@@ -62,10 +62,11 @@ ROW = {"effect": 0.0123, "n_events": 40, "n_windows_with_events": 5, "n_blocks":
        "windows_claimed_sign": 5, "windows_with_value": 5}
 
 
-def _ce_entry(qid="q7", *, floor=None, row=None, status="ok", function="conditional_effect"):
+def _ce_entry(qid="q7", *, floor=None, row=None, status="ok", function="conditional_effect",
+              spec_hash=None):
     return {qid: {"id": qid, "function": function, "status": status,
                   "params": {"variant": "base"},
-                  "result": {"spec_hash": "hq7",
+                  "result": {"spec_hash": spec_hash or f"h{qid}",
                              "test": {"selector": LONG, "outcome": {"kind": "trade_net_return"},
                                       "baseline": {"kind": "other_trades"},
                                       "statistic": "mean_diff", "direction": "greater",
@@ -100,15 +101,18 @@ def _check(text, entries=None):
 
 
 def test_a_no_claim_with_valid_observations_is_accepted_and_recorded():
-    reading, rec, errors = _check(_answer([_obs(), _obs(statement="Short lots lose less.")]))
+    reading, rec, errors = _check(
+        _answer([_obs(), _obs(statement="Short lots lose less.", test="q8",
+                              evidence=["q8:horizons.1.effect=0.0123"])]),
+        {**_entries(), **_ce_entry("q8")})
     assert errors == []
     recorded = rec["no_claim"]["observations"]
     assert len(recorded) == 2
-    for o in recorded:
+    for o, (qid, h) in zip(recorded, (("q7", "hq7"), ("q8", "hq8"))):
         assert set(o) == set(asm.OBSERVATION_KEYS) | {"spec"}
-        assert o["test"] == "q7" and o["floors_met"] is True
+        assert o["test"] == qid and o["floors_met"] is True
         # the spec is code-written: the measured test block without its result, plus its hash
-        assert o["spec"]["spec_hash"] == "hq7" and o["spec"]["selector"] == LONG
+        assert o["spec"]["spec_hash"] == h and o["spec"]["selector"] == LONG
         assert o["spec"]["floor"] == {"min_events": 5}
         assert "horizons" not in o["spec"] and "effect" not in o["spec"]
     assert rec["outcome"] == "no_claim" and reading["side_findings"] == []
@@ -181,6 +185,57 @@ def test_each_observation_refusal(observations, entries, needle):
     reading, _rec, errors = _check(_answer(observations), entries)
     assert any(needle in e for e in errors), errors
     assert any("no_claim.observations" in e for e in errors), errors
+
+
+def _n_entries(n, **kw):
+    out = dict(_entries_for_claim())
+    for i in range(n):
+        out.update(_ce_entry(f"q{7 + i}", **kw))
+    return out
+
+
+def _n_obs(n):
+    return [_obs(statement=f"Behaviour {i}.", test=f"q{7 + i}",
+                 evidence=[f"q{7 + i}:horizons.1.effect=0.0123"]) for i in range(n)]
+
+
+def test_three_observations_citing_three_different_tests_are_accepted():
+    _r, rec, errors = _check(_answer(_n_obs(3)), _n_entries(3))
+    assert errors == []
+    assert [o["test"] for o in rec["no_claim"]["observations"]] == ["q7", "q8", "q9"]
+
+
+def test_a_fourth_observation_is_refused_with_the_cap_in_the_message():
+    _r, _rec, errors = _check(_answer(_n_obs(4)), _n_entries(4))
+    assert any("no_claim.observations has 4 entries" in e and "at most 3" in e
+               and "different test" in e for e in errors), errors
+    assert asm.OBSERVATIONS_MAX == 3
+
+
+def test_two_observations_citing_the_same_query_are_refused():
+    obs = [_obs(), _obs(statement="Same test, other words.")]
+    _r, _rec, errors = _check(_answer(obs), _n_entries(1))
+    assert any("no_claim.observations[1].test='q7'" in e and "different test" in e
+               for e in errors), errors
+
+
+def test_two_queries_with_the_same_test_block_are_the_same_test():
+    entries = {**_entries(), **_ce_entry("q8", spec_hash="hq7")}
+    obs = [_obs(), _obs(test="q8", evidence=["q8:horizons.1.effect=0.0123"])]
+    _r, _rec, errors = _check(_answer(obs), entries)
+    assert any("no_claim.observations[1].test='q8'" in e and "different test" in e
+               for e in errors), errors
+
+
+def test_the_observation_spec_shares_no_object_between_observations():
+    """Two observations citing one query: PyYAML would write the second selector as an alias
+    (&id001 / *id001). The spec holds copies, and the YAML has no anchor."""
+    entry = _entries()["q7"]
+    a, b = asm._observation_spec(entry), asm._observation_spec(entry)
+    assert a == b and a["selector"] is not b["selector"] and a["floor"] is not b["floor"]
+    assert a["selector"] is not LONG
+    dumped = yaml.safe_dump([a, b], sort_keys=False)
+    assert "&id" not in dumped and "*id" not in dumped
 
 
 def test_floors_met_matching_the_log_is_accepted_both_ways():
@@ -354,15 +409,92 @@ def test_the_memory_view_shows_an_observation_as_observed_no_vehicle_yet():
     assert row["source_run"] == "run_080" and row["lens"] == "trade_efficiency"
     assert row["fold_observed"] == "A" and row["floors_met"] is True
     assert "9.9" not in row["statement"] and "<n>" in row["statement"]
-    # the mechanical spec only: no floor, no result, no evidence, no query id
-    assert set(row["test"]) <= {"spec_hash", *amv.TEST_SPEC_KEYS}
+    # the mechanical spec and its floor (counts): no result, no evidence, no query id
+    assert set(row["test"]) <= {"spec_hash", "floor", *amv.TEST_SPEC_KEYS}
     assert row["test"]["spec_hash"] == "hq7" and row["test"]["selector"] == LONG
+    assert row["test"]["floor"] == {"min_events": 5}
     blob = json.dumps(view)
-    for leaked in ("0.0123", "9.9", "min_events", '"q7"', "q7:", "evidence"):
+    for leaked in ("0.0123", "9.9", '"q7"', "q7:", "evidence"):
         assert leaked not in blob, leaked
     assert row["source_strategy"]["hypothesis_id"] == "H-1"
     # it is not a claim: nothing joins the claims or their counts
     assert view["claims"] == [] and view["n_claims"] == 0
+
+
+def test_the_floor_is_counts_only_and_a_claims_test_row_is_unchanged():
+    memory = _memory_with_observation()
+    spec = memory["runs"]["run_080"]["observations"][0]["spec"]
+    spec["floor"] = {"min_events": 5, "min_windows": 3, "effect": 0.0123, "min_blocks": 2.5,
+                     "min_eras": True}
+    (row,) = amv.build_memory_view(memory, {})["observations"]
+    assert row["test"]["floor"] == {"min_events": 5, "min_windows": 3}
+    assert "0.0123" not in json.dumps(row)
+    spec.pop("floor")
+    (row,) = amv.build_memory_view(memory, {})["observations"]
+    assert "floor" not in row["test"]
+    assert "floor" not in amv.TEST_SPEC_KEYS                      # claims keep their keys
+    claim_memory = {"runs": {"run_080": {"run_id": "run_080", "finding": {
+        "finding_id": "F-1", "statement": "s", "kind": "event_behaviour",
+        "tests": [{"spec_hash": "h", "spec": dict(spec, floor={"min_events": 5})}]}}}}
+    (claim,) = amv.build_memory_view(claim_memory, {})["claims"]
+    assert "floor" not in claim["tests"][0]
+
+
+def test_observation_rows_share_no_object_so_the_yaml_has_no_alias():
+    """Two runs whose observations hold the same spec object: the view copies it."""
+    memory = _memory_with_observation()
+    second = copy.copy(memory["runs"]["run_080"])
+    second["run_id"] = "run_081"
+    second["observations"] = [dict(memory["runs"]["run_080"]["observations"][0])]
+    assert second["observations"][0]["spec"] is memory["runs"]["run_080"]["observations"][0]["spec"]
+    memory["runs"]["run_081"] = second
+    view = amv.build_memory_view(memory, {})
+    a, b = view["observations"]
+    assert a["test"]["selector"] == b["test"]["selector"] == LONG
+    assert a["test"]["selector"] is not b["test"]["selector"]
+    assert a["test"]["floor"] is not b["test"]["floor"]
+    dumped = yaml.safe_dump(view, sort_keys=False)
+    assert "&id" not in dumped and "*id" not in dumped
+
+
+def _memory_with_runs(n, *, recorded_at):
+    memory = _memory_with_observation()
+    proto = memory["runs"].pop("run_080")
+    for i in range(1, n + 1):
+        run = copy.deepcopy(proto)
+        run["run_id"] = f"run_{i:03d}"
+        run["recorded_at"] = recorded_at(i)
+        run["observations"][0]["statement"] = f"Behaviour of run {i}."
+        memory["runs"][run["run_id"]] = run
+    return memory
+
+
+def test_the_view_keeps_the_newest_20_observation_rows_and_counts_the_rest():
+    assert amv.OBSERVATION_ROWS_MAX == 20
+    view = amv.build_memory_view(
+        _memory_with_runs(21, recorded_at=lambda i: f"2026-10-01T00:00:{i:02d}"), {})
+    rows = view["observations"]
+    assert len(rows) == 20
+    assert rows[0]["source_run"] == "run_002" and rows[-1]["source_run"] == "run_021"
+    assert view["observations_max_rows"] == 20
+    assert view["observations_in_memory"] == 21 and view["omitted_older_observations"] == 1
+    assert all("source_strategy" in r for r in rows)
+
+
+def test_newest_means_the_latest_recorded_at_not_the_highest_run_number():
+    # run_001 was recorded last: it is kept, and run_002 (the oldest recorded) is dropped
+    view = amv.build_memory_view(
+        _memory_with_runs(21, recorded_at=lambda i: "2026-10-02T00:00:00" if i == 1
+                          else f"2026-10-01T00:00:{i:02d}"), {})
+    runs = [r["source_run"] for r in view["observations"]]
+    assert len(runs) == 20 and "run_001" in runs and "run_002" not in runs
+    assert runs[-1] == "run_001"                                    # oldest first, newest last
+
+
+def test_twenty_or_fewer_observation_rows_are_all_shown_with_nothing_omitted():
+    view = amv.build_memory_view(
+        _memory_with_runs(20, recorded_at=lambda i: f"2026-10-01T00:00:{i:02d}"), {})
+    assert len(view["observations"]) == 20 and view["omitted_older_observations"] == 0
 
 
 def test_a_memory_view_without_observations_has_no_observation_keys():
@@ -370,6 +502,7 @@ def test_a_memory_view_without_observations_has_no_observation_keys():
     del memory["runs"]["run_080"]["observations"]
     view = amv.build_memory_view(memory, {})
     assert "observations" not in view and "observations_note" not in view
+    assert "omitted_older_observations" not in view
     assert set(view) == {"schema_version", "note", "n_claims", "by_status", "claims"}
     assert "observations" not in amv.build_memory_view({}, None)
 
@@ -444,6 +577,13 @@ def test_the_skill_states_the_vehicle_rule_and_the_observation_shape():
     assert "observations:" in text and "floors_met:" in text
     assert "observed, no vehicle yet" in text
     assert "the child run on the next fold is the proof" in text
+    assert "A `no_claim` carries at most 3 observations, each citing a different test." in text
+    assert ("While every bar's regime is unknown: no claim on regime or regime_at_entry; a market "
+            "condition is claimed through past_return or any selector in the vocabulary.") in text
+    assert "The detector's label is unknown" not in text
+    te = " ".join((SKILL_DIR / "trade_efficiency.md").read_text(encoding="utf-8").split())
+    assert ("The pipeline rule itself is not a vehicle; the vehicle changes the forecast the rule "
+            "acts on (for example a smoothing span that cuts sign flips).") in te
     assert "Profit and cost are measurements of this run" in text
     for lens in ("forecast.md", "trade_efficiency.md"):
         assert "Profit and cost are measurements of this run" in " ".join(

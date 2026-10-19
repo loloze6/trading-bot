@@ -7,8 +7,9 @@ allocation is the forecast divided by 10; a rebalance happens on every allocatio
 above the band; lots are closed last-in-first-out) and predict a second query it implies. Your
 claims are strategy claims, measured on trades (CLAIM_TESTS_TRADE.md) and confirmed by the
 child run of a variant that changes the rule (a config change, its vehicle) on a fold you
-have not seen. Exit fields describe what happened; a vehicle may only act on what was known
-at entry.
+have not seen. The pipeline rule itself is not a vehicle; the vehicle changes the forecast the
+rule acts on (for example a smoothing span that cuts sign flips). Exit fields describe what
+happened; a vehicle may only act on what was known at entry.
 
 Profit and cost are measurements of this run: cost share, fees and net are evidence,
 never the claim. A cost claim names the cause of the weak gross edge (the edge lasts one

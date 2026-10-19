@@ -208,8 +208,9 @@ evidence:
 Each observation has exactly four keys: `statement` (the behaviour you measured), `test`
 (the id of the `conditional_effect` query of this session that measured it), `evidence`
 (citations, at least one of that query) and `floors_met` (true or false: whether that query
-cleared its test's floor on every horizon). An observation is recorded, not confirmed; the
-memory view shows it as "observed, no vehicle yet".
+cleared its test's floor on every horizon). A `no_claim` carries at most 3 observations, each
+citing a different test. An observation is recorded, not confirmed; the memory view shows it
+as "observed, no vehicle yet".
 
 Code checks, before anything is kept: the claim block (CLAIM_TESTS), every citation against the
 query log (the id exists, the path exists in that result, the value equals the logged value),
@@ -265,6 +266,5 @@ fewer.
   regime_at_entry, entry_forecast), or measure `post_exit_return`.
 - One claim or none.
 - Stop when the comparison budget says so.
-- The detector's label is unknown on every bar of this run: no claim on `regime` or
-  `regime_at_entry`. A market condition is claimed through `trailing_vol`, `past_return` or
-  any selector in the vocabulary.
+- While every bar's regime is unknown: no claim on regime or regime_at_entry; a market
+  condition is claimed through past_return or any selector in the vocabulary.

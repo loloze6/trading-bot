@@ -57,6 +57,7 @@ clock, no model call, no side effect.
 """
 from __future__ import annotations
 
+import copy
 import json
 import os
 import re
@@ -94,8 +95,15 @@ NOTE = ("earlier claims and what became of them: numbers only for confirmed clai
 OBSERVED = "observed, no vehicle yet"
 OBSERVATIONS_NOTE = ("behaviour an earlier session measured with no strategy change following "
                      "from it yet: observed, no vehicle yet -- not a claim and never confirmed, "
-                     "so no number is shown and every statement has its numbers masked; it "
+                     "so no result is shown and every statement has its numbers masked; the test's "
+                     "`floor` is shown (counts of events, windows, blocks or eras the test needed: "
+                     "`floors_met` says whether the measurement reached them); it "
                      "describes only the strategy of its source run (`source_strategy`)")
+# Operator, 2026-10-19: the view keeps the newest OBSERVATION_ROWS_MAX observation rows, the same
+# mechanism as campaign_memory.TRIED_IDEAS_MAX_ROWS (newest by the source run's recorded_at, run
+# order breaks ties; the older ones are counted, not listed).
+OBSERVATION_ROWS_MAX = 20
+FLOOR_UNITS = ("min_events", "min_windows", "min_eras", "min_blocks")   # claim_tests.FLOOR_UNITS
 # operator, 2026-10-08: confirmed on any fold wins; a refutation on another fold stays in `folds`
 _FOLD_STATUS_ORDER = (CONFIRMED, NOT_CONFIRMED, NOT_MEASURABLE)   # the first present wins
 # digits glued to a word character (`x2`, `h24`, `5of6`, `Sharpe1.2`) that mask_numbers'
@@ -180,29 +188,47 @@ def _memory_claims(memory: dict) -> list:
     return out
 
 
+def _floor(spec: dict):
+    """The test's floor: counts only (FLOOR_UNITS with a whole number >= 1, a copy), so
+    that no result number can come through it; None when absent or unreadable."""
+    fl = spec.get("floor")
+    if not isinstance(fl, dict):
+        return None
+    out = {u: fl[u] for u in FLOOR_UNITS
+           if isinstance(fl.get(u), int) and not isinstance(fl.get(u), bool) and fl[u] >= 1}
+    return out or None
+
+
 def _memory_observations(memory: dict) -> list:
-    """One row per observation of `runs.<id>.observations`, in run order: the lens, the masked
-    statement, the fold of the source run, floors_met, the status OBSERVED and the measured
-    test's mechanical spec (no result, no evidence: the numbers are exploratory)."""
-    out = []
+    """One row per observation of `runs.<id>.observations`, oldest first (the source run's
+    recorded_at, then run order, then the order inside the run): the lens, the masked statement,
+    the fold of the source run, floors_met, the status OBSERVED and the measured test's
+    mechanical spec with its floor (no result, no evidence: the numbers are exploratory). The
+    spec's slots are copies: rows never share an object (PyYAML would alias them)."""
+    keyed = []
     runs = (memory or {}).get("runs") or {}
-    for rid in sorted(runs, key=lambda r: _run_order(str(r))):
+    for rid in runs:
         entry = runs[rid]
         obs = entry.get("observations") if isinstance(entry, dict) else None
-        for o in obs if isinstance(obs, list) else []:
+        for j, o in enumerate(obs if isinstance(obs, list) else []):
             if not isinstance(o, dict):
                 continue
             spec = o.get("spec") if isinstance(o.get("spec"), dict) else {}
-            out.append({
+            test = {"spec_hash": spec.get("spec_hash"),
+                    **{k: copy.deepcopy(spec[k]) for k in TEST_SPEC_KEYS if k in spec}}
+            floor = _floor(spec)
+            if floor is not None:
+                test["floor"] = floor
+            keyed.append(((str(entry.get("recorded_at") or ""), _run_order(str(rid)), j), {
                 "source_run": str(rid), "lens": o.get("lens"),
                 "statement": _statement(o.get("statement")),
                 "fold_observed": entry.get("fold"),
                 "floors_met": o.get("floors_met") if isinstance(o.get("floors_met"), bool)
                 else None,
                 "status": OBSERVED,
-                "test": {"spec_hash": spec.get("spec_hash"),
-                         **{k: spec[k] for k in TEST_SPEC_KEYS if k in spec}}})
-    return out
+                "test": test}))
+    keyed.sort(key=lambda kr: kr[0])
+    return [row for _k, row in keyed]
 
 
 def _fold_observed(rec: dict, runs: dict):
@@ -313,7 +339,8 @@ def _source_strategy(rid, runs: dict, configs: dict) -> dict:
 
 
 def build_memory_view(memory: dict, ledger: dict | None = None,
-                      configs: dict | None = None) -> dict:
+                      configs: dict | None = None,
+                      max_observation_rows: int = OBSERVATION_ROWS_MAX) -> dict:
     """The analyst's memory view from the campaign memory and the confirmations
     ledger (both already loaded; either may be empty). `configs`: {run id: that run's base
     strategy config}, for each claim's `source_strategy` (D-097)."""
@@ -337,11 +364,17 @@ def build_memory_view(memory: dict, ledger: dict | None = None,
             "by_status": counts, "claims": claims}
     observations = _memory_observations(memory)
     if observations:                                   # absent without one: views unchanged
-        for o in observations:
+        # the newest `max_observation_rows` (campaign_memory.tried_ideas' rule); the rest counted
+        kept = observations[-max_observation_rows:] \
+            if max_observation_rows and len(observations) > max_observation_rows else observations
+        for o in kept:
             o["source_strategy"] = _source_strategy(o["source_run"],
                                                     runs if isinstance(runs, dict) else {},
                                                     configs or {})
-        view.update(observations_note=OBSERVATIONS_NOTE, observations=observations)
+        view.update(observations_note=OBSERVATIONS_NOTE, observations_max_rows=max_observation_rows,
+                    observations_in_memory=len(observations),
+                    omitted_older_observations=len(observations) - len(kept),
+                    observations=kept)
     return view
 
 

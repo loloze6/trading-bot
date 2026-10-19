@@ -24,6 +24,7 @@ date at or after the holdout start.
 """
 from __future__ import annotations
 
+import copy
 import json
 import math
 import os
@@ -394,7 +395,10 @@ def _cite_path(c) -> str:
 # regroup_record stage copies an accepted no_claim's observations into the run's
 # campaign_memory entry (campaign_memory.analyst_observations); the memory view shows them as
 # "observed, no vehicle yet" (analyst_memory_view).
+# Operator, 2026-10-19: at most OBSERVATIONS_MAX observations per no_claim, each citing a different
+# test (the prompt grows with every recorded observation).
 OBSERVATION_KEYS = ("statement", "test", "evidence", "floors_met")
+OBSERVATIONS_MAX = 3
 
 
 def floors_met_in_log(entry: dict):
@@ -428,6 +432,11 @@ def observation_errors(observations, entries: dict) -> list:
         return ["no_claim.observations must be a list of {statement, test, evidence, "
                 "floors_met} (leave the key out, or write [], when there is none)"]
     errors = []
+    if len(observations) > OBSERVATIONS_MAX:
+        errors.append(f"no_claim.observations has {len(observations)} entries: a no_claim records at "
+                      f"most {OBSERVATIONS_MAX} observations, each citing a different test (keep the "
+                      f"{OBSERVATIONS_MAX} that matter most)")
+    seen_tests = set()
     for i, o in enumerate(observations):
         w = f"no_claim.observations[{i}]"
         if not isinstance(o, dict) or set(o) != set(OBSERVATION_KEYS):
@@ -438,6 +447,15 @@ def observation_errors(observations, entries: dict) -> list:
             errors.append(f"{w}.statement must be a non-empty text: the behaviour you measured")
         qid = o["test"]
         is_ce = _ok_call(entries, qid) and entries[qid].get("function") == "conditional_effect"
+        if is_ce:
+            # one observation per test: the same query, or the same test block run again (the
+            # same spec_hash), is the same test
+            sh = (entries[qid].get("result") or {}).get("spec_hash")
+            key = sh if isinstance(sh, str) and sh else qid
+            if key in seen_tests:
+                errors.append(f"{w}.test={qid!r} measures the same test as an earlier observation "
+                              f"of this no_claim: each observation cites a different test")
+            seen_tests.add(key)
         if not is_ce:
             errors.append(f"{w}.test={qid!r} must be the id of an ok conditional_effect call of "
                           f"this session (the call that measured the behaviour)")
@@ -463,9 +481,11 @@ def _observation_spec(entry: dict) -> dict:
     (selector, outcome, baseline, statistic, direction, floor; no result) and its spec_hash."""
     res = entry.get("result") or {}
     block = res.get("test") if isinstance(res.get("test"), dict) else {}
+    # deep copies: two observations citing the same query must not share objects (PyYAML would
+    # write the second as an alias, &id001 / *id001, in the record)
     return {"spec_hash": res.get("spec_hash"),
-            **{k: block[k] for k in ("selector", "outcome", "baseline", "statistic",
-                                     "direction", "floor") if k in block}}
+            **{k: copy.deepcopy(block[k]) for k in ("selector", "outcome", "baseline", "statistic",
+                                                    "direction", "floor") if k in block}}
 
 
 def _tests_of(claim) -> list:
