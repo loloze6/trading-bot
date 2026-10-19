@@ -1,6 +1,6 @@
 # Campaign summary
 
-_Regenerated: 2026-10-16T11:27:11Z_
+_Regenerated: 2026-10-18T20:11:34Z_
 
 ## Queue
 
@@ -30,21 +30,21 @@ _Regenerated: 2026-10-16T11:27:11Z_
 | E068_hourly_shock_reversal_kraken_perp__more_2 | done | run_075 | refuted |
 | trade_efficiency-run_070-1 | done | run_073 | refuted |
 | profitability-run_073-1 | done | run_074 | refuted |
-| component_attribution-run_071-1 | blocked_on_operator_approval | - | - |
+| component_attribution-run_071-1 | superseded | - | - |
 | trade_efficiency-run_073-1 | superseded | - | - |
-| trade_efficiency-run_071-1 | blocked_on_operator_approval | - | - |
+| trade_efficiency-run_071-1 | superseded | - | - |
 | trade_efficiency-run_071-3 | superseded | run_076 | - |
 | trade_efficiency-run_071-4 | done | run_078 | refuted |
-| trade_efficiency-run_078-1 | blocked_on_operator_approval | - | - |
+| trade_efficiency-run_078-1 | superseded | - | - |
 | trade_efficiency-run_066-2 | done | run_079 | refuted |
-| trade_efficiency-run_079-1 | blocked_on_operator_approval | - | - |
+| trade_efficiency-run_079-1 | superseded | - | - |
 | L1_daily_trend_basket_sma100 | superseded | run_080 | - |
 | L1_daily_trend_basket_sma50 | superseded | - | - |
 | L1_daily_trend_basket_sma200 | superseded | - | - |
 | L1_daily_trend_basket_sma100_v2 | done | run_081 | inconclusive |
 | L1_daily_trend_basket_sma50_v2 | done | run_082 | inconclusive |
 | L1_daily_trend_basket_sma200_v2 | done | run_083 | validated |
-| forecast_power-run_078-1 | blocked_on_operator_approval | - | - |
+| forecast_power-run_078-1 | superseded | - | - |
 | L1_daily_trend_basket_sma100_v3 ([obsolete] Lane 1 v3 -- daily trend on the distance from SMA(100), vol-targeted, 3-coin Kraken basket, fold B (BASE run)) | done | run_084 | refuted |
 | L1_daily_trend_basket_sma50_v3 ([obsolete] Lane 1 v3 -- daily trend on the distance from SMA(50), vol-targeted, 3-coin Kraken basket, fold B (design run, shorter lookback)) | done | run_085 | refuted |
 | L1_daily_trend_basket_sma200_v3 ([obsolete] Lane 1 v3 -- daily trend on the distance from SMA(200), vol-targeted, 3-coin Kraken basket, fold B (design run, longer lookback)) | superseded | run_086 | - |
@@ -66,18 +66,15 @@ _Regenerated: 2026-10-16T11:27:11Z_
 | daily_breadth_fold_a__h2 | superseded | - | - |
 | forecast_power-run_094-1 | done | run_095 | refuted |
 | forecast_power-run_095-1 | done | run_096 | refuted |
-| trade_efficiency-run_095-1 | blocked_on_operator_approval | - | - |
+| trade_efficiency-run_095-1 | superseded | - | - |
+| rebase_run_095_standardised_host | done | run_097 | refuted |
+| trade_efficiency-run_075-1 | blocked_on_operator_approval | - | - |
 
 ## Awaiting operator approval (approve with --approve <id>)
 
 | id | origin | priority | brief |
 |---|---|---|---|
-| component_attribution-run_071-1 | reader | 999 | campaign_record/candidate_briefs/component_attribution-run_071-1.md |
-| trade_efficiency-run_071-1 | reader | 999 | campaign_record/candidate_briefs/trade_efficiency-run_071-1.md |
-| trade_efficiency-run_078-1 | reader | 999 | campaign_record/candidate_briefs/trade_efficiency-run_078-1.md |
-| trade_efficiency-run_079-1 | reader | 999 | campaign_record/candidate_briefs/trade_efficiency-run_079-1.md |
-| forecast_power-run_078-1 | reader | 999 | campaign_record/candidate_briefs/forecast_power-run_078-1.md |
-| trade_efficiency-run_095-1 | reader | 999 | campaign_record/candidate_briefs/trade_efficiency-run_095-1.md |
+| trade_efficiency-run_075-1 | reader | 999 | campaign_record/candidate_briefs/trade_efficiency-run_075-1.md |
 
 ## Closed briefs (reopen: RUNBOOK §3, completed_brief_exhausted)
 
@@ -96,19 +93,19 @@ _Regenerated: 2026-10-16T11:27:11Z_
 
 ## Claim tests (E-068, information only)
 
-- Runs with a usable claim test: 17
+- Runs with a usable claim test: 18
 - Runs without one: 5
   - criteria_refs_only: 2 (run_073, run_085)
   - exempt: 1 (run_072)
   - tests_none: 2 (run_094, run_095)
-- Claim tests measured after the backtests (effect sizes, measured, not proven): 29 test(s) in 7 run(s) (run_070, run_071, run_074, run_075, run_078, run_079, run_096); tests whose selector matched no bars: 0; runs not measured: 10
+- Claim tests measured after the backtests (effect sizes, measured, not proven): 37 test(s) in 8 run(s) (run_070, run_071, run_074, run_075, run_078, run_079, run_096, run_097); tests whose selector matched no bars: 0; runs not measured: 10
 
 ## Readers skipped by a code rule (E-068 slice 5, no model call)
 
-- Reader calls skipped: 50 in 20 run(s)
+- Reader calls skipped: 53 in 21 run(s)
   - operator_refold: 20 (component_attribution in run_090, forecast_power in run_090, profitability in run_090, regime_power in run_090, trade_efficiency in run_090, component_attribution in run_091, forecast_power in run_091, profitability in run_091, regime_power in run_091, trade_efficiency in run_091, component_attribution in run_092, forecast_power in run_092, profitability in run_092, regime_power in run_092, trade_efficiency in run_092, component_attribution in run_093, forecast_power in run_093, profitability in run_093, regime_power in run_093, trade_efficiency in run_093)
   - regime_detector_scaffolding: 10 (regime_power in run_071, regime_power in run_073, regime_power in run_074, regime_power in run_081, regime_power in run_082, regime_power in run_083, regime_power in run_084, regime_power in run_085, regime_power in run_088, regime_power in run_089)
-  - replaced_by_analyst: 18 (component_attribution in run_075, profitability in run_075, regime_power in run_075, component_attribution in run_078, profitability in run_078, regime_power in run_078, component_attribution in run_079, profitability in run_079, regime_power in run_079, component_attribution in run_094, profitability in run_094, regime_power in run_094, component_attribution in run_095, profitability in run_095, regime_power in run_095, component_attribution in run_096, profitability in run_096, regime_power in run_096)
+  - replaced_by_analyst: 21 (component_attribution in run_075, profitability in run_075, regime_power in run_075, component_attribution in run_078, profitability in run_078, regime_power in run_078, component_attribution in run_079, profitability in run_079, regime_power in run_079, component_attribution in run_094, profitability in run_094, regime_power in run_094, component_attribution in run_095, profitability in run_095, regime_power in run_095, component_attribution in run_096, profitability in run_096, regime_power in run_096, component_attribution in run_097, profitability in run_097, regime_power in run_097)
   - single_component: 2 (component_attribution in run_073, component_attribution in run_074)
 
 ## Claims measured on a child run's fold (E-077; a noise rule, not proof)
@@ -146,13 +143,13 @@ Open = every row: none of these files records a closed request. Newest last.
 
 ## Scoreboard
 
-- Trials recorded (campaign_state.trial_sharpes): 70
+- Trials recorded (campaign_state.trial_sharpes): 74
   - kill_no_ic: 8
   - no_signal_artifact: 2
   - proceed_to_backtest: 1
-  - recorded: 58
+  - recorded: 62
   - refine_inverted_ic: 1
 - Distinct failed hypothesis families: 9
-- Knowledge-base findings on file: 42
-- Total campaign runs so far: 54
-- Estimated spend: $58.95 (25,349,066 weighted token units, see config/campaign_config.yaml orchestrator.token_budget_per_run_weighted_units)
+- Knowledge-base findings on file: 43
+- Total campaign runs so far: 55
+- Estimated spend: $62.82 (26,078,970 weighted token units, see config/campaign_config.yaml orchestrator.token_budget_per_run_weighted_units)
