@@ -3368,7 +3368,10 @@ refutation there (the wrong sign, or a non-positive pooled value) is `not_confir
 even if another horizon is too short to judge. A claim with no effect passes it about 11% of the time per fold
 (six windows; about 1% after two folds); a "window" is one coin's block, so with several
 coins it is stricter. The row records the effect size per horizon, the per-window
-values and the agreement (k of the fold's windows, for example "5 of 6"). Refuted and not-measurable claims stay in the
+values and the agreement (k of the fold's windows, for example "5 of 6"). The row also keeps the per-window event
+counts (`events_per_window`, beside `per_window`) and, in each test entry, the claim's floor, so a
+not_measurable claim keeps what was measured; early exits before measurement keep status and reason
+only. Refuted and not-measurable claims stay in the
 ledger. With the flag on, explore_confirm's in-run route and its weak follow-up
 resolution are unreachable (a claim is never confirmed inside the run that inspired
 it); the campaign summary has one line per status, labelled by fold. A claim whose

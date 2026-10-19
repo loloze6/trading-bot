@@ -125,7 +125,7 @@ def build_prompt(lens: str, run_dir: Path, *, base_config_rel: str, fold: str | 
                      _read(SR_ROOT / "docs" / "DATA_DICTIONARY.md"))
     for name in ("CLAIM_TESTS.md", "CLAIM_TESTS_TRADE.md", "CLAIM_TESTS_EXECUTION.md"):
         text += _section(f"Claim-test vocabulary: {name}", _read(hs / name))
-    text += _section("The memory view (earlier claims; numbers only for confirmed ones)",
+    text += _section("The memory view (earlier claims; effect numbers only for confirmed ones)",
                      yaml.safe_dump(memory_view, sort_keys=False, allow_unicode=True))
     text += _section("Your tools", "\n".join(
         f"- {full} (call it by that name)" for full in ALLOWED_TOOLS))
