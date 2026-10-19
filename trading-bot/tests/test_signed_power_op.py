@@ -58,6 +58,27 @@ def test_zero_stays_zero():
     assert _op(0.0, {"exponent": 3.5, "pivot": 4}) == 0.0
 
 
+@pytest.mark.parametrize(
+    "v,exponent,expected",
+    [
+        (float("nan"), 2, float("nan")),
+        (float("inf"), 2, float("inf")),
+        (float("-inf"), 2, float("-inf")),
+        (-5.0, 2.5, -10 * (0.5 ** 2.5)),  # about -1.7678
+        (1e200, 2, float("inf")),  # overflows to +inf, no exception
+    ],
+)
+def test_edge_values_at_the_default_pivot(v, exponent, expected):
+    with np.errstate(over="ignore"):
+        out = _op(v, {"exponent": exponent})
+    if math.isnan(expected):
+        assert math.isnan(out)
+    elif math.isinf(expected):
+        assert out == expected
+    else:
+        assert out == pytest.approx(expected, abs=1e-12)
+
+
 def test_a_non_default_pivot():
     # 5 * (10 / 5) ** 2 = 20; 5 * (2.5 / 5) ** 2 = 1.25
     assert _op(10.0, {"exponent": 2, "pivot": 5}) == pytest.approx(20.0, abs=1e-12)
