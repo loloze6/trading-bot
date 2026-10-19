@@ -9,8 +9,8 @@ at exponent 2; sign and zero survive; a non-default pivot); the operator bounds
 20 -> 80 at pivot 10, exponent 3; a non-finite input or output raises as in
 vol_target); the param check (signed_power_param_errors) and that the op and V16
 refuse exactly the same params; V16 refuses the op outside a strategies component's
-`transforms` in a regime without `blocks` (the V14 pattern) but sets no position within
-that list; V16 is silent for a config without the op; the op is a scalar op with a
+`transforms` in a regime without `blocks` (the V14 pattern), including in a block's
+source detector, but sets no position within that list; V16 is silent for a config without the op; the op is a scalar op with a
 min-periods entry of 1; and a pipeline without the op is unchanged.
 
 All data is synthetic.
@@ -387,6 +387,82 @@ def test_v16_has_no_position_rule_within_transforms():
     got = validate(_full([{"op": "signed_power", "params": {"exponent": 2}}, STD]))
     assert _v(got, "V16") == []
     assert _v(got, "V5")
+
+
+# --- V16 in a block's source detector (strategies.regimes.<r>.blocks[i].source.regime_detector)
+
+PE = "strategies.strategy_components.PriceEvolutionComponent"
+BSRC = "strategies.regimes.unknown.blocks[0].source.regime_detector"
+
+
+def _block_full(veto_tfs=None, comp_key="transforms", comp_tfs=None):
+    """A well-formed one-block composite whose block source detector holds a veto and a
+    regime component, each with its own transforms list."""
+    detector = {
+        "mode": "threshold_rules", "default_regime": "unknown", "rules": [],
+        "components": [{"id": "er", "class": ER, "params": {"period": 20}}],
+        "vetoes": [{"id": "er", "transforms": veto_tfs or [{"op": "identity"}],
+                    "rules": [{"op": "gt", "value": 0.5}], "result": "chop"}],
+        "regimes": {"trending": {"components": [
+            {"id": "er", "class": ER, "params": {"period": 20},
+             comp_key: comp_tfs or [{"op": "identity"}]}]}}}
+    return {"regime_detector": UNGATED, "strategies": {"regimes": {
+        "unknown": {
+            "components": [{"id": "b0__x", "class": PE, "params": {"period": 5}, "weight": 1.0,
+                            "lookback": 60, "transforms": [{"op": "identity"}]}],
+            "blocks": [{"id": "b0", "weight": 1.0, "components": ["b0__x"],
+                        "source": {"required_bars": 24, "warmup": 10, "buffer_bars": 124,
+                                   "regime_detector": detector,
+                                   "parts": {"unknown": ["b0__x"]}}}],
+            "block_standardisation": {"target": 10.0, "window": 100, "min_periods": 30}},
+        "trending": None, "mean_reversion": None, "chop": None}}}
+
+
+def test_the_block_fixture_without_the_op_validates_clean():
+    assert validate(_block_full()) == []
+
+
+def test_v16_refuses_a_block_source_detector_veto_once():
+    assert _v(validate(_block_full(veto_tfs=[{"op": "identity"}, SP])), "V16") == [
+        f"VIOLATION V16 {BSRC}.vetoes[0].transforms[1]: {_PLACEMENT}"]
+
+
+@pytest.mark.parametrize("key", ["transforms", "history_transforms"])
+def test_v16_refuses_a_block_source_detector_component_once(key):
+    assert _v(validate(_block_full(comp_key=key, comp_tfs=[SP])), "V16") == [
+        f"VIOLATION V16 {BSRC}.regimes.trending.components[0].{key}[0]: {_PLACEMENT}"]
+
+
+def test_v16_still_checks_params_in_a_block_source_detector():
+    got = _v(validate(_block_full(veto_tfs=[{"op": "signed_power", "params": {"exponent": 0}}])), "V16")
+    assert got == [
+        f"VIOLATION V16 {BSRC}.vetoes[0].transforms[0]: {_PLACEMENT}",
+        f"VIOLATION V16 {BSRC}.vetoes[0].transforms[0].params: exponent must be a finite number "
+        "with 1 <= exponent <= 3 (1 is the identity, above 3 over-amplifies), got 0"]
+
+
+def test_the_block_source_walk_changes_only_v16_lines():
+    # _all_transform_lists is unchanged: every other rule ignores the block source
+    # detector exactly as before, so adding the op there adds V16 lines and nothing else
+    base = validate(_block_full())
+    for cfg in (_block_full(veto_tfs=[SP]), _block_full(comp_tfs=[SP]),
+                _block_full(comp_key="history_transforms", comp_tfs=[SP])):
+        got = validate(cfg)
+        assert [v for v in got if not v.startswith("VIOLATION V16")] == base
+        assert len(_v(got, "V16")) == 1
+
+
+@pytest.mark.parametrize("mutate", [
+    lambda r: r.update(blocks={"b0": 1}),
+    lambda r: r.update(blocks=[["not", "a", "dict"]]),
+    lambda r: r["blocks"][0].update(source=None),
+    lambda r: r["blocks"][0]["source"].update(regime_detector=None),
+])
+def test_the_block_source_walk_never_raises_on_a_malformed_combiner(mutate):
+    cfg = _block_full(veto_tfs=[SP])
+    mutate(cfg["strategies"]["regimes"]["unknown"])
+    got = validate(cfg)
+    assert _v(got, "V13") and not _v(got, "V16")
 
 
 # --- registry membership ----------------------------------------------------------

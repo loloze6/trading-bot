@@ -412,10 +412,34 @@ def validate(config: dict) -> List[str]:
     # strategy_engine.update for the bar (later components' histories fall out
     # of step); in the regime detector it would escape generate_signals. No
     # position rule within the list (standardise, signed_power, clip is fine).
-    # Silent for every config without signed_power.
+    # V16 also walks each block's source detector
+    # (`strategies.regimes.<r>.blocks[i].source.regime_detector`, run by its own
+    # ConfigDrivenRegimeEngine, strategy_engine._Block) -- the same lists as the
+    # top-level detector, never allowed. V16 only: _all_transform_lists is
+    # unchanged, so every other rule's output is too (V14 keeps the same gap for
+    # vol_target). Silent for every config without signed_power.
     from strategies.registry import signed_power_param_errors
-    for loc, transforms in _all_transform_lists(config):
-        allowed = _in_strategy_transforms(loc)
+
+    def _block_source_detector_lists():
+        for rname, rcfg in strat_regimes.items():
+            blocks = rcfg.get("blocks") if isinstance(rcfg, dict) else None
+            if not isinstance(blocks, list):
+                continue  # V13 reports a malformed `blocks`
+            for i, block in enumerate(blocks):
+                src = block.get("source") if isinstance(block, dict) else None
+                det = src.get("regime_detector") if isinstance(src, dict) else None
+                if not isinstance(det, dict):
+                    continue  # V13 reports a malformed source
+                prefix = f"strategies.regimes.{rname}.blocks[{i}].source."
+                for loc, tfs in _all_transform_lists({"regime_detector": det}):
+                    yield prefix + loc, tfs, False
+
+    def _v16_lists():
+        for loc, tfs in _all_transform_lists(config):
+            yield loc, tfs, _in_strategy_transforms(loc)
+        yield from _block_source_detector_lists()
+
+    for loc, transforms, allowed in _v16_lists():
         for k, step in enumerate(transforms):
             if step.get("op") == "signed_power":
                 if not allowed:
