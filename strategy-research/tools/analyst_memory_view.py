@@ -8,14 +8,18 @@ good" (engineering/roadmap/E-075/ANALYST_SKILL_REVIEW_1.md P5; plan A1.11 item
 
 with status one of `confirmed`, `not_confirmed`, `not_measurable`, `pending`, and
 numbers (the confirmed effect and the per-window agreement, with the fold) for
-CONFIRMED claims only.
+CONFIRMED claims only. Each fold a claim was measured on (`folds`) also shows, for
+EVERY status (operator 2026-10-19), the row's reason with its numbers masked and its
+agreement ("k of F" per test, keyed by spec_hash, and horizon: a count of the fold's
+windows, not an effect); effects stay confirmed-only.
 
 What it deliberately does NOT show -- the thing tools/reader_findings.py's
 `reader_findings_summary` shows today (largest effect and "k/6 windows" per
 variant, `reader_findings.py` `_largest` and the summary row):
-  * no exploratory effect size, no window count, no pending effect;
-  * no reason text (the reasons of an unconfirmed claim quote window counts and
-    effects: "windows 3 of 6"), only the status;
+  * no exploratory effect size, no pending effect, no effect of a fold that did not
+    confirm the claim;
+  * no number inside a reason text (masked: a reason can quote a free-text test name
+    or a config value), only the status, the masked reason and the fold's agreement;
   * every claim's free-text statement has its number literals masked
     (explore_confirm.mask_numbers, the same rule E-072 applies to every reader copy:
     run_074's statement quotes "median forecast_return_corr=-0.0057", an exploratory
@@ -44,7 +48,8 @@ touches a file but in `load_memory_view`):
     (D-090, operator 2026-10-08): `confirmed` if any fold confirmed it, else
     `not_confirmed` if any fold refuted it, else `not_measurable`; `fold_confirmed`
     lists the folds that confirmed it, `confirmed` holds the numbers of those rows only,
-    and `folds` lists every measured fold with its status (no number), so a refutation on
+    and `folds` lists every measured fold with its status, masked reason and agreement (no
+    effect), so a refutation on
     another fold is still recorded. Fold rows replace the E-072 row of the
     same finding, and a ledger claim replaces the memory claim with the same id.
 
@@ -83,9 +88,11 @@ MEMORY_REL = "campaign_record/campaign_memory.yaml"
 LEDGER_REL = ec.LEDGER_REL
 STATEMENT_CHARS = 400
 TEST_SPEC_KEYS = ("selector", "outcome", "baseline", "statistic", "direction")
-NOTE = ("earlier claims and what became of them: numbers only for confirmed claims, measured "
-        "on the fold that confirmed them; pending, not_confirmed and not_measurable claims carry "
-        "none; every statement has its numbers masked; a claim of kind execution_behaviour "
+NOTE = ("earlier claims and what became of them: effect numbers only for confirmed claims, "
+        "measured on the fold that confirmed them; pending, not_confirmed and not_measurable claims "
+        "carry none; every fold a claim was measured on shows, for every status, its reason "
+        "(numbers masked) and its agreement (windows of the fold with the claimed sign: a count, "
+        "not an effect); every statement has its numbers masked; a claim of kind execution_behaviour "
         "describes only the strategy of its source run (`source_strategy`): never apply it to "
         "another strategy; the numbers in `source_strategy` are config settings, not results")
 # Operator, 2026-10-19 (PR-A): an earlier session's no_claim observations (campaign_memory.yaml
@@ -167,6 +174,35 @@ def _confirmed_numbers(rec: dict) -> dict:
             agreement[name] = {str(h): f"{x.get('windows_claimed_sign')} of "
                                        f"{x.get('windows_with_value')}" for h, x in hz.items()}
     return {"fold": rec.get("fold"), "effect": effect, "agreement": agreement}
+
+
+def _fold_agreement(rec: dict):
+    """The row's agreement ("k of F" per test and horizon: counts, no effect), keyed by the
+    test's spec_hash -- the test name is free text and is never shown (D-090); a test with
+    no spec_hash is keyed by its name with the numbers masked. None when the row measured
+    nothing (an early exit carries no agreement)."""
+    agreement = rec.get("agreement")
+    if not isinstance(agreement, dict) or not agreement:
+        return None
+    tests = rec.get("tests") if isinstance(rec.get("tests"), dict) else {}
+    out = {}
+    for name, hz in agreement.items():
+        h_spec = (tests.get(name) or {}).get("spec_hash") if isinstance(tests.get(name), dict) \
+            else None
+        key = h_spec if isinstance(h_spec, str) and h_spec else _statement(str(name))
+        out[key] = {str(h): str(v) for h, v in hz.items()} if isinstance(hz, dict) else None
+    return out
+
+
+def _fold_entry(rec: dict, status: str) -> dict:
+    """One fold row in a claim's `folds` (operator 2026-10-19): fold, run, status, the row's
+    reason and its agreement, for EVERY status. No effect: numbers stay confirmed-only (in
+    `confirmed`). The reason is masked as statements are (mask_numbers plus glued digits,
+    every status), because it can quote free text -- a test name, a config value, an
+    exception -- that may carry an exploratory number; the counts it quotes are in
+    `agreement`."""
+    return {"fold": rec.get("fold"), "run_id": rec.get("run_id"), "status": status,
+            "reason": _statement(rec.get("reason")), "agreement": _fold_agreement(rec)}
 
 
 def _memory_claims(memory: dict) -> list:
@@ -287,8 +323,7 @@ def _fold_claims(ledger: dict, memory: dict | None = None) -> list:
             "fold_observed": first_of("fold_observed") or _fold_observed(first, runs),
             "fold_confirmed": None,
             "status": status,
-            "folds": [{"fold": r.get("fold"), "run_id": r.get("run_id"), "status": st}
-                      for r, st in zip(recs, statuses)],
+            "folds": [_fold_entry(r, st) for r, st in zip(recs, statuses)],
             "tests": [{"spec_hash": h} for h in sorted({h for r in recs
                                                         for h in r.get("spec_hashes") or []})]}
         if status == CONFIRMED:

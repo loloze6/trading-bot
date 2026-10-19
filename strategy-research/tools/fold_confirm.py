@@ -162,7 +162,9 @@ def grade_test(result: dict, fold_windows=None) -> dict:
     `horizons`: per horizon with a pooled value, {effect, oriented, n_events,
     windows_claimed_sign (k), windows_with_value (n), windows_in_fold, windows_against
     (windows_in_fold - k), windows_without_value (labels), windows_needed_with_value,
-    per_window (oriented value per measured cell, as before), pooled_sign_held,
+    per_window (oriented value per measured cell, as before), events_per_window (the
+    cell's n_events, same keys as per_window: claim_tests' selected events with an outcome
+    in that window; for coins pooled per window, the sum over the coins), pooled_sign_held,
     windows_rule_held}. Pure."""
     import claim_measure as cmeas
     st = result.get("status")
@@ -186,8 +188,11 @@ def grade_test(result: dict, fold_windows=None) -> dict:
                            f"value pooled over the coins ({POOLED_KEY}): the noise rule "
                            f"counts windows, not coin-window cells")
             break
-        per_window = {str(w): c.get("oriented")
-                      for w, c in (cells if cells is not None else r.get("per_window") or {}).items()}
+        src = cells if cells is not None else r.get("per_window") or {}
+        per_window = {str(w): c.get("oriented") for w, c in src.items()}
+        # what was measured in each window, kept whatever the status (operator 2026-10-19):
+        # same keys as per_window; a window with no cell is absent from both
+        events_per_window = {str(w): c.get("n_events") for w, c in src.items()}
         # one value per window: a pooled cell is keyed by the window, a one-coin cell by
         # "<symbol>/<window>" (claim_tests.Window.label)
         by_window = {w.rsplit("/", 1)[-1]: v for w, v in per_window.items()}
@@ -206,6 +211,7 @@ def grade_test(result: dict, fold_windows=None) -> dict:
                                                       if by_window.get(w) is None],
                             "windows_needed_with_value": need,
                             "per_window": per_window,
+                            "events_per_window": events_per_window,
                             "pooled_sign_held": oriented > 0,
                             "windows_rule_held": (n >= need and len(counted) - k
                                                   <= WINDOWS_ALLOWED_AGAINST)}
@@ -250,6 +256,18 @@ def grade_test(result: dict, fold_windows=None) -> dict:
                        "at most one of the fold's windows: " + "; ".join(
                            f"h={h} {x['windows_claimed_sign']} of {x['windows_in_fold']}"
                            for h, x in horizons.items()))}
+
+
+def row_test_entry(result: dict, graded: dict) -> dict:
+    """One test's entry in the fold_confirmation row: its spec_hash, grade_test's output, and
+    the claim's floor exactly as claim_measure.measure_test read it (the result's `floor`, a
+    copy), kept whatever the status (operator 2026-10-19). A result claim_measure never
+    produced (not measured: an error, no bars) carries no floor and the entry none. Pure."""
+    entry = {"spec_hash": (result or {}).get("spec_hash"), **graded}
+    floor = (result or {}).get("floor")
+    if isinstance(floor, dict):
+        entry["floor"] = dict(floor)
+    return entry
 
 
 def _coins(per_window) -> list:
@@ -620,8 +638,7 @@ def confirm_on_fold(run_dir: Path, run_id: str, *, root: Path, folds_doc: dict |
     fold_windows = [b["label"] for b in block_rows]           # R5: the count's windows
     graded_tests = {n: grade_test(r, fold_windows) for n, r in sorted(results.items())}
     status, reason = combine(graded_tests)
-    row["tests"] = {n: {"spec_hash": results[n].get("spec_hash"), **g}
-                    for n, g in graded_tests.items()}
+    row["tests"] = {n: row_test_entry(results[n], g) for n, g in graded_tests.items()}
     row["windows_measured"] = list(measured)
     if any(POOLED_KEY in (x or {}) for r in results.values()
            for x in ((r or {}).get("horizons") or {}).values()):

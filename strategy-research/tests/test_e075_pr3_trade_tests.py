@@ -250,7 +250,7 @@ def test_mean_diff_trade_net_return_by_hand():
     assert h["value"] == pytest.approx(0.01375 - 0.013125) and h["oriented"] == pytest.approx(0.000625)
     assert h["n_events"] == 4 and h["n_windows_with_events"] == 1
     assert h["per_window"] == {"SYN/w0": {"value": pytest.approx(0.000625),
-                                          "oriented": pytest.approx(0.000625),
+                                          "oriented": pytest.approx(0.000625), "n_events": 4,
                                           "basis": "net_of_fees_and_slippage"}}
     assert h["bases"] == ["net_of_fees_and_slippage"]
     # direction less flips the oriented sign only
@@ -328,7 +328,8 @@ def test_window_without_trades_is_measurable():
     empty = ct.build_trade_window(bars(), [], post_alloc())
     empty_w = ct.build_trade_window(bars(label="w1"), [], post_alloc())
     _, out_h, _, _ = ct.effect_sizes([empty_w, twin()], spec([eq("exit_cause", "flip")]))
-    assert out_h[0]["per_window"]["SYN/w1"] == {"value": None, "oriented": None, "basis": None}
+    assert out_h[0]["per_window"]["SYN/w1"] == {"value": None, "oriented": None, "n_events": 0,
+                                                 "basis": None}
     assert out_h[0]["per_window"]["SYN/w0"]["value"] == pytest.approx(0.000625)
     assert out_h[0]["n_events"] == 4 and out_h[0]["n_windows_with_events"] == 1
     assert empty.n == 0

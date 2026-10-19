@@ -1056,7 +1056,8 @@ def test_the_memory_view_with_the_ledger_numbers_only_for_confirmed_claims(tmp_p
     assert conf["fold_observed"] == "A"
     assert conf["confirmed"] == [{"fold": "B", "effect": {"t1": {"24": 0.0012}},
                                   "agreement": {"t1": {"24": "5 of 6"}}}]
-    assert conf["folds"] == [{"fold": "B", "run_id": "run_080", "status": "confirmed"}]
+    assert conf["folds"] == [{"fold": "B", "run_id": "run_080", "status": "confirmed",
+                              "reason": None, "agreement": {"aaa": {"24": "5 of 6"}}}]
     # D-090: a confirmed claim's statement is masked too (its numbers are the exploratory ones)
     assert "12 bps" not in conf["statement"] and "<n>" in conf["statement"]
     # the others: a status and a fold, never a number
@@ -1072,7 +1073,9 @@ def test_the_memory_view_with_the_ledger_numbers_only_for_confirmed_claims(tmp_p
     assert view["n_claims"] == 8
     rest = {k: v for k, v in by.items() if k != "trade_efficiency-run_074-2"}
     blob = json.dumps(rest) + json.dumps(conf["statement"])
-    for leaked in ("0.0031", "3 of 6", "0.9", "windows", "reason", "noise rule", "14 bps",
+    # operator 2026-10-19: each fold's (masked) reason and its agreement count are shown for
+    # every status; effects never are
+    for leaked in ("0.0031", "0.9", "14 bps",
                    "0.31%", "0.3 lose", "5%", "9%", "12 bars", "12 bps", "3%"):
         assert leaked not in blob, leaked
     nums = [x for x in _walk(rest) if isinstance(x, float)]
@@ -1104,8 +1107,10 @@ def test_a_claim_measured_on_two_folds_gets_one_status_from_the_statuses(tmp_pat
     assert c["status"] == "confirmed" and c["fold_confirmed"] == ["B"]
     assert [x["fold"] for x in c["confirmed"]] == ["B"]
     assert -0.003 not in [x for x in _walk(c) if isinstance(x, float)]
-    assert c["folds"] == [{"fold": "B", "run_id": "run_99", "status": "confirmed"},
-                          {"fold": "C", "run_id": "run_100", "status": "not_confirmed"}]
+    assert c["folds"] == [{"fold": "B", "run_id": "run_99", "status": "confirmed",
+                           "reason": None, "agreement": {"aaa": {"24": "5 of 6"}}},
+                          {"fold": "C", "run_id": "run_100", "status": "not_confirmed",
+                           "reason": None, "agreement": {"aaa": {"24": "5 of 6"}}}]
     # refuted with nothing confirmed: not_confirmed, and no number
     (c,) = amv.build_memory_view({}, _write_ledger(tmp_path / "r", [rows[1]]))["claims"]
     assert c["status"] == "not_confirmed" and "confirmed" not in c
