@@ -4,59 +4,64 @@ ONE definition, shared by the analyst's `window_economics` query
 `window_economics` object stored beside `forecast_shape` in
 artifacts/profit_bars_evaluation.yaml (workflow/run_phase1_research.py, under
 orchestrator.analyst.enabled). Each caller resolves its own window folders (with
-its own path checks); this module only reads the `bars.csv` and `trades.json` of
-the folders it is given. A pure module: no SDK, no network, writes nothing.
+its own path checks) and hands over each window's `core` block from
+protocol_result.yaml (`results[i]["core"]`); this module reads the `bars.csv`,
+`trades.json` and `metrics.json` of the folders it is given. A pure module: no SDK, no
+network, writes nothing.
+
+Operator ruling 2026-10-19 (item 4): READ the run's own figures, do not recompute them.
+Per window, trades / gross / net / fees / cost drag / average trade duration are the
+`core` block's (trading-bot/reporting/run_artifact.py build_core), turnover is
+metrics.json's `bar_equity.turnover` (run_artifact.py build_bar_equity); a percent of the
+window's starting equity is a conversion of the read dollars, nothing else. Only
+direction_changes, mean and max absolute allocation and median_holding_bars are computed.
 
 Per (coin, window) cell, keyed `<symbol>/<window>`; `total` pools every cell
 -------------------------------------------------------------------------
-Bar fields read the window's bars.csv rows with regime != NOT_READY (stripped,
-upper case) -- the rows build_bar_equity (trading-bot/reporting/run_artifact.py)
-counts, so `turnover` is metrics.json's bar_equity.turnover before its rounding.
-  n_bars               the bars read
-  turnover             performance.bar_equity.turnover(postRebalance_current_allocation,
-                       previous_allocation): the sum of |executed allocation change| per
-                       bar (the function run_artifact.py calls, not a copy)
+READ (a window whose figure is absent -- no `core` block, an older run, no metrics.json --
+carries None for it; nothing is recomputed in its place):
+  trades                 core.trade_count (count of completed LIFO lots)
+  gross_pct              100 * core.gross_pnl / V0   (core.gross_pnl: dollars, before commission)
+  fees_pct               100 * core.fees_paid / V0   (dollars)
+  net_pct                100 * core.net_pnl / V0     (dollars, after commission)
+                         V0 = total_portfolio_value of the window's first bars.csv row, the
+                         account at the window's start; a dollar figure divided once by V0.
+  cost_drag_pct          core.cost_drag_pct verbatim ((gross - net) / |gross| * 100 as the run
+                         computed it; None when the run's gross was 0)
+  avg_trade_duration_bars  core.avg_trade_duration_bars verbatim (mean trade duration / median
+                         bar spacing, in bars)
+  turnover               metrics.json bar_equity.turnover verbatim (the sum of |executed
+                         allocation change| per ready bar; allocation units)
+COMPUTED from the window's own files:
+  n_bars               the bars bars.csv has with regime != NOT_READY (stripped, upper case) --
+                       the rows build_bar_equity counts
   direction_changes    sign flips of postRebalance_current_allocation; |a| <= FLAT_EPS is
                        flat and has no sign; a flat stretch is skipped, so long -> flat
                        -> short counts 1 and long -> flat -> long counts 0
   mean_abs_allocation  mean of |postRebalance_current_allocation|
   max_abs_allocation   max of |postRebalance_current_allocation|
-Trade fields read every lot of trades.json (one row per LIFO-matched lot):
-  trades               the number of lots
-  gross_pct            100 * sum(profit_loss_absolute) / V0
-  fees_pct             100 * sum(total_commission) / V0
-  net_pct              100 * sum(net_profit_loss_absolute) / V0  (= gross_pct - fees_pct)
-                       V0 = total_portfolio_value of the window's first bars.csv row, the
-                       account at the window's start. Dollars summed, then divided once:
-                       net_pct is the window's realised account change from closed lots:
-                       when the window ends flat (every lot closed by the last bar) it
-                       equals 100 * (E_end - V0) / V0, E_end = the last bars.csv row's
-                       postRebalance_total_value (the account after the window's last
-                       action; NOT its total_portfolio_value, the pre-rebalance value of
-                       that bar); E_end is marked to market, so an open lot at the end
-                       breaks the equality. On a saved run: equal to rounding. These are the
-                       dollars of run_artifact.py's core gross_pnl / fees_paid / net_pnl
-                       in percent of V0.
-  cost_drag_pct        (gross_pct - net_pct) / |gross_pct| * 100 = fees / |gross| * 100;
-                       None when gross is 0. run_artifact.py's core cost_drag_pct formula
-                       (the same number on each window)
-  median_holding_bars  median of duration_minutes * 60 / step over the lots; step = the
-                       median spacing of the window's bars.csv timestamps; None without lots
-`total`: counts, turnover and the three *_pct summed over the cells (each window is its own
-account); mean_abs_allocation over all bars pooled; max over all; cost_drag_pct from the
-summed *_pct; median_holding_bars over all lots pooled.
+  median_holding_bars  median of duration_minutes * 60 / step over the lots of trades.json;
+                       step = the median spacing of the window's bars.csv timestamps; None
+                       without lots
+`total`: trades, turnover, direction_changes and the three *_pct summed over the cells (each
+window is its own account) -- None when any cell's figure is None; cost_drag_pct from the
+SUMMED READ DOLLARS, (sum gross - sum net) / |sum gross| * 100 (the run's own formula on
+the summed dollars; None when the sum is 0 or any cell lacks a figure);
+avg_trade_duration_bars the mean of the cells' averages weighted by their trade_count (the
+pooled mean; windows without trades have no average and no weight); mean_abs_allocation
+over all bars pooled; max over all; median_holding_bars over all lots pooled.
 
 Why not the per-lot percent fields: profit_loss_percent / net_profit_loss_percent /
 total_commission_percent (trading-bot/performance/metrics.py CompletedTrade.to_dict) are
 returns on the LOT's own entry notional, and the lots of one window range from about 2%
-to 200% of the account (one saved run). An unweighted sum ignores size; a sum weighted by
-the lot's share of the account at entry does not compound and did not reconcile (one
-observed window: +6.5 against an account change of -2.4). They stay per-lot fields of the
-analyst's trade_slice (trade_gross_return, trade_cost_pct), where a lot is the unit.
+to 200% of the account (one saved run); the run's dollar totals are the reconciled basis.
+They stay per-lot fields of the analyst's trade_slice (trade_gross_return, trade_cost_pct),
+where a lot is the unit.
 
-Why this cannot leak: post-run accounting. It reads only the run's own bars.csv and
-trades.json, after the backtest wrote them; no figure is an input to any bar's
-decision, and nothing outside the given window folders is opened.
+Why this cannot leak: post-run accounting. It reads only the run's own protocol_result core
+block and the bars.csv, trades.json and metrics.json of the given window folders, after the
+backtest wrote them; no figure is an input to any bar's decision, and nothing outside the
+given window folders is opened.
 """
 from __future__ import annotations
 
@@ -74,16 +79,14 @@ for _p in (_HERE, _TBOT):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from performance.bar_equity import turnover as _turnover  # noqa: E402
 from claim_tests import FLAT_EPS  # noqa: E402  (one definition of "flat")
 
 BAR_COLUMNS = ("timestamp", "regime", "total_portfolio_value",
                "postRebalance_current_allocation", "previous_allocation")
-TRADE_FIELDS = ("profit_loss_absolute", "total_commission", "net_profit_loss_absolute",
-                "duration_minutes")
+TRADE_FIELDS = ("duration_minutes",)
 CELL_KEYS = ("n_bars", "trades", "turnover", "direction_changes", "mean_abs_allocation",
              "max_abs_allocation", "gross_pct", "fees_pct", "net_pct", "cost_drag_pct",
-             "median_holding_bars")
+             "avg_trade_duration_bars", "median_holding_bars")
 
 
 def _r8(v):
@@ -106,6 +109,19 @@ def direction_changes(alloc) -> int:
             n += 1
         last = s
     return n
+
+
+def result_cores(protocol_result) -> list:
+    """The `core` block (a dict, or None when absent / not a mapping) of every
+    protocol_result `results[]` entry that has a run_id, in order -- the entries the
+    window loaders (claim_tests.load_variant_trade_windows) keep, in their order."""
+    out = []
+    for entry in (protocol_result or {}).get("results") or []:
+        if not isinstance(entry, dict) or not entry.get("run_id"):
+            continue
+        core = entry.get("core")
+        out.append(core if isinstance(core, dict) else None)
+    return out
 
 
 def _read_bars(path: Path):
@@ -146,36 +162,101 @@ def _read_trades(path: Path) -> list:
     return trades
 
 
-def _cell(alloc: np.ndarray, n_flips: int, turnover: float, n_trades: int,
-          gross: float, fees: float, net: float, holding: list) -> dict:
+def _num(src, key: str, where: str):
+    """src[key] as a float; None when src is not a mapping or the key is absent / None
+    (the figure was not recorded); ValueError when it is present but not a finite number."""
+    if not isinstance(src, dict):
+        return None
+    v = src.get(key)
+    if v is None:
+        return None
+    if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v):
+        raise ValueError(f"{where}: {key} is not a finite number ({v!r})")
+    return float(v)
+
+
+def _read_turnover(folder: Path):
+    """metrics.json bar_equity.turnover of the window folder, verbatim; None when the file or
+    the bar_equity block / its turnover is absent (a run made without bar_equity)."""
+    path = folder / "metrics.json"
+    if not path.is_file():
+        return None
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    be = doc.get("bar_equity") if isinstance(doc, dict) else None
+    return _num(be, "turnover", f"{path}: bar_equity")
+
+
+def _read_core(core, v0: float, where: str) -> dict:
+    """The figures a window reads from its protocol_result `core` block: dollars (for the
+    total) and the cell's read fields. A missing block or key is None throughout."""
+    gross, fees, net = (_num(core, k, where) for k in ("gross_pnl", "fees_paid", "net_pnl"))
+    pct = (lambda d: None if d is None else 100.0 * d / v0)
+    n = _num(core, "trade_count", where)
+    return {"gross_usd": gross, "fees_usd": fees, "net_usd": net,
+            "gross": pct(gross), "fees": pct(fees), "net": pct(net),
+            "trades": None if n is None else int(n),
+            "cost_drag": _num(core, "cost_drag_pct", where),
+            "avg_dur": _num(core, "avg_trade_duration_bars", where)}
+
+
+def _cell(alloc: np.ndarray, n_flips: int, read: dict, turnover, holding: list) -> dict:
     a = np.abs(alloc)
     return {
         "n_bars": int(len(alloc)),
-        "trades": int(n_trades),
+        "trades": read["trades"],
         "turnover": _r8(turnover),
         "direction_changes": int(n_flips),
         "mean_abs_allocation": _r8(a.mean()) if len(a) else None,
         "max_abs_allocation": _r8(a.max()) if len(a) else None,
-        "gross_pct": _r8(gross),
-        "fees_pct": _r8(fees),
-        "net_pct": _r8(net),
-        "cost_drag_pct": _r8((gross - net) / abs(gross) * 100) if gross != 0 else None,
+        "gross_pct": _r8(read["gross"]),
+        "fees_pct": _r8(read["fees"]),
+        "net_pct": _r8(read["net"]),
+        "cost_drag_pct": _r8(read["cost_drag"]),
+        "avg_trade_duration_bars": _r8(read["avg_dur"]),
         "median_holding_bars": _r8(np.median(holding)) if holding else None,
     }
+
+
+def _sum_or_none(values):
+    """The sum of the values, or None when any is None."""
+    return None if any(v is None for v in values) else sum(values)
+
+
+def _total_read(reads: list, turnovers: list) -> dict:
+    """The `total` cell's read fields from the cells' read figures (see the module docstring)."""
+    gross_usd, net_usd = _sum_or_none([r["gross_usd"] for r in reads]), \
+        _sum_or_none([r["net_usd"] for r in reads])
+    cost_drag = None
+    if gross_usd is not None and net_usd is not None and gross_usd != 0:
+        cost_drag = (gross_usd - net_usd) / abs(gross_usd) * 100
+    trades = _sum_or_none([r["trades"] for r in reads])
+    avg_dur = None
+    if trades:
+        weighted = [(r["trades"], r["avg_dur"]) for r in reads if r["trades"]]
+        if all(d is not None for _n, d in weighted):
+            avg_dur = sum(n * d for n, d in weighted) / sum(n for n, _d in weighted)
+    return {"trades": trades,
+            "gross": _sum_or_none([r["gross"] for r in reads]),
+            "fees": _sum_or_none([r["fees"] for r in reads]),
+            "net": _sum_or_none([r["net"] for r in reads]),
+            "cost_drag": cost_drag, "avg_dur": avg_dur,
+            "turnover": _sum_or_none(turnovers)}
 
 
 def window_economics(windows) -> dict:
     """{"windows": {"<symbol>/<window>": cell}, "total": cell} (fields: module docstring).
 
-    `windows`: an iterable of (symbol, window label, folder), the folder holding that
-    (coin, window) backtest's bars.csv and trades.json. Raises ValueError (or OSError)
-    on a missing file or column, a non-numeric trade field, a NaN allocation among the
-    ready bars, a non-positive starting account, two windows with one label, or no
+    `windows`: an iterable of (symbol, window label, folder, core), the folder holding that
+    (coin, window) backtest's bars.csv, trades.json and metrics.json, and core the window's
+    `results[i]["core"]` block of protocol_result.yaml (None when it has none: the read
+    figures are then None). Raises ValueError (or OSError) on a missing bars.csv or
+    trades.json, a missing column, a non-numeric duration or core figure, a NaN allocation
+    among the ready bars, a non-positive starting account, two windows with one label, or no
     window at all."""
     out: dict = {}
-    allocs, holds = [], []
-    tot = {"turnover": 0.0, "flips": 0, "trades": 0, "gross": 0.0, "fees": 0.0, "net": 0.0}
-    for symbol, window, folder in windows:
+    allocs, holds, reads, turnovers = [], [], [], []
+    flips_total = 0
+    for symbol, window, folder, core in windows:
         label = f"{symbol}/{window}"
         if label in out:
             raise ValueError(f"window {label!r} given twice")
@@ -183,20 +264,18 @@ def window_economics(windows) -> dict:
         ready, step, v0 = _read_bars(folder / "bars.csv")
         trades = _read_trades(folder / "trades.json")
         alloc = ready["postRebalance_current_allocation"].to_numpy(dtype=float)
-        turn = _turnover(ready["postRebalance_current_allocation"], ready["previous_allocation"])
         flips = direction_changes(alloc)
-        gross = 100.0 * sum(t["profit_loss_absolute"] for t in trades) / v0
-        fees = 100.0 * sum(t["total_commission"] for t in trades) / v0
-        net = 100.0 * sum(t["net_profit_loss_absolute"] for t in trades) / v0
+        read = _read_core(core, v0, f"{label}: core")
+        turn = _read_turnover(folder)
         holding = [t["duration_minutes"] * 60.0 / step for t in trades]
-        out[label] = _cell(alloc, flips, turn, len(trades), gross, fees, net, holding)
+        out[label] = _cell(alloc, flips, read, turn, holding)
         allocs.append(alloc)
         holds += holding
-        for k, v in (("turnover", turn), ("flips", flips), ("trades", len(trades)),
-                     ("gross", gross), ("fees", fees), ("net", net)):
-            tot[k] += v
+        reads.append(read)
+        turnovers.append(turn)
+        flips_total += flips
     if not out:
         raise ValueError("no window to read")
+    tot = _total_read(reads, turnovers)
     return {"windows": out,
-            "total": _cell(np.concatenate(allocs), tot["flips"], tot["turnover"], tot["trades"],
-                           tot["gross"], tot["fees"], tot["net"], holds)}
+            "total": _cell(np.concatenate(allocs), flips_total, tot, tot["turnover"], holds)}

@@ -71,8 +71,9 @@ Why this cannot leak (no lookahead)
   * Outcomes (`fwd_return` ..., `trade_net_return`, `post_exit_return`) are
     matched by timestamp inside one window by the claim engine; event_study's
     "after" half is an outcome, labelled as such in the result.
-  * `window_economics` is post-run accounting of the run's own bars.csv and
-    trades.json (whole windows, outcomes included); it decides nothing and is
+  * `window_economics` is post-run accounting of the run's own bars.csv,
+    trades.json, metrics.json and protocol_result.yaml core block (whole windows,
+    outcomes included; the core figures are read, not recomputed); it decides nothing and is
     no condition of any test.
 
 Comparisons (the look counter)
@@ -1195,11 +1196,20 @@ class QueryEngine:
 
     def _window_economics(self, variant):
         """tools/window_economics.window_economics over the variant's windows, resolved and
-        checked as for trade_slice (inside the run, before the holdout). Counts 0."""
+        checked as for trade_slice (inside the run, before the holdout). Each window's
+        `core` block is the variant's protocol_result.yaml `results[]` entry's, read in the
+        order the trade windows were loaded (both skip an entry without a run_id). Counts 0."""
         tws = self._trade_windows(variant)
         try:
+            pr = self.run_dir / "artifacts" / "variants" / self._variant(variant) / \
+                "protocol_result.yaml"
+            cores = wecon.result_cores(yaml.safe_load(pr.read_text(encoding="utf-8")) or {})
+            if len(cores) != len(tws):
+                raise ValueError(f"{len(cores)} protocol_result results against "
+                                 f"{len(tws)} loaded windows")
             out = wecon.window_economics(
-                (tw.symbol, tw.window, Path(tw.bars.source).parent) for tw in tws)
+                (tw.symbol, tw.window, Path(tw.bars.source).parent, core)
+                for tw, core in zip(tws, cores))
         except (OSError, ValueError, KeyError) as exc:
             raise QueryRefused(f"the run's economics cannot be read ({type(exc).__name__}: "
                                f"{exc})") from exc

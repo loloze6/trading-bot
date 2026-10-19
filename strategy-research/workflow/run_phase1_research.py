@@ -16277,10 +16277,13 @@ def _variant_window_economics(run_dir: Path, protocol_result: dict) -> dict | No
     passing rule. Computed by tools/window_economics.window_economics, the one definition
     the analyst's window_economics query returns, over exactly the windows graded
     (protocol_result["results"]), each window's folder found as forecast_shape finds it
-    (the parent of its portfolio_states.csv, _pd.find_window_equity_file).
+    (the parent of its portfolio_states.csv, _pd.find_window_equity_file), and each
+    window's `core` block (results[i]["core"]) passed along: the run's own gross / net /
+    fees / cost drag / trade count / duration are read from it, not recomputed.
 
-    Why this cannot leak: it reads the bars.csv and trades.json the backtest already wrote
-    and decides nothing; no figure is an input to any later bar.
+    Why this cannot leak: it reads the core block and the bars.csv, trades.json and
+    metrics.json the backtest already wrote and decides nothing; no figure is an input to
+    any later bar.
 
     None when the windows cannot be read (no results, a window without its files, an
     unreadable file, a missing column). Never raises out of grading."""
@@ -16293,7 +16296,8 @@ def _variant_window_economics(run_dir: Path, protocol_result: dict) -> dict | No
             equity = _pd.find_window_equity_file(run_dir, r["run_id"])
             if equity is None:
                 return None
-            windows.append((str(r["symbol"]), str(r["window"]), Path(equity).parent))
+            windows.append((str(r["symbol"]), str(r["window"]), Path(equity).parent,
+                            r.get("core")))
         _tools = str(Path(__file__).parent.parent / "tools")
         if _tools not in sys.path:
             sys.path.insert(0, _tools)

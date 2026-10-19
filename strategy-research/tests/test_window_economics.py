@@ -2,7 +2,9 @@
 derived bar columns abs_forecast, allocation_abs, forecast_sign_change.
 
   1. tools/window_economics.py on hand-computed fixtures: every field of a window, of `total`,
-     direction changes with zeros, NOT_READY rows out, empty trades, gross 0, the refusals.
+     direction changes with zeros, NOT_READY rows out, empty trades, gross 0, the refusals;
+     the figures READ from the core block / metrics.json are used verbatim (lots perturbed:
+     unchanged) and are None, never recomputed, where the run did not record them.
   2. The query: zero comparisons, the 12-cell cap, the logged refusal, the digest; the engine's
      object is the stored object (run_phase1_research._variant_window_economics).
   3. trade_slice: trade_gross_return counts as a comparison, trade_cost_pct does not; values
@@ -51,9 +53,10 @@ BARS_HDR = "timestamp,regime,total_portfolio_value,previous_allocation,postRebal
 # fixtures: two hand-made windows
 # ---------------------------------------------------------------------------
 
-def write_window(folder: Path, rows, trades):
+def write_window(folder: Path, rows, trades, turnover=None):
     """rows: (regime, total_portfolio_value, previous_allocation, postRebalance_current_allocation),
-    one per hourly bar from 2020-01-01 00:00; trades: list of trade dicts (or None: no file)."""
+    one per hourly bar from 2020-01-01 00:00; trades: list of trade dicts (or None: no file);
+    turnover: written as metrics.json bar_equity.turnover (None: no metrics.json)."""
     folder.mkdir(parents=True, exist_ok=True)
     lines = [BARS_HDR]
     for i, (regime, tpv, prev, post) in enumerate(rows):
@@ -61,11 +64,20 @@ def write_window(folder: Path, rows, trades):
     (folder / "bars.csv").write_text("\n".join(lines) + "\n", encoding="utf-8")
     if trades is not None:
         (folder / "trades.json").write_text(json.dumps(trades), encoding="utf-8")
+    if turnover is not None:
+        (folder / "metrics.json").write_text(
+            json.dumps({"core": {}, "bar_equity": {"turnover": turnover}}), encoding="utf-8")
 
 
 def lot(gross, fees, net, minutes):
     return {"profit_loss_absolute": gross, "total_commission": fees,
             "net_profit_loss_absolute": net, "duration_minutes": minutes}
+
+
+def core_of(trade_count, gross, fees, net, cost_drag, avg_dur):
+    """A protocol_result `core` block: only the keys window_economics reads (dollars, bars)."""
+    return {"trade_count": trade_count, "gross_pnl": gross, "fees_paid": fees, "net_pnl": net,
+            "cost_drag_pct": cost_drag, "avg_trade_duration_bars": avg_dur}
 
 
 # W1: V0 = 1000 (the first row, a NOT_READY one). Ready rows 1..7:
@@ -77,6 +89,11 @@ W1_ROWS = [("NOT_READY", 1000, 0, 0), ("trend", 1000, 0.0, 0.5), ("trend", 1010,
            ("trend", 1020, 0.5, 0.0), ("trend", 1020, 0.0, -0.4), ("trend", 1030, -0.4, 0.0),
            ("trend", 1030, 0.0, 0.3), ("trend", 1040, 0.3, 0.3)]
 W1_TRADES = [lot(30.0, 1.0, 29.0, 120.0), lot(-10.0, 0.5, -10.5, 60.0), lot(20.0, 1.5, 18.5, 300.0)]
+#   the run's own core block (hand-typed as the run would write it, NOT summed from the lots here):
+#   trade_count 3, gross $40, fees $3, net $37, cost drag 7.5 %, mean duration 8/3 = 2.67 bars;
+#   metrics.json bar_equity.turnover 2.1
+W1_CORE = core_of(3, 40.0, 3.0, 37.0, 7.5, 2.67)
+W1_TURNOVER = 2.1
 # W2: V0 = 2000. Ready rows 0..3 (a padded lower-case not_ready row 4 with |alloc| 0.9 is out):
 #   post -.2 -.2 0 .4   prev 0 -.2 -.2 0 -> turnover .2+0+.2+.4 = .8 ; signs - - (0) + -> 1 flip
 #   mean |a| = .8/4 = .2 ; max .4 ; lots 40+... gross -20+60 = 40 -> 2.0, fees 2+4 -> .3, net 34 -> 1.7
@@ -84,13 +101,17 @@ W1_TRADES = [lot(30.0, 1.0, 29.0, 120.0), lot(-10.0, 0.5, -10.5, 60.0), lot(20.0
 W2_ROWS = [("trend", 2000, 0.0, -0.2), ("trend", 2000, -0.2, -0.2), ("trend", 2010, -0.2, 0.0),
            ("trend", 2010, 0.0, 0.4), (" not_ready ", 2020, 0.9, 0.9)]
 W2_TRADES = [lot(-20.0, 2.0, -22.0, 60.0), lot(60.0, 4.0, 56.0, 180.0)]
+#   core: trade_count 2, gross $40, fees $6, net $34, cost drag 15 %, mean duration 2.0 bars;
+#   bar_equity.turnover 0.8
+W2_CORE = core_of(2, 40.0, 6.0, 34.0, 15.0, 2.0)
+W2_TURNOVER = 0.8
 
 
 @pytest.fixture()
 def wins(tmp_path):
-    write_window(tmp_path / "a", W1_ROWS, W1_TRADES)
-    write_window(tmp_path / "b", W2_ROWS, W2_TRADES)
-    return [("AAA", "w0", tmp_path / "a"), ("BBB", "w1", tmp_path / "b")]
+    write_window(tmp_path / "a", W1_ROWS, W1_TRADES, W1_TURNOVER)
+    write_window(tmp_path / "b", W2_ROWS, W2_TRADES, W2_TURNOVER)
+    return [("AAA", "w0", tmp_path / "a", W1_CORE), ("BBB", "w1", tmp_path / "b", W2_CORE)]
 
 
 def approx(v):
@@ -109,32 +130,113 @@ def test_every_field_of_each_cell_and_of_the_total_is_the_hand_number(wins):
     assert a == {"n_bars": 7, "trades": 3, "turnover": approx(2.1), "direction_changes": 2,
                  "mean_abs_allocation": approx(2.0 / 7), "max_abs_allocation": 0.5,
                  "gross_pct": approx(4.0), "fees_pct": approx(0.3), "net_pct": approx(3.7),
-                 "cost_drag_pct": approx(7.5), "median_holding_bars": 2.0}
+                 "cost_drag_pct": approx(7.5), "avg_trade_duration_bars": approx(2.67),
+                 "median_holding_bars": 2.0}
     assert b == {"n_bars": 4, "trades": 2, "turnover": approx(0.8), "direction_changes": 1,
                  "mean_abs_allocation": approx(0.2), "max_abs_allocation": 0.4,
                  "gross_pct": approx(2.0), "fees_pct": approx(0.3), "net_pct": approx(1.7),
-                 "cost_drag_pct": approx(15.0), "median_holding_bars": 2.0}
+                 "cost_drag_pct": approx(15.0), "avg_trade_duration_bars": approx(2.0),
+                 "median_holding_bars": 2.0}
     # total: counts, turnover and the *_pct summed (each window its own account), bars pooled,
-    # cost drag from the summed *_pct, holding over the 5 lots pooled (2,1,5,1,3 -> 2)
+    # cost drag from the SUMMED READ DOLLARS ((80 - 71) / 80 = 11.25, not the 10.0 of the
+    # summed percents: the two windows have different starting accounts), the average duration
+    # weighted by trade count ((3 * 2.67 + 2 * 2.0) / 5), holding over the 5 lots pooled
+    # (2,1,5,1,3 -> 2)
     assert tot == {"n_bars": 11, "trades": 5, "turnover": approx(2.9), "direction_changes": 3,
                    "mean_abs_allocation": approx(2.8 / 11), "max_abs_allocation": 0.5,
                    "gross_pct": approx(6.0), "fees_pct": approx(0.6), "net_pct": approx(5.4),
-                   "cost_drag_pct": approx(10.0), "median_holding_bars": 2.0}
+                   "cost_drag_pct": approx(11.25), "avg_trade_duration_bars": approx(2.402),
+                   "median_holding_bars": 2.0}
 
 
-def test_net_is_gross_minus_fees_in_dollars_not_a_sum_of_lot_percents(wins):
-    c = we.window_economics(wins)["windows"]["AAA/w0"]
-    assert c["net_pct"] == approx(c["gross_pct"] - c["fees_pct"])
-    # the basis is the window's starting account (1000), whatever the lots' own sizes
-    assert c["gross_pct"] == approx(100 * sum(t["profit_loss_absolute"] for t in W1_TRADES) / 1000)
+def test_the_read_figures_are_the_core_dollars_converted_by_the_starting_account(wins):
+    """gross / fees / net are core.gross_pnl / fees_paid / net_pnl, as a percent of V0 (the
+    first bars.csv row's total_portfolio_value: 1000 and 2000) and nothing else."""
+    cells = we.window_economics(wins)["windows"]
+    for (sym, win, _f, core), v0 in zip(wins, (1000.0, 2000.0)):
+        c = cells[f"{sym}/{win}"]
+        assert c["gross_pct"] == approx(100 * core["gross_pnl"] / v0)
+        assert c["fees_pct"] == approx(100 * core["fees_paid"] / v0)
+        assert c["net_pct"] == approx(100 * core["net_pnl"] / v0)
+        assert c["trades"] == core["trade_count"]
+        assert c["cost_drag_pct"] == core["cost_drag_pct"]
+        assert c["avg_trade_duration_bars"] == core["avg_trade_duration_bars"]
+        assert c["net_pct"] == approx(c["gross_pct"] - c["fees_pct"])
 
 
-def test_turnover_is_the_function_the_run_artifact_uses(wins):
-    from performance.bar_equity import turnover
-    df = pd.read_csv(wins[0][2] / "bars.csv")
-    df = df[df["regime"] != "NOT_READY"]
-    got = we.window_economics(wins[:1])["windows"]["AAA/w0"]["turnover"]
-    assert got == approx(turnover(df["postRebalance_current_allocation"], df["previous_allocation"]))
+def test_the_read_figures_are_used_verbatim_not_summed_from_the_lots(wins, tmp_path):
+    """Perturb every lot of trades.json (dollars, commissions, count): gross / fees / net, the
+    trade count, cost drag and the average duration do not move, because they are not summed
+    from the lots. Only median_holding_bars (computed from the lots' durations) responds."""
+    base = we.window_economics(wins)
+    for _s, _w, folder, _c in wins:
+        p = folder / "trades.json"
+        lots = json.loads(p.read_text(encoding="utf-8"))
+        for t in lots:
+            t.update(profit_loss_absolute=t["profit_loss_absolute"] * 7 + 123.0,
+                     total_commission=t["total_commission"] * 11 + 5.0,
+                     net_profit_loss_absolute=-999.0, duration_minutes=60.0 * 17)
+        p.write_text(json.dumps(lots + [lots[0]]), encoding="utf-8")        # and one lot more
+    moved = we.window_economics(wins)
+    read_keys = ("trades", "turnover", "gross_pct", "fees_pct", "net_pct", "cost_drag_pct",
+                 "avg_trade_duration_bars")
+    for label in list(base["windows"]) + ["total"]:
+        b = base["total"] if label == "total" else base["windows"][label]
+        m = moved["total"] if label == "total" else moved["windows"][label]
+        assert {k: m[k] for k in read_keys} == {k: b[k] for k in read_keys}, label
+        assert m["median_holding_bars"] == 17.0 != b["median_holding_bars"], label
+    # an inconsistent core is not "fixed" by the dollars of the lots or by its own identities:
+    # cost_drag_pct is the run's, whatever (gross - net) / |gross| would give
+    odd = [(s, w, f, dict(c, cost_drag_pct=99.0)) for s, w, f, c in wins]
+    assert we.window_economics(odd)["windows"]["AAA/w0"]["cost_drag_pct"] == 99.0
+
+
+def test_turnover_is_metrics_json_bar_equity_verbatim_not_recomputed(wins):
+    # the bars of W1 give 2.1 if recomputed; the run's recorded value is what is read
+    (wins[0][2] / "metrics.json").write_text(
+        json.dumps({"bar_equity": {"turnover": 9.99}}), encoding="utf-8")
+    cells = we.window_economics(wins)
+    assert cells["windows"]["AAA/w0"]["turnover"] == 9.99
+    assert cells["total"]["turnover"] == approx(9.99 + 0.8)
+
+
+def test_figures_the_run_did_not_record_are_none_and_never_recomputed(tmp_path):
+    """No core block (an older run) and no metrics.json: every read figure is None, the
+    computed ones are still there; the total is None for a sum with a missing term."""
+    write_window(tmp_path / "old", W1_ROWS, W1_TRADES)                # no metrics.json
+    write_window(tmp_path / "new", W2_ROWS, W2_TRADES, W2_TURNOVER)
+    out = we.window_economics([("OLD", "w", tmp_path / "old", None),
+                               ("NEW", "w", tmp_path / "new", W2_CORE)])
+    old, new, tot = out["windows"]["OLD/w"], out["windows"]["NEW/w"], out["total"]
+    for k in ("trades", "turnover", "gross_pct", "fees_pct", "net_pct", "cost_drag_pct",
+              "avg_trade_duration_bars"):
+        assert old[k] is None, k
+        assert tot[k] is None, k
+    assert old["n_bars"] == 7 and old["direction_changes"] == 2 and old["median_holding_bars"] == 2.0
+    assert new["gross_pct"] == approx(2.0) and new["turnover"] == approx(0.8)
+    assert tot["n_bars"] == 11 and tot["direction_changes"] == 3
+    # a core block that lacks one key (and a non-mapping core) is None for that key only
+    part = {k: v for k, v in W2_CORE.items() if k != "fees_paid"}
+    c = we.window_economics([("P", "w", tmp_path / "new", part)])["windows"]["P/w"]
+    assert c["fees_pct"] is None and c["gross_pct"] == approx(2.0)
+    assert we.window_economics([("P", "w", tmp_path / "new", "junk")])["windows"]["P/w"][
+        "gross_pct"] is None
+
+
+@pytest.mark.parametrize("key", ["gross_pnl", "fees_paid", "net_pnl", "trade_count",
+                                 "cost_drag_pct", "avg_trade_duration_bars"])
+@pytest.mark.parametrize("bad", ["x", True, float("nan")])
+def test_a_present_but_non_numeric_core_figure_raises(tmp_path, key, bad):
+    write_window(tmp_path / "w", W2_ROWS, W2_TRADES, W2_TURNOVER)
+    with pytest.raises(ValueError, match=f"{key} is not a finite number"):
+        we.window_economics([("X", "w", tmp_path / "w", dict(W2_CORE, **{key: bad}))])
+
+
+def test_result_cores_follow_the_results_with_a_run_id_in_order():
+    pr = {"results": [{"run_id": "a", "core": {"gross_pnl": 1.0}}, {"core": {"gross_pnl": 2.0}},
+                      {"run_id": "b"}, {"run_id": "c", "core": "junk"}, "x"]}
+    assert we.result_cores(pr) == [{"gross_pnl": 1.0}, None, None]
+    assert we.result_cores(None) == [] and we.result_cores({}) == []
 
 
 @pytest.mark.parametrize("alloc,flips", [
@@ -158,7 +260,7 @@ def test_direction_changes_with_zeros_in_a_window_file(tmp_path):
         rows = [("trend", 1000, 0.0, post[0])] + [("trend", 1000, post[i - 1], post[i])
                                                    for i in range(1, len(post))]
         write_window(tmp_path / name, rows, [])
-        cell = we.window_economics([("X", name, tmp_path / name)])["windows"][f"X/{name}"]
+        cell = we.window_economics([("X", name, tmp_path / name, None)])["windows"][f"X/{name}"]
         assert cell["direction_changes"] == want, name
 
 
@@ -170,20 +272,28 @@ def test_not_ready_rows_are_excluded_from_every_bar_field(wins):
     assert we.window_economics(wins[:1])["windows"]["AAA/w0"]["gross_pct"] == approx(4.0)
 
 
-def test_a_window_without_lots_has_no_cost_drag_and_no_holding(tmp_path):
-    write_window(tmp_path / "e", W2_ROWS, [])
-    c = we.window_economics([("X", "w", tmp_path / "e")])["windows"]["X/w"]
+def test_a_window_without_lots_has_no_cost_drag_no_duration_and_no_holding(tmp_path):
+    # what the run writes for a window without trades: counts and dollars 0, no ratio, no mean
+    write_window(tmp_path / "e", W2_ROWS, [], W2_TURNOVER)
+    core = core_of(0, 0.0, 0.0, 0.0, None, None)
+    c = we.window_economics([("X", "w", tmp_path / "e", core)])["windows"]["X/w"]
     assert (c["trades"], c["gross_pct"], c["fees_pct"], c["net_pct"]) == (0, 0.0, 0.0, 0.0)
     assert c["cost_drag_pct"] is None and c["median_holding_bars"] is None
+    assert c["avg_trade_duration_bars"] is None
     assert c["n_bars"] == 4 and c["turnover"] == approx(0.8)
+    tot = we.window_economics([("X", "w", tmp_path / "e", core)])["total"]
+    assert tot["trades"] == 0 and tot["avg_trade_duration_bars"] is None
 
 
-def test_zero_gross_gives_no_cost_drag_but_keeps_the_rest(tmp_path):
+def test_zero_gross_gives_the_runs_no_cost_drag_but_keeps_the_rest(tmp_path):
     write_window(tmp_path / "z", W2_ROWS, [lot(10.0, 1.0, 9.0, 60.0), lot(-10.0, 1.0, -11.0, 120.0)])
-    c = we.window_economics([("X", "w", tmp_path / "z")])["windows"]["X/w"]
+    core = core_of(2, 0.0, 2.0, -2.0, None, 1.5)
+    c = we.window_economics([("X", "w", tmp_path / "z", core)])["windows"]["X/w"]
     assert c["gross_pct"] == 0.0 and c["cost_drag_pct"] is None
     assert c["fees_pct"] == approx(0.1) and c["net_pct"] == approx(-0.1)
-    assert c["median_holding_bars"] == 1.5
+    assert c["median_holding_bars"] == 1.5 and c["avg_trade_duration_bars"] == 1.5
+    assert c["turnover"] is None                       # no metrics.json: not recomputed
+    assert we.window_economics([("X", "w", tmp_path / "z", core)])["total"]["cost_drag_pct"] is None
 
 
 def test_the_step_is_the_median_bar_spacing_not_a_fixed_hour(tmp_path):
@@ -193,21 +303,28 @@ def test_the_step_is_the_median_bar_spacing_not_a_fixed_hour(tmp_path):
     (f / "bars.csv").write_text(BARS_HDR + "\n" + "\n".join(
         f"2020-01-0{d} 00:00:00,trend,1000,0,0.1" for d in range(1, 5)) + "\n", encoding="utf-8")
     (f / "trades.json").write_text(json.dumps([lot(1.0, 0.1, 0.9, 2880.0)]), encoding="utf-8")
-    assert we.window_economics([("X", "d", f)])["windows"]["X/d"]["median_holding_bars"] == 2.0
+    assert we.window_economics([("X", "d", f, None)])["windows"]["X/d"][
+        "median_holding_bars"] == 2.0
 
 
 def test_the_inputs_are_not_modified_and_the_result_is_deterministic(wins):
-    before = [(p / "bars.csv").read_bytes() + (p / "trades.json").read_bytes()
-              for _s, _w, p in wins]
+    def snap():
+        return [(p / "bars.csv").read_bytes() + (p / "trades.json").read_bytes()
+                + (p / "metrics.json").read_bytes() for _s, _w, p, _c in wins]
+    before, cores = snap(), copy.deepcopy([c for *_x, c in wins])
     a, b = we.window_economics(wins), we.window_economics(copy.deepcopy(wins))
     assert a == b
-    assert before == [(p / "bars.csv").read_bytes() + (p / "trades.json").read_bytes()
-                      for _s, _w, p in wins]
+    assert before == snap() and cores == [c for *_x, c in wins]
+
+
+def test_the_windows_must_be_four_tuples_with_the_core(wins):
+    with pytest.raises(ValueError):
+        we.window_economics([wins[0][:3]])
 
 
 def test_a_duplicate_label_raises(wins):
     with pytest.raises(ValueError, match="given twice"):
-        we.window_economics([wins[0], ("AAA", "w0", wins[1][2])])
+        we.window_economics([wins[0], ("AAA", "w0", wins[1][2], None)])
 
 
 def test_no_window_raises():
@@ -223,50 +340,68 @@ def test_a_missing_column_raises(tmp_path):
                                 "2020-01-01 01:00:00,trend,1000,0\n", encoding="utf-8")
     (f / "trades.json").write_text("[]", encoding="utf-8")
     with pytest.raises(ValueError, match="missing column.*postRebalance_current_allocation"):
-        we.window_economics([("X", "w", f)])
+        we.window_economics([("X", "w", f, None)])
 
 
 @pytest.mark.parametrize("bad", ["x", None, True, float("nan")])
-def test_a_non_numeric_trade_field_raises(tmp_path, bad):
+def test_a_non_numeric_lot_duration_raises(tmp_path, bad):
     t = lot(1.0, 0.1, 0.9, 60.0)
-    t["total_commission"] = bad
+    t["duration_minutes"] = bad
     write_window(tmp_path / "t", W2_ROWS, [t])
     # NaN is written by json.dumps as NaN and read back as a float nan
-    with pytest.raises(ValueError, match="no numeric total_commission"):
-        we.window_economics([("X", "w", tmp_path / "t")])
+    with pytest.raises(ValueError, match="no numeric duration_minutes"):
+        we.window_economics([("X", "w", tmp_path / "t", None)])
+
+
+def test_the_lots_dollar_fields_are_not_read_so_their_absence_is_not_an_error(tmp_path):
+    write_window(tmp_path / "t", W2_ROWS, [{"duration_minutes": 60.0}], W2_TURNOVER)
+    c = we.window_economics([("X", "w", tmp_path / "t", W2_CORE)])["windows"]["X/w"]
+    assert c["gross_pct"] == approx(2.0) and c["median_holding_bars"] == 1.0
 
 
 def test_a_trade_row_that_is_not_a_mapping_raises(tmp_path):
     write_window(tmp_path / "t", W2_ROWS, [[1, 2]])
     with pytest.raises(ValueError, match="not a mapping"):
-        we.window_economics([("X", "w", tmp_path / "t")])
+        we.window_economics([("X", "w", tmp_path / "t", None)])
 
 
 def test_missing_files_and_degenerate_windows_raise(tmp_path):
     write_window(tmp_path / "nt", W2_ROWS, None)
     with pytest.raises(OSError):
-        we.window_economics([("X", "w", tmp_path / "nt")])
+        we.window_economics([("X", "w", tmp_path / "nt", None)])
     with pytest.raises(OSError):
-        we.window_economics([("X", "w", tmp_path / "nowhere")])
+        we.window_economics([("X", "w", tmp_path / "nowhere", None)])
     write_window(tmp_path / "one", W2_ROWS[:1], [])
     with pytest.raises(ValueError, match="fewer than 2 bars"):
-        we.window_economics([("X", "w", tmp_path / "one")])
+        we.window_economics([("X", "w", tmp_path / "one", None)])
     write_window(tmp_path / "v0", [("trend", 0, 0.0, 0.1)] * 3, [])
     with pytest.raises(ValueError, match="not positive"):
-        we.window_economics([("X", "w", tmp_path / "v0")])
+        we.window_economics([("X", "w", tmp_path / "v0", None)])
     write_window(tmp_path / "nan", [("trend", 1000, 0.0, "")] * 3, [])
     with pytest.raises(ValueError, match="NaN allocation"):
-        we.window_economics([("X", "w", tmp_path / "nan")])
+        we.window_economics([("X", "w", tmp_path / "nan", None)])
 
 
 # ---------------------------------------------------------------------------
 # a saved-run-shaped fixture (tests/test_e075_pr4_queries.make_run) with the economics fields
 # ---------------------------------------------------------------------------
 
+def saved_core(i):
+    """The core block the saved-run fixture gives its i-th window (hand-typed as a run would
+    write it; the figures differ per window so a mis-paired window is caught): 8 lots, gross
+    $(360 + 100 i), fees $(8 + i), net = gross - fees, cost drag fees / gross, rounded to 4
+    places as run_artifact.build_core does, mean duration sum(HOLDS) / 8 = 4.75 bars."""
+    gross, fees = 360.0 + 100.0 * i, 8.0 + i
+    return core_of(8, gross, fees, gross - fees, round(fees / gross * 100, 4), 4.75)
+
+
 def enrich(run):
-    """Add the trades.json fields the economics read, hand-made per lot k = 0..7:
+    """Add the trades.json fields the lots' own tools read, hand-made per lot k = 0..7:
     gross $ 10(k+1), fee $1, net $10(k+1)-1, duration HOLDS[k] bars of an hour,
-    profit_loss_percent (k+1)-4, total_commission_percent 0.1+0.01k."""
+    profit_loss_percent (k+1)-4, total_commission_percent 0.1+0.01k; and what the economics
+    READ: each window's `core` block in the variant's protocol_result.yaml (saved_core) and
+    its metrics.json bar_equity.turnover (an independent numpy sum over the file's own two
+    allocation columns, rounded to 6 places as the run rounds it)."""
     for p in sorted(Path(run).glob("variants/base/results/*/trades.json")):
         trades = json.loads(p.read_text(encoding="utf-8"))
         for k, t in enumerate(trades):
@@ -276,6 +411,17 @@ def enrich(run):
                      profit_loss_percent=float(k + 1) - 4.0,
                      total_commission_percent=0.1 + 0.01 * k)
         p.write_text(json.dumps(trades), encoding="utf-8")
+    pr_path = Path(run) / "artifacts" / "variants" / "base" / "protocol_result.yaml"
+    pr = yaml.safe_load(pr_path.read_text(encoding="utf-8"))
+    for i, entry in enumerate(pr["results"]):
+        entry["core"] = saved_core(i)
+        df = pd.read_csv(Path(run) / "variants" / "base" / "results" / entry["run_id"] / "bars.csv")
+        turn = float(np.abs(df["postRebalance_current_allocation"].to_numpy()
+                            - df["previous_allocation"].to_numpy()).sum())
+        (Path(run) / "variants" / "base" / "results" / entry["run_id"] / "metrics.json"
+         ).write_text(json.dumps({"core": entry["core"], "bar_equity": {"turnover": round(turn, 6)}}),
+                      encoding="utf-8")
+    pr_path.write_text(yaml.safe_dump(pr), encoding="utf-8")
 
 
 @pytest.fixture()
@@ -286,8 +432,13 @@ def run(tmp_path):
 
 
 def _window_dirs(run):
-    return [(s, w, Path(run) / "variants" / "base" / "results" / rid)
-            for rid, s, w, _o, _sd in pr4.WINDOWS]
+    """(symbol, window, folder, core) of the saved run's windows, the core from its
+    protocol_result.yaml as the query reads it."""
+    pr = yaml.safe_load((Path(run) / "artifacts" / "variants" / "base" / "protocol_result.yaml")
+                        .read_text(encoding="utf-8"))
+    cores = we.result_cores(pr)
+    return [(s, w, Path(run) / "variants" / "base" / "results" / rid, cores[i])
+            for i, (rid, s, w, _o, _sd) in enumerate(pr4.WINDOWS)]
 
 
 # ---------------------------------------------------------------------------
@@ -299,25 +450,33 @@ def test_the_query_returns_the_hand_numbers_of_the_saved_run(run):
     assert res["status"] == "ok"
     out = res["result"]
     assert list(out["windows"]) == ["AAA/w0", "AAA/w1", "BBB/w0"]
-    for cell in out["windows"].values():
-        # 8 lots; V0 = 1000 (the first row); gross 10*(1..8) = 360, fees 8, net 352
+    for i, cell in enumerate(out["windows"].values()):
+        # the window's own core block (saved_core(i)); V0 = 1000 (the first row): gross
+        # $(360 + 100 i) -> (36 + 10 i) %, fees $(8 + i) -> (0.8 + 0.1 i) %, net = their difference
+        c = saved_core(i)
         assert cell["trades"] == 8 and cell["n_bars"] == N
-        assert cell["gross_pct"] == approx(36.0) and cell["fees_pct"] == approx(0.8)
-        assert cell["net_pct"] == approx(35.2)
-        assert cell["cost_drag_pct"] == approx(0.8 / 36.0 * 100)
+        assert cell["gross_pct"] == approx(36.0 + 10.0 * i)
+        assert cell["fees_pct"] == approx(0.8 + 0.1 * i)
+        assert cell["net_pct"] == approx(35.2 + 9.9 * i)
+        assert cell["cost_drag_pct"] == c["cost_drag_pct"]
+        assert cell["avg_trade_duration_bars"] == 4.75
         assert cell["median_holding_bars"] == 4.5        # 2 3 3 4 5 5 7 9
         # the exits alternate +0.3 / -0.3 over 8 lots: 7 flips, mean |a| = 8 * 0.3 / N
         assert cell["direction_changes"] == 7 and cell["max_abs_allocation"] == 0.3
         assert cell["mean_abs_allocation"] == approx(8 * 0.3 / N)
-    # turnover: independent numpy over the file's own two columns
-    for (sym, win, folder) in _window_dirs(run):
+    # turnover: metrics.json's bar_equity.turnover, written by enrich from an independent numpy
+    # sum over the file's own two columns
+    for (sym, win, folder, _core) in _window_dirs(run):
         df = pd.read_csv(folder / "bars.csv")
         want = float(np.abs(df["postRebalance_current_allocation"].to_numpy()
                             - df["previous_allocation"].to_numpy()).sum())
         assert out["windows"][f"{sym}/{win}"]["turnover"] == approx(want)
     t = out["total"]
     assert t["trades"] == 24 and t["n_bars"] == 3 * N and t["direction_changes"] == 21
-    assert t["gross_pct"] == approx(108.0) and t["net_pct"] == approx(105.6)
+    assert t["gross_pct"] == approx(36.0 * 3 + 30.0) and t["net_pct"] == approx(35.2 * 3 + 29.7)
+    # cost drag from the summed dollars: fees 8 + 9 + 10 = 27 over gross 360 + 460 + 560 = 1380
+    assert t["cost_drag_pct"] == approx(27.0 / 1380.0 * 100)
+    assert t["avg_trade_duration_bars"] == approx(4.75)
     assert t["median_holding_bars"] == 4.5
 
 
@@ -398,11 +557,11 @@ def test_a_result_over_the_character_cap_is_refused_and_logged(run, monkeypatch)
 
 
 def test_unreadable_economics_are_a_logged_refusal(tmp_path):
-    root = make_run(tmp_path / "raw")                 # trades.json without the dollar fields
+    root = make_run(tmp_path / "raw")                 # trades.json without the lots' durations
     eng = engine(root)
     res = eng.window_economics()
     assert res["status"] == "refused" and "economics cannot be read" in res["reason"]
-    assert "profit_loss_absolute" in res["reason"]
+    assert "duration_minutes" in res["reason"]
     assert log_of(eng)[-1]["status"] == "refused"
 
 
@@ -613,7 +772,7 @@ def test_abs_forecast_and_allocation_abs_are_bar_t_absolute_values(run):
     folders = _window_dirs(run)
     fa = eng._column_values("base", "abs_forecast")
     aa = eng._column_values("base", "allocation_abs")
-    for i, (_s, _w, folder) in enumerate(folders):
+    for i, (_s, _w, folder, _c) in enumerate(folders):
         df = pd.read_csv(folder / "bars.csv")
         assert np.allclose(np.asarray(fa[i], dtype=float), np.abs(df["forecast"].to_numpy()),
                            rtol=1e-12, atol=0)
@@ -623,7 +782,7 @@ def test_abs_forecast_and_allocation_abs_are_bar_t_absolute_values(run):
     assert (np.asarray(aa[0]) == 0.3).sum() == 8              # the eight exit bars
     g = eng.describe("abs_forecast")["result"]["groups"]["all"]
     allf = np.concatenate([np.abs(pd.read_csv(f / "bars.csv")["forecast"].to_numpy())
-                           for _s, _w, f in folders])
+                           for _s, _w, f, _c in folders])
     assert g["n"] == len(allf) and g["mean"] == aq.r8(allf.mean())
 
 
@@ -652,7 +811,7 @@ def test_describe_of_the_new_columns_by_hour_weekday_regime_still_charges(run, c
 
 
 def test_a_derived_column_with_no_value_in_the_run_is_refused(run):
-    for _s, _w, folder in _window_dirs(run):
+    for _s, _w, folder, _c in _window_dirs(run):
         df = pd.read_csv(folder / "bars.csv")
         df["forecast"] = float("nan")
         df.to_csv(folder / "bars.csv", index=False)
@@ -679,7 +838,15 @@ def _bars_for(folder, k):
     rows = [("NOT_READY", 1000, 0.0, 0.0)] + [
         ("trend", 1000 + 5 * i, a, b) for i, (a, b) in enumerate(
             [(0.0, 0.5), (0.5, 0.5), (0.5, -0.25), (-0.25, 0.0), (0.0, 0.2)])]
-    write_window(folder, rows, [lot(20.0 + k, 2.0, 18.0 + k, 120.0), lot(-5.0, 1.0, -6.0, 60.0)])
+    write_window(folder, rows, [lot(20.0 + k, 2.0, 18.0 + k, 120.0), lot(-5.0, 1.0, -6.0, 60.0)],
+                 turnover=1.7)
+
+
+def _graded_core(k):
+    """The core block of window k: what the run would have recorded for _bars_for(k)'s two
+    lots (gross 20 + k and -5 -> 15 + k, fees 3, net 12 + k, mean duration 1.5 bars)."""
+    gross = 15.0 + k
+    return core_of(2, gross, 3.0, gross - 3.0, round(3.0 / gross * 100, 4), 1.5)
 
 
 @pytest.fixture()
@@ -693,10 +860,15 @@ def _graded_run():
     run_dir = tpb._variant_run({"base": False, "design": True})
     k = 0
     for vid in ("base", "design"):
+        pr_path = run_dir / "artifacts" / "variants" / vid / "protocol_result.yaml"
+        pr = rpr.load_yaml(pr_path)
         for sym in ("BTCUSDT", "ETHUSDT"):
             for w in ("w1", "w2"):
                 _bars_for(_window_folder(run_dir, vid, sym, w), k)
+                (entry,) = [r for r in pr["results"] if (r["symbol"], r["window"]) == (sym, w)]
+                entry["core"] = {**entry["core"], **_graded_core(k)}
                 k += 1
+        rpr.save_yaml(pr_path, pr)
     return run_dir
 
 
@@ -759,10 +931,33 @@ def test_flag_on_graded_variants_carry_the_economics_and_the_others_none(monkeyp
     assert c["trades"] == 2 and c["gross_pct"] == approx(1.5) and c["fees_pct"] == approx(0.3)
     assert c["net_pct"] == approx(1.2) and c["turnover"] == approx(1.7)
     assert c["direction_changes"] == 2 and c["cost_drag_pct"] == approx(20.0)
-    assert c["median_holding_bars"] == 1.5
+    assert c["median_holding_bars"] == 1.5 and c["avg_trade_duration_bars"] == 1.5
+    # the next window of the variant carries its OWN core (k = 1: gross $16 -> 1.6 %)
+    c1 = on["variants"]["base"]["window_economics"]["windows"]["BTCUSDT/w2"]
+    assert c1["gross_pct"] == approx(1.6) and c1["net_pct"] == approx(1.3)
     for vid in ("asset", "broken"):                  # no protocol_result: the key is None
         assert on["variants"][vid]["result"] == "NOT_TESTED"
         assert on["variants"][vid]["window_economics"] is None
+
+
+@pytest.mark.usefixtures("reader_docs", "stub_python")
+def test_flag_on_a_variant_without_core_blocks_has_none_read_figures_and_grading_is_unchanged(
+        monkeypatch):
+    run_dir = _graded_run()
+    pr_path = run_dir / "artifacts" / "variants" / "design" / "protocol_result.yaml"
+    pr = rpr.load_yaml(pr_path)
+    for r in pr["results"]:                           # an older run: only the grader's figure
+        r["core"] = {"sharpe": r["core"]["sharpe"]}
+    rpr.save_yaml(pr_path, pr)
+    off, _ = _evaluate(run_dir, monkeypatch, False)
+    on, _ = _evaluate(run_dir, monkeypatch, True)
+    t = on["variants"]["design"]["window_economics"]["total"]
+    for k in ("trades", "gross_pct", "fees_pct", "net_pct", "cost_drag_pct",
+              "avg_trade_duration_bars"):
+        assert t[k] is None, k
+    assert t["turnover"] == approx(4 * 1.7) and t["n_bars"] == 20      # metrics.json is read
+    assert on["variants"]["base"]["window_economics"]["total"]["gross_pct"] is not None
+    assert on["result"] == off["result"] and on["passing"] == off["passing"]
 
 
 @pytest.mark.usefixtures("reader_docs", "stub_python")
@@ -788,7 +983,7 @@ def test_flag_on_missing_or_unreadable_files_give_none_and_grading_is_unchanged(
 
 def test_the_stored_object_is_the_one_the_query_returns(run):
     # a stub equity file in every window of the saved-run fixture, so the helper finds each folder
-    for _s, _w, folder in _window_dirs(run):
+    for _s, _w, folder, _c in _window_dirs(run):
         (folder / "portfolio_states.csv").write_text("timestamp,regime\n", encoding="utf-8")
     pr = yaml.safe_load((Path(run) / "artifacts" / "variants" / "base" / "protocol_result.yaml")
                         .read_text(encoding="utf-8"))

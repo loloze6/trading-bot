@@ -1,8 +1,9 @@
 """PR-B (analyst tools, 2026-10-19): the dollar-basis reconciliation of window_economics.
 
-Operator decision 2026-10-19: gross, fees and net are dollar sums over the window divided by the
+Operator ruling 2026-10-19: gross, fees and net are READ from the window's `core` block in
+protocol_result.yaml (gross_pnl, fees_paid, net_pnl: dollars) and converted to a percent of the
 account equity at the window's first bar (V0 = `total_portfolio_value` of the first row of
-bars.csv by timestamp); and two identities must hold in every window:
+bars.csv by timestamp), nothing else; and two identities must hold in every window:
 
   (a) gross_pct - fees_pct == net_pct                       (tol sum_tol(): the tool rounds each
                                                               of the three to 8 significant
@@ -24,7 +25,8 @@ Two tests of the same two assertions:
     trades);
   - run copy: reads the base variant of a saved run (env WINDOW_ECONOMICS_RUN_COPY, default the
     analyst smoke copy on this machine); skipped when the folder is absent (runs/ is
-    not in git, CI has no copy). Reads only bars.csv and trades.json of each window (the window
+    not in git, CI has no copy). Reads the `core` block of each result of the variant's
+    protocol_result.yaml and the bars.csv, trades.json and metrics.json of each window (the window
     folders are resolved as the stored-object code does: portfolio_daily.find_window_equity_file
     over the graded results of the variant's protocol_result.yaml, then the parent folder).
 
@@ -47,7 +49,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import window_economics as we  # noqa: E402
 import portfolio_daily as _pd  # noqa: E402
-from test_window_economics import lot  # noqa: E402
+from test_window_economics import core_of, lot  # noqa: E402
 
 DEFAULT_RUN_COPY = r"C:\Users\alauz\AppData\Local\Temp\analyst_smoke\run_097"
 ENV_RUN_COPY = "WINDOW_ECONOMICS_RUN_COPY"
@@ -104,14 +106,17 @@ def write_reconciled_window(folder: Path, rows, trades):
 
 
 def check_cells(windows):
-    """Per window (symbol, label, folder): (index, gross, fees, net, equity change). Asserts (a)
-    and (b); messages name the window by index only."""
+    """Per window (symbol, label, folder, core): (index, gross, fees, net, equity change). The
+    figures are the READ ones (core gross_pnl / fees_paid / net_pnl as a percent of V0). Asserts
+    (a) and (b); messages name the window by index only."""
     out = we.window_economics(windows)["windows"]
     assert len(windows) >= 1
     rows = []
-    for i, (sym, win, folder) in enumerate(windows):
+    for i, (sym, win, folder, core) in enumerate(windows):
         c = out[f"{sym}/{win}"]
+        assert core is not None, f"window #{i}: no core block in protocol_result.yaml"
         gross, fees, net = c["gross_pct"], c["fees_pct"], c["net_pct"]
+        assert None not in (gross, fees, net), f"window #{i}: a read figure is missing"
         eq = equity_change_pct(Path(folder) / "bars.csv")
         assert abs((gross - fees) - net) <= sum_tol(gross, fees, net), (
             f"window #{i}: gross {gross} - fees {fees} != net {net}")
@@ -142,7 +147,9 @@ def test_synthetic_gross_minus_fees_is_net_and_net_is_the_equity_change(tmp_path
         [("trend", 2000, 2000, 0.0, 0.3), ("trend", 1990, 1990, 0.3, 0.3),
          ("trend", 1975, 1967, 0.3, 0.0)],
         [lot(-50.0, 2.0, -52.0, 60.0), lot(20.0, 1.0, 19.0, 120.0)])
-    wins = [("AAA", "w0", tmp_path / "a"), ("BBB", "w1", tmp_path / "b")]
+    # the cores as the run records them: dollars, hand-typed (not summed from the lots)
+    wins = [("AAA", "w0", tmp_path / "a", core_of(3, 40.0, 3.0, 37.0, 7.5, 2.67)),
+            ("BBB", "w1", tmp_path / "b", core_of(2, -30.0, 3.0, -33.0, 10.0, 1.5))]
     rows = check_cells(wins)
     (_, g0, f0, n0, e0), (_, g1, f1, n1, e1) = rows
     assert (g0, f0, n0, e0) == pytest.approx((4.0, 0.3, 3.7, 3.7), abs=1e-9)
@@ -157,7 +164,7 @@ def test_synthetic_twin_catches_an_account_that_does_not_reconcile(tmp_path):
          ("trend", 1030, 1030, 0.0, 0.0)],
         [lot(10.0, 1.0, 9.0, 60.0)])
     with pytest.raises(AssertionError, match="window #0: net_pct"):
-        check_cells([("X", "w", tmp_path / "x")])
+        check_cells([("X", "w", tmp_path / "x", core_of(1, 10.0, 1.0, 9.0, 10.0, 1.0))])
 
 
 # ---------------------------------------------------------------------------
@@ -177,7 +184,7 @@ def _run_copy_windows():
     for r in pr.get("results") or []:
         equity = _pd.find_window_equity_file(root, r["run_id"])
         assert equity is not None, "a graded window of the copy has no folder"
-        wins.append((str(r["symbol"]), str(r["window"]), Path(equity).parent))
+        wins.append((str(r["symbol"]), str(r["window"]), Path(equity).parent, r.get("core")))
     return wins
 
 

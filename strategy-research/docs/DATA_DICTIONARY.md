@@ -635,7 +635,9 @@ measurement status (`CM:run_doc`, error case `CM:error_doc`). Per-variant detail
 ## 10. The analyst's economics tools (PR-B, orchestrator.analyst.enabled)
 
 Not run-artifact fields: figures the analyst's query engine (`tools/analyst_queries.py`)
-computes from a run's own `bars.csv` and `trades.json`. This section is not parsed by
+reports per window. Most are READ from the run's own record: the window's `core` block (section 3;
+`protocol_result.yaml` `results[].core`) and `metrics.json` `bar_equity`. Only four are computed
+here, from `bars.csv` and `trades.json`. This section is not parsed by
 `tests/test_e073_data_dictionary.py` (it has no `data-dictionary` marker) and is left out of
 the readers' subset.
 
@@ -646,35 +648,38 @@ under `variants.<variant>.window_economics` (information only; the key exists on
 analyst flag on; null when the windows cannot be read). All figures are post-run accounting
 (`run`), never a signal input. Bar fields read the bars with `regime` other than `NOT_READY`.
 
-| Field | Exact definition | Unit |
-|---|---|---|
-| `n_bars` | Bars read (ready bars). | count |
-| `trades` | Lots in `trades.json` (one row per LIFO-matched lot). | count |
-| `turnover` | Sum over the bars of the executed allocation change `abs(postRebalance_current_allocation - previous_allocation)` (`performance.bar_equity.turnover`, the function `RA` uses for `bar_equity.turnover`). | alloc |
-| `direction_changes` | Sign flips of `postRebalance_current_allocation`. A bar with `abs(alloc) <= 1e-6` is flat and has no sign, and flat stretches are skipped: long, flat, short counts 1; long, flat, long counts 0. | count |
-| `mean_abs_allocation` | Mean of `abs(postRebalance_current_allocation)` over the ready bars. | alloc |
-| `max_abs_allocation` | Max of `abs(postRebalance_current_allocation)`. | alloc |
-| `gross_pct` | 100 x sum of `profit_loss_absolute` over the lots / V0. | % of V0 |
-| `fees_pct` | 100 x sum of `total_commission` over the lots / V0. | % of V0 |
-| `net_pct` | 100 x sum of `net_profit_loss_absolute` over the lots / V0 (= `gross_pct` - `fees_pct`). | % of V0 |
-| `cost_drag_pct` | (`gross_pct` - `net_pct`) / abs(`gross_pct`) x 100, the fees as a share of absolute gross; null when gross is 0. | % |
-| `median_holding_bars` | Median over the lots of `duration_minutes` x 60 / step, step = the median spacing of the window's bar timestamps; null without lots. | bars |
+| Field | Exact definition | Unit | Source |
+|---|---|---|---|
+| `n_bars` | Bars read: the `bars.csv` rows with `regime` other than `NOT_READY` (stripped, upper case). | count | computed (`bars.csv`) |
+| `trades` | `core.trade_count`. | count | read (`core`) |
+| `turnover` | `bar_equity.turnover` of the window's `metrics.json` (`RA:build_bar_equity`, `run_artifact.py` :729): the sum over the ready bars of `abs(postRebalance_current_allocation - previous_allocation)`, as the run rounded it. Not in the `core` block. | alloc | read (`metrics.json`) |
+| `direction_changes` | Sign flips of `postRebalance_current_allocation`. A bar with `abs(alloc) <= 1e-6` is flat and has no sign, and flat stretches are skipped: long, flat, short counts 1; long, flat, long counts 0. | count | computed (`bars.csv`) |
+| `mean_abs_allocation` | Mean of `abs(postRebalance_current_allocation)` over the ready bars. | alloc | computed (`bars.csv`) |
+| `max_abs_allocation` | Max of `abs(postRebalance_current_allocation)` over the ready bars. | alloc | computed (`bars.csv`) |
+| `gross_pct` | 100 x `core.gross_pnl` / V0. | % of V0 | read (`core`), converted |
+| `fees_pct` | 100 x `core.fees_paid` / V0. | % of V0 | read (`core`), converted |
+| `net_pct` | 100 x `core.net_pnl` / V0 (= `gross_pct` - `fees_pct`, within the run's rounding). | % of V0 | read (`core`), converted |
+| `cost_drag_pct` | `core.cost_drag_pct`, verbatim: (gross - net) / abs(gross) x 100 as the run computed it; null when the run's gross was 0. | % | read (`core`) |
+| `avg_trade_duration_bars` | `core.avg_trade_duration_bars`, verbatim: mean trade duration / median bar spacing; null when the run had no trades. | bars | read (`core`) |
+| `median_holding_bars` | Median over the lots of `trades.json` of `duration_minutes` x 60 / step, step = the median spacing of the window's bar timestamps; null without lots. | bars | computed (`trades.json`, `bars.csv`) |
 
-V0 is the `total_portfolio_value` of the window's first `bars.csv` row, the account at the
-window's start. The dollar sums are divided once by V0. Why dollars: the per-lot percent
-fields of `trades.json` (`profit_loss_percent`, `net_profit_loss_percent`,
-`total_commission_percent`) are returns on each lot's own entry notional, and the lots of
-one window range from about 2% to 200% of the account, so those percents do not add up to
-the window's result: an unweighted sum ignores size, and a sum weighted by the lot's share of
-the account at entry neither compounds nor reconciled (one observed window: +6.5 against an
-account change of -2.4). `net_pct` is the window's realised account change from closed lots: when the window ends flat (every lot closed by the last bar) it equals
-100 x (E_end - V0) / V0, where E_end is the `postRebalance_total_value` of the window's last
-`bars.csv` row (the account after the window's last action; the last row's
+Read, not recomputed (operator ruling 2026-10-19): a figure marked read is the run's own number.
+Nothing is summed from the lots of `trades.json` and nothing is re-derived from the bars. A
+figure the run did not record (no `core` block in an older run, no `metrics.json` or no
+`bar_equity` block) is null, never filled in by a recomputation. A percent of V0 is the read
+dollar figure divided once by V0, nothing else. V0 is the `total_portfolio_value` of the
+window's first `bars.csv` row, the account at the window's start. `net_pct` is the window's
+realised account change from closed lots: when the window ends flat (every lot closed by the
+last bar) it equals 100 x (E_end - V0) / V0, where E_end is the `postRebalance_total_value` of
+the window's last `bars.csv` row (the account after the window's last action; the last row's
 `total_portfolio_value` is that bar's value before its rebalance and is not E_end).
 `total` sums `trades`, `turnover`, `direction_changes` and the three `*_pct` over the cells
-(each window is its own account), pools the bars for `mean_abs_allocation` and
-`max_abs_allocation`, derives `cost_drag_pct` from the summed `*_pct`, and pools every lot
-for `median_holding_bars`.
+(each window is its own account; null when any cell's figure is null), pools the bars for
+`mean_abs_allocation` and `max_abs_allocation`, derives `cost_drag_pct` from the summed read
+dollars ((sum of `core.gross_pnl` - sum of `core.net_pnl`) / abs(sum of `core.gross_pnl`) x 100;
+null when that sum is 0 or a cell lacks a figure), takes `avg_trade_duration_bars` as the mean
+of the cells' averages weighted by their `trade_count`, and pools every lot for
+`median_holding_bars`.
 
 **`trade_slice` fields** (aggregates of the lots, one value per lot of `trades.json`):
 
