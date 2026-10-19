@@ -128,8 +128,11 @@ Columns: class, params (defaults), exact output, range & sign, kind, units, warm
   `PriceEvolutionOnPeriodComponent`, `MomentumDivergenceComponent` and `VolatilityFromStdDevComponent`, and `EMADiff`
   has none).
 - **Soften a dead zone.** Append `signed_power` with `exponent` 2 after `standardise` (`pivot` 10 by default): a weak
-  forecast is damped smoothly towards 0 (5 becomes 2.5), a strong one is amplified (15 becomes 22.5, then the engine's
-  cap of 20 applies), and the sign is kept. Use it instead of `threshold_filter`, which is not allowed in `strategies`.
+  forecast is damped smoothly towards 0 (5 becomes 2.5), a strong one is amplified (15 becomes 22.5), and the sign is
+  kept. Bounds (operator ruling 2026-10-19): `exponent` 1 to 3, `pivot` 10 to 20, inclusive (a pivot below the standardise
+  target would amplify the typical forecast, a re-scaling, not a dead zone); worst case 20 becomes 80 (pivot 10, exponent
+  3), since the clip at 20 is on the combined forecast, not per component. Use it instead of `threshold_filter`, which is
+  not allowed in `strategies`.
 - **Magnitude.** A forecast component's size comes from `standardise` (or `vol_target`, or a blocks regime with
   `block_standardisation`; D-149), not from `scaling_factor`. Under `standardise`, `ratio_to_mean`, `zscore` and
   `percentile` a component's `scaling_factor` cancels and only its sign survives (see the design guide, "Transform

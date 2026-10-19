@@ -146,7 +146,7 @@ def test_signed_power_after_standardise_passes_both_rules():
     assert fr.strategies_violations(cfg, fr.on_off_classes()) == []
     # with a pivot and a clip after it, still clean
     cfg = _cfg(transforms=[{"op": "standardise", "params": {"window": 20, "min_periods": 5}},
-                           {"op": "signed_power", "params": {"exponent": 2, "pivot": 8}},
+                           {"op": "signed_power", "params": {"exponent": 2, "pivot": 15}},
                            {"op": "clip", "params": {"min": -20, "max": 20}}])
     assert fr.strategies_violations(cfg, fr.on_off_classes()) == []
 
