@@ -102,7 +102,8 @@ def test_transform_ops_registry_is_unchanged():
         "scale", "threshold_filter", "clip", "sigmoid", "negate", "vol_normalize",
         "vol_adjusted", "price_normalized", "volume_filter",
         "vol_target",  # added after E-060 by the vol_target PR (tests/test_vol_target_transform.py)
-        "standardise"])  # added after E-060 by the standardise PR (tests/test_standardise_op.py)
+        "standardise",  # added after E-060 by the standardise PR (tests/test_standardise_op.py)
+        "signed_power"])  # added after E-060 by the signed_power PR (tests/test_signed_power_op.py)
     h = pd.Series([1.0, -2.0, 3.0, 0.5, 4.0])
     assert apply_transform_pipeline(h, [{"op": "ratio_to_mean"}]) == 4.0 / h.abs().mean()
     z = (4.0 - h.mean()) / h.std()

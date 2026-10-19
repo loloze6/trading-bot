@@ -136,6 +136,28 @@ def test_dead_zone_ops_are_refused_in_both_pipelines(key, op):
     assert f"components[0].{key}[1]" in msgs[0]
 
 
+def test_signed_power_after_standardise_passes_both_rules():
+    """CUL-354: the graded soft dead zone. [standardise, signed_power] is not a
+    dead-zone op (D-051) and, being a scalar op that is not a scale op, leaves
+    D-149 satisfied by the standardise before it."""
+    assert "signed_power" not in fr.DEAD_ZONE_OPS
+    cfg = _cfg(transforms=[{"op": "standardise", "params": {"window": 20, "min_periods": 5}},
+                           {"op": "signed_power", "params": {"exponent": 2}}])
+    assert fr.strategies_violations(cfg, fr.on_off_classes()) == []
+    # with a pivot and a clip after it, still clean
+    cfg = _cfg(transforms=[{"op": "standardise", "params": {"window": 20, "min_periods": 5}},
+                           {"op": "signed_power", "params": {"exponent": 2, "pivot": 8}},
+                           {"op": "clip", "params": {"min": -20, "max": 20}}])
+    assert fr.strategies_violations(cfg, fr.on_off_classes()) == []
+
+
+def test_signed_power_does_not_stand_in_for_standardise():
+    """It is not a scale op: without standardise (or vol_target) D-149 still refuses."""
+    cfg = _cfg(transforms=[{"op": "signed_power", "params": {"exponent": 2}}])
+    msgs = fr.strategies_violations(cfg, fr.on_off_classes())
+    assert len(msgs) == 1 and msgs[0].startswith("D-149:")
+
+
 def test_the_regime_detector_is_not_checked():
     cfg = copy.deepcopy(CONFIG)
     cfg["regime_detector"]["components"].append(

@@ -127,6 +127,9 @@ Columns: class, params (defaults), exact output, range & sign, kind, units, warm
   Do not flip with a negative `scaling_factor`: only the classes that use it honour it (it is ignored by
   `PriceEvolutionOnPeriodComponent`, `MomentumDivergenceComponent` and `VolatilityFromStdDevComponent`, and `EMADiff`
   has none).
+- **Soften a dead zone.** Append `signed_power` with `exponent` 2 after `standardise` (`pivot` 10 by default): a weak
+  forecast is damped smoothly towards 0 (5 becomes 2.5), a strong one is amplified (15 becomes 22.5, then the engine's
+  cap of 20 applies), and the sign is kept. Use it instead of `threshold_filter`, which is not allowed in `strategies`.
 - **Magnitude.** A forecast component's size comes from `standardise` (or `vol_target`, or a blocks regime with
   `block_standardisation`; D-149), not from `scaling_factor`. Under `standardise`, `ratio_to_mean`, `zscore` and
   `percentile` a component's `scaling_factor` cancels and only its sign survives (see the design guide, "Transform
@@ -165,9 +168,9 @@ For a reader that does not have the design guide. The guide defines each one; th
 name outside them is invented.
 
 - **Regime names** (the only four): `trending`, `mean_reversion`, `chop`, `unknown`.
-- **Transform ops** (the only seventeen). History ops, which must come first in a pipeline: `identity`, `percentile`,
+- **Transform ops** (the only eighteen). History ops, which must come first in a pipeline: `identity`, `percentile`,
   `negate_percentile`, `zscore`, `ratio_to_mean`, `ema`, `standardise`. Scalar ops: `scale`, `threshold_filter`, `clip`, `sigmoid`,
-  `negate`. Data-aware ops: `vol_normalize`, `vol_adjusted`, `price_normalized`, `volume_filter`, `vol_target`
+  `negate`, `signed_power`. Data-aware ops: `vol_normalize`, `vol_adjusted`, `price_normalized`, `volume_filter`, `vol_target`
   (volatility targeting; see the design guide).
 - **Regime-rule operators**: `gte`, `gt`, `lte`, `lt`, `between` (with `low` and `high`).
 - **Regime detector modes**: `threshold_rules`, `score`, `score_product`.
