@@ -592,7 +592,10 @@ def test_the_skill_states_the_vehicle_rule_and_the_observation_shape():
     assert "the child run on the next fold is the proof" in text
     assert "A `no_claim` carries at most 3 observations, each citing a different test." in text
     assert ("While every bar's regime is unknown: no claim on regime or regime_at_entry; a market "
-            "condition is claimed through past_return or any selector in the vocabulary.") in text
+            "condition is claimed through past_return or trailing_vol.") in text
+    assert ("run the selector by window, then describe `past_return_<n>` or `trailing_vol_<n>` "
+            "by window to name the condition; claim it through past_return or trailing_vol.") in text
+    assert "then condition it on" not in text
     assert "The detector's label is unknown" not in text
     te = " ".join((SKILL_DIR / "trade_efficiency.md").read_text(encoding="utf-8").split())
     assert ("The pipeline rule itself is not a vehicle; the vehicle changes the forecast the rule "

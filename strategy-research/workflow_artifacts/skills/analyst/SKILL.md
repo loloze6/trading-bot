@@ -76,10 +76,10 @@ lens.
    Think in this order: the observation, then why, then the graded forecast the why shapes
    (which quantity it reads, how it scales with that quantity, where it is near zero); that
    forecast is the vehicle. When `windows_claimed_sign` is below `windows_with_value`, run the
-   selector by window (`by: window`), then condition it on `trailing_vol` or `past_return` to
-   name the condition before dropping it. A behaviour that holds under a named condition and
-   not in its complement is a `conditional_behaviour` claim with the condition in its
-   selector.
+   selector by window, then describe `past_return_<n>` or `trailing_vol_<n>` by window to name
+   the condition; claim it through past_return or trailing_vol. A behaviour that holds under a
+   named condition and not in its complement is a `conditional_behaviour` claim with the
+   condition in its selector.
 4. **Rule out rivals,** one query each where it matters: one window (`by: window`), one coin
    (`by: coin`), a data gap, the strategy's own mechanics.
 5. **Write the claim with its test,** or stop with no claim. A `conditional_effect` reply with
@@ -267,4 +267,4 @@ fewer.
 - One claim or none.
 - Stop when the comparison budget says so.
 - While every bar's regime is unknown: no claim on regime or regime_at_entry; a market
-  condition is claimed through past_return or any selector in the vocabulary.
+  condition is claimed through past_return or trailing_vol.
