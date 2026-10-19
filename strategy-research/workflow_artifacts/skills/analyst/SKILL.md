@@ -152,6 +152,8 @@ forecast grows with the strength of the signal): a signal parameter (horizon, sp
 vol target), a transform, a new component, or a detector condition with a graded strategy
 under it. Never a side excluded, a clip at zero, a threshold switch, or a rule fitted to one
 observation.
+A vehicle may name any class or op in the component and op catalogue section of this prompt
+and nothing else.
 
 ## Your answer: exactly one fenced YAML block
 

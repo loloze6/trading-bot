@@ -12,7 +12,7 @@ Covers:
   5. an op added to a guide table appears with no code change (no hard-coded op list);
   6. build_prompt carries the section after "The run context" and before the data dictionary.
 
-The test that the section lists signed_power (CUL-354) is added once that op is merged.
+  7. signed_power (CUL-354) is listed once among the ops, allowed in strategies, with its parameters.
 No LLM, no backtest.
 """
 from __future__ import annotations
@@ -193,13 +193,28 @@ def test_an_op_added_to_the_guide_table_appears_with_no_code_change(tmp_path):
     out = cs.catalogue_section(cat, guide)
     line = next(ln for ln in out.splitlines() if ln.startswith("- fake_graded_op "))
     assert line == ("- fake_graded_op (k (2)): a made-up graded op; allowed in strategies")
-    assert "Transform ops (18)" in out
+    assert f"Transform ops ({len(_ops_in_guide()) + 1})" in out
 
 
 def test_an_op_added_to_dead_zone_ops_is_refused_without_a_guide_change(tmp_path, monkeypatch):
     monkeypatch.setattr(fr, "DEAD_ZONE_OPS", fr.DEAD_ZONE_OPS + ("negate",))
     assert cs.op_status("negate").startswith("refused in strategies (D-051")
 
+
+def test_signed_power_is_listed_once_among_the_ops_with_its_status_and_parameters(section):
+    op_lines = _lines(section, "Transform ops (")
+    names = [line.split(" ", 2)[1] for line in op_lines]
+    assert names.count("signed_power") == 1
+    assert section.count("- signed_power ") == 1
+    line = op_lines[names.index("signed_power")]
+    # its status is the one forecast_rules derives: not a dead-zone op, so allowed in strategies
+    assert "signed_power" not in fr.DEAD_ZONE_OPS
+    assert cs.op_status("signed_power") == "allowed in strategies"
+    assert line.endswith("; " + cs.op_status("signed_power")), line
+    assert "refused" not in line
+    # both parameters are on the line
+    assert "exponent" in line and "pivot" in line
+    assert line.startswith("- signed_power (exponent (")
 
 # ---------------------------------------------------------------------------
 # build_prompt
