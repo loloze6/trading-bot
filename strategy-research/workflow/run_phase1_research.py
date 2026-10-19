@@ -16299,7 +16299,7 @@ def _variant_window_economics(run_dir: Path, protocol_result: dict) -> dict | No
             sys.path.insert(0, _tools)
         import window_economics as _we
         return _we.window_economics(windows)
-    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, ImportError):
         return None
 
 

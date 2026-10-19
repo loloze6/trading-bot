@@ -694,6 +694,8 @@ bar t, plus bar t-1 where stated, never a later bar):
 
 `describe` / `distribution` grouped by hour, weekday or regime still charge comparisons on
 these columns, as on any other.
+
+These are not claim fields: a claim selector reads forecast, close, past_return or trailing_vol; a trade test's outcome is trade_net_return or post_exit_return.
 <!-- /readers: omit -->
 ## Not recorded today
 
