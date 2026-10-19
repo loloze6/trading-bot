@@ -99,12 +99,12 @@ E-029 will replace this function with the recorded decision.
 ## Example
 
 ```yaml
-- name: reductions_return_less
+- name: reductions_then_market_keeps_moving
   selector:  {kind: trade, where: [{field: exit_cause, op: "==", value: reduction}]}
-  outcome:   {kind: trade_net_return}
+  outcome:   {kind: post_exit_return, horizons: [1, 6, 24]}
   baseline:  {kind: other_trades}
   statistic: mean_diff
-  direction: less
+  direction: greater
   floor:     {min_events: 100, min_windows: 4}
 ```
 

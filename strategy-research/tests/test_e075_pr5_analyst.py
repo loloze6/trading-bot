@@ -1706,6 +1706,24 @@ def test_two_offending_tests_give_two_errors_one_naming_each():
     assert "claim test 'first'" in msgs[0] and "claim test 'second'" in msgs[1]
 
 
+def test_check_answer_errors_are_the_module_functions_errors():
+    """Direction ruling 2026-10-20 item 1: the D-095 loop is the module-level
+    exit_selector_own_outcome_errors (claim in, error strings out); check_answer's D-095 errors
+    are exactly its output, same messages and order."""
+    text = _claim_answer(claim={"tests": [
+        _exit_test([_w("holding_bars", ">", 5)], name="first"),
+        _exit_test([_w("side", "==", "long")], name="entry"),
+        _exit_test([_w("exit_cause", "==", "flip")], outcome="trade_gross_return", name="second"),
+        _exit_test([_w("exit_cause", "==", "flip")], outcome="post_exit_return", name="post")]})
+    claim = yaml.safe_load(text.split("```yaml\n")[1].split("```")[0])["claim"]
+    own = asm.exit_selector_own_outcome_errors(claim)
+    assert len(own) == 2
+    assert "claim test 'first'" in own[0] and "claim test 'second'" in own[1]
+    assert _check(text) == own
+    assert asm.exit_selector_own_outcome_errors(None) == []
+    assert asm.exit_selector_own_outcome_errors({"tests": "x"}) == []
+
+
 def test_a_claim_card_error_and_the_exit_rule_are_both_returned_in_one_answer():
     class _Bad(_Res):
         def __init__(self):

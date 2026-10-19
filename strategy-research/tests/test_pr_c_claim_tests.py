@@ -732,19 +732,37 @@ def test_default_check_spec_and_check_claim_refuse_the_new_outcomes_as_before_pr
 # ---------------------------------------------------------------------------
 
 def test_every_trade_guide_example_passes_check_claim_and_the_new_one_is_the_entry_selector():
+    """Direction ruling 2026-10-20 item 1: every example also passes the analyst's D-095 check
+    (analyst_session.exit_selector_own_outcome_errors), and the first one is the informative
+    reductions_then_market_keeps_moving (an exit-time selector with post_exit_return)."""
     import re
     import yaml
+    import analyst_session as asm
     text = pr3.TRADE_GUIDE.read_text(encoding="utf-8")
     blocks = re.findall(r"```yaml\n(.*?)```", text, flags=re.S)
     assert len(blocks) == 3, len(blocks)
     tests = [t for b in blocks for t in yaml.safe_load(b)]
     names = [t["name"] for t in tests]
     assert "reductions_cost_more_of_the_move" not in names
+    assert "reductions_return_less" not in names
     assert "trade_cost_share" not in text
     for t in tests:
         checked = cc.check_claim(pr3.claim(t), trade_tests=True)
         assert checked.errors == [], (t["name"], checked.errors)
         assert len(checked.tests) == 1
+        assert asm.exit_selector_own_outcome_errors(pr3.claim(t)) == [], t["name"]
+        # no example pairs an exit-time selector with one of the lot's own results (D-095)
+        if t["outcome"]["kind"] in ct.TRADE_OWN_OUTCOMES:
+            assert not {c["field"] for c in t["selector"]["where"]} & set(ct.TRADE_EXIT_FIELDS), \
+                t["name"]
+    first = tests[0]
+    assert first == {
+        "name": "reductions_then_market_keeps_moving",
+        "selector": {"kind": "trade", "where": [
+            {"field": "exit_cause", "op": "==", "value": "reduction"}]},
+        "outcome": {"kind": "post_exit_return", "horizons": [1, 6, 24]},
+        "baseline": {"kind": "other_trades"}, "statistic": "mean_diff", "direction": "greater",
+        "floor": {"min_events": 100, "min_windows": 4}}
     new = next(t for t in tests if t["outcome"]["kind"] == "trade_gross_return")
     assert new["selector"] == {"kind": "trade", "where": [
         {"field": "entry_forecast", "op": ">", "value": -10},
