@@ -1,6 +1,6 @@
 """E-075 PR-5 (CUL-423, D-092): the analyst session's pure part -- no SDK, no model call.
 
-run_phase1_research wires the session (the six tools as an in-process MCP server, the
+run_phase1_research wires the session (the seven tools as an in-process MCP server, the
 closed-book options, the deny hook, the call); this module holds everything that can be
 checked without a model:
 
@@ -347,13 +347,13 @@ def in_run_score(test_hashes: list, entries: dict) -> int:
 
 def tool_list_errors(init_tools) -> list:
     """Errors of the tool list the CLI reported for the session (system/init `tools`): it must
-    be present, a list, and name no tool outside the six (PHASE_A section 1.4 (b): fail
+    be present, a list, and name no tool outside the seven (PHASE_A section 1.4 (b): fail
     closed). Not verifiable from the Python source; the smoke session checks it live."""
     if not isinstance(init_tools, list):
         return [f"the session reported no tool list (system/init tools={init_tools!r})"]
     extra = sorted({str(t) for t in init_tools} - set(ALLOWED_TOOLS))
     if extra:
-        return [f"the session had tools outside the six: {extra}"]
+        return [f"the session had tools outside the seven: {extra}"]
     return []
 
 

@@ -631,6 +631,67 @@ measurement status (`CM:run_doc`, error case `CM:error_doc`). Per-variant detail
 | `tests[].status` | `measured`, `no_events` or `not_measured`. | label | `CM:run_doc` | run |
 <!-- /data-dictionary -->
 
+<!-- readers: omit -->
+## 10. The analyst's economics tools (PR-B, orchestrator.analyst.enabled)
+
+Not run-artifact fields: figures the analyst's query engine (`tools/analyst_queries.py`)
+computes from a run's own `bars.csv` and `trades.json`. This section is not parsed by
+`tests/test_e073_data_dictionary.py` (it has no `data-dictionary` marker) and is left out of
+the readers' subset.
+
+**`window_economics`** (`tools/window_economics.py`; counts 0 comparisons; refused above 12
+cells). Returns `windows.<symbol>/<window>` and `total`, one cell each. The same object is
+stored per graded variant beside `forecast_shape` in `artifacts/profit_bars_evaluation.yaml`
+under `variants.<variant>.window_economics` (information only; the key exists only with the
+analyst flag on; null when the windows cannot be read). All figures are post-run accounting
+(`run`), never a signal input. Bar fields read the bars with `regime` other than `NOT_READY`.
+
+| Field | Exact definition | Unit |
+|---|---|---|
+| `n_bars` | Bars read (ready bars). | count |
+| `trades` | Lots in `trades.json` (one row per LIFO-matched lot). | count |
+| `turnover` | Sum over the bars of the executed allocation change `abs(postRebalance_current_allocation - previous_allocation)` (`performance.bar_equity.turnover`, the function `RA` uses for `bar_equity.turnover`). | alloc |
+| `direction_changes` | Sign flips of `postRebalance_current_allocation`. A bar with `abs(alloc) <= 1e-6` is flat and has no sign, and flat stretches are skipped: long, flat, short counts 1; long, flat, long counts 0. | count |
+| `mean_abs_allocation` | Mean of `abs(postRebalance_current_allocation)` over the ready bars. | alloc |
+| `max_abs_allocation` | Max of `abs(postRebalance_current_allocation)`. | alloc |
+| `gross_pct` | 100 x sum of `profit_loss_absolute` over the lots / V0. | % of V0 |
+| `fees_pct` | 100 x sum of `total_commission` over the lots / V0. | % of V0 |
+| `net_pct` | 100 x sum of `net_profit_loss_absolute` over the lots / V0 (= `gross_pct` - `fees_pct`). | % of V0 |
+| `cost_drag_pct` | (`gross_pct` - `net_pct`) / abs(`gross_pct`) x 100, the fees as a share of absolute gross; null when gross is 0. | % |
+| `median_holding_bars` | Median over the lots of `duration_minutes` x 60 / step, step = the median spacing of the window's bar timestamps; null without lots. | bars |
+
+V0 is the `total_portfolio_value` of the window's first `bars.csv` row, the account at the
+window's start. The dollar sums are divided once by V0. Why dollars: the per-lot percent
+fields of `trades.json` (`profit_loss_percent`, `net_profit_loss_percent`,
+`total_commission_percent`) are returns on each lot's own entry notional, and the lots of
+one window range from about 2% to 200% of the account, so those percents do not add up to
+the window's result: an unweighted sum ignores size, and a sum weighted by the lot's share of
+the account at entry neither compounds nor reconciled (one observed window: +6.5 against an
+account change of -2.4). `net_pct` is the window's realised account change from closed lots.
+`total` sums `trades`, `turnover`, `direction_changes` and the three `*_pct` over the cells
+(each window is its own account), pools the bars for `mean_abs_allocation` and
+`max_abs_allocation`, derives `cost_drag_pct` from the summed `*_pct`, and pools every lot
+for `median_holding_bars`.
+
+**`trade_slice` fields** (aggregates of the lots, one value per lot of `trades.json`):
+
+| Field | Exact definition | Unit | Counts as a comparison |
+|---|---|---|---|
+| `trade_gross_return` | `profit_loss_percent` / 100: the lot's price return at its fill prices (slippage already in them), signed by side, before commission. Always `trades.json`'s, whatever basis `trade_net_return` has. A per-lot return on the lot's own notional, not a share of the account. | frac | yes, like `trade_net_return` (an outcome) |
+| `trade_cost_pct` | `total_commission_percent`: (entry + exit commission rate) x 100, in percent of the lot's notional (the cost model's rate). | % | no (not a market outcome) |
+
+**Derived bar columns** (for `describe` / `distribution`; `list_columns` lists them; each uses
+bar t, plus bar t-1 where stated, never a later bar):
+
+| Column | Exact definition | Unit | When known |
+|---|---|---|---|
+| `abs_forecast` | `abs(forecast_t)`. | forecast | close |
+| `allocation_abs` | `abs(postRebalance_current_allocation_t)`, the allocation held after bar t's trade. | alloc | fill |
+| `forecast_sign_change` | 1.0 when `forecast_(t-1)` and `forecast_t` are of strictly opposite signs, else 0.0. A zero forecast has no sign: + then 0 and 0 then - are not changes. NaN when the bar stamped ts_t - step is not in the window (the first bar, a gap) or either forecast is not finite. | 0/1 | close |
+
+`describe` / `distribution` grouped by hour, weekday or regime still charge comparisons on
+these columns, as on any other.
+<!-- /readers: omit -->
 ## Not recorded today
 
 These do not exist in any file the AI steps read. Do not infer them.

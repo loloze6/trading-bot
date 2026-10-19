@@ -7,7 +7,7 @@ query log is written) and the REAL PreToolUse hook, then returns a canned answer
 Pins:
   1. the options: the analyst variant of _stage_agent_options on the same closed-book base,
      read off the installed SDK's CLI builder; flag-off options unchanged;
-  2. the deny hook refuses every tool but the six;
+  2. the deny hook refuses every tool but the seven;
   3. a stubbed session writes a reading in the reader-proposal shape that decide-next picks
      and turns into a fold-B child brief;
   4. code's checks of the answer (citations, the test was run, why_query, sealed dates,
@@ -182,13 +182,13 @@ def test_flag_off_options_are_unchanged():
     assert opts.permission_mode is None and opts.max_turns is None
 
 
-def test_the_analyst_options_are_the_closed_book_base_plus_the_six_tools():
+def test_the_analyst_options_are_the_closed_book_base_plus_the_seven_tools():
     opts = rpr._stage_agent_options(analyst=_spec())
     assert opts.tools == [] and opts.setting_sources == [] and opts.strict_mcp_config is True
     assert opts.env == {"CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"}
     assert Path(opts.cwd).resolve() == rpr._STAGE_AGENT_CWD.resolve()
     assert list(opts.mcp_servers) == ["analyst"]
-    assert opts.allowed_tools == list(asm.ALLOWED_TOOLS) and len(asm.ALLOWED_TOOLS) == 6
+    assert opts.allowed_tools == list(asm.ALLOWED_TOOLS) and len(asm.ALLOWED_TOOLS) == 7
     assert opts.permission_mode == "dontAsk"
     assert (opts.max_turns, opts.max_budget_usd) == (40, 1.5)
 
@@ -215,7 +215,7 @@ def test_the_hook_denies_every_other_tool_and_records_it(name):
     assert seen == [name]
 
 
-def test_the_hook_allows_the_six():
+def test_the_hook_allows_the_seven():
     seen = []
     hook = rpr._analyst_deny_hook(seen)
     for full in asm.ALLOWED_TOOLS:
@@ -583,7 +583,7 @@ def test_the_reading_content_check_runs_on_the_answer(run, monkeypatch):
 
 @pytest.mark.parametrize("init_tools,needle", [
     (None, "reported no tool list"),
-    ([*asm.ALLOWED_TOOLS, "Read"], "outside the six: ['Read']"),
+    ([*asm.ALLOWED_TOOLS, "Read"], "outside the seven: ['Read']"),
 ])
 def test_a_session_with_another_tool_stops_the_stage(run, monkeypatch, init_tools, needle):
     _install(monkeypatch, _good_claim, init_tools=init_tools)

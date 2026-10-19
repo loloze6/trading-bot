@@ -1185,8 +1185,8 @@ def _stage_agent_options(*, analyst: dict | None = None) -> ClaudeAgentOptions:
     `analyst` (E-075 PR-5, D-092; only from _invoke_analyst_llm, under
     orchestrator.analyst.enabled): {server, hook, model, max_turns, max_budget_usd}.
     The SAME closed-book base (tools=[] still removes every built-in tool) plus ONE
-    in-process MCP server holding the six query tools (strict_mcp_config keeps every
-    other MCP server out), allowed_tools = exactly those six (they run without asking),
+    in-process MCP server holding the seven query tools (strict_mcp_config keeps every
+    other MCP server out), allowed_tools = exactly those seven (they run without asking),
     permission_mode dontAsk (anything else is denied), a PreToolUse hook that denies
     any other tool name and records it, and the session caps. None: exactly as before."""
     _STAGE_AGENT_CWD.mkdir(parents=True, exist_ok=True)
@@ -5102,7 +5102,7 @@ async def _invoke_reader_llm(prompt: str) -> tuple:
 # ---------------------------------------------------------------------------
 # E-075 PR-5 (CUL-423, D-092): the analyst, under orchestrator.analyst.enabled
 # ---------------------------------------------------------------------------
-# One tool-using session per lens (tools/analyst_session.LENS_CATEGORY): the six query
+# One tool-using session per lens (tools/analyst_session.LENS_CATEGORY): the seven query
 # tools of tools/analyst_queries.py as an in-process MCP server, on the closed-book base
 # (_stage_agent_options(analyst=...)). Its answer becomes a v3 reading in the lens's
 # category file, so decide-next reads it unchanged. The pure part (prompt, answer checks,
@@ -5205,7 +5205,7 @@ _ANALYST_TOOL_HELP = {
 
 
 def _analyst_tools(engine) -> list:
-    """The six @tool wrappers over one QueryEngine. A refusal is a normal result with its
+    """The seven @tool wrappers over one QueryEngine. A refusal is a normal result with its
     reason (the engine logged it); an unexpected error is logged by the engine and comes
     back as an error result."""
     tools = []
@@ -5230,7 +5230,7 @@ def _analyst_tools(engine) -> list:
 
 def _analyst_deny_hook(seen: list):
     """The PreToolUse hook: records every tool name the session tries, and denies any name
-    outside the six (defence in depth behind tools=[], strict MCP and dontAsk)."""
+    outside the seven (defence in depth behind tools=[], strict MCP and dontAsk)."""
     allowed = set(_analyst_session_module().ALLOWED_TOOLS)
 
     async def hook(hook_input, tool_use_id, context):
@@ -5240,7 +5240,7 @@ def _analyst_deny_hook(seen: list):
             return {}
         return {"hookSpecificOutput": {
             "hookEventName": "PreToolUse", "permissionDecision": "deny",
-            "permissionDecisionReason": f"{name} is not one of the analyst's six query tools"}}
+            "permissionDecisionReason": f"{name} is not one of the analyst's seven query tools"}}
     return hook
 
 
@@ -5292,11 +5292,11 @@ def _write_reading_atomically(dest: Path, body: str) -> None:
 
 class AnalystToolListError(RuntimeError):
     """The analyst session reported a tool list (the CLI's system/init message) that is
-    absent or names a tool outside the six: the stage stops, loudly."""
+    absent or names a tool outside the seven: the stage stops, loudly."""
 
 
 def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -> Path:
-    """One analyst lens on this run: a session with the six tools, its answer checked by
+    """One analyst lens on this run: a session with the seven tools, its answer checked by
     code (analyst_session.check_answer, then the readers' own reading checks:
     check_reading with the envelope and _reading_content_errors), one retry with the
     reasons, then a code-written `skipped` reading (output_refused_after_retry). Writes
