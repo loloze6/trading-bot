@@ -1262,7 +1262,7 @@ def fold_summary_lines(doc: dict) -> list:
         by_status[r.get("status")][str(r.get("fold"))] += 1
     lines = ["", "## Claims measured on a child run's fold (E-077; a noise rule, not proof)", "",
              f"- Claims measured: {len(rows)}. Confirmed = the pooled sign holds at every "
-             f"horizon and the claimed sign holds in all but one window (at least 4 windows): "
+             f"horizon and the claimed sign holds in all but one of the fold's windows (an empty window counts against): "
              f"a noise rule, about an 11% chance per fold under a symmetric null; no cost "
              f"is compared."]
     for status, label in FOLD_STATUS_LINES:

@@ -590,6 +590,22 @@ def test_r5_five_measured_all_positive_with_one_window_absent_confirms():
     assert h["windows_against"] == 1 and h["windows_without_value"] == [FOLD_WINDOWS[5]]
 
 
+def test_r5_pooled_bare_window_keys_with_one_window_absent_count_against():
+    # the multi-coin shape: per-window cells pooled over the coins, keyed by the bare window
+    # label (no "<symbol>/" prefix); the sixth window has no cell at all
+    res = _measured({1: [POS] * 5})
+    hz = res["horizons"][1]
+    hz["per_window"] = {f"{s}/{w}": {"value": POS, "oriented": POS}
+                        for s in ("BTCUSD", "ETHUSD") for w in FOLD_WINDOWS[:5]}
+    hz[fc.POOLED_KEY] = {w: {"value": POS, "oriented": POS} for w in FOLD_WINDOWS[:5]}
+    g = fc.grade_test(res, FOLD_WINDOWS)
+    assert g["status"] == fc.CONFIRMED
+    h = g["horizons"]["1"]
+    assert h["windows_without_value"] == [FOLD_WINDOWS[5]]
+    assert (h["windows_in_fold"], h["windows_with_value"], h["windows_against"]) == (6, 5, 1)
+    assert f"{h['windows_claimed_sign']} of {h['windows_in_fold']}" == "5 of 6"
+
+
 def test_r5_four_positive_one_negative_one_absent_is_a_real_refutation():
     g = _grade_fold({1: [POS] * 4 + [NEG]}, pooled={1: 0.01})
     assert g["status"] == fc.NOT_CONFIRMED and "4 of 6" in g["reason"]

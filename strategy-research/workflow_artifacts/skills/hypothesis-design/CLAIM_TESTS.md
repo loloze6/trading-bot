@@ -138,7 +138,7 @@ about 0.11: 0.23 for `less` after a rise and 0.22 for `greater` after a fall, ag
 forward move of a selected bar is part of the `past_return` of the bars after it, so a
 selected bar followed by a rise pulls more bars into the selection, and the mean over the
 selected bars is biased low. A reversal result on `past_return` is therefore weaker evidence
-than the same result on `trailing_vol` or `calendar`, and a momentum result is slightly
+than a reversal result on `trailing_vol`, which the report measured as symmetric, and a momentum result is slightly
 stronger. Prefer a `quantile` cut-off to an absolute `event` cut-off, and state the reversal
 bias in the claim's explanation. Source:
 `strategy-research/engineering/FOLD-FLOORS-2026-10-19/REPORT.md` (sections 2.2 and 2.3; the

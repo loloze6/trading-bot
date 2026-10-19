@@ -87,7 +87,7 @@ the fold's windows -- so a 3-coin claim faces the same ~11% chance per fold as a
 claim, not 17 of 18 symbol-window cells. One coin is measured exactly as before (its cells
 ARE its windows). Every look is counted in the ledger. It uses numbers every measurement already has
 (claim_measure.measure_test: the pooled oriented value and the per-window values). The
-EFFECT SIZE and the agreement count (k of n) are recorded for every horizon of every
+EFFECT SIZE and the agreement count (k of the fold's windows) are recorded for every horizon of every
 claim; NO COST appears anywhere: whether an effect survives costs is judged where a
 strategy is assembled, not here.
 
