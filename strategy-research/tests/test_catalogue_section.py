@@ -13,6 +13,9 @@ Covers:
   6. build_prompt carries the section after "The run context" and before the data dictionary.
 
   7. signed_power (CUL-354) is listed once among the ops, allowed in strategies, with its parameters.
+  8. each op line carries its group and the guide's placement phrase; every op that
+     trading-bot/tools/validate_config.py refuses by placement (V14, V15, V16) carries it;
+     the section names no run id and no date.
 No LLM, no backtest.
 """
 from __future__ import annotations
@@ -192,7 +195,7 @@ def test_an_op_added_to_the_guide_table_appears_with_no_code_change(tmp_path):
         anchor, anchor + "\n| `fake_graded_op` | `k` (2) | a made-up graded op. Second sentence. |"))
     out = cs.catalogue_section(cat, guide)
     line = next(ln for ln in out.splitlines() if ln.startswith("- fake_graded_op "))
-    assert line == ("- fake_graded_op (k (2)): a made-up graded op; allowed in strategies")
+    assert line == ("- fake_graded_op [scalar op] (k (2)): a made-up graded op; allowed in strategies")
     assert f"Transform ops ({len(_ops_in_guide()) + 1})" in out
 
 
@@ -210,11 +213,83 @@ def test_signed_power_is_listed_once_among_the_ops_with_its_status_and_parameter
     # its status is the one forecast_rules derives: not a dead-zone op, so allowed in strategies
     assert "signed_power" not in fr.DEAD_ZONE_OPS
     assert cs.op_status("signed_power") == "allowed in strategies"
-    assert line.endswith("; " + cs.op_status("signed_power")), line
+    # status, then the guide's bold placement phrase as the line ending
+    assert line.endswith("; " + cs.op_status("signed_power")
+                         + "; Allowed only in a strategies component's transforms, "
+                         "in a regime without blocks"), line
     assert "refused" not in line
     # both parameters are on the line
     assert "exponent" in line and "pivot" in line
-    assert line.startswith("- signed_power (exponent (")
+    assert line.startswith("- signed_power [scalar op] (exponent (")
+
+
+# ---------------------------------------------------------------------------
+# placement and group: the section states what validate_config enforces
+# ---------------------------------------------------------------------------
+
+VALIDATE_CONFIG = SR_ROOT.parent / "trading-bot" / "tools" / "validate_config.py"
+# `<op> is allowed only in <where>` (V14, V16) and V15's `<op> belongs in` / `must be the first step`
+# / `must be the only history op` messages, read as text from the validator source.
+_ALLOWED_ONLY_RE = re.compile(r"(\w+) is allowed only in ")
+_V15_RE = re.compile(r"\]: (\w+) (belongs in|must be the first step|must be the only history op)")
+_V15_LINE_WORDS = {"belongs in": "first step", "must be the first step": "first step",
+                   "must be the only history op": "only history op"}
+
+
+def _validator_source() -> str:
+    # adjacent string literals are joined, so a message split over two source lines reads whole
+    return re.sub(r'"\s*\r?\n\s*f?"', "", VALIDATE_CONFIG.read_text(encoding="utf-8"))
+
+
+def _op_lines(section: str) -> dict:
+    return {line.split(" ", 2)[1]: line for line in _lines(section, "Transform ops (")}
+
+
+def test_every_op_the_validator_refuses_by_placement_carries_that_placement_on_its_line(section):
+    src = _validator_source()
+    by_op = _op_lines(section)
+    allowed_only = {m.group(1): src[m.end():].split('"')[0].split("(")[0].replace("`", "").strip()
+                    for m in _ALLOWED_ONLY_RE.finditer(src)}
+    # the validator has placement rules for these (vol_target V14, signed_power V16); a rule
+    # added there for another op is checked here too, with no list kept by hand
+    assert {"vol_target", "signed_power"} <= set(allowed_only)
+    for op, where in allowed_only.items():
+        assert op in by_op, f"validate_config places {op}, the guide table lacks it"
+        assert f"allowed only in {where}".lower() in by_op[op].lower(), (
+            f"validate_config says {op} is allowed only in {where!r}; the guide cell states no such "
+            f"placement, so the catalogue section line does not carry it: {by_op[op]}")
+    v15 = {(m.group(1), m.group(2)) for m in _V15_RE.finditer(src)}
+    assert ("standardise", "belongs in") in v15
+    for op, phrase in v15:
+        assert op in by_op, f"validate_config places {op}, the guide table lacks it"
+        assert _V15_LINE_WORDS[phrase] in by_op[op], (op, phrase, by_op[op])
+
+
+def test_vol_adjusted_keeps_its_warning_and_dead_zone_ops_are_not_double_stated(section):
+    by_op = _op_lines(section)
+    assert by_op["vol_adjusted"].endswith("; Not a volatility scaler on its own")
+    for op in fr.DEAD_ZONE_OPS:
+        assert by_op[op].count("refused in strategies") == 1
+        assert "Not allowed" not in by_op[op]
+
+
+def test_every_op_line_carries_its_group_and_the_history_ops_match_the_registry(section):
+    from strategies.registry import HISTORY_OPS
+    for op, line in _op_lines(section).items():
+        assert re.match(rf"- {op} \[[a-z-]+ op\] \(", line), line
+        assert (f"- {op} [history op] (" in line) == (op in HISTORY_OPS), line
+    assert "[history op] History ops recompute" in section
+
+
+def test_the_section_names_no_run_and_no_date(section):
+    assert not re.search(r"run_\d+", section)
+    assert not re.search(r"\d{4}-\d{2}-\d{2}", section)
+
+
+def test_the_header_says_d051_and_d149_skip_the_regime_detector_but_placement_does_not(section):
+    assert "D-051 and D-149 do not apply to the regime detector; the placement rules on the op lines do." in section
+    assert "the regime detector is not checked" not in section
+    assert "period and window parameters are counted in bars of the run's timeframe" in section
 
 # ---------------------------------------------------------------------------
 # build_prompt

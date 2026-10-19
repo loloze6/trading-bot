@@ -86,7 +86,7 @@ def on_off_classes(catalog_path: Path = CATALOG_PATH) -> frozenset:
     on_off = set()
     for cells in catalog_rows(path):
         if len(cells) <= _KIND_CELL or not cells[_KIND_CELL]:
-            raise CatalogError(f"{path}: row without a Kind cell: {'| '.join(cells)[:120]!r}")
+            raise CatalogError(f"{path}: row without a Kind cell: {' | '.join(cells)[:120]!r}")
         if cells[_KIND_CELL] == ON_OFF_KIND:
             on_off.add(cells[0].strip("`"))
     if not on_off:

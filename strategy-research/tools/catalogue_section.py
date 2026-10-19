@@ -40,6 +40,8 @@ KIND_HEADING = "### Kind legend"
 _OP_ROW_RE = re.compile(r"^\|\s*`(\w+)`\s*\|", re.MULTILINE)
 _COMPONENT_CELLS = 9   # class, params, exact output, range & sign, kind, units, warmup, data & NaN, notes
 _OP_CELLS = 3          # op, params, output
+_GROUP_RE = re.compile(r"^\*\*([\w-]+(?: [\w-]+)* ops)\*\*")   # '**History ops** recompute ...'
+_GROUP_SUFFIX_RE = re.compile(r"ops$")
 _PARAMS_CELL, _OUTPUT_CELL, _KIND_CELL = 1, 2, 4
 MAX_LINE = 190         # characters of the one-line description
 
@@ -77,8 +79,9 @@ def _component_rows(catalog_path: Path) -> list:
     return rows
 
 
-def op_rows(guide_path: Path = GUIDE_PATH) -> list:
-    """The rows (op, params, output) of the tables under the Transform ops heading, in doc order."""
+def _parse_ops(guide_path: Path) -> tuple:
+    """(rows, groups): each row is (op, params, output, group); groups maps a group name
+    ('history op') to the first sentence of the guide paragraph that introduces its table."""
     path = Path(guide_path)
     if not path.is_file():
         raise CatalogueSectionError(f"{path}: design guide not found")
@@ -90,20 +93,51 @@ def op_rows(guide_path: Path = GUIDE_PATH) -> list:
     nxt = re.search(r"^## ", body[len(OPS_HEADING):], re.MULTILINE)
     if nxt:
         body = body[:len(OPS_HEADING) + nxt.start()]
-    rows = []
-    for line in body.splitlines():
-        if _OP_ROW_RE.match(line):
+    rows, groups, group, paragraph = [], {}, None, []
+    for line in body.splitlines() + [""]:
+        head = _GROUP_RE.match(line)
+        if head:
+            if group is not None:
+                groups[group] = _one_line(" ".join(paragraph), 300)
+            group = _GROUP_SUFFIX_RE.sub("op", head.group(1).lower())
+            paragraph = [line]
+        elif group is not None and paragraph and line.strip() and not line.startswith("|"):
+            paragraph.append(line.strip())
+        elif _OP_ROW_RE.match(line):
             cells = [c.strip() for c in line.strip().strip("|").split("|")]
             if len(cells) != _OP_CELLS:
                 raise CatalogueSectionError(
                     f"{path}: op row with {len(cells)} cells, expected {_OP_CELLS}: {cells[0]}")
-            rows.append(cells)
+            if group is None:
+                raise CatalogueSectionError(
+                    f"{path}: op {cells[0]} has no '**<Kind> ops**' group heading above its table")
+            rows.append(cells + [group])
+    if group is not None and group not in groups:
+        groups[group] = _one_line(" ".join(paragraph), 300)
     if not rows:
         raise CatalogueSectionError(f"{path}: no op rows under {OPS_HEADING!r}")
     names = [c[0] for c in rows]
     if len(set(names)) != len(names):
         raise CatalogueSectionError(f"{path}: an op is listed twice under {OPS_HEADING!r}")
-    return rows
+    return rows, groups
+
+
+def op_rows(guide_path: Path = GUIDE_PATH) -> list:
+    """The rows (op, params, output, group) of the tables under the Transform ops heading, in
+    doc order. The group ('history op', 'scalar op', ...) comes from the bold '**<Kind> ops**'
+    heading of the paragraph above each table."""
+    return _parse_ops(guide_path)[0]
+
+
+def op_placement(description_cell: str) -> str:
+    """Where the guide says an op may be used: its bold 'Allowed only ...' / 'Not allowed ...' /
+    'Not a ...' phrases; when the cell has none, the sentence that says what the op 'must be' and
+    cites a validator rule '(V<n>)'. Empty when the guide states no placement."""
+    bold = re.findall(r"\*\*((?:Allowed only|Not allowed|Not a)[^*]*)\*\*", description_cell)
+    if bold:
+        return "; ".join(_plain(b) for b in bold)
+    m = re.search(r"[^.;]*\bmust be\b[^;]*?\(V\d+\)", description_cell)
+    return _plain(m.group(0)) if m else ""
 
 
 def _probe(pipeline: list) -> list:
@@ -155,20 +189,26 @@ def catalogue_section(catalog_path: Path = fr.CATALOG_PATH, guide_path: Path = G
     unknown = sorted({_plain(c[_KIND_CELL]) for c in comps} - {k for k, _ in legend})
     if unknown:
         raise CatalogueSectionError(f"{catalog_path}: kind(s) {unknown} not in the Kind legend")
-    ops = op_rows(Path(guide_path))
+    ops, groups = _parse_ops(Path(guide_path))
     out = [
         "Every component class and transform op that exists is listed here; a name not listed "
         "is invented. A config refers to a class as strategies.strategy_components.<Class>. "
-        "Parameters are written name (default); parameters are counted in bars of the run's timeframe.",
+        "Parameters are written name (default); period and window parameters are counted in bars "
+        "of the run's timeframe.",
         "",
-        "Rules in force for components and ops in strategies (checked by tools/forecast_rules.py "
-        "after step 1b and at 5a; the regime detector is not checked):",
+        "Rules in force for components and ops in strategies (D-051 and D-149 are checked by "
+        "tools/forecast_rules.py after step 1b and at 5a; the placement rules on the op lines "
+        "are checked by validate_config at 5a):",
         "- D-051 (graded forecasts only): on/off classes and the dead-zone ops "
         + " and ".join(fr.DEAD_ZONE_OPS) + " are refused.",
         "- D-149: " + fr.RULE_SENTENCE,
+        "- D-051 and D-149 do not apply to the regime detector; the placement rules on the op lines do.",
         "",
         "Kinds, as a forecast source in strategies: "
         + "; ".join(f"{k}: {use}" for k, use in legend) + ".",
+        "",
+        "Op groups, from the design guide: "
+        + " ".join(f"[{g}] {s}." for g, s in groups.items()),
         "",
         f"Component classes ({len(comps)}) -- class [kind] (parameters): what it measures:",
     ]
@@ -176,10 +216,16 @@ def catalogue_section(catalog_path: Path = fr.CATALOG_PATH, guide_path: Path = G
         name, kind = _plain(cells[0]), _plain(cells[_KIND_CELL])
         out.append(f"- {name} [{kind}] ({_plain(cells[_PARAMS_CELL])}): "
                    f"{_one_line(cells[_OUTPUT_CELL])}")
-    out += ["", f"Transform ops ({len(ops)}) -- op (parameters): what it does; status:"]
+    out += ["", f"Transform ops ({len(ops)}) -- op [group] (parameters): what it does; status; "
+                f"where the guide allows it:"]
     for cells in ops:
-        out.append(f"- {_plain(cells[0])} ({_one_line(cells[1], 240)}): "
-                   f"{_one_line(cells[2])}; {op_status(_plain(cells[0]))}")
+        name, status = _plain(cells[0]), op_status(_plain(cells[0]))
+        line = (f"- {name} [{cells[3]}] ({_one_line(cells[1], 240)}): "
+                f"{_one_line(cells[2])}; {status}")
+        placement = op_placement(cells[2])
+        if placement and not status.startswith("refused"):
+            line += f"; {placement}"
+        out.append(line)
     return "\n".join(out)
 
 
