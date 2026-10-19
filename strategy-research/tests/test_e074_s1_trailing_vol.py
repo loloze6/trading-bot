@@ -243,7 +243,8 @@ def _test(selector):
 
 
 def test_the_public_registry_holds_it():
-    assert ct.BAR_T_FIELDS == ("forecast", "close", "past_return", "trailing_vol")
+    assert ct.BAR_T_FIELDS == ("forecast", "close", "past_return", "trailing_vol",
+                               "abs_forecast", "forecast_sign_change")   # PR-C
     assert ct.FIELDS_WITH_BARS == ("past_return", "trailing_vol")
     assert ct.MIN_FIELD_BARS == {"past_return": 1, "trailing_vol": 2}
     assert not hasattr(ct, "GATED_BAR_T_FIELDS")                   # the gate is gone
@@ -281,7 +282,8 @@ def test_past_return_rules_unchanged_and_the_messages_name_it():
     bad = {"kind": "event", "field": "volume", "op": ">", "value": 0.0}
     assert ct.check_spec(_spec(bad)) == [
         "selector: field 'volume' is not a bar-t field (allowed: ['forecast', 'close', "
-        "'past_return', 'trailing_vol']); a selector may not read the future"]
+        "'past_return', 'trailing_vol', 'abs_forecast', 'forecast_sign_change']); a selector "
+        "may not read the future"]   # PR-C: two more bar-t fields
     assert ct.check_spec(_spec({"kind": "event", "field": "close", "bars": 2, "op": ">",
                                 "value": 0.0})) == [
         "selector: `bars` is only allowed with field ['past_return', 'trailing_vol']"]

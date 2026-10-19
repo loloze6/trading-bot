@@ -539,7 +539,8 @@ def test_check_spec_rejects_bad_slots():
 
 
 def test_registries_and_exercised_markers():
-    assert len(ct.SELECTORS) + len(ct.OUTCOMES) + len(ct.BASELINES) + len(ct.STATISTICS) == 17
+    # 17 v1 blocks + all_of (PR-C)
+    assert len(ct.SELECTORS) + len(ct.OUTCOMES) + len(ct.BASELINES) + len(ct.STATISTICS) == 18
     every = ({f"selector:{k}" for k in ct.SELECTORS} | {f"outcome:{k}" for k in ct.OUTCOMES}
              | {f"baseline:{k}" for k in ct.BASELINES} | {f"statistic:{k}" for k in ct.STATISTICS})
     assert ct.EXERCISED_ON_REAL_RUNS <= every

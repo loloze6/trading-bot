@@ -923,10 +923,10 @@ class QueryEngine:
                 raise QueryRefused("horizons must be a list of ints")
             if len(horizons) > MAX_HORIZONS:
                 raise QueryRefused(f"{len(horizons)} horizons, over the cap of {MAX_HORIZONS}")
-        if outcome == "trade_net_return":
+        if outcome in ct.TRADE_OWN_OUTCOMES:      # PR-C: gross return and cost share too
             out_spec = {"kind": outcome}
             if horizons:
-                raise QueryRefused("trade_net_return takes no horizons (the lot's own result)")
+                raise QueryRefused(f"{outcome} takes no horizons (the lot's own result)")
         else:
             out_spec = {"kind": outcome, "horizons": sorted(horizons) if isinstance(horizons, list)
                         and all(isinstance(h, int) and not isinstance(h, bool) for h in horizons)
@@ -961,7 +961,7 @@ class QueryEngine:
         self._charge(n)
 
         def key(h):
-            return "trade" if (is_trade and out_spec["kind"] == "trade_net_return") else str(h)
+            return "trade" if (is_trade and out_spec["kind"] in ct.TRADE_OWN_OUTCOMES) else str(h)
 
         horizons_out, groups_out = {}, {}
         for h in hz:
