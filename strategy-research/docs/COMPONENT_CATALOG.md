@@ -127,6 +127,15 @@ Columns: class, params (defaults), exact output, range & sign, kind, units, warm
   Do not flip with a negative `scaling_factor`: only the classes that use it honour it (it is ignored by
   `PriceEvolutionOnPeriodComponent`, `MomentumDivergenceComponent` and `VolatilityFromStdDevComponent`, and `EMADiff`
   has none).
+- **Soften a dead zone.** Append `signed_power` with `exponent` 2 after `standardise` (`pivot` 10 by default): a weak
+  forecast is damped smoothly towards 0 (5 becomes 2.5), a strong one is amplified (15 becomes 22.5), and the sign is
+  kept. Bounds (operator ruling 2026-10-19): `exponent` 1 to 3, `pivot` 10 to 20, inclusive (a pivot below the standardise
+  target would amplify the typical forecast, a re-scaling, not a dead zone); worst case 20 becomes 80 (pivot 10, exponent
+  3), since the clip at 20 is on the combined forecast, not per component. Use it instead of `threshold_filter`, which is
+  not allowed in `strategies`. Place it only in a strategies component's `transforms`, in a regime without `blocks`
+  (V16, the `vol_target` rule; operator ruling 2026-10-19): there a refused value (a non-finite input or output) raises
+  inside the per-bar error guard, so that bar's forecast is 0.0 and the bot rebalances toward 0; in `history_transforms`
+  or the regime detector the same raise would leave component histories out of step or escape the guard.
 - **Magnitude.** A forecast component's size comes from `standardise` (or `vol_target`, or a blocks regime with
   `block_standardisation`; D-149), not from `scaling_factor`. Under `standardise`, `ratio_to_mean`, `zscore` and
   `percentile` a component's `scaling_factor` cancels and only its sign survives (see the design guide, "Transform
@@ -165,9 +174,9 @@ For a reader that does not have the design guide. The guide defines each one; th
 name outside them is invented.
 
 - **Regime names** (the only four): `trending`, `mean_reversion`, `chop`, `unknown`.
-- **Transform ops** (the only seventeen). History ops, which must come first in a pipeline: `identity`, `percentile`,
+- **Transform ops** (the only eighteen). History ops, which must come first in a pipeline: `identity`, `percentile`,
   `negate_percentile`, `zscore`, `ratio_to_mean`, `ema`, `standardise`. Scalar ops: `scale`, `threshold_filter`, `clip`, `sigmoid`,
-  `negate`. Data-aware ops: `vol_normalize`, `vol_adjusted`, `price_normalized`, `volume_filter`, `vol_target`
+  `negate`, `signed_power`. Data-aware ops: `vol_normalize`, `vol_adjusted`, `price_normalized`, `volume_filter`, `vol_target`
   (volatility targeting; see the design guide).
 - **Regime-rule operators**: `gte`, `gt`, `lte`, `lt`, `between` (with `low` and `high`).
 - **Regime detector modes**: `threshold_rules`, `score`, `score_product`.

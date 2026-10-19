@@ -17487,7 +17487,7 @@ _COMPONENT_GAP_RETRY_STATE_KEY = "component_gap_retry"
 # transformation) and `ema` (also the plain word "EMA" in prose -- "EMA distance"
 # would pass without any transform tried); a test keeps the two in sync.
 _TRANSFORM_OP_NAMES = ("percentile", "negate_percentile", "zscore", "ratio_to_mean", "standardise",
-                       "scale", "threshold_filter", "clip", "sigmoid", "negate",
+                       "scale", "threshold_filter", "clip", "sigmoid", "negate", "signed_power",
                        "vol_normalize", "vol_adjusted", "price_normalized", "volume_filter",
                        "vol_target")
 _TRANSFORM_OPS_NOT_DETECTED = ("identity", "ema")
