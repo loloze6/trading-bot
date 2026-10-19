@@ -108,18 +108,21 @@ def load_policy_eras(policy_path: Path | None = None) -> list:
 
 # E-061 C1.6/C1.7 second-round code-review fix: memoizes era_id_for_timestamp's
 # LOOKUP (which era a given calendar day belongs to), keyed on the already-
-# normalized "YYYY-MM-DD" string plus id(eras) -- NOT on the raw `ts` passed
-# in, so two different representations of the same UTC day (a string, a
+# normalized "YYYY-MM-DD" string plus the eras' CONTENT -- NOT on the raw `ts`
+# passed in, so two different representations of the same UTC day (a string, a
 # tz-aware Timestamp that normalizes to it, ...) share one cache entry. A
 # plain dict, not functools.lru_cache: `eras` is a list of dicts and
-# therefore unhashable, so identity (id()) stands in for it -- correct here
-# because a caller either reuses the SAME eras list object across many calls
-# (the common case: loaded once per process) or passes a fresh one each time
-# (a synthetic test list), in which case a stale id() simply never gets a
-# cache hit rather than returning a wrong answer. Intentionally unbounded:
-# one process's total distinct (era-list-identity, calendar-day) pairs is
-# bounded by the campaign's own date range, at most a few thousand entries.
-_ERA_LOOKUP_CACHE: dict[tuple[int, str], str] = {}
+# therefore unhashable, so the key carries a tuple of (era_id, lo, hi) per
+# entry instead. Content, not identity: the earlier id(eras) key was wrong
+# because Python reuses the id() of a garbage-collected list, so a fresh
+# eras list with DIFFERENT ranges could hit a stale entry and return a wrong
+# era (it made a test fail intermittently). With a content key, a different
+# list with the same ranges shares an entry (correct, the answer is
+# identical) and a different range never does. Cost: building the tuple is
+# O(len(eras)) per call, small (a handful of eras). Intentionally unbounded:
+# one process's total distinct (eras-content, calendar-day) pairs is bounded
+# by the campaign's own date range, at most a few thousand entries.
+_ERA_LOOKUP_CACHE: dict[tuple[tuple[tuple, ...], str], str] = {}
 
 
 def era_id_for_timestamp(ts, eras: list) -> str:
@@ -181,7 +184,10 @@ def era_id_for_timestamp(ts, eras: list) -> str:
         parsed = parsed.tz_convert("UTC")
     d = parsed.strftime("%Y-%m-%d")
 
-    cache_key = (id(eras), d)
+    # (lo, hi) are unpacked from each era's `range` (a YAML list), so the key
+    # holds only the scalar bounds (str/date/None), all hashable -- no list in
+    # the key, no conversion needed.
+    cache_key = (tuple((era["era_id"], *era["range"]) for era in eras), d)
     cached = _ERA_LOOKUP_CACHE.get(cache_key)
     if cached is not None:
         return cached
