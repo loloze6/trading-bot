@@ -8,8 +8,8 @@ session that ends in no_claim may record what it measured as observations.
    no_claim last attempt; the key is absent when there is none; the schema takes it.
 3. analyst_memory_view: the rows "observed, no vehicle yet".
 4. reader_proposals: a model's `vehicle: []` is refused for every kind (EMPTY_VEHICLE_KINDS is
-   empty); a FILE already written keeps D-089 (a) for execution_behaviour only
-   (WRITTEN_EMPTY_VEHICLE_KINDS).
+   empty); a FILE already written with one loads, its item flagged legacy_no_vehicle
+   (operator ruling 2026-10-19 item 3; decide-next's side: test_d089_vehicle_and_coins.py).
 5. The skill text: no `vehicle: []` outside a sentence that forbids it.
 
 Fixtures are those of test_e075_pr5_analyst.py (a synthetic query log), test_d089_vehicle_and_coins.py
@@ -529,7 +529,9 @@ _KINDS = ("execution_behaviour", "event_behaviour", "direction_forecast", "cost_
 
 def test_the_constants():
     assert rp.EMPTY_VEHICLE_KINDS == ()
-    assert rp.WRITTEN_EMPTY_VEHICLE_KINDS == ("execution_behaviour",) == cc.FOLDS_CLAIM_KINDS
+    assert cc.FOLDS_CLAIM_KINDS == ("execution_behaviour",)
+    assert rp.LEGACY_NO_VEHICLE == "legacy_no_vehicle"
+    assert not hasattr(rp, "WRITTEN_EMPTY_VEHICLE_KINDS")
 
 
 @pytest.mark.parametrize("kind", _KINDS)
@@ -548,14 +550,25 @@ def test_the_refusal_does_not_offer_an_exception():
     assert "allowed only" not in msg
 
 
-def test_a_written_file_keeps_an_empty_vehicle_for_execution_behaviour_only():
-    doc = _reading(_claim(kind="execution_behaviour"), **EMPTY)
+@pytest.mark.parametrize("kind", _KINDS)
+def test_a_written_empty_vehicle_loads_flagged_legacy_no_vehicle(kind, tmp_path):
+    """Operator ruling 2026-10-19 item 3: a written item with `vehicle: []` loads (any kind;
+    only execution_behaviour could be written before the ruling), flagged on the loaded item
+    only -- never in the file, never by flatten_reading alone."""
+    doc = _reading(_claim(kind=kind), **EMPTY)
     rp.check_reading(doc, CAT, "file")                       # from_model False: loads as it stands
-    (item,) = rp.flatten_reading(doc)
-    assert item["vehicle"] == []
-    for kind in _KINDS[1:]:
-        with pytest.raises(rp.ProposalError, match="refused for every claim kind"):
-            rp.check_reading(_reading(_claim(kind=kind), **EMPTY), CAT, "file")
+    assert rp.LEGACY_NO_VEHICLE not in rp.flatten_reading(doc)[0]
+    path = tmp_path / f"{CAT}.yaml"
+    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+    before = path.read_bytes()
+    (item,) = rp.load_proposals(tmp_path, [CAT])[CAT]
+    assert item[rp.LEGACY_NO_VEHICLE] is True and item["vehicle"] == []
+    assert path.read_bytes() == before
+    # a written item with a real vehicle is not flagged
+    path.write_text(yaml.safe_dump(_reading(_claim(kind=kind), **dict(
+        EMPTY, vehicle=copy.deepcopy(CHANGE))), sort_keys=False), encoding="utf-8")
+    (item,) = rp.load_proposals(tmp_path, [CAT])[CAT]
+    assert rp.LEGACY_NO_VEHICLE not in item
 
 
 # ---------------------------------------------------------------------------

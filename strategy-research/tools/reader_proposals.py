@@ -140,11 +140,12 @@ ENVELOPE_KEYS = frozenset({"vehicle", "combines_as", "fold_observed"})
 # kind, it needs a vehicle like every other. An envelope exists only under
 # orchestrator.folds.enabled, so flag off nothing reaches this.
 EMPTY_VEHICLE_KINDS = ()
-# A FILE already written (from_model False) is accepted as it stands: an execution_behaviour
-# claim written with `vehicle: []` under D-089 (a) before the 2026-10-19 ruling still loads,
-# because decide-next (decide_next.py, every earlier run's proposals) and fold_confirm
-# (the source item of a child run) read those files. Only these kinds, as before.
-WRITTEN_EMPTY_VEHICLE_KINDS = ("execution_behaviour",)
+# Operator ruling 2026-10-19 item 3 (D-151): a FILE already written (from_model False) with a
+# side finding whose `vehicle` is [] (D-089 a, before the ruling) loads as it stands, nothing
+# rewritten; load_proposals flags that item `legacy_no_vehicle: True` (on the flattened item
+# only, never in a file), and decide-next records it ineligible (reason legacy_no_vehicle)
+# instead of ranking it. fold_confirm and campaign_memory read it unchanged.
+LEGACY_NO_VEHICLE = "legacy_no_vehicle"
 
 
 class ProposalError(ValueError):
@@ -377,16 +378,14 @@ def _check_envelope(s: dict, where: str, *, require_vehicle: bool,
     `require_vehicle`), `combines_as` one of COMBINES_AS, `fold_observed` a fold
     id of config/folds.yaml. `vehicle: []` is refused in a model's answer
     (`from_model`) for every claim kind (EMPTY_VEHICLE_KINDS is empty); a file
-    already written keeps D-089 (a)'s WRITTEN_EMPTY_VEHICLE_KINDS."""
+    already written loads as it stands, and load_proposals flags the item
+    LEGACY_NO_VEHICLE (operator ruling 2026-10-19 item 3)."""
     if "vehicle" in s and "config_change" in s:
         raise ProposalError(f"{where}: write `vehicle` OR `config_change`, not both -- the "
                             f"vehicle IS the finding's config change")
     if "vehicle" in s:
         kind = s["claim"].get("kind") if isinstance(s.get("claim"), dict) else None
-        allowed = EMPTY_VEHICLE_KINDS if from_model else WRITTEN_EMPTY_VEHICLE_KINDS
-        if s["vehicle"] == [] and kind in allowed:
-            pass            # a file written under D-089 (a), loaded as it stands
-        elif s["vehicle"] == [] and from_model:
+        if s["vehicle"] == [] and from_model and kind not in EMPTY_VEHICLE_KINDS:
             raise ProposalError(
                 f"{where}.vehicle: an empty vehicle is refused for every claim kind, "
                 f"{kind!r} included, with no exception: a claim carries the strategy change "
@@ -395,11 +394,7 @@ def _check_envelope(s: dict, where: str, *, require_vehicle: bool,
                 f"say what to change, you do not have a claim yet (the analyst records the "
                 f"behaviour under no_claim.observations)")
         elif s["vehicle"] == []:
-            raise ProposalError(
-                f"{where}.vehicle: an empty vehicle is refused for every claim kind; in a file "
-                f"written before the 2026-10-19 ruling (D-089 a) it is allowed only for a claim "
-                f"of kind {list(WRITTEN_EMPTY_VEHICLE_KINDS)}, and this claim is of kind "
-                f"{kind!r} -- vehicle: [{{component_id, field, before, after}}]")
+            pass            # a file written before the ruling: loads, flagged LEGACY_NO_VEHICLE
         else:
             _check_change_items(s["vehicle"], f"{where}.vehicle")
     elif require_vehicle:
@@ -516,7 +511,9 @@ def load_proposals(proposals_dir: Path, categories: list, strict_provenance: boo
             # E-068 slice 5 (D-073): a v3 reading, flattened into items.
             check_reading(data, cat, str(path), strict_provenance=strict_provenance,
                           **({"analyst": True} if analyst else {}))
-            out[cat] = flatten_reading(data)
+            # operator ruling 2026-10-19 item 3: a written `vehicle: []` item is flagged
+            out[cat] = [dict(item, **{LEGACY_NO_VEHICLE: True}) if item.get("vehicle") == []
+                        else item for item in flatten_reading(data)]
             continue
         if not isinstance(data, list):
             raise ProposalError(f"{path}: expected a YAML list of proposals (`[]` for none), "
