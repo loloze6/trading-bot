@@ -383,6 +383,91 @@ def _cite_path(c) -> str:
     return _cite_parts(c)[1]
 
 
+# Operator, 2026-10-19 (PR-A): a no_claim may record what the session measured but could not
+# turn into a claim yet (no strategy change follows from it yet): `observations`, a list of
+# mappings with exactly OBSERVATION_KEYS -- `statement` (the behaviour), `test` (the id of the
+# ok conditional_effect call of this session that measured it), `evidence` (citations, at
+# least one of that call), `floors_met` (true/false: the call cleared its test's floor on
+# every horizon; checked where its result can tell). Absent = none: a no_claim without the key
+# is checked and recorded exactly as before. Each recorded observation also carries `spec`,
+# written by code: the measured test block (its slots, no result) and its spec_hash. The
+# regroup_record stage copies an accepted no_claim's observations into the run's
+# campaign_memory entry (campaign_memory.analyst_observations); the memory view shows them as
+# "observed, no vehicle yet" (analyst_memory_view).
+OBSERVATION_KEYS = ("statement", "test", "evidence", "floors_met")
+
+
+def floors_met_in_log(entry: dict):
+    """Whether a conditional_effect call's logged result clears its own test block's floor on
+    every horizon (claim_measure's floor_not_met rule): False when a unit the result reports
+    is below the floor, True when every unit is reported and met, None when it cannot tell
+    (min_eras is not in the result, or the result is unreadable)."""
+    import claim_measure as cmeas
+    res = entry.get("result") if isinstance(entry, dict) else None
+    floor = ((res or {}).get("test") or {}).get("floor") if isinstance(res, dict) else None
+    hz = res.get("horizons") if isinstance(res, dict) else None
+    if not isinstance(floor, dict) or not isinstance(hz, dict) or not hz:
+        return None
+    known = True
+    for unit, need in floor.items():
+        field = cmeas._FLOOR_KEY.get(unit)
+        for row in hz.values():
+            have = row.get(field) if isinstance(row, dict) and field else None
+            if not isinstance(have, (int, float)) or isinstance(have, bool) \
+                    or not isinstance(need, (int, float)):
+                known = False
+            elif have < need:
+                return False
+    return True if known else None
+
+
+def observation_errors(observations, entries: dict) -> list:
+    """Errors of a no_claim's `observations` (OBSERVATION_KEYS); [] for a valid list,
+    `[]` included."""
+    if not isinstance(observations, list):
+        return ["no_claim.observations must be a list of {statement, test, evidence, "
+                "floors_met} (leave the key out, or write [], when there is none)"]
+    errors = []
+    for i, o in enumerate(observations):
+        w = f"no_claim.observations[{i}]"
+        if not isinstance(o, dict) or set(o) != set(OBSERVATION_KEYS):
+            errors.append(f"{w} must have exactly the keys {list(OBSERVATION_KEYS)}"
+                          + (f" (got {sorted(map(str, o))})" if isinstance(o, dict) else ""))
+            continue
+        if not isinstance(o["statement"], str) or not o["statement"].strip():
+            errors.append(f"{w}.statement must be a non-empty text: the behaviour you measured")
+        qid = o["test"]
+        is_ce = _ok_call(entries, qid) and entries[qid].get("function") == "conditional_effect"
+        if not is_ce:
+            errors.append(f"{w}.test={qid!r} must be the id of an ok conditional_effect call of "
+                          f"this session (the call that measured the behaviour)")
+        errors += [f"{w}.{e}" for e in check_citations(o["evidence"], entries)]
+        if is_ce and isinstance(o["evidence"], list) \
+                and not any(_cite_qid(c) == qid for c in o["evidence"]):
+            errors.append(f"{w}.evidence must cite its test's own result "
+                          f"(`{qid}:horizons.<h>.<field>=<value>`)")
+        if not isinstance(o["floors_met"], bool):
+            errors.append(f"{w}.floors_met must be true or false")
+        elif is_ce:
+            met = floors_met_in_log(entries[qid])
+            if met is not None and met != o["floors_met"]:
+                errors.append(f"{w}.floors_met is {str(o['floors_met']).lower()}, but {qid}'s "
+                              f"result {'clears' if met else 'does not clear'} its test's floor "
+                              f"on every horizon (n_events, n_windows_with_events, n_blocks "
+                              f"against `floor`)")
+    return errors
+
+
+def _observation_spec(entry: dict) -> dict:
+    """The code-written `spec` of a recorded observation: the measured test block's slots
+    (selector, outcome, baseline, statistic, direction, floor; no result) and its spec_hash."""
+    res = entry.get("result") or {}
+    block = res.get("test") if isinstance(res.get("test"), dict) else {}
+    return {"spec_hash": res.get("spec_hash"),
+            **{k: block[k] for k in ("selector", "outcome", "baseline", "statistic",
+                                     "direction", "floor") if k in block}}
+
+
 def _tests_of(claim) -> list:
     tests = claim.get("tests") if isinstance(claim, dict) else None
     return [t for t in tests if isinstance(t, dict)] if isinstance(tests, list) else []
@@ -657,6 +742,27 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
                 tests=[ktest] if isinstance(ktest, dict) else None, settings=settings)
             nc = mask_hits(nc, "no_claim", hits)
             record["unverified_numbers"] = _unverified(hits)
+            if "observations" in nc:
+                # operator, 2026-10-19 (PR-A): absent = none, so a no_claim without the key is
+                # unchanged; a valid list is recorded masked (D-096), each with its code spec
+                obs_errors = observation_errors(nc["observations"], entries)
+                errors += obs_errors
+                if not obs_errors:
+                    recorded = []
+                    for i, o in enumerate(nc["observations"]):
+                        test = entries[o["test"]]
+                        block = (test.get("result") or {}).get("test")
+                        ohits = number_hits(
+                            {"observation.statement": o["statement"]},
+                            list(o["evidence"]) + list(evidence), entries,
+                            tests=[block] if isinstance(block, dict) else None,
+                            settings=settings)
+                        recorded.append({**mask_hits(o, "observation", ohits),
+                                         "spec": _observation_spec(test)})
+                        record["unverified_numbers"] += [
+                            {"field": f"no_claim.observations.{i}.statement", "written": wr}
+                            for _l, _s, _e, wr, _m in ohits]
+                    nc["observations"] = recorded
         record["no_claim"] = nc
         reading = {**base, "explanation": str((nc or {}).get("reason") or "no claim"),
                    "evidence": list(evidence), "side_findings": []}

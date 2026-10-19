@@ -134,13 +134,17 @@ _V3_PATCH_KEYS = frozenset({"proposal_id", "patch", "evidence", "scores", "requi
 # a FILE already written (from_model False) is accepted as it stands.
 COMBINES_AS = ("forecast_block", "regime_gate", "execution_rule", "knowledge_only")
 ENVELOPE_KEYS = frozenset({"vehicle", "combines_as", "fold_observed"})
-# D-089 (operator, 2026-10-08, decision a): a claim about TODAY's strategy as it is may change
-# nothing -- `vehicle: []`, the child re-runs the same strategy on the next fold and the
-# strategy's own behaviour there is the test. Only these claim kinds (claim_card's
-# FOLDS_CLAIM_KINDS; not imported, to keep this module free of the claim engine); every
-# other kind still needs a non-empty vehicle. An envelope exists only under
+# Operator, 2026-10-19 (supersedes D-089 decision a): a claim always carries a vehicle, the
+# strategy change that follows from it; no claim kind takes `vehicle: []` in a model's
+# answer. claim_card's FOLDS_CLAIM_KINDS is unchanged: execution_behaviour stays a legal
+# kind, it needs a vehicle like every other. An envelope exists only under
 # orchestrator.folds.enabled, so flag off nothing reaches this.
-EMPTY_VEHICLE_KINDS = ("execution_behaviour",)
+EMPTY_VEHICLE_KINDS = ()
+# A FILE already written (from_model False) is accepted as it stands: an execution_behaviour
+# claim written with `vehicle: []` under D-089 (a) before the 2026-10-19 ruling still loads,
+# because decide-next (decide_next.py, every earlier run's proposals) and fold_confirm
+# (the source item of a child run) read those files. Only these kinds, as before.
+WRITTEN_EMPTY_VEHICLE_KINDS = ("execution_behaviour",)
 
 
 class ProposalError(ValueError):
@@ -333,7 +337,7 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
             raise ProposalError(f"{w}: claim must be a claim block mapping (CLAIM_TESTS.md)")
         if "config_change" in s:
             _check_change_items(s["config_change"], f"{w}.config_change")
-        _check_envelope(s, w, require_vehicle=envelope and from_model)
+        _check_envelope(s, w, require_vehicle=envelope and from_model, from_model=from_model)
         _check_evidence(s["evidence"], w)
         check_scores(s["scores"], w)
         if "requires_feed" in s:
@@ -366,33 +370,45 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
             raise ProposalError(f"{w}: duplicate proposal_id {patch['proposal_id']!r}")
 
 
-def _check_envelope(s: dict, where: str, *, require_vehicle: bool) -> None:
+def _check_envelope(s: dict, where: str, *, require_vehicle: bool,
+                    from_model: bool = False) -> None:
     """The E-077 envelope of one side finding (ENVELOPE_KEYS): `vehicle` is the
     config-change list (and excludes `config_change`; required when
     `require_vehicle`), `combines_as` one of COMBINES_AS, `fold_observed` a fold
-    id of config/folds.yaml."""
+    id of config/folds.yaml. `vehicle: []` is refused in a model's answer
+    (`from_model`) for every claim kind (EMPTY_VEHICLE_KINDS is empty); a file
+    already written keeps D-089 (a)'s WRITTEN_EMPTY_VEHICLE_KINDS."""
     if "vehicle" in s and "config_change" in s:
         raise ProposalError(f"{where}: write `vehicle` OR `config_change`, not both -- the "
                             f"vehicle IS the finding's config change")
     if "vehicle" in s:
         kind = s["claim"].get("kind") if isinstance(s.get("claim"), dict) else None
-        if s["vehicle"] == [] and kind in EMPTY_VEHICLE_KINDS:
-            pass            # D-089 (a): today's strategy, unchanged, re-run on the next fold
+        allowed = EMPTY_VEHICLE_KINDS if from_model else WRITTEN_EMPTY_VEHICLE_KINDS
+        if s["vehicle"] == [] and kind in allowed:
+            pass            # a file written under D-089 (a), loaded as it stands
+        elif s["vehicle"] == [] and from_model:
+            raise ProposalError(
+                f"{where}.vehicle: an empty vehicle is refused for every claim kind, "
+                f"{kind!r} included, with no exception: a claim carries the strategy change "
+                f"that follows from it, and the child run on the next fold backtests that "
+                f"change -- vehicle: [{{component_id, field, before, after}}]. If you cannot "
+                f"say what to change, you do not have a claim yet (the analyst records the "
+                f"behaviour under no_claim.observations)")
         elif s["vehicle"] == []:
             raise ProposalError(
-                f"{where}.vehicle: an empty vehicle (the strategy unchanged, re-run on the next "
-                f"fold) is allowed only for a claim of kind {list(EMPTY_VEHICLE_KINDS)}; a claim "
-                f"of kind {kind!r} needs the strategy change its own run backtests -- vehicle: "
-                f"[{{component_id, field, before, after}}]")
+                f"{where}.vehicle: an empty vehicle is refused for every claim kind; in a file "
+                f"written before the 2026-10-19 ruling (D-089 a) it is allowed only for a claim "
+                f"of kind {list(WRITTEN_EMPTY_VEHICLE_KINDS)}, and this claim is of kind "
+                f"{kind!r} -- vehicle: [{{component_id, field, before, after}}]")
         else:
             _check_change_items(s["vehicle"], f"{where}.vehicle")
     elif require_vehicle:
         raise ProposalError(
-            f"{where}: `vehicle` is required (orchestrator.folds.enabled): every claim is a "
-            f"strategy claim, and its vehicle is the strategy change its own run backtests -- "
+            f"{where}: `vehicle` is required (orchestrator.folds.enabled) for every claim "
+            f"kind, with no exception: every claim is a strategy claim, and its vehicle is "
+            f"the strategy change that follows from it, backtested by its own run -- "
             f"vehicle: [{{component_id, field, before, after}}], resolved against the run's "
-            f"base config like a config change (`vehicle: []` only for a claim of kind "
-            f"{list(EMPTY_VEHICLE_KINDS)}: today's strategy, unchanged)")
+            f"base config like a config change; `vehicle: []` is refused")
     if "combines_as" in s and s["combines_as"] not in COMBINES_AS:
         raise ProposalError(f"{where}.combines_as={s['combines_as']!r} must be one of "
                             f"{list(COMBINES_AS)}")
