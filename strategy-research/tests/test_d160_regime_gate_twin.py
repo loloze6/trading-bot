@@ -15,10 +15,12 @@ Minimal pins (fuller tests follow). No LLM, no backtest, no market data.
 from __future__ import annotations
 
 import copy
+import json
 import sys
 from pathlib import Path
 
 import pytest
+import yaml
 
 SR_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SR_ROOT / "workflow"))
@@ -29,7 +31,7 @@ import config_vehicle as cv  # noqa: E402
 import reader_proposals as rp  # noqa: E402
 import run_phase1_research as rpr  # noqa: E402
 
-from test_d051_d053_forecast_rules import CONFIG  # noqa: E402
+from test_d051_d053_forecast_rules import CONFIG, MANIFEST  # noqa: E402
 from test_e077_pr2_confirm import CAT, _claim, _reading  # noqa: E402
 
 GATE = {"combines_as": "regime_gate", "fold_observed": "A"}
@@ -247,9 +249,19 @@ def _doc(config) -> dict:
     return _reading(_claim(), vehicle=_vehicle(config), **GATE)
 
 
+def _source_run(run_dir) -> None:
+    """D-161: CONFIG and its MANIFEST as the source run's base config and block manifest."""
+    (run_dir / "artifacts").mkdir(parents=True, exist_ok=True)
+    (run_dir / "artifacts" / "candidate_strategy_config.json").write_text(
+        json.dumps(CONFIG), encoding="utf-8")
+    (run_dir / "artifacts" / "block_manifest.yaml").write_text(yaml.safe_dump(MANIFEST),
+                                                               encoding="utf-8")
+
+
 def test_on_the_reading_check_applies_the_gate_form(monkeypatch, tmp_path):
     monkeypatch.setattr(rp, "CONFIG_VEHICLE_ROUTED", True)
     monkeypatch.setattr(rpr, "_claim_check_kw", lambda: {"folds": True})
+    _source_run(tmp_path)     # D-161: the vehicle is also checked against its source run
     for cfg in (_gated(), copy.deepcopy(CONFIG)):
         rp.check_reading(_doc(cfg), CAT, "reading", from_model=True, envelope=True)  # shape ok
     assert rpr._reading_content_errors(_doc(_gated()), CAT, tmp_path) == []

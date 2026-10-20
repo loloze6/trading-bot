@@ -18,6 +18,7 @@ No LLM, no backtest, no market data.
 from __future__ import annotations
 
 import copy
+import json
 import sys
 from pathlib import Path
 
@@ -33,7 +34,7 @@ import config_vehicle as cv  # noqa: E402
 import reader_proposals as rp  # noqa: E402
 import run_phase1_research as rpr  # noqa: E402
 
-from test_d051_d053_forecast_rules import CONFIG, SC  # noqa: E402
+from test_d051_d053_forecast_rules import CONFIG, MANIFEST, SC  # noqa: E402
 from test_e077_pr2_confirm import CAT, CHANGE, _claim, _reading, _save  # noqa: E402
 from test_e075_pr5_analyst import _flags, _good_claim, _install, run, RUN_ID  # noqa: E402,F401
 import analyst_session as asm  # noqa: E402
@@ -370,18 +371,29 @@ def _doc(vehicle) -> dict:
     return _reading(_claim(), vehicle=vehicle, **ENV)
 
 
+def _source_run(run_dir) -> None:
+    """D-161: CONFIG and its MANIFEST as the source run's base config and block manifest
+    (a config vehicle is also checked against its source run, which needs a manifest)."""
+    (run_dir / "artifacts").mkdir(parents=True, exist_ok=True)
+    (run_dir / "artifacts" / "candidate_strategy_config.json").write_text(
+        json.dumps(CONFIG), encoding="utf-8")
+    (run_dir / "artifacts" / "block_manifest.yaml").write_text(yaml.safe_dump(MANIFEST),
+                                                               encoding="utf-8")
+
+
 def test_the_content_check_runs_the_config_vehicle_check_and_never_resolve_patch(monkeypatch,
                                                                                   tmp_path):
     calls = []
     monkeypatch.setattr(rpr._decide_next_tools(), "resolve_patch",
                         lambda *a, **k: calls.append(a) or ([], {}, None))
     monkeypatch.setattr(rpr, "_claim_check_kw", lambda: {"folds": True})
+    _source_run(tmp_path)
     cfg = copy.deepcopy(CONFIG)
     cfg["strategies"]["regimes"]["unknown"]["components"][0]["transforms"] = []
     errs = rpr._reading_content_errors(_doc(_vehicle(cfg)), CAT, tmp_path)
     assert [e for e in errs if e.startswith("side_findings[0].vehicle.config: D-149: ")], errs
     assert rpr._reading_content_errors(_doc(_vehicle()), CAT, tmp_path) == []
-    assert calls == []                      # no base config read, nothing resolved as a patch
+    assert calls == []                      # nothing resolved as a patch
 
 
 def _run_analyst(run_dir):
@@ -403,6 +415,7 @@ def test_the_analyst_off_refuses_a_config_vehicle_with_the_old_message(run, monk
 
 def test_the_analyst_on_hears_the_content_refusal_and_retries(run, monkeypatch):
     monkeypatch.setattr(rp, "CONFIG_VEHICLE_ROUTED", True)
+    _source_run(run)
     cfg = _with_op()                                         # the new op, not listed
     answers = iter([_vehicle(cfg), _vehicle(cfg, requires=[_req()])])
 
@@ -422,6 +435,7 @@ def test_the_analyst_on_hears_the_content_refusal_and_retries(run, monkeypatch):
 def test_the_analyst_on_refuses_a_malformed_op_and_retries_instead_of_crashing(run,
                                                                               monkeypatch):
     monkeypatch.setattr(rp, "CONFIG_VEHICLE_ROUTED", True)
+    _source_run(run)
     answers = iter([_vehicle(_malformed()), _vehicle()])
 
     async def script(call):
