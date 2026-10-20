@@ -359,7 +359,8 @@ def test_check_spec_accepts_the_family_only_with_trade_tests():
     # default: exactly the pre-PR-3 refusals
     assert ct.check_spec(sp) == [
         "selector: unknown selector {'kind': 'trade', 'where': [{'field': 'exit_cause', 'op': '==', "
-        "'value': 'flip'}]}; known: ['all', 'calendar', 'event', 'quantile', 'regime', 'regime_change']",
+        "'value': 'flip'}]}; known: ['all', 'all_of', 'calendar', 'event', 'quantile', 'regime', "
+        "'regime_change']",   # all_of: PR-C
         "outcome: unknown {'kind': 'trade_net_return'}; known: ['fwd_max_drawdown', 'fwd_return', "
         "'fwd_volatility', 'trend_ends']",
         "baseline: unknown {'kind': 'other_trades'}; known: ['complement', 'other_selector', 'placebo']"]
@@ -593,11 +594,13 @@ def test_old_spec_hashes_are_unchanged(name, d, want):
 
 
 def test_block_lists_and_the_old_guide_are_unchanged():
-    assert sorted(ct.SELECTORS) == ["all", "calendar", "event", "quantile", "regime", "regime_change"]
+    assert sorted(ct.SELECTORS) == ["all", "all_of", "calendar", "event", "quantile", "regime",
+                                   "regime_change"]                    # all_of: PR-C
     assert sorted(ct.OUTCOMES) == ["fwd_max_drawdown", "fwd_return", "fwd_volatility", "trend_ends"]
     assert sorted(ct.BASELINES) == ["complement", "other_selector", "placebo"]
     assert sorted(ct.STATISTICS) == ["decay_curve", "hit_rate", "mean_diff", "rank_ic"]
-    assert ct.BAR_T_FIELDS == ("forecast", "close", "past_return", "trailing_vol")   # D-153
+    assert ct.BAR_T_FIELDS == ("forecast", "close", "past_return", "trailing_vol",
+                               "abs_forecast", "forecast_sign_change")   # D-153; PR-C
     text = GUIDE.read_text(encoding="utf-8")
     for token in ("trade_net_return", "post_exit_return", "other_trades", "exit_cause",
                   "CLAIM_TESTS_TRADE"):

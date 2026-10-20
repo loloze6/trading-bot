@@ -109,11 +109,12 @@ without a claim test; a person can add the block for later ideas.
 | kind | parameters | selects |
 |---|---|---|
 | `all` | none | every bar |
-| `event` | `field`: `forecast`, `close`, `past_return` (with `bars`) or `trailing_vol` (with `bars`); `op`: `>=` `>` `<=` `<` `==`; `value`: a number | bars where `field op value` |
-| `quantile` | `field`: `forecast`, `close`, `past_return` (with `bars`) or `trailing_vol` (with `bars`); `side`: `top` or `bottom`; `q` in (0, 0.5]; `lookback`: int >= 2 | bars in the top/bottom `q` of the trailing `lookback` bars (past only) |
+| `event` | `field`: `forecast`, `abs_forecast`, `forecast_sign_change`, `close`, `past_return` (with `bars`) or `trailing_vol` (with `bars`); `op`: `>=` `>` `<=` `<` `==`; `value`: a number | bars where `field op value` |
+| `quantile` | `field`: `forecast`, `abs_forecast`, `close`, `past_return` (with `bars`) or `trailing_vol` (with `bars`); `side`: `top` or `bottom`; `q` in (0, 0.5]; `lookback`: int >= 2 | bars in the top/bottom `q` of the trailing `lookback` bars (past only) |
 | `calendar` | `weekdays`: list of 0 (Monday) .. 6 and/or `hours`: list of 0 .. 23 (UTC) | bars on those days/hours |
 | `regime` | `value: <label>` or `values: [<labels>]` | bars whose regime label is one of these |
 | `regime_change` | `to: <label>` | bars where the regime label changes to `to` |
+| `all_of` | `selectors`: a list of 2 to 3 bar selectors (`event`, `quantile`, `calendar`, `regime` or `regime_change`; not `all`, not another `all_of`, none twice) | bars where every listed selector holds (their AND); a bar is compared with the baseline only where every part is defined |
 
 Fields: `forecast` is the block's forecast at bar t; `close` is the price LEVEL at bar t;
 `past_return` is the MOVE that ended at bar t, close[t] / close[t - n] - 1, and needs
@@ -127,6 +128,8 @@ example `{kind: quantile, field: trailing_vol, bars: 24, side: top, q: 0.2, look
 on 1h bars selects the bars whose past 24 hours were among the most volatile. It is empty
 under the same rule as `past_return`: the first n bars of each window and wherever a bar in
 between is missing. `bars` is allowed only with `past_return` and `trailing_vol`.
+
+`abs_forecast` is |forecast[t]|, the size of the block's forecast at bar t whatever its sign; it is empty where the forecast is empty. `forecast_sign_change` is 1 on bar t when the forecasts at bars t - 1 and t have strictly opposite signs, and 0 otherwise (a forecast of exactly 0 has no sign, so a move to or from 0 is not a change); it is empty on the first bar of each window, wherever bar t - 1 is missing, and wherever either forecast is empty. Select it with `{kind: event, field: forecast_sign_change, op: "==", value: 1}`; it is 0 or 1, so a `quantile` on it is refused. Neither takes `bars`. Why neither can leak: they read the forecast saved at the close of bar t (and, for `forecast_sign_change`, of bar t - 1), never a later bar.
 
 Guidance for `past_return` (nothing refuses this; it is advice): a REVERSAL claim on
 `past_return` (`less` after a rise, `greater` after a fall) is favoured by the measurement
@@ -150,6 +153,10 @@ Guidance for `trailing_vol` (nothing refuses these; they are advice):
   mean rises with volatility with no edge, and volatility persists, so a fixed cut-off often
   selects all or none of a window.
 - `trailing_vol` against `fwd_volatility` or `fwd_max_drawdown` measures persistence, not an edge.
+
+**`all_of` selects the bars where 2 to 3 conditions hold together.** Write each condition as a bar selector of its own, for example
+`{kind: all_of, selectors: [{kind: event, field: trailing_vol, bars: 24, op: ">=", value: 0.01}, {kind: event, field: forecast_sign_change, op: "==", value: 1}]}`.
+A bar is selected when every part selects it, and it can be in the baseline only where every part is defined (a part that is empty at a bar, like `past_return` in a window's first bars, leaves that bar out of both groups). Rules: 2 to 3 parts; no nesting (list every condition in one `all_of`); no `all` part (it adds nothing); no part twice; no other keys. The order of the parts does not matter. It works as the selector and as the selector of an `other_selector` baseline. A `regime` or `regime_change` part is allowed and gives an effect size only.
 
 **Regime selectors are measured like any other selector.** Write them when the claim is
 about a regime: the run continues normally, and the measured effect is kept.
@@ -226,7 +233,7 @@ attempts and the holdout.
 | `redundancy` | `tests: none` (missing: an outcome measured against the current composite). Residual IC is added by code, never a card criterion, so `criteria_refs` cannot name it |
 | `lead_lag` | `tests: none` (missing outcome `fwd_return_of(other_symbol, h)`) |
 | `data_feed_value` | `criteria_refs`, or a test on the feed-built forecast |
-| `cost_turnover` | `tests: none` (missing: a cost/turnover outcome; the ratio criterion is retired for blocks, D-133, so `criteria_refs` cannot name it) |
+| `cost_turnover` | test one: the cause (horizon_decay, direction_forecast by horizon, conditional_behaviour on abs_forecast, or event on forecast_sign_change); the cost share is evidence from trade_slice and window_economics, not a test. |
 | `robustness` | `criteria_refs: [sign_consistent_by_era]` |
 
 The `kind` says whether the idea could be a block: a forecast kind is a forecast-block

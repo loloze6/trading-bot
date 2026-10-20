@@ -115,12 +115,14 @@ def _regime_selector_paths(test: dict) -> list:
     """(where, kind) for every selector of this test that is a regime selector,
     with `where` named exactly as claim_tests.check_spec names it."""
     out = []
-    sel = test.get("selector")
-    if isinstance(sel, dict) and sel.get("kind") in ct.NOT_RECOMPUTABLE_SELECTORS:
-        out.append(("selector", sel["kind"]))
-    sub = _baseline_selector(test)
-    if isinstance(sub, dict) and sub.get("kind") in ct.NOT_RECOMPUTABLE_SELECTORS:
-        out.append(("baseline.selector", sub["kind"]))
+    for where, sel in (("selector", test.get("selector")),
+                       ("baseline.selector", _baseline_selector(test))):
+        if isinstance(sel, dict) and sel.get("kind") in ct.NOT_RECOMPUTABLE_SELECTORS:
+            out.append((where, sel["kind"]))
+        # PR-C: a regime part of an all_of, named as check_spec names it
+        for i, part in enumerate(ct.selector_parts(sel)[1:]):
+            if isinstance(part, dict) and part.get("kind") in ct.NOT_RECOMPUTABLE_SELECTORS:
+                out.append((f"{where}.selectors[{i}]", part["kind"]))
     return out
 
 
@@ -258,9 +260,13 @@ def card_criteria_ids(card: dict) -> list:
 def _selector_columns(sel) -> set:
     if not isinstance(sel, dict):
         return set()
+    if sel.get("kind") == ct.ALL_OF:                       # PR-C: the union of its parts
+        return set().union(*(_selector_columns(p) for p in ct.selector_parts(sel)[1:]))
     if sel.get("kind") in ("regime", "regime_change"):
         return {"regime"}
-    if sel.get("kind") in ("event", "quantile") and sel.get("field") == "forecast":
+    # abs_forecast and forecast_sign_change (PR-C) are read from the forecast too
+    if sel.get("kind") in ("event", "quantile") and sel.get("field") in (
+            "forecast", "abs_forecast", "forecast_sign_change"):
         return {"forecast"}
     return set()
 

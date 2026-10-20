@@ -1627,6 +1627,42 @@ def test_holding_bars_with_the_lots_own_return_is_refused():
                    "if it is your best idea, end with no_claim and give it as best_rejected")
 
 
+@pytest.mark.parametrize("where, named", [
+    ([_w("holding_bars", ">", 5)], "holding_bars"),
+    ([_w("exit_cause", "==", "flip")], "exit_cause"),
+    ([_w("holding_bars", ">", 5), _w("exit_cause", "==", "flip")], "exit_cause, holding_bars")])
+def test_an_exit_selector_with_the_lots_own_gross_return_is_refused_naming_it(where, named):
+    """B1 (operator ruling 2026-10-19): D-095 covers every one of the lot's own results
+    (claim_tests.TRADE_OWN_OUTCOMES); the message names the outcome the test measures."""
+    (msg,) = _exit_errors(_exit_test(where, outcome="trade_gross_return"))
+    assert msg.startswith(f"claim test 't' selects lots by an exit-time field ({named}) and "
+                          f"measures their own trade_gross_return: it cannot tell 'the exit "
+                          f"comes too late' from 'a losing lot stays open longer'"), msg
+    assert "trade_net_return" not in msg
+    (net,) = _exit_errors(_exit_test(where))
+    assert net == msg.replace("their own trade_gross_return", "their own trade_net_return")
+    # through the real claim check too (the block itself is valid)
+    (real,) = _exit_errors(_exit_test(where, outcome="trade_gross_return"), check=_real_check)
+    assert real == msg
+
+
+def test_every_own_outcome_is_covered_and_post_exit_return_is_not():
+    import claim_tests as ct
+    assert ct.TRADE_OWN_OUTCOMES == ("trade_net_return", "trade_gross_return")
+    for kind in ct.TRADE_OWN_OUTCOMES:
+        (msg,) = _exit_errors(_exit_test([_w("holding_bars", ">", 5)], outcome=kind))
+        assert f"measures their own {kind}:" in msg
+    assert _exit_errors(_exit_test([_w("holding_bars", ">", 5)], outcome="post_exit_return")) == []
+
+
+def test_an_entry_time_selector_with_the_lots_own_gross_return_is_not_refused():
+    for w in ([_w("side", "==", "long")], [_w("entry_hour", ">=", 8)],
+              [_w("regime_at_entry", "==", "x")], [_w("entry_forecast", ">", 1)],
+              [_w("entry_weekday", "<", 5)]):
+        assert _exit_errors(_exit_test(w, outcome="trade_gross_return")) == []
+        assert _exit_errors(_exit_test(w, outcome="trade_gross_return"), check=_real_check) == []
+
+
 def test_exit_cause_with_the_lots_own_return_is_refused():
     (msg,) = _exit_errors(_exit_test([_w("exit_cause", "==", "flip")]))
     assert "(exit_cause)" in msg and "post_exit_return" in msg
@@ -1668,6 +1704,24 @@ def test_two_offending_tests_give_two_errors_one_naming_each():
                         _exit_test([_w("exit_cause", "==", "flip")], name="second"))
     assert len(msgs) == 2
     assert "claim test 'first'" in msgs[0] and "claim test 'second'" in msgs[1]
+
+
+def test_check_answer_errors_are_the_module_functions_errors():
+    """Direction ruling 2026-10-20 item 1: the D-095 loop is the module-level
+    exit_selector_own_outcome_errors (claim in, error strings out); check_answer's D-095 errors
+    are exactly its output, same messages and order."""
+    text = _claim_answer(claim={"tests": [
+        _exit_test([_w("holding_bars", ">", 5)], name="first"),
+        _exit_test([_w("side", "==", "long")], name="entry"),
+        _exit_test([_w("exit_cause", "==", "flip")], outcome="trade_gross_return", name="second"),
+        _exit_test([_w("exit_cause", "==", "flip")], outcome="post_exit_return", name="post")]})
+    claim = yaml.safe_load(text.split("```yaml\n")[1].split("```")[0])["claim"]
+    own = asm.exit_selector_own_outcome_errors(claim)
+    assert len(own) == 2
+    assert "claim test 'first'" in own[0] and "claim test 'second'" in own[1]
+    assert _check(text) == own
+    assert asm.exit_selector_own_outcome_errors(None) == []
+    assert asm.exit_selector_own_outcome_errors({"tests": "x"}) == []
 
 
 def test_a_claim_card_error_and_the_exit_rule_are_both_returned_in_one_answer():

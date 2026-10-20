@@ -699,6 +699,37 @@ def _unverified(hits: list) -> list:
     return [{"field": label, "written": written} for label, _s, _e, written, _m in hits]
 
 
+def exit_selector_own_outcome_errors(claim) -> list[str]:
+    """D-095 (smoke 3, 2026-10-09): one error per claim test that selects lots by an exit-time
+    field (claim_tests.TRADE_EXIT_FIELDS) and measures their own result (any of
+    claim_tests.TRADE_OWN_OUTCOMES, operator ruling 2026-10-19). Such a test is near-mechanical
+    (a losing lot stays open longer). Claim in, list of error strings out, in the order of the
+    claim's tests; [] for anything else, a malformed claim included. check_answer calls it."""
+    import claim_tests as ct
+    errors = []
+    for i, t in enumerate(_tests_of(claim)):
+        sel, out = t.get("selector"), t.get("outcome")
+        if not (isinstance(sel, dict) and sel.get("kind") == "trade"
+                and isinstance(out, dict) and out.get("kind") in ct.TRADE_OWN_OUTCOMES
+                and isinstance(sel.get("where"), list)):
+            continue
+        fields = sorted({c["field"] for c in sel["where"]
+                         if isinstance(c, dict) and c.get("field") in ct.TRADE_EXIT_FIELDS})
+        if fields:
+            # D-097: the message says what this test cannot tell apart and what to do instead
+            errors.append(
+                f"claim test {t.get('name', i)!r} selects lots by an exit-time field "
+                f"({', '.join(fields)}) and measures their own {out['kind']}: it cannot tell "
+                f"'the exit comes too late' from 'a losing lot stays open longer' (a lot closes "
+                f"only when the allocation changes, so long-held lots are the ones the price "
+                f"kept going against). Select on an entry-time field "
+                f"({', '.join(ct.TRADE_ENTRY_FIELDS)}), or measure post_exit_return. 'The exit "
+                f"comes too late' has no claim test yet (it needs the return from bar N to the "
+                f"exit): explore it with event_study (trade_filter on {fields[0]}) and, if it "
+                f"is your best idea, end with no_claim and give it as best_rejected")
+    return errors
+
+
 def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_check,
                  holdout_start: str, fold: str | None, model_id: str,
                  settings=None) -> tuple:
@@ -804,29 +835,7 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
     elif res.tests_none:
         errors.append("claim: `tests: none` cannot be confirmed on a fold; write the test in the "
                       "slots or end with no_claim")
-    # smoke 3 (2026-10-09; D-095): lots selected by an exit-time field, measured by their own
-    # trade_net_return, is near-mechanical (a losing lot stays open longer)
-    import claim_tests as ct
-    for i, t in enumerate(_tests_of(claim)):
-        sel, out = t.get("selector"), t.get("outcome")
-        if not (isinstance(sel, dict) and sel.get("kind") == "trade"
-                and isinstance(out, dict) and out.get("kind") == "trade_net_return"
-                and isinstance(sel.get("where"), list)):
-            continue
-        fields = sorted({c["field"] for c in sel["where"]
-                         if isinstance(c, dict) and c.get("field") in ct.TRADE_EXIT_FIELDS})
-        if fields:
-            # D-097: the message says what this test cannot tell apart and what to do instead
-            errors.append(
-                f"claim test {t.get('name', i)!r} selects lots by an exit-time field "
-                f"({', '.join(fields)}) and measures their own trade_net_return: it cannot tell "
-                f"'the exit comes too late' from 'a losing lot stays open longer' (a lot closes "
-                f"only when the allocation changes, so long-held lots are the ones the price "
-                f"kept going against). Select on an entry-time field "
-                f"({', '.join(ct.TRADE_ENTRY_FIELDS)}), or measure post_exit_return. 'The exit "
-                f"comes too late' has no claim test yet (it needs the return from bar N to the "
-                f"exit): explore it with event_study (trade_filter on {fields[0]}) and, if it "
-                f"is your best idea, end with no_claim and give it as best_rejected")
+    errors += exit_selector_own_outcome_errors(claim)
     # D-098 (pilot 2a): the forecast's rank IC over all bars is what the run's protocol
     # already tests; restating it spends a fold-B child to learn nothing new
     for i, t in enumerate(_tests_of(claim)):

@@ -37,6 +37,11 @@ post_exit_return, baseline other_trades, statistics mean_diff | hit_rate. It is
 not in the lists above, check_spec / check_claim refuse it unless the caller
 passes trade_tests=True, and nothing in the pipeline does yet.
 
+PR-C (2026-10-19, after the v1 list above): selector `all_of {selectors: [2-3
+bar selectors]}` (the AND of its sub-selectors; no nesting), bar-t fields
+`abs_forecast` and `forecast_sign_change`, and the trade outcome
+`trade_gross_return` (in the gated trade family).
+
 Block definitions (fixed in tasks/todo.md before any code):
   fwd_return(h)        close[t+h] / close[t] - 1
   fwd_volatility(h)    sample std (ddof=1) of the h one-bar log returns in (t, t+h]; h >= 2
@@ -65,6 +70,14 @@ WHY THIS CANNOT LEAK (no lookahead):
     t-n .. t only, under exactly the `past_return` rule (bar ts[t] - n*step in
     the SAME window, row distance exactly n); NaN otherwise, including the
     first n bars of every window. No warm-up rows (`Window.warm` is never read).
+  - `abs_forecast` (PR-C) is |forecast[t]|: row t only, the forecast saved at
+    bar t's close.
+  - `forecast_sign_change` (PR-C) is 1.0 when forecast[t-1] and forecast[t]
+    have strictly opposite signs (a zero has no sign), else 0.0; NaN where the
+    bar stamped ts[t] - step is not in the SAME window or either forecast is
+    not finite. Rows t-1 and t only; nothing chained across windows.
+  - `all_of` (PR-C) is the AND of 2-3 bar selectors, each of which obeys the
+    rules here; an AND of past-only masks reads nothing more than they do.
   - `quantile` compares x[t] with the quantile of the TRAILING `lookback` bars
     t-lookback .. t-1 of the same window -- never a whole-sample quantile.
   - Outcomes are the label (the future); they never feed a selector. They are
@@ -157,8 +170,10 @@ EXERCISED_ON_REAL_RUNS = frozenset({
 # that ENDED at bar t: close[t] / close[t-bars] - 1, with its required `bars`.
 # `trailing_vol` (E-074 slice 1) is the sample std of the n one-bar log returns
 # ending at bar t, with its required `bars`; gated until D-153 (operator ruling
-# 2026-10-19 item 2), a plain bar-t field since.
-BAR_T_FIELDS = ("forecast", "close", "past_return", "trailing_vol")
+# 2026-10-19 item 2), a plain bar-t field since. `abs_forecast` and
+# `forecast_sign_change` (PR-C) read the forecast at bars t-1..t only, no `bars`.
+BAR_T_FIELDS = ("forecast", "close", "past_return", "trailing_vol",
+                "abs_forecast", "forecast_sign_change")
 FIELDS_WITH_BARS = ("past_return", "trailing_vol")   # fields that take (and need) `bars: n`
 MIN_FIELD_BARS = {"past_return": 1, "trailing_vol": 2}   # ddof=1 needs >= 2 returns
 # PHASE_A table 2.1: the digest's `trailing_vol` length per timeframe.
@@ -508,11 +523,38 @@ def trailing_vol(w: Window, n: int) -> np.ndarray:
 _FIELD_FUNCS = {"past_return": past_return, "trailing_vol": trailing_vol}
 
 
+def abs_forecast(w: Window) -> np.ndarray:
+    """|forecast[t]| (PR-C): row t only. NaN where the forecast is NaN."""
+    return np.abs(np.asarray(w.forecast, dtype=float))
+
+
+def forecast_sign_change(w: Window) -> np.ndarray:
+    """1.0 where forecast[t-1] and forecast[t] have strictly opposite signs,
+    else 0.0 (a zero forecast has no sign: + -> 0 and 0 -> - are not changes)
+    (PR-C; the same definition as the analyst's derived column). NaN where
+    the bar stamped exactly ts[t] - step is not in this window (the first bar
+    of every window included) or either forecast is not finite. Reads rows
+    t-1 and t only (the past)."""
+    f = np.asarray(w.forecast, dtype=float)
+    k = w.index_at(-1)
+    out = np.full(len(f), np.nan)
+    ok = k >= 0
+    ok[ok] = np.isfinite(f[ok]) & np.isfinite(f[k[ok]])
+    out[ok] = (f[ok] * f[k[ok]] < 0).astype(float)
+    return out
+
+
+# bar-t fields computed from the window without a `bars` length (PR-C)
+_PLAIN_FIELD_FUNCS = {"abs_forecast": abs_forecast, "forecast_sign_change": forecast_sign_change}
+
+
 def _field_values(w: Window, sel: dict) -> np.ndarray:
     """The bar-t numbers a selector reads (BAR_T_FIELDS)."""
     f = sel["field"]
     if f in _FIELD_FUNCS:
         return _FIELD_FUNCS[f](w, int(sel["bars"]))
+    if f in _PLAIN_FIELD_FUNCS:
+        return _PLAIN_FIELD_FUNCS[f](w)
     return getattr(w, f).astype(float)
 
 
@@ -576,9 +618,31 @@ def sel_quantile(w: Window, p: dict):
     return mask, valid
 
 
+def sel_all_of(w: Window, p: dict):
+    """PR-C: the AND of 2-3 bar sub-selectors (check_spec refuses nesting):
+    mask = AND of their masks, valid = AND of their valids. A bar is in the
+    baseline only where every sub-selector is defined."""
+    n = len(w.ts)
+    mask, valid = np.ones(n, dtype=bool), np.ones(n, dtype=bool)
+    for sub in p["selectors"]:
+        m, v = SELECTORS[sub["kind"]](w, sub)
+        mask &= m
+        valid &= v
+    return mask, valid
+
+
+ALL_OF = "all_of"
+ALL_OF_SIZE = (2, 3)            # min, max sub-selectors
 SELECTORS = {"all": sel_all, "event": sel_event, "regime": sel_regime,
              "regime_change": sel_regime_change, "calendar": sel_calendar,
-             "quantile": sel_quantile}
+             "quantile": sel_quantile, ALL_OF: sel_all_of}
+
+
+def selector_parts(sel) -> list:
+    """`sel` and, for all_of, its sub-selectors (one level: nesting is refused)."""
+    if isinstance(sel, dict) and sel.get("kind") == ALL_OF and isinstance(sel.get("selectors"), list):
+        return [sel] + list(sel["selectors"])
+    return [sel]
 
 
 # ---------------------------------------------------------------------------
@@ -653,6 +717,15 @@ def _shift_offsets(n: int, h_max: int, rng, size: int, period: int | None = None
 def _calendar_period(selector: dict, step: int) -> int | None:
     """Period of a calendar selection, in bars: a week if it names weekdays,
     else a day. None for every other selector."""
+    if selector.get("kind") == ALL_OF:
+        # PR-C: the AND keeps the calendar part's period (a week if any calendar
+        # part names weekdays, else a day); no calendar part: None
+        cal = [s for s in selector.get("selectors") or []
+               if isinstance(s, dict) and s.get("kind") == "calendar"]
+        if not cal:
+            return None
+        seconds = 7 * DAY if any(s.get("weekdays") is not None for s in cal) else DAY
+        return seconds // step if seconds % step == 0 else None
     if selector.get("kind") != "calendar":
         return None
     seconds = 7 * DAY if selector.get("weekdays") is not None else DAY
@@ -802,6 +875,15 @@ def spec_hash(spec: TestSpec) -> str:
         # not part of the test. Only the gated trade selector is touched, so
         # every pre-PR-3 hash is unchanged.
         d["selector"] = dict(sel, where=_canon_where(sel.get("where")))
+    # PR-C: an all_of's parts in canonical order, as the selector or as an
+    # other_selector baseline's selector. Only all_of is touched, so every
+    # pre-PR-C hash is unchanged.
+    d["selector"] = _canon_all_of(d["selector"])
+    base = d.get("baseline")
+    if isinstance(base, dict) and isinstance(base.get("selector"), dict):
+        canon = _canon_all_of(base["selector"])
+        if canon is not base["selector"]:
+            d["baseline"] = dict(base, selector=canon)
     blob = json.dumps(_canon(d), sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
@@ -836,6 +918,8 @@ def _check_selector(s, where: str) -> list[str]:
     if not isinstance(s, dict) or s.get("kind") not in SELECTORS:
         return [f"{where}: unknown selector {s!r}; known: {sorted(SELECTORS)}"]
     k, e = s["kind"], []
+    if k == ALL_OF:
+        return _check_all_of(s, where)
     if k in NOT_RECOMPUTABLE_SELECTORS:
         e.append(f"{where}: {k} cannot be graded under {SIGNIFICANCE_METHOD} (regime labels "
                  f"cannot be recomputed on fake prices); park it as a test request")
@@ -857,6 +941,10 @@ def _check_selector(s, where: str) -> list[str]:
         if not isinstance(s.get("value"), (int, float)) or isinstance(s.get("value"), bool):
             e.append(f"{where}: event value must be a number")
     if k == "quantile":
+        if s.get("field") == "forecast_sign_change":
+            # operator ruling 2026-10-19 (N1): a 0/1 field has no useful trailing quantile
+            e.append(f"{where}: forecast_sign_change is 0 or 1: select it with {{kind: event, "
+                     f"field: forecast_sign_change, op: \"==\", value: 1}}")
         if s.get("side") not in ("top", "bottom"):
             e.append(f"{where}: side must be top or bottom")
         q = s.get("q")
@@ -876,6 +964,59 @@ def _check_selector(s, where: str) -> list[str]:
         if any(h not in range(24) for h in s.get("hours") or []):
             e.append(f"{where}: hours are 0 .. 23 (UTC)")
     return e
+
+
+def _check_all_of(s: dict, where: str) -> list[str]:
+    """PR-C: exactly {kind: all_of, selectors: [2-3 bar selectors]}, each one
+    checked as a selector of its own (`where.selectors[i]`). No nesting (an
+    all_of inside an all_of is the flat AND of the parts: write that), no
+    `all` part (AND with every bar is the other part alone), no part twice."""
+    lo, hi = ALL_OF_SIZE
+    if set(s) != {"kind", "selectors"}:
+        return [f"{where}: an all_of selector is exactly {{kind: all_of, selectors: [...]}}"]
+    subs = s["selectors"]
+    if not isinstance(subs, list) or not lo <= len(subs) <= hi:
+        return [f"{where}: selectors must be a list of {lo} to {hi} bar selectors, all of "
+                f"which must hold"]
+    e: list[str] = []
+    seen: dict = {}
+    for i, sub in enumerate(subs):
+        w = f"{where}.selectors[{i}]"
+        kind = sub.get("kind") if isinstance(sub, dict) else None
+        if kind == ALL_OF:
+            e.append(f"{w}: all_of cannot be nested; list every condition in one all_of")
+            continue
+        if kind == "all":
+            e.append(f"{w}: `all` selects every bar; the AND is the other selector(s) alone")
+            continue
+        e += _check_selector(sub, w)
+        if isinstance(sub, dict):
+            try:
+                key = _sel_key(sub)
+            except (TypeError, OverflowError):      # spec_hash reports it, as for any selector
+                continue
+            if key in seen:
+                e.append(f"{w}: repeats selectors[{seen[key]}]; write each condition once")
+            else:
+                seen[key] = i
+    return e
+
+
+def _sel_key(sel: dict) -> str:
+    """Canonical JSON of one selector (numbers as floats, keys sorted): the
+    order key of all_of's parts and its duplicate test."""
+    return json.dumps(_canon(sel), sort_keys=True, separators=(",", ":"))
+
+
+def _canon_all_of(sel):
+    """An all_of selector with its parts in canonical order (AND is
+    commutative: the order is not part of the test). Anything else, or a
+    malformed all_of, is returned as it came (check_spec refuses it)."""
+    if not (isinstance(sel, dict) and sel.get("kind") == ALL_OF
+            and isinstance(sel.get("selectors"), list)
+            and all(isinstance(x, dict) for x in sel["selectors"])):
+        return sel
+    return dict(sel, selectors=sorted(sel["selectors"], key=_sel_key))
 
 
 def check_spec(spec: TestSpec, trade_tests: bool = False) -> list[str]:
@@ -982,12 +1123,16 @@ def _check_tail(spec: TestSpec) -> list[str]:
 #   - Outcomes are the label (the future). post_exit_return(h) reads the
 #     exit bar's close and the close of the bar stamped exactly ts_exit +
 #     h*step in the SAME window; no row later than that is read. It never
-#     feeds a selector. trade_net_return is the lot's own result.
+#     feeds a selector. trade_net_return is the lot's own result, and so is
+#     trade_gross_return (PR-C): the lot's return before costs, known only at
+#     the lot's exit, never a selector field.
 #   - Nothing is matched across windows; no warm-up rows, no data cache.
 # ---------------------------------------------------------------------------
 
 TRADE_SELECTOR = "trade"
-TRADE_OUTCOMES = ("trade_net_return", "post_exit_return")
+TRADE_OUTCOMES = ("trade_net_return", "post_exit_return", "trade_gross_return")
+# the lot's own result (no horizons; horizon 0 = the trade's life; one return basis per pool)
+TRADE_OWN_OUTCOMES = ("trade_net_return", "trade_gross_return")
 TRADE_BASELINES = ("other_trades",)
 TRADE_STATISTICS = ("mean_diff", "hit_rate")
 # The interim exit classifier (E-074 PHASE_A 4.2), in this order. Replaced by
@@ -1068,12 +1213,20 @@ class TradeWindow:
     exit_idx: np.ndarray
     net_return: np.ndarray      # float, a fraction (0.01 = 1%), NaN if missing
     basis: str = "net_of_fees_and_slippage"
+    # PR-C, on the same basis as net_return (net = gross - cost); NaN arrays when not given
+    gross_return: np.ndarray | None = None   # fraction, before the basis' costs
+    cost: np.ndarray | None = None           # fraction of the lot's entry notional
 
     def __post_init__(self):
         n = len(self.entry_ts)
+        if self.gross_return is None:
+            self.gross_return = np.full(n, np.nan)
+        if self.cost is None:
+            self.cost = np.full(n, np.nan)
         if not all(len(a) == n for a in (self.exit_ts, self.side, self.exit_cause,
                                          self.regime_at_entry, self.entry_forecast,
-                                         self.entry_idx, self.exit_idx, self.net_return)):
+                                         self.entry_idx, self.exit_idx, self.net_return,
+                                         self.gross_return, self.cost)):
             raise ValueError(f"{self.bars.label}: trade column lengths differ")
 
     @property
@@ -1110,7 +1263,17 @@ def build_trade_window(bars: Window, trades: list, post_alloc: np.ndarray,
     one carries gross_return_before_costs and cost_paid_all (CUL-414, flag
     --cost-bar-all-costs): then the net return is the all-costs basis, else
     trades.json's net_profit_loss_percent (after the commission; slippage is
-    already inside the fill prices)."""
+    already inside the fill prices).
+
+    PR-C, gross and cost on the SAME basis, so net = gross - cost per lot:
+      all_costs                 gross = gross_return_before_costs / 100 (at the
+                                bar closes), cost = cost_paid_all / 10000 (fees +
+                                slippage of both legs, bps)
+      net_of_fees_and_slippage  gross = profit_loss_percent / 100 (at the fill
+                                prices, before commission), cost =
+                                (profit_loss_percent - net_profit_loss_percent)
+                                / 100 (the commission of both legs as the engine
+                                charged it); NaN where either is missing"""
     n = len(trades)
     ent = _parse_ts([t["entry_time"] for t in trades]) if n else np.zeros(0, dtype=np.int64)
     ext = _parse_ts([t["exit_time"] for t in trades]) if n else np.zeros(0, dtype=np.int64)
@@ -1128,6 +1291,8 @@ def build_trade_window(bars: Window, trades: list, post_alloc: np.ndarray,
     regime = np.empty(n, dtype=object)
     ef = np.full(n, np.nan)
     ret = np.full(n, np.nan)
+    gross = np.full(n, np.nan)
+    cost = np.full(n, np.nan)
     last_ts = int(bars.ts[-1])
     for i, t in enumerate(trades):
         sd = str(t.get("side", "")).upper()
@@ -1145,6 +1310,9 @@ def build_trade_window(bars: Window, trades: list, post_alloc: np.ndarray,
                                  found and int(ext[i]) == last_ts)
         v = t.get("net_profit_loss_percent")
         ret[i] = _float(v) / 100.0 if v is not None else np.nan
+        g = t.get("profit_loss_percent")
+        gross[i] = _float(g) / 100.0 if g is not None else np.nan
+        cost[i] = gross[i] - ret[i]          # NaN when either is missing
     basis = "net_of_fees_and_slippage"
     if (costs is not None and n and len(costs) == n
             and all(c.get("trade_id") == t.get("trade_id") for c, t in zip(costs, trades))
@@ -1153,10 +1321,13 @@ def build_trade_window(bars: Window, trades: list, post_alloc: np.ndarray,
         # gross at the bar closes (%) minus fees + slippage of both legs (bps / 100 = %)
         ret = np.array([(float(c["gross_return_before_costs"]) - float(c["cost_paid_all"]) / 100.0)
                         / 100.0 for c in costs])
+        gross = np.array([float(c["gross_return_before_costs"]) / 100.0 for c in costs])
+        cost = np.array([float(c["cost_paid_all"]) / 10000.0 for c in costs])
         basis = "all_costs"
     return TradeWindow(bars=bars, entry_ts=ent, exit_ts=ext, side=side, exit_cause=cause,
                        regime_at_entry=regime, entry_forecast=ef, entry_idx=ent_i,
-                       exit_idx=ext_i, net_return=ret, basis=basis)
+                       exit_idx=ext_i, net_return=ret, basis=basis, gross_return=gross,
+                       cost=cost)
 
 
 def _read_column(path: Path, name: str, n_rows: int) -> np.ndarray:
@@ -1263,9 +1434,13 @@ def trade_outcome(tw: TradeWindow, kind: str, h: int) -> np.ndarray:
     post_exit_return: signed by side (positive = the market kept moving the
     trade's way), from the exit bar's close to the close of the bar stamped
     exactly ts_exit + h*step in this window; NaN when that bar does not exist
-    (the window's end) or the exit bar is not a row."""
+    (the window's end) or the exit bar is not a row.
+    PR-C, on the window's basis and ignoring h: trade_gross_return is the
+    lot's return before that basis' costs."""
     if kind == "trade_net_return":
         return tw.net_return.copy()
+    if kind == "trade_gross_return":
+        return np.asarray(tw.gross_return, dtype=float).copy()
     y = np.full(tw.n, np.nan)
     j_all = tw.bars.index_at(h)
     for i in range(tw.n):
@@ -1343,10 +1518,10 @@ def _check_trade_head(spec: TestSpec) -> list[str]:
                  f"post_exit_return), not the bare name {o!r}")
     elif not isinstance(o, dict) or o.get("kind") not in TRADE_OUTCOMES:
         e.append(f"outcome: a trade test needs one of {list(TRADE_OUTCOMES)}, got {o!r}")
-    elif o["kind"] == "trade_net_return":
+    elif o["kind"] in TRADE_OWN_OUTCOMES:
         if set(o) != {"kind"}:
-            e.append("outcome: trade_net_return is the lot's own result: no horizons "
-                     "(write {kind: trade_net_return})")
+            e.append(f"outcome: {o['kind']} is the lot's own result: no horizons "
+                     f"(write {{kind: {o['kind']}}})")
     else:
         hs = o.get("horizons")
         if set(o) - {"kind", "horizons"}:
@@ -1363,8 +1538,9 @@ def _check_trade_head(spec: TestSpec) -> list[str]:
 
 
 def _trade_horizons(spec: TestSpec) -> list:
-    """The outcome's horizons; [0] (the trade's own life) for trade_net_return."""
-    if spec.outcome["kind"] == "trade_net_return":
+    """The outcome's horizons; [0] (the trade's own life) for the lot's own
+    results (TRADE_OWN_OUTCOMES)."""
+    if spec.outcome["kind"] in TRADE_OWN_OUTCOMES:
         return [0]
     return sorted(spec.outcome["horizons"])
 
@@ -1428,14 +1604,17 @@ def trade_effect_sizes(windows: list, spec: TestSpec, eras: list | None = None):
     post_exit_return the selected lots closing on one bar on one side are one
     event (_one_event_per_exit) and n_blocks counts blocks of max(h, 1) EXIT
     bars (gap-aware, as for bars). trade_net_return records each window's
-    return basis and refuses windows with different ones (MixedReturnBasis)."""
+    return basis and refuses windows with different ones (MixedReturnBasis).
+    PR-C: trade_gross_return (the lot's own result too, TRADE_OWN_OUTCOMES)
+    follows trade_net_return's rules exactly: horizon 0,
+    stretches as blocks, the basis recorded, mixed bases refused."""
     horizons = _trade_horizons(spec)
-    is_net = spec.outcome["kind"] == "trade_net_return"
+    is_net = spec.outcome["kind"] in TRADE_OWN_OUTCOMES
     bases = sorted({tw.basis for tw in windows if tw.n})
     if is_net and len(bases) > 1:
         by_window = {tw.label: tw.basis for tw in windows if tw.n}
         raise MixedReturnBasis(
-            f"trade_net_return over windows with different return bases {bases}: "
+            f"{spec.outcome['kind']} over windows with different return bases {bases}: "
             f"{by_window}; pooling them would mix returns with and without the slippage")
     stat = STATISTICS[spec.statistic]
     opposite = "less" if spec.direction == "greater" else "greater"

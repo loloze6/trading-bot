@@ -595,7 +595,7 @@ def test_the_skill_states_the_vehicle_rule_and_the_observation_shape():
             "condition is claimed through past_return, trailing_vol or any selector in the "
             "vocabulary.") in text
     assert ("run the selector by window, then describe `past_return_<n>` or `trailing_vol_<n>` "
-            "by window to name the condition; claim it through past_return or trailing_vol.") in text
+            "by window to name the condition; claim it with all_of.") in text
     assert "then condition it on" not in text
     assert "The detector's label is unknown" not in text
     te = " ".join((SKILL_DIR / "trade_efficiency.md").read_text(encoding="utf-8").split())

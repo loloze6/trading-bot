@@ -376,6 +376,14 @@ LOOKAHEAD_SELECTORS = [
     {"kind": "calendar", "weekdays": [5, 6], "hours": [0, 12]},
     {"kind": "quantile", "field": "forecast", "side": "top", "q": 0.2, "lookback": 30},
     {"kind": "quantile", "field": "close", "side": "bottom", "q": 0.1, "lookback": 20},
+    # PR-C: the two new bar-t fields and all_of (the rewritten future leaves the mask unchanged)
+    {"kind": "event", "field": "abs_forecast", "op": ">=", "value": 5},
+    {"kind": "event", "field": "forecast_sign_change", "op": "==", "value": 1},
+    {"kind": "all_of", "selectors": [EVENT, {"kind": "calendar", "weekdays": [5, 6]}]},
+    {"kind": "all_of", "selectors": [
+        {"kind": "event", "field": "forecast_sign_change", "op": "==", "value": 1},
+        {"kind": "regime", "values": ["trend"]},
+        {"kind": "quantile", "field": "close", "side": "bottom", "q": 0.1, "lookback": 20}]},
 ]
 
 
@@ -539,7 +547,8 @@ def test_check_spec_rejects_bad_slots():
 
 
 def test_registries_and_exercised_markers():
-    assert len(ct.SELECTORS) + len(ct.OUTCOMES) + len(ct.BASELINES) + len(ct.STATISTICS) == 17
+    # 17 v1 blocks + all_of (PR-C)
+    assert len(ct.SELECTORS) + len(ct.OUTCOMES) + len(ct.BASELINES) + len(ct.STATISTICS) == 18
     every = ({f"selector:{k}" for k in ct.SELECTORS} | {f"outcome:{k}" for k in ct.OUTCOMES}
              | {f"baseline:{k}" for k in ct.BASELINES} | {f"statistic:{k}" for k in ct.STATISTICS})
     assert ct.EXERCISED_ON_REAL_RUNS <= every

@@ -24,6 +24,7 @@ share an entry bar. Trades never cross windows. The test is measured on the vari
 |---|---|---|
 | selector `trade` | `where`: 1 to 4 clauses `{field, op, value}`, all of which must hold | the trades matching every clause |
 | outcome `trade_net_return` | none (no `horizons`) | the lot's net return, a fraction (0.01 = 1%), after fees and slippage of both legs |
+| outcome `trade_gross_return` | none (no `horizons`) | the lot's return before costs, a fraction, on the window's basis (below): the same per-lot number as `trade_net_return` plus the lot's costs, and the number `trade_slice` reports |
 | outcome `post_exit_return` | `horizons`: distinct ints >= 1, in bars | the market's move from the exit bar's close to the close h bars later, signed by the trade's side (positive = the market kept moving the trade's way) |
 | baseline `other_trades` | none | every other trade of the same window (a trade with a missing field is in neither group) |
 | statistic `mean_diff` | none | mean outcome of the selected trades minus the baseline's mean |
@@ -47,6 +48,10 @@ What the counts mean, so a floor is not met by one market move counted many time
   `net_of_fees_and_slippage` when the window has no complete cost record) as
   `per_window[...].basis` and `bases`. Windows with different bases are **not pooled**: the test
   is `not_measured` (reason `mixed_return_basis`).
+- `trade_gross_return` is the lot's own result like `trade_net_return`: no horizons (horizon 0, the lot's life), `min_events` counts selected lots, a block is one stretch of overlapping trades, each window's basis is recorded as `per_window[...].basis` and `bases`, and windows with different bases are not pooled (`not_measured`, reason `mixed_return_basis`). On the two bases (net = gross - cost on both):
+  - `all_costs`: gross = the cost record's `gross_return_before_costs` / 100 (at the bar closes); cost = `cost_paid_all` / 10000 (fees and slippage of both legs).
+  - `net_of_fees_and_slippage`: gross = `profit_loss_percent` / 100 (at the fill prices, before commission); cost = (`profit_loss_percent` - `net_profit_loss_percent`) / 100 (the commission of both legs, as the engine charged it).
+  - A missing number makes that lot's value empty (it is in neither group). Both results are known only at the exit: they are outcomes, never selector fields.
 - A trade test has an effect size and **no p-value, so no verdict**: the claim card marks it
   `verdict_possible: false`.
 
@@ -68,7 +73,7 @@ efficiency (they use the entry bar's own high and low or later bars: audit findi
 
 **The two exit-time fields describe what the strategy did; they are known only at the exit.**
 A claim may select on them (the analyst may not pair them with the lot's own
-`trade_net_return`: D-095). A strategy change built from a confirmed claim may act only on the
+results, `trade_net_return` or `trade_gross_return`: D-095). A strategy change built from a confirmed claim may act only on the
 five entry-time fields.
 
 ## `exit_cause`: the interim classifier (E-074 PHASE_A 4.2)
@@ -94,9 +99,20 @@ E-029 will replace this function with the recorded decision.
 ## Example
 
 ```yaml
-- name: reductions_return_less
+- name: reductions_then_market_keeps_moving
   selector:  {kind: trade, where: [{field: exit_cause, op: "==", value: reduction}]}
-  outcome:   {kind: trade_net_return}
+  outcome:   {kind: post_exit_return, horizons: [1, 6, 24]}
+  baseline:  {kind: other_trades}
+  statistic: mean_diff
+  direction: greater
+  floor:     {min_events: 100, min_windows: 4}
+```
+
+```yaml
+- name: mid_forecast_entries_gross_less
+  selector:  {kind: trade, where: [{field: entry_forecast, op: ">", value: -10},
+                                   {field: entry_forecast, op: "<", value: 10}]}
+  outcome:   {kind: trade_gross_return}
   baseline:  {kind: other_trades}
   statistic: mean_diff
   direction: less
