@@ -1,21 +1,27 @@
 """D-157 (operator ruling 2026-10-20): D-095 extends beyond the analyst.
 
 A claim test that selects lots by an exit-time field (holding_bars, exit_cause) and measures the
-lot's own result (trade_net_return, trade_gross_return) is refused by
-analyst_session.exit_selector_own_outcome_errors. D-095 called it only from the analyst's
-check_answer; it is now also called from reader_findings._check (the reader side findings, trade
-family on) and from run_phase1_research._check_1a_claim (step 1a, analyst flag on). It is NOT
-called from claim_card.check_claim, so fold_confirm's re-check of recorded claims is unchanged.
+lot's own result (trade_net_return, trade_gross_return) is found by
+analyst_session.exit_selector_own_outcome_hits (the one source of the facts and the core
+sentence). D-095 refused it only at the analyst's check_answer
+(exit_selector_own_outcome_errors); it is now also refused by reader_findings._check (the reader
+side findings and decide-next, trade family on; d095_refusals) and by
+run_phase1_research._check_1a_claim (step 1a and, D-157 (a), the keep of a pre-filled claim,
+analyst flag on). It is NOT called from claim_card.check_claim, so fold_confirm's re-check of
+recorded claims is unchanged. Each seam has its own text (operator ruling D-157): the analyst's
+unchanged; step 1a's core + "Select on an entry-time field (...) or measure post_exit_return";
+the side-finding check's one short line "D-095: <what>".
 
 Pins:
   1. the refused shape, both outcomes, inside a full claim, through both new call sites;
-  2. the reader side finding: errors are the analyst's strings, no spec hash, trade family off
-     gives no D-095 text;
-  3. step 1a: the same strings, tests dropped; flag off equals plain check_claim;
+  2. the reader side finding: the short line, no spec hash, trade family off gives no D-095 text;
+  3. step 1a: core + step 1a's tail, tests dropped; flag off equals plain check_claim;
   4. what must still pass: entry-time selectors, post_exit_return;
   5. the three recorded confirmations, re-checked, are unchanged (spec hashes equal
      campaign_record/confirmations.yaml); fold_confirm.py references none of the new call sites;
-  6. the analyst's refusal message appears once in a refused attempt (run_analyst_worker).
+  6. the analyst's refusal message appears once in a refused attempt (run_analyst_worker);
+  7. the three texts, as literals;
+  8. D-157 (a): a pre-filled claim of the refused shape is not kept (the retry's card stays).
 No market data is read; no API key (the SDK query is stubbed as in test_e075_pr5_analyst).
 """
 from __future__ import annotations
@@ -114,6 +120,22 @@ def _msg(where, outcome, named, name="t"):
             f"it as best_rejected")
 
 
+def _1a(named, outcome, name="t"):
+    """Step 1a's message (operator ruling D-157): the core, then step 1a's own tail."""
+    return (f"claim test {name!r} selects lots by an exit-time field ({named}) and measures "
+            f"their own {outcome}: it cannot tell 'the exit comes too late' from 'a losing lot "
+            f"stays open longer' (a lot closes only when the allocation changes, so long-held "
+            f"lots are the ones the price kept going against). Select on an entry-time field "
+            f"(side, entry_hour, entry_weekday, regime_at_entry, entry_forecast) or measure "
+            f"post_exit_return")
+
+
+def _short(named, outcome, name="t"):
+    """The side-finding check's one short line (decide-next's INFEASIBLE reason)."""
+    return (f"D-095: claim test {name!r} selects lots by an exit-time field ({named}) and "
+            f"measures their own {outcome}")
+
+
 # ---------------------------------------------------------------------------
 # 1. the shape, as the claim card sees it: check_claim alone still accepts it
 # ---------------------------------------------------------------------------
@@ -133,14 +155,12 @@ def test_check_claim_alone_still_accepts_the_shape_and_the_analyst_string_is_the
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("where, outcome, named", REFUSED)
-def test_a_reader_side_finding_of_that_shape_is_refused_with_the_analysts_message(
+def test_a_reader_side_finding_of_that_shape_is_refused_with_the_short_line(
         where, outcome, named):
     claim = _claim(_test(where, outcome))
-    own = asm.exit_selector_own_outcome_errors(claim)
-    assert len(own) == 1
     out = rfi.side_finding_review({"claim": claim}, prior={}, own=set(), run_id="r",
                                   folds=True, trade_tests=True)
-    assert out["errors"] == own                       # exactly the analyst's strings
+    assert out["errors"] == [_short(named, outcome)] == rfi.d095_refusals(claim)
     assert out["spec_hashes"] == []                   # the tests are dropped as for any refusal
     assert out["warnings"] == []
 
@@ -162,7 +182,7 @@ def test_the_reader_check_keeps_check_claims_errors_first_then_the_d095_ones():
     plain = cc.check_claim(claim, folds=True, trade_tests=True)
     assert plain.errors                                       # the second test is refused
     res = rfi._check(claim, True, True)
-    own = asm.exit_selector_own_outcome_errors(claim)
+    own = rfi.d095_refusals(claim)
     assert len(own) == 1 and "'bad_shape'" in own[0]
     assert res.errors == plain.errors + own and res.tests == []
 
@@ -191,13 +211,13 @@ def test_one_refused_test_refuses_the_whole_reader_claim():
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("where, outcome, named", REFUSED)
-def test_a_step_1a_claim_of_that_shape_is_refused_with_the_analysts_message(
+def test_a_step_1a_claim_of_that_shape_is_refused_with_step_1as_message(
         monkeypatch, where, outcome, named):
     _on(monkeypatch)
     claim = _claim(_test(where, outcome))
     res = rpr._check_1a_claim(cc, claim, [])
-    assert res.errors == asm.exit_selector_own_outcome_errors(claim)
-    assert len(res.errors) == 1 and res.tests == []
+    assert res.errors == [_1a(named, outcome)]
+    assert res.tests == []
 
 
 @pytest.mark.parametrize("where, outcome, named", REFUSED[:3])
@@ -300,12 +320,12 @@ def test_fold_confirm_reaches_none_of_the_new_call_sites():
     """Static: an accepted claim must not become 'claim refused' at fold time, so fold_confirm
     must not reference the checkers that carry D-095."""
     text = (SR_ROOT / "tools" / "fold_confirm.py").read_text(encoding="utf-8")
-    for name in ("reader_findings", "analyst_session", "_check_1a_claim",
-                 "exit_selector_own_outcome_errors"):
+    for name in ("reader_findings", "analyst_session", "_check_1a_claim", "d095_refusals",
+                 "exit_selector_own_outcome"):
         assert name not in text, name
     # and claim_card.check_claim itself does not call it
     card = (SR_ROOT / "tools" / "claim_card.py").read_text(encoding="utf-8")
-    assert "exit_selector_own_outcome_errors" not in card and "analyst_session" not in card
+    assert "exit_selector_own_outcome" not in card and "analyst_session" not in card
 
 
 # ---------------------------------------------------------------------------
@@ -334,10 +354,11 @@ async def _exit_selector_claim(call):
 
 def test_a_d095_refused_analyst_answer_lists_the_message_once(run, monkeypatch):
     """The analyst's claim is also its one side finding, so the content check's side finding
-    review now repeats check_answer's D-095 string ('side_findings[0]: <string>'). The filter in
-    run_analyst_worker drops that repeat; the analyst's text appears once, unprefixed, as
-    before. Full run_analyst_worker call on the stubbed session of test_e075_pr5_analyst; the
-    content check's own return is captured to show the repeat exists before the filter."""
+    review repeats check_answer's D-095 refusal, in its short line ('side_findings[0]: D-095:
+    ...'). The filter in run_analyst_worker drops that repeat; the analyst's text appears once,
+    unprefixed, as before. Full run_analyst_worker call on the stubbed session of
+    test_e075_pr5_analyst; the content check's own return is captured to show the repeat exists
+    before the filter."""
     content = []
     real = rpr._reading_content_errors
 
@@ -356,7 +377,99 @@ def test_a_d095_refused_analyst_answer_lists_the_message_once(run, monkeypatch):
     assert msgs[0].startswith("claim test ") and "holding_bars" in msgs[0]
     assert not any(e.startswith("side_findings[") and D095_NEEDLE in e for e in first["errors"])
     # the repeat existed before the filter (so the filter, not luck, produced the single copy)
-    assert content and f"side_findings[0]: {msgs[0]}" in content[0]
+    claim = yaml.safe_load(first["answer"].split("```yaml\n")[1].split("```")[0])["claim"]
+    assert content and [f"side_findings[0]: {s}" for s in rfi.d095_refusals(claim)] == \
+        [e for e in content[0] if D095_NEEDLE in e]
     # the analyst's string is unchanged: it is exactly what the module function gives
-    assert msgs[0] in asm.exit_selector_own_outcome_errors(
-        yaml.safe_load(first["answer"].split("```yaml\n")[1].split("```")[0])["claim"])
+    assert msgs == asm.exit_selector_own_outcome_errors(claim)
+    assert msgs[0] == _msg(None, claim["tests"][0]["outcome"]["kind"], "holding_bars",
+                           name=claim["tests"][0].get("name", 0))
+
+
+# ---------------------------------------------------------------------------
+# 7. the three texts (operator ruling D-157), as literals
+# ---------------------------------------------------------------------------
+
+CORE = ("claim test 'x' selects lots by an exit-time field (exit_cause, holding_bars) and "
+        "measures their own trade_gross_return: it cannot tell 'the exit comes too late' from "
+        "'a losing lot stays open longer' (a lot closes only when the allocation changes, so "
+        "long-held lots are the ones the price kept going against).")
+
+
+def test_the_three_texts(monkeypatch):
+    claim = _claim(_test(_where(("holding_bars", ">=", 3), ("exit_cause", "==", "flip")),
+                         "trade_gross_return", name="x"))
+    hits = asm.exit_selector_own_outcome_hits(claim)
+    assert [h["core"] for h in hits] == [CORE]
+    # the analyst: byte-identical to the message before D-157 (pinned again in
+    # test_e075_pr5_analyst)
+    assert asm.exit_selector_own_outcome_errors(claim) == [
+        CORE + " Select on an entry-time field (side, entry_hour, entry_weekday, regime_at_entry, "
+        "entry_forecast), or measure post_exit_return. 'The exit comes too late' has no claim "
+        "test yet (it needs the return from bar N to the exit): explore it with event_study "
+        "(trade_filter on exit_cause) and, if it is your best idea, end with no_claim and give "
+        "it as best_rejected"]
+    # step 1a
+    _on(monkeypatch)
+    assert rpr._check_1a_claim(cc, claim).errors == [
+        CORE + " Select on an entry-time field (side, entry_hour, entry_weekday, regime_at_entry, "
+        "entry_forecast) or measure post_exit_return"]
+    # the side-finding check, and decide-next's INFEASIBLE reason built from it
+    assert rfi.d095_refusals(claim) == [
+        "D-095: claim test 'x' selects lots by an exit-time field (exit_cause, holding_bars) and "
+        "measures their own trade_gross_return"]
+    assert rfi.side_finding_review({"claim": claim}, prior={}, own=set(), run_id="r",
+                                   folds=True, trade_tests=True)["errors"] == \
+        rfi.d095_refusals(claim)
+
+
+# ---------------------------------------------------------------------------
+# 8. D-157 (a): the keep of a pre-filled claim applies decide-next's test, D-095 included
+# ---------------------------------------------------------------------------
+
+def test_a_prefilled_claim_of_the_refused_shape_is_not_kept(monkeypatch):
+    """Analyst on: the brief's pre-filled claim is D-095's shape (check_claim alone accepts
+    it). _keep_prefilled_claim refuses it as decide-next would, so it never overwrites 1a's card,
+    nor the card of the claim retry that step 1a's own D-095 refusal triggers: the retry's
+    claim is the run's claim."""
+    import test_d139_prefilled_claim_kept as d139
+    monkeypatch.setattr(rpr, "_resolve_tbot_python", lambda: Path("stub-python"))
+    d139._set_orchestrator(d139.ON)
+    _on(monkeypatch)
+    bad = _claim(_test(_where(("holding_bars", ">", 5)), floor={"min_events": 100,
+                                                               "min_windows": 4}))
+    assert cc.check_claim(bad, **rpr._claim_check_kw()).errors == []    # only D-095 refuses it
+    good = _claim(_test(_where(("entry_forecast", ">=", 10)), name="g",
+                        floor={"min_events": 100, "min_windows": 4}))
+    run_dir = d139._run("run_957", bad, bad)                 # 1a copied it unchanged
+    before = d139._card_bytes(run_dir)
+    assert rpr._keep_prefilled_claim(run_dir, "run_957") is rpr._NOT_KEPT
+    assert d139._card_bytes(run_dir) == before
+    seen = []
+
+    def _invoke(stage, run_id, rdir, expected, state):
+        st = rpr.load_yaml(rdir / "pipeline_state.yaml")[rpr.CLAIM_RETRY_STATE_KEY]
+        seen.append(st["last_error"])
+        card = dict(d139.CARD, claim=good)          # 1a's outputs were set aside: a new card
+        rpr.save_yaml(rdir / "artifacts" / "hypothesis_card.yaml", card)
+
+    monkeypatch.setattr(rpr, "_invoke_agent_with_yaml_retry", _invoke)
+    monkeypatch.setattr(rpr, "_claim_power_check", lambda *a, **k: [])
+    rpr._check_claim_after_1a("run_957", run_dir, [], {})
+    assert len(seen) == 1 and f"hypothesis_card.yaml: {_1a('holding_bars', 'trade_net_return')}" \
+        in seen[0]
+    assert d139._card_claim(run_dir) == good                 # the retry's own claim stays
+    assert d139._prefill_record(run_dir)["status"] == "changed"
+
+
+def test_a_prefilled_claim_of_an_accepted_trade_shape_is_still_kept(monkeypatch):
+    import test_d139_prefilled_claim_kept as d139
+    monkeypatch.setattr(rpr, "_resolve_tbot_python", lambda: Path("stub-python"))
+    d139._set_orchestrator(d139.ON)
+    _on(monkeypatch)
+    pre = _claim(_test(_where(("exit_cause", "==", "flip")), outcome="post_exit_return",
+                       statistic="hit_rate", direction="greater",
+                       floor={"min_events": 100, "min_windows": 4}))
+    run_dir = d139._run("run_958", None, pre)
+    assert rpr._keep_prefilled_claim(run_dir, "run_958") is None   # 1a wrote no claim
+    assert d139._card_claim(run_dir) == pre

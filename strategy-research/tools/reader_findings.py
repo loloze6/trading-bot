@@ -364,20 +364,29 @@ def own_spec_hashes(card) -> set:
     return {t["spec_hash"] for t in cf._tests_of(claim) if t.get("spec_hash")}
 
 
+def d095_refusals(claim) -> list[str]:
+    """D-095 at the side-finding check (operator ruling D-157, 2026-10-20: "one short line"):
+    one line per hit of analyst_session.exit_selector_own_outcome_hits -- "D-095: " and the
+    hit's `what`. It is what decide-next's INFEASIBLE reason carries (next_test_refused: ...)
+    and what the reading content check lists; the analyst's longer message is its own
+    seam's (exit_selector_own_outcome_errors)."""
+    import analyst_session as asm  # tools/ sibling, light
+    return [f"D-095: {h['what']}" for h in asm.exit_selector_own_outcome_hits(claim)]
+
+
 def _check(claim, folds: bool, trade_tests: bool):
     """check_claim with the folds kinds (D-089) and the trade-level test family (D-091),
     each passed only when on, so a call with both off is exactly the original one.
     D-095, extended beyond the analyst (operator, 2026-10-20): with the trade family on, a
     test selecting lots by an exit-time field and measuring their own outcome is refused here
-    too, with the analyst's own message (analyst_session.exit_selector_own_outcome_errors),
-    and the claim's tests are dropped as for any refused claim. Not in check_claim: fold
-    confirmation re-checks recorded claims through check_claim alone."""
+    too, one short line per test (d095_refusals), and the claim's tests are dropped as for any
+    refused claim. Not in check_claim: fold confirmation re-checks recorded claims through
+    check_claim alone."""
     import claim_card as cc
     kw = {**({"folds": True} if folds else {}), **({"trade_tests": True} if trade_tests else {})}
     res = cc.check_claim(claim, **kw)
     if trade_tests:
-        import analyst_session as asm  # tools/ sibling, light; imported only with the family on
-        d095 = asm.exit_selector_own_outcome_errors(claim)
+        d095 = d095_refusals(claim)     # imports analyst_session only with the family on
         if d095:
             res.errors += d095
             res.tests = []

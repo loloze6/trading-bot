@@ -5375,10 +5375,16 @@ def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -
                 errors = errors + [str(exc)]
             else:
                 if rec.get("outcome") == "no_claim" or rec.get("claim_card_ok"):
-                    # D-095 extended (2026-10-20): the content check's side finding review now
-                    # repeats check_answer's own D-095 refusal; it is listed once, unchanged
-                    said = {f"side_findings[{i}]: {e}" for e in errors
-                            for i in range(len(reading.get("side_findings") or []))}
+                    # D-095 extended (2026-10-20): the content check's side finding review
+                    # repeats check_answer's own D-095 refusal, in its short line (D-157); a
+                    # short line is dropped only where check_answer already gave the analyst's
+                    # message for the same test, so the analyst hears it once, unchanged
+                    said = {f"side_findings[{i}]: {short}"
+                            for i, s in enumerate(reading.get("side_findings") or [])
+                            for short, full in zip(
+                                _reader_findings_module().d095_refusals((s or {}).get("claim")),
+                                asm.exit_selector_own_outcome_errors((s or {}).get("claim")))
+                            if full in errors}
                     errors = errors + [e for e in _reading_content_errors(reading, category, run_dir)
                                        if e not in said]
         record.update(rec)
@@ -18088,18 +18094,21 @@ _NOT_KEPT = object()  # D-139: code did not write the pre-filled claim into the 
 def _keep_prefilled_claim(run_dir: Path, run_id: str):
     """D-139, right after 1a writes its card (_check_claim_after_1a, before the
     claim check): when the brief carries a pre-filled claim and it validates --
-    decide-next's own test (claim_card.check_claim with the pipeline's keywords,
-    no errors and not `tests: none`) -- code writes it into hypothesis_card.yaml's
+    decide-next's own test (_check_1a_claim: claim_card.check_claim with the
+    pipeline's keywords, plus D-095 under orchestrator.analyst.enabled -- D-157
+    (a), the side-finding check decide-next applies, reader_findings._check; no
+    errors and not `tests: none`) -- code writes it into hypothesis_card.yaml's
     `claim` unchanged, the whole claim: a pre-registered claim is not re-authored
     by a model (precedent D-110, exact-config 1b). Returns the claim 1a wrote
     (None if it wrote none), for _check_prefilled_claim's record of 1a's
     difference. No pre-filled claim, an invalid one or no card: _NOT_KEPT, and
-    nothing is read beyond that or written (today's behaviour)."""
+    nothing is read beyond that or written (today's behaviour); a pre-filled claim
+    D-095 refuses is not kept, so 1a's card -- and its claim retry's -- stays 1a's own."""
     import copy
     pre = _prefilled_claim(run_dir)
     if pre is None:
         return _NOT_KEPT
-    res = _claim_card_module().check_claim(pre, **_claim_check_kw())
+    res = _check_1a_claim(_claim_card_module(), pre)
     if res.errors or res.tests_none:
         return _NOT_KEPT
     path = Path(run_dir) / "artifacts" / "hypothesis_card.yaml"
@@ -18244,17 +18253,23 @@ def _claim_check_folds() -> dict:
     return {"folds": True} if _folds_enabled() else {}
 
 
-def _check_1a_claim(cc, claim, criteria_ids):
-    """The step 1a claim check of one card (_claim_check_cards): check_claim with the
+def _check_1a_claim(cc, claim, criteria_ids=()):
+    """The step 1a claim check of one claim (_claim_check_cards; D-157 (a): also
+    _keep_prefilled_claim's test of the brief's pre-filled claim): check_claim with the
     pipeline's keywords, plus, with the trade family on (orchestrator.analyst.enabled), D-095
     extended beyond the analyst (operator, 2026-10-20): a test selecting lots by an exit-time
-    field and measuring their own outcome is refused with the analyst's own message
-    (analyst_session.exit_selector_own_outcome_errors) and the claim's tests dropped, as for
-    any refused claim. Family off: exactly check_claim. Not in check_claim: fold confirmation
-    re-checks recorded claims through check_claim alone."""
+    field and measuring their own outcome is refused and the claim's tests dropped, as for
+    any refused claim. Its message (operator ruling D-157): the shared core
+    (analyst_session.exit_selector_own_outcome_hits) plus step 1a's own tail. Family off:
+    exactly check_claim. Not in check_claim: fold confirmation re-checks recorded claims
+    through check_claim alone."""
     res = cc.check_claim(claim, criteria_ids, **_claim_check_kw())
     if _analyst_enabled():                 # the flag under which _claim_check_kw passes trade_tests
-        d095 = _analyst_session_module().exit_selector_own_outcome_errors(claim)
+        asm = _analyst_session_module()    # puts tools/ on sys.path
+        import claim_tests as _ct
+        entry = ", ".join(_ct.TRADE_ENTRY_FIELDS)
+        d095 = [f"{h['core']} Select on an entry-time field ({entry}) or measure post_exit_return"
+                for h in asm.exit_selector_own_outcome_hits(claim)]
         if d095:
             res.errors += d095
             res.tests = []
