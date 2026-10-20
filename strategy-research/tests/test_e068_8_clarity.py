@@ -70,7 +70,8 @@ ALLOWED = ("pass_if", "fail_if", "pass_through", "pass-through", "`significance`
            "graded variant",
            # D-156: the overlap paragraph of CLAIM_TESTS.md, the operator's wording; it
            # describes a chance-rate property of a test, not a verdict on the claim
-           "A test can pass by chance", "they are graded", "a confirmation against it",
+           "A test can pass by chance", "share the moves they are graded",
+           "a confirmation against it is stronger evidence",
            "treat its confirmation with more doubt")
 
 
