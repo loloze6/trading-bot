@@ -35,18 +35,24 @@ and the analyst retries in the existing loop:
      block manifest is refused; every `scaffolding` pointer of the manifest must hold the same
      value in the config as in the base config (scaffolding_errors); and the source manifest,
      relabelled where a regime gate moved the trading regime (derived_manifest), must fit the
-     config by block_manifest.check_manifest, the function D-110's exact-config 1b runs.
+     config by block_manifest.check_manifest, the function D-110's exact-config 1b runs -- and,
+     with combines_as regime_gate, once the config fits, its ungated twin too (the run's design
+     variant, which D-110's route runs with the same manifest).
+  Before step 1, a config that refers to itself (a YAML alias cycle) is refused (cycle_error;
+  D-161 lead decision): V2-2 writes the config into the brief as JSON.
 
 How the scaffolding rule tells the V1d gate form from a scaffolding rewrite (operator ruling
 2026-10-20): the gate form is defined positively, as three allowances that are REVERTED in a
 copy of the config before it is compared with the base config, and only with
 `combines_as: regime_gate`: (a) regime_detector.rules, .vetoes and .default_regime take the
-base config's values; (b) a detector component the source does not have (its `id` absent from
-the source's components) is removed when a rule condition or a veto of the vehicle reads that
-id (reading B); (c) when the source and the vehicle each have exactly one trading regime and
+base config's values; (b) detector components the source does not have (their `id`s absent from
+the source's components) are removed when they all come AFTER the source's components (the
+vehicle's first entries are the source's, ids in order) and a rule condition or a veto of the
+vehicle reads each of them (reading B); (c) when the source and the vehicle each have exactly one trading regime and
 they differ, the two regime names are swapped back (the relabel). Whatever still differs under
 a scaffolding pointer is the scaffolding rewrite: a mode change, a source detector component
-changed, removed or reordered (a swap), an added component nothing reads, or any other key
+changed, removed or reordered (a swap), an added component nothing reads or placed before or
+between the source's components, or any other key
 (min_score, ...) -- refused, with its label. Every other combines_as gets no allowance.
 
 Pure apart from reading the trading-bot sources (the registry and validate_config loaded by
@@ -178,6 +184,22 @@ def ungated_twin(config: dict) -> dict:
     return twin
 
 
+def cycle_error(config, where: str):
+    """D-161 lead decision: the refusal for a config that refers to itself (a YAML alias
+    cycle, which yaml.safe_load builds), else None. The config is round-tripped through
+    json.dumps(..., default=str), as V2-2's brief writes it; only the cycle (ValueError) is
+    a refusal here; anything else json.dumps raises on is left to the later steps, as
+    before (this adds no crash). Pure."""
+    try:
+        json.dumps(config, default=str)
+    except ValueError:      # "Circular reference detected"
+        return (f"{where}: the config refers to itself (a YAML alias cycle); write it out "
+                f"in full")
+    except (TypeError, RecursionError):
+        return None
+    return None
+
+
 def _content_errors(config, where: str, vc, fr, on_off, req_ops: set, req_classes: set,
                     run_validate: bool) -> list:
     """Steps 2-3 for one config (the vehicle's, or its ungated twin), every line prefixed
@@ -207,6 +229,11 @@ def config_vehicle_errors(vehicle: dict, where: str, *, trading_bot_root: Path =
     import decide_next as dn  # tools/ siblings
     import forecast_rules as fr
     config = vehicle["config"]
+    cycle = cycle_error(config, f"{where}.config")
+    if cycle:
+        # D-161 lead decision: refused before any other step (each would walk the cycle);
+        # V2-2 writes the config into the brief as JSON, which a cycle cannot be
+        return [cycle]
     requires = vehicle.get("requires") or []
     vc = _validate_config_module(trading_bot_root)
     registry = set(vc.TRANSFORM_OPS_REGISTRY)
@@ -275,8 +302,8 @@ MAX_SCAFFOLDING_DIFFS = 8      # differences listed per vehicle; the rest are co
 MAX_VALUE_CHARS = 80           # a differing value is shown as JSON, cut to this length
 GATE_SUFFIX = ("; a regime gate (D-160) may change only regime_detector.rules, "
                "regime_detector.vetoes and regime_detector.default_regime, and add detector "
-               "components its rules or vetoes read, every source detector component kept as "
-               "it is")
+               "components its rules or vetoes read after the source's detector components, "
+               "every source detector component kept as it is")
 
 
 def _detector(config):
@@ -355,12 +382,33 @@ def _source_view(base, config, combines_as):
         else:
             rd.pop(key, None)
     comps = rd.get("components")
-    if isinstance(comps, list):
-        read, source_ids = read_detector_ids(_detector(config)), _component_ids(brd)
-        rd["components"] = [c for c in comps if not (
-            isinstance(c, dict) and isinstance(c.get("id"), str)
-            and c["id"] in read and c["id"] not in source_ids)]
+    if isinstance(comps, list) and _added_after_source(brd, comps, _detector(config)):
+        rd["components"] = comps[:len(_component_list(brd))]
     return view
+
+
+def _component_list(rd) -> list:
+    comps = rd.get("components") if isinstance(rd, dict) else None
+    return comps if isinstance(comps, list) else []
+
+
+def _id_of(comp):
+    return comp.get("id") if isinstance(comp, dict) else None
+
+
+def _added_after_source(brd, comps: list, vehicle_rd) -> bool:
+    """Allowance (b) (D-161): True when `comps` (the vehicle's detector components) is the
+    source's components, ids in order, followed by at least one entry, each an added
+    component (a string id the source does not have) that a rule or veto of the vehicle
+    reads. An added component anywhere else (before or between the source's) gets no
+    allowance."""
+    src = _component_list(brd)
+    k = len(src)
+    if len(comps) <= k or [_id_of(c) for c in comps[:k]] != [_id_of(c) for c in src]:
+        return False
+    read, source_ids = read_detector_ids(vehicle_rd), _component_ids(brd)
+    return all(isinstance(_id_of(c), str) and _id_of(c) in read and _id_of(c) not in source_ids
+               for c in comps[k:])
 
 
 def _value_at(config, path: str) -> tuple:
@@ -379,13 +427,30 @@ def _shown(found: bool, value) -> tuple:
         text = json.dumps(value, sort_keys=True, default=str)
     except (TypeError, ValueError):    # a model-written mapping with mixed key types
         text = repr(value)
+    return _cut(text)
+
+
+def _cut(text: str) -> tuple:
+    """(text, truncated): cut to MAX_VALUE_CHARS (values and pointers alike)."""
     if len(text) > MAX_VALUE_CHARS:
         return text[:MAX_VALUE_CHARS - 3] + "...", True
     return text, False
 
 
-def _label(path: str, src, view, combines_as) -> str:
-    """What a difference at `path` (source regime names) is, for the refusal."""
+def _added_label(added: set, read: set, combines_as) -> str:
+    """The label of a detector component the source does not have."""
+    if combines_as != REGIME_GATE:
+        return f"added detector component {sorted(added)}"
+    unread = sorted(added - read)
+    if unread:
+        return f"added detector component that no rule or veto reads {unread}"
+    return "added detector component must follow the source's components"
+
+
+def _label(path: str, src, view, combines_as, config=None) -> str:
+    """What a difference at `path` (source regime names) is, for the refusal. `config`: the
+    vehicle config itself, whose rules and vetoes say which added components are read (None:
+    none read)."""
     import json_pointer as jp  # tools/ sibling
     segs = jp.split_json_pointer(path)
     if segs[0] != "regime_detector" or len(segs) == 1:
@@ -397,16 +462,27 @@ def _label(path: str, src, view, combines_as) -> str:
         return f"gate change, which only combines_as {REGIME_GATE} (D-160) may make"
     if key != "components":
         return "structure change"
+    srd, vrd = _detector(src), _detector(view)
+    src_ids, view_ids = _component_ids(srd), _component_ids(vrd)
+    added, read = view_ids - src_ids, read_detector_ids(_detector(config))
     if len(segs) > 2:
+        # one entry differs: the same id there is a change of that component (class, params,
+        # ...); a different id is a removal, an added component, or a swap
+        idx = int(segs[2]) if segs[2].isascii() and segs[2].isdigit() else -1
+        s_list, v_list = _component_list(srd), _component_list(vrd)
+        s_id = _id_of(s_list[idx]) if 0 <= idx < len(s_list) else None
+        v_id = _id_of(v_list[idx]) if 0 <= idx < len(v_list) else None
+        if isinstance(s_id, str) and s_id == v_id:
+            return "detector component change"
+        if src_ids - view_ids:
+            return "detector component removal"
+        if isinstance(v_id, str) and v_id in added:
+            return _added_label(added, read, combines_as)
         return "detector component swap"
-    src_ids, view_ids = _component_ids(_detector(src)), _component_ids(_detector(view))
     if src_ids - view_ids:
         return "detector component removal"
-    added = sorted(view_ids - src_ids)
-    if added and combines_as == REGIME_GATE:
-        return f"added detector component that no rule or veto reads {added}"
     if added:
-        return f"added detector component {added}"
+        return _added_label(added, read, combines_as)
     return "detector component swap"
 
 
@@ -432,7 +508,8 @@ def scaffolding_errors(config, base, manifest, combines_as, where: str) -> list:
     base@p is compared with config@p by nearest_build.config_diff, after the allowances of a
     regime gate are reverted (_source_view; a missing mode read as threshold_rules on both
     sides). One message per differing leaf, at most MAX_SCAFFOLDING_DIFFS (the rest counted);
-    values are shown as JSON, cut to MAX_VALUE_CHARS (and said so). Pure."""
+    values are shown as JSON, and values and pointers cut to MAX_VALUE_CHARS (and said so).
+    Pure."""
     import json_pointer as jp
     import nearest_build as nb
     src, view = _with_mode(base), _source_view(base, config, combines_as)
@@ -453,12 +530,17 @@ def scaffolding_errors(config, base, manifest, combines_as, where: str) -> list:
     for p, path in diffs[:MAX_SCAFFOLDING_DIFFS]:
         before, cut_b = _shown(*_value_at(src, path))
         after, cut_a = _shown(*_value_at(view, path))
-        cut = ", values truncated" if cut_b or cut_a else ""
+        at, cut_at = _cut(_vehicle_pointer(path, relabel))
+        under, cut_under = _cut(p)
+        cut = (", values truncated" if cut_b or cut_a else "") + (
+            ", pointers truncated" if cut_at and cut_under
+            else ", pointer truncated" if cut_at or cut_under else "")
         errors.append(
-            f"{where}.config: {_vehicle_pointer(path, relabel)} differs from the source run's base "
-            f"config ({before} -> {after}{cut}): {_label(path, src, view, combines_as)} under "
-            f"{p}, which the source's block_manifest.yaml lists as scaffolding (not part of the "
-            f"idea); keep the source's scaffolding unchanged"
+            f"{where}.config: {at} differs from the source run's base "
+            f"config ({before} -> {after}{cut}): "
+            f"{_label(path, src, view, combines_as, config)} under "
+            f"{under}, which the source's block_manifest.yaml lists as scaffolding (not part of "
+            f"the idea); keep the source's scaffolding unchanged"
             + (GATE_SUFFIX if combines_as == REGIME_GATE else ""))
     if len(diffs) > MAX_SCAFFOLDING_DIFFS:
         errors.append(f"{where}.config: and {len(diffs) - MAX_SCAFFOLDING_DIFFS} more "
@@ -492,7 +574,8 @@ def source_fit_errors(config, base, manifest, combines_as, where: str) -> list:
     ([] when it fits). `manifest` None (the source has no block_manifest.yaml): refused, the
     exact-config route (D-110) cannot carry it. Else scaffolding_errors, then the derived
     manifest checked against the config by block_manifest.check_manifest (Q3: the function
-    D-110's exact-config 1b runs). `where` as config_vehicle_errors'. Pure."""
+    D-110's exact-config 1b runs), then, for combines_as regime_gate and once the config fits,
+    against its ungated twin. `where` as config_vehicle_errors'. Pure."""
     import block_manifest as bm  # tools/ sibling
     if manifest is None:
         return [f"{where}: the source run has no block manifest (artifacts/block_manifest.yaml), "
@@ -504,10 +587,24 @@ def source_fit_errors(config, base, manifest, combines_as, where: str) -> list:
     named = ("the source run's block_manifest.yaml"
              + (f" with regime {relabel[0]!r} relabelled {relabel[1]!r} (D-161)" if relabel else "")
              + ", checked against this config as the next run's base config")
-    try:
-        bm.check_manifest(derived_manifest(manifest, base, config, combines_as), config,
-                          where=named, error_cls=ValueError)
-    except ValueError as exc:
-        errors.append(f"{where}.config: {exc}; keep every block and scaffolding path the "
-                      f"source's manifest lists (D-110 runs this config with that manifest)")
+    derived = derived_manifest(manifest, base, config, combines_as)
+    checked = [(named, config)]
+    if combines_as == REGIME_GATE:
+        # the ungated twin is the run's design variant (D-160), and D-110's route runs it with
+        # the same manifest: a pointer under the gate (/regime_detector/vetoes, .../rules/0)
+        # resolves in the config and not in the twin. The gate form is config_vehicle_errors'
+        # step 4 (the caller runs this only once that passes); a config without it has no twin
+        try:
+            checked.append((named + " (ungated twin)", ungated_twin(config)))
+        except ValueError:
+            pass
+    for name, cfg in checked:
+        try:
+            bm.check_manifest(derived, cfg, where=name, error_cls=ValueError)
+        except ValueError as exc:
+            errors.append(f"{where}.config: {exc}; keep every block and scaffolding path the "
+                          f"source's manifest lists (D-110 runs this config with that manifest)")
+            # the twin is checked once the config passes: it names only what the derivation
+            # itself breaks, never a fault of the config twice (as config_vehicle_errors)
+            break
     return errors

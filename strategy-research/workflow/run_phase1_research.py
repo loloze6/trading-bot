@@ -5710,9 +5710,14 @@ def _reading_content_errors(doc: dict, category: str, run_dir: Path) -> list:
                               f"({str(exc).replace(str(mpath), bm.MANIFEST_FILENAME)})")
                 continue
             if manifest is not None:
-                _load_base()
+                rel = _load_base()
                 if base_error:
-                    errors.append(f"{where}: {base_error}")
+                    # the run directory stripped from an OSError's text (its full path, as
+                    # written and as the OSError quotes it, shown run-relative), as the
+                    # manifest error above does; the patch path below keeps its message
+                    full = str(Path(run_dir) / rel)
+                    shown = base_error.replace(repr(full)[1:-1], rel).replace(full, rel)
+                    errors.append(f"{where}: {shown}")
                     continue
             errors += cv.source_fit_errors(s["vehicle"]["config"], base, manifest,
                                            s.get("combines_as"), where)
