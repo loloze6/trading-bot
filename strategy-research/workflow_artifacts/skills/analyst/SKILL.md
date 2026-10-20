@@ -151,9 +151,10 @@ with its **vehicle**: the strategy change that follows from the observation.
   and `strategies` as the base config has them. Use it when the change is more than a few
   values, for example a gate on the base strategy with `combines_as: regime_gate`: the base
   config with `regime_detector.rules` (or `vetoes`) added, the detector components those
-  rules read added, and exactly one non-null regime under `strategies.regimes`, the regime
-  the gate trades in. Keep everything else of the base config. Code derives the ungated
-  twin (the same config without the gate) and runs it beside yours; do not write it.
+  rules read added after the base config's own components (D-161), and exactly one non-null
+  regime under `strategies.regimes`, the regime the gate trades in. Keep everything else of
+  the base config. Code derives the ungated twin (the same config without the gate, D-160)
+  as the run's design variant; do not write it.
 - A piece that does not exist yet goes in `requires`, one entry per op or component the
   config uses that is not in the catalogue: `requires: [{kind: op, name: kalman_smooth,
   spec: "a one-dimensional Kalman filter of the value; params q (process noise) and r

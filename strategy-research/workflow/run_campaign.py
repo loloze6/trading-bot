@@ -4952,12 +4952,6 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
         _log(line)
 
     orch.save_yaml(ROOT / decision_ref, record)
-    # D-162 (V2b): the spec of each missing op or component a config vehicle waits on,
-    # requested once per (kind, name), the first spec kept
-    piece_requests = dn.component_request_rows(record, inputs)
-    if piece_requests:
-        crr.append_component_requests(ROOT / crr.COMPONENT_REQUESTS_REL, piece_requests,
-                                      key=dn.component_request_key)
     disk_queue = _load_queue()
     items = disk_queue.get("queue") or []
     idx = next((i for i, e in enumerate(items) if isinstance(e, dict) and e.get("id") == entry["id"]),
@@ -4967,6 +4961,13 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
     items[idx] = entry
     _apply_updates(items, updates)
     _save_queue(disk_queue)
+    # D-162 (V2b): the spec of each missing op or component a config vehicle waits on,
+    # requested once per (kind, name), the first spec kept; written after the queue is
+    # saved (D-162 review nit), so a decide pass that fails before it requests nothing
+    piece_requests = dn.component_request_rows(record, inputs)
+    if piece_requests:
+        crr.append_component_requests(ROOT / crr.COMPONENT_REQUESTS_REL, piece_requests,
+                                      key=dn.component_request_key)
     _log_awaiting_approval(held)
     return disk_queue, entry, stop is None, msg
 

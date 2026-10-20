@@ -623,15 +623,16 @@ BASE_COMPONENT_CLASS_NAMES = frozenset({"SubStrategyComponent"})
 _SUGGESTION_CUTOFF = 0.6
 
 
-def _string_leaves(node):
+def _string_leaves(node, _path=frozenset()):
+    """Every string leaf of `node`. D-162 (review B1): a container already on the current path
+    (a YAML alias cycle in a proposal file on disk) is not entered again, so the scan ends;
+    an acyclic node, shared aliases included, yields exactly what it did before."""
     if isinstance(node, str):
         yield node
-    elif isinstance(node, dict):
-        for value in node.values():
-            yield from _string_leaves(value)
-    elif isinstance(node, list):
-        for value in node:
-            yield from _string_leaves(value)
+    elif isinstance(node, (dict, list)) and id(node) not in _path:
+        path = _path | {id(node)}
+        for value in (node.values() if isinstance(node, dict) else node):
+            yield from _string_leaves(value, path)
 
 
 def unknown_class_names(proposal, known, card_text=None) -> dict:

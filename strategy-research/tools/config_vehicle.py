@@ -36,10 +36,13 @@ and the analyst retries in the existing loop:
      value in the config as in the base config (scaffolding_errors); and the source manifest,
      relabelled where a regime gate moved the trading regime (derived_manifest), must fit the
      config by block_manifest.check_manifest, the function D-110's exact-config 1b runs -- and,
-     with combines_as regime_gate, once the config fits, its ungated twin too (the run's design
-     variant, which D-110's route runs with the same manifest).
-  Before step 1, a config that refers to itself (a YAML alias cycle) is refused (cycle_error;
-  D-161 lead decision): V2-2 writes the config into the brief as JSON.
+     with combines_as regime_gate, once the config fits, its ungated twin on the manifest's
+     BLOCK paths only (twin_missing_block_paths; D-162: the twin is a design variant, and 5a
+     checks a variant on block paths only, json_pointer.manifest_missing_paths).
+  Before step 1, a config that is not plain JSON is refused (json_error): one that refers to
+  itself (a YAML alias cycle; cycle_error, D-161 lead decision), and (D-162) one that
+  json.dumps cannot write or that does not read back equal (a YAML date, a non-string or
+  mixed-type key, NaN, a tuple): V2-2 hashes the config and writes it into the brief as JSON.
 
 How the scaffolding rule tells the V1d gate form from a scaffolding rewrite (operator ruling
 2026-10-20): the gate form is defined positively, as three allowances that are REVERTED in a
@@ -200,6 +203,44 @@ def cycle_error(config, where: str):
     return None
 
 
+def json_error(config, where: str):
+    """D-162 (review B1): the refusal for a config that is not plain JSON, else None. The
+    config is written as json.dumps(..., sort_keys=True, allow_nan=False) -- decide-next hashes
+    it (config_sha256) and writes it into the brief as JSON -- and must read back equal:
+      * a circular reference: cycle_error's refusal (D-161 lead decision, unchanged);
+      * any other ValueError (NaN, an infinity), a TypeError (a YAML date, mixed-type keys
+        sorted together) or a RecursionError: refused;
+      * written but read back different (an int or boolean key becomes a string, a tuple a
+        list): refused.
+    `where` names the config (e.g. "side_findings[0].vehicle.config"). Pure."""
+    try:
+        text = json.dumps(config, sort_keys=True, allow_nan=False)
+        same = json.loads(text) == config
+    except ValueError as exc:
+        if "Circular reference" in str(exc):     # cycle_error's message, word for word
+            return (f"{where}: the config refers to itself (a YAML alias cycle); write it "
+                    f"out in full")
+        why = f"{type(exc).__name__}: {str(exc)[:200]}"
+    except (TypeError, RecursionError) as exc:
+        why = f"{type(exc).__name__}: {str(exc)[:200]}"
+    else:
+        if same:
+            return None
+        why = "it does not read back the same: a non-string key or a tuple"
+    return (f"{where} is not plain JSON ({why}): write every key as a string and every value "
+            f"as a string, number, boolean, null, list or mapping (quote a date)")
+
+
+def twin_missing_block_paths(derived_manifest_doc, twin) -> list:
+    """D-162 (review A): the block paths (block.config_paths) of the derived manifest that do
+    not resolve in the ungated twin; [] when all do. The twin is the run's design variant,
+    and 5a checks a variant on block paths only (run_phase1_research._check_manifest_paths ->
+    json_pointer.manifest_missing_paths): a variant may change scaffolding. The one check
+    reading time (source_fit_errors) and decide-next (config_vehicle_reasons) both run. Pure."""
+    import json_pointer as jp  # tools/ sibling
+    return jp.manifest_missing_paths(twin, derived_manifest_doc)
+
+
 def _content_errors(config, where: str, vc, fr, on_off, req_ops: set, req_classes: set,
                     run_validate: bool) -> list:
     """Steps 2-3 for one config (the vehicle's, or its ungated twin), every line prefixed
@@ -229,11 +270,12 @@ def config_vehicle_errors(vehicle: dict, where: str, *, trading_bot_root: Path =
     import decide_next as dn  # tools/ siblings
     import forecast_rules as fr
     config = vehicle["config"]
-    cycle = cycle_error(config, f"{where}.config")
-    if cycle:
-        # D-161 lead decision: refused before any other step (each would walk the cycle);
-        # V2-2 writes the config into the brief as JSON, which a cycle cannot be
-        return [cycle]
+    not_json = json_error(config, f"{where}.config")
+    if not_json:
+        # D-161 lead decision (a cycle) and D-162 (review B1, any other non-JSON value):
+        # refused before any other step (each would walk a cycle); decide-next hashes the
+        # config and writes it into the brief as JSON, which neither can be
+        return [not_json]
     requires = vehicle.get("requires") or []
     vc = _validate_config_module(trading_bot_root)
     registry = set(vc.TRANSFORM_OPS_REGISTRY)
@@ -575,7 +617,9 @@ def source_fit_errors(config, base, manifest, combines_as, where: str) -> list:
     exact-config route (D-110) cannot carry it. Else scaffolding_errors, then the derived
     manifest checked against the config by block_manifest.check_manifest (Q3: the function
     D-110's exact-config 1b runs), then, for combines_as regime_gate and once the config fits,
-    against its ungated twin. `where` as config_vehicle_errors'. Pure."""
+    its ungated twin on the derived manifest's BLOCK paths only (twin_missing_block_paths,
+    D-162: as 5a checks a variant; this replaces D-161's full check_manifest of the twin).
+    `where` as config_vehicle_errors'. Pure."""
     import block_manifest as bm  # tools/ sibling
     if manifest is None:
         return [f"{where}: the source run has no block manifest (artifacts/block_manifest.yaml), "
@@ -584,27 +628,34 @@ def source_fit_errors(config, base, manifest, combines_as, where: str) -> list:
                 f"changes instead"]
     errors = scaffolding_errors(config, base, manifest, combines_as, where)
     relabel = regime_relabel(base, config, combines_as)
-    named = ("the source run's block_manifest.yaml"
-             + (f" with regime {relabel[0]!r} relabelled {relabel[1]!r} (D-161)" if relabel else "")
-             + ", checked against this config as the next run's base config")
+    manifest_name = ("the source run's block_manifest.yaml"
+                     + (f" with regime {relabel[0]!r} relabelled {relabel[1]!r} (D-161)"
+                        if relabel else ""))
+    named = manifest_name + ", checked against this config as the next run's base config"
     derived = derived_manifest(manifest, base, config, combines_as)
-    checked = [(named, config)]
-    if combines_as == REGIME_GATE:
-        # the ungated twin is the run's design variant (D-160), and D-110's route runs it with
-        # the same manifest: a pointer under the gate (/regime_detector/vetoes, .../rules/0)
-        # resolves in the config and not in the twin. The gate form is config_vehicle_errors'
-        # step 4 (the caller runs this only once that passes); a config without it has no twin
-        try:
-            checked.append((named + " (ungated twin)", ungated_twin(config)))
-        except ValueError:
-            pass
-    for name, cfg in checked:
-        try:
-            bm.check_manifest(derived, cfg, where=name, error_cls=ValueError)
-        except ValueError as exc:
-            errors.append(f"{where}.config: {exc}; keep every block and scaffolding path the "
-                          f"source's manifest lists (D-110 runs this config with that manifest)")
-            # the twin is checked once the config passes: it names only what the derivation
-            # itself breaks, never a fault of the config twice (as config_vehicle_errors)
-            break
+    try:
+        bm.check_manifest(derived, config, where=named, error_cls=ValueError)
+    except ValueError as exc:
+        errors.append(f"{where}.config: {exc}; keep every block and scaffolding path the "
+                      f"source's manifest lists (D-110 runs this config with that manifest)")
+        # the twin is checked once the config passes: it names only what the derivation
+        # itself breaks, never a fault of the config twice (as config_vehicle_errors)
+        return errors
+    if combines_as != REGIME_GATE:
+        return errors
+    # D-162 (review A): the ungated twin is the run's design variant (D-160), and 5a checks a
+    # variant on block paths only (a variant may change scaffolding): a scaffolding pointer
+    # under the gate (/regime_detector/vetoes, .../rules/0) is no refusal; a block path the
+    # twin loses is. The gate form is config_vehicle_errors' step 4 (the caller runs this only
+    # once that passes); a config without it has no twin
+    try:
+        twin = ungated_twin(config)
+    except ValueError:
+        return errors
+    missing = twin_missing_block_paths(derived, twin)
+    if missing:
+        errors.append(f"{where}.config: the ungated twin (D-052: rules [], vetoes dropped; the "
+                      f"run's design variant) does not resolve the block path(s) {missing} of "
+                      f"{manifest_name}; keep every block path outside the gate, so the twin "
+                      f"still holds the block (5a does not test a variant that loses one)")
     return errors

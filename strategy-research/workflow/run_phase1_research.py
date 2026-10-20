@@ -17953,8 +17953,22 @@ def _set_ungated_twin_variant(run_dir: Path, run_id: str) -> None:
     design variant step 2 wrote; base and asset variants are kept as written. The base
     config is 1b's (artifacts/backtest_spec.yaml), the brief's exact config. Raises
     RuntimeError when the base config is missing or has no gate form (never for a run the
-    mode does not cover)."""
+    mode does not cover).
+    D-162 review nit (lead decision): only a PER-COIN file (variant_coin.per_coin_mode, some
+    entry declares kind or symbol) gets the twin. A legacy coin-less file, or none, is left
+    exactly as step 2 wrote it, and routes as before: a `kind: design` entry inserted into it
+    would turn it per-coin and fail Step 2's shape check on every legacy entry (E-061 C2 S2c),
+    and a legacy file has no design kind to replace. A line says the twin was not added."""
     arts = Path(run_dir) / "artifacts"
+    path = arts / "variant_patches.yaml"
+    doc = (load_yaml(path) or {}) if path.exists() else {}
+    doc = doc if isinstance(doc, dict) else {}
+    variants = doc.get("variants") if isinstance(doc.get("variants"), list) else []
+    if not _variant_coin_module().per_coin_mode(variants):
+        print(f"⚠️  [D-162] {run_id}: artifacts/variant_patches.yaml is not per-coin (no entry "
+              f"declares kind or symbol), so the ungated twin is NOT added as the design "
+              f"variant; the file routes as step 2 wrote it")
+        return
     spec = load_yaml(arts / "backtest_spec.yaml") or {}
     base = spec.get("config") if isinstance(spec, dict) else None
     if not isinstance(base, dict):
@@ -17963,10 +17977,6 @@ def _set_ungated_twin_variant(run_dir: Path, run_id: str) -> None:
         twin = _config_vehicle_module().ungated_twin(base)
     except ValueError as exc:
         raise RuntimeError(f"[D-162] ungated twin: the base config has no gate form ({exc})")
-    path = arts / "variant_patches.yaml"
-    doc = (load_yaml(path) or {}) if path.exists() else {}
-    doc = doc if isinstance(doc, dict) else {}
-    variants = doc.get("variants") if isinstance(doc.get("variants"), list) else []
     entry = {"variant_id": UNGATED_TWIN_VARIANT_ID, "kind": "design",
              "patch": [{"path": "/regime_detector", "value": twin["regime_detector"]}],
              "rationale": ("the ungated twin (D-052/D-160), derived by code "

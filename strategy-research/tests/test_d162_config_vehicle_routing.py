@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import ast
 import copy
+import inspect
 import json
 import sys
 from pathlib import Path
@@ -444,7 +445,9 @@ def test_the_brief_carries_the_exact_config_and_manifest_and_round_trips(tmp_pat
         f"{dn.BRIEF_EXACT_MANIFEST_PREFIX}: {RUN}'s block manifest, as "
         f"config_vehicle.derived_manifest gives it for this config (D-161)."]
     assert "relabelled to the vehicle's trading regime" in front["research_goal"]
-    assert "Its ungated twin" in front["research_goal"]
+    # review should-fix 2: true whatever the variant loop says (the twin is added only with it on)
+    assert ("With the variant loop on, code adds its ungated twin (the same config without the "
+            "gate, D-052) as the run's design variant (D-160).") in front["research_goal"]
     run_dir = _brief_dir(tmp_path, front)
     assert rpr._brief_exact_config(run_dir) == gate                 # the orchestrator's parsers
     assert rpr._brief_exact_manifest(run_dir) == derived
@@ -669,6 +672,10 @@ def test_the_analyst_skill_advertises_the_config_form_and_requires():
     text = _flat("workflow_artifacts/skills/analyst/SKILL.md")
     for phrase in ("`vehicle: {kind: config, config: <the complete strategy config>}`",
                    "`combines_as: regime_gate`", "Code derives the ungated twin",
+                   # review should-fix 2 and 3
+                   "as the run's design variant; do not write it.",
+                   "the detector components those rules read added after the base config's "
+                   "own components (D-161)",
                    "`requires: [{kind: op, name: kalman_smooth,",
                    "(a component: `kind: component`, `name` its full class path "
                    "`strategies.strategy_components.<ClassName>`",
@@ -676,3 +683,142 @@ def test_the_analyst_skill_advertises_the_config_form_and_requires():
                    "an existing history op placed after it is refused (V5)",
                    "except a piece the config form lists in `requires`"):
         assert phrase in text, phrase
+    assert "beside yours" not in text
+
+
+# ---------------------------------------------------------------------------
+# review fixes (D-162 fix round): B1 plain JSON, A the twin on block paths, the nits
+# ---------------------------------------------------------------------------
+
+NOT_JSON_TAIL = (": write every key as a string and every value as a string, number, boolean, "
+                 "null, list or mapping (quote a date)")
+
+
+def _not_json(kind: str) -> dict:
+    """_gated() with one non-JSON value under /strategies/notes (a path no manifest lists),
+    each as yaml.safe_load builds it from a model's YAML where it can."""
+    cfg = _gated()
+    if kind == "date":
+        cfg["strategies"]["notes"] = yaml.safe_load("d: 2024-01-02")["d"]
+    elif kind == "mixed_keys":
+        cfg["strategies"]["notes"] = yaml.safe_load("a: 1\n2: 3")
+    elif kind == "int_keys":
+        cfg["strategies"]["notes"] = yaml.safe_load("1: x\n2: y")
+    elif kind == "nan":
+        cfg["strategies"]["notes"] = yaml.safe_load("v: .nan")["v"]
+    elif kind == "tuple":
+        cfg["strategies"]["notes"] = (1, 2)
+    elif kind == "cycle":
+        cfg["strategies"]["notes"] = yaml.safe_load("n: &n {again: *n}")["n"]
+    return cfg
+
+
+NOT_JSON_WHY = {
+    "date": "(TypeError: Object of type date is not JSON serializable)",
+    "mixed_keys": "(TypeError: ",
+    "int_keys": "(it does not read back the same: a non-string key or a tuple)",
+    "nan": "(ValueError: Out of range float values are not JSON compliant",
+    "tuple": "(it does not read back the same: a non-string key or a tuple)",
+}
+
+
+@pytest.mark.parametrize("kind", sorted(NOT_JSON_WHY))
+def test_b1_a_config_that_is_not_plain_json_is_refused_at_reading_time(kind):
+    cfg = _not_json(kind)
+    for word in ("regime_gate", "forecast_block"):
+        (err,) = cv.config_vehicle_errors(_vehicle(cfg), "v", combines_as=word)
+        assert err.startswith(f"v.config is not plain JSON {NOT_JSON_WHY[kind]}"), err
+        assert err.endswith(NOT_JSON_TAIL), err
+    assert cv.json_error(cfg, "x") is not None
+    # a cycle keeps D-161's own message; a plain config and a shared (acyclic) alias pass
+    assert cv.json_error(_not_json("cycle"), "v.config") == (
+        "v.config: the config refers to itself (a YAML alias cycle); write it out in full")
+    shared = {"a": 1}
+    assert cv.json_error({"x": shared, "y": [shared, shared]}, "v.config") is None
+    assert cv.json_error(_gated(), "v.config") is None
+
+
+@pytest.mark.parametrize("kind", sorted(NOT_JSON_WHY) + ["cycle"])
+def test_b1_decide_next_makes_a_non_json_config_infeasible_instead_of_crashing(kind):
+    """A proposal file on disk that never passed the reading check (written by hand, or before
+    D-162): the candidate is INFEASIBLE with config_not_json, on every pass, no crash."""
+    p = _side(_vehicle(_not_json(kind)))
+    start = dn.side_finding_start(p, _src())
+    assert start["config"] is None and start["manifest"] is None
+    assert start["reason"].startswith(f"{dn.CONFIG_NOT_JSON}: the vehicle's config")
+    assert start["reason"].endswith(NOT_JSON_TAIL if kind != "cycle" else "write it out in full")
+    cand = _cand(p)
+    assert cand["eligible"] is False
+    assert cand["gates"]["feasibility"]["result"] == "INFEASIBLE"
+    assert [r for r in _reasons(cand) if r.startswith(dn.CONFIG_NOT_JSON)] == [start["reason"]]
+    assert cand["resolved_config_sha256"] is None
+
+
+def test_a_the_twin_is_checked_on_block_paths_by_one_shared_helper():
+    """Review A: reading time (source_fit_errors) and decide-next (config_vehicle_reasons) run
+    the same block-paths-only check of the twin, the one 5a runs on a variant."""
+    gate = _gated()
+    twin = cv.ungated_twin(gate)
+    scaff = {**copy.deepcopy(MANIFEST), "scaffolding": ["/strategies/warmup",
+                                                       "/regime_detector/vetoes"]}
+    derived = cv.derived_manifest(scaff, CONFIG, gate, "regime_gate")
+    assert cv.twin_missing_block_paths(derived, twin) == jp.manifest_missing_paths(twin, derived)
+    assert cv.twin_missing_block_paths(derived, twin) == []        # scaffolding: not checked
+    blocked = {"block": {"kind": "forecast", "config_paths": [
+        "/strategies/regimes/unknown/components/0", "/regime_detector/vetoes"]},
+        "scaffolding": ["/strategies/warmup"], "rationale": "the gated block"}
+    bderived = cv.derived_manifest(blocked, CONFIG, gate, "regime_gate")
+    assert cv.twin_missing_block_paths(bderived, twin) == ["/regime_detector/vetoes"]
+    for fn in (cv.source_fit_errors, dn.config_vehicle_reasons):
+        body = inspect.getsource(fn)
+        assert "twin_missing_block_paths(" in body, fn.__name__
+        assert "manifest_missing_paths(" not in body, fn.__name__
+    # decide-next: a block path the twin loses is a reason; a scaffolding one is not
+    p = _side(_vehicle(gate))
+    (reason,) = _reasons(_cand(p, _src(p, manifest=blocked)))
+    assert reason == ("manifest_unresolved: the ungated twin (D-052, the run's design variant) "
+                      "does not resolve the block path(s) ['/regime_detector/vetoes']")
+    scaff_src = _src(p, manifest=scaff)
+    assert _reasons(_cand(p, scaff_src)) == [ELIGIBLE]
+
+
+def test_nit_the_component_requests_are_appended_after_the_queue_is_saved():
+    src = Path(camp.__file__).read_text(encoding="utf-8")
+    at = src.index("piece_requests = dn.component_request_rows(record, inputs)")
+    fn = src[:at].rindex("\ndef ")
+    body = src[fn:src.index("\ndef ", at)]
+    assert body.index("_save_queue(disk_queue)") < body.index(
+        "piece_requests = dn.component_request_rows(record, inputs)")
+    assert body.count("crr.append_component_requests(") == 1
+
+
+@pytest.mark.parametrize("legacy", [
+    None,                                                                  # no file
+    [{"variant_id": "base", "patch": []},
+     {"variant_id": "wider", "patch": [{"path": "/strategies/warmup", "value": 60}]}]])
+def test_nit_a_legacy_coin_less_step2_file_gets_no_twin_and_is_left_as_written(legacy):
+    _set_orchestrator(LOOP_ON)
+    run_dir = _1b_run("run_990", _front(_side(_vehicle(_gated()))))
+    rpr._exact_config_1b(run_dir, "run_990")
+    path = run_dir / "artifacts" / "variant_patches.yaml"
+    if legacy is not None:
+        rpr.save_yaml(path, {"base_config_ref": "x", "variants": legacy})
+        before = path.read_bytes()
+    rpr._set_ungated_twin_variant(run_dir, "run_990")
+    if legacy is None:
+        assert not path.exists()
+    else:
+        assert path.read_bytes() == before
+        # so the legacy file keeps routing as before: Step 2's shape check does not apply
+        assert rpr._variant_shape_check_applies(run_dir) is False
+
+
+def test_nit_a_class_listed_in_requires_gets_no_unknown_class_warning():
+    cfg = _with_class(_gated())
+    listed = _side(_vehicle(cfg, requires=[_req("component", NEW_CLASS)]))
+    known = dn.known_component_classes(TB)
+    assert dn.class_name_warnings(listed, known, None) == []
+    assert "warnings" not in _cand(listed)
+    unlisted = _side(_vehicle(cfg))
+    assert [w["name"] for w in dn.class_name_warnings(unlisted, known, None)] == [
+        "KalmanTrendComponent"]

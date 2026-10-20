@@ -1938,7 +1938,11 @@ def side_finding_start(p: dict, src: dict) -> dict:
     child from that config itself, a deep copy, with the source's block manifest as
     config_vehicle.derived_manifest relabels it (D-161: a regime gate that moved the trading
     regime); `ops` is [] and the result carries `config_vehicle: True` (that key only on this
-    path). On a composite source it is refused like a config change."""
+    path). On a composite source it is refused like a config change. A config that is not
+    plain JSON (config_vehicle.json_error: a cycle, a YAML date, a non-string key, NaN, a
+    tuple) gives reason `config_not_json: ...` and config None (D-162 review B1): the
+    candidate is INFEASIBLE instead of the pass crashing on config_sha256 or the brief's
+    json.dumps, for a proposal file that reached the disk without the reading check."""
     vehicle = p.get("vehicle")
     config_vehicle = isinstance(vehicle, dict)
     if isinstance(src.get("composition_manifest"), dict):
@@ -1954,6 +1958,10 @@ def side_finding_start(p: dict, src: dict) -> dict:
                            "not on disk")}
     if config_vehicle:
         import config_vehicle as _cv  # tools/ sibling; only a config vehicle needs it
+        not_json = _cv.json_error(vehicle.get("config"), "the vehicle's config")
+        if not_json:
+            return {"config": None, "manifest": None, "ops": [],
+                    "reason": f"{CONFIG_NOT_JSON}: {not_json}"}
         return {"config": copy.deepcopy(vehicle["config"]),
                 "manifest": _cv.derived_manifest(manifest, base, vehicle["config"],
                                                  p.get("combines_as")),
@@ -1979,6 +1987,7 @@ BRIEF_EXACT_MANIFEST_PREFIX = "Use EXACTLY this block manifest (JSON)"
 REQUIRES_OP = "requires_op"
 REQUIRES_COMPONENT = "requires_component"
 EXACT_CONFIG_1B_OFF = "exact_config_1b_off"
+CONFIG_NOT_JSON = "config_not_json"     # review B1: side_finding_start's guard
 _REQUIRES_REASON_RE = re.compile(r"^requires_(op|component):(\S+)")
 # where the full config of a slim vehicle copy lives, in the child's brief (Q4)
 START_CONFIG_POINTER = "candidate.start_config"
@@ -1993,7 +2002,8 @@ def config_vehicle_reasons(p: dict, start: dict, inputs: dict) -> list:
         source's, relabelled by config_vehicle.derived_manifest) against the config: the
         check D-110's exact-config 1b runs; with combines_as regime_gate, the ungated twin
         (config_vehicle.ungated_twin, the run's design variant, D-052) must resolve the
-        manifest's block paths too, the check 5a runs on every variant;
+        manifest's block paths too, the check 5a runs on every variant
+        (config_vehicle.twin_missing_block_paths, shared with reading time);
       * requires_op:<name> -- an op the config uses (config_vehicle.used_pieces) that is not
         in inputs["known_ops"] (known_ops; every op when none was supplied);
       * requires_component:<name> -- a component class the config uses that is not in
@@ -2017,7 +2027,8 @@ def config_vehicle_reasons(p: dict, start: dict, inputs: dict) -> list:
             reasons.append(f"manifest_unresolved: the ungated twin (D-052, the run's design "
                            f"variant) cannot be derived: {exc}")
         else:
-            missing = _jp.manifest_missing_paths(twin, manifest)
+            # D-162 review A: the one block-paths-only check reading time runs too
+            missing = _cv.twin_missing_block_paths(manifest, twin)
             if missing:
                 reasons.append(f"manifest_unresolved: the ungated twin (D-052, the run's design "
                                f"variant) does not resolve the block path(s) {missing}")
@@ -2129,12 +2140,19 @@ def class_name_warnings(proposal: dict, known, card_text) -> list:
     class name the proposal writes that is neither a known class
     (known_component_classes) nor quoted from the run's hypothesis card
     (reader_proposals.unknown_class_names). WARNING ONLY -- never a reason,
-    never a change of eligibility or rank. [] without a known class set."""
+    never a change of eligibility or rank. [] without a known class set.
+    D-162 (review nit): a class a config vehicle lists in its `requires` (kind component) is
+    declared missing on purpose -- its requires_component reason and component request say
+    so -- and gets no warning."""
     if known is None:
         return []
     found = _rp.unknown_class_names(proposal, known, card_text)
+    vehicle = proposal.get("vehicle") if isinstance(proposal, dict) else None
+    required = {str(r.get("name")).rpartition(".")[2]
+                for r in ((vehicle.get("requires") or []) if isinstance(vehicle, dict) else [])
+                if isinstance(r, dict) and r.get("kind") == "component"}
     return [{"kind": UNKNOWN_CLASS_WARNING, "name": u["name"], "suggestion": u["suggestion"]}
-            for u in found["unknown"]]
+            for u in found["unknown"] if u["name"] not in required]
 
 
 def _card_candidate(entry: dict, info: dict, owner) -> dict:
@@ -2677,8 +2695,9 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str,
                    if _cv.regime_relabel(src["base_config"], start["config"], p.get("combines_as"))
                    else "")
                 + "."
-                + (" Its ungated twin (the same config without the gate, D-052) is the run's "
-                   "design variant, derived by code." if gate else ""))
+                + (" With the variant loop on, code adds its ungated twin (the same config "
+                   "without the gate, D-052) as the run's design variant (D-160)."
+                   if gate else ""))
         elif start["config"] is not None:
             candidate["start_config"] = start["config"]
             candidate["start_manifest"] = start["manifest"]
