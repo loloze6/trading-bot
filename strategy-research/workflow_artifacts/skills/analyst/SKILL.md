@@ -146,6 +146,25 @@ with its **vehicle**: the strategy change that follows from the observation.
   value from the config, and the new value). A list element is written `name[i]`, never
   `name.i`: `{component_id: shock_zscore, field: "transforms[0].params.span", before: 2,
   after: 1}`.
+- Or the whole strategy config the change leads to, the config form:
+  `vehicle: {kind: config, config: <the complete strategy config>}`, with `regime_detector`
+  and `strategies` as the base config has them. Use it when the change is more than a few
+  values, for example a gate on the base strategy with `combines_as: regime_gate`: the base
+  config with `regime_detector.rules` (or `vetoes`) added, the detector components those
+  rules read added, and exactly one non-null regime under `strategies.regimes`, the regime
+  the gate trades in. Keep everything else of the base config. Code derives the ungated
+  twin (the same config without the gate) and runs it beside yours; do not write it.
+- A piece that does not exist yet goes in `requires`, one entry per op or component the
+  config uses that is not in the catalogue: `requires: [{kind: op, name: kalman_smooth,
+  spec: "a one-dimensional Kalman filter of the value; params q (process noise) and r
+  (measurement noise); returns the filtered value", example: "{op: kalman_smooth, params:
+  {q: 0.01, r: 1.0}}"}]` (a component: `kind: component`, `name` its full class path
+  `strategies.strategy_components.<ClassName>`, as the config's `class` writes it). Code
+  checks the config without that piece's own line, files the spec as a request, and the
+  child run waits until the piece exists; it is never built for you. The checker cannot
+  know whether a new op you list is a history op (one that reads the component's history,
+  as `standardise`, `zscore`, `ema` do): it reads it as an ordinary op, so an existing
+  history op placed after it is refused (V5). Put the new op after them.
 - No empty vehicle. If you cannot say what to change you do not have a claim yet: ask the
   next why, or record the behaviour under `no_claim.observations`.
 
@@ -156,7 +175,7 @@ vol target), a transform, a new component, or a detector condition with a graded
 under it. Never a side excluded, a clip at zero, a threshold switch, or a rule fitted to one
 observation.
 A vehicle may name any class or op in the component and op catalogue section of this prompt
-and nothing else.
+and nothing else, except a piece the config form lists in `requires`.
 
 ## Your answer: exactly one fenced YAML block
 

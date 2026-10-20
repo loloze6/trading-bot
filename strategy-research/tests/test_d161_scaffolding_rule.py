@@ -13,8 +13,8 @@ A config vehicle is measured against its SOURCE run (config_vehicle.source_fit_e
 Probes on committed sources: the exact config and manifest of
 briefs/L1_daily_trend_basket_sma50_v3.md and briefs/rebase_run_095_standardised_host.md
 (read with run_phase1_research's own brief parsers), and the detector of
-trading-bot/strategy_config.json. The wiring runs with reader_proposals.CONFIG_VEHICLE_ROUTED
-forced on; off, a config vehicle gets today's refusal. No LLM, no backtest, no market data.
+trading-bot/strategy_config.json. The wiring runs with no switch (D-162 deleted
+reader_proposals.CONFIG_VEHICLE_ROUTED). No LLM, no backtest, no market data.
 """
 from __future__ import annotations
 
@@ -532,7 +532,7 @@ def test_a_config_that_refers_to_itself_is_refused_not_a_crash(rebase):
 
 
 # ---------------------------------------------------------------------------
-# the wiring: CONFIG_VEHICLE_ROUTED forced on; off unchanged
+# the wiring (no switch, D-162)
 # ---------------------------------------------------------------------------
 
 def _source_run(tmp_path, config, manifest, name="run_x") -> Path:
@@ -553,7 +553,6 @@ def _doc(config, combines_as="regime_gate") -> dict:
 
 @pytest.fixture()
 def routed(monkeypatch):
-    monkeypatch.setattr(rp, "CONFIG_VEHICLE_ROUTED", True)
     monkeypatch.setattr(rpr, "_claim_check_kw", lambda: {"folds": True})
 
 
@@ -673,9 +672,7 @@ def test_on_a_cyclic_config_vehicle_is_a_refusal(routed, tmp_path, rebase):
         CYCLE.replace("v.config", "side_findings[0].vehicle.config")]
 
 
-def test_off_a_config_vehicle_gets_the_old_refusal(rebase):
-    assert rp.CONFIG_VEHICLE_ROUTED is False
-    with pytest.raises(rp.ProposalError) as exc:
-        rp.check_reading(_doc(_relabel_gate(rebase[0])), CAT, "reading", from_model=True,
-                         envelope=True)
-    assert str(exc.value) == f"reading.side_findings[0].{OLD_MESSAGE}"
+def test_a_config_vehicle_is_accepted_by_the_shape_check_with_no_switch(rebase):
+    assert not hasattr(rp, "CONFIG_VEHICLE_ROUTED")
+    rp.check_reading(_doc(_relabel_gate(rebase[0])), CAT, "reading", from_model=True,
+                     envelope=True)

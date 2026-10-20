@@ -5689,8 +5689,8 @@ def _reading_content_errors(doc: dict, category: str, run_dir: Path) -> list:
         # change (the shape check refuses a finding that carries both)
         errors += _envelope_content_errors(s, i, run_dir)
         if isinstance(s, dict) and isinstance(s.get("vehicle"), dict):
-            # D-159 (vehicle-format V1c): a config vehicle (the shape check lets one through
-            # only with reader_proposals' config_vehicle on) is checked whole -- requires,
+            # D-159 (vehicle-format V1c): a config vehicle (accepted by the shape check since
+            # D-162) is checked whole -- requires,
             # validate_config, D-051/D-149 -- and is never resolved as a patch; D-160: with
             # combines_as regime_gate, the gate form and its ungated twin too
             cv, where = _config_vehicle_module(), f"side_findings[{i}].vehicle"
@@ -17897,6 +17897,100 @@ def _brief_exact_manifest(path: Path):
     return None
 
 
+def _brief_config_vehicle(run_dir: Path):
+    """D-162: (vehicle, combines_as) of a decide-next brief built from a CONFIG vehicle --
+    research_brief.yaml candidate.source.proposal.vehicle is a mapping (the slim copy,
+    decide_next.slim_vehicle; the full config is the brief's exact config) -- else None."""
+    p = Path(run_dir) / "artifacts" / "research_brief.yaml"
+    if not p.exists():
+        return None
+    brief = load_yaml(p) or {}
+    cand = brief.get("candidate") if isinstance(brief, dict) else None
+    source = cand.get("source") if isinstance(cand, dict) else None
+    proposal = source.get("proposal") if isinstance(source, dict) else None
+    vehicle = proposal.get("vehicle") if isinstance(proposal, dict) else None
+    if not isinstance(vehicle, dict):
+        return None
+    return vehicle, proposal.get("combines_as")
+
+
+def _config_vehicle_missing_pieces(run_dir: Path, config) -> list:
+    """D-162 (V3b): for a config-vehicle brief (_brief_config_vehicle), every op the config
+    uses that is not in TRANSFORM_OPS_REGISTRY and every component class it uses that is not
+    defined in strategies.strategy_components, named ("op 'x'", "component 'y'"); [] when
+    every piece exists, and for any other brief (nothing else is read)."""
+    if _brief_config_vehicle(run_dir) is None:
+        return []
+    cv, dn = _config_vehicle_module(), _decide_next_tools()
+    ops, classes = cv.used_pieces(config)
+    known = set(dn.known_ops(_TRADING_BOT_ROOT))
+    return ([f"op {op!r}" for op in sorted(ops - known)]
+            + [f"component {c!r}" for c in sorted(classes)
+               if dn.component_class_status(_TRADING_BOT_ROOT, c) != "defined"])
+
+
+UNGATED_TWIN_VARIANT_ID = "ungated_twin"
+
+
+def _ungated_twin_variant_mode(run_dir: Path) -> bool:
+    """D-162: True when step 2's design variant is the ungated twin, written by code --
+    config-direct authoring and the variant loop on, exact-config 1b on with an exact config
+    in the brief (D-110), and the brief built from a config vehicle with combines_as
+    regime_gate. Anything else: False (nothing read beyond the flags and the brief)."""
+    if not (_config_direct_authoring_enabled() and _variant_loop_enabled()
+            and _exact_config_1b_mode(run_dir)):
+        return False
+    found = _brief_config_vehicle(run_dir)
+    return found is not None and found[1] == _config_vehicle_module().REGIME_GATE
+
+
+def _set_ungated_twin_variant(run_dir: Path, run_id: str) -> None:
+    """D-162 (D-052/D-160: "the ungated twin is the design variant", "code derives the
+    ungated twin"): after step 2's answer, artifacts/variant_patches.yaml gets exactly one
+    design variant, UNGATED_TWIN_VARIANT_ID, whose patch sets /regime_detector to the
+    detector of config_vehicle.ungated_twin(base config) -- so the variant's config IS the
+    twin (rules [], vetoes dropped, default_regime the trading regime) -- in place of every
+    design variant step 2 wrote; base and asset variants are kept as written. The base
+    config is 1b's (artifacts/backtest_spec.yaml), the brief's exact config. Raises
+    RuntimeError when the base config is missing or has no gate form (never for a run the
+    mode does not cover)."""
+    arts = Path(run_dir) / "artifacts"
+    spec = load_yaml(arts / "backtest_spec.yaml") or {}
+    base = spec.get("config") if isinstance(spec, dict) else None
+    if not isinstance(base, dict):
+        raise RuntimeError("[D-162] ungated twin: artifacts/backtest_spec.yaml has no config")
+    try:
+        twin = _config_vehicle_module().ungated_twin(base)
+    except ValueError as exc:
+        raise RuntimeError(f"[D-162] ungated twin: the base config has no gate form ({exc})")
+    path = arts / "variant_patches.yaml"
+    doc = (load_yaml(path) or {}) if path.exists() else {}
+    doc = doc if isinstance(doc, dict) else {}
+    variants = doc.get("variants") if isinstance(doc.get("variants"), list) else []
+    entry = {"variant_id": UNGATED_TWIN_VARIANT_ID, "kind": "design",
+             "patch": [{"path": "/regime_detector", "value": twin["regime_detector"]}],
+             "rationale": ("the ungated twin (D-052/D-160), derived by code "
+                           "(config_vehicle.ungated_twin): regime_detector.rules emptied, "
+                           "vetoes dropped, default_regime the trading regime; the run's one "
+                           "design variant (D-162)")}
+    kept, placed = [], False
+    for v in variants:
+        if isinstance(v, dict) and (v.get("kind") == "design"
+                                    or v.get("variant_id") == UNGATED_TWIN_VARIANT_ID):
+            if not placed:
+                kept.append(entry)
+                placed = True
+            continue
+        kept.append(v)
+    if not placed:
+        at = next((i + 1 for i, v in enumerate(kept)
+                   if isinstance(v, dict) and v.get("variant_id") == "base"), 0)
+        kept.insert(at, entry)
+    save_yaml(path, {**doc, "variants": kept})
+    print(f"✅ [D-162] {run_id}: the ungated twin is the design variant "
+          f"({UNGATED_TWIN_VARIANT_ID}, derived by code)")
+
+
 def _exact_config_1b_mode(run_dir: Path) -> bool:
     """D-110: True when orchestrator.exact_config_1b is on and the run's brief
     carries an exact config. Flag off: False, nothing but the flag is read."""
@@ -17917,7 +18011,12 @@ def _exact_config_1b(run_dir: Path, run_id: str) -> None:
     spend) when the brief has no exact manifest, when either JSON is broken, or
     when the manifest does not fit the config (block_manifest.check_manifest).
     Every check after 1b (manifest, D-051, nearest build, the deviation gate,
-    the config replay gate) runs unchanged on what is written here."""
+    the config replay gate) runs unchanged on what is written here.
+    D-162: a decide-next brief built from a config vehicle carries its config as
+    the exact config and NOT expected_config_sha256, so the pass-through refusal
+    below (a patch candidate) does not apply to it and stays for every patch;
+    such a brief is refused when an op or component its config uses does not
+    exist yet (_config_vehicle_missing_pieces): 1b never builds one."""
     import copy
     arts = Path(run_dir) / "artifacts"
     if _is_pass_through_candidate(arts):
@@ -17937,6 +18036,13 @@ def _exact_config_1b(run_dir: Path, run_id: str) -> None:
                            f"{BRIEF_EXACT_MANIFEST_PREFIX!r})")
     _block_manifest_module().check_manifest(manifest, config, where="the brief's exact block manifest",
                                             error_cls=RuntimeError)
+    missing = _config_vehicle_missing_pieces(run_dir, config)
+    if missing:
+        # D-162 (V3b): a config vehicle's piece that does not exist yet is never built here
+        raise RuntimeError("[D-110] exact-config 1b refused: the brief's config vehicle (D-162) "
+                           "uses " + ", ".join(missing) + ", which does not exist yet; 1b never "
+                           "builds a missing piece (its spec is in "
+                           "campaign_record/component_requests.yaml)")
     # what async_invoke_agent clears before a model 1b (review of PR #396): an
     # earlier attempt's deviations.yaml and claim revision must not be read as this one's
     _clear_stale_deviations("strategy_config_authoring", run_dir)
@@ -20968,6 +21074,10 @@ def run_loop(run_id: str, *, after_1a=None):
                 # tool-only backtest_specification stage instead.
                 if next_stage == "validation" and _config_direct_authoring_enabled():
                     next_stage = "backtest_specification"
+                    # D-162: a regime-gate config vehicle's design variant is its ungated
+                    # twin, written by code over step 2's answer before any check reads it
+                    if _ungated_twin_variant_mode(RUN_DIR):
+                        _set_ungated_twin_variant(RUN_DIR, run_id)
                     # E-061 C2 S2c: Step 2's variant shape (variant loop + per-coin
                     # file only); an invalid one retries Step 2 once, then pauses.
                     if _variant_shape_check_applies(RUN_DIR):

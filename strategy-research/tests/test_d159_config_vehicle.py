@@ -3,11 +3,10 @@
   vehicle: {kind: config, config: <complete strategy config>[, requires: [{kind, name, spec,
   example}]]}
 
-1. Lands unused: reader_proposals.CONFIG_VEHICLE_ROUTED is False, so a mapping vehicle is
-   refused exactly as before (the patch-list message), from a model and in a written file,
-   in the readers' check and in the analyst stage. Patch vehicles and D-151 are unchanged
-   with the form on or off.
-2. The shape (check_config_vehicle), with config_vehicle=True.
+1. Routed since D-162 (V2-2/V3): the switch CONFIG_VEHICLE_ROUTED is deleted, so a mapping
+   vehicle is accepted with no switch, from a model and in a written file. Patch vehicles
+   and D-151 are unchanged.
+2. The shape (check_config_vehicle).
 3. flatten_reading: a config vehicle is never handed on as a patch `config_change`.
 4. The content (tools/config_vehicle.py): requires (absent today, used, every absent piece
    listed), validate_config with only V3/V12 lines of listed names exempt, D-051/D-149.
@@ -83,38 +82,43 @@ def _errors(vehicle) -> list:
 
 
 # ---------------------------------------------------------------------------
-# 1. lands unused: refused exactly as before
+# 1. routed (D-162): accepted with no switch
 # ---------------------------------------------------------------------------
 
-def test_the_form_is_off_until_v2_routes_it():
-    assert rp.CONFIG_VEHICLE_ROUTED is False
+def test_the_switch_is_deleted_not_flipped():
+    assert not hasattr(rp, "CONFIG_VEHICLE_ROUTED")
+    import inspect
+    for fn in (rp.check_reading, rp._check_envelope):
+        assert "config_vehicle" not in inspect.signature(fn).parameters
 
 
-@pytest.mark.parametrize("kw", [{}, {"config_vehicle": None}, {"config_vehicle": False}])
-def test_off_a_config_vehicle_from_a_model_gets_the_old_patch_list_refusal(kw):
-    with pytest.raises(rp.ProposalError) as exc:
-        _check_model(_vehicle(), **kw)
-    assert str(exc.value) == f"reading.side_findings[0].{OLD_MESSAGE}"
+def test_a_config_vehicle_from_a_model_is_accepted_with_no_switch():
+    _check_model(_vehicle())
 
 
-def test_off_a_written_file_with_a_config_vehicle_fails_to_load_loudly(tmp_path):
+def test_a_written_file_with_a_config_vehicle_loads(tmp_path):
     _save(tmp_path / "proposals" / f"{CAT}.yaml", _reading(_claim(), vehicle=_vehicle(), **ENV))
-    for load in (rp.load_proposals, rp.load_readings):
-        with pytest.raises(rp.ProposalError) as exc:
-            load(tmp_path / "proposals", [CAT])
-        assert str(exc.value).endswith(f"side_findings[0].{OLD_MESSAGE}"), str(exc.value)
+    (item,) = rp.load_proposals(tmp_path / "proposals", [CAT])[CAT]
+    assert item["vehicle"] == _vehicle() and "config_change" not in item
+    assert "legacy_no_vehicle" not in item
+    assert rp.load_readings(tmp_path / "proposals", [CAT])[CAT]["side_findings"][0][
+        "vehicle"] == _vehicle()
+    # a written file is shape-checked as the config form (not the patch list)
+    _save(tmp_path / "proposals" / f"{CAT}.yaml",
+          _reading(_claim(), vehicle=dict(_vehicle(), kind="patch"), **ENV))
+    with pytest.raises(rp.ProposalError, match=r"vehicle.kind='patch' must be 'config'"):
+        rp.load_proposals(tmp_path / "proposals", [CAT])
 
 
-@pytest.mark.parametrize("on", [False, True])
-def test_patch_vehicles_and_d151_are_unchanged_with_the_form_on_or_off(on, tmp_path):
-    _check_model(copy.deepcopy(CHANGE), config_vehicle=on)                  # accepted
+def test_patch_vehicles_and_d151_are_unchanged(tmp_path):
+    _check_model(copy.deepcopy(CHANGE))                                      # accepted
     with pytest.raises(rp.ProposalError, match=r"an empty vehicle is refused for every claim"):
-        _check_model([], config_vehicle=on)
+        _check_model([])
     with pytest.raises(rp.ProposalError, match=r"`vehicle` is required"):
         rp.check_reading(_reading(_claim(), **ENV), CAT, "reading", from_model=True,
-                         envelope=True, config_vehicle=on)
+                         envelope=True)
     with pytest.raises(rp.ProposalError, match=r"vehicle\[0\] must be exactly"):
-        _check_model([{"component_id": "x"}], config_vehicle=on)
+        _check_model([{"component_id": "x"}])
     # a written `vehicle: []` still loads flagged (D-151); the flattened items are unchanged
     _save(tmp_path / "proposals" / f"{CAT}.yaml", _reading(_claim(), vehicle=[], **ENV))
     (item,) = rp.load_proposals(tmp_path / "proposals", [CAT])[CAT]
@@ -126,34 +130,18 @@ def test_patch_vehicles_and_d151_are_unchanged_with_the_form_on_or_off(on, tmp_p
 def test_vehicle_and_config_change_together_are_still_refused():
     side = _reading(_claim(), vehicle=_vehicle(), config_change=copy.deepcopy(CHANGE), **ENV)
     with pytest.raises(rp.ProposalError, match="write `vehicle` OR `config_change`"):
-        rp.check_reading(side, CAT, "reading", from_model=True, envelope=True,
-                         config_vehicle=True)
+        rp.check_reading(side, CAT, "reading", from_model=True, envelope=True)
 
 
 # ---------------------------------------------------------------------------
-# 2. the shape (on)
+# 2. the shape
 # ---------------------------------------------------------------------------
 
-def test_on_the_config_form_is_accepted_with_and_without_requires():
-    _check_model(_vehicle(), config_vehicle=True)
-    _check_model(_vehicle(_with_op(), requires=[_req()]), config_vehicle=True)
-    _check_model(_vehicle(_with_class(), requires=[_req("component", NEW_CLASS,
-                                                       example={"class": NEW_CLASS})]),
-                 config_vehicle=True)
-
-
-def test_on_the_flag_constant_turns_it_on_for_every_caller(monkeypatch, tmp_path):
-    monkeypatch.setattr(rp, "CONFIG_VEHICLE_ROUTED", True)
+def test_the_config_form_is_accepted_with_and_without_requires():
     _check_model(_vehicle())
-    _save(tmp_path / "proposals" / f"{CAT}.yaml", _reading(_claim(), vehicle=_vehicle(), **ENV))
-    (item,) = rp.load_proposals(tmp_path / "proposals", [CAT])[CAT]
-    assert item["vehicle"] == _vehicle() and "config_change" not in item
-    assert "legacy_no_vehicle" not in item
-    # forced on, a written file is shape-checked as the config form (not the patch list)
-    _save(tmp_path / "proposals" / f"{CAT}.yaml",
-          _reading(_claim(), vehicle=dict(_vehicle(), kind="patch"), **ENV))
-    with pytest.raises(rp.ProposalError, match=r"vehicle.kind='patch' must be 'config'"):
-        rp.load_proposals(tmp_path / "proposals", [CAT])
+    _check_model(_vehicle(_with_op(), requires=[_req()]))
+    _check_model(_vehicle(_with_class(), requires=[_req("component", NEW_CLASS,
+                                                       example={"class": NEW_CLASS})]))
 
 
 @pytest.mark.parametrize("vehicle,needle", [
@@ -175,15 +163,9 @@ def test_on_the_flag_constant_turns_it_on_for_every_caller(monkeypatch, tmp_path
     (dict(_vehicle(), requires=[_req(example=None)]), r"requires\[0\].example must be"),
     (dict(_vehicle(), requires=[_req(), _req()]), r"requires\[1\]: op 'kalman_smooth' is listed twice"),
 ])
-@pytest.mark.parametrize("how", ["kwarg", "constant"])
-def test_on_each_shape_refusal(vehicle, needle, how, monkeypatch):
-    if how == "constant":                       # the constant forced on, no kwarg
-        monkeypatch.setattr(rp, "CONFIG_VEHICLE_ROUTED", True)
-        kw = {}
-    else:
-        kw = {"config_vehicle": True}
+def test_each_shape_refusal(vehicle, needle):
     with pytest.raises(rp.ProposalError, match=needle):
-        _check_model(vehicle, **kw)
+        _check_model(vehicle)
 
 
 # ---------------------------------------------------------------------------
@@ -403,18 +385,20 @@ def _run_analyst(run_dir):
     return dest, record
 
 
-def test_the_analyst_off_refuses_a_config_vehicle_with_the_old_message(run, monkeypatch):
+def test_the_analyst_accepts_a_config_vehicle_with_no_switch(run, monkeypatch):
+    _source_run(run)
+
     async def script(call):
         return await _good_claim(call, extra={"vehicle": _vehicle()})
     _install(monkeypatch, script)
-    _dest, record = _run_analyst(run)
-    errs = record["attempts"][0]["errors"]
-    assert f"analyst reading.side_findings[0].{OLD_MESSAGE}" in errs, errs
-    assert record["attempts"][-1]["status"] == "refused"
+    dest, record = _run_analyst(run)
+    assert record["attempts"][0]["status"] == "accepted", record["attempts"][0]["errors"]
+    assert not any(OLD_MESSAGE in e for a in record["attempts"] for e in a.get("errors") or [])
+    written = yaml.safe_load(dest.read_text(encoding="utf-8"))
+    assert written["side_findings"][0]["vehicle"] == _vehicle()
 
 
-def test_the_analyst_on_hears_the_content_refusal_and_retries(run, monkeypatch):
-    monkeypatch.setattr(rp, "CONFIG_VEHICLE_ROUTED", True)
+def test_the_analyst_hears_the_content_refusal_and_retries(run, monkeypatch):
     _source_run(run)
     cfg = _with_op()                                         # the new op, not listed
     answers = iter([_vehicle(cfg), _vehicle(cfg, requires=[_req()])])
@@ -432,9 +416,7 @@ def test_the_analyst_on_hears_the_content_refusal_and_retries(run, monkeypatch):
     assert written["side_findings"][0]["vehicle"]["requires"] == [_req()]
 
 
-def test_the_analyst_on_refuses_a_malformed_op_and_retries_instead_of_crashing(run,
-                                                                              monkeypatch):
-    monkeypatch.setattr(rp, "CONFIG_VEHICLE_ROUTED", True)
+def test_the_analyst_refuses_a_malformed_op_and_retries_instead_of_crashing(run, monkeypatch):
     _source_run(run)
     answers = iter([_vehicle(_malformed()), _vehicle()])
 

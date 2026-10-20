@@ -710,8 +710,9 @@ def finding_route(item: dict, *, folds: bool = False, trade_tests: bool = False)
     if block in ("forecast", "regime"):
         return PENDING, (f"a {block} block claim: measured on the confirmation windows of the "
                          f"run built from it")
-    if item.get("config_change") and any(cc.signal_columns(t) for t in claim["tests"]
-                                         if isinstance(t, dict)):
+    # D-162: a config vehicle (a mapping `vehicle`) is a config change too
+    changes = item.get("config_change") or isinstance(item.get("vehicle"), dict)
+    if changes and any(cc.signal_columns(t) for t in claim["tests"] if isinstance(t, dict)):
         return PENDING, ("its config change alters the forecast/regime its tests read: measured "
                          "on the confirmation windows of the run built from it")
     return IN_RUN, "a price-only (pure) finding: measured in this run"

@@ -520,7 +520,9 @@ def _merge_key(item: dict, folds: bool = False, trade_tests: bool = False):
     tests: none). The kind is part of the key (review fix 4): the
     confirmation routes by it (explore_confirm.finding_route: a block kind
     is PENDING, a pure kind IN_RUN), so the same tests under two kinds are
-    two findings."""
+    two findings. D-162: a config vehicle (a mapping `vehicle`, never a
+    config_change) is keyed on its canonical config (sorted-key JSON), so two
+    findings merge only on the same whole config."""
     import json as _json
     claim = item.get("claim") if isinstance(item, dict) else None
     # D-089: under the folds flag the folds kinds (execution_behaviour) are claims too
@@ -530,7 +532,13 @@ def _merge_key(item: dict, folds: bool = False, trade_tests: bool = False):
         return None
     change = item.get("config_change")
     canon = None
-    if change:
+    vehicle = item.get("vehicle")
+    if isinstance(vehicle, dict):
+        try:
+            canon = "config:" + _json.dumps(vehicle.get("config"), sort_keys=True, default=str)
+        except TypeError:          # mixed key types in a model-written mapping
+            canon = "config:" + repr(vehicle.get("config"))
+    elif change:
         canon = _json.dumps(sorted((_json.dumps(c, sort_keys=True, default=str)
                                     for c in change), key=str), default=str)
     return str(item["claim"].get("kind")), hashes, canon
