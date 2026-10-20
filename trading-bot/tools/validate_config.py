@@ -515,7 +515,7 @@ def validate(config: dict) -> List[str]:
         if dead:
             violations.append(
                 f"VIOLATION V18 regime_detector.default_regime: '{dead}' in mode 'threshold_rules' "
-                f"with regime_detector.rules empty, so every bar resolves to '{dead}' (or to a veto's "
+                f"with regime_detector.rules empty or missing, so every bar resolves to '{dead}' (or to a veto's "
                 f"result, and none holds components) -- but strategies.regimes.{dead} is null or "
                 f"missing. This config forecasts 0.0 on every bar; point default_regime at the "
                 f"regime that holds the components, or move the components to "

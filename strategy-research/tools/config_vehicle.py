@@ -129,7 +129,8 @@ def gate_form_errors(config, where: str) -> list:
     if not (isinstance(rules, list) and rules) and not (isinstance(vetoes, list) and vetoes):
         errors.append(f"{where}.regime_detector: combines_as {REGIME_GATE} needs the gate, a "
                       f"non-empty regime_detector.rules or regime_detector.vetoes, and both are "
-                      f"empty or missing; write the gate, or choose another combines_as")
+                      f"empty, missing or not a list; write the gate, or choose another "
+                      f"combines_as")
     trading = _trading_regimes(config)
     if len(trading) != 1:
         errors.append(f"{where}.strategies.regimes: combines_as {REGIME_GATE} needs exactly one "

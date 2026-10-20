@@ -80,8 +80,8 @@ def test_no_gate_is_refused():
     cfg["regime_detector"]["default_regime"] = "trending"   # else V18 (a dead config) too
     assert _errors(cfg) == [
         "v.config.regime_detector: combines_as regime_gate needs the gate, a non-empty "
-        "regime_detector.rules or regime_detector.vetoes, and both are empty or missing; write "
-        "the gate, or choose another combines_as"]
+        "regime_detector.rules or regime_detector.vetoes, and both are empty, missing or not a "
+        "list; write the gate, or choose another combines_as"]
     del cfg["regime_detector"]["rules"], cfg["regime_detector"]["vetoes"]
     assert len(_errors(cfg)) == 1
 
@@ -112,6 +112,79 @@ def test_a_mode_other_than_threshold_rules_is_refused(mode):
 def test_the_form_applies_to_regime_gate_only(word):
     assert _errors(copy.deepcopy(CONFIG), word) == []          # ungated, several words: no form
     assert _errors(copy.deepcopy(CONFIG))                       # the same config as a gate: refused
+
+
+def test_a_vetoes_only_gate_with_a_null_default_and_a_veto_into_the_trading_regime_passes():
+    # ruling (a): V18 does not fire when a veto's result names a trading regime. Through the
+    # whole gate path: form, config checks and twin all pass; the twin trades in 'trending'
+    cfg = _gated((), (dict(VETO, result="trending"),))
+    assert cfg["strategies"]["regimes"]["unknown"] is None      # default 'unknown' is null
+    assert cfg["regime_detector"]["default_regime"] == "unknown"
+    assert cv.gate_form_errors(cfg, "c") == []
+    assert _errors(cfg) == []
+    twin = cv.ungated_twin(cfg)
+    assert twin["regime_detector"]["default_regime"] == "trending"
+    assert twin["regime_detector"]["rules"] == [] and "vetoes" not in twin["regime_detector"]
+
+
+def test_the_kill_switch_shape_passes_and_its_twin_keeps_the_default():
+    # rules route to a null regime (the 'off' state), default 'unknown' holds the strategy
+    cfg = copy.deepcopy(CONFIG)
+    cfg["regime_detector"]["rules"] = [dict(RULE, regime="chop")]
+    assert cfg["strategies"]["regimes"]["chop"] is None
+    assert cfg["regime_detector"]["default_regime"] == "unknown"
+    assert _errors(cfg) == []
+    twin = cv.ungated_twin(cfg)
+    assert twin["regime_detector"]["default_regime"] == "unknown"
+    assert twin["regime_detector"]["rules"] == []
+
+
+_NOT_A_LIST = ("combines_as regime_gate needs the gate, a non-empty regime_detector.rules or "
+               "regime_detector.vetoes, and both are empty, missing or not a list; write the gate, "
+               "or choose another combines_as")
+
+
+def test_gate_form_errors_never_raises_on_a_malformed_config():
+    # a model-written config: every shape comes back as messages, never an exception
+    good = _gated()
+    bad_inputs = [None, [], "x", 5,
+                  {"regime_detector": None, "strategies": None},
+                  {"regime_detector": [], "strategies": {"regimes": []}},
+                  dict(good, regime_detector=dict(good["regime_detector"], mode=["score"])),
+                  dict(good, regime_detector=dict(good["regime_detector"], mode=None)),
+                  dict(good, regime_detector=dict(good["regime_detector"], rules={"a": 1},
+                                                  vetoes=None)),
+                  dict(good, strategies={"regimes": ["trending"]}),
+                  dict(good, strategies={"regimes": None})]
+    for cfg in bad_inputs:
+        errs = cv.gate_form_errors(cfg, "c")
+        assert isinstance(errs, list) and errs and all(isinstance(e, str) for e in errs), cfg
+        with pytest.raises(ValueError):                      # the twin refuses, with the same text
+            cv.ungated_twin(cfg)
+
+
+def test_malformed_gate_inputs_name_what_is_wrong():
+    good = _gated()
+    mode_list = dict(good, regime_detector=dict(good["regime_detector"], mode=["score"]))
+    mode_none = dict(good, regime_detector=dict(good["regime_detector"], mode=None))
+    for cfg, mode in ((mode_list, ["score"]), (mode_none, None)):
+        (err,) = cv.gate_form_errors(cfg, "c")
+        assert err.startswith(f"c.regime_detector.mode={mode!r}: combines_as regime_gate needs "
+                              f"mode threshold_rules"), err
+    rules_dict = dict(good, regime_detector=dict(good["regime_detector"], rules={"a": 1},
+                                                 vetoes=None))
+    assert cv.gate_form_errors(rules_dict, "c") == [f"c.regime_detector: {_NOT_A_LIST}"]
+    # a dict `rules` with real vetoes: the vetoes are the gate
+    assert cv.gate_form_errors(
+        dict(good, regime_detector=dict(good["regime_detector"], rules={"a": 1})), "c") == []
+    regimes_list = dict(good, strategies={"regimes": ["trending"]})
+    assert cv.gate_form_errors(regimes_list, "c") == [
+        "c.strategies.regimes: combines_as regime_gate needs exactly one non-null regime (the "
+        "regime the gate trades in), and this config has 0 []; set every other regime to null"]
+    assert cv.gate_form_errors(None, "c") == [
+        f"c.regime_detector: {_NOT_A_LIST}",
+        "c.strategies.regimes: combines_as regime_gate needs exactly one non-null regime (the "
+        "regime the gate trades in), and this config has 0 []; set every other regime to null"]
 
 
 # ---------------------------------------------------------------------------

@@ -13,6 +13,7 @@ not V18).
 All data is synthetic.
 """
 import copy
+import json
 
 import pytest
 from tools.validate_config import validate
@@ -20,7 +21,7 @@ from tools.validate_config import validate
 ER = "strategies.strategy_components.EfficiencyRatioRegimeComponent"
 SMA = "strategies.strategy_components.SmaTrendLongOnlyComponent"
 TOP = ("VIOLATION V18 regime_detector.default_regime: 'unknown' in mode 'threshold_rules' with "
-       "regime_detector.rules empty, so every bar resolves to 'unknown' (or to a veto's result, "
+       "regime_detector.rules empty or missing, so every bar resolves to 'unknown' (or to a veto's result, "
        "and none holds components) -- but strategies.regimes.unknown is null or missing. This "
        "config forecasts 0.0 on every bar; point default_regime at the regime that holds the "
        "components, or move the components to strategies.regimes.unknown.")
@@ -115,3 +116,39 @@ def test_a_block_source_detector_is_checked_against_its_parts():
         f"source.parts."]
     assert _v18(_block_cfg(det, parts={"unknown": ["b0__x"]})) == []
     assert _v18(_block_cfg(dict(det, mode="score"))) == []
+
+
+def test_a_block_source_veto_routing_into_parts_is_accepted():
+    # ruling (a), for a block: a veto whose result is a regime of source.parts keeps the block
+    # contributing, so there is no V18 even though the default 'unknown' is not in parts
+    det = copy.deepcopy(_cfg()["regime_detector"])                 # default 'unknown'
+    veto = {"id": "er", "rules": [{"op": "gt", "value": 0.5}], "result": "trending"}
+    assert _v18(_block_cfg(dict(det, vetoes=[veto]))) == []
+    assert len(_v18(_block_cfg(dict(det, vetoes=[dict(veto, result="chop")])))) == 1
+
+
+def test_a_block_source_with_rules_missing_is_checked_like_empty_rules():
+    det = copy.deepcopy(_cfg()["regime_detector"])
+    del det["rules"]                                               # missing = no rules
+    loc = "strategies.regimes.trending.blocks[0].source"
+    (line,) = _v18(_block_cfg(det))
+    assert line.startswith(f"VIOLATION V18 {loc}.regime_detector.default_regime: 'unknown' ")
+    assert _v18(_block_cfg(det, parts={"unknown": ["b0__x"]})) == []
+    # and with a default that is in parts, nothing at all
+    assert _v18(_block_cfg(dict(det, default_regime="trending"))) == []
+
+
+def test_advanced_strategy_construction_refuses_a_v18_config(tmp_path):
+    from strategies.main_strategy import AdvancedStrategy
+    path = tmp_path / "strategy_config.json"
+    path.write_text(json.dumps(_cfg()), encoding="utf-8")
+    assert _v18(_cfg())                                            # the fixture is a V18 config
+    with pytest.raises(ValueError, match="invalid strategy_config"):
+        AdvancedStrategy(config_path=str(path))
+
+
+def test_advanced_strategy_construction_accepts_the_same_config_pointed_at_the_regime(tmp_path):
+    from strategies.main_strategy import AdvancedStrategy
+    path = tmp_path / "strategy_config.json"
+    path.write_text(json.dumps(_cfg(default_regime="trending")), encoding="utf-8")
+    AdvancedStrategy(config_path=str(path))
