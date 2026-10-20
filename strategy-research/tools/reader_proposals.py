@@ -152,15 +152,11 @@ LEGACY_NO_VEHICLE = "legacy_no_vehicle"
 # and `vehicle: []` stays refused (D-151). `requires` names each op or component the config
 # uses that does not exist today, {kind: op|component, name, spec, example}; the content rules
 # (absent today, used by the config, every absent piece listed, validate_config / D-051 /
-# D-149) are tools/config_vehicle.py's, run where the reading is checked. The form lands
-# UNUSED: decide-next does not route it yet (V2), and every consumer of a flattened item's
-# `config_change` reads a patch list, so in V1 the mapping is refused exactly as before
-# (the patch-list message) unless a caller passes config_vehicle=True.
-# CONFIG_VEHICLE_ROUTED is NOT a flag (operator ruling 2026-10-20, D-159): it is not registered
-# in config/feature_flag_register.yaml and no config sets it; it marks the form as landed
-# unused. V2 DELETES this constant together with the routing; it does not flip it to True.
-# Tests cover both states (the checks with it forced on; today's exact refusal with it off).
-CONFIG_VEHICLE_ROUTED = False
+# D-149) are tools/config_vehicle.py's, run where the reading is checked. Routed since
+# vehicle-format V2-2/V3 (D-162): decide-next starts the child from the config itself
+# (decide_next.side_finding_start) and the run builds it by code at step 1b (D-110's exact
+# config route); a config vehicle is never handed on as a patch `config_change`. D-159's
+# switch (CONFIG_VEHICLE_ROUTED, never a flag) is deleted, as ruled, not flipped.
 VEHICLE_CONFIG_KIND = "config"
 REQUIRES_KINDS = ("op", "component")
 _CONFIG_VEHICLE_KEYS = frozenset({"kind", "config", "requires"})
@@ -289,17 +285,15 @@ def _check_item_id(pid, reading_id: str, where: str) -> None:
 
 
 def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False, analyst: bool = False,
-                  from_model: bool = False, envelope: bool = False,
-                  config_vehicle: bool | None = None) -> None:
+                  from_model: bool = False, envelope: bool = False) -> None:
     """Shape check of one v3 reading (the claim INSIDE a side finding is
     checked by claim_card.check_claim, not here). `from_model`: the text a
     reader answered -- a `skipped` reading is code's only, so it is refused.
     `envelope` (E-077 PR-2, orchestrator.folds.enabled): a model's side finding
     may carry the ENVELOPE_KEYS and MUST carry `vehicle`; without it a model's
     answer with any of them is refused as before (a file already written is
-    accepted either way). `config_vehicle` (D-159): whether a vehicle may be the
-    config form (CONFIG_VEHICLE_SHAPE); None reads CONFIG_VEHICLE_ROUTED (False;
-    not a flag, V2 deletes it), so a mapping is refused as before.
+    accepted either way). A mapping vehicle is the config form (D-159,
+    CONFIG_VEHICLE_SHAPE; routed since D-162).
     Raises ProposalError naming the whole required shape where it can."""
     if not is_reading(doc):
         raise ProposalError(f"{where}: a v3 reading must be a mapping with schema_version: "
@@ -365,8 +359,7 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
             raise ProposalError(f"{w}: claim must be a claim block mapping (CLAIM_TESTS.md)")
         if "config_change" in s:
             _check_change_items(s["config_change"], f"{w}.config_change")
-        _check_envelope(s, w, require_vehicle=envelope and from_model, from_model=from_model,
-                        config_vehicle=config_vehicle)
+        _check_envelope(s, w, require_vehicle=envelope and from_model, from_model=from_model)
         _check_evidence(s["evidence"], w)
         check_scores(s["scores"], w)
         if "requires_feed" in s:
@@ -400,24 +393,21 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
 
 
 def _check_envelope(s: dict, where: str, *, require_vehicle: bool,
-                    from_model: bool = False, config_vehicle: bool | None = None) -> None:
+                    from_model: bool = False) -> None:
     """The E-077 envelope of one side finding (ENVELOPE_KEYS): `vehicle` is the
     config-change list (and excludes `config_change`; required when
     `require_vehicle`), `combines_as` one of COMBINES_AS, `fold_observed` a fold
     id of config/folds.yaml. `vehicle: []` is refused in a model's answer
     (`from_model`) for every claim kind (EMPTY_VEHICLE_KINDS is empty); a file
     already written loads as it stands, and load_proposals flags the item
-    LEGACY_NO_VEHICLE (operator ruling 2026-10-19 item 3). D-159: with
-    `config_vehicle` on (None reads CONFIG_VEHICLE_ROUTED), a mapping vehicle is
-    the config form, checked by check_config_vehicle; off, it is refused by the
-    patch-list check exactly as before."""
+    LEGACY_NO_VEHICLE (operator ruling 2026-10-19 item 3). D-159/D-162: a
+    mapping vehicle is the config form, checked by check_config_vehicle."""
     if "vehicle" in s and "config_change" in s:
         raise ProposalError(f"{where}: write `vehicle` OR `config_change`, not both -- the "
                             f"vehicle IS the finding's config change")
-    accept_config = CONFIG_VEHICLE_ROUTED if config_vehicle is None else config_vehicle
     if "vehicle" in s:
         kind = s["claim"].get("kind") if isinstance(s.get("claim"), dict) else None
-        if accept_config and isinstance(s["vehicle"], dict):
+        if isinstance(s["vehicle"], dict):
             check_config_vehicle(s["vehicle"], f"{where}.vehicle")
         elif s["vehicle"] == [] and from_model and kind not in EMPTY_VEHICLE_KINDS:
             raise ProposalError(
@@ -528,8 +518,9 @@ def flatten_reading(doc: dict) -> list:
             item["config_change"] = s["config_change"]
         # E-077 PR-2: the vehicle IS the config change (decide-next reads config_change);
         # the three envelope keys travel with the item so the ledger can record them.
-        # D-159: only a patch-list vehicle is a config_change; a config vehicle (a mapping,
-        # accepted only with config_vehicle on) travels as `vehicle` alone, never as a patch.
+        # D-159: only a patch-list vehicle is a config_change; a config vehicle (a mapping)
+        # travels as `vehicle` alone, never as a patch: decide-next routes it whole (D-162,
+        # decide_next.side_finding_start), never through resolve_patch.
         if "vehicle" in s and isinstance(s["vehicle"], list):
             item["config_change"] = s["vehicle"]
         for key in sorted(ENVELOPE_KEYS & set(s)):
@@ -632,15 +623,16 @@ BASE_COMPONENT_CLASS_NAMES = frozenset({"SubStrategyComponent"})
 _SUGGESTION_CUTOFF = 0.6
 
 
-def _string_leaves(node):
+def _string_leaves(node, _path=frozenset()):
+    """Every string leaf of `node`. D-162 (review B1): a container already on the current path
+    (a YAML alias cycle in a proposal file on disk) is not entered again, so the scan ends;
+    an acyclic node, shared aliases included, yields exactly what it did before."""
     if isinstance(node, str):
         yield node
-    elif isinstance(node, dict):
-        for value in node.values():
-            yield from _string_leaves(value)
-    elif isinstance(node, list):
-        for value in node:
-            yield from _string_leaves(value)
+    elif isinstance(node, (dict, list)) and id(node) not in _path:
+        path = _path | {id(node)}
+        for value in (node.values() if isinstance(node, dict) else node):
+            yield from _string_leaves(value, path)
 
 
 def unknown_class_names(proposal, known, card_text=None) -> dict:

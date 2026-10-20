@@ -4849,7 +4849,12 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
             **({"composition_runs": True, "dsr_basis": _ledger_dsr_basis()} if comp_on else {}),
             **({"folds": folds_doc, "fold_data": fold_data} if folds_doc is not None else {}),
             # E-075 PR-5a (D-091): the trade-level family, only under orchestrator.analyst
-            **({"trade_tests": True} if orch._analyst_enabled() else {}))
+            **({"trade_tests": True} if orch._analyst_enabled() else {}),
+            # D-162: the ops that exist, read only when a proposal carries a config vehicle;
+            # a config vehicle is built by D-110's exact-config 1b, so decide-next is told
+            # whether that flag is on (the kwarg only when on)
+            known_ops=lambda: dn.known_ops(_TRADING_BOT_ROOT),
+            **({"exact_config_1b": True} if orch._exact_config_1b_enabled() else {}))
         mem_entry = (inputs["memory"].get("runs") or {}).get(run_id) or {}
         trigger = {"after_run": run_id, "after_entry": entry["id"],
                    "idea_status": mem_entry.get("idea_status")}
@@ -4956,6 +4961,13 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
     items[idx] = entry
     _apply_updates(items, updates)
     _save_queue(disk_queue)
+    # D-162 (V2b): the spec of each missing op or component a config vehicle waits on,
+    # requested once per (kind, name), the first spec kept; written after the queue is
+    # saved (D-162 review nit), so a decide pass that fails before it requests nothing
+    piece_requests = dn.component_request_rows(record, inputs)
+    if piece_requests:
+        crr.append_component_requests(ROOT / crr.COMPONENT_REQUESTS_REL, piece_requests,
+                                      key=dn.component_request_key)
     _log_awaiting_approval(held)
     return disk_queue, entry, stop is None, msg
 

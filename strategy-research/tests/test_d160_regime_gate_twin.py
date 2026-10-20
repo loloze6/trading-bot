@@ -7,8 +7,7 @@
    default_regime the single non-null regime, everything else kept; pure.
 3. The twin is checked like the config (validate_config incl. V18, D-051/D-149); a twin
    failure is a refusal naming the twin.
-4. The wiring, with reader_proposals.CONFIG_VEHICLE_ROUTED forced on; off, unchanged (the old
-   patch-list refusal).
+4. The wiring (no switch since D-162: CONFIG_VEHICLE_ROUTED is deleted).
 
 Minimal pins (fuller tests follow). No LLM, no backtest, no market data.
 """
@@ -242,7 +241,7 @@ def test_the_twin_is_checked_only_once_the_config_and_form_pass(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# 4. the wiring, CONFIG_VEHICLE_ROUTED forced on; off unchanged
+# 4. the wiring (no switch, D-162)
 # ---------------------------------------------------------------------------
 
 def _doc(config) -> dict:
@@ -258,8 +257,7 @@ def _source_run(run_dir) -> None:
                                                                encoding="utf-8")
 
 
-def test_on_the_reading_check_applies_the_gate_form(monkeypatch, tmp_path):
-    monkeypatch.setattr(rp, "CONFIG_VEHICLE_ROUTED", True)
+def test_the_reading_check_applies_the_gate_form(monkeypatch, tmp_path):
     monkeypatch.setattr(rpr, "_claim_check_kw", lambda: {"folds": True})
     _source_run(tmp_path)     # D-161: the vehicle is also checked against its source run
     for cfg in (_gated(), copy.deepcopy(CONFIG)):
@@ -271,8 +269,8 @@ def test_on_the_reading_check_applies_the_gate_form(monkeypatch, tmp_path):
         "gate")], errs
 
 
-def test_off_a_regime_gate_config_vehicle_gets_the_old_refusal():
-    assert rp.CONFIG_VEHICLE_ROUTED is False
-    with pytest.raises(rp.ProposalError) as exc:
-        rp.check_reading(_doc(_gated()), CAT, "reading", from_model=True, envelope=True)
-    assert str(exc.value) == f"reading.side_findings[0].{OLD_MESSAGE}"
+def test_a_regime_gate_config_vehicle_is_accepted_with_no_switch():
+    assert not hasattr(rp, "CONFIG_VEHICLE_ROUTED")
+    rp.check_reading(_doc(_gated()), CAT, "reading", from_model=True, envelope=True)
+    (item,) = rp.flatten_reading(_doc(_gated()))
+    assert item["vehicle"] == _vehicle(_gated()) and "config_change" not in item

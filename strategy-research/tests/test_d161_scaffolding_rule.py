@@ -13,8 +13,8 @@ A config vehicle is measured against its SOURCE run (config_vehicle.source_fit_e
 Probes on committed sources: the exact config and manifest of
 briefs/L1_daily_trend_basket_sma50_v3.md and briefs/rebase_run_095_standardised_host.md
 (read with run_phase1_research's own brief parsers), and the detector of
-trading-bot/strategy_config.json. The wiring runs with reader_proposals.CONFIG_VEHICLE_ROUTED
-forced on; off, a config vehicle gets today's refusal. No LLM, no backtest, no market data.
+trading-bot/strategy_config.json. The wiring runs with no switch (D-162 deleted
+reader_proposals.CONFIG_VEHICLE_ROUTED). No LLM, no backtest, no market data.
 """
 from __future__ import annotations
 
@@ -31,6 +31,7 @@ sys.path.insert(0, str(SR_ROOT / "workflow"))
 sys.path.insert(0, str(SR_ROOT / "tools"))
 sys.path.insert(0, str(SR_ROOT / "tests"))
 
+import block_manifest as bm  # noqa: E402
 import config_vehicle as cv  # noqa: E402
 import reader_proposals as rp  # noqa: E402
 import run_phase1_research as rpr  # noqa: E402
@@ -410,24 +411,49 @@ def _with_scaffolding(manifest: dict, pointer: str) -> dict:
 
 
 @pytest.mark.parametrize("pointer", ["/regime_detector/vetoes", "/regime_detector/rules/0"])
-def test_a_gate_whose_ungated_twin_cannot_resolve_the_manifest_is_refused(rebase, pointer):
-    """Probe P1: a scaffolding pointer under the gate resolves in the gated config but not in
-    its ungated twin (rules [], vetoes dropped), the design variant D-110 runs with the same
-    manifest."""
+def test_a_scaffolding_pointer_under_the_gate_is_accepted_for_the_twin(rebase, pointer):
+    """Probe P1, re-pointed by D-162 (review A): a scaffolding pointer under the gate resolves
+    in the gated config but not in its ungated twin (rules [], vetoes dropped). The twin is the
+    run's design variant and 5a checks a variant on BLOCK paths only (a variant may change
+    scaffolding), so reading time no longer refuses it (D-161 checked the twin in full)."""
     config, manifest = rebase
     source = _tb_detector(config)               # rules and vetoes: the source is gated already
     gate = copy.deepcopy(source)
-    expected = [
-        "v.config: the source run's block_manifest.yaml, checked against this config as the "
-        "next run's base config (ungated twin): manifest path(s) "
-        f"['{pointer}'] do not resolve in the base config; keep every block and scaffolding "
-        "path the source's manifest lists (D-110 runs this config with that manifest)"]
-    assert _fit(gate, source, _with_scaffolding(manifest, pointer)) == expected
-    assert _full(gate, source, _with_scaffolding(manifest, pointer)) == expected
+    assert _fit(gate, source, _with_scaffolding(manifest, pointer)) == []
+    assert _full(gate, source, _with_scaffolding(manifest, pointer)) == []
     # an ordinary accepted gate: the same config with the scaffolding /regime_detector
     assert _full(gate, source, manifest) == []
-    # not a regime gate: no twin, nothing to refuse
     assert _fit(gate, source, _with_scaffolding(manifest, pointer), "forecast_block") == []
+
+
+def _with_gate_block_path(manifest: dict, pointer: str) -> dict:
+    """The manifest with /regime_detector narrowed to its components (scaffolding) and
+    `pointer`, a piece of the gate, added to the BLOCK paths."""
+    out = _with_scaffolding(manifest, "/regime_detector/components")
+    out["block"]["config_paths"] = out["block"]["config_paths"] + [pointer]
+    return bm.validate_manifest(out)
+
+
+@pytest.mark.parametrize("pointer", ["/regime_detector/vetoes", "/regime_detector/rules/0"])
+def test_a_block_path_the_ungated_twin_cannot_resolve_is_refused(rebase, pointer):
+    """D-162 (review A): a BLOCK path under the gate resolves in the gated config but not in
+    its ungated twin, which 5a would leave untested: refused, by the check decide-next runs
+    too (config_vehicle.twin_missing_block_paths)."""
+    config, manifest = rebase
+    source = _tb_detector(config)
+    gate = copy.deepcopy(source)
+    m = _with_gate_block_path(manifest, pointer)
+    expected = [
+        "v.config: the ungated twin (D-052: rules [], vetoes dropped; the run's design variant) "
+        f"does not resolve the block path(s) ['{pointer}'] of the source run's "
+        "block_manifest.yaml; keep every block path outside the gate, so the twin still holds "
+        "the block (5a does not test a variant that loses one)"]
+    assert _fit(gate, source, m) == expected
+    assert _full(gate, source, m) == expected
+    assert cv.twin_missing_block_paths(cv.derived_manifest(m, source, gate, "regime_gate"),
+                                       cv.ungated_twin(gate)) == [pointer]
+    # not a regime gate: no twin, nothing to refuse
+    assert _fit(gate, source, m, "forecast_block") == []
 
 
 def test_the_twin_is_checked_only_once_the_config_fits(rebase):
@@ -436,7 +462,7 @@ def test_the_twin_is_checked_only_once_the_config_fits(rebase):
     del gate["strategies"]["regimes"]["mean_reversion"]
     errs = _fit(gate, config, manifest)
     assert sum("do not resolve" in e for e in errs) == 1
-    assert "(ungated twin)" not in errs[-1]
+    assert not any("ungated twin" in e for e in errs)
 
 
 def _er_source(config: dict) -> dict:
@@ -532,7 +558,7 @@ def test_a_config_that_refers_to_itself_is_refused_not_a_crash(rebase):
 
 
 # ---------------------------------------------------------------------------
-# the wiring: CONFIG_VEHICLE_ROUTED forced on; off unchanged
+# the wiring (no switch, D-162)
 # ---------------------------------------------------------------------------
 
 def _source_run(tmp_path, config, manifest, name="run_x") -> Path:
@@ -553,7 +579,6 @@ def _doc(config, combines_as="regime_gate") -> dict:
 
 @pytest.fixture()
 def routed(monkeypatch):
-    monkeypatch.setattr(rp, "CONFIG_VEHICLE_ROUTED", True)
     monkeypatch.setattr(rpr, "_claim_check_kw", lambda: {"folds": True})
 
 
@@ -673,9 +698,7 @@ def test_on_a_cyclic_config_vehicle_is_a_refusal(routed, tmp_path, rebase):
         CYCLE.replace("v.config", "side_findings[0].vehicle.config")]
 
 
-def test_off_a_config_vehicle_gets_the_old_refusal(rebase):
-    assert rp.CONFIG_VEHICLE_ROUTED is False
-    with pytest.raises(rp.ProposalError) as exc:
-        rp.check_reading(_doc(_relabel_gate(rebase[0])), CAT, "reading", from_model=True,
-                         envelope=True)
-    assert str(exc.value) == f"reading.side_findings[0].{OLD_MESSAGE}"
+def test_a_config_vehicle_is_accepted_by_the_shape_check_with_no_switch(rebase):
+    assert not hasattr(rp, "CONFIG_VEHICLE_ROUTED")
+    rp.check_reading(_doc(_relabel_gate(rebase[0])), CAT, "reading", from_model=True,
+                     envelope=True)
