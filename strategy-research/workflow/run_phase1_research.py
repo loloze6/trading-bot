@@ -5662,10 +5662,25 @@ def _reading_content_errors(doc: dict, category: str, run_dir: Path) -> list:
     (decide_next.resolve_patch, the same check decide-next applies) and never
     under a scaffolding path of block_manifest.yaml (a deliberately ungated
     detector is not part of the idea, run_070). Continuation 2: a reading
-    carries no stand-alone patch (refused by the shape check)."""
+    carries no stand-alone patch (refused by the shape check). A config
+    vehicle (D-159/D-160) is checked whole, then (D-161) against this run as
+    its source: config_vehicle.source_fit_errors with this run's base config
+    and block_manifest.yaml (none: refused)."""
     rf = _reader_findings_module()
     errors = []
     base, base_error = None, None
+
+    def _load_base() -> str:
+        """This run's base config, read once into `base` (or `base_error`); its rel path."""
+        nonlocal base, base_error
+        rel = _reader_base_config_rel(run_dir)
+        if base is None and base_error is None:
+            try:
+                base = json.loads((Path(run_dir) / rel).read_text(encoding="utf-8"))
+            except (OSError, ValueError) as exc:
+                base_error = f"the base config {rel} cannot be read ({exc})"
+        return rel
+
     for i, s in enumerate(doc.get("side_findings") or []):
         review = rf.side_finding_review(s, prior={}, own=set(), run_id=Path(run_dir).name,
                                         **_claim_check_kw())
@@ -5678,20 +5693,41 @@ def _reading_content_errors(doc: dict, category: str, run_dir: Path) -> list:
             # only with reader_proposals' config_vehicle on) is checked whole -- requires,
             # validate_config, D-051/D-149 -- and is never resolved as a patch; D-160: with
             # combines_as regime_gate, the gate form and its ungated twin too
-            errors += _config_vehicle_module().config_vehicle_errors(
-                s["vehicle"], f"side_findings[{i}].vehicle", combines_as=s.get("combines_as"))
+            cv, where = _config_vehicle_module(), f"side_findings[{i}].vehicle"
+            own = cv.config_vehicle_errors(s["vehicle"], where, combines_as=s.get("combines_as"))
+            errors += own
+            if own:
+                continue
+            # D-161 (V2-1): then against the source run -- no block manifest refused, its
+            # scaffolding kept (a regime gate's allowances aside), its manifest (relabelled
+            # by code for a moved trading regime) fitting the config
+            bm = _block_manifest_module()
+            mpath = Path(run_dir) / "artifacts" / bm.MANIFEST_FILENAME
+            try:
+                manifest = bm.load_manifest_file(mpath, error_cls=ValueError)
+            except ValueError as exc:
+                errors.append(f"{where}: the source run's {bm.MANIFEST_FILENAME} cannot be read "
+                              f"({str(exc).replace(str(mpath), bm.MANIFEST_FILENAME)})")
+                continue
+            if manifest is not None:
+                rel = _load_base()
+                if base_error:
+                    # the run directory stripped from an OSError's text (its full path, as
+                    # written and as the OSError quotes it, shown run-relative), as the
+                    # manifest error above does; the patch path below keeps its message
+                    full = str(Path(run_dir) / rel)
+                    shown = base_error.replace(repr(full)[1:-1], rel).replace(full, rel)
+                    errors.append(f"{where}: {shown}")
+                    continue
+            errors += cv.source_fit_errors(s["vehicle"]["config"], base, manifest,
+                                           s.get("combines_as"), where)
             continue
         key = "vehicle" if isinstance(s, dict) and s.get("vehicle") else "config_change"
         change = s.get(key) if isinstance(s, dict) else None
         if not change:
             continue
         where = f"side_findings[{i}].{key}"
-        rel = _reader_base_config_rel(run_dir)
-        if base is None and base_error is None:
-            try:
-                base = json.loads((Path(run_dir) / rel).read_text(encoding="utf-8"))
-            except (OSError, ValueError) as exc:
-                base_error = f"the base config {rel} cannot be read ({exc})"
+        rel = _load_base()
         if base_error:
             errors.append(f"{where}: {base_error}")
             continue
