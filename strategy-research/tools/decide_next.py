@@ -43,6 +43,11 @@ What decides, in order:
      unknown component class; a regime block is infeasible before slice 7;
      (E-035 S2c) a proposal's `requires_feed` blocks it only while that feed
      is not WIRED and the candidate's config consumes it (requires_feed_gate).
+     (D-162) A side finding's CONFIG vehicle starts the child from that config
+     (side_finding_start) and waits, re-checked every pass, while an op or
+     component it uses is missing (requires_op:/requires_component:, the spec
+     filed once per name by the caller, component_request_rows) or
+     orchestrator.exact_config_1b is off (exact_config_1b_off).
   3. Eligible candidates collapse (card I, full novelty key; ineligible ones
      never collapse into them) and are ranked: confidence_real desc,
      distance_to_profitable desc, cost (backtests) asc, candidate_id asc.
@@ -271,6 +276,37 @@ def component_class_status(trading_bot_root: Path, class_path) -> str:
     except (SyntaxError, ValueError, OSError):
         return "invalid"
     return "defined" if name in names else "missing"
+
+
+# D-162 (vehicle-format V2-2): the transform ops that exist today, for a config vehicle's
+# `requires`. Read with ast (the module imports pandas and numpy, which decide_next must
+# not need), as known_component_classes reads the components.
+TRANSFORM_OPS_MODULE = "strategies.registry"
+TRANSFORM_OPS_NAME = "TRANSFORM_OPS_REGISTRY"
+
+
+def known_ops(trading_bot_root: Path) -> list:
+    """Sorted string keys of trading-bot/strategies/registry.py's module-level
+    TRANSFORM_OPS_REGISTRY dict literal (an annotated assignment there, a plain one
+    accepted too), read with ast, never imported. Raises DecideNextError when the module
+    is unreadable or the registry is not a dict literal with string keys: a silent empty
+    set would call every op of every config vehicle missing."""
+    path = Path(trading_bot_root).joinpath(*TRANSFORM_OPS_MODULE.split(".")).with_suffix(".py")
+    tree = _parse_module(path)
+    node = None
+    for stmt in tree.body:
+        if (isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name)
+                and stmt.target.id == TRANSFORM_OPS_NAME):
+            node = stmt.value
+        elif (isinstance(stmt, ast.Assign) and len(stmt.targets) == 1
+              and isinstance(stmt.targets[0], ast.Name)
+              and stmt.targets[0].id == TRANSFORM_OPS_NAME):
+            node = stmt.value
+    if not (isinstance(node, ast.Dict) and node.keys and all(
+            isinstance(k, ast.Constant) and isinstance(k.value, str) for k in node.keys)):
+        raise DecideNextError(f"{path}: no module-level {TRANSFORM_OPS_NAME} dict literal with "
+                              f"string keys -- cannot tell which ops exist")
+    return sorted(k.value for k in node.keys)
 
 
 # ---------------------------------------------------------------------------
@@ -986,7 +1022,8 @@ def requests_count(doc) -> int:
 def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None,
                 digest=None, composition_runs: bool = False, dsr_basis: dict | None = None,
                 feed_set=None, folds: dict | None = None, fold_data: dict | None = None,
-                trade_tests: bool = False) -> dict:
+                trade_tests: bool = False, known_ops=None,
+                exact_config_1b: bool = False) -> dict:
     """Everything decide() reads, from disk under `root` (strategy-research/).
     `queue` is the caller's in-memory queue document (after its own write).
     `known_classes` is the known component class set (known_component_classes)
@@ -1012,7 +1049,16 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
     its fold. None: that check is skipped.
     `trade_tests` (D-091; the caller passes it only under orchestrator.analyst.enabled): a side
     finding's claim may use the trade-level test family (inputs["trade_tests"]). Off: no
-    such key, every claim checked as before."""
+    such key, every claim checked as before.
+    `known_ops` (D-162): None, a list of op names, or a zero-argument callable returning one
+    (run_campaign passes a callable over known_ops). Used -- and a callable CALLED -- only
+    when some loaded proposal carries a config vehicle (a mapping `vehicle`): then
+    inputs["known_ops"] is the sorted list (None when none was supplied). No config
+    vehicle: no such key, nothing read.
+    `exact_config_1b` (D-162; run_campaign passes it only when
+    run_phase1_research._exact_config_1b_enabled() is on): a config vehicle runs through
+    D-110's exact-config 1b, so without it such a candidate is INFEASIBLE
+    (`exact_config_1b_off`). Off: no such key."""
     root = Path(root)
     mem_path = root / "campaign_record" / "campaign_memory.yaml"
     memory = _cm.load_memory(mem_path)
@@ -1076,6 +1122,11 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
                       for src in runs.values() for item in src["proposals"])
     if needs_feeds and callable(feed_set):
         feed_set = feed_set()
+    # D-162: the known ops, read only when some proposal carries a config vehicle
+    needs_ops = any(isinstance(item["proposal"].get("vehicle"), dict)
+                    for src in runs.values() for item in src["proposals"])
+    if needs_ops and callable(known_ops):
+        known_ops = known_ops()
 
     out = {
         "brief_cards": brief_cards,
@@ -1095,6 +1146,10 @@ def load_inputs(root: Path, queue: dict, *, categories: list, known_classes=None
     }
     if trade_tests:
         out["trade_tests"] = True
+    if needs_ops:
+        out["known_ops"] = sorted(known_ops) if known_ops is not None else None
+    if exact_config_1b:
+        out["exact_config_1b"] = True
     if folds is not None:
         out["folds"] = {"doc": copy.deepcopy(folds), "run_ranges": _memory_run_ranges(root, memory),
                         "data": fold_data}
@@ -1658,6 +1713,12 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
             # measured (fold_confirm compares the measured config with candidate.start_config)
             reasons.append("empty_vehicle_needs_a_source_config: an empty vehicle re-runs the "
                            "source run's config unchanged, and this source has no block config")
+        elif start.get("config_vehicle"):
+            # D-162: the config vehicle itself, built by code at 1b (D-110), re-checked on
+            # every pass: eligible with no rewrite once a missing piece exists
+            config_for_digest = start["config"]
+            resolved_sha = config_sha256(start["config"])
+            reasons += config_vehicle_reasons(p, start, inputs)
         elif start["ops"]:
             config_for_digest = start["config"]
             resolved_sha = config_sha256(start["config"])
@@ -1695,7 +1756,10 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
                        "note": "no config until 1b authors it",
                        "spec_hashes": list(side_review["spec_hashes"])}
         feas = "INFEASIBLE" if reasons else "UNKNOWN"
-        if not reasons:
+        if not reasons and start.get("config_vehicle"):
+            reasons.append("the vehicle's config, copied by code at 1b (D-110); step 3's data "
+                           "gate stays binding")
+        elif not reasons:
             reasons.append("starts from the source run's config at 1b; step 3's data gate "
                            "stays binding" if start["config"] is not None else
                            "config authored at 1b; step 3's data gate stays binding")
@@ -1869,18 +1933,39 @@ def side_finding_start(p: dict, src: dict) -> dict:
       * no base config or no block manifest on disk: reason
         `source_config_missing` (the candidate is INFEASIBLE);
       * a config_change that does not resolve: its resolve_patch reason.
-    `ops` lists the resolved changes ([] when the finding carries none)."""
+    `ops` lists the resolved changes ([] when the finding carries none).
+    D-162 (vehicle-format V2-2): a CONFIG vehicle (a mapping `vehicle`, D-159) starts the
+    child from that config itself, a deep copy, with the source's block manifest as
+    config_vehicle.derived_manifest relabels it (D-161: a regime gate that moved the trading
+    regime); `ops` is [] and the result carries `config_vehicle: True` (that key only on this
+    path). On a composite source it is refused like a config change. A config that is not
+    plain JSON (config_vehicle.json_error: a cycle, a YAML date, a non-string key, NaN, a
+    tuple) gives reason `config_not_json: ...` and config None (D-162 review B1): the
+    candidate is INFEASIBLE instead of the pass crashing on config_sha256 or the brief's
+    json.dumps, for a proposal file that reached the disk without the reading check."""
+    vehicle = p.get("vehicle")
+    config_vehicle = isinstance(vehicle, dict)
     if isinstance(src.get("composition_manifest"), dict):
         return {"config": None, "manifest": None, "ops": [],
                 "reason": ("config_change_on_composition: a composite run has no block config "
                            "to apply the finding's config change to; propose the claim without "
-                           "it") if p.get("config_change") else None}
+                           "it") if (p.get("config_change") or config_vehicle) else None}
     base, manifest = src.get("base_config"), src.get("manifest")
     if not isinstance(base, dict) or not isinstance(manifest, dict):
         return {"config": None, "manifest": None, "ops": [],
                 "reason": ("source_config_missing: a side finding starts from the source "
                            "run's base config and block manifest (CUL-412), and they are "
                            "not on disk")}
+    if config_vehicle:
+        import config_vehicle as _cv  # tools/ sibling; only a config vehicle needs it
+        not_json = _cv.json_error(vehicle.get("config"), "the vehicle's config")
+        if not_json:
+            return {"config": None, "manifest": None, "ops": [],
+                    "reason": f"{CONFIG_NOT_JSON}: {not_json}"}
+        return {"config": copy.deepcopy(vehicle["config"]),
+                "manifest": _cv.derived_manifest(manifest, base, vehicle["config"],
+                                                 p.get("combines_as")),
+                "ops": [], "reason": None, "config_vehicle": True}
     change = p.get("config_change")
     if not change:
         return {"config": copy.deepcopy(base), "manifest": copy.deepcopy(manifest),
@@ -1889,6 +1974,135 @@ def side_finding_start(p: dict, src: dict) -> dict:
     if why:
         return {"config": None, "manifest": None, "ops": [], "reason": f"config_change: {why}"}
     return {"config": patched, "manifest": copy.deepcopy(manifest), "ops": ops, "reason": None}
+
+
+# ---------------------------------------------------------------------------
+# D-162 (vehicle-format V2-2): a config vehicle routed
+# ---------------------------------------------------------------------------
+# The two constraint prefixes of D-110's exact-config brief, copied from
+# run_phase1_research (BRIEF_EXACT_CONFIG_PREFIX / BRIEF_EXACT_MANIFEST_PREFIX; decide_next
+# never imports the orchestrator). A test pins the copies equal.
+BRIEF_EXACT_CONFIG_PREFIX = "Build EXACTLY this strategy config (JSON)"
+BRIEF_EXACT_MANIFEST_PREFIX = "Use EXACTLY this block manifest (JSON)"
+REQUIRES_OP = "requires_op"
+REQUIRES_COMPONENT = "requires_component"
+EXACT_CONFIG_1B_OFF = "exact_config_1b_off"
+CONFIG_NOT_JSON = "config_not_json"     # review B1: side_finding_start's guard
+_REQUIRES_REASON_RE = re.compile(r"^requires_(op|component):(\S+)")
+# where the full config of a slim vehicle copy lives, in the child's brief (Q4)
+START_CONFIG_POINTER = "candidate.start_config"
+
+
+def config_vehicle_reasons(p: dict, start: dict, inputs: dict) -> list:
+    """The INFEASIBLE reasons of a config-vehicle side finding (side_finding_start gave
+    `start`, config_vehicle True); [] when it can run. Read on every decide pass, from the
+    config itself, so the candidate becomes eligible with no rewrite once a missing piece
+    exists:
+      * manifest_unresolved -- block_manifest.check_manifest of start's manifest (the
+        source's, relabelled by config_vehicle.derived_manifest) against the config: the
+        check D-110's exact-config 1b runs; with combines_as regime_gate, the ungated twin
+        (config_vehicle.ungated_twin, the run's design variant, D-052) must resolve the
+        manifest's block paths too, the check 5a runs on every variant
+        (config_vehicle.twin_missing_block_paths, shared with reading time);
+      * requires_op:<name> -- an op the config uses (config_vehicle.used_pieces) that is not
+        in inputs["known_ops"] (known_ops; every op when none was supplied);
+      * requires_component:<name> -- a component class the config uses that is not in
+        inputs["known_classes"] (every class when none was supplied);
+      * exact_config_1b_off -- inputs carry no `exact_config_1b` (the flag is off), so 1b
+        would not build this config by code.
+    Pure."""
+    import block_manifest as _bm  # tools/ siblings; only a config vehicle needs them
+    import config_vehicle as _cv
+    reasons = []
+    cfg, manifest = start["config"], start["manifest"]
+    try:
+        _bm.check_manifest(manifest, cfg, where="the source run's block manifest, as the child "
+                           "runs it (config_vehicle.derived_manifest)", error_cls=ValueError)
+    except ValueError as exc:
+        reasons.append(f"manifest_unresolved: {exc}")
+    if p.get("combines_as") == _cv.REGIME_GATE:
+        try:
+            twin = _cv.ungated_twin(cfg)
+        except ValueError as exc:
+            reasons.append(f"manifest_unresolved: the ungated twin (D-052, the run's design "
+                           f"variant) cannot be derived: {exc}")
+        else:
+            # D-162 review A: the one block-paths-only check reading time runs too
+            missing = _cv.twin_missing_block_paths(manifest, twin)
+            if missing:
+                reasons.append(f"manifest_unresolved: the ungated twin (D-052, the run's design "
+                               f"variant) does not resolve the block path(s) {missing}")
+    ops, classes = _cv.used_pieces(cfg)
+    k_ops, k_classes = inputs.get("known_ops"), inputs.get("known_classes")
+    for op in sorted(ops):
+        if k_ops is None:
+            reasons.append(f"{REQUIRES_OP}:{op} -- no known op set was supplied")
+        elif op not in k_ops:
+            reasons.append(f"{REQUIRES_OP}:{op} -- not in {TRANSFORM_OPS_NAME} "
+                           f"({TRANSFORM_OPS_MODULE}) yet; eligible as it stands once it is")
+    for cls in sorted(classes):
+        if k_classes is None:
+            reasons.append(f"{REQUIRES_COMPONENT}:{cls} -- no known class set was supplied")
+        elif cls not in k_classes:
+            reasons.append(f"{REQUIRES_COMPONENT}:{cls} -- not defined in {COMPONENT_MODULE} "
+                           f"yet; eligible as it stands once it is")
+    if not inputs.get("exact_config_1b"):
+        reasons.append(f"{EXACT_CONFIG_1B_OFF}: a config vehicle is built only by D-110's "
+                       f"exact-config 1b (the config and its block manifest copied by code), "
+                       f"and orchestrator.exact_config_1b is off")
+    return reasons
+
+
+def slim_vehicle(vehicle: dict, config_ref: str) -> dict:
+    """Q4 (D-162): the slim copy of a config vehicle kept in a brief's
+    candidate.source.proposal and in a fold-confirm row -- {kind: config, config_sha256,
+    requires (only when the vehicle lists it), config_ref}; `config_ref` points to where
+    the full config lives. Pure."""
+    out = {"kind": vehicle.get("kind"), "config_sha256": config_sha256(vehicle.get("config"))}
+    if "requires" in vehicle:
+        out["requires"] = copy.deepcopy(vehicle["requires"])
+    out["config_ref"] = config_ref
+    return out
+
+
+def component_request_rows(record: dict, inputs: dict) -> list:
+    """V2b (D-162): one campaign_record/component_requests.yaml row per missing op or
+    component a config-vehicle candidate of `record` waits on (its requires_op: /
+    requires_component: reasons) whose spec its vehicle's `requires` lists:
+    {kind, name, spec, example, stage: decide_next, run_id, proposal_ref, reason}, in
+    candidate then reason order. The caller appends them keyed on (kind, name), so a name
+    is written once, its first spec kept. Pure; [] when nothing waits."""
+    rows = []
+    for cand in record.get("candidates") or []:
+        if cand.get("kind") != _rp.SIDE_FINDING:
+            continue
+        reasons = ((cand.get("gates") or {}).get("feasibility") or {}).get("reasons") or []
+        wanted = [m.groups() for m in (_REQUIRES_REASON_RE.match(str(r)) for r in reasons) if m]
+        if not wanted:
+            continue
+        try:
+            _cat, p = _find_proposal(inputs, cand["source_run"], cand["candidate_id"])
+        except DecideNextError:
+            continue
+        vehicle = p.get("vehicle")
+        listed = {(r.get("kind"), r.get("name")): r
+                  for r in ((vehicle.get("requires") or []) if isinstance(vehicle, dict) else [])
+                  if isinstance(r, dict)}
+        for kind, name in wanted:
+            r = listed.get((kind, name))
+            if r is None:
+                continue
+            rows.append({"kind": kind, "name": name, "spec": r.get("spec"),
+                         "example": copy.deepcopy(r.get("example")), "stage": "decide_next",
+                         "run_id": cand["source_run"], "proposal_ref": cand["proposal_ref"],
+                         "reason": f"requires_{kind}:{name}"})
+    return rows
+
+
+def component_request_key(row: dict) -> tuple:
+    """The identity of a V2b row for campaign_review_retired.append_component_requests:
+    (kind, name), so each missing piece is requested once (D-162)."""
+    return (row.get("kind"), row.get("name"))
 
 
 def _cc_kind_block(kind):
@@ -1926,12 +2140,19 @@ def class_name_warnings(proposal: dict, known, card_text) -> list:
     class name the proposal writes that is neither a known class
     (known_component_classes) nor quoted from the run's hypothesis card
     (reader_proposals.unknown_class_names). WARNING ONLY -- never a reason,
-    never a change of eligibility or rank. [] without a known class set."""
+    never a change of eligibility or rank. [] without a known class set.
+    D-162 (review nit): a class a config vehicle lists in its `requires` (kind component) is
+    declared missing on purpose -- its requires_component reason and component request say
+    so -- and gets no warning."""
     if known is None:
         return []
     found = _rp.unknown_class_names(proposal, known, card_text)
+    vehicle = proposal.get("vehicle") if isinstance(proposal, dict) else None
+    required = {str(r.get("name")).rpartition(".")[2]
+                for r in ((vehicle.get("requires") or []) if isinstance(vehicle, dict) else [])
+                if isinstance(r, dict) and r.get("kind") == "component"}
     return [{"kind": UNKNOWN_CLASS_WARNING, "name": u["name"], "suggestion": u["suggestion"]}
-            for u in found["unknown"]]
+            for u in found["unknown"] if u["name"] not in required]
 
 
 def _card_candidate(entry: dict, info: dict, owner) -> dict:
@@ -2447,7 +2668,37 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str,
         if start["reason"]:
             raise DecideNextError(f"picked side finding {cid!r} has no start config: "
                                   f"{start['reason']}")
-        if start["config"] is not None:
+        if start.get("config_vehicle"):
+            # D-162 (V2d): the config vehicle as an exact config plus its exact block
+            # manifest, the constraint layout of D-110 (run_campaign.refold_brief), so 1b
+            # builds it by code. NOT expected_config_sha256: that marks a pass-through
+            # patch, which _exact_config_1b refuses (D-110).
+            candidate["start_config"] = start["config"]
+            candidate["start_manifest"] = start["manifest"]
+            source["base_config_ref"] = src["base_config_ref"]
+            source["start_config_sha256"] = config_sha256(start["config"])
+            # Q4: a slim copy here; the full config is candidate.start_config
+            source["proposal"]["vehicle"] = slim_vehicle(p["vehicle"], START_CONFIG_POINTER)
+            front["constraints"] = [
+                f"{BRIEF_EXACT_CONFIG_PREFIX}: the config vehicle of {cid} (a side finding of "
+                f"{run_id}), unchanged (D-162).\n" + json.dumps(start["config"], indent=2),
+                f"{BRIEF_EXACT_MANIFEST_PREFIX}: {run_id}'s block manifest, as "
+                f"config_vehicle.derived_manifest gives it for this config (D-161).\n"
+                + json.dumps(start["manifest"], indent=2)]
+            import config_vehicle as _cv  # tools/ sibling
+            gate = p.get("combines_as") == _cv.REGIME_GATE
+            front["research_goal"] += (
+                f" It runs the finding's config vehicle, a complete strategy config "
+                f"(candidate.start_config), built by code at step 1b exactly as given (D-110), "
+                f"with {run_id}'s block manifest"
+                + (" relabelled to the vehicle's trading regime (D-161)"
+                   if _cv.regime_relabel(src["base_config"], start["config"], p.get("combines_as"))
+                   else "")
+                + "."
+                + (" With the variant loop on, code adds its ungated twin (the same config "
+                   "without the gate, D-052) as the run's design variant (D-160)."
+                   if gate else ""))
+        elif start["config"] is not None:
             candidate["start_config"] = start["config"]
             candidate["start_manifest"] = start["manifest"]
             source["base_config_ref"] = src["base_config_ref"]

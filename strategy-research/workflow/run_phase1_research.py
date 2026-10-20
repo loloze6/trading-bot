@@ -5375,7 +5375,18 @@ def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -
                 errors = errors + [str(exc)]
             else:
                 if rec.get("outcome") == "no_claim" or rec.get("claim_card_ok"):
-                    errors = errors + _reading_content_errors(reading, category, run_dir)
+                    # D-095 extended (2026-10-20): the content check's side finding review
+                    # repeats check_answer's own D-095 refusal, in its short line (D-157); a
+                    # short line is dropped only where check_answer already gave the analyst's
+                    # message for the same test, so the analyst hears it once, unchanged
+                    said = {f"side_findings[{i}]: {short}"
+                            for i, s in enumerate(reading.get("side_findings") or [])
+                            for short, full in zip(
+                                _reader_findings_module().d095_refusals((s or {}).get("claim")),
+                                asm.exit_selector_own_outcome_errors((s or {}).get("claim")))
+                            if full in errors}
+                    errors = errors + [e for e in _reading_content_errors(reading, category, run_dir)
+                                       if e not in said]
         record.update(rec)
         record["attempts"].append({"status": "refused" if errors else "accepted",
                                    "errors": errors, "subtype": meta.get("subtype"),
@@ -5651,10 +5662,25 @@ def _reading_content_errors(doc: dict, category: str, run_dir: Path) -> list:
     (decide_next.resolve_patch, the same check decide-next applies) and never
     under a scaffolding path of block_manifest.yaml (a deliberately ungated
     detector is not part of the idea, run_070). Continuation 2: a reading
-    carries no stand-alone patch (refused by the shape check)."""
+    carries no stand-alone patch (refused by the shape check). A config
+    vehicle (D-159/D-160) is checked whole, then (D-161) against this run as
+    its source: config_vehicle.source_fit_errors with this run's base config
+    and block_manifest.yaml (none: refused)."""
     rf = _reader_findings_module()
     errors = []
     base, base_error = None, None
+
+    def _load_base() -> str:
+        """This run's base config, read once into `base` (or `base_error`); its rel path."""
+        nonlocal base, base_error
+        rel = _reader_base_config_rel(run_dir)
+        if base is None and base_error is None:
+            try:
+                base = json.loads((Path(run_dir) / rel).read_text(encoding="utf-8"))
+            except (OSError, ValueError) as exc:
+                base_error = f"the base config {rel} cannot be read ({exc})"
+        return rel
+
     for i, s in enumerate(doc.get("side_findings") or []):
         review = rf.side_finding_review(s, prior={}, own=set(), run_id=Path(run_dir).name,
                                         **_claim_check_kw())
@@ -5662,17 +5688,46 @@ def _reading_content_errors(doc: dict, category: str, run_dir: Path) -> list:
         # E-077 PR-2 (D-087): under orchestrator.folds.enabled the vehicle IS the config
         # change (the shape check refuses a finding that carries both)
         errors += _envelope_content_errors(s, i, run_dir)
+        if isinstance(s, dict) and isinstance(s.get("vehicle"), dict):
+            # D-159 (vehicle-format V1c): a config vehicle (accepted by the shape check since
+            # D-162) is checked whole -- requires,
+            # validate_config, D-051/D-149 -- and is never resolved as a patch; D-160: with
+            # combines_as regime_gate, the gate form and its ungated twin too
+            cv, where = _config_vehicle_module(), f"side_findings[{i}].vehicle"
+            own = cv.config_vehicle_errors(s["vehicle"], where, combines_as=s.get("combines_as"))
+            errors += own
+            if own:
+                continue
+            # D-161 (V2-1): then against the source run -- no block manifest refused, its
+            # scaffolding kept (a regime gate's allowances aside), its manifest (relabelled
+            # by code for a moved trading regime) fitting the config
+            bm = _block_manifest_module()
+            mpath = Path(run_dir) / "artifacts" / bm.MANIFEST_FILENAME
+            try:
+                manifest = bm.load_manifest_file(mpath, error_cls=ValueError)
+            except ValueError as exc:
+                errors.append(f"{where}: the source run's {bm.MANIFEST_FILENAME} cannot be read "
+                              f"({str(exc).replace(str(mpath), bm.MANIFEST_FILENAME)})")
+                continue
+            if manifest is not None:
+                rel = _load_base()
+                if base_error:
+                    # the run directory stripped from an OSError's text (its full path, as
+                    # written and as the OSError quotes it, shown run-relative), as the
+                    # manifest error above does; the patch path below keeps its message
+                    full = str(Path(run_dir) / rel)
+                    shown = base_error.replace(repr(full)[1:-1], rel).replace(full, rel)
+                    errors.append(f"{where}: {shown}")
+                    continue
+            errors += cv.source_fit_errors(s["vehicle"]["config"], base, manifest,
+                                           s.get("combines_as"), where)
+            continue
         key = "vehicle" if isinstance(s, dict) and s.get("vehicle") else "config_change"
         change = s.get(key) if isinstance(s, dict) else None
         if not change:
             continue
         where = f"side_findings[{i}].{key}"
-        rel = _reader_base_config_rel(run_dir)
-        if base is None and base_error is None:
-            try:
-                base = json.loads((Path(run_dir) / rel).read_text(encoding="utf-8"))
-            except (OSError, ValueError) as exc:
-                base_error = f"the base config {rel} cannot be read ({exc})"
+        rel = _load_base()
         if base_error:
             errors.append(f"{where}: {base_error}")
             continue
@@ -17842,6 +17897,110 @@ def _brief_exact_manifest(path: Path):
     return None
 
 
+def _brief_config_vehicle(run_dir: Path):
+    """D-162: (vehicle, combines_as) of a decide-next brief built from a CONFIG vehicle --
+    research_brief.yaml candidate.source.proposal.vehicle is a mapping (the slim copy,
+    decide_next.slim_vehicle; the full config is the brief's exact config) -- else None."""
+    p = Path(run_dir) / "artifacts" / "research_brief.yaml"
+    if not p.exists():
+        return None
+    brief = load_yaml(p) or {}
+    cand = brief.get("candidate") if isinstance(brief, dict) else None
+    source = cand.get("source") if isinstance(cand, dict) else None
+    proposal = source.get("proposal") if isinstance(source, dict) else None
+    vehicle = proposal.get("vehicle") if isinstance(proposal, dict) else None
+    if not isinstance(vehicle, dict):
+        return None
+    return vehicle, proposal.get("combines_as")
+
+
+def _config_vehicle_missing_pieces(run_dir: Path, config) -> list:
+    """D-162 (V3b): for a config-vehicle brief (_brief_config_vehicle), every op the config
+    uses that is not in TRANSFORM_OPS_REGISTRY and every component class it uses that is not
+    defined in strategies.strategy_components, named ("op 'x'", "component 'y'"); [] when
+    every piece exists, and for any other brief (nothing else is read)."""
+    if _brief_config_vehicle(run_dir) is None:
+        return []
+    cv, dn = _config_vehicle_module(), _decide_next_tools()
+    ops, classes = cv.used_pieces(config)
+    known = set(dn.known_ops(_TRADING_BOT_ROOT))
+    return ([f"op {op!r}" for op in sorted(ops - known)]
+            + [f"component {c!r}" for c in sorted(classes)
+               if dn.component_class_status(_TRADING_BOT_ROOT, c) != "defined"])
+
+
+UNGATED_TWIN_VARIANT_ID = "ungated_twin"
+
+
+def _ungated_twin_variant_mode(run_dir: Path) -> bool:
+    """D-162: True when step 2's design variant is the ungated twin, written by code --
+    config-direct authoring and the variant loop on, exact-config 1b on with an exact config
+    in the brief (D-110), and the brief built from a config vehicle with combines_as
+    regime_gate. Anything else: False (nothing read beyond the flags and the brief)."""
+    if not (_config_direct_authoring_enabled() and _variant_loop_enabled()
+            and _exact_config_1b_mode(run_dir)):
+        return False
+    found = _brief_config_vehicle(run_dir)
+    return found is not None and found[1] == _config_vehicle_module().REGIME_GATE
+
+
+def _set_ungated_twin_variant(run_dir: Path, run_id: str) -> None:
+    """D-162 (D-052/D-160: "the ungated twin is the design variant", "code derives the
+    ungated twin"): after step 2's answer, artifacts/variant_patches.yaml gets exactly one
+    design variant, UNGATED_TWIN_VARIANT_ID, whose patch sets /regime_detector to the
+    detector of config_vehicle.ungated_twin(base config) -- so the variant's config IS the
+    twin (rules [], vetoes dropped, default_regime the trading regime) -- in place of every
+    design variant step 2 wrote; base and asset variants are kept as written. The base
+    config is 1b's (artifacts/backtest_spec.yaml), the brief's exact config. Raises
+    RuntimeError when the base config is missing or has no gate form (never for a run the
+    mode does not cover).
+    D-162 review nit (lead decision): only a PER-COIN file (variant_coin.per_coin_mode, some
+    entry declares kind or symbol) gets the twin. A legacy coin-less file, or none, is left
+    exactly as step 2 wrote it, and routes as before: a `kind: design` entry inserted into it
+    would turn it per-coin and fail Step 2's shape check on every legacy entry (E-061 C2 S2c),
+    and a legacy file has no design kind to replace. A line says the twin was not added."""
+    arts = Path(run_dir) / "artifacts"
+    path = arts / "variant_patches.yaml"
+    doc = (load_yaml(path) or {}) if path.exists() else {}
+    doc = doc if isinstance(doc, dict) else {}
+    variants = doc.get("variants") if isinstance(doc.get("variants"), list) else []
+    if not _variant_coin_module().per_coin_mode(variants):
+        print(f"⚠️  [D-162] {run_id}: artifacts/variant_patches.yaml is not per-coin (no entry "
+              f"declares kind or symbol), so the ungated twin is NOT added as the design "
+              f"variant; the file routes as step 2 wrote it")
+        return
+    spec = load_yaml(arts / "backtest_spec.yaml") or {}
+    base = spec.get("config") if isinstance(spec, dict) else None
+    if not isinstance(base, dict):
+        raise RuntimeError("[D-162] ungated twin: artifacts/backtest_spec.yaml has no config")
+    try:
+        twin = _config_vehicle_module().ungated_twin(base)
+    except ValueError as exc:
+        raise RuntimeError(f"[D-162] ungated twin: the base config has no gate form ({exc})")
+    entry = {"variant_id": UNGATED_TWIN_VARIANT_ID, "kind": "design",
+             "patch": [{"path": "/regime_detector", "value": twin["regime_detector"]}],
+             "rationale": ("the ungated twin (D-052/D-160), derived by code "
+                           "(config_vehicle.ungated_twin): regime_detector.rules emptied, "
+                           "vetoes dropped, default_regime the trading regime; the run's one "
+                           "design variant (D-162)")}
+    kept, placed = [], False
+    for v in variants:
+        if isinstance(v, dict) and (v.get("kind") == "design"
+                                    or v.get("variant_id") == UNGATED_TWIN_VARIANT_ID):
+            if not placed:
+                kept.append(entry)
+                placed = True
+            continue
+        kept.append(v)
+    if not placed:
+        at = next((i + 1 for i, v in enumerate(kept)
+                   if isinstance(v, dict) and v.get("variant_id") == "base"), 0)
+        kept.insert(at, entry)
+    save_yaml(path, {**doc, "variants": kept})
+    print(f"✅ [D-162] {run_id}: the ungated twin is the design variant "
+          f"({UNGATED_TWIN_VARIANT_ID}, derived by code)")
+
+
 def _exact_config_1b_mode(run_dir: Path) -> bool:
     """D-110: True when orchestrator.exact_config_1b is on and the run's brief
     carries an exact config. Flag off: False, nothing but the flag is read."""
@@ -17862,7 +18021,12 @@ def _exact_config_1b(run_dir: Path, run_id: str) -> None:
     spend) when the brief has no exact manifest, when either JSON is broken, or
     when the manifest does not fit the config (block_manifest.check_manifest).
     Every check after 1b (manifest, D-051, nearest build, the deviation gate,
-    the config replay gate) runs unchanged on what is written here."""
+    the config replay gate) runs unchanged on what is written here.
+    D-162: a decide-next brief built from a config vehicle carries its config as
+    the exact config and NOT expected_config_sha256, so the pass-through refusal
+    below (a patch candidate) does not apply to it and stays for every patch;
+    such a brief is refused when an op or component its config uses does not
+    exist yet (_config_vehicle_missing_pieces): 1b never builds one."""
     import copy
     arts = Path(run_dir) / "artifacts"
     if _is_pass_through_candidate(arts):
@@ -17882,6 +18046,13 @@ def _exact_config_1b(run_dir: Path, run_id: str) -> None:
                            f"{BRIEF_EXACT_MANIFEST_PREFIX!r})")
     _block_manifest_module().check_manifest(manifest, config, where="the brief's exact block manifest",
                                             error_cls=RuntimeError)
+    missing = _config_vehicle_missing_pieces(run_dir, config)
+    if missing:
+        # D-162 (V3b): a config vehicle's piece that does not exist yet is never built here
+        raise RuntimeError("[D-110] exact-config 1b refused: the brief's config vehicle (D-162) "
+                           "uses " + ", ".join(missing) + ", which does not exist yet; 1b never "
+                           "builds a missing piece (its spec is in "
+                           "campaign_record/component_requests.yaml)")
     # what async_invoke_agent clears before a model 1b (review of PR #396): an
     # earlier attempt's deviations.yaml and claim revision must not be read as this one's
     _clear_stale_deviations("strategy_config_authoring", run_dir)
@@ -18076,18 +18247,21 @@ _NOT_KEPT = object()  # D-139: code did not write the pre-filled claim into the 
 def _keep_prefilled_claim(run_dir: Path, run_id: str):
     """D-139, right after 1a writes its card (_check_claim_after_1a, before the
     claim check): when the brief carries a pre-filled claim and it validates --
-    decide-next's own test (claim_card.check_claim with the pipeline's keywords,
-    no errors and not `tests: none`) -- code writes it into hypothesis_card.yaml's
+    decide-next's own test (_check_1a_claim: claim_card.check_claim with the
+    pipeline's keywords, plus D-095 under orchestrator.analyst.enabled -- D-157
+    (a), the side-finding check decide-next applies, reader_findings._check; no
+    errors and not `tests: none`) -- code writes it into hypothesis_card.yaml's
     `claim` unchanged, the whole claim: a pre-registered claim is not re-authored
     by a model (precedent D-110, exact-config 1b). Returns the claim 1a wrote
     (None if it wrote none), for _check_prefilled_claim's record of 1a's
     difference. No pre-filled claim, an invalid one or no card: _NOT_KEPT, and
-    nothing is read beyond that or written (today's behaviour)."""
+    nothing is read beyond that or written (today's behaviour); a pre-filled claim
+    D-095 refuses is not kept, so 1a's card -- and its claim retry's -- stays 1a's own."""
     import copy
     pre = _prefilled_claim(run_dir)
     if pre is None:
         return _NOT_KEPT
-    res = _claim_card_module().check_claim(pre, **_claim_check_kw())
+    res = _check_1a_claim(_claim_card_module(), pre)
     if res.errors or res.tests_none:
         return _NOT_KEPT
     path = Path(run_dir) / "artifacts" / "hypothesis_card.yaml"
@@ -18232,6 +18406,29 @@ def _claim_check_folds() -> dict:
     return {"folds": True} if _folds_enabled() else {}
 
 
+def _check_1a_claim(cc, claim, criteria_ids=()):
+    """The step 1a claim check of one claim (_claim_check_cards; D-157 (a): also
+    _keep_prefilled_claim's test of the brief's pre-filled claim): check_claim with the
+    pipeline's keywords, plus, with the trade family on (orchestrator.analyst.enabled), D-095
+    extended beyond the analyst (operator, 2026-10-20): a test selecting lots by an exit-time
+    field and measuring their own outcome is refused and the claim's tests dropped, as for
+    any refused claim. Its message (operator ruling D-157): the shared core
+    (analyst_session.exit_selector_own_outcome_hits) plus step 1a's own tail. Family off:
+    exactly check_claim. Not in check_claim: fold confirmation re-checks recorded claims
+    through check_claim alone."""
+    res = cc.check_claim(claim, criteria_ids, **_claim_check_kw())
+    if _analyst_enabled():                 # the flag under which _claim_check_kw passes trade_tests
+        asm = _analyst_session_module()    # puts tools/ on sys.path
+        import claim_tests as _ct
+        entry = ", ".join(_ct.TRADE_ENTRY_FIELDS)
+        d095 = [f"{h['core']} Select on an entry-time field ({entry}) or measure post_exit_return"
+                for h in asm.exit_selector_own_outcome_hits(claim)]
+        if d095:
+            res.errors += d095
+            res.tests = []
+    return res
+
+
 def _claim_check_exempt(run_dir: Path, card) -> str | None:
     """Why a card carries no 1a-written claim (DESIGN D6), else None. Decided
     from the run's inputs, never from a field the card writes about itself:
@@ -18281,9 +18478,9 @@ def _claim_check_cards(run_dir: Path, run_id: str, attempt, stage: str, *,
             continue
         card = load_yaml(path)
         exempt = _claim_check_exempt(run_dir, card)
-        res = None if exempt else cc.check_claim(
-            (card or {}).get("claim") if isinstance(card, dict) else None,
-            cc.card_criteria_ids(card or {}), **_claim_check_kw())
+        res = None if exempt else _check_1a_claim(
+            cc, (card or {}).get("claim") if isinstance(card, dict) else None,
+            cc.card_criteria_ids(card or {}))
         power = []
         if res is not None and not res.errors and res.tests:
             if known_power is not None and path.name in known_power:
@@ -19727,6 +19924,14 @@ def _forecast_rules_module():
     return _fr
 
 
+def _config_vehicle_module():
+    """tools/config_vehicle.py (D-159: the content check of a config vehicle), imported
+    lazily like the other tools/ siblings."""
+    _json_pointer_module()  # puts tools/ on sys.path
+    import config_vehicle as _cv
+    return _cv
+
+
 def _venue_resolver_module():
     """tools/venue_resolver.py (O-12: brief venue/product -> protocol keys),
     imported lazily like the other tools/ siblings."""
@@ -20879,6 +21084,10 @@ def run_loop(run_id: str, *, after_1a=None):
                 # tool-only backtest_specification stage instead.
                 if next_stage == "validation" and _config_direct_authoring_enabled():
                     next_stage = "backtest_specification"
+                    # D-162: a regime-gate config vehicle's design variant is its ungated
+                    # twin, written by code over step 2's answer before any check reads it
+                    if _ungated_twin_variant_mode(RUN_DIR):
+                        _set_ungated_twin_variant(RUN_DIR, run_id)
                     # E-061 C2 S2c: Step 2's variant shape (variant loop + per-coin
                     # file only); an invalid one retries Step 2 once, then pauses.
                     if _variant_shape_check_applies(RUN_DIR):

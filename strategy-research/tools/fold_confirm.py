@@ -437,6 +437,19 @@ def vehicle_missing(config, vehicle) -> list:
     return missing
 
 
+MAX_CONFIG_DIFFS_SHOWN = 3     # differing leaves named in a config vehicle's reason
+
+
+def config_vehicle_missing(config, vehicle: dict) -> list:
+    """D-162: a CONFIG vehicle (a mapping, D-159) is in `config` (the measured strategy
+    config) when the whole config is the same: one string per leaf that differs
+    (nearest_build.config_diff, CUL-412's definition, so 1 and 1.0 are equal), naming the
+    vehicle's value and the measured one; [] when they are the same. Pure."""
+    import nearest_build as nb
+    return [f"{d['path']}: the vehicle has {d['before']!r}, the measured config has "
+            f"{d['after']!r}" for d in nb.config_diff(vehicle.get("config"), config)]
+
+
 def _start_config_changed(arts: Path, vid: str):
     """None when variant `vid`'s strategy_config.json has the same values as the config
     decide-next started the child from (research_brief.yaml candidate.start_config), else
@@ -477,6 +490,13 @@ def _row_base(child: str, ref: tuple, item: dict | None, fold: str | None) -> di
     for key in ("vehicle", "combines_as", "fold_observed"):
         if item and key in item:
             row[key] = item[key]
+    if isinstance(row.get("vehicle"), dict):
+        # Q4 (D-162): a config vehicle is kept slim, with a pointer to the full config (the
+        # child's brief carries it as candidate.start_config)
+        import decide_next as dn
+        row["vehicle"] = dn.slim_vehicle(
+            row["vehicle"], f"runs/{child}/artifacts/research_brief.yaml#"
+                            f"{dn.START_CONFIG_POINTER}")
     return row
 
 
@@ -618,15 +638,21 @@ def confirm_on_fold(run_dir: Path, run_id: str, *, root: Path, folds_doc: dict |
         cfg_path = arts / "variants" / vehicle_vid / "strategy_config.json"
         try:
             cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
-            missing = vehicle_missing(cfg, vehicle)
+            # D-162: a config vehicle is compared whole (it IS the measured config)
+            missing = (config_vehicle_missing(cfg, vehicle) if isinstance(vehicle, dict)
+                       else vehicle_missing(cfg, vehicle))
         except Exception as exc:  # noqa: BLE001 -- recorded
             missing = [f"the variant's strategy_config.json cannot be read "
                        f"({type(exc).__name__}: {exc})"]
         if missing:
             row["vehicle_missing"] = missing
+            shown = missing
+            if isinstance(vehicle, dict) and len(missing) > MAX_CONFIG_DIFFS_SHOWN:
+                shown = missing[:MAX_CONFIG_DIFFS_SHOWN] + [
+                    f"(+{len(missing) - MAX_CONFIG_DIFFS_SHOWN} more)"]
             return _finish(row, NOT_MEASURABLE,
                            f"vehicle_not_in_measured_config: variant {vehicle_vid!r} does not "
-                           f"carry the claim's vehicle: " + "; ".join(missing))
+                           f"carry the claim's vehicle: " + "; ".join(shown))
     # the generic measurement, over the fold's windows only
     measure = measure or measure_on_fold
     try:

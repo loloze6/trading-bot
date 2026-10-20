@@ -364,12 +364,33 @@ def own_spec_hashes(card) -> set:
     return {t["spec_hash"] for t in cf._tests_of(claim) if t.get("spec_hash")}
 
 
+def d095_refusals(claim) -> list[str]:
+    """D-095 at the side-finding check (operator ruling D-157, 2026-10-20: "one short line"):
+    one line per hit of analyst_session.exit_selector_own_outcome_hits -- "D-095: " and the
+    hit's `what`. It is what decide-next's INFEASIBLE reason carries (next_test_refused: ...)
+    and what the reading content check lists; the analyst's longer message is its own
+    seam's (exit_selector_own_outcome_errors)."""
+    import analyst_session as asm  # tools/ sibling, light
+    return [f"D-095: {h['what']}" for h in asm.exit_selector_own_outcome_hits(claim)]
+
+
 def _check(claim, folds: bool, trade_tests: bool):
     """check_claim with the folds kinds (D-089) and the trade-level test family (D-091),
-    each passed only when on, so a call with both off is exactly the original one."""
+    each passed only when on, so a call with both off is exactly the original one.
+    D-095, extended beyond the analyst (operator, 2026-10-20): with the trade family on, a
+    test selecting lots by an exit-time field and measuring their own outcome is refused here
+    too, one short line per test (d095_refusals), and the claim's tests are dropped as for any
+    refused claim. Not in check_claim: fold confirmation re-checks recorded claims through
+    check_claim alone."""
     import claim_card as cc
     kw = {**({"folds": True} if folds else {}), **({"trade_tests": True} if trade_tests else {})}
-    return cc.check_claim(claim, **kw)
+    res = cc.check_claim(claim, **kw)
+    if trade_tests:
+        d095 = d095_refusals(claim)     # imports analyst_session only with the family on
+        if d095:
+            res.errors += d095
+            res.tests = []
+    return res
 
 
 def side_finding_review(item: dict, *, prior: dict, own: set, run_id: str,
@@ -499,7 +520,9 @@ def _merge_key(item: dict, folds: bool = False, trade_tests: bool = False):
     tests: none). The kind is part of the key (review fix 4): the
     confirmation routes by it (explore_confirm.finding_route: a block kind
     is PENDING, a pure kind IN_RUN), so the same tests under two kinds are
-    two findings."""
+    two findings. D-162: a config vehicle (a mapping `vehicle`, never a
+    config_change) is keyed on its canonical config (sorted-key JSON), so two
+    findings merge only on the same whole config."""
     import json as _json
     claim = item.get("claim") if isinstance(item, dict) else None
     # D-089: under the folds flag the folds kinds (execution_behaviour) are claims too
@@ -509,7 +532,13 @@ def _merge_key(item: dict, folds: bool = False, trade_tests: bool = False):
         return None
     change = item.get("config_change")
     canon = None
-    if change:
+    vehicle = item.get("vehicle")
+    if isinstance(vehicle, dict):
+        try:
+            canon = "config:" + _json.dumps(vehicle.get("config"), sort_keys=True, default=str)
+        except TypeError:          # mixed key types in a model-written mapping
+            canon = "config:" + repr(vehicle.get("config"))
+    elif change:
         canon = _json.dumps(sorted((_json.dumps(c, sort_keys=True, default=str)
                                     for c in change), key=str), default=str)
     return str(item["claim"].get("kind")), hashes, canon

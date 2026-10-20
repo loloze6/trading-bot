@@ -55,6 +55,10 @@ What the counts mean, so a floor is not met by one market move counted many time
 - A trade test has an effect size and **no p-value, so no verdict**: the claim card marks it
   `verdict_possible: false`.
 
+A claim that compares groups of lots on their own return also measures what the market did over
+the windows (its drift, through the sides the groups hold and how long their lots stay open);
+state in the rationale how the claim separates the strategy's effect from the market's.
+
 ## The closed field list
 
 | field | values | known | meaning |

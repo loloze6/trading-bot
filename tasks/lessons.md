@@ -689,3 +689,27 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-20 -- Sub-agents started python without the test lock
 - **Pattern:** several agents started a bare `python -` or `python3 - <<EOF` (empty or trivial) outside the shared test lock, and one printed sealed dates by running `sed` on a run_protocol.json; none wrote anything, but each broke a stated rule.
 - **Rule:** every brief says "never a bare `python -`, no heredoc, no system python3 outside the lock" and "never print run_protocol.json or any holdout date"; the lead reads each hand-back for such slips and records them.
+
+## 2026-10-20 -- "None affected" searches covered tracked files only
+- **Pattern:** the D-158 and V18 byte-identity searches listed files with `git ls-files`; `strategy-research/runs/` is gitignored and the tracked runs stop at run_060, so runs 061-097 in the operator's checkout were never searched until the V1d safety review caught it (the re-scan, read-only, found nothing affected).
+- **Rule:** a "nothing existing is affected" search walks the operator checkout's filesystem read-only (tracked and untracked; skipping local_data, holdout_sealed, run_protocol, .git, venvs) and states both scopes and their counts.
+
+## 2026-10-20 -- Rule slips by agents (and the lead) continued after the brief named them
+- **Pattern:** after the 2026-10-20 lesson was in every brief, two agents still ran a bare `python -`/`python -c`/`python3 -` once outside the lock, the lead ran a one-line `python -c` venv check outside the lock, and one agent tailed the pre-commit hook's log, which echoed the sealed holdout range into its session (not repeated; the log deleted).
+- **Rule:** briefs say "NEVER a bare python/python -/python -c/python3 or a heredoc: only the venv interpreter with pytest or a script file run with -I, under the lock", and "redirect commit output to $null and never read the hook's output or its log file"; the lead holds itself to the same.
+
+## 2026-10-20 -- One brief let an agent run the full suite
+- **Pattern:** the V2-2+V3 brief said "run every test file of each touched module" but not "never the full suite"; the builder ran all 255 strategy-research files (47 min) under the shared lock, blocking another agent's fix run for most of that time.
+- **Rule:** every brief that runs tests says "never the full suite (CI runs it)" and names the files.
+
+## 2026-10-20 -- The disk filled up with worktrees
+- **Pattern:** 20 worktrees of about 560 MB each accumulated under Projects\wt\; C: reached 0 bytes free and a review's wider test run failed with "No space left on device".
+- **Rule:** remove a PR's worktree as soon as the PR merges (after checking it is clean and has no junctions); check `df` before starting a long agent chain.
+
+## 2026-10-20 -- An auto-merge step misread the CI table
+- **Pattern:** a watcher that merged "if every check passed" tested `awk '{print $2}'` of `gh pr checks`, which is the job's "(ubuntu-latest)" column, not the result; it reported "not all pass" on a green PR (no harm: it refused to merge).
+- **Rule:** count result lines (`grep -c pass` against the number of `test (` lines) or use `gh pr checks --json`; never parse columns by position.
+
+## 2026-10-20 -- Parallel builds on dependent branches collided in their tests
+- **Pattern:** V2-2+V3 was built on V2-1's first commit while V2-1's fix round added tests that force the off-switch on; V2-2+V3 deleted the switch, so the rebase conflicted in the tests and needed a separate resolving agent.
+- **Rule:** when a later slice is built on an earlier one still in review, tell the later builder what the earlier fix round may add, and rebase as soon as the earlier fix commit lands.
