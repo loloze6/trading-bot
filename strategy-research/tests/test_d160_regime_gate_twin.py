@@ -1,0 +1,193 @@
+"""D-160 (vehicle-format V1d): a config vehicle whose idea combines as a regime gate.
+
+1. The gate form (config_vehicle.gate_form_errors), only with `combines_as: regime_gate`:
+   mode threshold_rules, a non-empty regime_detector.rules or vetoes, exactly one non-null
+   strategies.regimes entry; else a refusal naming what is missing.
+2. The ungated twin (config_vehicle.ungated_twin, D-052): rules [], vetoes dropped,
+   default_regime the single non-null regime, everything else kept; pure.
+3. The twin is checked like the config (validate_config incl. V18, D-051/D-149); a twin
+   failure is a refusal naming the twin.
+4. The wiring, with reader_proposals.CONFIG_VEHICLE_ROUTED forced on; off, unchanged (the old
+   patch-list refusal).
+
+Minimal pins (fuller tests follow). No LLM, no backtest, no market data.
+"""
+from __future__ import annotations
+
+import copy
+import sys
+from pathlib import Path
+
+import pytest
+
+SR_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(SR_ROOT / "workflow"))
+sys.path.insert(0, str(SR_ROOT / "tools"))
+sys.path.insert(0, str(SR_ROOT / "tests"))
+
+import config_vehicle as cv  # noqa: E402
+import reader_proposals as rp  # noqa: E402
+import run_phase1_research as rpr  # noqa: E402
+
+from test_d051_d053_forecast_rules import CONFIG  # noqa: E402
+from test_e077_pr2_confirm import CAT, _claim, _reading  # noqa: E402
+
+GATE = {"combines_as": "regime_gate", "fold_observed": "A"}
+RULE = {"regime": "trending", "any_of": [[{"id": "er", "op": "gte", "value": 0.4}]]}
+VETO = {"id": "er", "transforms": [], "rules": [{"op": "lt", "value": 0.1}], "result": "chop",
+        "consecutive_bars": 2}
+OLD_MESSAGE = ("vehicle: must be a non-empty list of changes (omit it when the finding needs "
+               "no config change)")
+
+
+def _gated(rules=(RULE,), vetoes=(VETO,)) -> dict:
+    """CONFIG's strategy moved to 'trending', traded only when the rule (or no veto) says so."""
+    cfg = copy.deepcopy(CONFIG)
+    regimes = cfg["strategies"]["regimes"]
+    regimes["trending"], regimes["unknown"] = regimes["unknown"], None
+    cfg["regime_detector"]["rules"] = copy.deepcopy(list(rules))
+    cfg["regime_detector"]["vetoes"] = copy.deepcopy(list(vetoes))
+    return cfg
+
+
+def _vehicle(config) -> dict:
+    return {"kind": "config", "config": config}
+
+
+def _errors(config, combines_as="regime_gate") -> list:
+    return cv.config_vehicle_errors(_vehicle(config), "v", combines_as=combines_as)
+
+
+# ---------------------------------------------------------------------------
+# 1. the gate form
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("rules,vetoes", [((RULE,), (VETO,)), ((RULE,), ()), ((), (VETO,))])
+def test_the_gate_form_passes_with_rules_or_vetoes(rules, vetoes):
+    cfg = _gated(rules, vetoes)
+    if not rules:   # a vetoes-only gate trades by default and vetoes into a null regime
+        cfg["regime_detector"]["default_regime"] = "trending"
+    assert _errors(cfg) == []
+
+
+def test_a_vetoes_only_gate_whose_default_is_null_is_v18s():
+    (err,) = _errors(_gated((), (VETO,)))          # every bar 'unknown' or 'chop': both null
+    assert err.startswith("v.config: VIOLATION V18 regime_detector.default_regime: 'unknown' ")
+
+
+def test_no_gate_is_refused():
+    cfg = _gated((), ())
+    cfg["regime_detector"]["default_regime"] = "trending"   # else V18 (a dead config) too
+    assert _errors(cfg) == [
+        "v.config.regime_detector: combines_as regime_gate needs the gate, a non-empty "
+        "regime_detector.rules or regime_detector.vetoes, and both are empty or missing; write "
+        "the gate, or choose another combines_as"]
+    del cfg["regime_detector"]["rules"], cfg["regime_detector"]["vetoes"]
+    assert len(_errors(cfg)) == 1
+
+
+def test_not_exactly_one_trading_regime_is_refused():
+    cfg = _gated()
+    cfg["strategies"]["regimes"]["unknown"] = copy.deepcopy(cfg["strategies"]["regimes"]["trending"])
+    assert _errors(cfg) == [
+        "v.config.strategies.regimes: combines_as regime_gate needs exactly one non-null regime "
+        "(the regime the gate trades in), and this config has 2 ['unknown', 'trending']; set "
+        "every other regime to null"]
+    assert cv.gate_form_errors({"regime_detector": {"rules": [RULE]},
+                                "strategies": {"regimes": {"trending": None}}}, "c") == [
+        "c.strategies.regimes: combines_as regime_gate needs exactly one non-null regime (the "
+        "regime the gate trades in), and this config has 0 []; set every other regime to null"]
+
+
+@pytest.mark.parametrize("mode", ["score", "score_product"])
+def test_a_mode_other_than_threshold_rules_is_refused(mode):
+    form = cv.gate_form_errors(dict(_gated(), regime_detector=dict(_gated()["regime_detector"],
+                                                                     mode=mode)), "c")
+    assert form == [f"c.regime_detector.mode={mode!r}: combines_as regime_gate needs mode "
+                    f"threshold_rules (the default): its ungated twin (D-052) empties the rules "
+                    f"and sets default_regime, which only threshold_rules mode reads"]
+
+
+@pytest.mark.parametrize("word", ["forecast_block", "execution_rule", "knowledge_only", None])
+def test_the_form_applies_to_regime_gate_only(word):
+    assert _errors(copy.deepcopy(CONFIG), word) == []          # ungated, several words: no form
+    assert _errors(copy.deepcopy(CONFIG))                       # the same config as a gate: refused
+
+
+# ---------------------------------------------------------------------------
+# 2. the ungated twin
+# ---------------------------------------------------------------------------
+
+def test_the_twin_exact_output_and_the_input_unchanged():
+    cfg = _gated()
+    before = copy.deepcopy(cfg)
+    twin = cv.ungated_twin(cfg)
+    expected = copy.deepcopy(before)
+    expected["regime_detector"]["rules"] = []
+    del expected["regime_detector"]["vetoes"]
+    expected["regime_detector"]["default_regime"] = "trending"
+    assert twin == expected
+    assert twin["regime_detector"]["components"] == before["regime_detector"]["components"]
+    assert cfg == before                                        # pure
+    twin["strategies"]["regimes"]["trending"]["components"][0]["weight"] = 9.0
+    assert cfg == before                                        # a deep copy
+
+
+def test_the_twin_of_a_config_without_the_gate_form_raises():
+    with pytest.raises(ValueError, match=r"^config\.regime_detector: combines_as regime_gate"):
+        cv.ungated_twin(_gated((), ()))
+
+
+# ---------------------------------------------------------------------------
+# 3. the twin is validated like the config
+# ---------------------------------------------------------------------------
+
+def test_the_twin_is_checked_and_its_failure_names_the_twin(monkeypatch):
+    real = cv.ungated_twin
+
+    def bad_twin(config):            # a derivation that points default_regime at a null regime
+        twin = real(config)
+        twin["regime_detector"]["default_regime"] = "unknown"
+        return twin
+    monkeypatch.setattr(cv, "ungated_twin", bad_twin)
+    (err,) = _errors(_gated())
+    assert err.startswith("v.config ungated twin (D-052: rules [], vetoes dropped, default_regime "
+                          "'unknown'): VIOLATION V18 regime_detector.default_regime: 'unknown' "), err
+
+
+def test_the_twin_is_checked_only_once_the_config_and_form_pass(monkeypatch):
+    calls = []
+    monkeypatch.setattr(cv, "ungated_twin", lambda c: calls.append(1) or c)
+    assert _errors(_gated((), ()))                              # the form fails
+    cfg = _gated()
+    cfg["strategies"]["regimes"]["trending"]["components"][0]["transforms"] = []   # D-149
+    assert _errors(cfg)
+    assert calls == []
+    assert _errors(_gated()) == [] and calls == [1]
+
+
+# ---------------------------------------------------------------------------
+# 4. the wiring, CONFIG_VEHICLE_ROUTED forced on; off unchanged
+# ---------------------------------------------------------------------------
+
+def _doc(config) -> dict:
+    return _reading(_claim(), vehicle=_vehicle(config), **GATE)
+
+
+def test_on_the_reading_check_applies_the_gate_form(monkeypatch, tmp_path):
+    monkeypatch.setattr(rp, "CONFIG_VEHICLE_ROUTED", True)
+    monkeypatch.setattr(rpr, "_claim_check_kw", lambda: {"folds": True})
+    for cfg in (_gated(), copy.deepcopy(CONFIG)):
+        rp.check_reading(_doc(cfg), CAT, "reading", from_model=True, envelope=True)  # shape ok
+    assert rpr._reading_content_errors(_doc(_gated()), CAT, tmp_path) == []
+    errs = rpr._reading_content_errors(_doc(copy.deepcopy(CONFIG)), CAT, tmp_path)
+    assert [e for e in errs if e.startswith(
+        "side_findings[0].vehicle.config.regime_detector: combines_as regime_gate needs the "
+        "gate")], errs
+
+
+def test_off_a_regime_gate_config_vehicle_gets_the_old_refusal():
+    assert rp.CONFIG_VEHICLE_ROUTED is False
+    with pytest.raises(rp.ProposalError) as exc:
+        rp.check_reading(_doc(_gated()), CAT, "reading", from_model=True, envelope=True)
+    assert str(exc.value) == f"reading.side_findings[0].{OLD_MESSAGE}"
