@@ -525,6 +525,22 @@ def test_decide_nexts_infeasible_reason_is_the_prefix_and_the_short_line(where, 
             assert not any(D095_NEEDLE in r for r in reasons)
 
 
+def test_decide_nexts_infeasible_reason_literal():
+    """Operator ruling D-157 (4th): decide-next's INFEASIBLE reason, pinned as one literal next to
+    the analyst's and step 1a's (test_the_three_texts), through decide-next end to end."""
+    import test_d091_trade_tests_pipeline as d091
+    import test_e077_folds as tf
+    claim = _claim(_test(_where(("holding_bars", ">=", 3), ("exit_cause", "==", "flip")),
+                         "trade_gross_return", name="x"))
+    inputs, pid = tf._scenario("run_074", "ROOT", {"run_074": tf.FOLD_A})
+    inputs["runs"]["run_074"]["proposals"] = [{"category": "profitability",
+                                               "proposal": d091._side_item(pid, claim)}]
+    inputs["trade_tests"] = True
+    reasons = tf._cand(tf._decide(inputs, "run_074"), pid)["gates"]["feasibility"]["reasons"]
+    assert ("next_test_refused: D-095: claim test 'x' selects lots by an exit-time field "
+            "(exit_cause, holding_bars) and measures their own trade_gross_return") in reasons
+
+
 @pytest.mark.parametrize("i", range(len(ACCEPTED)))
 def test_an_accepted_prefilled_claim_is_kept_as_before(monkeypatch, i):
     """Entry-time + trade_net_return, exit_cause + post_exit_return and the rest of ACCEPTED:
