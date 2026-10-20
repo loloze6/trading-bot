@@ -1422,7 +1422,8 @@ def trade_effect_sizes(windows: list, spec: TestSpec, eras: list | None = None):
     the bar statistics applied to per-trade arrays; per-window values are
     given exactly as for bar tests (the all-but-one-window rule is E-077
     PR-2's). Horizon 0 is trade_net_return's: the trade's own life.
-    n_events = selected trades with an outcome. For trade_net_return n_blocks
+    n_events = selected trades with an outcome (pooled, and per window in each
+    per_window cell: the cells sum to the pooled count). For trade_net_return n_blocks
     is the number of stretches of overlapping selected trades (per window); for
     post_exit_return the selected lots closing on one bar on one side are one
     event (_one_event_per_exit) and n_blocks counts blocks of max(h, 1) EXIT
@@ -1470,9 +1471,11 @@ def trade_effect_sizes(windows: list, spec: TestSpec, eras: list | None = None):
                 active.append(a)
             n_blocks = _blocks(active, per, max(h, 1))
         per_window = {}
-        for p in per:
+        for p, ev in zip(per, events):
             r, o = stat(p["ys"][h], p["mask"], p["wref"], p["fc"], spec.direction)
-            per_window[p["w"].label] = {"value": _num(r), "oriented": _num(o)}
+            # n_events: this window's share of the pooled n_events (R5, operator 2026-10-19)
+            per_window[p["w"].label] = {"value": _num(r), "oriented": _num(o),
+                                        "n_events": int(ev.sum())}
             if is_net:
                 per_window[p["w"].label]["basis"] = p["w"].basis if p["w"].n else None
         per_era, n_eras = {}, None
@@ -1674,7 +1677,10 @@ def effect_sizes(windows: list[Window], spec: TestSpec, eras: list | None = None
     No check_spec here (the caller checks the spec; E-068 slice 3 measures
     regime-selector tests too, which check_spec refuses for a verdict), no
     p-value, no verdict. Reads only the given windows: selectors read bar t,
-    outcomes are timestamp-matched inside one window."""
+    outcomes are timestamp-matched inside one window. Each per_window cell
+    carries {value, oriented, n_events}: n_events is that window's selected
+    events with an outcome (and a forecast, for rank_ic), the same definition
+    as the pooled n_events, so the cells sum to it."""
     if isinstance(spec.selector, dict) and spec.selector.get("kind") == TRADE_SELECTOR:
         return trade_effect_sizes(windows, spec, eras)      # E-075 PR-3: gated family
     horizons = sorted(spec.outcome["horizons"])
@@ -1691,9 +1697,11 @@ def effect_sizes(windows: list[Window], spec: TestSpec, eras: list | None = None
         if spec.statistic == "rank_ic":
             events = [ev & np.isfinite(p["fc"]) for ev, p in zip(events, per)]
         per_window = {}
-        for p in per:
+        for p, ev in zip(per, events):
             r, o = stat(p["ys"][h], p["mask"], p["wref"], p["fc"], spec.direction)
-            per_window[p["w"].label] = {"value": _num(r), "oriented": _num(o)}
+            # n_events: this window's share of the pooled n_events (R5, operator 2026-10-19)
+            per_window[p["w"].label] = {"value": _num(r), "oriented": _num(o),
+                                        "n_events": int(ev.sum())}
         per_era, n_eras = {}, None
         if eras is not None:
             era_all = np.concatenate([p["era"] for p in per])

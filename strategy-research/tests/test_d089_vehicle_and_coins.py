@@ -308,6 +308,9 @@ def test_three_coins_five_of_six_pooled_windows_confirm(tmp_path):
     assert h["windows_with_value"] == 6 and h["windows_claimed_sign"] == 5
     assert sorted(h["per_window"]) == sorted(LABELS)                     # windows, not cells
     assert row["agreement"] == {"up_day_follow": {"1": "5 of 6"}}
+    for hh in row["tests"]["up_day_follow"]["horizons"].values():
+        assert sum(hh["events_per_window"].values()) == hh["n_events"]
+        assert set(hh["events_per_window"]) == set(hh["per_window"])
     # under the old cell count this fold would need 17 of 18 cells: it has at most 15
     assert len(row["windows_measured"]) == 18
 

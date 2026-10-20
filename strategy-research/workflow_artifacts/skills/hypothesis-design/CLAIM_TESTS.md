@@ -128,6 +128,22 @@ on 1h bars selects the bars whose past 24 hours were among the most volatile. It
 under the same rule as `past_return`: the first n bars of each window and wherever a bar in
 between is missing. `bars` is allowed only with `past_return` and `trailing_vol`.
 
+Guidance for `past_return` (nothing refuses this; it is advice): a REVERSAL claim on
+`past_return` (`less` after a rise, `greater` after a fall) is favoured by the measurement
+itself. On a simulated random walk with no edge, an `event` cut-off on `past_return` lets a
+reversal claim clear the fold's noise rule about twice as often as the documented chance of
+about 0.11: 0.23 for `less` after a rise and 0.22 for `greater` after a fall, against about
+0.04 to 0.05 for the momentum claim on the same bars. A `quantile` cut-off is less affected
+(0.135 for `less` against 0.079 for `greater`). The cause is overlap inside a window: the
+forward move of a selected bar is part of the `past_return` of the bars after it, so a
+selected bar followed by a rise pulls more bars into the selection, and the mean over the
+selected bars is biased low. A reversal result on `past_return` is therefore weaker evidence
+than a reversal result on `trailing_vol`, which the report measured as symmetric, and a momentum result is slightly
+stronger. Prefer a `quantile` cut-off to an absolute `event` cut-off, and state the reversal
+bias in the claim's explanation. Source:
+`strategy-research/engineering/FOLD-FLOORS-2026-10-19/REPORT.md` (sections 2.2 and 2.3; the
+rates are simulated, not measured on market data).
+
 Guidance for `trailing_vol` (nothing refuses these; they are advice):
 - A volatility-conditioned DIRECTION claim should use `statistic: hit_rate` or a `quantile`
   selector, not `mean_diff` on an absolute `event` cut-off: `fwd_return` is arithmetic, so its

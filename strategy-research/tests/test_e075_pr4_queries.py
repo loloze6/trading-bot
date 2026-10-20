@@ -1056,7 +1056,8 @@ def test_the_memory_view_with_the_ledger_numbers_only_for_confirmed_claims(tmp_p
     assert conf["fold_observed"] == "A"
     assert conf["confirmed"] == [{"fold": "B", "effect": {"t1": {"24": 0.0012}},
                                   "agreement": {"t1": {"24": "5 of 6"}}}]
-    assert conf["folds"] == [{"fold": "B", "run_id": "run_080", "status": "confirmed"}]
+    assert conf["folds"] == [{"fold": "B", "run_id": "run_080", "status": "confirmed",
+                              "reason": None, "agreement": {"aaa": {"24": "5 of 6"}}}]
     # D-090: a confirmed claim's statement is masked too (its numbers are the exploratory ones)
     assert "12 bps" not in conf["statement"] and "<n>" in conf["statement"]
     # the others: a status and a fold, never a number
@@ -1072,9 +1073,32 @@ def test_the_memory_view_with_the_ledger_numbers_only_for_confirmed_claims(tmp_p
     assert view["n_claims"] == 8
     rest = {k: v for k, v in by.items() if k != "trade_efficiency-run_074-2"}
     blob = json.dumps(rest) + json.dumps(conf["statement"])
-    for leaked in ("0.0031", "3 of 6", "0.9", "windows", "reason", "noise rule", "14 bps",
+    # operator 2026-10-19: each fold's (masked) reason and its agreement count are shown for
+    # every status; effects never are. The old list also forbade "3 of 6", "windows", "reason" and
+    # "noise rule": those now legitimately appear (the agreement count, the masked reason text and
+    # the `reason` key), so they are replaced by the exact masked reasons and the agreement-only
+    # rule below, not simply dropped.
+    for leaked in ("0.0031", "0.9", "14 bps", "windows_claimed_sign", "windows_with_value",
                    "0.31%", "0.3 lose", "5%", "9%", "12 bars", "12 bps", "3%"):
         assert leaked not in blob, leaked
+    fp, short = by["forecast_power-run_074-1"], by["x-run_073-1"]
+    assert fp["folds"] == [{"fold": "B", "run_id": "run_081", "status": "not_confirmed",
+                            "reason": "the noise rule fails: h=<n>: pooled held, windows <n> of <n>",
+                            "agreement": {"bbb": {"6": "3 of 6"}}}]
+    assert short["folds"] == [{"fold": "C", "run_id": "run_082", "status": "not_measurable",
+                               "reason": "fewer than <n> windows with a value (windows with a "
+                                         "value) <n>", "agreement": None}]
+    # a fold entry never carries an effect, and the only count of a non-confirmed claim is its
+    # agreement ("3 of 6"): the reason's own counts ("windows 3 of 6", "h=6") stay masked
+    for c in rest.values():
+        for f in c.get("folds", []):
+            assert set(f) == {"fold", "run_id", "status", "reason", "agreement"}, f
+        assert "effect" not in c and "confirmed" not in c
+    no_agreement = json.dumps({k: dict(v, folds=[{kk: vv for kk, vv in f.items()
+                                                  if kk != "agreement"} for f in v.get("folds", [])])
+                               for k, v in rest.items()})
+    for leaked in ("3 of 6", "windows 3", "h=6", "of 6", "fewer than 4"):
+        assert leaked not in no_agreement, leaked
     nums = [x for x in _walk(rest) if isinstance(x, float)]
     assert nums == []
     # the confirmed numbers can also come from the row's per-test horizons
@@ -1084,6 +1108,98 @@ def test_the_memory_view_with_the_ledger_numbers_only_for_confirmed_claims(tmp_p
              if c["claim_id"] == "trade_efficiency-run_074-2")
     assert c["confirmed"][0]["effect"] == {"t1": {"24": 0.0012}}
     assert c["confirmed"][0]["agreement"] == {"t1": {"24": "5 of 6"}}
+
+
+FLOOR_TEST = "fc_gt_8_gives_0.31pct_h6"         # a test name is free text and can carry numbers
+
+
+def _floor_row(**kw):
+    """A not_measurable fold row as confirm_on_fold now leaves it when a claim's floor is not
+    met (R5 keep-measured): the reason quotes the test name, and the row keeps its effect,
+    its agreement count, its floor and the events per window."""
+    row = {"finding_id": "forecast_power-run_090-1", "source_run": "run_090", "run_id": "run_091",
+           "basis": "child_run", "fold": "B", "kind": "direction_forecast",
+           "status": "not_measurable", "statement": "A forecast above 8 predicts 0.31% at h=6.",
+           "reason": f"{FLOOR_TEST}: floor not met: events=100 at h=6 (have 60)",
+           "spec_hashes": ["ddd"],
+           "tests": {FLOOR_TEST: {
+               "spec_hash": "ddd", "status": "not_measurable", "floor": {"min_events": 100},
+               "reason": "floor not met: events=100 at h=6 (have 60)",
+               "horizons": {"6": {"effect": 0.0031, "oriented": 0.0031, "n_events": 60,
+                                  "windows_claimed_sign": 4, "windows_with_value": 6,
+                                  "events_per_window": {"BTCUSD/w1": 10, "BTCUSD/w2": 50}}}}},
+           "effect": {FLOOR_TEST: {"6": 0.0031}}, "agreement": {FLOOR_TEST: {"6": "4 of 6"}}}
+    row.update(kw)
+    return row
+
+
+def test_the_memory_view_of_a_not_measurable_claim_shows_reason_and_agreement_but_no_effect(tmp_path):
+    view = amv.build_memory_view({}, _write_ledger(tmp_path, [_floor_row()]))
+    (c,) = view["claims"]
+    assert c["status"] == "not_measurable" and c["fold_confirmed"] is None
+    assert c["folds"] == [{
+        "fold": "B", "run_id": "run_091", "status": "not_measurable",
+        # the test name's numbers are masked (digits glued to letters too), the rest is kept
+        "reason": "fc_gt_<n>_gives_<n>pct_h<n>: floor not met: events=<n> at h=<n> (have <n>)",
+        # "k of F" keyed by spec_hash (the name is free text), horizon -> the count
+        "agreement": {"ddd": {"6": "4 of 6"}}}]
+    assert "confirmed" not in c and "effect" not in c
+    blob = json.dumps(c)
+    for leaked in ("0.0031", "0.31", FLOOR_TEST, "gives_0", "events_per_window", "min_events",
+                   "floor\"", "have 60", "events=100", "n_events"):
+        assert leaked not in blob, leaked
+    assert [x for x in _walk(c) if isinstance(x, float)] == []
+    # NOTE: reason and agreement for every status, effect numbers only for confirmed
+    note = view["note"]
+    assert "effect numbers only for confirmed" in note
+    assert "for every status" in note and "reason" in note and "agreement" in note
+
+
+def test_a_fold_agreement_without_a_spec_hash_is_keyed_by_the_masked_test_name(tmp_path):
+    row = _floor_row()
+    del row["tests"][FLOOR_TEST]["spec_hash"]
+    (c,) = amv.build_memory_view({}, _write_ledger(tmp_path, [row]))["claims"]
+    assert c["folds"][0]["agreement"] == {"fc_gt_<n>_gives_<n>pct_h<n>": {"6": "4 of 6"}}
+    assert FLOOR_TEST not in json.dumps(c)
+
+
+def test_every_status_shows_its_reason_and_agreement_and_only_confirmed_shows_effects(tmp_path):
+    conf = _same_claim_on("B", "run_99", "confirmed")
+    conf["reason"] = f"{FLOOR_TEST}: the pooled sign held in 5 of 6 windows (0.0012)"
+    conf["agreement"] = {FLOOR_TEST: {"24": "5 of 6"}}
+    conf["tests"] = {FLOOR_TEST: {"spec_hash": "aaa"}}
+    refuted = _same_claim_on("C", "run_100", "not_confirmed", effect=-0.003)
+    refuted["reason"] = "the noise rule fails: h=24: windows 3 of 6"
+    refuted["agreement"] = {"t1": {"24": "3 of 6"}}
+    short = _same_claim_on("D", "run_101", "not_measurable", effect=0.0007)
+    short["reason"] = "too few of the fold's windows with a value to grade: h=24: 3 of the fold's 6"
+    short["agreement"] = {"t1": {"24": "3 of 6"}}
+    (c,) = amv.build_memory_view({}, _write_ledger(tmp_path, [conf, refuted, short]))["claims"]
+    assert c["status"] == "confirmed" and c["fold_confirmed"] == ["B"]
+    assert [(f["fold"], f["status"]) for f in c["folds"]] == [
+        ("B", "confirmed"), ("C", "not_confirmed"), ("D", "not_measurable")]
+    assert [f["reason"] for f in c["folds"]] == [
+        "fc_gt_<n>_gives_<n>pct_h<n>: the pooled sign held in <n> of <n> windows (<n>)",
+        "the noise rule fails: h=<n>: windows <n> of <n>",
+        "too few of the fold's windows with a value to grade: h=<n>: <n> of the fold's <n>"]
+    assert [f["agreement"] for f in c["folds"]] == [
+        {"aaa": {"24": "5 of 6"}}, {"aaa": {"24": "3 of 6"}}, {"aaa": {"24": "3 of 6"}}]
+    # effects: the confirmed fold's only, in `confirmed`, never in a fold entry
+    assert [x["fold"] for x in c["confirmed"]] == ["B"]
+    assert all("effect" not in f for f in c["folds"])
+    floats = [x for x in _walk(c) if isinstance(x, float)]
+    assert floats == [0.0012] and -0.003 not in floats and 0.0007 not in floats
+
+
+def test_the_memory_view_is_unchanged_for_a_row_with_no_agreement_or_reason(tmp_path):
+    """An early exit (not comparable, tests none) carries no agreement: None, not a crash."""
+    row = _floor_row(status="not_comparable", reason=None)
+    for k in ("tests", "effect", "agreement", "spec_hashes"):
+        del row[k]
+    (c,) = amv.build_memory_view({}, _write_ledger(tmp_path, [row]))["claims"]
+    assert c["status"] == "not_measurable"
+    assert c["folds"] == [{"fold": "B", "run_id": "run_091", "status": "not_measurable",
+                           "reason": None, "agreement": None}]
 
 
 def _same_claim_on(fold, run_id, status, effect=0.0012):
@@ -1104,8 +1220,10 @@ def test_a_claim_measured_on_two_folds_gets_one_status_from_the_statuses(tmp_pat
     assert c["status"] == "confirmed" and c["fold_confirmed"] == ["B"]
     assert [x["fold"] for x in c["confirmed"]] == ["B"]
     assert -0.003 not in [x for x in _walk(c) if isinstance(x, float)]
-    assert c["folds"] == [{"fold": "B", "run_id": "run_99", "status": "confirmed"},
-                          {"fold": "C", "run_id": "run_100", "status": "not_confirmed"}]
+    assert c["folds"] == [{"fold": "B", "run_id": "run_99", "status": "confirmed",
+                           "reason": None, "agreement": {"aaa": {"24": "5 of 6"}}},
+                          {"fold": "C", "run_id": "run_100", "status": "not_confirmed",
+                           "reason": None, "agreement": {"aaa": {"24": "5 of 6"}}}]
     # refuted with nothing confirmed: not_confirmed, and no number
     (c,) = amv.build_memory_view({}, _write_ledger(tmp_path / "r", [rows[1]]))["claims"]
     assert c["status"] == "not_confirmed" and "confirmed" not in c
