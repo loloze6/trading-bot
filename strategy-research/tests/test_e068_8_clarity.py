@@ -67,7 +67,11 @@ VERDICT_WORDING = re.compile(
 # Explicit allowlist: field names and fixed phrases that are not a verdict.
 ALLOWED = ("pass_if", "fail_if", "pass_through", "pass-through", "`significance`",
            "measured, not proven", "the claim is not graded", "nothing you write grades the claim",
-           "graded variant")
+           "graded variant",
+           # D-156: the overlap paragraph of CLAIM_TESTS.md, the operator's wording; it
+           # describes a chance-rate property of a test, not a verdict on the claim
+           "A test can pass by chance", "they are graded", "a confirmation against it",
+           "treat its confirmation with more doubt")
 
 
 def _verdict_hits(text: str) -> list:
