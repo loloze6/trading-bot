@@ -17,19 +17,26 @@ and the analyst retries in the existing loop:
   2. trading-bot/tools/validate_config.py validate(config), every rule, with exactly two
      kinds of line dropped: a V3 line naming an op listed in `requires`, and a V12
      cannot-load line naming a class listed in `requires` whose loader message says the
-     module imported and has no such attribute. Nothing else is exempt (V4-V17 included),
+     module imported and has no such attribute. Nothing else is exempt (V4-V18 included),
      and validate_config.py itself is unchanged: whatever rules it holds when this runs
      (D-158's detector-component transforms rule included, once merged) apply.
   3. tools/forecast_rules.py strategies_violations (D-051 graded forecasts, D-149
      standardised forecast).
   A config that validate_config or forecast_rules cannot check (it raises) is a refusal,
   not a crash.
+  4. D-160 (vehicle-format V1d): with `combines_as: regime_gate`, the gate form
+     (gate_form_errors): mode threshold_rules, a non-empty `regime_detector.rules` or
+     `regime_detector.vetoes`, and exactly one non-null `strategies.regimes` entry. Once the
+     config passes 1-3 and the form, its ungated twin (ungated_twin, D-052) is checked by
+     steps 2-3 exactly like the config (the same `requires` exemptions); a twin failure is a
+     refusal naming the twin. The twin is derived by code and never stored.
 
 Pure apart from reading the trading-bot sources (the registry and validate_config loaded by
 file path, the component module read with ast) and the component catalogue.
 """
 from __future__ import annotations
 
+import copy
 import importlib.util
 import re
 from pathlib import Path
@@ -40,6 +47,10 @@ _V3_RE = re.compile(r"^VIOLATION V3 \S+\.op: '(.*)' not in TRANSFORM_OPS_REGISTR
 _V12_RE = re.compile(r"^VIOLATION V12 \S+\.class: cannot load '([^']+)': (.*)$")
 _TRANSFORM_KEYS = ("transforms", "history_transforms")
 _modules: dict = {}
+# D-160: the combines_as word (reader_proposals.COMBINES_AS) whose config vehicle must have the
+# gate form, and the one detector mode whose gate the D-052 twin recipe removes
+REGIME_GATE = "regime_gate"
+GATE_MODE = "threshold_rules"
 
 
 def _validate_config_module(trading_bot_root: Path):
@@ -91,11 +102,89 @@ def _exempt(line: str, req_ops: set, req_classes: set) -> bool:
     return False
 
 
+def _trading_regimes(config) -> list:
+    """The `strategies.regimes` names whose value is not null, in config order."""
+    strat = config.get("strategies") if isinstance(config, dict) else None
+    regimes = strat.get("regimes") if isinstance(strat, dict) else None
+    return [r for r, v in regimes.items() if v is not None] if isinstance(regimes, dict) else []
+
+
+def gate_form_errors(config, where: str) -> list:
+    """D-160: the form of a config whose idea combines as a regime gate ([] when it has it).
+    `where` names the config (e.g. "side_findings[0].vehicle.config"). The gate is
+    `regime_detector.rules` or `regime_detector.vetoes`, at least one non-empty; the strategy is
+    exactly one non-null `strategies.regimes` entry (the regime the gate trades in). The mode
+    is threshold_rules (absent = threshold_rules, as regime_engine.py reads it): the ungated
+    twin (D-052) empties the rules and sets default_regime, and only that mode reads them, so
+    in score / score_product mode the twin would still be gated."""
+    rd = config.get("regime_detector") if isinstance(config, dict) else None
+    rd = rd if isinstance(rd, dict) else {}
+    errors = []
+    mode = rd.get("mode", GATE_MODE)
+    if mode != GATE_MODE:
+        errors.append(f"{where}.regime_detector.mode={mode!r}: combines_as {REGIME_GATE} needs "
+                      f"mode {GATE_MODE} (the default): its ungated twin (D-052) empties the "
+                      f"rules and sets default_regime, which only {GATE_MODE} mode reads")
+    rules, vetoes = rd.get("rules"), rd.get("vetoes")
+    if not (isinstance(rules, list) and rules) and not (isinstance(vetoes, list) and vetoes):
+        errors.append(f"{where}.regime_detector: combines_as {REGIME_GATE} needs the gate, a "
+                      f"non-empty regime_detector.rules or regime_detector.vetoes, and both are "
+                      f"empty, missing or not a list; write the gate, or choose another "
+                      f"combines_as")
+    trading = _trading_regimes(config)
+    if len(trading) != 1:
+        errors.append(f"{where}.strategies.regimes: combines_as {REGIME_GATE} needs exactly one "
+                      f"non-null regime (the regime the gate trades in), and this config has "
+                      f"{len(trading)} {trading}; set every other regime to null")
+    return errors
+
+
+def ungated_twin(config: dict) -> dict:
+    """D-052 / D-160: the ungated version of a regime-gated config, derived by code. A deep
+    copy with `regime_detector.rules` emptied ([]), `regime_detector.vetoes` dropped (the key
+    removed: regime_engine.py and validate_config.py both read a missing key as [], and the
+    twin has no veto at all rather than an empty one), and `regime_detector.default_regime`
+    set to the single non-null `strategies.regimes` entry; the detector components and
+    everything else kept, so the twin warms up exactly like the gated config and every bar
+    trades the same strategy. Pure; `config` is not changed. Raises ValueError, with the
+    gate_form_errors messages, when the config does not have the gate form."""
+    errors = gate_form_errors(config, "config")
+    if errors:
+        raise ValueError("; ".join(errors))
+    twin = copy.deepcopy(config)
+    rd = twin["regime_detector"]
+    rd["rules"] = []
+    rd.pop("vetoes", None)
+    rd["default_regime"] = _trading_regimes(config)[0]
+    return twin
+
+
+def _content_errors(config, where: str, vc, fr, on_off, req_ops: set, req_classes: set,
+                    run_validate: bool) -> list:
+    """Steps 2-3 for one config (the vehicle's, or its ungated twin), every line prefixed
+    with `where`; a checker that raises is a refusal, not a crash."""
+    checker = "validate_config"
+    try:
+        # run_validate False (a class outside COMPONENT_MODULE): validate() is NOT run, since
+        # its V12 imports each `class` module, a model-chosen import at reading time
+        lines = vc.validate(config) if run_validate else []
+        checker = "forecast_rules"
+        msgs = fr.strategies_violations(config,
+                                        fr.on_off_classes() if on_off is None else on_off)
+    except Exception as exc:  # noqa: BLE001 -- a malformed model-written config is a refusal
+        return [f"{where}: {checker} cannot check it "
+                f"({type(exc).__name__}: {str(exc)[:200]}); write the complete strategy "
+                f"config, regime_detector and strategies, as the base config has them"]
+    return ([f"{where}: {ln}" for ln in lines if not _exempt(ln, req_ops, req_classes)]
+            + [f"{where}: {m}" for m in msgs])
+
+
 def config_vehicle_errors(vehicle: dict, where: str, *, trading_bot_root: Path = TBOT_ROOT,
-                          on_off=None) -> list:
+                          on_off=None, combines_as=None) -> list:
     """The refusal messages for one shape-checked config vehicle ([] when it passes).
     `where` prefixes every message (e.g. "side_findings[0].vehicle"). `on_off`: the D-051
-    on/off class names (None: forecast_rules.on_off_classes(), the catalogue)."""
+    on/off class names (None: forecast_rules.on_off_classes(), the catalogue).
+    `combines_as`: the side finding's word; REGIME_GATE adds step 4 (D-160)."""
     import decide_next as dn  # tools/ siblings
     import forecast_rules as fr
     config = vehicle["config"]
@@ -142,20 +231,17 @@ def config_vehicle_errors(vehicle: dict, where: str, *, trading_bot_root: Path =
             errors.append(f"{where}.config: component class {cls!r} must be a dotted class path "
                           f"in {dn.COMPONENT_MODULE} (as the config's `class` writes it, "
                           f"{dn.COMPONENT_MODULE}.<ClassName>)")
-    checker = "validate_config"
-    try:
-        # with any class outside COMPONENT_MODULE, validate() is NOT run: its V12 imports each
-        # `class` module, and that would be a model-chosen import at reading time
-        lines = [] if invalid else vc.validate(config)
-        checker = "forecast_rules"
-        msgs = fr.strategies_violations(config,
-                                        fr.on_off_classes() if on_off is None else on_off)
-    except Exception as exc:  # noqa: BLE001 -- a malformed model-written config is a refusal
-        errors.append(f"{where}.config: {checker} cannot check it "
-                      f"({type(exc).__name__}: {str(exc)[:200]}); write the complete strategy "
-                      f"config, regime_detector and strategies, as the base config has them")
-    else:
-        errors += [f"{where}.config: {ln}" for ln in lines
-                   if not _exempt(ln, req_ops, req_classes)]
-        errors += [f"{where}.config: {m}" for m in msgs]
-    return errors
+    errors += _content_errors(config, f"{where}.config", vc, fr, on_off, req_ops, req_classes,
+                              run_validate=not invalid)
+    if combines_as != REGIME_GATE:
+        return errors
+    errors += gate_form_errors(config, f"{where}.config")
+    if errors:
+        # the twin differs from the config only in the detector's rules, vetoes and
+        # default_regime: checked once the config passes, it names only what the
+        # derivation itself breaks, never a fault of the config twice
+        return errors
+    twin = ungated_twin(config)
+    tw = (f"{where}.config ungated twin (D-052: rules [], vetoes dropped, default_regime "
+          f"{twin['regime_detector']['default_regime']!r})")
+    return _content_errors(twin, tw, vc, fr, on_off, req_ops, req_classes, run_validate=True)

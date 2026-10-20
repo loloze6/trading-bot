@@ -483,6 +483,64 @@ def validate(config: dict) -> List[str]:
                 f"ignores them: regime_engine.py); put the transform on a veto, on a "
                 f"score-mode regime component, or on a strategy component")
 
+    # V18 (D-160): in threshold_rules mode (regime_detector.mode, absent = "threshold_rules",
+    # as regime_engine.py reads it) with regime_detector.rules empty or missing, every bar
+    # resolves to default_regime (absent = "unknown", regime_engine.py) or to a veto's result
+    # (vetoes run first, in every mode). When neither holds components -- the default regime
+    # is null or missing in strategies.regimes and no veto's result names a non-null one --
+    # the strategy engine returns 0.0 on every bar (strategy_engine.forecast: a null or
+    # missing regime forecasts 0.0) and nothing says so. V10 is the special case with no
+    # components either; it already reports that one, so V18 skips it (one line per fault).
+    # Score and score_product modes never read default_regime and are not touched; an
+    # explicit null or an unknown name is V7's. A block's source detector is checked the same
+    # way against the block's own `source.parts` (its regimes with components; a block
+    # abstains in any other regime, strategy_engine._update_block): the same walk as V16/V17.
+    def _v18_dead(det: dict, has_strategy) -> str:
+        """The default regime name when `det` (a detector mapping) routes every bar to a
+        regime `has_strategy` refuses, else ''."""
+        if det.get("mode", "threshold_rules") != "threshold_rules" or det.get("rules"):
+            return ""
+        default = det.get("default_regime", "unknown")
+        if not isinstance(default, str) or default not in _VALID_REGIMES or has_strategy(default):
+            return ""
+        vetoes = det.get("vetoes") or []
+        if isinstance(vetoes, list) and any(
+                isinstance(v, dict) and isinstance(v.get("result"), str)
+                and has_strategy(v["result"]) for v in vetoes):
+            return ""
+        return default
+
+    if not fully_ungated:
+        dead = _v18_dead(rd, lambda r: strat_regimes.get(r) is not None)
+        if dead:
+            violations.append(
+                f"VIOLATION V18 regime_detector.default_regime: '{dead}' in mode 'threshold_rules' "
+                f"with regime_detector.rules empty or missing, so every bar resolves to '{dead}' (or to a veto's "
+                f"result, and none holds components) -- but strategies.regimes.{dead} is null or "
+                f"missing. This config forecasts 0.0 on every bar; point default_regime at the "
+                f"regime that holds the components, or move the components to "
+                f"strategies.regimes.{dead}.")
+
+    for rname, rcfg in strat_regimes.items():
+        blocks = rcfg.get("blocks") if isinstance(rcfg, dict) else None
+        if not isinstance(blocks, list):
+            continue  # V13 reports a malformed `blocks`
+        for i, block in enumerate(blocks):
+            src = block.get("source") if isinstance(block, dict) else None
+            det = src.get("regime_detector") if isinstance(src, dict) else None
+            parts = src.get("parts") if isinstance(src, dict) else None
+            if not isinstance(det, dict) or not isinstance(parts, dict):
+                continue  # V13 reports a malformed source
+            dead = _v18_dead(det, lambda r: r in parts)
+            if dead:
+                loc = f"strategies.regimes.{rname}.blocks[{i}].source"
+                violations.append(
+                    f"VIOLATION V18 {loc}.regime_detector.default_regime: '{dead}' in mode "
+                    f"'threshold_rules' with the source detector's rules empty, so every bar "
+                    f"resolves to '{dead}' (or to a veto's result, and none is in source.parts) -- "
+                    f"but {loc}.parts has no '{dead}' entry. This block abstains on every bar "
+                    f"(contributes 0); point default_regime at a regime of source.parts.")
+
     return violations
 
 

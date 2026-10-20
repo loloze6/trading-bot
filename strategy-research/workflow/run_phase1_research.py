@@ -5676,9 +5676,10 @@ def _reading_content_errors(doc: dict, category: str, run_dir: Path) -> list:
         if isinstance(s, dict) and isinstance(s.get("vehicle"), dict):
             # D-159 (vehicle-format V1c): a config vehicle (the shape check lets one through
             # only with reader_proposals' config_vehicle on) is checked whole -- requires,
-            # validate_config, D-051/D-149 -- and is never resolved as a patch
+            # validate_config, D-051/D-149 -- and is never resolved as a patch; D-160: with
+            # combines_as regime_gate, the gate form and its ungated twin too
             errors += _config_vehicle_module().config_vehicle_errors(
-                s["vehicle"], f"side_findings[{i}].vehicle")
+                s["vehicle"], f"side_findings[{i}].vehicle", combines_as=s.get("combines_as"))
             continue
         key = "vehicle" if isinstance(s, dict) and s.get("vehicle") else "config_change"
         change = s.get(key) if isinstance(s, dict) else None
