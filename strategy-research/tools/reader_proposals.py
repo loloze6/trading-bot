@@ -154,9 +154,12 @@ LEGACY_NO_VEHICLE = "legacy_no_vehicle"
 # (absent today, used by the config, every absent piece listed, validate_config / D-051 /
 # D-149) are tools/config_vehicle.py's, run where the reading is checked. The form lands
 # UNUSED: decide-next does not route it yet (V2), and every consumer of a flattened item's
-# `config_change` reads a patch list, so until V2 the mapping is refused exactly as before
-# (the patch-list message) unless a caller passes config_vehicle=True. V2 sets
-# CONFIG_VEHICLE_ROUTED with the routing.
+# `config_change` reads a patch list, so in V1 the mapping is refused exactly as before
+# (the patch-list message) unless a caller passes config_vehicle=True.
+# CONFIG_VEHICLE_ROUTED is NOT a flag (operator ruling 2026-10-20, D-159): it is not registered
+# in config/feature_flag_register.yaml and no config sets it; it marks the form as landed
+# unused. V2 DELETES this constant together with the routing; it does not flip it to True.
+# Tests cover both states (the checks with it forced on; today's exact refusal with it off).
 CONFIG_VEHICLE_ROUTED = False
 VEHICLE_CONFIG_KIND = "config"
 REQUIRES_KINDS = ("op", "component")
@@ -295,8 +298,8 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
     may carry the ENVELOPE_KEYS and MUST carry `vehicle`; without it a model's
     answer with any of them is refused as before (a file already written is
     accepted either way). `config_vehicle` (D-159): whether a vehicle may be the
-    config form (CONFIG_VEHICLE_SHAPE); None reads CONFIG_VEHICLE_ROUTED (False
-    until V2 routes it), so a mapping is refused as before.
+    config form (CONFIG_VEHICLE_SHAPE); None reads CONFIG_VEHICLE_ROUTED (False;
+    not a flag, V2 deletes it), so a mapping is refused as before.
     Raises ProposalError naming the whole required shape where it can."""
     if not is_reading(doc):
         raise ProposalError(f"{where}: a v3 reading must be a mapping with schema_version: "

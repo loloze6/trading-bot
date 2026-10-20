@@ -11,7 +11,9 @@ and the analyst retries in the existing loop:
      trading-bot/strategies/registry.py TRANSFORM_OPS_REGISTRY; a component class path that
      decide_next.component_class_status reads `missing`) and used by the config (an `op` of
      a transforms / history_transforms step, or a `class` value, anywhere in it); and every
-     absent piece the config uses must be listed.
+     absent piece the config uses must be listed. A `class` outside
+     strategies.strategy_components (component_class_status `invalid`) is refused, and
+     step 2 is then not run, so no model-chosen module is imported at reading time.
   2. trading-bot/tools/validate_config.py validate(config), every rule, with exactly two
      kinds of line dropped: a V3 line naming an op listed in `requires`, and a V12
      cannot-load line naming a class listed in `requires` whose loader message says the
@@ -20,6 +22,8 @@ and the analyst retries in the existing loop:
      (D-158's detector-component transforms rule included, once merged) apply.
   3. tools/forecast_rules.py strategies_violations (D-051 graded forecasts, D-149
      standardised forecast).
+  A config that validate_config or forecast_rules cannot check (it raises) is a refusal,
+  not a crash.
 
 Pure apart from reading the trading-bot sources (the registry and validate_config loaded by
 file path, the component module read with ast) and the component catalogue.
@@ -54,10 +58,15 @@ def _validate_config_module(trading_bot_root: Path):
 def used_pieces(config) -> tuple:
     """(ops, classes) the config names: every string `op` of a step in a `transforms` or
     `history_transforms` list, and every string `class` value, anywhere in the config
-    (block source detectors included)."""
-    ops, classes, stack = set(), set(), [config]
+    (block source detectors included). Each dict and list is walked once (by id), so a
+    self-referential YAML alias cannot loop."""
+    ops, classes, stack, seen = set(), set(), [config], set()
     while stack:
         node = stack.pop()
+        if isinstance(node, (dict, list)):
+            if id(node) in seen:
+                continue
+            seen.add(id(node))
         if isinstance(node, dict):
             for key, value in node.items():
                 if key in _TRANSFORM_KEYS and isinstance(value, list):
@@ -127,15 +136,26 @@ def config_vehicle_errors(vehicle: dict, where: str, *, trading_bot_root: Path =
         errors.append(f"{where}.config: component class {cls!r} does not exist today and is "
                       f"not listed in requires: use an existing component, or list it as "
                       f"{{kind: component, name: {cls}, spec, example}}")
+    invalid = sorted(c for c in classes if status[c] == "invalid")
+    for cls in invalid:
+        if cls not in req_classes:   # a listed one is already refused above (requires branch)
+            errors.append(f"{where}.config: component class {cls!r} must be a dotted class path "
+                          f"in {dn.COMPONENT_MODULE} (as the config's `class` writes it, "
+                          f"{dn.COMPONENT_MODULE}.<ClassName>)")
+    checker = "validate_config"
     try:
-        lines = vc.validate(config)
+        # with any class outside COMPONENT_MODULE, validate() is NOT run: its V12 imports each
+        # `class` module, and that would be a model-chosen import at reading time
+        lines = [] if invalid else vc.validate(config)
+        checker = "forecast_rules"
+        msgs = fr.strategies_violations(config,
+                                        fr.on_off_classes() if on_off is None else on_off)
     except Exception as exc:  # noqa: BLE001 -- a malformed model-written config is a refusal
-        errors.append(f"{where}.config: validate_config cannot check it "
+        errors.append(f"{where}.config: {checker} cannot check it "
                       f"({type(exc).__name__}: {str(exc)[:200]}); write the complete strategy "
                       f"config, regime_detector and strategies, as the base config has them")
     else:
         errors += [f"{where}.config: {ln}" for ln in lines
                    if not _exempt(ln, req_ops, req_classes)]
-    msgs = fr.strategies_violations(config, fr.on_off_classes() if on_off is None else on_off)
-    errors += [f"{where}.config: {m}" for m in msgs]
+        errors += [f"{where}.config: {m}" for m in msgs]
     return errors

@@ -98,10 +98,10 @@ def test_off_a_config_vehicle_from_a_model_gets_the_old_patch_list_refusal(kw):
 
 def test_off_a_written_file_with_a_config_vehicle_fails_to_load_loudly(tmp_path):
     _save(tmp_path / "proposals" / f"{CAT}.yaml", _reading(_claim(), vehicle=_vehicle(), **ENV))
-    with pytest.raises(rp.ProposalError, match=r"vehicle: must be a non-empty list of changes"):
-        rp.load_proposals(tmp_path / "proposals", [CAT])
-    with pytest.raises(rp.ProposalError, match=r"vehicle: must be a non-empty list of changes"):
-        rp.load_readings(tmp_path / "proposals", [CAT])
+    for load in (rp.load_proposals, rp.load_readings):
+        with pytest.raises(rp.ProposalError) as exc:
+            load(tmp_path / "proposals", [CAT])
+        assert str(exc.value).endswith(f"side_findings[0].{OLD_MESSAGE}"), str(exc.value)
 
 
 @pytest.mark.parametrize("on", [False, True])
@@ -148,6 +148,11 @@ def test_on_the_flag_constant_turns_it_on_for_every_caller(monkeypatch, tmp_path
     (item,) = rp.load_proposals(tmp_path / "proposals", [CAT])[CAT]
     assert item["vehicle"] == _vehicle() and "config_change" not in item
     assert "legacy_no_vehicle" not in item
+    # forced on, a written file is shape-checked as the config form (not the patch list)
+    _save(tmp_path / "proposals" / f"{CAT}.yaml",
+          _reading(_claim(), vehicle=dict(_vehicle(), kind="patch"), **ENV))
+    with pytest.raises(rp.ProposalError, match=r"vehicle.kind='patch' must be 'config'"):
+        rp.load_proposals(tmp_path / "proposals", [CAT])
 
 
 @pytest.mark.parametrize("vehicle,needle", [
@@ -169,9 +174,15 @@ def test_on_the_flag_constant_turns_it_on_for_every_caller(monkeypatch, tmp_path
     (dict(_vehicle(), requires=[_req(example=None)]), r"requires\[0\].example must be"),
     (dict(_vehicle(), requires=[_req(), _req()]), r"requires\[1\]: op 'kalman_smooth' is listed twice"),
 ])
-def test_on_each_shape_refusal(vehicle, needle):
+@pytest.mark.parametrize("how", ["kwarg", "constant"])
+def test_on_each_shape_refusal(vehicle, needle, how, monkeypatch):
+    if how == "constant":                       # the constant forced on, no kwarg
+        monkeypatch.setattr(rp, "CONFIG_VEHICLE_ROUTED", True)
+        kw = {}
+    else:
+        kw = {"config_vehicle": True}
     with pytest.raises(rp.ProposalError, match=needle):
-        _check_model(vehicle, config_vehicle=True)
+        _check_model(vehicle, **kw)
 
 
 # ---------------------------------------------------------------------------
@@ -277,18 +288,78 @@ def test_each_requires_refusal(req, needle):
     assert len(errs) == 1 and errs[0].startswith("v.requires[0]: ") and needle in errs[0], errs
 
 
-def test_a_class_in_another_module_is_never_exemptable():
+def _spy_validate(monkeypatch) -> list:
+    calls = []
+    vc = cv._validate_config_module(cv.TBOT_ROOT)
+    real = vc.validate
+    monkeypatch.setattr(vc, "validate", lambda config: calls.append(1) or real(config))
+    return calls
+
+
+def test_a_class_in_another_module_is_never_exemptable(monkeypatch):
+    calls = _spy_validate(monkeypatch)
     bad = "strategies.no_such_module.KalmanTrendComponent"
     errs = _errors(_vehicle(_with_class(bad), requires=[_req("component", bad)]))
-    assert any("must be a dotted class path" in e for e in errs)
-    assert any(f"V12 strategies.regimes.unknown.components[1].class: cannot load {bad!r}" in e
-               for e in errs)
+    assert errs == [f"v.requires[0]: component {bad!r} must be a dotted class path in "
+                    f"strategies.strategy_components (as the config's `class` writes it, "
+                    f"strategies.strategy_components.<ClassName>)"]
+    assert calls == []                      # validate_config (V12 imports) never ran
+
+
+@pytest.mark.parametrize("bad", ["json.JSONDecoder",
+                                 "strategies.strategy_engine.ConfigDrivenStrategyEngine",
+                                 "KalmanTrendComponent"])
+def test_an_unlisted_class_outside_the_component_module_is_refused_and_never_imported(
+        bad, monkeypatch):
+    calls = _spy_validate(monkeypatch)
+    errs = _errors(_vehicle(_with_class(bad)))
+    assert errs == [f"v.config: component class {bad!r} must be a dotted class path in "
+                    f"strategies.strategy_components (as the config's `class` writes it, "
+                    f"strategies.strategy_components.<ClassName>)"]
+    assert calls == []                      # no model-chosen module imported at reading time
+    assert _errors(_vehicle()) == [] and calls == [1]       # the spy does see a normal call
+
+
+MALFORMED_OP = [{"op": ["x"]}]                             # TypeError: unhashable list
+
+
+def _malformed() -> dict:
+    cfg = copy.deepcopy(CONFIG)
+    cfg["strategies"]["regimes"]["unknown"]["components"][0]["transforms"] = copy.deepcopy(
+        MALFORMED_OP)
+    return cfg
+
+
+def test_a_config_forecast_rules_cannot_read_is_a_refusal_not_a_crash(monkeypatch):
+    import forecast_rules as fr
+    with pytest.raises(TypeError):                         # the probe does crash forecast_rules
+        fr.strategies_violations(_malformed(), fr.on_off_classes())
+    vc = cv._validate_config_module(cv.TBOT_ROOT)
+    monkeypatch.setattr(vc, "validate", lambda config: [])  # so forecast_rules is reached
+    (err,) = _errors(_vehicle(_malformed()))
+    assert err.startswith("v.config: forecast_rules cannot check it (TypeError"), err
+
+
+def test_a_malformed_op_is_a_refusal_with_the_real_checkers():
+    (err,) = _errors(_vehicle(_malformed()))
+    assert err.startswith("v.config: ") and " cannot check it (TypeError" in err, err
 
 
 def test_pieces_inside_a_block_source_detector_count_as_used():
     cfg = {"x": [{"blocks": [{"source": {"regime_detector": {"components": [
         {"class": NEW_CLASS, "transforms": [{"op": NEW_OP}]}]}}}]}]}
     assert cv.used_pieces(cfg) == ({NEW_OP}, {NEW_CLASS})
+
+
+def test_used_pieces_ends_on_a_self_referential_structure():
+    cfg = {"class": NEW_CLASS, "transforms": [{"op": NEW_OP}]}
+    loop = [cfg]
+    loop.append(loop)
+    cfg["self"], cfg["loop"] = cfg, loop
+    assert cv.used_pieces(cfg) == ({NEW_OP}, {NEW_CLASS})
+    alias = yaml.safe_load("a: &x\n  class: " + NEW_CLASS + "\n  me: *x\n")
+    assert alias["a"]["me"] is alias["a"]                  # a real YAML self-alias
+    assert cv.used_pieces(alias) == (set(), {NEW_CLASS})
 
 
 # ---------------------------------------------------------------------------
@@ -346,3 +417,19 @@ def test_the_analyst_on_hears_the_content_refusal_and_retries(run, monkeypatch):
     assert second["status"] == "accepted", second["errors"]
     written = yaml.safe_load(dest.read_text(encoding="utf-8"))
     assert written["side_findings"][0]["vehicle"]["requires"] == [_req()]
+
+
+def test_the_analyst_on_refuses_a_malformed_op_and_retries_instead_of_crashing(run,
+                                                                              monkeypatch):
+    monkeypatch.setattr(rp, "CONFIG_VEHICLE_ROUTED", True)
+    answers = iter([_vehicle(_malformed()), _vehicle()])
+
+    async def script(call):
+        return await _good_claim(call, extra={"vehicle": next(answers)})
+    _install(monkeypatch, script)
+    _dest, record = _run_analyst(run)
+    first, second = record["attempts"]
+    assert first["status"] == "refused" and any(
+        e.startswith("side_findings[0].vehicle.config: ") and " cannot check it (TypeError" in e
+        for e in first["errors"]), first["errors"]
+    assert second["status"] == "accepted", second["errors"]
