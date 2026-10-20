@@ -17,6 +17,19 @@ def _all_transform_lists(config: dict):
     """Yield (location_path, transforms_list) for every transforms/history_transforms list in config."""
     rd = config.get("regime_detector", {})
 
+    # regime_detector.components[j]: the engine ignores these lists (regime_engine.py:
+    # detector components have no transforms), so V17 refuses any that is non-empty;
+    # they are yielded so V3-V5, V14-V16 also see them.
+    for j, comp in enumerate(rd.get("components") or []):
+        if not isinstance(comp, dict):
+            continue
+        tfs = comp.get("transforms", [])
+        if tfs:
+            yield f"regime_detector.components[{j}].transforms", tfs
+        htfs = comp.get("history_transforms", [])
+        if htfs:
+            yield f"regime_detector.components[{j}].history_transforms", htfs
+
     for i, veto in enumerate(rd.get("vetoes", [])):
         tfs = veto.get("transforms", [])
         if tfs:
@@ -415,9 +428,11 @@ def validate(config: dict) -> List[str]:
     # V16 also walks each block's source detector
     # (`strategies.regimes.<r>.blocks[i].source.regime_detector`, run by its own
     # ConfigDrivenRegimeEngine, strategy_engine._Block) -- the same lists as the
-    # top-level detector, never allowed. V16 only: _all_transform_lists is
-    # unchanged, so every other rule's output is too (V14 keeps the same gap for
-    # vol_target). Silent for every config without signed_power.
+    # top-level detector, never allowed. Only V16 and V17 walk the block source
+    # detectors; no other rule does (V14 keeps the same gap for vol_target).
+    # _all_transform_lists also yields regime_detector.components[j] lists (V17),
+    # so on such a config the rules that walk it say more (V3-V5, V14-V16); every
+    # config without them is unchanged. Silent for every config without signed_power.
     from strategies.registry import signed_power_param_errors
 
     def _block_source_detector_lists():
@@ -449,6 +464,24 @@ def validate(config: dict) -> List[str]:
                         f"refuses raises there, inside generate_signals' guard)")
                 for msg in signed_power_param_errors(step.get("params", {})):
                     violations.append(f"VIOLATION V16 {loc}[{k}].params: {msg}")
+
+    # V17 (D-158): a detector component (`regime_detector.components[j]`, at the top
+    # level or in a block's source detector) takes no transforms -- the engine never
+    # reads them (regime_engine.py), so a config that adds one passes every other
+    # check while the run measures an unchanged strategy. One refusal per non-empty
+    # list. Score-mode regime components (`regime_detector.regimes.<r>.components`)
+    # and vetoes do apply theirs and are not touched. Silent for every config
+    # without such a list.
+    def _is_detector_component_list(loc: str) -> bool:
+        return (loc.startswith("regime_detector.components[")
+                or ".source.regime_detector.components[" in loc)
+
+    for loc, _tfs, _allowed in _v16_lists():
+        if _is_detector_component_list(loc):
+            violations.append(
+                f"VIOLATION V17 {loc}: detector components take no transforms (the engine "
+                f"ignores them: regime_engine.py); put the transform on a veto, on a "
+                f"score-mode regime component, or on a strategy component")
 
     return violations
 
