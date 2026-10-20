@@ -473,3 +473,94 @@ def test_a_prefilled_claim_of_an_accepted_trade_shape_is_still_kept(monkeypatch)
     run_dir = d139._run("run_958", None, pre)
     assert rpr._keep_prefilled_claim(run_dir, "run_958") is None   # 1a wrote no claim
     assert d139._card_claim(run_dir) == pre
+
+
+# ---------------------------------------------------------------------------
+# 9. added after the wiring: one core, decide-next end to end, the keep unchanged elsewhere
+# ---------------------------------------------------------------------------
+
+def test_the_three_texts_derive_from_one_core(monkeypatch):
+    """Changes nothing: proves the structure. The core is a prefix of the analyst's and of step
+    1a's text, and the short line is "D-095: " and the core's first clause (the part before
+    ': it cannot tell')."""
+    claim = _claim(_test(_where(("holding_bars", ">=", 3), ("exit_cause", "==", "flip")),
+                         "trade_gross_return", name="x"))
+    (hit,) = asm.exit_selector_own_outcome_hits(claim)
+    core = hit["core"]
+    assert core == CORE
+    (analyst,) = asm.exit_selector_own_outcome_errors(claim)
+    _on(monkeypatch)
+    (step_1a,) = rpr._check_1a_claim(cc, claim).errors
+    (short,) = rfi.d095_refusals(claim)
+    assert analyst.startswith(core + " ") and step_1a.startswith(core + " ")
+    first_clause = core.split(": it cannot tell", 1)[0]
+    assert first_clause == hit["what"]
+    assert short == "D-095: " + first_clause
+    # the tails differ, the core does not
+    assert analyst != step_1a and core not in short
+
+
+@pytest.mark.parametrize("where, outcome, named", REFUSED)
+def test_decide_nexts_infeasible_reason_is_the_prefix_and_the_short_line(where, outcome, named):
+    """decide-next end to end (decide_next._side_finding_review -> decide): trade family on, the
+    candidate of a side finding of the refused shape is INFEASIBLE with the reason
+    'next_test_refused: ' + the short line, and with the family off it carries no D-095 text."""
+    import test_d091_trade_tests_pipeline as d091
+    import test_e077_folds as tf
+    claim = _claim(_test(where, outcome))
+    for on in (True, False):
+        inputs, pid = tf._scenario("run_074", "ROOT", {"run_074": tf.FOLD_A})
+        inputs["runs"]["run_074"]["proposals"] = [{"category": "profitability",
+                                                   "proposal": d091._side_item(pid, claim)}]
+        if on:
+            inputs["trade_tests"] = True
+        cand = tf._cand(tf._decide(inputs, "run_074"), pid)
+        reasons = cand["gates"]["feasibility"]["reasons"]
+        if on:
+            assert "next_test_refused: " + _short(named, outcome) in reasons
+            assert cand["eligible"] is False
+            assert not any(_msg(where, outcome, named) in r or _1a(named, outcome) in r
+                           for r in reasons)             # neither longer text reaches decide-next
+        else:
+            assert not any(D095_NEEDLE in r for r in reasons)
+
+
+@pytest.mark.parametrize("i", range(len(ACCEPTED)))
+def test_an_accepted_prefilled_claim_is_kept_as_before(monkeypatch, i):
+    """Entry-time + trade_net_return, exit_cause + post_exit_return and the rest of ACCEPTED:
+    analyst on, 1a's own (different) claim is replaced by the pre-filled one, unchanged, and
+    _keep_prefilled_claim returns 1a's own claim -- exactly as D-139 has it."""
+    import test_d139_prefilled_claim_kept as d139
+    monkeypatch.setattr(rpr, "_resolve_tbot_python", lambda: Path("stub-python"))
+    d139._set_orchestrator(d139.ON)
+    _on(monkeypatch)
+    pre = _claim(ACCEPTED[i].values[0])
+    own = dict(d139.BAR_CLAIM, statement="1a's own idea")
+    run_dir = d139._run(f"run_98{i}", own, pre)
+    assert rpr._keep_prefilled_claim(run_dir, f"run_98{i}") == own
+    assert d139._card_claim(run_dir) == pre
+
+
+@pytest.mark.parametrize("pre_name", ["bar", "exit_selector", "run_095", "entry_trade"])
+def test_the_keep_with_the_analyst_flag_off_is_check_claims_decision(monkeypatch, pre_name):
+    """Flag off: _keep_prefilled_claim keeps exactly the claims claim_card.check_claim (with the
+    pipeline's keywords) accepts -- no D-095 anywhere. The refused shape is refused anyway
+    (the trade family is off), and the card is untouched when not kept."""
+    import test_d139_prefilled_claim_kept as d139
+    monkeypatch.setattr(rpr, "_resolve_tbot_python", lambda: Path("stub-python"))
+    d139._set_orchestrator(d139.ON)
+    _on(monkeypatch, analyst=False)
+    pre = {"bar": d139.BAR_CLAIM,
+           "exit_selector": _claim(_test(_where(("holding_bars", ">", 5)))),
+           "run_095": d139.RUN_095_PREFILLED,
+           "entry_trade": _claim(_test(_where(("entry_forecast", ">=", 10))))}[pre_name]
+    want = cc.check_claim(pre, **rpr._claim_check_kw())
+    own = dict(d139.BAR_CLAIM, statement="1a's own idea")
+    run_dir = d139._run("run_990", own, pre)
+    before = d139._card_bytes(run_dir)
+    got = rpr._keep_prefilled_claim(run_dir, "run_990")
+    if want.errors or want.tests_none:
+        assert got is rpr._NOT_KEPT and d139._card_bytes(run_dir) == before
+        assert not any(D095_NEEDLE in e for e in want.errors)
+    else:
+        assert got == own and d139._card_claim(run_dir) == pre
