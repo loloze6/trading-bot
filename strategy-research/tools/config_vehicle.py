@@ -30,10 +30,12 @@ and the analyst retries in the existing loop:
      config passes 1-3 and the form, its ungated twin (ungated_twin, D-052) is checked by
      steps 2-3 exactly like the config (the same `requires` exemptions); a twin failure is a
      refusal naming the twin. The twin is derived by code and never stored. S4 (operator
-     ruling 2026-10-20): given the source run's base config, the twin reverts the rules and
-     vetoes to the source's own (relabelled) instead of emptying them, so it differs from the
-     config only by the gate the config adds; a source with no rules and no vetoes of its own
-     gives the D-052 twin exactly.
+     rulings 2026-10-20): given the source run's base config, the twin reverts the rules,
+     the vetoes and default_regime to the source's own (relabelled) instead of emptying the
+     gate, so it differs from the config only by the gate the config adds; a source with no
+     rules and no vetoes of its own gives the D-052 twin exactly. A source with its own rules
+     whose default regime, relabelled, is a trading regime (source_gate_errors) is refused:
+     its twin would be one validate_config V9 refuses (the limit recorded on D-160).
   5. D-161 (vehicle-format V2-1), once 1-4 pass, against the SOURCE run (source_fit_errors;
      the caller reads the source's base config and block_manifest.yaml): a source without a
      block manifest is refused; every `scaffolding` pointer of the manifest must hold the same
@@ -85,6 +87,12 @@ REGIME_GATE = "regime_gate"
 GATE_MODE = "threshold_rules"
 # twin_recipe's words for a twin with no rule and no veto (its source has no gate of its own)
 D052_RECIPE = "D-052: rules [], vetoes dropped"
+S4_RECIPE = "D-052, S4: rules, vetoes and default_regime the source's own"
+# the default regimes validate_config.py's V9 forbids beside non-empty rules (mode
+# threshold_rules or score_product), as it writes them; source_gate_errors mirrors V9 exactly
+V9_TRADING_REGIMES = ("trending", "mean_reversion", "chop")
+# what regime_engine.py (and validate_config.py) read for a missing default_regime
+DEFAULT_REGIME = "unknown"
 
 
 def _validate_config_module(trading_bot_root: Path):
@@ -196,8 +204,51 @@ def _own_gate(source, key: str, relabel) -> list:
     return out
 
 
+def _own_default(source, relabel):
+    """S4 (operator ruling 2026-10-20, item 1): the source's own `regime_detector.
+    default_regime` as the ungated twin takes it -- DEFAULT_REGIME ('unknown') when the key
+    (or the detector) is missing, as regime_engine.py reads it -- renamed through the same
+    relabel swap as _own_gate's rules and vetoes. A non-string value is kept as it is (V7
+    refuses it in the twin, as in the source)."""
+    rd = _detector(source)
+    own = rd.get("default_regime", DEFAULT_REGIME) if rd is not None else DEFAULT_REGIME
+    if relabel and isinstance(own, str):
+        own = {relabel[0]: relabel[1], relabel[1]: relabel[0]}.get(own, own)
+    return copy.deepcopy(own)
+
+
+def source_gate_errors(config, source, where: str) -> list:
+    """S4 (operator ruling 2026-10-20, item 2, the limit recorded on D-160): the refusal of the
+    gate form on a source whose ungated twin validate_config V9 would refuse ([] when there is
+    none, or `source` is not a mapping). The twin takes the source's own rules (_own_gate) and
+    its default regime relabelled (_own_default), in mode threshold_rules (the gate form), so
+    V9 refuses it exactly when the source's rules are a non-empty list AND that relabelled
+    default is one of V9_TRADING_REGIMES -- the source shape "a source trading in its default
+    regime with its own rules" (e.g. one trading in 'unknown' with its own rules, which a gate
+    relabels to 'trending'). V9 itself is not changed. `where` names the config (e.g.
+    "side_findings[0].vehicle.config"). Pure."""
+    if not isinstance(source, dict):
+        return []
+    relabel = regime_relabel(source, config, REGIME_GATE)
+    if not _own_gate(source, "rules", relabel):
+        return []
+    default = _own_default(source, relabel)
+    if default not in V9_TRADING_REGIMES:
+        return []
+    rd = _detector(source)
+    src_default = rd.get("default_regime", DEFAULT_REGIME) if rd is not None else DEFAULT_REGIME
+    named = (f"its default regime {src_default!r}, relabelled {default!r} by this gate (D-161), "
+             f"is a trading regime" if src_default != default
+             else f"its default regime {default!r} is a trading regime")
+    return [f"{where}: combines_as {REGIME_GATE} cannot be used on this source: it has its own "
+            f"regime rules and {named} (a source trading in its default regime with its own "
+            f"rules); its ungated twin (S4: the source's own rules, vetoes and default_regime) "
+            f"would set default_regime {default!r} with non-empty rules, which validate_config "
+            f"V9 refuses. Keep the source's gate, or use another combines_as"]
+
+
 def ungated_twin(config: dict, source=None) -> dict:
-    """D-052 / D-160, S4 recipe (operator ruling 2026-10-20): the ungated version of a
+    """D-052 / D-160, S4 recipe (operator rulings 2026-10-20): the ungated version of a
     regime-gated config, derived by code; it differs from the gated config only by the gate the
     config adds. A deep copy of `config` with
       * `regime_detector.rules` set to the SOURCE's own rules (`source`: the source run's base
@@ -205,16 +256,19 @@ def ungated_twin(config: dict, source=None) -> dict:
       * `regime_detector.vetoes` set to the source's own vetoes, relabelled, or the key removed
         when the source has none (regime_engine.py and validate_config.py both read a missing
         key as [], and the twin then has no veto at all rather than an empty one);
-      * `regime_detector.default_regime` set to the single non-null `strategies.regimes` entry
-        (the regime holding the strategy);
+      * `regime_detector.default_regime` set to the source's own default_regime ('unknown'
+        when missing), renamed through the same relabel (_own_default);
       * the detector components and everything else kept as the config has them -- an added
         component only the gate read stays, unread: the twin warms up exactly like the gated
         config (regime_engine readiness and lookback count every component).
-    `source` None, or a source with no rules and no vetoes of its own (missing or empty): the
-    D-052 twin exactly (rules [], vetoes dropped), as before S4. Pure; neither argument is
-    changed. Raises ValueError, with the gate_form_errors messages, when the config does not
-    have the gate form."""
-    errors = gate_form_errors(config, "config")
+    A source with no rules and no vetoes of its own classifies every bar as its default
+    regime, so for one that trades that is its one trading regime, the relabelled default is
+    the config's trading regime, and the twin is the D-052 twin byte for byte (rules [], vetoes dropped, default_regime the
+    trading regime). `source` not a mapping (None: a caller with no source): the D-052 twin.
+    Pure; neither argument is changed. Raises ValueError, with the gate_form_errors messages,
+    when the config does not have the gate form, or with source_gate_errors' message when the
+    source refuses one (its twin would fail V9)."""
+    errors = gate_form_errors(config, "config") or source_gate_errors(config, source, "config")
     if errors:
         raise ValueError("; ".join(errors))
     relabel = regime_relabel(source, config, REGIME_GATE)
@@ -226,7 +280,8 @@ def ungated_twin(config: dict, source=None) -> dict:
         rd["vetoes"] = vetoes
     else:
         rd.pop("vetoes", None)
-    rd["default_regime"] = _trading_regimes(config)[0]
+    rd["default_regime"] = (_own_default(source, relabel) if isinstance(source, dict)
+                            else _trading_regimes(config)[0])
     return twin
 
 
@@ -237,7 +292,7 @@ def twin_recipe(twin) -> str:
     rd = twin.get("regime_detector") if isinstance(twin, dict) else None
     if isinstance(rd, dict) and rd.get("rules") == [] and "vetoes" not in rd:
         return D052_RECIPE
-    return "D-052, S4: rules and vetoes the source's own"
+    return S4_RECIPE
 
 
 def cycle_error(config, where: str):
@@ -320,8 +375,9 @@ def config_vehicle_errors(vehicle: dict, where: str, *, trading_bot_root: Path =
     `where` prefixes every message (e.g. "side_findings[0].vehicle"). `on_off`: the D-051
     on/off class names (None: forecast_rules.on_off_classes(), the catalogue).
     `combines_as`: the side finding's word; REGIME_GATE adds step 4 (D-160). `source`: the
-    source run's base config, from which step 4's twin takes its rules and vetoes (S4,
-    ungated_twin); None: the D-052 twin."""
+    source run's base config, from which step 4's twin takes its rules, vetoes and
+    default_regime (S4, ungated_twin), and which may refuse the gate form
+    (source_gate_errors); None: the D-052 twin."""
     import decide_next as dn  # tools/ siblings
     import forecast_rules as fr
     config = vehicle["config"]
@@ -379,6 +435,9 @@ def config_vehicle_errors(vehicle: dict, where: str, *, trading_bot_root: Path =
     if combines_as != REGIME_GATE:
         return errors
     errors += gate_form_errors(config, f"{where}.config")
+    if not errors:
+        # S4 (item 2): a source whose twin V9 would refuse refuses the gate form itself
+        errors += source_gate_errors(config, source, f"{where}.config")
     if errors:
         # the twin differs from the config only in the detector's rules, vetoes and
         # default_regime: checked once the config passes, it names only what the
@@ -674,7 +733,8 @@ def source_fit_errors(config, base, manifest, combines_as, where: str) -> list:
     D-110's exact-config 1b runs), then, for combines_as regime_gate and once the config fits,
     its ungated twin on the derived manifest's BLOCK paths only (twin_missing_block_paths,
     D-162: as 5a checks a variant; this replaces D-161's full check_manifest of the twin); the
-    twin is ungated_twin(config, base), the source's own rules and vetoes kept (S4).
+    twin is ungated_twin(config, base), the source's own rules, vetoes and default_regime
+    kept (S4).
     `where` as config_vehicle_errors'. Pure."""
     import block_manifest as bm  # tools/ sibling
     if manifest is None:
@@ -705,7 +765,7 @@ def source_fit_errors(config, base, manifest, combines_as, where: str) -> list:
     # twin loses is. The gate form is config_vehicle_errors' step 4 (the caller runs this only
     # once that passes); a config without it has no twin
     try:
-        twin = ungated_twin(config, base)       # S4: the source's own rules and vetoes kept
+        twin = ungated_twin(config, base)   # S4: the source's rules, vetoes, default kept
     except ValueError:
         return errors
     missing = twin_missing_block_paths(derived, twin)

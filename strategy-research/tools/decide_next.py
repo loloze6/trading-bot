@@ -1996,9 +1996,9 @@ START_CONFIG_POINTER = "candidate.start_config"
 def config_vehicle_reasons(p: dict, start: dict, inputs: dict, source=None) -> list:
     """The INFEASIBLE reasons of a config-vehicle side finding (side_finding_start gave
     `start`, config_vehicle True); [] when it can run. `source`: the source run's base config
-    (the twin keeps its own rules and vetoes, S4; None: the D-052 twin). Read on every decide
-    pass, from the config itself, so the candidate becomes eligible with no rewrite once a
-    missing piece exists:
+    (the twin keeps its own rules, vetoes and default_regime, S4; None: the D-052 twin).
+    Read on every decide pass, from the config itself, so the candidate becomes eligible
+    with no rewrite once a missing piece exists:
       * manifest_unresolved -- block_manifest.check_manifest of start's manifest (the
         source's, relabelled by config_vehicle.derived_manifest) against the config: the
         check D-110's exact-config 1b runs; with combines_as regime_gate, the ungated twin
@@ -2677,6 +2677,10 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str,
             candidate["start_config"] = start["config"]
             candidate["start_manifest"] = start["manifest"]
             source["base_config_ref"] = src["base_config_ref"]
+            # S4 (operator ruling 2026-10-20, item 3): the source config pinned, so step 2
+            # derives the ungated twin only from the source config read here (the D-110
+            # pattern; run_phase1_research._brief_source_base_config checks it). Additive.
+            source["base_config_sha256"] = config_sha256(src["base_config"])
             source["start_config_sha256"] = config_sha256(start["config"])
             # Q4: a slim copy here; the full config is candidate.start_config
             source["proposal"]["vehicle"] = slim_vehicle(p["vehicle"], START_CONFIG_POINTER)

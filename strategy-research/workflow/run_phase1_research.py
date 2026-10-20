@@ -5666,7 +5666,8 @@ def _reading_content_errors(doc: dict, category: str, run_dir: Path) -> list:
     vehicle (D-159/D-160) is checked whole, then (D-161) against this run as
     its source: config_vehicle.source_fit_errors with this run's base config
     and block_manifest.yaml (none: refused). S4: a regime gate's ungated twin keeps the
-    source's own rules and vetoes, so its base config is read before the twin is checked (an
+    source's own rules, vetoes and default_regime (and a source whose twin V9 would refuse
+    refuses the gate form), so its base config is read before the twin is checked (an
     unreadable one is refused there)."""
     rf = _reader_findings_module()
     errors = []
@@ -5707,7 +5708,7 @@ def _reading_content_errors(doc: dict, category: str, run_dir: Path) -> list:
             cv, where = _config_vehicle_module(), f"side_findings[{i}].vehicle"
             source = None
             if s.get("combines_as") == cv.REGIME_GATE:
-                # S4: the ungated twin keeps the source's own rules and vetoes, so step 4 needs
+                # S4: the twin keeps the source's own rules, vetoes and default, so step 4 needs
                 # this run's base config (the source); unreadable, no twin can be derived
                 rel = _load_base()
                 if base_error:
@@ -17953,8 +17954,12 @@ def _brief_source_base_config(run_dir: Path) -> dict:
     research_brief.yaml candidate.source.base_config_ref, campaign-root relative (ROOT), the
     same file decide_next.load_inputs read as the source's base config when it built the brief
     (decide_next.candidate_brief writes the ref). At step 2 the run's own base config is the
-    vehicle's gated config, so the source's comes from the brief. Raises RuntimeError when the
-    ref is missing, or its file is missing or not a JSON mapping (no twin without its source)."""
+    vehicle's gated config, so the source's comes from the brief. Pinned (operator ruling
+    2026-10-20, item 3; the D-110 pattern): the brief's candidate.source.base_config_sha256
+    (decide_next.config_sha256 of the source config it read) must equal the canonical sha256
+    of the file read here. Raises RuntimeError when the ref is missing, the brief has no
+    base_config_sha256 (a brief written before the pin: no twin from an unpinned source), the
+    file is missing or not a JSON mapping, or its sha differs (no twin without its source)."""
     brief = load_yaml(Path(run_dir) / "artifacts" / "research_brief.yaml") or {}
     cand = brief.get("candidate") if isinstance(brief, dict) else None
     source = cand.get("source") if isinstance(cand, dict) else None
@@ -17962,6 +17967,13 @@ def _brief_source_base_config(run_dir: Path) -> dict:
     if not isinstance(ref, str) or not ref:
         raise RuntimeError("[S4] ungated twin: the brief has no candidate.source.base_config_ref "
                            "(the source run's base config, whose rules and vetoes the twin keeps)")
+    want = source.get("base_config_sha256")
+    if not isinstance(want, str) or not want:
+        raise RuntimeError(f"[S4] ungated twin refused: the brief has no "
+                           f"candidate.source.base_config_sha256 beside base_config_ref {ref} (a "
+                           f"brief written before the source pin); the twin takes the source's "
+                           f"own rules, vetoes and default_regime, and is never derived from an "
+                           f"unpinned source config; write the brief again with decide-next")
     path = ROOT / ref
     try:
         config = json.loads(path.read_text(encoding="utf-8"))
@@ -17971,6 +17983,13 @@ def _brief_source_base_config(run_dir: Path) -> dict:
     if not isinstance(config, dict):
         raise RuntimeError(f"[S4] ungated twin: the source run's base config {ref} is not a "
                            f"JSON mapping")
+    got = _canonical_json_sha256(config)
+    if got != want:
+        raise RuntimeError(f"[S4] ungated twin refused: the source base config at {ref} does "
+                           f"not match the brief's base_config_sha256 ({got} != {want}); the "
+                           f"twin takes the source's own rules, vetoes and default_regime, so it "
+                           f"is derived only from the source config decide-next pinned; restore "
+                           f"that file, or write the brief again with decide-next")
     return config
 
 
@@ -17991,13 +18010,15 @@ def _set_ungated_twin_variant(run_dir: Path, run_id: str) -> None:
     ungated twin"): after step 2's answer, artifacts/variant_patches.yaml gets exactly one
     design variant, UNGATED_TWIN_VARIANT_ID, whose patch sets /regime_detector to the
     detector of config_vehicle.ungated_twin(base config, source config) -- so the variant's
-    config IS the twin (S4: the source run's own rules and vetoes, relabelled, or rules [] and
-    vetoes dropped when it has none; default_regime the trading regime) -- in place of every
-    design variant step 2 wrote; base and asset variants are kept as written. The base
+    config IS the twin (S4: the source run's own rules, vetoes and default_regime, relabelled;
+    rules [], vetoes dropped and default_regime the trading regime when it has no rule and no
+    veto) -- in place of every design variant step 2 wrote; base and asset variants are kept
+    as written. The base
     config is 1b's (artifacts/backtest_spec.yaml), the brief's exact config; the source
     config is the brief's candidate.source.base_config_ref (_brief_source_base_config). Raises
-    RuntimeError when the base config is missing or has no gate form, or the source config
-    cannot be read (never for a run the mode does not cover).
+    RuntimeError when the base config is missing or has no gate form, the source refuses one
+    (config_vehicle.source_gate_errors), or the source config cannot be read or does not match
+    the brief's pin (never for a run the mode does not cover); nothing is written then.
     D-162 review nit (lead decision): only a PER-COIN file (variant_coin.per_coin_mode, some
     entry declares kind or symbol) gets the twin. A legacy coin-less file, or none, is left
     exactly as step 2 wrote it, and routes as before: a `kind: design` entry inserted into it
@@ -18022,7 +18043,8 @@ def _set_ungated_twin_variant(run_dir: Path, run_id: str) -> None:
     try:
         twin = cv.ungated_twin(base, source)
     except ValueError as exc:
-        raise RuntimeError(f"[D-162] ungated twin: the base config has no gate form ({exc})")
+        raise RuntimeError(f"[D-162] ungated twin: the base config has no gate form, or its "
+                           f"source refuses one ({exc})")
     entry = {"variant_id": UNGATED_TWIN_VARIANT_ID, "kind": "design",
              "patch": [{"path": "/regime_detector", "value": twin["regime_detector"]}],
              "rationale": ("the ungated twin (D-052/D-160), derived by code "
@@ -18031,9 +18053,9 @@ def _set_ungated_twin_variant(run_dir: Path, run_id: str) -> None:
                            "design variant (D-162)")
              if cv.twin_recipe(twin) == cv.D052_RECIPE else
              ("the ungated twin (D-052/D-160, S4), derived by code "
-              "(config_vehicle.ungated_twin): regime_detector.rules and vetoes the source "
-              "run's own, default_regime the trading regime, so it differs from the base only "
-              "by the gate; the run's one design variant (D-162)")}
+              "(config_vehicle.ungated_twin): regime_detector.rules, vetoes and "
+              "default_regime the source run's own, relabelled, so it differs from the base "
+              "only by the gate; the run's one design variant (D-162)")}
     kept, placed = [], False
     for v in variants:
         if isinstance(v, dict) and (v.get("kind") == "design"
