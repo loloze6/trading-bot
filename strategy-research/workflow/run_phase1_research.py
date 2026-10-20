@@ -5662,6 +5662,13 @@ def _reading_content_errors(doc: dict, category: str, run_dir: Path) -> list:
         # E-077 PR-2 (D-087): under orchestrator.folds.enabled the vehicle IS the config
         # change (the shape check refuses a finding that carries both)
         errors += _envelope_content_errors(s, i, run_dir)
+        if isinstance(s, dict) and isinstance(s.get("vehicle"), dict):
+            # D-159 (vehicle-format V1c): a config vehicle (the shape check lets one through
+            # only with reader_proposals' config_vehicle on) is checked whole -- requires,
+            # validate_config, D-051/D-149 -- and is never resolved as a patch
+            errors += _config_vehicle_module().config_vehicle_errors(
+                s["vehicle"], f"side_findings[{i}].vehicle")
+            continue
         key = "vehicle" if isinstance(s, dict) and s.get("vehicle") else "config_change"
         change = s.get(key) if isinstance(s, dict) else None
         if not change:
@@ -19725,6 +19732,14 @@ def _forecast_rules_module():
     _json_pointer_module()  # puts tools/ on sys.path
     import forecast_rules as _fr
     return _fr
+
+
+def _config_vehicle_module():
+    """tools/config_vehicle.py (D-159: the content check of a config vehicle), imported
+    lazily like the other tools/ siblings."""
+    _json_pointer_module()  # puts tools/ on sys.path
+    import config_vehicle as _cv
+    return _cv
 
 
 def _venue_resolver_module():
