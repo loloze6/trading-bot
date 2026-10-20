@@ -166,7 +166,7 @@ What the numbers say:
 ### 3.1 Setup
 
 - Cell A as in #495: `past_return(5) >= +0.05` event, `fwd_return` at h = 3, `mean_diff` against the complement, floor `min_events 100, min_windows 4`, both directions.
-- Coins: BTCUSDT, ETHUSDT, LTCUSDT on venue kraken, timeframe 1d, mapped to the venue's symbols (BTCUSD, ETHUSD, LTCUSD) by `tools/venue_resolver.protocol_keys`. `config/campaign_config.yaml` holds no coin list (checked). These are the active daily briefs' set. The operator should confirm that set (section 7).
+- Coins: BTCUSDT, ETHUSDT, LTCUSDT on venue kraken, timeframe 1d, mapped to the venue's symbols (BTCUSD, ETHUSD, LTCUSD) by `tools/venue_resolver.protocol_keys`. `config/campaign_config.yaml` holds no coin list (checked). These are the active daily briefs' set. The operator confirmed this set.
 - Windows: folds A, B and C of `config/folds.yaml`, loaded through `tools/research_folds.load_folds`, which refuses blocks outside the research period or touching the validation period or the holdout (all read from `config/campaign_data_policy.yaml`). Fold D lies in the validation period and is not used. Each fold has 6 windows of 120 to 123 daily bars. `holdout_policy.check_windows_before(windows, <holdout start>)` must pass.
 - Data path: `DataManager(symbols=[coin], interval_seconds=86400, mode="backtest").fetch_historical_data(coin, start, end, exchange=...)`, the call the backtester makes for each window, with its seal guards on.
 - Cache only: before any load, the remote fetch and the cache write are replaced by functions that record the call and raise, and socket connections raise. The script stops if either was called. Every window must come back whole (one bar per day, no gap, finite positive closes). Every request end and every returned bar is asserted before the holdout start. After the checks, timestamps are replaced by a synthetic daily grid; logging is disabled and stdout and stderr are discarded during the load, so no date is printed or written.
@@ -175,7 +175,7 @@ What the numbers say:
 
 ### 3.2 Deviation: two coin-folds not measured
 
-The script's STOP condition fired for ETHUSDT fold C and LTCUSDT fold C: "the loader would fetch", i.e. their window 0 is not fully in the cache. Stopping and reporting was the instruction. The run continued with `--skip-incomplete`, which excludes a coin-fold with an incomplete window (its message carries coin, fold and window index only) and measures the rest. Nothing was fetched, filled or written to the cache. So 7 of 9 coin-folds (42 windows) are measured, and fold C is represented by BTC alone. This is for the operator to decide.
+The script's STOP condition fired for ETHUSDT fold C and LTCUSDT fold C: "the loader would fetch", i.e. their window 0 is not fully in the cache. Stopping and reporting was the instruction. The run continued with `--skip-incomplete`, which excludes a coin-fold with an incomplete window (its message carries coin, fold and window index only) and measures the rest. Nothing was fetched, filled or written to the cache. So 7 of 9 coin-folds (42 windows) are measured, and fold C is represented by BTC alone. The operator accepted this deviation: nothing was fetched or written, and the 7 of 9 coin-folds stand as reported.
 
 ### 3.3 Null per coin-fold: R5 confirm rate (2000 sims each)
 
@@ -294,10 +294,10 @@ Findings only: no verdict is changed and no rule is proposed. The recorded value
 ## 7. Process notes
 
 - **No production code changed.** The folder holds scripts and results only. R5 comes from PR #496's branch worktree via `--tools`; `load_tools` exits if any module resolves elsewhere or if `grade_test` has no `fold_windows`.
-- **No campaign coin list exists** in `config/`. The coins are the active daily briefs' set (BTCUSDT, ETHUSDT, LTCUSDT; venue kraken, product perp, 1d), mapped by `tools/venue_resolver`. The operator should confirm the set.
+- **No campaign coin list exists** in `config/`. The coins are the active daily briefs' set (BTCUSDT, ETHUSDT, LTCUSDT; venue kraken, product perp, 1d), mapped by `tools/venue_resolver`. The operator confirmed the set.
 - **"Exploration windows" = research folds A, B and C** of `config/folds.yaml`, loaded through `tools/research_folds.load_folds`. Fold D (validation period) is excluded. The holdout is never read; its start is read from `config/campaign_data_policy.yaml` and asserted on every request end and returned bar. No date is written anywhere in this folder's outputs.
-- **Deviation from "stop and report" on the STOP condition:** ETH and LTC fold C window 0 are not fully in the cache. The run continued over 7 of 9 coin-folds with `--skip-incomplete`. The operator decides whether that stands.
-- **Trial ledger.** A trial-ledger row for (b) (it touches market data) was NOT written. Flag for the operator. Parts (a) and (c)-synthetic touch no market data.
+- **Deviation from "stop and report" on the STOP condition:** ETH and LTC fold C window 0 are not fully in the cache. The run continued over 7 of 9 coin-folds with `--skip-incomplete`. The operator accepted the deviation: nothing fetched or written; the 7 of 9 coin-folds stand as reported.
+- **Trial ledger.** Part (b) (it touches market data) is recorded as trial T013 in `research/TRIALS.csv` (verdict measurement, no dates). Parts (a) and (c)-synthetic touch no market data.
 - Two python commands were started without the shared test lock; neither ran a script (an empty stdin and a print).
 - The (b) result depends on the contents of the local cache of the checkout used. The cache is not changed by the run. From the code: `real_return_null.py` puts `<repo root>/trading-bot` (derived from the script's own location, not the working directory) first on `sys.path`, and `DataManager.fetch_historical_data` reads `local_data` next to that `data/` package, i.e. `<repo root>/trading-bot/local_data` of the checkout the script sits in. Run from a worktree root it reads that worktree's own copy of `local_data`. The ETH and LTC fold C incompleteness is a property of that cache and may differ in another checkout.
 
