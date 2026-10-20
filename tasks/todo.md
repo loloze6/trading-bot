@@ -1,3 +1,89 @@
+# Vehicle-format plan (approved 2026-10-20, with the operator's answers below)
+# Done 2026-10-20: V1 #503 (D-159), V1d #505 (D-160), V2-1 #506 (D-161), V2-2+V3 #507 (D-162).
+# Open: V4 smoke; operator scope points S1-S4 (D-162) and D-157 edge case (3).
+
+Ruled scope (opening prompt 2026-10-19, approved in principle; 2026-10-20 direction adds item V1c):
+complete config as the vehicle; `requires: [{kind, name, spec, example}]` for a missing op or
+component; decide-next marks such a candidate INFEASIBLE `requires_component:<name>` and appends
+the spec to campaign_record/component_requests.yaml; eligible with no rewrite once the piece
+exists; the D-110 exact-config 1b route copies the config (refusal lifted for this form only);
+1b never builds anything; gate-plus-strategy form and one detector-only exception sentence in
+PREFILLED_CLAIM.md ride with it; the ungated twin is the design variant; the complete config is
+validated at reading time (refusal with message, the analyst retries).
+
+Operator answers 2026-10-20: plan approved with one change of order: V1e (the SKILL.md text that
+advertises the config vehicle and `requires`) moves to the V3 PR, so no analyst answer can use the
+form before decide-next and 1b route it; V1a-V1d land first, unused. Q1 three PRs, V1, V2, V3 in
+order. Q2 beside the patch list; exactly one of the two per candidate; D-151 stays. Q3 one prefix
+per kind: requires_op:<name>, requires_component:<name>. Q4 requires orchestrator.exact_config_1b;
+with it off, INFEASIBLE exact_config_1b_off (new reason, this use only); the flag is on in
+c4/flag-set. Q5 the lead drafts the one detector-only sentence and sends it for approval, quoting
+the line of the opening prompt it implements, before touching PREFILLED_CLAIM.md. Q6 the
+detector-component transforms rule is its own PR (D-158) before this work; V1c inherits it.
+Start V1 when the item 2 (D-157) and item 5 (D-158) agents have finished.
+
+Facts checked on master 467bdcd7 (line drift from c51026fb noted):
+- 1b refusal: run_phase1_research.py:17868 (was :17820) -- `_exact_config_1b` refuses any
+  pass-through candidate (`_is_pass_through_candidate`, :17446 = brief carries
+  `candidate.source.expected_config_sha256`). Route: :20741; flag `orchestrator.exact_config_1b`
+  (:4454, off by default).
+- Vehicle today: only a patch list `[{component_id, field, before, after}]`
+  (reader_proposals.py:29, `_check_envelope` :374); empty vehicle refused (D-151).
+- decide-next: `_candidate` decide_next.py:1548; INFEASIBLE reasons list; `requires_feed_gate`
+  :463 is the model for a requires gate; `component_class_status` :255; ops in
+  strategies/registry.py `TRANSFORM_OPS_REGISTRY` :236.
+- component_requests.yaml exists; appender `append_component_requests`
+  (campaign_review_retired.py:120) plus four writers in run_phase1_research.py.
+- Reading-time checks available: trading-bot/tools/validate_config.py `validate(config)`
+  (V1-V16), forecast_rules.strategies_violations (D-051/D-149), block_manifest.check_manifest.
+- PREFILLED_CLAIM.md is 16 lines, one heading; no gate or detector-only text yet.
+
+## Slices (three PRs in order, each from origin/master; Opus core + Opus safety review, Sonnet tests/docs)
+- [x] V1 Reading-time format and validation: PR #503 merged 2026-10-20 (D-159); lands unused
+- [x] V1d gate form + code-derived ungated twin + V18 (threshold_rules only): PR #505 merged 2026-10-20 (D-160)
+  - [x] V1a `vehicle: {kind: config, config: <complete strategy config>}` accepted beside the patch
+        list; exactly one of the two per candidate; D-151 stays
+  - [x] V1b optional `requires: [{kind: op|component, name, spec, example}]`; each named piece must be
+        absent today and used by the config; every absent piece the config names must be listed
+  - [x] V1c the config is validated when read: validate(), D-051/D-149, names in `requires` exempt
+        from V3/V12 only; any failure -> refusal with the message, the analyst retries (existing loop);
+        inherits the detector-component transforms rule (D-158, merged first)
+  - [x] V1d gate-plus-strategy form (`combines_as: regime_gate` with a complete config); ungated twin
+        named as the design variant
+  - [x] V1 tests; Opus safety review; D-row
+- [x] V2 split (operator 2026-10-20): V2-1 scaffolding rule + derived manifest + reading-time manifest check +
+      no-manifest refusal (behind the off-switch); V2-2 the rest below. V2-2 and V3 merge back to back, no campaign
+      run between them. Q1 regime relabel for regime_gate only; Q2 added detector components allowed when a rule or
+      veto reads them; Q3 manifest check also at reading; Q4 slim copies {kind: config, config_sha256, requires} with
+      a pointer to the full config; Q6 regime_* claims on a gate stay INFEASIBLE (regime_block_needs_composition).
+- [x] V2 decide-next (decide_next.py): V2-1 PR #506, V2-2 with V3 PR #507
+  - [x] V2a config-vehicle candidate: missing op -> INFEASIBLE `requires_op:<name>`; missing
+        component -> INFEASIBLE `requires_component:<name>`
+  - [x] V2b append the spec to component_requests.yaml once per name (no duplicate rows)
+  - [x] V2c re-checked every pass: eligible with no rewrite once the piece exists
+  - [x] V2d brief carries the config as an exact config plus its exact block manifest
+  - [x] V2e `orchestrator.exact_config_1b` off -> INFEASIBLE `exact_config_1b_off` (this use only)
+  - [x] V2f delete CONFIG_VEHICLE_ROUTED (operator 2026-10-20: delete, not flip)
+  - [x] V2g the V1 safety review's items: side_finding_start from vehicle.config (manifest, composition
+        source, D-089 branch, digest/sha); fold_confirm whole-config comparison; _merge_key on the
+        canonical config; explore_confirm treats a config vehicle like config_change; the brief copy
+  - [x] V2h scaffolding rule for config vehicles (operator 2026-10-20): it must tell the V1d gate form
+        (rules or vetoes added on the source's kept detector components) apart from a scaffolding
+        rewrite (mode, components, structure); the V2 agent states how before wiring
+  - [x] V2 tests; Opus safety review (decide-next); D-row
+- [x] V3 Step 1b, the 1a sentence and the analyst skill (run_phase1_research.py, PREFILLED_CLAIM.md, SKILL.md)
+  - [x] V3a lift the :17868 refusal for the config-vehicle form only; the patch pass-through refusal stays
+  - [x] V3b 1b refuses if a required piece is still missing (never builds one)
+  - [x] V3c PREFILLED_CLAIM.md, after the "The block is the source run's" bullet, the sentence approved
+        2026-10-20: "Exception: when the brief's config changes only the regime detector (a gate on the
+        source run's unchanged strategies), the claim is about that gate: in signal_concept describe the
+        gate's condition and the source run's block it gates; keep the strategies as the source run's; the
+        ungated twin (the same config without the gate) is the design variant, and code derives it, so do
+        not write it."
+  - [x] V3d (moved from V1e) analyst SKILL.md: the config vehicle and `requires`, one example each
+  - [x] V3 tests; Opus safety review (analyst prompt, 1b); D-row
+- [ ] V4 smoke after V3 merges, on a run_097 copy, both lenses
+
 # Roadmap re-edit (agreed 2026-09-16..18) — engineering_roadmap.html
 
 Approved by Jérémy 2026-09-18 ("Yes please go"). Source of truth for the agreed target: memory file
