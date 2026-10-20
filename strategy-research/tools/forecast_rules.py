@@ -59,11 +59,11 @@ class CatalogError(RuntimeError):
     """COMPONENT_CATALOG.md is missing or cannot be read as the kind table."""
 
 
-def on_off_classes(catalog_path: Path = CATALOG_PATH) -> frozenset:
-    """The class names whose catalogue Kind is `on/off`. Raises CatalogError
-    when the catalogue is missing, has no marked table, has a row without a
-    Kind cell, or lists no on/off class at all (an empty set would silently
-    let every on/off component through)."""
+def catalog_rows(catalog_path: Path = CATALOG_PATH) -> list:
+    """The component rows between the catalogue markers, as lists of stripped
+    cells (class cell first, backticks kept), in file order. Raises
+    CatalogError when the catalogue is missing, has no marked table, or has no
+    component row."""
     path = Path(catalog_path)
     if not path.is_file():
         raise CatalogError(f"{path}: component catalogue not found (D-051 needs its Kind column)")
@@ -74,11 +74,19 @@ def on_off_classes(catalog_path: Path = CATALOG_PATH) -> frozenset:
     rows = [line for line in text[start:end].splitlines() if _ROW_RE.match(line)]
     if not rows:
         raise CatalogError(f"{path}: no component rows between the catalogue markers")
+    return [[c.strip() for c in row.strip().strip("|").split("|")] for row in rows]
+
+
+def on_off_classes(catalog_path: Path = CATALOG_PATH) -> frozenset:
+    """The class names whose catalogue Kind is `on/off`. Raises CatalogError
+    when the catalogue is missing, has no marked table, has a row without a
+    Kind cell, or lists no on/off class at all (an empty set would silently
+    let every on/off component through)."""
+    path = Path(catalog_path)
     on_off = set()
-    for row in rows:
-        cells = [c.strip() for c in row.strip().strip("|").split("|")]
+    for cells in catalog_rows(path):
         if len(cells) <= _KIND_CELL or not cells[_KIND_CELL]:
-            raise CatalogError(f"{path}: row without a Kind cell: {row[:120]!r}")
+            raise CatalogError(f"{path}: row without a Kind cell: {' | '.join(cells)[:120]!r}")
         if cells[_KIND_CELL] == ON_OFF_KIND:
             on_off.add(cells[0].strip("`"))
     if not on_off:
