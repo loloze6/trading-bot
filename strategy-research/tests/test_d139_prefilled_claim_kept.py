@@ -389,14 +389,20 @@ def test_run_095_shape_analyst_off_is_todays_behaviour(monkeypatch):
 
 def test_the_validator_is_decide_nexts():
     """The keep uses claim_card.check_claim with the pipeline's keywords -- the call
-    reader_findings.side_finding_review makes for decide-next (no errors, not tests_none)."""
+    reader_findings.side_finding_review makes for decide-next (no errors, not tests_none).
+    D-157 (a): through _check_1a_claim, which adds D-095 under the analyst flag, as
+    reader_findings._check does for decide-next under the trade family."""
     import ast
     src = (SR_ROOT / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8")
-    fn = next(n for n in ast.walk(ast.parse(src))
+    tree = ast.parse(src)
+    fn = next(n for n in ast.walk(tree)
               if isinstance(n, ast.FunctionDef) and n.name == "_keep_prefilled_claim")
     body = ast.unparse(fn)
-    assert "check_claim(pre, **_claim_check_kw())" in body
+    assert "_check_1a_claim(_claim_card_module(), pre)" in body
     assert "res.errors or res.tests_none" in body
+    check = next(n for n in ast.walk(tree)
+                 if isinstance(n, ast.FunctionDef) and n.name == "_check_1a_claim")
+    assert "cc.check_claim(claim, criteria_ids, **_claim_check_kw())" in ast.unparse(check)
 
 
 # ---------------------------------------------------------------------------

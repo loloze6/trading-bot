@@ -699,14 +699,19 @@ def _unverified(hits: list) -> list:
     return [{"field": label, "written": written} for label, _s, _e, written, _m in hits]
 
 
-def exit_selector_own_outcome_errors(claim) -> list[str]:
-    """D-095 (smoke 3, 2026-10-09): one error per claim test that selects lots by an exit-time
+def exit_selector_own_outcome_hits(claim) -> list[dict]:
+    """D-095 (smoke 3, 2026-10-09): one hit per claim test that selects lots by an exit-time
     field (claim_tests.TRADE_EXIT_FIELDS) and measures their own result (any of
     claim_tests.TRADE_OWN_OUTCOMES, operator ruling 2026-10-19). Such a test is near-mechanical
-    (a losing lot stays open longer). Claim in, list of error strings out, in the order of the
-    claim's tests; [] for anything else, a malformed claim included. check_answer calls it."""
+    (a losing lot stays open longer). Claim in, list of {name, fields, outcome, what, core} out,
+    in the order of the claim's tests; [] for anything else, a malformed claim included.
+    The one source of the refusal's facts (operator ruling D-157, 2026-10-20): every seam
+    composes its own text from a hit -- `what` (the test and what it does) and `core` (`what`
+    plus what the test cannot tell apart, one sentence) -- so the seams cannot drift:
+    the analyst (exit_selector_own_outcome_errors), step 1a (run_phase1_research.
+    _check_1a_claim) and the side-finding check (reader_findings.d095_refusals)."""
     import claim_tests as ct
-    errors = []
+    hits = []
     for i, t in enumerate(_tests_of(claim)):
         sel, out = t.get("selector"), t.get("outcome")
         if not (isinstance(sel, dict) and sel.get("kind") == "trade"
@@ -716,18 +721,29 @@ def exit_selector_own_outcome_errors(claim) -> list[str]:
         fields = sorted({c["field"] for c in sel["where"]
                          if isinstance(c, dict) and c.get("field") in ct.TRADE_EXIT_FIELDS})
         if fields:
-            # D-097: the message says what this test cannot tell apart and what to do instead
-            errors.append(
-                f"claim test {t.get('name', i)!r} selects lots by an exit-time field "
-                f"({', '.join(fields)}) and measures their own {out['kind']}: it cannot tell "
-                f"'the exit comes too late' from 'a losing lot stays open longer' (a lot closes "
-                f"only when the allocation changes, so long-held lots are the ones the price "
-                f"kept going against). Select on an entry-time field "
-                f"({', '.join(ct.TRADE_ENTRY_FIELDS)}), or measure post_exit_return. 'The exit "
-                f"comes too late' has no claim test yet (it needs the return from bar N to the "
-                f"exit): explore it with event_study (trade_filter on {fields[0]}) and, if it "
-                f"is your best idea, end with no_claim and give it as best_rejected")
-    return errors
+            name = t.get("name", i)
+            what = (f"claim test {name!r} selects lots by an exit-time field "
+                    f"({', '.join(fields)}) and measures their own {out['kind']}")
+            # D-097: the core says what this test cannot tell apart
+            core = (f"{what}: it cannot tell 'the exit comes too late' from 'a losing lot stays "
+                    f"open longer' (a lot closes only when the allocation changes, so long-held "
+                    f"lots are the ones the price kept going against).")
+            hits.append({"name": name, "fields": fields, "outcome": out["kind"],
+                         "what": what, "core": core})
+    return hits
+
+
+def exit_selector_own_outcome_errors(claim) -> list[str]:
+    """D-095, the analyst's seam (check_answer): one error per hit
+    (exit_selector_own_outcome_hits), its core plus the analyst's advice (D-097: what to do
+    instead). Claim in, list of error strings out; [] for anything else."""
+    import claim_tests as ct
+    return [f"{h['core']} Select on an entry-time field ({', '.join(ct.TRADE_ENTRY_FIELDS)}), "
+            f"or measure post_exit_return. 'The exit comes too late' has no claim test yet (it "
+            f"needs the return from bar N to the exit): explore it with event_study "
+            f"(trade_filter on {h['fields'][0]}) and, if it is your best idea, end with "
+            f"no_claim and give it as best_rejected"
+            for h in exit_selector_own_outcome_hits(claim)]
 
 
 def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_check,
