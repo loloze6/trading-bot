@@ -469,9 +469,17 @@ def test_a_forecast_block_vehicle_brief_names_no_twin():
 # step 1b (V3a, V3b)
 # ---------------------------------------------------------------------------
 
-def _1b_run(run_id, front) -> Path:
+def _1b_run(run_id, front, source=CONFIG) -> Path:
+    """A run whose brief is `front`; the source run's base config (`source`, _src's CONFIG by
+    default) on disk at the brief's candidate.source.base_config_ref, where step 2 reads it
+    (S4: the twin keeps the source's own rules and vetoes)."""
     run_dir = _run(run_id, no_brief=True)
     rpr.save_yaml(run_dir / "artifacts" / "research_brief.yaml", front)
+    ref = ((front.get("candidate") or {}).get("source") or {}).get("base_config_ref")
+    if ref:
+        path = rpr.ROOT / ref
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(source), encoding="utf-8")
     return run_dir
 
 

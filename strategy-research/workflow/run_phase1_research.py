@@ -5665,7 +5665,9 @@ def _reading_content_errors(doc: dict, category: str, run_dir: Path) -> list:
     carries no stand-alone patch (refused by the shape check). A config
     vehicle (D-159/D-160) is checked whole, then (D-161) against this run as
     its source: config_vehicle.source_fit_errors with this run's base config
-    and block_manifest.yaml (none: refused)."""
+    and block_manifest.yaml (none: refused). S4: a regime gate's ungated twin keeps the
+    source's own rules and vetoes, so its base config is read before the twin is checked (an
+    unreadable one is refused there)."""
     rf = _reader_findings_module()
     errors = []
     base, base_error = None, None
@@ -5681,6 +5683,15 @@ def _reading_content_errors(doc: dict, category: str, run_dir: Path) -> list:
                 base_error = f"the base config {rel} cannot be read ({exc})"
         return rel
 
+    def _vehicle_base_error(where: str, rel: str) -> str:
+        """A config vehicle's refusal for an unreadable base config: the run directory
+        stripped from the OSError's text (its full path, as written and as the OSError quotes
+        it, shown run-relative), as the manifest error does; the patch path keeps its
+        message."""
+        full = str(Path(run_dir) / rel)
+        shown = base_error.replace(repr(full)[1:-1], rel).replace(full, rel)
+        return f"{where}: {shown}"
+
     for i, s in enumerate(doc.get("side_findings") or []):
         review = rf.side_finding_review(s, prior={}, own=set(), run_id=Path(run_dir).name,
                                         **_claim_check_kw())
@@ -5694,7 +5705,17 @@ def _reading_content_errors(doc: dict, category: str, run_dir: Path) -> list:
             # validate_config, D-051/D-149 -- and is never resolved as a patch; D-160: with
             # combines_as regime_gate, the gate form and its ungated twin too
             cv, where = _config_vehicle_module(), f"side_findings[{i}].vehicle"
-            own = cv.config_vehicle_errors(s["vehicle"], where, combines_as=s.get("combines_as"))
+            source = None
+            if s.get("combines_as") == cv.REGIME_GATE:
+                # S4: the ungated twin keeps the source's own rules and vetoes, so step 4 needs
+                # this run's base config (the source); unreadable, no twin can be derived
+                rel = _load_base()
+                if base_error:
+                    errors.append(_vehicle_base_error(where, rel))
+                    continue
+                source = base
+            own = cv.config_vehicle_errors(s["vehicle"], where, combines_as=s.get("combines_as"),
+                                           source=source)
             errors += own
             if own:
                 continue
@@ -5712,12 +5733,7 @@ def _reading_content_errors(doc: dict, category: str, run_dir: Path) -> list:
             if manifest is not None:
                 rel = _load_base()
                 if base_error:
-                    # the run directory stripped from an OSError's text (its full path, as
-                    # written and as the OSError quotes it, shown run-relative), as the
-                    # manifest error above does; the patch path below keeps its message
-                    full = str(Path(run_dir) / rel)
-                    shown = base_error.replace(repr(full)[1:-1], rel).replace(full, rel)
-                    errors.append(f"{where}: {shown}")
+                    errors.append(_vehicle_base_error(where, rel))
                     continue
             errors += cv.source_fit_errors(s["vehicle"]["config"], base, manifest,
                                            s.get("combines_as"), where)
@@ -17932,6 +17948,32 @@ def _config_vehicle_missing_pieces(run_dir: Path, config) -> list:
 UNGATED_TWIN_VARIANT_ID = "ungated_twin"
 
 
+def _brief_source_base_config(run_dir: Path) -> dict:
+    """S4: the SOURCE run's base config of a config-vehicle brief -- the file at
+    research_brief.yaml candidate.source.base_config_ref, campaign-root relative (ROOT), the
+    same file decide_next.load_inputs read as the source's base config when it built the brief
+    (decide_next.candidate_brief writes the ref). At step 2 the run's own base config is the
+    vehicle's gated config, so the source's comes from the brief. Raises RuntimeError when the
+    ref is missing, or its file is missing or not a JSON mapping (no twin without its source)."""
+    brief = load_yaml(Path(run_dir) / "artifacts" / "research_brief.yaml") or {}
+    cand = brief.get("candidate") if isinstance(brief, dict) else None
+    source = cand.get("source") if isinstance(cand, dict) else None
+    ref = source.get("base_config_ref") if isinstance(source, dict) else None
+    if not isinstance(ref, str) or not ref:
+        raise RuntimeError("[S4] ungated twin: the brief has no candidate.source.base_config_ref "
+                           "(the source run's base config, whose rules and vetoes the twin keeps)")
+    path = ROOT / ref
+    try:
+        config = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise RuntimeError(f"[S4] ungated twin: the source run's base config {ref} cannot be "
+                           f"read ({type(exc).__name__}: {exc})") from exc
+    if not isinstance(config, dict):
+        raise RuntimeError(f"[S4] ungated twin: the source run's base config {ref} is not a "
+                           f"JSON mapping")
+    return config
+
+
 def _ungated_twin_variant_mode(run_dir: Path) -> bool:
     """D-162: True when step 2's design variant is the ungated twin, written by code --
     config-direct authoring and the variant loop on, exact-config 1b on with an exact config
@@ -17948,12 +17990,14 @@ def _set_ungated_twin_variant(run_dir: Path, run_id: str) -> None:
     """D-162 (D-052/D-160: "the ungated twin is the design variant", "code derives the
     ungated twin"): after step 2's answer, artifacts/variant_patches.yaml gets exactly one
     design variant, UNGATED_TWIN_VARIANT_ID, whose patch sets /regime_detector to the
-    detector of config_vehicle.ungated_twin(base config) -- so the variant's config IS the
-    twin (rules [], vetoes dropped, default_regime the trading regime) -- in place of every
+    detector of config_vehicle.ungated_twin(base config, source config) -- so the variant's
+    config IS the twin (S4: the source run's own rules and vetoes, relabelled, or rules [] and
+    vetoes dropped when it has none; default_regime the trading regime) -- in place of every
     design variant step 2 wrote; base and asset variants are kept as written. The base
-    config is 1b's (artifacts/backtest_spec.yaml), the brief's exact config. Raises
-    RuntimeError when the base config is missing or has no gate form (never for a run the
-    mode does not cover).
+    config is 1b's (artifacts/backtest_spec.yaml), the brief's exact config; the source
+    config is the brief's candidate.source.base_config_ref (_brief_source_base_config). Raises
+    RuntimeError when the base config is missing or has no gate form, or the source config
+    cannot be read (never for a run the mode does not cover).
     D-162 review nit (lead decision): only a PER-COIN file (variant_coin.per_coin_mode, some
     entry declares kind or symbol) gets the twin. A legacy coin-less file, or none, is left
     exactly as step 2 wrote it, and routes as before: a `kind: design` entry inserted into it
@@ -17973,8 +18017,10 @@ def _set_ungated_twin_variant(run_dir: Path, run_id: str) -> None:
     base = spec.get("config") if isinstance(spec, dict) else None
     if not isinstance(base, dict):
         raise RuntimeError("[D-162] ungated twin: artifacts/backtest_spec.yaml has no config")
+    source = _brief_source_base_config(run_dir)
+    cv = _config_vehicle_module()
     try:
-        twin = _config_vehicle_module().ungated_twin(base)
+        twin = cv.ungated_twin(base, source)
     except ValueError as exc:
         raise RuntimeError(f"[D-162] ungated twin: the base config has no gate form ({exc})")
     entry = {"variant_id": UNGATED_TWIN_VARIANT_ID, "kind": "design",
@@ -17982,7 +18028,12 @@ def _set_ungated_twin_variant(run_dir: Path, run_id: str) -> None:
              "rationale": ("the ungated twin (D-052/D-160), derived by code "
                            "(config_vehicle.ungated_twin): regime_detector.rules emptied, "
                            "vetoes dropped, default_regime the trading regime; the run's one "
-                           "design variant (D-162)")}
+                           "design variant (D-162)")
+             if cv.twin_recipe(twin) == cv.D052_RECIPE else
+             ("the ungated twin (D-052/D-160, S4), derived by code "
+              "(config_vehicle.ungated_twin): regime_detector.rules and vetoes the source "
+              "run's own, default_regime the trading regime, so it differs from the base only "
+              "by the gate; the run's one design variant (D-162)")}
     kept, placed = [], False
     for v in variants:
         if isinstance(v, dict) and (v.get("kind") == "design"

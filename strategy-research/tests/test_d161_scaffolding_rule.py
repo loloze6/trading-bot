@@ -415,7 +415,9 @@ def test_a_scaffolding_pointer_under_the_gate_is_accepted_for_the_twin(rebase, p
     """Probe P1, re-pointed by D-162 (review A): a scaffolding pointer under the gate resolves
     in the gated config but not in its ungated twin (rules [], vetoes dropped). The twin is the
     run's design variant and 5a checks a variant on BLOCK paths only (a variant may change
-    scaffolding), so reading time no longer refuses it (D-161 checked the twin in full)."""
+    scaffolding), so reading time no longer refuses it (D-161 checked the twin in full).
+    S4: this source has its own rules and vetoes, which its twin now keeps; accepted either
+    way (the gate added to a source without them: the block-path test below)."""
     config, manifest = rebase
     source = _tb_detector(config)               # rules and vetoes: the source is gated already
     gate = copy.deepcopy(source)
@@ -440,20 +442,33 @@ def test_a_block_path_the_ungated_twin_cannot_resolve_is_refused(rebase, pointer
     its ungated twin, which 5a would leave untested: refused, by the check decide-next runs
     too (config_vehicle.twin_missing_block_paths)."""
     config, manifest = rebase
-    source = _tb_detector(config)
-    gate = copy.deepcopy(source)
+    # S4 (operator ruling 2026-10-20): the twin keeps the source's own rules and vetoes, so the
+    # gate is ADDED to a source with none (before S4 the source was _tb_detector(config),
+    # already gated, and the twin emptied the source's own gate too)
+    if pointer == "/regime_detector/vetoes":
+        gate = _veto_gate(config)
+    else:
+        gate = copy.deepcopy(config)
+        gate["regime_detector"]["components"] = [_tb("er")]
+        gate["regime_detector"]["rules"] = [dict(copy.deepcopy(ER_RULE), regime="chop")]
     m = _with_gate_block_path(manifest, pointer)
     expected = [
         "v.config: the ungated twin (D-052: rules [], vetoes dropped; the run's design variant) "
         f"does not resolve the block path(s) ['{pointer}'] of the source run's "
         "block_manifest.yaml; keep every block path outside the gate, so the twin still holds "
         "the block (5a does not test a variant that loses one)"]
-    assert _fit(gate, source, m) == expected
-    assert _full(gate, source, m) == expected
-    assert cv.twin_missing_block_paths(cv.derived_manifest(m, source, gate, "regime_gate"),
-                                       cv.ungated_twin(gate)) == [pointer]
-    # not a regime gate: no twin, nothing to refuse
-    assert _fit(gate, source, m, "forecast_block") == []
+    assert _fit(gate, config, m) == expected
+    assert _full(gate, config, m) == expected
+    assert cv.twin_missing_block_paths(cv.derived_manifest(m, config, gate, "regime_gate"),
+                                       cv.ungated_twin(gate, config)) == [pointer]
+    # not a regime gate: no twin, no twin refusal (the added gate is a scaffolding change there)
+    assert not any("ungated twin" in e for e in _fit(gate, config, m, "forecast_block"))
+    # S4: a source with its own rules and vetoes keeps them in the twin, so the same block
+    # path resolves there and nothing is refused (the D-052 twin would have lost it)
+    source = _tb_detector(config)
+    gated_source = copy.deepcopy(source)
+    assert _fit(gated_source, source, m) == []
+    assert cv.twin_missing_block_paths(m, cv.ungated_twin(gated_source)) == [pointer]
 
 
 def test_the_twin_is_checked_only_once_the_config_fits(rebase):

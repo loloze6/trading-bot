@@ -1718,7 +1718,7 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
             # every pass: eligible with no rewrite once a missing piece exists
             config_for_digest = start["config"]
             resolved_sha = config_sha256(start["config"])
-            reasons += config_vehicle_reasons(p, start, inputs)
+            reasons += config_vehicle_reasons(p, start, inputs, source=src["base_config"])
         elif start["ops"]:
             config_for_digest = start["config"]
             resolved_sha = config_sha256(start["config"])
@@ -1993,16 +1993,17 @@ _REQUIRES_REASON_RE = re.compile(r"^requires_(op|component):(\S+)")
 START_CONFIG_POINTER = "candidate.start_config"
 
 
-def config_vehicle_reasons(p: dict, start: dict, inputs: dict) -> list:
+def config_vehicle_reasons(p: dict, start: dict, inputs: dict, source=None) -> list:
     """The INFEASIBLE reasons of a config-vehicle side finding (side_finding_start gave
-    `start`, config_vehicle True); [] when it can run. Read on every decide pass, from the
-    config itself, so the candidate becomes eligible with no rewrite once a missing piece
-    exists:
+    `start`, config_vehicle True); [] when it can run. `source`: the source run's base config
+    (the twin keeps its own rules and vetoes, S4; None: the D-052 twin). Read on every decide
+    pass, from the config itself, so the candidate becomes eligible with no rewrite once a
+    missing piece exists:
       * manifest_unresolved -- block_manifest.check_manifest of start's manifest (the
         source's, relabelled by config_vehicle.derived_manifest) against the config: the
         check D-110's exact-config 1b runs; with combines_as regime_gate, the ungated twin
-        (config_vehicle.ungated_twin, the run's design variant, D-052) must resolve the
-        manifest's block paths too, the check 5a runs on every variant
+        (config_vehicle.ungated_twin(config, source), the run's design variant, D-052/S4)
+        must resolve the manifest's block paths too, the check 5a runs on every variant
         (config_vehicle.twin_missing_block_paths, shared with reading time);
       * requires_op:<name> -- an op the config uses (config_vehicle.used_pieces) that is not
         in inputs["known_ops"] (known_ops; every op when none was supplied);
@@ -2022,7 +2023,7 @@ def config_vehicle_reasons(p: dict, start: dict, inputs: dict) -> list:
         reasons.append(f"manifest_unresolved: {exc}")
     if p.get("combines_as") == _cv.REGIME_GATE:
         try:
-            twin = _cv.ungated_twin(cfg)
+            twin = _cv.ungated_twin(cfg, source)
         except ValueError as exc:
             reasons.append(f"manifest_unresolved: the ungated twin (D-052, the run's design "
                            f"variant) cannot be derived: {exc}")

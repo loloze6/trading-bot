@@ -219,8 +219,8 @@ def test_the_twin_of_a_config_without_the_gate_form_raises():
 def test_the_twin_is_checked_and_its_failure_names_the_twin(monkeypatch):
     real = cv.ungated_twin
 
-    def bad_twin(config):            # a derivation that points default_regime at a null regime
-        twin = real(config)
+    def bad_twin(config, source=None):   # a derivation pointing default_regime at a null regime
+        twin = real(config, source)
         twin["regime_detector"]["default_regime"] = "unknown"
         return twin
     monkeypatch.setattr(cv, "ungated_twin", bad_twin)
@@ -231,7 +231,7 @@ def test_the_twin_is_checked_and_its_failure_names_the_twin(monkeypatch):
 
 def test_the_twin_is_checked_only_once_the_config_and_form_pass(monkeypatch):
     calls = []
-    monkeypatch.setattr(cv, "ungated_twin", lambda c: calls.append(1) or c)
+    monkeypatch.setattr(cv, "ungated_twin", lambda c, source=None: calls.append(1) or c)
     assert _errors(_gated((), ()))                              # the form fails
     cfg = _gated()
     cfg["strategies"]["regimes"]["trending"]["components"][0]["transforms"] = []   # D-149
