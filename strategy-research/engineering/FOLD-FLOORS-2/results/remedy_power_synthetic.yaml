@@ -1,0 +1,607 @@
+script: remedy_power.py
+tools: C:\Users\alauz\Documents\Projects\wt\r5\strategy-research\tools
+seed_reference:
+- 20261020
+- 1
+seed_test:
+- 20261020
+- 2
+layout:
+  windows: 6
+  bars: 120
+  sd: 0.035
+cell: 'A: past_return(5) >= +0.05, fwd_return h=3, mean_diff vs complement'
+floor:
+  min_events: 100
+  min_windows: 4
+spacing_remedy1: 8
+check_sims_full_chain: 50
+reference:
+  tool|null|less:
+    pooled_q95: 0.01302393970230414
+    share_q95: 0.8333333333333334
+    ref_sims: 2000
+    cell: tool|null|less
+  tool|null|greater:
+    pooled_q95: 0.011807520700192465
+    share_q95: 0.6666666666666666
+    ref_sims: 2000
+    cell: tool|null|greater
+  shadow|null|less:
+    pooled_q95: 0.011954379985159394
+    share_q95: 0.8333333333333334
+    ref_sims: 2000
+    cell: shadow|null|less
+  shadow|null|greater:
+    pooled_q95: 0.012190099046230267
+    share_q95: 0.8333333333333334
+    ref_sims: 2000
+    cell: shadow|null|greater
+cells:
+  tool|null|less:
+    sims: 2000
+    per_window_claimed_sign:
+      rate: 0.5972
+      count: 7167
+      n: 12000
+      se: 0.0045
+    confirm:
+      R5:
+        rate: 0.212
+        count: 424
+        n: 2000
+        se: 0.0091
+      rem1a:
+        rate: 0.134
+        count: 268
+        n: 2000
+        se: 0.0076
+      rem1b:
+        rate: 0.1175
+        count: 235
+        n: 2000
+        se: 0.0072
+      rem2_pooled:
+        rate: 0.04
+        count: 80
+        n: 2000
+        se: 0.0044
+      rem2_share:
+        rate: 0.038
+        count: 76
+        n: 2000
+        se: 0.0043
+    r5_status:
+      confirmed: 424
+      not_confirmed: 1576
+    pooled_oriented:
+      mean: 0.000546
+      se: 0.000165
+      n: 2000
+    selected_events_per_fold: 179.6
+    selected_thinned_per_fold: 46.5
+    complement_thinned_per_fold: 78.0
+    remedy2_reference:
+      pooled_q95: 0.01302393970230414
+      share_q95: 0.8333333333333334
+      ref_sims: 2000
+  tool|null|greater:
+    sims: 2000
+    per_window_claimed_sign:
+      rate: 0.4027
+      count: 4833
+      n: 12000
+      se: 0.0045
+    confirm:
+      R5:
+        rate: 0.032
+        count: 64
+        n: 2000
+        se: 0.0039
+      rem1a:
+        rate: 0.0835
+        count: 167
+        n: 2000
+        se: 0.0062
+      rem1b:
+        rate: 0.1045
+        count: 209
+        n: 2000
+        se: 0.0068
+      rem2_pooled:
+        rate: 0.017
+        count: 34
+        n: 2000
+        se: 0.0029
+      rem2_share:
+        rate: 0.032
+        count: 64
+        n: 2000
+        se: 0.0039
+    r5_status:
+      confirmed: 64
+      not_confirmed: 1936
+    pooled_oriented:
+      mean: -0.000546
+      se: 0.000165
+      n: 2000
+    selected_events_per_fold: 179.6
+    selected_thinned_per_fold: 46.5
+    complement_thinned_per_fold: 78.0
+    remedy2_reference:
+      pooled_q95: 0.011807520700192465
+      share_q95: 0.6666666666666666
+      ref_sims: 2000
+  tool|edge0.01|less:
+    sims: 2000
+    per_window_claimed_sign:
+      rate: 0.7773
+      count: 9328
+      n: 12000
+      se: 0.0038
+    confirm:
+      R5:
+        rate: 0.608
+        count: 1216
+        n: 2000
+        se: 0.0109
+      rem1a:
+        rate: 0.4125
+        count: 825
+        n: 2000
+        se: 0.011
+      rem1b:
+        rate: 0.338
+        count: 676
+        n: 2000
+        se: 0.0106
+      rem2_pooled:
+        rate: 0.3345
+        count: 669
+        n: 2000
+        se: 0.0106
+      rem2_share:
+        rate: 0.21
+        count: 420
+        n: 2000
+        se: 0.0091
+    r5_status:
+      confirmed: 1216
+      not_confirmed: 784
+    pooled_oriented:
+      mean: 0.010546
+      se: 0.000165
+      n: 2000
+    selected_events_per_fold: 179.6
+    selected_thinned_per_fold: 46.5
+    complement_thinned_per_fold: 78.0
+    remedy2_reference:
+      pooled_q95: 0.01302393970230414
+      share_q95: 0.8333333333333334
+      ref_sims: 2000
+  tool|edge0.01|greater:
+    sims: 2000
+    per_window_claimed_sign:
+      rate: 0.6195
+      count: 7434
+      n: 12000
+      se: 0.0044
+    confirm:
+      R5:
+        rate: 0.261
+        count: 522
+        n: 2000
+        se: 0.0098
+      rem1a:
+        rate: 0.319
+        count: 638
+        n: 2000
+        se: 0.0104
+      rem1b:
+        rate: 0.316
+        count: 632
+        n: 2000
+        se: 0.0104
+      rem2_pooled:
+        rate: 0.2035
+        count: 407
+        n: 2000
+        se: 0.009
+      rem2_share:
+        rate: 0.261
+        count: 522
+        n: 2000
+        se: 0.0098
+    r5_status:
+      confirmed: 522
+      not_confirmed: 1478
+    pooled_oriented:
+      mean: 0.009454
+      se: 0.000165
+      n: 2000
+    selected_events_per_fold: 179.6
+    selected_thinned_per_fold: 46.5
+    complement_thinned_per_fold: 78.0
+    remedy2_reference:
+      pooled_q95: 0.011807520700192465
+      share_q95: 0.6666666666666666
+      ref_sims: 2000
+  tool|edge0.02|less:
+    sims: 2000
+    per_window_claimed_sign:
+      rate: 0.8974
+      count: 10769
+      n: 12000
+      se: 0.0028
+    confirm:
+      R5:
+        rate: 0.887
+        count: 1774
+        n: 2000
+        se: 0.0071
+      rem1a:
+        rate: 0.7175
+        count: 1435
+        n: 2000
+        se: 0.0101
+      rem1b:
+        rate: 0.615
+        count: 1230
+        n: 2000
+        se: 0.0109
+      rem2_pooled:
+        rate: 0.8005
+        count: 1601
+        n: 2000
+        se: 0.0089
+      rem2_share:
+        rate: 0.515
+        count: 1030
+        n: 2000
+        se: 0.0112
+    r5_status:
+      confirmed: 1774
+      not_confirmed: 226
+    pooled_oriented:
+      mean: 0.020546
+      se: 0.000165
+      n: 2000
+    selected_events_per_fold: 179.6
+    selected_thinned_per_fold: 46.5
+    complement_thinned_per_fold: 78.0
+    remedy2_reference:
+      pooled_q95: 0.01302393970230414
+      share_q95: 0.8333333333333334
+      ref_sims: 2000
+  tool|edge0.02|greater:
+    sims: 2000
+    per_window_claimed_sign:
+      rate: 0.8109
+      count: 9731
+      n: 12000
+      se: 0.0036
+    confirm:
+      R5:
+        rate: 0.681
+        count: 1362
+        n: 2000
+        se: 0.0104
+      rem1a:
+        rate: 0.6755
+        count: 1351
+        n: 2000
+        se: 0.0105
+      rem1b:
+        rate: 0.6275
+        count: 1255
+        n: 2000
+        se: 0.0108
+      rem2_pooled:
+        rate: 0.6555
+        count: 1311
+        n: 2000
+        se: 0.0106
+      rem2_share:
+        rate: 0.681
+        count: 1362
+        n: 2000
+        se: 0.0104
+    r5_status:
+      confirmed: 1362
+      not_confirmed: 638
+    pooled_oriented:
+      mean: 0.019454
+      se: 0.000165
+      n: 2000
+    selected_events_per_fold: 179.6
+    selected_thinned_per_fold: 46.5
+    complement_thinned_per_fold: 78.0
+    remedy2_reference:
+      pooled_q95: 0.011807520700192465
+      share_q95: 0.6666666666666666
+      ref_sims: 2000
+  shadow|null|less:
+    sims: 2000
+    per_window_claimed_sign:
+      rate: 0.505
+      count: 6060
+      n: 12000
+      se: 0.0046
+    confirm:
+      R5:
+        rate: 0.1075
+        count: 215
+        n: 2000
+        se: 0.0069
+      rem1a:
+        rate: 0.1085
+        count: 217
+        n: 2000
+        se: 0.007
+      rem1b:
+        rate: 0.0985
+        count: 197
+        n: 2000
+        se: 0.0067
+      rem2_pooled:
+        rate: 0.037
+        count: 74
+        n: 2000
+        se: 0.0042
+      rem2_share:
+        rate: 0.0175
+        count: 35
+        n: 2000
+        se: 0.0029
+    r5_status:
+      confirmed: 215
+      not_confirmed: 1785
+    pooled_oriented:
+      mean: 6.8e-05
+      se: 0.000166
+      n: 2000
+    selected_events_per_fold: 179.6
+    selected_thinned_per_fold: 46.5
+    complement_thinned_per_fold: 78.0
+    remedy2_reference:
+      pooled_q95: 0.011954379985159394
+      share_q95: 0.8333333333333334
+      ref_sims: 2000
+  shadow|null|greater:
+    sims: 2000
+    per_window_claimed_sign:
+      rate: 0.495
+      count: 5940
+      n: 12000
+      se: 0.0046
+    confirm:
+      R5:
+        rate: 0.1035
+        count: 207
+        n: 2000
+        se: 0.0068
+      rem1a:
+        rate: 0.0945
+        count: 189
+        n: 2000
+        se: 0.0065
+      rem1b:
+        rate: 0.11
+        count: 220
+        n: 2000
+        se: 0.007
+      rem2_pooled:
+        rate: 0.0335
+        count: 67
+        n: 2000
+        se: 0.004
+      rem2_share:
+        rate: 0.013
+        count: 26
+        n: 2000
+        se: 0.0025
+    r5_status:
+      confirmed: 207
+      not_confirmed: 1793
+    pooled_oriented:
+      mean: -6.8e-05
+      se: 0.000166
+      n: 2000
+    selected_events_per_fold: 179.6
+    selected_thinned_per_fold: 46.5
+    complement_thinned_per_fold: 78.0
+    remedy2_reference:
+      pooled_q95: 0.012190099046230267
+      share_q95: 0.8333333333333334
+      ref_sims: 2000
+  shadow|edge0.01|less:
+    sims: 2000
+    per_window_claimed_sign:
+      rate: 0.7085
+      count: 8502
+      n: 12000
+      se: 0.0041
+    confirm:
+      R5:
+        rate: 0.4275
+        count: 855
+        n: 2000
+        se: 0.0111
+      rem1a:
+        rate: 0.365
+        count: 730
+        n: 2000
+        se: 0.0108
+      rem1b:
+        rate: 0.334
+        count: 668
+        n: 2000
+        se: 0.0105
+      rem2_pooled:
+        rate: 0.304
+        count: 608
+        n: 2000
+        se: 0.0103
+      rem2_share:
+        rate: 0.124
+        count: 248
+        n: 2000
+        se: 0.0074
+    r5_status:
+      confirmed: 855
+      not_confirmed: 1145
+    pooled_oriented:
+      mean: 0.010068
+      se: 0.000166
+      n: 2000
+    selected_events_per_fold: 179.6
+    selected_thinned_per_fold: 46.5
+    complement_thinned_per_fold: 78.0
+    remedy2_reference:
+      pooled_q95: 0.011954379985159394
+      share_q95: 0.8333333333333334
+      ref_sims: 2000
+  shadow|edge0.01|greater:
+    sims: 2000
+    per_window_claimed_sign:
+      rate: 0.6996
+      count: 8395
+      n: 12000
+      se: 0.0042
+    confirm:
+      R5:
+        rate: 0.4065
+        count: 813
+        n: 2000
+        se: 0.011
+      rem1a:
+        rate: 0.336
+        count: 672
+        n: 2000
+        se: 0.0106
+      rem1b:
+        rate: 0.305
+        count: 610
+        n: 2000
+        se: 0.0103
+      rem2_pooled:
+        rate: 0.2815
+        count: 563
+        n: 2000
+        se: 0.0101
+      rem2_share:
+        rate: 0.109
+        count: 218
+        n: 2000
+        se: 0.007
+    r5_status:
+      confirmed: 813
+      not_confirmed: 1187
+    pooled_oriented:
+      mean: 0.009932
+      se: 0.000166
+      n: 2000
+    selected_events_per_fold: 179.6
+    selected_thinned_per_fold: 46.5
+    complement_thinned_per_fold: 78.0
+    remedy2_reference:
+      pooled_q95: 0.012190099046230267
+      share_q95: 0.8333333333333334
+      ref_sims: 2000
+  shadow|edge0.02|less:
+    sims: 2000
+    per_window_claimed_sign:
+      rate: 0.8572
+      count: 10286
+      n: 12000
+      se: 0.0032
+    confirm:
+      R5:
+        rate: 0.799
+        count: 1598
+        n: 2000
+        se: 0.009
+      rem1a:
+        rate: 0.6895
+        count: 1379
+        n: 2000
+        se: 0.0103
+      rem1b:
+        rate: 0.617
+        count: 1234
+        n: 2000
+        se: 0.0109
+      rem2_pooled:
+        rate: 0.7505
+        count: 1501
+        n: 2000
+        se: 0.0097
+      rem2_share:
+        rate: 0.387
+        count: 774
+        n: 2000
+        se: 0.0109
+    r5_status:
+      confirmed: 1598
+      not_confirmed: 402
+    pooled_oriented:
+      mean: 0.020068
+      se: 0.000166
+      n: 2000
+    selected_events_per_fold: 179.6
+    selected_thinned_per_fold: 46.5
+    complement_thinned_per_fold: 78.0
+    remedy2_reference:
+      pooled_q95: 0.011954379985159394
+      share_q95: 0.8333333333333334
+      ref_sims: 2000
+  shadow|edge0.02|greater:
+    sims: 2000
+    per_window_claimed_sign:
+      rate: 0.8571
+      count: 10285
+      n: 12000
+      se: 0.0032
+    confirm:
+      R5:
+        rate: 0.7975
+        count: 1595
+        n: 2000
+        se: 0.009
+      rem1a:
+        rate: 0.667
+        count: 1334
+        n: 2000
+        se: 0.0105
+      rem1b:
+        rate: 0.5985
+        count: 1197
+        n: 2000
+        se: 0.011
+      rem2_pooled:
+        rate: 0.748
+        count: 1496
+        n: 2000
+        se: 0.0097
+      rem2_share:
+        rate: 0.3885
+        count: 777
+        n: 2000
+        se: 0.0109
+    r5_status:
+      confirmed: 1595
+      not_confirmed: 405
+    pooled_oriented:
+      mean: 0.019932
+      se: 0.000166
+      n: 2000
+    selected_events_per_fold: 179.6
+    selected_thinned_per_fold: 46.5
+    complement_thinned_per_fold: 78.0
+    remedy2_reference:
+      pooled_q95: 0.012190099046230267
+      share_q95: 0.8333333333333334
+      ref_sims: 2000
+seconds:
+  reference: 15.6
+  test: 51.0

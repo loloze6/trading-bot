@@ -398,8 +398,10 @@ def _old_module(rel, name):
 
 def test_every_other_op_and_min_periods_entry_is_unchanged():
     old = _old_module("strategies/registry.py", "_old_registry_s")
-    assert set(TRANSFORM_OPS_REGISTRY) - set(old.TRANSFORM_OPS_REGISTRY) == {"standardise"}
-    assert old.TRANSFORM_MIN_PERIODS == {k: v for k, v in TRANSFORM_MIN_PERIODS.items() if k != "standardise"}
+    # "signed_power" was added after this op by its own PR (tests/test_signed_power_op.py)
+    assert set(TRANSFORM_OPS_REGISTRY) - set(old.TRANSFORM_OPS_REGISTRY) == {"standardise", "signed_power"}
+    assert old.TRANSFORM_MIN_PERIODS == {k: v for k, v in TRANSFORM_MIN_PERIODS.items()
+                                         if k not in ("standardise", "signed_power")}
     d = _bars(200, seed=5)
     d["stddev_24"] = d["close"].rolling(24).std()
     h = pd.Series(np.random.default_rng(6).normal(0, 3, 120))

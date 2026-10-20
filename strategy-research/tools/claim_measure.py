@@ -225,7 +225,8 @@ def measure_test(windows: list, test: dict, eras: list | None, trade_tests: bool
     if all(rows[h]["n_events"] == 0 for h in horizons):
         # nothing was measured: a look taken (counted for best-of-N), never an effect
         reason = NO_EVENTS_REASON if noun == "bars" else "the selector matched no trades"
-        if spec.selector.get("kind") in ct.NOT_RECOMPUTABLE_SELECTORS:
+        if any(isinstance(p, dict) and p.get("kind") in ct.NOT_RECOMPUTABLE_SELECTORS
+               for p in ct.selector_parts(spec.selector)):          # PR-C: all_of parts too
             labels = sorted({str(r) for w in windows for r in w.regime if r})
             reason += f"; regime labels present in the bars: {labels if labels else 'none'}"
         out.update(status=NO_EVENTS, reason=reason)

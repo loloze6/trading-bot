@@ -406,6 +406,46 @@ def _proposals_block(run_dir: Path, run_id: str, categories) -> list:
     } for cat in categories]
 
 
+# Operator, 2026-10-19 (PR-A): what an analyst session measured but could not turn into a
+# claim yet (no strategy change follows from it): an ACCEPTED no_claim's `observations` in
+# artifacts/analyst/<lens>.yaml (analyst_session.OBSERVATION_KEYS plus the code-written
+# `spec`), copied into the entry's `observations` with the lens and the record's ref. The
+# key is absent -- not [] -- when no lens recorded one, so every other entry is unchanged.
+OBSERVATION_FIELDS = ("statement", "test", "evidence", "floors_met", "spec")
+
+
+def analyst_observations(run_dir: Path, run_id: str) -> list:
+    """The run's analyst observations, one row per observation of each lens whose session
+    ended accepted with outcome no_claim ([] when none). A record that is not a mapping, or an
+    accepted no_claim's observation not of the recorded shape, raises CampaignMemoryError."""
+    import analyst_session as asm  # tools/ sibling; imported lazily for the caller's sys.path
+    out = []
+    for lens in asm.LENSES:
+        rel = asm.record_rel(lens)
+        path = Path(run_dir) / rel
+        if not path.exists():
+            continue
+        rec = _load_mapping(path, "the analyst record")
+        attempts = rec.get("attempts")
+        last = attempts[-1] if isinstance(attempts, list) and attempts else None
+        if rec.get("outcome") != "no_claim" or not isinstance(last, dict) \
+                or last.get("status") != "accepted" or last.get("outcome") != "no_claim":
+            continue
+        nc = rec.get("no_claim")
+        obs = nc.get("observations") if isinstance(nc, dict) else None
+        if obs is None:
+            continue
+        if not isinstance(obs, list):
+            raise CampaignMemoryError(f"{path}: no_claim.observations is not a list")
+        for i, o in enumerate(obs):
+            if not isinstance(o, dict) or set(o) != set(OBSERVATION_FIELDS):
+                raise CampaignMemoryError(f"{path}: no_claim.observations[{i}] is not exactly "
+                                          f"{list(OBSERVATION_FIELDS)}")
+            out.append({"lens": lens, **{k: o[k] for k in OBSERVATION_FIELDS},
+                        "ref": _ref(run_id, rel)})
+    return out
+
+
 def profit_bars_block(run_dir: Path, run_id: str, variants: dict) -> dict:
     """The memory's `profit_bars` value from the per-backtest check's
     artifacts/profit_bars_evaluation.yaml: one result per variant, each bar's
@@ -729,6 +769,10 @@ def build_memory_entry(run_dir: Path, run_id: str, *, trial_sharpes, categories,
     fold = _folds.fold_of_run_dir(run_dir)
     if fold is not None:
         entry["fold"] = fold
+    # Operator, 2026-10-19 (PR-A): absent -- not [] -- without an analyst observation
+    observations = analyst_observations(run_dir, run_id)
+    if observations:
+        entry["observations"] = observations
     retired = _find_retired(entry)
     if retired:
         raise CampaignMemoryError(f"memory entry for {run_id} carries retired field(s) {retired}")

@@ -1,0 +1,469 @@
+script: trade_null_sim.py
+host: d155
+drift: arith0
+mu_per_bar: -0.0006125000000000001
+tools: C:\Users\alauz\Documents\Projects\wt\r5\strategy-research\tools
+seed:
+- 20261020
+- 100
+sims_chunk: 500
+seconds: 147.7
+layout:
+  windows: 6
+  bars: 240
+  warmup: 60
+  sd: 0.035
+  cost: 0.002
+  band: null
+chunks:
+- 0
+- 1
+- 2
+- 3
+sims: 2000
+tests:
+  T1_short_net|less:
+    confirm_R5:
+      rate: 0.09
+      count: 180
+      n: 2000
+      se: 0.0064
+    status:
+      confirmed: 180
+      not_confirmed: 1820
+    floor_not_met_share:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    per_window_claimed_sign:
+      '0':
+        rate: 0.4933
+        count: 5919
+        n: 12000
+        se: 0.0046
+    windows_with_value_per_fold:
+      '0': 6.0
+    pooled_oriented:
+      '0':
+        mean: -8.0e-05
+        se: 8.3e-05
+        n: 2000
+    selected_lots_per_fold: 359.5
+  T1_short_net|greater:
+    confirm_R5:
+      rate: 0.114
+      count: 228
+      n: 2000
+      se: 0.0071
+    status:
+      confirmed: 228
+      not_confirmed: 1772
+    floor_not_met_share:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    per_window_claimed_sign:
+      '0':
+        rate: 0.5068
+        count: 6081
+        n: 12000
+        se: 0.0046
+    windows_with_value_per_fold:
+      '0': 6.0
+    pooled_oriented:
+      '0':
+        mean: 8.0e-05
+        se: 8.3e-05
+        n: 2000
+    selected_lots_per_fold: 359.5
+  T2_flip_post_exit|less:
+    confirm_R5:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    status:
+      not_measurable: 2000
+    floor_not_met_share:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    per_window_claimed_sign:
+      '1':
+        rate: null
+        count: 0
+        n: 0
+        se: null
+      '6':
+        rate: null
+        count: 0
+        n: 0
+        se: null
+      '24':
+        rate: null
+        count: 0
+        n: 0
+        se: null
+    windows_with_value_per_fold:
+      '1': 0.0
+      '6': 0.0
+      '24': 0.0
+    pooled_oriented:
+      '1':
+        mean: null
+        se: null
+        n: 0
+      '6':
+        mean: null
+        se: null
+        n: 0
+      '24':
+        mean: null
+        se: null
+        n: 0
+    selected_lots_per_fold: 713.2
+  T2_flip_post_exit|greater:
+    confirm_R5:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    status:
+      not_measurable: 2000
+    floor_not_met_share:
+      rate: 0.0
+      count: 0
+      n: 2000
+      se: 0.0
+    per_window_claimed_sign:
+      '1':
+        rate: null
+        count: 0
+        n: 0
+        se: null
+      '6':
+        rate: null
+        count: 0
+        n: 0
+        se: null
+      '24':
+        rate: null
+        count: 0
+        n: 0
+        se: null
+    windows_with_value_per_fold:
+      '1': 0.0
+      '6': 0.0
+      '24': 0.0
+    pooled_oriented:
+      '1':
+        mean: null
+        se: null
+        n: 0
+      '6':
+        mean: null
+        se: null
+        n: 0
+      '24':
+        mean: null
+        se: null
+        n: 0
+    selected_lots_per_fold: 713.2
+  T3_strong_long_net|less:
+    confirm_R5:
+      rate: 0.089
+      count: 178
+      n: 2000
+      se: 0.0064
+    status:
+      confirmed: 178
+      not_confirmed: 1770
+      not_measurable: 52
+    floor_not_met_share:
+      rate: 0.026
+      count: 52
+      n: 2000
+      se: 0.0036
+    per_window_claimed_sign:
+      '0':
+        rate: 0.4818
+        count: 5781
+        n: 12000
+        se: 0.0046
+    windows_with_value_per_fold:
+      '0': 6.0
+    pooled_oriented:
+      '0':
+        mean: -0.000126
+        se: 0.000111
+        n: 2000
+    selected_lots_per_fold: 117.0
+  T3_strong_long_net|greater:
+    confirm_R5:
+      rate: 0.1245
+      count: 249
+      n: 2000
+      se: 0.0074
+    status:
+      confirmed: 249
+      not_confirmed: 1699
+      not_measurable: 52
+    floor_not_met_share:
+      rate: 0.026
+      count: 52
+      n: 2000
+      se: 0.0036
+    per_window_claimed_sign:
+      '0':
+        rate: 0.5182
+        count: 6219
+        n: 12000
+        se: 0.0046
+    windows_with_value_per_fold:
+      '0': 6.0
+    pooled_oriented:
+      '0':
+        mean: 0.000126
+        se: 0.000111
+        n: 2000
+    selected_lots_per_fold: 117.0
+mechanism:
+  T1_short_net:
+    '0':
+      windows: 12000
+      selected_lots_per_window:
+        mean: 59.921
+        se: 0.035153
+        n: 12000
+      baseline_lots_per_window:
+        mean: 59.945167
+        se: 0.035214
+        n: 12000
+      sum_S:
+        mean: -0.121639
+        se: 0.003533
+        n: 12000
+      ratio_sumS_over_sumN: -0.00203
+      mean_of_S_over_N:
+        mean: -0.002263
+        se: 6.0e-05
+        n: 12000
+      mean_of_baseline_mean:
+        mean: -0.002346
+        se: 5.8e-05
+        n: 12000
+      mean_diff_sel_minus_base:
+        mean: 8.3e-05
+        se: 8.3e-05
+        n: 12000
+      mean_diff_signed_log_move_sel_minus_base:
+        mean: 0.002547
+        se: 8.3e-05
+        n: 12000
+      share_windows_diff_below_0:
+        rate: 0.4933
+        count: 5919
+        n: 12000
+        se: 0.0046
+      share_windows_signed_log_move_diff_below_0:
+        rate: 0.3917
+        count: 4700
+        n: 12000
+        se: 0.0045
+      corr_S_N: 0.5344
+      selected_lots_opened_entry_to_exit_plus_8_after_own_outcome_up:
+        mean: 2.19277
+        se: 0.001179
+        n: 454603
+      selected_lots_opened_entry_to_exit_plus_8_after_own_outcome_down:
+        mean: 2.16666
+        se: 0.001597
+        n: 264449
+  T2_flip_post_exit:
+    '1':
+      windows: 12000
+      selected_lots_per_window:
+        mean: 118.866167
+        se: 0.070072
+        n: 12000
+      baseline_lots_per_window:
+        mean: 0.0
+        se: 0.0
+        n: 12000
+      sum_S:
+        mean: 0.003925
+        se: 0.00353
+        n: 12000
+      ratio_sumS_over_sumN: 3.3e-05
+      mean_of_S_over_N:
+        mean: 0.00015
+        se: 3.0e-05
+        n: 12000
+      mean_of_baseline_mean:
+        mean: null
+        se: null
+        n: 0
+      mean_diff_sel_minus_base:
+        mean: null
+        se: null
+        n: 0
+      mean_diff_signed_log_move_sel_minus_base:
+        mean: null
+        se: null
+        n: 0
+      share_windows_diff_below_0: null
+      share_windows_signed_log_move_diff_below_0: null
+      corr_S_N: -0.5535
+      selected_lots_opened_entry_to_exit_plus_8_after_own_outcome_up:
+        mean: 4.380618
+        se: 0.00171
+        n: 713763
+      selected_lots_opened_entry_to_exit_plus_8_after_own_outcome_down:
+        mean: 5.374535
+        se: 0.001727
+        n: 712631
+    '6':
+      windows: 12000
+      selected_lots_per_window:
+        mean: 116.36075
+        se: 0.069354
+        n: 12000
+      baseline_lots_per_window:
+        mean: 0.0
+        se: 0.0
+        n: 12000
+      sum_S:
+        mean: 0.004911
+        se: 0.003495
+        n: 12000
+      ratio_sumS_over_sumN: 4.2e-05
+      mean_of_S_over_N:
+        mean: 0.000164
+        se: 3.0e-05
+        n: 12000
+      mean_of_baseline_mean:
+        mean: null
+        se: null
+        n: 0
+      mean_diff_sel_minus_base:
+        mean: null
+        se: null
+        n: 0
+      mean_diff_signed_log_move_sel_minus_base:
+        mean: null
+        se: null
+        n: 0
+      share_windows_diff_below_0: null
+      share_windows_signed_log_move_diff_below_0: null
+      corr_S_N: -0.5588
+      selected_lots_opened_entry_to_exit_plus_8_after_own_outcome_up:
+        mean: 4.741512
+        se: 0.001854
+        n: 697673
+      selected_lots_opened_entry_to_exit_plus_8_after_own_outcome_down:
+        mean: 5.008003
+        se: 0.00181
+        n: 698656
+    '24':
+      windows: 12000
+      selected_lots_per_window:
+        mean: 107.377417
+        se: 0.066835
+        n: 12000
+      baseline_lots_per_window:
+        mean: 0.0
+        se: 0.0
+        n: 12000
+      sum_S:
+        mean: 0.004321
+        se: 0.003524
+        n: 12000
+      ratio_sumS_over_sumN: 4.0e-05
+      mean_of_S_over_N:
+        mean: 0.000172
+        se: 3.3e-05
+        n: 12000
+      mean_of_baseline_mean:
+        mean: null
+        se: null
+        n: 0
+      mean_diff_sel_minus_base:
+        mean: null
+        se: null
+        n: 0
+      mean_diff_signed_log_move_sel_minus_base:
+        mean: null
+        se: null
+        n: 0
+      share_windows_diff_below_0: null
+      share_windows_signed_log_move_diff_below_0: null
+      corr_S_N: -0.5314
+      selected_lots_opened_entry_to_exit_plus_8_after_own_outcome_up:
+        mean: 4.80041
+        se: 0.001944
+        n: 644833
+      selected_lots_opened_entry_to_exit_plus_8_after_own_outcome_down:
+        mean: 4.929973
+        se: 0.001905
+        n: 643696
+  T3_strong_long_net:
+    '0':
+      windows: 12000
+      selected_lots_per_window:
+        mean: 19.494833
+        se: 0.033405
+        n: 12000
+      baseline_lots_per_window:
+        mean: 100.371333
+        se: 0.066572
+        n: 12000
+      sum_S:
+        mean: -0.038122
+        se: 0.001958
+        n: 12000
+      ratio_sumS_over_sumN: -0.001955
+      mean_of_S_over_N:
+        mean: -0.002178
+        se: 0.000104
+        n: 12000
+      mean_of_baseline_mean:
+        mean: -0.00228
+        se: 4.6e-05
+        n: 12000
+      mean_diff_sel_minus_base:
+        mean: 0.000102
+        se: 0.000114
+        n: 12000
+      mean_diff_signed_log_move_sel_minus_base:
+        mean: -0.001372
+        se: 0.000118
+        n: 12000
+      share_windows_diff_below_0:
+        rate: 0.4818
+        count: 5781
+        n: 12000
+        se: 0.0046
+      share_windows_signed_log_move_diff_below_0:
+        rate: 0.5212
+        count: 6254
+        n: 12000
+        se: 0.0046
+      corr_S_N: 0.0699
+      selected_lots_opened_entry_to_exit_plus_8_after_own_outcome_up:
+        mean: 0.717845
+        se: 0.001956
+        n: 144208
+      selected_lots_opened_entry_to_exit_plus_8_after_own_outcome_down:
+        mean: 0.714599
+        se: 0.002492
+        n: 89730
+host_lots_per_window:
+  mean: 119.866167
+  se: 0.070072
+  n: 12000
+host_exit_causes_share:
+  end_of_window: 0.0042
+  flip: 0.9958

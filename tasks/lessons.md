@@ -665,3 +665,27 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-18 -- A campaign launched as a session background job inherits the 2-hour cap
 - **Pattern:** `run_campaign.py --once` was started through the session's background-job tool, whose jobs are stopped at the 2-hour limit (same cap as the 2026-10-03 calibration lesson); a run of run_094's length (about 6 hours from LAUNCH to DONE in campaign_record/campaign_log.md) would have been killed mid-stage. run_097 finished in 8 minutes, so nothing was lost.
 - **Rule:** before launching a campaign run, check how long the expected run can take against the launcher's time cap; if it can exceed the cap, say so to the operator before launch and ask how to launch it.
+
+## 2026-10-19 -- A PR touching registry.py went without the Opus safety review
+- **Pattern:** the opening prompt required an Opus safety review for anything touching decide-next, claim_tests, registry.py or the analyst prompt; PR-D (registry.py) got only the Sonnet round until the lead noticed, and the late review then found the parameter-bounds hole the operator had to rule on.
+- **Rule:** before dispatching a PR's first review, check its touched files against the safety-review list and dispatch the Opus safety review in the same step when any file matches.
+
+## 2026-10-19 -- A brief added words to an operator ruling
+- **Pattern:** the lead's brief explained the operator's clause "claim it with all_of" with a parenthetical; the agent wrote the parenthetical into SKILL.md, and a review had to cut it back.
+- **Rule:** in a brief, quote the operator's wording on its own line and mark any explanation as "for you, not for the file"; the file gets only the quoted words.
+
+## 2026-10-19 -- A brief turned a ruling into an implementation constraint
+- **Pattern:** the operator asked that "net matches the window's equity change from bars.csv"; the lead's brief added "use the same equity column as V0", which is wrong for the end of a window (the pre-action column misses the last trade), and the agent stopped on it.
+- **Rule:** brief the operator's requirement, not a derived method; when a method seems needed, state it as a suggestion the agent may replace with a reason.
+
+## 2026-10-19 -- The first PR of the session ignored the PR template
+- **Pattern:** PR-0 was opened with a free-form body; the repo has .github/PULL_REQUEST_TEMPLATE.md.
+- **Rule:** read the PR template before the first `gh pr create` of a session and use its sections for every PR body.
+
+## 2026-10-19 -- Questions for the direction session were summarised, not pasteable
+- **Pattern:** the lead's B1/B2/S1/N1 findings reached the direction session only as a short summary; it ruled from the branch and the operator had to ask for the full text.
+- **Rule:** any question meant for the direction session goes out as one self-contained paste block with the full finding, the evidence and the options, so the operator can relay it unchanged.
+
+## 2026-10-20 -- Sub-agents started python without the test lock
+- **Pattern:** several agents started a bare `python -` or `python3 - <<EOF` (empty or trivial) outside the shared test lock, and one printed sealed dates by running `sed` on a run_protocol.json; none wrote anything, but each broke a stated rule.
+- **Rule:** every brief says "never a bare `python -`, no heredoc, no system python3 outside the lock" and "never print run_protocol.json or any holdout date"; the lead reads each hand-back for such slips and records them.

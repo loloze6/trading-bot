@@ -1,6 +1,6 @@
 """E-075 PR-5 (CUL-423, D-092): the analyst session's pure part -- no SDK, no model call.
 
-run_phase1_research wires the session (the six tools as an in-process MCP server, the
+run_phase1_research wires the session (the seven tools as an in-process MCP server, the
 closed-book options, the deny hook, the call); this module holds everything that can be
 checked without a model:
 
@@ -24,6 +24,7 @@ date at or after the holdout start.
 """
 from __future__ import annotations
 
+import copy
 import json
 import math
 import os
@@ -40,6 +41,8 @@ if _HERE not in sys.path:
 
 SR_ROOT = Path(_HERE).parent
 
+import catalogue_section  # noqa: E402
+
 #: lens -> the reader category file it writes (artifacts/proposals/<category>.yaml); the
 #: other reader categories are written by code as `skipped` (replaced_by_analyst)
 LENS_CATEGORY = {"forecast": "forecast_power", "trade_efficiency": "trade_efficiency"}
@@ -47,7 +50,7 @@ LENSES = tuple(LENS_CATEGORY)
 REPLACED_RULE = "replaced_by_analyst"
 SERVER_NAME = "analyst"
 TOOL_NAMES = ("list_columns", "describe", "distribution", "conditional_effect", "trade_slice",
-              "event_study")
+              "event_study", "window_economics")
 ALLOWED_TOOLS = tuple(f"mcp__{SERVER_NAME}__{n}" for n in TOOL_NAMES)
 SKILL_DIR = SR_ROOT / "workflow_artifacts" / "skills" / "analyst"
 LOG_DIR_REL = "artifacts/analyst_queries"
@@ -107,7 +110,7 @@ def run_context(run_dir: Path, base_config_rel: str, fold: str | None) -> str:
     out += _section(f"Base strategy config ({base_config_rel})", _read(run_dir / base_config_rel))
     out += _section("Variant patches (artifacts/variant_patches.yaml)",
                     _read(arts / "variant_patches.yaml"))
-    out += _section("Cost model (config/cost_model.yaml; for reference only)",
+    out += _section("Cost model (config/cost_model.yaml; a measurement of this run, evidence never the claim)",
                     _read(SR_ROOT / "config" / "cost_model.yaml"))
     return out
 
@@ -120,11 +123,13 @@ def build_prompt(lens: str, run_dir: Path, *, base_config_rel: str, fold: str | 
     hs = SR_ROOT / "workflow_artifacts" / "skills" / "hypothesis-design"
     text = (_read(SKILL_DIR / "SKILL.md") or "") + "\n\n" + (_read(SKILL_DIR / f"{lens}.md") or "")
     text += _section("The run context", run_context(run_dir, base_config_rel, fold))
+    text += _section("The component and op catalogue (what a vehicle may name)",
+                     catalogue_section.catalogue_section())
     text += _section("The data dictionary (docs/DATA_DICTIONARY.md)",
                      _read(SR_ROOT / "docs" / "DATA_DICTIONARY.md"))
     for name in ("CLAIM_TESTS.md", "CLAIM_TESTS_TRADE.md", "CLAIM_TESTS_EXECUTION.md"):
         text += _section(f"Claim-test vocabulary: {name}", _read(hs / name))
-    text += _section("The memory view (earlier claims; numbers only for confirmed ones)",
+    text += _section("The memory view (earlier claims; effect numbers only for confirmed ones)",
                      yaml.safe_dump(memory_view, sort_keys=False, allow_unicode=True))
     text += _section("Your tools", "\n".join(
         f"- {full} (call it by that name)" for full in ALLOWED_TOOLS))
@@ -346,13 +351,13 @@ def in_run_score(test_hashes: list, entries: dict) -> int:
 
 def tool_list_errors(init_tools) -> list:
     """Errors of the tool list the CLI reported for the session (system/init `tools`): it must
-    be present, a list, and name no tool outside the six (PHASE_A section 1.4 (b): fail
+    be present, a list, and name no tool outside the seven (PHASE_A section 1.4 (b): fail
     closed). Not verifiable from the Python source; the smoke session checks it live."""
     if not isinstance(init_tools, list):
         return [f"the session reported no tool list (system/init tools={init_tools!r})"]
     extra = sorted({str(t) for t in init_tools} - set(ALLOWED_TOOLS))
     if extra:
-        return [f"the session had tools outside the six: {extra}"]
+        return [f"the session had tools outside the seven: {extra}"]
     return []
 
 
@@ -381,6 +386,110 @@ def _cite_qid(c):
 
 def _cite_path(c) -> str:
     return _cite_parts(c)[1]
+
+
+# Operator, 2026-10-19 (PR-A): a no_claim may record what the session measured but could not
+# turn into a claim yet (no strategy change follows from it yet): `observations`, a list of
+# mappings with exactly OBSERVATION_KEYS -- `statement` (the behaviour), `test` (the id of the
+# ok conditional_effect call of this session that measured it), `evidence` (citations, at
+# least one of that call), `floors_met` (true/false: the call cleared its test's floor on
+# every horizon; checked where its result can tell). Absent = none: a no_claim without the key
+# is checked and recorded exactly as before. Each recorded observation also carries `spec`,
+# written by code: the measured test block (its slots, no result) and its spec_hash. The
+# regroup_record stage copies an accepted no_claim's observations into the run's
+# campaign_memory entry (campaign_memory.analyst_observations); the memory view shows them as
+# "observed, no vehicle yet" (analyst_memory_view).
+# Operator, 2026-10-19: at most OBSERVATIONS_MAX observations per no_claim, each citing a different
+# test (the prompt grows with every recorded observation).
+OBSERVATION_KEYS = ("statement", "test", "evidence", "floors_met")
+OBSERVATIONS_MAX = 3
+
+
+def floors_met_in_log(entry: dict):
+    """Whether a conditional_effect call's logged result clears its own test block's floor on
+    every horizon (claim_measure's floor_not_met rule): False when a unit the result reports
+    is below the floor, True when every unit is reported and met, None when it cannot tell
+    (min_eras is not in the result, or the result is unreadable)."""
+    import claim_measure as cmeas
+    res = entry.get("result") if isinstance(entry, dict) else None
+    floor = ((res or {}).get("test") or {}).get("floor") if isinstance(res, dict) else None
+    hz = res.get("horizons") if isinstance(res, dict) else None
+    if not isinstance(floor, dict) or not isinstance(hz, dict) or not hz:
+        return None
+    known = True
+    for unit, need in floor.items():
+        field = cmeas._FLOOR_KEY.get(unit)
+        for row in hz.values():
+            have = row.get(field) if isinstance(row, dict) and field else None
+            if not isinstance(have, (int, float)) or isinstance(have, bool) \
+                    or not isinstance(need, (int, float)):
+                known = False
+            elif have < need:
+                return False
+    return True if known else None
+
+
+def observation_errors(observations, entries: dict) -> list:
+    """Errors of a no_claim's `observations` (OBSERVATION_KEYS); [] for a valid list,
+    `[]` included."""
+    if not isinstance(observations, list):
+        return ["no_claim.observations must be a list of {statement, test, evidence, "
+                "floors_met} (leave the key out, or write [], when there is none)"]
+    errors = []
+    if len(observations) > OBSERVATIONS_MAX:
+        errors.append(f"no_claim.observations has {len(observations)} entries: a no_claim records at "
+                      f"most {OBSERVATIONS_MAX} observations, each citing a different test (keep the "
+                      f"{OBSERVATIONS_MAX} that matter most)")
+    seen_tests = set()
+    for i, o in enumerate(observations):
+        w = f"no_claim.observations[{i}]"
+        if not isinstance(o, dict) or set(o) != set(OBSERVATION_KEYS):
+            errors.append(f"{w} must have exactly the keys {list(OBSERVATION_KEYS)}"
+                          + (f" (got {sorted(map(str, o))})" if isinstance(o, dict) else ""))
+            continue
+        if not isinstance(o["statement"], str) or not o["statement"].strip():
+            errors.append(f"{w}.statement must be a non-empty text: the behaviour you measured")
+        qid = o["test"]
+        is_ce = _ok_call(entries, qid) and entries[qid].get("function") == "conditional_effect"
+        if is_ce:
+            # one observation per test: the same query, or the same test block run again (the
+            # same spec_hash), is the same test
+            sh = (entries[qid].get("result") or {}).get("spec_hash")
+            key = sh if isinstance(sh, str) and sh else qid
+            if key in seen_tests:
+                errors.append(f"{w}.test={qid!r} measures the same test as an earlier observation "
+                              f"of this no_claim: each observation cites a different test")
+            seen_tests.add(key)
+        if not is_ce:
+            errors.append(f"{w}.test={qid!r} must be the id of an ok conditional_effect call of "
+                          f"this session (the call that measured the behaviour)")
+        errors += [f"{w}.{e}" for e in check_citations(o["evidence"], entries)]
+        if is_ce and isinstance(o["evidence"], list) \
+                and not any(_cite_qid(c) == qid for c in o["evidence"]):
+            errors.append(f"{w}.evidence must cite its test's own result "
+                          f"(`{qid}:horizons.<h>.<field>=<value>`)")
+        if not isinstance(o["floors_met"], bool):
+            errors.append(f"{w}.floors_met must be true or false")
+        elif is_ce:
+            met = floors_met_in_log(entries[qid])
+            if met is not None and met != o["floors_met"]:
+                errors.append(f"{w}.floors_met is {str(o['floors_met']).lower()}, but {qid}'s "
+                              f"result {'clears' if met else 'does not clear'} its test's floor "
+                              f"on every horizon (n_events, n_windows_with_events, n_blocks "
+                              f"against `floor`)")
+    return errors
+
+
+def _observation_spec(entry: dict) -> dict:
+    """The code-written `spec` of a recorded observation: the measured test block's slots
+    (selector, outcome, baseline, statistic, direction, floor; no result) and its spec_hash."""
+    res = entry.get("result") or {}
+    block = res.get("test") if isinstance(res.get("test"), dict) else {}
+    # deep copies: two observations citing the same query must not share objects (PyYAML would
+    # write the second as an alias, &id001 / *id001, in the record)
+    return {"spec_hash": res.get("spec_hash"),
+            **{k: copy.deepcopy(block[k]) for k in ("selector", "outcome", "baseline", "statistic",
+                                                    "direction", "floor") if k in block}}
 
 
 def _tests_of(claim) -> list:
@@ -590,6 +699,37 @@ def _unverified(hits: list) -> list:
     return [{"field": label, "written": written} for label, _s, _e, written, _m in hits]
 
 
+def exit_selector_own_outcome_errors(claim) -> list[str]:
+    """D-095 (smoke 3, 2026-10-09): one error per claim test that selects lots by an exit-time
+    field (claim_tests.TRADE_EXIT_FIELDS) and measures their own result (any of
+    claim_tests.TRADE_OWN_OUTCOMES, operator ruling 2026-10-19). Such a test is near-mechanical
+    (a losing lot stays open longer). Claim in, list of error strings out, in the order of the
+    claim's tests; [] for anything else, a malformed claim included. check_answer calls it."""
+    import claim_tests as ct
+    errors = []
+    for i, t in enumerate(_tests_of(claim)):
+        sel, out = t.get("selector"), t.get("outcome")
+        if not (isinstance(sel, dict) and sel.get("kind") == "trade"
+                and isinstance(out, dict) and out.get("kind") in ct.TRADE_OWN_OUTCOMES
+                and isinstance(sel.get("where"), list)):
+            continue
+        fields = sorted({c["field"] for c in sel["where"]
+                         if isinstance(c, dict) and c.get("field") in ct.TRADE_EXIT_FIELDS})
+        if fields:
+            # D-097: the message says what this test cannot tell apart and what to do instead
+            errors.append(
+                f"claim test {t.get('name', i)!r} selects lots by an exit-time field "
+                f"({', '.join(fields)}) and measures their own {out['kind']}: it cannot tell "
+                f"'the exit comes too late' from 'a losing lot stays open longer' (a lot closes "
+                f"only when the allocation changes, so long-held lots are the ones the price "
+                f"kept going against). Select on an entry-time field "
+                f"({', '.join(ct.TRADE_ENTRY_FIELDS)}), or measure post_exit_return. 'The exit "
+                f"comes too late' has no claim test yet (it needs the return from bar N to the "
+                f"exit): explore it with event_study (trade_filter on {fields[0]}) and, if it "
+                f"is your best idea, end with no_claim and give it as best_rejected")
+    return errors
+
+
 def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_check,
                  holdout_start: str, fold: str | None, model_id: str,
                  settings=None) -> tuple:
@@ -657,6 +797,27 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
                 tests=[ktest] if isinstance(ktest, dict) else None, settings=settings)
             nc = mask_hits(nc, "no_claim", hits)
             record["unverified_numbers"] = _unverified(hits)
+            if "observations" in nc:
+                # operator, 2026-10-19 (PR-A): absent = none, so a no_claim without the key is
+                # unchanged; a valid list is recorded masked (D-096), each with its code spec
+                obs_errors = observation_errors(nc["observations"], entries)
+                errors += obs_errors
+                if not obs_errors:
+                    recorded = []
+                    for i, o in enumerate(nc["observations"]):
+                        test = entries[o["test"]]
+                        block = (test.get("result") or {}).get("test")
+                        ohits = number_hits(
+                            {"observation.statement": o["statement"]},
+                            list(o["evidence"]) + list(evidence), entries,
+                            tests=[block] if isinstance(block, dict) else None,
+                            settings=settings)
+                        recorded.append({**mask_hits(o, "observation", ohits),
+                                         "spec": _observation_spec(test)})
+                        record["unverified_numbers"] += [
+                            {"field": f"no_claim.observations.{i}.statement", "written": wr}
+                            for _l, _s, _e, wr, _m in ohits]
+                    nc["observations"] = recorded
         record["no_claim"] = nc
         reading = {**base, "explanation": str((nc or {}).get("reason") or "no claim"),
                    "evidence": list(evidence), "side_findings": []}
@@ -674,29 +835,7 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
     elif res.tests_none:
         errors.append("claim: `tests: none` cannot be confirmed on a fold; write the test in the "
                       "slots or end with no_claim")
-    # smoke 3 (2026-10-09; D-095): lots selected by an exit-time field, measured by their own
-    # trade_net_return, is near-mechanical (a losing lot stays open longer)
-    import claim_tests as ct
-    for i, t in enumerate(_tests_of(claim)):
-        sel, out = t.get("selector"), t.get("outcome")
-        if not (isinstance(sel, dict) and sel.get("kind") == "trade"
-                and isinstance(out, dict) and out.get("kind") == "trade_net_return"
-                and isinstance(sel.get("where"), list)):
-            continue
-        fields = sorted({c["field"] for c in sel["where"]
-                         if isinstance(c, dict) and c.get("field") in ct.TRADE_EXIT_FIELDS})
-        if fields:
-            # D-097: the message says what this test cannot tell apart and what to do instead
-            errors.append(
-                f"claim test {t.get('name', i)!r} selects lots by an exit-time field "
-                f"({', '.join(fields)}) and measures their own trade_net_return: it cannot tell "
-                f"'the exit comes too late' from 'a losing lot stays open longer' (a lot closes "
-                f"only when the allocation changes, so long-held lots are the ones the price "
-                f"kept going against). Select on an entry-time field "
-                f"({', '.join(ct.TRADE_ENTRY_FIELDS)}), or measure post_exit_return. 'The exit "
-                f"comes too late' has no claim test yet (it needs the return from bar N to the "
-                f"exit): explore it with event_study (trade_filter on {fields[0]}) and, if it "
-                f"is your best idea, end with no_claim and give it as best_rejected")
+    errors += exit_selector_own_outcome_errors(claim)
     # D-098 (pilot 2a): the forecast's rank IC over all bars is what the run's protocol
     # already tests; restating it spends a fold-B child to learn nothing new
     for i, t in enumerate(_tests_of(claim)):

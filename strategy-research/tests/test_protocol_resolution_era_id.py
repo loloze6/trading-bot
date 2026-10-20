@@ -247,18 +247,81 @@ def test_run_protocol_and_vce_delegate_to_the_shared_policy_loader():
     assert "load_policy_eras" in inspect.getsource(vce._load_campaign_data_policy_eras)
 
 
-def test_era_lookup_is_memoized_per_date_and_eras_identity(eras):
+@pytest.fixture
+def clean_era_cache():
+    """Empty _ERA_LOOKUP_CACHE for the test, restore its prior contents after."""
+    saved = dict(pr._ERA_LOOKUP_CACHE)
+    pr._ERA_LOOKUP_CACHE.clear()
+    try:
+        yield pr._ERA_LOOKUP_CACHE
+    finally:
+        pr._ERA_LOOKUP_CACHE.clear()
+        pr._ERA_LOOKUP_CACHE.update(saved)
+
+
+def _synthetic_eras(split: str) -> list:
+    """Two eras with fixed ids whose shared boundary is `split` (synthetic)."""
+    return [{"era_id": "era_a", "range": ["2018-01-01", split]},
+            {"era_id": "era_b", "range": [split, None]}]
+
+
+def test_era_lookup_is_memoized_per_date_and_eras_content(eras, clean_era_cache):
     era = _era(eras, "era_2019_2023_full_feed")
     lo = era["range"][0]
-    key = (id(eras), lo)
-    pr._ERA_LOOKUP_CACHE.pop(key, None)
-    assert key not in pr._ERA_LOOKUP_CACHE
-    result = pr.era_id_for_timestamp(lo, eras)
-    assert pr._ERA_LOOKUP_CACHE[key] == result == era["era_id"]
-    # a second call for the SAME date, a DIFFERENT (but equal-content) eras
-    # list object, does NOT share the first list's cache entry (id()-keyed).
-    eras_copy = [dict(e) for e in eras]
-    other_key = (id(eras_copy), lo)
-    assert other_key not in pr._ERA_LOOKUP_CACHE
-    assert pr.era_id_for_timestamp(lo, eras_copy) == era["era_id"]
-    assert other_key in pr._ERA_LOOKUP_CACHE
+    assert len(clean_era_cache) == 0
+    assert pr.era_id_for_timestamp(lo, eras) == era["era_id"]
+    assert len(clean_era_cache) == 1
+    assert list(clean_era_cache.values()) == [era["era_id"]]
+    # same date again: a hit, no new entry
+    assert pr.era_id_for_timestamp(lo, eras) == era["era_id"]
+    assert len(clean_era_cache) == 1
+
+
+def test_two_lists_with_different_ranges_get_their_own_answers(clean_era_cache):
+    """Same era ids, same probe date, different ranges, one process: each list
+    must resolve the date by ITS OWN ranges, never the other list's entry."""
+    list_a = _synthetic_eras("2020-06-30")  # 2020-03-15 falls in era_a
+    list_b = _synthetic_eras("2020-01-31")  # 2020-03-15 falls in era_b
+    probe = "2020-03-15"
+    assert pr.era_id_for_timestamp(probe, list_a) == "era_a"
+    assert pr.era_id_for_timestamp(probe, list_b) == "era_b"
+    # and back again, now both answers come from the cache
+    assert pr.era_id_for_timestamp(probe, list_a) == "era_a"
+    assert pr.era_id_for_timestamp(probe, list_b) == "era_b"
+    assert len(clean_era_cache) == 2  # distinct content -> distinct entries
+
+
+def test_reused_id_of_a_collected_list_does_not_serve_a_stale_entry(clean_era_cache):
+    """id()-reuse regression. CPython may or may not hand a freed list's id()
+    to the next list, so two angles: (1) deterministic -- the SAME list object
+    (hence the same id()) is edited in place to different ranges between two
+    lookups, the strongest form of id reuse; the old id()-keyed cache returned
+    the stale answer here. (2) best-effort -- build/drop lists repeatedly so
+    the allocator reuses ids in practice; each lookup must still be right."""
+    probe = "2020-03-15"
+    shared = _synthetic_eras("2020-06-30")
+    assert pr.era_id_for_timestamp(probe, shared) == "era_a"
+    shared[0]["range"][1] = "2020-01-31"
+    shared[1]["range"][0] = "2020-01-31"
+    assert pr.era_id_for_timestamp(probe, shared) == "era_b"
+
+    for _ in range(50):
+        list_a = _synthetic_eras("2020-06-30")
+        assert pr.era_id_for_timestamp(probe, list_a) == "era_a"
+        del list_a
+        list_b = _synthetic_eras("2020-01-31")
+        assert pr.era_id_for_timestamp(probe, list_b) == "era_b"
+        del list_b
+
+
+def test_distinct_list_objects_with_identical_content_share_one_entry(clean_era_cache):
+    list_a = _synthetic_eras("2020-06-30")
+    list_b = _synthetic_eras("2020-06-30")
+    assert list_a is not list_b
+    assert pr.era_id_for_timestamp("2020-03-15", list_a) == "era_a"
+    assert len(clean_era_cache) == 1
+    assert pr.era_id_for_timestamp("2020-03-15", list_b) == "era_a"
+    assert len(clean_era_cache) == 1  # grew by 0 on the second list, not 1
+    # a different date is a new entry
+    assert pr.era_id_for_timestamp("2020-09-01", list_b) == "era_b"
+    assert len(clean_era_cache) == 2

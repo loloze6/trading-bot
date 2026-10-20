@@ -7,7 +7,7 @@ query log is written) and the REAL PreToolUse hook, then returns a canned answer
 Pins:
   1. the options: the analyst variant of _stage_agent_options on the same closed-book base,
      read off the installed SDK's CLI builder; flag-off options unchanged;
-  2. the deny hook refuses every tool but the six;
+  2. the deny hook refuses every tool but the seven;
   3. a stubbed session writes a reading in the reader-proposal shape that decide-next picks
      and turns into a fold-B child brief;
   4. code's checks of the answer (citations, the test was run, why_query, sealed dates,
@@ -45,6 +45,18 @@ import test_e075_pr4_queries as q4  # noqa: E402  (a synthetic run with bars and
 # the real flag reader, kept before the autouse fixture replaces the attribute
 _REAL_ANALYST_ENABLED = rpr._analyst_enabled
 RUN_ID = "run_074"
+# operator, 2026-10-19 (D-151): a claim always carries a vehicle; this one resolves against
+# BASE_CONFIG, which the `run` fixture writes as the run's candidate config
+# (the component and value of test_e059_s2a_decide_next._base_config, so decide-next resolves
+# the same vehicle against its own base config)
+BASE_CONFIG = {"strategies": {"regimes": {"unknown": {"components": [
+    {"id": "funding_mr", "params": {"z": 2.0}}]}}}}
+
+
+def _vehicle():
+    return [{"component_id": "funding_mr", "field": "params.z", "before": 2.0, "after": 3.0}]
+
+
 LONG = {"kind": "trade", "where": [{"field": "side", "op": "==", "value": "long"}]}
 
 
@@ -70,6 +82,8 @@ def run(tmp_path, monkeypatch):
         yaml.safe_dump({"machine_constraints": {"protocol": {"fold": "A"}}}), encoding="utf-8")
     (run_dir / "pipeline_state.yaml").write_text(
         yaml.safe_dump({"status": "active", "audit_log": {}}), encoding="utf-8")
+    (arts / "candidate_strategy_config.json").write_text(json.dumps(BASE_CONFIG),
+                                                         encoding="utf-8")
     monkeypatch.setattr(rpr, "ROOT", root)
     monkeypatch.setattr(rpr, "_load_holdout_range", lambda *a: (q4.HOLDOUT, None))
     monkeypatch.setattr(asm, "SR_ROOT", SR_ROOT)
@@ -146,7 +160,7 @@ async def _good_claim(call, *, why=True, cite_bad=False, extra=None):
                         "pass_if": "long lots above the others on the unseen fold",
                         "fail_if": "not above", "rationale": "the longs ride the drift"},
               "why_query": ts["query_id"] if why else ce["query_id"],
-              "evidence": [cite], "vehicle": [], "combines_as": "execution_rule"}
+              "evidence": [cite], "vehicle": _vehicle(), "combines_as": "execution_rule"}
     answer.update(extra or {})
     return "Here is my claim.\n```yaml\n" + yaml.safe_dump(answer, sort_keys=False) + "```\n"
 
@@ -168,13 +182,13 @@ def test_flag_off_options_are_unchanged():
     assert opts.permission_mode is None and opts.max_turns is None
 
 
-def test_the_analyst_options_are_the_closed_book_base_plus_the_six_tools():
+def test_the_analyst_options_are_the_closed_book_base_plus_the_seven_tools():
     opts = rpr._stage_agent_options(analyst=_spec())
     assert opts.tools == [] and opts.setting_sources == [] and opts.strict_mcp_config is True
     assert opts.env == {"CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"}
     assert Path(opts.cwd).resolve() == rpr._STAGE_AGENT_CWD.resolve()
     assert list(opts.mcp_servers) == ["analyst"]
-    assert opts.allowed_tools == list(asm.ALLOWED_TOOLS) and len(asm.ALLOWED_TOOLS) == 6
+    assert opts.allowed_tools == list(asm.ALLOWED_TOOLS) and len(asm.ALLOWED_TOOLS) == 7
     assert opts.permission_mode == "dontAsk"
     assert (opts.max_turns, opts.max_budget_usd) == (40, 1.5)
 
@@ -201,7 +215,7 @@ def test_the_hook_denies_every_other_tool_and_records_it(name):
     assert seen == [name]
 
 
-def test_the_hook_allows_the_six():
+def test_the_hook_allows_the_seven():
     seen = []
     hook = rpr._analyst_deny_hook(seen)
     for full in asm.ALLOWED_TOOLS:
@@ -248,7 +262,7 @@ def test_a_stubbed_session_writes_a_reading_decide_next_turns_into_a_fold_b_chil
     doc = yaml.safe_load(dest.read_text(encoding="utf-8"))
     assert doc["rubric_version"] == "trade_efficiency-analyst-v1"
     (side,) = doc["side_findings"]
-    assert side["vehicle"] == [] and side["fold_observed"] == "A"
+    assert side["vehicle"] == _vehicle() and side["fold_observed"] == "A"
     assert side["scores"]["distance_to_profitable"] == 1 == side["scores"]["mechanism_plausibility"]
     rp.check_reading(doc, "trade_efficiency", "file", strict_provenance=True, analyst=True)
     # the log and the record
@@ -283,7 +297,7 @@ def test_a_stubbed_session_writes_a_reading_decide_next_turns_into_a_fold_b_chil
 @pytest.mark.parametrize("variant,needle", [
     (dict(cite_bad=True), "returned"),
     (dict(why=False), "why_query must be the SECOND query"),
-    (dict(extra={"vehicle": [], "combines_as": "execution_rule",
+    (dict(extra={"vehicle": _vehicle(), "combines_as": "execution_rule",
                  "evidence": ["q9:result.x=1"]}), "not a successful call"),
 ])
 def test_a_refused_answer_is_retried_then_skipped(run, monkeypatch, variant, needle):
@@ -323,7 +337,8 @@ def test_a_claim_test_never_run_is_refused():
                         "direction": "greater", "floor": {"min_events": 1}}],
              "pass_if": "p", "fail_if": "f", "rationale": "r"}
     text = "```yaml\n" + yaml.safe_dump({"outcome": "claim", "claim": claim, "why_query": "q1",
-                                         "evidence": ["q1:groups.all.mean=0.5"], "vehicle": [],
+                                         "evidence": ["q1:groups.all.mean=0.5"],
+                                         "vehicle": _vehicle(),
                                          "combines_as": "execution_rule"}) + "```"
     _r, _rec, errors = asm.check_answer(
         text, lens="trade_efficiency", run_id=RUN_ID, entries=entries,
@@ -377,10 +392,11 @@ def test_the_simple_score_is_the_in_run_window_agreement(k, n, want):
     assert asm.in_run_score(["other"], entries) == 0
 
 
-def test_an_empty_vehicle_for_another_kind_is_refused_by_the_reading_check(run, monkeypatch):
+@pytest.mark.parametrize("kind", ["execution_behaviour", "conditional_behaviour"])
+def test_an_empty_vehicle_is_refused_by_the_reading_check_for_every_kind(run, monkeypatch, kind):
     async def script(call):
-        text = await _good_claim(call)
-        return text.replace("kind: execution_behaviour", "kind: conditional_behaviour")
+        text = await _good_claim(call, extra={"vehicle": []})
+        return text.replace("kind: execution_behaviour", f"kind: {kind}")
     _install(monkeypatch, script)
     rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
     record = yaml.safe_load((run / asm.record_rel("trade_efficiency")).read_text(encoding="utf-8"))
@@ -567,7 +583,7 @@ def test_the_reading_content_check_runs_on_the_answer(run, monkeypatch):
 
 @pytest.mark.parametrize("init_tools,needle", [
     (None, "reported no tool list"),
-    ([*asm.ALLOWED_TOOLS, "Read"], "outside the six: ['Read']"),
+    ([*asm.ALLOWED_TOOLS, "Read"], "outside the seven: ['Read']"),
 ])
 def test_a_session_with_another_tool_stops_the_stage(run, monkeypatch, init_tools, needle):
     _install(monkeypatch, _good_claim, init_tools=init_tools)
@@ -624,6 +640,9 @@ def test_repeating_a_test_on_another_variant_cannot_raise_its_score():
 
 
 def _claim_answer(**over):
+    # `vehicle: []` here is deliberate: this builds answers for check_answer, which does not
+    # look at the vehicle (the reading checks do), and GOLDEN_ONE_OR_NO_BLOCK pins the result
+    # of these exact answers from before D-151
     claim = {"statement": "Long lots earn more than short lots.", "kind": "execution_behaviour",
              "tests": [{"name": "t", "selector": LONG, "outcome": {"kind": "trade_net_return"},
                         "baseline": {"kind": "other_trades"}, "statistic": "mean_diff",
@@ -977,7 +996,7 @@ def _floor_answer(test, ce_qid, why_qid, cite):
                      "kind": "execution_behaviour", "tests": [dict(test, name="t")],
                      "pass_if": "higher on the unseen fold", "fail_if": "not higher",
                      "rationale": "the forecast leads the drift"},
-           "why_query": why_qid, "evidence": [cite], "vehicle": [],
+           "why_query": why_qid, "evidence": [cite], "vehicle": _vehicle(),
            "combines_as": "execution_rule"}
     return "```yaml\n" + yaml.safe_dump(doc, sort_keys=False) + "```"
 
@@ -1105,7 +1124,7 @@ def test_a_stubbed_session_claiming_a_real_floor_reaches_the_reading(run, monkey
                             "fail_if": "not above", "rationale": "the longs ride the drift"},
                   "why_query": ts["query_id"],
                   "evidence": [_cite(ce["query_id"], ce["result"], "horizons.trade.effect")],
-                  "vehicle": [], "combines_as": "execution_rule"}
+                  "vehicle": _vehicle(), "combines_as": "execution_rule"}
         return "```yaml\n" + yaml.safe_dump(answer, sort_keys=False) + "```\n"
     _install(monkeypatch, script)
     dest = rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
@@ -1608,6 +1627,42 @@ def test_holding_bars_with_the_lots_own_return_is_refused():
                    "if it is your best idea, end with no_claim and give it as best_rejected")
 
 
+@pytest.mark.parametrize("where, named", [
+    ([_w("holding_bars", ">", 5)], "holding_bars"),
+    ([_w("exit_cause", "==", "flip")], "exit_cause"),
+    ([_w("holding_bars", ">", 5), _w("exit_cause", "==", "flip")], "exit_cause, holding_bars")])
+def test_an_exit_selector_with_the_lots_own_gross_return_is_refused_naming_it(where, named):
+    """B1 (operator ruling 2026-10-19): D-095 covers every one of the lot's own results
+    (claim_tests.TRADE_OWN_OUTCOMES); the message names the outcome the test measures."""
+    (msg,) = _exit_errors(_exit_test(where, outcome="trade_gross_return"))
+    assert msg.startswith(f"claim test 't' selects lots by an exit-time field ({named}) and "
+                          f"measures their own trade_gross_return: it cannot tell 'the exit "
+                          f"comes too late' from 'a losing lot stays open longer'"), msg
+    assert "trade_net_return" not in msg
+    (net,) = _exit_errors(_exit_test(where))
+    assert net == msg.replace("their own trade_gross_return", "their own trade_net_return")
+    # through the real claim check too (the block itself is valid)
+    (real,) = _exit_errors(_exit_test(where, outcome="trade_gross_return"), check=_real_check)
+    assert real == msg
+
+
+def test_every_own_outcome_is_covered_and_post_exit_return_is_not():
+    import claim_tests as ct
+    assert ct.TRADE_OWN_OUTCOMES == ("trade_net_return", "trade_gross_return")
+    for kind in ct.TRADE_OWN_OUTCOMES:
+        (msg,) = _exit_errors(_exit_test([_w("holding_bars", ">", 5)], outcome=kind))
+        assert f"measures their own {kind}:" in msg
+    assert _exit_errors(_exit_test([_w("holding_bars", ">", 5)], outcome="post_exit_return")) == []
+
+
+def test_an_entry_time_selector_with_the_lots_own_gross_return_is_not_refused():
+    for w in ([_w("side", "==", "long")], [_w("entry_hour", ">=", 8)],
+              [_w("regime_at_entry", "==", "x")], [_w("entry_forecast", ">", 1)],
+              [_w("entry_weekday", "<", 5)]):
+        assert _exit_errors(_exit_test(w, outcome="trade_gross_return")) == []
+        assert _exit_errors(_exit_test(w, outcome="trade_gross_return"), check=_real_check) == []
+
+
 def test_exit_cause_with_the_lots_own_return_is_refused():
     (msg,) = _exit_errors(_exit_test([_w("exit_cause", "==", "flip")]))
     assert "(exit_cause)" in msg and "post_exit_return" in msg
@@ -1649,6 +1704,24 @@ def test_two_offending_tests_give_two_errors_one_naming_each():
                         _exit_test([_w("exit_cause", "==", "flip")], name="second"))
     assert len(msgs) == 2
     assert "claim test 'first'" in msgs[0] and "claim test 'second'" in msgs[1]
+
+
+def test_check_answer_errors_are_the_module_functions_errors():
+    """Direction ruling 2026-10-20 item 1: the D-095 loop is the module-level
+    exit_selector_own_outcome_errors (claim in, error strings out); check_answer's D-095 errors
+    are exactly its output, same messages and order."""
+    text = _claim_answer(claim={"tests": [
+        _exit_test([_w("holding_bars", ">", 5)], name="first"),
+        _exit_test([_w("side", "==", "long")], name="entry"),
+        _exit_test([_w("exit_cause", "==", "flip")], outcome="trade_gross_return", name="second"),
+        _exit_test([_w("exit_cause", "==", "flip")], outcome="post_exit_return", name="post")]})
+    claim = yaml.safe_load(text.split("```yaml\n")[1].split("```")[0])["claim"]
+    own = asm.exit_selector_own_outcome_errors(claim)
+    assert len(own) == 2
+    assert "claim test 'first'" in own[0] and "claim test 'second'" in own[1]
+    assert _check(text) == own
+    assert asm.exit_selector_own_outcome_errors(None) == []
+    assert asm.exit_selector_own_outcome_errors({"tests": "x"}) == []
 
 
 def test_a_claim_card_error_and_the_exit_rule_are_both_returned_in_one_answer():
@@ -1909,7 +1982,7 @@ def test_a_claim_the_claim_card_refuses_is_not_reported_twice(run, monkeypatch):
 
 def test_a_shape_error_is_added_to_the_answers_errors(run, monkeypatch):
     async def script(call):
-        text = await _good_claim(call, cite_bad=True)
+        text = await _good_claim(call, cite_bad=True, extra={"vehicle": []})
         return text.replace("kind: execution_behaviour", "kind: no_such_kind")
     _install(monkeypatch, script)
     rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
@@ -1925,7 +1998,7 @@ def test_a_malformed_claim_runs_the_reading_checks_without_raising(run, monkeypa
         return "```yaml\n" + yaml.safe_dump({
             "outcome": "claim", "claim": junk, "why_query": ce["query_id"],
             "evidence": [_cite(ce["query_id"], ce["result"], "horizons.trade.effect")],
-            "vehicle": [], "combines_as": "execution_rule"}) + "```"
+            "vehicle": _vehicle(), "combines_as": "execution_rule"}) + "```"
     _install(monkeypatch, script)
     dest = rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
     assert yaml.safe_load(dest.read_text(encoding="utf-8"))["skipped"]["rule"] \
@@ -1982,10 +2055,12 @@ def test_a_missing_path_or_query_is_still_refused():
     assert asm.check_citations(["q9:x=0.0563"], _LOGGED)
 
 
-def test_the_skill_says_an_execution_claim_names_its_strategy_feature():
+def test_the_skill_says_an_execution_claim_holds_for_its_strategy_only_and_has_a_vehicle():
+    # D-151 (operator, 2026-10-19) deleted the empty-vehicle bullet and with it the sentence
+    # "its `statement` names the strategy feature it depends on"; the memory-view sentence stays
     skill = " ".join((asm.SKILL_DIR / "SKILL.md").read_text(encoding="utf-8").split())
-    assert "its `statement` names the strategy feature it depends on" in skill
     assert "holds for that strategy only" in skill
+    assert "No empty vehicle." in skill
 
 
 # ---------------------------------------------------------------------------

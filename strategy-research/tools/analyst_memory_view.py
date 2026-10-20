@@ -8,14 +8,18 @@ good" (engineering/roadmap/E-075/ANALYST_SKILL_REVIEW_1.md P5; plan A1.11 item
 
 with status one of `confirmed`, `not_confirmed`, `not_measurable`, `pending`, and
 numbers (the confirmed effect and the per-window agreement, with the fold) for
-CONFIRMED claims only.
+CONFIRMED claims only. Each fold a claim was measured on (`folds`) also shows, for
+EVERY status (operator 2026-10-19), the row's reason with its numbers masked and its
+agreement ("k of F" per test, keyed by spec_hash, and horizon: a count of the fold's
+windows, not an effect); effects stay confirmed-only.
 
 What it deliberately does NOT show -- the thing tools/reader_findings.py's
 `reader_findings_summary` shows today (largest effect and "k/6 windows" per
 variant, `reader_findings.py` `_largest` and the summary row):
-  * no exploratory effect size, no window count, no pending effect;
-  * no reason text (the reasons of an unconfirmed claim quote window counts and
-    effects: "windows 3 of 6"), only the status;
+  * no exploratory effect size, no pending effect, no effect of a fold that did not
+    confirm the claim;
+  * no number inside a reason text (masked: a reason can quote a free-text test name
+    or a config value), only the status, the masked reason and the fold's agreement;
   * every claim's free-text statement has its number literals masked
     (explore_confirm.mask_numbers, the same rule E-072 applies to every reader copy:
     run_074's statement quotes "median forecast_return_corr=-0.0057", an exploratory
@@ -44,15 +48,21 @@ touches a file but in `load_memory_view`):
     (D-090, operator 2026-10-08): `confirmed` if any fold confirmed it, else
     `not_confirmed` if any fold refuted it, else `not_measurable`; `fold_confirmed`
     lists the folds that confirmed it, `confirmed` holds the numbers of those rows only,
-    and `folds` lists every measured fold with its status (no number), so a refutation on
+    and `folds` lists every measured fold with its status, masked reason and agreement (no
+    effect), so a refutation on
     another fold is still recorded. Fold rows replace the E-072 row of the
     same finding, and a ledger claim replaces the memory claim with the same id.
+
+Beside the claims, under `observations` (operator, 2026-10-19; absent when there is none):
+each earlier session's no_claim observation from `runs.<id>.observations`, status
+"observed, no vehicle yet", its statement masked and its test's spec only (no number).
 
 The view is a plain dict; PR-5 renders it into the analyst's prompt. Pure: no
 clock, no model call, no side effect.
 """
 from __future__ import annotations
 
+import copy
 import json
 import os
 import re
@@ -78,11 +88,29 @@ MEMORY_REL = "campaign_record/campaign_memory.yaml"
 LEDGER_REL = ec.LEDGER_REL
 STATEMENT_CHARS = 400
 TEST_SPEC_KEYS = ("selector", "outcome", "baseline", "statistic", "direction")
-NOTE = ("earlier claims and what became of them: numbers only for confirmed claims, measured "
-        "on the fold that confirmed them; pending, not_confirmed and not_measurable claims carry "
-        "none; every statement has its numbers masked; a claim of kind execution_behaviour "
+NOTE = ("earlier claims and what became of them: effect numbers only for confirmed claims, "
+        "measured on the fold that confirmed them; pending, not_confirmed and not_measurable claims "
+        "carry none; every fold a claim was measured on shows, for every status, its reason "
+        "(numbers masked) and its agreement (windows of the fold with the claimed sign: a count, "
+        "not an effect); every statement has its numbers masked; a claim of kind execution_behaviour "
         "describes only the strategy of its source run (`source_strategy`): never apply it to "
         "another strategy; the numbers in `source_strategy` are config settings, not results")
+# Operator, 2026-10-19 (PR-A): an earlier session's no_claim observations (campaign_memory.yaml
+# `runs.<id>.observations`, campaign_memory.analyst_observations) are shown apart from the
+# claims, each with this status: measured, not a claim, never confirmed. The view's
+# `observations` and `observations_note` keys are absent when no run recorded one.
+OBSERVED = "observed, no vehicle yet"
+OBSERVATIONS_NOTE = ("behaviour an earlier session measured with no strategy change following "
+                     "from it yet: observed, no vehicle yet -- not a claim and never confirmed, "
+                     "so no result is shown and every statement has its numbers masked; the test's "
+                     "`floor` is shown (counts of events, windows, blocks or eras the test needed: "
+                     "`floors_met` says whether the measurement reached them); it "
+                     "describes only the strategy of its source run (`source_strategy`)")
+# Operator, 2026-10-19: the view keeps the newest OBSERVATION_ROWS_MAX observation rows, the same
+# mechanism as campaign_memory.TRIED_IDEAS_MAX_ROWS (newest by the source run's recorded_at, run
+# order breaks ties; the older ones are counted, not listed).
+OBSERVATION_ROWS_MAX = 20
+FLOOR_UNITS = ("min_events", "min_windows", "min_eras", "min_blocks")   # claim_tests.FLOOR_UNITS
 # operator, 2026-10-08: confirmed on any fold wins; a refutation on another fold stays in `folds`
 _FOLD_STATUS_ORDER = (CONFIRMED, NOT_CONFIRMED, NOT_MEASURABLE)   # the first present wins
 # digits glued to a word character (`x2`, `h24`, `5of6`, `Sharpe1.2`) that mask_numbers'
@@ -148,6 +176,35 @@ def _confirmed_numbers(rec: dict) -> dict:
     return {"fold": rec.get("fold"), "effect": effect, "agreement": agreement}
 
 
+def _fold_agreement(rec: dict):
+    """The row's agreement ("k of F" per test and horizon: counts, no effect), keyed by the
+    test's spec_hash -- the test name is free text and is never shown (D-090); a test with
+    no spec_hash is keyed by its name with the numbers masked. None when the row measured
+    nothing (an early exit carries no agreement)."""
+    agreement = rec.get("agreement")
+    if not isinstance(agreement, dict) or not agreement:
+        return None
+    tests = rec.get("tests") if isinstance(rec.get("tests"), dict) else {}
+    out = {}
+    for name, hz in agreement.items():
+        h_spec = (tests.get(name) or {}).get("spec_hash") if isinstance(tests.get(name), dict) \
+            else None
+        key = h_spec if isinstance(h_spec, str) and h_spec else _statement(str(name))
+        out[key] = {str(h): str(v) for h, v in hz.items()} if isinstance(hz, dict) else None
+    return out
+
+
+def _fold_entry(rec: dict, status: str) -> dict:
+    """One fold row in a claim's `folds` (operator 2026-10-19): fold, run, status, the row's
+    reason and its agreement, for EVERY status. No effect: numbers stay confirmed-only (in
+    `confirmed`). The reason is masked as statements are (mask_numbers plus glued digits,
+    every status), because it can quote free text -- a test name, a config value, an
+    exception -- that may carry an exploratory number; the counts it quotes are in
+    `agreement`."""
+    return {"fold": rec.get("fold"), "run_id": rec.get("run_id"), "status": status,
+            "reason": _statement(rec.get("reason")), "agreement": _fold_agreement(rec)}
+
+
 def _memory_claims(memory: dict) -> list:
     out = []
     runs = (memory or {}).get("runs") or {}
@@ -165,6 +222,49 @@ def _memory_claims(memory: dict) -> list:
             "status": PENDING if tests else NOT_MEASURABLE,
             "tests": _specs(tests)})
     return out
+
+
+def _floor(spec: dict):
+    """The test's floor: counts only (FLOOR_UNITS with a whole number >= 1, a copy), so
+    that no result number can come through it; None when absent or unreadable."""
+    fl = spec.get("floor")
+    if not isinstance(fl, dict):
+        return None
+    out = {u: fl[u] for u in FLOOR_UNITS
+           if isinstance(fl.get(u), int) and not isinstance(fl.get(u), bool) and fl[u] >= 1}
+    return out or None
+
+
+def _memory_observations(memory: dict) -> list:
+    """One row per observation of `runs.<id>.observations`, oldest first (the source run's
+    recorded_at, then run order, then the order inside the run): the lens, the masked statement,
+    the fold of the source run, floors_met, the status OBSERVED and the measured test's
+    mechanical spec with its floor (no result, no evidence: the numbers are exploratory). The
+    spec's slots are copies: rows never share an object (PyYAML would alias them)."""
+    keyed = []
+    runs = (memory or {}).get("runs") or {}
+    for rid in runs:
+        entry = runs[rid]
+        obs = entry.get("observations") if isinstance(entry, dict) else None
+        for j, o in enumerate(obs if isinstance(obs, list) else []):
+            if not isinstance(o, dict):
+                continue
+            spec = o.get("spec") if isinstance(o.get("spec"), dict) else {}
+            test = {"spec_hash": spec.get("spec_hash"),
+                    **{k: copy.deepcopy(spec[k]) for k in TEST_SPEC_KEYS if k in spec}}
+            floor = _floor(spec)
+            if floor is not None:
+                test["floor"] = floor
+            keyed.append(((str(entry.get("recorded_at") or ""), _run_order(str(rid)), j), {
+                "source_run": str(rid), "lens": o.get("lens"),
+                "statement": _statement(o.get("statement")),
+                "fold_observed": entry.get("fold"),
+                "floors_met": o.get("floors_met") if isinstance(o.get("floors_met"), bool)
+                else None,
+                "status": OBSERVED,
+                "test": test}))
+    keyed.sort(key=lambda kr: kr[0])
+    return [row for _k, row in keyed]
 
 
 def _fold_observed(rec: dict, runs: dict):
@@ -223,8 +323,7 @@ def _fold_claims(ledger: dict, memory: dict | None = None) -> list:
             "fold_observed": first_of("fold_observed") or _fold_observed(first, runs),
             "fold_confirmed": None,
             "status": status,
-            "folds": [{"fold": r.get("fold"), "run_id": r.get("run_id"), "status": st}
-                      for r, st in zip(recs, statuses)],
+            "folds": [_fold_entry(r, st) for r, st in zip(recs, statuses)],
             "tests": [{"spec_hash": h} for h in sorted({h for r in recs
                                                         for h in r.get("spec_hashes") or []})]}
         if status == CONFIRMED:
@@ -275,7 +374,8 @@ def _source_strategy(rid, runs: dict, configs: dict) -> dict:
 
 
 def build_memory_view(memory: dict, ledger: dict | None = None,
-                      configs: dict | None = None) -> dict:
+                      configs: dict | None = None,
+                      max_observation_rows: int = OBSERVATION_ROWS_MAX) -> dict:
     """The analyst's memory view from the campaign memory and the confirmations
     ledger (both already loaded; either may be empty). `configs`: {run id: that run's base
     strategy config}, for each claim's `source_strategy` (D-097)."""
@@ -295,8 +395,22 @@ def build_memory_view(memory: dict, ledger: dict | None = None,
                                                     runs if isinstance(runs, dict) else {},
                                                     configs or {})
     counts = {s: sum(1 for c in claims if c["status"] == s) for s in STATUSES}
-    return {"schema_version": SCHEMA_VERSION, "note": NOTE, "n_claims": len(claims),
+    view = {"schema_version": SCHEMA_VERSION, "note": NOTE, "n_claims": len(claims),
             "by_status": counts, "claims": claims}
+    observations = _memory_observations(memory)
+    if observations:                                   # absent without one: views unchanged
+        # the newest `max_observation_rows` (campaign_memory.tried_ideas' rule); the rest counted
+        kept = observations[-max_observation_rows:] \
+            if max_observation_rows and len(observations) > max_observation_rows else observations
+        for o in kept:
+            o["source_strategy"] = _source_strategy(o["source_run"],
+                                                    runs if isinstance(runs, dict) else {},
+                                                    configs or {})
+        view.update(observations_note=OBSERVATIONS_NOTE, observations_max_rows=max_observation_rows,
+                    observations_in_memory=len(observations),
+                    omitted_older_observations=len(observations) - len(kept),
+                    observations=kept)
+    return view
 
 
 def load_memory_view(root) -> dict:

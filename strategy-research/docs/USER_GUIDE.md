@@ -3354,17 +3354,24 @@ vehicle variant because decide-next gives the child the source config with the v
 applied, over the child's fold only, and writes one row to
 `campaign_record/confirmations.yaml` under `fold_confirmations` (and
 `artifacts/fold_confirmation.yaml` in the child): `confirmed`, `not_confirmed`,
-`not_measurable` (no events, fewer than 4 windows with a value, `tests: none`, bars or
+`not_measurable` (no events, a floor of the claim not met at any horizon, too few of the
+fold's windows with a value (a fold of 6 needs 5), `tests: none`, bars or
 source unreadable, or `vehicle_not_in_measured_config`: the measured variant's own
 strategy config does not carry the vehicle, so step 1b changed it) or `not_comparable` (the child's card carries other tests than the
 claim's; nothing is measured). **The rule is a noise rule, not a size rule, and no cost
 is compared:** confirmed when, at every horizon, the pooled effect has the claimed sign
-and the claimed sign holds in all but at most one window of the fold (at least 4
-windows with a value). Horizons with at least 4 windows are judged first: a refutation
-there is `not_confirmed` even if another horizon is too short to judge. A claim with no effect passes it about 11% of the time per fold
+and the claimed sign holds in all but at most one of the fold's windows; a window with
+no value (no bars, or no event) counts against, so a fold of 6 needs 5 windows with a
+value. A floor of the claim not met at any horizon makes the claim `not_measurable`,
+never a refutation. Horizons with enough windows with a value are judged first: a
+refutation there (the wrong sign, or a non-positive pooled value) is `not_confirmed`
+even if another horizon is too short to judge. A claim with no effect passes it about 11% of the time per fold
 (six windows; about 1% after two folds); a "window" is one coin's block, so with several
 coins it is stricter. The row records the effect size per horizon, the per-window
-values and the agreement (k of n). Refuted and not-measurable claims stay in the
+values and the agreement (k of the fold's windows, for example "5 of 6"). The row also keeps the per-window event
+counts (`events_per_window`, beside `per_window`) and, in each test entry, the claim's floor, so a
+not_measurable claim keeps what was measured; early exits before measurement keep status and reason
+only. Refuted and not-measurable claims stay in the
 ledger. With the flag on, explore_confirm's in-run route and its weak follow-up
 resolution are unreachable (a claim is never confirmed inside the run that inspired
 it); the campaign summary has one line per status, labelled by fold. A claim whose

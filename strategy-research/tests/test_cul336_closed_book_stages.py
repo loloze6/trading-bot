@@ -160,7 +160,7 @@ def test_reader_llm_passes_closed_book_options(monkeypatch):
 def test_analyst_llm_passes_closed_book_options(monkeypatch):
     """E-075 PR-5 (D-092): the analyst's session is closed-book like every stage -- no
     built-in tool, no settings, no config-file MCP server -- plus its one in-process server
-    (the six query tools) and a deny hook."""
+    (the seven query tools) and a deny hook."""
     cap = _Capture()
     monkeypatch.setattr(rpr, "query", cap.query)
     spec = {"server": {"type": "sdk", "name": "analyst", "instance": None},

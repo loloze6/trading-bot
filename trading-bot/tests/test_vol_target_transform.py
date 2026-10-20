@@ -270,11 +270,13 @@ def _old_module(rel, name):
 
 def test_every_other_op_is_unchanged():
     old = _old_module("strategies/registry.py", "_old_registry")
-    # "standardise" was added after this op by its own PR (tests/test_standardise_op.py)
-    assert set(TRANSFORM_OPS_REGISTRY) - set(old.TRANSFORM_OPS_REGISTRY) == {"vol_target", "standardise"}
+    # "standardise" was added after this op by its own PR (tests/test_standardise_op.py),
+    # "signed_power" by its own (tests/test_signed_power_op.py)
+    assert set(TRANSFORM_OPS_REGISTRY) - set(old.TRANSFORM_OPS_REGISTRY) == {
+        "vol_target", "standardise", "signed_power"}
     assert {k: v for k, v in old.TRANSFORM_MIN_PERIODS.items()} == \
         {k: v for k, v in __import__("strategies.registry", fromlist=["x"]).TRANSFORM_MIN_PERIODS.items()
-         if k not in ("vol_target", "standardise")}
+         if k not in ("vol_target", "standardise", "signed_power")}
     d = _daily(200, seed=5)
     d["stddev_24"] = d["close"].rolling(24).std()
     h = pd.Series(np.random.default_rng(6).normal(0, 3, 120))

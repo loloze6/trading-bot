@@ -1974,6 +1974,42 @@ def _card_candidate(entry: dict, info: dict, owner) -> dict:
     }
 
 
+LEGACY_NO_VEHICLE_REASON = (
+    f"{_rp.LEGACY_NO_VEHICLE}: a side finding written with `vehicle: []` before the operator's "
+    f"2026-10-19 ruling (D-151); deactivated, never ranked, nothing rewritten")
+
+
+def _legacy_no_vehicle_candidate(run_id: str, entry: dict, category: str, p: dict) -> dict:
+    """Operator ruling 2026-10-19 item 3 (D-151): an item reader_proposals.load_proposals
+    flagged LEGACY_NO_VEHICLE is out of the pool before the queue check, recorded as an
+    ineligible candidate with that one reason; no gate is evaluated for it."""
+    pid, parent = p["proposal_id"], entry.get("hypothesis_id")
+    return {
+        "candidate_id": pid,
+        "origin": ORIGIN_READER,
+        "kind": p["kind"],
+        "category": category,
+        "source_run": run_id,
+        "parent_hypothesis_id": parent,
+        "hypothesis_id": f"{parent}__{pid}",
+        "proposal_ref": f"runs/{run_id}/artifacts/proposals/{category}.yaml#{pid}",
+        "collapsed_sources": [],
+        "scores": {**{k: p["scores"][k] for k in _rp.SCORE_KEYS},
+                   "model_id": p.get("model_id"), "rubric_version": p.get("rubric_version")},
+        "resolved_config_sha256": None,
+        "gates": {
+            "novelty": {"exact_match": "NOT_EVALUATED", "matched_runs": [],
+                        "digest_advisory": {"outcome": "not_available", "family": None,
+                                            "family_confidence": None, "run_ids": []}},
+            "feasibility": {"result": "INFEASIBLE", "reasons": [LEGACY_NO_VEHICLE_REASON]},
+        },
+        "eligible": False,
+        "cost": {"backtests": None, "seconds_estimate": None,
+                 "basis": f"not evaluated: {_rp.LEGACY_NO_VEHICLE}"},
+        "rank": None,
+    }
+
+
 def quarantine_capped_text(capped: list) -> str:
     """", N capped after 3 component quarantines: <ids>" -- appended to R2's
     reason and to the decide-next stop detail; empty when nothing is capped."""
@@ -2155,6 +2191,9 @@ def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
         for item in src["proposals"]:
             p, cat = item["proposal"], item["category"]
             ref = f"runs/{run_id}/artifacts/proposals/{cat}.yaml#{p['proposal_id']}"
+            if p.get(_rp.LEGACY_NO_VEHICLE):  # operator ruling 2026-10-19 item 3 (D-151)
+                cands.append(_legacy_no_vehicle_candidate(run_id, entry, cat, p))
+                continue
             if ref in named:
                 continue  # already in the queue: out of the pool (§3.7)
             cands.append(_candidate(run_id, entry, src, cat, p, inputs, exact))

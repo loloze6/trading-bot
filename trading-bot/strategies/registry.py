@@ -149,6 +149,75 @@ def _standardise(v: float, h: pd.Series, p: dict[str, Any], d: pd.DataFrame | No
 
 
 # ---------------------------------------------------------------------------
+# signed_power (scalar): the graded soft dead zone (CUL-354).
+#
+#   out = pivot * sign(v) * (|v| / pivot) ** exponent
+#
+# A per-value op on the running value, like scale or clip. With exponent > 1 a
+# value below the pivot in absolute size shrinks (a weak forecast is damped
+# towards 0, smoothly, with no cliff like threshold_filter's) and one above it
+# grows; |v| == pivot is a fixed point, the sign and a zero survive. exponent 1
+# is the identity. Not a scale op: it does not put a component on the forecast
+# scale, so standardise (or vol_target) is still needed before it (D-149).
+# exponent is required (no default: a default of 1 would make an op that was
+# configured without one a silent no-op); pivot defaults to 10 (the forecast
+# scale's average absolute value).
+#
+# Bounds (operator ruling 2026-10-19, inclusive, same in the op and in V16):
+# 1 <= exponent <= 3; 10 <= pivot <= 20, the standardise target to its cap (a
+# pivot below the typical value amplifies the typical forecast, a re-scaling,
+# not a dead zone). Worst case for |v| <= 20 (standardise's cap): pivot 10,
+# exponent 3 turns 20 into 80. The engine's [-20, +20] clip is on the combined
+# forecast, not on each component, so a component can carry up to 80 into the
+# combination. Fail loud, as vol_target: a non-finite input or output (e.g. an
+# unscaled raw value so large that the power overflows) raises ValueError.
+# Placement (V16, as vol_target's V14): only a strategies component's
+# `transforms` in a regime without `blocks`, where that raise lands in
+# generate_signals' guard; elsewhere it would desync histories or escape it.
+#
+# WHY THIS CANNOT LEAK: it reads only the current running value `v`, never the
+# history or the bar data.
+# ---------------------------------------------------------------------------
+SIGNED_POWER_DEFAULTS = {"pivot": 10.0}
+SIGNED_POWER_BOUNDS = {"exponent": (1.0, 3.0), "pivot": (10.0, 20.0)}
+
+
+def signed_power_param_errors(p: Any) -> list[str]:
+    """Problems with a signed_power params dict ([] when valid). Shared by the op
+    and validate_config.py's V16, so both refuse exactly the same params."""
+    if not isinstance(p, dict):
+        return [f"params must be a mapping, got {type(p).__name__}"]
+
+    def _num(x):
+        return isinstance(x, (int, float)) and not isinstance(x, bool) and bool(np.isfinite(x))
+    e_lo, e_hi = SIGNED_POWER_BOUNDS["exponent"]
+    p_lo, p_hi = SIGNED_POWER_BOUNDS["pivot"]
+    errors = []
+    if "exponent" not in p:
+        errors.append("missing param 'exponent'")
+    elif not (_num(p["exponent"]) and e_lo <= p["exponent"] <= e_hi):
+        errors.append(f"exponent must be a finite number with {e_lo:g} <= exponent <= {e_hi:g} "
+                      f"(1 is the identity, above 3 over-amplifies), got {p['exponent']!r}")
+    if "pivot" in p and not (_num(p["pivot"]) and p_lo <= p["pivot"] <= p_hi):
+        errors.append(f"pivot must be a finite number with {p_lo:g} <= pivot <= {p_hi:g} "
+                      f"(the standardise target to its cap), got {p['pivot']!r}")
+    return errors
+
+
+def _signed_power(v: float, h: pd.Series, p: dict[str, Any], d: pd.DataFrame | None) -> float:
+    errors = signed_power_param_errors(p)
+    if errors:
+        raise ValueError(f"signed_power: {'; '.join(errors)}")
+    if not np.isfinite(v):
+        raise ValueError(f"signed_power: input value is not finite ({v!r})")
+    pivot = p.get("pivot", SIGNED_POWER_DEFAULTS["pivot"])
+    out = pivot * np.sign(v) * np.power(abs(v) / pivot, p["exponent"])
+    if not np.isfinite(out):
+        raise ValueError(f"signed_power: output is not finite ({out!r})")
+    return float(out)
+
+
+# ---------------------------------------------------------------------------
 # Pipeline-based transform ops
 # Signature: (v: float, h: pd.Series, p: dict, data: pd.DataFrame | None) -> float
 #
@@ -158,7 +227,8 @@ def _standardise(v: float, h: pd.Series, p: dict[str, Any], d: pd.DataFrame | No
 #
 # WARNING: history-based ops (identity, percentile, zscore, ratio_to_mean, ema, standardise)
 # discard the accumulated pipeline value and recompute from the raw history.
-# They must appear BEFORE any scalar ops (scale, threshold_filter, clip, negate, sigmoid).
+# They must appear BEFORE any scalar ops (scale, threshold_filter, clip, negate, sigmoid,
+# signed_power).
 # Writing [scale, percentile] silently throws away the scale output.
 #
 # Use apply_transform_pipeline() to run an ordered list of these ops.
@@ -180,6 +250,7 @@ TRANSFORM_OPS_REGISTRY: Dict[str, Any] = {
     "clip":              lambda v, h, p, d: float(np.clip(v, p.get("min", -np.inf), p.get("max", np.inf))),
     "sigmoid":           lambda v, h, p, d: float(1.0 / (1.0 + np.exp(-v))),
     "negate":            lambda v, h, p, d: -v,
+    "signed_power":      _signed_power,
     # Data-aware — read current OHLCV bar from `d`
     # Intentionally NO guard: NaN stddev_24 must propagate as NaN (not 0.0) so that
     # pandas mean() in ratio_to_mean skips those entries rather than being poisoned.
@@ -245,6 +316,7 @@ TRANSFORM_MIN_PERIODS: Dict[str, int] = {
     "clip":              1,
     "sigmoid":           1,
     "negate":            1,
+    "signed_power":      1,
     "vol_normalize":     1,
     "vol_adjusted":      1,
     "price_normalized":  1,

@@ -109,18 +109,54 @@ without a claim test; a person can add the block for later ideas.
 | kind | parameters | selects |
 |---|---|---|
 | `all` | none | every bar |
-| `event` | `field`: `forecast`, `close` or `past_return` (with `bars`); `op`: `>=` `>` `<=` `<` `==`; `value`: a number | bars where `field op value` |
-| `quantile` | `field`: `forecast`, `close` or `past_return` (with `bars`); `side`: `top` or `bottom`; `q` in (0, 0.5]; `lookback`: int >= 2 | bars in the top/bottom `q` of the trailing `lookback` bars (past only) |
+| `event` | `field`: `forecast`, `abs_forecast`, `forecast_sign_change`, `close`, `past_return` (with `bars`) or `trailing_vol` (with `bars`); `op`: `>=` `>` `<=` `<` `==`; `value`: a number | bars where `field op value` |
+| `quantile` | `field`: `forecast`, `abs_forecast`, `close`, `past_return` (with `bars`) or `trailing_vol` (with `bars`); `side`: `top` or `bottom`; `q` in (0, 0.5]; `lookback`: int >= 2 | bars in the top/bottom `q` of the trailing `lookback` bars (past only) |
 | `calendar` | `weekdays`: list of 0 (Monday) .. 6 and/or `hours`: list of 0 .. 23 (UTC) | bars on those days/hours |
 | `regime` | `value: <label>` or `values: [<labels>]` | bars whose regime label is one of these |
 | `regime_change` | `to: <label>` | bars where the regime label changes to `to` |
+| `all_of` | `selectors`: a list of 2 to 3 bar selectors (`event`, `quantile`, `calendar`, `regime` or `regime_change`; not `all`, not another `all_of`, none twice) | bars where every listed selector holds (their AND); a bar is compared with the baseline only where every part is defined |
 
 Fields: `forecast` is the block's forecast at bar t; `close` is the price LEVEL at bar t;
 `past_return` is the MOVE that ended at bar t, close[t] / close[t - n] - 1, and needs
 `bars: n` (an int >= 1, in bars of the card's timeframe); for example
 `{kind: quantile, field: past_return, bars: 1, side: top, q: 0.1, lookback: 500}` selects the
 largest one-bar rises. `past_return` is empty for the first n bars of each window and
-wherever a bar in between is missing. `bars` is allowed only with `past_return`.
+wherever a bar in between is missing. `trailing_vol` is the VOLATILITY that ended at bar t,
+the sample standard deviation of the n one-bar log returns log(close[i] / close[i - 1]) for
+i = t - n + 1 .. t, and needs `bars: n` (an int >= 2, in bars of the card's timeframe); for
+example `{kind: quantile, field: trailing_vol, bars: 24, side: top, q: 0.2, lookback: 500}`
+on 1h bars selects the bars whose past 24 hours were among the most volatile. It is empty
+under the same rule as `past_return`: the first n bars of each window and wherever a bar in
+between is missing. `bars` is allowed only with `past_return` and `trailing_vol`.
+
+`abs_forecast` is |forecast[t]|, the size of the block's forecast at bar t whatever its sign; it is empty where the forecast is empty. `forecast_sign_change` is 1 on bar t when the forecasts at bars t - 1 and t have strictly opposite signs, and 0 otherwise (a forecast of exactly 0 has no sign, so a move to or from 0 is not a change); it is empty on the first bar of each window, wherever bar t - 1 is missing, and wherever either forecast is empty. Select it with `{kind: event, field: forecast_sign_change, op: "==", value: 1}`; it is 0 or 1, so a `quantile` on it is refused. Neither takes `bars`. Why neither can leak: they read the forecast saved at the close of bar t (and, for `forecast_sign_change`, of bar t - 1), never a later bar.
+
+Guidance for `past_return` (nothing refuses this; it is advice): a REVERSAL claim on
+`past_return` (`less` after a rise, `greater` after a fall) is favoured by the measurement
+itself. On a simulated random walk with no edge, an `event` cut-off on `past_return` lets a
+reversal claim clear the fold's noise rule about twice as often as the documented chance of
+about 0.11: 0.23 for `less` after a rise and 0.22 for `greater` after a fall, against about
+0.04 to 0.05 for the momentum claim on the same bars. A `quantile` cut-off is less affected
+(0.135 for `less` against 0.079 for `greater`). The cause is overlap inside a window: the
+forward move of a selected bar is part of the `past_return` of the bars after it, so a
+selected bar followed by a rise pulls more bars into the selection, and the mean over the
+selected bars is biased low. A reversal result on `past_return` is therefore weaker evidence
+than a reversal result on `trailing_vol`, which the report measured as symmetric, and a momentum result is slightly
+stronger. Prefer a `quantile` cut-off to an absolute `event` cut-off, and state the reversal
+bias in the claim's explanation. Source:
+`strategy-research/engineering/FOLD-FLOORS-2026-10-19/REPORT.md` (sections 2.2 and 2.3; the
+rates are simulated, not measured on market data).
+
+Guidance for `trailing_vol` (nothing refuses these; they are advice):
+- A volatility-conditioned DIRECTION claim should use `statistic: hit_rate` or a `quantile`
+  selector, not `mean_diff` on an absolute `event` cut-off: `fwd_return` is arithmetic, so its
+  mean rises with volatility with no edge, and volatility persists, so a fixed cut-off often
+  selects all or none of a window.
+- `trailing_vol` against `fwd_volatility` or `fwd_max_drawdown` measures persistence, not an edge.
+
+**`all_of` selects the bars where 2 to 3 conditions hold together.** Write each condition as a bar selector of its own, for example
+`{kind: all_of, selectors: [{kind: event, field: trailing_vol, bars: 24, op: ">=", value: 0.01}, {kind: event, field: forecast_sign_change, op: "==", value: 1}]}`.
+A bar is selected when every part selects it, and it can be in the baseline only where every part is defined (a part that is empty at a bar, like `past_return` in a window's first bars, leaves that bar out of both groups). Rules: 2 to 3 parts; no nesting (list every condition in one `all_of`); no `all` part (it adds nothing); no part twice; no other keys. The order of the parts does not matter. It works as the selector and as the selector of an `other_selector` baseline. A `regime` or `regime_change` part is allowed and gives an effect size only.
 
 **Regime selectors are measured like any other selector.** Write them when the claim is
 about a regime: the run continues normally, and the measured effect is kept.
@@ -197,7 +233,7 @@ attempts and the holdout.
 | `redundancy` | `tests: none` (missing: an outcome measured against the current composite). Residual IC is added by code, never a card criterion, so `criteria_refs` cannot name it |
 | `lead_lag` | `tests: none` (missing outcome `fwd_return_of(other_symbol, h)`) |
 | `data_feed_value` | `criteria_refs`, or a test on the feed-built forecast |
-| `cost_turnover` | `tests: none` (missing: a cost/turnover outcome; the ratio criterion is retired for blocks, D-133, so `criteria_refs` cannot name it) |
+| `cost_turnover` | test one: the cause (horizon_decay, direction_forecast by horizon, conditional_behaviour on abs_forecast, or event on forecast_sign_change); the cost share is evidence from trade_slice and window_economics, not a test. |
 | `robustness` | `criteria_refs: [sign_consistent_by_era]` |
 
 The `kind` says whether the idea could be a block: a forecast kind is a forecast-block
