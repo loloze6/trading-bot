@@ -5375,7 +5375,12 @@ def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -
                 errors = errors + [str(exc)]
             else:
                 if rec.get("outcome") == "no_claim" or rec.get("claim_card_ok"):
-                    errors = errors + _reading_content_errors(reading, category, run_dir)
+                    # D-095 extended (2026-10-20): the content check's side finding review now
+                    # repeats check_answer's own D-095 refusal; it is listed once, unchanged
+                    said = {f"side_findings[{i}]: {e}" for e in errors
+                            for i in range(len(reading.get("side_findings") or []))}
+                    errors = errors + [e for e in _reading_content_errors(reading, category, run_dir)
+                                       if e not in said]
         record.update(rec)
         record["attempts"].append({"status": "refused" if errors else "accepted",
                                    "errors": errors, "subtype": meta.get("subtype"),
@@ -18239,6 +18244,23 @@ def _claim_check_folds() -> dict:
     return {"folds": True} if _folds_enabled() else {}
 
 
+def _check_1a_claim(cc, claim, criteria_ids):
+    """The step 1a claim check of one card (_claim_check_cards): check_claim with the
+    pipeline's keywords, plus, with the trade family on (orchestrator.analyst.enabled), D-095
+    extended beyond the analyst (operator, 2026-10-20): a test selecting lots by an exit-time
+    field and measuring their own outcome is refused with the analyst's own message
+    (analyst_session.exit_selector_own_outcome_errors) and the claim's tests dropped, as for
+    any refused claim. Family off: exactly check_claim. Not in check_claim: fold confirmation
+    re-checks recorded claims through check_claim alone."""
+    res = cc.check_claim(claim, criteria_ids, **_claim_check_kw())
+    if _analyst_enabled():                 # the flag under which _claim_check_kw passes trade_tests
+        d095 = _analyst_session_module().exit_selector_own_outcome_errors(claim)
+        if d095:
+            res.errors += d095
+            res.tests = []
+    return res
+
+
 def _claim_check_exempt(run_dir: Path, card) -> str | None:
     """Why a card carries no 1a-written claim (DESIGN D6), else None. Decided
     from the run's inputs, never from a field the card writes about itself:
@@ -18288,9 +18310,9 @@ def _claim_check_cards(run_dir: Path, run_id: str, attempt, stage: str, *,
             continue
         card = load_yaml(path)
         exempt = _claim_check_exempt(run_dir, card)
-        res = None if exempt else cc.check_claim(
-            (card or {}).get("claim") if isinstance(card, dict) else None,
-            cc.card_criteria_ids(card or {}), **_claim_check_kw())
+        res = None if exempt else _check_1a_claim(
+            cc, (card or {}).get("claim") if isinstance(card, dict) else None,
+            cc.card_criteria_ids(card or {}))
         power = []
         if res is not None and not res.errors and res.tests:
             if known_power is not None and path.name in known_power:

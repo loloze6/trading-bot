@@ -366,10 +366,22 @@ def own_spec_hashes(card) -> set:
 
 def _check(claim, folds: bool, trade_tests: bool):
     """check_claim with the folds kinds (D-089) and the trade-level test family (D-091),
-    each passed only when on, so a call with both off is exactly the original one."""
+    each passed only when on, so a call with both off is exactly the original one.
+    D-095, extended beyond the analyst (operator, 2026-10-20): with the trade family on, a
+    test selecting lots by an exit-time field and measuring their own outcome is refused here
+    too, with the analyst's own message (analyst_session.exit_selector_own_outcome_errors),
+    and the claim's tests are dropped as for any refused claim. Not in check_claim: fold
+    confirmation re-checks recorded claims through check_claim alone."""
     import claim_card as cc
     kw = {**({"folds": True} if folds else {}), **({"trade_tests": True} if trade_tests else {})}
-    return cc.check_claim(claim, **kw)
+    res = cc.check_claim(claim, **kw)
+    if trade_tests:
+        import analyst_session as asm  # tools/ sibling, light; imported only with the family on
+        d095 = asm.exit_selector_own_outcome_errors(claim)
+        if d095:
+            res.errors += d095
+            res.tests = []
+    return res
 
 
 def side_finding_review(item: dict, *, prior: dict, own: set, run_id: str,
