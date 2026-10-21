@@ -393,6 +393,12 @@ def _layer1_price_precheck_structural(layer1: dict, exchange: str, symbol: str, 
 # coin has the strategy's warm-up bars BEFORE the window start.
 # ---------------------------------------------------------------------------
 
+# The start of layer1_warmup_check's failure reason. run_phase1_research reads it
+# (PR-13) to tell a window excluded only because the coin's history starts inside
+# the warm-up -- which no fetch can close -- from one the exchange has a gap in.
+WARMUP_REASON_PREFIX = "warm-up:"
+
+
 def strategy_required_bars(config: dict) -> Optional[int]:
     """AdvancedStrategy.required_bars for a strategy config DICT, computed the
     way trading-bot/strategies/main_strategy.py:61-65 computes it (the max of
@@ -467,7 +473,7 @@ def layer1_warmup_check(layer1: dict, exchange: str, symbol: str, timeframe: str
     available = max(int((window_start - earliest).total_seconds() // interval_seconds), 0)
     if available < warmup_bars:
         return False, (
-            f"warm-up: {available} bars before the window start, {warmup_bars} needed "
+            f"{WARMUP_REASON_PREFIX} {available} bars before the window start, {warmup_bars} needed "
             f"(the strategy's 2 x required_bars warm-up; {symbol}'s first bar on {exchange} is "
             f"{earliest}, window start {window_start}) -- the backtest would crash its warm-up "
             f"probe; the window is excluded, not covered")

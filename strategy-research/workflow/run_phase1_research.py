@@ -1945,6 +1945,14 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     print(f"⚠️  data_availability_gate: asset variant '{variant_id}' "
                           f"{outcome} -- not_tested, non-blocking (D-042).")
                 variants_idx[variant_id] = {**vinfo, "status": "not_tested", "reason": reason}
+                if variant_id == "base" and _gate_excluded_only_by_warmup(gate_result):
+                    # PR-13 (D-169 note): the base variant's coin history starts
+                    # inside the strategy's warm-up -- no fetch can create it, so
+                    # no request row. The base variant is still not_tested with
+                    # the reason above. Base only: other variants keep their row.
+                    print(f"ℹ️  data_availability_gate: base variant '{variant_id}' excluded only by "
+                          "the warm-up (coin history starts inside it); no data request written.")
+                    continue
                 data_requests.append({
                     "variant_id": variant_id, "outcome": outcome,
                     "reason": reason, "reasons": reasons,
@@ -7797,6 +7805,30 @@ def _gate_shortfall_fetchable(gate: dict) -> bool:
         if r.get("layer") != 2:
             return False
     return True
+
+
+def _gate_excluded_only_by_warmup(gate: dict) -> bool:
+    """PR-13 (D-169 note): True when a data_availability_gate.yaml decline / refine
+    is entirely windows excluded because the coin's history starts inside the
+    strategy's warm-up (Layer 1, reason starting data_availability_gate.
+    WARMUP_REASON_PREFIX) -- a shortfall the exchange cannot fill, since the coin
+    simply did not exist yet, so a data_requests.yaml row asking to fetch it would
+    be unfetchable. False when any non-validating window is anything else (a
+    Layer-2 gap, a structural Layer-1 decline) or any aux feed does not validate:
+    that variant still gets its row. False when nothing is non-validating. The helper is
+    kind-agnostic; its caller applies the skip to the base variant only."""
+    import data_availability_gate as _dag  # tools/ sibling: the reason prefix
+    if not isinstance(gate, dict) or gate.get("outcome") not in ("decline", "refine"):
+        return False
+    bad = [r for r in (gate.get("windows") or []) if isinstance(r, dict)
+           and r.get("outcome") != "validate"]
+    bad_aux = [r for r in (gate.get("aux_feeds") or []) if isinstance(r, dict)
+               and r.get("outcome") != "validate"]
+    if not bad or bad_aux:
+        return False
+    return all(r.get("layer") == 1
+               and str(r.get("reason") or "").startswith(_dag.WARMUP_REASON_PREFIX)
+               for r in bad)
 
 
 # E-036 S2a: the exact-match gate's skip reason prefix (_gate_config_direct_variants).

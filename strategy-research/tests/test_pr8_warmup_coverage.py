@@ -24,6 +24,7 @@ Covers:
 Sandbox: synthetic Layer-1 audits and configs only. No local_data read, no network, no
 market data. Windows are 2019-2021 (no sealed-range date).
 """
+import asyncio
 import copy
 import datetime
 import functools
@@ -50,6 +51,8 @@ import run_phase1_research as rpr  # noqa: E402
 
 from test_e061_c2_s2b_one_coin_per_variant import (  # noqa: E402
     _asset, _copy_coin_configs, _ctx, _months, _set_flags, _source, _synthetic)
+from test_e033_slice4a_variant_loop import _set_flag, _write_three_variant_index  # noqa: E402
+from test_e033_slice4b_gate_conformance_promotion import _setup_variant_loop_run  # noqa: E402
 from test_k3_protocol_pinning import _minimal_run  # noqa: E402
 
 COMP = "strategies.strategy_components."
@@ -402,3 +405,115 @@ def test_an_asset_variant_without_warmup_is_not_run_through_the_real_resolver():
     assert all(u["reason"].startswith("warm-up:") for u in res["coverage"]["uncovered"])
     plain = vc.resolve_variant(_asset(), **{**ctx, "precheck": dag.layer1_price_precheck})
     assert plain["ok"] is True
+
+
+# ---------------------------------------------------------------------------
+# 6. PR-13 (D-169 note): a variant excluded only by the warm-up writes no data request
+# ---------------------------------------------------------------------------
+
+def _warmup_gate_doc():
+    """The REAL gate's record for a coin whose Layer-1 history starts inside the warm-up before every
+    window (ADA-like: 95 daily bars before 2019-01, 540 needed): every window a Layer-1 decline."""
+    windows = [{"label": "2019-01", "test": {"start": "2019-01-01", "end": "2019-05-01"}},
+               {"label": "2019-06", "test": {"start": "2019-06-01", "end": "2019-09-01"}}]
+    return dag.evaluate_variant(SLOW, _gate_protocol(windows), layer1=_layer1(_earliest_before(95)))
+
+
+def _window(outcome, layer, reason, label="2019-01"):
+    return {"label": label, "symbol": "ADAUSD", "start": "2019-01-01", "end": "2019-05-01",
+            "layer": layer, "outcome": outcome, "reason": reason}
+
+
+def test_the_real_gate_record_of_a_coin_inside_the_warmup_is_warmup_only():
+    gate = _warmup_gate_doc()
+    assert gate["outcome"] == "decline"
+    assert all(w["layer"] == 1 and w["reason"].startswith(dag.WARMUP_REASON_PREFIX) for w in gate["windows"])
+    assert rpr._gate_excluded_only_by_warmup(gate) is True
+
+
+def test_warmup_only_is_true_for_a_refine_whose_other_window_validates():
+    gate = {"outcome": "refine", "windows": [
+        _window("decline", 1, "warm-up: 95 bars before the window start, 540 needed (...)"),
+        _window("validate", 2, "fully available", label="2020-07")]}
+    assert rpr._gate_excluded_only_by_warmup(gate) is True
+
+
+@pytest.mark.parametrize("gate", [
+    # a genuine gap the exchange has (Layer 2)
+    {"outcome": "decline", "windows": [_window("decline", 2, "42.0% of the expected bars are missing")]},
+    # a warm-up window AND a genuine gap: the gap still needs its request
+    {"outcome": "refine", "windows": [_window("decline", 1, "warm-up: 95 bars before the window start, 540 needed"),
+                                      _window("decline", 2, "gap", label="2020-07")]},
+    # a structural Layer-1 decline (symbol not listed) is not a warm-up exclusion
+    {"outcome": "decline", "windows": [_window("decline", 1, "NOTLISTED is not in confirmed_universe")]},
+    # an aux feed that does not validate
+    {"outcome": "refine", "windows": [_window("decline", 1, "warm-up: 95 bars before the window start, 540 needed")],
+     "aux_feeds": [{"feed": "funding", "outcome": "decline", "label": "2019-01"}]},
+    {"outcome": "validate", "windows": [_window("validate", 2, "fully available")]},
+    {"outcome": "decline", "windows": []},
+    {},
+])
+def test_warmup_only_is_false_for_anything_else(gate):
+    assert rpr._gate_excluded_only_by_warmup(gate) is False
+
+
+def _run_gate_loop(monkeypatch, run_id, gate_docs):
+    """Run the per-variant data gate (variant loop) with each variant's gate record fixed by
+    `gate_docs` (variant id -> gate yaml dict); returns (run_dir, index variants, data_requests rows)."""
+    _set_flag(rpr.ROOT, {"config_direct_authoring": {"enabled": True}, "variant_loop": {"enabled": True}})
+    run_dir = _setup_variant_loop_run(rpr.ROOT, run_id, f"{run_id}.json")
+    _write_three_variant_index(run_dir)
+
+    def _fake_subprocess_run(cmd, *args, **kwargs):
+        variant_id = Path(cmd[2]).parent.name
+        out_dir = Path(cmd[cmd.index("--out-dir") + 1])
+        out_dir.mkdir(parents=True, exist_ok=True)
+        doc = gate_docs[variant_id]
+        rpr.save_yaml(out_dir / "data_availability_gate.yaml", doc)
+
+        class _Result:
+            returncode = {"validate": 0, "decline": 2, "refine": 3}[doc["outcome"]]
+            stdout = ""
+            stderr = ""
+        return _Result()
+
+    monkeypatch.setattr(rpr.subprocess, "run", _fake_subprocess_run)
+    asyncio.run(rpr.run_tool_worker("data_availability_gate", run_id))
+    variants = rpr.load_yaml(run_dir / "artifacts" / "variants" / "index.yaml")["variants"]
+    path = rpr.ROOT / "campaign_record" / "data_requests.yaml"
+    rows = (rpr.load_yaml(path) or {}).get("requests", []) if path.exists() else []
+    return run_dir, variants, rows
+
+
+def test_a_base_variant_excluded_only_by_the_warmup_writes_no_data_request(monkeypatch):
+    ok = {"outcome": "validate", "reasons": ["all windows and aux feeds fully available"]}
+    _, variants, rows = _run_gate_loop(monkeypatch, "run_990", {
+        "base": _warmup_gate_doc(), "design_v2": ok, "asset_v2": ok})
+    # still excluded, with the warm-up reason in the index ...
+    assert variants["base"]["status"] == "not_tested"
+    assert variants["base"]["reason"].startswith("data_availability_gate outcome=decline:")
+    assert "warm-up:" in variants["base"]["reason"]
+    # ... but no request asking the exchange for history that does not exist
+    assert rows == []
+    assert not (rpr.ROOT / "campaign_record" / "data_requests.yaml").exists()
+
+
+def test_a_non_base_variant_excluded_only_by_the_warmup_still_writes_its_data_request(monkeypatch):
+    ok = {"outcome": "validate", "reasons": ["all windows and aux feeds fully available"]}
+    _, variants, rows = _run_gate_loop(monkeypatch, "run_992", {
+        "base": ok, "design_v2": _warmup_gate_doc(), "asset_v2": ok})
+    assert variants["base"]["status"] == "validated"
+    assert variants["design_v2"]["status"] == "not_tested"
+    assert "warm-up:" in variants["design_v2"]["reason"]
+    # the skip is for the base variant only: a design variant keeps its request row
+    assert [(r["variant_id"], r["outcome"]) for r in rows] == [("design_v2", "decline")]
+
+
+def test_a_genuine_data_gap_still_writes_its_request_next_to_a_warmup_exclusion(monkeypatch):
+    ok = {"outcome": "validate", "reasons": ["all windows and aux feeds fully available"]}
+    gap = {"outcome": "decline", "reasons": ["ADAUSD 2019-01: 42.0% of the expected bars are missing"],
+           "windows": [_window("decline", 2, "42.0% of the expected bars are missing")]}
+    _, variants, rows = _run_gate_loop(monkeypatch, "run_991", {
+        "base": _warmup_gate_doc(), "design_v2": gap, "asset_v2": ok})
+    assert variants["base"]["status"] == variants["design_v2"]["status"] == "not_tested"
+    assert [(r["variant_id"], r["outcome"]) for r in rows] == [("design_v2", "decline")]
