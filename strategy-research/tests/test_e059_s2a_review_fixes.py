@@ -312,7 +312,12 @@ def test_a_1a_rerun_rewrites_the_pass_rule_and_rechecks_the_id(campaign_root):
 # prompt changes of the operator's direction paste 2026-10-21 (PR-2: item 2 of the graded signal concept list
 # and the approximation sentence; PR-3: the fill-timing sentence). Changes hypothesis_generation's prompt.
 # Previous pin (D-143): 3120abe6bc674cb4af513bd387c694dc763cd56d1175cb05c0790225a374a216.
-_MASTER_SKILL_SHA256 = "7ddd477c214bdc3c7584c4c014b5fcbac14a2fc4ac137e61d98d83fec1e85e60"
+# RE-PINNED by D-170 (2026-10-21, branch fix/power-note-and-prior-failures): pin updated because of the declared
+# prompt change of the operator's direction paste 2026-10-21 (PR-10) -- the "cite the run_ids" sentence for
+# library_lookup.prior_campaign_failures now asks for the object form {run_id, mechanism_tried}; the schema gains
+# the optional power_parameters.power_note the skill already asked for. Changes hypothesis_generation's prompt.
+# Previous pin (D-163/D-164): 7ddd477c214bdc3c7584c4c014b5fcbac14a2fc4ac137e61d98d83fec1e85e60.
+_MASTER_SKILL_SHA256 = "c61311bb4ce854574ba5296a6a595e1769c652e280815e6834ff7ebbba1e1732"
 
 
 def test_hypothesis_design_skill_is_byte_identical_to_master():
