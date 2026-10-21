@@ -296,9 +296,9 @@ fresh search space.
    change the mechanism, not a parameter alone. An `inconclusive` row, or a
    bare-name family entry with no diagnosis, is weaker evidence — say what would make
    the next test decisive.
-3. Record what you checked in `library_lookup.prior_campaign_failures` (cite the
-   `run_id`s you are redirecting from) so the decision is auditable, not just
-   asserted.
+3. Record what you checked in `library_lookup.prior_campaign_failures` (cite each
+   one you are redirecting from as `{run_id, mechanism_tried}`, the object form of
+   that list's items) so the decision is auditable, not just asserted.
 
 **This is raw material, not the gate.** The mechanical refusal is the exact-match
 check at step 5a (`tools/anti_adjacency_gate.py`: same config, coins, timeframe and
