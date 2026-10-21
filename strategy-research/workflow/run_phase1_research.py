@@ -41,6 +41,7 @@ import yaml
 from datetime import datetime, timezone
 import argparse
 import contextlib
+import functools
 import os
 import re
 import asyncio
@@ -20300,8 +20301,19 @@ def _variant_coin_context(run_dir: Path, run_id: str, *, source: dict | None = N
     if not eras:
         raise RuntimeError(f"[E-061 C2 S2b] {run_id}: {_DATA_POLICY_PATH} declares no eras -- "
                            f"D-042's era count for an asset coin cannot be judged.")
+    # PR-8 (D-169): D-042's window coverage also requires the strategy's warm-up
+    # bars before each window's start. An asset variant is an empty patch on the
+    # base config (G3), so the warm-up is the base config's (backtest_spec.yaml
+    # `config`, written by 1b before Step 2 and 5a). No such file / config:
+    # no warm-up rule, the precheck exactly as before.
+    precheck = _dag.layer1_price_precheck
+    spec_path = Path(run_dir) / "artifacts" / "backtest_spec.yaml"
+    spec = load_yaml(spec_path) if spec_path.exists() else None
+    warmup_bars = _dag.warmup_bars_needed((spec or {}).get("config") or {})
+    if warmup_bars is not None:
+        precheck = functools.partial(_dag.layer1_price_precheck, warmup_bars=warmup_bars)
     return {"source": source, "universe": universe, "layer1": layer1,
-            "precheck": _dag.layer1_price_precheck,
+            "precheck": precheck,
             "era_of": lambda ts: _pres.era_id_for_timestamp(ts, eras)}
 
 

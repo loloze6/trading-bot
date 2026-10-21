@@ -192,9 +192,9 @@ def _finer_interval_covers(requested_seconds: Optional[int], available_seconds: 
     )
 
 
-def layer1_price_precheck(layer1: dict, exchange: str, symbol: str, timeframe: str,
-                           window_start: datetime.datetime, window_end: datetime.datetime,
-                           now: Optional[datetime.datetime] = None) -> tuple[bool, str]:
+def _layer1_price_precheck_structural(layer1: dict, exchange: str, symbol: str, timeframe: str,
+                                       window_start: datetime.datetime, window_end: datetime.datetime,
+                                       now: Optional[datetime.datetime] = None) -> tuple[bool, str]:
     """
     Cheap, zero-network structural check for PRICE data: could (exchange,
     'spot', symbol, timeframe, window) possibly exist at all. `spot` is
@@ -386,6 +386,110 @@ def layer1_price_precheck(layer1: dict, exchange: str, symbol: str, timeframe: s
             f"the source, not just gappy in cache."
         )
     return True, "ok"
+
+
+# ---------------------------------------------------------------------------
+# Warm-up coverage (PR-8, D-169) -- a window counts as covered only when the
+# coin has the strategy's warm-up bars BEFORE the window start.
+# ---------------------------------------------------------------------------
+
+def strategy_required_bars(config: dict) -> Optional[int]:
+    """AdvancedStrategy.required_bars for a strategy config DICT, computed the
+    way trading-bot/strategies/main_strategy.py:61-65 computes it (the max of
+    the regime engine's and the strategy engine's get_required_periods() and
+    24) without constructing AdvancedStrategy (which wants a file path and
+    imports trading-bot's tools package). None when the config has no
+    `regime_detector` / `strategies` section (nothing to derive it from: the
+    caller then applies no warm-up rule), and also None when building the
+    engines from a malformed config raises (not judged: the rule is skipped,
+    the gate does not crash). Config content only -- no market data is read."""
+    if not (isinstance(config, dict) and config.get("regime_detector") and config.get("strategies")):
+        return None
+    from strategies.regime_engine import ConfigDrivenRegimeEngine  # noqa: E402  (trading-bot on sys.path)
+    from strategies.strategy_engine import ConfigDrivenStrategyEngine  # noqa: E402
+    try:  # an import failure is an environment fault and still raises; only a bad config is "not judged"
+        return max(
+            ConfigDrivenRegimeEngine(config["regime_detector"]).get_required_periods(),
+            ConfigDrivenStrategyEngine(config["strategies"]).get_required_periods(),
+            24,  # main_strategy.py std_dev_period
+        )
+    except Exception:
+        return None
+
+
+def warmup_bars_needed(config: dict) -> Optional[int]:
+    """The bars a coin must have BEFORE a window's start for the backtest not to
+    crash: 2 x required_bars, what the launcher prefetches (core/launcher.py:
+    950-955) and then probes with `assert probe.is_ready()` (:1013-1027).
+
+    Why not required_bars itself (the component lookback plus the standardise
+    min_periods, strategy_engine.py:571-578, which is also what the paste's
+    PR-8 names): that is when a component's FIRST history value exists. The
+    strategy is ready only when each component's history holds max(warmup,
+    need) values (strategy_engine.py:566-569, warmup = required_bars), so the
+    probe needs about component_lookback + required_bars - 1 bars, i.e.
+    nearly 2 x required_bars (ADA on run_098: required_bars 270 for a 250-bar
+    component, ready only at ~519 bars). A coin with required_bars bars would
+    pass a required_bars rule and still crash the probe. Requiring the full
+    prefetch (2 x required_bars) is the one number under which the probe sees
+    exactly what any full-history coin gives it, so it cannot crash on the
+    coin's history; it can over-exclude a coin whose true need is a little
+    under 2 x required_bars, which is the safe direction. None when
+    strategy_required_bars is None."""
+    required = strategy_required_bars(config)
+    return None if required is None else 2 * required
+
+
+def layer1_warmup_check(layer1: dict, exchange: str, symbol: str, timeframe: str,
+                        window_start: datetime.datetime, warmup_bars: int) -> tuple[bool, str]:
+    """(ok, reason): does `symbol` have `warmup_bars` bars of `timeframe`
+    BEFORE `window_start`? Counted from the coin's Layer-1 first-bar date
+    (venues.<exchange>.spot.symbols.earliest_ohlcv_utc.<symbol>: a calendar
+    fact about when the coin's data begins, from its cache's first row or the
+    venue audit) -- n = whole bars between that date and the window start. No
+    bar, return or result is read, and the span checked ends AT the window
+    start: no lookahead.
+
+    A coin the audit holds no first-bar date for is not judged here (ok, as
+    layer1_price_precheck's own Kraken per-coin rule: a missing entry does not
+    decline by itself; Binance's missing entry already declined upstream).
+    Reason on failure starts "warm-up: n bars before the window start, k
+    needed"."""
+    spot = ((((layer1 or {}).get("venues") or {}).get(exchange) or {}).get("spot") or {})
+    earliest_str = ((spot.get("symbols") or {}).get("earliest_ohlcv_utc") or {}).get(symbol)
+    interval_seconds = _timeframe_to_seconds(timeframe)
+    if not interval_seconds:
+        return True, f"ok (warm-up not judged: timeframe {timeframe!r} could not be parsed to a bar length)"
+    if not earliest_str:
+        return True, "ok (warm-up not judged: no first-bar date for the coin in the Layer 1 audit)"
+    earliest = pd.Timestamp(earliest_str).to_pydatetime().replace(tzinfo=None)
+    window_start = window_start.replace(tzinfo=None)  # as the structural check does for earliest
+    available = max(int((window_start - earliest).total_seconds() // interval_seconds), 0)
+    if available < warmup_bars:
+        return False, (
+            f"warm-up: {available} bars before the window start, {warmup_bars} needed "
+            f"(the strategy's 2 x required_bars warm-up; {symbol}'s first bar on {exchange} is "
+            f"{earliest}, window start {window_start}) -- the backtest would crash its warm-up "
+            f"probe; the window is excluded, not covered")
+    return True, "ok"
+
+
+def layer1_price_precheck(layer1: dict, exchange: str, symbol: str, timeframe: str,
+                           window_start: datetime.datetime, window_end: datetime.datetime,
+                           now: Optional[datetime.datetime] = None,
+                           warmup_bars: Optional[int] = None) -> tuple[bool, str]:
+    """The structural Layer-1 precheck (_layer1_price_precheck_structural, whose
+    docstring is the full contract), plus -- when `warmup_bars` is given (PR-8,
+    D-169) -- the warm-up rule: a window is covered only if the coin also has
+    `warmup_bars` bars before the window start (layer1_warmup_check). Default
+    None: byte-identical to before PR-8 (the structural result unchanged)."""
+    ok, reason = _layer1_price_precheck_structural(
+        layer1, exchange, symbol, timeframe, window_start, window_end, now)
+    if not ok or warmup_bars is None:
+        return ok, reason
+    warm_ok, warm_reason = layer1_warmup_check(layer1, exchange, symbol, timeframe,
+                                                window_start, warmup_bars)
+    return (True, reason) if warm_ok else (False, warm_reason)
 
 
 # ---------------------------------------------------------------------------
@@ -786,6 +890,10 @@ def evaluate_variant(config: dict, protocol: dict, gap_tolerance: float = _DEFAU
     symbols = protocol.get("symbols") or []
     timeframe = protocol.get("timeframe", "1h")
     windows = protocol.get("windows") or []
+    # PR-8 (D-169): a window is covered only if the coin also has the strategy's
+    # warm-up bars before the window start. None (a config with no strategy
+    # sections) leaves the precheck exactly as before.
+    warmup_bars = warmup_bars_needed(config)
 
     window_results = []
     for w in windows:
@@ -795,7 +903,8 @@ def evaluate_variant(config: dict, protocol: dict, gap_tolerance: float = _DEFAU
         for symbol in symbols:
             start_dt = pd.Timestamp(w_start).to_pydatetime()
             end_dt = pd.Timestamp(w_end).to_pydatetime()
-            ok, l1_reason = layer1_price_precheck(layer1, exchange, symbol, timeframe, start_dt, end_dt)
+            ok, l1_reason = layer1_price_precheck(layer1, exchange, symbol, timeframe, start_dt, end_dt,
+                                                  warmup_bars=warmup_bars)
             if not ok:
                 window_results.append({
                     "label": label, "symbol": symbol, "start": w_start, "end": w_end,
