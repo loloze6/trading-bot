@@ -323,6 +323,12 @@ own `scaling_factor` has no effect on the forecast (the statistic divides it out
 survives. Standardised forecast (hard rule). Every component in strategies puts standardise first in its transforms, and no scale op after it (standardise: past values only, target 10, cap 20, window, min_periods), unless its scale is set by vol_target or the regime is a blocks regime with block_standardisation. Any other component, including one whose only scale is a bare scale or scaling_factor, is refused after 1b and again at 5a. Where a component ignores `scaling_factor` altogether, the
 catalogue says so.
 
+standardise window: the larger of 60 and the component's longest lookback, at most 500;
+min_periods: a quarter of the window, at least 20 and at most 120. 60/20 is for
+components with a lookback of 60 or less; a slow component standardised over 60 bars
+becomes an on-off signal at +-10. Readiness grows by min_periods only (the window sets
+the deque), so a 250-bar component is ready after 310 bars.
+
 **Percentile and sigmoid outputs are one-sided** (0 to 1). They suit regime scores; as a forecast they would be
 long-only unless re-centred.
 

@@ -47,8 +47,9 @@ lens.
 ## Method (a method, not a form)
 
 1. **Orient.** `list_columns`, then what the strategy does mechanically: the forecast, the
-   allocation changes, the lots by exit cause (`trade_slice`). Know the machine before reading
-   any outcome. From the base config, say how the forecast is scaled (a component's raw
+   allocation changes, the lots by exit cause (`trade_slice` with a filter on exit_cause; `by` takes
+   window, direction, regime_at_entry, weekday, hour). Know the machine before reading any
+   outcome. From the base config, say how the forecast is scaled (a component's raw
    `scaling_factor`, a `ratio_to_mean` or `vol_target` transform, or `blocks` with
    `block_standardisation`) and what one-bar move puts it at the clip (+-20). Then run
    `describe` and `distribution` on `forecast` (0 comparisons unless grouped by hour, weekday or
@@ -66,8 +67,12 @@ lens.
 3. **Ask why.** Name the mechanism: who is on the other side and why it persists (market), or
    which pipeline rule produces it (mechanical). Write the horizon and the direction from the
    mechanism before the query runs; chosen after seeing several, they are a fit and the claim is
-   refused. Write down the second query the mechanism predicts and a coincidence would not. Run
-   it. If it fails, that mechanism is wrong; the behaviour may still hold. If it does (your own
+   refused. Pre-registration binds the child run, not this exploration: when a result holds in
+   the opposite direction in all but at most one window, write a new test with that direction
+   and run it; the claim then carries the flipped direction. A quantile selector's lookback and
+   a horizon must fit inside a window: with 120-bar windows a lookback above 40 bars or a
+   horizon above 20 bars cannot clear the floors; choose smaller ones. Write down the second query the mechanism predicts and a coincidence
+   would not. Run it. If it fails, that mechanism is wrong; the behaviour may still hold. If it does (your own
    test shows it, or the memory view shows a claim confirmed on this strategy), name the next
    mechanism and run its query. A rejected mechanism that rests on a real observation leads to
    the next 'why' on that observation, until the observation is explained or the tools cannot
@@ -84,12 +89,19 @@ lens.
    named condition and not in its complement is a `conditional_behaviour` claim with the
    condition in its selector.
 4. **Rule out rivals,** one query each where it matters: one window (`by: window`), one coin
-   (`by: coin`), a data gap, the strategy's own mechanics.
+   (`by: coin`), a data gap, the strategy's own mechanics. Before writing a rival or a vehicle,
+   check it against every result already logged in this session; a rival contradicted by your
+   own earlier query is not a rival, and a vehicle contradicted by one is not the vehicle.
 5. **Write the claim with its test,** or stop with no claim. A `conditional_effect` reply with
    `compiles_as_claim` true that clears the floor is written as a claim or recorded as an
    observation (`no_claim.observations`); the only `killed_by` is a query of this session that
-   measured a rival, named. "Thin", "no mechanism yet" and the expected rank are not reasons.
-   A session that ends in no claim with a full trail is a good session.
+   measured a rival, named. A horizon that disagrees is dropped from the test and is never a
+   killed_by; a killed_by is a rival explanation, never the same selector at another horizon.
+   "Thin", "no mechanism yet" and the expected rank are not reasons.
+   A session may end in no claim only when every result that cleared its floors, in either
+   direction and at any horizon, has been written as a claim or recorded as an observation,
+   and every rejected candidate names the query of this session that measured its rival, or
+   the floor or tool limit that stopped it. Ending without a claim is not a success in itself.
 
 ## Worked example: an edge that lasts one bar
 
@@ -172,9 +184,14 @@ with its **vehicle**: the strategy change that follows from the observation.
 A claim carries the strategy change that follows from the observation; the child run on the
 next fold is the proof; no confirmed mechanism is needed. The change is graded (D-051: the
 forecast grows with the strength of the signal): a signal parameter (horizon, span, scaling,
-vol target), a transform, a new component, or a detector condition with a graded strategy
-under it. Never a side excluded, a clip at zero, a threshold switch, or a rule fitted to one
-observation.
+vol target), a transform, (negate after standardise is one: a sign flip is a graded vehicle)
+a new component, or a detector condition with a graded strategy under it. A rule fitted to
+one observation is never a vehicle, and a threshold switch never is (D-051). A side removed
+(clip at zero after standardise, the guide's "Long-only from a signed component") or
+down-weighted is a vehicle only when that side's loss holds in all but at most one window of
+the fold, the bar-level test uses a complement baseline so that the window's drift cancels
+(D-156), and the claim says which windows fell and which rose. Write window counts as the
+tool returned them ("3 of 4 windows"); "every window" only when the count is the total.
 A vehicle may name any class or op in the component and op catalogue section of this prompt
 and nothing else, except a piece the config form lists in `requires`.
 

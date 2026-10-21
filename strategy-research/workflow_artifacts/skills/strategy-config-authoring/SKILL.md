@@ -179,6 +179,11 @@ in `decision.yaml` `tried`, each with the card clause it fails; at least one mus
 - the forecast's scale (D-149): a component's transforms must hold standardise (first, no scale op
   after it) or vol_target, or its regime must be a blocks regime with block_standardisation;
   anything else is refused after 1b and again at 5a.
+  standardise window: the larger of 60 and the component's longest lookback, at most 500;
+  min_periods: a quarter of the window, at least 20 and at most 120. 60/20 is for
+  components with a lookback of 60 or less; a slow component standardised over 60 bars
+  becomes an on-off signal at +-10. Readiness grows by min_periods only (the window sets
+  the deque), so a 250-bar component is ready after 310 bars.
 - default_regime must be "unknown" in threshold_rules and score_product modes WHENEVER
   regime_detector.rules is non-empty (a real gate exists). Setting it to trending,
   mean_reversion, or chop in that case causes bars that fail every rule to still fire
