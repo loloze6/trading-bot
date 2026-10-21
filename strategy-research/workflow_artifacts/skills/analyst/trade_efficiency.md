@@ -17,4 +17,7 @@ bar, the forecast changes sign on most bars, the forecast is large when the move
 the signal predicts only the next bar); its test tests that cause; its vehicle changes that
 cause. Read `window_economics` first: it gives, per window and
 coin, the trades, the turnover, the direction changes, the allocation, gross, fees, net and
-cost drag, so the cause is named from a measurement.
+cost drag, so the cause is named from a measurement. Read the cost in this order: first fees
+as a percent of the account (per window and per year), then gross per lot against fees per
+lot, then turnover; fees over the absolute gross is never the first figure. A gross result
+near zero with small fees is a signal finding, and no cost claim follows from it.

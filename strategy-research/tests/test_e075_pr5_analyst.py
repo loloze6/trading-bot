@@ -475,6 +475,58 @@ def test_the_prompt_carries_the_skill_lens_inputs_and_memory(run):
         asm.build_prompt("regime", run, base_config_rel="x", fold=None, memory_view={})
 
 
+def _write_protocol(tmp_path, timeframe, windows):
+    """A synthetic run_protocol.json (2020 dates, hand-made) under tmp_path/artifacts/variants."""
+    d = tmp_path / "artifacts" / "variants"
+    d.mkdir(parents=True)
+    (d / "run_protocol.json").write_text(json.dumps(
+        {"symbols": ["AAA"], "timeframe": timeframe,
+         "windows": [{"label": lb, "test": {"start": s, "end": e}} for lb, s, e in windows]}),
+        encoding="utf-8")
+    return tmp_path
+
+
+def test_run_context_windows_line_carries_the_bar_count_per_window(tmp_path):
+    """D-168 (c): "label start..end, n bars"; end inclusive by day, bars per day from the
+    protocol's timeframe (the claim card's window_bars)."""
+    run_dir = _write_protocol(tmp_path, "1h", [("w1", "2020-01-01", "2020-01-05"),
+                                               ("w2", "2020-02-01", "2020-02-10")])
+    line = [x for x in asm.run_context(run_dir, "none.json", "A").split("\n")
+            if x.startswith("Windows:")]
+    assert line == ["Windows: w1 2020-01-01..2020-01-05, 120 bars, "
+                    "w2 2020-02-01..2020-02-10, 240 bars"]
+
+
+def test_run_context_bar_count_follows_the_timeframe_and_is_absent_when_unreadable(tmp_path):
+    four = _write_protocol(tmp_path / "a", "4h", [("w1", "2020-01-01", "2020-01-05")])
+    assert "Windows: w1 2020-01-01..2020-01-05, 30 bars" in asm.run_context(four, "x", None)
+    daily = _write_protocol(tmp_path / "b", "1d", [("w1", "2020-01-01", "2020-01-05")])
+    assert "Windows: w1 2020-01-01..2020-01-05, 5 bars" in asm.run_context(daily, "x", None)
+    # an unparseable timeframe or date: the line is as it was before the count, no crash
+    bad_tf = _write_protocol(tmp_path / "c", "weekly-ish", [("w1", "2020-01-01", "2020-01-05")])
+    assert "Windows: w1 2020-01-01..2020-01-05\n" in asm.run_context(bad_tf, "x", None) + "\n"
+    assert "bars" not in [x for x in asm.run_context(bad_tf, "x", None).split("\n")
+                          if x.startswith("Windows:")][0]
+    bad_date = _write_protocol(tmp_path / "d", "1h", [("w1", "2020-01-01", "soon")])
+    assert "Windows: w1 2020-01-01..soon" in asm.run_context(bad_date, "x", None)
+
+
+def test_the_cost_reading_order_is_in_the_skill_and_both_lenses():
+    """D-168 (b): fees as a percent of the account first, then gross per lot against fees per
+    lot, then turnover; fees over the absolute gross never first; the one signal-finding
+    sentence."""
+    sentence = ("A gross result near zero with small fees is a signal finding, and no cost "
+                "claim follows from it.")
+    for name in ("SKILL.md", "trade_efficiency.md", "forecast.md"):
+        text = " ".join((asm.SKILL_DIR / name).read_text(encoding="utf-8").split())
+        assert sentence in text, name
+        assert "fees over the absolute gross is never the first figure" in text.lower(), name
+        i_fees = text.lower().index("first fees as a percent of the account")
+        i_lot = text.lower().index("gross per lot against fees per lot")
+        i_turn = text.lower().index("then turnover")
+        assert i_fees < i_lot < i_turn, name
+
+
 def test_the_skill_files_name_no_sealed_date():
     import re
     pat = re.compile(r"(?<!\d)\d{4}-\d{2}")

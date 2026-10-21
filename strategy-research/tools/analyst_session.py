@@ -90,6 +90,21 @@ def _section(title: str, body: str | None) -> str:
     return f"\n\n## {title}\n\n" + (body.strip() if body else "(absent)")
 
 
+def _window_bars_suffix(window, timeframe) -> str:
+    """", <n> bars" for one protocol window: the days of test.start..test.end (end inclusive,
+    the engine's convention) times the bars per day of the protocol's timeframe
+    (claim_card.window_bars, the one definition of "bars in a test window"); "" when the
+    window or the timeframe cannot be read, so the line is then as it was without the count."""
+    import claim_card
+    step = claim_card.timeframe_seconds(timeframe)
+    if not step:
+        return ""
+    try:
+        return f", {claim_card.window_bars([window], step)} bars"
+    except (ValueError, KeyError, TypeError):
+        return ""
+
+
 def run_context(run_dir: Path, base_config_rel: str, fold: str | None) -> str:
     """The run context as text: the base config, the variant patches, the protocol (coins,
     timeframe, windows), the fold, the cost model. Absent files are said to be absent."""
@@ -103,6 +118,7 @@ def run_context(run_dir: Path, base_config_rel: str, fold: str | None) -> str:
             parts.append(f"Coins: {p.get('symbols')}; timeframe: {p.get('timeframe')}")
             parts.append("Windows: " + ", ".join(
                 f"{w.get('label')} {((w.get('test') or {}).get('start'))}..{((w.get('test') or {}).get('end'))}"
+                + _window_bars_suffix(w, p.get("timeframe"))
                 for w in p.get("windows") or []))
         except ValueError:
             parts.append("run_protocol.json: unreadable")
