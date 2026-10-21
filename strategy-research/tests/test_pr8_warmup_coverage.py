@@ -498,6 +498,17 @@ def test_a_base_variant_excluded_only_by_the_warmup_writes_no_data_request(monke
     assert not (rpr.ROOT / "campaign_record" / "data_requests.yaml").exists()
 
 
+def test_a_non_base_variant_excluded_only_by_the_warmup_still_writes_its_data_request(monkeypatch):
+    ok = {"outcome": "validate", "reasons": ["all windows and aux feeds fully available"]}
+    _, variants, rows = _run_gate_loop(monkeypatch, "run_992", {
+        "base": ok, "design_v2": _warmup_gate_doc(), "asset_v2": ok})
+    assert variants["base"]["status"] == "validated"
+    assert variants["design_v2"]["status"] == "not_tested"
+    assert "warm-up:" in variants["design_v2"]["reason"]
+    # the skip is for the base variant only: a design variant keeps its request row
+    assert [(r["variant_id"], r["outcome"]) for r in rows] == [("design_v2", "decline")]
+
+
 def test_a_genuine_data_gap_still_writes_its_request_next_to_a_warmup_exclusion(monkeypatch):
     ok = {"outcome": "validate", "reasons": ["all windows and aux feeds fully available"]}
     gap = {"outcome": "decline", "reasons": ["ADAUSD 2019-01: 42.0% of the expected bars are missing"],
