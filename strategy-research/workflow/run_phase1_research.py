@@ -11768,9 +11768,9 @@ def _generated_protocol_holdout_block(proto_constraint: dict) -> dict:
             and _holdout_policy.iso_day(override.get("end")) == policy_end)
         if not agrees:
             raise HoldoutBoundaryBreach(
-                f"machine_constraints.protocol.holdout differs from the holdout_range in "
-                f"config/campaign_data_policy.yaml and must be removed: "
-                f"the holdout range has one home, the policy (dates withheld).")
+                "machine_constraints.protocol.holdout differs from the holdout_range in "
+                "config/campaign_data_policy.yaml and must be removed: "
+                "the holdout range has one home, the policy (dates withheld).")
     return _holdout_policy.holdout_ref_block()
 
 
