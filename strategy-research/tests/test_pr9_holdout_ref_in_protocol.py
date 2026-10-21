@@ -126,6 +126,69 @@ def test_the_generator_still_refuses_without_a_usable_policy(tmp_path, monkeypat
         rpr._generated_protocol_holdout_block({})
 
 
+_NAMES_IN_OVERRIDE_REFUSAL = ("machine_constraints.protocol.holdout", "holdout_range",
+                              "config/campaign_data_policy.yaml", "must be removed")
+
+
+def _override_refusal(override) -> str:
+    """The message of the HoldoutBoundaryBreach a disagreeing
+    machine_constraints.protocol.holdout raises at generation."""
+    with pytest.raises(rpr.HoldoutBoundaryBreach) as info:
+        rpr._generated_protocol_holdout_block({"holdout": override})
+    return str(info.value)
+
+
+@pytest.mark.parametrize("shift", ["start", "end"])
+def test_the_override_disagreement_message_names_no_sealed_date(shift):
+    """PR-14 (D-173, hard rule): the refusal of a pre-registered holdout
+    override that disagrees with the policy names the three things to fix and
+    prints neither the policy's range nor the override's value. Sandbox policy
+    (the conftest verbatim copy); every assertion is on a bool or a count bound
+    beforehand, so a failure cannot print a sealed date."""
+    block = _legacy_literal_block()
+    block[shift] = (date.fromisoformat(block[shift]) + timedelta(days=1)).isoformat()
+    msg = _override_refusal(block)
+    names = all(n in msg for n in _NAMES_IN_OVERRIDE_REFUSAL)
+    assert names
+    n_policy_days = _days_inside_seal(msg)
+    assert n_policy_days == 0
+    n_override_days = sum(1 for d in _DAY.findall(msg) if d in block.values())
+    assert n_override_days == 0
+    n_any_day = len(_DAY.findall(msg))
+    assert n_any_day == 0
+
+
+def test_the_override_disagreement_message_prints_neither_range_synthetic(tmp_path, monkeypatch):
+    """Same refusal against a synthetic policy far from the real seal, so the
+    two ranges can be named in the assertion: neither the policy's days nor the
+    override's days appear, and neither does the override's repr."""
+    pol_start, pol_end = "2021-03-01", "2021-04-15"
+    ov_start, ov_end = "2021-03-02", "2021-04-16"
+    policy = tmp_path / "policy.yaml"
+    policy.write_text(yaml.safe_dump({"holdout_range": [pol_start, pol_end]}), encoding="utf-8")
+    monkeypatch.setattr(rpr, "_DATA_POLICY_PATH", policy)
+    msg = _override_refusal({"start": ov_start, "end": ov_end})
+    names = all(n in msg for n in _NAMES_IN_OVERRIDE_REFUSAL)
+    assert names
+    leaked = [d for d in (pol_start, pol_end, ov_start, ov_end) if d in msg]
+    n_leaked = len(leaked)
+    assert n_leaked == 0
+    n_any_day = len(_DAY.findall(msg))
+    assert n_any_day == 0
+    repr_leak = "start" in msg and "end" in msg and "{" in msg
+    assert not repr_leak
+
+
+def test_an_agreeing_override_is_still_accepted():
+    """Guard on the guard: the message change refuses nothing new -- the
+    reference and a policy-equal literal block still pass."""
+    ok_ref = rpr._generated_protocol_holdout_block({"holdout": dict(_REF)}) == _REF
+    assert ok_ref
+    ok_literal = rpr._generated_protocol_holdout_block(
+        {"holdout": _legacy_literal_block()}) == _REF
+    assert ok_literal
+
+
 def test_a_pre_pr9_literal_generated_file_is_still_accepted_unchanged():
     constraints = _constraints()
     run_dir = _scaffold(constraints=constraints)
