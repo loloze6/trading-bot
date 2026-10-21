@@ -162,9 +162,15 @@ The innovation-expansion rule "at least one non-price_volume_only variant per fa
 `signal_concept` must describe a GRADED forecast. The bot turns a forecast in [-20, +20] into a position
 (allocation = forecast / 10), so the position follows the size of the signal. State, in `signal_concept`:
 1. the quantity the signal measures (for example "where the close sits inside its 20-day high-low range"),
-2. how that quantity is scaled into [-20, +20] (for example "-20 at the bottom of the range, +20 at the top,
-   linear in between"),
+2. how that quantity is scaled: write "standardised" (step 1b puts the component on the scale of its own past
+   values with the standardise op, average absolute forecast about 10, D-149), unless the quantity is bounded by
+   construction (a range position, a distance to a rolling high, a share); then give the map with its anchors and
+   say that the quantity is bounded. Under D-149 step 1b still builds the standardised form and records the map
+   as a deviation; the run then tests an approximation (tried_ideas row "approximation: n").
 3. that position size follows it: a stronger signal is a bigger position, a zero signal is flat.
+   Fills: the engine trades at the close of the bar whose close produced the forecast (STRATEGY_DESIGN_GUIDE.md,
+   "How a config becomes a trade", step 5). Do not ask for a one-bar delay; the leakage note covers the quantity,
+   not the fill.
 
 An on/off rule is not acceptable as written: "long when X crosses Y", "long above the 20-day high, short below the
 20-day low", "enter on the signal, exit on the opposite signal". Restate it as its graded counterpart and say in
@@ -264,7 +270,9 @@ true, ONE of two files is added to your context files:
   (`campaign_record/campaign_memory.yaml`) exists: one row per recorded run with the
   idea (`hypothesis_id`), the coins it was tested on (`symbols`), the `timeframe`, and
   the grid's `idea_status` (`validated`, `refuted`, `inconclusive`; null for an
-  engineering fault).
+  engineering fault). A row with `approximation: n` means the run tested a build that differed from the idea
+  in n clauses: the idea as written is still untested, and its `idea_status` grades the approximation, not the
+  idea.
 - `campaign_record/exclusion_digest.yaml` — the legacy file, used while no campaign
   record is kept: runs grouped by family, as `(family, instrument, timeframe)` triples
   with their `run_ids`, plus `failed_families_passthrough` (families with a recorded

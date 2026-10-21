@@ -151,7 +151,9 @@ not build as written (an exit, a stop, a time-based hold, position state, sizing
 targeting is the `vol_target` op and a cap is a `clip`, so those are built, not declared), an
 on/off rule restated as a graded measure) gets its own entry whose `config_choice` starts with `DEVIATION:` and
 says what was built instead, or that nothing was. Never silently build a different signal, and never leave a
-clause unmapped.
+clause unmapped. A fill-timing clause in a card ("applied from the next bar", "no same-bar fill") is not a
+deviation: the engine's fill at the signal bar's close is the convention; note it in config_rationale and build
+nothing.
 
 **`component_gap` only after compositions are ruled out.** Before reporting `component_gap`, try compositions of the
 existing components: several components averaged, negative weights, offsets, sign flips, AND the transform pipeline
