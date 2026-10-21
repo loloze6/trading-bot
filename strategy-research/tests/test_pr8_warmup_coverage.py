@@ -195,6 +195,34 @@ def test_a_structural_decline_keeps_its_own_reason_and_no_date_means_not_judged(
                                      warmup_bars=NEEDED)[0] is True
 
 
+def test_a_tz_aware_window_start_is_counted_like_a_naive_one():
+    layer1 = _layer1(_earliest_before(95))
+    aware = WINDOW_START.replace(tzinfo=datetime.timezone.utc)
+    ok, reason = dag.layer1_warmup_check(layer1, "kraken", "ADAUSD", "1d", aware, NEEDED)
+    assert ok is False and reason.startswith("warm-up: 95 bars before the window start, 540 needed")
+    assert dag.layer1_warmup_check(_layer1(_earliest_before(NEEDED)), "kraken", "ADAUSD", "1d",
+                                   aware, NEEDED) == (True, "ok")
+
+
+def test_not_judged_has_a_distinct_reason_for_a_bad_timeframe_and_a_missing_date():
+    layer1 = _layer1(_earliest_before(95))
+    ok_tf, reason_tf = dag.layer1_warmup_check(layer1, "kraken", "ADAUSD", "not-a-timeframe",
+                                               WINDOW_START, NEEDED)
+    assert ok_tf is True and "warm-up not judged" in reason_tf and "could not be parsed" in reason_tf
+    no_date = copy.deepcopy(layer1)
+    no_date["venues"]["kraken"]["spot"]["symbols"]["earliest_ohlcv_utc"] = {}
+    ok_d, reason_d = dag.layer1_warmup_check(no_date, "kraken", "ADAUSD", "1d", WINDOW_START, NEEDED)
+    assert ok_d is True and "warm-up not judged" in reason_d and "no first-bar date" in reason_d
+    assert reason_tf != reason_d
+
+
+def test_a_malformed_config_is_not_judged_instead_of_crashing_the_gate():
+    bad = copy.deepcopy(SLOW)
+    bad["regime_detector"] = {"mode": "threshold_rules", "components": [], "vetoes": [{"id": "ghost"}]}
+    assert dag.strategy_required_bars(bad) is None
+    assert dag.warmup_bars_needed(bad) is None
+
+
 def test_the_warmup_is_counted_in_bars_of_the_timeframe():
     # 1h strategy: 540 bars is 22.5 days, not 540 days
     layer1 = {"venues": {"binance": {"spot": {

@@ -400,17 +400,21 @@ def strategy_required_bars(config: dict) -> Optional[int]:
     24) without constructing AdvancedStrategy (which wants a file path and
     imports trading-bot's tools package). None when the config has no
     `regime_detector` / `strategies` section (nothing to derive it from: the
-    caller then applies no warm-up rule). Config content only -- no market
-    data is read."""
+    caller then applies no warm-up rule), and also None when building the
+    engines from a malformed config raises (not judged: the rule is skipped,
+    the gate does not crash). Config content only -- no market data is read."""
     if not (isinstance(config, dict) and config.get("regime_detector") and config.get("strategies")):
         return None
     from strategies.regime_engine import ConfigDrivenRegimeEngine  # noqa: E402  (trading-bot on sys.path)
     from strategies.strategy_engine import ConfigDrivenStrategyEngine  # noqa: E402
-    return max(
-        ConfigDrivenRegimeEngine(config["regime_detector"]).get_required_periods(),
-        ConfigDrivenStrategyEngine(config["strategies"]).get_required_periods(),
-        24,  # main_strategy.py std_dev_period
-    )
+    try:  # an import failure is an environment fault and still raises; only a bad config is "not judged"
+        return max(
+            ConfigDrivenRegimeEngine(config["regime_detector"]).get_required_periods(),
+            ConfigDrivenStrategyEngine(config["strategies"]).get_required_periods(),
+            24,  # main_strategy.py std_dev_period
+        )
+    except Exception:
+        return None
 
 
 def warmup_bars_needed(config: dict) -> Optional[int]:
@@ -454,9 +458,12 @@ def layer1_warmup_check(layer1: dict, exchange: str, symbol: str, timeframe: str
     spot = ((((layer1 or {}).get("venues") or {}).get(exchange) or {}).get("spot") or {})
     earliest_str = ((spot.get("symbols") or {}).get("earliest_ohlcv_utc") or {}).get(symbol)
     interval_seconds = _timeframe_to_seconds(timeframe)
-    if not earliest_str or not interval_seconds:
+    if not interval_seconds:
+        return True, f"ok (warm-up not judged: timeframe {timeframe!r} could not be parsed to a bar length)"
+    if not earliest_str:
         return True, "ok (warm-up not judged: no first-bar date for the coin in the Layer 1 audit)"
     earliest = pd.Timestamp(earliest_str).to_pydatetime().replace(tzinfo=None)
+    window_start = window_start.replace(tzinfo=None)  # as the structural check does for earliest
     available = max(int((window_start - earliest).total_seconds() // interval_seconds), 0)
     if available < warmup_bars:
         return False, (
