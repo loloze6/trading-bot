@@ -3919,13 +3919,10 @@ def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state:
                 f"Restore pre_registration.yaml to match {path.name}, or register a new brief"), None
     if protocol_resolution.promotion_is_generic(expected.get("promotion")):
         return generic, None
-    # PR-9 (D-167): only the promotion block is rewritten -- the file's own
-    # `holdout` value (a pre-PR-9 literal block or the reference; equal to the
-    # expected one per _generated_field) is kept as written.
-    doc = dict(expected)
-    if "holdout" in current:
-        doc["holdout"] = current["holdout"]
-    return None, {"path": path, "doc": doc, "differing": differing}
+    # PR-9 (D-167, review fix): the regenerated doc is `expected` as is, so its
+    # `holdout` is the reference -- a pre-PR-9 literal block (equal to the
+    # policy per _generated_field, else refused above) is not written back.
+    return None, {"path": path, "doc": expected, "differing": differing}
 
 
 def _protocol_preflight(run_dir: Path, run_id: str, *, promotion_retired: bool,

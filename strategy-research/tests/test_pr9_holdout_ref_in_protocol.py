@@ -9,8 +9,8 @@ What is pinned here:
     a YYYY-MM-DD day inside the policy's holdout_range;
   * a generated file written before PR-9 (literal {start, end} block equal to
     the policy) is still accepted by the pre-flight, unchanged; a literal block
-    that disagrees is still refused; a promotion-only regeneration keeps the
-    file's own holdout block;
+    that disagrees is still refused; a promotion-only regeneration writes the
+    reference (review fix), whichever form the file stored;
   * the holdout pause prints the reference, never the dates;
   * check_data.py resolves the reference (no silent skip of its mismatch
     warning) and warns on an unknown one.
@@ -112,7 +112,8 @@ def test_no_generated_protocol_contains_a_date_inside_the_holdout_range(override
     variant = vc.variant_protocol(written, symbol="ETHUSDT")
     variant_is_ref = hp.is_holdout_ref(variant["holdout"])
     assert variant_is_ref
-    assert vc.check_variant_protocol(variant, written) == []
+    variant_ok = vc.check_variant_protocol(variant, written) == []
+    assert variant_ok
     n_variant = _days_inside_seal(json.dumps(variant))
     assert n_variant == 0
 
@@ -132,7 +133,8 @@ def test_a_pre_pr9_literal_generated_file_is_still_accepted_unchanged():
     before = _rewrite_as_pre_pr9(path, _legacy_literal_block())
     refusal, regeneration = camp._generated_protocol_plan(
         run_dir, RUN, constraints["protocol"], {}, promotion_retired=False)
-    assert refusal is None and regeneration is None
+    ok = refusal is None and regeneration is None
+    assert ok
     unchanged = path.read_bytes() == before
     assert unchanged
 
@@ -147,13 +149,16 @@ def test_a_literal_block_that_disagrees_with_the_policy_is_still_refused(shift):
     _rewrite_as_pre_pr9(path, block)
     refusal, regeneration = camp._generated_protocol_plan(
         run_dir, RUN, constraints["protocol"], {}, promotion_retired=False)
-    assert regeneration is None
+    no_regeneration = regeneration is None
+    assert no_regeneration
     names_holdout = refusal is not None and "['holdout']" in refusal
     assert names_holdout
 
 
 @pytest.mark.parametrize("stored", ["literal", "reference"])
-def test_a_promotion_only_regeneration_keeps_the_files_own_holdout_block(stored):
+def test_a_promotion_only_regeneration_writes_the_reference(stored):
+    """Review fix (D-167): the regenerated doc is the expected protocol, so its
+    holdout is the reference whichever form the file stored; no sealed day."""
     old = _constraints(_OTHER)
     run_dir = _scaffold(constraints=old)
     path = rpr._ensure_protocol_from_constraints(run_dir, RUN, old)
@@ -164,12 +169,19 @@ def test_a_promotion_only_regeneration_keeps_the_files_own_holdout_block(stored)
         yaml.safe_dump({"machine_constraints": new}), encoding="utf-8")
     refusal, regeneration = camp._generated_protocol_plan(
         run_dir, RUN, new["protocol"], {}, promotion_retired=False)
-    assert refusal is None and regeneration is not None
-    assert regeneration["differing"] == ["promotion"]
-    kept = regeneration["doc"]["holdout"] == block
-    assert kept
-    assert regeneration["doc"]["promotion"] == _NON_GENERIC
-    assert list(regeneration["doc"]) == list(json.loads(path.read_text(encoding="utf-8")))
+    planned = refusal is None and regeneration is not None
+    assert planned
+    only_promotion = regeneration["differing"] == ["promotion"]
+    assert only_promotion
+    doc = regeneration["doc"]
+    is_ref = hp.is_holdout_ref(doc["holdout"])
+    assert is_ref
+    n_doc = _days_inside_seal(json.dumps(doc))
+    assert n_doc == 0
+    promoted = doc["promotion"] == _NON_GENERIC
+    assert promoted
+    same_keys = list(doc) == list(json.loads(path.read_text(encoding="utf-8")))
+    assert same_keys
 
 
 def test_the_holdout_pause_prints_the_reference_not_the_dates(tmp_path, capsys):

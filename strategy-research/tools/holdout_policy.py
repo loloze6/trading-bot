@@ -159,8 +159,9 @@ def resolve_holdout_block(block, policy: dict):
     if not (isinstance(block, dict) and "ref" in block):
         return block
     if not is_holdout_ref(block):
-        raise HoldoutPolicyError(f"the protocol's holdout block {block!r} is not the "
-                                 f"reference {{'ref': {HOLDOUT_RANGE_REF!r}}}")
+        raise HoldoutPolicyError(f"the protocol's holdout block with keys "
+                                 f"{sorted(map(str, block))} is not the reference "
+                                 f"{{'ref': {HOLDOUT_RANGE_REF!r}}}")
     hr = policy.get("holdout_range") if isinstance(policy, dict) else None
     if not isinstance(hr, (list, tuple)) or len(hr) != 2:
         raise HoldoutPolicyError(f"the protocol's holdout block refers to {HOLDOUT_RANGE_REF}, "

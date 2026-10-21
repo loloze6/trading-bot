@@ -2069,6 +2069,32 @@ def _resolve_holdout_window(protocol: dict, policy: dict) -> tuple[str, str]:
     return start, end
 
 
+def _refuse_reference_protocol_windows_reaching_holdout(protocol: dict,
+                                                       holdout_start: str) -> None:
+    """PR-9 review fix (D-167): under --holdout, a protocol whose `holdout`
+    block is the reference ({"ref": holdout_policy.HOLDOUT_RANGE_REF}) must have
+    walk-forward windows strictly before the CURRENT policy's holdout start --
+    the guard its pre-PR-9 literal block gave by refusing once the policy range
+    moved. check_windows_before is the walk-forward pre-flight's own check. A
+    literal block (or none) keeps today's path exactly: nothing is checked here.
+    The refusal names no date (the bound is the sealed start), and it is raised
+    outside the except so no exception context carries one."""
+    if not _holdout_policy.is_holdout_ref(protocol.get("holdout")):
+        return
+    try:
+        _holdout_policy.check_windows_before(protocol.get("windows"), holdout_start)
+        clear = True
+    except _holdout_policy.HoldoutPolicyError:
+        clear = False
+    if not clear:
+        _refuse_before_any_backtest(
+            f"the protocol's holdout block is the reference "
+            f"{_holdout_policy.HOLDOUT_RANGE_REF!r}, and its walk-forward windows are "
+            f"missing, malformed or not all strictly before the policy's holdout start "
+            f"(dates withheld). A reference protocol's windows must clear the CURRENT "
+            f"policy range before --holdout; regenerate the protocol")
+
+
 def _training_holdout_start(protocol: dict, policy: dict) -> str:
     """CUL-339: the upper bound every walk-forward window (and its warmup
     prefetch) must stay strictly before -- min(protocol holdout start, policy
@@ -2407,6 +2433,7 @@ def main():
     policy = _load_policy_or_refuse()
     if args.holdout:
         holdout_window = _resolve_holdout_window(protocol, policy)
+        _refuse_reference_protocol_windows_reaching_holdout(protocol, holdout_window[0])
         _refuse_if_holdout_consumed(policy, args.hypothesis_id)
     _holdout_start = _training_holdout_start(protocol, policy)
     if not args.holdout:
