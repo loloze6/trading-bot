@@ -308,7 +308,11 @@ def test_a_1a_rerun_rewrites_the_pass_rule_and_rechecks_the_id(campaign_root):
 # criteria_fit; a decide-next pre-filled claim gets no criterion; never a profit criterion);
 # DECIDE_NEXT_CANDIDATES.md drops the same entry. Changes hypothesis_generation's prompt on every path.
 # Previous pin (D-137 review fix): 52cab846b7d8849f231512ab277f660380205bc4c95baa17151fb7530dd96c03.
-_MASTER_SKILL_SHA256 = "3120abe6bc674cb4af513bd387c694dc763cd56d1175cb05c0790225a374a216"
+# RE-PINNED by D-163/D-164 (2026-10-21, branch docs/working-rules-a2-a3): pin updated because of the declared
+# prompt changes of the operator's direction paste 2026-10-21 (PR-2: item 2 of the graded signal concept list
+# and the approximation sentence; PR-3: the fill-timing sentence). Changes hypothesis_generation's prompt.
+# Previous pin (D-143): 3120abe6bc674cb4af513bd387c694dc763cd56d1175cb05c0790225a374a216.
+_MASTER_SKILL_SHA256 = "7ddd477c214bdc3c7584c4c014b5fcbac14a2fc4ac137e61d98d83fec1e85e60"
 
 
 def test_hypothesis_design_skill_is_byte_identical_to_master():
