@@ -206,6 +206,7 @@ and nothing else, except a piece the config form lists in `requires`.
 ```yaml
 outcome: claim
 claim:
+  # allowed keys of claim, no others: criteria_refs, fail_if, kind, missing_block, pass_if, rationale, statement, tests
   statement: >
     one sentence a new joiner can test
   kind: execution_behaviour        # or a kind from CLAIM_TESTS.md
