@@ -2027,11 +2027,19 @@ def _policy_holdout_range(policy: dict) -> tuple[str, str]:
         _refuse_before_any_backtest(str(exc))
 
 
-def _protocol_holdout_block(protocol: dict) -> dict | None:
+def _protocol_holdout_block(protocol: dict, policy: dict) -> dict | None:
     """The protocol's own `holdout` block, validated as a mapping: None when
     absent or null (treated identically), a refusal when it is anything but a
-    {start, end} mapping. The ONE reader of that block in this module."""
-    block = protocol.get("holdout")
+    {start, end} mapping. The ONE reader of that block in this module.
+    PR-9 (D-167): a generated protocol's reference block
+    ({"ref": holdout_policy.HOLDOUT_RANGE_REF}) resolves to the policy's own
+    [start, end] -- the literal block the generator wrote from the policy
+    before PR-9 -- so both callers below behave exactly as with that literal
+    block; a `ref` naming anything else is refused."""
+    try:
+        block = _holdout_policy.resolve_holdout_block(protocol.get("holdout"), policy)
+    except _holdout_policy.HoldoutPolicyError as exc:
+        _refuse_before_any_backtest(str(exc))
     if block is None:
         return None
     if not isinstance(block, dict):
@@ -2048,7 +2056,7 @@ def _resolve_holdout_window(protocol: dict, policy: dict) -> tuple[str, str]:
     whole sealed window plus post-holdout data -- is refused before any fetch.
     The block is never used to widen, narrow or shift the range."""
     start, end = _policy_holdout_range(policy)
-    block = _protocol_holdout_block(protocol)
+    block = _protocol_holdout_block(protocol, policy)
     if block is None:
         return start, end
     p_start, p_end = block.get("start"), block.get("end")
@@ -2059,6 +2067,32 @@ def _resolve_holdout_window(protocol: dict, policy: dict) -> tuple[str, str]:
             f"with campaign_data_policy.yaml holdout_range [{start}, {end}]. --holdout takes "
             f"its range ONLY from the policy; fix or remove the protocol's block")
     return start, end
+
+
+def _refuse_reference_protocol_windows_reaching_holdout(protocol: dict,
+                                                       holdout_start: str) -> None:
+    """PR-9 review fix (D-167): under --holdout, a protocol whose `holdout`
+    block is the reference ({"ref": holdout_policy.HOLDOUT_RANGE_REF}) must have
+    walk-forward windows strictly before the CURRENT policy's holdout start --
+    the guard its pre-PR-9 literal block gave by refusing once the policy range
+    moved. check_windows_before is the walk-forward pre-flight's own check. A
+    literal block (or none) keeps today's path exactly: nothing is checked here.
+    The refusal names no date (the bound is the sealed start), and it is raised
+    outside the except so no exception context carries one."""
+    if not _holdout_policy.is_holdout_ref(protocol.get("holdout")):
+        return
+    try:
+        _holdout_policy.check_windows_before(protocol.get("windows"), holdout_start)
+        clear = True
+    except _holdout_policy.HoldoutPolicyError:
+        clear = False
+    if not clear:
+        _refuse_before_any_backtest(
+            f"the protocol's holdout block is the reference "
+            f"{_holdout_policy.HOLDOUT_RANGE_REF!r}, and its walk-forward windows are "
+            f"missing, malformed or not all strictly before the policy's holdout start "
+            f"(dates withheld). A reference protocol's windows must clear the CURRENT "
+            f"policy range before --holdout; regenerate the protocol")
 
 
 def _training_holdout_start(protocol: dict, policy: dict) -> str:
@@ -2075,7 +2109,7 @@ def _training_holdout_start(protocol: dict, policy: dict) -> str:
             policy, f"{_DATA_POLICY_PATH} holdout_range")
     except _holdout_policy.HoldoutPolicyError as exc:
         _refuse_before_any_backtest(str(exc))
-    block = _protocol_holdout_block(protocol)
+    block = _protocol_holdout_block(protocol, policy)
     raw = None if block is None else block.get("start")
     if raw is None:
         return policy_start
@@ -2399,6 +2433,7 @@ def main():
     policy = _load_policy_or_refuse()
     if args.holdout:
         holdout_window = _resolve_holdout_window(protocol, policy)
+        _refuse_reference_protocol_windows_reaching_holdout(protocol, holdout_window[0])
         _refuse_if_holdout_consumed(policy, args.hypothesis_id)
     _holdout_start = _training_holdout_start(protocol, policy)
     if not args.holdout:
