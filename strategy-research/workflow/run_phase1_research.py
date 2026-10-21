@@ -1739,6 +1739,34 @@ def _window_results(out_dir: Path) -> set:
     return {p.name for p in results.iterdir()} if results.is_dir() else set()
 
 
+FAILED_STDERR_FILENAME = "run_protocol_stderr.txt"
+FAILED_STDERR_TAIL_LINES = 20
+
+
+def _save_and_print_failed_stderr(artifacts_dir: Path, stderr) -> None:
+    """PR-7 (run_098 asset_ada): a variant's run_protocol.py exited non-zero and
+    its traceback was lost (stdout only was captured). Write the child's full
+    stderr to `artifacts_dir`/run_protocol_stderr.txt and print its last
+    FAILED_STDERR_TAIL_LINES lines. Called on the failed-backtest branch only;
+    prints nothing but the child's own stderr (plus the file location). A write
+    failure never stops the variant loop."""
+    text = stderr if isinstance(stderr, str) else ""
+    path = Path(artifacts_dir) / FAILED_STDERR_FILENAME
+    try:
+        with open(path, "w", encoding="utf-8", newline="") as f:
+            f.write(text)
+        saved = f"full stderr saved to {path}"
+    except OSError:
+        saved = "full stderr could not be saved"
+    lines = text.splitlines()
+    tail = lines[-FAILED_STDERR_TAIL_LINES:]
+    if not tail:
+        print(f"   child stderr was empty; {saved}.")
+        return
+    print(f"   child stderr, last {len(tail)} of {len(lines)} lines; {saved}:")
+    print("\n".join(tail))
+
+
 def _refused_before_any_backtest(result, windows_before: set, out_dir: Path) -> bool:
     """E-061 C1.3: run_protocol.py refused before any window ran (e.g. an unusable
     validation protocol) -- no market data was touched, so no trial row. All
@@ -2187,6 +2215,11 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     print(f"⚠️  H4: could not record failed-backtest trial for {trial_id}: {_rec_err}")
                 print(f"⚠️  protocol_execution: variant '{variant_id}' failed (run_protocol.py "
                       f"exit {result.returncode}); continuing with remaining variants.")
+                # PR-7 (run_098 asset_ada): the child's traceback was lost -- only
+                # stdout was kept. Save its full stderr next to the variant's
+                # artifacts and print the tail under the failure line. Failure
+                # branch only; the recorded reason below is unchanged.
+                _save_and_print_failed_stderr(variant_artifacts_dir, result.stderr)
                 _variant_failed(variant_id, f"run_protocol.py non-zero exit ({result.returncode})")
                 continue
 
