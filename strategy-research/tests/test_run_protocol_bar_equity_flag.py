@@ -39,6 +39,7 @@ TOOLS_PATH = ROOT / "tools"
 if str(TOOLS_PATH) not in sys.path:
     sys.path.insert(0, str(TOOLS_PATH))
 
+import holdout_policy as hp  # noqa: E402
 import run_protocol as rp  # noqa: E402
 
 
@@ -91,7 +92,7 @@ def _write_config(tmp_path):
 
 @pytest.fixture
 def run_main(monkeypatch, tmp_path):
-    def _run(holdout=False):
+    def _run(holdout=False, holdout_block=None):
         sandbox = tmp_path / "sandbox_runs"
         stub = _RecordingRunBacktest(sandbox)
         monkeypatch.setattr(rp, "run_backtest", stub)
@@ -106,7 +107,10 @@ def run_main(monkeypatch, tmp_path):
 
         protocol_extra = {}
         if holdout:
-            protocol_extra["holdout"] = {"start": "2022-02-01", "end": "2022-02-02"}
+            # PR-9 (D-167): a generated protocol's reference block or a
+            # pre-PR-9 literal block naming the sandboxed policy range.
+            protocol_extra["holdout"] = (holdout_block if holdout_block is not None
+                                         else {"start": "2022-02-01", "end": "2022-02-02"})
         protocol_path = _write_protocol(tmp_path, **protocol_extra)
         config_path = _write_config(tmp_path)
 
@@ -130,8 +134,12 @@ def test_bar_equity_true_at_walk_forward_call_site(run_main):
     )
 
 
-def test_bar_equity_true_at_holdout_call_site(run_main):
-    calls = run_main(holdout=True)
+@pytest.mark.parametrize("holdout_block", [
+    pytest.param(None, id="literal-block"),
+    pytest.param({"ref": hp.HOLDOUT_RANGE_REF}, id="reference-block"),
+])
+def test_bar_equity_true_at_holdout_call_site(run_main, holdout_block):
+    calls = run_main(holdout=True, holdout_block=holdout_block)
     assert calls, "run_backtest was never called"
     assert all(c["bar_equity"] is True for c in calls), (
         "run_protocol.py's holdout call site must pass bar_equity=True (E-041)."

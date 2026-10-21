@@ -15,6 +15,9 @@ Callers (each keeps its own exception type by catching HoldoutPolicyError):
     orchestrator/campaign caller of it, composite_cache's caller included);
   * tools/composite_cache.py::check_protocol_outside_holdout (window dates);
   * tools/measure_bar_sigma.py::_holdout_range_from_policy.
+PR-9 (D-167): the generated protocol's `holdout` reference (HOLDOUT_RANGE_REF)
+is spelled here once and resolved here for run_protocol.py, check_data.py and
+run_campaign.py's generated-protocol comparison.
 
 Deny by default: a missing, unreadable, unparseable or malformed policy
 raises; nothing here returns "no holdout to worry about".
@@ -36,6 +39,13 @@ from pathlib import Path
 POLICY_PATH = Path(__file__).resolve().parent.parent / "config" / "campaign_data_policy.yaml"
 
 _ISO_DAY = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
+
+#: PR-9 (D-167): what a GENERATED protocol's `holdout` block carries instead of
+#: the sealed dates -- a reference to the range's one home. The ONE spelling of
+#: it: the generator writes it (holdout_ref_block), every reader recognises it
+#: (is_holdout_ref / resolve_holdout_block). Protocols written before PR-9 keep
+#: their literal {start, end} block; readers accept both.
+HOLDOUT_RANGE_REF = "config/campaign_data_policy.yaml#holdout_range"
 
 
 class HoldoutPolicyError(ValueError):
@@ -122,6 +132,41 @@ def load_holdout_range(path=None) -> tuple[str, str]:
     """(start, end) of the policy's closed holdout_range, both strict days."""
     p = Path(path) if path is not None else POLICY_PATH
     return holdout_range_of(load_policy(p), f"{p} holdout_range")
+
+
+def holdout_ref_block() -> dict:
+    """PR-9 (D-167): a fresh `holdout` block for a generated protocol -- the
+    reference, never the dates."""
+    return {"ref": HOLDOUT_RANGE_REF}
+
+
+def is_holdout_ref(block) -> bool:
+    """True for exactly {"ref": HOLDOUT_RANGE_REF}; an extra key or another
+    ref is not this reference."""
+    return isinstance(block, dict) and block == {"ref": HOLDOUT_RANGE_REF}
+
+
+def resolve_holdout_block(block, policy: dict):
+    """PR-9 (D-167): the literal block a protocol's `holdout` value stands for.
+    The reference resolves to {"start", "end"} = the policy's holdout_range pair
+    as written -- the block the generator wrote from that policy before PR-9,
+    so a reader treats both alike. Any other value is returned unchanged (a
+    literal block, None, or a malformed value its caller already refuses). A
+    mapping with a `ref` key naming anything else, or a policy with no
+    [start, end] pair to resolve to, raises (deny by default). The policy's
+    days are validated by the caller's own parse, exactly as before; nothing
+    here prints or names them."""
+    if not (isinstance(block, dict) and "ref" in block):
+        return block
+    if not is_holdout_ref(block):
+        raise HoldoutPolicyError(f"the protocol's holdout block with keys "
+                                 f"{sorted(map(str, block))} is not the reference "
+                                 f"{{'ref': {HOLDOUT_RANGE_REF!r}}}")
+    hr = policy.get("holdout_range") if isinstance(policy, dict) else None
+    if not isinstance(hr, (list, tuple)) or len(hr) != 2:
+        raise HoldoutPolicyError(f"the protocol's holdout block refers to {HOLDOUT_RANGE_REF}, "
+                                 f"which is not a [start, end] pair")
+    return {"start": hr[0], "end": hr[1]}
 
 
 def consumed_hypothesis_ids(policy: dict) -> frozenset:

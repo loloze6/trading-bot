@@ -1885,7 +1885,10 @@ def _fold_data_reason(fold: str, protocol, brief, inputs: dict) -> str | None:
     on the fold's blocks for the child's symbols and timeframe, with the venue the
     brief maps to (tools/venue_resolver). Zero network, no market data. It is the
     base's pass/fail: the gate validates the base only when every window passes.
-    NOT checked: aux feeds (the gate reads those in layer 2 only: cache/fetch). Skipped
+    NOT checked: aux feeds (the gate reads those in layer 2 only: cache/fetch). Also NOT
+    applied here: the warm-up rule (D-169), because no strategy config exists yet at fold
+    choice; a late-listed coin can be assigned a fold whose early windows the data gate
+    then excludes. Skipped
     (None) when the caller supplied no `inputs["folds"]["data"]` (the production caller
     always does, run_phase1_research._fold_data_context). Never raises: an input that
     cannot be judged is a reason, not a crash."""

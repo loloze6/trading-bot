@@ -30,6 +30,10 @@ _TBOT = os.path.join(_REPO, "trading-bot")
 
 if _TBOT not in sys.path:
     sys.path.insert(0, _TBOT)
+if _HERE not in sys.path:
+    sys.path.append(_HERE)  # appended: never shadows trading-bot's packages
+
+import holdout_policy as _holdout_policy  # tools/ sibling: PR-9's holdout reference (D-167)
 
 import pandas as pd
 from data.data_manager import DataManager
@@ -120,8 +124,18 @@ def check_holdout_overlap(protocol: dict, policy: dict) -> bool:
         print("Action: remove overlapping windows or choose a different protocol.")
         return False
 
-    # Also check if the protocol's own holdout field overlaps
-    proto_holdout = protocol.get("holdout", {})
+    # Also check if the protocol's own holdout field overlaps.
+    # PR-9 (D-167): a generated protocol carries the reference
+    # {"ref": HOLDOUT_RANGE_REF} instead of dates; it resolves to the policy's
+    # own pair (the literal block the generator used to write), so the check
+    # below runs on it exactly as on that literal block. A `ref` naming
+    # anything else is warned about, never silently skipped.
+    try:
+        proto_holdout = _holdout_policy.resolve_holdout_block(
+            protocol.get("holdout", {}), policy)
+    except _holdout_policy.HoldoutPolicyError as exc:
+        print(f"WARNING: {exc} -- cannot compare it with the policy holdout.")
+        proto_holdout = None
     if proto_holdout:
         ph_start_s = proto_holdout.get("start")
         ph_end_s   = proto_holdout.get("end")

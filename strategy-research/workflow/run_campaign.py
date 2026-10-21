@@ -3753,9 +3753,39 @@ def _generated_field(doc: dict, key: str):
     `promotion` absent, null and empty ({}) are the same "no block", so a file
     written with one and expected with another is not regenerated. Under G7
     the expected block is never empty, so the flag-off comparison is
-    unchanged."""
+    unchanged.
+    PR-9 (D-167): `holdout` -- the generator now writes the reference
+    ({"ref": holdout_policy.HOLDOUT_RANGE_REF}) where it used to write the
+    policy's literal {start, end}. A file generated before PR-9 carries that
+    literal block; it compares equal to the reference exactly when it is the
+    block the old generator would write from the policy today (dict-equal to
+    {"start": policy start, "end": policy end}), so such a file is still
+    accepted unchanged, and a literal block that disagrees with the policy
+    still differs (refused, as before)."""
     value = doc.get(key)
-    return (value or None) if key == "promotion" else value
+    if key == "promotion":
+        return value or None
+    if key == "holdout":
+        return _generated_holdout_field(value)
+    return value
+
+
+def _generated_holdout_field(value):
+    """PR-9 (D-167): a generated protocol's `holdout` value for the
+    regeneration diff -- the reference for the reference itself and for a
+    pre-PR-9 literal block equal to the one the old generator would write from
+    the policy now; any other value as is. A policy that cannot be read leaves
+    the literal block as is (it then differs: fail closed)."""
+    if holdout_policy.is_holdout_ref(value):
+        return holdout_policy.holdout_ref_block()
+    if isinstance(value, dict) and set(value) == {"start", "end"}:
+        try:
+            start, end = orch._load_holdout_range()
+        except Exception:
+            return value
+        if value == {"start": start, "end": end}:
+            return holdout_policy.holdout_ref_block()
+    return value
 
 
 def _windows_overlap_in(path: Path) -> str | None:
@@ -3889,6 +3919,9 @@ def _generated_protocol_plan(run_dir: Path, run_id: str, generated: dict, state:
                 f"Restore pre_registration.yaml to match {path.name}, or register a new brief"), None
     if protocol_resolution.promotion_is_generic(expected.get("promotion")):
         return generic, None
+    # PR-9 (D-167, review fix): the regenerated doc is `expected` as is, so its
+    # `holdout` is the reference -- a pre-PR-9 literal block (equal to the
+    # policy per _generated_field, else refused above) is not written back.
     return None, {"path": path, "doc": expected, "differing": differing}
 
 

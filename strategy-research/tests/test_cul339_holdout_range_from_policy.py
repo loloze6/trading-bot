@@ -205,6 +205,72 @@ def test_agreeing_protocol_block_runs_on_policy_range(run_main):
     assert [(c["start"], c["end"]) for c in calls] == [(S_START, S_END)]
 
 
+# PR-9 (D-167): a generated protocol carries the reference instead of dates.
+_REF = {"ref": hp.HOLDOUT_RANGE_REF}
+
+
+def test_reference_block_runs_on_policy_range_like_the_literal_block(run_main):
+    calls, out_dir, code = run_main(holdout_block=dict(_REF))
+    assert code is None
+    assert [(c["start"], c["end"]) for c in calls] == [(S_START, S_END)]
+    payload = json.loads((out_dir / "holdout_result.json").read_text(encoding="utf-8"))
+    assert payload["holdout_window"] == {"start": S_START, "end": S_END}
+
+
+@pytest.mark.parametrize("block", [
+    pytest.param({"ref": "config/campaign_data_policy.yaml#validation_range"}, id="other-ref"),
+    pytest.param({"ref": hp.HOLDOUT_RANGE_REF, "start": S_START, "end": S_END}, id="ref-plus-dates"),
+    pytest.param({"ref": None}, id="null-ref"),
+])
+@pytest.mark.parametrize("holdout", [True, False], ids=["holdout", "walk-forward"])
+def test_unknown_reference_refused_before_any_fetch(run_main, capsys, block, holdout):
+    calls, out_dir, code = run_main(holdout_block=block, holdout=holdout,
+                                    hypothesis_id=HYP if holdout else None)
+    _assert_refused_untouched(calls, out_dir, code, capsys)
+
+
+_LEAKY_WINDOWS = {
+    "ends-after-start": [{"label": "leaky", "test": {"start": _day(_SANDBOX_START, -10),
+                                                     "end": _day(_SANDBOX_START, 5)}}],
+    "ends-on-start": [{"label": "edge", "test": {"start": _day(_SANDBOX_START, -10),
+                                                 "end": S_START}}],
+    "no-windows": [],
+}
+
+
+@pytest.mark.parametrize("windows", list(_LEAKY_WINDOWS.values()), ids=list(_LEAKY_WINDOWS))
+def test_holdout_mode_refuses_a_reference_protocol_whose_windows_reach_the_seal(
+        run_main, capsys, windows):
+    """PR-9 review fix (D-167): under --holdout a reference block is checked
+    with the walk-forward pre-flight's check_windows_before against the policy
+    start -- the guard a pre-PR-9 literal block gave once the policy range
+    moved. Refused before any backtest, and the message names no date."""
+    calls, out_dir, code = run_main(holdout_block=dict(_REF), windows=windows)
+    err = capsys.readouterr().err
+    refused = (code == EXIT_NO_DATA_TOUCHED and stderr_declares_no_data_touched(err)
+               and calls == [] and not out_dir.exists())
+    assert refused
+    names_the_ref = hp.HOLDOUT_RANGE_REF in err
+    assert names_the_ref
+    n_days = sum(1 for d in (S_START, S_END, _day(_SANDBOX_START, -10), _day(_SANDBOX_START, 5))
+                 if d in err)
+    assert n_days == 0
+
+
+def test_holdout_mode_keeps_todays_path_for_a_literal_block(run_main):
+    """A literal block (equal to the policy) is not checked by the new guard:
+    the same windows run under --holdout exactly as before PR-9."""
+    calls, _, code = run_main(holdout_block={"start": S_START, "end": S_END},
+                              windows=_LEAKY_WINDOWS["ends-after-start"])
+    assert code is None
+    assert [(c["start"], c["end"]) for c in calls] == [(S_START, S_END)]
+
+
+def test_reference_block_refused_when_the_policy_range_is_unusable(run_main, capsys):
+    calls, out_dir, code = run_main(holdout_block=dict(_REF), policy_range=[S_START, None])
+    _assert_refused_untouched(calls, out_dir, code, capsys)
+
+
 @pytest.mark.parametrize("policy_range", [
     pytest.param([S_START, None], id="null-end"),
     pytest.param([S_START, ""], id="empty-end"),
@@ -292,6 +358,23 @@ def test_training_guard_uses_policy_start_without_protocol_block(run_main):
     calls, _, code = _wf(run_main)
     assert code is None and calls
     assert all(c["holdout_start"] == S_START for c in calls)
+
+
+@pytest.mark.parametrize("policy_end", [S_END, None], ids=["closed", "open-end"])
+def test_training_guard_uses_policy_start_with_reference_block(run_main, policy_end):
+    """PR-9 (D-167): the reference resolves to the policy's own start, as the
+    literal block the generator used to write did; training still reads only
+    the policy START, so an open end does not block it."""
+    calls, _, code = _wf(run_main, holdout_block=dict(_REF), policy_range=[S_START, policy_end])
+    assert code is None and calls
+    assert all(c["holdout_start"] == S_START for c in calls)
+
+
+def test_training_window_past_policy_start_refused_with_reference_block(run_main, capsys):
+    window = {"label": "leaky", "test": {"start": _day(_SANDBOX_START, -10),
+                                         "end": _day(_SANDBOX_START, 5)}}
+    calls, out_dir, code = _wf(run_main, holdout_block=dict(_REF), windows=[window])
+    _assert_refused_untouched(calls, out_dir, code, capsys)
 
 
 def test_training_window_past_policy_start_refused_even_if_protocol_allows_it(run_main, capsys):
@@ -567,7 +650,8 @@ def test_consumed_ids_refused(policy):
 def test_real_policy_parses_strictly():
     """The committed policy passes the strict parser (read only, never printed)."""
     start, end = hp.load_holdout_range()
-    assert start <= end
+    ordered = start <= end  # bound first: a failing assert must not print the days
+    assert ordered
     assert isinstance(hp.consumed_hypothesis_ids(hp.load_policy()), frozenset)
 
 
@@ -617,13 +701,21 @@ def test_generator_refuses_a_disagreeing_holdout_override():
     rpr = _rpr()
     hs, he = rpr._load_holdout_range()
     policy_block = {"start": hs, "end": he}
-    assert rpr._generated_protocol_holdout_block({}) == policy_block
-    assert rpr._generated_protocol_holdout_block({"holdout": None}) == policy_block
-    assert rpr._generated_protocol_holdout_block({"holdout": dict(policy_block)}) == policy_block
+    # PR-9 (D-167): the generated block is the reference, never the dates; an
+    # override naming the policy range (or the reference itself) still agrees.
+    ref = {"ref": hp.HOLDOUT_RANGE_REF}
+    # Each result is reduced to a bool first: a failing assert must not print
+    # a block that could hold the sandboxed (verbatim) policy's days.
+    for override in ({}, {"holdout": None}, {"holdout": dict(policy_block)},
+                     {"holdout": dict(ref)}):
+        is_ref = rpr._generated_protocol_holdout_block(override) == ref
+        assert is_ref
     shifted = (date.fromisoformat(he) + timedelta(days=1)).isoformat()
     earlier = (date.fromisoformat(hs) - timedelta(days=365)).isoformat()
     for bad in ({"start": hs, "end": None}, {"start": hs, "end": shifted},
                 {"start": earlier, "end": he}, {"start": hs}, [hs, he], "policy",
-                {"start": hs, "end": he, "note": "x"}):
+                {"start": hs, "end": he, "note": "x"},
+                {"ref": "config/campaign_data_policy.yaml#validation_range"},
+                {**ref, "start": hs}):
         with pytest.raises(rpr.HoldoutBoundaryBreach):
             rpr._generated_protocol_holdout_block({"holdout": bad})

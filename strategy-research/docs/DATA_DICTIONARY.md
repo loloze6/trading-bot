@@ -659,9 +659,14 @@ analyst flag on; null when the windows cannot be read). All figures are post-run
 | `gross_pct` | 100 x `core.gross_pnl` / V0. | % of V0 | read (`core`), converted |
 | `fees_pct` | 100 x `core.fees_paid` / V0. | % of V0 | read (`core`), converted |
 | `net_pct` | 100 x `core.net_pnl` / V0 (= `gross_pct` - `fees_pct`, within the run's rounding). | % of V0 | read (`core`), converted |
-| `cost_drag_pct` | `core.cost_drag_pct`, verbatim: (gross - net) / abs(gross) x 100 as the run computed it; null when the run's gross was 0. | % | read (`core`) |
+| `cost_drag_pct` | `core.cost_drag_pct`, verbatim: (gross - net) / abs(gross) x 100 as the run computed it; null when the run's gross was 0. In this view only, it is reported only when `abs(gross_pct)` >= 5 x `fees_pct`; otherwise null, with `cost_drag_note` set (a cell with no gross or no fees figure keeps the run's figure). The run-level `cost_drag_pct` (section 3) is unchanged. | % | read (`core`) |
 | `avg_trade_duration_bars` | `core.avg_trade_duration_bars`, verbatim: mean trade duration / median bar spacing; null when the run had no trades. | bars | read (`core`) |
 | `median_holding_bars` | Median over the lots of `trades.json` of `duration_minutes` x 60 / step, step = the median spacing of the window's bar timestamps; null without lots. | bars | computed (`trades.json`, `bars.csv`) |
+| `fees_pct_annualised` | `fees_pct` x 365 / `n_bars`: fees as a percent of the window's starting account per 365 bars of the window. Null when `fees_pct` is null. | % of V0 per 365 bars | derived |
+| `gross_per_lot_pct` | `gross_pct` / `trades`: the mean over the window's lots of the lot's gross, as a percent of the window's starting account. Null without lots or without a gross. | % of V0 per lot | derived |
+| `fees_per_lot_pct` | `fees_pct` / `trades`: the same for fees. Read it against `gross_per_lot_pct`. Null without lots or without fees. | % of V0 per lot | derived |
+| `turnover_annualised` | `turnover` x 365 / `n_bars`. Null when `turnover` is null. | alloc per 365 bars | derived |
+| `cost_drag_note` | "gross near zero: a signal finding, not a cost finding" when `cost_drag_pct` was withheld by the 5 x `fees_pct` test (see `cost_drag_pct`); otherwise null. | text | derived |
 
 Read, not recomputed (operator ruling 2026-10-19): a figure marked read is the run's own number.
 Nothing is summed from the lots of `trades.json` and nothing is re-derived from the bars. A
@@ -676,6 +681,10 @@ the window's last `bars.csv` row (the account after the window's last action; th
 `total` sums `trades`, `turnover`, `direction_changes` and the three `*_pct` over the cells
 (each window is its own account; null when any cell's figure is null), pools the bars for
 `mean_abs_allocation` and `max_abs_allocation`, and pools every lot for `median_holding_bars`.
+The five derived fields (D-168) are arithmetic on the cell's own figures above, with no new
+input; in `total` they use the total's figures (summed percents, trades and turnover, pooled
+`n_bars`), and the same 5 x `fees_pct` test governs the total's `cost_drag_pct`. "Per 365 bars"
+is a year on a daily timeframe and 365 bars on any other.
 Two `total` figures are not the run's own numbers; each is stated as derived from the read
 window figures (operator ruling 2026-10-19, Q3), by these formulas:
 

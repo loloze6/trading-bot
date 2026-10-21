@@ -169,7 +169,7 @@ about a regime: the run continues normally, and the measured effect is kept.
 
 | kind | parameters | the other bars |
 |---|---|---|
-| `complement` | none | all bars not selected |
+| `complement` | none | all bars not selected; the window's drift is in both groups, so drift is not a rival for a complement test; it is one for a trade-level mean |
 | `placebo` | optional `n_draws` (default 20) | the same selection moved to other dates; the fair choice when the claim has no natural comparison |
 | `other_selector` | `selector`: any selector above | the bars that selector picks (minus the selected ones) |
 

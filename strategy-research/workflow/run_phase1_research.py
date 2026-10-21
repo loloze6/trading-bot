@@ -41,6 +41,7 @@ import yaml
 from datetime import datetime, timezone
 import argparse
 import contextlib
+import functools
 import os
 import re
 import asyncio
@@ -1739,6 +1740,34 @@ def _window_results(out_dir: Path) -> set:
     return {p.name for p in results.iterdir()} if results.is_dir() else set()
 
 
+FAILED_STDERR_FILENAME = "run_protocol_stderr.txt"
+FAILED_STDERR_TAIL_LINES = 20
+
+
+def _save_and_print_failed_stderr(artifacts_dir: Path, stderr) -> None:
+    """PR-7 (run_098 asset_ada): a variant's run_protocol.py exited non-zero and
+    its traceback was lost (stdout only was captured). Write the child's full
+    stderr to `artifacts_dir`/run_protocol_stderr.txt and print its last
+    FAILED_STDERR_TAIL_LINES lines. Called on the failed-backtest branch only;
+    prints nothing but the child's own stderr (plus the file location). A write
+    failure never stops the variant loop."""
+    text = stderr if isinstance(stderr, str) else ""
+    path = Path(artifacts_dir) / FAILED_STDERR_FILENAME
+    try:
+        with open(path, "w", encoding="utf-8", newline="") as f:
+            f.write(text)
+        saved = f"full stderr saved to {path}"
+    except OSError:
+        saved = "full stderr could not be saved"
+    lines = text.splitlines()
+    tail = lines[-FAILED_STDERR_TAIL_LINES:]
+    if not tail:
+        print(f"   child stderr was empty; {saved}.")
+        return
+    print(f"   child stderr, last {len(tail)} of {len(lines)} lines; {saved}:")
+    print("\n".join(tail))
+
+
 def _refused_before_any_backtest(result, windows_before: set, out_dir: Path) -> bool:
     """E-061 C1.3: run_protocol.py refused before any window ran (e.g. an unusable
     validation protocol) -- no market data was touched, so no trial row. All
@@ -1916,6 +1945,14 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     print(f"⚠️  data_availability_gate: asset variant '{variant_id}' "
                           f"{outcome} -- not_tested, non-blocking (D-042).")
                 variants_idx[variant_id] = {**vinfo, "status": "not_tested", "reason": reason}
+                if variant_id == "base" and _gate_excluded_only_by_warmup(gate_result):
+                    # PR-13 (D-169 note): the base variant's coin history starts
+                    # inside the strategy's warm-up -- no fetch can create it, so
+                    # no request row. The base variant is still not_tested with
+                    # the reason above. Base only: other variants keep their row.
+                    print(f"ℹ️  data_availability_gate: base variant '{variant_id}' excluded only by "
+                          "the warm-up (coin history starts inside it); no data request written.")
+                    continue
                 data_requests.append({
                     "variant_id": variant_id, "outcome": outcome,
                     "reason": reason, "reasons": reasons,
@@ -2187,6 +2224,11 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     print(f"⚠️  H4: could not record failed-backtest trial for {trial_id}: {_rec_err}")
                 print(f"⚠️  protocol_execution: variant '{variant_id}' failed (run_protocol.py "
                       f"exit {result.returncode}); continuing with remaining variants.")
+                # PR-7 (run_098 asset_ada): the child's traceback was lost -- only
+                # stdout was kept. Save its full stderr next to the variant's
+                # artifacts and print the tail under the failure line. Failure
+                # branch only; the recorded reason below is unchanged.
+                _save_and_print_failed_stderr(variant_artifacts_dir, result.stderr)
                 _variant_failed(variant_id, f"run_protocol.py non-zero exit ({result.returncode})")
                 continue
 
@@ -7765,6 +7807,30 @@ def _gate_shortfall_fetchable(gate: dict) -> bool:
     return True
 
 
+def _gate_excluded_only_by_warmup(gate: dict) -> bool:
+    """PR-13 (D-169 note): True when a data_availability_gate.yaml decline / refine
+    is entirely windows excluded because the coin's history starts inside the
+    strategy's warm-up (Layer 1, reason starting data_availability_gate.
+    WARMUP_REASON_PREFIX) -- a shortfall the exchange cannot fill, since the coin
+    simply did not exist yet, so a data_requests.yaml row asking to fetch it would
+    be unfetchable. False when any non-validating window is anything else (a
+    Layer-2 gap, a structural Layer-1 decline) or any aux feed does not validate:
+    that variant still gets its row. False when nothing is non-validating. The helper is
+    kind-agnostic; its caller applies the skip to the base variant only."""
+    import data_availability_gate as _dag  # tools/ sibling: the reason prefix
+    if not isinstance(gate, dict) or gate.get("outcome") not in ("decline", "refine"):
+        return False
+    bad = [r for r in (gate.get("windows") or []) if isinstance(r, dict)
+           and r.get("outcome") != "validate"]
+    bad_aux = [r for r in (gate.get("aux_feeds") or []) if isinstance(r, dict)
+               and r.get("outcome") != "validate"]
+    if not bad or bad_aux:
+        return False
+    return all(r.get("layer") == 1
+               and str(r.get("reason") or "").startswith(_dag.WARMUP_REASON_PREFIX)
+               for r in bad)
+
+
 # E-036 S2a: the exact-match gate's skip reason prefix (_gate_config_direct_variants).
 _REPEAT_REASON_PREFIX = "repeat:"
 
@@ -11682,24 +11748,30 @@ def _generated_protocol_holdout_block(proto_constraint: dict) -> dict:
     """CUL-339 review fix: the `holdout` block a generated protocol carries --
     always the policy's holdout_range. A pre-registered override
     (machine_constraints.protocol.holdout) is accepted only when it names
-    exactly that range (strict days); any disagreement is refused HERE, at
-    generation, instead of being written and only refused later by
-    `run_protocol.py --holdout`. An explicit null is treated as absent. Shared
-    by generation and run_campaign._expected_generated_protocol so both raise
-    at the same place."""
+    exactly that range (strict days) or is the reference itself; any
+    disagreement is refused HERE, at generation, instead of being written and
+    only refused later by `run_protocol.py --holdout`. An explicit null is
+    treated as absent. Shared by generation and
+    run_campaign._expected_generated_protocol so both raise at the same place.
+    PR-9 (D-167): the block is the REFERENCE
+    {"ref": holdout_policy.HOLDOUT_RANGE_REF}, never the dates -- the policy
+    is still loaded and validated here (a missing or malformed policy refuses
+    generation, as before), but its days are not written into the protocol.
+    Readers resolve the reference (run_protocol.py, check_data.py)."""
     policy_start, policy_end = _load_holdout_range()
     override = proto_constraint.get("holdout")
     if override is not None:
-        agrees = (isinstance(override, dict)
-                  and set(override) <= {"start", "end"}
-                  and _holdout_policy.iso_day(override.get("start")) == policy_start
-                  and _holdout_policy.iso_day(override.get("end")) == policy_end)
+        agrees = _holdout_policy.is_holdout_ref(override) or (
+            isinstance(override, dict)
+            and set(override) <= {"start", "end"}
+            and _holdout_policy.iso_day(override.get("start")) == policy_start
+            and _holdout_policy.iso_day(override.get("end")) == policy_end)
         if not agrees:
             raise HoldoutBoundaryBreach(
-                f"machine_constraints.protocol.holdout {override!r} disagrees with "
-                f"campaign_data_policy.yaml holdout_range [{policy_start}, {policy_end}]. "
-                f"The holdout range has ONE home (the policy); remove the override.")
-    return {"start": policy_start, "end": policy_end}
+                "machine_constraints.protocol.holdout differs from the holdout_range in "
+                "config/campaign_data_policy.yaml and must be removed: "
+                "the holdout range has one home, the policy (dates withheld).")
+    return _holdout_policy.holdout_ref_block()
 
 
 def _assert_windows_clear_of_holdout(windows: list, holdout_start: str,
@@ -16701,9 +16773,9 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
     # 3. Check if holdout_result.yaml is present
     hr_path = ARTIFACTS / "holdout_result.yaml"
     if not hr_path.exists():
-        holdout_range = policy.get("holdout_range", [])
+        # PR-9 (D-167): the reference, never the sealed dates.
         print(f"\n⏸️  HOLDOUT: holdout_result.yaml not yet present for {hyp_id}.")
-        print(f"   Holdout range: {holdout_range}")
+        print(f"   Holdout range: {_holdout_policy.HOLDOUT_RANGE_REF}")
         print(f"   Run the holdout backtest on this range, write holdout_result.yaml, "
               f"then resume the pipeline.")
         return "human_pause"
@@ -20261,8 +20333,19 @@ def _variant_coin_context(run_dir: Path, run_id: str, *, source: dict | None = N
     if not eras:
         raise RuntimeError(f"[E-061 C2 S2b] {run_id}: {_DATA_POLICY_PATH} declares no eras -- "
                            f"D-042's era count for an asset coin cannot be judged.")
+    # PR-8 (D-169): D-042's window coverage also requires the strategy's warm-up
+    # bars before each window's start. An asset variant is an empty patch on the
+    # base config (G3), so the warm-up is the base config's (backtest_spec.yaml
+    # `config`, written by 1b before Step 2 and 5a). No such file / config:
+    # no warm-up rule, the precheck exactly as before.
+    precheck = _dag.layer1_price_precheck
+    spec_path = Path(run_dir) / "artifacts" / "backtest_spec.yaml"
+    spec = load_yaml(spec_path) if spec_path.exists() else None
+    warmup_bars = _dag.warmup_bars_needed((spec or {}).get("config") or {})
+    if warmup_bars is not None:
+        precheck = functools.partial(_dag.layer1_price_precheck, warmup_bars=warmup_bars)
     return {"source": source, "universe": universe, "layer1": layer1,
-            "precheck": _dag.layer1_price_precheck,
+            "precheck": precheck,
             "era_of": lambda ts: _pres.era_id_for_timestamp(ts, eras)}
 
 
