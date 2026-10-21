@@ -43,13 +43,27 @@ COMPUTED from the window's own files:
   median_holding_bars  median of duration_minutes * 60 / step over the lots of trades.json;
                        step = the median spacing of the window's bars.csv timestamps; None
                        without lots
+DERIVED from the cell's own figures above (D-168, 2026-10-21; None when an input is None):
+  fees_pct_annualised  fees_pct x 365 / n_bars (percent of the starting account per 365 bars
+                       of the window)
+  gross_per_lot_pct    gross_pct / trades (mean over the window's lots, percent of the starting
+                       account; None without lots)
+  fees_per_lot_pct     fees_pct / trades (the same, for fees)
+  turnover_annualised  turnover x 365 / n_bars
+  cost_drag_pct        reported only when abs(gross_pct) >= 5 x fees_pct; otherwise None and
+                       cost_drag_note = "gross near zero: a signal finding, not a cost finding"
+                       (cost_drag_note is None otherwise; a cell with no gross or no fees figure
+                       cannot be judged and keeps the read cost_drag_pct)
 `total`: trades, turnover, direction_changes and the three *_pct summed over the cells (each
 window is its own account) -- None when any cell's figure is None; cost_drag_pct from the
 SUMMED READ DOLLARS, (sum gross - sum net) / |sum gross| * 100 (the run's own formula on
 the summed dollars; None when the sum is 0 or any cell lacks a figure);
 avg_trade_duration_bars the mean of the cells' averages weighted by their trade_count (the
 pooled mean; windows without trades have no average and no weight); mean_abs_allocation
-over all bars pooled; max over all; median_holding_bars over all lots pooled.
+over all bars pooled; max over all; median_holding_bars over all lots pooled. The derived
+fields of `total` are the same formulas on the total's figures (summed percents, summed trades
+and turnover, pooled bars), and its cost_drag_pct passes the same 5 x fees_pct test on the
+summed percents.
 
 Why not the per-lot percent fields: profit_loss_percent / net_profit_loss_percent /
 total_commission_percent (trading-bot/performance/metrics.py CompletedTrade.to_dict) are
@@ -86,7 +100,15 @@ BAR_COLUMNS = ("timestamp", "regime", "total_portfolio_value",
 TRADE_FIELDS = ("duration_minutes",)
 CELL_KEYS = ("n_bars", "trades", "turnover", "direction_changes", "mean_abs_allocation",
              "max_abs_allocation", "gross_pct", "fees_pct", "net_pct", "cost_drag_pct",
-             "avg_trade_duration_bars", "median_holding_bars")
+             "avg_trade_duration_bars", "median_holding_bars",
+             "fees_pct_annualised", "gross_per_lot_pct", "fees_per_lot_pct",
+             "turnover_annualised", "cost_drag_note")
+#: D-168: bars per "year" of the annualised figures (365 bars of the window, as the operator
+#: wrote it; a year on a daily timeframe)
+ANNUALISE_BARS = 365
+#: D-168: cost_drag_pct is reported only when abs(gross_pct) >= COST_DRAG_MIN_GROSS_X x fees_pct
+COST_DRAG_MIN_GROSS_X = 5
+COST_DRAG_NOTE = "gross near zero: a signal finding, not a cost finding"
 
 
 def _r8(v):
@@ -200,8 +222,29 @@ def _read_core(core, v0: float, where: str) -> dict:
             "avg_dur": _num(core, "avg_trade_duration_bars", where)}
 
 
+def _per_bars(value, n_bars: int):
+    """value per ANNUALISE_BARS bars of the window (None when the value or the bars are None / 0)."""
+    return None if value is None or not n_bars else value * ANNUALISE_BARS / n_bars
+
+
+def _per_lot(value, trades):
+    """The mean over the window's lots of a figure summed over them (None without a figure or lots)."""
+    return None if value is None or not trades else value / trades
+
+
+def _cost_drag_gate(read: dict):
+    """(cost_drag value, note): the read cost drag only when abs(gross_pct) >= 5 x fees_pct,
+    else None with COST_DRAG_NOTE. A window with no gross or no fees figure cannot be judged and
+    keeps what the run recorded, unchanged."""
+    gross, fees = read["gross"], read["fees"]
+    if gross is None or fees is None or abs(gross) >= COST_DRAG_MIN_GROSS_X * fees:
+        return read["cost_drag"], None
+    return None, COST_DRAG_NOTE
+
+
 def _cell(alloc: np.ndarray, n_flips: int, read: dict, turnover, holding: list) -> dict:
     a = np.abs(alloc)
+    cost_drag, cost_drag_note = _cost_drag_gate(read)
     return {
         "n_bars": int(len(alloc)),
         "trades": read["trades"],
@@ -212,9 +255,14 @@ def _cell(alloc: np.ndarray, n_flips: int, read: dict, turnover, holding: list) 
         "gross_pct": _r8(read["gross"]),
         "fees_pct": _r8(read["fees"]),
         "net_pct": _r8(read["net"]),
-        "cost_drag_pct": _r8(read["cost_drag"]),
+        "cost_drag_pct": _r8(cost_drag),
         "avg_trade_duration_bars": _r8(read["avg_dur"]),
         "median_holding_bars": _r8(np.median(holding)) if holding else None,
+        "fees_pct_annualised": _r8(_per_bars(read["fees"], len(alloc))),
+        "gross_per_lot_pct": _r8(_per_lot(read["gross"], read["trades"])),
+        "fees_per_lot_pct": _r8(_per_lot(read["fees"], read["trades"])),
+        "turnover_annualised": _r8(_per_bars(turnover, len(alloc))),
+        "cost_drag_note": cost_drag_note,
     }
 
 

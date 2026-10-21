@@ -129,16 +129,24 @@ def test_every_field_of_each_cell_and_of_the_total_is_the_hand_number(wins):
     assert list(out["windows"]) == ["AAA/w0", "BBB/w1"]
     a, b, tot = out["windows"]["AAA/w0"], out["windows"]["BBB/w1"], out["total"]
     assert set(a) == set(b) == set(tot) == CELL_KEYS
+    # D-168 derived fields: fees_pct x 365 / n_bars, gross_pct / trades, fees_pct / trades,
+    # turnover x 365 / n_bars (W1: 0.3 x 365 / 7, 4.0 / 3, 0.3 / 3, 2.1 x 365 / 7)
     assert a == {"n_bars": 7, "trades": 3, "turnover": approx(2.1), "direction_changes": 2,
                  "mean_abs_allocation": approx(2.0 / 7), "max_abs_allocation": 0.5,
                  "gross_pct": approx(4.0), "fees_pct": approx(0.3), "net_pct": approx(3.7),
                  "cost_drag_pct": approx(7.5), "avg_trade_duration_bars": approx(2.67),
-                 "median_holding_bars": 2.0}
+                 "median_holding_bars": 2.0,
+                 "fees_pct_annualised": approx(0.3 * 365 / 7), "gross_per_lot_pct": approx(4.0 / 3),
+                 "fees_per_lot_pct": approx(0.1), "turnover_annualised": approx(2.1 * 365 / 7),
+                 "cost_drag_note": None}
     assert b == {"n_bars": 4, "trades": 2, "turnover": approx(0.8), "direction_changes": 1,
                  "mean_abs_allocation": approx(0.2), "max_abs_allocation": 0.4,
                  "gross_pct": approx(2.0), "fees_pct": approx(0.3), "net_pct": approx(1.7),
                  "cost_drag_pct": approx(15.0), "avg_trade_duration_bars": approx(2.0),
-                 "median_holding_bars": 2.0}
+                 "median_holding_bars": 2.0,
+                 "fees_pct_annualised": approx(0.3 * 365 / 4), "gross_per_lot_pct": approx(1.0),
+                 "fees_per_lot_pct": approx(0.15), "turnover_annualised": approx(0.8 * 365 / 4),
+                 "cost_drag_note": None}
     # total: counts, turnover and the *_pct summed (each window its own account), bars pooled,
     # cost drag from the SUMMED READ DOLLARS ((80 - 71) / 80 = 11.25, not the 10.0 of the
     # summed percents: the two windows have different starting accounts), the average duration
@@ -148,7 +156,109 @@ def test_every_field_of_each_cell_and_of_the_total_is_the_hand_number(wins):
                    "mean_abs_allocation": approx(2.8 / 11), "max_abs_allocation": 0.5,
                    "gross_pct": approx(6.0), "fees_pct": approx(0.6), "net_pct": approx(5.4),
                    "cost_drag_pct": approx(11.25), "avg_trade_duration_bars": approx(2.402),
-                   "median_holding_bars": 2.0}
+                   "median_holding_bars": 2.0,
+                   # total: summed percents / trades / turnover over the pooled 11 bars
+                   "fees_pct_annualised": approx(0.6 * 365 / 11),
+                   "gross_per_lot_pct": approx(6.0 / 5), "fees_per_lot_pct": approx(0.6 / 5),
+                   "turnover_annualised": approx(2.9 * 365 / 11), "cost_drag_note": None}
+
+
+#: D-168: the twelve fields that existed before, as the pre-change code returned them for the
+#: two fixture windows (8-significant-digit floats, exact: no approx), in their original order
+LEGACY_KEYS = ["n_bars", "trades", "turnover", "direction_changes", "mean_abs_allocation",
+               "max_abs_allocation", "gross_pct", "fees_pct", "net_pct", "cost_drag_pct",
+               "avg_trade_duration_bars", "median_holding_bars"]
+LEGACY_GOLDEN = {
+    "AAA/w0": [7, 3, 2.1, 2, 0.28571429, 0.5, 4.0, 0.3, 3.7, 7.5, 2.67, 2.0],
+    "BBB/w1": [4, 2, 0.8, 1, 0.2, 0.4, 2.0, 0.3, 1.7, 15.0, 2.0, 2.0],
+    "total": [11, 5, 2.9, 3, 0.25454545, 0.5, 6.0, 0.6, 5.4, 11.25, 2.402, 2.0],
+}
+
+
+def test_every_pre_existing_field_is_byte_identical_and_keeps_its_place(wins):
+    out = we.window_economics(wins)
+    cells = {**out["windows"], "total": out["total"]}
+    for label, golden in LEGACY_GOLDEN.items():
+        cell = cells[label]
+        assert list(cell)[:len(LEGACY_KEYS)] == LEGACY_KEYS, label      # same keys, same order
+        assert json.dumps([cell[k] for k in LEGACY_KEYS]) == json.dumps(golden), label
+        # the new keys come after, in their own order
+        assert list(cell)[len(LEGACY_KEYS):] == [
+            "fees_pct_annualised", "gross_per_lot_pct", "fees_per_lot_pct",
+            "turnover_annualised", "cost_drag_note"], label
+
+
+# gross near zero: W2's bars with V0 = 2000, gross $2 (0.1 %), fees $6 (0.3 %): 0.1 < 5 x 0.3
+NEAR_ZERO_CORE = core_of(2, 2.0, 6.0, -4.0, 300.0, 2.0)
+
+
+def test_cost_drag_is_withheld_with_the_note_when_gross_is_near_zero(tmp_path):
+    write_window(tmp_path / "n", W2_ROWS, W2_TRADES, W2_TURNOVER)
+    c = we.window_economics([("X", "w", tmp_path / "n", NEAR_ZERO_CORE)])
+    cell, tot = c["windows"]["X/w"], c["total"]
+    for x in (cell, tot):
+        assert x["cost_drag_pct"] is None
+        assert x["cost_drag_note"] == "gross near zero: a signal finding, not a cost finding"
+    # the other fields are what they are with the run's cost drag of 300 % in the core
+    assert cell["gross_pct"] == approx(0.1) and cell["fees_pct"] == approx(0.3)
+    assert cell["net_pct"] == approx(-0.2) and cell["trades"] == 2
+    assert cell["fees_pct_annualised"] == approx(0.3 * 365 / 4)
+    assert cell["gross_per_lot_pct"] == approx(0.05) and cell["fees_per_lot_pct"] == approx(0.15)
+    assert cell["turnover_annualised"] == approx(0.8 * 365 / 4)
+
+
+def test_cost_drag_is_reported_at_five_times_fees_and_above_negative_gross_too(tmp_path):
+    write_window(tmp_path / "n", W2_ROWS, W2_TRADES, W2_TURNOVER)
+    # V0 2000: fees $4 -> 0.2 %, gross $20 -> 1.0 % = 5 x 0.2 %: the boundary is reported
+    at = core_of(2, 20.0, 4.0, 16.0, 20.0, 2.0)
+    c = we.window_economics([("X", "w", tmp_path / "n", at)])["windows"]["X/w"]
+    assert c["cost_drag_pct"] == 20.0 and c["cost_drag_note"] is None
+    # just under: $19.9 -> 0.995 % < 1.0 %
+    under = core_of(2, 19.9, 4.0, 15.9, 20.1, 2.0)
+    c = we.window_economics([("X", "w", tmp_path / "n", under)])["windows"]["X/w"]
+    assert c["cost_drag_pct"] is None and c["cost_drag_note"] is not None
+    # the test is on the absolute gross: a large loss with small fees is a cost reading
+    loss = core_of(2, -40.0, 4.0, -44.0, 10.0, 2.0)
+    c = we.window_economics([("X", "w", tmp_path / "n", loss)])["windows"]["X/w"]
+    assert c["cost_drag_pct"] == 10.0 and c["cost_drag_note"] is None
+
+
+def test_the_null_rule_leaves_cells_without_a_gross_or_fees_figure_as_the_run_recorded(tmp_path):
+    write_window(tmp_path / "n", W2_ROWS, W2_TRADES)             # no metrics.json
+    c = we.window_economics([("X", "w", tmp_path / "n", None)])["windows"]["X/w"]
+    assert c["cost_drag_pct"] is None and c["cost_drag_note"] is None
+    assert c["fees_pct_annualised"] is None and c["gross_per_lot_pct"] is None
+    assert c["fees_per_lot_pct"] is None and c["turnover_annualised"] is None
+    part = {k: v for k, v in W2_CORE.items() if k != "fees_paid"}
+    c = we.window_economics([("X", "w", tmp_path / "n", part)])["windows"]["X/w"]
+    assert c["cost_drag_pct"] == 15.0 and c["cost_drag_note"] is None
+
+
+def test_a_window_without_lots_has_no_per_lot_figures_and_a_zero_gross_zero_fees_cell_reports(tmp_path):
+    write_window(tmp_path / "e", W2_ROWS, [], W2_TURNOVER)
+    core = core_of(0, 0.0, 0.0, 0.0, None, None)
+    c = we.window_economics([("X", "w", tmp_path / "e", core)])["windows"]["X/w"]
+    assert c["gross_per_lot_pct"] is None and c["fees_per_lot_pct"] is None
+    assert c["fees_pct_annualised"] == 0.0 and c["turnover_annualised"] == approx(0.8 * 365 / 4)
+    assert c["cost_drag_pct"] is None and c["cost_drag_note"] is None     # 0 >= 0: not withheld
+
+
+def test_the_total_is_gated_on_its_own_summed_percents(wins, tmp_path):
+    """One window carries a real cost reading, the other a near-zero gross: each cell is gated
+    on its own figures, the total on the summed percents (4.0 + 0.1 = 4.1 against 5 x 0.6 =
+    3.0: reported, from the summed dollars (42 - 33) / 42). Two near-zero windows give a
+    withheld total (0.2 against 5 x 0.6)."""
+    write_window(tmp_path / "n", W2_ROWS, W2_TRADES, W2_TURNOVER)
+    out = we.window_economics([wins[0], ("X", "w", tmp_path / "n", NEAR_ZERO_CORE)])
+    assert out["windows"]["AAA/w0"]["cost_drag_pct"] == approx(7.5)
+    assert out["windows"]["X/w"]["cost_drag_pct"] is None
+    assert out["total"]["gross_pct"] == approx(4.1) and out["total"]["fees_pct"] == approx(0.6)
+    assert out["total"]["cost_drag_pct"] == approx(9.0 / 42.0 * 100)
+    assert out["total"]["cost_drag_note"] is None
+    out2 = we.window_economics([("X", "w", tmp_path / "n", NEAR_ZERO_CORE),
+                                ("Y", "w", tmp_path / "n", NEAR_ZERO_CORE)])
+    assert out2["total"]["gross_pct"] == approx(0.2) and out2["total"]["fees_pct"] == approx(0.6)
+    assert out2["total"]["cost_drag_pct"] is None and out2["total"]["cost_drag_note"]
 
 
 def test_the_read_figures_are_the_core_dollars_converted_by_the_starting_account(wins):
@@ -572,13 +682,14 @@ def test_more_cells_than_the_cap_is_refused_and_logged(tmp_path, monkeypatch):
     assert e["reason"] == res["reason"] and "result" not in e
 
 
-def test_twelve_cells_are_not_over_the_cell_cap(tmp_path, monkeypatch):
+def test_twelve_cells_are_not_over_the_cell_cap_or_the_character_cap(tmp_path, monkeypatch):
+    # D-168: the derived fields take about 170 characters per cell; MAX_RESULT_CHARS is 6500 so
+    # 12 cells and the total fit both the cell cap and the character cap.
     wins = [(f"rw{i}", f"S{i}", "w0", 0, 40 + i) for i in range(12)]
     monkeypatch.setattr(pr4, "WINDOWS", wins)
     root = make_run(tmp_path / "run_12")
     enrich(root)
     res = engine(root).window_economics()
-    # 12 cells and the total fit the cell cap and the 4000-character cap (about 3000 here)
     assert res["status"] == "ok", res.get("reason")
     assert len(res["result"]["windows"]) == 12
     assert len(aq._canon_json(res["result"])) <= aq.MAX_RESULT_CHARS
