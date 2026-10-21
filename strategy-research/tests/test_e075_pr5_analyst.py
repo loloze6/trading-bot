@@ -511,6 +511,15 @@ def test_run_context_bar_count_follows_the_timeframe_and_is_absent_when_unreadab
     assert "Windows: w1 2020-01-01..soon" in asm.run_context(bad_date, "x", None)
 
 
+def test_run_context_has_no_bar_count_for_a_step_longer_than_a_day(tmp_path):
+    """A weekly step would be counted as 0 bars per day by window_bars; the count is left out."""
+    weekly = _write_protocol(tmp_path / "w", "1w", [("w1", "2020-01-01", "2020-01-05")])
+    line = [x for x in asm.run_context(weekly, "x", None).split("\n") if x.startswith("Windows:")]
+    assert line == ["Windows: w1 2020-01-01..2020-01-05"]
+    assert asm._window_bars_suffix({"label": "w1", "test": {"start": "2020-01-01",
+                                                            "end": "2020-01-05"}}, "1w") == ""
+
+
 def test_the_cost_reading_order_is_in_the_skill_and_both_lenses():
     """D-168 (b): fees as a percent of the account first, then gross per lot against fees per
     lot, then turnover; fees over the absolute gross never first; the one signal-finding

@@ -43,11 +43,12 @@ lens.
   changes, allocation, gross / fees / net (percent of the window's starting account), cost drag
   and median holding bars (the data dictionary, section 10, defines each). Read its cost
   figures in this order: first fees as a percent of the account (`fees_pct` per window,
-  `fees_pct_annualised` per year), then gross per lot against fees per lot (`gross_per_lot_pct`,
-  `fees_per_lot_pct`), then turnover (`turnover`, `turnover_annualised`). Fees over the absolute
-  gross is never the first figure. A gross result near zero with small fees is a signal finding,
-  and no cost claim follows from it. You have 150 comparisons. A refused call costs nothing and
-  tells you why.
+  `fees_pct_annualised` per 365 bars of the window, a year on a daily timeframe), then gross
+  per lot against fees per lot (`gross_per_lot_pct`, `fees_per_lot_pct`), then turnover
+  (`turnover`, `turnover_annualised`, also per 365 bars). Fees over the absolute gross is never
+  the first figure. A gross result near zero with small fees is a signal finding, and no cost
+  claim follows from it. You have 150 comparisons. A refused call costs nothing and tells you
+  why.
 
 ## Method (a method, not a form)
 

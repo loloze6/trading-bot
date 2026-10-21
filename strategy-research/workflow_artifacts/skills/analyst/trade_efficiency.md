@@ -18,6 +18,6 @@ the signal predicts only the next bar); its test tests that cause; its vehicle c
 cause. Read `window_economics` first: it gives, per window and
 coin, the trades, the turnover, the direction changes, the allocation, gross, fees, net and
 cost drag, so the cause is named from a measurement. Read the cost in this order: first fees
-as a percent of the account (per window and per year), then gross per lot against fees per
+as a percent of the account (per window and per 365 bars: a year on a daily timeframe), then gross per lot against fees per
 lot, then turnover; fees over the absolute gross is never the first figure. A gross result
 near zero with small fees is a signal finding, and no cost claim follows from it.

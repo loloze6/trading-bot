@@ -97,7 +97,7 @@ def _window_bars_suffix(window, timeframe) -> str:
     window or the timeframe cannot be read, so the line is then as it was without the count."""
     import claim_card
     step = claim_card.timeframe_seconds(timeframe)
-    if not step:
+    if not step or step > 86400:
         return ""
     try:
         return f", {claim_card.window_bars([window], step)} bars"

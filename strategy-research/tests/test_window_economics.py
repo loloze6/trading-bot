@@ -682,18 +682,16 @@ def test_more_cells_than_the_cap_is_refused_and_logged(tmp_path, monkeypatch):
     assert e["reason"] == res["reason"] and "result" not in e
 
 
-def test_eight_cells_are_not_over_the_cell_cap_or_the_character_cap(tmp_path, monkeypatch):
-    # D-168: the five derived fields take about 170 characters per cell, so the 4000-character
-    # cap now fits 8 cells and the total here (about 3200); it fitted 12 before (about 3000).
-    # The cell cap (MAX_GROUPS 12) is unchanged; a 9..12-cell variant is refused by the
-    # character cap (a lead / operator decision whether to raise MAX_RESULT_CHARS, not made here).
-    wins = [(f"rw{i}", f"S{i}", "w0", 0, 40 + i) for i in range(8)]
+def test_twelve_cells_are_not_over_the_cell_cap_or_the_character_cap(tmp_path, monkeypatch):
+    # D-168: the derived fields take about 170 characters per cell; MAX_RESULT_CHARS is 6500 so
+    # 12 cells and the total fit both the cell cap and the character cap.
+    wins = [(f"rw{i}", f"S{i}", "w0", 0, 40 + i) for i in range(12)]
     monkeypatch.setattr(pr4, "WINDOWS", wins)
-    root = make_run(tmp_path / "run_8")
+    root = make_run(tmp_path / "run_12")
     enrich(root)
     res = engine(root).window_economics()
     assert res["status"] == "ok", res.get("reason")
-    assert len(res["result"]["windows"]) == 8
+    assert len(res["result"]["windows"]) == 12
     assert len(aq._canon_json(res["result"])) <= aq.MAX_RESULT_CHARS
 
 

@@ -10,7 +10,7 @@ never the claim. A cost claim names the cause of the weak gross edge (the edge l
 bar, the forecast changes sign on most bars, the forecast is large when the move is small,
 the signal predicts only the next bar); its test tests that cause; its vehicle changes that
 cause. Read the cost in this order: first fees as a percent of the account (per window and per
-year), then gross per lot against fees per lot, then turnover; fees over the absolute gross is
+365 bars: a year on a daily timeframe), then gross per lot against fees per lot, then turnover; fees over the absolute gross is
 never the first figure. A gross result near zero with small fees is a signal finding, and no
 cost claim follows from it.
 
