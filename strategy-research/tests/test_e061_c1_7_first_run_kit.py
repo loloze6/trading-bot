@@ -74,6 +74,7 @@ sys.path.insert(0, str(_SR / "tools"))
 import run_campaign as camp  # noqa: E402
 import run_phase1_research as orch  # noqa: E402
 import protocol_resolution as protres  # noqa: E402
+import holdout_policy as hpol  # noqa: E402
 
 from test_halt_quarantine_policy import campaign_root  # noqa: E402,F401
 
@@ -357,7 +358,9 @@ def test_all_13_protocols_surveyed_against_the_five_criteria_none_qualifies():
         eras_touched = {protres.era_id_for_timestamp(s, policy["eras"]) for s in starts}
         within_train_val = min(starts) >= "2018-01-01" and max(ends) < holdout_range[0]
         touches_sealed = any(e >= holdout_range[0] for e in ends)
-        holdout = proto.get("holdout")
+        # PR-9 (D-167): the reference block resolves to the policy's own range
+        # (holdout-consistent by construction); a literal block must name it.
+        holdout = hpol.resolve_holdout_block(proto.get("holdout"), policy)
         holdout_ok = holdout is None or (
             holdout.get("start") == holdout_range[0] and holdout.get("end") == holdout_range[1])
         promo = proto.get("promotion")

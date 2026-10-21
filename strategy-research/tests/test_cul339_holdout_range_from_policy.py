@@ -205,6 +205,35 @@ def test_agreeing_protocol_block_runs_on_policy_range(run_main):
     assert [(c["start"], c["end"]) for c in calls] == [(S_START, S_END)]
 
 
+# PR-9 (D-167): a generated protocol carries the reference instead of dates.
+_REF = {"ref": hp.HOLDOUT_RANGE_REF}
+
+
+def test_reference_block_runs_on_policy_range_like_the_literal_block(run_main):
+    calls, out_dir, code = run_main(holdout_block=dict(_REF))
+    assert code is None
+    assert [(c["start"], c["end"]) for c in calls] == [(S_START, S_END)]
+    payload = json.loads((out_dir / "holdout_result.json").read_text(encoding="utf-8"))
+    assert payload["holdout_window"] == {"start": S_START, "end": S_END}
+
+
+@pytest.mark.parametrize("block", [
+    pytest.param({"ref": "config/campaign_data_policy.yaml#validation_range"}, id="other-ref"),
+    pytest.param({"ref": hp.HOLDOUT_RANGE_REF, "start": S_START, "end": S_END}, id="ref-plus-dates"),
+    pytest.param({"ref": None}, id="null-ref"),
+])
+@pytest.mark.parametrize("holdout", [True, False], ids=["holdout", "walk-forward"])
+def test_unknown_reference_refused_before_any_fetch(run_main, capsys, block, holdout):
+    calls, out_dir, code = run_main(holdout_block=block, holdout=holdout,
+                                    hypothesis_id=HYP if holdout else None)
+    _assert_refused_untouched(calls, out_dir, code, capsys)
+
+
+def test_reference_block_refused_when_the_policy_range_is_unusable(run_main, capsys):
+    calls, out_dir, code = run_main(holdout_block=dict(_REF), policy_range=[S_START, None])
+    _assert_refused_untouched(calls, out_dir, code, capsys)
+
+
 @pytest.mark.parametrize("policy_range", [
     pytest.param([S_START, None], id="null-end"),
     pytest.param([S_START, ""], id="empty-end"),
@@ -292,6 +321,23 @@ def test_training_guard_uses_policy_start_without_protocol_block(run_main):
     calls, _, code = _wf(run_main)
     assert code is None and calls
     assert all(c["holdout_start"] == S_START for c in calls)
+
+
+@pytest.mark.parametrize("policy_end", [S_END, None], ids=["closed", "open-end"])
+def test_training_guard_uses_policy_start_with_reference_block(run_main, policy_end):
+    """PR-9 (D-167): the reference resolves to the policy's own start, as the
+    literal block the generator used to write did; training still reads only
+    the policy START, so an open end does not block it."""
+    calls, _, code = _wf(run_main, holdout_block=dict(_REF), policy_range=[S_START, policy_end])
+    assert code is None and calls
+    assert all(c["holdout_start"] == S_START for c in calls)
+
+
+def test_training_window_past_policy_start_refused_with_reference_block(run_main, capsys):
+    window = {"label": "leaky", "test": {"start": _day(_SANDBOX_START, -10),
+                                         "end": _day(_SANDBOX_START, 5)}}
+    calls, out_dir, code = _wf(run_main, holdout_block=dict(_REF), windows=[window])
+    _assert_refused_untouched(calls, out_dir, code, capsys)
 
 
 def test_training_window_past_policy_start_refused_even_if_protocol_allows_it(run_main, capsys):
@@ -617,13 +663,19 @@ def test_generator_refuses_a_disagreeing_holdout_override():
     rpr = _rpr()
     hs, he = rpr._load_holdout_range()
     policy_block = {"start": hs, "end": he}
-    assert rpr._generated_protocol_holdout_block({}) == policy_block
-    assert rpr._generated_protocol_holdout_block({"holdout": None}) == policy_block
-    assert rpr._generated_protocol_holdout_block({"holdout": dict(policy_block)}) == policy_block
+    # PR-9 (D-167): the generated block is the reference, never the dates; an
+    # override naming the policy range (or the reference itself) still agrees.
+    ref = {"ref": hp.HOLDOUT_RANGE_REF}
+    assert rpr._generated_protocol_holdout_block({}) == ref
+    assert rpr._generated_protocol_holdout_block({"holdout": None}) == ref
+    assert rpr._generated_protocol_holdout_block({"holdout": dict(policy_block)}) == ref
+    assert rpr._generated_protocol_holdout_block({"holdout": dict(ref)}) == ref
     shifted = (date.fromisoformat(he) + timedelta(days=1)).isoformat()
     earlier = (date.fromisoformat(hs) - timedelta(days=365)).isoformat()
     for bad in ({"start": hs, "end": None}, {"start": hs, "end": shifted},
                 {"start": earlier, "end": he}, {"start": hs}, [hs, he], "policy",
-                {"start": hs, "end": he, "note": "x"}):
+                {"start": hs, "end": he, "note": "x"},
+                {"ref": "config/campaign_data_policy.yaml#validation_range"},
+                {**ref, "start": hs}):
         with pytest.raises(rpr.HoldoutBoundaryBreach):
             rpr._generated_protocol_holdout_block({"holdout": bad})

@@ -11682,24 +11682,30 @@ def _generated_protocol_holdout_block(proto_constraint: dict) -> dict:
     """CUL-339 review fix: the `holdout` block a generated protocol carries --
     always the policy's holdout_range. A pre-registered override
     (machine_constraints.protocol.holdout) is accepted only when it names
-    exactly that range (strict days); any disagreement is refused HERE, at
-    generation, instead of being written and only refused later by
-    `run_protocol.py --holdout`. An explicit null is treated as absent. Shared
-    by generation and run_campaign._expected_generated_protocol so both raise
-    at the same place."""
+    exactly that range (strict days) or is the reference itself; any
+    disagreement is refused HERE, at generation, instead of being written and
+    only refused later by `run_protocol.py --holdout`. An explicit null is
+    treated as absent. Shared by generation and
+    run_campaign._expected_generated_protocol so both raise at the same place.
+    PR-9 (D-167): the block is the REFERENCE
+    {"ref": holdout_policy.HOLDOUT_RANGE_REF}, never the dates -- the policy
+    is still loaded and validated here (a missing or malformed policy refuses
+    generation, as before), but its days are not written into the protocol.
+    Readers resolve the reference (run_protocol.py, check_data.py)."""
     policy_start, policy_end = _load_holdout_range()
     override = proto_constraint.get("holdout")
     if override is not None:
-        agrees = (isinstance(override, dict)
-                  and set(override) <= {"start", "end"}
-                  and _holdout_policy.iso_day(override.get("start")) == policy_start
-                  and _holdout_policy.iso_day(override.get("end")) == policy_end)
+        agrees = _holdout_policy.is_holdout_ref(override) or (
+            isinstance(override, dict)
+            and set(override) <= {"start", "end"}
+            and _holdout_policy.iso_day(override.get("start")) == policy_start
+            and _holdout_policy.iso_day(override.get("end")) == policy_end)
         if not agrees:
             raise HoldoutBoundaryBreach(
                 f"machine_constraints.protocol.holdout {override!r} disagrees with "
                 f"campaign_data_policy.yaml holdout_range [{policy_start}, {policy_end}]. "
                 f"The holdout range has ONE home (the policy); remove the override.")
-    return {"start": policy_start, "end": policy_end}
+    return _holdout_policy.holdout_ref_block()
 
 
 def _assert_windows_clear_of_holdout(windows: list, holdout_start: str,
@@ -16701,9 +16707,9 @@ def _route_holdout_evaluation(run_dir: Path, run_id: str) -> str:
     # 3. Check if holdout_result.yaml is present
     hr_path = ARTIFACTS / "holdout_result.yaml"
     if not hr_path.exists():
-        holdout_range = policy.get("holdout_range", [])
+        # PR-9 (D-167): the reference, never the sealed dates.
         print(f"\n⏸️  HOLDOUT: holdout_result.yaml not yet present for {hyp_id}.")
-        print(f"   Holdout range: {holdout_range}")
+        print(f"   Holdout range: {_holdout_policy.HOLDOUT_RANGE_REF}")
         print(f"   Run the holdout backtest on this range, write holdout_result.yaml, "
               f"then resume the pipeline.")
         return "human_pause"

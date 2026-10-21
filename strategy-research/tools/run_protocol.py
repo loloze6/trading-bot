@@ -2027,11 +2027,19 @@ def _policy_holdout_range(policy: dict) -> tuple[str, str]:
         _refuse_before_any_backtest(str(exc))
 
 
-def _protocol_holdout_block(protocol: dict) -> dict | None:
+def _protocol_holdout_block(protocol: dict, policy: dict) -> dict | None:
     """The protocol's own `holdout` block, validated as a mapping: None when
     absent or null (treated identically), a refusal when it is anything but a
-    {start, end} mapping. The ONE reader of that block in this module."""
-    block = protocol.get("holdout")
+    {start, end} mapping. The ONE reader of that block in this module.
+    PR-9 (D-167): a generated protocol's reference block
+    ({"ref": holdout_policy.HOLDOUT_RANGE_REF}) resolves to the policy's own
+    [start, end] -- the literal block the generator wrote from the policy
+    before PR-9 -- so both callers below behave exactly as with that literal
+    block; a `ref` naming anything else is refused."""
+    try:
+        block = _holdout_policy.resolve_holdout_block(protocol.get("holdout"), policy)
+    except _holdout_policy.HoldoutPolicyError as exc:
+        _refuse_before_any_backtest(str(exc))
     if block is None:
         return None
     if not isinstance(block, dict):
@@ -2048,7 +2056,7 @@ def _resolve_holdout_window(protocol: dict, policy: dict) -> tuple[str, str]:
     whole sealed window plus post-holdout data -- is refused before any fetch.
     The block is never used to widen, narrow or shift the range."""
     start, end = _policy_holdout_range(policy)
-    block = _protocol_holdout_block(protocol)
+    block = _protocol_holdout_block(protocol, policy)
     if block is None:
         return start, end
     p_start, p_end = block.get("start"), block.get("end")
@@ -2075,7 +2083,7 @@ def _training_holdout_start(protocol: dict, policy: dict) -> str:
             policy, f"{_DATA_POLICY_PATH} holdout_range")
     except _holdout_policy.HoldoutPolicyError as exc:
         _refuse_before_any_backtest(str(exc))
-    block = _protocol_holdout_block(protocol)
+    block = _protocol_holdout_block(protocol, policy)
     raw = None if block is None else block.get("start")
     if raw is None:
         return policy_start
