@@ -401,8 +401,13 @@
     // blocks
     var b = obj(d.blocks);
     var blocks = arr(b.blocks);
-    frag.appendChild(el("h2", { text: "Blocks (registry revision " + fieldText(b.revision) + "), " + blocks.length }));
-    if (blocks.length) {
+    var blocksFailed = !isNil(b.error);
+    frag.appendChild(el("h2", { text: blocksFailed ? "Blocks" : "Blocks (registry revision " + fieldText(b.revision) + "), " + blocks.length }));
+    if (blocksFailed) {
+      // an unreadable registry is an error, not "no blocks recorded"
+      frag.appendChild(el("div", { class: "errorbox", role: "alert" },
+        el("strong", { text: "The block registry could not be read. " }), el("span", { text: String(b.error) })));
+    } else if (blocks.length) {
       var runIds = {};
       runs.forEach(function (r) { if (r && r.run_id) runIds[r.run_id] = true; });
       var runLink = function (o) {
@@ -677,10 +682,10 @@
           var labNode = el("span", { text: label });
           if (optVariant && hasWindowCol) {
             var hw = makeHref(runId, winMap, optVariant, label);
-            if (hw) labNode = el("a", { href: hw, text: label });
+            if (hw) labNode = el("a", { class: "tap", href: hw, text: label });
           } else if (by === "window" && hasVariantCol) {
             var hv = makeHref(runId, winMap, label, o);
-            if (hv) labNode = el("a", { href: hv, text: label });
+            if (hv) labNode = el("a", { class: "tap", href: hv, text: label });
           }
           kv.appendChild(el("div", { class: "k" }, labNode));
           kv.appendChild(el("div", { class: "v" }, valueNode(pa[1])));

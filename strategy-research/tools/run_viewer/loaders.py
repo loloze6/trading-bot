@@ -19,23 +19,27 @@ reads the policy, once).
 Parsed files are cached by (path, mtime_ns, size), so every request rescans cheaply and a
 finished run shows up without a restart.
 """
-import json
-import math
-import os
-import re
 import sys
-from datetime import date, datetime
-from pathlib import Path
 
-import yaml
+sys.dont_write_bytecode = True  # before any tools/ import (block_registry): no .pyc under the repo
+
+import json  # noqa: E402
+import math  # noqa: E402
+import os  # noqa: E402
+import re  # noqa: E402
+from datetime import date, datetime  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+import yaml  # noqa: E402
 
 _TOOLS_DIR = Path(__file__).resolve().parents[1]
 
 # yaml.safe_load semantics (the safe loader); the C-accelerated safe loader when available.
 _SAFE_LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
-RUN_ID_RE = re.compile(r"^run_\d+$")
-_STAMP_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+RUN_ID_RE = re.compile(r"^run_[0-9]+\Z")
+_STAMP_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*\Z")
+_SAFE_NAME_RE = _STAMP_RE
 RAW_CAP = 300 * 1024
 COST_LABEL = "model cost (stages that called a model)"
 
@@ -379,13 +383,37 @@ def _first_paragraph(s):
     return " ".join(paras[0].split()) if paras else None
 
 
+def _brief_target(rd: Reader, brief_path):
+    """The brief file to read, or None when `brief_path` is not a relative briefs/<name>.md
+    whose resolved location is inside <root>/briefs (absolute paths, "..", other folders,
+    other suffixes and symlinks out of briefs/ are all refused)."""
+    if not isinstance(brief_path, str) or not brief_path or "\x00" in brief_path:
+        return None
+    try:
+        p = Path(brief_path)
+        if p.is_absolute() or p.anchor or p.drive or ".." in p.parts:
+            return None
+        if len(p.parts) < 2 or p.parts[0] != "briefs" or p.suffix != ".md":
+            return None
+        full = (rd.root / p).resolve()
+        full.relative_to((rd.root / "briefs").resolve())
+    except (ValueError, OSError):
+        return None
+    return rd.root / p
+
+
 def read_brief(rd: Reader, brief_path):
     """-> {"front", "purpose", "purpose_full", "outcomes", "fold", "symbols", "timeframe"}."""
     out = {"front": None, "purpose": None, "purpose_full": None, "outcomes": [],
            "fold": None, "symbols": None, "timeframe": None}
-    if not isinstance(brief_path, str) or not brief_path or ".." in Path(brief_path).parts:
+    if brief_path is None:
         return out
-    text = rd.text(rd.root / brief_path)
+    target = _brief_target(rd, brief_path)
+    if target is None:
+        # the queue names something that is not briefs/<name>.md: read nothing
+        out["purpose"] = out["purpose_full"] = _unr("brief_path outside briefs/")
+        return out
+    text = rd.text(target)
     front = parse_brief(text)
     if not front:
         return out
@@ -415,9 +443,9 @@ def entry_for_run(entries, run_id):
     return None
 
 
-_LOG_TS = r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z?)"
-_LAUNCH_RE = re.compile(r"^- " + _LOG_TS + r" LAUNCH-CARD (\S+) -> (run_\d+)")
-_DONE_RE = re.compile(r"^- " + _LOG_TS + r" DONE (\S+) \((run_\d+)\)")
+_LOG_TS = r"([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z?)"
+_LAUNCH_RE = re.compile(r"^- " + _LOG_TS + r" LAUNCH-CARD (\S+) -> (run_[0-9]+)")
+_DONE_RE = re.compile(r"^- " + _LOG_TS + r" DONE (\S+) \((run_[0-9]+)\)")
 
 
 def log_lines(rd: Reader):
@@ -511,7 +539,7 @@ def list_variants(rd: Reader):
 
 
 def _safe_name(s):
-    return isinstance(s, str) and re.match(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$", s) is not None and ".." not in s
+    return isinstance(s, str) and _SAFE_NAME_RE.match(s) is not None and ".." not in s
 
 
 def window_map(rd: Reader, variant):
@@ -685,7 +713,7 @@ def _blocks(root):
 
         doc = block_registry.load_registry(path)
     except Exception as exc:  # noqa: BLE001 -- report, never crash
-        return {"error": f"{type(exc).__name__}: {str(exc)[:300]}"}
+        return {"error": f"{type(exc).__name__} reading block_registry.yaml"}
     doc = _jsonable(doc)
     status = {}
     for rec in _as_list(doc.get("statuses")):
@@ -796,6 +824,14 @@ def kv_table(title, pairs):
 # --------------------------------------------------------------------------- step framework
 
 
+def _inside(path, base) -> bool:
+    try:
+        Path(path).resolve().relative_to(base)
+        return True
+    except (ValueError, OSError):
+        return False
+
+
 class Step:
     """One step's accumulating result."""
 
@@ -825,11 +861,17 @@ class Step:
 
     def result(self):
         raw = []
+        # raw embeds only this run's own files and the brief; the campaign-wide records
+        # (log, state, memory, queue, block registry) stay listed in `sources` only
+        run_base = (self.rd.runs_dir / (self.rd.run_id or "")).resolve()
+        briefs_base = (self.rd.root / "briefs").resolve()
         for p in self.rd.present_paths():
             if p.endswith(".csv"):
                 continue
             ap = self._abs(p)
-            t = self.rd.text(ap) if ap is not None else None
+            if ap is None or not (_inside(ap, run_base) or _inside(ap, briefs_base)):
+                continue
+            t = self.rd.text(ap)
             if isinstance(t, str):
                 trunc = len(t) > RAW_CAP
                 raw.append({"path": p, "text": t[:RAW_CAP], "truncated": trunc})
@@ -883,12 +925,16 @@ def _step_launch(s: Step, ctx):
     li = [ln[:600] for ln in lines if (ctx["run_id"] in ln and ("LAUNCH-CARD" in ln or "VENUE-CHECK" in ln))]
     rd.yaml(rd.root / "config" / "campaign_queue.yaml")
     rd.text(rd.root / "campaign_record" / "campaign_log.md")
+    if entry is not None:
+        bt = _brief_target(rd, entry.get("brief_path"))
+        if bt is not None:
+            rd.text(bt)  # the brief is a source of this step (and the one non-run file its raw embeds)
     if entry is None and ps is None:
         s.status = "absent"
         s.line = "no queue entry and no pipeline_state.yaml for this run"
         return
     fold = brief.get("fold") or ctx["fold"]
-    s.head("entry", entry.get("id") if entry else "unreadable (no queue entry names this run)")
+    s.head("entry", entry.get("id") if entry else "absent (no queue entry names this run)")
     s.head("fold", fold)
     coins = ctx["coins"]
     s.head("coins x timeframe", f"{', '.join(coins) if coins else '-'} x {brief.get('timeframe') or ctx['timeframe'] or '-'}")
@@ -927,11 +973,15 @@ def _step_config(s: Step, ctx):
         return
     hid = opt(spec, "hypothesis_id") or opt(dec, "hypothesis_id")
     if not hid:
-        hid = rd.yaml(rd.run_path("artifacts/hypothesis_card.yaml"))
-        hid = opt(hid, "hypothesis_id") or _unr("missing key hypothesis_id (backtest_spec, decision, hypothesis_card)")
+        card = rd.yaml(rd.run_path("artifacts/hypothesis_card.yaml"))
+        hid = opt(card, "hypothesis_id")
+        if not hid:
+            # absent files give "absent"; "unreadable" only when a file exists but lacks the key
+            hid = "absent" if (spec is None and dec is None and card is None) else _unr(
+                "missing key hypothesis_id (backtest_spec, decision, hypothesis_card)")
     s.head("hypothesis id", hid)
     devs = opt(dev, "deviations")
-    dstatus = req(dev, "status") if dev is not None else _unr("deviations.yaml not read")
+    dstatus = req(dev, "status") if dev is not None else "absent"
     s.head("deviations", f"{dstatus} ({len(devs) if isinstance(devs, list) else '?'} listed)")
     rat = opt(spec, "config_rationale")
     n_rat = len(rat) if isinstance(rat, list) else 0
@@ -940,6 +990,9 @@ def _step_config(s: Step, ctx):
     if isinstance(dstatus, Unr):
         s.status = "unreadable"
         s.line = dstatus
+    elif dstatus == "absent":
+        s.status = "warn"
+        s.line = "deviations.yaml absent; deviations not checked"
     elif dstatus != "exact" or (isinstance(devs, list) and devs):
         s.status = "warn"
         s.line = f"deviations status {dstatus}"
@@ -1237,7 +1290,7 @@ def _step_grid(s: Step, ctx):
         s.status = "absent"
         s.line = "no grid_evaluation.yaml, residual_ic.yaml or idea_status.yaml"
         return
-    idea = req(ist, "idea_status") if ist is not None else (req(grid, "idea_status") if grid is not None else _unr("no idea_status"))
+    idea = req(ist, "idea_status") if ist is not None else (req(grid, "idea_status") if grid is not None else "absent")
     g = opt(grid, "grid")
     g = g if isinstance(g, dict) else {}
     cells = fails = incon = 0
@@ -1290,7 +1343,7 @@ def _step_claims(s: Step, ctx):
         s.status = "absent"
         s.line = "no claim files"
         return
-    cstat = req(meas, "claim_status") if meas is not None else (req(dig, "claim_status") if dig is not None else _unr("no claim_status"))
+    cstat = req(meas, "claim_status") if meas is not None else (req(dig, "claim_status") if dig is not None else "absent")
     tests = [t for t in _as_list(opt(meas, "tests")) if isinstance(t, dict)]
     measured = opt(meas, "n_tests_measured")
     s.head("claim_status", cstat)

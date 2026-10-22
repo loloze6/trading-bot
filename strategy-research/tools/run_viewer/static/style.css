@@ -7,7 +7,7 @@
   --muted: #5b6470;
   --line: #d0d5dc;
   --link: #0b57d0;
-  --ok: #1a7f37;      --ok-bg: #e6f4ea;
+  --ok: #176b2f;      --ok-bg: #e6f4ea;   /* 5.8:1 on --ok-bg */
   --fail: #c62828;    --fail-bg: #fdecea;
   --warn: #8a5a00;    --warn-bg: #fff3d1;
   --absent: #5b6470;  --absent-bg: #eef0f3;
@@ -36,7 +36,6 @@ body {
   font: 16px/1.45 var(--font);
   background: var(--bg);
   color: var(--fg);
-  overflow-x: hidden;
   overflow-wrap: anywhere;
 }
 a { color: var(--link); }
@@ -196,7 +195,8 @@ table.t td .cell { display: block; max-width: 46ch; min-width: 6ch; overflow-wra
 table.t td.num { text-align: right; font-variant-numeric: tabular-nums; }
 table.t tr.click { cursor: pointer; }
 table.t tr.click:hover td { background: var(--bg2); }
-table.t a { display: inline-block; padding: 8px 0; }
+/* link targets in view 3 are at least 44 px tall */
+table.t a, .kv .k a, a.tap { display: inline-flex; align-items: center; min-height: 44px; }
 
 /* narrow/wide switch at 900 px */
 .wide-only { display: none; }

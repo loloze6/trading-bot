@@ -18,17 +18,34 @@ exception message or a repr. The public API is exactly `sanitize(obj)` and
 Fail closed: if the policy is absent or unreadable the module raises a fixed-text error and never
 returns unmasked data.
 
-Token shapes masked, when the date they spell falls inside the window:
-  * YYYY-MM-DD, also when followed by T or a space and a time (and an optional
-    fraction / Z / offset): the whole token is replaced;
+Token shapes masked, when the day (or the month / quarter / half) they spell intersects
+the window. One left-to-right pass over the text: at each position the leftmost token
+wins (so "5 May YYYY" is read as a day, not as the month "May YYYY"), and a token whose
+period does not intersect the window is left as it was.
+  * ISO YYYY-MM-DD, also when followed by T or a space and a time (and an optional
+    fraction / Z / offset): the whole token is replaced. The only guard before it is
+    "not a digit", so it is masked when glued after letters too;
+  * YYYY/MM/DD, YYYY.MM.DD, YYYY_MM_DD (one separator used twice);
+  * D/M/YYYY, M/D/YYYY, D.M.YYYY, D-M-YYYY (masked when EITHER the day/month reading or
+    the month/day reading is inside the window);
+  * "D Mon YYYY", "D Month YYYY", "Mon D, YYYY", "Month D, YYYY", "DD-Mon-YYYY" (English
+    month names and 3-letter abbreviations, case-insensitive, optional ordinal suffix);
   * compact YYYYMMDD, also when followed by T<time>Z (results stamps like
     YYYYMMDDTHHMMSSZ, with an optional _<hash> suffix): the whole stamp is replaced;
-  * YYYY-MM month tokens whose month intersects the window.
+  * months: YYYY-MM, YYYY/MM, MM/YYYY, "Month YYYY", "Mon YYYY";
+  * quarter labels (Q1..Q4 with a year, either order, "Q1 YYYY" / "YYYY Q1" / "YYYYQ1" /
+    "YYYY-Q1" / "Q1-YYYY") and half labels (H1/H2, same forms).
+
+Known limits, NOT masked: epoch numbers, ISO week dates (YYYY-Www-D), ordinal dates
+(YYYY-DDD), two-digit years, and any date spelled in a language other than English.
 """
-import re as _re
 import sys as _sys
-from datetime import date as _date
-from pathlib import Path as _Path
+
+_sys.dont_write_bytecode = True  # before any tools/ import: never write .pyc under the repo
+
+import re as _re  # noqa: E402
+from datetime import date as _date  # noqa: E402
+from pathlib import Path as _Path  # noqa: E402
 
 __all__ = ["sanitize", "sanitize_text"]
 
@@ -40,14 +57,35 @@ _TOOLS_DIR = str(_Path(__file__).resolve().parents[1])
 
 _range = None  # (date, date) once loaded; private, never exposed
 
-_FULL = _re.compile(
-    r"(?<![0-9A-Za-z])(\d{4})-(\d{2})-(\d{2})"
-    r"(?:[T ]\d{2}:\d{2}(?::\d{2}(?:[.,]\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?(?![0-9])"
+_MON = (r"(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|"
+        r"sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)(?![A-Za-z])")
+_MON_NUM = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+            "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12}
+_ORD = r"(?:st|nd|rd|th)?"
+_SP = r"(?:\s+|-)"
+
+_I = _re.IGNORECASE
+_P_ISO = _re.compile(
+    r"(?<![0-9])([0-9]{4})-([0-9]{2})-([0-9]{2})"
+    r"(?:[T ][0-9]{2}:[0-9]{2}(?::[0-9]{2}(?:[.,][0-9]+)?)?(?:Z|[+-][0-9]{2}:?[0-9]{2})?)?(?![0-9])"
 )
-_COMPACT = _re.compile(
-    r"(?<![0-9A-Za-z])(\d{4})(\d{2})(\d{2})(?:T\d{4,6}(?:\.\d+)?Z?(?:_[0-9a-f]{6,12})?)?(?![0-9])"
+_P_YMD_SEP = _re.compile(r"(?<![0-9])([0-9]{4})([/._])([0-9]{2})\2([0-9]{2})(?![0-9])")
+_P_NUM_DMY = _re.compile(r"(?<![0-9])([0-9]{1,2})([/.\-])([0-9]{1,2})\2([0-9]{4})(?![0-9])")
+_P_D_MON_Y = _re.compile(
+    r"(?<![0-9A-Za-z])([0-9]{1,2})" + _ORD + _SP + _MON + r"\.?" + _SP + r"([0-9]{4})(?![0-9])", _I)
+_P_MON_D_Y = _re.compile(
+    r"(?<![A-Za-z])" + _MON + r"\.?\s+([0-9]{1,2})" + _ORD + r",?\s+([0-9]{4})(?![0-9])", _I)
+_P_COMPACT = _re.compile(
+    r"(?<![0-9A-Za-z])([0-9]{4})([0-9]{2})([0-9]{2})(?:T[0-9]{4,6}(?:\.[0-9]+)?Z?(?:_[0-9a-f]{6,12})?)?(?![0-9])"
 )
-_MONTH = _re.compile(r"(?<![0-9A-Za-z-])(\d{4})-(\d{2})(?![0-9-])")
+_P_YM_DASH = _re.compile(r"(?<![0-9-])([0-9]{4})-([0-9]{2})(?![0-9-])")
+_P_YM_SLASH = _re.compile(r"(?<![0-9/.\-])([0-9]{4})/([0-9]{2})(?![0-9/])")
+_P_MY_SLASH = _re.compile(r"(?<![0-9/.\-])([0-9]{1,2})/([0-9]{4})(?![0-9])")
+_P_MON_Y = _re.compile(r"(?<![A-Za-z])" + _MON + r"\.?\s+([0-9]{4})(?![0-9])", _I)
+_P_Q_FIRST = _re.compile(r"(?<![0-9A-Za-z])Q([1-4])(?:\s+|[-_])([0-9]{4})(?![0-9])", _I)
+_P_Q_LAST = _re.compile(r"(?<![0-9])([0-9]{4})(?:\s+|[-_])?Q([1-4])(?![0-9A-Za-z])", _I)
+_P_H_FIRST = _re.compile(r"(?<![0-9A-Za-z])H([12])(?:\s+|[-_])([0-9]{4})(?![0-9])", _I)
+_P_H_LAST = _re.compile(r"(?<![0-9])([0-9]{4})(?:\s+|[-_])?H([12])(?![0-9A-Za-z])", _I)
 
 
 class _SanitizeError(RuntimeError):
@@ -80,15 +118,102 @@ def _ensure_ready() -> None:
     _load()
 
 
-def _day(y: str, m: str, d: str):
+# --------------------------------------------------------------------------- period tests
+
+
+def _day_hit(y, m, d, lo, hi):
     try:
-        return _date(int(y), int(m), int(d))
+        return lo <= _date(int(y), int(m), int(d)) <= hi
     except ValueError:
-        return None
+        return False
 
 
-def _in_window(day, lo, hi) -> bool:
-    return day is not None and lo <= day <= hi
+def _span_hit(y, m1, m2, lo, hi):
+    """True when months m1..m2 (inclusive) of year y intersect [lo, hi]."""
+    try:
+        y = int(y)
+        first = _date(y, m1, 1)
+        last = _date(y + (m2 == 12), 1 if m2 == 12 else m2 + 1, 1).toordinal() - 1
+    except ValueError:
+        return False
+    return first <= hi and _date.fromordinal(last) >= lo
+
+
+def _month_hit(y, m, lo, hi):
+    m = int(m)
+    return 1 <= m <= 12 and _span_hit(y, m, m, lo, hi)
+
+
+def _h_ymd(m, lo, hi):
+    return _day_hit(m.group(1), m.group(2), m.group(3), lo, hi)
+
+
+def _h_ymd_sep(m, lo, hi):
+    return _day_hit(m.group(1), m.group(3), m.group(4), lo, hi)
+
+
+def _h_num_dmy(m, lo, hi):
+    a, b, y = m.group(1), m.group(3), m.group(4)
+    return _day_hit(y, b, a, lo, hi) or _day_hit(y, a, b, lo, hi)
+
+
+def _h_d_mon_y(m, lo, hi):
+    return _day_hit(m.group(3), _MON_NUM[m.group(2)[:3].lower()], m.group(1), lo, hi)
+
+
+def _h_mon_d_y(m, lo, hi):
+    return _day_hit(m.group(3), _MON_NUM[m.group(1)[:3].lower()], m.group(2), lo, hi)
+
+
+def _h_ym(m, lo, hi):
+    return _month_hit(m.group(1), m.group(2), lo, hi)
+
+
+def _h_my(m, lo, hi):
+    return _month_hit(m.group(2), m.group(1), lo, hi)
+
+
+def _h_mon_y(m, lo, hi):
+    return _month_hit(m.group(2), _MON_NUM[m.group(1)[:3].lower()], lo, hi)
+
+
+def _h_q_first(m, lo, hi):
+    q = int(m.group(1))
+    return _span_hit(m.group(2), 3 * q - 2, 3 * q, lo, hi)
+
+
+def _h_q_last(m, lo, hi):
+    q = int(m.group(2))
+    return _span_hit(m.group(1), 3 * q - 2, 3 * q, lo, hi)
+
+
+def _h_h_first(m, lo, hi):
+    h = int(m.group(1))
+    return _span_hit(m.group(2), 6 * h - 5, 6 * h, lo, hi)
+
+
+def _h_h_last(m, lo, hi):
+    h = int(m.group(2))
+    return _span_hit(m.group(1), 6 * h - 5, 6 * h, lo, hi)
+
+
+# (pattern, handler); on a tie in start position the earlier entry wins
+_PATTERNS = [
+    (_P_ISO, _h_ymd),
+    (_P_YMD_SEP, _h_ymd_sep),
+    (_P_NUM_DMY, _h_num_dmy),
+    (_P_D_MON_Y, _h_d_mon_y),
+    (_P_MON_D_Y, _h_mon_d_y),
+    (_P_COMPACT, _h_ymd),
+    (_P_YM_DASH, _h_ym),
+    (_P_YM_SLASH, _h_ym),
+    (_P_MY_SLASH, _h_my),
+    (_P_MON_Y, _h_mon_y),
+    (_P_Q_FIRST, _h_q_first),
+    (_P_Q_LAST, _h_q_last),
+    (_P_H_FIRST, _h_h_first),
+    (_P_H_LAST, _h_h_last),
+]
 
 
 def sanitize_text(text):
@@ -98,27 +223,27 @@ def sanitize_text(text):
     lo, hi = _load()
     if not any(ch.isdigit() for ch in text):
         return text
-
-    def full(m):
-        return _MASK if _in_window(_day(m.group(1), m.group(2), m.group(3)), lo, hi) else m.group(0)
-
-    def compact(m):
-        return _MASK if _in_window(_day(m.group(1), m.group(2), m.group(3)), lo, hi) else m.group(0)
-
-    def month(m):
-        y, mo = int(m.group(1)), int(m.group(2))
-        if not 1 <= mo <= 12:
-            return m.group(0)
-        first = _date(y, mo, 1)
-        last = _date(y + (mo == 12), 1 if mo == 12 else mo + 1, 1).toordinal() - 1
-        if first <= hi and _date.fromordinal(last) >= lo:
-            return _MASK
-        return m.group(0)
-
-    out = _FULL.sub(full, text)
-    out = _COMPACT.sub(compact, out)
-    out = _MONTH.sub(month, out)
-    return out
+    nxt = [p.search(text) for p, _ in _PATTERNS]
+    out = []
+    pos = 0
+    while True:
+        best = None
+        for i, m in enumerate(nxt):
+            if m is not None and (best is None or m.start() < nxt[best].start()):
+                best = i
+        if best is None:
+            break
+        m = nxt[best]
+        out.append(text[pos:m.start()])
+        out.append(_MASK if _PATTERNS[best][1](m, lo, hi) else m.group(0))
+        pos = m.end()
+        for i, mm in enumerate(nxt):
+            if mm is not None and mm.start() < pos:
+                nxt[i] = _PATTERNS[i][0].search(text, pos)
+    if pos == 0 and not out:
+        return text
+    out.append(text[pos:])
+    return "".join(out)
 
 
 def sanitize(obj):
@@ -131,4 +256,3 @@ def sanitize(obj):
     if isinstance(obj, (list, tuple)):
         return [sanitize(v) for v in obj]
     return obj
-

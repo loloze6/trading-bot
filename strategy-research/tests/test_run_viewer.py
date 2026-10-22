@@ -18,8 +18,11 @@ import os
 import pathlib
 import re
 import shutil
+import socket
+import subprocess
 import sys
 import threading
+import time
 from datetime import date, timedelta
 from pathlib import Path
 from urllib.parse import quote
@@ -63,22 +66,123 @@ def _window_range():
     return date.fromisoformat(lo), date.fromisoformat(hi)
 
 
-_FULL = re.compile(r"(?<![0-9A-Za-z])(\d{4})-(\d{2})-(\d{2})")
-_COMPACT = re.compile(r"(?<![0-9A-Za-z])(\d{4})(\d{2})(\d{2})(?![0-9])")
+# --- an independent counter of every date form sanitize masks (not sanitize's own patterns)
+_MN = r"(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)"
+_MN_NUM = {m: i + 1 for i, m in enumerate(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"])}
+_C_DAY_FORMS = [  # (regex, (year, month, day) group order); month/day swapped readings handled below
+    (re.compile(r"(?<![0-9])([0-9]{4})-([0-9]{2})-([0-9]{2})"), (1, 2, 3)),
+    (re.compile(r"(?<![0-9])([0-9]{4})[/._]([0-9]{2})[/._]([0-9]{2})"), (1, 2, 3)),
+    (re.compile(r"(?<![0-9A-Za-z])([0-9]{4})([0-9]{2})([0-9]{2})(?![0-9])"), (1, 2, 3)),
+]
+_C_DMY = re.compile(r"(?<![0-9])([0-9]{1,2})[/.\-]([0-9]{1,2})[/.\-]([0-9]{4})(?![0-9])")
+_C_D_MON_Y = re.compile(r"(?<![0-9A-Za-z])([0-9]{1,2})(?:st|nd|rd|th)?[ \-]+" + _MN + r"[a-z]*\.?[ \-]+([0-9]{4})", re.I)
+_C_MON_D_Y = re.compile(_MN + r"[a-z]*\.?\s+([0-9]{1,2})(?:st|nd|rd|th)?,?\s+([0-9]{4})", re.I)
+_C_YM = [re.compile(r"(?<![0-9-])([0-9]{4})-([0-9]{2})(?![0-9-])"),
+         re.compile(r"(?<![0-9/.\-])([0-9]{4})/([0-9]{2})(?![0-9/])")]
+_C_MY = re.compile(r"(?<![0-9/.\-])([0-9]{1,2})/([0-9]{4})(?![0-9])")
+_C_MON_Y = re.compile(r"(?<![0-9][ \-])(?<![0-9](?:st|nd|rd|th)[ \-])(?<![A-Za-z])" + _MN + r"[a-z]*\.?\s+([0-9]{4})(?![0-9])", re.I)
+_C_Q = [re.compile(r"(?<![0-9A-Za-z])q([1-4])(?:\s+|[-_])([0-9]{4})(?![0-9])", re.I),
+        re.compile(r"(?<![0-9])([0-9]{4})(?:\s+|[-_])?q([1-4])(?![0-9A-Za-z])", re.I)]
+_C_H = [re.compile(r"(?<![0-9A-Za-z])h([12])(?:\s+|[-_])([0-9]{4})(?![0-9])", re.I),
+        re.compile(r"(?<![0-9])([0-9]{4})(?:\s+|[-_])?h([12])(?![0-9A-Za-z])", re.I)]
+
+
+def _c_day_in(y, m, d, lo, hi):
+    try:
+        return lo <= date(int(y), int(m), int(d)) <= hi
+    except ValueError:
+        return False
+
+
+def _c_span_in(y, m1, m2, lo, hi):
+    try:
+        y = int(y)
+        first = date(y, m1, 1)
+        last = date(y + (m2 == 12), 1 if m2 == 12 else m2 + 1, 1) - timedelta(days=1)
+    except ValueError:
+        return False
+    return first <= hi and last >= lo
 
 
 def count_in_range(text):
+    """Number of tokens, in any form sanitize masks, whose day / month / quarter / half
+    intersects the sealed window (0 is the only acceptable answer for any output)."""
     lo, hi = _window_range()
     n = 0
-    for rx in (_FULL, _COMPACT):
-        for m in rx.finditer(text):
-            try:
-                d = date(int(m[1]), int(m[2]), int(m[3]))
-            except ValueError:
-                continue
-            if lo <= d <= hi:
-                n += 1
-    return n
+    for rx, (iy, im, idd) in _C_DAY_FORMS:
+        n += sum(1 for m in rx.finditer(text) if _c_day_in(m[iy], m[im], m[idd], lo, hi))
+    for m in _C_DMY.finditer(text):
+        a, b, y = m[1], m[2], m[3]
+        n += _c_day_in(y, b, a, lo, hi) or _c_day_in(y, a, b, lo, hi)
+    for m in _C_D_MON_Y.finditer(text):
+        n += _c_day_in(m[3], _MN_NUM[m[2][:3].lower()], m[1], lo, hi)
+    for m in _C_MON_D_Y.finditer(text):
+        n += _c_day_in(m[3], _MN_NUM[m[1][:3].lower()], m[2], lo, hi)
+    for rx in _C_YM:
+        n += sum(1 for m in rx.finditer(text) if 1 <= int(m[2]) <= 12 and _c_span_in(m[1], int(m[2]), int(m[2]), lo, hi))
+    n += sum(1 for m in _C_MY.finditer(text) if 1 <= int(m[1]) <= 12 and _c_span_in(m[2], int(m[1]), int(m[1]), lo, hi))
+    for m in _C_MON_Y.finditer(text):
+        mo = _MN_NUM[m[1][:3].lower()]
+        n += _c_span_in(m[2], mo, mo, lo, hi)
+    for m in _C_Q[0].finditer(text):
+        q = int(m[1])
+        n += _c_span_in(m[2], 3 * q - 2, 3 * q, lo, hi)
+    for m in _C_Q[1].finditer(text):
+        q = int(m[2])
+        n += _c_span_in(m[1], 3 * q - 2, 3 * q, lo, hi)
+    for m in _C_H[0].finditer(text):
+        h = int(m[1])
+        n += _c_span_in(m[2], 6 * h - 5, 6 * h, lo, hi)
+    for m in _C_H[1].finditer(text):
+        h = int(m[2])
+        n += _c_span_in(m[1], 6 * h - 5, 6 * h, lo, hi)
+    return int(n)
+
+
+_MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August",
+                "September", "October", "November", "December"]
+
+
+def date_forms(d):
+    """{name: token} spelling day `d` (and its month / quarter / half) in every masked form."""
+    y, mo, dd = d.year, d.month, d.day
+    mn = _MONTH_NAMES[mo - 1]
+    q = (mo - 1) // 3 + 1
+    h = 1 if mo <= 6 else 2
+    return {
+        "iso": f"{y:04d}-{mo:02d}-{dd:02d}",
+        "iso glued after letters": f"run{y:04d}-{mo:02d}-{dd:02d}",
+        "iso with time": f"{y:04d}-{mo:02d}-{dd:02d}T09:30:00Z",
+        "ymd slash": f"{y:04d}/{mo:02d}/{dd:02d}",
+        "ymd dot": f"{y:04d}.{mo:02d}.{dd:02d}",
+        "ymd underscore": f"{y:04d}_{mo:02d}_{dd:02d}",
+        "dmy slash": f"{dd:02d}/{mo:02d}/{y:04d}",
+        "mdy slash": f"{mo:02d}/{dd:02d}/{y:04d}",
+        "dmy dot": f"{dd:02d}.{mo:02d}.{y:04d}",
+        "dmy dash": f"{dd:02d}-{mo:02d}-{y:04d}",
+        "d Mon Y": f"{dd} {mn[:3]} {y}",
+        "d Month Y": f"{dd} {mn} {y}",
+        "Mon d, Y": f"{mn[:3]} {dd}, {y}",
+        "Month d, Y": f"{mn} {dd}, {y}",
+        "DD-Mon-YYYY": f"{dd:02d}-{mn[:3]}-{y}",
+        "lower month": f"{dd} {mn.lower()} {y}",
+        "upper month": f"{dd} {mn.upper()} {y}",
+        "Month Y": f"{mn} {y}",
+        "Mon Y": f"{mn[:3]} {y}",
+        "Y/M": f"{y:04d}/{mo:02d}",
+        "M/Y": f"{mo:02d}/{y:04d}",
+        "Y-M": f"{y:04d}-{mo:02d}",
+        "compact": f"{y:04d}{mo:02d}{dd:02d}",
+        "compact stamp": f"{y:04d}{mo:02d}{dd:02d}T113455Z_c3c83fd6",
+        "Q Y": f"Q{q} {y}",
+        "Y Q": f"{y} Q{q}",
+        "YQ": f"{y}Q{q}",
+        "Y-Q": f"{y}-Q{q}",
+        "Q-Y": f"Q{q}-{y}",
+        "H Y": f"H{h} {y}",
+        "YH": f"{y}H{h}",
+        "Y-H": f"{y}-H{h}",
+    }
 
 
 @pytest.fixture()
@@ -770,3 +874,417 @@ def test_read_only_guard_and_read_path_allowlist(monkeypatch):
     off = [r for r in rels if not allowed.match(r)]
     assert not off, f"{len(off)} read(s) outside the documented allowlist"
     assert not any("/handoffs/" in r for r in rels)
+
+
+# --------------------------------------------------------------------------- review fixes (D-180)
+
+MASK = "[sealed-window date]"
+_MONTH_FORMS = {"Month Y", "Mon Y", "Y/M", "M/Y", "Y-M"}
+_QUARTER_FORMS = {"Q Y", "Y Q", "YQ", "Y-Q", "Q-Y"}
+_HALF_FORMS = {"H Y", "YH", "Y-H"}
+
+
+def _mid_day():
+    lo, hi = _window_range()
+    return lo + (hi - lo) // 2
+
+
+def _outside_day():
+    """The latest day before the window whose month/day-swapped reading is not in it either."""
+    lo, hi = _window_range()
+    d = lo - timedelta(days=1)
+    while True:
+        try:
+            swapped = date(d.year, d.day, d.month)
+        except ValueError:
+            return d
+        if not (lo <= swapped <= hi):
+            return d
+        d -= timedelta(days=1)
+
+
+def _outside_for(form):
+    lo, _ = _window_range()
+    if form in _MONTH_FORMS:
+        return lo.replace(day=1) - timedelta(days=1)
+    if form in _QUARTER_FORMS:
+        return date(lo.year, 3 * ((lo.month - 1) // 3) + 1, 1) - timedelta(days=1)
+    if form in _HALF_FORMS:
+        return date(lo.year, 1 if lo.month <= 6 else 7, 1) - timedelta(days=1)
+    return _outside_day()
+
+
+def test_sanitize_every_date_form_masked_inside_and_untouched_outside():
+    inside = date_forms(_mid_day())
+    assert len(inside) >= 30
+    for name, tok in inside.items():
+        expected = "a " + MASK + " b"
+        if name == "iso glued after letters":
+            expected = "a run" + MASK + " b"
+        assert sanitize.sanitize_text(f"a {tok} b") == expected, name
+        assert count_in_range(tok) >= 1, name  # the test counter sees the same form
+    for name in inside:
+        tok = date_forms(_outside_for(name))[name]
+        assert sanitize.sanitize_text(f"a {tok} b") == f"a {tok} b", name
+        assert count_in_range(tok) == 0, name
+
+
+def test_sanitize_swapped_day_month_reading_is_masked_if_either_reading_is_inside():
+    lo, hi = _window_range()
+    d = _mid_day()
+    for tok in (f"{d.day}/{d.month}/{d.year}", f"{d.month}/{d.day}/{d.year}", f"{d.day}.{d.month}.{d.year}",
+                f"{d.month}-{d.day}-{d.year}"):
+        assert sanitize.sanitize_text(tok) == MASK
+    # a day outside the window whose month is inside it keeps its day form (leftmost token wins)
+    o = _outside_day()
+    for tok in (f"{o.day} {_MONTH_NAMES[o.month - 1]} {o.year}", f"{_MONTH_NAMES[o.month - 1][:3]} {o.day}, {o.year}"):
+        assert sanitize.sanitize_text(tok) == tok
+
+
+def test_sanitize_leaves_hashes_and_plain_numbers_alone():
+    sha = "19c8d4c6ad88929a79f4ae49d6f7161566dfd0ba3d15cc495e974f787eb78f1f"
+    for s in (sha, "123456", "version 1.2.3", "n=1234567890", f"sha {sha} and 123456 end", "Marching 5 times"):
+        assert sanitize.sanitize_text(s) == s
+
+
+def test_sanitize_known_limits_are_documented():
+    doc = sanitize.__doc__
+    for word in ("epoch", "ISO week", "ordinal", "two-digit"):
+        assert word in doc
+
+
+def test_sanitize_public_names_unchanged_after_widening():
+    assert {n for n in dir(sanitize) if not n.startswith("_")} == {"sanitize", "sanitize_text"}
+
+
+# ---- injection: a masking test that can fail
+
+
+def _inject_value(prefix):
+    """All forms of a mid-window day, one string, short enough never to be truncated."""
+    return prefix + " | ".join(date_forms(_mid_day()).values())
+
+
+def test_injected_window_dates_in_every_kind_of_source_are_masked_everywhere(fx_copy):
+    forms = date_forms(_mid_day())
+    n_forms = len(forms)
+    runs = _runs(fx_copy)
+    val = _inject_value("")
+    assert count_in_range(val) >= n_forms  # the injected string really holds every form
+    assert len(val) < 560
+
+    def baseline(path):
+        s = Srv(fx_copy, runs)
+        try:
+            st, _, body = s.req(path)
+        finally:
+            s.close()
+        return body.decode("utf-8").count(MASK)
+
+    base_runs = baseline("/api/runs")
+    base_run = baseline("/api/run/run_099")
+    base_grid = baseline("/api/run/run_099/step/grid")
+    base_bars = baseline("/api/run/run_099/variant/base/window/2020-05/bars")
+
+    # 1. a queue entry's notes (shown in view 1 for ready / blocked entries)
+    qp = fx_copy / "config/campaign_queue.yaml"
+    q = yaml.safe_load(qp.read_text(encoding="utf-8"))
+    target = [e for e in q["queue"] if e["status"] == "ready" or str(e["status"]).startswith("blocked")][0]
+    target["notes"] = val
+    qp.write_text(yaml.safe_dump(q, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    # 2. a campaign_log line for run_099 (between its LAUNCH-CARD and its DECIDE line)
+    lp = fx_copy / "campaign_record/campaign_log.md"
+    lines = lp.read_text(encoding="utf-8").split("\n")
+    li = [i for i, ln in enumerate(lines) if "LAUNCH-CARD" in ln and "run_099" in ln][0]
+    lines.insert(li + 1, "- note run_099 " + val)
+    lp.write_text("\n".join(lines), encoding="utf-8")
+    # 3. a key and a value of a run_099 artifact YAML (idea_status.yaml, shown raw in the grid step)
+    ip = fx_copy / "runs/run_099/artifacts/idea_status.yaml"
+    with open(ip, "a", encoding="utf-8", newline="\n") as fh:
+        fh.write("\n" + json.dumps(_inject_value("key ")) + ": " + json.dumps(_inject_value("value ")) + "\n")
+    # 4. a bars.csv timestamp cell of one window, 5. a trades.json entry_time
+    _, bars_p, trades_p = _window_files_in(fx_copy, "run_099", "base", "2020-05")
+    with open(bars_p, newline="", encoding="utf-8") as fh:
+        rows = list(csv.reader(fh))
+    rows[1][rows[0].index("timestamp")] = val
+    with open(bars_p, "w", newline="", encoding="utf-8") as fh:
+        csv.writer(fh, lineterminator="\n").writerows(rows)
+    trades = json.loads(trades_p.read_text(encoding="utf-8"))
+    trades[0]["entry_time"] = val
+    trades_p.write_text(json.dumps(trades), encoding="utf-8")
+
+    lines_out = []
+    s = Srv(fx_copy, runs, sink=lines_out.append)
+    try:
+        crawled = {p: (st, body.decode("utf-8")) for p, st, body in crawl(s, fx_copy)}
+        s.req("/api/run/run_099/step/nope")
+    finally:
+        s.close()
+    bad = [p for p, (st, text) in crawled.items() if st != 200 or count_in_range(text) != 0]
+    assert not bad, f"{len(bad)} response(s) failed (status or window date left)"
+    assert count_in_range("\n".join(lines_out)) == 0
+    # each injection site's response carries at least one mask per injected form
+    assert crawled["/api/runs"][1].count(MASK) - base_runs >= n_forms
+    assert crawled["/api/run/run_099"][1].count(MASK) - base_run >= n_forms
+    assert crawled["/api/run/run_099/step/grid"][1].count(MASK) - base_grid >= 2 * n_forms  # key and value
+    assert crawled["/api/run/run_099/variant/base/window/2020-05/bars"][1].count(MASK) - base_bars >= 2 * n_forms
+
+
+def _window_files_in(root, rid, variant, label):
+    res = _yaml(Path(root) / f"runs/{rid}/artifacts/variants/{variant}/protocol_result.yaml")["results"]
+    r = [x for x in res if x["window"] == label][0]
+    d = Path(root) / f"runs/{rid}/variants/{variant}/results/{r['run_id']}"
+    return r, d / "bars.csv", d / "trades.json"
+
+
+def test_static_route_masks_text_files(tmp_path, monkeypatch):
+    sd = tmp_path / "static"
+    sd.mkdir()
+    (sd / "t.js").write_text("const a = " + json.dumps(_inject_value("")) + ";\n", encoding="utf-8")
+    (sd / "t.css").write_text("/* " + _inject_value("") + " */\n", encoding="utf-8")
+    monkeypatch.setattr(server, "STATIC_DIR", sd)
+    s = Srv(FIX, _runs(FIX))
+    try:
+        for name in ("t.js", "t.css"):
+            st, hdr, body = s.req("/static/" + name)
+            text = body.decode("utf-8")
+            assert st == 200
+            assert count_in_range(text) == 0, name
+            assert text.count(MASK) >= len(date_forms(_mid_day())), name
+    finally:
+        s.close()
+
+
+# ---- brief path containment
+
+
+def test_brief_path_outside_briefs_is_never_read(fx_copy, tmp_path, monkeypatch):
+    brief_text = (fx_copy / "briefs/child_run_098_long_only_fold_b.md").read_text(encoding="utf-8")
+    outside = tmp_path / "outside_brief.md"
+    outside.write_text(brief_text, encoding="utf-8")
+    (fx_copy / "config/x.md").write_text(brief_text, encoding="utf-8")
+    good = "briefs/child_run_098_long_only_fold_b.md"
+    qp = fx_copy / "config/campaign_queue.yaml"
+    original = qp.read_text(encoding="utf-8")
+    assert original.count(f"brief_path: {good}") == 1
+    runs = _runs(fx_copy)
+
+    # control: the real path is read and gives a purpose
+    assert not isinstance(loaders.load_run(fx_copy, runs, "run_099")["header"]["purpose"], loaders.Unr)
+
+    loads = []
+    real_load = loaders.Reader._load
+
+    def spy(self, path, kind):
+        loads.append((Path(path).resolve(), kind))
+        return real_load(self, path, kind)
+
+    monkeypatch.setattr(loaders.Reader, "_load", spy)
+    forbidden = [str(outside), "config/x.md", "config/campaign_queue.yaml", "briefs/../config/x.md",
+                 "briefs\\..\\config\\x.md", "briefs/x.txt", "briefs"]
+    for bp in forbidden:
+        qp.write_text(original.replace(f"brief_path: {good}", "brief_path: " + json.dumps(bp)), encoding="utf-8")
+        loads.clear()
+        guard = _Guard(monkeypatch)
+        with monkeypatch.context() as mp:
+            guard.mp = mp
+            guard.install()
+            v2 = loaders.load_run(fx_copy, runs, "run_099")
+            v1 = loaders.load_campaign(fx_copy, runs)
+        assert v2["header"]["purpose"] == "unreadable (brief_path outside briefs/)", bp
+        assert v2["header"]["outcomes"] == [], bp
+        row = [r for r in v1["runs"] if r["run_id"] == "run_099"][0]
+        assert row["pre_registered_letters"] == [], bp
+        text_loads = {p for p, k in loads if k == "text"}
+        for p in (outside.resolve(), (fx_copy / "config/x.md").resolve(), qp.resolve()):
+            assert p not in text_loads, bp
+        opened = {Path(p).resolve() for p, _ in guard.reads if isinstance(p, str)}
+        assert outside.resolve() not in opened and (fx_copy / "config/x.md").resolve() not in opened, bp
+        assert not guard.violations
+    # null brief_path stays silent (no entry value at all)
+    qp.write_text(original.replace(f"brief_path: {good}", "brief_path: null"), encoding="utf-8")
+    assert loaders.load_run(fx_copy, runs, "run_099")["header"]["purpose"] is None
+
+
+# ---- server robustness
+
+
+def _raw(port, payload, timeout=5):
+    s = socket.create_connection(("127.0.0.1", port), timeout=timeout)
+    got = b""
+    try:
+        try:
+            s.sendall(payload)
+        except OSError:
+            pass
+        while True:
+            try:
+                chunk = s.recv(65536)
+            except (socket.timeout, OSError):
+                break
+            if not chunk:
+                break
+            got += chunk
+    finally:
+        s.close()
+    return got
+
+
+def test_server_survives_garbage_requests_without_traceback_or_date_in_log(capfd):
+    lo, hi = _window_range()
+    iso = lo.isoformat()
+    lines = []
+    s = Srv(FIX, _runs(FIX), sink=lines.append)
+    payloads = {
+        "garbage": b"\x00\xff\xfe garbage \x01\r\n\r\n",
+        "http09": b"GET /api/runs\r\n",
+        "http09 non-GET": b"POST /api/runs\r\n",
+        "bad version": b"GET / HTTP/9.9\r\n\r\n",
+        "unknown method with date": f"FOO{iso} /x{iso} HTTP/1.1\r\n\r\n".encode(),
+        "huge url": b"GET /" + b"a" * 70000 + b" HTTP/1.1\r\n\r\n",
+        "empty": b"",
+    }
+    try:
+        replies = {name: _raw(s.port, p) for name, p in payloads.items()}
+        st, body = s.get_json("/api/runs")  # still alive afterwards
+        assert st == 200
+    finally:
+        s.close()
+    for name, r in replies.items():
+        assert b"Traceback" not in r, name
+        assert iso.encode() not in r, name
+        assert count_in_range(r.decode("latin-1")) == 0, name
+        if r.startswith(b"HTTP/"):
+            code = int(r.split(b" ", 2)[1])
+            assert code in (400, 404, 405, 414, 501, 505), name
+            assert b"error" in r, name
+    assert replies["unknown method with date"].startswith(b"HTTP/1.0 501")
+    assert replies["huge url"] == b"" or replies["huge url"].startswith(b"HTTP/1.0 414")
+    # the stdlib answers a bad version before it has a version to answer in: a bare JSON body (HTTP/0.9 style)
+    assert replies["bad version"].startswith(b"HTTP/1.0 505") or json.loads(replies["bad version"]) == {"error": "not supported"}
+    assert json.loads(replies["garbage"].split(b"\r\n\r\n", 1)[-1]) == {"error": "bad request"}
+    joined = "\n".join(lines)
+    assert "Traceback" not in joined and "File \"" not in joined
+    assert count_in_range(joined) == 0
+    assert all(len(ln) <= 400 for ln in lines)
+    out, err = capfd.readouterr()
+    assert "Traceback" not in err and "Traceback" not in out
+    assert count_in_range(err + out) == 0
+
+
+def test_handle_error_sends_one_fixed_line_and_nothing_to_stderr(capfd):
+    lines = []
+    s = Srv(FIX, _runs(FIX), sink=lines.append)
+    try:
+        try:
+            raise RuntimeError("secret " + _window_range()[0].isoformat())
+        except RuntimeError:
+            s.srv.handle_error(None, ("127.0.0.1", 1))
+    finally:
+        s.close()
+    assert lines == ["run viewer: request error"]
+    out, err = capfd.readouterr()
+    assert err == "" and out == ""
+
+
+# ---- no bytecode under the repository
+
+
+def test_server_writes_no_pycache_next_to_the_sources(tmp_path):
+    tools_src = SR / "tools"
+    sr = tmp_path / "strategy-research"
+    tools = sr / "tools"
+    tools.mkdir(parents=True)
+    for p in tools_src.glob("*.py"):
+        shutil.copy2(p, tools / p.name)
+    shutil.copytree(tools_src / "run_viewer", tools / "run_viewer", ignore=shutil.ignore_patterns("__pycache__"))
+    (sr / "config").mkdir()
+    shutil.copy2(POLICY, sr / "config" / "campaign_data_policy.yaml")
+    root = tmp_path / "root"
+    shutil.copytree(FIX, root)
+    assert not list(tmp_path.rglob("__pycache__"))
+    env = {k: v for k, v in os.environ.items() if k not in ("PYTHONDONTWRITEBYTECODE", "PYTHONPATH", "PYTHONPYCACHEPREFIX")}
+    proc = subprocess.Popen([sys.executable, str(tools / "run_viewer" / "server.py"), "--runs", str(root / "runs"),
+                             "--root", str(root), "--port", "0"],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, text=True)
+    try:
+        banner = proc.stdout.readline()
+        m = re.search(r":(\d+)/", banner)
+        assert m, "server did not print its banner"
+        c = http.client.HTTPConnection("127.0.0.1", int(m.group(1)), timeout=60)
+        c.request("GET", "/api/runs")
+        r = c.getresponse()
+        body = json.loads(r.read())
+        c.close()
+        assert r.status == 200 and body["runs"]
+        c = http.client.HTTPConnection("127.0.0.1", int(m.group(1)), timeout=60)
+        c.request("GET", "/api/run/run_099/step/grid")
+        assert c.getresponse().status == 200
+        c.close()
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(timeout=15)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
+        proc.stdout.close()
+        proc.stderr.close()
+    found = [str(p.relative_to(tmp_path)) for p in tmp_path.rglob("__pycache__")]
+    assert not found, f"{len(found)} __pycache__ folder(s) written next to the copied sources"
+
+
+# ---- absent is not unreadable
+
+
+def test_absent_optional_file_does_not_make_the_card_unreadable(fx_copy):
+    runs = _runs(fx_copy)
+    (fx_copy / "runs/run_099/artifacts/deviations.yaml").unlink()
+    card = {c["name"]: c for c in loaders.load_run(fx_copy, runs, "run_099")["steps"]}["config"]
+    assert card["status"] != "unreadable"
+    assert not str(card["line"]).startswith("unreadable")
+    assert any(h["label"] == "deviations" and h["value"].startswith("absent") for h in card["headlines"])
+    assert any(sr["path"].endswith("deviations.yaml") and sr["state"] == "absent" for sr in card["sources"])
+    # a file that exists but is broken is still unreadable
+    (fx_copy / "runs/run_099/artifacts/deviations.yaml").write_text("status: [unclosed\n", encoding="utf-8")
+    card = {c["name"]: c for c in loaders.load_run(fx_copy, runs, "run_099")["steps"]}["config"]
+    assert card["status"] == "unreadable"
+
+
+# ---- blocks error and raw size
+
+
+def test_blocks_error_names_type_and_file_only(fx_copy):
+    (fx_copy / "campaign_record/block_registry.yaml").write_text("schema_version: [unclosed\n", encoding="utf-8")
+    err = loaders.load_campaign(fx_copy, _runs(fx_copy))["blocks"]["error"]
+    assert err.endswith("reading block_registry.yaml")
+    assert str(fx_copy) not in err and "\\" not in err and "/" not in err
+    assert len(err) < 100
+
+
+def test_step_raw_embeds_only_run_files_and_the_brief():
+    campaign_wide = {"campaign_record/campaign_log.md", "campaign_record/campaign_state.yaml",
+                     "campaign_record/campaign_memory.yaml", "config/campaign_queue.yaml",
+                     "campaign_record/block_registry.yaml"}
+    for n in STEPS:
+        st = loaders.load_step(FIX, _runs(FIX), "run_099", n)
+        paths = {r["path"] for r in st["raw"]}
+        assert not (paths & campaign_wide), n
+        assert all(p.startswith("runs/run_099/") or p.startswith("briefs/") for p in paths), n
+    rec = loaders.load_step(FIX, _runs(FIX), "run_099", "record")
+    srcs = {r["path"] for r in rec["sources"]}
+    assert campaign_wide - {"config/campaign_queue.yaml"} <= srcs  # still listed as sources
+    assert "config/campaign_queue.yaml" in {r["path"] for r in loaders.load_step(FIX, _runs(FIX), "run_099", "launch")["sources"]}
+    launch = loaders.load_step(FIX, _runs(FIX), "run_099", "launch")
+    assert any(r["path"].startswith("briefs/") for r in launch["raw"])
+
+
+# ---- id regexes
+
+
+def test_run_id_and_name_regexes_reject_trailing_newline_and_unicode_digits():
+    assert loaders.RUN_ID_RE.match("run_099")
+    assert not loaders.RUN_ID_RE.match("run_099\n")
+    assert not loaders.RUN_ID_RE.match("run_\u0663\u0664")
+    assert not loaders._safe_name("base\n")
+    assert not loaders.run_exists(_runs(FIX), "run_099\n")

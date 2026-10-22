@@ -21,13 +21,16 @@ Routes (see DESIGN.md):
     /api/run/<id>/variant/<v>/window/<label>/bars  view 4, one window
     /api/run/<id>/variant/<v>/equity               view 4, chained equity
 """
-import argparse
-import json
-import mimetypes
 import sys
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from pathlib import Path
-from urllib.parse import unquote
+
+sys.dont_write_bytecode = True  # first, before any import of loaders / sanitize / tools modules
+
+import argparse  # noqa: E402
+import json  # noqa: E402
+import mimetypes  # noqa: E402
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer  # noqa: E402
+from pathlib import Path  # noqa: E402
+from urllib.parse import unquote  # noqa: E402
 
 _HERE = Path(__file__).resolve().parent
 if str(_HERE) not in sys.path:
@@ -39,6 +42,7 @@ import sanitize  # noqa: E402
 STATIC_DIR = _HERE / "static"
 mimetypes.init()  # read the system mime tables now, not on the first request
 NO_START = "run viewer: sealed-window policy unreadable; not starting"
+REQUEST_ERROR = "run viewer: request error"
 
 
 def banner(host, port):
@@ -60,6 +64,14 @@ class RunViewerServer(ThreadingHTTPServer):
         self.log_sink = log_sink or _stderr_sink
         super().__init__(addr, Handler)
 
+    def handle_error(self, request, client_address):
+        """An exception while serving a request: one fixed line to the log sink, never a
+        traceback on stderr (a traceback can carry the request line)."""
+        try:
+            self.log_sink(REQUEST_ERROR)
+        except Exception:  # noqa: BLE001
+            pass
+
 
 def make_server(root, runs_dir, host="127.0.0.1", port=0, log_sink=None):
     """Create (but do not run) the server. Raises (fixed text) if the policy is unreadable."""
@@ -74,19 +86,35 @@ class Handler(BaseHTTPRequestHandler):
 
     # ---- logging: method, path, status only; always through sanitize_text
     def log_request(self, code="-", size="-"):
-        line = f"{self.command} {self._clean(self.path)} {code}"
-        self.server.log_sink(sanitize.sanitize_text(line))
+        # command / path do not exist yet when the request line itself was bad (414, 400, ...)
+        cmd = getattr(self, "command", None) or "-"
+        path = getattr(self, "path", None) or "-"
+        line = f"{self._clean(cmd)} {self._clean(path)} {code}"
+        self.server.log_sink(sanitize.sanitize_text(line)[:300])
 
     def log_error(self, format, *args):  # noqa: A002 -- stdlib signature
         code = args[0] if args and isinstance(args[0], int) else "-"
-        self.server.log_sink(sanitize.sanitize_text(f"{self.command or '-'} - {code}"))
+        cmd = getattr(self, "command", None) or "-"
+        self.server.log_sink(sanitize.sanitize_text(f"{self._clean(cmd)} - {code}")[:300])
+
+    def send_error(self, code, message=None, explain=None):
+        """Every error the stdlib raises on its own (400, 414, 501, 505, ...) answers with a
+        fixed JSON body: nothing of the request is echoed back."""
+        self.close_connection = True
+        try:
+            self._err(code, "bad request" if code < 500 else "not supported",
+                      head_only=getattr(self, "command", None) == "HEAD")
+        except Exception:  # noqa: BLE001 -- a peer that went away mid-reply
+            pass
 
     def log_message(self, format, *args):  # noqa: A002
         pass
 
     @staticmethod
     def _clean(s):
-        return "".join(c if 32 <= ord(c) < 127 else "?" for c in str(s))[:300]
+        # printable ASCII only; NOT truncated here -- the caller truncates after sanitising,
+        # so a date can never be cut in half and slip past the masks
+        return "".join(c if 32 <= ord(c) < 127 else "?" for c in str(s))
 
     # ---- responses
     def _send(self, code, body: bytes, ctype, head_only=False, extra=None):
@@ -156,6 +184,9 @@ class Handler(BaseHTTPRequestHandler):
                 data = fh.read()
         except OSError:
             return self._err(404, "not found", head)
+        # Text static files are masked like any other output. Non-text files (the vendored
+        # uPlot assets are .js/.css, so masked too; images or fonts, if ever added) are
+        # served byte for byte: they are vendored code, not data.
         if ctype.startswith("text/") or ctype in ("application/javascript", "application/json"):
             try:
                 data = sanitize.sanitize_text(data.decode("utf-8")).encode("utf-8")
