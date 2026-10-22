@@ -541,7 +541,44 @@ def validate(config: dict) -> List[str]:
                     f"but {loc}.parts has no '{dead}' entry. This block abstains on every bar "
                     f"(contributes 0); point default_regime at a regime of source.parts.")
 
+    # V19 (D-176): strategies.sizing, if present, sizes the ALLOCATION step
+    # (ForecastManager): kind vol_target, window int >= 2, target_annual_vol and
+    # periods_per_year finite > 0, max_allocation finite > 0 (default 2), no
+    # other key. Reuses the engine's own check (registry.sizing_block_errors).
+    # With a block, a vol_target op anywhere in a transforms / history_transforms
+    # list -- top level, block source detectors or parts, any depth -- would size
+    # the forecast as well: refused, "sized twice". Silent without the key, so
+    # every earlier config (run_084's lane-1 block, D-149's vol_target clause)
+    # is untouched.
+    if "sizing" in config["strategies"]:
+        from strategies.registry import sizing_block_errors
+        for msg in sizing_block_errors(config["strategies"]["sizing"]):
+            violations.append(f"VIOLATION V19 strategies.sizing: {msg}")
+        for loc in _vol_target_op_locations(config):
+            violations.append(
+                f"VIOLATION V19 {loc}: sized twice -- strategies.sizing sizes the allocation "
+                f"step and this vol_target op sizes the forecast; keep the sizing block and "
+                f"remove the vol_target op (the forecast stays the unsized signal)")
+
     return violations
+
+
+def _vol_target_op_locations(node: Any, path: str = "") -> List[str]:
+    """Every `<path>[k]` whose step is a vol_target op in any transforms /
+    history_transforms list anywhere in `node` (V19)."""
+    found: List[str] = []
+    if isinstance(node, dict):
+        for key, val in node.items():
+            sub = f"{path}.{key}" if path else str(key)
+            if key in ("transforms", "history_transforms") and isinstance(val, list):
+                found += [f"{sub}[{k}]" for k, step in enumerate(val)
+                          if isinstance(step, dict) and step.get("op") == "vol_target"]
+            else:
+                found += _vol_target_op_locations(val, sub)
+    elif isinstance(node, list):
+        for i, item in enumerate(node):
+            found += _vol_target_op_locations(item, f"{path}[{i}]")
+    return found
 
 
 if __name__ == "__main__":
