@@ -1,7 +1,7 @@
 import sys
 import os
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.dirname(_HERE)
@@ -541,7 +541,63 @@ def validate(config: dict) -> List[str]:
                     f"but {loc}.parts has no '{dead}' entry. This block abstains on every bar "
                     f"(contributes 0); point default_regime at a regime of source.parts.")
 
+    # V19 (D-176): strategies.sizing, if present, sizes the ALLOCATION step
+    # (ForecastManager): kind vol_target, window int >= 2, target_annual_vol and
+    # periods_per_year finite > 0, max_allocation finite > 0 (default 2), no
+    # other key. Reuses the engine's own check (registry.sizing_block_errors).
+    # With a block, a volatility-dividing op would size the forecast as well:
+    # vol_target anywhere in a transforms / history_transforms list (top level,
+    # block source detectors or parts, any depth) is refused, "sized twice"
+    # (D-176 safety review, Finding 4). vol_adjusted is refused in BOTH lists;
+    # vol_normalize is refused only in a component's `transforms` and ALLOWED in
+    # `history_transforms` -- standardise divides it out (STRATEGY_DESIGN_GUIDE.md:301)
+    # (operator ruling 2026-10-22: vol_adjusted in history_transforms is refused,
+    # the earlier ruling allowing it is withdrawn). Silent without the key, so every earlier config (run_084's
+    # lane-1 block, D-149's vol_target clause) is untouched.
+    if "sizing" in config["strategies"]:
+        from strategies.registry import sizing_block_errors
+        for msg in sizing_block_errors(config["strategies"]["sizing"]):
+            violations.append(f"VIOLATION V19 strategies.sizing: {msg}")
+        for loc, op, key in _vol_target_op_locations(config):
+            if op == "vol_target":
+                violations.append(
+                    f"VIOLATION V19 {loc}: sized twice -- strategies.sizing sizes the allocation "
+                    f"step and this {op} op sizes the forecast; keep the sizing block and "
+                    f"remove the {op} op (the forecast stays the unsized signal)")
+            else:
+                violations.append(
+                    f"VIOLATION V19 {loc}: sized twice -- strategies.sizing sizes the allocation "
+                    f"step and this {op} op in {key} sizes the forecast; volatility "
+                    f"belongs before standardise (history_transforms), in the component, "
+                    f"or as a regime")
+
     return violations
+
+
+# Ops that divide by volatility (strategies/registry.py TRANSFORM_OPS_REGISTRY):
+# alongside a strategies.sizing block vol_target and vol_adjusted (any list) and
+# vol_normalize (a `transforms` list only) would size the forecast a second time.
+_SIZED_TWICE_OPS = ("vol_target", "vol_normalize", "vol_adjusted")
+
+
+def _vol_target_op_locations(node: Any, path: str = "") -> List[Tuple[str, str, str]]:
+    """Every (`<path>[k]`, op, list key) refused by V19: a vol_target step in any
+    transforms / history_transforms list anywhere in `node`, or a vol_adjusted step in
+    either list, or a vol_normalize step in a `transforms` list only."""
+    found: List[Tuple[str, str, str]] = []
+    if isinstance(node, dict):
+        for key, val in node.items():
+            sub = f"{path}.{key}" if path else str(key)
+            if key in ("transforms", "history_transforms") and isinstance(val, list):
+                found += [(f"{sub}[{k}]", step["op"], key) for k, step in enumerate(val)
+                          if isinstance(step, dict) and step.get("op") in _SIZED_TWICE_OPS
+                          and (step["op"] != "vol_normalize" or key == "transforms")]
+            else:
+                found += _vol_target_op_locations(val, sub)
+    elif isinstance(node, list):
+        for i, item in enumerate(node):
+            found += _vol_target_op_locations(item, f"{path}[{i}]")
+    return found
 
 
 if __name__ == "__main__":

@@ -2977,7 +2977,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
             # sends a variant's back to Step 2 once, and a `base` refusal (1b's
             # config, already checked right after 1b) pauses.
             _fr_msgs = (_fr.strategies_violations(variant_config, _fr_on_off)
-                        + _fr.class_mismatch(base_config, variant_config))
+                        + _fr.class_mismatch(base_config, variant_config)
+                        + _fr.sizing_vehicle_violations(variant.get("patch")))
             if _fr_msgs:
                 reason = FORECAST_RULE_REASON
                 report = "\n".join(_fr_msgs)
