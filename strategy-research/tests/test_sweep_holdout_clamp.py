@@ -57,7 +57,8 @@ def test_a_sweep_spanning_the_boundary_raises():
     with pytest.raises(rpr.HoldoutBoundaryBreach) as exc:
         rpr._generate_monthly_windows("2025-11-01", HOLDOUT_START)
     msg = str(exc.value)
-    assert HOLDOUT_START in msg
+    withheld = HOLDOUT_START not in msg and "dates withheld" in msg  # D-173: no sealed date printed
+    assert withheld
     assert "INCLUSIVE-BY-DAY" in msg
 
 
@@ -116,7 +117,8 @@ def test_the_boundary_comes_from_the_policy_file_not_from_code():
         rpr._generate_monthly_windows(
             "2020-01-01", "2020-06-01", holdout_range=("2020-03-01", "2020-09-30")
         )
-    assert "2020-03-01" in str(exc.value)
+    moved_msg = str(exc.value)  # raising at all proves the seal moved; the message withholds the date (D-173)
+    assert "2020-03-01" not in moved_msg
 
     # ...and the same request is fine against a seal that is out of the way.
     # CUL-369 (D-058): `end` is the last included day (an end on the 1st is
