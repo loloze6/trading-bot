@@ -2670,6 +2670,22 @@ def _log(line: str, dry_run: bool = False):
         f.write(full + "\n")
 
 
+def _sharpe_basis_text(protocol_result: dict, n_symbols: int) -> str:
+    """D-177: what the STAGE line's median_sharpe is, and over how many windows.
+    It is the mean over symbols of each symbol's median per-window trade Sharpe;
+    a window below the protocol's trade floor has sharpe null and is excluded.
+    The whole-test (bar-level) Sharpe lives in profit_bars_evaluation.yaml."""
+    try:
+        from run_protocol import _SPARSE_TRADE_FLOOR as floor  # lazy: heavy import
+        floor_txt = f">= {floor} trades"
+    except Exception:
+        floor_txt = "enough trades"
+    rows = [r for r in (protocol_result.get("results") or []) if isinstance(r, dict)]
+    have = sum(1 for r in rows if (r.get("core") or {}).get("sharpe") is not None)
+    return (f"per-window trade Sharpe, windows with {floor_txt}: {have} of {len(rows)}; "
+            f"mean over {n_symbols} symbol(s) with a value")
+
+
 def _extract_run_numbers(run_dir: Path) -> dict:
     """Best-effort numeric summary for a log line — degrades gracefully when a
     run hasn't reached a stage that produces the relevant artifact yet."""
@@ -2697,6 +2713,9 @@ def _extract_run_numbers(run_dir: Path) -> dict:
         sharpes = [v.get("median_sharpe") for v in pss.values() if v.get("median_sharpe") is not None]
         if sharpes:
             out["median_sharpe"] = round(sum(sharpes) / len(sharpes), 3)
+            # D-177: print-only basis/sample note, popped by _log_transition; the
+            # numeric field above is unchanged.
+            out["_sharpe_basis"] = _sharpe_basis_text(d, len(sharpes))
 
     vi_path = artifacts / "verdict_interpretation.yaml"
     if vi_path.exists():
@@ -2731,7 +2750,10 @@ def _log_transition(entry: dict, run_id: str, state: dict, dry_run: bool = False
     pending = state.get("pending_stage", "?")
     status = state.get("status", "?")
     numbers = _extract_run_numbers(ROOT / "runs" / run_id)
-    numbers_str = ", ".join(f"{k}={v}" for k, v in numbers.items()) if numbers else "no scored artifacts yet"
+    basis = numbers.pop("_sharpe_basis", None)
+    numbers_str = ", ".join(
+        f"{k}={v}" + (f" [{basis}]" if k == "median_sharpe" and basis else "")
+        for k, v in numbers.items()) if numbers else "no scored artifacts yet"
     _log(f"STAGE  {entry['id']} / {run_id}: pending_stage={pending} status={status} ({numbers_str})", dry_run)
 
 
