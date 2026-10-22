@@ -1446,3 +1446,26 @@ def test_d175_other_selectors_and_missing_window_counts_are_unchanged():
     assert cc.quantile_lookback({"kind": "all_of", "selectors": [
         {"kind": "quantile", "lookback": 30}, {"kind": "quantile", "lookback": 50}]}) == 50
     assert cc.quantile_lookback({"kind": "event"}) == 0
+
+
+def test_d175_retry_rule_sentence_count_equals_power_warnings_bound_and_message(monkeypatch):
+    from datetime import date, timedelta
+    d0 = date(2021, 1, 1)
+    wins = [{"test": {"start": str(d0 + timedelta(days=200 * i)),
+                      "end": str(d0 + timedelta(days=200 * i + 119))}} for i in range(6)]
+    monkeypatch.setattr(rpr, "_claim_power_inputs",
+                        lambda run_dir, run_id: (wins, ["BTCUSDT"], "1d", "x"))
+    facts = rpr._claim_revision_power_facts(Path("."), "run_x")
+    assert facts["known"] is True and facts["bars_in_test_windows"] == 720
+    sentence = ("for a quantile selector, first take its lookback off each test window: "
+                "((sum over windows of max(0, window bars - lookback)) // longest horizon) "
+                "x coins")
+    assert sentence in facts["rule"]
+    # the rule's formula as written: six 120-bar windows, lookback 100, horizon 3, 1 coin
+    counts, lookback, h, coins = [120] * 6, 100, 3, facts["coins"]
+    from_rule = (sum(max(0, b - lookback) for b in counts) // h) * coins
+    assert from_rule == 40
+    w = cc.power_warnings(_claim(tests=[_quantile_test(lookback, floor=50)]),
+                          facts["bars_in_test_windows"], coins, counts)
+    assert w[0]["bound"] == from_rule
+    assert f"possible events {from_rule} < min_events 50" in w[0]["message"]

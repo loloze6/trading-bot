@@ -19031,7 +19031,9 @@ def _claim_revision_power_facts(run_dir: Path, run_id: str) -> dict:
                 "coins": len(symbols),
                 "rule": (f"a min_events floor must be at most (bars_in_test_windows // the "
                          f"longest horizon) x coins = ({bars} // longest horizon) x "
-                         f"{len(symbols)}")}
+                         f"{len(symbols)}; for a quantile selector, first take its lookback "
+                         f"off each test window: ((sum over windows of max(0, window bars - "
+                         f"lookback)) // longest horizon) x coins")}
     except Exception as exc:  # noqa: BLE001 -- information only
         return {"known": False, "reason": f"{type(exc).__name__}: {exc}"}
 
