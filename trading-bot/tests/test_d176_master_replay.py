@@ -54,7 +54,13 @@ def test_branch_replay_equals_the_master_recording_byte_for_byte(name, tmp_path)
 
 def test_the_recorded_series_is_the_seeded_one(tmp_path):
     """The CSV the recordings were made over is reproducible from its seed (numpy default_rng)."""
+    import pandas as pd
+
     h = _harness()
     h.make_series(tmp_path / "again.csv")
-    assert (tmp_path / "again.csv").read_bytes().replace(b"\r\n", b"\n") == \
-        (FX / "synthetic_daily_ohlcv.csv").read_bytes().replace(b"\r\n", b"\n")
+    again = pd.read_csv(tmp_path / "again.csv")
+    kept = pd.read_csv(FX / "synthetic_daily_ohlcv.csv")
+    # the recordings were made over the committed CSV (the replay reads it, never regenerates it);
+    # numpy's exp/cumsum can differ in the last ulp across platforms, so compare to 1e-12
+    assert list(again.columns) == list(kept.columns) and (again["timestamp"] == kept["timestamp"]).all()
+    pd.testing.assert_frame_equal(again, kept, rtol=1e-12, atol=0)
