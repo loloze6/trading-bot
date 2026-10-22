@@ -190,8 +190,8 @@ in `decision.yaml` `tried`, each with the card clause it fails; at least one mus
   `strategies.sizing` block, not a `vol_target` op. Block shape: `{"kind": "vol_target", "window": int >= 2,
   "target_annual_vol": > 0, "periods_per_year": > 0, "max_allocation": > 0 (default 2)}`, placed in `strategies`
   next to `regimes`. It sizes the allocation (`forecast / 10 x target / realised`, clipped), the forecast stays the
-  unsized signal, and the no-trade band is judged on the signal. A config with the block AND any `vol_target` op is
-  refused ("sized twice"). See the guide's "Sizing (`strategies.sizing`)".
+  unsized signal, and the no-trade band passes when either the signal's change or the sized exposure's change reaches the threshold.
+  A config with the block AND any `vol_target`, `vol_normalize` or `vol_adjusted` op is refused ("sized twice"). See the guide's "Sizing (`strategies.sizing`)".
 - default_regime must be "unknown" in threshold_rules and score_product modes WHENEVER
   regime_detector.rules is non-empty (a real gate exists). Setting it to trending,
   mean_reversion, or chop in that case causes bars that fail every rule to still fire

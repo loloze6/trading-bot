@@ -45,6 +45,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from core.launcher import Launcher  # noqa: E402
 from core.trading_bot import TradingBot  # noqa: E402
 from execution.forecast_manager import ForecastManager  # noqa: E402
+from risk.portfolio_risk_gate import PortfolioRiskGate  # noqa: E402
 from risk.risk_manager import RiskManager  # noqa: E402
 from strategies.main_strategy import AdvancedStrategy  # noqa: E402
 from strategies.registry import (  # noqa: E402
@@ -126,7 +127,7 @@ class _SpyRiskManager(RiskManager):
         return res
 
 
-def _make_bot(sizing, forecasts, *, threshold=0.2, success=True, start_alloc=0.0, legacy=False):
+def _make_bot(sizing, forecasts, *, threshold=0.2, success=True, start_alloc=0.0, legacy=False, gate=None):
     portfolio = _FixedPortfolio(equity=100.0, allocation=start_alloc)
     execn = _FillingExec(portfolio, success=success)
     tracker = _Tracker()
@@ -139,7 +140,7 @@ def _make_bot(sizing, forecasts, *, threshold=0.2, success=True, start_alloc=0.0
         data_manager=_DM(), strategy=_SizedStrategy(forecasts), execution_handler=execn,
         logger=logging.getLogger("test_d176"), portfolio_info=portfolio,
         portfolio_state_tracker=tracker, forecast_manager=fm, risk_manager=rm,
-        performance_tracker=None, symbols=[SYMBOL], risk_gate=None)
+        performance_tracker=None, symbols=[SYMBOL], risk_gate=gate)
     return bot, execn, tracker, rm
 
 
@@ -376,34 +377,156 @@ def _first_bar_with_a_full_window():
     return SIZING["window"]          # index of the first bar that has window + 1 closes
 
 
-def test_a_small_signal_move_with_a_large_sized_move_is_rejected():
+def _passed_on(row):
+    return row["debug_approve_allocation_change"]["controls"]["min_allocation_change"]["passed_on"]
+
+
+def test_a_small_signal_move_with_a_large_sized_move_passes_on_sized():
+    """D-176 safety review (Finding 2): with a block the band passes when EITHER the signal's change
+    OR the sized change reaches the threshold. A vol shock moves the sized exposure a lot while the
+    signal moves 0.05: the pre-D-176 (sized) judgement still trades, so it still does."""
     n0 = _first_bar_with_a_full_window()
     calm = _closes(n0 + 1, seed=12, vol=0.01)
     jump = calm + [calm[-1] * 1.25]                               # a vol shock on the last bar
     forecasts = [0.0] * n0 + [10.0, 10.5]                         # signal 1.0 -> 1.05
     bot, execn, tracker, rm = _make_bot(SIZING, forecasts)
     _run(bot, jump)
-    # bar n0: signal moves 0 -> 1.0, passes the band, orders the SIZED target
-    assert len(execn.calls) == 1
+    # bar n0: signal moves 0 -> 1.0, orders the SIZED target
     t0 = _expected_alloc(10.0, calm)
     assert execn.calls[0]["target_allocation"] == pytest.approx(t0, rel=1e-12)
-    assert bot._held_signal_allocation[SYMBOL] == 1.0
+    assert _passed_on(tracker.rows[n0]) == "both"
     # bar n0 + 1: the sized change alone is above the 0.2 band, the signal change is 0.05
     row = tracker.rows[-1]
-    assert abs(row["allocation_change"]) >= 0.2                   # the old band would have traded
+    assert abs(row["allocation_change"]) >= 0.2
     assert row["sizing_signal_change"] == pytest.approx(0.05)
-    assert row["approved_rebalance"] is False
+    assert row["approved_rebalance"] is True and _passed_on(row) == "sized"
+    assert len(execn.calls) == 2
+    assert execn.calls[1]["target_allocation"] == pytest.approx(_expected_alloc(10.5, jump), rel=1e-12)
+    assert bot._held_signal_allocation[SYMBOL] == pytest.approx(1.05)   # the signal this position was set from
+
+
+def _alternating_closes(n, step=0.01):
+    """Constant-vol closes (+step, -step, ...): the realised vol barely moves bar to bar."""
+    out = [100.0]
+    for i in range(n - 1):
+        out.append(out[-1] * ((1.0 + step) if i % 2 == 0 else 1.0 / (1.0 + step)))
+    return out
+
+
+def test_a_small_signal_move_with_a_small_sized_move_is_rejected():
+    n0 = _first_bar_with_a_full_window()
+    closes = _alternating_closes(n0 + 2)
+    bot, execn, tracker, rm = _make_bot(SIZING, [0.0] * n0 + [10.0, 10.5])
+    _run(bot, closes)
+    row = tracker.rows[-1]
+    assert abs(row["allocation_change"]) < 0.2                    # precondition: sized move below the band
+    assert row["sizing_signal_change"] == pytest.approx(0.05)
+    assert row["approved_rebalance"] is False and _passed_on(row) is None
     assert len(execn.calls) == 1                                  # rejected: no second order
-    args, kwargs, ok = rm.calls[-1]
-    assert ok is False and kwargs["signal_change"] == pytest.approx(0.05)
+    assert rm.calls[-1][2] is False and rm.calls[-1][1]["signal_change"] == pytest.approx(0.05)
     assert bot._held_signal_allocation[SYMBOL] == 1.0             # unchanged on a rejection
+
+
+def test_a_large_signal_move_with_a_small_sized_move_passes_on_signal():
+    """Book already within 0.1 of the sized target, signal moved 1.0 from the held 0.0: the signal
+    path passes (the order is the small re-centre to the sized target)."""
+    n0 = _first_bar_with_a_full_window()
+    closes = _closes(n0 + 1, seed=21, vol=0.01)
+    t0 = _expected_alloc(10.0, closes)
+    bot, execn, tracker, rm = _make_bot(SIZING, [10.0], start_alloc=t0 - 0.1)
+    bot.strategy.data_buffer.closes = list(closes[:n0])           # restarted bot with its history loaded
+    _drive(bot, n0, closes[n0])
+    row = tracker.rows[-1]
+    assert row["allocation_change"] == pytest.approx(0.1) and abs(row["allocation_change"]) < 0.2
+    assert row["sizing_signal_change"] == pytest.approx(1.0)
+    assert row["approved_rebalance"] is True and _passed_on(row) == "signal"
+    assert execn.calls[0]["target_allocation"] == pytest.approx(t0, rel=1e-12)
+    assert bot._held_signal_allocation[SYMBOL] == 1.0
+
+
+def test_both_paths_over_the_threshold_report_both():
+    n0 = _first_bar_with_a_full_window()
+    closes = _closes(n0 + 1, seed=22, vol=0.01)
+    bot, execn, tracker, rm = _make_bot(SIZING, [0.0] * n0 + [10.0])
+    _run(bot, closes)
+    assert _passed_on(tracker.rows[-1]) == "both"
+
+
+def test_the_40_bar_restart_probe_recentres_on_bar_one():
+    """Restart with the book at 1.5, held signal 0.0 (a fresh bot), signal 0.1 and a sized target of
+    ~0.2: the signal moved only 0.1 (below the band) but the SIZED change (about -1.3) passes on bar one."""
+    n0 = _first_bar_with_a_full_window()
+    closes = _closes(n0 + 40, seed=23, vol=0.0052)                # realised ~0.1 annualised -> sized ~2 x signal
+    t0 = _expected_alloc(1.0, closes[:n0 + 1])
+    assert 0.1 < t0 < 0.3                                         # precondition: sized target ~0.2
+    bot, execn, tracker, rm = _make_bot(SIZING, [1.0] * 40, start_alloc=1.5)
+    bot.strategy.data_buffer.closes = list(closes[:n0])
+    for k in range(40):
+        _drive(bot, n0 + k, closes[n0 + k])
+        if k == 0:
+            assert len(execn.calls) == 1                          # the re-centre happens on bar ONE
+            assert execn.calls[0]["target_allocation"] == pytest.approx(t0, rel=1e-12)
+            assert execn.calls[0]["actual_allocation"] == 1.5
+            assert tracker.rows[0]["sizing_signal_change"] == pytest.approx(0.1)   # < 0.2: the signal path alone would wait
+            assert _passed_on(tracker.rows[0]) == "sized"
+            assert bot._held_signal_allocation[SYMBOL] == pytest.approx(0.1)
+    assert len(tracker.rows) == 40
+
+
+def test_volatility_alone_resizes_the_book_down_with_the_signal_steady():
+    """Entered at the cap in calm vol; vol jumps, the signal never moves: the book is resized down
+    as soon as the sized change reaches the threshold."""
+    n0 = _first_bar_with_a_full_window()
+    calm = _closes(n0 + 4, seed=24, vol=0.002)
+    shock = [calm[-1] * 1.06, calm[-1] * 1.06 * 0.94]            # then a violent pair of bars
+    closes = calm + shock
+    bot, execn, tracker, rm = _make_bot(SIZING, [0.0] * n0 + [10.0] * (len(closes) - n0))
+    _run(bot, closes)
+    assert execn.calls[0]["target_allocation"] == 2.0             # entered at the cap in calm vol
+    for r in tracker.rows[n0 + 1:n0 + 4]:                         # calm bars after entry: capped target unchanged
+        assert r["allocation_change"] == 0.0
+    assert len(execn.calls) >= 2
+    resize = execn.calls[1]
+    assert resize["target_allocation"] < 2.0 - 0.2
+    row = next(r for r in tracker.rows if r["approved_rebalance"] and r["sizing_target_allocation"] < 1.8)
+    assert row["sizing_signal_change"] == 0.0                     # the signal never moved
+    assert _passed_on(row) == "sized"
+    assert bot._held_signal_allocation[SYMBOL] == 1.0
+
+
+def test_unmeasurable_volatility_flatten_holds_signal_zero_then_the_book_re_enters():
+    """D-176 safety review (Finding 3): a successful order to 0.0 BECAUSE volatility could not be
+    measured leaves the remembered signal at 0.0, not at the signal; when volatility recovers with
+    the same signal, the book re-enters."""
+    n0 = _first_bar_with_a_full_window()
+    w = SIZING["window"]
+    closes = _closes(n0 + 1 + w + 2, seed=25, vol=0.01)
+    closes[n0 + 1] = 0.0                                          # an unmeasurable close
+    bot, execn, tracker, rm = _make_bot(SIZING, [0.0] * n0 + [10.0] * (len(closes) - n0))
+    for i in range(n0 + 1):
+        _drive(bot, i, closes[i])
+    assert bot._held_signal_allocation[SYMBOL] == 1.0 and len(execn.calls) == 1
+    _drive(bot, n0 + 1, closes[n0 + 1])                           # vol unmeasurable: sized to flat
+    assert bot.forecast_manager.last_realised_vol is None
+    assert execn.calls[-1]["target_allocation"] == 0.0 and len(execn.calls) == 2
+    assert bot._held_signal_allocation[SYMBOL] == 0.0             # not 1.0
+    for i in range(n0 + 2, n0 + 2 + w):                           # the bad close is still inside the window
+        _drive(bot, i, closes[i])
+        assert len(execn.calls) == 2
+    _drive(bot, n0 + 2 + w, closes[n0 + 2 + w])                   # the window is clean again
+    assert bot.forecast_manager.last_realised_vol is not None
+    assert len(execn.calls) == 3
+    assert execn.calls[-1]["target_allocation"] == pytest.approx(
+        _expected_alloc(10.0, closes[:n0 + 3 + w]), rel=1e-12)
+    assert tracker.rows[-1]["sizing_signal_change"] == pytest.approx(1.0)   # judged against the held 0.0
+    assert bot._held_signal_allocation[SYMBOL] == 1.0
 
 
 def test_the_signal_is_judged_against_the_held_signal_not_the_previous_bar():
     """A slowly moving signal (+0.1 a bar) never trades on a last-bar delta; it trades once it has
     moved a full band from where the position was set, and orders the sized target."""
     n0 = _first_bar_with_a_full_window()
-    closes = _closes(n0 + 4, seed=13, vol=0.01)
+    closes = _alternating_closes(n0 + 4)                          # steady vol: the sized path stays out of the way
     forecasts = [0.0] * n0 + [10.0, 11.0, 12.0, 13.0]            # signal 1.0 .. 1.3 in steps of 0.1
     bot, execn, tracker, rm = _make_bot(SIZING, forecasts)
     _run(bot, closes)
@@ -477,25 +600,52 @@ def test_a_failed_forced_flat_keeps_the_held_signal():
     assert bot._held_signal_allocation[SYMBOL] == 1.0
 
 
-def test_signal_change_drives_the_band_and_only_the_band():
+_DATA = pd.DataFrame({"timestamp": [pd.Timestamp("2024-04-01")]})
+
+
+@pytest.mark.parametrize("sized, signal, passed, on", [
+    (0.01, 0.5, True, "signal"),
+    (0.9, 0.05, True, "sized"),
+    (0.9, 0.5, True, "both"),
+    (0.01, 0.05, False, None),
+    (0.0, -0.3, True, "signal"),                                  # a sign does not matter
+    (-0.9, 0.0, True, "sized"),
+    (0.2 - 5e-7, 0.0, True, "sized"),                             # the same 1e-6 tolerance as the legacy band
+    (0.0, 0.2 - 5e-7, True, "signal"),
+    (0.2 - 2e-6, 0.2 - 2e-6, False, None),
+])
+def test_with_a_block_the_band_passes_on_either_change(sized, signal, passed, on):
     rm = RiskManager({"min_allocation_change": {"threshold": 0.2}})
-    data = pd.DataFrame({"timestamp": [pd.Timestamp("2024-04-01")]})
-    # sized change tiny, signal change big -> passes; the reverse -> rejected
-    assert rm.approve_allocation_change(SYMBOL, 0.01, data, signal_change=0.5)[0] is True
-    assert rm.approve_allocation_change(SYMBOL, 0.9, data, signal_change=0.05)[0] is False
-    # None: the sized change is judged, exactly as before
-    assert rm.approve_allocation_change(SYMBOL, 0.01, data)[0] is False
-    assert rm.approve_allocation_change(SYMBOL, 0.9, data)[0] is True
-    assert rm.approve_allocation_change(SYMBOL, 0.9, data, signal_change=None)[0] is True
-    # a sign does not matter
-    assert rm.approve_allocation_change(SYMBOL, 0.0, data, signal_change=-0.3)[0] is True
+    ok, dbg = rm.approve_allocation_change(SYMBOL, sized, _DATA, signal_change=signal)
+    assert ok is passed
+    assert dbg["controls"]["min_allocation_change"] == {"passed": passed, "passed_on": on}
+
+
+def test_without_a_block_the_band_judges_the_sized_change_exactly_as_before():
+    rm = RiskManager({"min_allocation_change": {"threshold": 0.2}})
+    assert rm.approve_allocation_change(SYMBOL, 0.01, _DATA)[0] is False
+    ok, dbg = rm.approve_allocation_change(SYMBOL, 0.9, _DATA)
+    assert ok is True and dbg["controls"]["min_allocation_change"] == {"passed": True}   # no passed_on key
+    assert rm.approve_allocation_change(SYMBOL, 0.9, _DATA, signal_change=None)[0] is True
+    assert rm.approve_allocation_change(SYMBOL, 0.01, _DATA, signal_change=None)[0] is False
+
+
+def test_the_pre_d176_sized_judgement_is_a_subset_of_the_block_rule():
+    """Every sized change the legacy band passed, the block rule passes; it adds the signal path."""
+    rm = RiskManager({"min_allocation_change": {"threshold": 0.2}})
+    for sized in np.linspace(-2.0, 2.0, 81):
+        legacy = rm.approve_allocation_change(SYMBOL, float(sized), _DATA)[0]
+        for signal in (0.0, 0.05, 0.19, 1.0):
+            if legacy:
+                assert rm.approve_allocation_change(SYMBOL, float(sized), _DATA, signal_change=signal)[0] is True
 
 
 @pytest.mark.parametrize("bad", [float("nan"), float("inf"), float("-inf")])
-def test_a_non_finite_signal_change_is_refused(bad):
+def test_a_non_finite_signal_change_falls_back_to_the_sized_change(bad):
     rm = RiskManager({"min_allocation_change": {"threshold": 0.2}})
-    data = pd.DataFrame({"timestamp": [pd.Timestamp("2024-04-01")]})
-    ok, dbg = rm.approve_allocation_change(SYMBOL, 0.9, data, signal_change=bad)
+    ok, dbg = rm.approve_allocation_change(SYMBOL, 0.9, _DATA, signal_change=bad)
+    assert ok is True and dbg["controls"]["min_allocation_change"] == {"passed": True, "passed_on": "sized"}
+    ok, dbg = rm.approve_allocation_change(SYMBOL, 0.05, _DATA, signal_change=bad)
     assert ok is False and dbg["controls"]["min_allocation_change"]["passed"] is False
 
 
@@ -663,3 +813,128 @@ def test_every_launcher_call_site_passes_strategy_sizing():
                      and ast.unparse(kw["sizing"]) == "strategy.sizing"]
     assert len(from_strategy) == 4
     assert [kw for name, kw in sites if "sizing" not in kw] == []
+
+
+# --------------------------------------------------------------------------- V19: every volatility-dividing op
+
+VOL_OPS = {
+    "vol_target": VOL_TARGET_OP,
+    "vol_normalize": {"op": "vol_normalize", "params": {}},
+    "vol_adjusted": {"op": "vol_adjusted", "params": {}},
+}
+
+
+@pytest.mark.parametrize("op", sorted(VOL_OPS))
+def test_every_volatility_dividing_op_beside_a_block_is_refused_as_sized_twice(op):
+    cfg = _base_cfg()
+    comp = cfg["strategies"]["regimes"]["unknown"]["components"][0]
+    comp["transforms"].append(copy.deepcopy(VOL_OPS[op]))
+    assert _v19(cfg) == []                                        # no block: accepted as before
+    cfg["strategies"]["sizing"] = dict(SIZING)
+    msgs = _v19(cfg)
+    assert len(msgs) == 1 and "sized twice" in msgs[0]
+    assert f"this {op} op sizes the forecast" in msgs[0] and f"remove the {op} op" in msgs[0]
+    assert "components[0].transforms[2]" in msgs[0]
+
+
+@pytest.mark.parametrize("op", ["vol_normalize", "vol_adjusted"])
+def test_the_new_ops_are_also_found_in_history_transforms_and_nested_positions(op):
+    cfg = _base_cfg()
+    cfg["strategies"]["sizing"] = dict(SIZING)
+    cfg["strategies"]["regimes"]["unknown"]["components"][0]["history_transforms"] = [copy.deepcopy(VOL_OPS[op])]
+    cfg["regime_detector"]["components"] = [{"id": "d", "transforms": [copy.deepcopy(VOL_OPS[op])]}]
+    twice = [m for m in _v19(cfg) if "sized twice" in m]
+    assert len(twice) == 2 and all(op in m for m in twice)
+
+
+# --------------------------------------------------------------------------- real AdvancedStrategy + RollingBuffer warm-up
+
+def _synthetic_df():
+    return pd.read_csv(FIXTURES / "d176" / "synthetic_daily_ohlcv.csv", parse_dates=["timestamp"])
+
+
+def _run099_sized_config(tmp_path, *, with_block):
+    cfg = json.loads(RUN_099.read_text())
+    comp = cfg["strategies"]["regimes"]["unknown"]["components"][0]
+    comp["transforms"] = [t for t in comp["transforms"] if t["op"] != "vol_target"]
+    if with_block:
+        cfg["strategies"]["sizing"] = {"kind": "vol_target", "window": 60, "target_annual_vol": 0.2,
+                                       "periods_per_year": 365}
+    assert [m for m in validate(cfg) if "V19" in m] == []
+    p = tmp_path / ("sized.json" if with_block else "plain.json")
+    p.write_text(json.dumps(cfg))
+    return str(p)
+
+
+def test_real_strategy_warmup_with_a_block_and_the_first_sized_allocation(tmp_path):
+    """The real AdvancedStrategy (and its RollingBuffer) over the synthetic series: no allocation
+    before required_bars = max(existing, window + 1); the first sized allocation equals
+    forecast / 10 * target / realised (hand-computed from the series), clipped."""
+    plain = AdvancedStrategy(config_path=_run099_sized_config(tmp_path, with_block=False))
+    strat = AdvancedStrategy(config_path=_run099_sized_config(tmp_path, with_block=True))
+    assert strat.sizing is not None and plain.sizing is None
+    assert strat.required_bars == max(plain.required_bars, 60 + 1)
+    fm = ForecastManager(sizing=strat.sizing)
+    df = _synthetic_df()
+    closes = df["close"].to_numpy(dtype=float)
+
+    first_alloc_bar = None
+    for i in range(len(df)):
+        strat.update(df.iloc[i:i + 1])
+        signal = strat.generate_signals()
+        buf = strat.data_buffer.get_df()["close"].to_numpy(dtype=float)
+        # the buffer is a bounded deque; it always holds >= window + 1 closes once they exist, the
+        # bar being decided is the last one, and the tail equals the series
+        assert min(i + 1, 61) <= len(buf) <= i + 1 and buf[-1] == closes[i]
+        assert (buf == closes[i + 1 - len(buf):i + 1]).all()
+        alloc = fm.forecast_to_allocation(signal.forecast, closes=buf)
+        if i + 1 < strat.required_bars:
+            assert not strat.is_ready() and signal.forecast == 0.0 and alloc == 0.0   # no allocation yet
+        if alloc != 0.0:
+            first_alloc_bar = i
+            break
+    assert first_alloc_bar is not None and first_alloc_bar + 1 >= strat.required_bars
+    f = signal.forecast
+    tail = closes[first_alloc_bar - 60:first_alloc_bar + 1]
+    realised = float(np.std(tail[1:] / tail[:-1] - 1.0, ddof=1)) * math.sqrt(365)
+    want = min(max(f / 10.0 * 0.2 / realised, -2.0), 2.0)
+    assert alloc == pytest.approx(want, rel=1e-12) and f > 0
+    assert fm.last_realised_vol == pytest.approx(realised, rel=1e-12)
+
+
+# --------------------------------------------------------------------------- PortfolioRiskGate acts on the SIZED target
+
+def test_the_risk_gate_cap_clamps_the_sized_target_not_the_signal():
+    n0 = _first_bar_with_a_full_window()
+    closes = _closes(n0 + 1, seed=31, vol=0.01)
+    sized = _expected_alloc(10.0, closes)                         # ~1: above the 0.5 cap, signal is 1.0
+    assert sized > 0.5
+    gate = PortfolioRiskGate({"absolute_allocation_cap": {"cap": 0.5}})
+    bot, execn, tracker, rm = _make_bot(SIZING, [0.0] * n0 + [10.0], gate=gate)
+    _run(bot, closes)
+    row = tracker.rows[-1]
+    assert row["risk_target_raw"] == pytest.approx(sized, rel=1e-12)   # the gate saw the sized target
+    assert row["risk_cap_clamped"] is True
+    assert execn.calls[0]["target_allocation"] == 0.5
+    assert row["sizing_target_allocation"] == pytest.approx(sized, rel=1e-12)  # telemetry keeps the pre-gate size
+    assert bot._held_signal_allocation[SYMBOL] == 1.0
+
+
+def test_the_risk_gate_kill_flattens_a_sized_book_through_the_bypass():
+    n0 = _first_bar_with_a_full_window()
+    closes = _closes(n0 + 3, seed=32, vol=0.01)
+    gate = PortfolioRiskGate({"max_drawdown_kill": {"threshold": 0.25}})
+    bot, execn, tracker, rm = _make_bot(SIZING, [0.0] * n0 + [10.0] * 3, gate=gate)
+    bot.portfolio_info.set_equity(100.0)
+    for i in range(n0 + 1):
+        _drive(bot, i, closes[i])
+    assert len(execn.calls) == 1 and bot._held_signal_allocation[SYMBOL] == 1.0
+    held_alloc = execn.calls[0]["target_allocation"]
+    bot.portfolio_info.set_equity(70.0)                           # 30% drawdown: the kill trips
+    _drive(bot, n0 + 1, closes[n0 + 1])
+    assert gate.killed is True
+    assert len(execn.calls) == 2 and execn.calls[1]["target_allocation"] == 0.0
+    assert execn.calls[1]["actual_allocation"] == pytest.approx(held_alloc)
+    assert len(rm.calls) == 1                                     # the flatten bypassed the band
+    assert tracker.rows[-1]["succcess_execute_portfolio_rebalance"] is True
+    assert bot._held_signal_allocation[SYMBOL] == 0.0             # a forced flat forgets the signal

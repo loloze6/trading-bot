@@ -339,17 +339,21 @@ allocation is `forecast / 10`, byte for byte.
   are read (the last `window` + 1).
 - *The forecast stays the signal.* bars.csv `forecast` is the unsized standardised forecast; the allocation columns
   (`previous_allocation`, `allocation_change`, `postRebalance_current_allocation`) are sized.
-- *The no-trade band is judged on the signal.* `risk_management.controls.min_allocation_change` (or a strategy's own
-  `strategies.min_allocation_change`) compares the move in `forecast / 10` with the threshold, not the sized order
-  delta. The move is measured from the signal the position was last set from (updated on a successful rebalance, reset
-  to 0 on a forced flatten), not from the previous bar: a slowly moving signal still trades once it has moved a full
-  band, and a vol swing alone does not trade. Once it passes, the order goes to the sized target.
+- *The no-trade band passes on the signal or the sized change.* `risk_management.controls.min_allocation_change` (or a
+  strategy's own `strategies.min_allocation_change`) passes when EITHER the signal's change (`forecast / 10` against the
+  signal the position was last set from) OR the sized exposure's change (target sized allocation minus the current
+  position, what the band judged before D-176) reaches the threshold. The pre-D-176 behaviour is a subset; the signal
+  path is added. The signal's move is measured from the signal the position was last set from (updated on a successful
+  rebalance, reset to 0 on a forced flatten or when volatility was unmeasurable and the order went flat), not from the
+  previous bar: a slowly moving signal still trades once it has moved a full band, a vol swing alone trades once the
+  sized exposure has moved a full band, and a restart with the book far from its sized target re-centres on bar one.
+  Once it passes, the order goes to the sized target.
 - *Warm-up.* The strategy is not ready before `window` + 1 closes (`required_bars` is raised to that if it is lower), so
   the forecast is 0 and the position flat until then.
 - *Degenerate volatility goes flat.* A realised vol of exactly 0, a non-finite or non-positive close in the window, or
   fewer than `window` + 1 closes sizes the bar to 0.0 (flat). A NaN forecast is not sized: the existing NaN hold applies.
-- *Sized twice is refused.* With a sizing block, any `vol_target` op in a `transforms` or `history_transforms` list (at
-  any depth) fails validation (V19, "sized twice"). A malformed block (unknown key, bad `kind`, `window` below 2, a
+- *Sized twice is refused.* With a sizing block, any `vol_target`, `vol_normalize` or `vol_adjusted` op in a
+  `transforms` or `history_transforms` list (at any depth) fails validation (V19, "sized twice"). A malformed block (unknown key, bad `kind`, `window` below 2, a
   non-positive number) is refused too.
 - *When to use which.* A new config uses `standardise` for the forecast scale (hard rule above) plus the sizing block for
   volatility targeting, not a `vol_target` op. Existing configs with the op keep working unchanged. `composition.py` does
