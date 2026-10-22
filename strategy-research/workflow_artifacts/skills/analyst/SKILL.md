@@ -75,9 +75,11 @@ lens.
    mechanism before the query runs; chosen after seeing several, they are a fit and the claim is
    refused. Pre-registration binds the child run, not this exploration: when a result holds in
    the opposite direction in all but at most one window, write a new test with that direction
-   and run it; the claim then carries the flipped direction. A quantile selector's lookback and
-   a horizon must fit inside a window: with 120-bar windows a lookback above 40 bars or a
-   horizon above 20 bars cannot clear the floors; choose smaller ones. Write down the second query the mechanism predicts and a coincidence
+   and run it; the claim then carries the flipped direction. Before a query, count what it can
+   select: bars per window minus the lookback minus the longest horizon, times the share the
+   selector keeps, times the windows. If that is under the floor, change the selector or the
+   horizon now; a query that cannot reach its floor is not run. Write down the second query the
+   mechanism predicts and a coincidence
    would not. Run it. If it fails, that mechanism is wrong; the behaviour may still hold. If it does (your own
    test shows it, or the memory view shows a claim confirmed on this strategy), name the next
    mechanism and run its query. A rejected mechanism that rests on a real observation leads to
@@ -101,9 +103,18 @@ lens.
 5. **Write the claim with its test,** or stop with no claim. A `conditional_effect` reply with
    `compiles_as_claim` true that clears the floor is written as a claim or recorded as an
    observation (`no_claim.observations`); the only `killed_by` is a query of this session that
-   measured a rival, named. A horizon that disagrees is dropped from the test and is never a
-   killed_by; a killed_by is a rival explanation, never the same selector at another horizon.
-   "Thin", "no mechanism yet" and the expected rank are not reasons.
+   measured a rival, named. When a result clears its floors and you name a mechanism for it, run
+   the query that mechanism predicts before you write the result as an observation. "It may be a
+   fit to this fold" is not a reason: the child run and the refold are that test. Only a named
+   tool limit may stand in place of that query. A horizon that disagrees is dropped from the test
+   and is never a killed_by; a killed_by is a rival explanation, never the same selector at
+   another horizon. "Thin", "no mechanism yet" and the expected rank are not reasons.
+   Before you end, write the next-steps ledger on your best observation: four lines, one each for
+   the opposite direction, another horizon, the all-bars version of a selector that failed its
+   floors, and the mechanism behind it. Each line is the id of a query of this session that ran
+   it, or "not run: <the floor, the tool limit, or the budget that stopped it>". The ledger is a
+   record field (`next_steps`, under `claim` or `no_claim`); the reader checks that the four lines
+   exist and that every cited query id is one of this session's. It judges nothing else.
    A session may end in no claim only when every result that cleared its floors, in either
    direction and at any horizon, has been written as a claim or recorded as an observation,
    and every rejected candidate names the query of this session that measured its rival, or
@@ -224,6 +235,14 @@ claim:
     what result refutes it (the falsifier)
   rationale: >
     the why: the market or mechanical reason
+  # two keys below are for code (it removes them before the claim card reads the claim):
+  next_steps:                      # required: the closing ledger on your best observation
+    opposite_direction: q8         # each: the id of a query of this session, or "not run: <reason>"
+    another_horizon: "not run: the floor"
+    all_bars_version: q9
+    mechanism: q10
+  floor_lowered_reasons:           # only for a test that repeats an earlier query's selector and
+    my_test: one sentence on why the floor was lowered   # outcome on a lower floor: {test name: reason}
 why_query: q9                      # the second query your mechanism predicted (another selector)
 evidence:                          # citations: query id, a path in that result, the value
   - q7:horizons.24.effect=0.0012   # at least one from your claim test's own conditional_effect
@@ -250,15 +269,30 @@ no_claim:
       evidence:                    # citations, at least one from that query
         - q7:horizons.24.effect=0.0012
       floors_met: true             # true or false: that query cleared its test's floor
+      mechanism_query: q9          # floors_met true: a LATER query of this session, or stopped_by: <tool limit>
+      floor_lowered_reason: one sentence   # only when that test repeats an earlier query's selector
+                                           # and outcome on a lower floor
+  next_steps:                      # required: the closing ledger on your best observation
+    opposite_direction: q8         # each: the id of a query of this session, or "not run: <reason>"
+    another_horizon: "not run: the floor"
+    all_bars_version: q9
+    mechanism: q10
 evidence:
   - q12:groups.long.trade_net_return_mean=-0.0008
 ```
 
-Each observation has exactly four keys: `statement` (the behaviour you measured), `test`
+Each observation has four keys: `statement` (the behaviour you measured), `test`
 (the id of the `conditional_effect` query of this session that measured it), `evidence`
 (citations, at least one of that query) and `floors_met` (true or false: whether that query
-cleared its test's floor on every horizon). A `no_claim` carries at most 3 observations, each
-citing a different test. An observation is recorded, not confirmed; the memory view shows it
+cleared its test's floor on every horizon); and, where they apply, `mechanism_query` (or
+`stopped_by`: the tool limit; one of the two is required when `floors_met` is true) and
+`floor_lowered_reason` (one sentence; required when the test repeats an earlier query's selector
+and outcome on a lower floor; in a claim the same reasons are `claim.floor_lowered_reasons`,
+test name to reason). A `no_claim` carries at most 3 observations, each citing a different test.
+Code writes the `floor_lowered` entry and the `angle` tag itself: `regime` for a selector that
+names no forecast field, `sizing` for a finding about how the position is sized (it names
+`vol_target`, sizing or position size). A sizing finding is an observation, never a claim with
+a vehicle. An observation is recorded, not confirmed; the memory view shows it
 as "observed, no vehicle yet".
 
 Code checks, before anything is kept: the claim block (CLAIM_TESTS), every citation against the

@@ -41,6 +41,7 @@ from claude_agent_sdk import AssistantMessage, SystemMessage, TextBlock  # noqa:
 from claude_agent_sdk._internal.transport.subprocess_cli import SubprocessCLITransport  # noqa: E402
 
 import test_e075_pr4_queries as q4  # noqa: E402  (a synthetic run with bars and trades)
+from d178_legacy_fixture import d178_checks_off  # noqa: E402,F401  (D-178)
 
 # the real flag reader, kept before the autouse fixture replaces the attribute
 _REAL_ANALYST_ENABLED = rpr._analyst_enabled
@@ -65,7 +66,7 @@ LONG = {"kind": "trade", "where": [{"field": "side", "op": "==", "value": "long"
 # ---------------------------------------------------------------------------
 
 @pytest.fixture(autouse=True)
-def _flags(monkeypatch):
+def _flags(monkeypatch, d178_checks_off):
     """Analyst on (with folds), score provenance off; nothing reads the real config."""
     monkeypatch.setattr(rpr, "_analyst_enabled", lambda *a: True)
     monkeypatch.setattr(rpr, "_folds_enabled", lambda *a: True)

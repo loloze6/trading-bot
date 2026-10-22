@@ -1843,6 +1843,13 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
                                 "bad": copy.deepcopy(src["citation_flags"][pid])}]
     if warnings:  # E-068 PR 4 (D-071): only when non-empty -- other records unchanged
         cand["warnings"] = warnings
+    if p["kind"] == _rp.SIDE_FINDING and p.get("floor_lowered"):
+        # D-178 (item D1): the analyst's claim test was run on a lower floor than an earlier
+        # query of the same selector and outcome; shown on the candidate entry, never a gate
+        cand["floor_lowered"] = copy.deepcopy(p["floor_lowered"])
+        cand["notes"] = [_rp.floor_lowered_text(p["floor_lowered"])]
+    if p["kind"] == _rp.SIDE_FINDING and p.get("angle"):
+        cand["angle"] = p["angle"]                      # D-178 (item D4): regime | sizing
     merged = (src.get("side_finding_merges") or {}).get(pid)         if p["kind"] == _rp.SIDE_FINDING else None
     if merged:
         # E-073 step 2: an in-run duplicate (side_finding_merges.yaml) is folded

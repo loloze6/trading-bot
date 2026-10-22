@@ -5411,8 +5411,10 @@ def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -
         # (claim card again, vehicle) need a claim the claim card accepted
         if reading is not None:
             try:
+                # D-178: the analyst worker's reading carries the analyst tags (angle,
+                # floor_lowered) whatever the flag reader says here
                 rp.check_reading(reading, category, "analyst reading", from_model=True,
-                                 envelope=True, **_reader_strictness())
+                                 envelope=True, **{**_reader_strictness(), "analyst": True})
             except rp.ProposalError as exc:
                 errors = errors + [str(exc)]
             else:

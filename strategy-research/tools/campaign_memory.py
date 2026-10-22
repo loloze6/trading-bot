@@ -412,6 +412,10 @@ def _proposals_block(run_dir: Path, run_id: str, categories) -> list:
 # `spec`), copied into the entry's `observations` with the lens and the record's ref. The
 # key is absent -- not [] -- when no lens recorded one, so every other entry is unchanged.
 OBSERVATION_FIELDS = ("statement", "test", "evidence", "floors_met", "spec")
+# D-178 (operator item D, 2026-10-22): optional fields the analyst's code or model adds to a
+# recorded observation; copied when present, so the direction review can list
+# `angle: sizing` observations and the memory shows a lowered floor.
+OBSERVATION_OPTIONAL_FIELDS = ("mechanism_query", "stopped_by", "floor_lowered", "angle")
 
 
 def analyst_observations(run_dir: Path, run_id: str) -> list:
@@ -438,10 +442,12 @@ def analyst_observations(run_dir: Path, run_id: str) -> list:
         if not isinstance(obs, list):
             raise CampaignMemoryError(f"{path}: no_claim.observations is not a list")
         for i, o in enumerate(obs):
-            if not isinstance(o, dict) or set(o) != set(OBSERVATION_FIELDS):
+            if not isinstance(o, dict) or not set(OBSERVATION_FIELDS) <= set(o)                     or set(o) - set(OBSERVATION_FIELDS) - set(OBSERVATION_OPTIONAL_FIELDS):
                 raise CampaignMemoryError(f"{path}: no_claim.observations[{i}] is not exactly "
-                                          f"{list(OBSERVATION_FIELDS)}")
+                                          f"{list(OBSERVATION_FIELDS)} (plus, where they apply, "
+                                          f"{list(OBSERVATION_OPTIONAL_FIELDS)})")
             out.append({"lens": lens, **{k: o[k] for k in OBSERVATION_FIELDS},
+                        **{k: o[k] for k in OBSERVATION_OPTIONAL_FIELDS if k in o},
                         "ref": _ref(run_id, rel)})
     return out
 
