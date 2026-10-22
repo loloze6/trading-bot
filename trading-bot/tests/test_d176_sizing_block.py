@@ -842,14 +842,26 @@ def test_every_volatility_dividing_op_in_transforms_beside_a_block_is_refused_as
             assert words in msgs[0]
 
 
-@pytest.mark.parametrize("op", ["vol_normalize", "vol_adjusted"])
-def test_vol_normalize_and_vol_adjusted_in_history_transforms_are_accepted_beside_a_block(op):
-    """standardise divides them out (STRATEGY_DESIGN_GUIDE.md:301): they do not size the forecast."""
+def test_vol_normalize_in_history_transforms_is_accepted_beside_a_block():
+    """standardise divides it out (STRATEGY_DESIGN_GUIDE.md:301): it does not size the forecast."""
     cfg = _base_cfg()
-    cfg["strategies"]["regimes"]["unknown"]["components"][0]["history_transforms"] = [copy.deepcopy(VOL_OPS[op])]
+    cfg["strategies"]["regimes"]["unknown"]["components"][0]["history_transforms"] = [copy.deepcopy(VOL_OPS["vol_normalize"])]
     assert _v19(cfg) == []
     cfg["strategies"]["sizing"] = dict(SIZING)
     assert _v19(cfg) == []
+
+
+def test_vol_adjusted_in_history_transforms_beside_a_block_is_refused_as_sized_twice():
+    """operator 2026-10-22: vol_adjusted is refused in both lists (the earlier ruling allowing it is withdrawn)."""
+    cfg = _base_cfg()
+    cfg["strategies"]["regimes"]["unknown"]["components"][0]["history_transforms"] = [copy.deepcopy(VOL_OPS["vol_adjusted"])]
+    assert _v19(cfg) == []                                        # no block: accepted as before
+    cfg["strategies"]["sizing"] = dict(SIZING)
+    msgs = _v19(cfg)
+    assert len(msgs) == 1 and "sized twice" in msgs[0] and "history_transforms[0]" in msgs[0]
+    assert "this vol_adjusted op in history_transforms sizes the forecast" in msgs[0]
+    for words in ("before standardise", "in the component", "as a regime"):
+        assert words in msgs[0]
 
 
 @pytest.mark.parametrize("op", ["vol_normalize", "vol_adjusted"])

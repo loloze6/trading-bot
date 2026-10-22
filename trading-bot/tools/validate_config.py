@@ -548,11 +548,11 @@ def validate(config: dict) -> List[str]:
     # With a block, a volatility-dividing op would size the forecast as well:
     # vol_target anywhere in a transforms / history_transforms list (top level,
     # block source detectors or parts, any depth) is refused, "sized twice"
-    # (D-176 safety review, Finding 4). vol_normalize / vol_adjusted are refused
-    # only in a component's `transforms`; in `history_transforms` they are
-    # ALLOWED -- standardise divides them out (STRATEGY_DESIGN_GUIDE.md:301), so
-    # they do not size the forecast (operator ruling 2026-10-22, Finding 4
-    # narrowed). Silent without the key, so every earlier config (run_084's
+    # (D-176 safety review, Finding 4). vol_adjusted is refused in BOTH lists;
+    # vol_normalize is refused only in a component's `transforms` and ALLOWED in
+    # `history_transforms` -- standardise divides it out (STRATEGY_DESIGN_GUIDE.md:301)
+    # (operator ruling 2026-10-22: vol_adjusted in history_transforms is refused,
+    # the earlier ruling allowing it is withdrawn). Silent without the key, so every earlier config (run_084's
     # lane-1 block, D-149's vol_target clause) is untouched.
     if "sizing" in config["strategies"]:
         from strategies.registry import sizing_block_errors
@@ -567,7 +567,7 @@ def validate(config: dict) -> List[str]:
             else:
                 violations.append(
                     f"VIOLATION V19 {loc}: sized twice -- strategies.sizing sizes the allocation "
-                    f"step and this {op} op in transforms sizes the forecast; volatility "
+                    f"step and this {op} op in {key} sizes the forecast; volatility "
                     f"belongs before standardise (history_transforms), in the component, "
                     f"or as a regime")
 
@@ -575,15 +575,15 @@ def validate(config: dict) -> List[str]:
 
 
 # Ops that divide by volatility (strategies/registry.py TRANSFORM_OPS_REGISTRY):
-# alongside a strategies.sizing block vol_target (any list) and vol_normalize /
-# vol_adjusted (a `transforms` list only) would size the forecast a second time.
+# alongside a strategies.sizing block vol_target and vol_adjusted (any list) and
+# vol_normalize (a `transforms` list only) would size the forecast a second time.
 _SIZED_TWICE_OPS = ("vol_target", "vol_normalize", "vol_adjusted")
 
 
 def _vol_target_op_locations(node: Any, path: str = "") -> List[Tuple[str, str, str]]:
     """Every (`<path>[k]`, op, list key) refused by V19: a vol_target step in any
-    transforms / history_transforms list anywhere in `node`, or a vol_normalize /
-    vol_adjusted step in a `transforms` list only."""
+    transforms / history_transforms list anywhere in `node`, or a vol_adjusted step in
+    either list, or a vol_normalize step in a `transforms` list only."""
     found: List[Tuple[str, str, str]] = []
     if isinstance(node, dict):
         for key, val in node.items():
@@ -591,7 +591,7 @@ def _vol_target_op_locations(node: Any, path: str = "") -> List[Tuple[str, str, 
             if key in ("transforms", "history_transforms") and isinstance(val, list):
                 found += [(f"{sub}[{k}]", step["op"], key) for k, step in enumerate(val)
                           if isinstance(step, dict) and step.get("op") in _SIZED_TWICE_OPS
-                          and (step["op"] == "vol_target" or key == "transforms")]
+                          and (step["op"] != "vol_normalize" or key == "transforms")]
             else:
                 found += _vol_target_op_locations(val, sub)
     elif isinstance(node, list):

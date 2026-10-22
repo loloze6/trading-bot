@@ -27,6 +27,11 @@ is refused.
     `transforms` list. That `standardise` is the FIRST step is validate_config.py's
     V15, not this module's. The regime detector is not checked.
 
+  * D-176 (a sizing parameter is not a vehicle): a design-variant patch whose
+    path is /strategies/sizing or starts with /strategies/sizing/ is refused.
+    The base config's own sizing block is untouched, and nothing here checks
+    the block's values (validate_config.py V19 checks its shape).
+
 Classes are matched by their bare class name (the last segment of the dotted
 `class` path): every component lives in strategies.strategy_components, and
 whether the path loads at all is validate_config.py's V12, not this module's.
@@ -159,6 +164,23 @@ def strategies_violations(config, on_off) -> list:
                         f"regime detector)")
         if _not_standardised(comp, regimes.get(rname)):
             out.append(f"D-149: {loc} (id {comp.get('id')!r}) -- " + RULE_SENTENCE)
+    return out
+
+
+SIZING_POINTER = "/strategies/sizing"
+
+
+def sizing_vehicle_violations(patch) -> list:
+    """D-176 messages for a design variant's `patch` list ([{path, value}, ...]):
+    one per op whose path is /strategies/sizing or below it (empty when none).
+    Malformed ops are skipped: applying the patch reports them."""
+    out = []
+    for op in patch if isinstance(patch, list) else []:
+        path = op.get("path") if isinstance(op, dict) else None
+        if isinstance(path, str) and (path == SIZING_POINTER or path.startswith(SIZING_POINTER + "/")):
+            out.append(f"D-176: a sizing parameter is not a vehicle -- the patch path {path} changes "
+                       f"strategies.sizing; the campaign sizing default is fixed, a design variant "
+                       f"changes one parameter or transform of a component, never the sizing block")
     return out
 
 
