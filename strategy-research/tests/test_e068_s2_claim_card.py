@@ -1405,3 +1405,44 @@ def test_a_lone_numbered_card_from_the_claim_retry_is_kept(monkeypatch):
     assert not (arts / "hypothesis_card_2.yaml").exists()
     assert _status(run_dir)["usable"] is True
 
+
+
+# ---------------------------------------------------------------------------
+# D-175: a quantile selector's lookback is taken off every window before the
+# possible-events count (run_099: 21 events against the floor).
+# ---------------------------------------------------------------------------
+
+def _quantile_test(lookback, floor=30):
+    return dict(UPPER, floor={"min_events": floor},
+                outcome={"kind": "fwd_return", "horizons": [1, 2, 3]},
+                selector={"kind": "quantile", "field": "forecast", "side": "top", "q": 0.2,
+                          "lookback": lookback})
+
+
+def test_d175_quantile_lookback_100_in_six_120_bar_windows_is_refused_with_the_count():
+    counts = [120] * 6                                    # 720 bars; 6 x (120-100) = 120 usable
+    w = cc.power_warnings(_claim(tests=[_quantile_test(100)]), 720, 1, counts)
+    assert w == []                                        # 40 >= 30: reachable
+    w = cc.power_warnings(_claim(tests=[_quantile_test(100, floor=50)]), 720, 1, counts)
+    assert len(w) == 1
+    m = w[0]["message"]
+    assert "possible events 40 < min_events 50" in m and "quantile lookback 100 bars" in m
+
+
+def test_d175_quantile_lookback_40_in_six_120_bar_windows_passes():
+    counts = [120] * 6                                    # 6 x 80 = 480 // 3 = 160
+    assert cc.power_warnings(_claim(tests=[_quantile_test(40, floor=150)]), 720, 1, counts) == []
+    # the same floor with lookback 100 is refused, so the lookback is what decided it
+    assert cc.power_warnings(_claim(tests=[_quantile_test(100, floor=150)]), 720, 1, counts)
+
+
+def test_d175_other_selectors_and_missing_window_counts_are_unchanged():
+    ev = dict(UPPER, floor={"min_events": 100})
+    assert cc.power_warnings(_claim(tests=[ev]), 59, 1, [31, 28]) == \
+        cc.power_warnings(_claim(tests=[ev]), 59, 1)
+    q = _quantile_test(100, floor=1000)
+    old = cc.power_warnings(_claim(tests=[q]), 720, 1)
+    assert old[0]["bound"] == 240 and "quantile_lookback" not in old[0]
+    assert cc.quantile_lookback({"kind": "all_of", "selectors": [
+        {"kind": "quantile", "lookback": 30}, {"kind": "quantile", "lookback": 50}]}) == 50
+    assert cc.quantile_lookback({"kind": "event"}) == 0

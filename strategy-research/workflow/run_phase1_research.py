@@ -18620,7 +18620,9 @@ def _claim_power_check(run_dir: Path, run_id: str, attempt, stage: str, card: di
     else:
         try:
             bars = cc.window_bars(windows, step)
-            warnings = cc.power_warnings((card or {}).get("claim") or {}, bars, len(symbols))
+            warnings = cc.power_warnings(
+                (card or {}).get("claim") or {}, bars, len(symbols),
+                [cc.window_bars([w], step) for w in windows])
             entry.update({"status": "below_floor" if warnings else "ok", "source": source,
                           "bars": bars, "coins": len(symbols), "timeframe": tf,
                           "warnings": warnings})
