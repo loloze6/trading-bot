@@ -1600,6 +1600,12 @@ def _digest_advisory(card, config, symbols, timeframe, digest) -> dict:
                                      candidate_config=config)
 
 
+def _append_notes(cand: dict, *notes: str) -> None:
+    """A candidate entry's `notes`: the given lines are appended to any it already has, never
+    replacing them (D-178: the floor disclosure lives here beside any other note)."""
+    cand["notes"] = list(cand.get("notes") or []) + [n for n in notes if n]
+
+
 def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inputs: dict,
                exact: dict) -> dict:
     pid = p["proposal_id"]
@@ -1847,7 +1853,7 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         # D-178 (item D1): the analyst's claim test was run on a lower floor than an earlier
         # query of the same selector and outcome; shown on the candidate entry, never a gate
         cand["floor_lowered"] = copy.deepcopy(p["floor_lowered"])
-        cand["notes"] = [_rp.floor_lowered_text(p["floor_lowered"])]
+        _append_notes(cand, _rp.floor_lowered_text(p["floor_lowered"]))
     if p["kind"] == _rp.SIDE_FINDING and p.get("angle"):
         cand["angle"] = p["angle"]                      # D-178 (item D4): regime | sizing
     merged = (src.get("side_finding_merges") or {}).get(pid)         if p["kind"] == _rp.SIDE_FINDING else None

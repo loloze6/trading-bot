@@ -10,6 +10,7 @@ lenses). No model call, no backtest.
 from __future__ import annotations
 
 import copy
+import json
 import re
 import sys
 from pathlib import Path
@@ -61,11 +62,16 @@ def _answer(doc):
     return "```yaml\n" + yaml.safe_dump(doc, sort_keys=False) + "```"
 
 
-def _check(doc, entries, lens="forecast", claim=False):
+def _base_config():
+    """The run_099 base strategy config (anchor_position's transforms[2] is a vol_target step)."""
+    return json.loads((FIX / "run_099_strategy_config.json").read_text(encoding="utf-8"))
+
+
+def _check(doc, entries, lens="forecast", claim=False, base_config=None):
     return asm.check_answer(
         _answer(doc), lens=lens, run_id="run_099", entries=entries,
         claim_check=(lambda c: cc.check_claim(c, folds=True, trade_tests=True)) if claim else None,
-        holdout_start=q4.HOLDOUT, fold="A", model_id="m")
+        holdout_start=q4.HOLDOUT, fold="A", model_id="m", base_config=base_config)
 
 
 LEDGER = {"opposite_direction": "q8", "another_horizon": "not run: the floor",
@@ -183,13 +189,30 @@ def test_completeness_counts_why_query_observations_killed_by_and_variants_of_a_
            and asm.met_own_floor(x) is True]
     assert {"q5", "q6", "q7", "q11", "q12", "q13", "q14", "q15"} == set(met)
     assert asm.completeness_errors(e, set(met)) == []
-    # q11/q13/q15 are one test (same selector, outcome, statistic): writing q15 covers them
-    assert asm.completeness_errors(e, {"q15", "q12", "q5", "q6"}) == []     # q7, q14 are q5's test
+    # q11/q13/q15 are one test (same selector, outcome, statistic, direction): writing q15
+    # covers them; q7 and q14 are one test (direction less): writing q7 covers q14
+    assert asm.completeness_errors(e, {"q15", "q12", "q5", "q6", "q7"}) == []
     (msg,) = asm.completeness_errors(e, {"q15", "q12", "q6"})
     assert all(q in msg.split("cleared")[0] for q in ("q5", "q7", "q14"))
     assert "q15" not in msg.split("cleared")[0] and "q13" not in msg.split("cleared")[0]
     # an unknown or non-string id in `accounted` is ignored, never raises
     assert asm.completeness_errors(e, {None, "q99", "q15"}) != []
+
+
+def test_the_same_selector_in_the_opposite_direction_is_not_accounted_for():
+    """Ruling 4: "accounted for" is selector + outcome + statistic + direction. q5 (forecast > 0,
+    mean_diff, greater) and q7/q14 (the same, less) are two findings."""
+    e = _log("sonnet", "forecast")
+    (msg,) = asm.completeness_errors(e, {"q15", "q12", "q6", "q5"})
+    named = msg.split("cleared")[0]
+    assert "q7" in named and "q14" in named and "q5" not in named
+    # the same direction at another floor/horizon is still the same finding
+    assert asm.completeness_errors(e, {"q15", "q12", "q6", "q5", "q14"}) == []
+    # through the whole answer: an observation on q5 does not cover q7
+    _r, _rec, errors = _check(_nc(e, [_obs(e, "q5", mechanism_query="q12"),
+                                      _obs(e, "q15", mechanism_query="q12")]), e)
+    (msg,) = [x for x in errors if "appear nowhere in your answer" in x]
+    assert "q7" in msg.split("cleared")[0]
 
 
 # ---------------------------------------------------------------------------
@@ -205,7 +228,12 @@ def _haiku_nc(entries, **obs_over):
     return {"outcome": "no_claim",
             "no_claim": {"reason": "No change follows yet.",
                          "best_rejected": {"statement": "A top-20% threshold.", "killed_by": "q7"},
-                         "observations": [obs],
+                         # q6 (all bars, rank_ic, the OPPOSITE direction of q9) cleared its floors
+                         # too, and is its own finding (ruling 4)
+                         "observations": [obs, {
+                             "statement": "The forecast's rank correlation with forward returns is positive.",
+                             "test": "q6", "evidence": [_cite(entries, "q6", "horizons.5.effect")],
+                             "floors_met": True, "stopped_by": "no query separates it"}],
                          "next_steps": {"opposite_direction": "q6", "another_horizon": "q9",
                                         "all_bars_version": "q9",
                                         "mechanism": "not run: the tool limit"}},
@@ -354,46 +382,208 @@ def test_the_unwritten_results_of_the_real_sonnet_log_refuse_the_claim_naming_q7
 # D4: tags
 # ---------------------------------------------------------------------------
 
+_FORECAST_VEHICLE = [{"component_id": "anchor_position", "field": "params.period",
+                      "before": 250, "after": 200}]
+_SIZING_VEHICLE = [{"component_id": "anchor_position", "field": "transforms[2].params.window",
+                    "before": 60, "after": 20}]
+
+
 def test_a_selector_with_no_forecast_field_is_tagged_regime_by_code():
     e = _claim_entries()
-    reading, rec, errors = _check(_claim_doc(), e, claim=True)
+    doc = _claim_doc()
+    doc["vehicle"] = copy.deepcopy(_FORECAST_VEHICLE)
+    reading, rec, errors = _check(doc, e, claim=True, base_config=_base_config())
     assert errors == [] and reading["side_findings"][0]["angle"] == "regime" and rec["angle"] == "regime"
-    # observations: a trailing_vol selector -> regime; a forecast selector, or kind all -> no tag
+    # observations: a trailing_vol selector -> regime; a forecast selector -> no tag
     ee = _log("sonnet", "forecast")
     _r, rec, _err = _check(_nc(ee, [_obs(ee, "q11", floor_lowered_reason="r"),
                                     _obs(ee, "q7", floor_lowered_reason="r")]), ee)
     tags = [o.get("angle") for o in rec["no_claim"]["observations"]]
     assert tags == ["regime", None]
-    h = _log("haiku", "trade_efficiency")
-    _r, rec, _err = _check(_haiku_nc(h, stopped_by="x"), h, lens="trade_efficiency")
-    assert "angle" not in rec["no_claim"]["observations"][0]
-    assert asm.angle_of([{"kind": "trade", "where": [{"field": "side", "op": "==", "value": "long"}]}]) is None
+    # by the letter of the ruling ("no forecast field in the selector"): a trade selector that
+    # names none, and kind all, are regime selectors too
+    trade = {"kind": "trade", "where": [{"field": "side", "op": "==", "value": "long"}]}
+    assert asm.angle_of([trade]) == "regime" and asm.angle_of([{"kind": "all"}]) == "regime"
     assert asm.angle_of([{"kind": "event", "field": "past_return", "bars": 1, "op": ">=", "value": 0.01}]) == "regime"
+    assert asm.angle_of([{"kind": "trade", "where": [
+        {"field": "entry_forecast", "op": "<=", "value": -10}]}]) is None
     assert asm.angle_of([{"kind": "all_of", "clauses": [
         {"kind": "event", "field": "forecast", "op": ">", "value": 0},
         {"kind": "event", "field": "trailing_vol", "bars": 20, "op": ">", "value": 0.02}]}]) is None
+    assert asm.angle_of([]) is None
 
 
-def test_a_sizing_finding_is_an_observation_tagged_sizing_never_a_claim_with_a_vehicle():
-    h = _log("haiku", "trade_efficiency")
-    doc = _haiku_nc(h, stopped_by="x",
-                    statement="The vol_target step sizes the position, and the forecast ranks "
-                              "returns negatively.")
-    _r, rec, errors = _check(doc, h, lens="trade_efficiency")
-    assert errors == [], errors
-    assert rec["no_claim"]["observations"][0]["angle"] == "sizing"
-    # the original Sonnet claim (its text names vol_target and sizing, its vehicle the vol window)
+def test_the_sonnet_forecast_claim_is_a_sizing_finding_by_its_vehicle_path_and_is_refused():
+    """The real claim: vehicle anchor_position transforms[2].params.window 60 -> 20, where
+    transforms[2] is the vol_target step of run_099's base config."""
+    cfg = _base_config()
+    assert cfg["strategies"]["regimes"]["unknown"]["components"][0]["transforms"][2]["op"] == "vol_target"
     e = _claim_entries()
-    sized = _claim_doc()
-    sized["claim"]["rationale"] = ("The base strategy's vol_target sizes inversely to volatility, "
-                                   "so a 20-bar vol_target window is a sizing change.")
-    reading, rec, errors = _check(sized, e, claim=True)
+    reading, rec, errors = _check(_claim_doc(), e, claim=True, base_config=cfg)
     assert any("sizing finding" in x and "never a claim with a vehicle" in x for x in errors), errors
     assert reading["side_findings"][0]["angle"] == "sizing" and rec["angle"] == "sizing"
-    # a vehicle that names the sizing op is enough, whatever the prose says
-    veh = _claim_doc()
-    veh["vehicle"] = [{"component_id": "vol_target", "field": "params.window", "before": 60, "after": 20}]
-    assert any("sizing finding" in x for x in _check(veh, e, claim=True)[2])
+    # without the base config the path cannot be resolved: nothing is guessed from words
+    assert _check(_claim_doc(), e, claim=True)[2] == []
+
+
+def test_words_in_the_prose_never_tag_a_claim_as_sizing():
+    e = _claim_entries()
+    doc = _claim_doc()
+    doc["vehicle"] = copy.deepcopy(_FORECAST_VEHICLE)
+    doc["claim"]["rationale"] = ("The base strategy's vol_target sizes inversely to volatility; "
+                                 "the position is sized by it. Position sizing is not changed here.")
+    doc["claim"]["statement"] += " A sized position, vol_target, sizing."
+    reading, rec, errors = _check(doc, e, claim=True, base_config=_base_config())
+    assert not any("sizing finding" in x for x in errors), errors
+    assert reading["side_findings"][0].get("angle") != "sizing" and rec.get("angle") != "sizing"
+
+
+def test_the_vehicle_paths_that_make_a_finding_a_sizing_finding():
+    cfg = _base_config()
+    assert asm.vehicle_is_sizing(_SIZING_VEHICLE, cfg) is True
+    assert asm.vehicle_is_sizing([{"component_id": "anchor_position",
+                                   "field": "transforms[2]", "before": {}, "after": {}}], cfg) is True
+    assert asm.vehicle_is_sizing(_FORECAST_VEHICLE, cfg) is False
+    assert asm.vehicle_is_sizing([{"component_id": "anchor_position", "field": "transforms[0].params.window",
+                                   "before": 250, "after": 120}], cfg) is False           # standardise
+    assert asm.vehicle_is_sizing(_SIZING_VEHICLE, None) is False
+    # the sizing block
+    assert asm.vehicle_is_sizing([{"component_id": "strategies.sizing", "field": "params.x",
+                                   "before": 1, "after": 2}], None) is True
+    assert asm.vehicle_is_sizing([{"component_id": "anything", "field": "strategies.sizing.target",
+                                   "before": 1, "after": 2}], None) is True
+    # a config vehicle: judged by what differs from the base at the sizing block / vol_target steps
+    same = {"kind": "config", "config": copy.deepcopy(cfg)}
+    assert asm.vehicle_is_sizing(same, cfg) is False
+    cand = copy.deepcopy(cfg)
+    cand["strategies"]["regimes"]["unknown"]["components"][0]["transforms"][2]["params"]["window"] = 20
+    assert asm.vehicle_is_sizing({"kind": "config", "config": cand}, cfg) is True
+    cand = copy.deepcopy(cfg)
+    cand["strategies"]["sizing"] = {"kind": "fixed"}
+    assert asm.vehicle_is_sizing({"kind": "config", "config": cand}, cfg) is True
+    cand = copy.deepcopy(cfg)
+    cand["strategies"]["regimes"]["unknown"]["components"][0]["params"]["period"] = 200
+    assert asm.vehicle_is_sizing({"kind": "config", "config": cand}, cfg) is False
+    # sizing wins over regime
+    assert asm.angle_of([{"kind": "quantile", "field": "trailing_vol", "bars": 20, "side": "bottom",
+                          "q": 0.3, "lookback": 60}], _SIZING_VEHICLE, cfg) == "sizing"
+
+
+def test_a_sizing_finding_is_recorded_as_an_observation_tagged_sizing():
+    cfg = _base_config()
+    e = _log("sonnet", "forecast")
+    obs = _obs(e, "q11", floor_lowered_reason="r", vehicle=copy.deepcopy(_SIZING_VEHICLE),
+               statement="A shorter volatility window for the position size.")
+    _r, rec, errors = _check(_nc(e, [obs, _obs(e, "q7", floor_lowered_reason="r")]), e, base_config=cfg)
+    assert not any("observations[0]" in x for x in errors), errors
+    assert rec["no_claim"]["observations"][0]["angle"] == "sizing"
+    assert rec["no_claim"]["observations"][0]["vehicle"] == _SIZING_VEHICLE
+    # a malformed observation vehicle is refused
+    bad = _obs(e, "q11", floor_lowered_reason="r", vehicle=[{"component_id": "x"}])
+    errors = _check(_nc(e, [bad]), e, base_config=cfg)[2]
+    assert any("observations[0].vehicle" in x for x in errors), errors
+
+
+# ---------------------------------------------------------------------------
+# ruling 2: claims carry observations; D3 applies to claim and no_claim sessions
+# ---------------------------------------------------------------------------
+
+def _claim_with_observations(e):
+    """A claim on q11/q13/q15 (why_query q12) over the FULL Sonnet log: q5, q6 and q7 cleared
+    their floors too and are recorded as the claim's observations."""
+    doc = _claim_doc()
+    doc["vehicle"] = copy.deepcopy(_FORECAST_VEHICLE)
+    doc["claim"]["observations"] = [
+        _obs(e, "q5", floors_met=asm.floors_met_in_log(e["q5"]), mechanism_query="q12"),
+        _obs(e, "q6", floors_met=asm.floors_met_in_log(e["q6"]), mechanism_query="q12"),
+        _obs(e, "q7", floors_met=asm.floors_met_in_log(e["q7"]), mechanism_query="q12",
+             floor_lowered_reason="Too few bars."),
+    ]
+    return doc
+
+
+def test_a_claim_carries_observations_that_complete_the_account():
+    e = _log("sonnet", "forecast")
+    doc = _claim_with_observations(e)
+    cfg = _base_config()
+    # without the observations the claim is refused naming what is unaccounted
+    bare = copy.deepcopy(doc)
+    del bare["claim"]["observations"]
+    errs = _check(bare, e, claim=True, base_config=cfg)[2]
+    (msg,) = [x for x in errs if "appear nowhere in your answer" in x]
+    assert all(q in msg.split("cleared")[0] for q in ("q5", "q6", "q7"))
+    # with them: accepted, recorded in the record (masked, spec, floor_lowered), stripped
+    # from the claim the claim card and the reading see
+    reading, rec, errors = _check(doc, e, claim=True, base_config=cfg)
+    assert errors == [], errors
+    assert "observations" not in reading["side_findings"][0]["claim"]
+    obs = rec["observations"]
+    assert [o["test"] for o in obs] == ["q5", "q6", "q7"]
+    assert all("spec" in o and "floor_lowered_reason" not in o for o in obs)
+    assert obs[2]["floor_lowered"]["after"] == "q5" and obs[2]["floor_lowered"]["reason"] == "Too few bars."
+    rp.check_reading(reading, "forecast_power", "reading", analyst=True, from_model=True,
+                     envelope=True)
+
+
+def test_a_claims_observations_follow_the_no_claim_rules():
+    e = _log("sonnet", "forecast")
+    cfg = _base_config()
+    doc = _claim_with_observations(e)
+    # the maximum is the same (3)
+    over = copy.deepcopy(doc)
+    over["claim"]["observations"].append(
+        _obs(e, "q9", floors_met=asm.floors_met_in_log(e["q9"]), mechanism_query="q12"))
+    errs = _check(over, e, claim=True, base_config=cfg)[2]
+    assert any(x.startswith("claim.observations has 4 entries") for x in errs), errs
+    # the same shape check, naming the claim
+    bad = copy.deepcopy(doc)
+    bad["claim"]["observations"][0]["surprise"] = 1
+    errs = _check(bad, e, claim=True, base_config=cfg)[2]
+    assert any(x.startswith("claim.observations[0] must have exactly the keys") for x in errs), errs
+    # mechanism and floor-lowered rules apply
+    bad = copy.deepcopy(doc)
+    del bad["claim"]["observations"][0]["mechanism_query"]
+    del bad["claim"]["observations"][2]["floor_lowered_reason"]
+    errs = _check(bad, e, claim=True, base_config=cfg)[2]
+    assert any("claim.observations[0]: q5 cleared its floors" in x for x in errs), errs
+    assert any("claim.observations[2].floor_lowered_reason is required" in x for x in errs), errs
+    # a non-list is refused
+    bad = copy.deepcopy(doc)
+    bad["claim"]["observations"] = "none"
+    assert any("claim.observations must be a list" in x
+               for x in _check(bad, e, claim=True, base_config=cfg)[2])
+
+
+def test_campaign_memory_reads_a_claim_sessions_observations(tmp_path):
+    e = _log("sonnet", "forecast")
+    _r, rec, errors = _check(_claim_with_observations(e), e, claim=True, base_config=_base_config())
+    assert errors == []
+    rec["attempts"] = [{"status": "accepted", "outcome": "claim", "errors": []}]
+    run_dir = tmp_path / "run_099"
+    (run_dir / "artifacts" / "analyst").mkdir(parents=True)
+    (run_dir / asm.record_rel("forecast")).write_text(yaml.safe_dump(rec), encoding="utf-8")
+    rows = cm.analyst_observations(run_dir, "run_099")
+    assert [r["test"] for r in rows] == ["q5", "q6", "q7"]
+
+
+def test_the_mechanism_check_is_presence_only():
+    """Ruling 3: any later query of the session satisfies mechanism_query; nothing judges
+    whether it tests the mechanism."""
+    e = _log("sonnet", "forecast")
+    for later in ("q9", "q12", "q15"):
+        errs = asm.observation_errors([_obs(e, "q7", mechanism_query=later,
+                                            floor_lowered_reason="r")], e)
+        assert not any("mechanism_query" in x for x in errs), (later, errs)
+
+
+def test_decide_next_appends_the_floor_note_to_existing_notes():
+    import decide_next as dn
+    cand = {"notes": ["an earlier note"]}
+    dn._append_notes(cand, "on a lowered floor (100 to 50)")
+    assert cand["notes"] == ["an earlier note", "on a lowered floor (100 to 50)"]
+    cand = {}
+    dn._append_notes(cand, "on a lowered floor (100 to 50)")
+    assert cand["notes"] == ["on a lowered floor (100 to 50)"]
 
 
 # ---------------------------------------------------------------------------

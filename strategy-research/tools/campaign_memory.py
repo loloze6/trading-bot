@@ -415,13 +415,14 @@ OBSERVATION_FIELDS = ("statement", "test", "evidence", "floors_met", "spec")
 # D-178 (operator item D, 2026-10-22): optional fields the analyst's code or model adds to a
 # recorded observation; copied when present, so the direction review can list
 # `angle: sizing` observations and the memory shows a lowered floor.
-OBSERVATION_OPTIONAL_FIELDS = ("mechanism_query", "stopped_by", "floor_lowered", "angle")
+OBSERVATION_OPTIONAL_FIELDS = ("mechanism_query", "stopped_by", "floor_lowered", "angle",
+                               "vehicle")
 
 
 def analyst_observations(run_dir: Path, run_id: str) -> list:
     """The run's analyst observations, one row per observation of each lens whose session
-    ended accepted with outcome no_claim ([] when none). A record that is not a mapping, or an
-    accepted no_claim's observation not of the recorded shape, raises CampaignMemoryError."""
+    ended accepted with outcome no_claim or claim ([] when none). A record that is not a mapping,
+    or an accepted session's observation not of the recorded shape, raises CampaignMemoryError."""
     import analyst_session as asm  # tools/ sibling; imported lazily for the caller's sys.path
     out = []
     for lens in asm.LENSES:
@@ -432,18 +433,24 @@ def analyst_observations(run_dir: Path, run_id: str) -> list:
         rec = _load_mapping(path, "the analyst record")
         attempts = rec.get("attempts")
         last = attempts[-1] if isinstance(attempts, list) and attempts else None
-        if rec.get("outcome") != "no_claim" or not isinstance(last, dict) \
-                or last.get("status") != "accepted" or last.get("outcome") != "no_claim":
+        outcome = rec.get("outcome")
+        if outcome not in ("no_claim", "claim") or not isinstance(last, dict) \
+                or last.get("status") != "accepted" or last.get("outcome") != outcome:
             continue
+        # D-178 (ruling 2): a claim session's observations are the record's `observations`
         nc = rec.get("no_claim")
-        obs = nc.get("observations") if isinstance(nc, dict) else None
+        if outcome == "no_claim":
+            obs = nc.get("observations") if isinstance(nc, dict) else None
+        else:
+            obs = rec.get("observations")
         if obs is None:
             continue
         if not isinstance(obs, list):
-            raise CampaignMemoryError(f"{path}: no_claim.observations is not a list")
+            raise CampaignMemoryError(f"{path}: the observations are not a list")
         for i, o in enumerate(obs):
-            if not isinstance(o, dict) or not set(OBSERVATION_FIELDS) <= set(o)                     or set(o) - set(OBSERVATION_FIELDS) - set(OBSERVATION_OPTIONAL_FIELDS):
-                raise CampaignMemoryError(f"{path}: no_claim.observations[{i}] is not exactly "
+            if not isinstance(o, dict) or not set(OBSERVATION_FIELDS) <= set(o) \
+                    or set(o) - set(OBSERVATION_FIELDS) - set(OBSERVATION_OPTIONAL_FIELDS):
+                raise CampaignMemoryError(f"{path}: observations[{i}] is not exactly "
                                           f"{list(OBSERVATION_FIELDS)} (plus, where they apply, "
                                           f"{list(OBSERVATION_OPTIONAL_FIELDS)})")
             out.append({"lens": lens, **{k: o[k] for k in OBSERVATION_FIELDS},

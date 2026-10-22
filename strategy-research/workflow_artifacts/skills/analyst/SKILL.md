@@ -102,7 +102,7 @@ lens.
    own earlier query is not a rival, and a vehicle contradicted by one is not the vehicle.
 5. **Write the claim with its test,** or stop with no claim. A `conditional_effect` reply with
    `compiles_as_claim` true that clears the floor is written as a claim or recorded as an
-   observation (`no_claim.observations`); the only `killed_by` is a query of this session that
+   observation (`observations`, under `claim` or `no_claim`); the only `killed_by` is a query of this session that
    measured a rival, named. When a result clears its floors and you name a mechanism for it, run
    the query that mechanism predicts before you write the result as an observation. "It may be a
    fit to this fold" is not a reason: the child run and the refold are that test. Only a named
@@ -235,7 +235,7 @@ claim:
     what result refutes it (the falsifier)
   rationale: >
     the why: the market or mechanical reason
-  # two keys below are for code (it removes them before the claim card reads the claim):
+  # three keys below are for code (it removes them before the claim card reads the claim):
   next_steps:                      # required: the closing ledger on your best observation
     opposite_direction: q8         # each: the id of a query of this session, or "not run: <reason>"
     another_horizon: "not run: the floor"
@@ -243,6 +243,8 @@ claim:
     mechanism: q10
   floor_lowered_reasons:           # only for a test that repeats an earlier query's selector and
     my_test: one sentence on why the floor was lowered   # outcome on a lower floor: {test name: reason}
+  observations: []                 # optional: other behaviour you measured, same shape and
+                                   # maximum as under no_claim below
 why_query: q9                      # the second query your mechanism predicted (another selector)
 evidence:                          # citations: query id, a path in that result, the value
   - q7:horizons.24.effect=0.0012   # at least one from your claim test's own conditional_effect
@@ -281,7 +283,7 @@ evidence:
   - q12:groups.long.trade_net_return_mean=-0.0008
 ```
 
-Each observation has four keys: `statement` (the behaviour you measured), `test`
+Observations live under `claim.observations` or `no_claim.observations`; each has four keys: `statement` (the behaviour you measured), `test`
 (the id of the `conditional_effect` query of this session that measured it), `evidence`
 (citations, at least one of that query) and `floors_met` (true or false: whether that query
 cleared its test's floor on every horizon); and, where they apply, `mechanism_query` (or
@@ -289,10 +291,11 @@ cleared its test's floor on every horizon); and, where they apply, `mechanism_qu
 `floor_lowered_reason` (one sentence; required when the test repeats an earlier query's selector
 and outcome on a lower floor; in a claim the same reasons are `claim.floor_lowered_reasons`,
 test name to reason). A `no_claim` carries at most 3 observations, each citing a different test.
-Code writes the `floor_lowered` entry and the `angle` tag itself: `regime` for a selector that
-names no forecast field, `sizing` for a finding about how the position is sized (it names
-`vol_target`, sizing or position size). A sizing finding is an observation, never a claim with
-a vehicle. An observation is recorded, not confirmed; the memory view shows it
+A claim carries at most 3 under `claim.observations`, on the same terms. An observation may carry `vehicle` (the change list a claim's vehicle takes), the
+change the finding points at. Code writes the `floor_lowered` entry and the `angle` tag itself:
+`regime` for a selector that names no forecast field, `sizing` for a vehicle that changes the
+sizing block or the params of a vol_target op. A sizing finding is an observation, never a claim
+with a vehicle. An observation is recorded, not confirmed; the memory view shows it
 as "observed, no vehicle yet".
 
 Code checks, before anything is kept: the claim block (CLAIM_TESTS), every citation against the

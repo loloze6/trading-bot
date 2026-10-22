@@ -5364,10 +5364,11 @@ def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -
     # D-098: the run's base-config settings may be written in the prose (code-checkable); an
     # unreadable config only means none are (its vehicle check reports the config itself)
     try:
-        settings = asm.config_settings(json.loads(
-            (run_dir / _reader_base_config_rel(run_dir)).read_text(encoding="utf-8")))
+        analyst_base_config = json.loads(
+            (run_dir / _reader_base_config_rel(run_dir)).read_text(encoding="utf-8"))
+        settings = asm.config_settings(analyst_base_config)
     except (OSError, ValueError):
-        settings = set()
+        analyst_base_config, settings = None, set()
     record = {"schema_version": 1, "lens": lens, "category": category, "run_id": run_id,
               "model": caps["model"], "caps": caps, "attempts": []}
     errors: list = []
@@ -5405,7 +5406,8 @@ def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -
         reading, rec, errors = asm.check_answer(
             text, lens=lens, run_id=run_id, entries=entries,
             claim_check=lambda claim: cc.check_claim(claim, **_claim_check_kw()),
-            holdout_start=holdout_start, fold=fold, model_id=model_id, settings=settings)
+            holdout_start=holdout_start, fold=fold, model_id=model_id, settings=settings,
+            base_config=analyst_base_config if isinstance(analyst_base_config, dict) else None)
         # D-096: the reading checks run on every readable answer, so the first attempt hears
         # every error (smoke 6: a vehicle error surfaced only on the retry); the content checks
         # (claim card again, vehicle) need a claim the claim card accepted
