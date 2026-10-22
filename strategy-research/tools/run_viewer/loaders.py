@@ -41,6 +41,18 @@ RUN_ID_RE = re.compile(r"^run_[0-9]+\Z")
 _STAMP_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*\Z")
 _SAFE_NAME_RE = _STAMP_RE
 RAW_CAP = 300 * 1024
+# A cut made before sanitize() runs could split a date ("YYYY-MM-D") into a fragment the
+# date mask no longer recognises; _cut drops the cut-through token so no fragment survives.
+_CUT_TAIL_RE = re.compile(r"[0-9A-Za-z:./_+,-]*\Z")
+
+
+def _cut(text, n):
+    """text[:n], minus the token the cut went through, plus " [cut]" when anything was cut."""
+    if not isinstance(text, str) or len(text) <= n:
+        return text
+    return _CUT_TAIL_RE.sub("", text[:n]) + " [cut]"
+
+
 COST_LABEL = "model cost (stages that called a model)"
 
 STEP_DEFS = [
@@ -489,14 +501,14 @@ def run_log_lines(lines, run_id, entry_id):
             start = i
     if start is None:
         sel = [ln for ln in lines if run_id in ln]
-        return [ln[:600] for ln in sel[:200]]
+        return [_cut(ln, 600) for ln in sel[:200]]
     end = len(lines) - 1
     for j in range(start, len(lines)):
         if " DECIDE " in lines[j] and mentions(lines[j]):
             end = j
             break
     sel = [ln for ln in lines[start:end + 1] if mentions(ln)]
-    return [ln[:600] for ln in sel[:200]]
+    return [_cut(ln, 600) for ln in sel[:200]]
 
 
 # --------------------------------------------------------------------------- run helpers
@@ -758,7 +770,7 @@ def load_campaign(root, runs_dir):
             notes = e.get("notes")
             queue.append({
                 "id": e.get("id"), "status": st, "priority": e.get("priority"),
-                "notes": notes[:1000] if isinstance(notes, str) else notes,
+                "notes": _cut(notes, 1000),
                 "brief_status_reason": e.get("brief_status_reason"),
             })
     return {
@@ -874,7 +886,7 @@ class Step:
             t = self.rd.text(ap)
             if isinstance(t, str):
                 trunc = len(t) > RAW_CAP
-                raw.append({"path": p, "text": t[:RAW_CAP], "truncated": trunc})
+                raw.append({"path": p, "text": _cut(t, RAW_CAP), "truncated": trunc})
         bad = [r for r in self.rd.sources if r["state"] == "unreadable"]
         if bad and self.status != "unreadable":
             self.status = "unreadable"
@@ -922,7 +934,7 @@ def _step_launch(s: Step, ctx):
     ps = _pipeline(rd)
     brief = ctx["brief"]
     lines = ctx["log_lines"]
-    li = [ln[:600] for ln in lines if (ctx["run_id"] in ln and ("LAUNCH-CARD" in ln or "VENUE-CHECK" in ln))]
+    li = [_cut(ln, 600) for ln in lines if (ctx["run_id"] in ln and ("LAUNCH-CARD" in ln or "VENUE-CHECK" in ln))]
     rd.yaml(rd.root / "config" / "campaign_queue.yaml")
     rd.text(rd.root / "campaign_record" / "campaign_log.md")
     if entry is not None:
@@ -1505,7 +1517,7 @@ def _step_decide_next(s: Step, ctx):
              ["after_entry", fmt(opt(d, "trigger", "after_entry"))], ["idea_status", fmt(opt(d, "trigger", "idea_status"))],
              ["picked", fmt(picked)], ["stop reason", fmt(opt(d, "stop", "reason"))],
              ["stop detail", fmt(opt(d, "stop", "detail"))]], by_option=None)
-    dl = [ln[:900] for ln in ctx["log_lines"] if " DECIDE " in ln and ctx["run_id"] in ln]
+    dl = [_cut(ln, 900) for ln in ctx["log_lines"] if " DECIDE " in ln and ctx["run_id"] in ln]
     if dl:
         s.add_text("Campaign log: DECIDE line", "\n".join(dl))
 
@@ -1523,7 +1535,7 @@ def _step_record(s: Step, ctx):
               if isinstance(t, dict) and str(t.get("trial_id", "")).startswith(rid + ":")]
     mentry = opt(mem, "runs", rid)
     blocks = [b for b in _as_list(opt(reg, "blocks")) if isinstance(b, dict) and b.get("validated_by_run") == rid]
-    done = [ln[:600] for ln in ctx["log_lines"] if " DONE " in ln and f"({rid})" in ln]
+    done = [_cut(ln, 600) for ln in ctx["log_lines"] if " DONE " in ln and f"({rid})" in ln]
     have = [summ is not None, bool(trials), isinstance(mentry, dict)]
     if not any(have) and not tried:
         s.status = "absent"
@@ -1598,7 +1610,7 @@ def build_step(root, runs_dir, run_id, name, ctx=None):
         _STEP_FUNCS[name](s, ctx)
     except Exception as exc:  # noqa: BLE001 -- one step's bug never blanks the run
         s.status = "unreadable"
-        s.line = f"unreadable ({type(exc).__name__}: {str(exc)[:200]})"
+        s.line = f"unreadable ({type(exc).__name__}: {_cut(str(exc), 200)})"
     return s.result()
 
 

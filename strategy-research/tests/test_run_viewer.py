@@ -1288,3 +1288,18 @@ def test_run_id_and_name_regexes_reject_trailing_newline_and_unicode_digits():
     assert not loaders.RUN_ID_RE.match("run_\u0663\u0664")
     assert not loaders._safe_name("base\n")
     assert not loaders.run_exists(_runs(FIX), "run_099\n")
+
+def test_cut_before_masking_leaves_no_date_fragment():
+    """A loader cut runs before sanitize(); _cut must drop the token it cuts through, so a
+    sealed-window day split by the cut cannot survive as an unmasked fragment."""
+    lo, _hi = _window_range()
+    day = lo.isoformat()
+    prefix = "x" * 50 + " "
+    n_fragments = 0
+    for k in range(1, len(day)):
+        out = loaders._cut(prefix + day + " tail", len(prefix) + k)
+        n_fragments += int(day[:k] in out)
+        assert out.endswith(" [cut]")
+    assert n_fragments == 0, f"{n_fragments} cut positions left a fragment"
+    assert loaders._cut("short", 600) == "short"
+    assert loaders._cut(None, 10) is None

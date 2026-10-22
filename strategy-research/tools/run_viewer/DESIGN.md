@@ -26,8 +26,9 @@ levels: campaign, run, step, variant-in-window. Stdlib `http.server`, pandas, ya
 ## Data model
 
 One loader per view returns one JSON document. Loaders never raise on a missing or
-unparseable file: each source is reported as `{"path", "state": "present"|"absent"|"error",
-"error"?}` and the field it would fill is `null`. Parsed files are cached by
+unparseable file: each source is reported as `{"path", "state": "present"|"absent"|"unreadable",
+"reason"?}` and the field it would fill is `null` (corrected after review: the code has
+always emitted "unreadable" with a "reason"). Parsed files are cached by
 `(path, mtime_ns, size)`, so each request rescans the folders cheaply and a finished run
 appears without a restart.
 
@@ -64,7 +65,8 @@ Card status: `ok` (green), `fail` (red: a FAIL, refuted, refused, invalid verdic
 file). Each step loader returns
 `{name, title, status, headlines: [{label, value}], line, sources: [...]}` for the card and,
 for view 3, adds `tables: [{title, columns, rows, links?}]`, `text: [{title, body}]` and
-`raw: [{path, text}]` (raw file text, 300 KB cap, truncation noted).
+`raw: [{path, text}]` (raw file text, 300 KB cap, truncation noted; only files under the
+run folder and the brief: the campaign-wide files stay in `sources` but are not embedded).
 
 ## Artifact shapes move (operator 2026-10-23)
 
@@ -179,9 +181,14 @@ fixture build; the first reading called them all provenance timestamps). Ruling:
 reads the range once through `tools/holdout_policy.py` (the policy next to the tool, not
 under `--root`), holds it only inside that module, and never logs, returns or prints it.
 Every response, the raw file text, the request log and the banner pass through
-`sanitize()`/`sanitize_text()`; an in-range date (YYYY-MM-DD, compact YYYYMMDD stamps,
-YYYY-MM months that intersect the range) becomes "[sealed-window date]", provenance
-timestamps included. Policy unreadable -> the server does not start. Committed fixtures
+`sanitize()`/`sanitize_text()`; an in-range date becomes "[sealed-window date]",
+provenance timestamps included. Forms masked: YYYY-MM-DD (with any time), compact
+YYYYMMDD and results stamps, YYYY-MM; after review also slash, dot and underscore
+separators, day-first and month-first numeric dates, English month-name dates and
+month-name years, YYYY/MM, MM/YYYY, quarter and half labels. Known limits, not masked:
+epoch numbers, ISO week and ordinal dates, two-digit years (none of the forms the
+review tried appeared in any real run's responses). Error pages of the stdlib server and
+its traceback log are routed through the same filter. Policy unreadable -> the server does not start. Committed fixtures
 were written through the same `sanitize_text()`. Tests: no in-range date in any response;
 none in the server log over a full crawl of run_099; masking of dates built from the
 policy at test time; the policy is the only read outside the allowed list.
