@@ -28,7 +28,7 @@ here. Do not invent blocks, fields or parameters.
   alone are not enough when the idea is a block: add such a test (the refs may stay); a claim
   without one gets one revision request after step 1b. For a forecast
   block prefer `rank_ic` or a `quantile` on `forecast` (for example the top 10%:
-  `{kind: quantile, field: forecast, side: top, q: 0.1, lookback: 100}`) over an absolute
+  `{kind: quantile, field: forecast, side: top, q: 0.1, lookback: 40}`; lookback 40 fits a 120-bar window, count bars minus lookback minus horizon) over an absolute
   forecast threshold such as `forecast >= 12`: step 1b, not you, chooses the forecast's scale,
   so a fixed threshold may select almost every bar or never fire.
 - **Never approximate.** A test measures exactly the stated quantity in the stated unit
@@ -45,7 +45,7 @@ claim:
   kind: conditional_behaviour        # one of the kinds in section 4
   tests:                             # 1 to 3 tests; each one is measured on its own
     - name: upper_breakout           # unique within the claim
-      selector:  {kind: quantile, field: forecast, side: top, q: 0.2, lookback: 100}
+      selector:  {kind: quantile, field: forecast, side: top, q: 0.2, lookback: 40}   # lookback 40 fits a 120-bar window; count bars minus lookback minus horizon
       outcome:   {kind: fwd_return, horizons: [1, 2, 3, 4, 5]}
       baseline:  {kind: complement}
       statistic: mean_diff
