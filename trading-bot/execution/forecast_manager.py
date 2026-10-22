@@ -71,8 +71,8 @@ class ForecastManager:
 
     def signal_allocation(self, forecast: float) -> float:
         """The unsized allocation, forecast / 10 -- the signal on the
-        allocation scale (D-176: what the min_allocation_change band judges
-        when a sizing block is present)."""
+        allocation scale (D-176: with a sizing block the min_allocation_change
+        band passes on this signal's change or on the sized change)."""
         return forecast / FORECAST_FOR_100_INVESTMENT
 
     def forecast_to_allocation(self, forecast: float, closes=None) -> float:

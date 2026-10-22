@@ -531,9 +531,11 @@ class TradingBot:
 
             # D-176: the band input on the signal -- the move of forecast / 10
             # since the position was last set (the unsized analogue of
-            # allocation_change = target - actual). None without a block, and on
-            # a NaN-forecast bar (the strategy decided nothing: a risk-gate trim
-            # there is judged on its own sized change, as without a block).
+            # allocation_change = target - actual). The band passes when this OR
+            # the sized allocation_change reaches the threshold (RiskManager).
+            # None without a block, and on a NaN-forecast bar (the strategy
+            # decided nothing: a risk-gate trim there is judged on its own sized
+            # change, as without a block).
             band_signal_change = None
             if sizing_active and not nan_forecast_bar:
                 band_signal_change = signal_allocation - self._held_signal_allocation.get(symbol, 0.0)
@@ -609,7 +611,14 @@ class TradingBot:
                     if success_execute_portfolio_rebalance: 
                         self.logger.debug("   ✓ REBALANCE executed successfully")
                         if band_signal_change is not None:
-                            self._held_signal_allocation[symbol] = signal_allocation
+                            # D-176: the signal this position was set from,
+                            # whichever band path passed. When the sizing step
+                            # could not measure volatility it sized to 0.0 -- the
+                            # book went flat, not to the signal -- so the
+                            # remembered signal is 0.0 as well.
+                            self._held_signal_allocation[symbol] = (
+                                0.0 if self.forecast_manager.last_realised_vol is None
+                                else signal_allocation)
                     else: 
                         self.logger.error(f"   ✗ REBALANCE execution failed. Debug info: {debug_execute_portfolio_rebalance}")
 

@@ -1,7 +1,7 @@
 import sys
 import os
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.dirname(_HERE)
@@ -545,34 +545,41 @@ def validate(config: dict) -> List[str]:
     # (ForecastManager): kind vol_target, window int >= 2, target_annual_vol and
     # periods_per_year finite > 0, max_allocation finite > 0 (default 2), no
     # other key. Reuses the engine's own check (registry.sizing_block_errors).
-    # With a block, a vol_target op anywhere in a transforms / history_transforms
-    # list -- top level, block source detectors or parts, any depth -- would size
-    # the forecast as well: refused, "sized twice". Silent without the key, so
+    # With a block, a volatility-dividing op (vol_target, vol_normalize,
+    # vol_adjusted -- _SIZED_TWICE_OPS) anywhere in a transforms /
+    # history_transforms list -- top level, block source detectors or parts, any
+    # depth -- would size the forecast as well: refused, "sized twice" (operator
+    # ruling on the D-176 safety review, Finding 4). Silent without the key, so
     # every earlier config (run_084's lane-1 block, D-149's vol_target clause)
     # is untouched.
     if "sizing" in config["strategies"]:
         from strategies.registry import sizing_block_errors
         for msg in sizing_block_errors(config["strategies"]["sizing"]):
             violations.append(f"VIOLATION V19 strategies.sizing: {msg}")
-        for loc in _vol_target_op_locations(config):
+        for loc, op in _vol_target_op_locations(config):
             violations.append(
                 f"VIOLATION V19 {loc}: sized twice -- strategies.sizing sizes the allocation "
-                f"step and this vol_target op sizes the forecast; keep the sizing block and "
-                f"remove the vol_target op (the forecast stays the unsized signal)")
+                f"step and this {op} op sizes the forecast; keep the sizing block and "
+                f"remove the {op} op (the forecast stays the unsized signal)")
 
     return violations
 
 
-def _vol_target_op_locations(node: Any, path: str = "") -> List[str]:
-    """Every `<path>[k]` whose step is a vol_target op in any transforms /
-    history_transforms list anywhere in `node` (V19)."""
-    found: List[str] = []
+# Ops that divide by volatility (strategies/registry.py TRANSFORM_OPS_REGISTRY):
+# alongside a strategies.sizing block each would size the forecast a second time.
+_SIZED_TWICE_OPS = ("vol_target", "vol_normalize", "vol_adjusted")
+
+
+def _vol_target_op_locations(node: Any, path: str = "") -> List[Tuple[str, str]]:
+    """Every (`<path>[k]`, op) whose step is a _SIZED_TWICE_OPS op in any
+    transforms / history_transforms list anywhere in `node` (V19)."""
+    found: List[Tuple[str, str]] = []
     if isinstance(node, dict):
         for key, val in node.items():
             sub = f"{path}.{key}" if path else str(key)
             if key in ("transforms", "history_transforms") and isinstance(val, list):
-                found += [f"{sub}[{k}]" for k, step in enumerate(val)
-                          if isinstance(step, dict) and step.get("op") == "vol_target"]
+                found += [(f"{sub}[{k}]", step["op"]) for k, step in enumerate(val)
+                          if isinstance(step, dict) and step.get("op") in _SIZED_TWICE_OPS]
             else:
                 found += _vol_target_op_locations(val, sub)
     elif isinstance(node, list):
