@@ -99,7 +99,7 @@ portfolio risk gate, which `run_protocol` never passes).
 | `fear_greed` | Fear and Greed index, latest value published at least 1 day before the bar start (as-of merge, publication delay 86400 s). Present only when the strategy reads this feed (D-146). | index 0-100 | `FR:FEED_REGISTRY`, `DM:_merge_asof_with_causality_guard` | close |
 | `funding_rate` | Latest perpetual funding rate settled at or before the bar start (carried forward). Present only when the strategy reads this feed (D-146). | frac per settlement | `FR:FEED_REGISTRY`, `DM:_merge_asof_with_causality_guard` | close |
 | `<reserved feed>` | A reserved feed's column (whale-footprint features), only when a caller registers it. | feed | `FR:RESERVED_FEED_REGISTRY` | close |
-| `forecast` | The strategy's final forecast for the bar, clipped to -20..+20; 0.0 while not ready or on an error. | forecast | `SE:ConfigDrivenStrategyEngine.forecast`, `SB:StrategyOutput`, `SB:MainStrategy.generate_signals` | close |
+| `forecast` | The strategy's final forecast for the bar, clipped to -20..+20; 0.0 while not ready or on an error. Always the unsized signal: a `strategies.sizing` block (D-176) sizes the allocation, never this column. | forecast | `SE:ConfigDrivenStrategyEngine.forecast`, `SB:StrategyOutput`, `SB:MainStrategy.generate_signals` | close |
 | `confidence` | Always 0.0 (A2). | 0-1 | `SB:StrategyOutput`, `MS:AdvancedStrategy.generate_forecast` | meta |
 | `regime` | Regime label used this bar (`trending`, `mean_reversion`, `chop`, `unknown`), or `NOT_READY` / `ERROR`. | label | `RE:ConfigDrivenRegimeEngine.classify`, `SB:MainStrategy.generate_signals` | close |
 | `strategy` | Always empty (A2). | label | `SB:StrategyOutput`, `MS:AdvancedStrategy.generate_forecast` | meta |
@@ -120,12 +120,12 @@ portfolio risk gate, which `run_protocol` never passes).
 | `debug_info.error` | Why the strategy gave 0.0: `Strategy not ready` (warm-up) or the exception text. | text | `SB:MainStrategy.generate_signals` | close |
 | `total_portfolio_value` | Account value at this close, before this bar's trade (cash minus borrowed plus position x close; funding accrued first when modelled). | USDT | `TB:TradingBot._process_symbol_candle_completion`, `PI:CommonPortfolioDef._calculate_total_portfolio_value` | close |
 | `portfolio_value` | Copy of `total_portfolio_value`. | USDT | `BT:BacktestEngine._end_of_backtest` | close |
-| `previous_allocation` | Position value / account value at this close, before the trade. | alloc | `TB:TradingBot._process_symbol_candle_completion`, `PI:CommonPortfolioDef._calculate_actual_allocation` | close |
-| `allocation_change` | Target allocation (forecast / 10, or the held allocation on a NaN forecast, 0 under a forced flatten) minus `previous_allocation`; set to 0 when a gap middle tier blocks a new entry. The target itself is not recorded. | alloc | `TB:TradingBot._process_symbol_candle_completion`, `FM:ForecastManager.forecast_to_allocation` | close |
+| `previous_allocation` | Position value / account value at this close, before the trade. Sized when a `strategies.sizing` block is present (it is the position the sizing built). | alloc | `TB:TradingBot._process_symbol_candle_completion`, `PI:CommonPortfolioDef._calculate_actual_allocation` | close |
+| `allocation_change` | Target allocation (forecast / 10, or the held allocation on a NaN forecast, 0 under a forced flatten) minus `previous_allocation`; set to 0 when a gap middle tier blocks a new entry. The target itself is not recorded, except with a `strategies.sizing` block (D-176), where `allocation_change` is the SIZED target minus `previous_allocation` and the target is `sizing_target_allocation`. | alloc | `TB:TradingBot._process_symbol_candle_completion`, `FM:ForecastManager.forecast_to_allocation` | close |
 | `approved_rebalance` | Risk manager's answer when `allocation_change` is non-zero (empty otherwise, and on a forced flatten). | bool | `TB:TradingBot._process_symbol_candle_completion` | fill |
 | `succcess_execute_portfolio_rebalance` | The order succeeded (empty when no order was attempted). Name misspelled in code (A3). | bool | `TB:TradingBot._process_symbol_candle_completion`, `TB:TradingBot._close_all_positions_at_end` | fill |
 | `postRebalance_total_value` | Account value after this bar's trade and its commission, at this close. | USDT | `TB:TradingBot._process_symbol_candle_completion` | fill |
-| `postRebalance_current_allocation` | Allocation after this bar's trade. | alloc | `TB:TradingBot._process_symbol_candle_completion` | fill |
+| `postRebalance_current_allocation` | Allocation after this bar's trade. Sized when a `strategies.sizing` block is present. | alloc | `TB:TradingBot._process_symbol_candle_completion` | fill |
 | `balances.<asset>.free` | Should be the asset held before the trade; is the END-of-run balance on every row (A1). | asset units | `PI:_default_balance`, `TB:TradingBot._process_symbol_candle_completion`, `PI:CommonPortfolioDef.get_account_balance` | end |
 | `balances.<asset>.locked` | Should be the asset borrowed (short or margin) before the trade; END-of-run value (A1). | asset units | `PI:_default_balance`, `TB:TradingBot._process_symbol_candle_completion`, `PI:CommonPortfolioDef.get_account_balance` | end |
 | `postRebalance_balances.<asset>.free` | Should be the asset held after the trade; END-of-run value (A1). | asset units | `PI:_default_balance`, `TB:TradingBot._process_symbol_candle_completion` | end |
@@ -133,20 +133,23 @@ portfolio risk gate, which `run_protocol` never passes).
 | `debug_approve_allocation_change` | Present instead of the dotted columns when no bar asked the risk manager: the text `{}`. | text | `TB:TradingBot._process_symbol_candle_completion` | fill |
 | `debug_approve_allocation_change.symbol` | Symbol checked by the risk manager. | id | `RM:RiskManager.approve_allocation_change` | fill |
 | `debug_approve_allocation_change.time` | Bar timestamp checked. | time | `RM:RiskManager.approve_allocation_change` | fill |
-| `debug_approve_allocation_change.controls.min_allocation_change.passed` | abs(change) >= threshold (default 0.20): the no-trade band. | bool | `RM:RiskManager.approve_allocation_change`, `RM:RiskManager._ctrl_min_allocation_change` | fill |
+| `debug_approve_allocation_change.controls.min_allocation_change.passed` | abs(change) >= threshold (default 0.20): the no-trade band. With a `strategies.sizing` block (D-176) the change judged is `sizing_signal_change`, not `allocation_change`. | bool | `RM:RiskManager.approve_allocation_change`, `RM:RiskManager._ctrl_min_allocation_change` | fill |
 | `debug_execute_portfolio_rebalance` | Present instead of the dotted columns when no order ran: the text `{}`. | text | `TB:TradingBot._process_symbol_candle_completion` | fill |
 | `debug_execute_portfolio_rebalance.symbol` | Symbol of the order. | id | `EH:MockExecutionHandler.open_long_position` | fill |
 | `debug_execute_portfolio_rebalance.price` | Fill price: close x (1 +/- slippage bps / 10000). | price | `EH:MockExecutionHandler.open_long_position`, `EH:MockExecutionHandler.open_short_position`, `EH:MockExecutionHandler.close_position` | fill |
 | `debug_execute_portfolio_rebalance.quantity` | Order size: positive for LONG/SHORT/REDUCE_*, the signed position for CLOSE (A13). | base units | `EH:MockExecutionHandler.open_long_position`, `EH:MockExecutionHandler.open_short_position`, `EH:MockExecutionHandler.close_position` | fill |
 | `debug_execute_portfolio_rebalance.trade_type` | `LONG`, `SHORT`, `REDUCE_LONG`, `REDUCE_SHORT` or `CLOSE`. | label | `EH:BaseExecutionHandler._handle_allocation_change` | fill |
 | `debug_execute_portfolio_rebalance.error` | Exception text of a failed order. | text | `EH:MockExecutionHandler.open_long_position`, `EH:MockExecutionHandler.open_short_position` | fill |
-| `risk_target_raw` | Risk gate only: the target before the gate (NaN on a NaN forecast). | alloc | `RG:PortfolioRiskGate.apply`, `TB:TradingBot._process_symbol_candle_completion` | close |
+| `risk_target_raw` | Risk gate only: the target before the gate (NaN on a NaN forecast). With a `strategies.sizing` block it is the SIZED target (the gate sees what sizing produced). | alloc | `RG:PortfolioRiskGate.apply`, `TB:TradingBot._process_symbol_candle_completion` | close |
 | `risk_cap_clamped` | Risk gate only: the cap clamped the target. | bool | `RG:PortfolioRiskGate.apply` | close |
 | `risk_killed` | Risk gate only: drawdown kill latched. | bool | `RG:PortfolioRiskGate.apply` | close |
 | `risk_drawdown` | Risk gate only: drawdown at this close. | frac | `RG:PortfolioRiskGate.apply` | close |
 | `risk_daily_halted` | Risk gate only: daily loss halt latched. | bool | `RG:PortfolioRiskGate.apply` | close |
 | `risk_daily_loss` | Risk gate only: loss since the day's anchor. | frac | `RG:PortfolioRiskGate.apply` | close |
 | `risk_trip` | Risk gate only: what tripped this bar. | label | `RG:PortfolioRiskGate.apply` | close |
+| `sizing_realised_vol` | `strategies.sizing` block only (D-176): the annualised realised volatility the bar was sized with (stdev of the last `window` simple close returns x sqrt(`periods_per_year`)); empty when the closes could not give one (warm-up, a bad close, zero vol: the bar is sized to 0.0). | frac | `TB:TradingBot._process_symbol_candle_completion`, `FM:ForecastManager.forecast_to_allocation` | close |
+| `sizing_target_allocation` | `strategies.sizing` block only (D-176): the sized target allocation, clipped to +/- `max_allocation` (what `allocation_change` is measured towards). | alloc | `TB:TradingBot._process_symbol_candle_completion`, `FM:ForecastManager.forecast_to_allocation` | close |
+| `sizing_signal_change` | `strategies.sizing` block only (D-176): the change in the unsized signal (forecast / 10) since the position was last set, which is what the min_allocation_change band judges. Empty on a NaN-forecast bar. | alloc | `TB:TradingBot._process_symbol_candle_completion`, `RM:RiskManager.approve_allocation_change` | close |
 <!-- /data-dictionary -->
 <!-- /readers: omit -->
 
@@ -731,7 +734,7 @@ These do not exist in any file the AI steps read. Do not infer them.
   was held (only counted in metrics.json `nan_forecast`), a gap tier (middle-tier
   entry block, large-tier forced flatten; gap events only in metrics.json
   `data_quality`), a risk-gate kill, or the end-of-backtest forced close (merged
-  into the last row, `PI:PortfolioStateTracker.record_state`). The target allocation is not a column.
+  into the last row, `PI:PortfolioStateTracker.record_state`). The target allocation is not a column (except `sizing_target_allocation`, only with a `strategies.sizing` block).
 - **The decision behind each trade** (E-029): which rule opened or closed a lot,
   whether it was a full exit or a partial reduction, the forecast and band at the
   decision. `exit_reason` is inferred (A5).
