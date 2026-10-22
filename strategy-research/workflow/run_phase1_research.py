@@ -11809,12 +11809,12 @@ def _assert_windows_clear_of_holdout(windows: list, holdout_start: str,
             value = str(w["test"][edge])[:10]
             if value >= holdout_start:
                 raise HoldoutBoundaryBreach(
-                    f"window {label!r} has test.{edge}={value}, at or past "
-                    f"holdout_start={holdout_start} (holdout_range "
-                    f"{holdout_start}..{holdout_end}). `end` is INCLUSIVE-BY-DAY at "
-                    f"the engine, so end={value} materialises that whole day's bars "
-                    f"inside the sealed window. Move the sweep's end date before "
-                    f"{holdout_start}; this generator will not truncate it for you."
+                    f"a window's test.{edge} is at or past the holdout_range start in "
+                    f"config/campaign_data_policy.yaml (dates withheld). `end` is "
+                    f"INCLUSIVE-BY-DAY at the engine, so an end on that day materialises "
+                    f"that whole day's bars inside the sealed window. Move the sweep's "
+                    f"end date before the holdout_range start; this generator will not "
+                    f"truncate it for you."
                 )
 
 
