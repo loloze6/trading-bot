@@ -1,0 +1,60 @@
+run_id: run_099
+flow: config_direct
+protocol_ref: protocols/run_099_generated.json
+memory_present: true
+protocol_warnings: []
+checked:
+- asset_ltc
+- base
+- design_no_vol_target
+repeats: []
+run_end: null
+variants:
+  asset_ltc:
+    route: admit
+    layer: exact_match
+    reasons:
+    - no tested variant in campaign_memory.yaml has this exact key
+    outcome: novel
+    matched: []
+    layer1_advisory: &id001
+      status: no_opinion
+      reasons: []
+      kb_finding_id: null
+    key:
+      forecast_hash: 0ca7e24cc123060b9ac1a38af87d44da08dafa4ed9d7c321c2a61006b6847aa3
+      symbols:
+      - LTCUSD
+      timeframe: 1d
+      window_set: windows:7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+    config_ref: runs/run_099/artifacts/variants/asset_ltc/strategy_config.json
+  base:
+    route: admit
+    layer: exact_match
+    reasons:
+    - no tested variant in campaign_memory.yaml has this exact key
+    outcome: novel
+    matched: []
+    layer1_advisory: *id001
+    key:
+      forecast_hash: 0ca7e24cc123060b9ac1a38af87d44da08dafa4ed9d7c321c2a61006b6847aa3
+      symbols:
+      - BTCUSD
+      timeframe: 1d
+      window_set: windows:7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+    config_ref: runs/run_099/artifacts/variants/base/strategy_config.json
+  design_no_vol_target:
+    route: admit
+    layer: exact_match
+    reasons:
+    - no tested variant in campaign_memory.yaml has this exact key
+    outcome: novel
+    matched: []
+    layer1_advisory: *id001
+    key:
+      forecast_hash: 767df308eb22c20d2550d7e0cccd60982df6f5a7a507d507da25203a34ef83f4
+      symbols:
+      - BTCUSD
+      timeframe: 1d
+      window_set: windows:7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+    config_ref: runs/run_099/artifacts/variants/design_no_vol_target/strategy_config.json

@@ -1,0 +1,193 @@
+schema_version: 1
+label: measured, not proven
+note: 'information only: effect sizes measured on saved bars, no p-value; readers
+  explain these numbers and propose, they do not grade the claim'
+information_only: true
+approximation:
+  line: 'this run tested an approximation of the idea: Quantity d_t = close_t / max(close
+    over last 250 bars incl. t) - 1, the distance below the 250-bar high -> DonchianBreakoutComponent(period
+    250, scaling_factor 1.0): position of close_t in the 250-bar close range, (close
+    - min) / (max - min), mapped to [-1, +1]; forecast = clip(80 x (d_t + 0.25), -20,
+    +20) -> standardise(window 60, min_periods 20), default target 10 and cap 20,
+    applied to the Donchian position; Forecast from bar t is applied from bar t+1
+    or later; no same-bar fill. (The card asks 1b to confirm the fill convention.)
+    -> Forecast from bar t, computed on the close of bar t, traded at that bar''s
+    close, as the engine does'
+  n_deviations: 3
+  deviations:
+  - clause: Quantity d_t = close_t / max(close over last 250 bars incl. t) - 1, the
+      distance below the 250-bar high
+    built_instead: 'DonchianBreakoutComponent(period 250, scaling_factor 1.0): position
+      of close_t in the 250-bar close range, (close - min) / (max - min), mapped to
+      [-1, +1]'
+    missing: A component that outputs distance to a rolling maximum (close / rolling
+      max - 1); none exists in COMPONENT_CATALOG.md
+    effect: The position also depends on the 250-bar low, so the same distance below
+      the high scores differently in wide and narrow ranges. Zero sits at mid-range,
+      not at 25 percent below the high. The two measures are correlated but not identical.
+  - clause: forecast = clip(80 x (d_t + 0.25), -20, +20)
+    built_instead: standardise(window 60, min_periods 20), default target 10 and cap
+      20, applied to the Donchian position
+    missing: A fixed linear map with the card's anchors (+20 at the high, 0 at 25
+      percent below, -20 at 50 percent below or further)
+    effect: The forecast is scaled to the trailing mean absolute value, so its level
+      drifts with recent range. Ordering and sign are kept, but the size of a position
+      at a given distance differs from the card's.
+  - clause: Forecast from bar t is applied from bar t+1 or later; no same-bar fill.
+      (The card asks 1b to confirm the fill convention.)
+    built_instead: Forecast from bar t, computed on the close of bar t, traded at
+      that bar's close, as the engine does
+    missing: A one-bar execution delay. The config has no key or op that lags the
+      forecast, and STRATEGY_DESIGN_GUIDE documents the fill at the signal bar's close.
+    effect: Strategy P&L may be optimistic because the position is taken at the close
+      that generated the signal. The forward-return rank IC claim is measured on subsequent
+      bars and is not changed by the fill timing.
+  ref: artifacts/deviations.yaml
+variant_patches:
+  note: each variant's exact change to the base config (JSON pointer -> new value).
+    Read a variant's settings here, never infer them from its name.
+  base_config_ref: artifacts/backtest_spec.yaml
+  variants:
+  - variant_id: base
+    kind: base
+    symbol: BTCUSDT
+    patch: []
+  - variant_id: design_lookback_120
+    kind: design
+    symbol: BTCUSDT
+    patch:
+    - path: /strategies/regimes/unknown/components/0/params/period
+      value: 120
+  - variant_id: asset_link
+    kind: asset
+    symbol: LINKUSDT
+    patch: []
+  - variant_id: asset_ada
+    kind: asset
+    symbol: ADAUSDT
+    patch: []
+statement: 'On BTC daily bars, a higher forecast (closer to the 250-day high) is followed
+  by higher returns over the next 1 and 2 bars. The top 30 percent of forecast days
+  have higher next-day returns than other days.
+
+  '
+kind: direction_forecast
+block_visibility: ok
+manifest_kind: forecast
+statistics_note: each test's `effect` is that test's own statistic (its `statistic_label`);
+  none of them is the forecast_power report's forecast_return_corr, which is a Pearson
+  correlation of the forecast with the next bar's return on active bars
+tests:
+- name: anchor_rank_ic
+  spec_hash: 41fb7a032482a3ac23566df9fe907c0f4d87cda6f2f6390825956e90ea628711
+  statistic: rank_ic
+  statistic_label: rank IC (Spearman) of the bar-t forecast with the outcome, on the
+    selected bars -- the claim test's own statistic; horizons in bars
+  direction: greater
+  selector:
+    kind: all
+  outcome:
+    kind: fwd_return
+    horizons:
+    - 1
+    - 2
+- name: near_high_top30
+  spec_hash: 805bf8437b41c3b0211bb546250c2583d3b6f2f307e2259ebb7ebca5550b204f
+  statistic: mean_diff
+  statistic_label: mean outcome on the selected bars minus the baseline's mean (a
+    difference of means, not a correlation); horizons in bars
+  direction: greater
+  selector:
+    kind: quantile
+    field: forecast
+    side: top
+    q: 0.3
+    lookback: 60
+  outcome:
+    kind: fwd_return
+    horizons:
+    - 1
+    - 2
+  baseline:
+    kind: complement
+claim_status: measured
+reason: null
+variants:
+  base:
+    status: measured
+    tests:
+      anchor_rank_ic:
+        status: measured
+        spec_hash: 41fb7a032482a3ac23566df9fe907c0f4d87cda6f2f6390825956e90ea628711
+        peak_horizon: null
+        floor_not_met: []
+        horizons:
+          '1':
+            effect: 0.00399482
+            n_events: 724
+            windows_claimed_sign: 1
+            windows_with_value: 6
+          '2':
+            effect: 0.0103664
+            n_events: 718
+            windows_claimed_sign: 1
+            windows_with_value: 6
+        statistic_label: rank IC (Spearman) of the bar-t forecast with the outcome,
+          on the selected bars -- the claim test's own statistic; horizons in bars
+      near_high_top30:
+        status: measured
+        spec_hash: 805bf8437b41c3b0211bb546250c2583d3b6f2f307e2259ebb7ebca5550b204f
+        peak_horizon: null
+        floor_not_met: []
+        horizons:
+          '1':
+            effect: 0.00143458
+            n_events: 129
+            windows_claimed_sign: 0
+            windows_with_value: 6
+          '2':
+            effect: 0.00237467
+            n_events: 127
+            windows_claimed_sign: 0
+            windows_with_value: 6
+        statistic_label: mean outcome on the selected bars minus the baseline's mean
+          (a difference of means, not a correlation); horizons in bars
+  design_lookback_120:
+    status: measured
+    tests:
+      anchor_rank_ic:
+        status: measured
+        spec_hash: 41fb7a032482a3ac23566df9fe907c0f4d87cda6f2f6390825956e90ea628711
+        peak_horizon: null
+        floor_not_met: []
+        horizons:
+          '1':
+            effect: 0.0364352
+            n_events: 724
+            windows_claimed_sign: 2
+            windows_with_value: 6
+          '2':
+            effect: 0.0576623
+            n_events: 718
+            windows_claimed_sign: 2
+            windows_with_value: 6
+        statistic_label: rank IC (Spearman) of the bar-t forecast with the outcome,
+          on the selected bars -- the claim test's own statistic; horizons in bars
+      near_high_top30:
+        status: measured
+        spec_hash: 805bf8437b41c3b0211bb546250c2583d3b6f2f307e2259ebb7ebca5550b204f
+        peak_horizon: null
+        floor_not_met: []
+        horizons:
+          '1':
+            effect: 0.001213
+            n_events: 102
+            windows_claimed_sign: 1
+            windows_with_value: 5
+          '2':
+            effect: 0.0019742
+            n_events: 102
+            windows_claimed_sign: 1
+            windows_with_value: 5
+        statistic_label: mean outcome on the selected bars minus the baseline's mean
+          (a difference of means, not a correlation); horizons in bars

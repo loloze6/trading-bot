@@ -1,0 +1,14 @@
+status: match
+manifest_kind: forecast
+warnings: []
+block_visibility: ok
+approximation: 'this run tested an approximation of the idea: Quantity d_t = close_t
+  / max(close over last 250 bars incl. t) - 1, the distance below the 250-bar high
+  -> DonchianBreakoutComponent(period 250, scaling_factor 1.0): position of close_t
+  in the 250-bar close range, (close - min) / (max - min), mapped to [-1, +1]; forecast
+  = clip(80 x (d_t + 0.25), -20, +20) -> standardise(window 60, min_periods 20), default
+  target 10 and cap 20, applied to the Donchian position; Forecast from bar t is applied
+  from bar t+1 or later; no same-bar fill. (The card asks 1b to confirm the fill convention.)
+  -> Forecast from bar t, computed on the close of bar t, traded at that bar''s close,
+  as the engine does -- the claim''s tests measure the config as built, not the idea
+  as written'

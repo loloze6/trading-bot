@@ -1,0 +1,65 @@
+run_id: run_098
+manifest_kind: forecast
+claim_before: &id001
+  statement: 'On BTC daily bars, a higher forecast (closer to the 250-day high) is
+    followed by higher returns over the next 1 and 2 bars. The top 30 percent of forecast
+    days have higher next-day returns than other days.
+
+    '
+  kind: direction_forecast
+  tests:
+  - name: anchor_rank_ic
+    selector:
+      kind: all
+    outcome:
+      kind: fwd_return
+      horizons:
+      - 1
+      - 2
+    statistic: rank_ic
+    direction: greater
+    floor:
+      min_events: 100
+      min_windows: 4
+    consistency:
+      unit: window
+      min_same_sign: 4
+  - name: near_high_top30
+    selector:
+      kind: quantile
+      field: forecast
+      side: top
+      q: 0.3
+      lookback: 60
+    outcome:
+      kind: fwd_return
+      horizons:
+      - 1
+      - 2
+    baseline:
+      kind: complement
+    statistic: mean_diff
+    direction: greater
+    floor:
+      min_events: 100
+      min_windows: 4
+  pass_if: 'At horizons 1 and 2, rank IC of forecast with the next returns is positive
+    in at least 4 of 6 windows, with at least 100 events. The top 30 percent forecast
+    days show higher mean next-day returns than other days in the same direction.
+
+    '
+  fail_if: 'Rank IC is negative at horizon 1 or 2 in most windows, or the top 30 percent
+    forecast days show lower mean next-day returns than other days in most windows.
+
+    '
+  rationale: 'If anchoring drives continuation, forecast ranking and the top-decile
+    days must both point upward at the short horizons. Horizons are capped at 2 bars
+    so that the event floor is reachable on about 730 bars. The 250-bar lookback on
+    the forecast is a test selector only, kept at 60 bars so it fits within each window.
+
+    '
+claim_before_sha256: c9929fade8a183192209f693b4118a56a84df6ee9e8c269d3c24238909cdf7dd
+visibility_before: ok
+status: not_needed
+claim_after: *id001
+visibility_after: ok

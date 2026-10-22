@@ -1,0 +1,24 @@
+schema_version: 3
+reading_id: forecast_power-run_098
+model_id: claude-haiku-5-5
+rubric_version: forecast_power-analyst-v1
+explanation: 'Nothing survived. The forecast is graded (a standardised component with
+  a 250-bar Donchian anchor), and its strong-bar edge does not hold window by window.
+  At horizon 1, the pooled effect of forecast at or above <n> is positive, but in
+  every window that has such bars the effect is negative or flat, so the pooled sign
+  comes from how the baseline is pooled across windows, not from a repeated behaviour.
+  The top-quintile forecast test (top 20% over 100 bars) fails its floors at the longer
+  horizons, and its 5-bar effect is negative. Costs are large against a gross result
+  near zero, and the forecast steps about a small amount each bar, so allocation churns
+  through the risk manager''s no-trade band. That churn is the likely cost cause,
+  but I did not run a test that isolates it, and no graded change follows from it
+  that a test in this session could check. The rejected mechanisms are: a slow range-position
+  trend that pays at longer horizons (q6), and a one-bar edge on strong long forecasts
+  (q9, q10).
+
+  '
+evidence:
+- q2:total.cost_drag_pct=406.01642
+- q9:horizons.1.effect=0.0012112745
+- q6:horizons.5.effect=-0.0072307673
+side_findings: []

@@ -1,0 +1,31 @@
+base_config_ref: "artifacts/backtest_spec.yaml"
+variants:
+  - variant_id: "base"
+    kind: "base"
+    symbol: "BTCUSDT"
+    patch: []
+    rationale: "Base config as strategy_config_authoring produced it, unmodified: Donchian 250 position, standardised (250, 62), clip 0..20, vol_target 0.2 over 60 closes, clip 0..20. Always included per IMPROVEMENT 07."
+  - variant_id: "design_no_vol_target"
+    kind: "design"
+    symbol: "BTCUSDT"
+    patch:
+      - path: "/strategies/regimes/unknown/components/0/transforms"
+        value:
+          - op: "standardise"
+            params:
+              window: 250
+              min_periods: 62
+          - op: "clip"
+            params:
+              min: 0
+              max: 20
+          - op: "clip"
+            params:
+              min: 0
+              max: 20
+    rationale: "One transform change (D-053): vol_target removed and the list replaced. The signal and the long-only clip are unchanged. Isolates the sizing effect from the range-position signal (pre-registered outcome C3)."
+  - variant_id: "asset_ltc"
+    kind: "asset"
+    symbol: "LTCUSDT"
+    patch: []
+    rationale: "Same base config on LTCUSDT (altcoin_l1_verified_kraken, a different category from store_of_value). Has 624 bars before every fold-B window. Tests whether the mechanism is cross-asset (pre-registered outcome C2)."

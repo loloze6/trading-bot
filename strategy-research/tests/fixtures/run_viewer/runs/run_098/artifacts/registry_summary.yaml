@@ -1,0 +1,42 @@
+schema_version: 1
+run_id: run_098
+registry:
+  n_blocks: 1
+  revision: 3
+  n_forecast_blocks: 1
+  grouping: none
+this_run:
+  idea_status: refuted
+  block_type:
+    kind: forecast
+    component_classes:
+    - strategies.strategy_components.DonchianBreakoutComponent
+    timeframe_category: daily
+  reason: null
+  type_already_registered: false
+  neighbour_block_ids: []
+  n_neighbour_blocks: 0
+  patches_registered_block: null
+  correlation_to_composite:
+    status: measured
+    composite_kind: block
+    by_variant:
+      base: 0.531114
+      design_lookback_120: 0.755457
+    max_abs: 0.755457
+blocks:
+- block_id: L1_DAILY_TREND_SMA100_V3_FOLD_B:run_084
+  hypothesis_id: L1_DAILY_TREND_SMA100_V3_FOLD_B
+  validated_by_run: run_084
+  kind: forecast
+  component_classes:
+  - strategies.strategy_components.MovingAverageDistanceComponent
+  timeframe: 1d
+  timeframe_category: daily
+  symbols_tested:
+  - BTCUSD
+  - ETHUSD
+  - LTCUSD
+  residual_ic: null
+  correlation_to_composite: null
+  relation_to_this_run: null

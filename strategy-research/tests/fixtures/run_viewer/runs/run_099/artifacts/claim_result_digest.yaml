@@ -1,0 +1,179 @@
+schema_version: 1
+label: measured, not proven
+note: 'information only: effect sizes measured on saved bars, no p-value; readers
+  explain these numbers and propose, they do not grade the claim'
+information_only: true
+variant_patches:
+  note: each variant's exact change to the base config (JSON pointer -> new value).
+    Read a variant's settings here, never infer them from its name.
+  base_config_ref: artifacts/backtest_spec.yaml
+  variants:
+  - variant_id: base
+    kind: base
+    symbol: BTCUSDT
+    patch: []
+  - variant_id: design_no_vol_target
+    kind: design
+    symbol: BTCUSDT
+    patch:
+    - path: /strategies/regimes/unknown/components/0/transforms
+      value:
+      - op: standardise
+        params:
+          window: 250
+          min_periods: 62
+      - op: clip
+        params:
+          min: 0
+          max: 20
+      - op: clip
+        params:
+          min: 0
+          max: 20
+  - variant_id: asset_ltc
+    kind: asset
+    symbol: LTCUSDT
+    patch: []
+statement: 'The long-only forecast ranks the next 5 and 20 daily returns positively
+  (higher forecast, higher return), and after a forecast of 8 or more the return over
+  the next 5 bars is lower than on the other bars (half (a) of the run_098 re-run
+  question: whether the strongest long readings are already exhausted at 5 bars).
+
+  '
+kind: direction_forecast
+block_visibility: ok
+manifest_kind: forecast
+statistics_note: each test's `effect` is that test's own statistic (its `statistic_label`);
+  none of them is the forecast_power report's forecast_return_corr, which is a Pearson
+  correlation of the forecast with the next bar's return on active bars
+tests:
+- name: long_forecast_rank_ic_5_20
+  spec_hash: 322acac88fc9a108cd25d2f4097bc5ab7d5b1e364025359d97acc4b39162237a
+  statistic: rank_ic
+  statistic_label: rank IC (Spearman) of the bar-t forecast with the outcome, on the
+    selected bars -- the claim test's own statistic; horizons in bars
+  direction: greater
+  selector:
+    kind: all
+  outcome:
+    kind: fwd_return
+    horizons:
+    - 5
+    - 20
+  baseline: null
+- name: half_a_strong_long_lower_5
+  spec_hash: 1854af2bfe6b44b988fb2eb4726deb20b5d1a79e6d79e13eb40d01abf9cc62f3
+  statistic: mean_diff
+  statistic_label: mean outcome on the selected bars minus the baseline's mean (a
+    difference of means, not a correlation); horizons in bars
+  direction: less
+  selector:
+    kind: event
+    field: forecast
+    op: '>='
+    value: 8
+  outcome:
+    kind: fwd_return
+    horizons:
+    - 5
+  baseline:
+    kind: complement
+claim_status: measured
+reason: null
+variants:
+  asset_ltc:
+    status: measured
+    tests:
+      long_forecast_rank_ic_5_20:
+        status: measured
+        spec_hash: 322acac88fc9a108cd25d2f4097bc5ab7d5b1e364025359d97acc4b39162237a
+        peak_horizon: null
+        floor_not_met: []
+        horizons:
+          '5':
+            effect: 0.0615101
+            n_events: 700
+            windows_claimed_sign: 0
+            windows_with_value: 4
+          '20':
+            effect: 0.183235
+            n_events: 610
+            windows_claimed_sign: 0
+            windows_with_value: 4
+        statistic_label: rank IC (Spearman) of the bar-t forecast with the outcome,
+          on the selected bars -- the claim test's own statistic; horizons in bars
+      half_a_strong_long_lower_5:
+        status: no_events
+        spec_hash: 1854af2bfe6b44b988fb2eb4726deb20b5d1a79e6d79e13eb40d01abf9cc62f3
+        reason: the selector matched no bars
+        statistic_label: mean outcome on the selected bars minus the baseline's mean
+          (a difference of means, not a correlation); horizons in bars
+  base:
+    status: measured
+    tests:
+      long_forecast_rank_ic_5_20:
+        status: measured
+        spec_hash: 322acac88fc9a108cd25d2f4097bc5ab7d5b1e364025359d97acc4b39162237a
+        peak_horizon: null
+        floor_not_met: []
+        horizons:
+          '5':
+            effect: -0.0231004
+            n_events: 700
+            windows_claimed_sign: 0
+            windows_with_value: 5
+          '20':
+            effect: -0.0388268
+            n_events: 610
+            windows_claimed_sign: 1
+            windows_with_value: 5
+        statistic_label: rank IC (Spearman) of the bar-t forecast with the outcome,
+          on the selected bars -- the claim test's own statistic; horizons in bars
+      half_a_strong_long_lower_5:
+        status: measured
+        spec_hash: 1854af2bfe6b44b988fb2eb4726deb20b5d1a79e6d79e13eb40d01abf9cc62f3
+        peak_horizon: null
+        floor_not_met:
+        - min_events=50 at h=5 (have 21)
+        horizons:
+          '5':
+            effect: 0.0159876
+            n_events: 21
+            windows_claimed_sign: 0
+            windows_with_value: 1
+        statistic_label: mean outcome on the selected bars minus the baseline's mean
+          (a difference of means, not a correlation); horizons in bars
+  design_no_vol_target:
+    status: measured
+    tests:
+      long_forecast_rank_ic_5_20:
+        status: measured
+        spec_hash: 322acac88fc9a108cd25d2f4097bc5ab7d5b1e364025359d97acc4b39162237a
+        peak_horizon: null
+        floor_not_met: []
+        horizons:
+          '5':
+            effect: -0.0142204
+            n_events: 700
+            windows_claimed_sign: 0
+            windows_with_value: 5
+          '20':
+            effect: -0.0321455
+            n_events: 610
+            windows_claimed_sign: 0
+            windows_with_value: 5
+        statistic_label: rank IC (Spearman) of the bar-t forecast with the outcome,
+          on the selected bars -- the claim test's own statistic; horizons in bars
+      half_a_strong_long_lower_5:
+        status: measured
+        spec_hash: 1854af2bfe6b44b988fb2eb4726deb20b5d1a79e6d79e13eb40d01abf9cc62f3
+        peak_horizon: null
+        floor_not_met: []
+        horizons:
+          '5':
+            effect: 0.00623656
+            n_events: 268
+            windows_claimed_sign: 3
+            windows_with_value: 3
+        statistic_label: mean outcome on the selected bars minus the baseline's mean
+          (a difference of means, not a correlation); horizons in bars

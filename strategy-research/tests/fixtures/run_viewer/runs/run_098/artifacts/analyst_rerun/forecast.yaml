@@ -1,0 +1,133 @@
+schema_version: 1
+lens: forecast
+category: forecast_power
+run_id: run_098
+model: claude-haiku-5-5
+caps:
+  model: claude-haiku-5-5
+  max_turns: 40
+  max_budget_usd: 3.0
+  timeout_minutes: 15
+attempts:
+- status: refused
+  errors:
+  - 'claim: claim: unknown keys [''rationale_end'']; allowed: [''criteria_refs'',
+    ''fail_if'', ''kind'', ''missing_block'', ''pass_if'', ''rationale'', ''statement'',
+    ''tests'']'
+  subtype: success
+  cost_usd: 1.0576725
+  num_turns: 9
+  tools_denied: []
+  outcome: claim
+  models:
+  - claude-haiku-5-5
+  answer: "```yaml\noutcome: claim\nclaim:\n  statement: >\n    After a close at or\
+    \ below -10 in forecast (the close near the bottom of its 250-bar range, so a\
+    \ short is entered), the mean return over the next 5 and 20 bars is higher than\
+    \ on other bars, in most windows: the short side is a bounce that costs the strategy.\n\
+    \  kind: conditional_behaviour\n  tests:\n    - name: short_bounce_5_20\n    \
+    \  selector: {kind: event, field: forecast, op: \"<=\", value: -10}\n      outcome:\
+    \ {kind: fwd_return, horizons: [5, 20]}\n      baseline: {kind: complement}\n\
+    \      statistic: mean_diff\n      direction: greater\n      floor: {min_events:\
+    \ 50, min_windows: 4}\n  pass_if: >\n    At horizons 5 and 20, bars after a forecast\
+    \ at or below -10 have a higher mean forward return than the other bars, with\
+    \ the effect positive in at least 3 of the 4 windows that have such bars, and\
+    \ at least 50 such bars.\n  fail_if: >\n    At horizon 5 or 20, the effect is\
+    \ zero or negative in most windows, meaning the strongly negative forecast is\
+    \ followed by continued decline, as a short would need.\n  rationale: >\n    The\
+    \ forecast is the standardised position of the close in its 250-bar Donchian channel,\
+    \ so a value at or below -10 marks a breakdown to the bottom of the range. The\
+    \ bounce after a breakdown over 1 to 4 weeks is the mechanism: shorts entered\
+    \ there are covered into the bounce. The same bars in the test show the effect\
+    \ at both horizons and in every window with events (4 of 4). The rival is the\
+    \ drift of this sample (BTC rose through most of 2018 to 2021); the complement\
+    \ baseline shares the window's drift, so the effect is not a drift difference\
+    \ between the two groups. Limit: at horizon 20 the effect rests on few independent\
+    \ blocks (4 blocks against 124 bars), so it is weaker evidence than horizon 5.\n\
+    \  rationale_end: \"\"\nwhy_query: q7\nevidence:\n  - q8:horizons.5.effect=0.006358708\n\
+    \  - q8:horizons.5.windows_claimed_sign=4\n  - q8:horizons.20.effect=0.01909351\n\
+    \  - q8:horizons.20.windows_claimed_sign=4\n  - q7:groups.BTCUSD/2019-01.trade_net_return_mean=-0.18538871\n\
+    \  - q7:groups.BTCUSD/2018-05.trade_net_return_mean=0.0018361642\nvehicle:\n \
+    \ kind: config\n  config:\n    regime_detector:\n      mode: threshold_rules\n\
+    \      components: []\n      rules: []\n      default_regime: unknown\n    strategies:\n\
+    \      regimes:\n        unknown:\n          components:\n            - id: anchor_position\n\
+    \              class: strategies.strategy_components.DonchianBreakoutComponent\n\
+    \              params:\n                period: 250\n                scaling_factor:\
+    \ 1.0\n              weight: 1.0\n              transforms:\n                -\
+    \ op: standardise\n                  params:\n                    window: 60\n\
+    \                    min_periods: 20\n                - op: clip\n           \
+    \       params:\n                    min: 0.0\n        trending: null\n      \
+    \  mean_reversion: null\n        chop: null\ncombines_as: forecast_block\n```"
+- status: accepted
+  errors: []
+  subtype: success
+  cost_usd: 0.785488
+  num_turns: 1
+  tools_denied: []
+  outcome: claim
+  models:
+  - claude-haiku-5-5
+  answer: "```yaml\noutcome: claim\nclaim:\n  statement: >\n    After a close with\
+    \ a forecast at or below -10 (the close near the bottom of its 250-bar range,\
+    \ where the strategy goes short), the mean return over the next 5 and 20 bars\
+    \ is higher than on other bars, so the shorts entered there are covered into a\
+    \ bounce.\n  kind: conditional_behaviour\n  tests:\n    - name: short_bounce_5_20\n\
+    \      selector: {kind: event, field: forecast, op: \"<=\", value: -10}\n    \
+    \  outcome: {kind: fwd_return, horizons: [5, 20]}\n      baseline: {kind: complement}\n\
+    \      statistic: mean_diff\n      direction: greater\n      floor: {min_events:\
+    \ 50, min_windows: 4}\n  pass_if: >\n    At horizons 5 and 20, bars with a forecast\
+    \ at or below -10 have a higher mean forward return than the other bars, with\
+    \ the effect positive in at least 3 of the 4 windows that have such bars, and\
+    \ at least 50 such bars.\n  fail_if: >\n    At horizon 5 or 20, the effect is\
+    \ zero or negative in most windows, meaning a strongly negative forecast is followed\
+    \ by continued decline, which is what a short needs.\n  rationale: >\n    The\
+    \ forecast is the standardised position of the close in its 250-bar Donchian channel,\
+    \ so a value at or below -10 marks a breakdown to the bottom of the range. The\
+    \ mechanism is that a breakdown is followed by a bounce over the next 5 to 20\
+    \ bars, and the shorts entered there are covered into it. The effect is positive\
+    \ at both horizons in every window with events (q8). At horizon 1 the sign is\
+    \ the other way (q6): the first day favours the short, so the bounce starts after\
+    \ that. The complement baseline shares each window's drift, so the effect is not\
+    \ a drift difference between the two groups. The horizon 20 effect rests on few\
+    \ independent blocks, so it is weaker evidence than horizon 5. The side-level\
+    \ loss is measured by q7: short lots lost in all but one of the four windows that\
+    \ had shorts, and the short mean was negative overall (q5).\nwhy_query: q7\nevidence:\n\
+    \  - q8:horizons.5.effect=0.006358708\n  - q8:horizons.5.windows_claimed_sign=4\n\
+    \  - q8:horizons.20.effect=0.01909351\n  - q8:horizons.20.windows_claimed_sign=4\n\
+    \  - q7:groups.BTCUSD/2019-01.trade_net_return_mean=-0.18538871\n  - q5:groups.short.trade_net_return_mean=-0.033880004\n\
+    vehicle:\n  kind: config\n  config:\n    regime_detector:\n      mode: threshold_rules\n\
+    \      components: []\n      rules: []\n      default_regime: unknown\n    strategies:\n\
+    \      regimes:\n        unknown:\n          components:\n            - id: anchor_position\n\
+    \              class: strategies.strategy_components.DonchianBreakoutComponent\n\
+    \              params:\n                period: 250\n                scaling_factor:\
+    \ 1.0\n              weight: 1.0\n              transforms:\n                -\
+    \ op: standardise\n                  params:\n                    window: 60\n\
+    \                    min_periods: 20\n                - op: clip\n           \
+    \       params:\n                    min: 0.0\n        trending: null\n      \
+    \  mean_reversion: null\n        chop: null\ncombines_as: forecast_block\n```"
+outcome: claim
+what_was_examined:
+- a7e5066a92a1c724107a57b86b1d7d1dc88fe64c0488aabe9eaf98e98cc43ca2
+- df9a1902063dd69f871fc2f0ac92cb2c8ad6f13c2168bc06a5747c8f33dd86d2
+looks:
+  calls: 8
+  comparisons: 11
+unverified_numbers:
+- field: claim.pass_if
+  written: '3'
+claim_card_ok: true
+why_query: q7
+test_spec_hashes:
+- a7e5066a92a1c724107a57b86b1d7d1dc88fe64c0488aabe9eaf98e98cc43ca2
+scores:
+  confidence_real: 3
+  distance_to_profitable: 1
+  mechanism_plausibility: 1
+  source: 'code: in-run window agreement (PR5_DESIGN 11.3)'
+outcome_flipped_on_retry: false
+reading_review:
+  forecast_power-run_098-1:
+    spec_hashes:
+    - a7e5066a92a1c724107a57b86b1d7d1dc88fe64c0488aabe9eaf98e98cc43ca2
+    tests_none: false
+    warnings: []

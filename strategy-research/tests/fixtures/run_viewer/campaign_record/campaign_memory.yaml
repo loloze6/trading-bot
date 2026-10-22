@@ -1,0 +1,968 @@
+schema_version: 1
+runs:
+  run_098:
+    run_id: run_098
+    hypothesis_id: DAILY_ANCHOR_52W_PROXIMITY_1D
+    legacy: false
+    recorded_at: '2026-10-20T19:59:24.786064+00:00'
+    idea_status: refuted
+    idea_status_reason: at least one criterion FAILed with sufficient data on at least one variant; variant(s) ['asset_ada'] failed their backtest (a backtest_failed trial row counts the look) -- a variant without a graded result never validates an idea (D-015); variant(s) ['asset_link'] have no graded result in this run -- an idea validates only when all its variants are graded in one run (card D)
+    idea_status_ref: runs/run_098/artifacts/idea_status.yaml
+    engineering_fault: null
+    engineering_fault_detail: []
+    grid:
+      ref: runs/run_098/artifacts/grid_evaluation.yaml
+      criteria:
+      - forecast_ic_median
+      - residual_ic
+      variants:
+      - base
+      - design_lookback_120
+      cells:
+        forecast_ic_median:
+          base:
+            result: FAIL
+            value: -0.058206999999999995
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 176
+          design_lookback_120:
+            result: FAIL
+            value: -0.0569435
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 204
+        residual_ic:
+          base:
+            result: FAIL
+            value: 0.000169
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 176
+          design_lookback_120:
+            result: FAIL
+            value: 0.025752
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 204
+            reason: 'not significant: p_value_one_sided=0.244633 >= max_p_value=0.05'
+      counts:
+        PASS: 0
+        FAIL: 4
+        INCONCLUSIVE: 0
+    variants:
+      asset_ada:
+        status: failed
+        reason: 'backtest_failed: run_protocol.py non-zero exit (1)'
+        config_ref: runs/run_098/artifacts/variants/asset_ada/strategy_config.json
+        forecast_hash: 0ae437792ef96f015cd2d9544198beecacb2befa30369fc2302f9bc67f69d428
+        symbols: []
+        n_windows: 0
+        trial_id: run_098:asset_ada
+        windows_sha256: 1adf5a37700ec6a01744ca7f68c9c82a3fd42b8c13e231e3a5ad38097551429c
+      asset_link:
+        status: not_tested
+        reason: 'insufficient_coverage: the coin covers 3/6 protocol windows (50%; era(s) [''era_2019_2023_full_feed'']) by the Layer-1 precheck and the listing date -- D-042 runs a partial-coverage asset variant only at >= 60% of the windows; not run, the idea is at best inconclusive'
+        config_ref: null
+        forecast_hash: null
+        symbols: []
+        n_windows: 0
+        trial_id: null
+      base:
+        status: tested
+        reason: null
+        config_ref: runs/run_098/artifacts/variants/base/strategy_config.json
+        forecast_hash: 0ae437792ef96f015cd2d9544198beecacb2befa30369fc2302f9bc67f69d428
+        symbols:
+        - BTCUSD
+        n_windows: 6
+        trial_id: run_098:base
+      design_lookback_120:
+        status: tested
+        reason: null
+        config_ref: runs/run_098/artifacts/variants/design_lookback_120/strategy_config.json
+        forecast_hash: 18163a477560e04a21c408148e94a385b8c707f840c1b42584da57cb61983bab
+        symbols:
+        - BTCUSD
+        n_windows: 6
+        trial_id: run_098:design_lookback_120
+    trial_ids:
+    - run_098:asset_ada
+    - run_098:base
+    - run_098:design_lookback_120
+    protocol_ref: protocols/run_098_generated.json
+    timeframe: 1d
+    proposals:
+    - category: profitability
+      ref: runs/run_098/artifacts/proposals/profitability.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'', ''trade_efficiency'']) replace the readers; no lens writes profitability'
+    - category: trade_efficiency
+      ref: runs/run_098/artifacts/proposals/trade_efficiency.yaml
+      proposal_ids: []
+      count: 0
+    - category: forecast_power
+      ref: runs/run_098/artifacts/proposals/forecast_power.yaml
+      proposal_ids: []
+      count: 0
+    - category: regime_power
+      ref: runs/run_098/artifacts/proposals/regime_power.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'', ''trade_efficiency'']) replace the readers; no lens writes regime_power'
+    - category: component_attribution
+      ref: runs/run_098/artifacts/proposals/component_attribution.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'', ''trade_efficiency'']) replace the readers; no lens writes component_attribution'
+    registry:
+      skipped: not_validated
+    profit_bars:
+      ref: runs/run_098/artifacts/profit_bars_evaluation.yaml
+      scope: every_backtest
+      result: FAIL
+      passing: []
+      variants:
+        asset_ada:
+          result: NOT_TESTED
+          bars: {}
+        asset_link:
+          result: NOT_TESTED
+          bars: {}
+        base:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: PASS
+              actual: 0.10447654403026334
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.006646603143099616
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 41.561840890368174
+              threshold: 20.0
+            avg_daily_return_min:
+              result: FAIL
+              actual: 0.00021342499388591553
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: FAIL
+              actual: -0.7172155488236658
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.21506849315068494
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: FAIL
+              actual: -0.4204898716888431
+              threshold: 0.0
+        design_lookback_120:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: PASS
+              actual: 0.8003716004099253
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.06917935479671489
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 38.91615629406838
+              threshold: 20.0
+            avg_daily_return_min:
+              result: PASS
+              actual: 0.001696709072645032
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: FAIL
+              actual: -0.021320492444003802
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.2452054794520548
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: PASS
+              actual: 0.48485371253980264
+              threshold: 0.0
+    profit_bars_reason: null
+    kb_entry_id: grid_run_098
+    fold: B
+    observations:
+    - lens: forecast
+      statement: 'Bars with forecast at or above 8 show a positive pooled next-bar return against the rest, but in each window with such bars the next-bar effect is negative or flat, so the pooled sign is not a per-window behaviour.
+
+        '
+      test: q9
+      evidence:
+      - q9:horizons.1.effect=0.0012112745
+      floors_met: true
+      spec:
+        spec_hash: e4ea2de2da762da99c946e0adbff75c384d933b289667ad259f5465ad9440223
+        selector:
+          kind: event
+          field: forecast
+          op: '>='
+          value: 8
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 1
+          - 2
+          - 5
+          - 10
+        baseline:
+          kind: complement
+        statistic: mean_diff
+        direction: greater
+        floor:
+          min_events: 100
+          min_windows: 4
+      ref: runs/run_098/artifacts/analyst/forecast.yaml
+    - lens: forecast
+      statement: 'Top-quintile forecast bars show a positive next-bar effect and a negative five-bar effect against the rest, and their 20- and 60-bar effects have no events, so the test cannot show a longer-horizon edge.
+
+        '
+      test: q6
+      evidence:
+      - q6:horizons.5.effect=-0.0072307673
+      floors_met: false
+      spec:
+        spec_hash: f34f012e0441fa560f8ed93a349f380f8bce946ddb9b8a7f3c229e6e8d16be78
+        selector:
+          kind: quantile
+          field: forecast
+          side: top
+          q: 0.2
+          lookback: 100
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 1
+          - 5
+          - 20
+          - 60
+        baseline:
+          kind: complement
+        statistic: mean_diff
+        direction: greater
+        floor:
+          min_events: 100
+          min_windows: 4
+      ref: runs/run_098/artifacts/analyst/forecast.yaml
+    - lens: trade_efficiency
+      statement: 'After bars with a forecast of -10 or lower, forward returns over 5, 10 and 20 bars are higher than on other bars, in all four windows with events, while the 1-bar return is lower on average but points the claimed way in only one window.
+
+        '
+      test: q8
+      evidence:
+      - q8:horizons.5.effect=0.00636
+      - q8:horizons.20.windows_claimed_sign=4
+      floors_met: true
+      spec:
+        spec_hash: 8f8d57f1c1019efdd854af14d602f28bc917ff01bb6625a2ad0713aa25d62b73
+        selector:
+          kind: event
+          field: forecast
+          op: <=
+          value: -10
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 1
+          - 5
+          - 10
+          - 20
+        baseline:
+          kind: complement
+        statistic: mean_diff
+        direction: greater
+        floor:
+          min_events: 100
+          min_windows: 4
+      ref: runs/run_098/artifacts/analyst/trade_efficiency.yaml
+    finding:
+      approximation:
+        line: 'this run tested an approximation of the idea: Quantity d_t = close_t / max(close over last 250 bars incl. t) - 1, the distance below the 250-bar high -> DonchianBreakoutComponent(period 250, scaling_factor 1.0): position of close_t in the 250-bar close range, (close - min) / (max - min), mapped to [-1, +1]; forecast = clip(80 x (d_t + 0.25), -20, +20) -> standardise(window 60, min_periods 20), default target 10 and cap 20, applied to the Donchian position; Forecast from bar t is applied from bar t+1 or later; no same-bar fill. (The card asks 1b to confirm the fill convention.) -> Forecast from bar t, computed on the close of bar t, traded at that bar''s close, as the engine does'
+        n_deviations: 3
+        deviations:
+        - clause: Quantity d_t = close_t / max(close over last 250 bars incl. t) - 1, the distance below the 250-bar high
+          built_instead: 'DonchianBreakoutComponent(period 250, scaling_factor 1.0): position of close_t in the 250-bar close range, (close - min) / (max - min), mapped to [-1, +1]'
+          missing: A component that outputs distance to a rolling maximum (close / rolling max - 1); none exists in COMPONENT_CATALOG.md
+          effect: The position also depends on the 250-bar low, so the same distance below the high scores differently in wide and narrow ranges. Zero sits at mid-range, not at 25 percent below the high. The two measures are correlated but not identical.
+        - clause: forecast = clip(80 x (d_t + 0.25), -20, +20)
+          built_instead: standardise(window 60, min_periods 20), default target 10 and cap 20, applied to the Donchian position
+          missing: A fixed linear map with the card's anchors (+20 at the high, 0 at 25 percent below, -20 at 50 percent below or further)
+          effect: The forecast is scaled to the trailing mean absolute value, so its level drifts with recent range. Ordering and sign are kept, but the size of a position at a given distance differs from the card's.
+        - clause: Forecast from bar t is applied from bar t+1 or later; no same-bar fill. (The card asks 1b to confirm the fill convention.)
+          built_instead: Forecast from bar t, computed on the close of bar t, traded at that bar's close, as the engine does
+          missing: A one-bar execution delay. The config has no key or op that lags the forecast, and STRATEGY_DESIGN_GUIDE documents the fill at the signal bar's close.
+          effect: Strategy P&L may be optimistic because the position is taken at the close that generated the signal. The forward-return rank IC claim is measured on subsequent bars and is not changed by the fill timing.
+        ref: artifacts/deviations.yaml
+      finding_id: F-run_098-1
+      label: measured, not proven
+      status: measured
+      reason: null
+      information_only: true
+      statement: 'On BTC daily bars, a higher forecast (closer to the 250-day high) is followed by higher returns over the next 1 and 2 bars. The top 30 percent of forecast days have higher next-day returns than other days.
+
+        '
+      kind: direction_forecast
+      block_visibility: ok
+      manifest_kind: forecast
+      claim_revision: not_needed
+      tests:
+      - name: anchor_rank_ic
+        spec_hash: 41fb7a032482a3ac23566df9fe907c0f4d87cda6f2f6390825956e90ea628711
+        statistic: rank_ic
+        direction: greater
+        outcome: fwd_return
+        spec:
+          selector:
+            kind: all
+          outcome:
+            kind: fwd_return
+            horizons:
+            - 1
+            - 2
+          statistic: rank_ic
+          direction: greater
+          floor:
+            min_events: 100
+            min_windows: 4
+          consistency:
+            unit: window
+            min_same_sign: 4
+      - name: near_high_top30
+        spec_hash: 805bf8437b41c3b0211bb546250c2583d3b6f2f307e2259ebb7ebca5550b204f
+        statistic: mean_diff
+        direction: greater
+        outcome: fwd_return
+        spec:
+          selector:
+            kind: quantile
+            field: forecast
+            side: top
+            q: 0.3
+            lookback: 60
+          outcome:
+            kind: fwd_return
+            horizons:
+            - 1
+            - 2
+          baseline:
+            kind: complement
+          statistic: mean_diff
+          direction: greater
+          floor:
+            min_events: 100
+            min_windows: 4
+      scope:
+        venue: kraken
+        product: perp
+        price_proxy: true
+        funding_modelled: false
+        timeframe: 1d
+        symbols:
+        - BTCUSD
+        period:
+          start: '2018-05-01'
+          end: '2021-12-31'
+        windows_sha256: 7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+        windows_vary: false
+      result:
+        per_variant:
+          asset_ada:
+            trial_id: run_098:asset_ada
+            status: not_measured
+            reason: variant_failed
+          asset_link:
+            trial_id: null
+            status: not_measured
+            reason: variant_not_tested
+          base:
+            trial_id: run_098:base
+            status: measured
+            tests:
+              anchor_rank_ic:
+                status: measured
+                spec_hash: 41fb7a032482a3ac23566df9fe907c0f4d87cda6f2f6390825956e90ea628711
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.00399482
+                    n_events: 724
+                    windows_claimed_sign: 1
+                    windows_with_value: 6
+                  '2':
+                    effect: 0.0103664
+                    n_events: 718
+                    windows_claimed_sign: 1
+                    windows_with_value: 6
+              near_high_top30:
+                status: measured
+                spec_hash: 805bf8437b41c3b0211bb546250c2583d3b6f2f307e2259ebb7ebca5550b204f
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.00143458
+                    n_events: 129
+                    windows_claimed_sign: 0
+                    windows_with_value: 6
+                  '2':
+                    effect: 0.00237467
+                    n_events: 127
+                    windows_claimed_sign: 0
+                    windows_with_value: 6
+            windows_sha256: 7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+          design_lookback_120:
+            trial_id: run_098:design_lookback_120
+            status: measured
+            tests:
+              anchor_rank_ic:
+                status: measured
+                spec_hash: 41fb7a032482a3ac23566df9fe907c0f4d87cda6f2f6390825956e90ea628711
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.0364352
+                    n_events: 724
+                    windows_claimed_sign: 2
+                    windows_with_value: 6
+                  '2':
+                    effect: 0.0576623
+                    n_events: 718
+                    windows_claimed_sign: 2
+                    windows_with_value: 6
+              near_high_top30:
+                status: measured
+                spec_hash: 805bf8437b41c3b0211bb546250c2583d3b6f2f307e2259ebb7ebca5550b204f
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.001213
+                    n_events: 102
+                    windows_claimed_sign: 1
+                    windows_with_value: 5
+                  '2':
+                    effect: 0.0019742
+                    n_events: 102
+                    windows_claimed_sign: 1
+                    windows_with_value: 5
+            windows_sha256: 7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+      trial_ids:
+      - run_098:base
+      - run_098:design_lookback_120
+      source:
+        run_id: run_098
+        hypothesis_id: DAILY_ANCHOR_52W_PROXIMITY_1D
+        claim_status_ref: runs/run_098/artifacts/claim_measurement.yaml
+        claim_test_refs:
+          base: runs/run_098/artifacts/variants/base/claim_test.yaml
+          design_lookback_120: runs/run_098/artifacts/variants/design_lookback_120/claim_test.yaml
+  run_099:
+    run_id: run_099
+    hypothesis_id: DAILY_DONCHIAN_250_LONG_ONLY_VOLTARGET_1D_BTC
+    legacy: false
+    recorded_at: '2026-10-22T11:39:04.011519+00:00'
+    idea_status: refuted
+    idea_status_reason: at least one criterion FAILed with sufficient data on at least one variant
+    idea_status_ref: runs/run_099/artifacts/idea_status.yaml
+    engineering_fault: null
+    engineering_fault_detail: []
+    grid:
+      ref: runs/run_099/artifacts/grid_evaluation.yaml
+      criteria:
+      - forecast_ic_median
+      - residual_ic
+      variants:
+      - asset_ltc
+      - base
+      - design_no_vol_target
+      cells:
+        forecast_ic_median:
+          asset_ltc:
+            result: INCONCLUSIVE
+            n_windows: 4
+            n_trades: 4
+            reason: n_windows=4 < floor.min_windows=5
+          base:
+            result: FAIL
+            value: -0.076797
+            threshold: 0.02
+            n_windows: 5
+            n_trades: 12
+          design_no_vol_target:
+            result: FAIL
+            value: -0.070288
+            threshold: 0.02
+            n_windows: 5
+            n_trades: 80
+        residual_ic:
+          asset_ltc:
+            result: FAIL
+            value: -0.018008
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 4
+          base:
+            result: FAIL
+            value: -0.018521
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 12
+          design_no_vol_target:
+            result: FAIL
+            value: -0.010024
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 80
+      counts:
+        PASS: 0
+        FAIL: 5
+        INCONCLUSIVE: 1
+    variants:
+      asset_ltc:
+        status: tested
+        reason: null
+        config_ref: runs/run_099/artifacts/variants/asset_ltc/strategy_config.json
+        forecast_hash: 0ca7e24cc123060b9ac1a38af87d44da08dafa4ed9d7c321c2a61006b6847aa3
+        symbols:
+        - LTCUSD
+        n_windows: 6
+        trial_id: run_099:asset_ltc
+      base:
+        status: tested
+        reason: null
+        config_ref: runs/run_099/artifacts/variants/base/strategy_config.json
+        forecast_hash: 0ca7e24cc123060b9ac1a38af87d44da08dafa4ed9d7c321c2a61006b6847aa3
+        symbols:
+        - BTCUSD
+        n_windows: 6
+        trial_id: run_099:base
+      design_no_vol_target:
+        status: tested
+        reason: null
+        config_ref: runs/run_099/artifacts/variants/design_no_vol_target/strategy_config.json
+        forecast_hash: 767df308eb22c20d2550d7e0cccd60982df6f5a7a507d507da25203a34ef83f4
+        symbols:
+        - BTCUSD
+        n_windows: 6
+        trial_id: run_099:design_no_vol_target
+    trial_ids:
+    - run_099:asset_ltc
+    - run_099:base
+    - run_099:design_no_vol_target
+    protocol_ref: protocols/run_099_generated.json
+    timeframe: 1d
+    proposals:
+    - category: profitability
+      ref: runs/run_099/artifacts/proposals/profitability.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'', ''trade_efficiency'']) replace the readers; no lens writes profitability'
+    - category: trade_efficiency
+      ref: runs/run_099/artifacts/proposals/trade_efficiency.yaml
+      proposal_ids: []
+      count: 0
+    - category: forecast_power
+      ref: runs/run_099/artifacts/proposals/forecast_power.yaml
+      proposal_ids: []
+      count: 0
+    - category: regime_power
+      ref: runs/run_099/artifacts/proposals/regime_power.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'', ''trade_efficiency'']) replace the readers; no lens writes regime_power'
+    - category: component_attribution
+      ref: runs/run_099/artifacts/proposals/component_attribution.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'', ''trade_efficiency'']) replace the readers; no lens writes component_attribution'
+    registry:
+      skipped: not_validated
+    profit_bars:
+      ref: runs/run_099/artifacts/profit_bars_evaluation.yaml
+      scope: every_backtest
+      result: FAIL
+      passing: []
+      variants:
+        asset_ltc:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: PASS
+              actual: 0.47450214305818766
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.022537825372349773
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: PASS
+              actual: 10.014074473856605
+              threshold: 20.0
+            avg_daily_return_min:
+              result: FAIL
+              actual: 0.00014338544874255177
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: FAIL
+              actual: -0.1491193178180396
+              threshold: 0.0
+            trade_frequency_min:
+              result: FAIL
+              actual: 0.0013698630136986301
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: FAIL
+              actual: -0.8689972325851785
+              threshold: 0.0
+        base:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: PASS
+              actual: 0.8378524187846568
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.06085586230897666
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: PASS
+              actual: 12.789629153755621
+              threshold: 20.0
+            avg_daily_return_min:
+              result: FAIL
+              actual: 0.000446295856837176
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: PASS
+              actual: 0.016160325930727693
+              threshold: 0.0
+            trade_frequency_min:
+              result: FAIL
+              actual: 0.00821917808219178
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: PASS
+              actual: 0.34171314459801627
+              threshold: 0.0
+        design_no_vol_target:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: PASS
+              actual: 0.6715813598011465
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.0396993970856821
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 42.069798457785325
+              threshold: 20.0
+            avg_daily_return_min:
+              result: PASS
+              actual: 0.0011290018506471748
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: FAIL
+              actual: -0.15011073305278255
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.0958904109589041
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: PASS
+              actual: 0.10579551770863937
+              threshold: 0.0
+    profit_bars_reason: null
+    kb_entry_id: grid_run_099
+    fold: B
+    observations:
+    - lens: forecast
+      statement: 'Bars with forecast at or above 4 show lower forward returns than other bars at 1, 5 and 10 bars, and in none of the windows that have such bars does the effect point the claimed way. The window floor is not reached (such bars fall in only two windows).
+
+        '
+      test: q6
+      evidence:
+      - q6:horizons.1.effect=-0.0019116712
+      - q6:horizons.5.effect=-0.0013222797
+      - q6:horizons.10.effect=-0.001853995
+      floors_met: false
+      spec:
+        spec_hash: 9f492989f969c635e73ec76293b3413296500ffc4c203591adf233b4a3660489
+        selector:
+          kind: event
+          field: forecast
+          op: '>='
+          value: 4
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 1
+          - 5
+          - 10
+        baseline:
+          kind: complement
+        statistic: mean_diff
+        direction: greater
+        floor:
+          min_events: 100
+          min_windows: 4
+      ref: runs/run_099/artifacts/analyst/forecast.yaml
+    - lens: forecast
+      statement: 'Bars in the top 20% of the forecast''s own 100-bar range show no higher return at 1 bar and a lower return at 5 bars than other bars. At 20 bars there are only a few events, so the test cannot read that horizon.
+
+        '
+      test: q5
+      evidence:
+      - q5:horizons.1.effect=-3.5955961e-06
+      - q5:horizons.5.effect=-0.0024697194
+      floors_met: false
+      spec:
+        spec_hash: 1db1cd82721781e0bc2deafdce23b167910c1fe0c9e96c245691e7404f6aaf1b
+        selector:
+          kind: quantile
+          field: forecast
+          side: top
+          q: 0.2
+          lookback: 100
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 1
+          - 5
+          - 20
+        baseline:
+          kind: complement
+        statistic: mean_diff
+        direction: greater
+        floor:
+          min_events: 100
+          min_windows: 4
+      ref: runs/run_099/artifacts/analyst/forecast.yaml
+    - lens: trade_efficiency
+      statement: 'The forecast''s rank correlation with forward returns is negative at 5 and 20 bars, in most windows: higher-forecast bars are followed by lower returns over those horizons.
+
+        '
+      test: q9
+      evidence:
+      - q9:horizons.5.effect=-0.023100387
+      - q9:horizons.5.n_events=700
+      - q9:horizons.20.effect=-0.038826816
+      floors_met: true
+      spec:
+        spec_hash: b4ed77c7cb00c0b0d9f978c15ddd85b9d92a19dc8bd1df5d2c4aa565f6090605
+        selector:
+          kind: all
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 5
+          - 20
+        baseline: null
+        statistic: rank_ic
+        direction: less
+        floor:
+          min_events: 100
+          min_windows: 4
+      ref: runs/run_099/artifacts/analyst/trade_efficiency.yaml
+    finding:
+      finding_id: F-run_099-1
+      label: measured, not proven
+      status: measured
+      reason: null
+      information_only: true
+      statement: 'The long-only forecast ranks the next 5 and 20 daily returns positively (higher forecast, higher return), and after a forecast of 8 or more the return over the next 5 bars is lower than on the other bars (half (a) of the run_098 re-run question: whether the strongest long readings are already exhausted at 5 bars).
+
+        '
+      kind: direction_forecast
+      block_visibility: ok
+      manifest_kind: forecast
+      claim_revision: not_needed
+      tests:
+      - name: long_forecast_rank_ic_5_20
+        spec_hash: 322acac88fc9a108cd25d2f4097bc5ab7d5b1e364025359d97acc4b39162237a
+        statistic: rank_ic
+        direction: greater
+        outcome: fwd_return
+        spec:
+          selector:
+            kind: all
+          outcome:
+            kind: fwd_return
+            horizons:
+            - 5
+            - 20
+          baseline: null
+          statistic: rank_ic
+          direction: greater
+          floor:
+            min_windows: 5
+      - name: half_a_strong_long_lower_5
+        spec_hash: 1854af2bfe6b44b988fb2eb4726deb20b5d1a79e6d79e13eb40d01abf9cc62f3
+        statistic: mean_diff
+        direction: less
+        outcome: fwd_return
+        spec:
+          selector:
+            kind: event
+            field: forecast
+            op: '>='
+            value: 8
+          outcome:
+            kind: fwd_return
+            horizons:
+            - 5
+          baseline:
+            kind: complement
+          statistic: mean_diff
+          direction: less
+          floor:
+            min_events: 50
+      scope:
+        venue: kraken
+        product: perp
+        price_proxy: true
+        funding_modelled: false
+        timeframe: 1d
+        symbols:
+        - BTCUSD
+        - LTCUSD
+        period:
+          start: '2018-05-01'
+          end: '2021-12-31'
+        windows_sha256: 7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+        windows_vary: false
+      result:
+        per_variant:
+          asset_ltc:
+            trial_id: run_099:asset_ltc
+            status: measured
+            tests:
+              long_forecast_rank_ic_5_20:
+                status: measured
+                spec_hash: 322acac88fc9a108cd25d2f4097bc5ab7d5b1e364025359d97acc4b39162237a
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '5':
+                    effect: 0.0615101
+                    n_events: 700
+                    windows_claimed_sign: 0
+                    windows_with_value: 4
+                  '20':
+                    effect: 0.183235
+                    n_events: 610
+                    windows_claimed_sign: 0
+                    windows_with_value: 4
+              half_a_strong_long_lower_5:
+                status: no_events
+                spec_hash: 1854af2bfe6b44b988fb2eb4726deb20b5d1a79e6d79e13eb40d01abf9cc62f3
+                reason: the selector matched no bars
+            windows_sha256: 7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+          base:
+            trial_id: run_099:base
+            status: measured
+            tests:
+              long_forecast_rank_ic_5_20:
+                status: measured
+                spec_hash: 322acac88fc9a108cd25d2f4097bc5ab7d5b1e364025359d97acc4b39162237a
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '5':
+                    effect: -0.0231004
+                    n_events: 700
+                    windows_claimed_sign: 0
+                    windows_with_value: 5
+                  '20':
+                    effect: -0.0388268
+                    n_events: 610
+                    windows_claimed_sign: 1
+                    windows_with_value: 5
+              half_a_strong_long_lower_5:
+                status: measured
+                spec_hash: 1854af2bfe6b44b988fb2eb4726deb20b5d1a79e6d79e13eb40d01abf9cc62f3
+                peak_horizon: null
+                floor_not_met:
+                - min_events=50 at h=5 (have 21)
+                horizons:
+                  '5':
+                    effect: 0.0159876
+                    n_events: 21
+                    windows_claimed_sign: 0
+                    windows_with_value: 1
+            windows_sha256: 7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+          design_no_vol_target:
+            trial_id: run_099:design_no_vol_target
+            status: measured
+            tests:
+              long_forecast_rank_ic_5_20:
+                status: measured
+                spec_hash: 322acac88fc9a108cd25d2f4097bc5ab7d5b1e364025359d97acc4b39162237a
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '5':
+                    effect: -0.0142204
+                    n_events: 700
+                    windows_claimed_sign: 0
+                    windows_with_value: 5
+                  '20':
+                    effect: -0.0321455
+                    n_events: 610
+                    windows_claimed_sign: 0
+                    windows_with_value: 5
+              half_a_strong_long_lower_5:
+                status: measured
+                spec_hash: 1854af2bfe6b44b988fb2eb4726deb20b5d1a79e6d79e13eb40d01abf9cc62f3
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '5':
+                    effect: 0.00623656
+                    n_events: 268
+                    windows_claimed_sign: 3
+                    windows_with_value: 3
+            windows_sha256: 7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+      trial_ids:
+      - run_099:asset_ltc
+      - run_099:base
+      - run_099:design_no_vol_target
+      source:
+        run_id: run_099
+        hypothesis_id: DAILY_DONCHIAN_250_LONG_ONLY_VOLTARGET_1D_BTC
+        claim_status_ref: runs/run_099/artifacts/claim_measurement.yaml
+        claim_test_refs:
+          asset_ltc: runs/run_099/artifacts/variants/asset_ltc/claim_test.yaml
+          base: runs/run_099/artifacts/variants/base/claim_test.yaml
+          design_no_vol_target: runs/run_099/artifacts/variants/design_no_vol_target/claim_test.yaml

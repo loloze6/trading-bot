@@ -1,0 +1,494 @@
+protocol_run_id: 20261022T113407Z_a2236b7d
+config_sha256: a2236b7d24b3f610f2c4d1d25dba001f26eecf5c21a2f5b35bef02fc5ed7c704
+protocol_file: runs\run_099\artifacts\variants\asset_ltc\protocol.json
+venue:
+  venue: kraken
+  product: perp
+  market_type: futures
+  price_source: kraken.spot
+  price_proxy: true
+  funding_modelled: false
+  label: Kraken spot prices as a proxy for Kraken futures; funding not modelled
+  exchange: kraken
+  fee_bps: 5.0
+results:
+- symbol: LTCUSD
+  window: 2018-05
+  run_id: 20261022T113414Z_c3c83fd6
+  core:
+    net_return_pct: 0.0
+    sharpe: null
+    max_drawdown_pct: 0.0
+    trade_count: 0
+    win_rate: 0.0
+    avg_trade_net_pnl: 0.0
+    fees_paid: 0
+    gross_pnl: 0
+    net_pnl: 0
+    cost_drag_pct: null
+    forecast_return_corr: null
+    forecast_return_corr_pvalue: null
+    forecast_return_corr_pvalue_block_adjusted: null
+    forecast_return_corr_n_eff: null
+    forecast_return_corr_all_bars: null
+    forecast_return_corr_all_bars_pvalue_block_adjusted: null
+    forecast_return_corr_all_bars_n_eff: null
+    gap_skipped_pairs: 0
+    gap_skipped_pct: 0.0
+    avg_trade_duration_bars: null
+    sigma_bar_bps: 432.6797
+    sigma_bar_bps_is_placeholder: false
+    post_backtest_cost_check: null
+    post_backtest_route: null
+    post_backtest_route_rationale: null
+    real_round_trip_cost_bps: null
+    real_gross_edge_bps_per_trade: null
+    post_backtest_cost_check_real: null
+    post_backtest_route_real: null
+    post_backtest_route_real_rationale: null
+    sharpe_annualization: sqrt(365) for daily Sharpe (crypto, 365 days/year)
+  per_regime:
+    unknown:
+      bar_count: 123
+      avg_forecast: 0.0
+  regime_validity:
+    unknown:
+      forward_return_mean: -0.00617034
+      forward_return_std: 0.04326797
+      n_bars: 122
+      informative: true
+  data_quality:
+    gaps_detected: 2
+    events:
+    - symbol: LTCUSD
+      timestamp: '2016-09-11 00:00:00'
+      previous_timestamp: '2016-09-09 00:00:00'
+      expected_step_seconds: 86400
+      actual_delta_seconds: 172800.0
+      bars_missing: 1
+      tier: ignore
+    - symbol: LTCUSD
+      timestamp: '2018-01-13 00:00:00'
+      previous_timestamp: '2018-01-11 00:00:00'
+      expected_step_seconds: 86400
+      actual_delta_seconds: 172800.0
+      bars_missing: 1
+      tier: ignore
+  nan_forecast: null
+  component_errors:
+    count: 0
+    samples: []
+- symbol: LTCUSD
+  window: 2019-01
+  run_id: 20261022T113420Z_c3c83fd6
+  core:
+    net_return_pct: -3.505
+    sharpe: null
+    max_drawdown_pct: -3.526
+    trade_count: 1
+    win_rate: 0.0
+    avg_trade_net_pnl: -35.262113
+    fees_paid: 0.189095
+    gross_pnl: -35.073018
+    net_pnl: -35.262113
+    cost_drag_pct: 0.5391
+    forecast_return_corr: -0.105678
+    forecast_return_corr_pvalue: 0.465142
+    forecast_return_corr_pvalue_block_adjusted: 0.468763
+    forecast_return_corr_n_eff: 50
+    forecast_return_corr_all_bars: -0.091491
+    forecast_return_corr_all_bars_pvalue_block_adjusted: 0.324431
+    forecast_return_corr_all_bars_n_eff: 119
+    gap_skipped_pairs: 0
+    gap_skipped_pct: 0.0
+    avg_trade_duration_bars: 20.0
+    sigma_bar_bps: 583.6539
+    sigma_bar_bps_is_placeholder: false
+    post_backtest_cost_check:
+      estimated_gross_edge_bps_per_trade: 275.8386
+      cost_bps_per_trade: 18.5
+      edge_to_cost_ratio: 14.9102
+      safety_factor_required: 2.0
+      pass: true
+    post_backtest_route: kill_no_ic
+    post_backtest_route_rationale: Active-bar IC=-0.1057, p=0.4688 >= 0.1. Signal
+      has no detectable directional content.
+    real_round_trip_cost_bps: 10.0
+    real_gross_edge_bps_per_trade: -1697.7924
+    post_backtest_cost_check_real:
+      estimated_gross_edge_bps_per_trade: -1697.7924
+      cost_bps_per_trade: 10.0
+      edge_to_cost_ratio: 169.7792
+      safety_factor_required: 2.0
+      pass: true
+      basis: real
+    post_backtest_route_real: inconclusive_insufficient_data
+    post_backtest_route_real_rationale: 'Insufficient data to reach a verdict: n_trades=1
+      < min_n_trades=5 (too few completed trades to trust an average built from them).'
+    sharpe_annualization: sqrt(365) for daily Sharpe (crypto, 365 days/year)
+  per_regime:
+    unknown:
+      bar_count: 120
+      avg_forecast: 0.398684
+      trade_count: 1
+      total_net_pnl: -35.262113
+  regime_validity:
+    unknown:
+      forward_return_mean: 0.00867913
+      forward_return_std: 0.05836539
+      n_bars: 119
+      informative: true
+  data_quality:
+    gaps_detected: 1
+    events:
+    - symbol: LTCUSD
+      timestamp: '2018-01-13 00:00:00'
+      previous_timestamp: '2018-01-11 00:00:00'
+      expected_step_seconds: 86400
+      actual_delta_seconds: 172800.0
+      bars_missing: 1
+      tier: ignore
+  nan_forecast: null
+  component_errors:
+    count: 0
+    samples: []
+- symbol: LTCUSD
+  window: 2019-09
+  run_id: 20261022T113426Z_c3c83fd6
+  core:
+    net_return_pct: 0.0
+    sharpe: null
+    max_drawdown_pct: 0.0
+    trade_count: 0
+    win_rate: 0.0
+    avg_trade_net_pnl: 0.0
+    fees_paid: 0
+    gross_pnl: 0
+    net_pnl: 0
+    cost_drag_pct: null
+    forecast_return_corr: null
+    forecast_return_corr_pvalue: null
+    forecast_return_corr_pvalue_block_adjusted: null
+    forecast_return_corr_n_eff: null
+    forecast_return_corr_all_bars: null
+    forecast_return_corr_all_bars_pvalue_block_adjusted: null
+    forecast_return_corr_all_bars_n_eff: null
+    gap_skipped_pairs: 0
+    gap_skipped_pct: 0.0
+    avg_trade_duration_bars: null
+    sigma_bar_bps: 385.7759
+    sigma_bar_bps_is_placeholder: false
+    post_backtest_cost_check: null
+    post_backtest_route: null
+    post_backtest_route_rationale: null
+    real_round_trip_cost_bps: null
+    real_gross_edge_bps_per_trade: null
+    post_backtest_cost_check_real: null
+    post_backtest_route_real: null
+    post_backtest_route_real_rationale: null
+    sharpe_annualization: sqrt(365) for daily Sharpe (crypto, 365 days/year)
+  per_regime:
+    unknown:
+      bar_count: 122
+      avg_forecast: 0.0
+  regime_validity:
+    unknown:
+      forward_return_mean: -0.00316049
+      forward_return_std: 0.03857759
+      n_bars: 121
+      informative: true
+  data_quality:
+    gaps_detected: 1
+    events:
+    - symbol: LTCUSD
+      timestamp: '2018-01-13 00:00:00'
+      previous_timestamp: '2018-01-11 00:00:00'
+      expected_step_seconds: 86400
+      actual_delta_seconds: 172800.0
+      bars_missing: 1
+      tier: ignore
+  nan_forecast: null
+  component_errors:
+    count: 0
+    samples: []
+- symbol: LTCUSD
+  window: 2020-05
+  run_id: 20261022T113432Z_c3c83fd6
+  core:
+    net_return_pct: -2.153
+    sharpe: null
+    max_drawdown_pct: -2.178
+    trade_count: 1
+    win_rate: 0.0
+    avg_trade_net_pnl: -21.784331
+    fees_paid: 0.213764
+    gross_pnl: -21.570567
+    net_pnl: -21.784331
+    cost_drag_pct: 0.991
+    forecast_return_corr: -0.39667
+    forecast_return_corr_pvalue: 0.036627
+    forecast_return_corr_pvalue_block_adjusted: 0.047328
+    forecast_return_corr_n_eff: 28
+    forecast_return_corr_all_bars: -0.199654
+    forecast_return_corr_all_bars_pvalue_block_adjusted: 0.029408
+    forecast_return_corr_all_bars_n_eff: 122
+    gap_skipped_pairs: 0
+    gap_skipped_pct: 0.0
+    avg_trade_duration_bars: 14.0
+    sigma_bar_bps: 357.5751
+    sigma_bar_bps_is_placeholder: false
+    post_backtest_cost_check:
+      estimated_gross_edge_bps_per_trade: 530.7141
+      cost_bps_per_trade: 18.5
+      edge_to_cost_ratio: 28.6873
+      safety_factor_required: 2.0
+      pass: true
+    post_backtest_route: refine_inverted_ic
+    post_backtest_route_rationale: Active-bar IC=-0.3967 (negative, significant at
+      p=0.0473). Signal direction is inverted -- flip polarity.
+    real_round_trip_cost_bps: 10.0
+    real_gross_edge_bps_per_trade: -960.8578
+    post_backtest_cost_check_real:
+      estimated_gross_edge_bps_per_trade: -960.8578
+      cost_bps_per_trade: 10.0
+      edge_to_cost_ratio: 96.0858
+      safety_factor_required: 2.0
+      pass: true
+      basis: real
+    post_backtest_route_real: inconclusive_insufficient_data
+    post_backtest_route_real_rationale: 'Insufficient data to reach a verdict: n_trades=1
+      < min_n_trades=5 (too few completed trades to trust an average built from them).'
+    sharpe_annualization: sqrt(365) for daily Sharpe (crypto, 365 days/year)
+  per_regime:
+    unknown:
+      bar_count: 123
+      avg_forecast: 0.155865
+      trade_count: 1
+      total_net_pnl: -21.784331
+  regime_validity:
+    unknown:
+      forward_return_mean: 0.00274793
+      forward_return_std: 0.03575751
+      n_bars: 122
+      informative: true
+  data_quality:
+    gaps_detected: 0
+    events: []
+  nan_forecast: null
+  component_errors:
+    count: 0
+    samples: []
+- symbol: LTCUSD
+  window: 2021-01
+  run_id: 20261022T113438Z_c3c83fd6
+  core:
+    net_return_pct: 16.265
+    sharpe: null
+    max_drawdown_pct: 0.0
+    trade_count: 2
+    win_rate: 100.0
+    avg_trade_net_pnl: 81.15761
+    fees_paid: 0.396603
+    gross_pnl: 162.711824
+    net_pnl: 162.315221
+    cost_drag_pct: 0.2437
+    forecast_return_corr: -0.044395
+    forecast_return_corr_pvalue: 0.631645
+    forecast_return_corr_pvalue_block_adjusted: 0.632548
+    forecast_return_corr_n_eff: 119
+    forecast_return_corr_all_bars: -0.044395
+    forecast_return_corr_all_bars_pvalue_block_adjusted: 0.632548
+    forecast_return_corr_all_bars_n_eff: 119
+    gap_skipped_pairs: 0
+    gap_skipped_pct: 0.0
+    avg_trade_duration_bars: 64.5
+    sigma_bar_bps: 600.6247
+    sigma_bar_bps_is_placeholder: false
+    post_backtest_cost_check:
+      estimated_gross_edge_bps_per_trade: 214.1495
+      cost_bps_per_trade: 18.5
+      edge_to_cost_ratio: 11.5757
+      safety_factor_required: 2.0
+      pass: true
+    post_backtest_route: kill_no_ic
+    post_backtest_route_rationale: Active-bar IC=-0.0444, p=0.6325 >= 0.1. Signal
+      has no detectable directional content.
+    real_round_trip_cost_bps: 10.0
+    real_gross_edge_bps_per_trade: 6218.4378
+    post_backtest_cost_check_real:
+      estimated_gross_edge_bps_per_trade: 6218.4378
+      cost_bps_per_trade: 10.0
+      edge_to_cost_ratio: 621.8438
+      safety_factor_required: 2.0
+      pass: true
+      basis: real
+    post_backtest_route_real: inconclusive_insufficient_data
+    post_backtest_route_real_rationale: 'Insufficient data to reach a verdict: n_trades=2
+      < min_n_trades=5 (too few completed trades to trust an average built from them).'
+    sharpe_annualization: sqrt(365) for daily Sharpe (crypto, 365 days/year)
+  per_regime:
+    unknown:
+      bar_count: 120
+      avg_forecast: 2.209079
+      trade_count: 2
+      total_net_pnl: 162.31522
+  regime_validity:
+    unknown:
+      forward_return_mean: 0.00822379
+      forward_return_std: 0.06006247
+      n_bars: 119
+      informative: true
+  data_quality:
+    gaps_detected: 0
+    events: []
+  nan_forecast: null
+  component_errors:
+    count: 0
+    samples: []
+- symbol: LTCUSD
+  window: 2021-09
+  run_id: 20261022T113444Z_c3c83fd6
+  core:
+    net_return_pct: 0.0
+    sharpe: null
+    max_drawdown_pct: 0.0
+    trade_count: 0
+    win_rate: 0.0
+    avg_trade_net_pnl: 0.0
+    fees_paid: 0
+    gross_pnl: 0
+    net_pnl: 0
+    cost_drag_pct: null
+    forecast_return_corr: -0.510256
+    forecast_return_corr_pvalue: 0.241978
+    forecast_return_corr_pvalue_block_adjusted: 0.307486
+    forecast_return_corr_n_eff: 7
+    forecast_return_corr_all_bars: -0.135819
+    forecast_return_corr_all_bars_pvalue_block_adjusted: 0.140112
+    forecast_return_corr_all_bars_n_eff: 121
+    gap_skipped_pairs: 0
+    gap_skipped_pct: 0.0
+    avg_trade_duration_bars: null
+    sigma_bar_bps: 529.1763
+    sigma_bar_bps_is_placeholder: false
+    post_backtest_cost_check: null
+    post_backtest_route: null
+    post_backtest_route_rationale: null
+    real_round_trip_cost_bps: null
+    real_gross_edge_bps_per_trade: null
+    post_backtest_cost_check_real: null
+    post_backtest_route_real: null
+    post_backtest_route_real_rationale: null
+    sharpe_annualization: sqrt(365) for daily Sharpe (crypto, 365 days/year)
+  per_regime:
+    unknown:
+      bar_count: 122
+      avg_forecast: 0.02635
+  regime_validity:
+    unknown:
+      forward_return_mean: -0.00035561
+      forward_return_std: 0.05291763
+      n_bars: 121
+      informative: true
+  data_quality:
+    gaps_detected: 0
+    events: []
+  nan_forecast: null
+  component_errors:
+    count: 0
+    samples: []
+per_symbol_summary:
+  LTCUSD:
+    median_sharpe: null
+    max_abs_drawdown_pct: 3.526
+    min_trade_count: 0
+    zero_trade_slot_pct: 50.0
+verdict: null
+verdict_reason: 'legacy promote/kill/refine verdict not computed (--legacy-verdict-retired:
+  config_direct_authoring + verdict_routing_retired -- the grid and the profit bars
+  decide, C5.6 / D-043)'
+hypothesis_verdict:
+  verdict: null
+  criteria_results: []
+  verdict_reason: '--diagnostics-only: no validation protocol, no rule set -- diagnostics
+    only, no verdict'
+  diagnostics:
+    median_gross_pnl: 0.0
+    median_cost_drag_pct: 0.5391
+    median_forecast_return_corr: -0.2512
+    median_avg_trade_duration_bars: 20.0
+    uninformative_regimes: []
+    win_rate_vs_sharpe: N/A (no rule set)
+    below_floor_pct: 100.0
+    post_backtest_route_real: inconclusive_insufficient_data
+    post_backtest_route_real_tied: false
+    cost_dominated_real: false
+    per_trade_expectancy_bps:
+      mean: 263.1719
+      se: 407.6272
+      t_stat: 0.6456
+      n: 4
+    zero_trade_slot_pct: 50.0
+    fee_reduction_metrics:
+      lookback_bars: 6
+      combine_nearby_trades:
+        same_direction_reentry_rate: 0.0
+        avg_reentry_gap_bars: null
+      exit_later:
+        avg_post_exit_drift_pct: 2.5764
+        pct_better_exit_1bar_later: 0.0
+      enter_earlier:
+        avg_pre_entry_drift_pct: 14.4487
+        pct_better_entry_1bar_earlier: 100.0
+      trade_less_often:
+        boundary_recross_rate: null
+        frequency_vs_volatility_ratio: 0.108838
+trade_diagnostics_summary:
+  mae_mfe_ratio_median: 2.999
+  entry_efficiency_median: -0.0997
+  exit_efficiency_median: -1.7248
+  win_rate_net: 50.0
+  holding_period_distribution:
+    p10_bars: 10
+    p50_bars: 14
+    p90_bars: 20
+  pnl_concentration:
+    pct_pnl_from_top_decile_trades: 136.49
+    pct_pnl_from_worst_decile_trades: -33.5
+  exit_reason_breakdown:
+    signal_flip_pct: 25.0
+    stop_loss_pct: 0.0
+    time_stop_pct: 0.0
+    end_of_window_pct: 75.0
+    inferred_classification_pct: 25.0
+  stop_loss_recovery_rate: 0.0
+  per_trade_expectancy_bps:
+    mean: 263.1719
+    se: 407.6272
+    t_stat: 0.6456
+    n: 4
+  zero_trade_slot_pct: 50.0
+  fee_reduction_metrics:
+    lookback_bars: 6
+    combine_nearby_trades:
+      same_direction_reentry_rate: 0.0
+      avg_reentry_gap_bars: null
+    exit_later:
+      avg_post_exit_drift_pct: 2.5764
+      pct_better_exit_1bar_later: 0.0
+    enter_earlier:
+      avg_pre_entry_drift_pct: 14.4487
+      pct_better_entry_1bar_earlier: 100.0
+    trade_less_often:
+      boundary_recross_rate: null
+      frequency_vs_volatility_ratio: 0.108838
+  realized_edge_to_cost_ratio: 244.4555
+  cost_components_measured:
+    fees: true
+    funding: false
+    slippage: false
+  realized_edge_to_cost_ratio_all_costs: 98.5295
+  realized_edge_to_cost_ratio_all_costs_missing_trades: 0
+prescreen_backtest_cross_check: null
+episode_blocked_significance_by_symbol:
+  LTCUSD: episode_bootstrap_insufficient_n

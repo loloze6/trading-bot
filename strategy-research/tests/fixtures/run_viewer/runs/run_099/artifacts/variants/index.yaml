@@ -1,0 +1,41 @@
+variants:
+  base:
+    status: validated
+    config_path: artifacts\variants\base\strategy_config.json
+    kind: base
+    symbol: BTCUSD
+    protocol_path: artifacts/variants/base/protocol.json
+    protocol_sha256: ec2ae84bf44c60edfd3fbf0e49eefa336a42634ad07110684752de27643442ef
+    run_protocol_sha256: c3e7d18541ce86872a9cc89e61b93e5276d3d46ff86422d29fba2ef0de913ef3
+  design_no_vol_target:
+    status: validated
+    config_path: artifacts\variants\design_no_vol_target\strategy_config.json
+    kind: design
+    symbol: BTCUSD
+    protocol_path: artifacts/variants/design_no_vol_target/protocol.json
+    protocol_sha256: ec2ae84bf44c60edfd3fbf0e49eefa336a42634ad07110684752de27643442ef
+    run_protocol_sha256: c3e7d18541ce86872a9cc89e61b93e5276d3d46ff86422d29fba2ef0de913ef3
+  asset_ltc:
+    status: validated
+    config_path: artifacts\variants\asset_ltc\strategy_config.json
+    kind: asset
+    symbol: LTCUSDT
+    coverage:
+      venue_symbol: LTCUSD
+      exchange: kraken
+      windows_total: 6
+      windows_run:
+      - 2018-05
+      - 2019-01
+      - 2019-09
+      - 2020-05
+      - 2021-01
+      - 2021-09
+      fraction: 1.0
+      eras:
+      - era_2018_pre_funding
+      - era_2019_2023_full_feed
+      uncovered: []
+    protocol_path: artifacts/variants/asset_ltc/protocol.json
+    protocol_sha256: 6de02738d41cbd8d03990aaada0aca876a661b766015094d28ca12381fed0fcf
+    run_protocol_sha256: c3e7d18541ce86872a9cc89e61b93e5276d3d46ff86422d29fba2ef0de913ef3

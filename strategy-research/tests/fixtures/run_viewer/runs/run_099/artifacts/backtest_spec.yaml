@@ -1,0 +1,44 @@
+hypothesis_id: DAILY_DONCHIAN_250_LONG_ONLY_VOLTARGET_1D_BTC
+status: spec_ready
+config:
+  regime_detector:
+    mode: threshold_rules
+    components: []
+    rules: []
+    default_regime: unknown
+  strategies:
+    regimes:
+      unknown:
+        components:
+        - id: anchor_position
+          class: strategies.strategy_components.DonchianBreakoutComponent
+          params:
+            period: 250
+            scaling_factor: 1.0
+          weight: 1.0
+          transforms:
+          - op: standardise
+            params:
+              window: 250
+              min_periods: 62
+          - op: clip
+            params:
+              min: 0
+              max: 20
+          - op: vol_target
+            params:
+              window: 60
+              target_annual_vol: 0.2
+              periods_per_year: 365
+          - op: clip
+            params:
+              min: 0
+              max: 20
+      trending: null
+      mean_reversion: null
+      chop: null
+config_rationale:
+- hypothesis_claim: the brief's exact strategy config
+  config_choice: code-written from research_brief.yaml (D-110); copied unchanged,
+    no LLM
+component_gap: null

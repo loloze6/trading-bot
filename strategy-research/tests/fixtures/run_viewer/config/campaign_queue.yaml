@@ -1,0 +1,39 @@
+version: '1.0'
+created_at: '2026-07-06'
+queue:
+- id: daily_breadth_fold_b
+  brief_path: briefs/daily_breadth_fold_b.md
+  status: done
+  priority: 1
+  source: operator_ratified
+  relation: new_registration
+  notes: second shot of the daily breadth family, fold B; operator 2026-10-20
+  run_ids:
+  - run_098
+  brief_status: exhausted
+  brief_status_reason: family closed after run_099, outcome C (operator 2026-10-22)
+  brief_status_rule: 'operator direction 2026-10-22: the daily breadth family closed after run_099 (runs/run_099/artifacts/idea_status.yaml: refuted; pre-registered outcome C); reopen by setting brief_status: open and brief_reopened_after: <last entry id>'
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_098/artifacts/idea_status.yaml
+- id: child_run_098_long_only_fold_b
+  brief_path: briefs/child_run_098_long_only_fold_b.md
+  status: done
+  priority: 1
+  source: operator_ratified
+  relation: new_registration
+  notes: child of run_098, the long side of the Donchian 250 position, BTC plus LTC, fold B; operator direction 2026-10-21
+  run_ids:
+  - run_099
+  card_ref: campaign_record/queued_cards/run_098/hypothesis_card_child_long_only.yaml
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_099/artifacts/idea_status.yaml
+  title: '[obsolete] Child of run_098: long-only Donchian 250 position, vol-targeted, BTC, fold B'
+- id: E068_hourly_shock_reversal_kraken_perp__more_4
+  brief_path: briefs/E068_hourly_shock_reversal_kraken_perp.md
+  status: blocked_on_operator_approval
+  priority: 999
+  source: agent
+  notes: 'R2 after run_098: ask step 1a for more hypotheses on open brief E068_hourly_shock_reversal_kraken_perp (see decision_ref)'
+  run_ids: []
+  origin: brief
+  decision_ref: runs/run_098/artifacts/decision_record.yaml

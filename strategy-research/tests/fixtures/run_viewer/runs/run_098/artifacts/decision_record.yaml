@@ -1,0 +1,854 @@
+schema_version: 1
+decided_at: '2026-10-20T19:59:40.226244+00:00'
+trigger:
+  after_run: run_098
+  after_entry: daily_breadth_fold_b
+  idea_status: refuted
+inputs:
+  memory_sha256: c4505cd6afaf749a6bb1c96eab6e60a4d38c02fdf3f8b35ace254e6958820d82
+  registry_revision: 3
+  queue_sha256: 62e1ab4cc438d25cd334d4ca114392cec20258410316c56562ed208dee63f473
+  known_component_classes_sha256: acbcccf80e6ef5f8d95bd1e4fbd19d905e798f4066166b562a52a5b792c4fac8
+  component_requests: 5
+  data_requests: 13
+rules:
+  r1:
+    registry_revision: 3
+    last_composition_revision: null
+    would_fire: false
+    fired: false
+    reason: 'no timeframe has a new set of >= 2 forecast blocks (operator decision
+      3: same exact bar size only; R1 fires once per registry state)'
+    timeframes:
+    - timeframe: 1d
+      timeframe_category: daily
+      block_ids:
+      - L1_DAILY_TREND_SMA100_V3_FOLD_B:run_084
+      registry_hash: null
+      entry_id: null
+      status: single_block
+      reason: fewer than 2 forecast blocks
+    excluded_blocks: []
+  r2:
+    fired: true
+    open_briefs:
+    - E068_hourly_shock_reversal_kraken_perp
+    - L1_daily_trend_basket_sma100
+    - daily_breadth_fold_a
+    - daily_breadth_fold_b
+    - rebase_run_095_standardised_host
+    - L1_daily_trend_basket_sma50
+    - L1_daily_trend_basket_sma200
+    eligible_briefs:
+    - E068_hourly_shock_reversal_kraken_perp
+    - daily_breadth_fold_a
+    - daily_breadth_fold_b
+    - rebase_run_095_standardised_host
+    held_briefs: []
+    exhausted_briefs:
+    - C4_donchian_daily_trend
+    - C4_donchian_daily_trend_kraken_perp
+    - C4_vol_managed_trend
+    - C4_vol_managed_trend_kraken_perp
+    - L1_daily_trend_basket_sma100_v2
+    - L1_daily_trend_basket_sma200_v2
+    - L1_daily_trend_basket_sma200_v3_rerun2
+    - L1_daily_trend_basket_sma50_v2
+    - L1_daily_trend_basket_sma50_v3_rerun1
+    - L1_daily_trend_basket_sma50_v3_rerun2
+    no_new_hypothesis_briefs: []
+    legacy_briefs:
+    - FUNDING_MR_4H_RETEST
+    - FUNDING_MR_DAILY_RETEST
+    - H-041-C-v2
+    - L1_daily_trend_basket_sma100_v3
+    - L1_daily_trend_basket_sma200_v3
+    - L1_daily_trend_basket_sma50_v3
+    - P4_ts_trend
+    - XS_momentum
+    - refold_run_084_fold_C
+    - refold_run_088_fold_C
+    - refold_run_089_fold_C
+    - refold_run_089_fold_D
+    max_consecutive_empty_r2: 2
+    enqueued:
+    - entry_id: E068_hourly_shock_reversal_kraken_perp__more_4
+      owner: E068_hourly_shock_reversal_kraken_perp
+      status: blocked_on_operator_approval
+    - entry_id: daily_breadth_fold_a__more_1
+      owner: daily_breadth_fold_a
+      status: blocked_on_operator_approval
+    - entry_id: daily_breadth_fold_b__more_1
+      owner: daily_breadth_fold_b
+      status: blocked_on_operator_approval
+    - entry_id: rebase_run_095_standardised_host__more_1
+      owner: rebase_run_095_standardised_host
+      status: blocked_on_operator_approval
+    ready:
+    - E068_hourly_shock_reversal_kraken_perp__more_4
+    - daily_breadth_fold_a__more_1
+    - daily_breadth_fold_b__more_1
+    - rebase_run_095_standardised_host__more_1
+    reason: 'nothing scheduled and no eligible candidate: ask step 1a for more hypotheses
+      on 4 eligible open brief(s)'
+    awaiting_approval:
+    - E068_hourly_shock_reversal_kraken_perp__more_4
+    - daily_breadth_fold_a__more_1
+    - daily_breadth_fold_b__more_1
+    - rebase_run_095_standardised_host__more_1
+operator_entries: []
+candidates:
+- candidate_id: forecast_power-run_078-1
+  origin: reader
+  kind: side_finding
+  category: forecast_power
+  source_run: run_078
+  parent_hypothesis_id: HOURLY_SHOCK_CONTINUATION_MOMENTUM_1H_BTC_ETH__trade_efficiency-run_071-4
+  hypothesis_id: HOURLY_SHOCK_CONTINUATION_MOMENTUM_1H_BTC_ETH__trade_efficiency-run_071-4__forecast_power-run_078-1
+  proposal_ref: runs/run_078/artifacts/proposals/forecast_power.yaml#forecast_power-run_078-1
+  collapsed_sources: []
+  scores:
+    confidence_real: 0
+    distance_to_profitable: 1
+    mechanism_plausibility: 1
+    model_id: claude-haiku-5-5
+    rubric_version: forecast_power-analyst-v1
+  resolved_config_sha256: null
+  gates:
+    novelty:
+      exact_match: NOT_EVALUATED
+      matched_runs: []
+      digest_advisory:
+        outcome: not_available
+        family: null
+        family_confidence: null
+        run_ids: []
+    feasibility:
+      result: INFEASIBLE
+      reasons:
+      - 'legacy_no_vehicle: a side finding written with `vehicle: []` before the operator''s
+        2026-10-19 ruling (D-151); deactivated, never ranked, nothing rewritten'
+  eligible: false
+  cost:
+    backtests: null
+    seconds_estimate: null
+    basis: 'not evaluated: legacy_no_vehicle'
+  rank: null
+- candidate_id: forecast_power-run_094-1
+  origin: reader
+  kind: side_finding
+  category: forecast_power
+  source_run: run_094
+  parent_hypothesis_id: OVERNIGHT_GAP_MEAN_REVERSION_1D_BTC
+  hypothesis_id: OVERNIGHT_GAP_MEAN_REVERSION_1D_BTC__forecast_power-run_094-1
+  proposal_ref: runs/run_094/artifacts/proposals/forecast_power.yaml#forecast_power-run_094-1
+  collapsed_sources: []
+  scores:
+    confidence_real: 1
+    distance_to_profitable: 1
+    mechanism_plausibility: 1
+    model_id: claude-haiku-5-5
+    rubric_version: forecast_power-analyst-v1
+  resolved_config_sha256: null
+  gates:
+    novelty:
+      exact_match: NOT_EVALUATED
+      matched_runs: []
+      digest_advisory:
+        outcome: not_available
+        family: null
+        family_confidence: null
+        run_ids: []
+    feasibility:
+      result: INFEASIBLE
+      reasons:
+      - 'legacy_no_vehicle: a side finding written with `vehicle: []` before the operator''s
+        2026-10-19 ruling (D-151); deactivated, never ranked, nothing rewritten'
+  eligible: false
+  cost:
+    backtests: null
+    seconds_estimate: null
+    basis: 'not evaluated: legacy_no_vehicle'
+  rank: null
+- candidate_id: forecast_power-run_095-1
+  origin: reader
+  kind: side_finding
+  category: forecast_power
+  source_run: run_095
+  parent_hypothesis_id: OVERNIGHT_GAP_MEAN_REVERSION_1D_BTC__forecast_power-run_094-1
+  hypothesis_id: OVERNIGHT_GAP_MEAN_REVERSION_1D_BTC__forecast_power-run_094-1__forecast_power-run_095-1
+  proposal_ref: runs/run_095/artifacts/proposals/forecast_power.yaml#forecast_power-run_095-1
+  collapsed_sources: []
+  scores:
+    confidence_real: 2
+    distance_to_profitable: 1
+    mechanism_plausibility: 1
+    model_id: claude-haiku-5-5
+    rubric_version: forecast_power-analyst-v1
+  resolved_config_sha256: null
+  gates:
+    novelty:
+      exact_match: NOT_EVALUATED
+      matched_runs: []
+      digest_advisory:
+        outcome: not_available
+        family: null
+        family_confidence: null
+        run_ids: []
+    feasibility:
+      result: INFEASIBLE
+      reasons:
+      - 'legacy_no_vehicle: a side finding written with `vehicle: []` before the operator''s
+        2026-10-19 ruling (D-151); deactivated, never ranked, nothing rewritten'
+  eligible: false
+  cost:
+    backtests: null
+    seconds_estimate: null
+    basis: 'not evaluated: legacy_no_vehicle'
+  rank: null
+- candidate_id: profitability-run_071-1
+  origin: reader
+  kind: side_finding
+  category: profitability
+  source_run: run_071
+  parent_hypothesis_id: HOURLY_SHOCK_CONTINUATION_MOMENTUM_1H_BTC_ETH
+  hypothesis_id: HOURLY_SHOCK_CONTINUATION_MOMENTUM_1H_BTC_ETH__profitability-run_071-1
+  proposal_ref: runs/run_071/artifacts/proposals/profitability.yaml#profitability-run_071-1
+  collapsed_sources: []
+  scores:
+    confidence_real: 3
+    distance_to_profitable: 2
+    mechanism_plausibility: 2
+    model_id: claude-haiku-4-5-20251001
+    rubric_version: profitability-reading-v1
+  resolved_config_sha256: null
+  gates:
+    novelty:
+      exact_match: NOT_APPLICABLE
+      matched_runs: []
+      note: 'the source run''s config, unchanged: a new claim on it'
+      spec_hashes: []
+      digest_advisory:
+        outcome: novel
+        family: no_library_match
+        family_confidence: structural_indicator_id
+        run_ids: []
+    feasibility:
+      result: INFEASIBLE
+      reasons:
+      - 'next_test_none: missing block ''outcome measuring entry_timing_lag: fwd_return
+        from signal_bar_t vs return that entry_at(bar_t-1)_close would have captured''
+        (recorded as a test request)'
+  eligible: false
+  cost:
+    backtests: 18
+    seconds_estimate: 184
+    basis: 6 windows x 3 variants x 1 symbol(s) x 10.2 s (E-039 S1_FINDINGS.md L113-121)
+  rank: null
+  fold_assignment:
+    fold: B
+    source_folds:
+    - A
+    drawn_from:
+    - B
+    - C
+    - D
+    seed: 15465889679246328828
+- candidate_id: profitability-run_071-2
+  origin: reader
+  kind: side_finding
+  category: profitability
+  source_run: run_071
+  parent_hypothesis_id: HOURLY_SHOCK_CONTINUATION_MOMENTUM_1H_BTC_ETH
+  hypothesis_id: HOURLY_SHOCK_CONTINUATION_MOMENTUM_1H_BTC_ETH__profitability-run_071-2
+  proposal_ref: runs/run_071/artifacts/proposals/profitability.yaml#profitability-run_071-2
+  collapsed_sources: []
+  scores:
+    confidence_real: 3
+    distance_to_profitable: 2
+    mechanism_plausibility: 1
+    model_id: claude-haiku-4-5-20251001
+    rubric_version: profitability-reading-v1
+  resolved_config_sha256: null
+  gates:
+    novelty:
+      exact_match: NOT_APPLICABLE
+      matched_runs: []
+      note: 'the source run''s config, unchanged: a new claim on it'
+      spec_hashes: []
+      digest_advisory:
+        outcome: novel
+        family: no_library_match
+        family_confidence: structural_indicator_id
+        run_ids: []
+    feasibility:
+      result: INFEASIBLE
+      reasons:
+      - 'next_test_none: missing block ''outcome measuring whipsaw_cycles: count of
+        entry/exit/re-entry sequences within N-bar windows, and cumulative PnL per
+        cycle'' (recorded as a test request)'
+  eligible: false
+  cost:
+    backtests: 18
+    seconds_estimate: 184
+    basis: 6 windows x 3 variants x 1 symbol(s) x 10.2 s (E-039 S1_FINDINGS.md L113-121)
+  rank: null
+  fold_assignment:
+    fold: C
+    source_folds:
+    - A
+    drawn_from:
+    - B
+    - C
+    - D
+    seed: 5677147355979868509
+- candidate_id: profitability-run_073-2
+  origin: reader
+  kind: side_finding
+  category: profitability
+  source_run: run_073
+  parent_hypothesis_id: HOURLY_SHOCK_REVERSAL_MEAN_REVERSION_1H_BTC_ETH__trade_efficiency-run_070-1
+  hypothesis_id: HOURLY_SHOCK_REVERSAL_MEAN_REVERSION_1H_BTC_ETH__trade_efficiency-run_070-1__profitability-run_073-2
+  proposal_ref: runs/run_073/artifacts/proposals/profitability.yaml#profitability-run_073-2
+  collapsed_sources: []
+  scores:
+    confidence_real: 3
+    distance_to_profitable: 2
+    mechanism_plausibility: 2
+    model_id: claude-haiku-4-5-20251001
+    rubric_version: profitability-reading-v1
+  resolved_config_sha256: null
+  gates:
+    novelty:
+      exact_match: NOT_APPLICABLE
+      matched_runs: []
+      note: 'the source run''s config, unchanged: a new claim on it'
+      spec_hashes: []
+      digest_advisory:
+        outcome: novel
+        family: shock_reversal_custom_zscore_component
+        family_confidence: structural_indicator_id
+        run_ids: []
+    feasibility:
+      result: INFEASIBLE
+      reasons:
+      - 'next_test_none: missing block ''outcome: premature_exit_ratio (share of trades
+        exiting at loss then reversing within N bars) or trade_duration_efficiency
+        (is exit signal optimal or does every 1-2 bars force an exit before reversal
+        completes?).'' (recorded as a test request)'
+  eligible: false
+  cost:
+    backtests: 18
+    seconds_estimate: 184
+    basis: 6 windows x 3 variants x 1 symbol(s) x 10.2 s (E-039 S1_FINDINGS.md L113-121)
+  rank: null
+  fold_assignment:
+    fold: D
+    source_folds:
+    - A
+    drawn_from:
+    - B
+    - C
+    - D
+    seed: 4652285939142589294
+- candidate_id: regime_power-run_065-1
+  origin: reader
+  kind: new_block
+  category: regime_power
+  source_run: run_065
+  parent_hypothesis_id: donchian_daily_breakout_kraken_perp
+  hypothesis_id: donchian_daily_breakout_kraken_perp__regime_power-run_065-1
+  proposal_ref: runs/run_065/artifacts/proposals/regime_power.yaml#regime_power-run_065-1
+  collapsed_sources: []
+  scores:
+    confidence_real: 2
+    distance_to_profitable: 3
+    mechanism_plausibility: 2
+    model_id: claude-haiku-4-5-20251001
+    rubric_version: regime_power-reader-v2
+  resolved_config_sha256: null
+  gates:
+    novelty:
+      exact_match: NOT_APPLICABLE
+      matched_runs: []
+      note: no config until 1b authors it
+      digest_advisory:
+        outcome: novel
+        family: keltner_channel_trend
+        family_confidence: structural_indicator_id
+        run_ids: []
+    feasibility:
+      result: INFEASIBLE
+      reasons:
+      - 'regime_block_needs_composition: a regime block is validated only as a composition
+        variant (cards A/F, slice 7)'
+  eligible: false
+  cost:
+    backtests: 18
+    seconds_estimate: 184
+    basis: 6 windows x 3 variants x 1 symbol(s) x 10.2 s (E-039 S1_FINDINGS.md L113-121)
+  rank: null
+  fold_assignment:
+    fold: D
+    source_folds:
+    - A
+    drawn_from:
+    - B
+    - C
+    - D
+    seed: 12438482859078718518
+- candidate_id: regime_power-run_066-1
+  origin: reader
+  kind: new_block
+  category: regime_power
+  source_run: run_066
+  parent_hypothesis_id: VOL_MANAGED_TIME_SERIES_MOMENTUM
+  hypothesis_id: VOL_MANAGED_TIME_SERIES_MOMENTUM__regime_power-run_066-1
+  proposal_ref: runs/run_066/artifacts/proposals/regime_power.yaml#regime_power-run_066-1
+  collapsed_sources: []
+  scores:
+    confidence_real: 2
+    distance_to_profitable: 3
+    mechanism_plausibility: 2
+    model_id: claude-haiku-4-5-20251001
+    rubric_version: regime_power-reader-v2
+  resolved_config_sha256: null
+  gates:
+    novelty:
+      exact_match: NOT_APPLICABLE
+      matched_runs: []
+      note: no config until 1b authors it
+      digest_advisory:
+        outcome: novel
+        family: keltner_channel_trend_with_volatility_scaling_wrapper
+        family_confidence: structural_indicator_id
+        run_ids: []
+    feasibility:
+      result: INFEASIBLE
+      reasons:
+      - 'regime_block_needs_composition: a regime block is validated only as a composition
+        variant (cards A/F, slice 7)'
+  eligible: false
+  cost:
+    backtests: 18
+    seconds_estimate: 184
+    basis: 6 windows x 3 variants x 1 symbol(s) x 10.2 s (E-039 S1_FINDINGS.md L113-121)
+  rank: null
+  fold_assignment:
+    fold: D
+    source_folds:
+    - A
+    drawn_from:
+    - B
+    - C
+    - D
+    seed: 5971992067103634341
+- candidate_id: regime_power-run_070-1
+  origin: reader
+  kind: new_block
+  category: regime_power
+  source_run: run_070
+  parent_hypothesis_id: HOURLY_SHOCK_REVERSAL_MEAN_REVERSION_1H_BTC_ETH
+  hypothesis_id: HOURLY_SHOCK_REVERSAL_MEAN_REVERSION_1H_BTC_ETH__regime_power-run_070-1
+  proposal_ref: runs/run_070/artifacts/proposals/regime_power.yaml#regime_power-run_070-1
+  collapsed_sources: []
+  scores:
+    confidence_real: 3
+    distance_to_profitable: 3
+    mechanism_plausibility: 3
+    model_id: claude-haiku-4-5-20251001
+    rubric_version: regime_power-reader-v3
+  resolved_config_sha256: null
+  gates:
+    novelty:
+      exact_match: NOT_APPLICABLE
+      matched_runs: []
+      note: no config until 1b authors it
+      digest_advisory:
+        outcome: novel
+        family: bollinger_bands
+        family_confidence: structural_indicator_id
+        run_ids: []
+    feasibility:
+      result: INFEASIBLE
+      reasons:
+      - 'regime_block_needs_composition: a regime block is validated only as a composition
+        variant (cards A/F, slice 7)'
+  eligible: false
+  cost:
+    backtests: 18
+    seconds_estimate: 184
+    basis: 6 windows x 3 variants x 1 symbol(s) x 10.2 s (E-039 S1_FINDINGS.md L113-121)
+  rank: null
+  fold_assignment:
+    fold: D
+    source_folds:
+    - A
+    drawn_from:
+    - B
+    - C
+    - D
+    seed: 13969150656176039607
+  warnings:
+  - kind: unknown_component_class
+    name: VarianceRatioRegimeComponent
+    suggestion: VarianceRatioComponent
+- candidate_id: trade_efficiency-run_065-1
+  origin: reader
+  kind: patch
+  category: trade_efficiency
+  source_run: run_065
+  parent_hypothesis_id: donchian_daily_breakout_kraken_perp
+  hypothesis_id: donchian_daily_breakout_kraken_perp__trade_efficiency-run_065-1
+  proposal_ref: runs/run_065/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_065-1
+  collapsed_sources: []
+  scores:
+    confidence_real: 2
+    distance_to_profitable: 2
+    mechanism_plausibility: 2
+    model_id: claude-haiku-4-5-20251001
+    rubric_version: trade_efficiency-reader-v2
+  resolved_config_sha256: null
+  gates:
+    novelty:
+      exact_match: NOT_EVALUATED
+      matched_runs: []
+      digest_advisory:
+        outcome: novel
+        family: keltner_channel_trend
+        family_confidence: structural_indicator_id
+        run_ids: []
+    feasibility:
+      result: INFEASIBLE
+      reasons:
+      - 'patch_unresolvable: patch[0] component_id ''donchian_breakout'' matches 0
+        components'
+  eligible: false
+  cost:
+    backtests: 18
+    seconds_estimate: 184
+    basis: 6 windows x 3 variants x 1 symbol(s) x 10.2 s (E-039 S1_FINDINGS.md L113-121)
+  rank: null
+  fold_assignment:
+    fold: D
+    source_folds:
+    - A
+    drawn_from:
+    - B
+    - C
+    - D
+    seed: 5901282914426425515
+- candidate_id: trade_efficiency-run_066-2
+  origin: reader
+  kind: side_finding
+  category: trade_efficiency
+  source_run: run_066
+  parent_hypothesis_id: VOL_MANAGED_TIME_SERIES_MOMENTUM
+  hypothesis_id: VOL_MANAGED_TIME_SERIES_MOMENTUM__trade_efficiency-run_066-2
+  proposal_ref: runs/run_066/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_066-2
+  collapsed_sources: []
+  scores:
+    confidence_real: 2
+    distance_to_profitable: 1
+    mechanism_plausibility: 1
+    model_id: claude-haiku-5-5
+    rubric_version: trade_efficiency-analyst-v1
+  resolved_config_sha256: null
+  gates:
+    novelty:
+      exact_match: NOT_EVALUATED
+      matched_runs: []
+      digest_advisory:
+        outcome: not_available
+        family: null
+        family_confidence: null
+        run_ids: []
+    feasibility:
+      result: INFEASIBLE
+      reasons:
+      - 'legacy_no_vehicle: a side finding written with `vehicle: []` before the operator''s
+        2026-10-19 ruling (D-151); deactivated, never ranked, nothing rewritten'
+  eligible: false
+  cost:
+    backtests: null
+    seconds_estimate: null
+    basis: 'not evaluated: legacy_no_vehicle'
+  rank: null
+- candidate_id: trade_efficiency-run_071-4
+  origin: reader
+  kind: side_finding
+  category: trade_efficiency
+  source_run: run_071
+  parent_hypothesis_id: HOURLY_SHOCK_CONTINUATION_MOMENTUM_1H_BTC_ETH
+  hypothesis_id: HOURLY_SHOCK_CONTINUATION_MOMENTUM_1H_BTC_ETH__trade_efficiency-run_071-4
+  proposal_ref: runs/run_071/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_071-4
+  collapsed_sources: []
+  scores:
+    confidence_real: 3
+    distance_to_profitable: 1
+    mechanism_plausibility: 1
+    model_id: claude-haiku-5-5
+    rubric_version: trade_efficiency-analyst-v1
+  resolved_config_sha256: null
+  gates:
+    novelty:
+      exact_match: NOT_EVALUATED
+      matched_runs: []
+      digest_advisory:
+        outcome: not_available
+        family: null
+        family_confidence: null
+        run_ids: []
+    feasibility:
+      result: INFEASIBLE
+      reasons:
+      - 'legacy_no_vehicle: a side finding written with `vehicle: []` before the operator''s
+        2026-10-19 ruling (D-151); deactivated, never ranked, nothing rewritten'
+  eligible: false
+  cost:
+    backtests: null
+    seconds_estimate: null
+    basis: 'not evaluated: legacy_no_vehicle'
+  rank: null
+- candidate_id: trade_efficiency-run_073-2
+  origin: reader
+  kind: side_finding
+  category: trade_efficiency
+  source_run: run_073
+  parent_hypothesis_id: HOURLY_SHOCK_REVERSAL_MEAN_REVERSION_1H_BTC_ETH__trade_efficiency-run_070-1
+  hypothesis_id: HOURLY_SHOCK_REVERSAL_MEAN_REVERSION_1H_BTC_ETH__trade_efficiency-run_070-1__trade_efficiency-run_073-2
+  proposal_ref: runs/run_073/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_073-2
+  collapsed_sources: []
+  scores:
+    confidence_real: 1
+    distance_to_profitable: 2
+    mechanism_plausibility: 2
+    model_id: claude-haiku-4-5-20251001
+    rubric_version: trade_efficiency-reading-v1
+  resolved_config_sha256: null
+  gates:
+    novelty:
+      exact_match: NOT_APPLICABLE
+      matched_runs: []
+      note: 'the source run''s config, unchanged: a new claim on it'
+      spec_hashes: []
+      digest_advisory:
+        outcome: novel
+        family: shock_reversal_custom_zscore_component
+        family_confidence: structural_indicator_id
+        run_ids: []
+    feasibility:
+      result: INFEASIBLE
+      reasons:
+      - 'next_test_none: missing block ''per-trade exit_efficiency measured conditional
+        on trade outcome (profitable vs. losing trades). Standard CLAIM_TESTS outcomes
+        measure forward price movements bar-to-bar; a new outcome type (fwd_return_relative_to_trade_entry_price,
+        or rank_of_exit_efficiency_within_trade_outcome_quintile) would allow selection
+        of losing trades and measurement of their exit efficiency vs. winning trades.
+        Without it, we cannot directly test whether losing trades exhibit worse exit
+        timing.'' (recorded as a test request)'
+  eligible: false
+  cost:
+    backtests: 18
+    seconds_estimate: 184
+    basis: 6 windows x 3 variants x 1 symbol(s) x 10.2 s (E-039 S1_FINDINGS.md L113-121)
+  rank: null
+  fold_assignment:
+    fold: D
+    source_folds:
+    - A
+    drawn_from:
+    - B
+    - C
+    - D
+    seed: 14857308903691086133
+- candidate_id: trade_efficiency-run_075-1
+  origin: reader
+  kind: side_finding
+  category: trade_efficiency
+  source_run: run_075
+  parent_hypothesis_id: HOURLY_SHOCK_REVERSAL_HORIZON_DECAY_1H_BTC_ETH
+  hypothesis_id: HOURLY_SHOCK_REVERSAL_HORIZON_DECAY_1H_BTC_ETH__trade_efficiency-run_075-1
+  proposal_ref: runs/run_075/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_075-1
+  collapsed_sources: []
+  scores:
+    confidence_real: 1
+    distance_to_profitable: 1
+    mechanism_plausibility: 1
+    model_id: claude-haiku-5-5
+    rubric_version: trade_efficiency-analyst-v1
+  resolved_config_sha256: null
+  gates:
+    novelty:
+      exact_match: NOT_EVALUATED
+      matched_runs: []
+      digest_advisory:
+        outcome: not_available
+        family: null
+        family_confidence: null
+        run_ids: []
+    feasibility:
+      result: INFEASIBLE
+      reasons:
+      - 'legacy_no_vehicle: a side finding written with `vehicle: []` before the operator''s
+        2026-10-19 ruling (D-151); deactivated, never ranked, nothing rewritten'
+  eligible: false
+  cost:
+    backtests: null
+    seconds_estimate: null
+    basis: 'not evaluated: legacy_no_vehicle'
+  rank: null
+- candidate_id: trade_efficiency-run_078-1
+  origin: reader
+  kind: side_finding
+  category: trade_efficiency
+  source_run: run_078
+  parent_hypothesis_id: HOURLY_SHOCK_CONTINUATION_MOMENTUM_1H_BTC_ETH__trade_efficiency-run_071-4
+  hypothesis_id: HOURLY_SHOCK_CONTINUATION_MOMENTUM_1H_BTC_ETH__trade_efficiency-run_071-4__trade_efficiency-run_078-1
+  proposal_ref: runs/run_078/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_078-1
+  collapsed_sources: []
+  scores:
+    confidence_real: 2
+    distance_to_profitable: 1
+    mechanism_plausibility: 1
+    model_id: claude-haiku-5-5
+    rubric_version: trade_efficiency-analyst-v1
+  resolved_config_sha256: null
+  gates:
+    novelty:
+      exact_match: NOT_EVALUATED
+      matched_runs: []
+      digest_advisory:
+        outcome: not_available
+        family: null
+        family_confidence: null
+        run_ids: []
+    feasibility:
+      result: INFEASIBLE
+      reasons:
+      - 'legacy_no_vehicle: a side finding written with `vehicle: []` before the operator''s
+        2026-10-19 ruling (D-151); deactivated, never ranked, nothing rewritten'
+  eligible: false
+  cost:
+    backtests: null
+    seconds_estimate: null
+    basis: 'not evaluated: legacy_no_vehicle'
+  rank: null
+- candidate_id: trade_efficiency-run_079-1
+  origin: reader
+  kind: side_finding
+  category: trade_efficiency
+  source_run: run_079
+  parent_hypothesis_id: VOL_MANAGED_TIME_SERIES_MOMENTUM__trade_efficiency-run_066-2
+  hypothesis_id: VOL_MANAGED_TIME_SERIES_MOMENTUM__trade_efficiency-run_066-2__trade_efficiency-run_079-1
+  proposal_ref: runs/run_079/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_079-1
+  collapsed_sources: []
+  scores:
+    confidence_real: 2
+    distance_to_profitable: 1
+    mechanism_plausibility: 1
+    model_id: claude-haiku-5-5
+    rubric_version: trade_efficiency-analyst-v1
+  resolved_config_sha256: null
+  gates:
+    novelty:
+      exact_match: NOT_EVALUATED
+      matched_runs: []
+      digest_advisory:
+        outcome: not_available
+        family: null
+        family_confidence: null
+        run_ids: []
+    feasibility:
+      result: INFEASIBLE
+      reasons:
+      - 'legacy_no_vehicle: a side finding written with `vehicle: []` before the operator''s
+        2026-10-19 ruling (D-151); deactivated, never ranked, nothing rewritten'
+  eligible: false
+  cost:
+    backtests: null
+    seconds_estimate: null
+    basis: 'not evaluated: legacy_no_vehicle'
+  rank: null
+- candidate_id: trade_efficiency-run_095-1
+  origin: reader
+  kind: side_finding
+  category: trade_efficiency
+  source_run: run_095
+  parent_hypothesis_id: OVERNIGHT_GAP_MEAN_REVERSION_1D_BTC__forecast_power-run_094-1
+  hypothesis_id: OVERNIGHT_GAP_MEAN_REVERSION_1D_BTC__forecast_power-run_094-1__trade_efficiency-run_095-1
+  proposal_ref: runs/run_095/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_095-1
+  collapsed_sources: []
+  scores:
+    confidence_real: 2
+    distance_to_profitable: 1
+    mechanism_plausibility: 1
+    model_id: claude-haiku-5-5
+    rubric_version: trade_efficiency-analyst-v1
+  resolved_config_sha256: null
+  gates:
+    novelty:
+      exact_match: NOT_EVALUATED
+      matched_runs: []
+      digest_advisory:
+        outcome: not_available
+        family: null
+        family_confidence: null
+        run_ids: []
+    feasibility:
+      result: INFEASIBLE
+      reasons:
+      - 'legacy_no_vehicle: a side finding written with `vehicle: []` before the operator''s
+        2026-10-19 ruling (D-151); deactivated, never ranked, nothing rewritten'
+  eligible: false
+  cost:
+    backtests: null
+    seconds_estimate: null
+    basis: 'not evaluated: legacy_no_vehicle'
+  rank: null
+- candidate_id: trade_efficiency-run_097-1
+  origin: reader
+  kind: side_finding
+  category: trade_efficiency
+  source_run: run_097
+  parent_hypothesis_id: REBASE_RUN_095_STD_REVERSAL_1D_BTC_FOLD_D
+  hypothesis_id: REBASE_RUN_095_STD_REVERSAL_1D_BTC_FOLD_D__trade_efficiency-run_097-1
+  proposal_ref: runs/run_097/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_097-1
+  collapsed_sources: []
+  scores:
+    confidence_real: 1
+    distance_to_profitable: 1
+    mechanism_plausibility: 1
+    model_id: claude-haiku-5-5
+    rubric_version: trade_efficiency-analyst-v1
+  resolved_config_sha256: null
+  gates:
+    novelty:
+      exact_match: NOT_EVALUATED
+      matched_runs: []
+      digest_advisory:
+        outcome: not_available
+        family: null
+        family_confidence: null
+        run_ids: []
+    feasibility:
+      result: INFEASIBLE
+      reasons:
+      - 'legacy_no_vehicle: a side finding written with `vehicle: []` before the operator''s
+        2026-10-19 ruling (D-151); deactivated, never ranked, nothing rewritten'
+  eligible: false
+  cost:
+    backtests: null
+    seconds_estimate: null
+    basis: 'not evaluated: legacy_no_vehicle'
+  rank: null
+picked:
+  r2_request: E068_hourly_shock_reversal_kraken_perp__more_4
+  queue_entry_id: E068_hourly_shock_reversal_kraken_perp__more_4
+  brief_owner: E068_hourly_shock_reversal_kraken_perp
+  brief_path: briefs/E068_hourly_shock_reversal_kraken_perp.md
+  new: true
+  why: 'R2: no entry scheduled and no eligible candidate; ask step 1a for more hypotheses
+    on open brief E068_hourly_shock_reversal_kraken_perp'
+  status: blocked_on_operator_approval
+stop: null
