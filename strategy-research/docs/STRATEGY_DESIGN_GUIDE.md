@@ -352,9 +352,13 @@ allocation is `forecast / 10`, byte for byte.
   the forecast is 0 and the position flat until then.
 - *Degenerate volatility goes flat.* A realised vol of exactly 0, a non-finite or non-positive close in the window, or
   fewer than `window` + 1 closes sizes the bar to 0.0 (flat). A NaN forecast is not sized: the existing NaN hold applies.
-- *Sized twice is refused.* With a sizing block, any `vol_target`, `vol_normalize` or `vol_adjusted` op in a
-  `transforms` or `history_transforms` list (at any depth) fails validation (V19, "sized twice"). A malformed block (unknown key, bad `kind`, `window` below 2, a
-  non-positive number) is refused too.
+- *Sized twice is refused.* With a sizing block, a `vol_target` op in a `transforms` or `history_transforms` list (at
+  any depth), or a `vol_normalize` or `vol_adjusted` op in a component's `transforms` list, fails validation (V19,
+  "sized twice"); the message says where volatility belongs: before standardise (`history_transforms`), in the component,
+  or as a regime. `vol_normalize` and `vol_adjusted` in `history_transforms` are allowed: standardise divides them out
+  (see the data-aware ops table above), so they do not size the forecast. A malformed block (unknown key, bad `kind`,
+  `window` below 2, a non-positive number) is refused too.
+- *Campaign default.* kind `vol_target`, window 60 bars, `periods_per_year` 365 for daily bars and 8760 for hourly bars, `target_annual_vol` 0.2, `max_allocation` 2; unmeasurable volatility: flat, remembered (held) signal 0.0. The sizing window does not follow D-166: the standardise window describes the signal, the sizing window estimates the market. A brief carries this default and may not change it; it changes only by an operator D-row. Candidate change held, not built: the two-window form (the larger of the 20-bar and 60-bar volatility).
 - *When to use which.* A new config uses `standardise` for the forecast scale (hard rule above) plus the sizing block for
   volatility targeting, not a `vol_target` op. Existing configs with the op keep working unchanged. `composition.py` does
   not write a `strategies.sizing` key.

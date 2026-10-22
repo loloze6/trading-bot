@@ -825,7 +825,7 @@ VOL_OPS = {
 
 
 @pytest.mark.parametrize("op", sorted(VOL_OPS))
-def test_every_volatility_dividing_op_beside_a_block_is_refused_as_sized_twice(op):
+def test_every_volatility_dividing_op_in_transforms_beside_a_block_is_refused_as_sized_twice(op):
     cfg = _base_cfg()
     comp = cfg["strategies"]["regimes"]["unknown"]["components"][0]
     comp["transforms"].append(copy.deepcopy(VOL_OPS[op]))
@@ -833,18 +833,43 @@ def test_every_volatility_dividing_op_beside_a_block_is_refused_as_sized_twice(o
     cfg["strategies"]["sizing"] = dict(SIZING)
     msgs = _v19(cfg)
     assert len(msgs) == 1 and "sized twice" in msgs[0]
-    assert f"this {op} op sizes the forecast" in msgs[0] and f"remove the {op} op" in msgs[0]
     assert "components[0].transforms[2]" in msgs[0]
+    if op == "vol_target":
+        assert f"this {op} op sizes the forecast" in msgs[0] and f"remove the {op} op" in msgs[0]
+    else:
+        assert f"this {op} op in transforms sizes the forecast" in msgs[0]
+        for words in ("before standardise", "in the component", "as a regime"):
+            assert words in msgs[0]
 
 
 @pytest.mark.parametrize("op", ["vol_normalize", "vol_adjusted"])
-def test_the_new_ops_are_also_found_in_history_transforms_and_nested_positions(op):
+def test_vol_normalize_and_vol_adjusted_in_history_transforms_are_accepted_beside_a_block(op):
+    """standardise divides them out (STRATEGY_DESIGN_GUIDE.md:301): they do not size the forecast."""
+    cfg = _base_cfg()
+    cfg["strategies"]["regimes"]["unknown"]["components"][0]["history_transforms"] = [copy.deepcopy(VOL_OPS[op])]
+    assert _v19(cfg) == []
+    cfg["strategies"]["sizing"] = dict(SIZING)
+    assert _v19(cfg) == []
+
+
+@pytest.mark.parametrize("op", ["vol_normalize", "vol_adjusted"])
+def test_the_new_ops_in_transforms_are_found_at_top_level_and_nested_positions(op):
     cfg = _base_cfg()
     cfg["strategies"]["sizing"] = dict(SIZING)
-    cfg["strategies"]["regimes"]["unknown"]["components"][0]["history_transforms"] = [copy.deepcopy(VOL_OPS[op])]
+    cfg["strategies"]["regimes"]["unknown"]["components"][0]["transforms"].append(copy.deepcopy(VOL_OPS[op]))
     cfg["regime_detector"]["components"] = [{"id": "d", "transforms": [copy.deepcopy(VOL_OPS[op])]}]
+    cfg["strategies"]["regimes"]["unknown"]["blocks"] = [
+        {"id": "b", "source": {"parts": [{"id": "p", "transforms": [copy.deepcopy(VOL_OPS[op])]}]}}]
     twice = [m for m in _v19(cfg) if "sized twice" in m]
-    assert len(twice) == 2 and all(op in m for m in twice)
+    assert len(twice) == 3 and all(op in m and "before standardise" in m for m in twice)
+
+
+def test_vol_target_in_history_transforms_beside_a_block_is_still_refused():
+    cfg = _base_cfg()
+    cfg["strategies"]["sizing"] = dict(SIZING)
+    cfg["strategies"]["regimes"]["unknown"]["components"][0]["history_transforms"] = [copy.deepcopy(VOL_TARGET_OP)]
+    msgs = _v19(cfg)
+    assert len(msgs) == 1 and "sized twice" in msgs[0] and "history_transforms[0]" in msgs[0]
 
 
 # --------------------------------------------------------------------------- real AdvancedStrategy + RollingBuffer warm-up
