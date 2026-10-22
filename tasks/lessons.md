@@ -713,3 +713,27 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-20 -- Parallel builds on dependent branches collided in their tests
 - **Pattern:** V2-2+V3 was built on V2-1's first commit while V2-1's fix round added tests that force the off-switch on; V2-2+V3 deleted the switch, so the rebase conflicted in the tests and needed a separate resolving agent.
 - **Rule:** when a later slice is built on an earlier one still in review, tell the later builder what the earlier fix round may add, and rebase as soon as the earlier fix commit lands.
+
+## 2026-10-21 -- A sequencing line was treated as an approval
+- **Pattern:** the operator wrote "Show the REGISTER line, then hand over to the run session"; the lead registered the fold-B brief in the queue. The operator corrected: a sequencing line is not an approval; the approval is the paste that names the diff.
+- **Rule:** act at a gate (register, queue, merge, sync, launch) only on the operator's paste that names what is approved; diff that paste against what was built before acting. A line that only orders the steps is not that paste: show, then wait.
+
+## 2026-10-21 -- Bare python and heredocs still slipped through
+- **Pattern:** in the 2026-10-21 batch, agents ran a bare `python`/`python -c` or a heredoc into python a few times, and the lead did once, although every brief carried the rule.
+- **Rule:** unchanged (2026-10-20): only the venv interpreter, with pytest or a script file run with -I. The lead writes its own checks as script files under %TEMP%\claude\scripts\ and runs them the same way.
+
+## 2026-10-21 -- Agents saw the pre-commit hook's dated output
+- **Pattern:** the pre-commit hook prints the sealed range; in the 2026-10-21 batch and again in the second set, a builder's commit output showed it in the agent's session. Neither agent wrote it anywhere or repeated it.
+- **Rule:** briefs keep "never quote the hook's output; report pass or fail only"; commit output goes to $null where the shell allows it.
+
+## 2026-10-21 -- A reviewer read the operator checkout
+- **Pattern:** one reviewer opened files in the operator checkout read-only to check a fact, although the brief named the checkout as off-limits.
+- **Rule:** reviewers and builders get copies (a detached worktree of master, or files copied to %TEMP%); every dispatch names the checkout path as off-limits for reading as well as writing.
+
+## 2026-10-21 -- A hash pin was missed by the test search
+- **Pattern:** PR-A edited hypothesis-design/SKILL.md; the builder's search for tests touching the file missed the sha256 pin in test_e059_s2a_review_fixes.py, and CI failed on it.
+- **Rule:** before editing a skill or doc file, grep the tests for the file's name and for a sha256 pin of it; re-pin with a comment naming the D-row in the same PR.
+
+## 2026-10-21 -- The lead's re-run script aborted a paid session
+- **Pattern:** the lead's run_098 analyst re-run script set `$ErrorActionPreference = 'Stop'`; in Windows PowerShell 5.1 a warn-only stderr line from the native python process became a terminating error, so the first forecast session stopped mid-way. Its spend is unrecorded (log of 80 bytes, no cost line).
+- **Rule:** a script that runs a native command keeps `$ErrorActionPreference = 'Continue'` and tests `$LASTEXITCODE`; it writes each session's output, cost line included, to the log as it comes.
