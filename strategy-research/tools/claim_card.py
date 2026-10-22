@@ -394,11 +394,30 @@ def window_bars(windows: list, step: int) -> int:
     return total
 
 
-def power_warnings(claim: dict, total_bars: int, n_coins: int) -> list:
+def quantile_lookback(sel) -> int:
+    """The trailing bars a quantile selector needs before its first selectable
+    bar (the largest one among an all_of's sub-selectors); 0 for any other kind."""
+    if not isinstance(sel, dict):
+        return 0
+    parts = sel.get("selectors") if sel.get("kind") == "all_of" else [sel]
+    best = 0
+    for p in parts if isinstance(parts, list) else []:
+        lb = p.get("lookback") if isinstance(p, dict) and p.get("kind") == "quantile" else None
+        if isinstance(lb, int) and not isinstance(lb, bool) and lb > best:
+            best = lb
+    return best
+
+
+def power_warnings(claim: dict, total_bars: int, n_coins: int,
+                   window_bar_counts: list | None = None) -> list:
     """For every test with a min_events floor: the upper bound of separate
     events = (bars in the test windows // the longest horizon) x coins. One
     dict per test whose bound is below its floor (empty: every floor is
-    reachable). An upper bound: the selector picks fewer bars, never more."""
+    reachable). An upper bound: the selector picks fewer bars, never more.
+    D-175: a quantile selector cannot select its first `lookback` bars of each
+    window, so with `window_bar_counts` (bars per window) those are taken off
+    every window before the division (a window shorter than the lookback
+    counts 0). Without it the bound is the one above, unchanged."""
     out = []
     tests = claim.get("tests") if isinstance(claim, dict) else None
     for t in tests if isinstance(tests, list) else []:
@@ -407,13 +426,27 @@ def power_warnings(claim: dict, total_bars: int, n_coins: int) -> list:
         if not isinstance(floor, int) or not hs:
             continue
         h_max = max(hs)
-        bound = (total_bars // h_max) * n_coins
+        lookback = quantile_lookback(t.get("selector")) if window_bar_counts else 0
+        usable_bars = (sum(max(0, b - lookback) for b in window_bar_counts)
+                       if lookback else total_bars)
+        bound = (usable_bars // h_max) * n_coins
         if bound < floor:
-            out.append({"test": t.get("name"), "bound": bound, "floor": floor,
-                        "bars": total_bars, "longest_horizon": h_max, "coins": n_coins,
-                        "message": (f"test {t.get('name')!r}: at most {bound} separate events "
-                                    f"are possible, the floor is {floor}: shorten the horizon "
-                                    f"or widen the data")})
+            rec = {"test": t.get("name"), "bound": bound, "floor": floor,
+                   "bars": total_bars, "longest_horizon": h_max, "coins": n_coins}
+            if lookback:
+                rec.update({"quantile_lookback": lookback, "windows": len(window_bar_counts),
+                            "bars_after_lookback": usable_bars})
+                msg = (f"test {t.get('name')!r}: possible events {bound} < min_events {floor} "
+                       f"(quantile lookback {lookback} bars per window x {len(window_bar_counts)} "
+                       f"windows: {total_bars} bars leave {usable_bars}; count = bars minus "
+                       f"lookback, // longest horizon {h_max}, x {n_coins} coins): shorten the "
+                       f"lookback or the horizon, or widen the data")
+            else:
+                msg = (f"test {t.get('name')!r}: at most {bound} separate events "
+                       f"are possible, the floor is {floor}: shorten the horizon "
+                       f"or widen the data")
+            rec["message"] = msg
+            out.append(rec)
     return out
 
 
