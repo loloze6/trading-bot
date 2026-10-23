@@ -125,16 +125,21 @@ def test_default_output_byte_identical_to_pre_change_tool(tmp_path, capsys, monk
     assert "sealed" not in new_out and "census_" not in new_out
 
 
-def test_default_output_pinned_hash(tmp_path, capsys):
+PINNED_LEGACY_SHA256 = {
+    "1h": "d39785c564ef75f07be7af459650c21df8c001cbb938728cc88897c77b51c472",
+    "1d": "44ad80984038672c51fede77c7e854aeb42028506a542988978d8fddfa9c8927",
+}
+
+
+@pytest.mark.parametrize("tf", ["1h", "1d"])
+def test_default_output_pinned_hash(tmp_path, capsys, tf):
     """CI-independent pin: the pre-change tool's output on this fixture (captured from
-    origin/master:strategy-research/tools/cache_gap_census.py)."""
+    origin/master:strategy-research/tools/cache_gap_census.py). Survives the merge, when
+    the origin/master comparison above becomes a self-comparison."""
     data = _legacy_fixture(tmp_path)
-    assert cgc.main(["--data-dir", str(data), "--timeframe", "1h", "--warmup", "30", "--block", "6"]) == 0
+    assert cgc.main(["--data-dir", str(data), "--timeframe", tf, "--warmup", "30", "--block", "6"]) == 0
     out = capsys.readouterr().out
-    assert hashlib.sha256(out.encode()).hexdigest() == PINNED_LEGACY_SHA256
-
-
-PINNED_LEGACY_SHA256 = "d39785c564ef75f07be7af459650c21df8c001cbb938728cc88897c77b51c472"
+    assert hashlib.sha256(out.encode()).hexdigest() == PINNED_LEGACY_SHA256[tf]
 
 
 # ---------------------------------------------------------------------------
@@ -491,3 +496,108 @@ def test_cli_with_the_real_seal_never_surfaces_a_row_at_or_after_it(tmp_path, ca
     assert "sealed: not audited" in out and "PPPUSDT" in out
     stamps = [pd.Timestamp(m) for m in DATE.findall(out)]
     assert stamps and all(t < hs for t in stamps)
+
+
+# ---------------------------------------------------------------------------
+# review fixes: census-dir refusal, error hygiene, malformed gate records, row count
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("bad", ["local_data", "holdout_sealed", "recorded_reserved"])
+def test_census_dir_in_a_forbidden_place_is_refused_before_any_mkdir(tmp_path, policy, capsys, bad):
+    data = tmp_path / "data"
+    write_cache(data / "AAAUSDT_1d.csv", grid("2019-01-01", 60, "D"))
+    census = cgc.run_audit(data, ["1d"], policy_path=policy, folds_doc=folds_doc())
+    target = tmp_path / bad / "sub" / "data_census"
+    with pytest.raises(cgc.AuditRefusal):
+        cgc.write_census(census, target)
+    assert not (tmp_path / bad).exists()
+    # the CLI refuses before it audits or creates anything
+    with pytest.raises(SystemExit) as ei:
+        cgc.main(["--audit", "--audit-timeframes", "1d", "--data-dir", str(data),
+                  "--write-census", "--census-dir", str(target)])
+    assert str(ei.value).startswith("refused: ") and bad in str(ei.value)
+    assert not (tmp_path / bad).exists()
+    assert "data census" not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("flags", [["--audit", "--audit-timeframes", "1d"], ["--run-dir"]])
+def test_a_policy_error_is_refused_naming_only_the_exception_type(tmp_path, monkeypatch, flags):
+    bad_policy = tmp_path / "bad_policy.yaml"
+    bad_policy.write_text(yaml.safe_dump({"holdout_range": ["not-a-day", "not-a-day"]}), encoding="utf-8")
+    monkeypatch.setattr(hp, "POLICY_PATH", bad_policy)
+    data = tmp_path / "data"
+    write_cache(data / "kraken_AAAUSD_1d.csv", grid("2019-02-01", 90, "D"))
+    argv = [*flags, "--data-dir", str(data)]
+    if flags == ["--run-dir"]:
+        argv = ["--run-dir", str(_run_dir(tmp_path)), "--data-dir", str(data)]
+    with pytest.raises(SystemExit) as ei:
+        cgc.main(argv)
+    msg = str(ei.value)
+    assert msg.startswith("refused: ") and "HoldoutPolicyError" in msg
+    assert "not-a-day" not in msg and not DATE.search(msg)
+
+
+def _refusal_for_gate_rec(tmp_path, policy, gate_rec, name="run_m"):
+    data = tmp_path / "data"
+    write_cache(data / "kraken_AAAUSD_1d.csv", grid("2019-02-01", 90, "D"))
+    run = _run_dir(tmp_path, name=name, gate_rec=gate_rec)
+    with pytest.raises(cgc.AuditRefusal) as ei:
+        cgc.run_census_for_run(run, data, policy_path=policy)
+    assert not (run / "artifacts" / "variants" / "base" / "data_census.yaml").exists()
+    return str(ei.value)
+
+
+@pytest.mark.parametrize("gate_rec, needle", [
+    (["not", "a", "mapping"], "not a mapping"),
+    ({"exchange": "kraken", "timeframe": "1d", "symbols": ["AAAUSD"],
+      "windows": [{"label": "w", "start": "2019-03-01"}]}, "missing key 'end'"),
+    ({"exchange": "kraken", "timeframe": "1d", "symbols": ["AAAUSD"],
+      "windows": [{"label": "w", "end": "2019-03-31"}]}, "missing key 'start'"),
+    ({"exchange": "kraken", "timeframe": "1d", "symbols": ["AAAUSD"], "windows": ["w1"]}, "not a mapping"),
+    ({"exchange": "kraken", "timeframe": "1d", "symbols": ["AAAUSD"], "windows": "w1"}, "'windows' is not a list"),
+    ({"exchange": "kraken", "timeframe": "1d", "symbols": "AAAUSD",
+      "windows": [{"start": "2019-03-01", "end": "2019-03-31"}]}, "'symbols'"),
+    ({"exchange": ["kraken"], "timeframe": "1d", "symbols": ["AAAUSD"],
+      "windows": [{"start": "2019-03-01", "end": "2019-03-31"}]}, "'exchange'"),
+    ({"exchange": "kraken", "timeframe": "1d", "symbols": ["AAAUSD"],
+      "windows": [{"start": "2019-03-01", "end": "not-a-day"}]}, "not a parseable date"),
+])
+def test_a_malformed_gate_record_is_refused_naming_the_variant_and_the_key(tmp_path, policy, gate_rec, needle):
+    msg = _refusal_for_gate_rec(tmp_path, policy, gate_rec)
+    assert "variant base" in msg and needle in msg
+    assert "not-a-day" not in msg and not DATE.search(msg)
+
+
+def test_check_windows_clear_refuses_malformed_windows_not_a_bare_keyerror(tmp_path, policy):
+    ctx = ctx_for(policy)
+    for windows, needle in (([{"label": "w"}], "no 'test' mapping"),
+                            ([{"test": {"start": "2019-01-01"}}], "'test.end'"),
+                            ([{"test": {"end": "2019-01-31"}}], "'test.start'"),
+                            ([["not", "a", "dict"]], "no 'test' mapping")):
+        with pytest.raises(cgc.AuditRefusal) as ei:
+            cgc.check_windows_clear(windows, ctx, "variant v")
+        assert "variant v window #1" in str(ei.value) and needle in str(ei.value)
+
+
+def test_a_malformed_run_protocol_is_refused(tmp_path, policy):
+    data = tmp_path / "data"
+    write_cache(data / "kraken_AAAUSD_1d.csv", grid("2019-02-01", 90, "D"))
+    rec = {"exchange": "kraken", "symbols": ["AAAUSD"]}  # lacks timeframe and windows -> reads the protocol
+    for proto, name in (({"timeframe": "1d", "windows": "w1"}, "run_a"),
+                        ({"timeframe": "1d", "windows": ["w1"]}, "run_b"),
+                        (["not", "a", "mapping"], "run_c")):
+        run = _run_dir(tmp_path, name=name, gate_rec=rec, protocol=proto)
+        with pytest.raises(cgc.AuditRefusal):
+            cgc.run_census_for_run(run, data, policy_path=policy)
+        assert not (run / "artifacts" / "variants" / "base" / "data_census.yaml").exists()
+
+
+def test_window_rows_in_measure_span_includes_the_gates_exclusive_end(tmp_path, policy):
+    # March 1..31 in daily bars: 31 expected; the gate measures to Apr 1 00:00 and slices
+    # inclusively, so the Apr 1 row is counted and rows exceed expected by one.
+    write_cache(tmp_path / "AAAUSDT_1d.csv", grid("2019-02-01", 90, "D"))
+    windows = [{"label": "m", "test": {"start": "2019-03-01", "end": "2019-03-31"}}]
+    rec = cgc.audit_cache_file(tmp_path / "AAAUSDT_1d.csv", "1d", ctx_for(policy), {"A": windows})
+    w = rec["views"]["A"]["windows"][0]
+    assert w["expected_bars"] == 31 and w["rows_in_measure_span"] == 32
+    assert "rows" not in w

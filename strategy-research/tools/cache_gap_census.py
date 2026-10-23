@@ -41,6 +41,12 @@ imports the data-availability gate's own measurement functions:
 Rows at or after the holdout start (campaign_data_policy.yaml, read in code
 only) are dropped right after parsing; the sealed span appears as the single
 line `sealed: not audited`.
+
+Compatibility: the default (non-audit) stdout is byte-identical to the
+pre-audit tool (pinned by tests/test_cache_gap_census_audit.py). What did
+change is the `--help` text and the `--timeframe` choices (1m was added), and
+the `--warm` abbreviation is now ambiguous between `--warmup` and
+`--warmup-bars`, so argparse rejects it; spell the option out.
 """
 from __future__ import annotations
 
@@ -301,8 +307,19 @@ def check_windows_clear(windows, ctx, group: str) -> None:
     """Refuse (never clip) a window whose measured span reaches the holdout start."""
     D = _deps()
     for i, w in enumerate(windows, 1):
-        test = w.get("test") or {}
-        if D.pd.Timestamp(D.gate._measure_end(test["end"])) > ctx.hs:
+        test = w.get("test") if isinstance(w, dict) else None
+        if not isinstance(test, dict):
+            raise AuditRefusal(f"{group} window #{i} has no 'test' mapping; refusing")
+        for key in ("start", "end"):
+            if test.get(key) is None:
+                raise AuditRefusal(f"{group} window #{i} is missing key 'test.{key}'; refusing")
+        try:
+            D.pd.Timestamp(test["start"])
+            measure_end = D.pd.Timestamp(D.gate._measure_end(test["end"]))
+        except (ValueError, TypeError, OverflowError) as exc:
+            raise AuditRefusal(f"{group} window #{i}: 'test.start' / 'test.end' is not a "
+                               f"parseable date ({type(exc).__name__}; value withheld)") from None
+        if measure_end > ctx.hs:
             raise AuditRefusal(f"{group} window #{i} reaches the holdout start "
                                f"(dates withheld): refusing, not clipping")
 
@@ -385,6 +402,11 @@ def _gate_outcome(classification, runs, ctx):
 
 
 def _window_record(idx, first, win, tf, step_s, ctx):
+    """One window's record. `rows_in_measure_span` counts the rows in [start,
+    measure end], inclusive at both ends, as the gate's own _missing_fraction /
+    _missing_runs slice the frame; the measure end is the gate's EXCLUSIVE bound
+    (_measure_end), so a row stamped exactly on it is counted, and the count can
+    exceed `expected_bars` by one."""
     D = _deps()
     test = win["test"]
     w_start = D.pd.Timestamp(test["start"]).to_pydatetime()
@@ -393,7 +415,7 @@ def _window_record(idx, first, win, tf, step_s, ctx):
     cls = D.gate.classify_missing_fraction(frac)
     n_runs, largest, _after = _largest(runs, expected)
     rec = {"label": win.get("label"), "start": str(test["start"])[:10], "end": str(test["end"])[:10],
-           "expected_bars": expected, "rows": nrows, "missing_fraction": float(frac),
+           "expected_bars": expected, "rows_in_measure_span": nrows, "missing_fraction": float(frac),
            "classification": cls, "gate_outcome": _gate_outcome(cls, runs, ctx),
            "missing_runs": n_runs, "largest_run_bars": _num(largest)}
     if runs is None:
@@ -591,7 +613,14 @@ def write_new_yaml(path, doc) -> str:
     return str(path)
 
 
+def refuse_census_dir(census_dir) -> None:
+    """The census dir may not be under local_data, holdout_sealed or recorded_reserved
+    (checked before anything is created)."""
+    refuse_forbidden_dir(census_dir, "the census dir", extra=("local_data",))
+
+
 def write_census(census, census_dir, now=None) -> str:
+    refuse_census_dir(census_dir)
     stamp = census["header"]["utc_run_time"].replace("-", "").replace(":", "")
     return write_new_yaml(Path(census_dir) / f"census_{stamp}.yaml", census)
 
@@ -599,8 +628,12 @@ def write_census(census, census_dir, now=None) -> str:
 # --- Output B: the per-run artifact ----------------------------------------
 
 def _normalise_windows(raw):
+    if raw is not None and not isinstance(raw, list):
+        raise AuditRefusal("the run protocol's 'windows' is not a list; refusing")
     out = []
     for w in raw or []:
+        if not isinstance(w, dict):
+            raise AuditRefusal("the run protocol has a 'windows' entry that is not a mapping; refusing")
         test = w.get("test") if isinstance(w.get("test"), dict) else w
         s, e = _day_str(test.get("start")), _day_str(test.get("end"))
         if s and e:
@@ -640,7 +673,34 @@ def variant_params(gate_rec: dict, protocol: dict | None):
     if not (tf and syms and wins):
         raise AuditRefusal("neither the gate record nor the run protocol gives this variant's "
                            "timeframe, symbols and windows")
+    if not (isinstance(ex, str) and isinstance(tf, str) and isinstance(syms, list)
+            and all(isinstance(s, str) for s in syms)):
+        raise AuditRefusal("the exchange, timeframe or symbols (from the gate record or the run "
+                           "protocol) have the wrong type; refusing")
     return ex, tf, list(syms), wins, src
+
+
+def _check_gate_record(gate_rec, variant: str) -> None:
+    """Refuse a malformed gate record, naming the variant and the key (never a value)."""
+    if not isinstance(gate_rec, dict):
+        raise AuditRefusal(f"variant {variant}: the gate record is not a mapping; refusing")
+    for key in ("exchange", "timeframe"):
+        if gate_rec.get(key) is not None and not isinstance(gate_rec[key], str):
+            raise AuditRefusal(f"variant {variant}: gate record key '{key}' is not a string; refusing")
+    syms = gate_rec.get("symbols")
+    if syms is not None and not (isinstance(syms, list) and all(isinstance(s, str) for s in syms)):
+        raise AuditRefusal(f"variant {variant}: gate record key 'symbols' is not a list of "
+                           f"strings; refusing")
+    wins = gate_rec.get("windows")
+    if wins is not None and not isinstance(wins, list):
+        raise AuditRefusal(f"variant {variant}: gate record key 'windows' is not a list; refusing")
+    for i, w in enumerate(wins or [], 1):
+        if not isinstance(w, dict):
+            raise AuditRefusal(f"variant {variant}: gate record windows[{i}] is not a mapping; refusing")
+        for key in ("start", "end"):
+            if w.get(key) is None:
+                raise AuditRefusal(f"variant {variant}: gate record windows[{i}] is missing "
+                                   f"key '{key}'; refusing")
 
 
 def run_census_for_run(run_dir, data_dir, *, policy_path=None, warmup_bars=None, now=None) -> list:
@@ -656,16 +716,28 @@ def run_census_for_run(run_dir, data_dir, *, policy_path=None, warmup_bars=None,
     ctx = _context(policy_path, warmup_bars)
     protocol, plans = None, []
     for rec_path in records:
-        gate_rec = D.yaml.safe_load(rec_path.read_text(encoding="utf-8")) or {}
+        variant = rec_path.parent.name
+        try:
+            gate_rec = D.yaml.safe_load(rec_path.read_text(encoding="utf-8"))
+        except (D.yaml.YAMLError, OSError, UnicodeDecodeError) as exc:
+            raise AuditRefusal(f"variant {variant}: the gate record cannot be read "
+                               f"({type(exc).__name__}); refusing") from None
+        gate_rec = {} if gate_rec is None else gate_rec
+        _check_gate_record(gate_rec, variant)
         needs_protocol = not (gate_rec.get("exchange") and gate_rec.get("timeframe")
                               and gate_rec.get("symbols")
                               and any(w.get("start") and w.get("end")
-                                      for w in gate_rec.get("windows") or [] if isinstance(w, dict)))
+                                      for w in gate_rec.get("windows") or []))
         if needs_protocol and protocol is None:
             pp = vdir / "run_protocol.json"
             if pp.is_file():
-                protocol = json.loads(pp.read_text(encoding="utf-8"))
-        gate_rec["windows"] = [w for w in gate_rec.get("windows") or [] if isinstance(w, dict)]
+                try:
+                    protocol = json.loads(pp.read_text(encoding="utf-8"))
+                except (ValueError, OSError, UnicodeDecodeError) as exc:
+                    raise AuditRefusal(f"run_protocol.json cannot be read "
+                                       f"({type(exc).__name__}); refusing") from None
+                if not isinstance(protocol, dict):
+                    raise AuditRefusal("run_protocol.json is not a mapping; refusing")
         ex, tf, syms, wins, src = variant_params(gate_rec, protocol)
         check_windows_clear(wins, ctx, f"variant {rec_path.parent.name}")
         target = rec_path.parent / "data_census.yaml"
@@ -694,22 +766,33 @@ def run_census_for_run(run_dir, data_dir, *, policy_path=None, warmup_bars=None,
 
 def _audit_main(args) -> int:
     try:
-        if args.run_dir:
-            if args.audit or args.write_census:
-                raise AuditRefusal("--run-dir cannot be combined with --audit / --write-census")
-            for p in run_census_for_run(args.run_dir, args.data_dir, warmup_bars=args.warmup_bars):
-                print(f"wrote {p}")
-            print(f"sealed: {SEALED_LINE}")
-            return 0
-        if not args.audit:
-            raise AuditRefusal("--write-census needs --audit")
-        census = run_audit(args.data_dir, args.audit_timeframes, warmup_bars=args.warmup_bars)
-        print(census_summary(census))
-        if args.write_census:
-            print(f"\nwrote {write_census(census, args.census_dir)}")
-        return 0
+        try:
+            return _audit_dispatch(args)
+        except _deps().hp.HoldoutPolicyError as exc:
+            # its message can carry a policy value: name only the type
+            raise AuditRefusal(f"the holdout policy is unusable ({type(exc).__name__}; "
+                               f"details withheld)") from None
     except AuditRefusal as exc:
         raise SystemExit(f"refused: {exc}") from None
+
+
+def _audit_dispatch(args) -> int:
+    if args.run_dir:
+        if args.audit or args.write_census:
+            raise AuditRefusal("--run-dir cannot be combined with --audit / --write-census")
+        for p in run_census_for_run(args.run_dir, args.data_dir, warmup_bars=args.warmup_bars):
+            print(f"wrote {p}")
+        print(f"sealed: {SEALED_LINE}")
+        return 0
+    if not args.audit:
+        raise AuditRefusal("--write-census needs --audit")
+    if args.write_census:
+        refuse_census_dir(args.census_dir)  # before the audit runs and before any mkdir
+    census = run_audit(args.data_dir, args.audit_timeframes, warmup_bars=args.warmup_bars)
+    print(census_summary(census))
+    if args.write_census:
+        print(f"\nwrote {write_census(census, args.census_dir)}")
+    return 0
 
 
 def main(argv=None) -> int:
