@@ -595,22 +595,42 @@ SIZING_OP = "vol_target"
 _SIZING_BLOCK_IDS = ("sizing", "strategies.sizing", "/strategies/sizing")
 
 
-def _has_forecast_field(node) -> bool:
+def _fields_of(node) -> list:
+    """Every bar `field` named anywhere in a selector (at any depth)."""
     if isinstance(node, dict):
-        f = node.get("field")
-        if isinstance(f, str) and "forecast" in f:
-            return True
-        return any(_has_forecast_field(v) for v in node.values())
+        out = [node["field"]] if isinstance(node.get("field"), str) else []
+        for v in node.values():
+            out += _fields_of(v)
+        return out
     if isinstance(node, list):
-        return any(_has_forecast_field(v) for v in node)
-    return False
+        return [f for v in node for f in _fields_of(v)]
+    return []
 
 
-def is_regime_selector(selector) -> bool:
-    """True for a selector that names no forecast field (any `field` containing "forecast",
-    at any depth), by the letter of the operator's ruling: `kind: all` and `kind: trade`
-    selectors that name none are regime selectors too."""
-    return isinstance(selector, dict) and not _has_forecast_field(selector)
+def _is_forecast_field(field: str) -> bool:
+    """The forecast and every forecast-derived column (abs_forecast, forecast_sign_change,
+    entry_forecast, ...): any field whose name contains "forecast"."""
+    return "forecast" in field
+
+
+#: statistics that never read the forecast (claim_tests.st_mean_diff / st_hit_rate; decay_curve
+#: is mean_diff per horizon). rank_ic correlates the forecast with the outcome: it uses it.
+FORECAST_FREE_STATISTICS = ("mean_diff", "hit_rate", "decay_curve")
+#: selector kinds a regime tag is never given: all bars, and trade selectors
+NON_REGIME_KINDS = ("all", "trade")
+
+
+def is_regime_selector(selector, statistic=None) -> bool:
+    """D-178 (operator 2026-10-23): a regime finding when (1) the selector names at least one
+    bar field that is not a forecast field, (2) it names no forecast field and the test's
+    statistic does not use the forecast (FORECAST_FREE_STATISTICS), (3) the selector is neither
+    kind `all` nor kind `trade`. An unknown or missing statistic is not a regime."""
+    if not isinstance(selector, dict) or statistic not in FORECAST_FREE_STATISTICS:
+        return False
+    if selector.get("kind") in NON_REGIME_KINDS:
+        return False
+    fields = _fields_of(selector)
+    return bool(fields) and not any(_is_forecast_field(f) for f in fields)
 
 
 def _sizing_ops_of(config) -> dict:
@@ -677,12 +697,14 @@ def vehicle_is_sizing(vehicle, base_config=None) -> bool:
     return False
 
 
-def angle_of(selectors, vehicle=None, base_config=None):
-    """`sizing` (wins), `regime` (every selector names no forecast field) or None."""
+def angle_of(selectors, vehicle=None, base_config=None, statistics=None):
+    """`sizing` (wins), `regime` (every test passes is_regime_selector with its statistic;
+    `statistics` is parallel to `selectors`) or None."""
     if vehicle_is_sizing(vehicle, base_config):
         return "sizing"
-    sels = [s for s in selectors if s is not None]
-    return "regime" if sels and all(is_regime_selector(s) for s in sels) else None
+    stats = list(statistics) if statistics is not None else [None] * len(selectors)
+    pairs = [(s, st) for s, st in zip(selectors, stats) if s is not None]
+    return "regime" if pairs and all(is_regime_selector(s, st) for s, st in pairs) else None
 
 
 def floors_met_in_log(entry: dict):
@@ -1088,7 +1110,8 @@ def _record_observations(observations: list, entries: dict, evidence, settings, 
         lowered = floor_lowered_info(o["test"], entries)
         if lowered is not None:
             item["floor_lowered"] = {**lowered, "reason": o["floor_lowered_reason"].strip()}
-        angle = angle_of([item["spec"].get("selector")], o.get("vehicle"), base_config)
+        angle = angle_of([item["spec"].get("selector")], o.get("vehicle"), base_config,
+                         [item["spec"].get("statistic")])
         if angle is not None:
             item["angle"] = angle
         recorded.append(item)
@@ -1312,7 +1335,7 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
     angle = None
     if isinstance(claim, dict):
         angle = angle_of([t.get("selector") for t in _tests_of(claim)], doc.get("vehicle"),
-                         base_config)
+                         base_config, [t.get("statistic") for t in _tests_of(claim)])
     if angle == "sizing":
         errors.append("claim: this is a sizing finding (its vehicle changes the sizing block or "
                       "the params of a vol_target op). A sizing finding is recorded as an "

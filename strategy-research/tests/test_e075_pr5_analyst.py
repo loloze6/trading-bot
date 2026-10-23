@@ -993,6 +993,8 @@ SEL = {"kind": "event", "field": "forecast", "op": ">=", "value": 3.0}
 FLOOR = {"min_events": 5, "min_windows": 2}
 #: sha256 of the log the floor-less call script below wrote on origin/master 288e36e2
 #: (before D-094), measured on Windows 2026-10-09
+# D-178 (operator 2026-10-23): re-pinned with the angle tags on (the legacy fixture no longer
+# switches them off); the log is written by the query tools, which never read angle_of -- unchanged.
 GOLDEN_FLOORLESS_LOG = "86a802b86395dfa971e2df5222c10fea6c96e928a116215d01b8322afeda7a34"
 
 

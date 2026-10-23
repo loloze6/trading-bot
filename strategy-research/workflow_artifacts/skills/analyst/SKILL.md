@@ -292,8 +292,9 @@ cleared its test's floor on every horizon); and, where they apply, `mechanism_qu
 and outcome on a lower floor; in a claim the same reasons are `claim.floor_lowered_reasons`,
 test name to reason). A `no_claim` carries at most 3 observations, each citing a different test.
 A claim carries at most 3 under `claim.observations`, on the same terms. An observation may carry `vehicle` (the change list a claim's vehicle takes), the
-change the finding points at. Code writes the `floor_lowered` entry and the `angle` tag itself:
-`regime` for a selector that names no forecast field, `sizing` for a vehicle that changes the
+change the finding points at, for the operator's reading; it is never ranked. Code writes the `floor_lowered` entry and the `angle` tag itself:
+`regime` for a test whose selector names a bar field other than the forecast and whose statistic
+does not use the forecast (never for an all-bars or a trade selector), `sizing` for a vehicle that changes the
 sizing block or the params of a vol_target op. A sizing finding is an observation, never a claim
 with a vehicle. An observation is recorded, not confirmed; the memory view shows it
 as "observed, no vehicle yet".

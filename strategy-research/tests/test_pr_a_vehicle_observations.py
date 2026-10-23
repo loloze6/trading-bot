@@ -112,6 +112,8 @@ def test_a_no_claim_with_valid_observations_is_accepted_and_recorded():
     recorded = rec["no_claim"]["observations"]
     assert len(recorded) == 2
     for o, (qid, h) in zip(recorded, (("q7", "hq7"), ("q8", "hq8"))):
+        # D-178 (operator 2026-10-23): re-pinned with the angle tags on; these LONG-selector trade
+        # tests are not regime findings, so no `angle` key is recorded
         assert set(o) == set(asm.OBSERVATION_KEYS) | {"spec"}
         assert o["test"] == qid and o["floors_met"] is True
         # the spec is code-written: the measured test block without its result, plus its hash

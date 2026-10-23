@@ -1,7 +1,7 @@
 """D-178 (operator item D, 2026-10-22): the answer checks D-178 added to analyst_session
-(the next-steps ledger, completeness, the mechanism query, the angle tags) refuse every answer written before
+(the next-steps ledger, completeness, the mechanism query) refuse every answer written before
 them. The older analyst test modules test what they always tested -- the checks that existed --
-so they switch the new checks off with this fixture; tests/test_d178_analyst_method.py
+so they switch the three reader checks off with this fixture (the angle tags stay on, operator 2026-10-23); tests/test_d178_analyst_method.py
 tests the three on, with real fixtures."""
 import pytest
 
@@ -13,4 +13,3 @@ def d178_checks_off(monkeypatch):
     monkeypatch.setattr(asm, "next_steps_errors", lambda *a, **k: [])
     monkeypatch.setattr(asm, "completeness_errors", lambda *a, **k: [])
     monkeypatch.setattr(asm, "_mechanism_errors", lambda *a, **k: [])
-    monkeypatch.setattr(asm, "angle_of", lambda *a, **k: None)      # the D-178 angle tags

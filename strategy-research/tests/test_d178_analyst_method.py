@@ -400,17 +400,56 @@ def test_a_selector_with_no_forecast_field_is_tagged_regime_by_code():
                                     _obs(ee, "q7", floor_lowered_reason="r")]), ee)
     tags = [o.get("angle") for o in rec["no_claim"]["observations"]]
     assert tags == ["regime", None]
-    # by the letter of the ruling ("no forecast field in the selector"): a trade selector that
-    # names none, and kind all, are regime selectors too
+    # operator 2026-10-23: a regime needs a bar field other than the forecast in the selector,
+    # a statistic that does not use the forecast, and a selector that is neither all nor trade
+    tv = {"kind": "quantile", "field": "trailing_vol", "bars": 20, "side": "bottom", "q": 0.3, "lookback": 60}
+    assert asm.angle_of([tv], statistics=["mean_diff"]) == "regime"
+    assert asm.angle_of([tv], statistics=["hit_rate"]) == "regime"
+    assert asm.angle_of([tv], statistics=["rank_ic"]) is None       # rank_ic uses the forecast
+    assert asm.angle_of([tv]) is None and asm.angle_of([tv], statistics=["bogus"]) is None
+    fq = {"kind": "quantile", "field": "forecast", "bars": 20, "side": "top", "q": 0.3, "lookback": 60}
+    assert asm.angle_of([fq], statistics=["mean_diff"]) is None
+    fa = {"kind": "event", "field": "abs_forecast", "op": ">", "value": 5}
+    assert asm.angle_of([fa], statistics=["mean_diff"]) is None     # forecast-derived
+    assert asm.angle_of([{"kind": "all"}], statistics=["mean_diff"]) is None
     trade = {"kind": "trade", "where": [{"field": "side", "op": "==", "value": "long"}]}
-    assert asm.angle_of([trade]) == "regime" and asm.angle_of([{"kind": "all"}]) == "regime"
-    assert asm.angle_of([{"kind": "event", "field": "past_return", "bars": 1, "op": ">=", "value": 0.01}]) == "regime"
-    assert asm.angle_of([{"kind": "trade", "where": [
-        {"field": "entry_forecast", "op": "<=", "value": -10}]}]) is None
-    assert asm.angle_of([{"kind": "all_of", "clauses": [
-        {"kind": "event", "field": "forecast", "op": ">", "value": 0},
-        {"kind": "event", "field": "trailing_vol", "bars": 20, "op": ">", "value": 0.02}]}]) is None
+    assert asm.angle_of([trade], statistics=["mean_diff"]) is None
+    ev = {"kind": "event", "field": "past_return", "bars": 1, "op": ">=", "value": 0.01}
+    assert asm.angle_of([ev], statistics=["mean_diff"]) == "regime"
+    assert asm.angle_of([{"kind": "all_of", "selectors": [fa, ev]}], statistics=["mean_diff"]) is None
+    assert asm.angle_of([{"kind": "all_of", "selectors": [ev, tv]}], statistics=["mean_diff"]) == "regime"
+    assert asm.angle_of([tv, fq], statistics=["mean_diff", "mean_diff"]) is None   # every test must qualify
     assert asm.angle_of([]) is None
+
+
+def test_an_observation_vehicle_is_never_read_by_decide_next(tmp_path):
+    """Operator 2026-10-23 (b): `vehicle` on an observation is for the operator's reading. An
+    accepted session whose observation carries one reaches the campaign memory, and decide-next
+    makes no candidate from it and its candidates are unchanged by it."""
+    import decide_next as dn
+    import test_e059_s2a_decide_next as t59
+    e = _log("sonnet", "forecast")
+    obs = _obs(e, "q11", floor_lowered_reason="r", vehicle=copy.deepcopy(_FORECAST_VEHICLE))
+    _r, rec, errors = _check(_nc(e, [obs, _obs(e, "q7", floor_lowered_reason="r")]), e)
+    assert not any("vehicle" in x for x in errors), errors      # completeness aside
+    rec["attempts"] = [{"status": "accepted", "outcome": "no_claim", "errors": []}]
+    run_dir = tmp_path / "run_061"
+    (run_dir / "artifacts" / "analyst").mkdir(parents=True)
+    (run_dir / asm.record_rel("forecast")).write_text(yaml.safe_dump(rec), encoding="utf-8")
+    rows = cm.analyst_observations(run_dir, "run_061")
+    assert rows[0]["vehicle"] == _FORECAST_VEHICLE
+
+    def decide(memory_extra):
+        entry = t59._memory_entry("run_061", proposal_ids=())
+        entry.update(memory_extra)
+        inputs = t59._inputs({"run_061": t59._src([])}, {"run_061": entry})
+        return dn.decide(inputs, now="2026-10-08T00:00:00+00:00",
+                         trigger={"after_run": "run_061", "after_entry": "E", "idea_status": "refuted"})
+
+    without, with_obs = decide({}), decide({"observations": rows})
+    assert with_obs["candidates"] == without["candidates"]
+    assert not any("vehicle" in json.dumps(c) and "anchor_position" in json.dumps(c)
+                   for c in with_obs["candidates"])
 
 
 def test_the_sonnet_forecast_claim_is_a_sizing_finding_by_its_vehicle_path_and_is_refused():
