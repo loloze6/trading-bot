@@ -48,6 +48,7 @@ import test_e075_pr3_trade_tests as pr3  # noqa: E402
 # (autouse there: analyst and folds on, imported here so it applies in this module too; every
 # test below that cares about a flag sets it itself), `_install` (the stubbed SDK session)
 from test_e075_pr5_analyst import RUN_ID, _cite, _flags, _install, _vehicle, run  # noqa: E402,F401
+from d178_legacy_fixture import d178_checks_off  # noqa: E402,F401  (D-178; _flags uses it)
 
 OWN_OUTCOMES = ("trade_net_return", "trade_gross_return")
 D095_NEEDLE = "selects lots by an exit-time field"

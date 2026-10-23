@@ -37,6 +37,7 @@ from test_d051_d053_forecast_rules import CONFIG, MANIFEST, SC  # noqa: E402
 from test_e077_pr2_confirm import CAT, CHANGE, _claim, _reading, _save  # noqa: E402
 from test_e075_pr5_analyst import _flags, _good_claim, _install, run, RUN_ID  # noqa: E402,F401
 import analyst_session as asm  # noqa: E402
+from d178_legacy_fixture import d178_checks_off  # noqa: E402,F401  (D-178; _flags uses it)
 
 ENV = {"combines_as": "forecast_block", "fold_observed": "A"}
 NEW_OP = "kalman_smooth"                                   # not in TRANSFORM_OPS_REGISTRY
