@@ -1,0 +1,41 @@
+base_hypothesis_id: DAILY_ANCHOR_52W_PROXIMITY_1D
+summary: >
+  Four variants in the config-direct flow: base on BTCUSDT, one design (period 250 to 120) on BTCUSDT, and asset variants on LINKUSDT (defi) and ADAUSDT (altcoin_l1_verified_kraken). Single graded component, ungated, price_volume_only.
+key_insight: >
+  The authored base measures position in the 250-bar close range, not distance to the high. The card's d_t is not tested by any variant in this pass. Sign convention matches: higher near the high gives a higher forecast.
+flags:
+  - "Proxy mismatch: base uses (close minus 250-bar low) over range, so the low side also moves the forecast. Read any verdict as a range-position test, not an anchoring test."
+  - "A1.2 not met: a non-price variant needs a new component, which D-053 forbids for design variants. Funding and fear_and_greed are routed to separate hypotheses."
+  - "Leakage: position set at close t earns from close t to t+1 only if the engine computes returns that way. 1b to confirm."
+  - "Prior failure: run_065 (donchian daily breakout, on/off) refuted on BTCUSD and SOLUSD 1d. Same component family, different config, so not an exact repeat and not excluded."
+  - "Overlap: distance to a rolling high correlates with SMA200 distance (D-128 closed lane). Expected per card."
+  - "Coverage risk: coin_universe start dates come from the 1h archive. LINK from 2019-09-25, ADA from 2018-09-28. Fold B coverage gate (D-042) may exclude LINK; no substitute queued."
+  - "Conservative variant: the base is kept in the queue as the conservative reference."
+variants_not_pursued:
+  - candidate: "reverse polarity (negate) as a fifth variant"
+    reason: "exceeds the four-variant shape; test as a separate hypothesis or second design later"
+  - candidate: "funding_open_interest graded component added to the anchor"
+    reason: "adds a component, violates D-053 and the design-variant rule; separate hypothesis"
+  - candidate: "fear_and_greed daily-aligned sentiment overlay"
+    reason: "adds a component; separate hypothesis"
+  - candidate: "second design variant (period 60 or 500)"
+    reason: "parameter-only change on the same axis as period 120; cosmetic per IMPROVEMENT 04 and no shape slot"
+  - candidate: "threshold or dead-zone on the anchor distance"
+    reason: "forbidden: threshold_filter and volume_filter are not allowed in strategies (D-051)"
+  - candidate: "ETHUSDT as asset variant"
+    reason: "same category as BTC (store_of_value); refused by brief"
+prior_runs_checked:
+  - "run_065 donchian daily breakout BTC SOL 1d: refuted, different mechanism and config"
+  - "run_084 to run_093 L1 daily SMA trend BTC ETH LTC 1d: lane closed (D-128), overlap flagged"
+  - "run_097 std reversal on LINK among others 1d: refuted, different idea, not a repeat"
+diversity_audit:
+  categories_spanned: [trend_following]
+  data_requirements_spanned: [ohlcv_only]
+  verdict: "real_diversity"
+  cosmetic_reject_reason: null
+  note: "Library categories are not spanned. Diversity comes from the asset axis (coin_universe store_of_value, defi, altcoin_l1), which D-053 assigns to the asset variant. Design variant is exempt."
+asset_diversity_audit:
+  base_instrument_category: store_of_value
+  candidate_symbols: [LINKUSDT, ADAUSDT]
+  categories_spanned: [store_of_value, defi, altcoin_l1_verified_kraken]
+  opt_out: null

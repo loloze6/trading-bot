@@ -1,0 +1,86 @@
+hypothesis_id: DAILY_ANCHOR_52W_PROXIMITY_1D
+thesis: >
+  The daily close's proximity to its trailing 250-day high predicts the next one- and two-day BTC returns. Closer to the high means higher expected return, through anchoring-driven underreaction. The forecast is graded, not an on/off trigger.
+rationale: >
+  Let d_t = C_t / max(C_{t-249..t}) - 1, which lies in (-1, 0]. Hypothesis: E[r_{t+h} | d_t] rises in d_t for h = 1, 2, so the predicted sign is positive. The criterion forecast_ic_median tests the ordering of bars, not a threshold. Lane-1 caution: d_t is a distance to a rolling maximum, not an SMA distance, but the two are correlated, so overlap with the closed SMA lane (D-128) is material. Nearest prior: run_065 (donchian daily breakout, refuted). This formulation changes the mechanism (anchoring, graded distance) rather than a parameter.
+edge_source:
+  category: persistent_behavioral_bias
+  specific_mechanism: >
+    Investors anchor on the 52-week high. Near that anchor, good news is underreacted because holders wait for a breakthrough, so drift continues upward. Far below it, the reverse holds. Causal chain: closeness to anchor leads to slower reaction to news, so next-day returns correlate positively with d_t. Measurable proxy: d_t from daily closes. Purity note: d_t measures distance from an anchor, not the size of the recent move, so short-term reversal (which keys on past_return) is not what the proxy measures. That competing sign remains possible (see expected_failure_modes).
+  why_not_arbitraged: >
+    Exploiting the underreaction needs sustained exposure through the resistance zone the anchor creates. That exposure is capacity-limited for leveraged and stop-driven participants. Round-number highs are widely quoted, so the bias recurs from a structural incentive: managers and retail are judged against recent highs and place stops just beneath them.
+  evidence_type: price_volume_only
+  measurable_proxy: >
+    d_t = close_t / max(close over last 250 bars including t) - 1, from Kraken daily OHLCV closes. Predicted sign: positive rank correlation of d_t with the next 1-bar and 2-bar returns.
+signal_concept: >
+  Graded counterpart of the on/off rule "long when the close is at its 52-week high, flat otherwise". This is restated, not used as written. Quantity: d_t, the close's position relative to its trailing 250-bar high. Scaling: forecast = clip(80 * (d_t + 0.25), -20, +20), giving +20 at the high, 0 at 25 percent below it, and -20 at 50 percent below or further. Position size follows it: allocation = forecast / 10, so a stronger signal is a bigger position and a zero forecast is flat. The graded version differs from the on/off rule by sizing with distance instead of switching. Not expressible in the config: none (no stop, exit rule, time hold, or sizing beyond forecast / 10 is part of the idea). Ungated: no regime condition, so no regime design variant applies. Design variant on BTC: lookback 120 bars instead of 250 (a 4-month anchor). Leakage: d_t uses close_t and earlier closes only. The forecast from bar t is applied from bar t+1 (1b confirms the engine's fill convention).
+target_market: >
+  BTC/USD daily, Kraken, with Kraken perp costs applied to spot prices. Base variant: BTC. Design variant: BTC with lookback 120. Asset variants (one or two, graded by the data gate): LINK (defi) and ADA (altcoin_l1_verified_kraken). ETH is excluded (same category as BTC).
+timeframe: 1d
+assumptions:
+  - "Daily BTC closes from the local Kraken cache; the cache starts in 2013, so warm-up history exists before fold B."
+  - "The 250-bar anchor needs pre-window history. 1b must confirm the engine feeds it; if it uses window-local bars only, the base variant has no forecast."
+  - "Fold B is six 4-month windows (about 730 bars per coin)."
+  - "Perp cost model: 5 bps taker per side, 10 bps round trip. Funding is not modeled."
+  - "Forecast from bar t is applied from bar t+1 or later; no same-bar fill."
+expected_failure_modes:
+  - "Competing short-horizon reversal: after rallies into the high, 1-2 day mean reversion predicts the opposite sign. If it dominates, the anchoring claim fails by sign."
+  - "Lane-1 overlap: distance to a rolling high is strongly related to SMA200 distance (D-128 closed lane). Fold B may reproduce that lane rather than test anchoring."
+  - "Breakout cousin: run_065 (donchian daily breakout) was refuted on BTC 1d. A graded anchor distance may share the same failure."
+  - "Warm-up dependence: if the 250-bar history is not fed, the base variant is empty and the claim cannot be measured."
+  - "Turnover and exposure: the forecast changes most days and reaches plus or minus 2x allocation. Costs and the branch-3 20 percent drawdown cap are the binding constraints, judged by the backtest."
+  - "Small sample: about 730 BTC bars over six windows gives noisy per-window IC, so forecast_ic_median may read noise."
+library_lookup:
+  indicator_id: "none_nearest_moving_average_crossover"
+  regime_affinity_for_target: "neutral"
+  affinity_justification: "n/a (ungated; trend-family affinity risk is listed in expected_failure_modes)"
+  prior_campaign_failures:
+    - "run_065: donchian daily breakout (on/off), BTC and SOL 1d, refuted; this card changes mechanism to graded anchoring distance"
+  crowding_risk: "high"
+  crowding_deviation_justification: "No less-crowded OHLCV-only alternative exists in the library, and the non-OHLCV feeds are unavailable or out of scope. Used because the brief requires daily OHLCV on BTC."
+criteria:
+  - id: forecast_ic_median
+cost_feasibility:
+  assumed_round_trip_cost_bps: 10.0
+  expected_holding_bars:
+    min: 1
+    max: 60
+  expected_trades_per_window: "roughly 60 to 120 rebalance lots per 4-month window (estimate; the forecast changes most bars, and the count depends on engine netting)"
+  required_gross_edge_bps_per_trade: "<= 20.0 (2 x 10.0)"
+  plausibility: marginal
+  plausibility_rationale: >
+    Daily signal with a continuous forecast, so turnover is high. Round trip is 10 bps against daily BTC volatility of roughly 300 bps, so a 20 bps gross edge per trade is about 0.07 sigma. Plausible only if the drift is captured. Information only; judged by the backtest.
+claim:
+  statement: >
+    On BTC daily bars, a higher forecast (closer to the 250-day high) is followed by higher returns over the next 1 and 2 bars. The top 30 percent of forecast days have higher next-day returns than other days.
+  kind: direction_forecast
+  tests:
+    - name: anchor_rank_ic
+      selector: {kind: all}
+      outcome: {kind: fwd_return, horizons: [1, 2]}
+      statistic: rank_ic
+      direction: greater
+      floor: {min_events: 100, min_windows: 4}
+      consistency: {unit: window, min_same_sign: 4}
+    - name: near_high_top30
+      selector: {kind: quantile, field: forecast, side: top, q: 0.3, lookback: 60}
+      outcome: {kind: fwd_return, horizons: [1, 2]}
+      baseline: {kind: complement}
+      statistic: mean_diff
+      direction: greater
+      floor: {min_events: 100, min_windows: 4}
+  pass_if: >
+    At horizons 1 and 2, rank IC of forecast with the next returns is positive in at least 4 of 6 windows, with at least 100 events. The top 30 percent forecast days show higher mean next-day returns than other days in the same direction.
+  fail_if: >
+    Rank IC is negative at horizon 1 or 2 in most windows, or the top 30 percent forecast days show lower mean next-day returns than other days in most windows.
+  rationale: >
+    If anchoring drives continuation, forecast ranking and the top-decile days must both point upward at the short horizons. Horizons are capped at 2 bars so that the event floor is reachable on about 730 bars. The 250-bar lookback on the forecast is a test selector only, kept at 60 bars so it fits within each window.
+power_parameters:
+  activation_rate: 1.0
+  plausible_ic_upper: 0.05
+  n_bars: 730
+  n_symbols: 1
+  is_market_wide: false
+  power_note: >
+    A8.6 axis order: OHLCV-only (both rows), then activation density (dense, both rows), then crowding. Trend-following signals are crowding high in the library, so the top of the high-crowding dense OHLCV row (0.03-0.05) is used, set at 0.05.
+pass_through: false

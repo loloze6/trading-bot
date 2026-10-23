@@ -1,0 +1,81 @@
+hypothesis_id: DAILY_DONCHIAN_250_LONG_ONLY_VOLTARGET_1D_BTC
+thesis: >
+  On BTC daily bars, taking only the long side of the close's position in its trailing 250-day high-low range, sized to a common 20 percent a year volatility, earns more than Kraken perp costs on fold B, because run_098's long entries earned and its short entries lost.
+rationale: >
+  Let p_t = (C_t - min(C_{t-249..t})) / (max(C_{t-249..t}) - min(C_{t-249..t})) and o_t = 2 p_t - 1, which lies in [-1, 1]; this is run_098's host quantity (DonchianBreakoutComponent, period 250). run_098 traded it long and short on fold B and was refuted, but its analyst re-run split the result by side: short lots lost (mean net return per short lot -0.034, entered into the bounce that follows a breakdown to the bottom of the range) and strong-long entries earned (+0.022 gross per lot at an entry forecast of 10 or more). The hypothesis is the long half of that split. Expected sign: positive rank correlation of o_t with the next one to five daily returns, on the long side only. Nearest priors: run_098 (this host, long and short, refuted) and run_065 (daily Donchian breakout, on/off, refuted). Lane-1 caution (D-128): a long-only book can earn the fold's drift, which is why the pre-registered outcomes name that rival. This is a pre-registered test of a finding made on the same fold (fold B), so a pass is not independent; the refold on an unseen fold follows.
+edge_source:
+  category: persistent_behavioral_bias
+  specific_mechanism: >
+    Anchoring on the trailing high: near the top of a 250-day range, good news is underreacted because holders wait for a breakthrough, so the drift continues upward; a breakdown to the bottom of the range is followed by a bounce as shorts cover, which is why the short side is dropped. Causal chain: closeness to the range's high leads to slower reaction, so forward returns are higher after high range positions. Measurable proxy: o_t from daily closes; the long-side forecast is the standardised o_t limited to 0..20.
+  why_not_arbitraged: >
+    Exploiting the underreaction needs sustained long exposure through the resistance zone a rolling high creates, which is capacity-limited for leverage-constrained and stop-driven participants. Perp fees are paid only a few times a year on a daily signal, and the premium per day is small relative to BTC's daily volatility, so little capital is committed to correcting it.
+  evidence_type: price_volume_only
+  measurable_proxy: >
+    o_t = 2 x (C_t - rolling 250-bar minimum of closes) / (rolling 250-bar maximum - minimum) - 1, from Kraken daily closes. The mechanism predicts positive rank IC of the long-only forecast with forward 1 to 5 bar returns. Whether the strongest long readings are already exhausted at 5 bars is the pre-registered half (a) question in the claim.
+signal_concept: >
+  Graded signal on the long side only. Quantity: o_t, the position of the close in its trailing 250-bar high-low range, from -1 at the low to +1 at the high. Scaling: standardised (D-149) over a 250-bar window with min_periods 62 (D-166: the larger of 60 and the component's longest lookback, a quarter of the window for min_periods), then limited to 0..20, so the forecast is zero whenever the close is in the lower half of its range (o_t at or below 0) and rises to +20 near the high; then volatility targeting to 20 percent a year over 60 daily closes (vol_target: 0.2 x 365-day annualisation), then limited to 0..20 again. Position size follows it: allocation = forecast / 10, so a stronger reading is a bigger position and a zero forecast is flat. The sizing is host convention at a common target volatility, not the tested mechanism. Rule first conceived: "long when the close is near the top of its 250-day range, flat otherwise" (run_098's long side). Restated as the graded map above. Not expressible in the config: none (no stop, exit rule, time hold or sizing beyond forecast / 10 is part of the idea). Ungated design: regime rules empty. Design variant on BTC: the same config with the vol_target op removed (the transforms list replaced by standardise -> clip(0, 20) -> clip(0, 20)), one transform change, D-053. Asset variant: LTCUSDT (altcoin_l1_verified_kraken category), empty patch. No lookahead: o_t and the standardise mean use closes up to and including bar t (the mean is over values strictly before the current one); the vol_target window uses closes up to bar t.
+target_market: >
+  BTC/USD daily, Kraken, with Kraken perp costs applied to spot prices. Base variant: BTC with the vol_target op. Design variant: BTC without it. Asset variant: LTCUSDT (altcoin_l1_verified_kraken category), empty patch. Fold B (six 4-month blocks of 2018-2021).
+timeframe: 1d
+assumptions:
+  - "Daily Kraken closes are correct and timestamped at bar close."
+  - "The 624-bar warm-up (2 x required_bars of 312: 250 Donchian bars plus 62 standardise min_periods) is covered by BTC and LTC cached history before every fold-B window (BTC cache starts in 2013, LTC first Kraken bar 2013-10-24)."
+  - "run_098's side split (short lots lose, strong-long entries earn) is a property of the strategy, not only of fold B's drift; this run tests it on the same fold and the refold tests it on an unseen one."
+  - "Perp cost model: 5 bps taker per side, 10 bps round trip. Funding is not modelled."
+  - "The risk manager's min_allocation_change band (0.2) rejects rebalances smaller than 0.2 of allocation, so a vol-targeted position trades in coarser steps than the forecast moves."
+expected_failure_modes:
+  - "Drift: BTC rose through most of fold B's windows, so a long-only book can earn the fold's drift with no information in the range position (pre-registered outcome C)."
+  - "Drawdown: long-only at 20 percent a year volatility may still breach branch 3's 20 percent whole-test drawdown cap in 2018 and mid-2021 (pre-registered outcome B)."
+  - "Trade frequency: the 0.2 allocation band and a slowly moving 250-bar position may leave trades below 1 percent of bars, failing the trade-frequency bar alone (pre-registered outcome D)."
+  - "Standardise on a slow component: a 250-bar window keeps the forecast graded, but a small mean of past absolute values early in a window can still push readings to the cap."
+  - "Ties in the IC: about half of the forecast is exactly 0 after the clip at zero, so the forecast_ic_median criterion carries ties and may read low even if the long side earns."
+  - "LTC (altcoin_l1_verified_kraken) may not share the mechanism; a criterion failure on LTC alone refutes the idea (pre-registered outcome C2)."
+  - "Same-fold reuse: the long-side finding came from fold B, so a pass here is partly in-sample; only the refold is out of sample."
+library_lookup:
+  indicator_id: "none_nearest_moving_average_crossover"
+  regime_affinity_for_target: "neutral"
+  affinity_justification: "n/a (ungated; trend-family affinity risk is listed in expected_failure_modes)"
+  prior_campaign_failures:
+    - run_id: run_098
+      mechanism_tried: "Donchian 250 position, standardised, long and short, BTC fold B; refuted (negative forecast IC, drawdown 41.6 percent); this card keeps the long side only"
+    - run_id: run_065
+      mechanism_tried: "donchian daily breakout (on/off), BTC and SOL 1d, refuted; this card is graded, not on/off"
+  crowding_risk: "high"
+  crowding_deviation_justification: "No less-crowded OHLCV-only alternative exists in the library, and the non-OHLCV feeds are unavailable or out of scope. Used because the brief requires daily OHLCV on BTC."
+criteria:
+  - id: forecast_ic_median
+cost_feasibility:
+  assumed_round_trip_cost_bps: 10.0
+  expected_holding_bars:
+    min: 1
+    max: 120
+  expected_trades_per_window: 15
+  required_gross_edge_bps_per_trade: 20.0
+  plausibility: plausible
+  plausibility_rationale: "Slow daily signal on BTC perp at the cost_model round trip of 10.0 bps (taker fee only); a position held for weeks pays the round trip a few times a year. expected_trades_per_window 15 is an estimate: about half of run_098's 29 lots per window (176 lots over 6 windows, long and short), the long side only; the 0.2 allocation band blocks small changes. Information only; judged by the backtest."
+claim:
+  statement: >
+    The long-only forecast ranks the next 5 and 20 daily returns positively (higher forecast, higher return), and after a forecast of 8 or more the return over the next 5 bars is lower than on the other bars (half (a) of the run_098 re-run question: whether the strongest long readings are already exhausted at 5 bars).
+  kind: direction_forecast
+  tests:
+    - name: long_forecast_rank_ic_5_20
+      selector: {kind: all}
+      outcome: {kind: fwd_return, horizons: [5, 20]}
+      baseline: null
+      statistic: rank_ic
+      direction: greater
+      floor: {min_windows: 5}
+    - name: half_a_strong_long_lower_5
+      selector: {kind: event, field: forecast, op: ">=", value: 8}
+      outcome: {kind: fwd_return, horizons: [5]}
+      baseline: {kind: complement}
+      statistic: mean_diff
+      direction: less
+      floor: {min_events: 50}
+  pass_if: >
+    At horizons 5 and 20 the rank IC of the forecast with the forward return is positive in at least 5 of the 6 windows; at horizon 5, bars with a forecast of 8 or more have a lower mean forward return than the other bars, with at least 50 such bars.
+  fail_if: >
+    The rank IC is zero or negative at horizon 5 or 20 in most windows, or at horizon 5 the bars with a forecast of 8 or more have a higher or equal mean forward return than the other bars.
+  rationale: >
+    The first test is the vehicle's own direction claim, the one the criterion forecast_ic_median grades, read at two horizons; the second is half (a), pre-registered by the operator's direction of 2026-10-21 from run_098's analyst re-run and left untested there (D-171). Both read the strategy's own forecast. The claim is measured and shown, never graded, and nothing in the run depends on it; no question is handed to the analyst lenses.
+pass_through: false

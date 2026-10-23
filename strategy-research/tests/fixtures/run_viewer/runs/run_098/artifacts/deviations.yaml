@@ -1,0 +1,47 @@
+schema_version: 1
+run_id: run_098
+status: approximation
+information_only: true
+deviations:
+- clause: Quantity d_t = close_t / max(close over last 250 bars incl. t) - 1, the
+    distance below the 250-bar high
+  built_instead: 'DonchianBreakoutComponent(period 250, scaling_factor 1.0): position
+    of close_t in the 250-bar close range, (close - min) / (max - min), mapped to
+    [-1, +1]'
+  missing: A component that outputs distance to a rolling maximum (close / rolling
+    max - 1); none exists in COMPONENT_CATALOG.md
+  effect: The position also depends on the 250-bar low, so the same distance below
+    the high scores differently in wide and narrow ranges. Zero sits at mid-range,
+    not at 25 percent below the high. The two measures are correlated but not identical.
+- clause: forecast = clip(80 x (d_t + 0.25), -20, +20)
+  built_instead: standardise(window 60, min_periods 20), default target 10 and cap
+    20, applied to the Donchian position
+  missing: A fixed linear map with the card's anchors (+20 at the high, 0 at 25 percent
+    below, -20 at 50 percent below or further)
+  effect: The forecast is scaled to the trailing mean absolute value, so its level
+    drifts with recent range. Ordering and sign are kept, but the size of a position
+    at a given distance differs from the card's.
+- clause: Forecast from bar t is applied from bar t+1 or later; no same-bar fill.
+    (The card asks 1b to confirm the fill convention.)
+  built_instead: Forecast from bar t, computed on the close of bar t, traded at that
+    bar's close, as the engine does
+  missing: A one-bar execution delay. The config has no key or op that lags the forecast,
+    and STRATEGY_DESIGN_GUIDE documents the fill at the signal bar's close.
+  effect: Strategy P&L may be optimistic because the position is taken at the close
+    that generated the signal. The forward-return rank IC claim is measured on subsequent
+    bars and is not changed by the fill timing.
+config_rationale_lines:
+- clause: Quantity d_t = close_t / max(close over last 250 bars incl. t) - 1, the
+    distance below the 250-bar high
+  text: DonchianBreakoutComponent(period 250) outputs the position of close_t within
+    the 250-bar close range, (close - min) / (max - min), mapped to [-1, +1]. No catalogue
+    component outputs distance to a rolling high. See decision.yaml deviations.
+- clause: forecast = clip(80 x (d + 0.25), -20, +20)
+  text: standardise(window 60, min_periods 20) with default target 10 and cap 20 replaces
+    the fixed linear map. The forecast is scaled to the trailing mean absolute value
+    of the component, and the cap at 20 is applied by standardise. The card's anchors
+    (+20 at the high, 0 at 25 percent below, ...
+- clause: Forecast from bar t is applied from bar t+1 or later; no same-bar fill
+  text: the engine fills at the close of the bar that produced the forecast (STRATEGY_DESIGN_GUIDE,
+    How a config becomes a trade, step 5). The config has no key or op that delays
+    the forecast by one bar. See decision.yaml deviations.

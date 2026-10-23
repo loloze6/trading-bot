@@ -1,0 +1,487 @@
+schema_version: 1
+note: every call of the analyst's query tools, in order, written before the result was returned; n_comparisons counts the
+  numbers that relate a condition or group to an outcome
+queries:
+- id: q1
+  function: list_columns
+  params:
+    variant: base
+  status: ok
+  n_comparisons: 0
+  cumulative_comparisons: 0
+  digest: 17 usable bar columns
+  result_sha256: 6af58f728d52733869dbd6dfbe0e53ce8ad9008e86837cceb5384dc7097f2389
+  result:
+    variant: base
+    cadence: daily
+    windows:
+    - BTCUSD/2018-05
+    - BTCUSD/2019-01
+    - BTCUSD/2019-09
+    - BTCUSD/2020-05
+    - BTCUSD/2021-01
+    - BTCUSD/2021-09
+    bar_columns:
+    - open | price | close | First price of the bar.
+    - high | price | close | Highest price of the bar.
+    - low | price | close | Lowest price of the bar.
+    - close | price | close | Last price of the bar; the decision and fill price.
+    - volume | base units | close | Traded volume of the bar.
+    - forecast | forecast | close | The strategy's final forecast for the bar, clipped to -20..+
+    - total_portfolio_value | USDT | close | Account value at this close, before this bar's trade (cash m
+    - previous_allocation | alloc | close | Position value / account value at this close, before the tra
+    - 'allocation_change | alloc | close | Target allocation (forecast / 10, or the held allocation on '
+    - 'postRebalance_total_value | USDT | fill | Account value after this bar''s trade and its commission, at '
+    - postRebalance_current_allocation | alloc | fill | Allocation after this bar's trade.
+    - portfolio_value | USDT | close | Copy of `total_portfolio_value`.
+    - debug_info.forecast_delta | forecast | close | This bar's forecast minus the previous ready bar's forecast.
+    - debug_info.bars_in_regime | bars | close | Consecutive bars in the current regime, this bar included.
+    - debug_info.components.anchor_position.last_history_value | component | close | The component's latest raw output (before
+      its transform pipe
+    - debug_info.components.anchor_position.post_pipeline_value | forecast | close | The component's value after its transform
+      pipeline.
+    - debug_info.components.anchor_position.weighted_contribution | forecast | close | weight_normalized x post_pipeline_value;
+      the sum over compon
+    derived_columns:
+    - past_return_<n> (n bars, 1..1000)
+    - trailing_vol_<n> (n bars, 2..1000)
+    - abs_forecast
+    - forecast_sign_change
+    - allocation_abs
+    not_offered:
+      label:
+      - confidence
+      - strategy
+      - debug_info.components.anchor_position.weight_normalized
+      never:
+      - balances.USDT.free
+      - balances.USDT.locked
+      - postRebalance_balances.USDT.free
+      - postRebalance_balances.USDT.locked
+      not_numeric:
+      - timestamp
+      - regime
+      - approved_rebalance
+      - debug_approve_allocation_change
+      - succcess_execute_portfolio_rebalance
+      - debug_execute_portfolio_rebalance
+      - debug_info.regime
+      - debug_info.regime_scores
+      - debug_info.regime_margin
+    by_bars:
+    - window
+    - coin
+    - regime
+    - weekday
+    - hour
+    by_effect:
+    - window
+    - coin
+    by_trades:
+    - window
+    - direction
+    - regime_at_entry
+    - weekday
+    - hour
+    trade_fields:
+      entry_time:
+      - side
+      - entry_hour
+      - entry_weekday
+      - regime_at_entry
+      - entry_forecast
+      exit_time:
+      - exit_cause
+      - holding_bars
+    trade_aggs:
+      fields:
+      - trade_net_return
+      - post_exit_return
+      - holding_bars
+      - entry_forecast
+      - trade_gross_return
+      - trade_cost_pct
+      stats:
+      - mean
+      - median
+      - share_positive
+      - count
+    condition_kinds:
+    - all
+    - all_of
+    - calendar
+    - event
+    - quantile
+    - regime
+    - regime_change
+    - trade
+    outcomes:
+    - fwd_max_drawdown
+    - fwd_return
+    - fwd_volatility
+    - trend_ends
+    - trade_net_return
+    - post_exit_return
+    - trade_gross_return
+    statistics:
+    - decay_curve
+    - hit_rate
+    - mean_diff
+    - rank_ic
+    caps:
+      groups: 12
+      horizons: 6
+      result_chars: 6500
+      comparisons: 150
+- id: q2
+  function: window_economics
+  params:
+    variant: base
+  status: ok
+  n_comparisons: 0
+  cumulative_comparisons: 0
+  digest: 6 window(s); trades=12 turnover=4.141044 gross_pct=33.853548 net_pct=33.631624
+  result_sha256: a19336fd139342da1d8ae04cdf0d96d04514b4ddb2b60aef3f8df51846121021
+  result:
+    windows:
+      BTCUSD/2018-05:
+        n_bars: 123
+        trades: 0
+        turnover: 0.0
+        direction_changes: 0
+        mean_abs_allocation: 0.0
+        max_abs_allocation: 0.0
+        gross_pct: 0.0
+        fees_pct: 0.0
+        net_pct: 0.0
+        cost_drag_pct: null
+        avg_trade_duration_bars: null
+        median_holding_bars: null
+        fees_pct_annualised: 0.0
+        gross_per_lot_pct: null
+        fees_per_lot_pct: null
+        turnover_annualised: 0.0
+        cost_drag_note: null
+      BTCUSD/2019-01:
+        n_bars: 120
+        trades: 0
+        turnover: 0.0
+        direction_changes: 0
+        mean_abs_allocation: 0.0
+        max_abs_allocation: 0.0
+        gross_pct: 0.0
+        fees_pct: 0.0
+        net_pct: 0.0
+        cost_drag_pct: null
+        avg_trade_duration_bars: null
+        median_holding_bars: null
+        fees_pct_annualised: 0.0
+        gross_per_lot_pct: null
+        fees_per_lot_pct: null
+        turnover_annualised: 0.0
+        cost_drag_note: null
+      BTCUSD/2019-09:
+        n_bars: 122
+        trades: 1
+        turnover: 0.365331
+        direction_changes: 0
+        mean_abs_allocation: 0.17079255
+        max_abs_allocation: 0.211763
+        gross_pct: -6.8832113
+        fees_pct: 0.017742
+        net_pct: -6.9009533
+        cost_drag_pct: 0.2578
+        avg_trade_duration_bars: 119.0
+        median_holding_bars: 119.0
+        fees_pct_annualised: 0.053080574
+        gross_per_lot_pct: -6.8832113
+        fees_per_lot_pct: 0.017742
+        turnover_annualised: 1.0929985
+        cost_drag_note: null
+      BTCUSD/2020-05:
+        n_bars: 123
+        trades: 5
+        turnover: 1.828862
+        direction_changes: 0
+        mean_abs_allocation: 0.55007858
+        max_abs_allocation: 0.932802
+        gross_pct: 21.448934
+        fees_pct: 0.1020983
+        net_pct: 21.346836
+        cost_drag_pct: 0.476
+        avg_trade_duration_bars: 65.8
+        median_holding_bars: 41.0
+        fees_pct_annualised: 0.30297463
+        gross_per_lot_pct: 4.2897868
+        fees_per_lot_pct: 0.02041966
+        turnover_annualised: 5.4271108
+        cost_drag_note: null
+      BTCUSD/2021-01:
+        n_bars: 120
+        trades: 2
+        turnover: 0.931033
+        direction_changes: 0
+        mean_abs_allocation: 0.30244708
+        max_abs_allocation: 0.473427
+        gross_pct: 23.814669
+        fees_pct: 0.0513079
+        net_pct: 23.763362
+        cost_drag_pct: 0.2154
+        avg_trade_duration_bars: 64.5
+        median_holding_bars: 64.5
+        fees_pct_annualised: 0.15606153
+        gross_per_lot_pct: 11.907335
+        fees_per_lot_pct: 0.02565395
+        turnover_annualised: 2.831892
+        cost_drag_note: null
+      BTCUSD/2021-09:
+        n_bars: 122
+        trades: 4
+        turnover: 1.015818
+        direction_changes: 0
+        mean_abs_allocation: 0.26257771
+        max_abs_allocation: 0.570933
+        gross_pct: -4.5268439
+        fees_pct: 0.0507764
+        net_pct: -4.5776203
+        cost_drag_pct: 1.1217
+        avg_trade_duration_bars: 72.75
+        median_holding_bars: 70.0
+        fees_pct_annualised: 0.151913
+        gross_per_lot_pct: -1.131711
+        fees_per_lot_pct: 0.0126941
+        turnover_annualised: 3.0391276
+        cost_drag_note: null
+    total:
+      n_bars: 730
+      trades: 12
+      turnover: 4.141044
+      direction_changes: 0
+      mean_abs_allocation: 0.21482806
+      max_abs_allocation: 0.932802
+      gross_pct: 33.853548
+      fees_pct: 0.2219246
+      net_pct: 33.631624
+      cost_drag_pct: 0.6555428
+      avg_trade_duration_bars: 72.333333
+      median_holding_bars: 70.0
+      fees_pct_annualised: 0.1109623
+      gross_per_lot_pct: 2.821129
+      fees_per_lot_pct: 0.018493717
+      turnover_annualised: 2.070522
+      cost_drag_note: null
+- id: q3
+  function: describe
+  params:
+    by: null
+    column: forecast
+    variant: base
+  status: ok
+  n_comparisons: 0
+  cumulative_comparisons: 0
+  digest: 'all: n=730 mean=1.8689993'
+  result_sha256: df3d0e1a1697c1f8356b062613ce7bfe1b3a03cae8d490d994b8a78e0335a078
+  result:
+    column: forecast
+    by: null
+    groups:
+      all:
+        n: 730
+        nan_share: 0.0
+        mean: 1.8689993
+        std: 2.3894881
+        p10: 0.0
+        p50: 0.5425885
+        p90: 5.5567117
+        abs_mean: 1.8689993
+        share_at_cap: 0.0
+- id: q4
+  function: trade_slice
+  params:
+    agg:
+    - field: entry_forecast
+      stat: median
+    - field: trade_net_return
+      stat: mean
+    - field: holding_bars
+      stat: median
+    by: null
+    filter: []
+    variant: base
+  status: ok
+  n_comparisons: 1
+  cumulative_comparisons: 1
+  digest: 'all: n_trades=12'
+  result_sha256: 5f9000005317904bd11ce7924d0cac9167877d5b21e35ea253edfb0be992d328
+  result:
+    by: null
+    groups:
+      all:
+        n_trades: 12
+        entry_forecast_median: 4.1990255
+        trade_net_return_mean: 0.13073143
+        holding_bars_median: 70.0
+    return_basis:
+    - all_costs
+- id: q5
+  function: conditional_effect
+  params:
+    baseline:
+      kind: complement
+    by: null
+    condition:
+      field: forecast
+      kind: quantile
+      lookback: 100
+      q: 0.2
+      side: top
+    direction: greater
+    floor:
+      min_events: 100
+      min_windows: 4
+    horizons:
+    - 1
+    - 5
+    - 20
+    outcome: fwd_return
+    statistic: mean_diff
+    variant: base
+  status: ok
+  n_comparisons: 3
+  cumulative_comparisons: 4
+  digest: 'bars; h=1: effect -3.5955961e-06 n=58; h=5: effect -0.0024697194 n=50; h=20: effect 0.072740651 n=6'
+  result_sha256: 4cbc9476324b8fb30e7af099e04b8f4ba687fc18a80d759c213d1ce75eb774ea
+  result:
+    unit: bars
+    outcome: fwd_return
+    statistic: mean_diff
+    direction: greater
+    by: null
+    horizons:
+      '1':
+        effect: -3.5955961e-06
+        oriented: -3.5955961e-06
+        n_events: 58
+        n_windows_with_events: 4
+        n_blocks: 58
+        windows_claimed_sign: 1
+        windows_with_value: 2
+      '5':
+        effect: -0.0024697194
+        oriented: -0.0024697194
+        n_events: 50
+        n_windows_with_events: 4
+        n_blocks: 8
+        windows_claimed_sign: 1
+        windows_with_value: 2
+      '20':
+        effect: 0.072740651
+        oriented: 0.072740651
+        n_events: 6
+        n_windows_with_events: 2
+        n_blocks: 0
+        windows_claimed_sign: 0
+        windows_with_value: 0
+    test:
+      name: cond_1db1cd8272
+      selector:
+        kind: quantile
+        field: forecast
+        side: top
+        q: 0.2
+        lookback: 100
+      outcome:
+        kind: fwd_return
+        horizons:
+        - 1
+        - 5
+        - 20
+      baseline:
+        kind: complement
+      statistic: mean_diff
+      direction: greater
+      floor:
+        min_events: 100
+        min_windows: 4
+    spec_hash: 1db1cd82721781e0bc2deafdce23b167910c1fe0c9e96c245691e7404f6aaf1b
+    compiles_as_claim: true
+- id: q6
+  function: conditional_effect
+  params:
+    baseline:
+      kind: complement
+    by: null
+    condition:
+      field: forecast
+      kind: event
+      op: '>='
+      value: 4
+    direction: greater
+    floor:
+      min_events: 100
+      min_windows: 4
+    horizons:
+    - 1
+    - 5
+    - 10
+    outcome: fwd_return
+    statistic: mean_diff
+    variant: base
+  status: ok
+  n_comparisons: 3
+  cumulative_comparisons: 7
+  digest: 'bars; h=1: effect -0.0019116712 n=145; h=5: effect -0.0013222797 n=141; h=10: effect -0.001853995 n=136'
+  result_sha256: 4d59dae1e59a76076d21937d57b6b78c4e8c6735433c14d15750a2fe2e27b791
+  result:
+    unit: bars
+    outcome: fwd_return
+    statistic: mean_diff
+    direction: greater
+    by: null
+    horizons:
+      '1':
+        effect: -0.0019116712
+        oriented: -0.0019116712
+        n_events: 145
+        n_windows_with_events: 2
+        n_blocks: 145
+        windows_claimed_sign: 0
+        windows_with_value: 2
+      '5':
+        effect: -0.0013222797
+        oriented: -0.0013222797
+        n_events: 141
+        n_windows_with_events: 2
+        n_blocks: 27
+        windows_claimed_sign: 0
+        windows_with_value: 2
+      '10':
+        effect: -0.001853995
+        oriented: -0.001853995
+        n_events: 136
+        n_windows_with_events: 2
+        n_blocks: 12
+        windows_claimed_sign: 0
+        windows_with_value: 2
+    test:
+      name: cond_9f492989f9
+      selector:
+        kind: event
+        field: forecast
+        op: '>='
+        value: 4
+      outcome:
+        kind: fwd_return
+        horizons:
+        - 1
+        - 5
+        - 10
+      baseline:
+        kind: complement
+      statistic: mean_diff
+      direction: greater
+      floor:
+        min_events: 100
+        min_windows: 4
+    spec_hash: 9f492989f969c635e73ec76293b3413296500ffc4c203591adf233b4a3660489
+    compiles_as_claim: true

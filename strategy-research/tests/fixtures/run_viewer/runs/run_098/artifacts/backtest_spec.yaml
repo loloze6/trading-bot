@@ -1,0 +1,51 @@
+status: spec_ready
+config:
+  regime_detector:
+    mode: threshold_rules
+    components: []
+    rules: []
+    default_regime: unknown
+  strategies:
+    regimes:
+      unknown:
+        components:
+          - id: anchor_position
+            class: strategies.strategy_components.DonchianBreakoutComponent
+            params:
+              period: 250
+              scaling_factor: 1.0
+            weight: 1.0
+            transforms:
+              - op: standardise
+                params:
+                  window: 60
+                  min_periods: 20
+      trending: null
+      mean_reversion: null
+      chop: null
+config_rationale:
+  - hypothesis_claim: "Graded forecast, not an on/off trigger"
+    config_choice: "DonchianBreakoutComponent is continuous on every bar (no threshold, no dead zone, no event); the only transform is standardise"
+  - hypothesis_claim: "Quantity d_t = close_t / max(close over last 250 bars incl. t) - 1, the distance below the 250-bar high"
+    config_choice: "DEVIATION: DonchianBreakoutComponent(period 250) outputs the position of close_t within the 250-bar close range, (close - min) / (max - min), mapped to [-1, +1]. No catalogue component outputs distance to a rolling high. See decision.yaml deviations."
+  - hypothesis_claim: "Lookback of 250 bars including bar t"
+    config_choice: "period 250 covers closes t-249 through t, matching the card window. The component's warmup is 250 bars, inside the engine window of required_bars + 100 bars, so the pre-window history is fed if the data loader supplies it."
+  - hypothesis_claim: "Predicted sign positive: closer to the high gives higher expected return"
+    config_choice: "scaling_factor positive and no negate op: close near the top of the 250-bar range gives a positive raw value, and standardise keeps the sign"
+  - hypothesis_claim: "forecast = clip(80 x (d + 0.25), -20, +20)"
+    config_choice: "DEVIATION: standardise(window 60, min_periods 20) with default target 10 and cap 20 replaces the fixed linear map. The forecast is scaled to the trailing mean absolute value of the component, and the cap at 20 is applied by standardise. The card's anchors (+20 at the high, 0 at 25 percent below, -20 at 50 percent below) are not reproduced."
+  - hypothesis_claim: "Allocation = forecast / 10; a zero forecast is flat"
+    config_choice: "Built by the engine: allocation = standardised forecast / 10. No sizing op in the config. A zero raw value gives a zero forecast, so flat is preserved."
+  - hypothesis_claim: "Ungated: no regime condition, no regime design variant"
+    config_choice: "regime_detector rules and components are empty with default_regime unknown, and strategies.regimes.unknown holds the component. Trending, mean_reversion and chop are null."
+  - hypothesis_claim: "Leakage: d_t uses close_t and earlier closes only"
+    config_choice: "Donchian reads closes only, up to and including bar t. standardise divides by the mean absolute value of the 60 stored values before the latest, so no future bar enters."
+  - hypothesis_claim: "Forecast from bar t is applied from bar t+1 or later; no same-bar fill"
+    config_choice: "DEVIATION: the engine fills at the close of the bar that produced the forecast (STRATEGY_DESIGN_GUIDE, How a config becomes a trade, step 5). The config has no key or op that delays the forecast by one bar. See decision.yaml deviations."
+  - hypothesis_claim: "Not expressible in the config: none (no stop, exit, time hold or sizing beyond forecast / 10)"
+    config_choice: "No exit, stop, hold or sizing key is written, because the idea uses none of them"
+  - hypothesis_claim: "Design variant on BTC: lookback 120 bars instead of 250"
+    config_choice: "Not in the base config. The base is period 250. The 120-bar variant is a patch for innovation_expansion to apply to period."
+  - hypothesis_claim: "Target: BTC daily on Kraken, asset variants LINK and ADA; ETH excluded"
+    config_choice: "No symbol, timeframe or venue key. The run protocol carries the instrument, and the config is a single base config for any coin."
+component_gap: null

@@ -1,0 +1,24 @@
+base_config_ref: artifacts/backtest_spec.yaml
+variants:
+  - variant_id: base
+    kind: base
+    symbol: BTCUSDT
+    patch: []
+    rationale: "Base config as strategy_config_authoring produced it, unmodified. Ungated DonchianBreakoutComponent, period 250, standardise window 60 min_periods 20."
+  - variant_id: design_lookback_120
+    kind: design
+    symbol: BTCUSDT
+    patch:
+      - path: "/strategies/regimes/unknown/components/0/params/period"
+        value: 120
+    rationale: "Anchor window cut from 250 to 120 bars, a 4-month anchor. Same graded component, parameter change only, no component added or replaced."
+  - variant_id: asset_link
+    kind: asset
+    symbol: LINKUSDT
+    patch: []
+    rationale: "Base config unchanged on LINK (defi), a different coin_universe category from BTC (store_of_value). Coverage gate decides whether it runs."
+  - variant_id: asset_ada
+    kind: asset
+    symbol: ADAUSDT
+    patch: []
+    rationale: "Base config unchanged on ADA (altcoin_l1_verified_kraken), a different category from BTC. Data from 2018-09-28 covers more of fold B than LINK."
