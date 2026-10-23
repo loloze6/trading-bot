@@ -43,6 +43,9 @@ from test_d089_vehicle_and_coins import EMPTY, _check_model  # noqa: E402
 from test_e058_s2a_regroup_record import ALL_ON, _memory, _seed  # noqa: E402
 from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
 from test_e075_pr5_analyst import LONG, RUN_ID, _entries_for_claim  # noqa: E402
+from d178_legacy_fixture import d178_checks_off  # noqa: E402,F401  (D-178)
+
+pytestmark = pytest.mark.usefixtures("d178_checks_off")
 from test_e077_pr2_confirm import CAT, CHANGE, _claim, _reading  # noqa: E402
 
 MEM_RUN = "run_980"                                   # the id test_e058's _seed gives its run
@@ -109,6 +112,8 @@ def test_a_no_claim_with_valid_observations_is_accepted_and_recorded():
     recorded = rec["no_claim"]["observations"]
     assert len(recorded) == 2
     for o, (qid, h) in zip(recorded, (("q7", "hq7"), ("q8", "hq8"))):
+        # D-178 (operator 2026-10-23): re-pinned with the angle tags on; these LONG-selector trade
+        # tests are not regime findings, so no `angle` key is recorded
         assert set(o) == set(asm.OBSERVATION_KEYS) | {"spec"}
         assert o["test"] == qid and o["floors_met"] is True
         # the spec is code-written: the measured test block without its result, plus its hash
@@ -617,4 +622,5 @@ def test_the_prompt_claim_example_has_a_vehicle_that_passes_the_shape_check():
     rp._check_change_items(claim["vehicle"], "example.vehicle")
     no_claim = next(yaml.safe_load(b) for b in blocks if b.lstrip().startswith("outcome: no_claim"))
     (obs,) = no_claim["no_claim"]["observations"]
-    assert set(obs) == set(asm.OBSERVATION_KEYS)
+    # D-178: the example also shows the optional keys that apply (mechanism_query)
+    assert set(asm.OBSERVATION_KEYS) <= set(obs) <= set(asm.OBSERVATION_KEYS) | set(asm.OBSERVATION_OPTIONAL)

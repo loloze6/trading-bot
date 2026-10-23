@@ -1,0 +1,81 @@
+schema_version: 1
+lens: forecast
+category: forecast_power
+run_id: run_099
+model: claude-sonnet-5-5
+caps:
+  model: claude-sonnet-5-5
+  max_turns: 40
+  max_budget_usd: 3.0
+  timeout_minutes: 15
+attempts:
+- status: accepted
+  errors: []
+  subtype: success
+  cost_usd: 1.278836
+  num_turns: 16
+  tools_denied: []
+  outcome: claim
+  models:
+  - claude-sonnet-5-5
+  answer: "```yaml\noutcome: claim\nclaim:\n  statement: >\n    On BTCUSD daily bars,\
+    \ when the past 20 days' volatility is in the bottom 30% of the\n    trailing\
+    \ 60 bars, returns over the next 5 and 10 days are higher than on other days,\n\
+    \    so the long-only Donchian forecast should be sized more tightly to short-window\n\
+    \    volatility.\n  kind: conditional_behaviour\n  tests:\n    - name: low_vol_then_higher_returns\n\
+    \      selector: {kind: quantile, field: trailing_vol, bars: 20, side: bottom,\
+    \ q: 0.3, lookback: 60}\n      outcome: {kind: fwd_return, horizons: [5, 10]}\n\
+    \      baseline: {kind: complement}\n      statistic: mean_diff\n      direction:\
+    \ greater\n      floor: {min_events: 50, min_windows: 4}\n  pass_if: >\n    At\
+    \ horizons 5 and 10, bars with low 20-day volatility (relative to the trailing\
+    \ 60 bars)\n    show a higher mean forward return than the other bars. The effect\
+    \ has the claimed sign in\n    at least 4 windows of the unseen fold, with at\
+    \ least 50 events.\n  fail_if: >\n    The mean forward return after low-volatility\
+    \ bars is lower than on other bars at either\n    horizon, or the claimed sign\
+    \ appears in fewer than 4 windows.\n  rationale: >\n    BTC volatility rises in\
+    \ sell-offs, the leverage effect, so a compressed-volatility regime\n    tends\
+    \ to be a rising or quiet one. High-volatility bars were followed by lower returns\n\
+    \    in 3 of 4 windows where they occurred (q12), which is the mirror image. The\
+    \ complement\n    baseline cancels each window's drift. The base strategy's vol_target\
+    \ already sizes\n    inversely to volatility, but over 60 bars. The effect is\
+    \ measured on a 20-bar volatility,\n    so a 20-bar vol_target window sizes up\
+    \ faster as volatility compresses and down faster as it\n    expands. Limits:\
+    \ the base strategy has a zero forecast in the two bear windows, so this\n   \
+    \ sizing change cannot act there. Event counts per window are small.\nwhy_query:\
+    \ q12\nevidence:\n  - q15:horizons.5.effect=0.037410038\n  - q15:horizons.10.effect=0.078621599\n\
+    \  - q15:horizons.5.windows_claimed_sign=5\n  - q15:horizons.10.windows_claimed_sign=4\n\
+    \  - q12:horizons.10.effect=-0.047922675\nvehicle:\n  - {component_id: anchor_position,\
+    \ field: \"transforms[2].params.window\", before: 60, after: 20}\ncombines_as:\
+    \ forecast_block\n```"
+outcome: claim
+what_was_examined:
+- 01cca70c9aa55acbe48836d2de860d31fa1a9580c7ff1d3c7752e391c1c5f148
+- 1c365ae80ce18ae793a56394326320066abed9bc04a961407bdc9cf952b2aadc
+- 2bf2b3b3ed19db0351897e61a4ab85472561b97480ee39f9a5280b4202f43fd9
+- 7f9220fd13a7f0e34ac1bfc2a8c6f0f4aaa941d7f7f7b6fd7d54d074dcadf371
+- 9c6c5b7942307db847979001af9aad8fad80d016e1e9d410a3e30519156294dd
+- 9f2be2e9c49c03259c69c08f81f8f12fa0e339c912d512d5e3ddf586f50e6e83
+- adf185dcb026ce4b23f33fa7b602084c50cde77f784282a124bdfd7bf3d477ff
+- b984338e2ffd917456be9f9a5492d352d3747f85239e28d24eead4cc3d0476f9
+looks:
+  calls: 15
+  comparisons: 79
+unverified_numbers:
+- field: claim.rationale
+  written: '3'
+claim_card_ok: true
+why_query: q12
+test_spec_hashes:
+- 01cca70c9aa55acbe48836d2de860d31fa1a9580c7ff1d3c7752e391c1c5f148
+scores:
+  confidence_real: 2
+  distance_to_profitable: 1
+  mechanism_plausibility: 1
+  source: 'code: in-run window agreement (PR5_DESIGN 11.3)'
+outcome_flipped_on_retry: false
+reading_review:
+  forecast_power-run_099-1:
+    spec_hashes:
+    - 01cca70c9aa55acbe48836d2de860d31fa1a9580c7ff1d3c7752e391c1c5f148
+    tests_none: false
+    warnings: []

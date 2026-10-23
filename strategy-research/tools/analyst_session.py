@@ -442,6 +442,292 @@ def _cite_path(c) -> str:
 OBSERVATION_KEYS = ("statement", "test", "evidence", "floors_met")
 OBSERVATIONS_MAX = 3
 
+# D-178 (operator item D, 2026-10-22). Optional keys of an observation: `mechanism_query` (a
+# later query of this session) or `stopped_by` (a named tool limit) -- one of them is required
+# when floors_met is true; `floor_lowered_reason` -- required when the observation's test repeats
+# an earlier query's selector and outcome on a lower floor (floor_lowered_info).
+# `vehicle` (ruling 1, 2026-10-23) -- the strategy change the finding points at, the claim's
+# change-list shape; code reads only its path to tag a sizing finding (angle_of).
+OBSERVATION_OPTIONAL = ("mechanism_query", "stopped_by", "floor_lowered_reason", "vehicle")
+#: the four lines of the next-steps ledger (`claim.next_steps` / `no_claim.next_steps`)
+NEXT_STEPS_KEYS = ("opposite_direction", "another_horizon", "all_bars_version", "mechanism")
+#: keys a claim may carry for code only: stripped before the claim card sees the claim
+CLAIM_CODE_KEYS = ("next_steps", "floor_lowered_reasons", "observations")
+NOT_RUN_PREFIX = "not run:"
+
+
+def _qnum(qid):
+    """The number of a query id ("q12" -> 12); None for anything else."""
+    m = re.fullmatch(r"q([0-9]+)", qid) if isinstance(qid, str) else None
+    return int(m.group(1)) if m else None
+
+
+def _is_ce_ok(entry) -> bool:
+    return isinstance(entry, dict) and entry.get("function") == "conditional_effect" \
+        and entry.get("status") == "ok"
+
+
+def _test_block_of(entry) -> dict:
+    res = entry.get("result") if isinstance(entry, dict) else None
+    blk = res.get("test") if isinstance(res, dict) else None
+    return blk if isinstance(blk, dict) else {}
+
+
+def _floor_of(entry) -> dict:
+    """The numeric floor units of a conditional_effect call's own test block."""
+    fl = _test_block_of(entry).get("floor")
+    if not isinstance(fl, dict):
+        return {}
+    return {k: v for k, v in fl.items() if isinstance(v, (int, float)) and not isinstance(v, bool)}
+
+
+def _same_selector_outcome_key(entry) -> str:
+    """The identity D-178 compares when it asks whether a test repeats an earlier one: the
+    selector, the outcome kind and the statistic (not the floor, direction, horizons, `by`,
+    baseline or variant)."""
+    t = _test_block_of(entry)
+    out = t.get("outcome")
+    kind = out.get("kind") if isinstance(out, dict) else out
+    return json.dumps([t.get("selector"), kind, t.get("statistic")], sort_keys=True, default=str)
+
+
+def _accounted_key(entry) -> str:
+    """The identity D-178 (item D3, operator ruling 4) uses for "accounted for": the selector,
+    the outcome kind, the statistic AND the direction. The same test at another floor, horizon
+    or `by` is the same finding; the opposite direction of the same selector is not."""
+    t = _test_block_of(entry)
+    return json.dumps([_same_selector_outcome_key(entry), t.get("direction")], default=str)
+
+
+def _floor_is_lower(this: dict, earlier: dict) -> bool:
+    """`this` floor is lower than `earlier`: lower in at least one unit (a unit it leaves out
+    counts as 0) and higher in none."""
+    keys = set(this) | set(earlier)
+    return any(earlier.get(k, 0) > this.get(k, 0) for k in keys) \
+        and not any(this.get(k, 0) > earlier.get(k, 0) for k in keys)
+
+
+def _first_run_of_test(qid: str, entries: dict) -> str:
+    """The earliest ok call of the same test block (same spec_hash) as `qid`: where the test
+    was first run, hence where its floor was chosen."""
+    h = (entries[qid].get("result") or {}).get("spec_hash")
+    same = [q for q, e in entries.items() if _is_ce_ok(e) and _qnum(q) is not None
+            and h and (e.get("result") or {}).get("spec_hash") == h]
+    return min(same, key=_qnum) if same else qid
+
+
+def floor_lowered_info(qid, entries: dict):
+    """D-178 (item D1): None, or {from, to, after} when the test that call `qid` ran repeats the
+    selector, outcome kind and statistic of an EARLIER ok conditional_effect call of this session
+    on a lower floor. `to` is the floor the test was first run with, `from` the earlier call's
+    floor, `after` the latest such earlier call. The reader writes it from the log; the model
+    only supplies the reason."""
+    if not _is_ce_ok(entries.get(qid)):
+        return None
+    anchor = _first_run_of_test(qid, entries)
+    n = _qnum(anchor)
+    key, this = _same_selector_outcome_key(entries[anchor]), _floor_of(entries[anchor])
+    best = None
+    for q, e in entries.items():
+        qn = _qnum(q)
+        if qn is None or n is None or qn >= n or not _is_ce_ok(e):
+            continue
+        if _same_selector_outcome_key(e) == key and _floor_is_lower(this, _floor_of(e)) \
+                and (best is None or qn > _qnum(best)):
+            best = q
+    if best is None:
+        return None
+    return {"from": _floor_of(entries[best]), "to": this, "after": best}
+
+
+def met_own_floor(entry):
+    """Whether a conditional_effect call's logged result met its own test's floor (D-178, item
+    D3): at ANY horizon every floor unit the result reports (n_events, n_windows_with_events,
+    n_blocks; a unit the result does not report, as min_eras, is not judged) is at or above its
+    minimum, and at least one unit was judged. SKILL.md's no-claim rule says "at any horizon";
+    floors_met_in_log (an observation's flag) asks every horizon. None when it cannot tell."""
+    import claim_measure as cmeas
+    floor = _floor_of(entry)
+    hz = (entry.get("result") or {}).get("horizons") if isinstance(entry, dict) else None
+    if not floor or not isinstance(hz, dict) or not hz:
+        return None
+    for row in hz.values():
+        if not isinstance(row, dict):
+            continue
+        judged = []
+        for unit, need in floor.items():
+            have = row.get(cmeas._FLOOR_KEY.get(unit))
+            if isinstance(have, (int, float)) and not isinstance(have, bool):
+                judged.append(have >= need)
+        if judged and all(judged):
+            return True
+    return False
+
+
+def completeness_errors(entries: dict, accounted) -> list:
+    """D-178 (item D3, SKILL.md's no-claim rule enforced): every ok conditional_effect call of
+    the session that met its own floor must be accounted for -- `accounted` is the set of query
+    ids the answer uses (why_query, an observation's `test` under a claim or a no_claim,
+    best_rejected.killed_by, a claim test's own calls). A call that has the same selector,
+    outcome kind, statistic AND direction as an accounted one (another floor, horizon or `by`)
+    is the same finding and counts as accounted; the opposite direction is not."""
+    keys = {_accounted_key(entries[q]) for q in accounted
+            if isinstance(q, str) and _is_ce_ok(entries.get(q))}
+    missing = [q for q, e in entries.items()
+               if _is_ce_ok(e) and q not in accounted and met_own_floor(e) is True
+               and _accounted_key(e) not in keys]
+    if not missing:
+        return []
+    return [f"query(ies) {', '.join(missing)} cleared the floor of their own test but appear "
+            f"nowhere in your answer: every conditional_effect result that cleared its floors, "
+            f"in either direction and at any horizon, is written as a claim or recorded as an "
+            f"observation (`observations`, `test`, under the claim or the no_claim), or is the "
+            f"why_query or the best_rejected killed_by. Record each"]
+
+
+def next_steps_errors(ns, entries: dict, where: str) -> list:
+    """D-178 (item D5b): the four-line ledger is present and every cited query id is one of
+    this session's. Nothing else is judged."""
+    if not isinstance(ns, dict) or set(ns) != set(NEXT_STEPS_KEYS):
+        return [f"{where}.next_steps is required: exactly the four lines "
+                f"{list(NEXT_STEPS_KEYS)}, each the id of a query of this session or "
+                f"\"{NOT_RUN_PREFIX} <the floor, the tool limit or the budget that stopped it>\""
+                + (f" (got {sorted(map(str, ns))})" if isinstance(ns, dict) else "")]
+    errors = []
+    for k in NEXT_STEPS_KEYS:
+        v = ns[k]
+        if isinstance(v, str) and v.strip().startswith(NOT_RUN_PREFIX):
+            if not v.strip()[len(NOT_RUN_PREFIX):].strip():
+                errors.append(f"{where}.next_steps.{k}: \"{NOT_RUN_PREFIX}\" needs the floor, "
+                              f"tool limit or budget that stopped it")
+        elif not (isinstance(v, str) and _qnum(v.strip()) is not None):
+            errors.append(f"{where}.next_steps.{k}={v!r} must be the id of a query of this "
+                          f"session or \"{NOT_RUN_PREFIX} <reason>\"")
+        elif v.strip() not in entries:
+            errors.append(f"{where}.next_steps.{k}={v!r} is not a query of this session")
+    return errors
+
+
+# D-178 (item D4, operator ruling 1 of 2026-10-23): angle tags, written by code, by the vehicle's
+# path and the selector's fields only; no text is read. `sizing`: the vehicle changes the sizing
+# block (strategies.sizing) or the params of a vol_target op. `regime`: no selector names a
+# forecast field. Sizing wins.
+ANGLES = ("regime", "sizing")
+SIZING_OP = "vol_target"
+_SIZING_BLOCK_IDS = ("sizing", "strategies.sizing", "/strategies/sizing")
+
+
+def _fields_of(node) -> list:
+    """Every bar `field` named anywhere in a selector (at any depth)."""
+    if isinstance(node, dict):
+        out = [node["field"]] if isinstance(node.get("field"), str) else []
+        for v in node.values():
+            out += _fields_of(v)
+        return out
+    if isinstance(node, list):
+        return [f for v in node for f in _fields_of(v)]
+    return []
+
+
+def _is_forecast_field(field: str) -> bool:
+    """The forecast and every forecast-derived column (abs_forecast, forecast_sign_change,
+    entry_forecast, ...): any field whose name contains "forecast"."""
+    return "forecast" in field
+
+
+#: statistics that never read the forecast (claim_tests.st_mean_diff / st_hit_rate; decay_curve
+#: is mean_diff per horizon). rank_ic correlates the forecast with the outcome: it uses it.
+FORECAST_FREE_STATISTICS = ("mean_diff", "hit_rate", "decay_curve")
+#: selector kinds a regime tag is never given: all bars, and trade selectors
+NON_REGIME_KINDS = ("all", "trade")
+
+
+def is_regime_selector(selector, statistic=None) -> bool:
+    """D-178 (operator 2026-10-23): a regime finding when (1) the selector names at least one
+    bar field that is not a forecast field, (2) it names no forecast field and the test's
+    statistic does not use the forecast (FORECAST_FREE_STATISTICS), (3) the selector is neither
+    kind `all` nor kind `trade`. An unknown or missing statistic is not a regime."""
+    if not isinstance(selector, dict) or statistic not in FORECAST_FREE_STATISTICS:
+        return False
+    if selector.get("kind") in NON_REGIME_KINDS:
+        return False
+    fields = _fields_of(selector)
+    return bool(fields) and not any(_is_forecast_field(f) for f in fields)
+
+
+def _sizing_ops_of(config) -> dict:
+    """{json pointer: params} of every step (a mapping with `op: vol_target`) in a config."""
+    out = {}
+
+    def walk(node, path):
+        if isinstance(node, dict):
+            if node.get("op") == SIZING_OP:
+                out[path] = copy.deepcopy(node.get("params"))
+            for k, v in node.items():
+                walk(v, f"{path}/{k}")
+        elif isinstance(node, list):
+            for i, v in enumerate(node):
+                walk(v, f"{path}/{i}")
+    walk(config, "")
+    return out
+
+
+def _change_is_sizing(item, base_config) -> bool:
+    """One `{component_id, field, before, after}` change: under the sizing block, or on a
+    step whose op is vol_target (the field's path resolved in the base config: the component
+    by `id`, then every prefix of the field path that is a step mapping)."""
+    if not isinstance(item, dict):
+        return False
+    cid, field = item.get("component_id"), item.get("field")
+    in_block = isinstance(field, str) and (
+        field == "strategies.sizing" or field.startswith(("strategies.sizing.", "strategies.sizing[")))
+    if cid in _SIZING_BLOCK_IDS or in_block:
+        return True
+    if not isinstance(base_config, dict) or not isinstance(cid, str) or not isinstance(field, str):
+        return False
+    import decide_next as dn
+    import json_pointer as jp
+    ptrs = dn._component_pointers(base_config, cid)
+    if len(ptrs) != 1:
+        return False
+    try:
+        suffix = dn.field_to_pointer_suffix(field)
+    except dn.DecideNextError:
+        return False
+    parts = suffix.strip("/").split("/")
+    for k in range(1, len(parts) + 1):
+        try:
+            node = jp.resolve_json_pointer(base_config, ptrs[0] + "/" + "/".join(parts[:k]))
+        except jp.JsonPointerError:
+            return False
+        if isinstance(node, dict) and node.get("op") == SIZING_OP:
+            return True
+    return False
+
+
+def vehicle_is_sizing(vehicle, base_config=None) -> bool:
+    """D-178 (ruling 1): True when a vehicle changes the sizing block or a vol_target op's
+    params. A change list is judged item by item; a config vehicle (`kind: config`) by what
+    differs from the base config at the sizing block and at its vol_target steps."""
+    if isinstance(vehicle, list):
+        return any(_change_is_sizing(x, base_config) for x in vehicle)
+    if isinstance(vehicle, dict) and isinstance(vehicle.get("config"), dict)             and isinstance(base_config, dict):
+        cand, base = vehicle["config"], base_config
+        if (cand.get("strategies") or {}).get("sizing") != (base.get("strategies") or {}).get("sizing"):
+            return True
+        return _sizing_ops_of(cand) != _sizing_ops_of(base)
+    return False
+
+
+def angle_of(selectors, vehicle=None, base_config=None, statistics=None):
+    """`sizing` (wins), `regime` (every test passes is_regime_selector with its statistic;
+    `statistics` is parallel to `selectors`) or None."""
+    if vehicle_is_sizing(vehicle, base_config):
+        return "sizing"
+    stats = list(statistics) if statistics is not None else [None] * len(selectors)
+    pairs = [(s, st) for s, st in zip(selectors, stats) if s is not None]
+    return "regime" if pairs and all(is_regime_selector(s, st) for s, st in pairs) else None
+
 
 def floors_met_in_log(entry: dict):
     """Whether a conditional_effect call's logged result clears its own test block's floor on
@@ -467,26 +753,34 @@ def floors_met_in_log(entry: dict):
     return True if known else None
 
 
-def observation_errors(observations, entries: dict) -> list:
-    """Errors of a no_claim's `observations` (OBSERVATION_KEYS); [] for a valid list,
-    `[]` included."""
+def observation_errors(observations, entries: dict, where: str = "no_claim.observations") -> list:
+    """Errors of the `observations` of a no_claim or of a claim (`where` names which;
+    OBSERVATION_KEYS); [] for a valid list, `[]` included."""
     if not isinstance(observations, list):
-        return ["no_claim.observations must be a list of {statement, test, evidence, "
+        return [f"{where} must be a list of {{statement, test, evidence, "
                 "floors_met} (leave the key out, or write [], when there is none)"]
     errors = []
     if len(observations) > OBSERVATIONS_MAX:
-        errors.append(f"no_claim.observations has {len(observations)} entries: a no_claim records at "
-                      f"most {OBSERVATIONS_MAX} observations, each citing a different test (keep the "
+        errors.append(f"{where} has {len(observations)} entries: at "
+                      f"most {OBSERVATIONS_MAX} observations are recorded, each citing a different test (keep the "
                       f"{OBSERVATIONS_MAX} that matter most)")
     seen_tests = set()
     for i, o in enumerate(observations):
-        w = f"no_claim.observations[{i}]"
-        if not isinstance(o, dict) or set(o) != set(OBSERVATION_KEYS):
-            errors.append(f"{w} must have exactly the keys {list(OBSERVATION_KEYS)}"
+        w = f"{where}[{i}]"
+        if not isinstance(o, dict) or not set(OBSERVATION_KEYS) <= set(o) \
+                or set(o) - set(OBSERVATION_KEYS) - set(OBSERVATION_OPTIONAL):
+            errors.append(f"{w} must have exactly the keys {list(OBSERVATION_KEYS)}, plus where "
+                          f"they apply {list(OBSERVATION_OPTIONAL)}"
                           + (f" (got {sorted(map(str, o))})" if isinstance(o, dict) else ""))
             continue
         if not isinstance(o["statement"], str) or not o["statement"].strip():
             errors.append(f"{w}.statement must be a non-empty text: the behaviour you measured")
+        if "vehicle" in o:
+            import reader_proposals as _rpm
+            try:
+                _rpm._check_change_items(o["vehicle"], f"{w}.vehicle")
+            except _rpm.ProposalError as exc:
+                errors.append(str(exc))
         qid = o["test"]
         is_ce = _ok_call(entries, qid) and entries[qid].get("function") == "conditional_effect"
         if is_ce:
@@ -496,7 +790,7 @@ def observation_errors(observations, entries: dict) -> list:
             key = sh if isinstance(sh, str) and sh else qid
             if key in seen_tests:
                 errors.append(f"{w}.test={qid!r} measures the same test as an earlier observation "
-                              f"of this no_claim: each observation cites a different test")
+                              f"of this answer: each observation cites a different test")
             seen_tests.add(key)
         if not is_ce:
             errors.append(f"{w}.test={qid!r} must be the id of an ok conditional_effect call of "
@@ -515,7 +809,42 @@ def observation_errors(observations, entries: dict) -> list:
                               f"result {'clears' if met else 'does not clear'} its test's floor "
                               f"on every horizon (n_events, n_windows_with_events, n_blocks "
                               f"against `floor`)")
+        if is_ce:
+            errors += _mechanism_errors(o, qid, w, entries)
+            if floor_lowered_info(qid, entries) is not None \
+                    and not _non_empty_text(o.get("floor_lowered_reason")):
+                errors.append(_floor_reason_error(f"{w}.floor_lowered_reason", qid, entries))
     return errors
+
+
+def _non_empty_text(v) -> bool:
+    return isinstance(v, str) and bool(v.strip())
+
+
+def _mechanism_errors(o: dict, qid: str, w: str, entries: dict) -> list:
+    """D-178 (item D2): an observation with floors_met true cites a LATER query of this session
+    as `mechanism_query` (the query its mechanism predicts), or `stopped_by` a named tool limit.
+    A `mechanism_query` that is written must be valid, whatever `stopped_by` says."""
+    if o.get("floors_met") is not True:
+        return []
+    mq = o.get("mechanism_query")
+    if mq is not None:
+        if not (_ok_call(entries, mq) and _qnum(mq) is not None and _qnum(mq) > _qnum(qid)):
+            return [f"{w}.mechanism_query={mq!r} must be an ok query of this session LATER than "
+                    f"{qid} (the query your mechanism predicts)"]
+        return []
+    if _non_empty_text(o.get("stopped_by")):
+        return []
+    return [f"{w}: {qid} cleared its floors, so the observation needs `mechanism_query: q<n>` "
+            f"(a query of this session after {qid} that runs what your mechanism predicts) or "
+            f"`stopped_by: <the tool limit that stopped it>`; run that query, then record it"]
+
+
+def _floor_reason_error(where: str, qid: str, entries: dict) -> str:
+    info = floor_lowered_info(qid, entries)
+    return (f"{where} is required: the test of {qid} repeats the selector and outcome of "
+            f"{info['after']} on a lower floor ({info['from']} to {info['to']}); write one "
+            f"sentence saying why the floor was lowered")
 
 
 def _observation_spec(entry: dict) -> dict:
@@ -784,10 +1113,40 @@ def exit_selector_own_outcome_errors(claim) -> list[str]:
             for h in exit_selector_own_outcome_hits(claim)]
 
 
+def _record_observations(observations: list, entries: dict, evidence, settings, base_config,
+                         where: str) -> tuple:
+    """(recorded observations, unverified numbers) of a valid `observations` list (a claim's or a
+    no_claim's): each masked (D-096), with its code spec, the floor disclosure (D1) and the
+    angle tag (D4) written by code."""
+    recorded, unverified = [], []
+    for i, o in enumerate(observations):
+        test = entries[o["test"]]
+        block = (test.get("result") or {}).get("test")
+        ohits = number_hits(
+            {"observation.statement": o["statement"]},
+            list(o["evidence"]) + list(evidence), entries,
+            tests=[block] if isinstance(block, dict) else None, settings=settings)
+        item = {k: v for k, v in mask_hits(o, "observation", ohits).items()
+                if k != "floor_lowered_reason"}
+        item["spec"] = _observation_spec(test)
+        lowered = floor_lowered_info(o["test"], entries)
+        if lowered is not None:
+            item["floor_lowered"] = {**lowered, "reason": o["floor_lowered_reason"].strip()}
+        angle = angle_of([item["spec"].get("selector")], o.get("vehicle"), base_config,
+                         [item["spec"].get("statistic")])
+        if angle is not None:
+            item["angle"] = angle
+        recorded.append(item)
+        unverified += [{"field": f"{where}.{i}.statement", "written": wr}
+                       for _l, _s, _e, wr, _m in ohits]
+    return recorded, unverified
+
+
 def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_check,
                  holdout_start: str, fold: str | None, model_id: str,
-                 settings=None) -> tuple:
-    """(reading, record, errors). `entries`: {id: log entry} of this lens's query log.
+                 settings=None, base_config=None) -> tuple:
+    """(reading, record, errors). `base_config`: the run's base strategy config (a mapping),
+    against which a vehicle's path is resolved for the sizing tag (D-178, ruling 1). `entries`: {id: log entry} of this lens's query log.
     `claim_check(claim)`: claim_card.check_claim with the pipeline's keywords (folds and the
     trade family). The reading is the v3 reader-proposal shape decide-next reads unchanged;
     the record holds what the reading cannot (why_query, the no-claim block, what was
@@ -833,6 +1192,8 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
                 or not _ok_call(entries, br.get("killed_by")):
             errors.append("no_claim needs best_rejected {statement, killed_by: an ok query id "
                           "of this session}")
+        errors += next_steps_errors(nc.get("next_steps") if isinstance(nc, dict) else None,
+                                    entries, "no_claim")
         if isinstance(nc, dict):
             # smoke 5 (2026-10-09): the killing test's own numbers (its threshold, horizons,
             # floor) may be written here, as the claim's own test's are on the claim path.
@@ -857,26 +1218,29 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
                 obs_errors = observation_errors(nc["observations"], entries)
                 errors += obs_errors
                 if not obs_errors:
-                    recorded = []
-                    for i, o in enumerate(nc["observations"]):
-                        test = entries[o["test"]]
-                        block = (test.get("result") or {}).get("test")
-                        ohits = number_hits(
-                            {"observation.statement": o["statement"]},
-                            list(o["evidence"]) + list(evidence), entries,
-                            tests=[block] if isinstance(block, dict) else None,
-                            settings=settings)
-                        recorded.append({**mask_hits(o, "observation", ohits),
-                                         "spec": _observation_spec(test)})
-                        record["unverified_numbers"] += [
-                            {"field": f"no_claim.observations.{i}.statement", "written": wr}
-                            for _l, _s, _e, wr, _m in ohits]
-                    nc["observations"] = recorded
+                    nc["observations"], unv = _record_observations(
+                        nc["observations"], entries, evidence, settings, base_config,
+                        "no_claim.observations")
+                    record["unverified_numbers"] += unv
+        # D-178 (item D3): every call that cleared its own floor is accounted for
+        accounted = [br.get("killed_by") if isinstance(br, dict) else None]
+        accounted += [o.get("test") for o in (nc.get("observations") if isinstance(nc, dict)
+                                              and isinstance(nc.get("observations"), list) else [])
+                      if isinstance(o, dict)]
+        errors += completeness_errors(entries, {q for q in accounted if isinstance(q, str)})
+        if isinstance(nc, dict) and isinstance(nc.get("next_steps"), dict):
+            record["next_steps"] = copy.deepcopy(nc["next_steps"])
         record["no_claim"] = nc
         reading = {**base, "explanation": str((nc or {}).get("reason") or "no claim"),
                    "evidence": list(evidence), "side_findings": []}
         return reading, record, errors
     claim = doc.get("claim")
+    # D-178: `next_steps` and `floor_lowered_reasons` are for code; the claim card never sees them
+    claim_extra = {}
+    if isinstance(claim, dict):
+        claim_extra = {k: claim[k] for k in CLAIM_CODE_KEYS if k in claim}
+        claim = {k: v for k, v in claim.items() if k not in CLAIM_CODE_KEYS}
+    errors += next_steps_errors(claim_extra.get("next_steps"), entries, "claim")
     try:
         res = claim_check(claim)
     except OverflowError as exc:
@@ -965,6 +1329,40 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
                           for c in evidence):
         errors.append("evidence must cite the claim test's own result "
                       "(`q<n>:horizons.<h>.<field>=<value>` of its conditional_effect call)")
+    # D-178: floor disclosure (D1), completeness (D3), tags (D4)
+    lowered_items = []
+    reasons = claim_extra.get("floor_lowered_reasons")
+    reasons = reasons if isinstance(reasons, dict) else {}
+    for t in (res.tests if hashes else []):
+        qids = sorted(ran.get(t["spec_hash"], []), key=_qnum)
+        info = floor_lowered_info(qids[0], entries) if qids else None
+        if info is None:
+            continue
+        reason = reasons.get(t.get("name"))
+        if not _non_empty_text(reason):
+            errors.append(_floor_reason_error(
+                f"claim.floor_lowered_reasons.{t.get('name')}", qids[0], entries))
+        else:
+            lowered_items.append({"test": t.get("name"), **info, "reason": reason.strip()})
+    accounted = ([why] if isinstance(why, str) else []) + list(test_qids)
+    claim_obs = claim_extra.get("observations")
+    claim_obs_ok = False
+    if "observations" in claim_extra:
+        obs_errors = observation_errors(claim_obs, entries, "claim.observations")
+        errors += obs_errors
+        claim_obs_ok = not obs_errors
+        if claim_obs_ok:
+            accounted += [o["test"] for o in claim_obs]
+    errors += completeness_errors(entries, {q for q in accounted if isinstance(q, str)})
+    angle = None
+    if isinstance(claim, dict):
+        angle = angle_of([t.get("selector") for t in _tests_of(claim)], doc.get("vehicle"),
+                         base_config, [t.get("statistic") for t in _tests_of(claim)])
+    if angle == "sizing":
+        errors.append("claim: this is a sizing finding (its vehicle changes the sizing block or "
+                      "the params of a vol_target op). A sizing finding is recorded as an "
+                      "observation (`observations`, under the claim or the no_claim), tagged "
+                      "angle: sizing by code; it is never a claim with a vehicle")
     if isinstance(claim, dict):
         # D-096: an unverified number is masked in what is stored and passed on (the reading,
         # the child's pre-filled claim) and listed, never a refusal
@@ -981,6 +1379,18 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
     side = {"proposal_id": f"{rid}-1", "claim": claim,
             "evidence": list(evidence), "scores": scores,
             "vehicle": doc.get("vehicle"), "combines_as": doc.get("combines_as")}
+    if lowered_items:      # D-178: written by code from the log; one test -> a mapping
+        side["floor_lowered"] = lowered_items[0] if len(lowered_items) == 1 else lowered_items
+        record["floor_lowered"] = side["floor_lowered"]
+    if angle is not None:
+        side["angle"] = angle
+        record["angle"] = angle
+    if isinstance(claim_extra.get("next_steps"), dict):
+        record["next_steps"] = copy.deepcopy(claim_extra["next_steps"])
+    if claim_obs_ok and claim_obs:
+        record["observations"], unv = _record_observations(
+            claim_obs, entries, evidence, settings, base_config, "claim.observations")
+        record["unverified_numbers"] = list(record.get("unverified_numbers") or []) + unv
     if fold:
         side["fold_observed"] = fold
     reading = {**base, "explanation": str((claim or {}).get("rationale") or "")
