@@ -179,10 +179,10 @@ the on/off rule and leave the conversion to a later stage.
 
 **Name what the strategy config cannot express.** The config describes one forecast per bar and nothing else. If
 the idea also needs an exit rule, a stop or take-profit, a time-based hold, anything that depends on the current
-position (entry price, bars held, profit and loss), or sizing other than forecast / 10 (Kelly, leverage; volatility
-targeting and a cap ARE expressible, with the `vol_target` op and a `clip`), say so in `signal_concept`, one line per item ("Not expressible in the config: stop at 2 ATR"), so
+position (entry price, bars held, profit and loss), or sizing other than forecast / 10 (Kelly, leverage), say so in
+`signal_concept`, one line per item ("Not expressible in the config: stop at 2 ATR"), so
 the config-writing stage can declare it as a deviation instead of dropping it silently or inventing it. Do not
-leave such a part out to make the idea look simpler.
+leave such a part out to make the idea look simpler. Volatility targeting is not done in the forecast: the campaign's `strategies.sizing` block (kind `vol_target`; window 60 bars, `periods_per_year` 365 daily / 8760 hourly, `target_annual_vol` 0.2, `max_allocation` 2) does it in the allocation step (D-176). It is fixed by the campaign and is not a vehicle: a design variant or a claim may not change it (a patch under `/strategies/sizing` is refused, "a sizing parameter is not a vehicle"), and a `vol_target`, `vol_normalize` or `vol_adjusted` op is not used in `transforms` (`vol_normalize` alone may sit in `history_transforms`). A cap on the position is a `clip`.
 
 ---
 

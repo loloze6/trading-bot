@@ -186,13 +186,14 @@ in `decision.yaml` `tried`, each with the card clause it fails; at least one mus
   components with a lookback of 60 or less; a slow component standardised over 60 bars
   becomes an on-off signal at +-10. Readiness grows by min_periods only (the window sets
   the deque), so a 250-bar component is ready after 310 bars.
-- volatility targeting (D-176): a new brief uses `standardise` for the forecast scale plus the optional
-  `strategies.sizing` block, not a `vol_target` op. Block shape: `{"kind": "vol_target", "window": int >= 2,
+- volatility targeting (D-176): a new brief uses `standardise` for the forecast scale plus the `strategies.sizing` block,
+  which is REQUIRED in every base config 1b authors (kind `vol_target`, window 60, `target_annual_vol` 0.2, `max_allocation` 2,
+  `periods_per_year` 365 on daily bars and 8760 on hourly bars, taken from the card's `timeframe`; D-181), not a `vol_target` op. Block shape: `{"kind": "vol_target", "window": int >= 2,
   "target_annual_vol": > 0, "periods_per_year": > 0, "max_allocation": > 0 (default 2)}`, placed in `strategies`
   next to `regimes`. It sizes the allocation (`forecast / 10 x target / realised`, clipped), the forecast stays the
   unsized signal, and the no-trade band passes when either the signal's change or the sized exposure's change reaches the threshold.
   A config with the block AND a `vol_target` op (any list), or a `vol_adjusted` op in `transforms` or `history_transforms`, or a `vol_normalize` op in `transforms`, is refused ("sized twice"; `vol_normalize` alone in `history_transforms` is allowed). See the guide's "Sizing (`strategies.sizing`)".
-  A brief carries the campaign sizing default (kind `vol_target`, window 60 bars, `periods_per_year` 365 daily / 8760 hourly, `target_annual_vol` 0.2, `max_allocation` 2; unmeasurable volatility: flat, remembered signal 0.0) and may not change it; the direction's ratification of each brief checks it; no automated check yet (D-176).
+  The config author writes it; the review confirms it from bars.csv's sizing columns (present only with a block).
 - default_regime must be "unknown" in threshold_rules and score_product modes WHENEVER
   regime_detector.rules is non-empty (a real gate exists). Setting it to trending,
   mean_reversion, or chop in that case causes bars that fail every rule to still fire
