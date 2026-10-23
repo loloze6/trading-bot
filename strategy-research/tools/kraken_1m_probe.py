@@ -547,6 +547,7 @@ def fetch_trades_for_day(exchange, ccxt_pair_id: str, d0: int, d1: int, *, log_p
 
 
 def run_trades(pair: str, day: str, out, *, exchange_factory=None, sleep=time.sleep,
+               max_requests: int = MAX_REQUESTS,
                policy_path=None) -> dict:
     import ccxt
 
@@ -557,6 +558,7 @@ def run_trades(pair: str, day: str, out, *, exchange_factory=None, sleep=time.sl
     t_start = _utcnow()
     log_path = outp / "trades_progress.log"
     stats = fetch_trades_for_day(exchange, pair, d0, d1, log_path=log_path, sleep=sleep,
+                                 max_requests=max_requests,
                                  network_errors=(ccxt.NetworkError,))
     trades = stats["trades"]
     raw_path = outp / f"{pair}_trades_{day}.jsonl.gz"
@@ -693,6 +695,8 @@ def _build_parser() -> argparse.ArgumentParser:
         p.add_argument("--pair", required=True)
         p.add_argument("--day", required=True)
         p.add_argument("--out", required=True)
+        if name == "trades":
+            p.add_argument("--max-requests", type=int, default=MAX_REQUESTS)
         if name == "archive":
             p.add_argument("--source", required=True)
         if name == "compare":
@@ -717,7 +721,7 @@ def main(argv=None, *, exchange_factory=None, sleep=time.sleep) -> int:
                                  sort_keys=False))
         elif args.cmd == "trades":
             res = run_trades(args.pair, args.day, args.out, exchange_factory=exchange_factory,
-                             sleep=sleep)
+                             sleep=sleep, max_requests=min(args.max_requests, MAX_REQUESTS))
             print(yaml.safe_dump(_native({k: res[k] for k in
                                           ("requests", "elapsed_seconds", "retries", "errors",
                                            "report")}), sort_keys=False))

@@ -507,3 +507,21 @@ def test_sizes_counts_bytes_lines_and_gzip_ratio(tmp_path):
     assert g["raw_bytes"] == 17 and g["gzip_bytes"] > 0
     assert sorted(p.name for p in out.iterdir()) == ["archive_1m_sizes.yaml", "provenance_sizes.json"]
     assert len(kp.SIZE_PAIRS) == 19
+
+
+def test_cli_trades_max_requests_stops_hard_and_flags_incomplete(tmp_path):
+    out = tmp_path / "capped"
+    ex = FakeKraken(_pages(), fail_first=False)
+    rc = kp.main(_day_args(out) + ["--max-requests", "1"], exchange_factory=lambda: ex,
+                 sleep=lambda s: None)
+    assert rc == 0 and len(ex.calls) == 1
+    prov = json.loads((out / "provenance_trades.json").read_text())
+    assert prov["request_count"] == 1 and prov["extra"]["hit_request_cap"] is True
+    rep = yaml.safe_load((out / "XBTUSD_1m_2019-03-15_trades_validation.yaml").read_text())
+    assert rep["fetch_complete"] is False and rep["hit_request_cap"] is True
+    # a value above the hard cap is clamped, never honoured
+    out2 = tmp_path / "clamped"
+    ex2 = FakeKraken(_pages(), fail_first=False)
+    kp.main(_day_args(out2) + ["--max-requests", "100000"], exchange_factory=lambda: ex2,
+            sleep=lambda s: None)
+    assert len(ex2.calls) == 2
