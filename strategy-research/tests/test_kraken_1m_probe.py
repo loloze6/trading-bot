@@ -98,8 +98,27 @@ def test_non_increasing_and_duplicates():
     df = _frame([0, 1, 1, 3, 2])
     rep = kp.validate_minute_frame(df)
     assert rep["duplicate_timestamps"] == 1
-    assert rep["non_increasing_steps"] == 2  # 1->1 and 3->2
+    assert rep["non_increasing_steps"] == 1  # strictly decreasing only: 3->2 (1->1 is a duplicate)
     assert rep["passed"] is False
+
+
+def test_empty_frame_is_not_a_pass():
+    rep = kp.validate_minute_frame(kp.candles_from_trades([]))
+    assert rep["rows"] == 0 and rep["empty"] is True and rep["passed"] is False
+    assert kp.validate_minute_frame(_clean())["empty"] is False
+
+
+@pytest.mark.parametrize("missing,bin_name", [
+    (1, "1"), (5, "2-5"), (6, "6-60"), (60, "6-60"), (61, "61-1440"),
+    (1440, "61-1440"), (1441, ">1440"),
+])
+def test_gap_bin_edges(missing, bin_name):
+    rep = kp.validate_minute_frame(_frame([0, missing + 1]))
+    assert rep["missing_minutes"] == missing
+    assert rep["longest_gap_minutes"] == missing
+    expected = {name: 0 for name, _, _ in kp.GAP_BINS}
+    expected[bin_name] = 1
+    assert rep["gap_histogram"] == expected
 
 
 @pytest.mark.parametrize("col,val", [
@@ -238,6 +257,15 @@ def test_compare_planted_mismatches_and_one_sided_minutes():
     assert ex[kp._iso(T0 + 120)]["close"] == {"archive": 100.5, "trades": 100.6}
 
 
+@pytest.mark.parametrize("which", ["archive", "trades"])
+def test_compare_refuses_duplicate_minutes(which):
+    dup = _frame([0, 1, 1, 2])
+    a, b = (dup, _clean()) if which == "archive" else (_clean(), dup)
+    with pytest.raises(kp.ProbeRefusal) as ei:
+        kp.compare_minute_frames(a, b)
+    assert "duplicate" in str(ei.value)
+
+
 def test_compare_examples_capped_at_five():
     a = _frame(list(range(10)))
     b = _frame(list(range(10)), close=99.9)
@@ -308,6 +336,20 @@ def test_fetch_pages_with_cursor_retry_on_429_and_filters_day():
     assert stats["reached_day_end"] is True and stats["hit_request_cap"] is False
     assert [c["since"] for c in ex.calls] == [str(T0 * 10**9), str(T0 * 10**9), "CURSOR1"]
     assert all(c["pair"] == "XBTUSD" and c["count"] == 1000 for c in ex.calls)
+
+
+def test_fetch_trade_at_or_after_day_end_touches_no_counter():
+    since0 = str(T0 * 10**9)
+    page = [_trade(100.0, 1.0, T0 + 10, 20),
+            _trade(101.0, 1.0, T0 + 86400, 5),       # at day end, lower id: would be non-monotonic
+            _trade(102.0, 1.0, T0 + 86400 + 7, 20),  # after day end, repeated id: would be a dup
+            _trade(103.0, 1.0, T0 + 86400 + 9, 30)]
+    ex = FakeKraken({since0: (page, "C1")}, fail_first=False)
+    stats = kp.fetch_trades_for_day(ex, "XBTUSD", T0, T0 + 86400, sleep=lambda s: None,
+                                    network_errors=(ccxt.NetworkError,))
+    assert [t[6] for t in stats["trades"]] == [20]
+    assert stats["duplicate_trade_ids"] == 0 and stats["non_monotonic_trade_ids"] == 0
+    assert stats["reached_day_end"] is True and stats["requests"] == 1
 
 
 def test_fetch_hard_cap_on_requests():
@@ -395,7 +437,8 @@ def test_cli_archive_writes_day_only_and_reports(tmp_path):
     d = yaml.safe_load((out / "XBTUSD_1m_2019-03-15_archive_day_validation.yaml").read_text())
     assert d["rows"] == 5 and d["missing_minutes"] == 2 and d["day_missing_minutes"] == 1435
     w = yaml.safe_load((out / "XBTUSD_1m_whole_file_validation.yaml").read_text())
-    assert w["rows"] == 7 and w["sealed_rows"] == 0
+    assert w["rows"] == 7 and w["sealed_rows_present"] is False
+    assert "sealed_rows" not in w
     prov = json.loads((out / "provenance_archive.json").read_text())
     assert prov["archive_copy"]["bytes"] == src.stat().st_size
     assert all(f["bytes"] > 0 for f in prov["output_files"])
@@ -411,7 +454,8 @@ def test_cli_archive_stops_and_writes_nothing_when_sealed_rows_present(tmp_path,
                   "--out", str(out)])
     assert rc == 3
     text = capsys.readouterr().out
-    assert "sealed_rows=2" in text
+    assert "sealed rows present: stopped, nothing written" in text
+    assert not re.search(r"\d", text)  # no count (or anything numeric) on this path
     leaked = bool(_DATE_RE.search(text))
     assert not leaked
     assert list(out.iterdir()) == []
@@ -486,6 +530,60 @@ def test_cli_refuses_day_at_or_after_holdout_start_with_no_date_in_message(tmp_p
     rc = kp.main(["archive", "--pair", "XBTUSD", "--day", s.isoformat(),
                   "--source", str(tmp_path / "does_not_exist.csv"), "--out", str(tmp_path / "oa")])
     assert rc == 2
+
+
+@pytest.mark.parametrize("bad", ["..\\x", "a/b", "", "XBT USD", "XBT\n"])
+def test_cli_refuses_bad_pair_before_any_io(tmp_path, capsys, bad):
+    ex = FakeKraken(_pages())
+    for cmd_args in (
+        ["trades", "--pair", bad, "--day", "2019-03-15", "--out", str(tmp_path / "t")],
+        ["archive", "--pair", bad, "--day", "2019-03-15", "--source", str(tmp_path / "nope.csv"),
+         "--out", str(tmp_path / "a")],
+        ["compare", "--pair", bad, "--day", "2019-03-15", "--archive-dir", str(tmp_path),
+         "--trades-dir", str(tmp_path), "--out", str(tmp_path / "c")],
+    ):
+        assert kp.main(cmd_args, exchange_factory=lambda: ex, sleep=lambda s: None) == 2
+        assert "REFUSED" in capsys.readouterr().err
+    assert ex.calls == []
+    assert not any((tmp_path / n).exists() for n in ("t", "a", "c"))
+
+
+@pytest.mark.parametrize("part", ["holdout_sealed", "recorded_reserved", "Holdout_Sealed"])
+def test_cli_refuses_sealed_path_inputs(tmp_path, capsys, part):
+    bad_dir = tmp_path / part / "q4"
+    bad_dir.mkdir(parents=True)
+    src = bad_dir / "XBTUSD_1.csv"
+    _write_source(src, _src_rows())
+    good = tmp_path / "good"
+    good.mkdir()
+    cases = [
+        (["archive", "--pair", "XBTUSD", "--day", "2019-03-15", "--source", str(src),
+          "--out", str(tmp_path / "o1")], "o1"),
+        (["sizes", "--source-dir", str(bad_dir), "--out", str(tmp_path / "o2")], "o2"),
+        (["compare", "--pair", "XBTUSD", "--day", "2019-03-15", "--archive-dir", str(bad_dir),
+          "--trades-dir", str(good), "--out", str(tmp_path / "o3")], "o3"),
+        (["compare", "--pair", "XBTUSD", "--day", "2019-03-15", "--archive-dir", str(good),
+          "--trades-dir", str(bad_dir), "--out", str(tmp_path / "o4")], "o4"),
+    ]
+    for argv, outname in cases:
+        assert kp.main(argv) == 2
+        err = capsys.readouterr().err
+        assert "REFUSED" in err and part.lower() in err.lower()
+        leaked = bool(_DATE_RE.search(err))
+        assert not leaked
+        assert not (tmp_path / outname).exists()
+
+
+def test_cli_compare_duplicate_minutes_is_a_refusal_not_a_crash(tmp_path, capsys):
+    (tmp_path / "a").mkdir()
+    (tmp_path / "t").mkdir()
+    kp.write_minute_csv_gz(_frame([0, 1, 1]), tmp_path / "a" / "XBTUSD_1m_2019-03-15_archive.csv.gz")
+    kp.write_minute_csv_gz(_clean(), tmp_path / "t" / "XBTUSD_1m_2019-03-15_trades.csv.gz")
+    rc = kp.main(["compare", "--pair", "XBTUSD", "--day", "2019-03-15",
+                  "--archive-dir", str(tmp_path / "a"), "--trades-dir", str(tmp_path / "t"),
+                  "--out", str(tmp_path / "c")])
+    assert rc == 2
+    assert "duplicate" in capsys.readouterr().err
 
 
 # --------------------------------------------------------------------------- sizes

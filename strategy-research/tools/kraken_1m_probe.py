@@ -24,9 +24,11 @@ tool asserts that the whole requested day lies strictly before the sealed
 holdout start, using holdout_policy.load_holdout_range (the policy's one strict
 reader); on failure it refuses with a message that names no date. The bounds are
 used only to filter and count: the whole-file archive pass drops every row at or
-after the holdout start before any statistic is computed, reports only the COUNT
-of such rows, and stops (writing nothing) when that count is not zero. The
-bounds are never printed, logged or written.
+after the holdout start before any statistic is computed, reports only a boolean
+(sealed rows present or not, never a count), and stops (writing nothing) when
+it is true. Inputs whose path has a holdout_sealed or recorded_reserved
+component are refused before anything is opened. The bounds are never printed,
+logged or written.
 
 Usage (from the repository root, with the project venv, on this file):
     python -I strategy-research/tools/kraken_1m_probe.py archive --pair XBTUSD \\
@@ -46,6 +48,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import subprocess
 import sys
 import time
@@ -83,6 +86,32 @@ POLICY_PATH_OVERRIDE = None
 
 class ProbeRefusal(Exception):
     """A deny-by-default refusal. The message never names a date."""
+
+
+_PAIR_RE = re.compile(r"[A-Za-z0-9]+")
+_FORBIDDEN_PATH_PARTS = ("holdout_sealed", "recorded_reserved")
+
+
+def check_pair(pair: str) -> str:
+    """Refuse a --pair that is not strictly alphanumeric (it becomes part of file names)."""
+    if not isinstance(pair, str) or not _PAIR_RE.fullmatch(pair):
+        raise ProbeRefusal("--pair must match ^[A-Za-z0-9]+$; refusing before any I/O")
+    return pair
+
+
+def refuse_sealed_path(path, label: str) -> None:
+    """Refuse an input path with a holdout_sealed or recorded_reserved component
+    (checked on the path as given and on its resolved form). Touches no file."""
+    p = Path(path)
+    try:
+        resolved = p.resolve()
+    except (OSError, RuntimeError):
+        resolved = p
+    for q in (p, resolved):
+        for part in q.parts:
+            if part.lower() in _FORBIDDEN_PATH_PARTS:
+                raise ProbeRefusal(f"{label} has a path component '{part}', which is "
+                                   f"off limits to this tool; refusing before any read")
 
 
 # --------------------------------------------------------------------------- #
@@ -138,7 +167,11 @@ def _iso(ts: float) -> str:
 class MinuteValidator:
     """Streaming validator. update() takes frames with COLUMNS (timestamp in
     unix seconds); report() is identical to validate_minute_frame on the
-    concatenation of everything fed in."""
+    concatenation of everything fed in.
+
+    non_increasing_steps counts STRICTLY DECREASING consecutive steps only;
+    repeated timestamps are counted in duplicate_timestamps, not here. A frame
+    with zero rows reports empty=True and passed=False."""
 
     def __init__(self, interval_seconds: int = 60):
         self.interval = interval_seconds
@@ -175,7 +208,7 @@ class MinuteValidator:
             rep["last_timestamp"] = None
         rep["non_integer_timestamps"] = int((ts != np.floor(ts)).sum())
         rep["off_grid_timestamps"] = int((np.mod(ts, interval) != 0).sum())
-        rep["non_increasing_steps"] = int((np.diff(ts) <= 0).sum()) if len(ts) > 1 else 0
+        rep["non_increasing_steps"] = int((np.diff(ts) < 0).sum()) if len(ts) > 1 else 0
         u = np.unique(ts)
         rep["duplicate_timestamps"] = int(len(ts) - len(u))
         rep["ohlc_violations"] = self.counts["ohlc_violations"]
@@ -203,12 +236,15 @@ class MinuteValidator:
         rep["gap_histogram"] = hist
         rep["longest_gap_minutes"] = int(longest)
         rep["longest_gap_starts_after"] = longest_after
-        rep["passed"] = all(rep[k] == 0 for k in _DEFECT_KEYS)
+        rep["empty"] = bool(self.rows == 0)
+        rep["passed"] = (not rep["empty"]) and all(rep[k] == 0 for k in _DEFECT_KEYS)
         return rep
 
 
 def validate_minute_frame(df: pd.DataFrame, *, interval_seconds: int = 60) -> dict:
-    """Validation report for one frame (see MinuteValidator)."""
+    """Validation report for one frame (see MinuteValidator). A zero-row frame
+    is not a pass (empty=True); non_increasing_steps counts strictly decreasing
+    steps only (duplicates are in duplicate_timestamps)."""
     v = MinuteValidator(interval_seconds)
     v.update(df)
     return v.report()
@@ -239,7 +275,12 @@ def candles_from_trades(trades) -> pd.DataFrame:
 
 def compare_minute_frames(archive_df: pd.DataFrame, trades_df: pd.DataFrame, *,
                           rel_tol: float = 1e-9, abs_tol: float = 1e-12) -> dict:
-    """Minute-by-minute comparison of two frames keyed on timestamp (seconds)."""
+    """Minute-by-minute comparison of two frames keyed on timestamp (seconds).
+    Refuses (ProbeRefusal) when either frame has duplicate minutes."""
+    if archive_df["timestamp"].duplicated().any():
+        raise ProbeRefusal("the archive frame has duplicate minutes; refusing to compare")
+    if trades_df["timestamp"].duplicated().any():
+        raise ProbeRefusal("the trades frame has duplicate minutes; refusing to compare")
     a = archive_df.set_index("timestamp")
     b = trades_df.set_index("timestamp")
     only_a = a.index.difference(b.index)
@@ -394,6 +435,8 @@ def check_out_dir(out) -> Path:
 # --------------------------------------------------------------------------- #
 def run_archive(pair: str, day: str, source, out, *, chunksize: int = 500_000,
                 policy_path=None) -> dict:
+    check_pair(pair)
+    refuse_sealed_path(source, "--source")
     d0, d1 = assert_day_before_holdout(day, policy_path)
     source = Path(source)
     outp = check_out_dir(out)
@@ -401,11 +444,10 @@ def run_archive(pair: str, day: str, source, out, *, chunksize: int = 500_000,
     start_epoch = _holdout_start_epoch(policy_path)
     whole = MinuteValidator()
     day_parts = []
-    sealed = 0
+    sealed_present = False
     for chunk in pd.read_csv(source, header=None, names=COLUMNS, chunksize=chunksize):
         ts = pd.to_numeric(chunk["timestamp"], errors="coerce")
-        s = int((ts >= start_epoch).sum())
-        sealed += s
+        sealed_present = sealed_present or bool((ts >= start_epoch).any())
         keep = chunk[~(ts >= start_epoch)]  # in-sample (and unparseable) rows only
         if len(keep):
             whole.update(keep)
@@ -413,9 +455,9 @@ def run_archive(pair: str, day: str, source, out, *, chunksize: int = 500_000,
         dm = keep[(kts >= d0) & (kts < d1)]
         if len(dm):
             day_parts.append(dm)
-    if sealed:
-        # count only; nothing is written (the staging dir stays empty)
-        return {"sealed_rows": sealed, "stopped": True}
+    if sealed_present:
+        # a boolean only, never a count; nothing is written (the staging dir stays empty)
+        return {"sealed_rows_present": True, "stopped": True}
     day_df = (pd.concat(day_parts, ignore_index=True) if day_parts
               else pd.DataFrame(columns=COLUMNS))
     for c in COLUMNS:
@@ -429,7 +471,7 @@ def run_archive(pair: str, day: str, source, out, *, chunksize: int = 500_000,
     day_rep["day_minutes_present"] = int(day_df["timestamp"].nunique())
     day_rep["day_missing_minutes"] = 1440 - day_rep["day_minutes_present"]
     whole_rep = whole.report()
-    whole_rep["sealed_rows"] = 0
+    whole_rep["sealed_rows_present"] = False
     day_yaml = outp / f"{pair}_1m_{day}_archive_day_validation.yaml"
     whole_yaml = outp / f"{pair}_1m_whole_file_validation.yaml"
     write_yaml(day_yaml, day_rep)
@@ -439,7 +481,7 @@ def run_archive(pair: str, day: str, source, out, *, chunksize: int = 500_000,
         url_or_endpoint=ARCHIVE_URL_NOTE, local_path=str(source),
         fetched_or_read_utc=_utcnow(), output_files=[csv_path, day_yaml, whole_yaml],
         elapsed_seconds=round(time.monotonic() - t0, 3), archive_copy_path=source)
-    return {"sealed_rows": 0, "stopped": False, "day_report": day_rep,
+    return {"sealed_rows_present": False, "stopped": False, "day_report": day_rep,
             "whole_file_report": whole_rep, "out": str(outp)}
 
 
@@ -513,6 +555,11 @@ def fetch_trades_for_day(exchange, ccxt_pair_id: str, d0: int, d1: int, *, log_p
             key = next(k for k in result if k != "last")
             page = result[key]
             for t in page:
+                tt = float(t[2])
+                if tt >= d1:
+                    # day end reached: drop at once, before ANY id accounting
+                    complete = True
+                    break
                 tid = t[6] if len(t) > 6 else None
                 if tid is not None:
                     if last_id is not None and int(tid) <= last_id:
@@ -522,10 +569,6 @@ def fetch_trades_for_day(exchange, ccxt_pair_id: str, d0: int, d1: int, *, log_p
                         dup_ids += 1
                         continue
                     seen_ids.add(tid)
-                tt = float(t[2])
-                if tt >= d1:
-                    complete = True
-                    break
                 if tt >= d0:
                     kept.append(t)
             if complete:
@@ -551,6 +594,7 @@ def run_trades(pair: str, day: str, out, *, exchange_factory=None, sleep=time.sl
                policy_path=None) -> dict:
     import ccxt
 
+    check_pair(pair)
     d0, d1 = assert_day_before_holdout(day, policy_path)
     outp = check_out_dir(out)
     exchange = (exchange_factory() if exchange_factory
@@ -598,6 +642,9 @@ def run_trades(pair: str, day: str, out, *, exchange_factory=None, sleep=time.sl
 # compare, sizes                                                              #
 # --------------------------------------------------------------------------- #
 def run_compare(pair: str, day: str, archive_dir, trades_dir, out, *, policy_path=None) -> dict:
+    check_pair(pair)
+    refuse_sealed_path(archive_dir, "--archive-dir")
+    refuse_sealed_path(trades_dir, "--trades-dir")
     assert_day_before_holdout(day, policy_path)
     outp = check_out_dir(out)
     a = read_minute_csv_gz(Path(archive_dir) / f"{pair}_1m_{day}_archive.csv.gz")
@@ -655,6 +702,7 @@ def gzip_ratio(path) -> dict:
 
 
 def run_sizes(source_dir, out, *, pairs=SIZE_PAIRS) -> dict:
+    refuse_sealed_path(source_dir, "--source-dir")
     outp = check_out_dir(out)
     src = Path(source_dir)
     t0 = time.monotonic()
@@ -714,7 +762,7 @@ def main(argv=None, *, exchange_factory=None, sleep=time.sleep) -> int:
         if args.cmd == "archive":
             res = run_archive(args.pair, args.day, args.source, args.out)
             if res["stopped"]:
-                print(f"sealed_rows={res['sealed_rows']} (non-zero): stopped, nothing written")
+                print("sealed rows present: stopped, nothing written")
                 return 3
             print(yaml.safe_dump(_native({"day": res["day_report"],
                                           "whole_file": res["whole_file_report"]}),
