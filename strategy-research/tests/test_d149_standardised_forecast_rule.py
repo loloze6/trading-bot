@@ -36,10 +36,11 @@ from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E40
 
 GUIDE = SR_ROOT / "docs" / "STRATEGY_DESIGN_GUIDE.md"
 SKILL = SR_ROOT / "workflow_artifacts" / "skills" / "strategy-config-authoring" / "SKILL.md"
+# D-183 (operator 2026-10-23): the vol_target exception holds only for configs without a sizing block.
 EXPECTED_SENTENCE = (
     "Standardised forecast (hard rule). Every component in strategies puts standardise first in "
     "its transforms, and no scale op after it (standardise: past values only, target 10, cap 20, "
-    "window, min_periods), unless its scale is set by vol_target or the regime is a blocks regime "
+    "window, min_periods), unless its scale is set by vol_target (configs without a sizing block only) or the regime is a blocks regime "
     "with block_standardisation. Any other component, including one whose only scale is a bare "
     "scale or scaling_factor, is refused after 1b and again at 5a.")
 STANDARDISE = {"op": "standardise", "params": {"window": 20, "min_periods": 5}}

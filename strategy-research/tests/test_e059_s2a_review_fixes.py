@@ -317,7 +317,11 @@ def test_a_1a_rerun_rewrites_the_pass_rule_and_rechecks_the_id(campaign_root):
 # library_lookup.prior_campaign_failures now asks for the object form {run_id, mechanism_tried}; the schema gains
 # the optional power_parameters.power_note the skill already asked for. Changes hypothesis_generation's prompt.
 # Previous pin (D-163/D-164): 7ddd477c214bdc3c7584c4c014b5fcbac14a2fc4ac137e61d98d83fec1e85e60.
-_MASTER_SKILL_SHA256 = "c61311bb4ce854574ba5296a6a595e1769c652e280815e6834ff7ebbba1e1732"
+# RE-PINNED by D-176 follow-up (2026-10-23, branch docs/hypothesis-design-sizing-d176): pin updated because of the declared
+# prompt change of the operator's direction 2026-10-23 -- "volatility targeting and a cap ARE expressible, with the vol_target op"
+# is replaced by the D-176 wording (the strategies.sizing block, fixed by the campaign, not a vehicle; a cap is a clip).
+# Previous pin (D-170): c61311bb4ce854574ba5296a6a595e1769c652e280815e6834ff7ebbba1e1732.
+_MASTER_SKILL_SHA256 = "fe011fcc3db4abb60fb5b9b3dacdb0af7a219da05f67689ddac7e34929497992"
 
 
 def test_hypothesis_design_skill_is_byte_identical_to_master():

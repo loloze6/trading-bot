@@ -52,10 +52,11 @@ _ROW_RE = re.compile(r"^\|\s*`(\w+)`\s*\|", re.MULTILINE)
 _KIND_CELL = 4  # class, params, exact output, range & sign, KIND, ...
 ON_OFF_KIND = "on/off"
 DEAD_ZONE_OPS = ("threshold_filter", "volume_filter")
+# D-183 (operator 2026-10-23): wording only; the vol_target exception holds only without a sizing block.
 RULE_SENTENCE = (
     "Standardised forecast (hard rule). Every component in strategies puts standardise first in "
     "its transforms, and no scale op after it (standardise: past values only, target 10, cap 20, "
-    "window, min_periods), unless its scale is set by vol_target or the regime is a blocks regime "
+    "window, min_periods), unless its scale is set by vol_target (configs without a sizing block only) or the regime is a blocks regime "
     "with block_standardisation. Any other component, including one whose only scale is a bare "
     "scale or scaling_factor, is refused after 1b and again at 5a.")
 

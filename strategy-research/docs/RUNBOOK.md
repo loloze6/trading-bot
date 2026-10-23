@@ -368,7 +368,7 @@ runs (operator decision 2026-10-14: deferred). `criteria_from:
 hypothesis_generation` is pre-filled (step 1a picks the criteria from
 `config/criterion_menu.yaml`); the template shows, as comments, how to give your
 own menu criteria instead (D-121) and how to seed an exact config and block
-manifest (D-110/D-112). `machine_constraints.protocol` GENERATES a fresh protocol
+manifest (D-110/D-112). Below the closing `---`, the template's "## Ratification (direction; people only)" section holds PURPOSE and the pre-registered outcomes, filled by direction at ratification; it is for people, and the orchestrator never reads it (D-182). `machine_constraints.protocol` GENERATES a fresh protocol
 from the coin(s), timeframe and windows you write (holdout defaulted from
 `campaign_data_policy.yaml`) rather than pinning an existing `protocols/*.json`
 file. **No `promotion`

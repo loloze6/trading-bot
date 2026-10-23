@@ -87,3 +87,11 @@ machine_constraints:
 Prose below the closing `---` is for human readers only -- the orchestrator
 never reads it. Use this space for the idea's motivation, links, and any
 context that does not belong in a field.
+
+## Ratification (direction; people only)
+
+<!-- filled by direction at ratification; the frontmatter stays the idea, the machine fields and the scope block -->
+
+### PURPOSE
+
+### Pre-registered outcomes
