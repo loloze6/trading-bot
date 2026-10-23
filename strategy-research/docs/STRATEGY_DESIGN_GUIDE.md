@@ -329,6 +329,40 @@ components with a lookback of 60 or less; a slow component standardised over 60 
 becomes an on-off signal at +-10. Readiness grows by min_periods only (the window sets
 the deque), so a 250-bar component is ready after 310 bars.
 
+**Sizing (`strategies.sizing`, D-176).** An optional block in `strategies` (next to `regimes`) that targets volatility in
+the allocation step instead of in the forecast: `{"kind": "vol_target", "window": 60, "target_annual_vol": 0.2,
+"periods_per_year": 365, "max_allocation": 2}` (`max_allocation` is optional, default 2). Absent, nothing changes: the
+allocation is `forecast / 10`, byte for byte.
+- *Formula.* `allocation = clip(forecast / 10 x target_annual_vol / realised, -max_allocation, +max_allocation)`, with
+  `realised` the standard deviation (ddof 1) of the simple close returns over the last `window` returns, times
+  `sqrt(periods_per_year)`: the same arithmetic as the `vol_target` op. Only closes up to and including the current bar
+  are read (the last `window` + 1).
+- *The forecast stays the signal.* bars.csv `forecast` is the unsized standardised forecast; the allocation columns
+  (`previous_allocation`, `allocation_change`, `postRebalance_current_allocation`) are sized.
+- *The no-trade band passes on the signal or the sized change.* `risk_management.controls.min_allocation_change` (or a
+  strategy's own `strategies.min_allocation_change`) passes when EITHER the signal's change (`forecast / 10` against the
+  signal the position was last set from) OR the sized exposure's change (target sized allocation minus the current
+  position, what the band judged before D-176) reaches the threshold. The pre-D-176 behaviour is a subset; the signal
+  path is added. The signal's move is measured from the signal the position was last set from (updated on a successful
+  rebalance, reset to 0 on a forced flatten or when volatility was unmeasurable and the order went flat), not from the
+  previous bar: a slowly moving signal still trades once it has moved a full band, a vol swing alone trades once the
+  sized exposure has moved a full band, and a restart with the book far from its sized target re-centres on bar one.
+  Once it passes, the order goes to the sized target.
+- *Warm-up.* The strategy is not ready before `window` + 1 closes (`required_bars` is raised to that if it is lower), so
+  the forecast is 0 and the position flat until then.
+- *Degenerate volatility goes flat.* A realised vol of exactly 0, a non-finite or non-positive close in the window, or
+  fewer than `window` + 1 closes sizes the bar to 0.0 (flat). A NaN forecast is not sized: the existing NaN hold applies.
+- *Sized twice is refused.* With a sizing block, a `vol_target` op in a `transforms` or `history_transforms` list (at
+  any depth), or a `vol_adjusted` op in either list, or a `vol_normalize` op in a component's `transforms` list, fails validation (V19,
+  "sized twice"); the message says where volatility belongs: before standardise (`history_transforms`), in the component,
+  or as a regime. `vol_normalize` alone in `history_transforms` is allowed: standardise divides it out
+  (see the data-aware ops table above), so it does not size the forecast. A malformed block (unknown key, bad `kind`,
+  `window` below 2, a non-positive number) is refused too.
+- *Campaign default.* kind `vol_target`, window 60 bars, `periods_per_year` 365 for daily bars and 8760 for hourly bars, `target_annual_vol` 0.2, `max_allocation` 2; unmeasurable volatility: flat, remembered (held) signal 0.0. The sizing window does not follow D-166: the standardise window describes the signal, the sizing window estimates the market. A brief carries this default and may not change it; it changes only by an operator D-row. Candidate change held, not built: the two-window form (the larger of the 20-bar and 60-bar volatility).
+- *When to use which.* A new config uses `standardise` for the forecast scale (hard rule above) plus the sizing block for
+  volatility targeting, not a `vol_target` op. Existing configs with the op keep working unchanged. `composition.py` does
+  not write a `strategies.sizing` key.
+
 **Percentile and sigmoid outputs are one-sided** (0 to 1). They suit regime scores; as a forecast they would be
 long-only unless re-centred.
 

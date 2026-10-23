@@ -68,6 +68,82 @@ def vol_target_param_errors(p: Any) -> list[str]:
     return errors
 
 
+def realised_annual_vol(tail: np.ndarray, periods_per_year: float) -> float:
+    """Annualised stdev (ddof 1) of the simple returns of `tail` (window + 1
+    closes, already checked finite and positive by the caller). The one copy of
+    the arithmetic, shared by the vol_target op and the allocation-step sizing
+    (D-176, sizing_realised_vol below)."""
+    return float(np.std(tail[1:] / tail[:-1] - 1.0, ddof=1)) * float(np.sqrt(periods_per_year))
+
+
+# ---------------------------------------------------------------------------
+# D-176: strategies.sizing -- vol targeting in the ALLOCATION step, not the
+# forecast. Optional; absent (every config before D-176) changes nothing.
+#
+#   allocation = clip(forecast / 10 * target_annual_vol / realised,
+#                     -max_allocation, +max_allocation)
+#
+# with `realised` exactly the vol_target op's (realised_annual_vol over the
+# last window + 1 closes). The forecast stays the unsized signal.
+# ---------------------------------------------------------------------------
+SIZING_KINDS = ("vol_target",)
+SIZING_DEFAULTS = {"max_allocation": 2.0}
+_SIZING_KEYS = ("kind",) + _VOL_TARGET_PARAMS + ("max_allocation",)
+
+
+def sizing_block_errors(block: Any) -> list[str]:
+    """Problems with a strategies.sizing block ([] when valid). Shared by
+    validate_config.py's V19 and normalise_sizing_block, so the config check
+    and the engine refuse exactly the same blocks."""
+    if not isinstance(block, dict):
+        return [f"must be a mapping, got {type(block).__name__}"]
+    errors = []
+    if block.get("kind") not in SIZING_KINDS:
+        errors.append(f"kind must be one of {list(SIZING_KINDS)}, got {block.get('kind')!r}")
+    unknown = sorted(set(block) - set(_SIZING_KEYS))
+    if unknown:
+        errors.append(f"unknown key(s) {unknown} (allowed: {list(_SIZING_KEYS)})")
+    errors += vol_target_param_errors({k: block[k] for k in _VOL_TARGET_PARAMS if k in block})
+    if "max_allocation" in block:
+        x = block["max_allocation"]
+        if not (isinstance(x, (int, float)) and not isinstance(x, bool) and np.isfinite(x) and x > 0):
+            errors.append(f"max_allocation must be a finite number > 0, got {x!r}")
+    return errors
+
+
+def normalise_sizing_block(block: Any) -> dict[str, Any]:
+    """A validated copy of a strategies.sizing block with max_allocation
+    defaulted. Raises ValueError (loud, never a silent default) when malformed."""
+    errors = sizing_block_errors(block)
+    if errors:
+        raise ValueError(f"strategies.sizing: {'; '.join(errors)}")
+    return {**SIZING_DEFAULTS, **block}
+
+
+def sizing_realised_vol(closes: Any, sizing: dict[str, Any]) -> float | None:
+    """The allocation-step sizing's realised vol (D-176) for a normalised
+    sizing block: realised_annual_vol over the last window + 1 closes, exactly
+    the vol_target op's number. None wherever the op would raise on its data --
+    fewer than window + 1 closes, a non-finite or non-positive close in the
+    window, a realised vol that is not > 0 -- and the caller then sizes to 0.0
+    (flat, the position a forecast of 0.0 gives). With required_bars covering
+    window + 1 (AdvancedStrategy), the strategy itself forecasts 0.0 until the
+    window is full, so warm-up is flat either way.
+
+    WHY THIS CANNOT LEAK: `closes` is the strategy's own buffer at the current
+    bar (AdvancedStrategy.update has already appended this bar), so its last
+    value is this bar's close; only the last window + 1 closes are read."""
+    window = sizing["window"]
+    arr = np.asarray(closes, dtype=float)
+    if len(arr) < window + 1:
+        return None
+    tail = arr[-(window + 1):]
+    if not (np.all(np.isfinite(tail)) and np.all(tail > 0)):
+        return None
+    realised = realised_annual_vol(tail, sizing["periods_per_year"])
+    return realised if realised > 0 else None
+
+
 def _vol_target(v: float, h: pd.Series, p: dict[str, Any], d: pd.DataFrame | None) -> float:
     errors = vol_target_param_errors(p)
     if errors:
@@ -83,7 +159,7 @@ def _vol_target(v: float, h: pd.Series, p: dict[str, Any], d: pd.DataFrame | Non
     tail = closes[-(window + 1):]
     if not (np.all(np.isfinite(tail)) and np.all(tail > 0)):
         raise ValueError("vol_target: a close in the window is not finite or not positive")
-    realised = float(np.std(tail[1:] / tail[:-1] - 1.0, ddof=1)) * float(np.sqrt(p["periods_per_year"]))
+    realised = realised_annual_vol(tail, p["periods_per_year"])
     if not realised > 0:
         raise ValueError(f"vol_target: realised volatility is {realised!r} over the last {window} returns")
     out = v * p["target_annual_vol"] / realised

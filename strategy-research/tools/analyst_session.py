@@ -105,6 +105,24 @@ def _window_bars_suffix(window, timeframe) -> str:
         return ""
 
 
+def _sizing_line(config_text: str | None) -> str | None:
+    """D-176: one line naming the base config's strategies.sizing block (vol targeting in
+    the allocation step), or None when there is no block or the config cannot be read."""
+    try:
+        sizing = ((json.loads(config_text or "") or {}).get("strategies") or {}).get("sizing")
+    except (ValueError, AttributeError):
+        return None
+    if not isinstance(sizing, dict):
+        return None
+    fields = " ".join(f"{k}={sizing[k]}" for k in
+                      ("window", "target_annual_vol", "periods_per_year", "max_allocation")
+                      if k in sizing)
+    if "max_allocation" not in sizing:
+        fields += " max_allocation=2.0 (default)"
+    return (f"sizing: {sizing.get('kind')} {fields} (allocation step; the forecast column is "
+            f"the unsized signal, the allocation columns are sized)")
+
+
 def run_context(run_dir: Path, base_config_rel: str, fold: str | None) -> str:
     """The run context as text: the base config, the variant patches, the protocol (coins,
     timeframe, windows), the fold, the cost model. Absent files are said to be absent."""
@@ -122,8 +140,12 @@ def run_context(run_dir: Path, base_config_rel: str, fold: str | None) -> str:
                 for w in p.get("windows") or []))
         except ValueError:
             parts.append("run_protocol.json: unreadable")
+    base_config_text = _read(run_dir / base_config_rel)
+    sizing_line = _sizing_line(base_config_text)
+    if sizing_line:
+        parts.append(sizing_line)
     out = "\n".join(parts)
-    out += _section(f"Base strategy config ({base_config_rel})", _read(run_dir / base_config_rel))
+    out += _section(f"Base strategy config ({base_config_rel})", base_config_text)
     out += _section("Variant patches (artifacts/variant_patches.yaml)",
                     _read(arts / "variant_patches.yaml"))
     out += _section("Cost model (config/cost_model.yaml; a measurement of this run, evidence never the claim)",
