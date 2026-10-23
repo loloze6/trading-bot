@@ -1,0 +1,21 @@
+schema_version: 3
+reading_id: trade_efficiency-run_098
+model_id: claude-haiku-5-5
+rubric_version: trade_efficiency-analyst-v1
+explanation: 'The shorts'' losses are real in this run but no strategy change follows
+  from them yet. Short lots lose on average and lose in every window where they occur
+  (q5, q6); the bar-level observation behind that is that after forecasts of -10 or
+  lower, forward returns over <n> to 20 bars are higher than on other bars, in all
+  four windows with events (q8). The 1-bar sign is not consistent: the 1-bar test
+  points the claimed way in only one of four windows (q9). I considered negating the
+  forecast as the vehicle and dropped it: a sign flip of the whole signal is not a
+  graded change, and it would be fitted to one fold whose long side is carried by
+  the bull-market drift (longs earn on average, q5). A shorter or longer anchor period
+  has no direction this observation fixes. The short losses concentrate in one window,
+  so that window is a rival to any claim about the short side.
+
+  '
+evidence:
+- q5:groups.short.trade_net_return_mean=-0.0339
+- q9:horizons.1.windows_claimed_sign=1
+side_findings: []

@@ -1,0 +1,26 @@
+schema_version: 3
+reading_id: trade_efficiency-run_099
+model_id: claude-haiku-5-5
+rubric_version: trade_efficiency-analyst-v1
+explanation: 'The strategy is one long-only Donchian position on the 250-bar range.
+  Its forecast is graded, not on/off: it is almost never at the +<n> clip (share_at_cap
+  0), its median is small, and the vol_target step scales it by inverse recent volatility.
+  Costs are not the problem. Fees are a small share of the account, and gross per
+  lot is well above fees per lot (q2). The lots are few (q2 total trades 12, all in
+  six windows), so trade-level tests cannot clear the 100-event floor. Measured on
+  bars, the forecast''s rank correlation with forward returns is negative at 5 and
+  20 bars in most windows (q9), so higher-forecast bars are followed by lower returns.
+  That clears the floors, so it is recorded as an observation. No strategy change
+  follows from it yet: I have not tested a mechanism for it (for example, that the
+  vol_target term drives it through low-volatility states), and a vehicle built on
+  it now would be a fit to one fold. The 1-bar rank correlation points the other way
+  (q6), so the test uses only the 5- and 20-bar horizons. Rejected candidate: a threshold
+  on the top 20% of the forecast over its trailing 100 bars. Its event count is far
+  below the floor (q7), and a fixed forecast >= 5 cut also fails the floor, with events
+  in only two windows (q8). Both are floor limits, not rival tests.
+
+  '
+evidence:
+- q7:horizons.20.n_events=6
+- q2:total.trades=12
+side_findings: []

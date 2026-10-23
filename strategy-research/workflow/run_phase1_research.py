@@ -2977,7 +2977,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
             # sends a variant's back to Step 2 once, and a `base` refusal (1b's
             # config, already checked right after 1b) pauses.
             _fr_msgs = (_fr.strategies_violations(variant_config, _fr_on_off)
-                        + _fr.class_mismatch(base_config, variant_config))
+                        + _fr.class_mismatch(base_config, variant_config)
+                        + _fr.sizing_vehicle_violations(variant.get("patch")))
             if _fr_msgs:
                 reason = FORECAST_RULE_REASON
                 report = "\n".join(_fr_msgs)
@@ -5364,10 +5365,11 @@ def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -
     # D-098: the run's base-config settings may be written in the prose (code-checkable); an
     # unreadable config only means none are (its vehicle check reports the config itself)
     try:
-        settings = asm.config_settings(json.loads(
-            (run_dir / _reader_base_config_rel(run_dir)).read_text(encoding="utf-8")))
+        analyst_base_config = json.loads(
+            (run_dir / _reader_base_config_rel(run_dir)).read_text(encoding="utf-8"))
+        settings = asm.config_settings(analyst_base_config)
     except (OSError, ValueError):
-        settings = set()
+        analyst_base_config, settings = None, set()
     record = {"schema_version": 1, "lens": lens, "category": category, "run_id": run_id,
               "model": caps["model"], "caps": caps, "attempts": []}
     errors: list = []
@@ -5405,14 +5407,17 @@ def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -
         reading, rec, errors = asm.check_answer(
             text, lens=lens, run_id=run_id, entries=entries,
             claim_check=lambda claim: cc.check_claim(claim, **_claim_check_kw()),
-            holdout_start=holdout_start, fold=fold, model_id=model_id, settings=settings)
+            holdout_start=holdout_start, fold=fold, model_id=model_id, settings=settings,
+            base_config=analyst_base_config if isinstance(analyst_base_config, dict) else None)
         # D-096: the reading checks run on every readable answer, so the first attempt hears
         # every error (smoke 6: a vehicle error surfaced only on the retry); the content checks
         # (claim card again, vehicle) need a claim the claim card accepted
         if reading is not None:
             try:
+                # D-178: the analyst worker's reading carries the analyst tags (angle,
+                # floor_lowered) whatever the flag reader says here
                 rp.check_reading(reading, category, "analyst reading", from_model=True,
-                                 envelope=True, **_reader_strictness())
+                                 envelope=True, **{**_reader_strictness(), "analyst": True})
             except rp.ProposalError as exc:
                 errors = errors + [str(exc)]
             else:
@@ -11809,12 +11814,12 @@ def _assert_windows_clear_of_holdout(windows: list, holdout_start: str,
             value = str(w["test"][edge])[:10]
             if value >= holdout_start:
                 raise HoldoutBoundaryBreach(
-                    f"window {label!r} has test.{edge}={value}, at or past "
-                    f"holdout_start={holdout_start} (holdout_range "
-                    f"{holdout_start}..{holdout_end}). `end` is INCLUSIVE-BY-DAY at "
-                    f"the engine, so end={value} materialises that whole day's bars "
-                    f"inside the sealed window. Move the sweep's end date before "
-                    f"{holdout_start}; this generator will not truncate it for you."
+                    f"a window's test.{edge} is at or past the holdout_range start in "
+                    f"config/campaign_data_policy.yaml (dates withheld). `end` is "
+                    f"INCLUSIVE-BY-DAY at the engine, so an end on that day materialises "
+                    f"that whole day's bars inside the sealed window. Move the sweep's "
+                    f"end date before the holdout_range start; this generator will not "
+                    f"truncate it for you."
                 )
 
 
@@ -18620,7 +18625,9 @@ def _claim_power_check(run_dir: Path, run_id: str, attempt, stage: str, card: di
     else:
         try:
             bars = cc.window_bars(windows, step)
-            warnings = cc.power_warnings((card or {}).get("claim") or {}, bars, len(symbols))
+            warnings = cc.power_warnings(
+                (card or {}).get("claim") or {}, bars, len(symbols),
+                [cc.window_bars([w], step) for w in windows])
             entry.update({"status": "below_floor" if warnings else "ok", "source": source,
                           "bars": bars, "coins": len(symbols), "timeframe": tf,
                           "warnings": warnings})
@@ -19029,7 +19036,9 @@ def _claim_revision_power_facts(run_dir: Path, run_id: str) -> dict:
                 "coins": len(symbols),
                 "rule": (f"a min_events floor must be at most (bars_in_test_windows // the "
                          f"longest horizon) x coins = ({bars} // longest horizon) x "
-                         f"{len(symbols)}")}
+                         f"{len(symbols)}; for a quantile selector, first take its lookback "
+                         f"off each test window: ((sum over windows of max(0, window bars - "
+                         f"lookback)) // longest horizon) x coins")}
     except Exception as exc:  # noqa: BLE001 -- information only
         return {"known": False, "reason": f"{type(exc).__name__}: {exc}"}
 

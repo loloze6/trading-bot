@@ -1,0 +1,19 @@
+- 2026-10-20T19:18:50Z REGISTER: queue entry 'daily_breadth_fold_b' appended (brief=briefs/daily_breadth_fold_b.md, priority=1, status=ready).
+- 2026-10-20T19:44:51Z [DRY RUN] queue: selected entry 'daily_breadth_fold_b' (status=ready, brief=briefs/daily_breadth_fold_b.md)
+- 2026-10-20T19:44:51Z [DRY RUN] classified next action for 'daily_breadth_fold_b': 'fresh_launch'
+- 2026-10-20T19:46:23Z VENUE-CHECK run_098: venue='kraken' market_type='perp' tradable=True research_only=False
+- 2026-10-20T19:46:23Z LAUNCH daily_breadth_fold_b -> run_098 (brief=briefs/daily_breadth_fold_b.md)
+- 2026-10-20T19:59:37Z STAGE  daily_breadth_fold_b / run_098: pending_stage=completed_refuted status=completed (median_sharpe=-1.175, idea_status=refuted)
+- 2026-10-20T19:59:42Z REGISTER: queue entry 'daily_breadth_fold_b__more_1' appended (brief=briefs/daily_breadth_fold_b.md, priority=999, status=blocked_on_operator_approval).
+- 2026-10-20T19:59:43Z WARNING regime_power-run_070-1: reader names unknown component class VarianceRatioRegimeComponent (nearest real class: VarianceRatioComponent) -- warning only, see runs/run_098/artifacts/decision_record.yaml
+- 2026-10-20T19:59:43Z awaiting operator approval: daily_breadth_fold_b__more_1 (run_campaign.py --approve daily_breadth_fold_b__more_1)
+- 2026-10-20T19:59:45Z DONE daily_breadth_fold_b (run_098) -> refuted
+- 2026-10-20T19:59:45Z DECIDE after daily_breadth_fold_b (run_098): R2 -- 4 eligible open brief(s); awaiting operator approval: ['E068_hourly_shock_reversal_kraken_perp__more_4', 'daily_breadth_fold_a__more_1', 'daily_breadth_fold_b__more_1', 'rebase_run_095_standardised_host__more_1'] (4 new). Record: runs/run_098/artifacts/decision_record.yaml
+- 2026-10-22T11:31:16Z [DRY RUN] queue: selected entry 'child_run_098_long_only_fold_b' (status=ready, brief=briefs/child_run_098_long_only_fold_b.md)
+- 2026-10-22T11:31:16Z [DRY RUN] classified next action for 'child_run_098_long_only_fold_b': 'queued_card'
+- 2026-10-22T11:31:41Z VENUE-CHECK run_099: venue='kraken' market_type='perp' tradable=True research_only=False
+- 2026-10-22T11:31:44Z LAUNCH-CARD child_run_098_long_only_fold_b -> run_099 (card=campaign_record/queued_cards/run_098/hypothesis_card_child_long_only.yaml, brief=briefs/child_run_098_long_only_fold_b.md; step 1a skipped)
+- 2026-10-22T11:39:12Z STAGE  child_run_098_long_only_fold_b / run_099: pending_stage=completed_refuted status=completed (median_sharpe=7.033, idea_status=refuted)
+- 2026-10-22T11:39:15Z WARNING regime_power-run_070-1: reader names unknown component class VarianceRatioRegimeComponent (nearest real class: VarianceRatioComponent) -- warning only, see runs/run_099/artifacts/decision_record.yaml
+- 2026-10-22T11:39:18Z DONE child_run_098_long_only_fold_b (run_099) -> refuted
+- 2026-10-22T11:39:18Z DECIDE stop after child_run_098_long_only_fold_b (run_099): no_eligible_candidate -- the scheduler has no in_progress or ready entry to run, 0 of 18 candidate(s) eligible, and no open brief for R2 (10 exhausted, 13 legacy, 4 held by an operator hold: E068_hourly_shock_reversal_kraken_perp, daily_breadth_fold_a, daily_breadth_fold_b, rebase_run_095_standardised_host). Record: runs/run_099/artifacts/decision_record.yaml. See RUNBOOK.md §3. Awaiting operator approval: ['E068_hourly_shock_reversal_kraken_perp__more_4', 'daily_breadth_fold_a__more_1', 'daily_breadth_fold_b__more_1', 'rebase_run_095_standardised_host__more_1'] -- approve with --approve <id> (RUNBOOK.md §4 Approval mode).

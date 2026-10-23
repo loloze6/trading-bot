@@ -713,3 +713,34 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-20 -- Parallel builds on dependent branches collided in their tests
 - **Pattern:** V2-2+V3 was built on V2-1's first commit while V2-1's fix round added tests that force the off-switch on; V2-2+V3 deleted the switch, so the rebase conflicted in the tests and needed a separate resolving agent.
 - **Rule:** when a later slice is built on an earlier one still in review, tell the later builder what the earlier fix round may add, and rebase as soon as the earlier fix commit lands.
+
+## 2026-10-21 -- A sequencing line was treated as an approval
+- **Pattern:** the operator wrote "Show the REGISTER line, then hand over to the run session"; the lead registered the fold-B brief in the queue. The operator corrected: a sequencing line is not an approval; the approval is the paste that names the diff.
+- **Rule:** act at a gate (register, queue, merge, sync, launch) only on the operator's paste that names what is approved; diff that paste against what was built before acting. A line that only orders the steps is not that paste: show, then wait.
+
+## 2026-10-21 -- Bare python and heredocs still slipped through
+- **Pattern:** in the 2026-10-21 batch, agents ran a bare `python`/`python -c` or a heredoc into python a few times, and the lead did once, although every brief carried the rule.
+- **Rule:** unchanged (2026-10-20): only the venv interpreter, with pytest or a script file run with -I. The lead writes its own checks as script files under %TEMP%\claude\scripts\ and runs them the same way.
+
+## 2026-10-21 -- Agents saw the pre-commit hook's dated output
+- **Pattern:** the pre-commit hook prints the sealed range; in the 2026-10-21 batch and again in the second set, a builder's commit output showed it in the agent's session. Neither agent wrote it anywhere or repeated it.
+- **Rule:** briefs keep "never quote the hook's output; report pass or fail only"; commit output goes to $null where the shell allows it.
+
+## 2026-10-21 -- A reviewer read the operator checkout
+- **Pattern:** one reviewer opened files in the operator checkout read-only to check a fact, although the brief named the checkout as off-limits.
+- **Rule:** reviewers and builders get copies (a detached worktree of master, or files copied to %TEMP%); every dispatch names the checkout path as off-limits for reading as well as writing.
+
+## 2026-10-21 -- A hash pin was missed by the test search
+- **Pattern:** PR-A edited hypothesis-design/SKILL.md; the builder's search for tests touching the file missed the sha256 pin in test_e059_s2a_review_fixes.py, and CI failed on it.
+- **Rule:** before editing a skill or doc file, grep the tests for the file's name and for a sha256 pin of it; re-pin with a comment naming the D-row in the same PR.
+
+## 2026-10-21 -- The lead's re-run script aborted a paid session
+- **Pattern:** the lead's run_098 analyst re-run script set `$ErrorActionPreference = 'Stop'`; in Windows PowerShell 5.1 a warn-only stderr line from the native python process became a terminating error, so the first forecast session stopped mid-way. Its spend is unrecorded (log of 80 bytes, no cost line).
+- **Rule:** a script that runs a native command keeps `$ErrorActionPreference = 'Continue'` and tests `$LASTEXITCODE`; it writes each session's output, cost line included, to the log as it comes.
+
+## 2026-10-23 -- The lead ran a bare python and printed a sealed-window date while mapping shapes
+- **Pattern:** during the run-viewer design session the lead (1) typed a stray `python -` inside a shell line (it started and exited with no input, wrote nothing), and (2) printed `holdout_contaminated_runs` from the data policy to learn its shape; that key carries a breach span inside the sealed window, which reached the lead's tool output (no file, no commit, no operator-facing text).
+- **Rule:** the lead holds itself to the agents' rule: only the venv interpreter, only a script file or pytest, never a bare `python`; and never prints any key of `config/campaign_data_policy.yaml` -- to learn a policy shape, print key names and value types only.
+- **Also (same session):** the lead printed the head of `tools/holdout_date_gate.sh`, whose comment quotes the sealed range literally, and the loaders agent did the same; nothing was written. **Rule:** never print `tools/holdout_date_gate.sh` (its WHY comment carries the range); read its behaviour from `tools/hooks/pre-commit` or ask.
+- **Also:** the lead called 91 runs' in-range dates "wall-clock provenance" from a count that did not separate kinds; the fixture build showed run_098's hits are the policy's holdout block inside `protocol.json`. **Rule:** a count names what it counted (files by name), not what the lead assumes the hits are.
+- **Also (same night):** while a fix agent was running, the lead ran a pointless `python -I -c "print(1)"` (a placeholder call, no read, no write); it broke the brief's "only pytest or a script file" rule. The reviewer's probe sent a method name carrying a sealed-window day, which the stdlib 501 page echoed into its own tool output (fixed in the server: every stdlib error page goes through the date filter). **Rule:** a probe that needs a sealed-window day is a test with count-only assertions, never a live request whose echo is read.

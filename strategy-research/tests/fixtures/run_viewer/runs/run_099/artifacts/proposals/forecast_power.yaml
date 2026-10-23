@@ -1,0 +1,26 @@
+schema_version: 3
+reading_id: forecast_power-run_099
+model_id: claude-haiku-5-5
+rubric_version: forecast_power-analyst-v1
+explanation: 'The strategy is a long-only 250-bar Donchian position, scaled by standardise
+  and vol_target, with a forecast that is never at the clip (share at cap zero). It
+  made 12 lots in total, none in two of the six windows, and its fees are small against
+  its gross (fees about 0.22% of the starting account over all windows). The gross
+  edge is therefore not a cost finding. Mechanism 1, that bars near the one-year high
+  keep rising (<n>-week-high continuation), is rejected: bars at forecast 4 or above
+  earn less than other bars at 1, 5 and 10 bars, and in none of the windows with such
+  bars does the effect point the claimed way. Mechanism <n>, that a top-fifth forecast
+  relative to its own 100-bar range predicts a higher next-bar return, is rejected:
+  the effect at 1 bar is about zero and at 5 bars negative, and the 20-bar horizon
+  has only <n> events, so the 100-event floor stops that horizon. No claim clears
+  its floors on this fold. The short-horizon sign reversal is recorded as an observation
+  with its floor not met. Not tested: a mean-reversion mechanism after a run-up to
+  the one-year high, which would need a window with more bars at high forecast.
+
+  '
+evidence:
+- q2:total.trades=12
+- q2:total.fees_pct=0.2219246
+- q6:horizons.1.effect=-0.0019116712
+- q5:horizons.5.effect=-0.0024697194
+side_findings: []

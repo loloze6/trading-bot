@@ -1,0 +1,65 @@
+run_id: run_099
+manifest_kind: forecast
+claim_before: &id001
+  statement: 'The long-only forecast ranks the next 5 and 20 daily returns positively
+    (higher forecast, higher return), and after a forecast of 8 or more the return
+    over the next 5 bars is lower than on the other bars (half (a) of the run_098
+    re-run question: whether the strongest long readings are already exhausted at
+    5 bars).
+
+    '
+  kind: direction_forecast
+  tests:
+  - name: long_forecast_rank_ic_5_20
+    selector:
+      kind: all
+    outcome:
+      kind: fwd_return
+      horizons:
+      - 5
+      - 20
+    baseline: null
+    statistic: rank_ic
+    direction: greater
+    floor:
+      min_windows: 5
+  - name: half_a_strong_long_lower_5
+    selector:
+      kind: event
+      field: forecast
+      op: '>='
+      value: 8
+    outcome:
+      kind: fwd_return
+      horizons:
+      - 5
+    baseline:
+      kind: complement
+    statistic: mean_diff
+    direction: less
+    floor:
+      min_events: 50
+  pass_if: 'At horizons 5 and 20 the rank IC of the forecast with the forward return
+    is positive in at least 5 of the 6 windows; at horizon 5, bars with a forecast
+    of 8 or more have a lower mean forward return than the other bars, with at least
+    50 such bars.
+
+    '
+  fail_if: 'The rank IC is zero or negative at horizon 5 or 20 in most windows, or
+    at horizon 5 the bars with a forecast of 8 or more have a higher or equal mean
+    forward return than the other bars.
+
+    '
+  rationale: 'The first test is the vehicle''s own direction claim, the one the criterion
+    forecast_ic_median grades, read at two horizons; the second is half (a), pre-registered
+    by the operator''s direction of 2026-10-21 from run_098''s analyst re-run and
+    left untested there (D-171). Both read the strategy''s own forecast. The claim
+    is measured and shown, never graded, and nothing in the run depends on it; no
+    question is handed to the analyst lenses.
+
+    '
+claim_before_sha256: dfed734c4f62896d06b42b60c49d9a0c2b6716ed98e0f582e8e2110c8b5bf063
+visibility_before: ok
+status: not_needed
+claim_after: *id001
+visibility_after: ok

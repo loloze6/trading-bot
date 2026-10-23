@@ -134,6 +134,48 @@ _V3_PATCH_KEYS = frozenset({"proposal_id", "patch", "evidence", "scores", "requi
 # a FILE already written (from_model False) is accepted as it stands.
 COMBINES_AS = ("forecast_block", "regime_gate", "execution_rule", "knowledge_only")
 ENVELOPE_KEYS = frozenset({"vehicle", "combines_as", "fold_observed"})
+# D-178 (operator item D, 2026-10-22): two keys the ANALYST's code writes on a side finding (never
+# the model): `floor_lowered` ({from, to, after, reason[, test]}, or a list of those, from the
+# query log: the claim's test repeats an earlier query's selector and outcome on a lower floor)
+# and `angle` (regime | sizing). Accepted in an analyst's reading (check_reading(analyst=True))
+# and in a file already written; carried to decide-next by flatten_reading.
+ANALYST_TAG_KEYS = frozenset({"floor_lowered", "angle"})
+ANGLES = ("regime", "sizing")
+_FLOOR_LOWERED_KEYS = frozenset({"from", "to", "after", "reason", "test"})
+
+
+def floor_lowered_items(fl) -> list:
+    """The floor_lowered mappings of a side finding (one mapping, or a list of them)."""
+    if isinstance(fl, dict):
+        return [fl]
+    return [x for x in fl if isinstance(x, dict)] if isinstance(fl, list) else []
+
+
+def floor_lowered_text(fl) -> str:
+    """D-178 (item D1): the words decide-next's candidate entry and the record show,
+    "on a lowered floor (100 to 50)": the floor units that differ, `from` to `to` (one unit: its
+    two numbers; several: their numbers joined by "/", in unit order)."""
+    parts = []
+    for x in floor_lowered_items(fl):
+        a, b = x.get("from") or {}, x.get("to") or {}
+        keys = sorted(k for k in set(a) | set(b) if a.get(k) != b.get(k))
+        parts.append(f"{'/'.join(str(a.get(k, 0)) for k in keys)} to "
+                     f"{'/'.join(str(b.get(k, 0)) for k in keys)}")
+    return f"on a lowered floor ({'; '.join(parts)})" if parts else ""
+
+
+def _check_analyst_tags(s: dict, w: str) -> None:
+    if "angle" in s and s["angle"] not in ANGLES:
+        raise ProposalError(f"{w}.angle={s['angle']!r} must be one of {list(ANGLES)}")
+    if "floor_lowered" in s:
+        items = floor_lowered_items(s["floor_lowered"])
+        n = len(s["floor_lowered"]) if isinstance(s["floor_lowered"], list) else 1
+        if not items or len(items) != n or any(
+                not {"from", "to", "after", "reason"} <= set(x)
+                or set(x) - _FLOOR_LOWERED_KEYS or not _non_empty_str(x.get("reason"))
+                for x in items):
+            raise ProposalError(f"{w}.floor_lowered must be {{from, to, after, reason}} "
+                                f"(written by code from the query log), or a list of them")
 # Operator, 2026-10-19 (supersedes D-089 decision a): a claim always carries a vehicle, the
 # strategy change that follows from it; no claim kind takes `vehicle: []` in a model's
 # answer. claim_card's FOLDS_CLAIM_KINDS is unchanged: execution_behaviour stays a legal
@@ -347,6 +389,8 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
                             f"{MAX_SIDE_FINDINGS} (`[]` for none)")
     seen = set()
     side_keys = _SIDE_FINDING_KEYS | (ENVELOPE_KEYS if (envelope or not from_model) else frozenset())
+    if analyst or not from_model:
+        side_keys = side_keys | ANALYST_TAG_KEYS
     for i, s in enumerate(sides):
         w = f"{where}.side_findings[{i}]"
         if not isinstance(s, dict) or set(s) - side_keys \
@@ -360,6 +404,7 @@ def check_reading(doc, cat: str, where: str, *, strict_provenance: bool = False,
         if "config_change" in s:
             _check_change_items(s["config_change"], f"{w}.config_change")
         _check_envelope(s, w, require_vehicle=envelope and from_model, from_model=from_model)
+        _check_analyst_tags(s, w)
         _check_evidence(s["evidence"], w)
         check_scores(s["scores"], w)
         if "requires_feed" in s:
@@ -523,7 +568,7 @@ def flatten_reading(doc: dict) -> list:
         # decide_next.side_finding_start), never through resolve_patch.
         if "vehicle" in s and isinstance(s["vehicle"], list):
             item["config_change"] = s["vehicle"]
-        for key in sorted(ENVELOPE_KEYS & set(s)):
+        for key in sorted((ENVELOPE_KEYS | ANALYST_TAG_KEYS) & set(s)):
             item[key] = s[key]
         out.append(item)
     patch = doc.get("patch")

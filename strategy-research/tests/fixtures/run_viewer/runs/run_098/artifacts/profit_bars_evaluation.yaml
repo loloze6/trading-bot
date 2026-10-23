@@ -1,0 +1,563 @@
+run_id: run_098
+generated_at: '2026-10-20T19:57:02.515000+00:00'
+scope: every_backtest
+bars_definitions: v2
+bars_ratified_by: 'Jeremy Alauze (loloze6) -- recorded by Claude at the operator''s
+  explicit instruction (2026-10-14 session: ''I accept the D-129 bars edit ... sign
+  the bars file on my behalf'')'
+bars_ratified_at: '2026-10-14'
+dsr_basis:
+  n_dsr_total: 71
+  n_trials: 52
+  sharpe_basis: whole_test_daily_equal_weight_v2
+  n_same_basis: 22
+  min_same_basis: 10
+  basis_overlay:
+    present: false
+    sha256: null
+variants:
+  asset_ada:
+    kind: variant
+    trial_id: run_098:asset_ada
+    protocol_result_ref: null
+    result: NOT_TESTED
+    reason: 'backtest failed (backtest_failed: run_protocol.py non-zero exit (1)):
+      never graded, never passing'
+    bars: []
+    reasons: []
+    forecast_shape: null
+    window_economics: null
+  asset_link:
+    kind: variant
+    trial_id: null
+    protocol_result_ref: null
+    result: NOT_TESTED
+    reason: 'not tested (index status ''not_tested''): insufficient_coverage: the
+      coin covers 3/6 protocol windows (50%; era(s) [''era_2019_2023_full_feed''])
+      by the Layer-1 precheck and the listing date -- D-042 runs a partial-coverage
+      asset variant only at >= 60% of the windows; not run, the idea is at best inconclusive'
+    bars: []
+    reasons: []
+    forecast_shape: null
+    window_economics: null
+  base:
+    kind: variant
+    trial_id: run_098:base
+    protocol_result_ref: artifacts/variants/base/protocol_result.yaml
+    result: FAIL
+    reason: null
+    bars:
+    - name: sharpe_min
+      threshold: 0.0
+      actual: 0.10447654403026334
+      result: PASS
+      basis: portfolio_equal_weight_whole_test_chained_daily_sharpe
+      comparator: '>'
+      note: mean / sample stdev (ddof 1) x sqrt(365), rf 0, of the 730 chained daily
+        return(s); equal-weight portfolio of 1 coin(s) ['BTCUSD'], 6 window(s) chained
+        over 2018-05-01..2021-12-31 (730 counted day(s), coverage 1.0000, 611 protocol
+        gap day(s), 0 engine edge day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: '2018-05-01'
+        last_day: '2021-12-31'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+    - name: deflated_sharpe_threshold
+      threshold: 0.5
+      actual: 0.006646603143099616
+      result: FAIL
+      basis: deflated_sharpe_whole_test_daily_on_campaign_trial_ledger
+      comparator: '>='
+      note: 'artifacts/variants/base/protocol_result.yaml: deflated Sharpe (Bailey
+        & Lopez de Prado 2014, D-046) of the whole-test daily Sharpe on the campaign
+        trial ledger; N=71 counted trial(s), K=22 same-basis value(s) (floor 10);
+        SR=0.005468552249498961/day over T=730 daily returns, SR0=0.09720958369559664
+        (sigma cross 0.03984701439906094 x Z(N) 2.4076617829424114)'
+      detail:
+        status: ok
+        reason: null
+        dsr: 0.006646603143099616
+        sr0: 0.09720958369559664
+        sigma_used: 0.03984701439906094
+        sigma_source: cross
+        sigma_null: 0.037037037037037035
+        sigma_cross: 0.03984701439906094
+        mean_same_basis: 0.001271449962621637
+        z_expected_max: 2.4076617829424114
+        sr_daily: 0.005468552249498961
+        K: 22
+        N: 71
+        T: 730
+        min_same_basis: 10
+    - name: max_drawdown_pct_max
+      threshold: 20.0
+      actual: 41.561840890368174
+      result: FAIL
+      basis: portfolio_equal_weight_whole_test_chained
+      comparator: <=
+      note: largest peak-to-trough fall of the chained bar-level curve; equal-weight
+        portfolio of 1 coin(s) ['BTCUSD'], 6 window(s) chained over 2018-05-01..2021-12-31
+        (730 counted day(s), coverage 1.0000, 611 protocol gap day(s), 0 engine edge
+        day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: '2018-05-01'
+        last_day: '2021-12-31'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        peak_ts: '2021-09-06 00:00:00'
+        trough_ts: '2021-10-02 00:00:00'
+        n_bars: 730
+    - name: avg_daily_return_min
+      threshold: 0.0005
+      actual: 0.00021342499388591553
+      result: FAIL
+      basis: portfolio_equal_weight_whole_test_chained_mean_daily_return
+      comparator: '>='
+      note: arithmetic mean of the 730 chained daily simple return(s); equal-weight
+        portfolio of 1 coin(s) ['BTCUSD'], 6 window(s) chained over 2018-05-01..2021-12-31
+        (730 counted day(s), coverage 1.0000, 611 protocol gap day(s), 0 engine edge
+        day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: '2018-05-01'
+        last_day: '2021-12-31'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+    - name: buy_and_hold_sharpe_excess_min
+      threshold: 0.0
+      actual: -0.7172155488236658
+      result: FAIL
+      basis: whole_test_sharpe_minus_buy_and_hold_whole_test_sharpe
+      comparator: '>'
+      note: 'whole-test Sharpe 0.104477 minus equal-weight buy-and-hold''s 0.821692
+        on the same 730 chained day(s), buy-and-hold charged one round trip per coin
+        at {''BTCUSD'': 7.5} bps per side; information: total return -0.333066 vs
+        0.915964; equal-weight portfolio of 1 coin(s) [''BTCUSD''], 6 window(s) chained
+        over 2018-05-01..2021-12-31 (730 counted day(s), coverage 1.0000, 611 protocol
+        gap day(s), 0 engine edge day(s) excluded, 0 multi-day step(s))'
+      detail:
+        first_day: '2018-05-01'
+        last_day: '2021-12-31'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        strategy_sharpe: 0.10447654403026334
+        buy_and_hold_sharpe: 0.8216920928539291
+        strategy_total_return: -0.33306617147551054
+        buy_and_hold_total_return: 0.9159639052078659
+        buy_and_hold_gross_return: 0.9188410874909907
+        excess_return: -1.2490300766833764
+        cost_multiplier: 0.9985005625
+        cost_per_side_bps:
+          BTCUSD: 7.5
+    - name: trade_frequency_min
+      threshold: 0.01
+      actual: 0.21506849315068494
+      result: PASS
+      basis: pooled_trades_excl_window_closes_per_backtest_bar
+      comparator: '>='
+      note: 157 trade(s) without end_of_window forced closes / 730 backtest bar(s),
+        pooled over every coin and window (19 forced close(s) not counted); source
+        variants/base/trade_diagnostics.json
+      detail:
+        trades: 157
+        bars: 730
+        end_of_window: 19
+        n_coin_windows: 6
+    - name: leave_one_block_out_sharpe_min
+      threshold: 0.0
+      actual: -0.4204898716888431
+      result: FAIL
+      basis: min_whole_test_sharpe_leaving_one_4_month_block_out
+      comparator: '>'
+      note: lowest whole-test Sharpe with one 4-month block left out (block 2021-01),
+        over 6 block(s); equal-weight portfolio of 1 coin(s) ['BTCUSD'], 6 window(s)
+        chained over 2018-05-01..2021-12-31 (730 counted day(s), coverage 1.0000,
+        611 protocol gap day(s), 0 engine edge day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: '2018-05-01'
+        last_day: '2021-12-31'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        worst_block: 2021-01
+        by_block:
+          2018-05: 0.007166745689997395
+          2019-01: 0.35508854754625147
+          2019-09: 0.3275642093317766
+          2020-05: -0.00619842565852512
+          2021-01: -0.4204898716888431
+          2021-09: 0.34088824062401824
+    reasons:
+    - 'deflated_sharpe_threshold: FAIL (threshold=0.5, actual=0.006646603143099616)'
+    - 'max_drawdown_pct_max: FAIL (threshold=20.0, actual=41.561840890368174)'
+    - 'avg_daily_return_min: FAIL (threshold=0.0005, actual=0.00021342499388591553)'
+    - 'buy_and_hold_sharpe_excess_min: FAIL (threshold=0.0, actual=-0.7172155488236658)'
+    - 'leave_one_block_out_sharpe_min: FAIL (threshold=0.0, actual=-0.4204898716888431)'
+    forecast_shape:
+      abs_mean_forecast: 10.34426829
+      share_at_cap: 0.06849315
+      abs_mean_allocation: 1.02536534
+      n_bars: 730
+      n_windows: 6
+    window_economics:
+      windows:
+        BTCUSD/2018-05:
+          n_bars: 123
+          trades: 33
+          turnover: 11.841601
+          direction_changes: 0
+          mean_abs_allocation: 1.2424138
+          max_abs_allocation: 2.101863
+          gross_pct: 4.5670167
+          fees_pct: 0.6801994
+          net_pct: 3.8868173
+          cost_drag_pct: 14.8937
+          avg_trade_duration_bars: 31.94
+          median_holding_bars: 20.0
+        BTCUSD/2019-01:
+          n_bars: 120
+          trades: 10
+          turnover: 4.043296
+          direction_changes: 2
+          mean_abs_allocation: 0.76707099
+          max_abs_allocation: 1.096587
+          gross_pct: -29.373666
+          fees_pct: 0.1744793
+          net_pct: -29.548145
+          cost_drag_pct: 0.594
+          avg_trade_duration_bars: 50.0
+          median_holding_bars: 42.5
+        BTCUSD/2019-09:
+          n_bars: 122
+          trades: 40
+          turnover: 19.024855
+          direction_changes: 5
+          mean_abs_allocation: 0.96844411
+          max_abs_allocation: 2.032037
+          gross_pct: -28.235301
+          fees_pct: 0.72976
+          net_pct: -28.965061
+          cost_drag_pct: 2.5846
+          avg_trade_duration_bars: 12.9
+          median_holding_bars: 8.0
+        BTCUSD/2020-05:
+          n_bars: 123
+          trades: 24
+          turnover: 11.022472
+          direction_changes: 0
+          mean_abs_allocation: 1.2027207
+          max_abs_allocation: 2.000416
+          gross_pct: 8.390138
+          fees_pct: 0.5416649
+          net_pct: 7.8484731
+          cost_drag_pct: 6.456
+          avg_trade_duration_bars: 22.08
+          median_holding_bars: 8.5
+        BTCUSD/2021-01:
+          n_bars: 120
+          trades: 17
+          turnover: 6.082926
+          direction_changes: 0
+          mean_abs_allocation: 0.93303492
+          max_abs_allocation: 1.260517
+          gross_pct: 74.391106
+          fees_pct: 0.4345321
+          net_pct: 73.956574
+          cost_drag_pct: 0.5841
+          avg_trade_duration_bars: 33.94
+          median_holding_bars: 20.0
+        BTCUSD/2021-09:
+          n_bars: 122
+          trades: 52
+          turnover: 24.675001
+          direction_changes: 9
+          mean_abs_allocation: 1.0295268
+          max_abs_allocation: 2.141406
+          gross_pct: -30.617812
+          fees_pct: 1.006294
+          net_pct: -31.624106
+          cost_drag_pct: 3.2866
+          avg_trade_duration_bars: 14.58
+          median_holding_bars: 5.0
+      total:
+        n_bars: 730
+        trades: 176
+        turnover: 76.690151
+        direction_changes: 16
+        mean_abs_allocation: 1.0253653
+        max_abs_allocation: 2.141406
+        gross_pct: -0.8785186
+        fees_pct: 3.5669297
+        net_pct: -4.4454484
+        cost_drag_pct: 406.01642
+        avg_trade_duration_bars: 22.358409
+        median_holding_bars: 8.0
+  design_lookback_120:
+    kind: variant
+    trial_id: run_098:design_lookback_120
+    protocol_result_ref: artifacts/variants/design_lookback_120/protocol_result.yaml
+    result: FAIL
+    reason: null
+    bars:
+    - name: sharpe_min
+      threshold: 0.0
+      actual: 0.8003716004099253
+      result: PASS
+      basis: portfolio_equal_weight_whole_test_chained_daily_sharpe
+      comparator: '>'
+      note: mean / sample stdev (ddof 1) x sqrt(365), rf 0, of the 730 chained daily
+        return(s); equal-weight portfolio of 1 coin(s) ['BTCUSD'], 6 window(s) chained
+        over 2018-05-01..2021-12-31 (730 counted day(s), coverage 1.0000, 611 protocol
+        gap day(s), 0 engine edge day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: '2018-05-01'
+        last_day: '2021-12-31'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+    - name: deflated_sharpe_threshold
+      threshold: 0.5
+      actual: 0.06917935479671489
+      result: FAIL
+      basis: deflated_sharpe_whole_test_daily_on_campaign_trial_ledger
+      comparator: '>='
+      note: 'artifacts/variants/design_lookback_120/protocol_result.yaml: deflated
+        Sharpe (Bailey & Lopez de Prado 2014, D-046) of the whole-test daily Sharpe
+        on the campaign trial ledger; N=71 counted trial(s), K=22 same-basis value(s)
+        (floor 10); SR=0.04189336426163702/day over T=730 daily returns, SR0=0.09720958369559664
+        (sigma cross 0.03984701439906094 x Z(N) 2.4076617829424114)'
+      detail:
+        status: ok
+        reason: null
+        dsr: 0.06917935479671489
+        sr0: 0.09720958369559664
+        sigma_used: 0.03984701439906094
+        sigma_source: cross
+        sigma_null: 0.037037037037037035
+        sigma_cross: 0.03984701439906094
+        mean_same_basis: 0.001271449962621637
+        z_expected_max: 2.4076617829424114
+        sr_daily: 0.04189336426163702
+        K: 22
+        N: 71
+        T: 730
+        min_same_basis: 10
+    - name: max_drawdown_pct_max
+      threshold: 20.0
+      actual: 38.91615629406838
+      result: FAIL
+      basis: portfolio_equal_weight_whole_test_chained
+      comparator: <=
+      note: largest peak-to-trough fall of the chained bar-level curve; equal-weight
+        portfolio of 1 coin(s) ['BTCUSD'], 6 window(s) chained over 2018-05-01..2021-12-31
+        (730 counted day(s), coverage 1.0000, 611 protocol gap day(s), 0 engine edge
+        day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: '2018-05-01'
+        last_day: '2021-12-31'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        peak_ts: '2019-10-24 00:00:00'
+        trough_ts: '2019-10-29 00:00:00'
+        n_bars: 730
+    - name: avg_daily_return_min
+      threshold: 0.0005
+      actual: 0.001696709072645032
+      result: PASS
+      basis: portfolio_equal_weight_whole_test_chained_mean_daily_return
+      comparator: '>='
+      note: arithmetic mean of the 730 chained daily simple return(s); equal-weight
+        portfolio of 1 coin(s) ['BTCUSD'], 6 window(s) chained over 2018-05-01..2021-12-31
+        (730 counted day(s), coverage 1.0000, 611 protocol gap day(s), 0 engine edge
+        day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: '2018-05-01'
+        last_day: '2021-12-31'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+    - name: buy_and_hold_sharpe_excess_min
+      threshold: 0.0
+      actual: -0.021320492444003802
+      result: FAIL
+      basis: whole_test_sharpe_minus_buy_and_hold_whole_test_sharpe
+      comparator: '>'
+      note: 'whole-test Sharpe 0.800372 minus equal-weight buy-and-hold''s 0.821692
+        on the same 730 chained day(s), buy-and-hold charged one round trip per coin
+        at {''BTCUSD'': 7.5} bps per side; information: total return 0.877957 vs 0.915964;
+        equal-weight portfolio of 1 coin(s) [''BTCUSD''], 6 window(s) chained over
+        2018-05-01..2021-12-31 (730 counted day(s), coverage 1.0000, 611 protocol
+        gap day(s), 0 engine edge day(s) excluded, 0 multi-day step(s))'
+      detail:
+        first_day: '2018-05-01'
+        last_day: '2021-12-31'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        strategy_sharpe: 0.8003716004099253
+        buy_and_hold_sharpe: 0.8216920928539291
+        strategy_total_return: 0.8779567248462545
+        buy_and_hold_total_return: 0.9159639052078659
+        buy_and_hold_gross_return: 0.9188410874909907
+        excess_return: -0.038007180361611326
+        cost_multiplier: 0.9985005625
+        cost_per_side_bps:
+          BTCUSD: 7.5
+    - name: trade_frequency_min
+      threshold: 0.01
+      actual: 0.2452054794520548
+      result: PASS
+      basis: pooled_trades_excl_window_closes_per_backtest_bar
+      comparator: '>='
+      note: 179 trade(s) without end_of_window forced closes / 730 backtest bar(s),
+        pooled over every coin and window (25 forced close(s) not counted); source
+        variants/design_lookback_120/trade_diagnostics.json
+      detail:
+        trades: 179
+        bars: 730
+        end_of_window: 25
+        n_coin_windows: 6
+    - name: leave_one_block_out_sharpe_min
+      threshold: 0.0
+      actual: 0.48485371253980264
+      result: PASS
+      basis: min_whole_test_sharpe_leaving_one_4_month_block_out
+      comparator: '>'
+      note: lowest whole-test Sharpe with one 4-month block left out (block 2021-01),
+        over 6 block(s); equal-weight portfolio of 1 coin(s) ['BTCUSD'], 6 window(s)
+        chained over 2018-05-01..2021-12-31 (730 counted day(s), coverage 1.0000,
+        611 protocol gap day(s), 0 engine edge day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: '2018-05-01'
+        last_day: '2021-12-31'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        worst_block: 2021-01
+        by_block:
+          2018-05: 0.9920017587427785
+          2019-01: 0.7075542356193937
+          2019-09: 0.880722225553847
+          2020-05: 0.8149501477527848
+          2021-01: 0.48485371253980264
+          2021-09: 0.9201384541026479
+    reasons:
+    - 'deflated_sharpe_threshold: FAIL (threshold=0.5, actual=0.06917935479671489)'
+    - 'max_drawdown_pct_max: FAIL (threshold=20.0, actual=38.91615629406838)'
+    - 'buy_and_hold_sharpe_excess_min: FAIL (threshold=0.0, actual=-0.021320492444003802)'
+    forecast_shape:
+      abs_mean_forecast: 10.56238251
+      share_at_cap: 0.07260274
+      abs_mean_allocation: 1.04384736
+      n_bars: 730
+      n_windows: 6
+    window_economics:
+      windows:
+        BTCUSD/2018-05:
+          n_bars: 123
+          trades: 43
+          turnover: 16.566816
+          direction_changes: 2
+          mean_abs_allocation: 0.94688663
+          max_abs_allocation: 1.78473
+          gross_pct: -12.739441
+          fees_pct: 0.8594396
+          net_pct: -13.59888
+          cost_drag_pct: 6.7463
+          avg_trade_duration_bars: 19.16
+          median_holding_bars: 9.0
+        BTCUSD/2019-01:
+          n_bars: 120
+          trades: 19
+          turnover: 7.832712
+          direction_changes: 1
+          mean_abs_allocation: 0.96725023
+          max_abs_allocation: 1.620115
+          gross_pct: 26.64246
+          fees_pct: 0.4007288
+          net_pct: 26.241731
+          cost_drag_pct: 1.5041
+          avg_trade_duration_bars: 31.84
+          median_holding_bars: 32.0
+        BTCUSD/2019-09:
+          n_bars: 122
+          trades: 42
+          turnover: 17.231783
+          direction_changes: 3
+          mean_abs_allocation: 1.1236291
+          max_abs_allocation: 2.198678
+          gross_pct: 0.1528485
+          fees_pct: 0.8788667
+          net_pct: -0.7260182
+          cost_drag_pct: 574.9921
+          avg_trade_duration_bars: 18.19
+          median_holding_bars: 9.0
+        BTCUSD/2020-05:
+          n_bars: 123
+          trades: 33
+          turnover: 13.364756
+          direction_changes: 0
+          mean_abs_allocation: 1.2610943
+          max_abs_allocation: 2.04037
+          gross_pct: 9.938208
+          fees_pct: 0.6591387
+          net_pct: 9.2790693
+          cost_drag_pct: 6.6324
+          avg_trade_duration_bars: 21.12
+          median_holding_bars: 8.0
+        BTCUSD/2021-01:
+          n_bars: 120
+          trades: 22
+          turnover: 7.627297
+          direction_changes: 0
+          mean_abs_allocation: 0.92691655
+          max_abs_allocation: 1.281052
+          gross_pct: 66.950929
+          fees_pct: 0.5776182
+          net_pct: 66.373311
+          cost_drag_pct: 0.8627
+          avg_trade_duration_bars: 33.68
+          median_holding_bars: 14.5
+        BTCUSD/2021-09:
+          n_bars: 122
+          trades: 45
+          turnover: 20.426448
+          direction_changes: 5
+          mean_abs_allocation: 1.0331488
+          max_abs_allocation: 2.058887
+          gross_pct: -3.6739786
+          fees_pct: 0.9350702
+          net_pct: -4.6090487
+          cost_drag_pct: 25.4512
+          avg_trade_duration_bars: 14.98
+          median_holding_bars: 8.0
+      total:
+        n_bars: 730
+        trades: 204
+        turnover: 83.049812
+        direction_changes: 11
+        mean_abs_allocation: 1.0438474
+        max_abs_allocation: 2.198678
+        gross_pct: 87.271026
+        fees_pct: 4.3108622
+        net_pct: 82.960164
+        cost_drag_pct: 4.9396258
+        avg_trade_duration_bars: 21.102157
+        median_holding_bars: 9.5
+passing: []
+result: FAIL
+bars_file_sha256: 3baf8f35b810496ca838e629102bac47334e7efb36d5e89abc2239b08810c650

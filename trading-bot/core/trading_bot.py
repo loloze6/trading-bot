@@ -192,6 +192,11 @@ class TradingBot:
         self.nan_forecast_samples: List[Dict[str, Any]] = []
         self._bars_since_gap: Dict[str, int] = {}
         self._active_gap_tier: Dict[str, str] = {}
+        # D-176: with a strategies.sizing block, the unsized signal allocation
+        # (forecast / 10) the current position was last set from, per symbol
+        # (0.0 = flat, the start). The min_allocation_change band judges the
+        # signal's move away from it. Never read or written without a block.
+        self._held_signal_allocation: Dict[str, float] = {}
 
         # Trading state
         self.open_trades: Dict[str, CompletedTrade] = {}
@@ -440,7 +445,23 @@ class TradingBot:
 
             # Get target allocation from forecast
             
-            target_allocation = self.forecast_manager.forecast_to_allocation(signal.forecast)
+            # D-176: a strategies.sizing block (ForecastManager.sizing) sizes the
+            # allocation from the strategy's own close buffer -- this bar's close
+            # last, appended by strategy.update() above, nothing later. No block
+            # (the default): the call below is exactly the one before D-176.
+            sizing_active = getattr(self.forecast_manager, "sizing", None) is not None
+            if sizing_active:
+                buffer_df = self.strategy.data_buffer.get_df()
+                closes = buffer_df["close"].to_numpy(dtype=float) if "close" in buffer_df.columns else []
+                signal_allocation = self.forecast_manager.signal_allocation(signal.forecast)
+                target_allocation = self.forecast_manager.forecast_to_allocation(signal.forecast, closes=closes)
+                sizing_extras = {
+                    "sizing_realised_vol": self.forecast_manager.last_realised_vol,
+                    "sizing_target_allocation": target_allocation,
+                }
+            else:
+                target_allocation = self.forecast_manager.forecast_to_allocation(signal.forecast)
+                sizing_extras = {}
 
             # CUL-274: a NaN forecast (a component that could not measure --
             # CUL-273 propagate_invalid, a 0/0, a feed not started yet) must
@@ -508,6 +529,18 @@ class TradingBot:
                 )
                 allocation_change = 0.0
 
+            # D-176: the band input on the signal -- the move of forecast / 10
+            # since the position was last set (the unsized analogue of
+            # allocation_change = target - actual). The band passes when this OR
+            # the sized allocation_change reaches the threshold (RiskManager).
+            # None without a block, and on a NaN-forecast bar (the strategy
+            # decided nothing: a risk-gate trim there is judged on its own sized
+            # change, as without a block).
+            band_signal_change = None
+            if sizing_active and not nan_forecast_bar:
+                band_signal_change = signal_allocation - self._held_signal_allocation.get(symbol, 0.0)
+                sizing_extras["sizing_signal_change"] = band_signal_change
+
             #Init variables
             approved_rebalance = None
             debug_approve_allocation_change = {}
@@ -546,12 +579,18 @@ class TradingBot:
                     )
                     if success_execute_portfolio_rebalance:
                         self.logger.debug("   ✓ RISK FLATTEN executed successfully")
+                        if sizing_active:
+                            self._held_signal_allocation[symbol] = 0.0
                     else:
                         self.logger.error(f"   ✗ RISK FLATTEN execution failed. Debug info: {debug_execute_portfolio_rebalance}")
 
             elif abs(allocation_change) != 0.0:
                 # Check if rebalance is ok from risk management perspective
-                approved_rebalance, debug_approve_allocation_change = self.risk_manager.approve_allocation_change(symbol, allocation_change, data)
+                if band_signal_change is None:
+                    approved_rebalance, debug_approve_allocation_change = self.risk_manager.approve_allocation_change(symbol, allocation_change, data)
+                else:
+                    approved_rebalance, debug_approve_allocation_change = self.risk_manager.approve_allocation_change(
+                        symbol, allocation_change, data, signal_change=band_signal_change)
 
                 if approved_rebalance:
                     self.logger.debug(
@@ -571,6 +610,15 @@ class TradingBot:
 
                     if success_execute_portfolio_rebalance: 
                         self.logger.debug("   ✓ REBALANCE executed successfully")
+                        if band_signal_change is not None:
+                            # D-176: the signal this position was set from,
+                            # whichever band path passed. When the sizing step
+                            # could not measure volatility it sized to 0.0 -- the
+                            # book went flat, not to the signal -- so the
+                            # remembered signal is 0.0 as well.
+                            self._held_signal_allocation[symbol] = (
+                                0.0 if self.forecast_manager.last_realised_vol is None
+                                else signal_allocation)
                     else: 
                         self.logger.error(f"   ✗ REBALANCE execution failed. Debug info: {debug_execute_portfolio_rebalance}")
 
@@ -601,6 +649,7 @@ class TradingBot:
                     postRebalance_total_value=postRebalance_total_portfolio_value,
                     postRebalance_current_allocation=postRebalance_current_allocation,
                     **risk_extras,
+                    **sizing_extras,
                 )
             
             else: 

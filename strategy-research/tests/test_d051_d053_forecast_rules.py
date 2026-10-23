@@ -493,3 +493,54 @@ def test_5a_fails_loud_when_the_catalogue_is_unreadable(monkeypatch, tmp_path):
     monkeypatch.setattr(fr.on_off_classes, "__defaults__", (tmp_path / "missing.md",))
     with pytest.raises(fr.CatalogError):
         _run_5a(monkeypatch, "run_912", CONFIG, [])
+
+
+# ---------------------------------------------------------------------------
+# 6. D-176: a sizing parameter is not a vehicle (design-variant patch under /strategies/sizing)
+# ---------------------------------------------------------------------------
+
+SIZING_BLOCK = {"kind": "vol_target", "window": 60, "target_annual_vol": 0.2,
+                "periods_per_year": 365, "max_allocation": 2}
+
+
+def _sized_cfg() -> dict:
+    cfg = copy.deepcopy(CONFIG)
+    cfg["strategies"]["sizing"] = copy.deepcopy(SIZING_BLOCK)
+    return cfg
+
+
+def test_5a_a_design_variant_patch_under_strategies_sizing_is_refused(monkeypatch):
+    variants = _run_5a(monkeypatch, "run_913", _sized_cfg(), [
+        _design("whole_block", [{"path": "/strategies/sizing",
+                                 "value": {**SIZING_BLOCK, "window": 20}}]),
+        _design("one_param", [{"path": "/strategies/sizing/window", "value": 20}]),
+        _design("one_param_target", [{"path": "/strategies/sizing/target_annual_vol", "value": 0.4}]),
+        _design("transforms_ok", [{"path": COMP0 + "/params/period", "value": 21}]),
+    ])
+    assert variants["base"]["status"] == "validated"          # the base's own block is untouched
+    assert variants["transforms_ok"]["status"] == "validated"
+    for vid, path in (("whole_block", "/strategies/sizing"),
+                      ("one_param", "/strategies/sizing/window"),
+                      ("one_param_target", "/strategies/sizing/target_annual_vol")):
+        assert variants[vid]["status"] == "not_tested", vid
+        assert variants[vid]["reason"] == rpr.FORECAST_RULE_REASON
+        assert "a sizing parameter is not a vehicle" in variants[vid]["report"], vid
+        assert path in variants[vid]["report"], vid
+    errors = dict(rpr._variant_config_errors(variants))
+    assert set(errors) == {"whole_block", "one_param", "one_param_target"}
+
+
+def test_sizing_vehicle_violations_unit():
+    base = _sized_cfg()
+    ok = [{"path": COMP0 + "/params/period", "value": 21}]
+    assert fr.sizing_vehicle_violations(ok) == []
+    assert fr.sizing_vehicle_violations([]) == []
+    assert fr.sizing_vehicle_violations(None) == []
+    for p in ("/strategies/sizing", "/strategies/sizing/window", "/strategies/sizing/max_allocation"):
+        msgs = fr.sizing_vehicle_violations([{"path": p, "value": 1}])
+        assert len(msgs) == 1 and "a sizing parameter is not a vehicle" in msgs[0] and p in msgs[0]
+    # a path that only shares the prefix text is not a sizing path
+    assert fr.sizing_vehicle_violations([{"path": "/strategies/sizing_note", "value": 1}]) == []
+    assert fr.sizing_vehicle_violations([{"path": "/strategies/regimes", "value": 1}]) == []
+    assert fr.sizing_vehicle_violations([{"value": 1}, "junk"]) == []     # malformed: not this check's job
+    assert base["strategies"]["sizing"] == SIZING_BLOCK

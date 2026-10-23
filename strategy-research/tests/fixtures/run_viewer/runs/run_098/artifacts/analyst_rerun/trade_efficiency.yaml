@@ -1,0 +1,116 @@
+schema_version: 1
+lens: trade_efficiency
+category: trade_efficiency
+run_id: run_098
+model: claude-haiku-5-5
+caps:
+  model: claude-haiku-5-5
+  max_turns: 40
+  max_budget_usd: 3.0
+  timeout_minutes: 15
+attempts:
+- status: refused
+  errors:
+  - 'claim: claim: unknown keys [''fail_if_note'', ''pass_if_note'']; allowed: [''criteria_refs'',
+    ''fail_if'', ''kind'', ''missing_block'', ''pass_if'', ''rationale'', ''statement'',
+    ''tests'']'
+  subtype: success
+  cost_usd: 1.3145177499999998
+  num_turns: 15
+  tools_denied: []
+  outcome: claim
+  models:
+  - claude-haiku-5-5
+  answer: "I'm writing one claim. It uses only the reversal test (horizons 2, 3 and\
+    \ 5, direction greater), since that is the part that held in every window with\
+    \ events. The one-bar result did not hold: its pooled effect is negative while\
+    \ three of four windows point the other way, so I'm leaving it out of the claim.\n\
+    \n```yaml\noutcome: claim\nclaim:\n  statement: >\n    In this strategy, the bars\
+    \ whose forecast is -10 or lower are followed, 2 to 5 bars later,\n    by higher\
+    \ returns than the other bars, in all four windows that have such bars.\n  kind:\
+    \ execution_behaviour\n  tests:\n    - name: reversal\n      selector: {kind:\
+    \ event, field: forecast, op: \"<=\", value: -10}\n      outcome: {kind: fwd_return,\
+    \ horizons: [2, 3, 5]}\n      baseline: {kind: complement}\n      statistic: mean_diff\n\
+    \      direction: greater\n      floor: {min_events: 100, min_windows: 4}\n  pass_if:\
+    \ >\n    At horizons 2, 3 and 5, the forward return after forecast -10 or lower\
+    \ is higher than on the\n    other bars, in most of the windows that have such\
+    \ bars, with at least 100 events.\n  fail_if: >\n    At any of horizons 2, 3 or\
+    \ 5, the forward return after forecast -10 or lower is lower than on\n    the\
+    \ other bars in most windows, or the sign does not hold on the unseen fold.\n\
+    \  rationale: >\n    The forecast is the Donchian position of the close in its\
+    \ 250-bar range, standardised by the\n    mean absolute value of the previous\
+    \ 60 forecasts, so a forecast of -10 or lower marks closes in\n    the lower part\
+    \ of the range. The short lots opened on such bars lose (the lots entered at a\
+    \ forecast\n    of -10 or lower average a loss, q10), because the price rebounds\
+    \ over the next 2 to 5 bars\n    while the short is still held. At one bar the\
+    \ pooled effect points the other way and in three of\n    four windows it is positive,\
+    \ so it is not part of the claim. The complement baseline cancels\n    each window's\
+    \ drift, so the rebound is not the market's upward trend.\n  pass_if_note: null\n\
+    \  fail_if_note: null\nwhy_query: q10\nevidence:\n  - q14:horizons.2.effect=0.000485\n\
+    \  - q14:horizons.3.effect=0.00249\n  - q14:horizons.5.effect=0.00636\n  - q14:horizons.5.windows_claimed_sign=4\n\
+    \  - q14:horizons.5.windows_with_value=4\n  - q10:groups.all.trade_gross_return_mean=-0.0219\n\
+    \  - q10:groups.all.trade_gross_return_count=58\nvehicle:\n  - component_id: anchor_position\n\
+    \    field: transforms\n    before:\n      - {op: standardise, params: {window:\
+    \ 60, min_periods: 20}}\n    after:\n      - {op: standardise, params: {window:\
+    \ 60, min_periods: 20}}\n      - {op: negate}\ncombines_as: forecast_block\n```"
+- status: accepted
+  errors: []
+  subtype: success
+  cost_usd: 0.837266
+  num_turns: 1
+  tools_denied: []
+  outcome: claim
+  models:
+  - claude-haiku-5-5
+  answer: "```yaml\noutcome: claim\nclaim:\n  statement: >\n    In this strategy,\
+    \ the bars whose forecast is -10 or lower are followed, 2 to 5 bars later,\n \
+    \   by higher returns than the other bars, in every window with such bars (4 of\
+    \ 4).\n  kind: execution_behaviour\n  tests:\n    - name: reversal\n      selector:\
+    \ {kind: event, field: forecast, op: \"<=\", value: -10}\n      outcome: {kind:\
+    \ fwd_return, horizons: [2, 3, 5]}\n      baseline: {kind: complement}\n     \
+    \ statistic: mean_diff\n      direction: greater\n      floor: {min_events: 100,\
+    \ min_windows: 4}\n  pass_if: >\n    At horizons 2, 3 and 5, the forward return\
+    \ after a forecast of -10 or lower is higher than on\n    the other bars, with\
+    \ the same sign in most windows that have such bars, and at least 100 events.\n\
+    \  fail_if: >\n    At any of horizons 2, 3 or 5, the forward return after a forecast\
+    \ of -10 or lower is lower than\n    on the other bars in most windows, or the\
+    \ sign does not hold on the unseen fold.\n  rationale: >\n    The forecast is\
+    \ the Donchian position of the close within its 250-bar range, standardised by\
+    \ the\n    mean absolute value of the previous 60 forecasts, so a forecast of\
+    \ -10 or lower marks closes in the\n    lower part of the range. The short lots\
+    \ opened on such bars lose on average, because the price\n    rebounds over the\
+    \ next few bars while the short is still held. The one-bar horizon points the\
+    \ other\n    way in pooled terms and is not in this test. The complement baseline\
+    \ cancels each window's drift,\n    so the rebound is not the market's upward\
+    \ trend.\nwhy_query: q10\nevidence:\n  - q14:horizons.2.effect=0.000485\n  - q14:horizons.3.effect=0.00249\n\
+    \  - q14:horizons.5.effect=0.00636\n  - q14:horizons.5.windows_claimed_sign=4\n\
+    \  - q14:horizons.5.windows_with_value=4\n  - q10:groups.all.trade_gross_return_mean=-0.0219\n\
+    \  - q10:groups.all.trade_gross_return_count=58\nvehicle:\n  - component_id: anchor_position\n\
+    \    field: transforms\n    before:\n      - {op: standardise, params: {window:\
+    \ 60, min_periods: 20}}\n    after:\n      - {op: standardise, params: {window:\
+    \ 60, min_periods: 20}}\n      - {op: negate}\ncombines_as: forecast_block\n```"
+outcome: claim
+what_was_examined:
+- 76c11ccb8a56efdf8af4219b1dcdcfcd5c5c7030c221f6eab8e4db82a523b256
+- 884ace31fb9e625f11e63cbc36c7fb5e6914226d5cdd7fc7166f755123072768
+- b4954ba8a11f15f1383ef7559fc8dc8f7240bc830b13dd19a10065ed16d67081
+looks:
+  calls: 14
+  comparisons: 18
+unverified_numbers: []
+claim_card_ok: true
+why_query: q10
+test_spec_hashes:
+- 76c11ccb8a56efdf8af4219b1dcdcfcd5c5c7030c221f6eab8e4db82a523b256
+scores:
+  confidence_real: 3
+  distance_to_profitable: 1
+  mechanism_plausibility: 1
+  source: 'code: in-run window agreement (PR5_DESIGN 11.3)'
+outcome_flipped_on_retry: false
+reading_review:
+  trade_efficiency-run_098-1:
+    spec_hashes:
+    - 76c11ccb8a56efdf8af4219b1dcdcfcd5c5c7030c221f6eab8e4db82a523b256
+    tests_none: false
+    warnings: []

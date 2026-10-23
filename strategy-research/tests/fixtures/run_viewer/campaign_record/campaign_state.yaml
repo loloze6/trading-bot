@@ -1,0 +1,117 @@
+runs:
+- run_098
+- run_099
+trial_sharpes:
+- trial_id: run_098:asset_ada
+  source: backtest_failed
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: failed
+  forecast_hash: 0ae437792ef96f015cd2d9544198beecacb2befa30369fc2302f9bc67f69d428
+  error: run_protocol.py non-zero exit (1) for variant 'asset_ada'
+  symbols:
+  - ADAUSD
+  windows_sha256: 1adf5a37700ec6a01744ca7f68c9c82a3fd42b8c13e231e3a5ad38097551429c
+  fold: B
+- trial_id: run_098:base
+  source: backtest
+  sharpe: -1.175
+  expectancy_bps: -2.6208
+  n_trades: 176
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 0ae437792ef96f015cd2d9544198beecacb2befa30369fc2302f9bc67f69d428
+  symbols:
+  - BTCUSD
+  fold: B
+  protocol_run_id: 20261020T195523Z_58e26d2f
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.005468552249498961
+    n_daily_returns: 730
+    skew: -0.16649565702197638
+    kurtosis: 8.025645168184926
+- trial_id: run_098:design_lookback_120
+  source: backtest
+  sharpe: 0.7365
+  expectancy_bps: 52.8249
+  n_trades: 204
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 18163a477560e04a21c408148e94a385b8c707f840c1b42584da57cb61983bab
+  symbols:
+  - BTCUSD
+  fold: B
+  protocol_run_id: 20261020T195603Z_9747296a
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.04189336426163702
+    n_daily_returns: 730
+    skew: -0.23907750863110885
+    kurtosis: 14.014887874465177
+- trial_id: run_099:asset_ltc
+  source: backtest
+  sharpe: null
+  expectancy_bps: 263.1719
+  n_trades: 4
+  statistic_valid: expectancy
+  below_floor_pct: 100.0
+  forecast_hash: 0ca7e24cc123060b9ac1a38af87d44da08dafa4ed9d7c321c2a61006b6847aa3
+  symbols:
+  - LTCUSD
+  fold: B
+  protocol_run_id: 20261022T113407Z_a2236b7d
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.024836577299697935
+    n_daily_returns: 730
+    skew: -0.38875009421459655
+    kurtosis: 51.979666592895455
+- trial_id: run_099:base
+  source: backtest
+  sharpe: 7.033
+  expectancy_bps: 278.9476
+  n_trades: 12
+  statistic_valid: expectancy
+  below_floor_pct: 83.33
+  forecast_hash: 0ca7e24cc123060b9ac1a38af87d44da08dafa4ed9d7c321c2a61006b6847aa3
+  symbols:
+  - BTCUSD
+  fold: B
+  protocol_run_id: 20261022T113450Z_a2236b7d
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.04385519995919635
+    n_daily_returns: 730
+    skew: 1.373483793224402
+    kurtosis: 20.91953249771591
+- trial_id: run_099:design_no_vol_target
+  source: backtest
+  sharpe: -1.1545
+  expectancy_bps: 94.6421
+  n_trades: 80
+  statistic_valid: sharpe
+  below_floor_pct: 33.33
+  forecast_hash: 767df308eb22c20d2550d7e0cccd60982df6f5a7a507d507da25203a34ef83f4
+  symbols:
+  - BTCUSD
+  fold: B
+  protocol_run_id: 20261022T113532Z_d3924e39
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.03515217496855858
+    n_daily_returns: 730
+    skew: 0.471279517081602
+    kurtosis: 13.118771214444925
+status: active

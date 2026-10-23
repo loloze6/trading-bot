@@ -1,0 +1,111 @@
+schema_version: 1
+lens: trade_efficiency
+category: trade_efficiency
+run_id: run_098
+model: claude-haiku-5-5
+caps:
+  model: claude-haiku-5-5
+  max_turns: 40
+  max_budget_usd: 3.0
+  timeout_minutes: 15
+attempts:
+- status: accepted
+  errors: []
+  subtype: success
+  cost_usd: 1.2182480000000002
+  num_turns: 10
+  tools_denied: []
+  outcome: no_claim
+  models:
+  - claude-haiku-5-5
+  answer: "The 1-bar sign does not hold consistently: q9 shows the claimed sign in\
+    \ only one of four windows, so I'm ending with no claim.\n\n```yaml\noutcome:\
+    \ no_claim\nno_claim:\n  reason: >\n    The shorts' losses are real in this run\
+    \ but no strategy change follows from them yet.\n    Short lots lose on average\
+    \ and lose in every window where they occur (q5, q6); the\n    bar-level observation\
+    \ behind that is that after forecasts of -10 or lower, forward\n    returns over\
+    \ 5 to 20 bars are higher than on other bars, in all four windows with\n    events\
+    \ (q8). The 1-bar sign is not consistent: the 1-bar test points the claimed\n\
+    \    way in only one of four windows (q9). I considered negating the forecast\
+    \ as the\n    vehicle and dropped it: a sign flip of the whole signal is not a\
+    \ graded change, and\n    it would be fitted to one fold whose long side is carried\
+    \ by the bull-market drift\n    (longs earn on average, q5). A shorter or longer\
+    \ anchor period has no direction this\n    observation fixes. The short losses\
+    \ concentrate in one window, so that window is a\n    rival to any claim about\
+    \ the short side.\n  best_rejected:\n    statement: >\n      Negate the anchor\
+    \ forecast so that the strong negative entries become longs: the\n      observation\
+    \ is that the signal reverses over 5 to 20 bars.\n    killed_by: q9\n  observations:\n\
+    \    - statement: >\n        After bars with a forecast of -10 or lower, forward\
+    \ returns over 5, 10 and 20 bars\n        are higher than on other bars, in all\
+    \ four windows with events, while the 1-bar\n        return is lower on average\
+    \ but points the claimed way in only one window.\n      test: q8\n      evidence:\n\
+    \        - q8:horizons.5.effect=0.00636\n        - q8:horizons.20.windows_claimed_sign=4\n\
+    \      floors_met: true\nevidence:\n  - q5:groups.short.trade_net_return_mean=-0.0339\n\
+    \  - q9:horizons.1.windows_claimed_sign=1\n```"
+outcome: no_claim
+what_was_examined:
+- 884ace31fb9e625f11e63cbc36c7fb5e6914226d5cdd7fc7166f755123072768
+- 8f8d57f1c1019efdd854af14d602f28bc917ff01bb6625a2ad0713aa25d62b73
+looks:
+  calls: 9
+  comparisons: 15
+unverified_numbers:
+- field: no_claim.reason
+  written: '5'
+- field: no_claim.best_rejected.statement
+  written: '5'
+no_claim:
+  reason: 'The shorts'' losses are real in this run but no strategy change follows
+    from them yet. Short lots lose on average and lose in every window where they
+    occur (q5, q6); the bar-level observation behind that is that after forecasts
+    of -10 or lower, forward returns over <n> to 20 bars are higher than on other
+    bars, in all four windows with events (q8). The 1-bar sign is not consistent:
+    the 1-bar test points the claimed way in only one of four windows (q9). I considered
+    negating the forecast as the vehicle and dropped it: a sign flip of the whole
+    signal is not a graded change, and it would be fitted to one fold whose long side
+    is carried by the bull-market drift (longs earn on average, q5). A shorter or
+    longer anchor period has no direction this observation fixes. The short losses
+    concentrate in one window, so that window is a rival to any claim about the short
+    side.
+
+    '
+  best_rejected:
+    statement: 'Negate the anchor forecast so that the strong negative entries become
+      longs: the observation is that the signal reverses over <n> to 20 bars.
+
+      '
+    killed_by: q9
+  observations:
+  - statement: 'After bars with a forecast of -10 or lower, forward returns over 5,
+      10 and 20 bars are higher than on other bars, in all four windows with events,
+      while the 1-bar return is lower on average but points the claimed way in only
+      one window.
+
+      '
+    test: q8
+    evidence:
+    - q8:horizons.5.effect=0.00636
+    - q8:horizons.20.windows_claimed_sign=4
+    floors_met: true
+    spec:
+      spec_hash: 8f8d57f1c1019efdd854af14d602f28bc917ff01bb6625a2ad0713aa25d62b73
+      selector:
+        kind: event
+        field: forecast
+        op: <=
+        value: -10
+      outcome:
+        kind: fwd_return
+        horizons:
+        - 1
+        - 5
+        - 10
+        - 20
+      baseline:
+        kind: complement
+      statistic: mean_diff
+      direction: greater
+      floor:
+        min_events: 100
+        min_windows: 4
+outcome_flipped_on_retry: false

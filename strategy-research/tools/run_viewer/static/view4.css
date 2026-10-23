@@ -1,0 +1,138 @@
+/* run viewer, view 4 (variant in window). Mobile first; wider from 900 px.
+ * Colours come from CSS variables so the charts (which read them in JS) follow dark mode. */
+.rv4 {
+  --rv4-axis: var(--muted, #5b6470);
+  --rv4-grid: rgba(110, 118, 129, 0.22);
+  --rv4-cursor: var(--muted, #5b6470);
+  --rv4-bg: var(--bg, #ffffff);
+  --rv4-price: #1d4ed8;
+  --rv4-forecast: #7c3aed;
+  --rv4-position: #0f766e;
+  --rv4-position-fill: rgba(15, 118, 110, 0.22);
+  --rv4-equity: #b45309;
+  --rv4-win: #1a7f37;
+  --rv4-loss: #c62828;
+  --rv4-shade: rgba(29, 78, 216, 0.14);
+  --rv4-zero: rgba(110, 118, 129, 0.7);
+}
+@media (prefers-color-scheme: dark) {
+  .rv4 {
+    --rv4-grid: rgba(160, 168, 178, 0.2);
+    --rv4-price: #8ab4f8;
+    --rv4-forecast: #c4a1ff;
+    --rv4-position: #5eead4;
+    --rv4-position-fill: rgba(94, 234, 212, 0.2);
+    --rv4-equity: #fbbf24;
+    --rv4-win: #56d364;
+    --rv4-loss: #ff7b72;
+    --rv4-shade: rgba(138, 180, 248, 0.18);
+    --rv4-zero: rgba(160, 168, 178, 0.7);
+  }
+}
+
+.rv4 { min-width: 0; max-width: 100%; color: var(--fg, #1b1f24); }
+.rv4 * { box-sizing: border-box; }
+
+/* ---- toolbar (inside the app's sticky top bar): selectors + reset, then the value strip */
+.rv4-toolbar { display: block; }
+.rv4-ctl { display: flex; gap: 8px; align-items: center; }
+.rv4-sel {
+  flex: 1 1 0; min-width: 0;
+  min-height: 44px; padding: 0 8px;
+  font: inherit; font-size: 16px;
+  color: var(--fg, #1b1f24); background: var(--bg2, #f4f5f7);
+  border: 1px solid var(--line, #d0d5dc); border-radius: 8px;
+  text-overflow: ellipsis;
+}
+.rv4-btn {
+  flex: 0 0 auto; min-height: 44px; min-width: 44px; padding: 0 12px;
+  font: inherit; font-size: 15px;
+  color: var(--fg, #1b1f24); background: var(--bg2, #f4f5f7);
+  border: 1px solid var(--line, #d0d5dc); border-radius: 8px; cursor: pointer;
+}
+.rv4-btn:disabled { opacity: 0.5; cursor: default; }
+.rv4-sel:focus-visible, .rv4-btn:focus-visible { outline: 2px solid var(--link, #0b57d0); outline-offset: 2px; }
+
+/* the value strip wraps (two lines at 390 px) instead of shrinking its text */
+.rv4-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+  gap: 4px 8px; margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.rv4-sc { min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.rv4-sk { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted, #5b6470); }
+.rv4-sv { font-size: 1rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---- body */
+.rv4-body { min-width: 0; }
+.rv4-sec { margin: 10px 0 18px; min-width: 0; }
+.rv4-sec h3 { margin: 0 0 6px; font-size: 1rem; }
+.rv4-note { color: var(--muted, #5b6470); margin: 8px 0; }
+.rv4-error {
+  border: 2px solid var(--fail, #c62828); background: var(--fail-bg, #fdecea);
+  border-radius: 8px; padding: 12px; margin: 12px 0;
+}
+.rv4-error strong { display: block; color: var(--fail, #c62828); }
+
+.rv4-pane { margin: 0 0 6px; min-width: 0; }
+.rv4-cap { font-size: 12px; color: var(--muted, #5b6470); margin: 4px 0 0 2px; }
+.rv4-chartbox { width: 100%; min-width: 0; overflow: hidden; }
+.rv4-absent {
+  min-height: 44px; display: flex; align-items: center; justify-content: center;
+  color: var(--muted, #5b6470); font-style: italic;
+  border: 1px dashed var(--line, #d0d5dc); border-radius: 8px;
+}
+
+/* the page must keep scrolling vertically; horizontal moves and pinch are ours */
+.rv4 .uplot, .rv4 .u-wrap, .rv4 .u-over, .rv4 .u-under, .rv4 canvas { touch-action: pan-y; }
+.rv4 .u-over { -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+.rv4 .uplot { max-width: 100%; }
+.rv4 .u-select { background: var(--rv4-shade); }
+.rv4 .u-cursor-x { border-right-color: var(--rv4-cursor) !important; }
+
+/* ---- metrics */
+.rv4-kv {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 4px 12px; margin: 0; max-width: 28rem;
+}
+.rv4-kv dt { color: var(--muted, #5b6470); }
+.rv4-kv dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+/* ---- trades: two-column cards on a phone, a table from 900 px */
+.rv4-trades { width: 100%; border-collapse: collapse; }
+/* the header row is for screen readers on a phone: clipped to 1 px, not parked off-canvas */
+.rv4-trades thead {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0;
+  overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+}
+.rv4-trades, .rv4-trades tbody, .rv4-trades tr, .rv4-trades td { display: block; }
+.rv4-trades tr {
+  border: 1px solid var(--line, #d0d5dc); border-radius: 8px;
+  padding: 6px 10px; margin: 0 0 8px; background: var(--bg, #fff);
+}
+.rv4-trades td {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px;
+  padding: 3px 0; text-align: left;
+}
+.rv4-trades td::before { content: attr(data-label); color: var(--muted, #5b6470); }
+.rv4-trades td.rv4-num { text-align: left; font-variant-numeric: tabular-nums; }
+.rv4-pos { color: var(--rv4-win); font-weight: 600; }
+.rv4-neg { color: var(--rv4-loss); font-weight: 600; }
+
+@media (min-width: 900px) {
+  .rv4-trades { display: table; }
+  .rv4-trades thead { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; clip-path: none; white-space: normal; display: table-header-group; }
+  .rv4-trades tbody { display: table-row-group; }
+  .rv4-trades tr { display: table-row; border: 0; padding: 0; margin: 0; background: transparent; }
+  .rv4-trades td, .rv4-trades th {
+    display: table-cell; padding: 6px 10px; text-align: left;
+    border-bottom: 1px solid var(--line, #d0d5dc);
+  }
+  .rv4-trades th { background: var(--bg2, #f4f5f7); font-weight: 700; }
+  .rv4-trades td::before { content: none; }
+  .rv4-trades td.rv4-num, .rv4-trades th:nth-child(n+4) { text-align: right; }
+  .rv4-strip { max-width: 760px; grid-template-columns: 1.35fr 1.1fr 0.9fr 0.9fr 1.1fr; }
+  .rv4-ctl { max-width: 760px; }
+  .rv4-sel { flex: 0 1 240px; }
+}

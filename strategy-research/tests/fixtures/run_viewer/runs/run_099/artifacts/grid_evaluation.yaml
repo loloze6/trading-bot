@@ -1,0 +1,69 @@
+result: GRID_EVALUATED
+criteria:
+- forecast_ic_median
+- residual_ic
+variants:
+- asset_ltc
+- base
+- design_no_vol_target
+grid:
+  forecast_ic_median:
+    asset_ltc:
+      result: INCONCLUSIVE
+      n_windows: 4
+      n_trades: 4
+      reason: n_windows=4 < floor.min_windows=5
+    base:
+      result: FAIL
+      value: -0.076797
+      threshold: 0.02
+      comparator: '>'
+      n_windows: 5
+      n_trades: 12
+    design_no_vol_target:
+      result: FAIL
+      value: -0.070288
+      threshold: 0.02
+      comparator: '>'
+      n_windows: 5
+      n_trades: 80
+  residual_ic:
+    asset_ltc:
+      result: FAIL
+      value: -0.018008
+      threshold: 0.02
+      comparator: '>'
+      n_windows: 6
+      n_trades: 4
+      n_eff: 724
+      p_value_one_sided: 0.685646
+      max_p_value: 0.05
+      composite: block
+      fully_explained: false
+    base:
+      result: FAIL
+      value: -0.018521
+      threshold: 0.02
+      comparator: '>'
+      n_windows: 6
+      n_trades: 12
+      n_eff: 724
+      p_value_one_sided: 0.690519
+      max_p_value: 0.05
+      composite: block
+      fully_explained: false
+    design_no_vol_target:
+      result: FAIL
+      value: -0.010024
+      threshold: 0.02
+      comparator: '>'
+      n_windows: 6
+      n_trades: 80
+      n_eff: 724
+      p_value_one_sided: 0.606096
+      max_p_value: 0.05
+      composite: block
+      fully_explained: false
+idea_status: refuted
+reason: at least one criterion FAILed with sufficient data on at least one variant
+evaluated_at: '2026-10-22T11:37:02.541901+00:00'

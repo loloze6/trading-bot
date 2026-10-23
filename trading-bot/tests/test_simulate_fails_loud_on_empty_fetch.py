@@ -46,6 +46,7 @@ class _StubStrategy:
     doesn't, so it must be stubbed here too."""
 
     min_allocation_change_override = None
+    sizing = None   # D-176: real AdvancedStrategy always has the attribute (None without a block)
 
 
 @pytest.fixture

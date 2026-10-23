@@ -203,6 +203,10 @@ def load_folds(path=None, *, policy_path=None) -> dict:
                                  f"period {rs}..{re_} (read from the data policy)")
             for name in (("holdout",) if fid == FOLD_D else ("validation", "holdout")):
                 if _overlaps((start, end), ranges[name]):
+                    if name == "holdout":  # D-173: the sealed range and the block's days are withheld
+                        raise FoldsError(f"{p}: fold {fid} has a block that overlaps the holdout "
+                                         f"period in config/campaign_data_policy.yaml "
+                                         f"(holdout_range; dates withheld)")
                     raise FoldsError(f"{p}: fold {fid} block {label} ({start}..{end}) overlaps the "
                                      f"{name} period {ranges[name][0]}..{ranges[name][1]}")
             out.append({"label": label, "start": start, "end": end})

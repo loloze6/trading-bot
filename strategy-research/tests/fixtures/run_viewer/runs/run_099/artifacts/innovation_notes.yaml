@@ -1,0 +1,35 @@
+run_id: "run_099"
+base_hypothesis_id: "DAILY_DONCHIAN_250_LONG_ONLY_VOLTARGET_1D_BTC"
+summary: "Three pre-registered variants: base (BTC, as authored), design (BTC, vol_target removed), asset (LTC, empty patch). No refinement notes present (refinement_attempt 0). The base config is the brief's exact config and is not modified. The design variant changes one transform list (D-053). The asset variant is the only coin change. No variant was added beyond the brief's pre-registered set."
+key_insight: "The idea is the long half of run_098's split, not a new mechanism. It re-uses run_098's coin (BTC) and fold B, so a pass here is partly in-sample; the refold on an unseen fold is the out-of-sample test. The A1.2 non-price feed requirement is unmet for this run by scope (see evidence_type_audit). The claim tests in the card are information only and are not graded by this stage."
+evidence_type_audit:
+  rule: "A1.2: at least one variant uses evidence_type other than price_volume_only"
+  status: "unmet_by_scope"
+  reason: "The brief limits this run to Kraken price bars. Funding is dropped for Kraken (tools/venue_resolver.py:134) and no other feed is in scope"
+  action: "No non-price variant added to the queue. Adding one would change the pre-registration and would be refused at the venue layer"
+  routing: "Operator decision needed. Candidate funding_open_interest on the binance default venue goes to feed_wishlist, not this run"
+tried_ideas_check:
+  rows_checked: ["run_098 DAILY_ANCHOR_52W_PROXIMITY_1D (BTCUSD, 1d, refuted)", "run_065 donchian_daily_breakout_kraken_perp (BTCUSD and SOLUSD, 1d, refuted)"]
+  exact_repeat: false
+  note: "run_098 tested the same host long and short, with no vol_target. This run is its long side, with a different config. Same coin and same fold B are reused. The pass is partly in-sample, and the refold tests it out of sample."
+variants_not_pursued:
+  - candidate: "funding_open_interest variant"
+    reason: "Feed out of scope for Kraken (see evidence_type_audit)"
+  - candidate: "negate (reverse polarity) variant"
+    reason: "Refused as a vehicle by the brief. The strong-long entries earn and the short side loses"
+  - candidate: "ADAUSDT and LINKUSDT as asset variants"
+    reason: "624-bar warm-up (D-169) is covered before only two and one of the six fold-B windows respectively (D-042 needs 60 percent)"
+  - candidate: "SOLUSDT as asset variant"
+    reason: "Kraken SOL history begins 2021-06, after most fold-B windows, so the 624-bar warm-up is not covered"
+diversity_audit:
+  categories_spanned: ["trend_following"]
+  data_requirements_spanned: ["ohlcv_only"]
+  verdict: "real_diversity"
+  cosmetic_reject_reason: null
+  basis: "Design variant is exempt (D-053). Asset variant carries the diversity on the coin axis (IMPROVEMENT 06): store_of_value to altcoin_l1_verified_kraken. Library category and data are identical across variants, so the diversity is coin-axis only and is recorded as such."
+asset_diversity_audit:
+  base_instrument_category: "store_of_value"
+  candidate_symbols: ["LTCUSDT", "XRPUSDT"]
+  categories_spanned: ["store_of_value", "altcoin_l1_verified_kraken", "payment"]
+  opt_out: null
+  note: "LTCUSDT runs in this pass, as pre-registered. XRPUSDT is named for a later pass only. Its payment category has mean-reversion affinity, a weaker match for this trend-anchoring mechanism."

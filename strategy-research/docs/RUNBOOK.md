@@ -555,6 +555,10 @@ cat "runs/<run_id>/pipeline_state.yaml"
 `last_error` live here — this is the ground truth `campaign_log.md`'s one-liners
 are summarizing.
 
+### Browse runs in the run viewer (D-180)
+
+From `strategy-research/`: `& $env:TBOT_PYTHON tools/run_viewer/server.py --runs runs --port 8765`, then open `http://127.0.0.1:8765/` (add `--host 0.0.0.0` to open it from a phone on the local network; there is no authentication, so only on a trusted network). Read-only: it reads the run folders, the queue, the briefs and four campaign_record files, writes nothing, never reads `trading-bot/local_data/`, and masks every sealed-window date as "[sealed-window date]"; it does not start if the data policy is unreadable. It rescans on each request, so a finished run appears on reload. Levels: campaign, run (the twelve step cards), step detail (raw files behind a button), variant in window (price, forecast, position, trades, equity). Design: `tools/run_viewer/DESIGN.md`.
+
 ---
 
 ## 2a. Hypothesis splits (one hypothesis per run)

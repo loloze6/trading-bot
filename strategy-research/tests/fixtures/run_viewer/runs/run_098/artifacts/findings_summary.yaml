@@ -1,0 +1,807 @@
+schema_version: 1
+run_id: run_098
+label: measured, not proven
+note: 'information only: effect sizes measured on this run''s own bars, no p-value
+  and no verdict (CUL-394); a finding never bans, routes or stops anything (D-055)'
+information_only: true
+n_findings: 22
+n_listed: 22
+by_status:
+  measured: 8
+  not_measured: 14
+by_kind:
+  conditional_behaviour: 6
+  cost_turnover: 5
+  direction_forecast: 7
+  execution_behaviour: 3
+  horizon_decay: 1
+findings:
+- deviations: 3
+  finding_id: F-run_098-1
+  run_id: run_098
+  kind: direction_forecast
+  status: measured
+  reason: null
+  block_visibility: ok
+  statement: On BTC daily bars, a higher forecast (closer to the 250-day high) is
+    followed by higher returns over the next 1 and 2 bars. The top 30 percent of forecast
+    days have higher next-day returns than oth...
+  scope:
+    venue: kraken
+    timeframe: 1d
+    symbols:
+    - BTCUSD
+    period:
+      start: '2018-05-01'
+      end: '2021-12-31'
+  tests:
+  - name: anchor_rank_ic
+    spec_hash: 41fb7a032482a3ac23566df9fe907c0f4d87cda6f2f6390825956e90ea628711
+    statistic: rank_ic
+    direction: greater
+    by_variant:
+      base:
+        status: measured
+        effect:
+          '1': 0.00399482
+          '2': 0.0103664
+        claimed_sign_windows:
+          '1': 1/6
+          '2': 1/6
+      design_lookback_120:
+        status: measured
+        effect:
+          '1': 0.0364352
+          '2': 0.0576623
+        claimed_sign_windows:
+          '1': 2/6
+          '2': 2/6
+  - name: near_high_top30
+    spec_hash: 805bf8437b41c3b0211bb546250c2583d3b6f2f307e2259ebb7ebca5550b204f
+    statistic: mean_diff
+    direction: greater
+    by_variant:
+      base:
+        status: measured
+        effect:
+          '1': 0.00143458
+          '2': 0.00237467
+        claimed_sign_windows:
+          '1': 0/6
+          '2': 0/6
+      design_lookback_120:
+        status: measured
+        effect:
+          '1': 0.001213
+          '2': 0.0019742
+        claimed_sign_windows:
+          '1': 1/5
+          '2': 1/5
+- finding_id: F-run_097-1
+  run_id: run_097
+  kind: direction_forecast
+  status: measured
+  reason: null
+  block_visibility: ok
+  statement: On BTCUSDT daily bars, the negated standardised one-day move ranks next
+    1 to 3 day returns positively, and the top 20 percent of forecast days earn more
+    over the next 1 to 3 days than other days.
+  scope:
+    venue: kraken
+    timeframe: 1d
+    symbols:
+    - AVAXUSD
+    - BTCUSD
+    - LINKUSD
+    period:
+      start: '2024-01-01'
+      end: '2025-12-31'
+  tests:
+  - name: forecast_rank_ic_next_1_to_3
+    spec_hash: f3f2430ce21cedd284ae413cfd9b13cceb1918747aa452d058373d83eac5fe9f
+    statistic: rank_ic
+    direction: greater
+    by_variant:
+      asset_avax:
+        status: measured
+        effect:
+          '1': -0.0273762
+          '2': -0.0198043
+          '3': 0.015033
+        claimed_sign_windows:
+          '1': 2/6
+          '2': 4/6
+          '3': 4/6
+      asset_link:
+        status: measured
+        effect:
+          '1': 0.00663676
+          '2': 0.0251362
+          '3': 0.0354814
+        claimed_sign_windows:
+          '1': 4/6
+          '2': 5/6
+          '3': 5/6
+      base:
+        status: measured
+        effect:
+          '1': 0.0433219
+          '2': 0.0208994
+          '3': 0.0190189
+        claimed_sign_windows:
+          '1': 4/6
+          '2': 3/6
+          '3': 4/6
+      std_window_120:
+        status: measured
+        effect:
+          '1': 0.0479499
+          '2': 0.0222601
+          '3': 0.0207535
+        claimed_sign_windows:
+          '1': 4/6
+          '2': 4/6
+          '3': 4/6
+  - name: top_quintile_forecast_mean_diff
+    spec_hash: 4da3e3825e967f3a762726f02d69613f9f4cbf7bc6c1f26880a637bbfbeb549e
+    statistic: mean_diff
+    direction: greater
+    by_variant:
+      asset_avax:
+        status: measured
+        effect:
+          '1': 0.00149307
+          '2': 0.00923134
+          '3': 0.0145699
+        claimed_sign_windows:
+          '1': 2/6
+          '2': 4/6
+          '3': 6/6
+      asset_link:
+        status: measured
+        effect:
+          '1': 0.00436755
+          '2': 0.00780741
+          '3': 0.0177331
+        claimed_sign_windows:
+          '1': 4/6
+          '2': 4/6
+          '3': 5/6
+      base:
+        status: measured
+        effect:
+          '1': 0.00258314
+          '2': 0.00452318
+          '3': 0.00271191
+        claimed_sign_windows:
+          '1': 3/6
+          '2': 4/6
+          '3': 3/6
+      std_window_120:
+        status: measured
+        effect:
+          '1': 0.00226776
+          '2': 0.00477937
+          '3': 0.00339325
+        claimed_sign_windows:
+          '1': 4/6
+          '2': 4/6
+          '3': 3/6
+- finding_id: F-run_096-1
+  run_id: run_096
+  kind: execution_behaviour
+  status: measured
+  reason: null
+  block_visibility: blind
+  statement: In this strategy, which goes short whenever its forecast is negative,
+    short lots earn a lower mean net return than the other lots in most windows.
+  scope:
+    venue: kraken
+    timeframe: 1d
+    symbols:
+    - BTCUSD
+    - LTCUSD
+    - XRPUSD
+    period:
+      start: '2018-01-01'
+      end: '2021-08-31'
+  tests:
+  - name: shorts_earn_less_than_other_lots
+    spec_hash: 05508ac0c6df321b1ff06d30f20ad42e37e052a8924a700e79fa77f8931c2951
+    statistic: mean_diff
+    direction: less
+    by_variant:
+      asset_LTCUSDT:
+        status: measured
+        effect:
+          '0': -0.0123073
+        claimed_sign_windows:
+          '0': 4/6
+      asset_XRPUSDT:
+        status: measured
+        effect:
+          '0': -0.0100327
+        claimed_sign_windows:
+          '0': 4/6
+      base:
+        status: measured
+        effect:
+          '0': -0.0210109
+        claimed_sign_windows:
+          '0': 5/6
+      design_scaling_factor_10:
+        status: measured
+        effect:
+          '0': -0.018355
+        claimed_sign_windows:
+          '0': 5/6
+- deviations: 3
+  finding_id: F-run_095-1
+  run_id: run_095
+  kind: conditional_behaviour
+  status: not_measured
+  reason: tests_none
+  block_visibility: not_applicable
+  statement: In this strategy, lots opened at a forecast of 10 or more, or of -10
+    or less (a full-size entry on either side), earn a lower mean net return than
+    the other lots, in most windows.
+  scope:
+    venue: kraken
+    timeframe: 1d
+    symbols:
+    - BTCUSD
+    - SOLUSD
+    - XRPUSD
+    period:
+      start: '2024-01-01'
+      end: '2025-12-31'
+  tests: []
+- deviations: 3
+  finding_id: F-run_094-1
+  run_id: run_094
+  kind: conditional_behaviour
+  status: not_measured
+  reason: tests_none
+  block_visibility: not_applicable
+  statement: Overnight gaps >1% exhibit predictable mean-reversion within 1-3 trading
+    days, with gap-ups followed by negative returns and gap-downs followed by positive
+    returns, at rates exceeding baseline (no-...
+  scope:
+    venue: kraken
+    timeframe: 1d
+    symbols:
+    - ADAUSD
+    - BTCUSD
+    - UNIUSD
+    period:
+      start: '2022-01-01'
+      end: '2023-12-31'
+  tests: []
+- finding_id: F-run_093-1
+  run_id: run_093
+  kind: cost_turnover
+  status: not_measured
+  reason: claim_status_absent
+  block_visibility: ok
+  statement: The 200-day SMA distance trend-following signal survives transaction
+    costs (realized_edge_to_cost_ratio > 2.2) across unseen fold-B data (2018-2021)
+    and is sign-consistent across the four constitue...
+  scope:
+    venue: null
+    timeframe: null
+    symbols: null
+    period: null
+  tests:
+  - name: forecast_return_correlation
+    spec_hash: 0845156c2c23d14d0d66834836dcb001f943047e74ade82b197fadd545839d00
+    statistic: rank_ic
+    direction: greater
+    by_variant: {}
+- finding_id: F-run_092-1
+  run_id: run_092
+  kind: direction_forecast
+  status: not_measured
+  reason: claim_status_absent
+  block_visibility: ok
+  statement: On daily bars where close is far above its 100-day moving average (top
+    20% of signal strength), subsequent 1–5 day forward returns are higher on average
+    than on other bars, confirming that distance...
+  scope:
+    venue: null
+    timeframe: null
+    symbols: null
+    period: null
+  tests:
+  - name: top_signal_outperformance
+    spec_hash: 10f752fa19e2de3d0c3e32f112b3eee81e750311c79e16c03c008a427b65479b
+    statistic: mean_diff
+    direction: greater
+    by_variant: {}
+- finding_id: F-run_091-1
+  run_id: run_091
+  kind: conditional_behaviour
+  status: not_measured
+  reason: claim_status_absent
+  block_visibility: ok
+  statement: On fold B (2018-2021) daily bars, closes at SMA(50) distance in the top
+    25% of trailing 100 days show higher mean forward returns at 1, 5, and 10 day
+    horizons compared to all other closes; this eff...
+  scope:
+    venue: null
+    timeframe: null
+    symbols: null
+    period: null
+  tests:
+  - name: high_distance_continuation
+    spec_hash: 70e6386fa110882f3023b6798745f27e00b4c34d8b091ecb9441e64f24284082
+    statistic: mean_diff
+    direction: greater
+    by_variant: {}
+- finding_id: F-run_090-1
+  run_id: run_090
+  kind: conditional_behaviour
+  status: not_measured
+  reason: claim_status_absent
+  block_visibility: ok
+  statement: On fold B (2018-2021) daily bars, closes at SMA(50) distance in the top
+    25% of trailing 100 days show higher mean forward returns at 1, 5, and 10 day
+    horizons compared to all other closes; this eff...
+  scope:
+    venue: null
+    timeframe: null
+    symbols: null
+    period: null
+  tests:
+  - name: high_distance_continuation
+    spec_hash: 70e6386fa110882f3023b6798745f27e00b4c34d8b091ecb9441e64f24284082
+    statistic: mean_diff
+    direction: greater
+    by_variant: {}
+- finding_id: F-run_089-1
+  run_id: run_089
+  kind: conditional_behaviour
+  status: not_measured
+  reason: no_graded_variants
+  block_visibility: ok
+  statement: On fold B (2018-2021) daily bars, closes at SMA(50) distance in the top
+    25% of trailing 100 days show higher mean forward returns at 1, 5, and 10 day
+    horizons compared to all other closes; this eff...
+  scope:
+    venue: null
+    timeframe: null
+    symbols: null
+    period: null
+  tests:
+  - name: high_distance_continuation
+    spec_hash: 70e6386fa110882f3023b6798745f27e00b4c34d8b091ecb9441e64f24284082
+    statistic: mean_diff
+    direction: greater
+    by_variant: {}
+- finding_id: F-run_088-1
+  run_id: run_088
+  kind: cost_turnover
+  status: not_measured
+  reason: no_graded_variants
+  block_visibility: ok
+  statement: The 200-day SMA distance trend-following signal survives transaction
+    costs (realized_edge_to_cost_ratio > 2.2) across unseen fold-B data (2018-2021)
+    and is sign-consistent across the four constitue...
+  scope:
+    venue: null
+    timeframe: null
+    symbols: null
+    period: null
+  tests:
+  - name: forecast_return_correlation
+    spec_hash: 0845156c2c23d14d0d66834836dcb001f943047e74ade82b197fadd545839d00
+    statistic: rank_ic
+    direction: greater
+    by_variant: {}
+- finding_id: F-run_085-1
+  run_id: run_085
+  kind: cost_turnover
+  status: not_measured
+  reason: criteria_refs_only
+  block_visibility: not_applicable
+  statement: SMA(50) distance signal, vol-targeted to 40% annual volatility, captures
+    trend-premium edge on Kraken perp BTC/ETH/LTC in 2018-2021 (fold B), generating
+    gross edge sufficient to survive round-trip ...
+  scope:
+    venue: null
+    timeframe: null
+    symbols: null
+    period: null
+  tests: []
+- finding_id: F-run_084-1
+  run_id: run_084
+  kind: direction_forecast
+  status: not_measured
+  reason: no_graded_variants
+  block_visibility: ok
+  statement: On daily bars where close is far above its 100-day moving average (top
+    20% of signal strength), subsequent 1–5 day forward returns are higher on average
+    than on other bars, confirming that distance...
+  scope:
+    venue: null
+    timeframe: null
+    symbols: null
+    period: null
+  tests:
+  - name: top_signal_outperformance
+    spec_hash: 10f752fa19e2de3d0c3e32f112b3eee81e750311c79e16c03c008a427b65479b
+    statistic: mean_diff
+    direction: greater
+    by_variant: {}
+- finding_id: F-run_083-1
+  run_id: run_083
+  kind: cost_turnover
+  status: not_measured
+  reason: no_graded_variants
+  block_visibility: ok
+  statement: A 200-day SMA distance trend strategy, volatility-targeted to 40% annual
+    vol, on an 8-coin equal-weight Kraken perp basket, generates sufficient gross
+    edge to exceed twice the per-trade transaction...
+  scope:
+    venue: null
+    timeframe: null
+    symbols: null
+    period: null
+  tests:
+  - name: forecast_rank_ic
+    spec_hash: e891dfee484e22d74ff45c68b6a00695d617a9e9b200d6398679dffd1faca873
+    statistic: rank_ic
+    direction: greater
+    by_variant: {}
+- finding_id: F-run_082-1
+  run_id: run_082
+  kind: direction_forecast
+  status: not_measured
+  reason: no_graded_variants
+  block_visibility: ok
+  statement: Daily SMA(50) distance from close predicts next-day directional returns;
+    when close is far above SMA(50), forward 1-5 day returns are larger.
+  scope:
+    venue: null
+    timeframe: null
+    symbols: null
+    period: null
+  tests:
+  - name: sma_distance_directional_correlation
+    spec_hash: 1981318cae5960a930aa604735acac6749864aaf05b5132e6abfab6dd0b81ecb
+    statistic: rank_ic
+    direction: greater
+    by_variant: {}
+- finding_id: F-run_081-1
+  run_id: run_081
+  kind: direction_forecast
+  status: not_measured
+  reason: no_graded_variants
+  block_visibility: ok
+  statement: Positions held above the 100-day SMA realize higher forward returns than
+    positions held at or below the SMA, with edge magnitude sufficient to survive
+    10 bps round-trip costs on an 8-coin perp basket.
+  scope:
+    venue: null
+    timeframe: null
+    symbols: null
+    period: null
+  tests:
+  - name: sma_distance_forecast_ic
+    spec_hash: 818298f78af4367d49cb1462cf2892d10ef51155c83e78a45ebc03e3abd685aa
+    statistic: rank_ic
+    direction: greater
+    by_variant: {}
+- deviations: 2
+  finding_id: F-run_079-1
+  run_id: run_079
+  kind: execution_behaviour
+  status: measured
+  reason: null
+  block_visibility: blind
+  statement: In this strategy, a lot closed by a forecast sign flip is followed by
+    a move in its own direction more often over the next 6 bars than the other lots
+    are.
+  scope:
+    venue: kraken
+    timeframe: 1h
+    symbols:
+    - BTCUSD
+    - XRPUSD
+    period:
+      start: '2018-05-01'
+      end: '2021-12-31'
+  tests:
+  - name: flip_closed_lots_continue
+    spec_hash: c609a010c712c29acad11eeee063bf8d0a5b5c05a0b801ce83df3f52acb4aeb7
+    statistic: hit_rate
+    direction: greater
+    by_variant:
+      asset_xrp:
+        status: measured
+        effect:
+          '1': 0.0603757
+          '6': 0.0654394
+          '24': 0.0794568
+        claimed_sign_windows:
+          '1': 5/6
+          '6': 6/6
+          '24': 6/6
+      base:
+        status: measured
+        effect:
+          '1': 0.0419181
+          '6': 0.0477723
+          '24': 0.0808443
+        claimed_sign_windows:
+          '1': 5/6
+          '6': 6/6
+          '24': 6/6
+      design_tighter_atr:
+        status: measured
+        effect:
+          '1': 0.0326223
+          '6': 0.0432079
+          '24': 0.0737298
+        claimed_sign_windows:
+          '1': 6/6
+          '6': 6/6
+          '24': 6/6
+- finding_id: F-run_078-1
+  run_id: run_078
+  kind: execution_behaviour
+  status: measured
+  reason: null
+  block_visibility: blind
+  statement: In this strategy, lots opened at a forecast of 10 or more (a full-size
+    long entry) earn a higher mean net return than the other lots, in every window.
+  scope:
+    venue: kraken
+    timeframe: 1h
+    symbols:
+    - BTCUSD
+    - XRPUSD
+    period:
+      start: '2018-05-01'
+      end: '2021-12-31'
+  tests:
+  - name: strong_long_entries_earn_more
+    spec_hash: 70837262630bcfce9f4373dd633c9ab654e12dc62b69ed280f137805a7d6be5e
+    statistic: mean_diff
+    direction: greater
+    by_variant:
+      asset_payment_xrpusdt:
+        status: measured
+        effect:
+          '0': 0.000149594
+        claimed_sign_windows:
+          '0': 2/6
+      base:
+        status: measured
+        effect:
+          '0': 0.00150489
+        claimed_sign_windows:
+          '0': 5/6
+      design_momentum_period:
+        status: measured
+        effect:
+          '0': 0.00101877
+        claimed_sign_windows:
+          '0': 5/6
+- deviations: 3
+  finding_id: F-run_075-1
+  run_id: run_075
+  kind: horizon_decay
+  status: measured
+  reason: null
+  block_visibility: ok
+  statement: After 1h candles with large price moves (top 20% by absolute magnitude),
+    forward returns show mean-reversion at short horizons (1-3h, more negative than
+    baseline) that decays toward neutral by long...
+  scope:
+    venue: kraken
+    timeframe: 1h
+    symbols:
+    - BTCUSD
+    - SOLUSD
+    period:
+      start: '2022-01-01'
+      end: '2023-12-31'
+  tests:
+  - name: shock_magnitude_reversion_decay
+    spec_hash: eaa5d8970cc4935a8634ca69137b77684ff344a501eabb4e38df40cfe9f6dfe5
+    statistic: decay_curve
+    direction: less
+    by_variant:
+      base:
+        status: measured
+        effect:
+          '1': 0.000104543
+          '2': 0.000162161
+          '3': 0.000349008
+          '6': 0.000488151
+          '12': 0.000734545
+        claimed_sign_windows:
+          '1': 3/6
+          '2': 2/6
+          '3': 2/6
+          '6': 1/6
+          '12': 1/6
+      shock_window_2h:
+        status: measured
+        effect:
+          '1': 0.000104543
+          '2': 0.000162161
+          '3': 0.000349008
+          '6': 0.000488151
+          '12': 0.000734545
+        claimed_sign_windows:
+          '1': 3/6
+          '2': 2/6
+          '3': 2/6
+          '6': 1/6
+          '12': 1/6
+      sol_asset_generalization:
+        status: measured
+        effect:
+          '1': 0.000143232
+          '2': 1.69379e-05
+          '3': 0.0003137
+          '6': -0.00029657
+          '12': -0.00034314
+        claimed_sign_windows:
+          '1': 2/6
+          '2': 3/6
+          '3': 3/6
+          '6': 4/6
+          '12': 3/6
+  - name: forecast_signal_quality
+    spec_hash: 71b2a12a801c8f83bbad64362a90cbe33e47ac4059c95cb600dc83d4ebe67b98
+    statistic: rank_ic
+    direction: greater
+    by_variant:
+      base:
+        status: measured
+        effect:
+          '3': 0.0498337
+        claimed_sign_windows:
+          '3': 6/6
+      shock_window_2h:
+        status: measured
+        effect:
+          '3': 0.0540773
+        claimed_sign_windows:
+          '3': 6/6
+      sol_asset_generalization:
+        status: measured
+        effect:
+          '3': 0.0248794
+        claimed_sign_windows:
+          '3': 5/6
+- deviations: 2
+  finding_id: F-run_074-1
+  run_id: run_074
+  kind: direction_forecast
+  status: measured
+  reason: null
+  block_visibility: ok
+  statement: The shock_reversal forecast at period=2 predicts zero forward returns
+    (median forecast_return_corr=-0.0057, not significant), indicating smoothing reduces
+    oscillation but cannot create an edge from...
+  scope:
+    venue: kraken
+    timeframe: 1h
+    symbols:
+    - BTCUSD
+    period:
+      start: '2022-01-01'
+      end: '2023-12-31'
+  tests:
+  - name: shock_reversal_rank_ic
+    spec_hash: f084b07ea82d1cae3caffbba2d318ea0c91c206bff5cc4578ebc6ead526d8521
+    statistic: rank_ic
+    direction: greater
+    by_variant:
+      base:
+        status: measured
+        effect:
+          '1': 0.0542876
+          '2': 0.0546216
+          '3': 0.0546032
+          '4': 0.0562814
+        claimed_sign_windows:
+          '1': 6/6
+          '2': 6/6
+          '3': 6/6
+          '4': 6/6
+      design_longer_smoothing:
+        status: measured
+        effect:
+          '1': 0.0439932
+          '2': 0.045773
+          '3': 0.0468398
+          '4': 0.048971
+        claimed_sign_windows:
+          '1': 6/6
+          '2': 6/6
+          '3': 6/6
+          '4': 6/6
+- deviations: 3
+  finding_id: F-run_071-1
+  run_id: run_071
+  kind: conditional_behaviour
+  status: measured
+  reason: null
+  block_visibility: ok
+  statement: After high-conviction directional 1h candles (body_fraction > 70%, close
+    in top or bottom 10% of intrabar range), price continues in the same direction
+    over 1-4 hours, indicating herding-driven mom...
+  scope:
+    venue: kraken
+    timeframe: 1h
+    symbols:
+    - BTCUSD
+    - SOLUSD
+    period:
+      start: '2022-01-01'
+      end: '2023-12-31'
+  tests:
+  - name: continuation_by_conviction
+    spec_hash: 75ac6399c191d394244e5d81c9dd08995c04a38a6da4717bbe406fdd09cd3a29
+    statistic: mean_diff
+    direction: greater
+    by_variant:
+      base:
+        status: measured
+        effect:
+          '1': 0.00020949
+          '2': 0.000334541
+          '3': 0.000494491
+          '4': 0.000587889
+        claimed_sign_windows:
+          '1': 4/6
+          '2': 5/6
+          '3': 4/6
+          '4': 4/6
+      donchian_faster_10bar:
+        status: measured
+        effect:
+          '1': 0.000143164
+          '2': 0.000340988
+          '3': 0.000370862
+          '4': 0.000465002
+        claimed_sign_windows:
+          '1': 5/6
+          '2': 5/6
+          '3': 3/6
+          '4': 4/6
+      solana_smart_contract:
+        status: measured
+        effect:
+          '1': 3.75416e-06
+          '2': -0.000272352
+          '3': 0.000152165
+          '4': 0.000380661
+        claimed_sign_windows:
+          '1': 2/6
+          '2': 2/6
+          '3': 2/6
+          '4': 2/6
+- finding_id: F-run_073-1
+  run_id: run_073
+  kind: cost_turnover
+  status: not_measured
+  reason: criteria_refs_only
+  block_visibility: not_applicable
+  statement: Shock reversal with period=2 bars reduces false oscillations and improves
+    exit efficiency, enabling realized_edge_to_cost_ratio > 2.2 and sign-consistent
+    profitable returns across market eras (2024...
+  scope:
+    venue: kraken
+    timeframe: 1h
+    symbols:
+    - BTCUSD
+    period:
+      start: '2022-01-01'
+      end: '2023-12-31'
+  tests: []
+same_spec_hash: []

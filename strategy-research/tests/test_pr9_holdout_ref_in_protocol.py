@@ -294,3 +294,75 @@ def test_check_data_resolves_the_reference(check_data, capsys, block, warns):
     assert check_data.check_holdout_overlap(protocol, policy) is True
     out = capsys.readouterr().out
     assert ("WARNING" in out) is warns
+
+
+# ---------------------------------------------------------------------------
+# PR-14 follow-up (D-173): the five record-reaching messages withhold dates.
+# Synthetic policy far from the real seal; every assertion is on a bool or a
+# count bound beforehand, so a failure cannot print a date.
+# ---------------------------------------------------------------------------
+
+_SYN_START, _SYN_END = "2021-03-01", "2021-04-15"
+_SYN_WINDOW_DAYS = ("2021-04-16", "2021-05-31", "2021-04-30", "2021-05-01")
+
+
+def _assert_no_dates(msg: str, names, extra_days=()) -> None:
+    has_names = all(n in msg for n in names)
+    n_any_day = len(_DAY.findall(msg))
+    n_syn = sum(1 for d in (_SYN_START, _SYN_END, *extra_days) if d in msg)
+    n_sealed = _days_inside_seal(msg)
+    assert has_names
+    assert n_any_day == 0
+    assert n_syn == 0
+    assert n_sealed == 0
+
+
+def test_generator_window_breach_message_names_key_and_no_date(tmp_path, monkeypatch):
+    windows = [{"label": "2021-04", "test": {"start": "2021-04-16", "end": "2021-05-31"}}]
+    with pytest.raises(rpr.HoldoutBoundaryBreach) as info:
+        rpr._assert_windows_clear_of_holdout(windows, _SYN_START, _SYN_END)
+    msg = str(info.value)
+    _assert_no_dates(msg, ("holdout_range", "config/campaign_data_policy.yaml", "dates withheld"),
+                     _SYN_WINDOW_DAYS)
+    assert "2021-04" not in msg
+
+
+def test_check_windows_before_message_names_key_and_no_date():
+    windows = [{"label": "2021-04", "test": {"start": "2021-04-16", "end": "2021-05-31"}}]
+    with pytest.raises(hp.HoldoutPolicyError) as info:
+        hp.check_windows_before(windows, _SYN_START)
+    msg = str(info.value)
+    _assert_no_dates(msg, ("holdout_range", "dates withheld"), _SYN_WINDOW_DAYS)
+    assert "2021-04" not in msg
+
+
+def test_parse_holdout_range_malformed_messages_name_key_and_no_value():
+    for hr, needle in (([_SYN_START, "2021-13-45"], "open or not a YYYY-MM-DD"),
+                       ([_SYN_START, "not-a-day"], "open or not a YYYY-MM-DD"),
+                       ([_SYN_END, _SYN_START], "ends before it starts")):
+        with pytest.raises(hp.HoldoutPolicyError) as info:
+            hp.parse_holdout_range(hr)
+        msg = str(info.value)
+        _assert_no_dates(msg, ("holdout_range", needle))
+        leaked_junk = any(v in msg for v in ("2021-13-45", "not-a-day"))
+        assert not leaked_junk
+
+
+def test_fold_holdout_overlap_message_names_key_and_no_date(tmp_path):
+    from test_d115_fold_d import REAL_FOLDS, REAL_POLICY
+    import research_folds as rf
+    policy = yaml.safe_load(REAL_POLICY.read_text(encoding="utf-8"))
+    policy["holdout_range"] = ["2025-10-01", "2025-11-30"]
+    pp = tmp_path / "policy.yaml"
+    pp.write_text(yaml.safe_dump(policy), encoding="utf-8")
+    with pytest.raises(rf.FoldsError) as info:
+        rf.load_folds(REAL_FOLDS, policy_path=pp)
+    msg = str(info.value)
+    has_overlap = "overlaps the holdout" in msg
+    assert has_overlap
+    n_any_day = len(_DAY.findall(msg))
+    n_window = sum(1 for d in ("2025-10-01", "2025-11-30", "2025-09") if d in msg)
+    assert n_any_day == 0
+    assert n_window == 0
+    names = all(n in msg for n in ("holdout_range", "config/campaign_data_policy.yaml", "dates withheld"))
+    assert names

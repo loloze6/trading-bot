@@ -90,10 +90,11 @@ def parse_holdout_range(hr, where: str = "holdout_range") -> tuple[str, str]:
     end = iso_day(raw_end)
     if end is None:
         raise HoldoutPolicyError(
-            f"{where} end {raw_end!r} is open or not a YYYY-MM-DD day; the holdout is a "
-            f"CLOSED range and an open end would read post-holdout data")
+            f"{where} end is open or not a YYYY-MM-DD day (value withheld); the holdout is "
+            f"a CLOSED range and an open end would read post-holdout data")
     if end < start:
-        raise HoldoutPolicyError(f"{where} ends ({end}) before it starts ({start})")
+        raise HoldoutPolicyError(f"{where} ends before it starts (dates withheld); "
+                                 f"fix holdout_range so end >= start")
     return start, end
 
 
@@ -218,11 +219,11 @@ def check_windows_before(windows, holdout_start: str) -> None:
                                      f"starts ({days['start']})")
         if not days["end"] < bound:
             raise HoldoutPolicyError(
-                f"window {label!r} ends {days['end']}, at or past holdout_start={bound} -- a "
-                f"training window must never reach into the holdout range. NB `end` is "
-                f"INCLUSIVE-BY-DAY at the engine, so an end equal to holdout_start still "
-                f"materialises that whole day's bars. Fix the protocol's windows before "
-                f"proceeding.")
+                f"a protocol window's test.end is at or past the holdout_range start (dates "
+                f"withheld) -- a training window must never reach into the holdout range. "
+                f"NB `end` is INCLUSIVE-BY-DAY at the engine, so an end equal to the "
+                f"holdout_range start still materialises that whole day's bars. Fix the "
+                f"protocol's windows before proceeding.")
 
 
 def windows_overlap(windows) -> str | None:

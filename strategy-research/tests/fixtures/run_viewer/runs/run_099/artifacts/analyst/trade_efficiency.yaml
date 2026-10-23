@@ -1,0 +1,113 @@
+schema_version: 1
+lens: trade_efficiency
+category: trade_efficiency
+run_id: run_099
+model: claude-haiku-5-5
+caps:
+  model: claude-haiku-5-5
+  max_turns: 40
+  max_budget_usd: 3.0
+  timeout_minutes: 15
+attempts:
+- status: accepted
+  errors: []
+  subtype: success
+  cost_usd: 1.09850725
+  num_turns: 10
+  tools_denied: []
+  outcome: no_claim
+  models:
+  - claude-haiku-5-5
+  answer: "```yaml\noutcome: no_claim\nno_claim:\n  reason: >\n    The strategy is\
+    \ one long-only Donchian position on the 250-bar range. Its forecast is\n    graded,\
+    \ not on/off: it is almost never at the +-20 clip (share_at_cap 0), its median\
+    \ is\n    small, and the vol_target step scales it by inverse recent volatility.\
+    \ Costs are not the\n    problem. Fees are a small share of the account, and gross\
+    \ per lot is well above fees per\n    lot (q2). The lots are few (q2 total trades\
+    \ 12, all in six windows), so trade-level tests\n    cannot clear the 100-event\
+    \ floor.\n    Measured on bars, the forecast's rank correlation with forward returns\
+    \ is negative at 5\n    and 20 bars in most windows (q9), so higher-forecast bars\
+    \ are followed by lower returns.\n    That clears the floors, so it is recorded\
+    \ as an observation. No strategy change follows\n    from it yet: I have not tested\
+    \ a mechanism for it (for example, that the vol_target term\n    drives it through\
+    \ low-volatility states), and a vehicle built on it now would be a fit to\n  \
+    \  one fold. The 1-bar rank correlation points the other way (q6), so the test\
+    \ uses only the\n    5- and 20-bar horizons.\n    Rejected candidate: a threshold\
+    \ on the top 20% of the forecast over its trailing 100 bars.\n    Its event count\
+    \ is far below the floor (q7), and a fixed forecast >= 5 cut also fails the\n\
+    \    floor, with events in only two windows (q8). Both are floor limits, not rival\
+    \ tests.\n  best_rejected:\n    statement: >\n      Bars in the top 20% of the\
+    \ forecast over its trailing 100 bars have lower forward returns\n      over 5\
+    \ and 20 bars than the rest of the bars.\n    killed_by: q7\n  observations:\n\
+    \    - statement: >\n        The forecast's rank correlation with forward returns\
+    \ is negative at 5 and 20 bars, in\n        most windows: higher-forecast bars\
+    \ are followed by lower returns over those horizons.\n      test: q9\n      evidence:\n\
+    \        - q9:horizons.5.effect=-0.023100387\n        - q9:horizons.5.n_events=700\n\
+    \        - q9:horizons.20.effect=-0.038826816\n      floors_met: true\nevidence:\n\
+    \  - q7:horizons.20.n_events=6\n  - q2:total.trades=12\n```"
+outcome: no_claim
+what_was_examined:
+- 5cc0a033ef4a53e754aaaabd820b3e25d21059cd8ac4676dd0ed4ef939b02e47
+- 746d622a8f5baa074eb9971758dea1db4765ddfce9fe16e6a1c78094c7b0dc06
+- b4ed77c7cb00c0b0d9f978c15ddd85b9d92a19dc8bd1df5d2c4aa565f6090605
+- fc1be4f08df909718a500749c2451fcba3037c596f34c9a7f0aa67a43d3ef0dd
+looks:
+  calls: 9
+  comparisons: 14
+unverified_numbers:
+- field: no_claim.reason
+  written: '-20'
+no_claim:
+  reason: 'The strategy is one long-only Donchian position on the 250-bar range. Its
+    forecast is graded, not on/off: it is almost never at the +<n> clip (share_at_cap
+    0), its median is small, and the vol_target step scales it by inverse recent volatility.
+    Costs are not the problem. Fees are a small share of the account, and gross per
+    lot is well above fees per lot (q2). The lots are few (q2 total trades 12, all
+    in six windows), so trade-level tests cannot clear the 100-event floor. Measured
+    on bars, the forecast''s rank correlation with forward returns is negative at
+    5 and 20 bars in most windows (q9), so higher-forecast bars are followed by lower
+    returns. That clears the floors, so it is recorded as an observation. No strategy
+    change follows from it yet: I have not tested a mechanism for it (for example,
+    that the vol_target term drives it through low-volatility states), and a vehicle
+    built on it now would be a fit to one fold. The 1-bar rank correlation points
+    the other way (q6), so the test uses only the 5- and 20-bar horizons. Rejected
+    candidate: a threshold on the top 20% of the forecast over its trailing 100 bars.
+    Its event count is far below the floor (q7), and a fixed forecast >= 5 cut also
+    fails the floor, with events in only two windows (q8). Both are floor limits,
+    not rival tests.
+
+    '
+  best_rejected:
+    statement: 'Bars in the top 20% of the forecast over its trailing 100 bars have
+      lower forward returns over 5 and 20 bars than the rest of the bars.
+
+      '
+    killed_by: q7
+  observations:
+  - statement: 'The forecast''s rank correlation with forward returns is negative
+      at 5 and 20 bars, in most windows: higher-forecast bars are followed by lower
+      returns over those horizons.
+
+      '
+    test: q9
+    evidence:
+    - q9:horizons.5.effect=-0.023100387
+    - q9:horizons.5.n_events=700
+    - q9:horizons.20.effect=-0.038826816
+    floors_met: true
+    spec:
+      spec_hash: b4ed77c7cb00c0b0d9f978c15ddd85b9d92a19dc8bd1df5d2c4aa565f6090605
+      selector:
+        kind: all
+      outcome:
+        kind: fwd_return
+        horizons:
+        - 5
+        - 20
+      baseline: null
+      statistic: rank_ic
+      direction: less
+      floor:
+        min_events: 100
+        min_windows: 4
+outcome_flipped_on_retry: false

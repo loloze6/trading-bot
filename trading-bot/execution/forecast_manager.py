@@ -1,8 +1,10 @@
+import math
 import time
 from typing import Any, Dict, List, Optional, Union, Tuple
 import datetime
 from performance.metrics import EnhancedPerformanceTracker, CompletedTrade
 from data.data_manager import Candle
+from strategies.registry import normalise_sizing_block, sizing_realised_vol
 import logging
 
 logger = logging.getLogger("trading_bot")
@@ -27,8 +29,9 @@ class ForecastManager:
         2. Convert to allocation (e.g., +75% long)
         3. Compute the delta against current allocation
 
-    NO DRIFT THRESHOLD LIVES HERE. This class is stateless and holds no
-    threshold -- `__init__` takes no arguments. The caller
+    NO DRIFT THRESHOLD LIVES HERE. This class holds no threshold and no
+    per-bar state (D-176: `__init__` takes one optional `sizing` block; without
+    it, nothing changes). The caller
     (`trading_bot.py:305`) proceeds to `risk_manager.approve_allocation_change`
     on `abs(allocation_change) != 0.0`, so ForecastManager itself never blocks
     a rebalance.
@@ -52,24 +55,62 @@ class ForecastManager:
     `strategy-research/engineering/improvements/known_divergences.md` (1).
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, sizing: Optional[Dict[str, Any]] = None):
+        """
+        sizing (D-176): a strategy_config.json strategies.sizing block, or None
+        (the default -- key absent). None keeps this class exactly as before:
+        forecast_to_allocation is forecast / 10 and nothing else. A block is
+        validated here (normalise_sizing_block: loud ValueError when malformed)
+        and turns on vol targeting in the allocation step.
+        """
+        self.sizing = normalise_sizing_block(sizing) if sizing is not None else None
+        # Realised vol of the last sized allocation (None before one, without a
+        # block, or when the closes could not give one). Read by the caller for
+        # the bars.csv sizing columns; never read back here.
+        self.last_realised_vol: Optional[float] = None
 
-    def forecast_to_allocation(self, forecast: float) -> float:
+    def signal_allocation(self, forecast: float) -> float:
+        """The unsized allocation, forecast / 10 -- the signal on the
+        allocation scale (D-176: with a sizing block the min_allocation_change
+        band passes on this signal's change or on the sized change)."""
+        return forecast / FORECAST_FOR_100_INVESTMENT
+
+    def forecast_to_allocation(self, forecast: float, closes=None) -> float:
         """
         Convert forecast (-20 to +20) to target allocation (-200% to +200%).
         
         Args:
             forecast: Forecast value between min_forecast and max_forecast
+            closes: (D-176, sizing block only) the strategy's close history up
+                to and including the current bar; ignored without a block.
             
         Returns:
-            Target allocation between -1.0 and 1.0
+            Target allocation between -1.0 and 1.0 (without a sizing block)
         """
         
         # Linear mapping from forecast range to allocation range
         allocation = forecast / FORECAST_FOR_100_INVESTMENT
-        
-        return allocation
+
+        if self.sizing is None:
+            return allocation
+
+        # D-176: allocation = forecast * target_annual_vol / realised / 10 --
+        # the vol_target op's own arithmetic and order (registry._vol_target),
+        # then this method's division by 10 -- clipped to +/-max_allocation.
+        if closes is None:
+            raise ValueError("ForecastManager: a sizing block needs the close history (closes=...)")
+        self.last_realised_vol = None
+        if not math.isfinite(allocation):
+            return allocation  # NaN/inf forecast: left for the caller's CUL-274 hold
+        realised = sizing_realised_vol(closes, self.sizing)
+        self.last_realised_vol = realised
+        if realised is None:
+            return 0.0  # where the op would raise on its data: flat (see sizing_realised_vol)
+        sized = forecast * self.sizing["target_annual_vol"] / realised / FORECAST_FOR_100_INVESTMENT
+        if not math.isfinite(sized):
+            return 0.0
+        cap = float(self.sizing["max_allocation"])
+        return float(min(max(sized, -cap), cap))
     
     def calculate_allocation_change(self, target_allocation: float, current_allocation: float) -> float:
         """

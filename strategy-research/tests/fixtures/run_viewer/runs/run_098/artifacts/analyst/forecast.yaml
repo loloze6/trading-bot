@@ -1,0 +1,146 @@
+schema_version: 1
+lens: forecast
+category: forecast_power
+run_id: run_098
+model: claude-haiku-5-5
+caps:
+  model: claude-haiku-5-5
+  max_turns: 40
+  max_budget_usd: 3.0
+  timeout_minutes: 15
+attempts:
+- status: accepted
+  errors: []
+  subtype: success
+  cost_usd: 1.1633554999999998
+  num_turns: 11
+  tools_denied: []
+  outcome: no_claim
+  models:
+  - claude-haiku-5-5
+  answer: "I'll stop here. The budget is about $1.99 left, and the evidence does not\
+    \ support a claim.\n\n```yaml\noutcome: no_claim\nno_claim:\n  reason: >\n   \
+    \ Nothing survived. The forecast is graded (a standardised component with a\n\
+    \    250-bar Donchian anchor), and its strong-bar edge does not hold window by\
+    \ window.\n    At horizon 1, the pooled effect of forecast at or above 8 is positive,\
+    \ but in every\n    window that has such bars the effect is negative or flat,\
+    \ so the pooled sign comes from\n    how the baseline is pooled across windows,\
+    \ not from a repeated behaviour. The top-quintile\n    forecast test (top 20%\
+    \ over 100 bars) fails its floors at the longer horizons, and its\n    5-bar effect\
+    \ is negative. Costs are large against a gross result near zero, and the\n   \
+    \ forecast steps about a small amount each bar, so allocation churns through the\n\
+    \    risk manager's no-trade band. That churn is the likely cost cause, but I\
+    \ did not\n    run a test that isolates it, and no graded change follows from\
+    \ it that a test in this\n    session could check. The rejected mechanisms are:\
+    \ a slow range-position trend that pays\n    at longer horizons (q6), and a one-bar\
+    \ edge on strong long forecasts (q9, q10).\n  best_rejected:\n    statement: >\n\
+    \      Forecast top quintile earns more than the rest over longer horizons (20\
+    \ to 60 bars), so the\n      250-bar anchor carries a slow trend edge.\n    killed_by:\
+    \ q6\n  observations:\n    - statement: >\n        Bars with forecast at or above\
+    \ 8 show a positive pooled next-bar return against the\n        rest, but in each\
+    \ window with such bars the next-bar effect is negative or flat, so the\n    \
+    \    pooled sign is not a per-window behaviour.\n      test: q9\n      evidence:\n\
+    \        - q9:horizons.1.effect=0.0012112745\n      floors_met: true\n    - statement:\
+    \ >\n        Top-quintile forecast bars show a positive next-bar effect and a\
+    \ negative five-bar effect\n        against the rest, and their 20- and 60-bar\
+    \ effects have no events, so the test\n        cannot show a longer-horizon edge.\n\
+    \      test: q6\n      evidence:\n        - q6:horizons.5.effect=-0.0072307673\n\
+    \      floors_met: false\nevidence:\n  - q2:total.cost_drag_pct=406.01642\n  -\
+    \ q9:horizons.1.effect=0.0012112745\n  - q6:horizons.5.effect=-0.0072307673\n\
+    ```"
+outcome: no_claim
+what_was_examined:
+- cbf2917d740a08a092dcf1877c97ad58acda71a76b3a8202b3c1ca4c6d0db01d
+- e4ea2de2da762da99c946e0adbff75c384d933b289667ad259f5465ad9440223
+- f34f012e0441fa560f8ed93a349f380f8bce946ddb9b8a7f3c229e6e8d16be78
+looks:
+  calls: 10
+  comparisons: 20
+unverified_numbers:
+- field: no_claim.reason
+  written: '8'
+no_claim:
+  reason: 'Nothing survived. The forecast is graded (a standardised component with
+    a 250-bar Donchian anchor), and its strong-bar edge does not hold window by window.
+    At horizon 1, the pooled effect of forecast at or above <n> is positive, but in
+    every window that has such bars the effect is negative or flat, so the pooled
+    sign comes from how the baseline is pooled across windows, not from a repeated
+    behaviour. The top-quintile forecast test (top 20% over 100 bars) fails its floors
+    at the longer horizons, and its 5-bar effect is negative. Costs are large against
+    a gross result near zero, and the forecast steps about a small amount each bar,
+    so allocation churns through the risk manager''s no-trade band. That churn is
+    the likely cost cause, but I did not run a test that isolates it, and no graded
+    change follows from it that a test in this session could check. The rejected mechanisms
+    are: a slow range-position trend that pays at longer horizons (q6), and a one-bar
+    edge on strong long forecasts (q9, q10).
+
+    '
+  best_rejected:
+    statement: 'Forecast top quintile earns more than the rest over longer horizons
+      (20 to 60 bars), so the 250-bar anchor carries a slow trend edge.
+
+      '
+    killed_by: q6
+  observations:
+  - statement: 'Bars with forecast at or above 8 show a positive pooled next-bar return
+      against the rest, but in each window with such bars the next-bar effect is negative
+      or flat, so the pooled sign is not a per-window behaviour.
+
+      '
+    test: q9
+    evidence:
+    - q9:horizons.1.effect=0.0012112745
+    floors_met: true
+    spec:
+      spec_hash: e4ea2de2da762da99c946e0adbff75c384d933b289667ad259f5465ad9440223
+      selector:
+        kind: event
+        field: forecast
+        op: '>='
+        value: 8
+      outcome:
+        kind: fwd_return
+        horizons:
+        - 1
+        - 2
+        - 5
+        - 10
+      baseline:
+        kind: complement
+      statistic: mean_diff
+      direction: greater
+      floor:
+        min_events: 100
+        min_windows: 4
+  - statement: 'Top-quintile forecast bars show a positive next-bar effect and a negative
+      five-bar effect against the rest, and their 20- and 60-bar effects have no events,
+      so the test cannot show a longer-horizon edge.
+
+      '
+    test: q6
+    evidence:
+    - q6:horizons.5.effect=-0.0072307673
+    floors_met: false
+    spec:
+      spec_hash: f34f012e0441fa560f8ed93a349f380f8bce946ddb9b8a7f3c229e6e8d16be78
+      selector:
+        kind: quantile
+        field: forecast
+        side: top
+        q: 0.2
+        lookback: 100
+      outcome:
+        kind: fwd_return
+        horizons:
+        - 1
+        - 5
+        - 20
+        - 60
+      baseline:
+        kind: complement
+      statistic: mean_diff
+      direction: greater
+      floor:
+        min_events: 100
+        min_windows: 4
+outcome_flipped_on_retry: false

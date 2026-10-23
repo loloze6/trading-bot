@@ -1,0 +1,51 @@
+base_hypothesis_id: DAILY_ANCHOR_52W_PROXIMITY_1D
+variant_patch_ref: artifacts/variant_patches.yaml
+a1_2_status: "not_satisfiable_in_this_shape: see innovation_notes flags"
+expanded_variants:
+  - variant_id: base
+    kind: base
+    symbol: BTCUSDT
+    library_category: trend_following
+    data_requirements: ohlcv_only
+    diversity_axis: "reference variant on base coin, unmodified config"
+  - variant_id: design_lookback_120
+    kind: design
+    symbol: BTCUSDT
+    library_category: trend_following
+    data_requirements: ohlcv_only
+    diversity_axis: "anchor window 250 to 120 bars, a 4-month anchor, one parameter change on the same component"
+  - variant_id: asset_link
+    kind: asset
+    symbol: LINKUSDT
+    library_category: trend_following
+    data_requirements: ohlcv_only
+    diversity_axis: "coin category store_of_value to defi, same config, empty patch"
+  - variant_id: asset_ada
+    kind: asset
+    symbol: ADAUSDT
+    library_category: trend_following
+    data_requirements: ohlcv_only
+    diversity_axis: "coin category store_of_value to altcoin_l1_verified_kraken, same config, empty patch"
+alternative_data_candidates:
+  - feed: funding_open_interest
+    feed_name: binance_funding_rate
+    status: available
+    use: "graded FundingRateComponent as a separate hypothesis, not a variant of this idea"
+    gap: "feed is Binance funding; venue is Kraken perp; confirm before use"
+    queued_here: false
+  - feed: fear_and_greed
+    feed_name: alternative_me_fng
+    status: available
+    use: "daily-aligned sentiment, matches 1d bars; would add a component, so separate hypothesis"
+    gap: "none on timeframe; graded FearGreedComponent required"
+    queued_here: false
+reverse_hypothesis:
+  statement: "Closer to the 250-bar high predicts lower next 1-2 bar returns through short-term reversal after rallies. The competing sign named in expected_failure_modes."
+  test: "same config with negate appended after standardise"
+  queued_here: false
+  reason: "would be a fifth variant or replace an asset variant; the four-variant shape is full"
+behavioral_features:
+  - "d_t: close over trailing 250-bar high minus 1, the anchor proximity proxy (card definition, not authored in base)"
+  - "range position: close within trailing 250-bar close range, the authored base proxy, price_volume_only"
+  - "trailing 60-bar mean absolute scale: keeps the forecast on its own past scale"
+regime_specific_variants: []

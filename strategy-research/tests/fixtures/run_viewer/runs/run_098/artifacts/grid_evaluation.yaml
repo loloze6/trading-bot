@@ -1,0 +1,63 @@
+result: GRID_EVALUATED
+criteria:
+- forecast_ic_median
+- residual_ic
+variants:
+- base
+- design_lookback_120
+grid:
+  forecast_ic_median:
+    base:
+      result: FAIL
+      value: -0.058206999999999995
+      threshold: 0.02
+      comparator: '>'
+      n_windows: 6
+      n_trades: 176
+    design_lookback_120:
+      result: FAIL
+      value: -0.0569435
+      threshold: 0.02
+      comparator: '>'
+      n_windows: 6
+      n_trades: 204
+  residual_ic:
+    base:
+      result: FAIL
+      value: 0.000169
+      threshold: 0.02
+      comparator: '>'
+      n_windows: 6
+      n_trades: 176
+      n_eff: 724
+      p_value_one_sided: 0.498189
+      max_p_value: 0.05
+      composite: block
+      fully_explained: false
+    design_lookback_120:
+      result: FAIL
+      value: 0.025752
+      threshold: 0.02
+      comparator: '>'
+      n_windows: 6
+      n_trades: 204
+      n_eff: 724
+      p_value_one_sided: 0.244633
+      max_p_value: 0.05
+      composite: block
+      fully_explained: false
+      reason: 'not significant: p_value_one_sided=0.244633 >= max_p_value=0.05'
+idea_status: refuted
+reason: at least one criterion FAILed with sufficient data on at least one variant;
+  variant(s) ['asset_ada'] failed their backtest (a backtest_failed trial row counts
+  the look) -- a variant without a graded result never validates an idea (D-015);
+  variant(s) ['asset_link'] have no graded result in this run -- an idea validates
+  only when all its variants are graded in one run (card D)
+failed_variants:
+  asset_ada: 'backtest_failed: run_protocol.py non-zero exit (1)'
+untested_variants:
+  asset_link: 'insufficient_coverage: the coin covers 3/6 protocol windows (50%; era(s)
+    [''era_2019_2023_full_feed'']) by the Layer-1 precheck and the listing date --
+    D-042 runs a partial-coverage asset variant only at >= 60% of the windows; not
+    run, the idea is at best inconclusive'
+evaluated_at: '2026-10-20T19:56:59.199433+00:00'

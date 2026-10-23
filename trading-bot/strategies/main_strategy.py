@@ -1,6 +1,7 @@
 from strategies.regime_engine import ConfigDrivenRegimeEngine
 from strategies.strategy_engine import ConfigDrivenStrategyEngine
 from strategies.strategy_base import MainStrategy, MarketRegime, RollingBuffer
+from strategies.registry import normalise_sizing_block
 from tools.validate_config import validate as _validate_config
 from typing import Any, Dict, Optional, Tuple
 import json
@@ -54,6 +55,14 @@ class AdvancedStrategy(MainStrategy):
         # been live since commit ac277917. See known_divergences.md (1).
         self.min_allocation_change_override = config["strategies"].get("min_allocation_change")
 
+        # D-176: optional strategies.sizing block (vol targeting in the
+        # allocation step; core/launcher.py hands it to ForecastManager). None
+        # (key absent, every earlier config) changes nothing. validate_config's
+        # V19 has already refused a malformed block; normalise_sizing_block
+        # defaults max_allocation and would raise on one regardless.
+        sizing = config["strategies"].get("sizing")
+        self.sizing = normalise_sizing_block(sizing) if sizing is not None else None
+
         self.regime_engine   = ConfigDrivenRegimeEngine(config["regime_detector"])
         self.strategy_engine = ConfigDrivenStrategyEngine(config["strategies"])
 
@@ -63,6 +72,12 @@ class AdvancedStrategy(MainStrategy):
             self.strategy_engine.get_required_periods(),
             std_dev_period,
         )
+        if self.sizing is not None:
+            # D-176: like the vol_target op (registry.transform_data_periods),
+            # the strategy is not ready before the sizing window has its
+            # window + 1 closes, so warm-up forecasts 0.0 and the buffer
+            # (required_bars + 100) always holds them. Absent block: untouched.
+            self.required_bars = max(self.required_bars, self.sizing["window"] + 1)
         # CUL-273: required_bars is the single source of truth for how many
         # real bars this strategy needs before it trusts itself. Before this,
         # strategy_engine derived its own internal per-regime readiness

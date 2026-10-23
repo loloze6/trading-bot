@@ -90,7 +90,7 @@ def test_load_folds_refuses_a_fold_d_block_inside_the_holdout_of_a_policy(tmp_pa
     policy["holdout_range"] = ["2025-10-01", "2025-11-30"]
     pp = tmp_path / "policy.yaml"
     pp.write_text(yaml.safe_dump(policy), encoding="utf-8")
-    with pytest.raises(rf.FoldsError, match="fold D block 2025-09 .* overlaps the holdout"):
+    with pytest.raises(rf.FoldsError, match="fold D has a block that overlaps the holdout"):
         rf.load_folds(REAL_FOLDS, policy_path=pp)
 
 

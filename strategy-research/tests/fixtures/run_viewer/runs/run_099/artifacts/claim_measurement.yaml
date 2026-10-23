@@ -1,0 +1,49 @@
+run_id: run_099
+label: measured, not proven
+note: 'effect sizes only, no p-value: the number is shown, the claim is not graded;
+  information only, it never changes idea_status'
+information_only: true
+claim_status: measured
+reason: null
+detail: null
+n_tests_measured: 5
+n_tests_no_events: 1
+n_tests_not_measured: 0
+variants:
+  asset_ltc:
+    status: measured
+    reason: null
+    file: variants/asset_ltc/claim_test.yaml
+  base:
+    status: measured
+    reason: null
+    file: variants/base/claim_test.yaml
+  design_no_vol_target:
+    status: measured
+    reason: null
+    file: variants/design_no_vol_target/claim_test.yaml
+tests:
+- variant: asset_ltc
+  test: long_forecast_rank_ic_5_20
+  spec_hash: 322acac88fc9a108cd25d2f4097bc5ab7d5b1e364025359d97acc4b39162237a
+  status: measured
+- variant: asset_ltc
+  test: half_a_strong_long_lower_5
+  spec_hash: 1854af2bfe6b44b988fb2eb4726deb20b5d1a79e6d79e13eb40d01abf9cc62f3
+  status: no_events
+- variant: base
+  test: long_forecast_rank_ic_5_20
+  spec_hash: 322acac88fc9a108cd25d2f4097bc5ab7d5b1e364025359d97acc4b39162237a
+  status: measured
+- variant: base
+  test: half_a_strong_long_lower_5
+  spec_hash: 1854af2bfe6b44b988fb2eb4726deb20b5d1a79e6d79e13eb40d01abf9cc62f3
+  status: measured
+- variant: design_no_vol_target
+  test: long_forecast_rank_ic_5_20
+  spec_hash: 322acac88fc9a108cd25d2f4097bc5ab7d5b1e364025359d97acc4b39162237a
+  status: measured
+- variant: design_no_vol_target
+  test: half_a_strong_long_lower_5
+  spec_hash: 1854af2bfe6b44b988fb2eb4726deb20b5d1a79e6d79e13eb40d01abf9cc62f3
+  status: measured
