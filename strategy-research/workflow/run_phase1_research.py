@@ -2977,7 +2977,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
             # sends a variant's back to Step 2 once, and a `base` refusal (1b's
             # config, already checked right after 1b) pauses.
             _fr_msgs = (_fr.strategies_violations(variant_config, _fr_on_off)
-                        + _fr.class_mismatch(base_config, variant_config))
+                        + _fr.class_mismatch(base_config, variant_config)
+                        + _fr.sizing_vehicle_violations(variant.get("patch")))
             if _fr_msgs:
                 reason = FORECAST_RULE_REASON
                 report = "\n".join(_fr_msgs)
@@ -11809,12 +11810,12 @@ def _assert_windows_clear_of_holdout(windows: list, holdout_start: str,
             value = str(w["test"][edge])[:10]
             if value >= holdout_start:
                 raise HoldoutBoundaryBreach(
-                    f"window {label!r} has test.{edge}={value}, at or past "
-                    f"holdout_start={holdout_start} (holdout_range "
-                    f"{holdout_start}..{holdout_end}). `end` is INCLUSIVE-BY-DAY at "
-                    f"the engine, so end={value} materialises that whole day's bars "
-                    f"inside the sealed window. Move the sweep's end date before "
-                    f"{holdout_start}; this generator will not truncate it for you."
+                    f"a window's test.{edge} is at or past the holdout_range start in "
+                    f"config/campaign_data_policy.yaml (dates withheld). `end` is "
+                    f"INCLUSIVE-BY-DAY at the engine, so an end on that day materialises "
+                    f"that whole day's bars inside the sealed window. Move the sweep's "
+                    f"end date before the holdout_range start; this generator will not "
+                    f"truncate it for you."
                 )
 
 
@@ -18620,7 +18621,9 @@ def _claim_power_check(run_dir: Path, run_id: str, attempt, stage: str, card: di
     else:
         try:
             bars = cc.window_bars(windows, step)
-            warnings = cc.power_warnings((card or {}).get("claim") or {}, bars, len(symbols))
+            warnings = cc.power_warnings(
+                (card or {}).get("claim") or {}, bars, len(symbols),
+                [cc.window_bars([w], step) for w in windows])
             entry.update({"status": "below_floor" if warnings else "ok", "source": source,
                           "bars": bars, "coins": len(symbols), "timeframe": tf,
                           "warnings": warnings})
@@ -19029,7 +19032,9 @@ def _claim_revision_power_facts(run_dir: Path, run_id: str) -> dict:
                 "coins": len(symbols),
                 "rule": (f"a min_events floor must be at most (bars_in_test_windows // the "
                          f"longest horizon) x coins = ({bars} // longest horizon) x "
-                         f"{len(symbols)}")}
+                         f"{len(symbols)}; for a quantile selector, first take its lookback "
+                         f"off each test window: ((sum over windows of max(0, window bars - "
+                         f"lookback)) // longest horizon) x coins")}
     except Exception as exc:  # noqa: BLE001 -- information only
         return {"known": False, "reason": f"{type(exc).__name__}: {exc}"}
 

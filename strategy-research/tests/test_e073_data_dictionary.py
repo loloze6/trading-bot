@@ -784,7 +784,8 @@ def bars_csv_columns() -> set:
                 and n.func.attr == "record_state":
             recorded |= {kw.arg for kw in n.keywords if kw.arg}
             spreads += sum(1 for kw in n.keywords if kw.arg is None)
-    assert spreads == 1, "the per-bar record_state call spreads **risk_extras exactly once"
+    # D-176: **risk_extras (the portfolio risk gate) and **sizing_extras (the strategies.sizing block)
+    assert spreads == 2, "the per-bar record_state call spreads **risk_extras and **sizing_extras, once each"
     recorded -= {"data", "signal", "replace_if_same_bar"}
     nested = {"balances", "postRebalance_balances", "debug_approve_allocation_change",
               "debug_execute_portfolio_rebalance"}
@@ -854,6 +855,17 @@ def bars_csv_columns() -> set:
             order |= _dict_keys(d)
     cols.add("debug_execute_portfolio_rebalance")
     cols |= {f"debug_execute_portfolio_rebalance.{k}" for k in order}
+
+    # D-176: the strategies.sizing block's extras (**sizing_extras), keys set in the bar processor
+    proc = _func(TB, "TradingBot._process_symbol_candle_completion")
+    for n in ast.walk(proc):
+        if isinstance(n, ast.Assign):
+            for t in n.targets:
+                if isinstance(t, ast.Name) and t.id == "sizing_extras" and isinstance(n.value, ast.Dict):
+                    cols |= _dict_keys(n.value)
+                elif isinstance(t, ast.Subscript) and isinstance(t.value, ast.Name) \
+                        and t.value.id == "sizing_extras" and _const_str(t.slice) is not None:
+                    cols.add(t.slice.value)
 
     # the portfolio risk gate's extras (**risk_extras)
     apply = _func(RG, "PortfolioRiskGate.apply")

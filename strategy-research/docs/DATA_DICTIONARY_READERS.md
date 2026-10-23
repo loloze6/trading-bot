@@ -536,7 +536,7 @@ These do not exist in any file the AI steps read. Do not infer them.
   was held (only counted in metrics.json `nan_forecast`), a gap tier (middle-tier
   entry block, large-tier forced flatten; gap events only in metrics.json
   `data_quality`), a risk-gate kill, or the end-of-backtest forced close (merged
-  into the last row, `PI:PortfolioStateTracker.record_state`). The target allocation is not a column.
+  into the last row, `PI:PortfolioStateTracker.record_state`). The target allocation is not a column (except `sizing_target_allocation`, only with a `strategies.sizing` block).
 - **The decision behind each trade** (E-029): which rule opened or closed a lot,
   whether it was a full exit or a partial reduction, the forecast and band at the
   decision. `exit_reason` is inferred (A5).
