@@ -345,3 +345,41 @@ def test_sma_50_minus_200_sign_matches_output_sign_on_every_ready_bar():
         assert np.sign(comp.raw_value()) == np.sign(diff), t
         signs.add(np.sign(diff))
     assert signs == {1.0, -1.0}
+
+
+# Safety review (PR #542 fix round): on "sma" a period must be an integer >= 1.
+# Integral floats are accepted and stored as int; bools are refused. "ema" is
+# not checked at all (unchanged behaviour for existing configs).
+_BAD_SMA_PERIODS = [0, -5, 9.7, 0.0, -1.0, True, False, float("nan"), float("inf"), "50", None]
+
+
+@pytest.mark.parametrize("key", ["fast_period", "slow_period"])
+@pytest.mark.parametrize("bad", _BAD_SMA_PERIODS)
+def test_sma_refuses_a_period_that_is_not_an_integer_ge_1(key, bad):
+    params = {"fast_period": 9, "slow_period": 21, "average": "sma", key: bad}
+    with pytest.raises(ValueError, match=f"{key} must be an integer >= 1"):
+        EMASpreadComponent(parameters=params)
+
+
+def test_sma_accepts_integral_float_periods_as_ints():
+    comp = EMASpreadComponent(parameters={"fast_period": 50.0, "slow_period": np.float64(200.0),
+                                          "average": "sma"})
+    assert comp.fast_period == 50 and isinstance(comp.fast_period, int)
+    assert comp.slow_period == 200 and isinstance(comp.slow_period, int)
+    assert comp.get_required_periods() == 200
+
+
+def test_sma_accepts_numpy_ints_and_period_one():
+    comp = EMASpreadComponent(parameters={"fast_period": np.int64(1), "slow_period": 3,
+                                          "average": "sma"})
+    assert comp.fast_period == 1 and comp.slow_period == 3
+
+
+@pytest.mark.parametrize("odd", [0, -5, 9.7, 50.0, True])
+@pytest.mark.parametrize("key", ["fast_period", "slow_period"])
+@pytest.mark.parametrize("average_kw", [{}, {"average": "ema"}])
+def test_ema_does_not_check_periods_at_construction(key, odd, average_kw):
+    comp = EMASpreadComponent(parameters={key: odd, **average_kw})
+    assert comp.average == "ema"
+    # stored exactly as given: no cast, no check on the ema path
+    assert getattr(comp, key) is odd

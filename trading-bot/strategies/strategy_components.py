@@ -333,6 +333,28 @@ class EMASpreadComponent(SubStrategyComponent):
         if self.average not in self.AVERAGES:
             raise ValueError(f"EMASpreadComponent: average must be one of "
                              f"{self.AVERAGES}, got {self.average!r}")
+        if self.average == "sma":
+            # Safety review: on "sma" a period that is not an integer >= 1
+            # would slice the wrong window (0 -> whole buffer, negative ->
+            # iloc[k:], 9.7 -> truncated to 9). Integral floats (50.0) are
+            # accepted as ints; bools are refused. "ema" is not checked.
+            self.fast_period = self._sma_period('fast_period', self.fast_period)
+            self.slow_period = self._sma_period('slow_period', self.slow_period)
+
+    @staticmethod
+    def _sma_period(key: str, value: Any) -> int:
+        if isinstance(value, (bool, np.bool_)):
+            ok = False
+        elif isinstance(value, (int, np.integer)):
+            ok = True
+        elif isinstance(value, (float, np.floating)):
+            ok = bool(np.isfinite(value)) and float(value).is_integer()
+        else:
+            ok = False
+        if not ok or int(value) < 1:
+            raise ValueError(f"EMASpreadComponent: {key} must be an integer >= 1 "
+                             f"when average is 'sma', got {value!r}")
+        return int(value)
 
     def update(self, data: pd.DataFrame):
         self.data = data
