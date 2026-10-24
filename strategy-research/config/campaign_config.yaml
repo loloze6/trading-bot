@@ -981,11 +981,28 @@ orchestrator:
       # then a code-written `skipped` reading. profitability, regime_power and
       # component_attribution are code-skipped (rule replaced_by_analyst). Optional caps
       # (code defaults shown; without the `model:` key above the model is the stage model,
-      # claude-haiku-5-5):
+      # claude-haiku-5-5, the default of _CLAUDE_WORKER_MODEL; D-189 gives steps 1a and 1b
+      # their own model under `stage_models` below, which does not apply to the analyst):
       #   max_turns: 40
       #   max_budget_usd: 3.0   (metered by the SDK's CLI on its own price list; see
       #                          _ANALYST_DEFAULT_CAPS)
       #   timeout_minutes: 15
+  stage_models:
+    hypothesis_generation: claude-sonnet-5-5
+    strategy_config_authoring: claude-sonnet-5-5
+      # D-189 (operator direction 2026-10-24, PR-6; supersedes D-135 for these two stages only).
+      # NOT A FLAG: no `enabled` key; the mapping is always read, by
+      # run_phase1_research._stage_model(stage_name), for every run_claude_worker stage. The
+      # mapping gives step 1a (hypothesis_generation) and step 1b (strategy_config_authoring)
+      # Sonnet 5.5. innovation_expansion and every stage not listed here use the default model
+      # _CLAUDE_WORKER_MODEL (claude-haiku-5-5, D-135), as do the five readers (not stages of
+      # this mapping) and the analyst (orchestrator.analyst.model, D-179). The stage's model
+      # is the one sent to the CLI, recorded as `requested` in the audit-log provenance block
+      # and the one the model-drift check (mismatch) compares against. An absent mapping or
+      # an unlisted stage falls back to the default; a listed value that is not a non-empty
+      # string raises (a typo must not silently run another model). Step 1a/1b cost on Haiku:
+      # run_098 1.93 USD, run_100 1.26 (1a) and 0.64 (1b). Not measured: their quality and
+      # cost on Sonnet.
   folds:
     enabled: false
       # E-077 PR-1 (D-085). OFF BY DEFAULT, read by run_phase1_research._folds_enabled().

@@ -1131,16 +1131,46 @@ def _build_stage_prompt(stage_name: str, handoff: dict, path: Path,
     return full_prompt
 
 
-# The model every Claude stage runs on (run_claude_worker and, E-046a 5b-ii-B,
-# run_reader_worker) -- one constant so the two paths cannot drift.
+# The DEFAULT model of every Claude stage (run_claude_worker and, E-046a 5b-ii-B,
+# run_reader_worker) -- one constant so the two paths cannot drift. D-189: a
+# run_claude_worker stage listed in orchestrator.stage_models (see _stage_model) runs
+# on that model instead; readers and every unlisted stage stay on this one.
 _CLAUDE_WORKER_MODEL = "claude-haiku-5-5"
+
+
+def _stage_model(stage_name: str, cfg: dict | None = None) -> str:
+    """D-189 (operator direction 2026-10-24, PR-6): the model one run_claude_worker
+    stage runs on. orchestrator.stage_models in config/campaign_config.yaml maps a
+    stage name to a model id; a stage the mapping does not list -- and an absent
+    mapping or key -- gets _CLAUDE_WORKER_MODEL (the readers and the analyst never
+    come through here: readers use the default, the analyst uses
+    orchestrator.analyst.model). Not a flag: there is no `enabled` key.
+    A present but malformed mapping, or a listed value that is not a non-empty
+    string, raises: a typo'd entry must not silently fall back to another model."""
+    cfg = _orchestrator_config(cfg)
+    mapping = (cfg.get("orchestrator") or {}).get("stage_models")
+    if mapping is None:
+        return _CLAUDE_WORKER_MODEL
+    if not isinstance(mapping, dict):
+        raise ValueError(
+            f"orchestrator.stage_models={mapping!r} must be a mapping of stage name to "
+            f"model id (got {type(mapping).__name__}) -- see config/campaign_config.yaml.")
+    if stage_name not in mapping:
+        return _CLAUDE_WORKER_MODEL
+    model = mapping[stage_name]
+    if not isinstance(model, str) or not model.strip():
+        raise ValueError(
+            f"orchestrator.stage_models.{stage_name}={model!r} must be a non-empty model "
+            f"id string -- fix or remove the entry in config/campaign_config.yaml.")
+    return model.strip()
 
 # CUL-336: see _stage_agent_options.
 _STAGE_AGENT_CWD = Path(tempfile.gettempdir()) / "strategy_research_stage_agent_cwd"
 _DISABLE_AUTO_MEMORY_ENV = "CLAUDE_CODE_DISABLE_AUTO_MEMORY"
 
 
-def _stage_agent_options(*, analyst: dict | None = None) -> ClaudeAgentOptions:
+def _stage_agent_options(*, analyst: dict | None = None,
+                         model: str | None = None) -> ClaudeAgentOptions:
     """CUL-336 (2026-09-27): the options every Claude stage agent runs with.
     run_claude_worker and _invoke_reader_llm both call this, and it is the
     only ClaudeAgentOptions(...) construction in this module
@@ -1196,10 +1226,14 @@ def _stage_agent_options(*, analyst: dict | None = None) -> ClaudeAgentOptions:
     in-process MCP server holding the seven query tools (strict_mcp_config keeps every
     other MCP server out), allowed_tools = exactly those seven (they run without asking),
     permission_mode dontAsk (anything else is denied), a PreToolUse hook that denies
-    any other tool name and records it, and the session caps. None: exactly as before."""
+    any other tool name and records it, and the session caps. None: exactly as before.
+
+    `model` (D-189, from run_claude_worker only): the stage's model, _stage_model(stage).
+    None (readers, and any caller that passes nothing): _CLAUDE_WORKER_MODEL, read at call
+    time. The analyst's own model (spec["model"]) still overrides it."""
     _STAGE_AGENT_CWD.mkdir(parents=True, exist_ok=True)
     kw = dict(
-        model=_CLAUDE_WORKER_MODEL,
+        model=model if model is not None else _CLAUDE_WORKER_MODEL,
         tools=[],  # the option that removes tools: --tools ""
         setting_sources=[],
         strict_mcp_config=True,
@@ -1255,9 +1289,10 @@ def _note_stream_models(message, models: set, result_models: set) -> None:
         result_models.update(k.strip() for k in usage if isinstance(k, str) and k.strip())
 
 
-def _base_provenance(models, result_models) -> dict:
-    """The audit-log `provenance` block written with the stage's entry (S0)."""
-    block = {"requested": _CLAUDE_WORKER_MODEL,
+def _base_provenance(models, result_models, requested: str | None = None) -> dict:
+    """The audit-log `provenance` block written with the stage's entry (S0).
+    `requested` (D-189): the stage's model; None is _CLAUDE_WORKER_MODEL."""
+    block = {"requested": requested if requested is not None else _CLAUDE_WORKER_MODEL,
              "observed_models": sorted({m for m in (models or ()) if isinstance(m, str) and m})}
     extra = sorted({m for m in (result_models or ()) if isinstance(m, str) and m})
     if extra:
@@ -1271,15 +1306,17 @@ def _model_matches_requested(observed: str, requested: str) -> bool:
     return observed == requested or observed.startswith(requested + "-")
 
 
-def _observed_model_facts(models) -> tuple:
+def _observed_model_facts(models, requested: str | None = None) -> tuple:
     """(observed, mismatch). observed: the one observed model id, or several
     sorted and comma-joined (G3); None when nothing was observed. mismatch
     (D-048): the observed model differs from the REQUESTED one -- several
-    distinct models always count; None when nothing was observed."""
+    distinct models always count; None when nothing was observed.
+    `requested` (D-189): the stage's model; None is _CLAUDE_WORKER_MODEL."""
     names = sorted({m for m in (models or ()) if isinstance(m, str) and m.strip()})
     if not names:
         return None, None
-    mismatch = len(names) > 1 or not _model_matches_requested(names[0], _CLAUDE_WORKER_MODEL)
+    requested = requested if requested is not None else _CLAUDE_WORKER_MODEL
+    mismatch = len(names) > 1 or not _model_matches_requested(names[0], requested)
     return ",".join(names), mismatch
 
 
@@ -1300,12 +1337,13 @@ def _stamp_model_ids(items, id_key: str, observed) -> tuple:
 
 
 def _provenance_record(observed, mismatch, self_reported: dict, stamped: bool,
-                       error: str | None = None) -> dict:
+                       error: str | None = None, requested: str | None = None) -> dict:
     """requested / observed / self_reported / mismatch / self_report_differs.
     `mismatch` compares observed with REQUESTED (D-048); `self_report_differs`
-    is informational only (the SKILL never tells the model its own id)."""
+    is informational only (the SKILL never tells the model its own id).
+    `requested` (D-189): the stage's model; None is _CLAUDE_WORKER_MODEL."""
     record = {
-        "requested": _CLAUDE_WORKER_MODEL,
+        "requested": requested if requested is not None else _CLAUDE_WORKER_MODEL,
         "observed": observed,
         "self_reported": self_reported,
         "mismatch": mismatch,
@@ -1348,11 +1386,12 @@ def _stamp_reader_body(body: str, category: str, run_dir: Path, models) -> tuple
     return body, _provenance_record(observed, mismatch, self_reported, stamped, error)
 
 
-def _stamp_card_scores_text(text: str, models) -> tuple:
+def _stamp_card_scores_text(text: str, models, requested: str | None = None) -> tuple:
     """extra_card_scores.yaml text with every card's `model_id` set to the
     observed model. Returns (text, provenance record); never raises, and an
-    unparseable or unexpected file is written as the model wrote it."""
-    observed, mismatch = _observed_model_facts(models)
+    unparseable or unexpected file is written as the model wrote it.
+    `requested` (D-189): the stage's model; None is _CLAUDE_WORKER_MODEL."""
+    observed, mismatch = _observed_model_facts(models, requested)
     self_reported, error = {}, None
     try:
         doc = yaml.safe_load(text)
@@ -1365,7 +1404,8 @@ def _stamp_card_scores_text(text: str, models) -> tuple:
     except Exception as exc:
         error = f"{type(exc).__name__}: {exc}"
     stamped = observed is not None and error is None
-    return text, _provenance_record(observed, mismatch, self_reported, stamped, error)
+    return text, _provenance_record(observed, mismatch, self_reported, stamped, error,
+                                    requested)
 
 
 # A stage deliverable is a fenced ```yaml block whose first line names the file:
@@ -1415,6 +1455,12 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     print(f"\n🧠 [AGENT INVOKED] Waking up specialist for: {stage_name}"
           + (" (YAML-repair retry)" if retry_context else ""))
 
+    # D-189: this stage's model (orchestrator.stage_models, else _CLAUDE_WORKER_MODEL);
+    # read before the prompt build and the paid call, so a malformed mapping raises
+    # here. The one value feeds the CLI model, the provenance `requested` and the
+    # drift check (mismatch) below.
+    stage_model = _stage_model(stage_name)
+
     full_prompt = _build_stage_prompt(stage_name, handoff, path, retry_context=retry_context)
 
     # --- PRE-FLIGHT SAFETY RADAR ---
@@ -1435,7 +1481,7 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     # (see _stage_agent_options). The handoff's inputs are the only context.
     async for message in query(
         prompt=full_prompt,
-        options=_stage_agent_options()
+        options=_stage_agent_options(model=stage_model)
     ):
         if prov_on:
             _note_stream_models(message, prov_models, prov_result_models)
@@ -1502,7 +1548,7 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     }
     if prov_on:
         log_entry[audit_key]["provenance"] = \
-            _base_provenance(prov_models, prov_result_models)
+            _base_provenance(prov_models, prov_result_models, stage_model)
     update_state(path=path, audit_log=log_entry)
 
 
@@ -1525,7 +1571,8 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
         if prov_on and filename.strip() == EXTRA_CARD_SCORES_FILE:
             # S3: the brief-card scores carry the model that answered, not its
             # self-report. brief-card-v1 is still enforced at decide_next.
-            out_text, card_provenance = _stamp_card_scores_text(out_text, prov_models)
+            out_text, card_provenance = _stamp_card_scores_text(
+                out_text, prov_models, stage_model)
             if card_provenance["mismatch"]:
                 print(f"⚠️  score provenance: {EXTRA_CARD_SCORES_FILE} answered by "
                       f"{card_provenance['observed']!r}, requested "
