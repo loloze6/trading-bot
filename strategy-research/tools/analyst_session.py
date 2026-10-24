@@ -564,25 +564,63 @@ def met_own_floor(entry):
     return False
 
 
-def completeness_errors(entries: dict, accounted) -> list:
-    """D-178 (item D3, SKILL.md's no-claim rule enforced): every ok conditional_effect call of
-    the session that met its own floor must be accounted for -- `accounted` is the set of query
-    ids the answer uses (why_query, an observation's `test` under a claim or a no_claim,
-    best_rejected.killed_by, a claim test's own calls). A call that has the same selector,
-    outcome kind, statistic AND direction as an accounted one (another floor, horizon or `by`)
-    is the same finding and counts as accounted; the opposite direction is not."""
+UNREPORTED_KEY = "unreported_results"        # the analyst record's key (D-184)
+UNREPORTED_TAG = "unreported_by_model"        # each entry's tag: code wrote it, not the model
+_WINDOW_KEYS = ("n_windows_with_events", "windows_claimed_sign", "windows_with_value")
+
+
+def _unreported_ids(entries: dict, accounted) -> list:
+    """Query ids of the ok conditional_effect calls that met their own floor and are not
+    accounted for -- `accounted` is the set of query ids the answer uses (why_query, an
+    observation's `test` under a claim or a no_claim, best_rejected.killed_by, a claim test's
+    own calls). A call that has the same selector, outcome kind, statistic AND direction as an
+    accounted one (another floor, horizon or `by`) is the same finding and counts as accounted;
+    the opposite direction is not."""
     keys = {_accounted_key(entries[q]) for q in accounted
             if isinstance(q, str) and _is_ce_ok(entries.get(q))}
-    missing = [q for q, e in entries.items()
-               if _is_ce_ok(e) and q not in accounted and met_own_floor(e) is True
-               and _accounted_key(e) not in keys]
+    return [q for q, e in entries.items()
+            if _is_ce_ok(e) and q not in accounted and met_own_floor(e) is True
+            and _accounted_key(e) not in keys]
+
+
+def unreported_results(entries: dict, accounted) -> list:
+    """D-184 (operator rule 2026-10-22, disclose, don't refuse): one entry per unreported
+    floor-clearing conditional_effect call (_unreported_ids), written by code from the query log
+    into the analyst record: {query, selector, outcome, statistic, effect, windows,
+    unreported_by_model: true}. `effect` and `windows` map each horizon to the logged value
+    (effect; n_windows_with_events, windows_claimed_sign, windows_with_value). A value the log
+    does not hold is null, never invented."""
+    out = []
+    for q in _unreported_ids(entries, accounted):
+        e = entries[q]
+        t = _test_block_of(e)
+        res = e.get("result") if isinstance(e.get("result"), dict) else {}
+        hz = res.get("horizons") if isinstance(res.get("horizons"), dict) else None
+        rows = {h: r for h, r in (hz or {}).items() if isinstance(r, dict)}
+        out.append({
+            "query": q,
+            "selector": copy.deepcopy(t.get("selector")),
+            "outcome": copy.deepcopy(t.get("outcome")),
+            "statistic": t.get("statistic"),
+            "effect": {h: r.get("effect") for h, r in rows.items()} if rows else None,
+            "windows": {h: {k: r.get(k) for k in _WINDOW_KEYS} for h, r in rows.items()}
+            if rows else None,
+            UNREPORTED_TAG: True})
+    return out
+
+
+def completeness_errors(entries: dict, accounted) -> list:
+    """D-184 (supersedes the refusal of D-178's item D3): an answer is refused here only when
+    it cites no ok query of the session at all while a floor-clearing result exists. Every
+    other unreported floor-clearing result is disclosed by unreported_results, not refused."""
+    if any(_ok_call(entries, q) for q in accounted):
+        return []
+    missing = _unreported_ids(entries, accounted)
     if not missing:
         return []
-    return [f"query(ies) {', '.join(missing)} cleared the floor of their own test but appear "
-            f"nowhere in your answer: every conditional_effect result that cleared its floors, "
-            f"in either direction and at any horizon, is written as a claim or recorded as an "
-            f"observation (`observations`, `test`, under the claim or the no_claim), or is the "
-            f"why_query or the best_rejected killed_by. Record each"]
+    return [f"your answer cites no query of this session, while query(ies) {', '.join(missing)} "
+            f"cleared the floor of their own test: a claim cites its why_query and its test, a "
+            f"no_claim cites its best_rejected killed_by (an ok query id of this session)"]
 
 
 def next_steps_errors(ns, entries: dict, where: str) -> list:
@@ -822,21 +860,22 @@ def _non_empty_text(v) -> bool:
 
 
 def _mechanism_errors(o: dict, qid: str, w: str, entries: dict) -> list:
-    """D-178 (item D2): an observation with floors_met true cites a LATER query of this session
-    as `mechanism_query` (the query its mechanism predicts), or `stopped_by` a named tool limit.
-    A `mechanism_query` that is written must be valid, whatever `stopped_by` says."""
+    """D-178 (item D2), relaxed by D-184: an observation with floors_met true cites any ok query
+    of this session as `mechanism_query` (the query its mechanism predicts; no longer required
+    to come after the test), or `stopped_by` a named tool limit. A `mechanism_query` that is
+    written must be an ok query of the session, whatever `stopped_by` says."""
     if o.get("floors_met") is not True:
         return []
     mq = o.get("mechanism_query")
     if mq is not None:
-        if not (_ok_call(entries, mq) and _qnum(mq) is not None and _qnum(mq) > _qnum(qid)):
-            return [f"{w}.mechanism_query={mq!r} must be an ok query of this session LATER than "
-                    f"{qid} (the query your mechanism predicts)"]
+        if not _ok_call(entries, mq):
+            return [f"{w}.mechanism_query={mq!r} must be an ok query of this session "
+                    f"(the query your mechanism predicts)"]
         return []
     if _non_empty_text(o.get("stopped_by")):
         return []
     return [f"{w}: {qid} cleared its floors, so the observation needs `mechanism_query: q<n>` "
-            f"(a query of this session after {qid} that runs what your mechanism predicts) or "
+            f"(a query of this session that runs what your mechanism predicts) or "
             f"`stopped_by: <the tool limit that stopped it>`; run that query, then record it"]
 
 
@@ -1227,7 +1266,12 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
         accounted += [o.get("test") for o in (nc.get("observations") if isinstance(nc, dict)
                                               and isinstance(nc.get("observations"), list) else [])
                       if isinstance(o, dict)]
-        errors += completeness_errors(entries, {q for q in accounted if isinstance(q, str)})
+        acc = {q for q in accounted if isinstance(q, str)}
+        errors += completeness_errors(entries, acc)
+        # D-184: an unreported floor-clearing result is disclosed in the record, not refused
+        unreported = unreported_results(entries, acc)
+        if unreported:
+            record[UNREPORTED_KEY] = unreported
         if isinstance(nc, dict) and isinstance(nc.get("next_steps"), dict):
             record["next_steps"] = copy.deepcopy(nc["next_steps"])
         record["no_claim"] = nc
@@ -1353,7 +1397,12 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
         claim_obs_ok = not obs_errors
         if claim_obs_ok:
             accounted += [o["test"] for o in claim_obs]
-    errors += completeness_errors(entries, {q for q in accounted if isinstance(q, str)})
+    acc = {q for q in accounted if isinstance(q, str)}
+    errors += completeness_errors(entries, acc)
+    # D-184: an unreported floor-clearing result is disclosed in the record, not refused
+    unreported = unreported_results(entries, acc)
+    if unreported:
+        record[UNREPORTED_KEY] = unreported
     angle = None
     if isinstance(claim, dict):
         angle = angle_of([t.get("selector") for t in _tests_of(claim)], doc.get("vehicle"),

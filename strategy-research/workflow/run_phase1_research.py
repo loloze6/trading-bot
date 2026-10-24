@@ -5434,6 +5434,7 @@ def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -
                             if full in errors}
                     errors = errors + [e for e in _reading_content_errors(reading, category, run_dir)
                                        if e not in said]
+        record.pop(asm.UNREPORTED_KEY, None)   # D-184: only the latest attempt's disclosure stays
         record.update(rec)
         record["attempts"].append({"status": "refused" if errors else "accepted",
                                    "errors": errors, "subtype": meta.get("subtype"),
@@ -5459,6 +5460,7 @@ def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -
     _write_skipped_reading(category, run_id, run_dir, {
         "rule": "output_refused_after_retry",
         "reason": ("the analyst's answer was refused twice: " + "; ".join(errors))[:1000]})
+    record["status"] = "refused"   # D-184: after the second refusal (accepted records carry no status)
     save_yaml(run_dir / asm.record_rel(lens), record)
     return dest
 

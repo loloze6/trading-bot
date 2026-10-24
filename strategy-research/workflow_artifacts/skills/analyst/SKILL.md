@@ -115,10 +115,13 @@ lens.
    it, or "not run: <the floor, the tool limit, or the budget that stopped it>". The ledger is a
    record field (`next_steps`, under `claim` or `no_claim`); the reader checks that the four lines
    exist and that every cited query id is one of this session's. It judges nothing else.
-   A session may end in no claim only when every result that cleared its floors, in either
-   direction and at any horizon, has been written as a claim or recorded as an observation,
-   and every rejected candidate names the query of this session that measured its rival, or
-   the floor or tool limit that stopped it. Ending without a claim is not a success in itself.
+   A session may end in no claim only when every rejected candidate names the query of this
+   session that measured its rival, or the floor or tool limit that stopped it. Ending without a
+   claim is not a success in itself. Record every result that cleared its floors, in either
+   direction and at any horizon, as a claim or an observation. One you leave out is not a
+   refusal: code writes it into the record (`unreported_results`: query, selector, outcome,
+   statistic, effect, windows, tagged `unreported_by_model`), beside your answer, for the reader
+   to see. An answer that cites no query is refused.
 
 ## Worked example: an edge that lasts one bar
 
@@ -271,7 +274,7 @@ no_claim:
       evidence:                    # citations, at least one from that query
         - q7:horizons.24.effect=0.0012
       floors_met: true             # true or false: that query cleared its test's floor
-      mechanism_query: q9          # floors_met true: a LATER query of this session, or stopped_by: <tool limit>
+      mechanism_query: q9          # floors_met true: any ok query of this session, or stopped_by: <tool limit>
       floor_lowered_reason: one sentence   # only when that test repeats an earlier query's selector
                                            # and outcome on a lower floor
   next_steps:                      # required: the closing ledger on your best observation
