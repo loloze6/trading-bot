@@ -259,8 +259,13 @@
     "statement": {
       "type": "object",
       "description": "D-186 (optional, information only): what the forecast predicts, in the four-step card. `horizon_bars` is the look-ahead in bars; it does NOT set the criterion's horizon -- the card's `criteria` entry does (forecast_ic_median `horizon`, orchestrator.forecast_ic_horizons).",
+      "required": ["predicts", "predicts_kind"],
       "properties": {
         "predicts": { "type": "string" },
+        "predicts_kind": {
+          "enum": ["return_direction", "market_state"],
+          "description": "D-192: what kind of thing `predicts` names. return_direction: the direction of a future return (expects forecast_ic_median at the menu horizon nearest horizon_bars). market_state: a state named by its outcome (expects a label measure, which the menu does not hold yet). Code only warns when the card's criteria do not fit it."
+        },
         "horizon_bars": { "type": "integer", "minimum": 1 },
         "condition": { "type": "string" },
         "if_pass": { "type": "string" },

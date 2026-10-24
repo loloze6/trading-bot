@@ -328,7 +328,10 @@ def test_a_1a_rerun_rewrites_the_pass_rule_and_rechecks_the_id(campaign_root):
 # RE-PINNED again by D-190 (2026-10-24, same branch, review round): the front-matter description names the four steps,
 # "one or more of the modes", the trade/execution notes say "when among your inputs", the card `criteria` line no longer
 # implies `horizon` is the only overridable field. Previous pin (D-190, first round): 30260ba7d0977dce35d3a83e6bb76cb514f45e54433e816f4239404724ad5779.
-_MASTER_SKILL_SHA256 = "96cca59420fad67f6e2b26aef4566fbb727e5298a5dc1200d03432c21643a614"
+# RE-PINNED by D-192 (2026-10-24, branch feat/d192-criterion-consistency-warning): step 2a names the new statement key
+# `predicts_kind` (return_direction | market_state), so "five keys" is "six keys" and the card list's `statement` line gains it.
+# Block 2b is unchanged. Previous pin (D-190, review round): 96cca59420fad67f6e2b26aef4566fbb727e5298a5dc1200d03432c21643a614.
+_MASTER_SKILL_SHA256 = "15da7800827f1f1f15a58f48a5dd1ae72eb29efdc48884b28503cd6cdb4895ab"
 
 
 def test_hypothesis_design_skill_is_byte_identical_to_master():

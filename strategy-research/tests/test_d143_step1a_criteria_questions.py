@@ -36,7 +36,7 @@ CODE_READ_FIELDS = ["hypothesis_id", "claim", "timeframe", "target_market", "cri
                     "library_lookup", "edge_source"]
 NEW_FIELDS = ["idea_quantities", "not_expressible", "statement", "criteria_rationale", "criteria_fit"]
 PASS_THROUGH_FIELDS = ["pass_through", "config", "manifest", "source"]
-STATEMENT_KEYS = ["predicts", "horizon_bars", "condition", "if_pass", "if_fail"]
+STATEMENT_KEYS = ["predicts", "predicts_kind", "horizon_bars", "condition", "if_pass", "if_fail"]
 
 
 def _skill():
@@ -65,7 +65,8 @@ def _four_step_card(**extra):
         "hypothesis_id": "H_D190", "timeframe": "1h", "thesis": "t",
         "idea_quantities": ["the operator's words: a formula"],
         "not_expressible": ["exits"],
-        "statement": {"predicts": "the sign of the next 24 hours", "horizon_bars": 24,
+        "statement": {"predicts": "the sign of the next 24 hours", "predicts_kind": "return_direction",
+                      "horizon_bars": 24,
                       "condition": "all bars", "if_pass": "keep", "if_fail": "drop"},
         "criteria": [{"id": "forecast_ic_median", "horizon": 24}],
         "criteria_rationale": "The statement predicts a return over 24 bars, hence the 24-bar forecast IC.",
@@ -135,7 +136,7 @@ def test_rule_2_horizons_are_the_ones_the_menu_offers():
 def test_the_statement_keys_in_the_skill_are_the_schema_keys():
     assert set(_schema()["properties"]["statement"]["properties"]) == set(STATEMENT_KEYS)
     section = _skill().split("### 2a. The statement\n", 1)[1].split("### 2b.", 1)[0]
-    listed = section.split("It has five keys:", 1)[1].split(". ", 1)[0]
+    listed = section.split("It has six keys:", 1)[1].split(". ", 1)[0]
     assert re.findall(r"`(\w+)`", listed) == STATEMENT_KEYS
 
 

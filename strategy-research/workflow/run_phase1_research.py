@@ -9944,6 +9944,78 @@ def _pass_rule_from_card(card: dict, menu: dict, where: str, *, block_run: bool 
     return {"criteria": resolved}
 
 
+_CONSISTENCY_FILE = "criterion_consistency.yaml"
+_NO_LABEL_MEASURE = "no label measure in the menu"
+
+
+def _criterion_consistency_warnings(card: dict, pass_rule: dict, menu: dict) -> list:
+    """D-192 (PR-8): what the card's resolved criteria lack against its own `statement`.
+    Warnings only; the caller refuses and retries nothing. No `statement` (an old-shape
+    card): no warning. return_direction expects forecast_ic_median at the menu horizon
+    nearest horizon_bars (a tie takes the smaller; a menu without horizon keys, i.e.
+    orchestrator.forecast_ic_horizons off, offers only 1). market_state expects a menu
+    entry declaring `predicts_kind: market_state`; the menu has none, so it always
+    reads _NO_LABEL_MEASURE until one is added."""
+    st = card.get("statement") if isinstance(card, dict) else None
+    if st is None:
+        return []
+    kind = st.get("predicts_kind") if isinstance(st, dict) else None
+    if kind is None:
+        return ["statement has no predicts_kind"]
+    entries = [e for e in ((menu or {}).get("criteria") or []) if isinstance(e, dict)]
+    crit = [c for c in ((pass_rule or {}).get("criteria") or []) if isinstance(c, dict)]
+    held = sorted(str(c.get("id")) for c in crit)
+    if kind == "market_state":
+        label_ids = {e.get("id") for e in entries if e.get("predicts_kind") == "market_state"}
+        if not label_ids:
+            return [_NO_LABEL_MEASURE]
+        if any(c.get("id") in label_ids for c in crit):
+            return []
+        return [f"predicts_kind is market_state: expected one of {sorted(map(str, label_ids))}, "
+                f"criteria hold {held}"]
+    if kind != "return_direction":
+        return [f"predicts_kind {kind!r} is neither return_direction nor market_state"]
+    ic = next((e for e in entries if e.get("id") == "forecast_ic_median"), {})
+    allowed = [h for h in (ic.get("horizon_allowed") or [1])
+               if isinstance(h, int) and not isinstance(h, bool)] or [1]
+    hb = st.get("horizon_bars")
+    if not isinstance(hb, int) or isinstance(hb, bool) or hb < 1:
+        return [f"predicts_kind is return_direction but horizon_bars {hb!r} is not an integer of 1 "
+                f"or more; expected forecast_ic_median, criteria hold {held}"]
+    want = min(allowed, key=lambda h: (abs(h - hb), h))
+    got = [c for c in crit if c.get("id") == "forecast_ic_median"]
+    if not got:
+        return [f"predicts_kind is return_direction at horizon_bars {hb}: expected "
+                f"forecast_ic_median at horizon {want}, criteria hold {held}"]
+    seen = sorted({c.get("horizon", 1) for c in got}, key=str)
+    if seen != [want]:
+        return [f"predicts_kind is return_direction at horizon_bars {hb}: expected "
+                f"forecast_ic_median at horizon {want}, criteria hold it at horizon {seen}"]
+    return []
+
+
+def _write_criterion_consistency(run_dir: Path, run_id: str, card: dict, pass_rule: dict,
+                                 menu: dict) -> None:
+    """D-192: record _criterion_consistency_warnings in artifacts/criterion_consistency.yaml
+    (the claim_prefill.yaml shape) and print each as a warning. Touches no other file, changes
+    no argument, refuses nothing; any exception is recorded and the run continues."""
+    out = Path(run_dir) / "artifacts" / _CONSISTENCY_FILE
+    try:
+        warns = _criterion_consistency_warnings(card, pass_rule, menu)
+        status = ("warning" if warns else
+                  "ok" if isinstance(card, dict) and card.get("statement") is not None
+                  else "not_checked")
+        save_yaml(out, {"run_id": run_id, "status": status, "warnings": warns})
+        for w in warns:
+            print(f"⚠️  [D-192] {run_id}: criterion does not fit the statement ({w}); "
+                  f"recorded in artifacts/{_CONSISTENCY_FILE}. The run continues.")
+    except Exception as exc:  # noqa: BLE001 -- information only
+        with contextlib.suppress(Exception):
+            save_yaml(out, {"run_id": run_id, "status": "error",
+                            "error": f"{type(exc).__name__}: {exc}"})
+        print(f"⚠️  [D-192] criterion consistency check could not run ({exc}); recorded.")
+
+
 def is_menu_id_pass_rule(pass_rule) -> bool:
     """D-121: True iff `pass_rule` is `{criteria: [...]}` with a non-empty list whose
     every entry references a menu id (verdict_criteria_evaluator.is_menu_referencing_criterion)
@@ -10032,6 +10104,11 @@ def _write_pass_rule_from_card(run_dir: Path, run_id: str, sr_flag: bool) -> boo
     save_yaml(pre_reg_path, pre_reg)
     print(f"✅ [E-059] pre_registration.yaml pass_rule written from 1a's criteria "
           f"{[c['id'] for c in pass_rule['criteria']]} (not inherited from any source run)")
+    if exempt != "composition run" and not card.get("composition"):
+        # D-192: only criteria 1a picked itself are checked against its statement (2b rule 6:
+        # criteria that arrive with a brief or pass-through are not 1a's -- they returned above;
+        # a composition run's are code's). Warning only; never raises.
+        _write_criterion_consistency(run_dir, run_id, card, pass_rule, menu)
     if sr_flag:
         _check_specialist_readers_preflight(run_dir)
     return True
