@@ -94,10 +94,10 @@ rationale: one or two sentences -- which hypothesis claim each block path implem
   + [zscore, negate, scale(factor=10), clip(-20,20)]">, fails_on: <the card clause it cannot express, and why>}`.
   At least one item must use the transform pipeline (see "component_gap only after compositions are ruled out").
 
-## Pass-through candidates (hypothesis-design IMPROVEMENT 08)
+## Pass-through candidates (hypothesis-design step 0, pass-through)
 
 If `hypothesis_card.yaml` carries `pass_through: true`, its `config` field is already a complete,
-upstream-authored strategy config (see `hypothesis-design/SKILL.md`'s IMPROVEMENT 08). Copy it through verbatim
+upstream-authored strategy config (see `hypothesis-design/SKILL.md`'s step 0, pass-through). Copy it through verbatim
 as this stage's own `backtest_spec.yaml.config`, and its `manifest` field verbatim as `block_manifest.yaml` —
 do not re-author, re-derive `config_rationale` from scratch
 (state "pass-through, see hypothesis_card.yaml.rationale" instead), or second-guess the supplied config's
@@ -145,13 +145,19 @@ strategy, so every bar is in that regime. That is a parameter change; the compon
 Standardised forecast (hard rule). Every component in strategies puts standardise first in its transforms, and no scale op after it (standardise: past values only, target 10, cap 20, window, min_periods), unless its scale is set by vol_target (configs without a sizing block only) or the regime is a blocks regime with block_standardisation. Any other component, including one whose only scale is a bare scale or scaling_factor, is refused after 1b and again at 5a.
 
 **Fidelity (O-7): build the signal the card describes, or say what differs.** In `config_rationale`, map EACH
-clause of the card's `signal_concept` to the config element that implements it (one entry per clause:
-`hypothesis_claim` = the clause, `config_choice` = the config path and what it does). A clause you did not or could
+`idea_quantities` entry of the card, and the `statement` (its `predicts`, `horizon_bars` and `condition`), to the
+config element that implements it (one entry per item: `hypothesis_claim` = the quantity or the statement part,
+`config_choice` = the config path and what it does). A part you did not or could
 not build as written (an exit, a stop, a time-based hold, position state, sizing other than forecast / 10 (volatility
 targeting is the `strategies.sizing` block (D-176) and a cap is a `clip`, so those are built, not declared), an
 on/off rule restated as a graded measure) gets its own entry whose `config_choice` starts with `DEVIATION:` and
-says what was built instead, or that nothing was. Never silently build a different signal, and never leave a
-clause unmapped. A fill-timing clause in a card ("applied from the next bar", "no same-bar fill") is not a
+says what was built instead, or that nothing was. Never silently build a different signal, and never leave an
+item unmapped. Each entry of the card's `not_expressible` is a part step 1a already declared a forecast cannot
+express: copy it into the deviation record as step 1a declared it, with no new argument and no `tried` list. That is
+one `config_rationale` entry per item, its `hypothesis_claim` the card's text unchanged and its `config_choice`
+`DEVIATION: declared by step 1a`, then what was built instead or that nothing was; code reads the `DEVIATION:` entries into the run's deviation record. Where
+`NEAREST_BUILD.md` is among your inputs, the same item is also listed in `decision.yaml` `deviations`, as that note
+asks. A fill-timing clause in a card ("applied from the next bar", "no same-bar fill") is not a
 deviation: the engine's fill at the signal bar's close is the convention; note it in config_rationale and build
 nothing. A sizing clause in a card ("target 20% annual volatility", "size by realised volatility") is not a
 deviation: the `strategies.sizing` block (D-176), required in every base config (D-181), is the sizing; build it and
@@ -173,7 +179,8 @@ in `decision.yaml` `tried`, each with the card clause it fails; at least one mus
   built as written because no component or composition exists for it, first try the compositions above: several
   instances averaged, negative weights, offsets, sign flips, the transform pipeline. That deviation entry carries a
   `tried` list: each composition you tried, with the card clause it fails. A deviation of another kind (the
-  bounded-quantity map D-163 requires when D-149 forces the standardised form, an on/off rule restated as graded)
+  bounded-quantity map D-163 requires when D-149 forces the standardised form, an on/off rule restated as graded, a
+  part the card declares `not_expressible`)
   carries no `tried` list.
 - If your `component_gap` comes without `tried`, or with a `tried` list that names no transform combination, the
   orchestrator sends you back once with that message.

@@ -10623,7 +10623,7 @@ def _apply_config_direct_authoring_context(stage_name: str, handoff: dict, run_d
     """Union the config-direct-authoring flow's file-presence signals into
     required_inputs for the two stages whose SKILL.md prose branches on
     them (hypothesis-design IMPROVEMENT 07/08, innovation-expansion
-    IMPROVEMENT 07) -- config/criterion_menu.yaml + config/cost_model.yaml
+    IMPROVEMENT 07) -- config/criterion_menu.yaml (D-190: no cost_model.yaml)
     for hypothesis_generation, artifacts/backtest_spec.yaml (strategy_config_
     authoring's own output, written before innovation_expansion runs in this
     flow) for innovation_expansion. Required, not optional: unlike the
@@ -10652,13 +10652,8 @@ def _apply_config_direct_authoring_context(stage_name: str, handoff: dict, run_d
     if stage_name == "hypothesis_generation":
         _add(
             "../../config/criterion_menu.yaml",
-            "E-056 Slice 3b IMPROVEMENT 07: pre-register pass/fail criteria here, at 1a, "
+            "pre-register pass/fail criteria here, at 1a, "
             "picked from this menu's live entries only.",
-        )
-        _add(
-            "../../config/cost_model.yaml",
-            "E-056 Slice 3b IMPROVEMENT 07: populate cost_feasibility from round_trip_cost_bps "
-            "here (relocated from quant-validation, which this flow does not invoke).",
         )
     elif stage_name == "innovation_expansion":
         _add(
