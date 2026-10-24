@@ -1401,7 +1401,7 @@ def _pooled_ic_with_bootstrap_fallback(rows: list, runs_root) -> tuple:
     return boot.get('pooled_ic'), boot['method']
 
 
-def _assemble_pooled_symbol_records(rows: list, runs_root) -> tuple:
+def _assemble_pooled_symbol_records(rows: list, runs_root, horizon: int = 1) -> tuple:
     """
     Pool ONE symbol's per-bar records across all of its windows, in chronological
     window order. Returns (records, expected_step, all_have_timestamp).
@@ -1423,6 +1423,11 @@ def _assemble_pooled_symbol_records(rows: list, runs_root) -> tuple:
     The "active"/"symbol" keys are additive: _stationary_block_bootstrap_ic_
     significance and _contiguous_segments read only forecast/next_return_bps/
     timestamp, so the pre-existing bootstrap path is unaffected by their presence.
+
+    D-186: `horizon` (default 1 = the next-bar return, byte-identical) makes next_return_bps
+    the h-bar forward return (close[t+h] - close[t]) / close[t]; the last h bars of each
+    window have none and are dropped, so a pair never crosses the window end, and a pair
+    whose span holds a timestamp hole is dropped.
     """
     import pandas as pd
     # Repointed 2026-09-12 (E-039 step 5): sourced from
@@ -1446,18 +1451,30 @@ def _assemble_pooled_symbol_records(rows: list, runs_root) -> tuple:
         closes = bdf['close'].tolist()
         forecasts = bdf['forecast'].tolist()
         timestamps = None
+        span_step = None
         if has_ts:
             timestamps = pd.to_datetime(bdf['timestamp']).tolist()
             if expected_step is None and len(timestamps) > 1:
                 step = timestamps[1] - timestamps[0]
                 if step > pd.Timedelta(0):
                     expected_step = step
-        for i in range(len(bdf) - 1):
+            if horizon > 1 and len(timestamps) > 1:
+                # D-186: the h-bar span check uses this window's MEDIAN positive step, not
+                # the first pair's (a first pair that spans a hole would reject every
+                # span). The returned expected_step stays the first-pair value (h=1 path).
+                diffs = sorted(d for d in (b - a for a, b in zip(timestamps, timestamps[1:]))
+                               if d > pd.Timedelta(0))
+                if diffs:
+                    span_step = diffs[len(diffs) // 2]
+        for i in range(len(bdf) - horizon):
             if closes[i] == 0:
                 continue
+            if (horizon > 1 and has_ts and span_step is not None
+                    and timestamps[i + horizon] - timestamps[i] != horizon * span_step):
+                continue  # D-186: a hole inside the h-bar span -- the pair is dropped, never padded
             rec = {
                 'forecast': float(forecasts[i]),
-                'next_return_bps': (closes[i + 1] - closes[i]) / closes[i] * 10000.0,
+                'next_return_bps': (closes[i + horizon] - closes[i]) / closes[i] * 10000.0,
                 'active': abs(float(forecasts[i])) > ACTIVE_THRESHOLD,
                 'symbol': symbol,
             }
@@ -2399,7 +2416,20 @@ def main():
                              "the summary realized_edge_to_cost_ratio_all_costs (gross edge "
                              "before fees and slippage / fees + slippage, both legs). Absent: "
                              "byte-identical output.")
+    parser.add_argument("--forecast-ic-horizons", action="store_true", dest="forecast_ic_horizons",
+                        help="D-186: passed by run_phase1_research only under "
+                             "orchestrator.forecast_ic_horizons. Each window's metrics.json core "
+                             "also carries forecast_return_corr_all_bars_h{1,6,24,72,168} (the "
+                             "all-bars forecast / h-bar forward-return correlation). Absent: "
+                             "byte-identical output.")
     args = parser.parse_args()
+
+    # D-186: build_core is reached only through core/backtester.py (not
+    # changed); the horizons are handed to it once, process-wide. Always set, so a
+    # flag-off call after a flag-on call in the same process clears the default.
+    from reporting import run_artifact as _run_artifact
+    _run_artifact.set_forecast_ic_horizons(
+        _run_artifact.FORECAST_IC_HORIZONS if args.forecast_ic_horizons else None)
 
     # Holdout gate: require BOTH flags or NEITHER
     if args.holdout != args.i_understand:

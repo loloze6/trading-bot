@@ -31,6 +31,74 @@ from performance.signal_statistics import (
 # is missing (e.g. a vendored/deployed trading-bot without the sibling repo).
 _COST_MODEL_PATH = Path(__file__).resolve().parent.parent.parent / "strategy-research" / "config" / "cost_model.yaml"
 
+# D-186 (orchestrator.forecast_ic_horizons): the all-bars forecast/forward-return
+# correlation at several horizons, beside the one-bar field. build_core never
+# reads strategy-research's config: the caller (strategy-research's
+# tools/run_protocol.py, under its --forecast-ic-horizons argument) hands the
+# horizons in, either as build_core's `forecast_ic_horizons` keyword or once per
+# process through set_forecast_ic_horizons() -- the only caller of build_core
+# is core/backtester.py, which this change does not touch, so the process-wide
+# setting is how run_protocol reaches it. Default None = off: no new key is
+# written and metrics.json is byte-identical to before.
+FORECAST_IC_HORIZONS = (1, 6, 24, 72, 168)
+_forecast_ic_horizons_default: Optional[tuple] = None
+
+
+def forecast_ic_horizon_field(horizon: int) -> str:
+    """Name of the core field holding the all-bars IC at `horizon` bars."""
+    return f"forecast_return_corr_all_bars_h{int(horizon)}"
+
+
+def _validate_horizons(horizons) -> tuple:
+    if isinstance(horizons, (str, bytes)) or not hasattr(horizons, "__iter__"):
+        raise ValueError(f"forecast_ic_horizons must be a sequence of ints, got {horizons!r}")
+    out = []
+    for h in horizons:
+        if isinstance(h, bool) or not isinstance(h, int) or h < 1:
+            raise ValueError(f"forecast_ic_horizons: {h!r} is not an integer >= 1")
+        out.append(h)
+    return tuple(out)
+
+
+def set_forecast_ic_horizons(horizons) -> None:
+    """Process-wide default for build_core's `forecast_ic_horizons` keyword
+    (None turns it off again). Called once by tools/run_protocol.py under
+    --forecast-ic-horizons, before any backtest."""
+    global _forecast_ic_horizons_default
+    _forecast_ic_horizons_default = None if horizons is None else _validate_horizons(horizons)
+
+
+def _forecast_corr_at_horizon(bars_df: pd.DataFrame, horizon: int,
+                              candle_interval_seconds: Optional[int]) -> Optional[float]:
+    """Pearson correlation of the forecast at bar t with the h-bar forward
+    return close[t+h] / close[t] - 1, over ALL bars (no activity filter).
+
+    For h = 1 this is the same population and formula as the one-bar
+    forecast_return_corr_all_bars (shift(-1), the same successor-is-the-next-bar
+    gap rule, the same dropna). For h > 1 the same rule is applied to the
+    whole span: the pair is kept only when timestamp[t+h] - timestamp[t] is
+    exactly h candle intervals (no hole inside the span). Bars whose t+h lies
+    past the last row have no forward return and are dropped, never padded.
+    None (never 0.0) below 5 pairs or when the correlation is undefined.
+
+    WHY THIS CANNOT LEAK: the forward return is the outcome, never an input to
+    the forecast; the forecast at t is computed by the engine from data up to
+    t's close, and close[t+h] enters only as the thing the forecast is
+    correlated against, exactly as in the one-bar IC."""
+    df = bars_df[["forecast", "close"]].copy()
+    forward = df["close"].shift(-horizon) / df["close"] - 1
+    if candle_interval_seconds and "timestamp" in bars_df.columns:
+        ts = pd.to_datetime(bars_df["timestamp"])
+        span_ok = (ts.shift(-horizon) - ts) == pd.Timedelta(seconds=candle_interval_seconds * horizon)
+        forward = forward.where(span_ok)
+    df["forward_return"] = forward
+    df = df.dropna()
+    if len(df) < 5:
+        return None
+    corr = pearson_correlation(df["forecast"].values.astype(float),
+                               df["forward_return"].values.astype(float))
+    return round(corr, 6) if corr is not None else None
+
 
 def _load_cost_model() -> dict:
     if not _COST_MODEL_PATH.exists():
@@ -227,7 +295,15 @@ def build_core(
     bars_df: Optional[pd.DataFrame] = None,
     candle_interval_seconds: Optional[int] = None,
     symbol: Optional[str] = None,
+    forecast_ic_horizons=None,
 ) -> dict:
+    # D-186: None (default) falls back to the process-wide setting, which is
+    # itself None unless run_protocol set it -- off, nothing below is added.
+    ic_horizons = (_forecast_ic_horizons_default if forecast_ic_horizons is None
+                   else _validate_horizons(forecast_ic_horizons))
+    # filled in the bars block below (one forecast_return_corr_all_bars_h<h> key per horizon);
+    # empty -- and spread as nothing -- unless horizons were requested
+    ic_horizon_fields = {}
     overall = metrics_dict.get("overall_metrics", {})
     n = len(completed_trades)
     avg_net_pnl = (
@@ -408,6 +484,17 @@ def build_core(
                 forecast_return_corr_all_bars_pvalue_block_adjusted = pv_all
                 forecast_return_corr_all_bars_n_eff                 = neff_all
 
+        # D-186: the same all-bars correlation at the requested horizons (see
+        # _forecast_corr_at_horizon: forward return, gap rule, tail drop, and the
+        # no-leak note). No p-value / n_eff here: an h-bar return overlaps its
+        # neighbours, so the one-day block adjustment above would not be valid.
+        # (.update(zip(..)) rather than a per-key subscript: the keys come from the
+        # horizons, so they are not literal keys the data-dictionary walk reads.)
+        ic_horizon_fields.update(zip(
+            [forecast_ic_horizon_field(_h) for _h in ic_horizons or ()],
+            [_forecast_corr_at_horizon(bars_df, _h, candle_interval_seconds)
+             for _h in ic_horizons or ()]))
+
     # Avg trade duration in bars (derived from trade timestamps + bar interval)
     avg_trade_duration_bars = None
     if n > 0 and bars_df is not None and "timestamp" in bars_df.columns and len(bars_df) >= 2:
@@ -557,6 +644,8 @@ def build_core(
         "forecast_return_corr_all_bars": forecast_return_corr_all_bars,
         "forecast_return_corr_all_bars_pvalue_block_adjusted": forecast_return_corr_all_bars_pvalue_block_adjusted,
         "forecast_return_corr_all_bars_n_eff": forecast_return_corr_all_bars_n_eff,
+        # D-186: empty (no key at all) unless horizons were requested.
+        **ic_horizon_fields,
         # CUL-266: how much of the reachable sample the #50(A) gap filter
         # removed. A correlation computed over a heavily-decimated sample is a
         # different claim from one over a clean one, so the count travels with

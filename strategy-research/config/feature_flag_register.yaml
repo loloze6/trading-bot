@@ -955,6 +955,39 @@ flags:
       recorded completed (run_loop's after_1a hook), and the enqueue after the run
       no longer refuses a run that failed after 1a. Tested by
       tests/test_d138_extra_cards_at_1a.py.
+  - name: forecast_ic_horizons
+    kind: orchestrator_config
+    config_key: orchestrator.forecast_ic_horizons.enabled
+    reader: run_phase1_research._forecast_ic_horizons_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "the operator switches it on in c4/flag-set (D-186)"
+    criterion: >
+      Landed 2026-10-24 (D-186, direction PR-4 step 1a code and config). Off:
+      byte-identical, step 1a's prompt included (the menu's D-186 lines sit between
+      "# D-186 BEGIN"/"# D-186 END" markers that _menu_text_for_prompt drops, so the
+      inlined menu equals the pre-D-186 file; pinned by a fixture). On: run_protocol.py
+      gets --forecast-ic-horizons and every
+      window's core carries forecast_return_corr_all_bars_h1/h6/h24/h72/h168 (all-bars
+      forecast vs the h-bar forward return close[t+h]/close[t]-1); the forecast_ic_median
+      menu entry takes a card `horizon` (default 1, allowed 1/6/24/72/168) and the grid
+      reads the matching field; tools/residual_ic.py ranks against the h-bar forward
+      return for the horizon the pass_rule's forecast_ic_median criterion carries.
+      Tested by tests/test_d186_forecast_ic_horizons.py and
+      trading-bot/tests/test_build_core_ic_horizons.py.
+  - name: residual_ic_requires_block
+    kind: orchestrator_config
+    config_key: orchestrator.residual_ic_requires_block.enabled
+    reader: run_phase1_research._residual_ic_requires_block_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "the operator switches it on in c4/flag-set (D-186)"
+    criterion: >
+      Landed 2026-10-24 (D-186, direction PR-4). Off: byte-identical. On: an idea on a
+      timeframe with no forecast block in campaign_record/block_registry.yaml is exempt
+      from residual IC (reason "no forecast block on this timeframe",
+      _residual_ic_exempt_reason): code does not add the criterion and the grid drops
+      it, as for a regime block. Tested by tests/test_d186_forecast_ic_horizons.py.
   - name: explore_confirm
     kind: orchestrator_config
     config_key: orchestrator.explore_confirm.enabled

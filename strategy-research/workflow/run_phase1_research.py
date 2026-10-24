@@ -1060,7 +1060,8 @@ def _build_stage_prompt(stage_name: str, handoff: dict, path: Path,
         if filepath.exists():
             with open(filepath, "r", encoding="utf-8") as f:
                 content = f.read()
-            context_blocks.append(f"--- CONTENT OF {req['path']} ---\n{content}\n")
+            context_blocks.append(
+                f"--- CONTENT OF {req['path']} ---\n{_prompt_input_content(req['path'], content)}\n")
         elif req in handoff.get("required_inputs", []):
             raise FileNotFoundError(f"Agent strictly requires {filepath}, but it is missing.")
         else:
@@ -1575,7 +1576,8 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
         if filepath.exists():
             with open(filepath, "r", encoding="utf-8") as f:
                 content = f.read()
-            context_blocks.append(f"--- CONTENT OF {req['path']} ---\n{content}\n")
+            context_blocks.append(
+                f"--- CONTENT OF {req['path']} ---\n{_prompt_input_content(req['path'], content)}\n")
 
     b7_deference_block = (
         f"\n    {_B7_DEFERENCE_SENTENCE}\n"
@@ -2051,6 +2053,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # entire purpose.
         legacy_verdict_args = _legacy_verdict_args()  # C5.6: read once, every variant
         cost_bar_args = _cost_bar_args()  # CUL-414: read once, every variant ([] flag off)
+        forecast_ic_args = _forecast_ic_horizons_args()  # D-186: read once, every variant ([] flag off)
         # C5.8 (C13, D-050): under _promotion_retired_enabled the legacy label is
         # retired for readers -- pass_rule_evaluation.yaml (C7) is not written below
         # and the category reports drop the verdict/route fields. A stale file from
@@ -2199,6 +2202,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 *_validation_protocol_args(validation_path),
                 *legacy_verdict_args,
                 *cost_bar_args,
+                *forecast_ic_args,
                 "--out-dir", str(variant_run_dir),
             ]
             print(f"--- protocol_execution: variant '{variant_id}' ---")
@@ -2425,7 +2429,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 _pass_rule_for_grid = _vce._find_pass_rule(_pre_reg_for_eval or {})
                 if _vce._is_menu_shaped_pass_rule(_pass_rule_for_grid):
                     _menu_path = ROOT / "config" / "criterion_menu.yaml"
-                    _menu = load_yaml(_menu_path) if _menu_path.exists() else {}
+                    _menu = _load_criterion_menu(_menu_path)
                     # E-061 C2 S2a (D-015, card D): the variants of this idea with
                     # no graded column in this attempt. Passed only when non-empty,
                     # so a run where every variant was graded writes a
@@ -2584,6 +2588,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
             *_validation_protocol_args(validation_path),
             *_legacy_verdict_args(),
             *_cost_bar_args(),  # CUL-414: [] flag off
+            *_forecast_ic_horizons_args(),  # D-186: [] flag off
             "--out-dir", str(RUN_DIR),
         ]
         _windows_before = _window_results(RUN_DIR)
@@ -2704,7 +2709,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     _pass_rule_for_grid = _vce._find_pass_rule(_pre_reg_for_eval or {})
                     if _vce._is_menu_shaped_pass_rule(_pass_rule_for_grid):
                         _menu_path = ROOT / "config" / "criterion_menu.yaml"
-                        _menu = load_yaml(_menu_path) if _menu_path.exists() else {}
+                        _menu = _load_criterion_menu(_menu_path)
                         _grid_result = _vce.evaluate_grid(
                             _with_whole_test_sharpe({run_id: summary}, RUN_DIR,  # D-121
                                                     _pass_rule_for_grid),
@@ -4560,6 +4565,104 @@ def _extra_cards_at_1a_enabled(cfg: dict | None = None) -> bool:
     pause or exception leaves the cards in the queue. A 1a that did not complete
     still enqueues nothing."""
     return _strict_orchestrator_flag("extra_cards_at_1a", cfg=cfg)
+
+
+def _forecast_ic_horizons_enabled(cfg: dict | None = None) -> bool:
+    """D-186 (direction 2026-10-24, PR-4): orchestrator.forecast_ic_horizons.enabled.
+    False when the key, the section or the config file is absent; a non-bool value
+    raises. No dependency. While false: byte-identical -- run_protocol is called with
+    the same arguments (no --forecast-ic-horizons), every window's metrics.json core
+    is unchanged, the criterion menu is read with its `horizon` keys stripped
+    (verdict_criteria_evaluator.menu_without_horizon, via _load_criterion_menu) so a
+    resolved pass_rule and every grid cell are as before, a card's `horizon` is refused
+    as an unknown key, and residual_ic.py ranks against the next-bar return.
+    While true: every window's core also carries forecast_return_corr_all_bars_h1/h6/
+    h24/h72/h168 (the all-bars forecast / h-bar forward-return correlation, trading-bot
+    reporting/run_artifact.py build_core); the forecast_ic_median menu entry takes a
+    card `horizon` (default 1, allowed 1/6/24/72/168) and the grid reads the matching
+    field; and the residual IC is ranked against the h-bar forward return for the
+    horizon the pass_rule's forecast_ic_median criterion carries (1 when it has none).
+    Code never picks a criterion or a horizon from the card's statement."""
+    return _strict_orchestrator_flag("forecast_ic_horizons", cfg=cfg)
+
+
+def _residual_ic_requires_block_enabled(cfg: dict | None = None) -> bool:
+    """D-186 (direction 2026-10-24, PR-4): orchestrator.residual_ic_requires_block.enabled.
+    False when the key, the section or the config file is absent; a non-bool value
+    raises. No dependency. While false: byte-identical (_residual_ic_exempt_reason is
+    as before). While true: an idea on a timeframe where no forecast block is
+    registered (composite_cache.resolve_current_composite kind `none` over
+    campaign_record/block_registry.yaml) is exempt from residual IC with the reason
+    "no forecast block on this timeframe" -- the first block on a timeframe has nothing
+    to be residual to, so code no longer adds the criterion for it."""
+    return _strict_orchestrator_flag("residual_ic_requires_block", cfg=cfg)
+
+
+def _forecast_ic_horizons_args() -> list:
+    """D-186: `--forecast-ic-horizons` for run_protocol.py under
+    orchestrator.forecast_ic_horizons, else nothing (the command unchanged)."""
+    return ["--forecast-ic-horizons"] if _forecast_ic_horizons_enabled() else []
+
+
+_D186_MENU_BEGIN = "# D-186 BEGIN"
+_D186_MENU_END = "# D-186 END"
+_D186_MENU_OFF_RE = re.compile(r"^(\s*)# D-186 OFF: (.*)$")
+
+
+def _menu_text_for_prompt(text: str, flag_on: bool) -> str:
+    """D-186: the config/criterion_menu.yaml text a stage prompt inlines. Flag on: `text`
+    unchanged (markers and all). Flag off: every `# D-186 BEGIN` .. `# D-186 END` bracket
+    is removed, the marker lines with it, except a line written `<indent># D-186 OFF:
+    <text>`, which is emitted as `<indent><text>` -- so the result is byte-identical to
+    the menu before D-186 (no `horizon` token reaches step 1a's prompt). A BEGIN with no
+    END raises (a half-open bracket would silently swallow the rest of the menu)."""
+    if flag_on:
+        return text
+    out: list[str] = []
+    inside = False
+    for line in text.splitlines(keepends=True):
+        bare = line.strip()
+        if not inside:
+            if bare == _D186_MENU_BEGIN:
+                inside = True
+            else:
+                out.append(line)
+            continue
+        if bare == _D186_MENU_END:
+            inside = False
+            continue
+        m = _D186_MENU_OFF_RE.match(line.rstrip("\r\n"))
+        if m:
+            out.append(m.group(1) + m.group(2) + line[len(line.rstrip("\r\n")):])
+    if inside:
+        raise ValueError(f"criterion menu: `{_D186_MENU_BEGIN}` without a `{_D186_MENU_END}`")
+    return "".join(out)
+
+
+def _prompt_input_content(req_path: str, content: str) -> str:
+    """D-186: the text of a stage input as the prompt inlines it. Only
+    config/criterion_menu.yaml is filtered (_menu_text_for_prompt, by
+    orchestrator.forecast_ic_horizons); every other input is returned as read."""
+    if str(req_path).replace("\\", "/").endswith("config/criterion_menu.yaml"):
+        return _menu_text_for_prompt(content, _forecast_ic_horizons_enabled())
+    return content
+
+
+def _load_criterion_menu(menu_path: Path | None = None) -> dict:
+    """config/criterion_menu.yaml as the pipeline reads it ({} when absent). The
+    one loader of the menu for resolving, linting and grading criteria: with
+    orchestrator.forecast_ic_horizons off the `horizon` keys are stripped
+    (verdict_criteria_evaluator.menu_without_horizon), so every consumer sees the
+    menu exactly as before D-186. (The raw file is still what step 1a's prompt copies.)"""
+    path = menu_path if menu_path is not None else ROOT / "config" / "criterion_menu.yaml"
+    menu = (load_yaml(path) if Path(path).exists() else {}) or {}
+    if _forecast_ic_horizons_enabled():
+        return menu
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import verdict_criteria_evaluator as _vce
+    return _vce.menu_without_horizon(menu)
 
 
 def _config_replay_gate_enabled(cfg: dict | None = None) -> bool:
@@ -6580,7 +6683,7 @@ def _write_exploration_views(run_dir: Path, run_id: str, pr_by_variant: dict, va
         raise FileNotFoundError(f"{arts / 'grid_evaluation.yaml'} is missing or not a mapping -- "
                                 f"no exploration grid can be built from it")
     menu_path = ROOT / "config" / "criterion_menu.yaml"
-    menu = load_yaml(menu_path) if menu_path.exists() else {}
+    menu = _load_criterion_menu(menu_path)
     # the keywords the run's own grid call passes (composition_runs, the v2 era rule)
     grid = ec.exploration_grid(grid_doc, pr_by_variant, pre_registration, menu, shown,
                                single_era_inconclusive=bool(_grid_v2_kw()),
@@ -7248,10 +7351,62 @@ def _residual_ic_menu_entry(menu: dict) -> dict:
     return _code_added_criterion(menu, _RESIDUAL_IC_CRITERION_ID)
 
 
-def _residual_ic_exempt_reason(run_dir: Path) -> str | None:
+RESIDUAL_IC_NO_BLOCK_REASON = "no forecast block on this timeframe"  # D-186
+
+
+def _run_timeframe_for_residual_ic(run_dir: Path) -> str | None:
+    """The run's bar size when it can be read without resolving or generating a
+    protocol: pre_registration.yaml machine_constraints.protocol.timeframe (the
+    generator's own default "1h" when the protocol constraint names none), else the
+    `protocol` file named by run_context.yaml (a pinned or forced protocol) under
+    ROOT/protocols. None when neither exists (the caller then keeps today's answer)."""
+    arts = Path(run_dir) / "artifacts"
+    pre_path = arts / "pre_registration.yaml"
+    pre = (load_yaml(pre_path) if pre_path.exists() else {}) or {}
+    mc = pre.get("machine_constraints") if isinstance(pre, dict) else None
+    proto = mc.get("protocol") if isinstance(mc, dict) else None
+    if isinstance(proto, dict):
+        return proto.get("timeframe", "1h")
+    ctx_path = arts / "run_context.yaml"
+    ctx = (load_yaml(ctx_path) if ctx_path.exists() else {}) or {}
+    name = ctx.get("protocol") if isinstance(ctx, dict) else None
+    if name and (ROOT / "protocols" / str(name)).exists():
+        doc = json.loads((ROOT / "protocols" / str(name)).read_text(encoding="utf-8"))
+        return doc.get("timeframe", "1h") if isinstance(doc, dict) else None
+    return None
+
+
+def _no_forecast_block_on_timeframe(timeframe) -> bool:
+    """True when composite_cache.resolve_current_composite -- the lookup that gives
+    residual_ic its `composite: none` (no forecast block registered on this
+    timeframe) -- returns kind `none` over campaign_record/block_registry.yaml.
+    A CompositeError (blocks exist, their composition is inconsistent) is not
+    "no block": it is left to the grid-time computation, which raises it as before."""
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import composite_cache as _cc
+    import block_registry as _br
+    try:
+        resolved = _cc.resolve_current_composite(
+            _br.load_active_registry(_block_registry_path()),
+            _cc.load_compositions(ROOT / "campaign_record" / "compositions.yaml"), timeframe)
+    except _cc.CompositeError:
+        return False
+    return resolved["kind"] == _cc.KIND_NONE
+
+
+def _residual_ic_exempt_reason(run_dir: Path, *, timeframe=None) -> str | None:
     """Why this run's idea is NOT a forecast-block idea (guess 6: the
     criterion is required for every forecast block, not for composition runs
-    or regime blocks). None = required."""
+    or regime blocks). None = required.
+
+    D-186 (orchestrator.residual_ic_requires_block, off: unchanged): also exempt, with
+    RESIDUAL_IC_NO_BLOCK_REASON, an idea on a timeframe where no forecast block is
+    registered (nothing to be residual to). `timeframe` is the run's bar size when the
+    caller knows it (the grid does, from the protocol it ran); else it is read from the
+    run's pre-registration / run context (_run_timeframe_for_residual_ic), and an
+    undeterminable timeframe keeps today's answer (None)."""
     path = Path(run_dir) / "artifacts" / "research_brief.yaml"
     brief = (load_yaml(path) if path.exists() else {}) or {}
     cand = brief.get("candidate") if isinstance(brief, dict) else None
@@ -7284,6 +7439,10 @@ def _residual_ic_exempt_reason(run_dir: Path) -> str | None:
         doc = (load_yaml(p) if p.exists() else {}) or {}
         if isinstance(doc, dict) and pick(doc) == "regime":
             return "regime block"
+    if _residual_ic_requires_block_enabled():  # D-186; off: the return below, as before
+        tf = timeframe if timeframe is not None else _run_timeframe_for_residual_ic(run_dir)
+        if tf is not None and _no_forecast_block_on_timeframe(tf):
+            return RESIDUAL_IC_NO_BLOCK_REASON
     return None
 
 
@@ -7383,6 +7542,32 @@ def _with_whole_test_sharpe(per_variant_summaries: dict, run_dir: Path, pass_rul
     return out
 
 
+_FORECAST_IC_CRITERION_ID = "forecast_ic_median"  # D-134/D-186: the menu entry that carries `horizon`
+
+
+def _residual_ic_horizon(pre_registration) -> int:
+    """D-186: the horizon (bars) the residual IC is ranked against: the `horizon` of the
+    pass_rule's forecast_ic_median criterion (the card's own choice, written by 1a into
+    the pass_rule). 1 -- today's next-bar return -- when the rule has no such criterion or
+    no horizon on it; when it carries more than one distinct horizon there is no single
+    one to use, so 1 and a printed warning. Nothing here reads the card's statement."""
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import verdict_criteria_evaluator as _vce
+    rule = _vce._find_pass_rule(pre_registration or {})
+    crit = rule.get("criteria") if isinstance(rule, dict) else None
+    hs = sorted({c["horizon"] for c in (crit or [])
+                 if isinstance(c, dict) and c.get("id") == _FORECAST_IC_CRITERION_ID
+                 and isinstance(c.get("horizon"), int) and not isinstance(c.get("horizon"), bool)
+                 and c["horizon"] >= 1})
+    if len(hs) > 1:
+        print(f"⚠️  [D-186] pass_rule carries several forecast_ic_median horizons {hs}: "
+              f"the residual IC stays on the next-bar return")
+        return 1
+    return hs[0] if hs else 1
+
+
 def _residual_ic_grid_inputs(per_variant_summaries: dict, run_dir: Path, protocol_path,
                              python_exe, pre_registration: dict,
                              variant_protocol_paths: dict | None = None) -> tuple:
@@ -7406,7 +7591,15 @@ def _residual_ic_grid_inputs(per_variant_summaries: dict, run_dir: Path, protoco
     import composite_cache as _cc
     import verdict_criteria_evaluator as _vce
     run_dir = Path(run_dir)
-    exempt = _residual_ic_exempt_reason(run_dir)
+    # D-186: the grid knows the run's bar size from the protocol it ran; passed only
+    # under residual_ic_requires_block (off: the call is the one before D-186).
+    _exempt_kw = ({"timeframe": json.loads(Path(protocol_path).read_text(encoding="utf-8"))
+                   .get("timeframe", "1h")} if _residual_ic_requires_block_enabled() else {})
+    exempt = _residual_ic_exempt_reason(run_dir, **_exempt_kw)
+    # D-186: the residual IC is ranked against the h-bar forward return for the horizon the
+    # pass_rule's forecast_ic_median criterion carries -- only under forecast_ic_horizons
+    # and only when it is not 1 (off, or 1: residual_ic_by_variant is called as before).
+    _horizon = _residual_ic_horizon(pre_registration) if _forecast_ic_horizons_enabled() else 1
     doc = _cc.residual_ic_by_variant(
         per_variant_summaries,
         {vid: run_dir / "variants" / vid / "results" for vid in per_variant_summaries},
@@ -7415,7 +7608,8 @@ def _residual_ic_grid_inputs(per_variant_summaries: dict, run_dir: Path, protoco
         compositions_path=ROOT / "campaign_record" / "compositions.yaml",
         holdout_range=_load_holdout_range(), breach_cls=HoldoutBoundaryBreach,
         exempt_reason=exempt, python_exe=python_exe,
-        **({"variant_protocol_paths": variant_protocol_paths} if variant_protocol_paths else {}))
+        **({"variant_protocol_paths": variant_protocol_paths} if variant_protocol_paths else {}),
+        **({"horizon": _horizon} if _horizon != 1 else {}))
     save_yaml(run_dir / "artifacts" / _RESIDUAL_IC_ARTIFACT, doc)
     if exempt:
         grid_pre = copy.deepcopy(pre_registration)
@@ -9551,7 +9745,7 @@ def _route_retired_campaign_review(run_dir: Path, run_id: str) -> str:
 PASS_RULE_PENDING_KEY = "pass_rule_pending"
 PASS_RULE_PENDING_AT_1A = "hypothesis_generation"
 # criterion_menu.yaml keys that describe an entry rather than define a criterion.
-_MENU_META_KEYS = ("basis", "card_overridable", "retired_for")  # D-133: retired_for
+_MENU_META_KEYS = ("basis", "card_overridable", "retired_for", "horizon_allowed")  # D-133: retired_for; D-186: horizon_allowed
 _DECIDE_NEXT_GUIDANCE = "../../workflow_artifacts/skills/hypothesis-design/DECIDE_NEXT_CANDIDATES.md"
 
 
@@ -9755,7 +9949,7 @@ def _write_pass_rule_from_card(run_dir: Path, run_id: str, sr_flag: bool) -> boo
             _check_specialist_readers_preflight(run_dir)
         return True
     menu_path = ROOT / "config" / "criterion_menu.yaml"
-    menu = (load_yaml(menu_path) if menu_path.exists() else {}) or {}
+    menu = _load_criterion_menu(menu_path)
     # D-133: only a composition run (criteria written by code, never picked from the menu)
     # may name a menu entry retired for blocks; a run whose kind cannot be told is a block.
     exempt = _residual_ic_exempt_reason(run_dir)
