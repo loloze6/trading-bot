@@ -1294,7 +1294,7 @@
    > Read SESSION_LOG.md's 2026-10-23 run viewer entry and strategy-research/tools/run_viewer/DESIGN.md. The run viewer PR waits for the operator's "merge <PR>". After merge and an approved sync, start it from strategy-research/ in the checkout with `& $env:TBOT_PYTHON tools/run_viewer/server.py --runs runs --port 8765` (add `--host 0.0.0.0` for the phone) and open run_099; report any card or view that reads wrong against the run's artifacts. A shape change in a future run is fixed in loaders.py, never in the page. No pipeline change, no writes to runs or records, never print the data policy or tools/holdout_date_gate.sh, one test process at a time, no attribution lines.
 5. **Operator direction 2026-10-23 on #528:** merge on the operator's "merge 528" only, after #527 (D-178, D-179) is merged; then re-merge master and place D-180 after D-179. The out-of-round masking fix (commit 3141a6b2) is accepted and stays on the record. Follow-ups, one small later PR, not blocking: view 4's per-window Sharpe names its basis ("per-window trade Sharpe", as D-177 did for the log line); the view 4 breadcrumb cut at the left edge on a phone; a gated-out variant's window selector. The real-phone test is the operator's after the sync (LAN, `--host 0.0.0.0`). The sync of the operator checkout is the main lead session's step, once, after both merges; this session does not sync.
 
-## 2026-10-24 -- Implementation lead: direction window PR-1..PR-9 and PR-8; D-184..D-192 merged (#534-#545); checkout not synced
+## 2026-10-24 -- Implementation lead: direction window PR-1..PR-9 and the pass-through text PR; D-184..D-192 merged (#534-#545); checkout not synced
 1. **Hypothesis:** the direction prompt of 2026-10-24 (PR-1..PR-8, plus the direction answers, PR-9 and the pass-through text PR of the same day) can go through as one reviewed PR each from master. Sonnet agents build; Opus only for PR-9's component and its safety review, as the direction asked. Each PR merges under the merge conditions, with no campaign run, no edit of the operator checkout and no sync.
 2. **Result:**
    - **Runs read:** 0. **PRs merged:** 11, plus this close PR. **Blocks in the registry:** 3, 1 active (L1_DAILY_TREND_SMA100_V3_FOLD_B:run_084), unchanged.
@@ -1332,8 +1332,8 @@
        - the `criteria_fit` and missing-block parks have no code.
      - **Not done:** the sync, the structure overlay write, the flags, and the run_100 halt clearance. Each waits for its own operator word.
 3. **Files touched:** PRs #534-#545 (see their diffs) and this PR (SESSION_LOG.md, tasks/lessons.md). Operator checkout: none.
-4. **Next-session prompt (paste verbatim; fill the bracket):**
-   > You are the implementation lead. Read SESSION_LOG.md's 2026-10-24 implementation-lead entry and CLAUDE.md's working rules. Master is [sha] or later; D-184..D-192 are merged. First, check the state read-only: the queue (sma_trend_1h_fold_a paused), the registry, the flags, runs/run_100/pipeline_state.yaml (`campaign_review_reframe_brief` still present), and git status of the checkout c4/flag-set.
+4. **Next-session prompt (paste verbatim):**
+   > You are the implementation lead. Read SESSION_LOG.md's 2026-10-24 implementation-lead entry and CLAUDE.md's working rules. Master is 055f5c74 or later; D-184..D-192 are merged (D-190 amended by #544). First, check the state read-only: the queue (sma_trend_1h_fold_a paused), the registry, the flags, runs/run_100/pipeline_state.yaml (`campaign_review_reframe_brief` still present), and git status of the checkout c4/flag-set.
    >
    > Then act only on the operator's words, in this order, one step per word:
    > 1. "sync approved <sha>": sync_generic.ps1 -Target <sha>.
