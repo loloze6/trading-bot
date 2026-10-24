@@ -1060,7 +1060,8 @@ def _build_stage_prompt(stage_name: str, handoff: dict, path: Path,
         if filepath.exists():
             with open(filepath, "r", encoding="utf-8") as f:
                 content = f.read()
-            context_blocks.append(f"--- CONTENT OF {req['path']} ---\n{content}\n")
+            context_blocks.append(
+                f"--- CONTENT OF {req['path']} ---\n{_prompt_input_content(req['path'], content)}\n")
         elif req in handoff.get("required_inputs", []):
             raise FileNotFoundError(f"Agent strictly requires {filepath}, but it is missing.")
         else:
@@ -1575,7 +1576,8 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
         if filepath.exists():
             with open(filepath, "r", encoding="utf-8") as f:
                 content = f.read()
-            context_blocks.append(f"--- CONTENT OF {req['path']} ---\n{content}\n")
+            context_blocks.append(
+                f"--- CONTENT OF {req['path']} ---\n{_prompt_input_content(req['path'], content)}\n")
 
     b7_deference_block = (
         f"\n    {_B7_DEFERENCE_SENTENCE}\n"
@@ -4600,6 +4602,50 @@ def _forecast_ic_horizons_args() -> list:
     """D-186: `--forecast-ic-horizons` for run_protocol.py under
     orchestrator.forecast_ic_horizons, else nothing (the command unchanged)."""
     return ["--forecast-ic-horizons"] if _forecast_ic_horizons_enabled() else []
+
+
+_D186_MENU_BEGIN = "# D-186 BEGIN"
+_D186_MENU_END = "# D-186 END"
+_D186_MENU_OFF_RE = re.compile(r"^(\s*)# D-186 OFF: (.*)$")
+
+
+def _menu_text_for_prompt(text: str, flag_on: bool) -> str:
+    """D-186: the config/criterion_menu.yaml text a stage prompt inlines. Flag on: `text`
+    unchanged (markers and all). Flag off: every `# D-186 BEGIN` .. `# D-186 END` bracket
+    is removed, the marker lines with it, except a line written `<indent># D-186 OFF:
+    <text>`, which is emitted as `<indent><text>` -- so the result is byte-identical to
+    the menu before D-186 (no `horizon` token reaches step 1a's prompt). A BEGIN with no
+    END raises (a half-open bracket would silently swallow the rest of the menu)."""
+    if flag_on:
+        return text
+    out: list[str] = []
+    inside = False
+    for line in text.splitlines(keepends=True):
+        bare = line.strip()
+        if not inside:
+            if bare == _D186_MENU_BEGIN:
+                inside = True
+            else:
+                out.append(line)
+            continue
+        if bare == _D186_MENU_END:
+            inside = False
+            continue
+        m = _D186_MENU_OFF_RE.match(line.rstrip("\r\n"))
+        if m:
+            out.append(m.group(1) + m.group(2) + line[len(line.rstrip("\r\n")):])
+    if inside:
+        raise ValueError(f"criterion menu: `{_D186_MENU_BEGIN}` without a `{_D186_MENU_END}`")
+    return "".join(out)
+
+
+def _prompt_input_content(req_path: str, content: str) -> str:
+    """D-186: the text of a stage input as the prompt inlines it. Only
+    config/criterion_menu.yaml is filtered (_menu_text_for_prompt, by
+    orchestrator.forecast_ic_horizons); every other input is returned as read."""
+    if str(req_path).replace("\\", "/").endswith("config/criterion_menu.yaml"):
+        return _menu_text_for_prompt(content, _forecast_ic_horizons_enabled())
+    return content
 
 
 def _load_criterion_menu(menu_path: Path | None = None) -> dict:

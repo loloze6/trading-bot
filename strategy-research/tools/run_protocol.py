@@ -1451,17 +1451,26 @@ def _assemble_pooled_symbol_records(rows: list, runs_root, horizon: int = 1) -> 
         closes = bdf['close'].tolist()
         forecasts = bdf['forecast'].tolist()
         timestamps = None
+        span_step = None
         if has_ts:
             timestamps = pd.to_datetime(bdf['timestamp']).tolist()
             if expected_step is None and len(timestamps) > 1:
                 step = timestamps[1] - timestamps[0]
                 if step > pd.Timedelta(0):
                     expected_step = step
+            if horizon > 1 and len(timestamps) > 1:
+                # D-186: the h-bar span check uses this window's MEDIAN positive step, not
+                # the first pair's (a first pair that spans a hole would reject every
+                # span). The returned expected_step stays the first-pair value (h=1 path).
+                diffs = sorted(d for d in (b - a for a, b in zip(timestamps, timestamps[1:]))
+                               if d > pd.Timedelta(0))
+                if diffs:
+                    span_step = diffs[len(diffs) // 2]
         for i in range(len(bdf) - horizon):
             if closes[i] == 0:
                 continue
-            if (horizon > 1 and has_ts and expected_step is not None
-                    and timestamps[i + horizon] - timestamps[i] != horizon * expected_step):
+            if (horizon > 1 and has_ts and span_step is not None
+                    and timestamps[i + horizon] - timestamps[i] != horizon * span_step):
                 continue  # D-186: a hole inside the h-bar span -- the pair is dropped, never padded
             rec = {
                 'forecast': float(forecasts[i]),
@@ -2415,11 +2424,12 @@ def main():
                              "byte-identical output.")
     args = parser.parse_args()
 
-    if args.forecast_ic_horizons:
-        # D-186: build_core is reached only through core/backtester.py (not
-        # changed); the horizons are handed to it once, process-wide.
-        from reporting import run_artifact as _run_artifact
-        _run_artifact.set_forecast_ic_horizons(_run_artifact.FORECAST_IC_HORIZONS)
+    # D-186: build_core is reached only through core/backtester.py (not
+    # changed); the horizons are handed to it once, process-wide. Always set, so a
+    # flag-off call after a flag-on call in the same process clears the default.
+    from reporting import run_artifact as _run_artifact
+    _run_artifact.set_forecast_ic_horizons(
+        _run_artifact.FORECAST_IC_HORIZONS if args.forecast_ic_horizons else None)
 
     # Holdout gate: require BOTH flags or NEITHER
     if args.holdout != args.i_understand:

@@ -1,0 +1,281 @@
+# E-046b S2 (the grid, engineering_roadmap.html card C). An anchor table of
+# scale-free idea criteria, same "pick from this table, don't free-hand"
+# discipline as hypothesis-design/SKILL.md's §A8.6 plausible_ic_upper table.
+#
+# Consumed by tools/verdict_criteria_evaluator.py::evaluate_grid() via its
+# `menu` parameter. A pre_registration.yaml pass_rule criterion may name only
+# `id` (+ optional field overrides) and have the rest backfilled from here,
+# or be fully self-contained (in which case this file is not consulted for
+# that criterion at all).
+#
+# Record shape (S1_FINDINGS.md §3):
+#   {id, metric, source: window|pooled, reducer: median|mean|min|max|
+#    fraction_above|sign_consistent_by_era, reducer_arg, comparator,
+#    threshold, floor: {min_windows|min_trades|min_n_eff}, scale_free: true,
+#    symbol_reducer: null|per_symbol_all|pooled}
+#
+# Do NOT add median_sharpe / max_abs_drawdown_pct / zero_trade_slot_pct here.
+# S1_FINDINGS.md explicitly marks all three not reusable under card B's
+# scale-free requirement (raw, non-IC-relative thresholds). They remain
+# valid only as campaign-wide profit-bar checks (card B's "one manually
+# written campaign file"), a separate, not-yet-built file.
+
+criteria:
+  - id: realized_edge_to_cost_ratio
+    # RETIRED FOR BLOCKS (D-133, operator decision 2026-10-14). The lot-based
+    # ratio below is an artefact: it is a plain unweighted mean of gross edge
+    # per lot over a plain unweighted mean of cost per lot (D-107, D-128), so
+    # its label "cost binds" did not survive a curve-based reading; run_094
+    # (2026-10-14) still had step 1a pick it as a grid criterion (> 2.2, FAIL
+    # on all 4 variants). The entry stays here, unmoved, so that a pre-registered
+    # pass_rule which already names it (a fold child's copy of its source's
+    # criteria, a resume, a regrade, the grid evaluating an existing pass_rule)
+    # keeps resolving and evaluating exactly as registered. What is refused is a
+    # NEW choice of it for a block idea: step 1a's card
+    # (run_phase1_research._pass_rule_from_card) and an operator brief's own
+    # evaluation.pass_rule (verdict_criteria_evaluator.lint_menu_shaped_pass_rule).
+    # Composition runs are not affected: their criteria are written by code
+    # (the profit bars), never picked from this list. A curve-based replacement
+    # is a separate, later decision.
+    retired_for: [block]
+    # CORRECTION (2026-09-20): the dispatch that seeded this file, and
+    # S1_FINDINGS.md's own corpus survey, both use the pre-CUL-300 spelling
+    # `edge_to_cost_ratio`. The real field, grep-confirmed against
+    # tools/run_protocol.py:1170 on current master (CUL-300 renamed it to
+    # avoid a real collision elsewhere in the codebase), is
+    # `realized_edge_to_cost_ratio`, living in `trade_diagnostics_summary`:
+    # mean gross-edge-bps / mean cost-bps, computed only over trades that
+    # have a measured `cost_paid` (numerator and denominator share the same
+    # filtered record set as of the 2026-09-20 CODE-REVIEW FIX in
+    # run_protocol.py -- see that file's own comment above the field).
+    metric: realized_edge_to_cost_ratio
+    source: pooled
+    comparator: ">"
+    # D-038/D-039 (operator, 2026-09-27): > 2.2 with a 100-trade floor -- the
+    # same numbers as the profit bar cost_edge_ratio_min (config/
+    # profitability_bars.yaml), which grades every backtest under
+    # orchestrator.profit_bars_v2; this menu entry stays optional for step 1a
+    # (E-062 S1 G7).
+    # Same numbers, NOT the same definition as that profit bar: this menu
+    # criterion reads run_protocol's ratio rounded to 4 dp over all trades, and
+    # its min_trades floor (sum of core.trade_count) counts end_of_window forced
+    # closes; the bar takes
+    # min(all trades, non-forced trades), unrounded, with its floor on
+    # non-forced trades only (tools/portfolio_whole_test.pooled_edge_to_cost_ratio).
+    threshold: 2.2
+    # E-059 S2a: fields a hypothesis card may override when step 1a picks
+    # this entry (run_phase1_research._write_pass_rule_from_card refuses any
+    # other card-supplied field). None here: the anchor is the point.
+    card_overridable: []
+    scale_free: true
+    symbol_reducer: null
+    floor:
+      min_windows: 5
+      min_trades: 100
+    basis: >
+      D-038/D-039 (operator, 2026-09-27): "survives 2x costs". Gross edge
+      minus twice the cost is positive iff the ratio is > 2.0 (which implies
+      positive at 1.5x too, the D-038 cost-stress bar); 2.2 = 2 + the
+      slippage round trip / fee round trip (about 0.2 for ETH, 0.13 for BTC,
+      review_2026-09-27/PLACEHOLDER_VALUES_PROPOSAL.md §3), so doubled
+      slippage is covered too. Floor: 100 trades. The same numbers are the
+      campaign-wide profit bar cost_edge_ratio_min (config/
+      profitability_bars.yaml, graded on every backtest under
+      orchestrator.profit_bars_v2); this idea-level entry stays one that
+      step 1a may pick (E-062 S1 G7). Replaces the 2026-09-20
+      dispatch-specified 0.3 / 15-trade anchor.
+    # UNDER-COMPLETE for perpetuals held across a funding settlement
+    # (run_protocol.py's own comment on this field): funding cash flows are
+    # not modeled anywhere in the engine's trade records until E-053 lands.
+
+  - id: sign_consistent_by_era
+    # Card C names this reducer type directly: "same sign in every era".
+    # `metric` defaults to net_return_pct (whole-window P&L sign, the most
+    # direct "did this window make money" read). Override `metric`
+    # per-hypothesis when a different window-level `core` field is the more
+    # meaningful sign to check (e.g. forecast_return_corr for a
+    # signal-quality-specific consistency check rather than a P&L-level
+    # one) -- this entry is an anchor default, not the only valid choice.
+    metric: net_return_pct
+    source: window
+    reducer: sign_consistent_by_era
+    # E-059 S2a: the comment above allows a per-hypothesis `metric`; nothing
+    # else may be overridden by a card (see realized_edge_to_cost_ratio).
+    card_overridable: [metric]
+    # comparator/threshold are unused by this reducer -- it resolves its own
+    # PASS/FAIL directly (every represented era's median sign agrees and is
+    # nonzero). Deliberately left absent rather than a misleading
+    # placeholder value that would suggest they are read.
+    scale_free: true
+    symbol_reducer: null
+    floor:
+      min_windows: 5
+      min_trades: 15
+    basis: >
+      Uses campaign_data_policy.yaml's existing 6-era list
+      (era_2018_pre_funding .. era_2026_h2_forward_recorded) via
+      evaluate_grid's own _era_id_for_timestamp, keyed off each window's
+      'YYYY-MM' label (S1_FINDINGS.md §3's reducer pseudocode). Scale-free by
+      construction: only the SIGN of each era's median is compared, never a
+      magnitude, so it does not depend on which coin or parameter value a
+      variant uses (card B's scale-free requirement).
+
+  - id: whole_test_sharpe_positive
+    # pre-registered by a brief only (D-121); not for step 1a
+    # D-121 (operator, 2026-10-13): the variant's whole-test Sharpe on the chained
+    # equal-weight curve is strictly above 0 -- ONE definition with the profit bar
+    # sharpe_min: run_phase1_research._whole_test_chain + portfolio_whole_test.
+    # whole_test_sharpe. The grid reads it as a pooled metric that the pipeline
+    # injects into a copy of each variant's summary
+    # (run_phase1_research._with_whole_test_sharpe, hypothesis_verdict.diagnostics.
+    # whole_test_sharpe); None (the chain or the Sharpe not computable, e.g. fewer than
+    # 30 daily returns) reads INCONCLUSIVE. A ruined account (equity <= 0, no liquidation
+    # in the engine) FAILs instead, the ruin recorded in the cell's detail (D-141, D-101).
+    metric: whole_test_sharpe
+    source: pooled
+    comparator: ">"
+    threshold: 0.0
+    card_overridable: []
+    scale_free: true
+    symbol_reducer: null
+    floor: {}
+    basis: >
+      Branch 3's own Sharpe definition (D-036, D-113, D-116, D-118), so a brief that
+      pre-registers "Sharpe > 0" is graded on the same number the profit bar reads.
+      Scale-free: a Sharpe does not depend on position size.
+
+  - id: forecast_ic_median
+    # D-134 (operator decisions 2026-10-14/15): plain IC as a grid criterion step 1a may
+    # pick. The window `core` field forecast_return_corr_all_bars (trading-bot/reporting/
+    # run_artifact.py, build_core): Pearson correlation of the forecast with the NEXT
+    # bar's return over ALL bars, no activity filter. The active-bars variant
+    # forecast_return_corr is deliberately not used: run_artifact's own comment (E-039
+    # step 5 follow-up) says that active-bars ("gated") IC is not admissible where IC
+    # over ALL bars is needed (the ungated-escape criterion). The grid takes the median of the
+    # per-window values (a window whose correlation is undefined, None, is left out of
+    # the median and of the window count, so it cannot lift the floor).
+    metric: forecast_return_corr_all_bars
+    source: window
+    reducer: median
+    comparator: ">"
+    threshold: 0.02
+    # One fixed default, not chosen per run: step 1a may not override it (same as every
+    # quantitative entry above).
+    card_overridable: []
+    scale_free: true
+    symbol_reducer: null
+    floor:
+      min_windows: 5
+    basis: >
+      D-134. All-bars IC, not the active-bars one: a regime-gated config would
+      otherwise be judged on the bars where it chose to act (run_artifact.py,
+      comment above forecast_return_corr_all_bars: the gated IC is not admissible
+      where IC over all bars is needed). 0.02 is the same number as residual_ic's
+      threshold (code_added_criteria below), but residual_ic also requires p < 0.05 and
+      n_eff >= 30; this entry has no significance test (it is a median-of-windows
+      level). 0.02 sits below the ceiling the hypothesis-design skill's anchor table
+      gives for crowded price-only signals (SKILL.md, plausible_ic_upper table).
+      Measured 2026-10-15 over every variant window metrics.json in the operator's runs
+      (bar size taken from each window's manifest timeframe; variants with at least 5
+      defined windows; per variant the median over its windows): HOURLY, 29 variants in
+      11 runs, range -0.029 to +0.018, none of the 29 above 0.02 (highest: run_070 base,
+      0.018). DAILY, 7 variants in 2 runs (run_065, run_094), range -0.041 to +0.058,
+      3 of the 7 above 0.02, all three from run_094 (UNI 0.058, ADA 0.048, BTC base
+      0.022): one 1-bar mean-reversion idea on one period, whose variants are correlated
+      across coins, and which failed every profit bar (drawdown 91-97%). run_094's
+      variants show 12 windows each because its results folders hold both attempts of
+      the same 6 windows (the resume re-ran them), so those windows are duplicated, not
+      12 independent ones. Reading: on hourly bars 0.02 has not been reached by any past
+      variant; on daily bars there is too little data to say the criterion
+      discriminates, and the three passes come from a losing strategy (IC measures
+      direction, not profit after costs). Known limit (estimates, normal approximation
+      assuming independent windows): on daily bars (about 121 bars per window) a
+      variant with no edge clears 0.02 roughly 1 time in 3 on 6 windows; on hourly bars
+      (about 2,900 bars per window) about 2% on 6 windows. A window whose correlation
+      is undefined (None, e.g. a constant forecast) is left out of the median and does
+      not count toward the 5-window floor (tools/verdict_criteria_evaluator.py:1400-1403),
+      so a gated or sparse strategy is graded on its defined windows only. Unanimity
+      across a hypothesis's variants tightens it. Floor: 5 windows. The operator
+      confirms the value 0.02 at merge.
+
+  # --- Not yet wired -- placeholder only (dispatch item 5) ---
+  #
+  # gated_beats_ungated resolves to no field anywhere (grep-checked against
+  # tools/run_protocol.py's protocol_result.yaml construction). It belongs to
+  # the regime-block story (E-060 S1 guess 13 / operator decision 4), not
+  # built yet. Left commented out deliberately -- a commented block cannot be
+  # matched by `id` at all.
+  #
+  # - id: gated_beats_ungated
+  #   metric: <not yet resolvable -- regime blocks, a later E-060 story>
+  #   source: <TBD>
+  #   scale_free: true
+
+# E-060 S2 (delivery_plan_v26.md slice 7 item 7.1; engineering/roadmap/E-060/
+# S1_FINDINGS.md guesses 6-8 + operator decision 5 of 2026-09-26).
+# Criteria that CODE adds to a pass_rule. They live outside `criteria:` on
+# purpose: 1a picks from `criteria` (a card naming one of these is refused as an
+# unknown id, exactly as before this section existed -- with the one D-137
+# exception below), and evaluate_grid backfills only from `criteria` -- the
+# entry is copied whole into pre_registration.yaml's pass_rule by
+# run_phase1_research._with_residual_ic_criterion, only under
+# orchestrator.composition_runs.enabled.
+# D-137 (direction ruling 2026-10-15, smaller version; card A): step 1a MAY
+# name `residual_ic` (`{id: residual_ic}`, no overrides) where code adds it
+# anyway (composition runs on, a forecast-block idea); code's own entry
+# replaces the named copy, so naming it changes nothing and not naming it
+# removes nothing. Anywhere else a card naming it is refused, as before.
+# `profit_bars` is never picked by step 1a.
+code_added_criteria:
+  - id: residual_ic
+    # Rank IC of the candidate's residual after an expanding least-squares fit
+    # on the current composite's forecast (tools/residual_ic.py), pooled over
+    # coins; n_eff = gap-aware one-day blocks (tools/residual_ic.py). Written
+    # by protocol_execution into hypothesis_verdict.diagnostics.residual_ic.
+    # composite STALE -> INCONCLUSIVE; fully_explained -> FAIL (evaluator,
+    # only with evaluate_grid(composition_runs=True); flag off, this entry
+    # takes the ordinary path, where min_n_eff raises as it always has).
+    metric: residual_ic
+    statistic: value
+    source: pooled
+    comparator: ">"
+    # D-039 (operator, 2026-09-27; supersedes D-026's 0.01 placeholder):
+    # > 0.02 with n_eff >= 30. Ratified by the operator 2026-09-29 (recorded by
+    # Claude at the operator's explicit instruction; E-062 S1 G9, SIGNING_CHECKLIST.md).
+    threshold: 0.02
+    # D-039: PASS also needs the one-sided p (H1: residual IC > 0,
+    # block-adjusted on n_eff) below this (code review of E-060 S2: without
+    # it a pure-noise block with n_eff at the floor cleared the old 0.01
+    # threshold about half the time).
+    max_p_value: 0.05
+    ratified: true
+    card_overridable: []
+    scale_free: true
+    symbol_reducer: null
+    floor:
+      min_n_eff: 30
+    requires_flag: orchestrator.composition_runs.enabled
+    basis: >
+      Card A: a block must hold information the composite does not. Rank-based,
+      so scale-free: the rolling scale-only standardisation of operator
+      decision 1 (S3) cannot change it.
+  - id: profit_bars
+    # E-060 S3b (S1_FINDINGS.md guess 9): a composition run's only criterion.
+    # A composite's criteria ARE the profit bars (card F): the cell is the
+    # result of the same grading function branch 3 runs on that variant
+    # (run_phase1_research._grade_profit_bars_protocol_result against
+    # config/profitability_bars.yaml) -- one computation, so the grid and
+    # branch 3 cannot disagree. PASS only when every bar reads PASS (a
+    # NOT_EVALUABLE bar is not a PASS, as in branch 3). Written into a
+    # composition run's pass_rule by code at step 1a (never picked by 1a) and
+    # graded only by evaluate_grid(composition_runs=True); anywhere else its
+    # source is not a grid source and the cell is a SPEC_ERROR.
+    metric: profit_bars
+    source: profit_bars
+    card_overridable: []
+    scale_free: true
+    symbol_reducer: null
+    requires_flag: orchestrator.composition_runs.enabled
+    basis: >
+      Card F: a composite is judged on the campaign's profit bars, not on idea
+      criteria -- the blocks it combines were each already validated.

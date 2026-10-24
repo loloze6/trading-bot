@@ -685,3 +685,175 @@ def test_no_code_derives_a_criterion_or_horizon_from_the_statement():
 
 
 RESIDUAL_NO_BLOCK = "no forecast block on this timeframe"
+
+
+# ---------------------------------------------------------------------------------------------
+# 8. review round (PR #537): the flag-off step 1a prompt is byte-identical, the run_protocol
+#    default is cleared, the pooled h>1 span step is robust to a hole in the first pair
+# ---------------------------------------------------------------------------------------------
+
+MENU_PATH = SR / "config" / "criterion_menu.yaml"
+# The menu exactly as master 6257c9f3 had it, before D-186. NOTE: re-pin this fixture together
+# with ANY later menu edit made outside the `# D-186 BEGIN` .. `# D-186 END` brackets -- the
+# flag-off prompt text must equal it byte for byte.
+MENU_PRE_D186 = (SR / "tests" / "fixtures" / "d186" / "criterion_menu_pre_d186.yaml"
+                 ).read_text(encoding="utf-8")
+MENU_REQ_PATH = "../../config/criterion_menu.yaml"
+
+
+def _raw_menu_text():
+    return MENU_PATH.read_text(encoding="utf-8")
+
+
+def test_flag_off_menu_prompt_text_is_the_pre_d186_menu_byte_for_byte():
+    assert rpr._menu_text_for_prompt(_raw_menu_text(), False) == MENU_PRE_D186
+
+
+def test_flag_off_menu_prompt_text_has_no_horizon_token_and_no_marker():
+    off = rpr._menu_text_for_prompt(_raw_menu_text(), False)
+    assert "horizon" not in off.lower()
+    assert "D-186" not in off
+    assert "card_overridable: []" in off and "card_overridable: [horizon]" not in off
+
+
+def test_flag_on_menu_prompt_text_is_the_raw_file():
+    raw = _raw_menu_text()
+    assert rpr._menu_text_for_prompt(raw, True) == raw
+    assert "# D-186 BEGIN" in raw and "card_overridable: [horizon]" in raw
+
+
+def test_menu_markers_are_comments_the_loaded_menu_is_unaffected():
+    raw = _raw_menu_text()
+    on = yaml.safe_load(raw)
+    assert on == RAW_MENU
+    assert _entry(on)["card_overridable"] == ["horizon"] and _entry(on)["horizon_allowed"] == HORIZONS
+    # the flag-off prompt text loads to exactly what the flag-off loader hands every consumer
+    assert yaml.safe_load(rpr._menu_text_for_prompt(raw, False)) == vce.menu_without_horizon(on)
+    assert yaml.safe_load(MENU_PRE_D186) == vce.menu_without_horizon(on)
+
+
+def test_menu_brackets_are_balanced_and_a_half_open_one_raises():
+    raw = _raw_menu_text()
+    lines = [ln.strip() for ln in raw.splitlines()]
+    assert lines.count("# D-186 BEGIN") == lines.count("# D-186 END") >= 2
+    with pytest.raises(ValueError):
+        rpr._menu_text_for_prompt("a: 1\n    # D-186 BEGIN\nb: 2\n", False)
+
+
+def test_menu_off_lines_keep_their_indent_and_line_ending():
+    text = "x: 1\r\n  # D-186 BEGIN\r\n  drop: 1\r\n  # D-186 OFF: keep: 2\r\n  # D-186 END\r\ny: 3\r\n"
+    assert rpr._menu_text_for_prompt(text, False) == "x: 1\r\n  keep: 2\r\ny: 3\r\n"
+
+
+def test_only_the_menu_input_is_filtered():
+    raw = _raw_menu_text()
+    _set_orchestrator(None)
+    assert rpr._prompt_input_content(MENU_REQ_PATH, raw) == MENU_PRE_D186
+    assert rpr._prompt_input_content("..\..\config\criterion_menu.yaml", raw) == MENU_PRE_D186
+    assert rpr._prompt_input_content("artifacts/research_brief.yaml", raw) == raw
+    _set_orchestrator(ON)
+    assert rpr._prompt_input_content(MENU_REQ_PATH, raw) == raw
+
+
+def _menu_handoff():
+    return {"required_inputs": [{"path": MENU_REQ_PATH, "reason": "menu"}], "optional_inputs": []}
+
+
+def _menu_run_dir():
+    _menu_into_sandbox()
+    run_dir = rpr.ROOT / "runs" / "run_d186"
+    (run_dir / "artifacts").mkdir(parents=True, exist_ok=True)
+    return run_dir
+
+
+def _menu_section(text):
+    return f"--- CONTENT OF {MENU_REQ_PATH} ---\n{text}\n"
+
+
+def _gemini_prompt(monkeypatch, run_dir):
+    import asyncio
+    seen = {}
+
+    class _Stop(Exception):
+        pass
+
+    class _Models:
+        async def generate_content(self, **kw):
+            seen["contents"] = kw["contents"]
+            raise _Stop
+
+    class _Client:
+        class aio:  # noqa: N801
+            models = _Models()
+
+    monkeypatch.setattr(rpr, "_get_client", lambda: _Client())
+    with pytest.raises(_Stop):
+        asyncio.run(rpr.run_gemini_worker("hypothesis_generation", _menu_handoff(), run_dir))
+    return seen["contents"]
+
+
+def test_both_prompt_assemblers_inline_the_pre_d186_menu_with_the_flag_off(monkeypatch):
+    _set_orchestrator(None)
+    run_dir = _menu_run_dir()
+    claude_prompt = rpr._build_stage_prompt("hypothesis_generation", _menu_handoff(), run_dir)
+    gemini_prompt = _gemini_prompt(monkeypatch, run_dir)
+    for prompt in (claude_prompt, gemini_prompt):
+        assert _menu_section(MENU_PRE_D186) in prompt
+        assert "D-186" not in prompt.split("--- CONTENT OF")[1].split("YAML FORMATTING")[0]
+        assert "horizon" not in _menu_section(MENU_PRE_D186)
+
+
+def test_both_prompt_assemblers_inline_the_raw_menu_with_the_flag_on(monkeypatch):
+    _set_orchestrator(ON)
+    run_dir = _menu_run_dir()
+    raw = _raw_menu_text()
+    assert _menu_section(raw) in rpr._build_stage_prompt("hypothesis_generation", _menu_handoff(), run_dir)
+    assert _menu_section(raw) in _gemini_prompt(monkeypatch, run_dir)
+
+
+def test_run_protocol_main_clears_the_forecast_ic_default_on_a_flag_off_call(monkeypatch):
+    """An in-process flag-on call followed by a flag-off call leaves the default None (the
+    --holdout-without---i-understand refusal exits right after the default is set)."""
+    import run_protocol as rp
+    from reporting import run_artifact as ra
+    monkeypatch.setattr(ra, "_forecast_ic_horizons_default", None)
+    for argv, expected in ((["--forecast-ic-horizons"], tuple(ra.FORECAST_IC_HORIZONS)), ([], None)):
+        monkeypatch.setattr(sys, "argv", ["run_protocol.py", "cfg.json", "proto.json", "--holdout"] + argv)
+        with pytest.raises(SystemExit):
+            rp.main()
+        assert ra._forecast_ic_horizons_default == expected
+
+
+def _pooled_rows(tmp_path, timestamps):
+    import pandas as pd
+    d = tmp_path / "wr_p"
+    d.mkdir()
+    n = len(timestamps)
+    pd.DataFrame({"timestamp": timestamps, "close": [100.0 + i for i in range(n)],
+                  "forecast": [float(i % 5) for i in range(n)]}).to_csv(d / "bars.csv", index=False)
+    return [{"symbol": "BTCUSDT", "window": "w", "run_id": "wr_p"}]
+
+
+def test_pooled_h_gt_1_first_pair_spanning_a_hole_still_builds_records(tmp_path):
+    import pandas as pd
+    import run_protocol as rp
+    ts = list(pd.date_range("2020-01-01", periods=40, freq="h"))
+    del ts[1:3]                                   # first pair (index 0, 1) spans a 3-hour hole
+    rows = _pooled_rows(tmp_path, ts)
+    n, h = len(ts), 6
+    records, first_pair_step, _ = rp._assemble_pooled_symbol_records(rows, tmp_path, horizon=h)
+    assert first_pair_step == pd.Timedelta(hours=3)          # returned value untouched (h=1 path)
+    kept = [i for i in range(n - h) if ts[i + h] - ts[i] == pd.Timedelta(hours=h)]
+    assert len(records) == len(kept) > 0
+    assert [r["timestamp"] for r in records] == [ts[i] for i in kept]
+
+
+def test_pooled_h1_path_is_untouched(tmp_path):
+    import pandas as pd
+    import run_protocol as rp
+    ts = list(pd.date_range("2020-01-01", periods=30, freq="h"))
+    del ts[1:3]
+    rows = _pooled_rows(tmp_path, ts)
+    a = rp._assemble_pooled_symbol_records(rows, tmp_path)
+    b = rp._assemble_pooled_symbol_records(rows, tmp_path, horizon=1)
+    assert a == b and len(a[0]) == len(ts) - 1 and a[1] == pd.Timedelta(hours=3)

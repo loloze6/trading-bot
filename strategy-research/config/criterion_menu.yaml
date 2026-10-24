@@ -154,6 +154,15 @@ criteria:
     # over ALL bars is needed (the ungated-escape criterion). The grid takes the median of the
     # per-window values (a window whose correlation is undefined, None, is left out of
     # the median and of the window count, so it cannot lift the floor).
+    # D-186 BEGIN
+    # Bracket mechanism (D-186; run_phase1_research._menu_text_for_prompt): everything between
+    # a `# D-186 BEGIN` and a `# D-186 END` line is dropped from the text step 1a's prompt
+    # inlines while orchestrator.forecast_ic_horizons is off, EXCEPT a line written
+    # `<indent># D-186 OFF: <text>`, which is emitted as `<indent><text>` (the pre-D-186
+    # form of a line the bracket replaces). With the flag on the file is inlined unchanged.
+    # The markers are YAML comments, so the loaded menu is identical either way. Edit the
+    # menu outside the brackets freely, but re-pin tests/fixtures/d186/criterion_menu_pre_d186.yaml
+    # with it (the test compares the flag-off prompt text to that fixture byte for byte).
     # D-186 (direction 2026-10-24, PR-4; ONLY while orchestrator.forecast_ic_horizons is on):
     # the card may set `horizon`, the number of bars the forecast looks ahead: the IC is then
     # the correlation of the forecast with the h-bar forward return close[t+h]/close[t]-1,
@@ -162,16 +171,22 @@ criteria:
     # `horizon_allowed`. With the flag off the loader strips `horizon`, `horizon_allowed` and
     # the `horizon` entry of card_overridable (verdict_criteria_evaluator.menu_without_horizon),
     # so this entry reads exactly as it did under D-134 (card_overridable [], no override).
+    # D-186 END
     metric: forecast_return_corr_all_bars
     source: window
     reducer: median
     comparator: ">"
     threshold: 0.02
+    # D-186 BEGIN
+    # D-186 OFF: # One fixed default, not chosen per run: step 1a may not override it (same as every
+    # D-186 OFF: # quantitative entry above).
+    # D-186 OFF: card_overridable: []
     # D-134: the threshold is one fixed default, not chosen per run (same as every
     # quantitative entry above). D-186 amends only the horizon, and only under the flag.
     card_overridable: [horizon]
     horizon: 1
     horizon_allowed: [1, 6, 24, 72, 168]
+    # D-186 END
     scale_free: true
     symbol_reducer: null
     floor:
