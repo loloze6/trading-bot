@@ -97,6 +97,12 @@ CAMPAIGN_STATE_PATH = ROOT / "campaign_record" / "campaign_state.yaml"
 # orchestrator.profit_bars_v2 only); its presence and sha256 are recorded.
 TRIAL_SHARPE_BASIS_OVERLAY_PATH = ROOT / "campaign_record" / "trial_sharpe_basis_recompute.yaml"
 
+# D-185: the append-only overlay that keys ledger rows written before
+# orchestrator.dsr_same_structure with their (structure_hash, timeframe), written by
+# tools/backfill_structure_hash.py and read, under that flag only, by
+# _whole_test_dsr_context(with_structure_overlay=True).
+TRIAL_STRUCTURE_KEY_OVERLAY_PATH = ROOT / "campaign_record" / "trial_structure_key_overlay.yaml"
+
 # E-054 Layer 2 (2026-09-11): data-availability gate. Originally shipped
 # off-by-default via an env var. delivery_plan_v26.md s:0.4 item 14
 # (2026-09-20) flipped this to ON by default -- see
@@ -2179,6 +2185,9 @@ async def run_tool_worker(stage_name: str, run_id: str):
                           f"{refused_variants[variant_id]}; continuing with remaining variants.")
                     _variant_failed(variant_id, refused_variants[variant_id], refused=True)
                     continue
+            # D-185: the protocol this variant runs on (its own per-coin file, else the
+            # run's) gives its rows' timeframe; {} with orchestrator.dsr_same_structure off.
+            _trial_kw.update(_trial_timeframe_kw(_vproto or protocol_path))
             variant_artifacts_dir = ARTIFACTS / "variants" / variant_id
             variant_artifacts_dir.mkdir(parents=True, exist_ok=True)
             variant_run_dir = RUN_DIR / "variants" / variant_id
@@ -2592,7 +2601,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
             try:
                 _record_failed_backtest_trial(
                     run_id, config_path,
-                    f"run_protocol.py non-zero exit ({result.returncode})")
+                    f"run_protocol.py non-zero exit ({result.returncode})",
+                    **_trial_timeframe_kw(protocol_path))
             except Exception as _rec_err:
                 print(f"⚠️  H4: could not record failed-backtest trial for {run_id}: {_rec_err}")
             raise RuntimeError(f"run_protocol.py failed:\n{result.stderr}")
@@ -2603,7 +2613,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
             try:
                 _record_failed_backtest_trial(
                     run_id, config_path,
-                    "protocol_summary.json missing after protocol run")
+                    "protocol_summary.json missing after protocol run",
+                    **_trial_timeframe_kw(protocol_path))
             except Exception as _rec_err:
                 print(f"⚠️  H4: could not record failed-backtest trial for {run_id}: {_rec_err}")
             raise FileNotFoundError("protocol_summary.json not found after protocol run")
@@ -2756,7 +2767,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     run_id, config_path,
                     f"post-success window raised {type(_win_err).__name__} "
                     "(protocol_summary.json parse or pass-rule evaluation) "
-                    "after successful protocol run")
+                    "after successful protocol run",
+                    **_trial_timeframe_kw(protocol_path))
             except Exception as _rec_err:
                 print(f"⚠️  H4: could not record failed-backtest trial for {run_id}: {_rec_err}")
             raise
@@ -2779,14 +2791,16 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # the recovery's own.
         try:
             _record_backtest_trial(run_id, summary, config_path,
-                                   **_whole_test_trial_kw(RUN_DIR, summary))
+                                   **_whole_test_trial_kw(RUN_DIR, summary),
+                                   **_trial_timeframe_kw(protocol_path))
         except Exception as _write_err:
             try:
                 _record_failed_backtest_trial(
                     run_id, config_path,
                     f"backtest completed but the trial write raised "
                     f"{type(_write_err).__name__} (ledger/hash write failure after a "
-                    "successful backtest)")
+                    "successful backtest)",
+                    **_trial_timeframe_kw(protocol_path))
             except Exception as _rec_err:
                 print(f"⚠️  G1: backtest completed but the ledger is unwritable for {run_id} — "
                       f"both the trial write ({type(_write_err).__name__}) and its recovery row "
@@ -4519,6 +4533,20 @@ def _brief_criteria_enabled(cfg: dict | None = None) -> bool:
     leaving them to step 1a. No criteria given: step 1a picks (criteria_from:
     hypothesis_generation), as before."""
     return _strict_orchestrator_flag("brief_criteria", cfg=cfg)
+
+
+def _dsr_same_structure_enabled(cfg: dict | None = None) -> bool:
+    """D-185: orchestrator.dsr_same_structure.enabled. False when the key, the section
+    or the config file is absent; a non-bool value raises. No dependency (it acts in
+    branch 3's v2 deflated Sharpe, so it changes a grade only with profit_bars_v2 on).
+    While false: byte-identical -- no trial row carries structure_hash or timeframe, N
+    and K are the campaign-wide counts, dsr_basis has no same_structure key. While
+    true: new trial rows carry structure_hash and timeframe (_trial_structure_fields),
+    and the v2 deflated Sharpe's N and K count only the ledger rows with the
+    candidate's own (structure_hash, timeframe) (_same_structure_view); a candidate
+    without a key falls back to the campaign-wide counts, recorded. The holdout
+    spend's N stays campaign-wide."""
+    return _strict_orchestrator_flag("dsr_same_structure", cfg=cfg)
 
 
 def _extra_cards_at_1a_enabled(cfg: dict | None = None) -> bool:
@@ -7684,7 +7712,8 @@ def _profit_bars_grid_grader(run_dir: Path, run_id: str):
     v2_kw = {"v2": True} if v2 else {}
     bars = _load_profitability_bars(**v2_kw)
     dsr_ctx = _promotion_dsr_context()
-    wctx = _whole_test_dsr_context(dsr_ctx) if v2 else None  # E-062 S2b-2b
+    wctx = (_whole_test_dsr_context(dsr_ctx, **_structure_overlay_kw())
+            if v2 else None)  # E-062 S2b-2b
     invalidated = _invalidated_trial_ids()
     kind = "composite" if _composition_mode(Path(run_dir)) else "variant"
     man_path = Path(run_dir) / "artifacts" / _COMPOSITION_MANIFEST_FILE
@@ -8728,6 +8757,8 @@ def _dsr_on_current_ledger_v2(run_dir: Path, variant: str, entry: dict, bars: di
         pr = load_yaml(run_dir / rel) if rel else None
         if not isinstance(pr, dict):
             raise ValueError(f"no readable protocol_result at {rel!r}")
+        # D-185: the spend keeps the CAMPAIGN-WIDE N and K whatever orchestrator.
+        # dsr_same_structure says -- no structure overlay, no same_structure keyword.
         wctx = _whole_test_dsr_context()
         res = _whole_test_dsr_candidate(wctx, run_dir, pr, entry.get("trial_id"),
                                         bars["dsr_min_same_basis_trials"])
@@ -13410,6 +13441,49 @@ def _compute_forecast_hash(config_path: Path) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
+def _structure_key_module():
+    import structure_key  # tools/ sibling (on sys.path)
+    return structure_key
+
+
+def _compute_structure_hash(config: dict) -> str:
+    """D-185: the structure hash of a parsed strategy config -- the config with every
+    parameter value removed (regime detector mode, component classes per regime in
+    order, transform op names in order, the signs of weights and scaling_factors, the
+    sizing kind). The recipe lives in tools/structure_key.py so the backfill tool
+    computes the very same value without importing this module."""
+    return _structure_key_module().compute_structure_hash(config)
+
+
+def _trial_timeframe_kw(protocol_file) -> dict:
+    """D-185: {"timeframe": canonical timeframe of the protocol file the backtest ran
+    on} under orchestrator.dsr_same_structure, else {} (the record calls unchanged).
+    Reads the file for its `timeframe` key only; unreadable: None, and the row is then
+    unkeyed."""
+    if not _dsr_same_structure_enabled():
+        return {}
+    return {"timeframe": _structure_key_module().read_protocol_timeframe(protocol_file)}
+
+
+def _trial_structure_fields(config_path: Path, timeframe: str | None) -> dict:
+    """D-185: {"structure_hash", "timeframe"} for a new trial row under
+    orchestrator.dsr_same_structure, else {} -- every row keeps exactly its keys. A
+    value that cannot be computed (a missing or unparseable config, no timeframe) is
+    left out, so the row is unkeyed rather than carrying a placeholder."""
+    if not _dsr_same_structure_enabled():
+        return {}
+    sk = _structure_key_module()
+    out: dict = {}
+    try:
+        out["structure_hash"] = _compute_structure_hash(
+            json.loads(Path(config_path).read_text(encoding="utf-8")))
+    except Exception:  # noqa: BLE001 -- the config may BE what is broken; the row is unkeyed
+        pass
+    canonical = sk.canonical_timeframe(timeframe) if timeframe is not None else None
+    if canonical is not None:
+        out["timeframe"] = canonical
+    return out
+
 
 def _trial_symbols_field(symbols) -> dict:
     """E-061 C2 S2b (G6): {"symbols": sorted coins} for a trial row written by
@@ -13480,12 +13554,14 @@ def _superseded_attempt(row: dict) -> dict:
     if row.get("invalidated_artifact"):
         kept["invalidated_artifact"] = True
         kept["invalidation_reason"] = row.get("invalidation_reason")
+    if _dsr_same_structure_enabled():  # D-185: the replaced attempt keeps its key; flag off: unchanged
+        kept.update({k: row[k] for k in ("structure_hash", "timeframe") if k in row})
     return kept
 
 
 def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_id: str | None = None,
                            symbols: list | None = None, whole_test: dict | None = None,
-                           windows_sha256: str | None = None):
+                           windows_sha256: str | None = None, timeframe: str | None = None):
     """
     A6.2: record a completed full-backtest as a trial in campaign_state.trial_sharpes.
     Appends {trial_id, source, sharpe, expectancy_bps, n_trades, statistic_valid}.
@@ -13522,6 +13598,12 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_
     orchestrator.profit_bars_v2 for a partial-coverage per-coin variant -- the
     row then carries its window fingerprint (_trial_windows_field). None: no
     such key, the row is byte-identical to before.
+
+    `timeframe` (D-185): the canonical bar size of the protocol the backtest ran
+    on, passed (_trial_timeframe_kw) only under orchestrator.dsr_same_structure.
+    The row then carries `structure_hash` and `timeframe` (_trial_structure_fields),
+    each left out when it cannot be computed. Flag off: no such keys, the row is
+    byte-identical to before.
 
     D-144: the row carries the summary's `protocol_run_id` (key absent when the
     summary has none). The H3 guard still skips a second write for the same
@@ -13605,6 +13687,7 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_
         **symbols_field,
         **windows_field,
         **fold_field,
+        **_trial_structure_fields(config_path, timeframe),  # D-185: {} with the flag off
         **({} if protocol_run_id is None else {"protocol_run_id": protocol_run_id}),
     }
     # CUL-233: carry an explicit reproduces_trial back-reference into the ledger
@@ -13632,12 +13715,16 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_
 
 
 def _record_failed_backtest_trial(run_id: str, config_path: Path, reason: str, trial_id: str | None = None,
-                                  symbols: list | None = None, windows_sha256: str | None = None):
+                                  symbols: list | None = None, windows_sha256: str | None = None,
+                                  timeframe: str | None = None):
     """
     `symbols` (E-061 C2 S2b, G6): as in _record_backtest_trial -- only the
     variant loop's per-coin variants pass it; None keeps the row unchanged.
     `windows_sha256` (E-062 S2b-3c): likewise, a partial-coverage variant's
     window fingerprint under orchestrator.profit_bars_v2; None: unchanged.
+    `timeframe` (D-185): as in _record_backtest_trial -- under
+    orchestrator.dsr_same_structure the row carries structure_hash and timeframe;
+    flag off: unchanged.
 
 
     `trial_id` param added 2026-09-22 (E-033.1 Slice 4a): optional, defaults
@@ -13714,6 +13801,7 @@ def _record_failed_backtest_trial(run_id: str, config_path: Path, reason: str, t
         **symbols_field,
         **windows_field,
         **fold_field,
+        **_trial_structure_fields(config_path, timeframe),  # D-185: {} with the flag off
     })
     _save_campaign_state(state)
     print(f"⚙️  H4: failed-backtest trial recorded (run={run_id}, reason={reason})")
@@ -15706,7 +15794,15 @@ def _load_trial_sharpe_basis_overlay() -> tuple:
     return index, {"present": True, "sha256": hashlib.sha256(raw).hexdigest()}
 
 
-def _whole_test_dsr_context(legacy_ctx: dict | None = None) -> dict:
+def _structure_overlay_kw() -> dict:
+    """D-185: {"with_structure_overlay": True} under orchestrator.dsr_same_structure,
+    else {} (the _whole_test_dsr_context call unchanged). Passed by branch 3's grading
+    and the grid's profit_bars grader, never by the holdout spend."""
+    return {"with_structure_overlay": True} if _dsr_same_structure_enabled() else {}
+
+
+def _whole_test_dsr_context(legacy_ctx: dict | None = None, *,
+                            with_structure_overlay: bool = False) -> dict:
     """The campaign-wide inputs of the whole-test DSR, computed once per
     evaluation: N (the legacy context's n_dsr_total -- the unchanged rule,
     every deduped valid row), the same-basis sample (select_same_basis_sample
@@ -15717,6 +15813,12 @@ def _whole_test_dsr_context(legacy_ctx: dict | None = None) -> dict:
     ds, basis = _deflate_sharpe_module(), _portfolio_whole_test_module().WHOLE_TEST_BASIS
     rows = legacy_ctx["campaign"].get("trial_sharpes") or []
     overlay, overlay_record = _load_trial_sharpe_basis_overlay()
+    if with_structure_overlay:
+        # D-185: rows written before the flag take their key from the backfill overlay
+        # (copies; the ledger itself is never mutated). Only the DSR counts read it.
+        sk = _structure_key_module()
+        rows = sk.apply_structure_overlay(
+            rows, sk.load_structure_overlay(TRIAL_STRUCTURE_KEY_OVERLAY_PATH))
     sample = ds.select_same_basis_sample(rows, overlay, basis=basis)
     if sample["N"] != legacy_ctx["n_dsr_total"]:
         raise ValueError(f"whole-test DSR: the same-basis sample counts N={sample['N']} deduped "
@@ -15724,15 +15826,62 @@ def _whole_test_dsr_context(legacy_ctx: dict | None = None) -> dict:
                          f"{legacy_ctx['n_dsr_total']} -- the two dedup implementations disagree")
     return {"rows": rows, "sample": sample, "n_dsr_total": legacy_ctx["n_dsr_total"],
             "n_trials": legacy_ctx["n_trials"], "sharpe_basis": basis,
-            "basis_overlay": overlay_record}
+            "basis_overlay": overlay_record, "overlay": overlay}
 
 
-def _whole_test_dsr_basis(wctx: dict, min_same_basis: int) -> dict:
+def _whole_test_dsr_basis(wctx: dict, min_same_basis: int, same_structure: dict | None = None) -> dict:
     """The v2 evaluation's `dsr_basis` (G7): the legacy counts plus
-    sharpe_basis, n_same_basis (K), min_same_basis and the overlay record."""
-    return {"n_dsr_total": wctx["n_dsr_total"], "n_trials": wctx["n_trials"],
-            "sharpe_basis": wctx["sharpe_basis"], "n_same_basis": wctx["sample"]["K"],
-            "min_same_basis": min_same_basis, "basis_overlay": dict(wctx["basis_overlay"])}
+    sharpe_basis, n_same_basis (K), min_same_basis and the overlay record.
+    D-185: `same_structure` (passed only under orchestrator.dsr_same_structure) adds
+    one `same_structure` entry -- {"enabled": True, "by_variant": {variant id:
+    _same_structure_view's record}}; the campaign-wide fields above are unchanged.
+    None (flag off): no such key, the dict byte-identical."""
+    out = {"n_dsr_total": wctx["n_dsr_total"], "n_trials": wctx["n_trials"],
+           "sharpe_basis": wctx["sharpe_basis"], "n_same_basis": wctx["sample"]["K"],
+           "min_same_basis": min_same_basis, "basis_overlay": dict(wctx["basis_overlay"])}
+    if same_structure is not None:
+        out["same_structure"] = {"enabled": True, "by_variant": dict(same_structure)}
+    return out
+
+
+def _own_backtest_row(wctx: dict, trial_id: str) -> dict | None:
+    """The candidate's one `backtest` ledger row (trial_id, source backtest), or
+    None when there is not exactly one."""
+    own = [r for r in wctx["rows"] if isinstance(r, dict) and r.get("trial_id") == trial_id
+           and r.get("source") == "backtest"]
+    return own[0] if len(own) == 1 else None
+
+
+def _same_structure_view(wctx: dict, row: dict) -> tuple:
+    """D-185: (wctx to grade with, record) for the candidate whose own ledger row is
+    `row`, under orchestrator.dsr_same_structure.
+
+    Keyed (the row carries both structure_hash and timeframe): the returned wctx has
+    N = the counted rows (invalidated out, deduplicated) with exactly that
+    (structure_hash, timeframe) and the same-basis sample restricted to them
+    (deflate_sharpe.select_same_structure_sample), so N >= K holds; the candidate's own
+    row is among them as it is among the campaign-wide N and K. Unkeyed ledger rows
+    are in no key's N. The record: {"status": "keyed", structure_hash, timeframe,
+    n_same_structure, n_campaign_wide, k_same_structure, k_campaign_wide}.
+
+    Unkeyed (the row lacks structure_hash or timeframe -- written before D-185 or
+    with a config / protocol that could not be read): the campaign-wide wctx,
+    unchanged, and {"status": "unkeyed", "reason", n_campaign_wide, k_campaign_wide}.
+    A design choice recorded in D-185: the candidate is graded on the campaign-wide
+    N and K, the rule it had before the flag, rather than refused."""
+    campaign = {"n_campaign_wide": wctx["n_dsr_total"], "k_campaign_wide": wctx["sample"]["K"]}
+    key = _structure_key_module().row_structure_key(row)  # a malformed field raises
+    if key is None:
+        missing = [f for f in ("structure_hash", "timeframe") if row.get(f) is None]
+        return wctx, {"status": "unkeyed",
+                      "reason": (f"the candidate's ledger row carries no {' and no '.join(missing)}; "
+                                 f"graded on the campaign-wide N and K"),
+                      **campaign}
+    sample = _deflate_sharpe_module().select_same_structure_sample(
+        wctx["rows"], key, wctx["overlay"], basis=wctx["sharpe_basis"])
+    return ({**wctx, "n_dsr_total": sample["N"], "sample": sample},
+            {"status": "keyed", "structure_hash": key[0], "timeframe": key[1],
+             "n_same_structure": sample["N"], "k_same_structure": sample["K"], **campaign})
 
 
 # (ledger block key, whole_test_sharpe_stats key)
@@ -15773,7 +15922,26 @@ def _dsr_not_evaluable(wctx: dict, min_same_basis: int, status: str, reason: str
 
 
 def _whole_test_dsr_candidate(wctx: dict, run_dir: Path, pr: dict, trial_id: str,
-                              min_same_basis: int) -> dict:
+                              min_same_basis: int, *, same_structure: bool = False) -> dict:
+    """compute_dsr_whole_test's result for ONE candidate (D-046).
+
+    D-185: `same_structure=True` (passed only by branch 3's grading, and only under
+    orchestrator.dsr_same_structure) grades the candidate on N and K counted among the
+    ledger rows with its own (structure_hash, timeframe) (_same_structure_view) and adds
+    `same_structure` -- the record of what was counted -- to the result. False (every
+    other caller, the holdout spend among them, and every flag-off run): campaign-wide
+    N and K, the result exactly as _whole_test_dsr_candidate_on returns it."""
+    if same_structure:
+        row = _own_backtest_row(wctx, trial_id)
+        if row is not None:  # not exactly one row: _whole_test_dsr_candidate_on raises, as before
+            used, record = _same_structure_view(wctx, row)
+            return {**_whole_test_dsr_candidate_on(used, run_dir, pr, trial_id, min_same_basis),
+                    "same_structure": record}
+    return _whole_test_dsr_candidate_on(wctx, run_dir, pr, trial_id, min_same_basis)
+
+
+def _whole_test_dsr_candidate_on(wctx: dict, run_dir: Path, pr: dict, trial_id: str,
+                                 min_same_basis: int) -> dict:
     """compute_dsr_whole_test's result for ONE candidate (D-046). The
     candidate's stats are recomputed from its own artifacts and checked, in
     lockstep, against its own ledger row (trial_id, source backtest).
@@ -15870,6 +16038,14 @@ def _whole_test_dsr_note(pr_ref: str, res: dict) -> str:
     base = (f"{pr_ref}: deflated Sharpe (Bailey & Lopez de Prado 2014, D-046) of the whole-test "
             f"daily Sharpe on the campaign trial ledger; N={res['N']} counted trial(s), "
             f"K={res['K']} same-basis value(s) (floor {res['min_same_basis']})")
+    ss = res.get("same_structure")  # D-185: present only under orchestrator.dsr_same_structure
+    if ss is not None:
+        base += (f"; N and K counted among the trials with this candidate's own (structure_hash, "
+                 f"timeframe) ({ss['structure_hash'][:12]}.., {ss['timeframe']}; campaign-wide "
+                 f"N={ss['n_campaign_wide']}, K={ss['k_campaign_wide']})"
+                 if ss["status"] == "keyed" else
+                 f"; D-185 same-structure N and K not applied, the candidate is unkeyed "
+                 f"(campaign-wide N and K used)")
     if res["dsr"] is None:
         return f"{base}; NOT_EVALUABLE: {res['reason']}"
     return (f"{base}; SR={res['sr_daily']!r}/day over T={res['T']} daily returns, "
@@ -16174,7 +16350,9 @@ def _grade_profit_bars_protocol_result(run_dir: Path, pr: dict, pr_ref: str, bar
     v2=False: exactly as before."""
     if v2:
         res = _whole_test_dsr_candidate(whole_test_ctx, run_dir, pr, trial_id,
-                                        bars["dsr_min_same_basis_trials"])
+                                        bars["dsr_min_same_basis_trials"],
+                                        **({"same_structure": True}  # D-185; flag off: no new keyword
+                                           if _dsr_same_structure_enabled() else {}))
         return _grade_profit_bars_v2(
             bars, dsr=res["dsr"], dsr_note=_whole_test_dsr_note(pr_ref, res),
             metrics=_whole_test_profit_metrics(run_dir, pr, bars),
@@ -16484,10 +16662,13 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
     candidates = _profit_bars_backtest_candidates(run_dir, run_id, **v2_kw)
     dsr_ctx = _promotion_dsr_context()
     # E-062 S2b-2b: under v2 the whole-test DSR's inputs, once for every variant.
-    wctx = _whole_test_dsr_context(dsr_ctx) if v2 else None
+    wctx = _whole_test_dsr_context(dsr_ctx, **_structure_overlay_kw()) if v2 else None
     # PR-B: the window_economics key exists only under orchestrator.analyst.enabled
     # (flag off: no key, the file byte-identical).
     analyst = _analyst_enabled()
+    # D-185: only meaningful with the v2 whole-test DSR (the legacy DSR has no same-basis K).
+    same_structure_on = bool(v2 and _dsr_same_structure_enabled())
+    same_structure_records: dict = {}
 
     variants: dict = {}
     for cid, cand in candidates.items():
@@ -16515,6 +16696,15 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
         results, overall, reasons = _grade_profit_bars_protocol_result(
             run_dir, cand["protocol_result"], cand["protocol_result_ref"], cand_bars, dsr_ctx,
             **({**v2_kw, "trial_id": cand["trial_id"], "whole_test_ctx": wctx} if v2 else {}))
+        if same_structure_on:
+            # D-185: what this candidate's N and K were counted over (the graded row has
+            # just been read, so its single ledger row exists).
+            _own = _own_backtest_row(wctx, cand["trial_id"])
+            same_structure_records[cid] = (_same_structure_view(wctx, _own)[1] if _own is not None
+                                           else {"status": "unkeyed",
+                                                 "reason": "no single backtest ledger row",
+                                                 "n_campaign_wide": wctx["n_dsr_total"],
+                                                 "k_campaign_wide": wctx["sample"]["K"]})
         if norm:
             results = _attach_normalisation(results, norm)
         if unmeasurable is not None:
@@ -16549,7 +16739,10 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
         "bars_ratified_at": bars["ratified_at"],
         # E-062 S2b-2b: under v2 also sharpe_basis, n_same_basis, min_same_basis
         # and the overlay's presence / sha256 (G7); flag off, unchanged.
-        "dsr_basis": (_whole_test_dsr_basis(wctx, bars["dsr_min_same_basis_trials"]) if v2 else
+        "dsr_basis": (_whole_test_dsr_basis(
+                          wctx, bars["dsr_min_same_basis_trials"],
+                          **({"same_structure": same_structure_records} if same_structure_on else {}))
+                      if v2 else
                       {"n_dsr_total": dsr_ctx["n_dsr_total"], "n_trials": dsr_ctx["n_trials"]}),
         # Per-variant shape. Composites (slice 7) would add their own graded
         # entries -- see _profit_bars_backtest_candidates' seam note.

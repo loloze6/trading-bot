@@ -1083,6 +1083,47 @@ def select_same_basis_sample(trial_records, overlay=None, basis: str = WHOLE_TES
             "N": len(deduped), "basis": basis}
 
 
+def select_same_structure_sample(trial_records, key, overlay=None,
+                                 basis: str = WHOLE_TEST_BASIS) -> dict:
+    """D-185: the same-basis sample and N restricted to ONE structure key.
+
+    key: (structure_hash, timeframe) -- structure_key.row_structure_key of the
+    candidate's own row. Runs select_same_basis_sample on the whole ledger
+    unchanged (the same validation, exclusion, dedup and K rule), then keeps
+    only the deduped rows whose own key equals `key`:
+
+      N = the deduped valid rows (invalidated out, deduplicate_trials) carrying
+          exactly this (structure_hash, timeframe);
+      K = the same-basis sample rows among them (a subset of those N rows, so
+          N >= K always holds).
+
+    The key filter comes AFTER dedup (the spec's order), so the dedup keys are
+    unchanged: two rows the campaign-wide rule collapses stay collapsed. A row
+    with no structure_hash or no timeframe (a ledger row written before D-185,
+    or by a run whose protocol/config could not be read) has no key and is
+    never counted in any key's N or K. A present but malformed field raises
+    (structure_key.row_structure_key).
+
+    Returns {"srs", "rows", "K", "N", "basis", "key", "N_campaign", "K_campaign"};
+    N_campaign / K_campaign are the unrestricted select_same_basis_sample
+    counts, for the evaluation's record."""
+    from structure_key import row_structure_key  # tools/ sibling
+
+    if (not isinstance(key, tuple) or len(key) != 2
+            or not all(isinstance(x, str) and x for x in key)):
+        raise ValueError(f"select_same_structure_sample: key {key!r} is not a "
+                         f"(structure_hash, timeframe) pair of non-empty strings")
+    full = select_same_basis_sample(trial_records, overlay, basis=basis)
+    valid, _n_invalidated = exclude_invalidated_trials(trial_records)
+    deduped, _n_removed = deduplicate_trials(valid)
+    in_key = [r for r in deduped if row_structure_key(r) == key]
+    in_key_ids = {(r.get("trial_id"), r.get("source")) for r in in_key}
+    rows = [x for x in full["rows"] if (x["trial_id"], x["source"]) in in_key_ids]
+    return {"srs": [x["sr_daily"] for x in rows], "rows": rows, "K": len(rows),
+            "N": len(in_key), "basis": basis, "key": key,
+            "N_campaign": full["N"], "K_campaign": full["K"]}
+
+
 # ---------------------------------------------------------------------------
 # CLI entry point
 # ---------------------------------------------------------------------------
