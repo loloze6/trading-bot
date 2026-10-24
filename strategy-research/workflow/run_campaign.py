@@ -3597,6 +3597,7 @@ def _flag_readers() -> dict:
         "brief_criteria": orch._brief_criteria_enabled,  # D-121
         "extra_cards_at_1a": orch._extra_cards_at_1a_enabled,  # D-138
         "explore_confirm": orch._explore_confirm_enabled,  # E-072 (D-080)
+        "dsr_same_structure": orch._dsr_same_structure_enabled,  # D-185
         "schedulability_block": _schedulability_block_enabled,
         "operator_approval": _operator_approval_enabled,  # E-068 PR 4 (D-071)
     }

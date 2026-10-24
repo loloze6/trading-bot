@@ -122,7 +122,8 @@ def _reproduces_collapses_onto_present_original(
         target_id = next_target
 
 
-def deduplicate_trials(records: list[dict]) -> tuple[list[dict], int]:
+def deduplicate_trials(records: list[dict], *,
+                       timeframe_in_key: bool = False) -> tuple[list[dict], int]:
     """
     Deduplicate trial records by (forecast_hash, source), honouring an explicit
     `reproduces_trial` back-reference (A6.4; #36; CUL-233).
@@ -180,8 +181,20 @@ def deduplicate_trials(records: list[dict]) -> tuple[list[dict], int]:
     None, so rows written without a fold dedupe exactly as before. A present but
     non-string or empty `fold` raises. Lockstep with run_phase1_research.
 
+    D-185 (direction d1, 2026-10-24): `timeframe_in_key=True` -- passed ONLY by
+    select_same_structure_sample -- adds the row's canonical timeframe to the key
+    (the key becomes (forecast_hash, symbols, windows_sha256, fold, timeframe,
+    source)), so the same config on two bar sizes is two trials in the
+    same-structure count. A row with no `timeframe` (or None) keys None, so a
+    pre-D-185 row never splits; a present but unparseable timeframe raises. The
+    default (False) is the campaign-wide rule above, byte-identical: the holdout
+    spend and the flag-off path never pass it. Not mirrored in
+    run_phase1_research._dedupe_trials (the pipeline's campaign-wide twin).
+
     Returns (deduped_list, n_removed).
     """
+    if timeframe_in_key:
+        from structure_key import canonical_timeframe  # tools/ sibling
     # Pre-pass: index every (trial_id, source) present and the reproduces_trial it
     # declares, so the walk can follow a chain and detect a cycle.
     reproduces_by_key: dict[tuple, object] = {}
@@ -231,7 +244,17 @@ def deduplicate_trials(records: list[dict]) -> tuple[list[dict], int]:
                                  f"non-empty string (D-124)")
         else:
             fold = None
-        key = (fh, coins, wsha, fold, rec.get("source"))
+        if timeframe_in_key:
+            tf = rec.get("timeframe")
+            if tf is not None:
+                tf = canonical_timeframe(tf) if isinstance(tf, str) else None
+                if tf is None:
+                    raise ValueError(f"trial {rec.get('trial_id')!r}: timeframe "
+                                     f"{rec.get('timeframe')!r} is not a parseable bar size "
+                                     f"string such as '1h' (D-185)")
+            key = (fh, coins, wsha, fold, tf, rec.get("source"))
+        else:
+            key = (fh, coins, wsha, fold, rec.get("source"))
         if key in seen_keys:
             n_removed += 1
         else:
@@ -811,7 +834,7 @@ def _expected_max_z(n: int) -> float:
 
 
 def compute_dsr_whole_test(candidate_stats, same_basis_srs, n_total: int,
-                           min_same_basis: int) -> dict:
+                           min_same_basis: int, *, n1_no_selection: bool = False) -> dict:
     """Deflated Sharpe Ratio on the whole-test daily basis (D-046).
 
     candidate_stats: {sr_daily, T, skew, kurtosis_raw} as returned by
@@ -837,8 +860,18 @@ def compute_dsr_whole_test(candidate_stats, same_basis_srs, n_total: int,
     DSR = Phi((SR - SR0) sqrt(T - 1) / sqrt(1 - skew SR + ((kurt - 1) / 4) SR^2)),
       SR = the candidate's sr_daily, skew / raw kurtosis of its daily returns.
 
+    D-185 (operator direction a, 2026-10-24): `n1_no_selection=True` -- passed ONLY
+    by the same-structure grading of a keyed candidate -- grades N == 1 instead of
+    refusing it: no selection happened among one trial, so the published formula's
+    N = 1 case applies, SR0 = 0 and DSR = PSR against zero with the candidate's T,
+    skew and kurtosis. The result: status "ok", reason "N = 1: no selection
+    correction", z_expected_max 0.0, sigma_source "none", sigma_used None, sr0 0.0.
+    At N >= 2 the keyword changes nothing; at N == 0 it changes nothing (still
+    NOT_EVALUABLE); False (every campaign-wide caller and the holdout spend) keeps
+    the N < 2 refusal below.
+
     NOT_EVALUABLE (status "not_evaluable", dsr None, reason set) ONLY when:
-    N < 2; the candidate's own block is not "ok"; the candidate's T is below
+    N < 2 (unless n1_no_selection and N == 1); the candidate's own block is not "ok"; the candidate's T is below
     SHARPE_MIN_DAILY_RETURNS; the denominator's argument is
     <= 0. A small K is never NOT_EVALUABLE (sigma_null takes over). Malformed
     input raises ValueError."""
@@ -889,25 +922,30 @@ def compute_dsr_whole_test(candidate_stats, same_basis_srs, n_total: int,
     if t < SHARPE_MIN_DAILY_RETURNS:
         return _not_evaluable(f"the candidate's T={t} daily returns is below "
                               f"SHARPE_MIN_DAILY_RETURNS={SHARPE_MIN_DAILY_RETURNS}")
-    if n_total < 2:
+    if n_total < 2 and not (n1_no_selection and n_total == 1):
         return _not_evaluable(f"N={n_total} counted trial(s); the multiple-testing "
                               f"correction needs N >= 2")
 
     sigma_null = 1.0 / math.sqrt(t - 1)
-    z = _expected_max_z(n_total)
-    out.update(sigma_null=sigma_null, z_expected_max=z)
-    if k < min_same_basis:
-        sigma_used, source, floor_mean = sigma_null, "null", 0.0
+    if n_total == 1:  # only reachable with n1_no_selection (D-185 direction a): SR0 = 0
+        out.update(sigma_null=sigma_null, z_expected_max=0.0,
+                   reason="N = 1: no selection correction")
+        sr0, sigma_used, source = 0.0, None, "none"
     else:
-        mean_k = statistics.mean(srs)
-        sigma_k = math.sqrt(statistics.variance(srs))
-        out.update(mean_same_basis=mean_k, sigma_cross=sigma_k)
-        if sigma_k > sigma_null:
-            sigma_used, source = sigma_k, "cross"
+        z = _expected_max_z(n_total)
+        out.update(sigma_null=sigma_null, z_expected_max=z)
+        if k < min_same_basis:
+            sigma_used, source, floor_mean = sigma_null, "null", 0.0
         else:
-            sigma_used, source = sigma_null, "null"
-        floor_mean = max(mean_k, 0.0)
-    sr0 = floor_mean + sigma_used * z
+            mean_k = statistics.mean(srs)
+            sigma_k = math.sqrt(statistics.variance(srs))
+            out.update(mean_same_basis=mean_k, sigma_cross=sigma_k)
+            if sigma_k > sigma_null:
+                sigma_used, source = sigma_k, "cross"
+            else:
+                sigma_used, source = sigma_null, "null"
+            floor_mean = max(mean_k, 0.0)
+        sr0 = floor_mean + sigma_used * z
     out.update(sr0=sr0, sigma_used=sigma_used, sigma_source=source)
 
     denom_arg = 1.0 - skew * sr + ((kurt - 1.0) / 4.0) * sr * sr
@@ -1033,6 +1071,14 @@ def select_same_basis_sample(trial_records, overlay=None, basis: str = WHOLE_TES
     overlay: the dict from validate_basis_overlay / load_basis_overlay (or None).
     Returns {"srs": [...], "rows": [{trial_id, source, sr_daily, origin}], "K": len,
     "N": len(deduped valid rows), "basis": basis}."""
+    return _same_basis_sample(trial_records, overlay, basis, timeframe_in_dedup=False)
+
+
+def _same_basis_sample(trial_records, overlay, basis, *, timeframe_in_dedup: bool) -> dict:
+    """select_same_basis_sample's body. timeframe_in_dedup=False is the
+    campaign-wide dedup, byte-identical to before D-185; True (passed only by
+    select_same_structure_sample) keys the dedup on the row's timeframe too
+    (deduplicate_trials(timeframe_in_key=True))."""
     if not isinstance(basis, str) or not basis:
         raise ValueError(f"select_same_basis_sample: basis {basis!r} is not a non-empty string")
     if not isinstance(trial_records, list):
@@ -1065,7 +1111,7 @@ def select_same_basis_sample(trial_records, overlay=None, basis: str = WHOLE_TES
                     f"{_row_field_diff(native, ov_block)}")
 
     valid, _n_invalidated = exclude_invalidated_trials(trial_records)
-    deduped, _n_removed = deduplicate_trials(valid)
+    deduped, _n_removed = deduplicate_trials(valid, timeframe_in_key=timeframe_in_dedup)
     rows = []
     for r in deduped:
         tid, src = r.get("trial_id"), r.get("source")
@@ -1081,6 +1127,53 @@ def select_same_basis_sample(trial_records, overlay=None, basis: str = WHOLE_TES
                      "origin": origin})
     return {"srs": [x["sr_daily"] for x in rows], "rows": rows, "K": len(rows),
             "N": len(deduped), "basis": basis}
+
+
+def select_same_structure_sample(trial_records, key, overlay=None,
+                                 basis: str = WHOLE_TEST_BASIS) -> dict:
+    """D-185: the same-basis sample and N restricted to ONE structure key.
+
+    key: (structure_hash, timeframe) -- structure_key.row_structure_key of the
+    candidate's own row. Validates the whole ledger as select_same_basis_sample
+    does (same checks, exclusion and K rule), deduplicates it with the row's
+    canonical timeframe added to the dedup key (D-185 direction d1; None when
+    absent, so a pre-D-185 row never splits), then keeps only the deduped rows
+    whose own key equals `key`:
+
+      N = the deduped valid rows (invalidated out, deduplicate_trials with
+          timeframe_in_key=True) carrying exactly this (structure_hash,
+          timeframe) -- the candidate's own row is among them;
+      K = the same-basis sample rows among them (a subset of those N rows, so
+          N >= K always holds).
+
+    The key filter comes AFTER dedup (the spec's order). The same config and fold
+    on two bar sizes (1h and 4h) is therefore two trials, each counted in its
+    own key; the campaign-wide dedup (N_campaign / K_campaign, the spend) still
+    collapses them -- held, not built. A row
+    with no structure_hash or no timeframe (a ledger row written before D-185,
+    or by a run whose protocol/config could not be read) has no key and is
+    never counted in any key's N or K. A present but malformed field raises
+    (structure_key.row_structure_key).
+
+    Returns {"srs", "rows", "K", "N", "basis", "key", "N_campaign", "K_campaign"};
+    N_campaign / K_campaign are the unrestricted select_same_basis_sample
+    counts, for the evaluation's record."""
+    from structure_key import row_structure_key  # tools/ sibling
+
+    if (not isinstance(key, tuple) or len(key) != 2
+            or not all(isinstance(x, str) and x for x in key)):
+        raise ValueError(f"select_same_structure_sample: key {key!r} is not a "
+                         f"(structure_hash, timeframe) pair of non-empty strings")
+    full = select_same_basis_sample(trial_records, overlay, basis=basis)
+    by_tf = _same_basis_sample(trial_records, overlay, basis, timeframe_in_dedup=True)
+    valid, _n_invalidated = exclude_invalidated_trials(trial_records)
+    deduped, _n_removed = deduplicate_trials(valid, timeframe_in_key=True)
+    in_key = [r for r in deduped if row_structure_key(r) == key]
+    in_key_ids = {(r.get("trial_id"), r.get("source")) for r in in_key}
+    rows = [x for x in by_tf["rows"] if (x["trial_id"], x["source"]) in in_key_ids]
+    return {"srs": [x["sr_daily"] for x in rows], "rows": rows, "K": len(rows),
+            "N": len(in_key), "basis": basis, "key": key,
+            "N_campaign": full["N"], "K_campaign": full["K"]}
 
 
 # ---------------------------------------------------------------------------

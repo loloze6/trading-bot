@@ -925,6 +925,23 @@ flags:
       card's; decide-next copies a fold child's source criteria into that field
       (supersedes D-011 item 2 for fold children). Tested by
       tests/test_d121_brief_criteria.py.
+  - name: dsr_same_structure
+    kind: orchestrator_config
+    config_key: orchestrator.dsr_same_structure.enabled
+    reader: run_phase1_research._dsr_same_structure_enabled
+    owner: Jeremy
+    state: off_incomplete
+    blocked_on: "the operator switches it on in c4/flag-set (D-185)"
+    criterion: >
+      Landed 2026-10-24 (D-185, PR-2). Off: byte-identical. On: new trial rows
+      carry structure_hash (the strategy config with every parameter value
+      removed) and timeframe; branch 3's v2 deflated Sharpe counts N and K among
+      the rows with the candidate's own (structure_hash, timeframe) after the
+      invalidated-row exclusion and dedup; an unkeyed candidate falls back to
+      the campaign-wide N and K, recorded in dsr_basis.same_structure; the
+      holdout spend keeps the campaign-wide N. Supersedes D-046's "N = every
+      counted trial" for branch 3 only. Tested by
+      tests/test_d185_dsr_same_structure.py.
   - name: extra_cards_at_1a
     kind: orchestrator_config
     config_key: orchestrator.extra_cards_at_1a.enabled
