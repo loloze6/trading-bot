@@ -153,7 +153,9 @@ on/off rule restated as a graded measure) gets its own entry whose `config_choic
 says what was built instead, or that nothing was. Never silently build a different signal, and never leave a
 clause unmapped. A fill-timing clause in a card ("applied from the next bar", "no same-bar fill") is not a
 deviation: the engine's fill at the signal bar's close is the convention; note it in config_rationale and build
-nothing.
+nothing. A sizing clause in a card ("target 20% annual volatility", "size by realised volatility") is not a
+deviation: the `strategies.sizing` block (D-176), required in every base config (D-181), is the sizing; build it and
+map the clause to it in config_rationale.
 
 **`component_gap` only after compositions are ruled out.** Before reporting `component_gap`, try compositions of the
 existing components: several components averaged, negative weights, offsets, sign flips, AND the transform pipeline
@@ -166,6 +168,13 @@ in `decision.yaml` `tried`, each with the card clause it fails; at least one mus
   its usual size" (standard deviation instead of ATR). Build that and write a `DEVIATION:` entry in
   `config_rationale` ("normalised by the std of 1-bar returns, not ATR(20)"). Report `component_gap` only when no
   composition expresses the clause's QUANTITY at all.
+- **The same compositions come first before a `DEVIATION:` saying a component or composition was missing (D-187),
+  not only before `component_gap`.** If you are about to write a `DEVIATION:` entry saying a signal clause could not be
+  built as written because no component or composition exists for it, first try the compositions above: several
+  instances averaged, negative weights, offsets, sign flips, the transform pipeline. That deviation entry carries a
+  `tried` list: each composition you tried, with the card clause it fails. A deviation of another kind (the
+  bounded-quantity map D-163 requires when D-149 forces the standardised form, an on/off rule restated as graded)
+  carries no `tried` list.
 - If your `component_gap` comes without `tried`, or with a `tried` list that names no transform combination, the
   orchestrator sends you back once with that message.
 
