@@ -214,7 +214,12 @@ def row_structure_key(row) -> tuple | None:
 # ---------------------------------------------------------------------------
 
 OVERLAY_KEYS = frozenset({"trial_id", "source", "structure_hash", "timeframe",
-                          "config_sha256", "config_ref"})
+                          "config_sha256", "config_ref", "forecast_hash_check"})
+# forecast_hash_check (D-185 note, direction 2026-10-24): "match" when the ledger row's
+# forecast_hash equals the saved config's, so the config is the one the trial tested;
+# "row_has_no_forecast_hash" when the legacy row carries none, so the saved config is the
+# run's config but cannot be checked against the trial (the dry run's "keyed_unverified").
+FORECAST_HASH_CHECKS = frozenset({"match", "row_has_no_forecast_hash"})
 _HEX = frozenset("0123456789abcdef")
 
 
@@ -226,7 +231,8 @@ def validate_structure_overlay(data) -> dict:
     """Validate the parsed overlay YAML and index it: None / empty -> {}; else
     {"entries": [entry, ...]} with every entry holding exactly OVERLAY_KEYS
     (trial_id, source, config_ref, timeframe non-empty strings; structure_hash
-    and config_sha256 sha256 hex digests). The same (trial_id, source) twice is
+    and config_sha256 sha256 hex digests; forecast_hash_check one of
+    FORECAST_HASH_CHECKS). The same (trial_id, source) twice is
     kept once when the entries are equal and raises when they differ. Returns
     {(trial_id, source): entry}."""
     if data is None:
@@ -251,6 +257,9 @@ def validate_structure_overlay(data) -> dict:
         for f in ("structure_hash", "config_sha256"):
             if not _is_sha(e[f]):
                 raise ValueError(f"{what}: {f} {e[f]!r} is not a sha256 hex digest")
+        if e["forecast_hash_check"] not in FORECAST_HASH_CHECKS:
+            raise ValueError(f"{what}: forecast_hash_check {e['forecast_hash_check']!r} is not one "
+                             f"of {sorted(FORECAST_HASH_CHECKS)}")
         key = (e["trial_id"], e["source"])
         if key in index:
             if index[key] != e:

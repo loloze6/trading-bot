@@ -897,6 +897,7 @@ def test_write_appends_the_overlay_only_keys_rows_with_configs_and_is_idempotent
     assert e["structure_hash"] == _h(_config()) and e["timeframe"] == "1h"       # "60m" -> "1h"
     assert e["config_ref"] == "runs/run_001/artifacts/candidate_strategy_config.json"
     assert e["config_sha256"] == hashlib.sha256((root / e["config_ref"]).read_bytes()).hexdigest()
+    assert e["forecast_hash_check"] == "match"  # the row's forecast_hash equals the config's
     assert index[("run_002:v1", "backtest")]["timeframe"] == "4h"                # via protocol_ref
     assert index[("run_002:v1", "backtest")]["structure_hash"] != e["structure_hash"]  # weight sign
     # nothing for the rows that stay unkeyed
@@ -939,8 +940,14 @@ def test_a_legacy_row_without_a_forecast_hash_is_keyed_but_counted_apart(tmp_pat
     state = yaml.safe_load((root / bsh.LEDGER_REL).read_text(encoding="utf-8"))
     state["trial_sharpes"] = [{"trial_id": "run_001", "source": "prescreen"}]
     (root / bsh.LEDGER_REL).write_text(yaml.safe_dump(state), encoding="utf-8")
-    c = bsh.run(root)["counts"]
+    plan = bsh.run(root)
+    c = plan["counts"]
     assert c["keyed"] == 1 and c["keyed_unverified"] == 1
+    # D-185 note (direction 2026-10-24): the overlay entry says the row could not be checked
+    assert [e["forecast_hash_check"] for e in plan["entries"]] == ["row_has_no_forecast_hash"]
+    bsh.run(root, write=True)
+    index = sk.load_structure_overlay(root / bsh.OVERLAY_REL)
+    assert index[("run_001", "prescreen")]["forecast_hash_check"] == "row_has_no_forecast_hash"
 
 
 @pytest.mark.parametrize("tid,want", [
@@ -956,10 +963,13 @@ def test_config_ref_follows_the_trial_id_and_refuses_path_tricks(tid, want):
 
 def test_overlay_validation_is_strict():
     good = {"trial_id": "r", "source": "backtest", "structure_hash": H1, "timeframe": "1h",
-            "config_sha256": H2, "config_ref": "runs/r/x.json"}
+            "config_sha256": H2, "config_ref": "runs/r/x.json",
+            "forecast_hash_check": "match"}
     assert sk.validate_structure_overlay({"entries": [good, dict(good)]}) == {("r", "backtest"): good}
     for bad in ({**good, "extra": 1}, {k: v for k, v in good.items() if k != "timeframe"},
-                {**good, "structure_hash": "zz"}, {**good, "trial_id": ""}):
+                {**good, "structure_hash": "zz"}, {**good, "trial_id": ""},
+                {**good, "forecast_hash_check": "unknown"},
+                {k: v for k, v in good.items() if k != "forecast_hash_check"}):
         with pytest.raises(ValueError):
             sk.validate_structure_overlay({"entries": [bad]})
     with pytest.raises(ValueError, match="only 'entries'"):
@@ -970,7 +980,7 @@ def test_overlay_validation_is_strict():
 
 def test_apply_overlay_copies_keys_in_never_mutates_and_refuses_conflicts_and_orphans():
     good = {"trial_id": "r1", "source": "backtest", "structure_hash": H1, "timeframe": "1h",
-            "config_sha256": H2, "config_ref": "x"}
+            "config_sha256": H2, "config_ref": "x", "forecast_hash_check": "match"}
     idx = {("r1", "backtest"): good}
     rows = [{"trial_id": "r1", "source": "backtest"}, {"trial_id": "r2", "source": "backtest"}]
     out = sk.apply_structure_overlay(rows, idx)
@@ -988,7 +998,8 @@ def test_the_dsr_reads_the_overlay_only_under_the_flag():
     run_dir = _v2_run()
     _add_rows(3, None, None, 700)  # three legacy rows, unkeyed in the ledger
     entries = [{"trial_id": f"run_{700 + i}", "source": "backtest", "structure_hash": H1,
-                "timeframe": "1h", "config_sha256": H2, "config_ref": f"runs/run_{700 + i}/c.json"}
+                "timeframe": "1h", "config_sha256": H2, "config_ref": f"runs/run_{700 + i}/c.json",
+                "forecast_hash_check": "match"}
                for i in range(3)]
     entries.append({**entries[0], "trial_id": RUN_ID})
     rpr.TRIAL_STRUCTURE_KEY_OVERLAY_PATH.write_text(yaml.safe_dump({"entries": entries}),
