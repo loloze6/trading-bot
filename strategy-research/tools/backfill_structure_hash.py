@@ -31,7 +31,10 @@ A row with no saved config stays unkeyed. So does a row whose saved config does
 not hash (the forecast_hash rule) to the row's own forecast_hash -- the file is
 then not what the row tested -- and a row whose run has no readable protocol
 timeframe. A legacy row with no forecast_hash cannot be checked that way and is
-keyed from its saved config, counted apart ("keyed_unverified").
+keyed from its saved config, counted apart ("keyed_unverified"): the config is the
+one saved in the trial's run, but nothing proves it is the one the trial tested.
+Each overlay entry says which case it is in `forecast_hash_check` ("match" or
+"row_has_no_forecast_hash").
 
 Why none of this can leak: the key is a function of a saved config and a bar
 size, both fixed before any bar of the run was read.
@@ -133,6 +136,7 @@ def plan(root: Path, rows: list, existing: dict) -> dict:
             "structure_hash": structure_hash, "timeframe": timeframe,
             "config_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
             "config_ref": rel.as_posix(),
+            "forecast_hash_check": "match" if recorded is not None else "row_has_no_forecast_hash",
         }
         counts["keyed"] += 1
         if recorded is None:
