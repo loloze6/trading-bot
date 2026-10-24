@@ -35,6 +35,10 @@ here. Do not invent blocks, fields or parameters.
   (horizons are bars of the card's timeframe). If no slot does, write `tests: none` and
   `missing_block`; never substitute a nearby quantity (a price level for a move, bars for days).
 
+**The statement's test.** The card's `statement` has a `horizon_bars` (SKILL.md, step 3). Test it
+at horizons around `horizon_bars`, not at `horizon_bars` alone. The opposite reading of the statement
+is its own test.
+
 ## 1. What to write
 
 ```yaml
