@@ -12,4 +12,5 @@ import analyst_session as asm
 def d178_checks_off(monkeypatch):
     monkeypatch.setattr(asm, "next_steps_errors", lambda *a, **k: [])
     monkeypatch.setattr(asm, "completeness_errors", lambda *a, **k: [])
+    monkeypatch.setattr(asm, "unreported_results", lambda *a, **k: [])      # D-184
     monkeypatch.setattr(asm, "_mechanism_errors", lambda *a, **k: [])
