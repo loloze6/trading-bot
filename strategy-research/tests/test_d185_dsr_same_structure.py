@@ -194,10 +194,12 @@ def test_a_missing_scaling_factor_hashes_as_the_positive_default():
 
 
 def test_every_component_default_scaling_factor_is_positive():
-    # The premise of the +1 above, read from the source rather than assumed.
+    # The premise of the +1 above, read from the source rather than assumed. The whole file
+    # is read (D-191: a fixed line slice broke when EMASpreadComponent grew); it holds
+    # exactly the 11 component defaults.
     import re
     src = (SR_ROOT.parent / "trading-bot" / "strategies" / "strategy_components.py").read_text(
-        encoding="utf-8").splitlines()[233:693]
+        encoding="utf-8").splitlines()
     defaults = [float(m.group(1)) for line in src
                 for m in [re.search(r"get\('scaling_factor',\s*([-0-9.]+)\)", line)] if m]
     assert len(defaults) == 11 and all(d > 0 for d in defaults), defaults
