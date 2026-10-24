@@ -3,11 +3,18 @@ D-185: key the trial ledger rows written before orchestrator.dsr_same_structure
 with their (structure_hash, timeframe), from the config their run saved and the
 run's protocol timeframe.
 
-Dry run by default: prints COUNTS only (rows keyed, rows left unkeyed and why).
-It reads the ledger, the saved configs and each run's protocol for its
-`timeframe` key, and prints nothing of any of them.
+Dry run by default: prints COUNTS only -- rows keyed, rows unkeyed, distinct keys,
+singleton keys (a key with exactly one counted trial: its candidate is graded at
+SR0 = 0, D-185 direction a), and a count per reason a row stays unkeyed. The key
+counts are taken over the counted rows (invalidated out, deduplicated with the
+timeframe in the key, as the same-structure count does), with the planned keys
+applied. It reads the ledger, the saved configs and each run's protocol for its
+`timeframe` key, and prints nothing of any of them: no row id, path, date or
+content; an error prints its class name only. `--root <strategy-research dir>`
+points it at another checkout's runs read-only (the dry run writes nothing).
 
     python tools/backfill_structure_hash.py                 # dry run
+    python tools/backfill_structure_hash.py --root <dir>    # dry run, another root
     python tools/backfill_structure_hash.py --write         # append to the overlay
 
 --write appends to the overlay campaign_record/trial_structure_key_overlay.yaml
@@ -134,6 +141,31 @@ def plan(root: Path, rows: list, existing: dict) -> dict:
             "counts": counts}
 
 
+def _summary(rows: list, existing: dict, result: dict) -> dict:
+    """{rows_keyed, rows_unkeyed, distinct_keys, singleton_keys} once the planned
+    entries are applied. rows_* count every ledger row; the key counts are over
+    the counted rows (exclude_invalidated_trials, then deduplicate_trials with the
+    timeframe in the key -- select_same_structure_sample's N basis)."""
+    from deflate_sharpe import deduplicate_trials, exclude_invalidated_trials  # tools/ sibling
+
+    dict_rows = [r for r in rows if isinstance(r, dict)]
+    index = dict(existing)
+    for e in result["entries"]:
+        index[(e["trial_id"], e["source"])] = e
+    keyed_rows = sk.apply_structure_overlay(dict_rows, index)
+    rows_keyed = sum(1 for r in keyed_rows if sk.row_structure_key(r) is not None)
+    valid, _n = exclude_invalidated_trials(keyed_rows)
+    deduped, _n = deduplicate_trials(valid, timeframe_in_key=True)
+    per_key: dict = {}
+    for r in deduped:
+        k = sk.row_structure_key(r)
+        if k is not None:
+            per_key[k] = per_key.get(k, 0) + 1
+    return {"rows_keyed": rows_keyed, "rows_unkeyed": len(keyed_rows) - rows_keyed,
+            "distinct_keys": len(per_key),
+            "singleton_keys": sum(1 for n in per_key.values() if n == 1)}
+
+
 def _atomic_write(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=path.name + ".", suffix=".tmp")
@@ -158,6 +190,7 @@ def run(root: Path, write: bool = False) -> dict:
                     if overlay_path.exists() else None)
     existing = sk.validate_structure_overlay(existing_doc)  # a malformed overlay aborts here
     result = plan(root, rows, existing)
+    result["summary"] = _summary(rows, existing, result)
     if write and result["entries"]:
         merged = list((existing_doc or {}).get("entries") or []) + result["entries"]
         sk.validate_structure_overlay({"entries": merged})  # the whole file must stay valid
@@ -173,9 +206,18 @@ def main(argv=None) -> int:
     ap.add_argument("--root", default=str(ROOT),
                     help="the strategy-research directory (default: this tool's)")
     args = ap.parse_args(argv)
-    result = run(Path(args.root), write=args.write)
+    try:
+        result = run(Path(args.root), write=args.write)
+    except Exception as exc:  # noqa: BLE001
+        if args.write:
+            raise
+        # dry run: a message can carry a row id or a path, so only the class is printed
+        print(f"backfill_structure_hash (dry run): failed with {type(exc).__name__} "
+              f"(message withheld: it can carry a row id or a path)")
+        return 1
     counts = result["counts"]
     print(f"backfill_structure_hash ({'WRITE' if args.write else 'dry run'}): "
+          + ", ".join(f"{k}={v}" for k, v in result["summary"].items()) + "; "
           + ", ".join(f"{k}={v}" for k, v in counts.items()))
     if args.write:
         print(f"overlay: {len(result['entries'])} entr{'y' if len(result['entries']) == 1 else 'ies'} "

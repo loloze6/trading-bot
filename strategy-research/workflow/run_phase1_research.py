@@ -15859,8 +15859,13 @@ def _same_structure_view(wctx: dict, row: dict) -> tuple:
     Keyed (the row carries both structure_hash and timeframe): the returned wctx has
     N = the counted rows (invalidated out, deduplicated) with exactly that
     (structure_hash, timeframe) and the same-basis sample restricted to them
-    (deflate_sharpe.select_same_structure_sample), so N >= K holds; the candidate's own
-    row is among them as it is among the campaign-wide N and K. Unkeyed ledger rows
+    (deflate_sharpe.select_same_structure_sample; its dedup key carries the row's
+    timeframe too, D-185 direction d1), so N >= K holds. The candidate's own row is
+    among them, in its own (structure, timeframe) key -- the same config and fold
+    backtested on another bar size is a different trial there, not a collapse onto
+    it; only a true duplicate (same forecast_hash, symbols, window fingerprint, fold,
+    timeframe and source as an earlier row) is collapsed, and that candidate is
+    graded NOT_EVALUABLE by dedup_collapse. Unkeyed ledger rows
     are in no key's N. The record: {"status": "keyed", structure_hash, timeframe,
     n_same_structure, n_campaign_wide, k_same_structure, k_campaign_wide}.
 
@@ -15928,20 +15933,27 @@ def _whole_test_dsr_candidate(wctx: dict, run_dir: Path, pr: dict, trial_id: str
     D-185: `same_structure=True` (passed only by branch 3's grading, and only under
     orchestrator.dsr_same_structure) grades the candidate on N and K counted among the
     ledger rows with its own (structure_hash, timeframe) (_same_structure_view) and adds
-    `same_structure` -- the record of what was counted -- to the result. False (every
+    `same_structure` -- the record of what was counted -- to the result. A keyed
+    candidate whose key holds only its own row (N = 1) is graded at SR0 = 0 (D-185
+    direction a, compute_dsr_whole_test(n1_no_selection=True)); an unkeyed one keeps
+    the campaign-wide N >= 2 rule. False (every
     other caller, the holdout spend among them, and every flag-off run): campaign-wide
     N and K, the result exactly as _whole_test_dsr_candidate_on returns it."""
     if same_structure:
         row = _own_backtest_row(wctx, trial_id)
         if row is not None:  # not exactly one row: _whole_test_dsr_candidate_on raises, as before
             used, record = _same_structure_view(wctx, row)
-            return {**_whole_test_dsr_candidate_on(used, run_dir, pr, trial_id, min_same_basis),
+            # D-185 direction (a): a KEYED candidate at N = 1 is graded at SR0 = 0 (no selection
+            # among one trial). An unkeyed candidate was counted campaign-wide, so it keeps
+            # the N >= 2 rule (n1_no_selection False).
+            return {**_whole_test_dsr_candidate_on(used, run_dir, pr, trial_id, min_same_basis,
+                                                   n1_no_selection=record["status"] == "keyed"),
                     "same_structure": record}
     return _whole_test_dsr_candidate_on(wctx, run_dir, pr, trial_id, min_same_basis)
 
 
 def _whole_test_dsr_candidate_on(wctx: dict, run_dir: Path, pr: dict, trial_id: str,
-                                 min_same_basis: int) -> dict:
+                                 min_same_basis: int, *, n1_no_selection: bool = False) -> dict:
     """compute_dsr_whole_test's result for ONE candidate (D-046). The
     candidate's stats are recomputed from its own artifacts and checked, in
     lockstep, against its own ledger row (trial_id, source backtest).
@@ -16030,7 +16042,8 @@ def _whole_test_dsr_candidate_on(wctx: dict, run_dir: Path, pr: dict, trial_id: 
                 f"grading it would drop it from K")
         candidate = {"status": "ok", **stats}
     return _deflate_sharpe_module().compute_dsr_whole_test(
-        candidate, wctx["sample"]["srs"], wctx["n_dsr_total"], min_same_basis)
+        candidate, wctx["sample"]["srs"], wctx["n_dsr_total"], min_same_basis,
+        **({"n1_no_selection": True} if n1_no_selection else {}))
 
 
 def _whole_test_dsr_note(pr_ref: str, res: dict) -> str:
@@ -16048,6 +16061,9 @@ def _whole_test_dsr_note(pr_ref: str, res: dict) -> str:
                  f"(campaign-wide N and K used)")
     if res["dsr"] is None:
         return f"{base}; NOT_EVALUABLE: {res['reason']}"
+    if res["sigma_source"] == "none":  # D-185: N = 1, SR0 = 0 (no selection among one trial)
+        return (f"{base}; SR={res['sr_daily']!r}/day over T={res['T']} daily returns, "
+                f"SR0={res['sr0']!r} ({res['reason']})")
     return (f"{base}; SR={res['sr_daily']!r}/day over T={res['T']} daily returns, "
             f"SR0={res['sr0']!r} (sigma {res['sigma_source']} {res['sigma_used']!r} x "
             f"Z(N) {res['z_expected_max']!r})")

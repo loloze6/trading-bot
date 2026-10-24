@@ -12,19 +12,23 @@ Covers:
   4. Trial rows: flag off, every row exactly as before; flag on, exactly two more
      keys (structure_hash, timeframe) at the three row sites, a superseded attempt
      keeps the key; a protocol_execution run writes the protocol's timeframe.
-  5. N and K by key: only (hash, timeframe) rows after exclusion and dedup, unkeyed
-     rows in no key's N, N >= K, the key filter after dedup.
+  5. N and K by key: only (hash, timeframe) rows after exclusion and dedup (the dedup
+     key carries the timeframe, direction d1), unkeyed rows in no key's N, N >= K, the
+     candidate's own row in its key's N.
   6. Branch 3 end to end: flag off dsr_basis and the DSR row as before; flag on the
      key and both counts in dsr_basis and in the DSR row; an unkeyed candidate falls
-     back to the campaign-wide counts; N = 1 reads NOT_EVALUABLE (the N >= 2 rule).
+     back to the campaign-wide counts (and keeps the N >= 2 rule); a keyed candidate alone on
+     its key (N = 1) is graded at SR0 = 0 (direction a); N = 2 is unchanged.
   7. The holdout spend keeps the campaign-wide N.
   8. The backfill tool: a dry run writes nothing, --write appends to the overlay only,
-     rows without a saved config stay unkeyed, a re-run changes nothing; the DSR reads
-     the overlay under the flag.
+     rows without a saved config stay unkeyed, a re-run changes nothing; the dry run
+     prints the four counts (keyed, unkeyed, distinct keys, singleton keys) and nothing
+     else; the DSR reads the overlay under the flag.
 """
 import copy
 import hashlib
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -45,7 +49,8 @@ from test_e058_s2a_regroup_record import RUN_ID  # noqa: E402
 from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
 from test_e062_s2b1_profit_bars_v2 import V2_ON  # noqa: E402
 from test_e062_s2b2b_dsr_wiring import (  # noqa: E402
-    _block, _dsr_row, _edit_rows, _evaluate, _own_row, _run_protocol_execution, _state, _v2_run, _z)
+    _block, _dsr_row, _edit_rows, _evaluate, _hand_dsr, _own_row, _run_protocol_execution, _state,
+    _v2_run, _z)
 
 SS_ON = {**V2_ON, "dsr_same_structure": {"enabled": True}}
 H1, H2 = "a" * 64, "b" * 64
@@ -148,8 +153,12 @@ def test_hash_is_invariant_to_key_order_and_regime_order_in_the_file():
     (lambda c: c["strategies"]["regimes"]["unknown"]["components"][0].update(weight=0), "weight zero"),
     (lambda c: c["strategies"]["regimes"]["unknown"]["components"][0]["params"].update(
         scaling_factor=-1.5), "scaling_factor sign"),
-    (lambda c: c["strategies"]["regimes"]["unknown"]["components"][0]["params"].pop("scaling_factor"),
-     "scaling_factor absent"),
+    (lambda c: c["strategies"]["regimes"]["unknown"]["components"][0]["params"].update(
+        scaling_factor=0), "scaling_factor zero"),
+    (lambda c: c["strategies"]["regimes"]["unknown"]["components"][0]["params"].update(
+        scaling_factor="x"), "scaling_factor not a number"),
+    (lambda c: c["strategies"]["regimes"]["unknown"]["components"][0].pop("weight"),
+     "weight absent (no default: the engine indexes cfg['weight'])"),
     (lambda c: c["strategies"]["regimes"]["unknown"]["components"][0]["transforms"][2]["params"].update(
         factor=-10.0), "scale factor sign"),
     (lambda c: c["strategies"]["sizing"].update(kind="other_kind"), "sizing kind"),
@@ -162,6 +171,36 @@ def test_hash_is_sensitive_to_structure(edit, why):
     cfg = _config()
     edit(cfg)
     assert _h(cfg) != _h(_config()), why
+
+
+def test_a_missing_scaling_factor_hashes_as_the_positive_default():
+    # Every component class defaults scaling_factor to a positive number
+    # (strategy_components.py:234-693), so absent == an explicit positive value (any magnitude);
+    # absent != an explicit negative (that flips the bet). A missing weight has no default.
+    comp = lambda c: c["strategies"]["regimes"]["unknown"]["components"][0]  # noqa: E731
+    absent = _config()
+    comp(absent)["params"].pop("scaling_factor")
+    assert _h(absent) == _h(_config())                    # 1.5 in the base config
+    assert sk.structure_dict(absent)["regimes"]["unknown"][0]["scaling_factor_sign"] == 1
+    no_params = _config()
+    del comp(no_params)["params"]
+    assert _h(no_params) == _h(_config())
+    negative = _config()
+    comp(negative)["params"]["scaling_factor"] = -1.5
+    assert _h(negative) != _h(absent)
+    gone = _config()
+    del comp(gone)["weight"]
+    assert sk.structure_dict(gone)["regimes"]["unknown"][0]["weight_sign"] is None
+
+
+def test_every_component_default_scaling_factor_is_positive():
+    # The premise of the +1 above, read from the source rather than assumed.
+    import re
+    src = (SR_ROOT.parent / "trading-bot" / "strategies" / "strategy_components.py").read_text(
+        encoding="utf-8").splitlines()[233:693]
+    defaults = [float(m.group(1)) for line in src
+                for m in [re.search(r"get\('scaling_factor',\s*([-0-9.]+)\)", line)] if m]
+    assert len(defaults) == 11 and all(d > 0 for d in defaults), defaults
 
 
 def test_hash_of_a_real_config_ignores_its_parameters():
@@ -377,12 +416,46 @@ def test_n_counts_only_the_same_hash_and_timeframe_after_exclusion_and_dedup():
         assert ds.select_same_structure_sample(rows, key)["N"] == n
 
 
-def test_the_key_filter_comes_after_dedup():
-    # same forecast_hash, different timeframe: the campaign-wide dedup collapses them onto the
-    # first row (the spec's order: key AFTER exclusion and dedup), so the 4h row is not counted.
-    rows = [_row("r1", H1, "1h", fh="same"), _row("r2", H1, "4h", fh="same")]
-    assert ds.select_same_structure_sample(rows, (H1, "1h"))["N"] == 1
-    assert ds.select_same_structure_sample(rows, (H1, "4h"))["N"] == 0
+def test_same_config_and_fold_on_two_bar_sizes_counts_in_each_own_key():
+    # D-185 direction d1: the same-structure dedup key carries the row's canonical timeframe,
+    # so one forecast_hash + fold on 1h and on 4h are two trials, each in its own key.
+    rows = [_row("r1", H1, "1h", fh="same", fold="fold_a"),
+            _row("r2", H1, "4h", fh="same", fold="fold_a")]
+    for key in ((H1, "1h"), (H1, "4h")):
+        got = ds.select_same_structure_sample(rows, key)
+        assert got["N"] == 1 and got["K"] == 1
+    # the campaign-wide count (and so the spend) still collapses them: held, not built
+    assert ds.select_same_basis_sample(rows)["N"] == 1
+    assert ds.select_same_structure_sample(rows, (H1, "1h"))["N_campaign"] == 1
+    # a true duplicate (same config, fold AND timeframe) still collapses in the key
+    dup = rows + [_row("r3", H1, "60m", fh="same", fold="fold_a")]  # "60m" is "1h"
+    assert ds.select_same_structure_sample(dup, (H1, "1h"))["N"] == 1
+
+
+def test_the_timeframe_in_the_dedup_key_never_splits_a_row_without_one():
+    rows = [_row("r1", None, None, fh="same"), _row("r2", None, None, fh="same")]
+    kept, removed = ds.deduplicate_trials(rows, timeframe_in_key=True)
+    assert [r["trial_id"] for r in kept] == ["r1"] and removed == 1
+    assert ds.deduplicate_trials(rows) == (kept, removed)
+    with pytest.raises(ValueError, match="D-185"):
+        ds.deduplicate_trials([_row("r1", H1, "xyz", fh="same")], timeframe_in_key=True)
+
+
+def test_the_campaign_wide_dedup_default_is_unchanged():
+    rows = [_row("r1", H1, "1h", fh="same"), _row("r2", H1, "4h", fh="same"),
+            _row("r3", H2, "1h", fh="other")]
+    kept, removed = ds.deduplicate_trials(rows)
+    assert [r["trial_id"] for r in kept] == ["r1", "r3"] and removed == 1
+    assert ds.select_same_basis_sample(rows)["N"] == 2
+
+
+def test_the_candidates_own_row_is_in_its_keys_n_and_the_record_says_so():
+    # the candidate backtested on 4h, the same config + fold also on 1h earlier
+    rows = [_row("r1", H1, "1h", fh="same"), _row("cand", H1, "4h", fh="same"),
+            _row("r3", H1, "4h", fh="other")]
+    got = ds.select_same_structure_sample(rows, (H1, "4h"))
+    assert "cand" in [x["trial_id"] for x in got["rows"]]
+    assert got["N"] == got["K"] == 2 and got["N_campaign"] == 2
 
 
 def test_n_is_never_below_k_and_compute_dsr_accepts_it():
@@ -542,18 +615,87 @@ def test_unkeyed_ledger_rows_are_never_counted_in_a_keys_n():
         "n_same_structure"]
 
 
-def test_a_candidate_alone_on_its_key_has_n_1_and_reads_not_evaluable():
-    # compute_dsr_whole_test needs N >= 2 (Z(1) is undefined). A candidate whose structure
-    # nobody else ran is therefore NOT_EVALUABLE under the flag: recorded in D-185 as a
-    # consequence of "N = counted rows with the same key", not worked around here.
+def test_a_candidate_alone_on_its_key_is_graded_at_sr0_zero():
+    # D-185 direction (a): at N = 1 on the same-structure path no selection happened, so the
+    # published formula's N = 1 case applies: SR0 = 0, DSR = PSR against zero.
     run_dir = _v2_run()
     _key_row(RUN_ID, H2, "1h")
     _set_orchestrator(SS_ON)
     ev = _evaluate(run_dir)
     row = _dsr_row(ev)
-    assert row["detail"]["N"] == 1 and row["actual"] is None
-    assert "N=1" in row["not_evaluable_reason"]
-    assert ev["dsr_basis"]["same_structure"]["by_variant"][RUN_ID]["n_same_structure"] == 1
+    d = row["detail"]
+    assert d["N"] == 1 and d["status"] == "ok" and d["reason"] == "N = 1: no selection correction"
+    assert (d["sr0"], d["z_expected_max"], d["sigma_source"]) == (0.0, 0.0, "none")
+    assert row["actual"] is not None and row["actual"] == d["dsr"]
+    assert row["actual"] == pytest.approx(
+        _hand_dsr(d["sr_daily"], d["T"], _own_row()["whole_test"]["skew"],
+                  _own_row()["whole_test"]["kurtosis"], 0.0), abs=1e-12)
+    assert "not_evaluable_reason" not in row or row["not_evaluable_reason"] is None
+    assert "N = 1: no selection correction" in row["note"]
+    rec = ev["dsr_basis"]["same_structure"]["by_variant"][RUN_ID]
+    assert rec["status"] == "keyed" and rec["n_same_structure"] == 1
+
+
+def test_two_trials_on_the_key_keep_the_n_2_rule():
+    run_dir = _v2_run()
+    _key_row(RUN_ID, H2, "1h")
+    _add_rows(1, H2, "1h", 700)
+    _set_orchestrator(SS_ON)
+    d = _dsr_row(_evaluate(run_dir))["detail"]
+    assert d["N"] == 2 and d["reason"] is None and d["sigma_source"] == "null"
+    assert d["z_expected_max"] == pytest.approx(_z(2), abs=1e-15)
+    assert d["sr0"] == pytest.approx(d["sigma_null"] * _z(2), abs=1e-15)
+
+
+def test_an_unkeyed_candidate_at_campaign_wide_n_1_is_still_not_evaluable():
+    # The unkeyed fallback is campaign-wide, so it keeps the campaign-wide N >= 2 rule.
+    run_dir = _v2_run()
+    _edit_rows(lambda rows: rows.__setitem__(
+        slice(None), [r for r in rows if r["trial_id"] == RUN_ID and r["source"] == "backtest"]))
+    for flag in (False, True):
+        _set_orchestrator(SS_ON if flag else V2_ON)
+        row = _dsr_row(_evaluate(run_dir))
+        assert row["detail"]["N"] == 1 and row["actual"] is None, flag
+        assert "N=1" in row["not_evaluable_reason"], flag
+
+
+def test_compute_dsr_whole_test_n1_branch_only_with_the_keyword():
+    stats = {"sr_daily": 0.1, "T": 400, "skew": -0.2, "kurtosis_raw": 4.0}
+    off = ds.compute_dsr_whole_test(stats, [0.1], 1, 10)
+    assert off["status"] == "not_evaluable" and off["dsr"] is None and "N >= 2" in off["reason"]
+    on = ds.compute_dsr_whole_test(stats, [0.1], 1, 10, n1_no_selection=True)
+    assert on["status"] == "ok" and on["reason"] == "N = 1: no selection correction"
+    assert (on["sr0"], on["z_expected_max"], on["sigma_source"], on["sigma_used"]) == (0.0, 0.0, "none", None)
+    assert on["N"] == 1 and on["K"] == 1 and on["T"] == 400
+    assert on["sigma_null"] == pytest.approx(1 / math.sqrt(399))
+    assert on["dsr"] == pytest.approx(_hand_dsr(0.1, 400, -0.2, 4.0, 0.0), abs=1e-12)
+    # still NOT_EVALUABLE with the keyword at N = 0, on a short T and on a bad denominator
+    assert ds.compute_dsr_whole_test(stats, [], 0, 10, n1_no_selection=True)["dsr"] is None
+    short = ds.compute_dsr_whole_test({**stats, "T": 5}, [0.1], 1, 10, n1_no_selection=True)
+    assert short["dsr"] is None and short["status"] == "not_evaluable"
+    kurt = 10.0 * (1 - 5e-10)          # the Pearson floor 1 + skew^2, within the validator's tolerance
+    bad = ds.compute_dsr_whole_test(
+        {"sr_daily": 6.0 / (kurt - 1), "T": 400, "skew": 3.0, "kurtosis_raw": kurt},
+        [0.5], 1, 10, n1_no_selection=True)  # 1 - skew*SR + ((kurt-1)/4)SR^2 is just below 0
+    assert bad["dsr"] is None and bad["status"] == "not_evaluable" and "denominator" in bad["reason"]
+
+
+def test_compute_dsr_whole_test_n2_and_above_ignore_the_keyword():
+    stats = {"sr_daily": 0.1, "T": 400, "skew": -0.2, "kurtosis_raw": 4.0}
+    for n, srs in ((2, [0.1, 0.0]), (5, [0.1, 0.0, 0.05]), (12, [0.01 * i for i in range(12)])):
+        assert (ds.compute_dsr_whole_test(stats, srs, n, 10, n1_no_selection=True)
+                == ds.compute_dsr_whole_test(stats, srs, n, 10))
+
+
+def test_the_spend_and_every_non_same_structure_caller_never_pass_the_n1_keyword():
+    import inspect
+    assert "n1_no_selection" not in inspect.getsource(rpr._dsr_on_current_ledger_v2)
+    src = inspect.getsource(rpr._whole_test_dsr_candidate)
+    # the keyword is passed from inside the same_structure branch, and only for a keyed candidate
+    assert src.index("if same_structure:") < src.index('n1_no_selection=record["status"] == "keyed"')
+    assert src.count("n1_no_selection=") == 2  # the docstring mention + the one call
+    for fn in (rpr._whole_test_dsr_candidate_on, rpr._dsr_not_evaluable):
+        assert "n1_no_selection=True" not in inspect.getsource(fn)
 
 
 def test_flag_on_without_v2_leaves_the_legacy_dsr_basis_alone():
@@ -694,6 +836,53 @@ def test_a_dry_run_writes_nothing_and_counts_what_it_would_key(tmp_path, capsys)
         "unkeyed_config_does_not_match_forecast_hash": 1,   # run_001 backtest_failed
     }
     assert plan["written"] is False
+
+
+def test_the_dry_run_prints_the_four_counts_and_the_unkeyed_reasons_only(tmp_path, capsys):
+    root = _make_root(tmp_path)
+    before = _snapshot(root)
+    assert bsh.main(["--root", str(root)]) == 0
+    out = capsys.readouterr().out
+    assert _snapshot(root) == before  # read-only against the given root
+    assert "rows_keyed=4, rows_unkeyed=4, distinct_keys=3, singleton_keys=2" in out
+    assert "unkeyed_no_saved_config=2" in out and "unkeyed_no_protocol_timeframe=1" in out
+    # nothing but name=number pairs and the two fixed sentences: no id, path, hash or date
+    import re
+    assert not re.search(r"[0-9a-f]{12,}|runs/|campaign_record|\d{4}-\d{2}-\d{2}|\.json|\.yaml", out)
+    s = bsh.run(root)["summary"]
+    assert s == {"rows_keyed": 4, "rows_unkeyed": 4, "distinct_keys": 3, "singleton_keys": 2}
+
+
+def test_a_dry_run_that_fails_prints_the_exception_class_only(tmp_path, capsys):
+    root = _make_root(tmp_path)
+    (root / bsh.OVERLAY_REL).write_text(
+        yaml.safe_dump({"entries": [{"trial_id": "run_secret_id", "source": "backtest"}]}),
+        encoding="utf-8")
+    assert bsh.main(["--root", str(root)]) == 1
+    out = capsys.readouterr().out
+    assert "ValueError" in out and "run_secret_id" not in out
+    with pytest.raises(ValueError):  # --write keeps the full error
+        bsh.main(["--root", str(root), "--write"])
+
+
+def test_the_summary_counts_a_singleton_key_after_dedup_with_the_timeframe(tmp_path):
+    root = _make_root(tmp_path)
+    state = yaml.safe_load((root / bsh.LEDGER_REL).read_text(encoding="utf-8"))
+    cfg_h = _h(_config())
+    state["trial_sharpes"] = [
+        {"trial_id": "x1", "source": "backtest", "forecast_hash": "f", "structure_hash": cfg_h,
+         "timeframe": "1h"},
+        {"trial_id": "x2", "source": "backtest", "forecast_hash": "f", "structure_hash": cfg_h,
+         "timeframe": "4h"},                                  # same config, 4h: its own key
+        {"trial_id": "x3", "source": "backtest", "forecast_hash": "f", "structure_hash": cfg_h,
+         "timeframe": "60m"},                                 # duplicate of x1 once canonical
+        {"trial_id": "x4", "source": "backtest", "forecast_hash": "g", "structure_hash": cfg_h,
+         "timeframe": "1h", "invalidated_artifact": True},    # excluded
+        {"trial_id": "x5", "source": "backtest", "forecast_hash": "h"},   # unkeyed
+    ]
+    (root / bsh.LEDGER_REL).write_text(yaml.safe_dump(state), encoding="utf-8")
+    assert bsh.run(root)["summary"] == {"rows_keyed": 4, "rows_unkeyed": 1, "distinct_keys": 2,
+                                        "singleton_keys": 2}
 
 
 def test_write_appends_the_overlay_only_keys_rows_with_configs_and_is_idempotent(tmp_path):

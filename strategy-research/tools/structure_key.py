@@ -20,9 +20,14 @@ every parameter value removed. It records exactly:
         history_transforms and change what the signal is, and an op moved
         from one list to the other is a different pipeline;
       - weight_sign, scaling_factor_sign: -1 / 0 / +1 of `weight` and of
-        `params.scaling_factor`, None when absent or not a number. The
-        magnitudes are parameters and are removed; the sign flips the
-        direction of the bet;
+        `params.scaling_factor`. The magnitudes are parameters and are removed;
+        the sign flips the direction of the bet. A missing `weight` is None
+        (the engine has no default weight: strategy_engine.py:229 and :613 index
+        cfg["weight"], so no ledger row comes from such a config). A missing
+        `params.scaling_factor` is +1, not None: every component class defaults
+        it to a positive number (strategy_components.py:234-693), so "absent" and
+        "explicit positive" are the same strategy and must share a key (D-185
+        fix round, direction sign fix). A present non-number stays None;
       - scale_factor_signs: the sign of each `scale` op's `params.factor`, in
         order (a negative factor flips the signal exactly like a negative
         weight or a `negate` op, which are in the hash; absent: the sign of
@@ -109,7 +114,8 @@ def structure_dict(config: dict) -> dict:
                 "transforms": _op_names(c.get("transforms")),
                 "history_transforms": _op_names(c.get("history_transforms")),
                 "weight_sign": _sign(c.get("weight")),
-                "scaling_factor_sign": _sign(params.get("scaling_factor")),
+                "scaling_factor_sign": (_sign(params["scaling_factor"])
+                                        if "scaling_factor" in params else 1),
                 "scale_factor_signs": (_scale_signs(c.get("transforms"))
                                        + _scale_signs(c.get("history_transforms"))),
             })
