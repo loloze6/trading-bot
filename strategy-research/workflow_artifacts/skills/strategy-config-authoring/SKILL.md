@@ -100,7 +100,7 @@ If `hypothesis_card.yaml` carries `pass_through: true`, its `config` field is al
 upstream-authored strategy config (see `hypothesis-design/SKILL.md`'s step 0, pass-through). Copy it through verbatim
 as this stage's own `backtest_spec.yaml.config`, and its `manifest` field verbatim as `block_manifest.yaml` —
 do not re-author, re-derive `config_rationale` from scratch
-(state "pass-through, see hypothesis_card.yaml.rationale" instead), or second-guess the supplied config's
+(state "pass-through, see the card's idea_quantities and statement" instead), or second-guess the supplied config's
 component choices. Still run it through the same validation this stage always performs before emitting
 `status: spec_ready` — a pass-through config is not exempt from being a VALID config, only from being
 re-invented.
