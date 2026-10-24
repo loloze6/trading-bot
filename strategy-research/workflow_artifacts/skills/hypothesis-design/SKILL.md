@@ -37,7 +37,7 @@ Write the idea in the operator's words first, then in formulas.
 
 ### 2a. The statement
 
-Write `statement` after the idea. It has five keys: `predicts`, `horizon_bars`, `condition`, `if_pass` and `if_fail`. The card list gives their meaning.
+Write `statement` after the idea. It has six keys: `predicts`, `predicts_kind`, `horizon_bars`, `condition`, `if_pass` and `if_fail`. `predicts_kind` is `return_direction` when `predicts` names the direction of a future return, and `market_state` when it names a state. The card list gives their meaning.
 
 ### 2b. The criterion
 Pick the criterion after the statement is written, from the statement alone, by id from the menu's live entries. Write nothing in `criteria` that is not a menu id.
@@ -76,7 +76,7 @@ A regime idea goes through the same steps.
 - `library_lookup`: `indicator_id` (the id in `config/indicator_library.yaml` the idea builds on, null if none), `regime_affinity_for_target` and `crowding_risk` (null if `indicator_id` is null). Code groups tried ideas by `indicator_id`.
 - `target_market`: the coin or coins of the brief.
 - `timeframe`: the bar size of the brief.
-- `statement`: `predicts` is what the forecast predicts. `horizon_bars` is how many bars of `timeframe` ahead it looks, an integer of 1 or more. `condition` is when the statement applies. `if_pass` and `if_fail` say what each result would mean for the idea.
+- `statement`: `predicts` is what the forecast predicts. `predicts_kind` is its kind, `return_direction` or `market_state`. `horizon_bars` is how many bars of `timeframe` ahead it looks, an integer of 1 or more. `condition` is when the statement applies. `if_pass` and `if_fail` say what each result would mean for the idea.
 - `criteria`: written only when `config/criterion_menu.yaml` is among your inputs. A list of `{id: <menu id>}`, with only the fields the menu entry lists under `card_overridable`. Step 2b.
 - `criteria_rationale`: one sentence (step 2b, rule 5).
 - `criteria_fit`: written only when the menu holds no measure for the statement: `none: ` then the measure that is missing (step 2b, rule 1).

@@ -598,7 +598,8 @@ NEW_SHAPE = {
     "hypothesis_id": "H-2", "timeframe": "1h",
     "idea_quantities": ["momentum over 24 bars", {"name": "volume", "why": "crowding"}],
     "not_expressible": ["order-book imbalance"],
-    "statement": {"predicts": "the next day's return", "horizon_bars": 24, "condition": "always",
+    "statement": {"predicts": "the next day's return", "predicts_kind": "return_direction",
+                  "horizon_bars": 24, "condition": "always",
                   "if_pass": "keep", "if_fail": "drop"},
     "criteria": [{"id": CID, "horizon": 24}],
     "criteria_rationale": "IC at the day horizon answers the statement",
@@ -642,16 +643,19 @@ def test_identity_and_bar_size_stay_required(missing):
 @pytest.mark.parametrize("statement", [
     {"horizon_bars": 0}, {"horizon_bars": "24"}, {"horizon_bars": 2.5}, {"horizon_bars": True},
     {"horizon_bars": -1},
-    {"predicts": 3}, {"unknown": "x"},
+    {"predicts": 3, "predicts_kind": "return_direction"}, {"unknown": "x"},
 ])
 def test_statement_is_checked(statement):
     with pytest.raises(jsonschema.ValidationError):
-        _valid({**NEW_SHAPE, "statement": statement})
+        _valid({**NEW_SHAPE, "statement": {"predicts": "x", "predicts_kind": "market_state", **statement}})
 
 
-def test_statement_parts_are_all_optional():
-    _valid({**NEW_SHAPE, "statement": {}})
-    _valid({**NEW_SHAPE, "statement": {"predicts": "x"}})
+def test_statement_requires_predicts_and_predicts_kind_only():  # D-192
+    with pytest.raises(jsonschema.ValidationError):
+        _valid({**NEW_SHAPE, "statement": {}})
+    with pytest.raises(jsonschema.ValidationError):
+        _valid({**NEW_SHAPE, "statement": {"predicts": "x"}})
+    _valid({**NEW_SHAPE, "statement": {"predicts": "x", "predicts_kind": "market_state"}})
 
 
 @pytest.mark.parametrize("field,val", [("idea_quantities", "x"), ("not_expressible", {"a": 1}),
@@ -676,11 +680,16 @@ def test_the_composition_branch_is_unchanged():
 
 
 def test_no_code_derives_a_criterion_or_horizon_from_the_statement():
-    """The statement is information only (direction 2026-10-24: no criterion derivation by code)."""
+    """The statement is information only (direction 2026-10-24: no criterion derivation by code).
+    D-192 (PR-8): the one reader is `_criterion_consistency_warnings`, which only warns; the rest of
+    run_phase1_research.py (the text from that function to its writer excluded) still never reads it."""
     for rel in ("workflow/run_phase1_research.py", "workflow/run_campaign.py",
                 "tools/verdict_criteria_evaluator.py", "tools/residual_ic.py",
                 "tools/composite_cache.py", "tools/decide_next.py"):
         text = (SR / rel).read_text(encoding="utf-8")
+        if rel == "workflow/run_phase1_research.py":  # D-192: the one reader is the warning-only check
+            head, rest = text.split("def _criterion_consistency_warnings", 1)
+            text = head + rest.split("def _write_criterion_consistency", 1)[1]
         assert not any(w in text for w in ("horizon_bars", "idea_quantities", "criteria_rationale", "not_expressible")), rel
 
 
