@@ -1,6 +1,14 @@
 # Item 2 (delivery_plan_v26.md 0.2 / engineering_roadmap.html "One campaign-wide
 # profitability-bars file, written once by hand").
 #
+# D-188 (direction 2026-10-24, PR-3; applies to backtests graded after it, nothing
+# regraded): calmar_min 0.75 added (v2, optional like D-127's two: absent or null = no
+# row). max_drawdown_pct_max stays at 20 but is an ADVISORY row from now on: printed,
+# computed as before, never makes the verdict FAIL (the Calmar row decides). The advisory
+# status holds whenever calmar_min is set. deflated_sharpe_threshold unchanged. The
+# 2026-10-14 signature below no longer covers this file: ratified_by / ratified_at are
+# null until the operator signs (SIGNING_CHECKLIST.md).
+#
 # D-127 (E-078, advisor guideline 2026-10-14 item 2; applies to backtests graded after
 # it): two v2 bars added. trade_frequency_min 0.01: trades without end_of_window forced
 # closes / backtest bars >= 1%, pooled over every coin and window of the run (X = 1% was
@@ -208,7 +216,40 @@
 #                                  is the single-peak one, unchanged. Applies to
 #                                  backtests graded after D-129. The threshold is
 #                                  unchanged. `<=`.
+#                                  ADVISORY since D-188 (whenever calmar_min is set): the
+#                                  row is computed and printed exactly as before, with
+#                                  `advisory: true`, and never makes the verdict FAIL
+#                                  (same flag and same handling as D-119's deflated
+#                                  Sharpe; the Calmar row below decides). Value 20 stays.
 #                                  basis: portfolio_equal_weight_whole_test_chained
+#   calmar_min                 number in (0, 100] or null, v2 only, OPTIONAL (D-188; absent
+#                                  or null = no row): Calmar = annualised return / drawdown
+#                                  of the SAME chained whole-test curve, strict `>`.
+#                                    R = chained whole-test total return = final chained
+#                                        level / first level - 1 (the strategy_total_return
+#                                        of chained_buy_and_hold);
+#                                    n = counted calendar days of the chain (chain
+#                                        `n_counted_calendar_days`, the D-113 coverage
+#                                        denominator: days inside some window's nominal
+#                                        span minus engine tail/head days; planned protocol
+#                                        gaps are NOT counted);
+#                                    annualised return = (1 + R)^(365 / n) - 1 (compound;
+#                                        365 as the whole-test Sharpe's sqrt(365): every
+#                                        day trades);
+#                                    drawdown = the D-129 whole-test drawdown above, in
+#                                        fraction (max_drawdown_pct / 100);
+#                                    Calmar = annualised return / drawdown.
+#                                  A negative R FAILs (the value is then negative, so it
+#                                  cannot clear a positive bar). Drawdown 0: R <= 0 reads
+#                                  as FAIL, R > 0 reads NOT_EVALUABLE (Calmar undefined:
+#                                  no divide by zero, no infinite value). A ruined account
+#                                  (D-101) FAILs. Not normalised for partial coverage (no
+#                                  `f` rule below applies to it); a partial-coverage
+#                                  variant is held NOT_EVALUABLE wherever the D-047
+#                                  normalisation cannot be applied, like the drawdown row.
+#                                  The row's detail: annualised_return, total_return,
+#                                  counted_days, max_drawdown_pct, formula.
+#                                  basis: portfolio_equal_weight_whole_test_chained_annualised_return_over_drawdown
 #   trade_count_min            v2: per coin, trades over the whole test WITHOUT
 #                                  the end_of_window forced closes (D-035, G5);
 #                                  actual = the worst coin; the row's `detail`
@@ -275,15 +316,15 @@
 #   variant's trade and drawdown bars read NOT_EVALUABLE instead (D-042 cap).
 
 sharpe_min: 0.0                    # D-118: strictly > 0
-max_drawdown_pct_max: 20.0         # unchanged
+max_drawdown_pct_max: 20.0         # unchanged value; ADVISORY since D-188 (never FAILs the verdict)
 avg_daily_return_min: 0.0005       # D-118: kept -- the deliberate single magnitude bar
 trade_count_min: null              # D-118: OFF (no sample floor until the frequency bar)
 deflated_sharpe_threshold: 0.5     # D-118 (was 0.95)
 target_instrument_set:
   - BTCUSDT
   - ETHUSDT
-ratified_by: "Jeremy Alauze (loloze6) -- recorded by Claude at the operator's explicit instruction (2026-10-14 session: 'I accept the D-129 bars edit ... sign the bars file on my behalf')"
-ratified_at: 2026-10-14
+ratified_by: null                  # D-188 changed the file: the 2026-10-14 signature no longer covers it; the operator signs
+ratified_at: null
 # v2 keys (required only under orchestrator.profit_bars_v2.enabled):
 buy_and_hold_sharpe_excess_min: 0.0     # D-120: strategy whole-test Sharpe - buy-and-hold's, strict > 0
 cost_edge_ratio_min: null          # D-118: OFF (no cost-stress bar anywhere)
@@ -292,3 +333,4 @@ dsr_min_same_basis_trials: 10
 trade_count_min_floor: null        # D-118: null -- both bars it floors are off
 trade_frequency_min: 0.01          # D-127: >= 1%, pooled (X chosen after seeing lane 1's frequencies)
 leave_one_block_out_sharpe_min: 0.0  # D-127: strictly > 0 (FAIL if any leave-one-out Sharpe <= 0)
+calmar_min: 0.75                 # D-188: strictly >; annualised whole-test return / D-129 drawdown

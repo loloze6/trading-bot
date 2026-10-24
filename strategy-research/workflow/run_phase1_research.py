@@ -3684,11 +3684,13 @@ _PROFIT_BARS_OFFABLE = ("trade_count_min", "cost_edge_ratio_min")
 _PROFIT_BARS_OPTIONAL_V2 = {
     "trade_frequency_min": (int, float, type(None)),  # trades / backtest bars, a fraction
     "leave_one_block_out_sharpe_min": (int, float, type(None)),  # the lowest LOO Sharpe
+    "calmar_min": (int, float, type(None)),  # D-188: annualised whole-test return / drawdown
 }
 # E-078: the range each optional bar's value must lie in when set: (low, high, low_open).
 _PROFIT_BARS_OPTIONAL_V2_RANGE = {
     "trade_frequency_min": (0.0, 1.0, True),  # (0, 1]
     "leave_one_block_out_sharpe_min": (-10.0, 10.0, False),  # a Sharpe threshold
+    "calmar_min": (0.0, 100.0, True),  # D-188: (0, 100] -- positive, so a negative Calmar FAILs
 }
 
 
@@ -7988,7 +7990,7 @@ def _profit_bars_grid_grader(run_dir: Path, run_id: str):
                 _partial = {variant_id: f"its index coverage record is unusable ({e})"}
             if _partial:
                 results, overall, reasons = _hold_rows_not_evaluable(
-                    results, _D047_NORMALISATION_FORMULAS,
+                    results, _D047_HELD_BARS,
                     f"{_partial[variant_id]} -- the grid's profit-bars grader does not normalise "
                     f"(D-047): only branch 3 grades a partial-coverage variant", bars=bars)
         return {"result": overall, "bars": results, "reasons": reasons, **extra}
@@ -9104,8 +9106,15 @@ def _validate_holdout_decision(run_dir: Path, run_id: str, state: dict) -> dict:
         bar_rows = (entry or {}).get("bars") or []
         if (variant not in (ev.get("passing") or []) or not isinstance(entry, dict)
                 or entry.get("result") != "PASS" or not bar_rows
-                or any(not isinstance(r, dict) or r.get("result") != "PASS" for r in bar_rows)):
-            advisory = [r.get("name") for r in bar_rows if isinstance(r, dict) and r.get("advisory")]
+                or any(not isinstance(r, dict)
+                       or (r.get("result") != "PASS"
+                           # D-188: the advisory drawdown row may FAIL (information); a spend
+                           # still needs it computed (D-119's rule: not NOT_EVALUABLE)
+                           and not (r.get("advisory") and r.get("name") == "max_drawdown_pct_max"
+                                    and r.get("result") == "FAIL"))
+                       for r in bar_rows)):
+            advisory = [r.get("name") for r in bar_rows if isinstance(r, dict)
+                        and r.get("advisory") and r.get("result") == "NOT_EVALUABLE"]
             raise HoldoutUnlockRefused(
                 "variant_not_passing", f"variant {variant!r} is not PASS on every bar in this "
                 f"run's profit_bars_evaluation.yaml (passing: {ev.get('passing')})"
@@ -15785,6 +15794,8 @@ _BASIS_V2 = {
     "trade_frequency_min": "pooled_trades_excl_window_closes_per_backtest_bar",
     # E-078 (D-127): the lowest whole-test Sharpe with one 4-month block left out
     "leave_one_block_out_sharpe_min": "min_whole_test_sharpe_leaving_one_4_month_block_out",
+    # D-188: annualised chained whole-test return over counted days / the D-129 drawdown
+    "calmar_min": "portfolio_equal_weight_whole_test_chained_annualised_return_over_drawdown",
 }
 # Comparator per v2 row: strict `>` where D-037 ("beats") and D-038 ("> 2.2")
 # say so; every other row keeps its v1 comparator.
@@ -15794,6 +15805,7 @@ _COMPARATOR_V2 = {
     "buy_and_hold_sharpe_excess_min": ">", "cost_edge_ratio_min": ">",
     "trade_frequency_min": ">=",  # E-078: >= 1%
     "leave_one_block_out_sharpe_min": ">",  # E-078: FAIL if any leave-one-out Sharpe <= 0
+    "calmar_min": ">",  # D-188: strict
 }
 _TRADE_DIAGNOSTICS_FILE = "trade_diagnostics.json"
 
@@ -16310,6 +16322,65 @@ def _whole_test_dsr_note(pr_ref: str, res: dict) -> str:
             f"Z(N) {res['z_expected_max']!r})")
 
 
+# D-188: the Calmar bar's formula, recorded in the row's detail.
+_CALMAR_FORMULA = ("annualised_return / (max_drawdown_pct / 100); annualised_return = "
+                   "(1 + total_return)^(365 / counted_days) - 1; total_return = final chained "
+                   "level / first level - 1; counted_days = the chain's n_counted_calendar_days "
+                   "(D-113); max_drawdown_pct = the D-129 whole-test drawdown of the same chain")
+_CALMAR_DAYS_PER_YEAR = 365  # as whole_test_sharpe's sqrt(365): crypto, every day trades
+
+
+def _calmar_row(_row, chain: dict, dd: dict, span: str, chain_detail: dict) -> None:
+    """D-188: the `calmar_min` row from the chained whole-test curve that the drawdown and
+    Sharpe rows already use. total_return = final chained level / first level - 1 (the first
+    level is the chain's start_level when day-1 returns are chained, D-116, else the first
+    daily level: chained_buy_and_hold's `strategy_total_return`); counted_days = the chain's
+    `n_counted_calendar_days` (D-113: days inside some window's nominal span, planned
+    protocol gaps not counted); annualised return = (1 + total_return)^(365 / counted_days)
+    - 1; Calmar = annualised return / (the D-129 drawdown in fraction).
+    Edges: a negative total return gives a negative value, which cannot clear the positive
+    bar (FAIL); drawdown 0 with total_return <= 0 reads 0.0 (FAIL: no positive return);
+    drawdown 0 with a positive return is undefined -> NOT_EVALUABLE (no divide by zero, no
+    infinite value); an annualisation that overflows -> NOT_EVALUABLE."""
+    first = chain.get("start_level", chain["daily_levels"][0][1])
+    final = chain["daily_levels"][-1][1]
+    days = chain["n_counted_calendar_days"]
+    dd_pct = dd["max_drawdown_pct"]
+    detail = {"counted_days": days, "max_drawdown_pct": dd_pct, "formula": _CALMAR_FORMULA}
+    if not (isinstance(first, (int, float)) and isinstance(final, (int, float))
+            and math.isfinite(first) and math.isfinite(final) and first > 0 and final > 0):
+        _row("calmar_min", reason=f"Calmar NOT_EVALUABLE: chained levels {first!r} -> {final!r} "
+                                  f"are not finite positive numbers")
+        return
+    total = final / first - 1.0
+    try:
+        ann = (1.0 + total) ** (_CALMAR_DAYS_PER_YEAR / days) - 1.0
+    except OverflowError:
+        ann = math.inf
+    if not math.isfinite(ann):
+        _row("calmar_min", reason=(f"Calmar NOT_EVALUABLE: the annualised return of total return "
+                                   f"{total!r} over {days} counted day(s) overflows"))
+        return
+    detail.update(total_return=total, annualised_return=ann)
+    if dd_pct > 0:
+        value = ann / (dd_pct / 100.0)
+        note = (f"annualised return {ann:.6f} ((1 + {total:.6f})^({_CALMAR_DAYS_PER_YEAR}/{days}) "
+                f"- 1) / drawdown {dd_pct / 100.0:.6f}" + ("; negative total return FAILs"
+                                                          if total < 0 else ""))
+    elif total <= 0:
+        value = 0.0
+        note = (f"no drawdown but total return {total:.6f} <= 0: Calmar 0 (FAIL: no positive "
+                f"return)")
+        detail["no_drawdown"] = True
+    else:
+        detail["no_drawdown"] = True
+        _row("calmar_min", reason=(f"Calmar NOT_EVALUABLE: no drawdown (0 %) with a positive "
+                                   f"annualised return {ann:.6f}: the ratio is undefined"),
+             detail=detail)
+        return
+    _row("calmar_min", value, note=f"{note}; {span}", detail={**chain_detail, **detail})
+
+
 def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
     """The v2 actual value of every row except the DSR, for ONE candidate:
     {bar name: {"actual": value or None, "note": str, "not_evaluable_reason":
@@ -16326,7 +16397,9 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
       * trade_count_min: whole_test_trade_counts' worst coin of
         excluding_end_of_window (G5, D-035); both counts per coin in `detail`;
       * cost_edge_ratio_min: pooled_edge_to_cost_ratio with the bars file's
-        cost_edge_min_trades (G7, D-038, S2a amendment).
+        cost_edge_min_trades (G7, D-038, S2a amendment);
+      * calmar_min (D-188, when set): the chain's annualised total return over the D-129
+        drawdown (_calmar_row).
     A PortfolioNotEvaluable becomes that row's not_evaluable_reason (the chain's
     reason covers the four chain rows); a malformed artifact raises."""
     pwt = _portfolio_whole_test_module()
@@ -16417,6 +16490,14 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
                               "equity": exc.equity}})
         for name in ("avg_daily_return_min", "sharpe_min", "buy_and_hold_sharpe_excess_min"):
             _row(name, reason=f"not computed past a ruin: {_ruin_text(exc)}")
+        if not _bar_is_off(bars, "calmar_min"):
+            # D-188: the drawdown row is advisory, so the measured total loss must FAIL here:
+            # a ruined account's return is -100 % (annualised -1.0) over its drawdown (>= 100 %).
+            _row("calmar_min", -100.0 / exc.drawdown_pct, note=_ruin_text(exc),
+                 detail={"annualised_return": -1.0, "total_return": -1.0,
+                         "max_drawdown_pct": exc.drawdown_pct, "formula": _CALMAR_FORMULA,
+                         "ruin": {"file": str(exc.path), "timestamp": exc.timestamp,
+                                  "equity": exc.equity}})
         if not _bar_is_off(bars, "leave_one_block_out_sharpe_min"):  # E-078
             _row("leave_one_block_out_sharpe_min",
                  reason=f"not computed past a ruin: {_ruin_text(exc)}")
@@ -16425,6 +16506,8 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
         for name in ("max_drawdown_pct_max", "avg_daily_return_min", "sharpe_min",
                      "buy_and_hold_sharpe_excess_min"):
             _row(name, reason=chain_reason)
+        if not _bar_is_off(bars, "calmar_min"):  # D-188
+            _row("calmar_min", reason=chain_reason)
         if not _bar_is_off(bars, "leave_one_block_out_sharpe_min"):  # E-078
             _row("leave_one_block_out_sharpe_min", reason=chain_reason)
         return out
@@ -16446,6 +16529,8 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
          note=f"largest peak-to-trough fall of the chained bar-level curve; {span}",
          detail={**chain_detail, "peak_ts": str(dd["peak_ts"]), "trough_ts": str(dd["trough_ts"]),
                  "n_bars": dd["n_bars"]})
+    if not _bar_is_off(bars, "calmar_min"):
+        _calmar_row(_row, chain, dd, span, chain_detail)
     rets = [r for _d, r in chain["daily_returns"]]
     _row("avg_daily_return_min", sum(rets) / len(rets),
          note=f"arithmetic mean of the {len(rets)} chained daily simple return(s); {span}",
@@ -16535,7 +16620,9 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
     avg_daily_return_min, buy_and_hold_sharpe_excess_min, cost_edge_ratio_min.
     `metrics` is _whole_test_profit_metrics(...). overall is PASS only when every
     row is PASS, except a NOT_EVALUABLE deflated-Sharpe row, which is advisory
-    (D-119). An off bar (D-118) has no row. `dsr_detail` / `dsr_reason`: compute_dsr_whole_test's result
+    (D-119), and the max_drawdown_pct_max row, which is advisory whatever its result
+    whenever calmar_min is set (D-188; the calmar_min row, annualised whole-test return /
+    the D-129 drawdown, comes right after it). An off bar (D-118) has no row. `dsr_detail` / `dsr_reason`: compute_dsr_whole_test's result
     and its NOT_EVALUABLE reason (E-062 S2b-2b)."""
     rows = {**metrics,
             "deflated_sharpe_threshold": {
@@ -16544,7 +16631,7 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
                                          "no deflated Sharpe" + (f": {dsr_reason}"
                                                                  if dsr_reason else ""))}}
     results = []
-    for name in ("sharpe_min", "deflated_sharpe_threshold", "max_drawdown_pct_max",
+    for name in ("sharpe_min", "deflated_sharpe_threshold", "max_drawdown_pct_max", "calmar_min",
                  "trade_count_min", "avg_daily_return_min", "buy_and_hold_sharpe_excess_min",
                  "cost_edge_ratio_min", "trade_frequency_min", "leave_one_block_out_sharpe_min"):
         if _bar_is_off(bars, name):
@@ -16576,12 +16663,17 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
     for r in results:
         if r["name"] == "deflated_sharpe_threshold" and r["result"] == "NOT_EVALUABLE":
             r["advisory"] = True
+        # D-188: with the Calmar bar set, the drawdown row is advisory in every outcome
+        # (computed and printed as before; the Calmar row decides). Same flag as D-119.
+        if r["name"] == "max_drawdown_pct_max" and not _bar_is_off(bars, "calmar_min"):
+            r["advisory"] = True
     overall = ("PASS" if {r["result"] for r in results if not r.get("advisory")} == {"PASS"}
                else "FAIL")
     reasons = [
         f"{r['name']}: {r['result']} (threshold={r['threshold']!r}, actual={r['actual']!r})"
         + (f" -- {r['not_evaluable_reason']}" if r.get("not_evaluable_reason") else "")
-        + (" [warning, not blocking: D-119]" if r.get("advisory") else "")
+        + ((" [advisory, not blocking: D-188]" if r["name"] == "max_drawdown_pct_max"
+            else " [warning, not blocking: D-119]") if r.get("advisory") else "")
         for r in results if r["result"] != "PASS"
     ]
     return results, overall, reasons
@@ -16697,7 +16789,9 @@ def _hold_rows_not_evaluable(results: list, names, reason: str,
             f"refusing to grade.")
     held = [({**r, "result": "NOT_EVALUABLE", "not_evaluable_reason": reason}
              if r.get("name") in names and not _is_ruin_row(r) else r) for r in results]
-    overall = "PASS" if {r["result"] for r in held} == {"PASS"} else "FAIL"
+    # D-188: an advisory row (the drawdown row beside the Calmar bar, D-119's DSR) never decides
+    overall = "PASS" if {r["result"] for r in held if not r.get("advisory")} == {"PASS"} \
+        else "FAIL"
     reasons = [
         f"{r['name']}: {r['result']} (threshold={r['threshold']!r}, actual={r['actual']!r})"
         + (f" -- {r['not_evaluable_reason']}" if r.get("not_evaluable_reason") else "")
@@ -16719,6 +16813,13 @@ _D047_NORMALISATION_FORMULAS = {
     "cost_edge_ratio_min": "min_trades = max(ceil(cost_edge_min_trades * f), "
                            "trade_count_min_floor)",
 }
+
+
+# D-188: the rows a partial-coverage variant is held NOT_EVALUABLE on where the D-047
+# normalisation cannot be applied (coverage unmeasurable, or the grid's grader): the D-047
+# rows plus calmar_min -- the drawdown row alone no longer decides (it is advisory), and
+# the Calmar bar is not normalised, so it must not let such a variant PASS.
+_D047_HELD_BARS = (*_D047_NORMALISATION_FORMULAS, "calmar_min")
 
 
 def _normalised_profit_bars(bars: dict, coverage_days) -> tuple:
@@ -16966,7 +17067,7 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
             results = _attach_normalisation(results, norm)
         if unmeasurable is not None:
             results, overall, reasons = _hold_rows_not_evaluable(
-                results, _D047_NORMALISATION_FORMULAS,
+                results, _D047_HELD_BARS,
                 f"{COVERAGE_UNMEASURABLE_PREFIX} {unmeasurable}", bars=bars)
             entry["coverage_unmeasurable"] = unmeasurable
         if cand.get("partial_coverage"):
@@ -17065,6 +17166,7 @@ def _profit_bars_stop_route(run_dir: Path, run_id: str) -> str | None:
     idea = load_yaml(run_dir / "artifacts" / "idea_status.yaml") or {}
     advisory = sorted(vid for vid in passing
                       if any(isinstance(r, dict) and r.get("advisory")
+                             and r.get("result") == "NOT_EVALUABLE"  # D-188: a FAIL is information
                              for r in ((ev.get("variants") or {}).get(vid) or {}).get("bars") or []))
     print(f"\n🛑 PROFIT BARS REACHED: variant(s) {passing} passed every bar in "
           f"config/profitability_bars.yaml"
