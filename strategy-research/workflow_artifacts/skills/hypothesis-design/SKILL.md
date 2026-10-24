@@ -1,6 +1,6 @@
 ---
 name: hypothesis-design
-description: Produces a clear, testable trading strategy hypothesis from a research brief, including thesis, rationale, edge_source declaration, signal concept, assumptions, and expected failure modes.
+description: Writes the hypothesis card for one research brief in four steps (0 Mode, 1 Idea, 2 Statement with the criterion, 3 Proof): the idea as quantities, a statement with its horizon, one criterion picked from the statement, and the tests of the claim.
 ---
 
 # Hypothesis Design
@@ -13,7 +13,7 @@ Output: `hypothesis_card.yaml`. The fields are listed under "The card" below.
 
 ## 0. Mode
 
-Read the brief first. It puts the run in one mode. With none of the modes below, write one card.
+Read the brief first. It puts the run in one or more of the modes below. With none of them, write one card.
 
 - **Pass-through.** A brief or candidate that arrives with `config`, `manifest`, `criteria` and `source` is already authored. Copy the four into the card unchanged and set `pass_through: true`. Its criteria stay as they arrive. A candidate missing any of the four is not a pass-through: author it with steps 1 to 3.
 - **Decide-next candidate.** `DECIDE_NEXT_CANDIDATES.md` is among your inputs. That file governs the candidate. Steps 1 to 3 still apply, and criteria that arrive with the candidate stay unchanged.
@@ -21,7 +21,7 @@ Read the brief first. It puts the run in one mode. With none of the modes below,
 - **Pre-filled claim.** `PREFILLED_CLAIM.md` is among your inputs. Copy the brief's `candidate.claim` into the card's `claim` as it is. There is no exception.
 - **Several cards.** `BRIEF_HYPOTHESES.md` is among your inputs. One brief may yield several cards. That file says how to write and score them.
 - **Brief exhausted.** Also `BRIEF_HYPOTHESES.md`. Declare a brief exhausted only when no honest card remains. Never declare it after an approximation run. A run that tested an approximation (a tried_ideas row with `approximation: n`) has not tested the idea.
-- **Claim tests.** `CLAIM_TESTS.md` is among your inputs. It says how to write `claim` (step 3). `CLAIM_TESTS_TRADE.md` adds the trade-level tests. `CLAIM_TESTS_EXECUTION.md` adds the claim kind `execution_behaviour`.
+- **Claim tests.** `CLAIM_TESTS.md` is among your inputs. It says how to write `claim` (step 3). When `CLAIM_TESTS_TRADE.md` is among your inputs, it adds the trade-level tests. When `CLAIM_TESTS_EXECUTION.md` is among your inputs, it adds the claim kind `execution_behaviour`.
 
 ## 1. Idea
 
@@ -77,7 +77,7 @@ A regime idea goes through the same steps.
 - `target_market`: the coin or coins of the brief.
 - `timeframe`: the bar size of the brief.
 - `statement`: `predicts` is what the forecast predicts. `horizon_bars` is how many bars of `timeframe` ahead it looks, an integer of 1 or more. `condition` is when the statement applies. `if_pass` and `if_fail` say what each result would mean for the idea.
-- `criteria`: written only when `config/criterion_menu.yaml` is among your inputs. A list of `{id: <menu id>}`, with only the fields the menu entry lists under `card_overridable` (the `horizon`, where the entry offers one). Step 2b.
+- `criteria`: written only when `config/criterion_menu.yaml` is among your inputs. A list of `{id: <menu id>}`, with only the fields the menu entry lists under `card_overridable`. Step 2b.
 - `criteria_rationale`: one sentence (step 2b, rule 5).
 - `criteria_fit`: written only when the menu holds no measure for the statement: `none: ` then the measure that is missing (step 2b, rule 1).
 - `claim`: written only when `CLAIM_TESTS.md` is among your inputs (step 3).

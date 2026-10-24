@@ -652,7 +652,7 @@ def test_explore_confirm_routes_a_config_vehicle_like_a_config_change():
 
 PREFILLED_SENTENCE = (
     "Exception: when the brief's config changes only the regime detector (a gate on the source "
-    "run's unchanged strategies), the claim is about that gate: in signal_concept describe the "
+    "run's unchanged strategies), the claim is about that gate: in `idea_quantities` and the `statement` describe the "
     "gate's condition and the source run's block it gates; keep the strategies as the source "
     "run's; the ungated twin (the same config without the gate) is the design variant, and code "
     "derives it, so do not write it.")

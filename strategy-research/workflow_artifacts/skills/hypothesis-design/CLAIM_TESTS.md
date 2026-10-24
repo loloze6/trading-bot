@@ -6,7 +6,7 @@ step 1a's inputs only under that flag, and it adds one field to what your skill 
 - **Every card you write carries a `claim` block**, described here: `hypothesis_card.yaml`,
   and, when you write several cards, every `hypothesis_card_<n>.yaml` too (an extra card is
   launched later without coming back to you, so it must carry its own claim).
-- **A pass-through card carries a `claim` too** (your skill's IMPROVEMENT 08). Its config and
+- **A pass-through card carries a `claim` too** (your skill's step 0, pass-through). Its config and
   manifest are copied through as supplied, but the claim is the card's own: state what the
   supplied config is expected to show, and test it like any other card's.
 - Put `claim` after the card's other fields. It changes nothing else your skill asks for.
@@ -35,7 +35,7 @@ here. Do not invent blocks, fields or parameters.
   (horizons are bars of the card's timeframe). If no slot does, write `tests: none` and
   `missing_block`; never substitute a nearby quantity (a price level for a move, bars for days).
 
-**The statement's test.** The card's `statement` has a `horizon_bars` (SKILL.md, step 3). Test it
+**The statement's test.** The card's `statement` has a `horizon_bars` (SKILL.md, step 2). Test it
 at horizons around `horizon_bars`, not at `horizon_bars` alone. The opposite reading of the statement
 is its own test.
 

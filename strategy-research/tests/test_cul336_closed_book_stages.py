@@ -497,7 +497,7 @@ _FLAG_GATED_INPUTS = {
     "hypothesis_generation": {
         rpr._TRIED_IDEAS_RELATIVE_PATH, rpr._EXCLUSION_DIGEST_RELATIVE_PATH,  # exclusion digest
         *[v for v in rpr._STALE_INPUT_PATH_FIXES["hypothesis_generation"].values()],  # stale-path fix (on)
-        "../../config/criterion_menu.yaml", "../../config/cost_model.yaml",  # config-direct authoring
+        "../../config/criterion_menu.yaml",  # config-direct authoring (D-190: no cost_model.yaml)
     },
     "innovation_expansion": {
         rpr._TRIED_IDEAS_RELATIVE_PATH, rpr._EXCLUSION_DIGEST_RELATIVE_PATH,

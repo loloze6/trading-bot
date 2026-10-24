@@ -62,12 +62,12 @@ Rubric `brief-card-v1` (anchored; a card with no backtest yet usually scores
 `distance_to_profitable` is the same score the readers give (card I, D-017), read
 from `campaign_record/block_registry.yaml` (an input only when the file exists).
 A block type is (kind, component classes, timeframe category). A card has no config
-yet, so score 0 or 1 only when the card's `signal_concept` plainly uses the same
+yet, so score 0 or 1 only when the card's `idea_quantities` and `statement` plainly use the same
 component classes as a registered block's `config_fragment` (`class` keys) -- never
 guess class names; when you cannot tell, score 2 (the readers' default for a type they
 cannot place). Timeframe categories: high <= 15min < medium < 1h <= low < 1d <= daily;
 a block with no recorded `timeframe_category` is an assumed match. It is NOT a
-cost estimate: `cost_feasibility` ranks nothing here (O-3, operator 2026-10-01 --
+cost estimate: no cost figure ranks anything here (O-3, operator 2026-10-01 --
 costs are judged only by the backtest).
 
 ## 3. The brief is exhausted
@@ -86,7 +86,7 @@ two consecutive runs say so independently (O-20); until then the queue may ask
 again. Writing this file next to any card stops the run (contradictory output).
 
 Never declare the brief exhausted, and never leave out a card, on a cost,
-breakeven or turnover estimate (`cost_feasibility` included). Costs are judged
+breakeven or turnover estimate. Costs are judged
 only by the backtest (O-3, operator 2026-10-01): an idea you expect to lose to
-fees is still a card -- say so in its `expected_failure_modes`. "Worth testing"
+fees is still a card -- say so in the statement's `if_fail`. "Worth testing"
 means distinct and testable with the available data, nothing more.
