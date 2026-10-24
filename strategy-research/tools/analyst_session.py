@@ -542,7 +542,7 @@ def floor_lowered_info(qid, entries: dict):
 
 def met_own_floor(entry):
     """Whether a conditional_effect call's logged result met its own test's floor (D-178, item
-    D3): at ANY horizon every floor unit the result reports (n_events, n_windows_with_events,
+    D3; since D-184 it selects what is disclosed, not refused): at ANY horizon every floor unit the result reports (n_events, n_windows_with_events,
     n_blocks; a unit the result does not report, as min_eras, is not judged) is at or above its
     minimum, and at least one unit was judged. SKILL.md's no-claim rule says "at any horizon";
     floors_met_in_log (an observation's flag) asks every horizon. None when it cannot tell."""
@@ -1261,7 +1261,8 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
                         nc["observations"], entries, evidence, settings, base_config,
                         "no_claim.observations")
                     record["unverified_numbers"] += unv
-        # D-178 (item D3): every call that cleared its own floor is accounted for
+        # D-178 (item D3) as amended by D-184: a call that cleared its own floor and is not
+        # accounted for is disclosed in the record (unreported_results), not refused
         accounted = [br.get("killed_by") if isinstance(br, dict) else None]
         accounted += [o.get("test") for o in (nc.get("observations") if isinstance(nc, dict)
                                               and isinstance(nc.get("observations"), list) else [])
