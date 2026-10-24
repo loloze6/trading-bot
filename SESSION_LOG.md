@@ -1293,3 +1293,52 @@
 4. **Next-session prompt (paste verbatim):**
    > Read SESSION_LOG.md's 2026-10-23 run viewer entry and strategy-research/tools/run_viewer/DESIGN.md. The run viewer PR waits for the operator's "merge <PR>". After merge and an approved sync, start it from strategy-research/ in the checkout with `& $env:TBOT_PYTHON tools/run_viewer/server.py --runs runs --port 8765` (add `--host 0.0.0.0` for the phone) and open run_099; report any card or view that reads wrong against the run's artifacts. A shape change in a future run is fixed in loaders.py, never in the page. No pipeline change, no writes to runs or records, never print the data policy or tools/holdout_date_gate.sh, one test process at a time, no attribution lines.
 5. **Operator direction 2026-10-23 on #528:** merge on the operator's "merge 528" only, after #527 (D-178, D-179) is merged; then re-merge master and place D-180 after D-179. The out-of-round masking fix (commit 3141a6b2) is accepted and stays on the record. Follow-ups, one small later PR, not blocking: view 4's per-window Sharpe names its basis ("per-window trade Sharpe", as D-177 did for the log line); the view 4 breadcrumb cut at the left edge on a phone; a gated-out variant's window selector. The real-phone test is the operator's after the sync (LAN, `--host 0.0.0.0`). The sync of the operator checkout is the main lead session's step, once, after both merges; this session does not sync.
+
+## 2026-10-24 -- Implementation lead: direction window PR-1..PR-9; D-184..D-191 merged (#534-#542); PR-8 held; checkout not synced
+1. **Hypothesis:** the direction prompt of 2026-10-24 (PR-1..PR-8 plus the direction answers and PR-9 of the same day) can go through as one reviewed PR each from master, built by Sonnet agents (Opus only for PR-9's component and its safety review, as the direction asked), merged under the merge conditions, with no campaign run, no edit of the operator checkout and no sync.
+2. **Result:**
+   - **Runs read:** 0. **PRs merged:** 9. **Blocks in the registry:** 3, 1 active (L1_DAILY_TREND_SMA100_V3_FOLD_B:run_084), unchanged.
+   - **Merged (master 7fc86293):**
+
+     | PR | D-row | What |
+     |---|---|---|
+     | #534 | D-184 | analyst disclosure: unreported floor-clearing results go into the record as `unreported_results`; the mechanism query may be any ok query; a double refusal sets `status: refused` |
+     | #535 | D-185 | deflated Sharpe N by (structure_hash, timeframe), flag `dsr_same_structure`. Direction answers built: N = 1 graded at SR0 0; timeframe-aware same-structure dedup; a missing scaling_factor counts +1; holdout spend keeps campaign-wide N |
+     | #537 | D-186 | forecast IC at horizons 1/6/24/72/168; residual IC at the card horizon; residual IC exempt with no block; menu `horizon`; card statement schema. Flags `forecast_ic_horizons` and `residual_ic_requires_block`; with the flags off, the menu prompt text is byte-identical |
+     | #536 | D-187 | step 1b: compositions before a missing-component DEVIATION; the sizing block is not a deviation. The SMA-pair catalogue note was dropped (its weights sum to 0) |
+     | #538 | D-188 | Calmar bar 0.75, normalised by 1/sqrt(f); zero drawdown PASSes "no drawdown"; the drawdown row becomes advisory. Signed 2026-10-24 on the operator's line; SIGNING_CHECKLIST section 9; LF sha256 249b6ebd5450b26d1a4d810f8035ec3287953c215cd25df625fe01faa9bec592 |
+     | #539 | D-189 | `orchestrator.stage_models`: steps 1a and 1b run on claude-sonnet-5-5 |
+     | #540 | D-190 | hypothesis-design rewritten in four steps (2b verbatim); 1b maps idea_quantities and the statement; not_expressible entries become declared deviations; old step-1a instructions removed, including step 1a's cost_model.yaml input |
+     | #541 | -- | D-185 note: overlay entries carry `forecast_hash_check` (match / row_has_no_forecast_hash) |
+     | #542 | D-191 | EMASpreadComponent `average: ema|sma`, default ema byte-identical; sma periods must be integers >= 1 |
+
+   - **Full suites:** every PR had green CI and a full suite under the lock.
+     - strategy-research failed only the Windows-environment set of 18 (holdout_date_gate 11, recorder supervisor_sh 6, shard_reader 1).
+     - On #534 and #541, trading-bot xdist workers crashed (memory) in test_d146; it passes alone (18).
+     - Pins the full suites found and fixed in the same PR: test_d188's loader test still asserting an unsigned file; a DATA_DICTIONARY row for `bars[].reason`; test_d185's fixed source-line slice, which D-191 moved.
+   - **Backfill (D-185), dry run only:** read-only on the checkout, 84 rows: 75 keyed (5 with no forecast_hash), 9 unkeyed (no protocol timeframe), 20 keys, 6 singletons. The overlay is NOT written; that waits for the operator's word, before the flags go on.
+   - **Housekeeping:**
+     - 11 merged worktrees were removed on the operator's word; C: had 0.6 GB free before, 6.7 GB after.
+     - All PR worktrees of this window are removed.
+     - The operator checkout is unchanged: 43 status lines, nothing written.
+   - **Held:**
+     - **PR-8 (criterion-consistency warning):** waits for the direction's answer on how code classifies `statement.predicts`: (p1) a `predicts_kind` enum, (p2) `claim.kind`, or (p3) a horizon-only check.
+     - The HELD regime items, unchanged.
+     - Found, not fixed (recorded in the D-rows):
+       - build_core's UnboundLocalError on a None bars_df;
+       - no pre-flight for a malformed stage_models;
+       - explore_confirm readers see idea_quantities/statement only for new cards;
+       - the `criteria_fit` and missing-block parks have no code.
+     - **Not done:** the sync and the run_100 halt clearance. Both wait for the operator's words.
+3. **Files touched:** PRs #534-#542 (see their diffs) and this PR (SESSION_LOG.md, tasks/lessons.md). Operator checkout: none.
+4. **Next-session prompt (paste verbatim; fill the brackets):**
+   > You are the implementation lead. Read SESSION_LOG.md's 2026-10-24 implementation-lead entry and CLAUDE.md's working rules. Master is 7fc86293 or later; D-184..D-191 are merged. First, check the state read-only: the queue (sma_trend_1h_fold_a paused), the registry, the flags, and runs/run_100/pipeline_state.yaml (`campaign_review_reframe_brief` still present).
+   >
+   > PR-8 (criterion-consistency warning, about 60 lines beside _pass_rule_from_card, four tests, no flag, one D-row): build it with the direction's answer [p1 predicts_kind enum / p2 claim.kind / p3 horizon only].
+   >
+   > Then, only on the operator's words:
+   > 1. "write the overlay": run tools/backfill_structure_hash.py --write against the checkout's strategy-research root, after a runner check. It appends campaign_record/trial_structure_key_overlay.yaml.
+   > 2. "sync approved <sha>": sync_generic.ps1 -Target <sha>. In c4/flag-set's campaign_config.yaml switch on orchestrator.dsr_same_structure, orchestrator.forecast_ic_horizons and orchestrator.residual_ic_requires_block (record edit, byte-preserving, validated).
+   > 3. "clear the halt": remove campaign_review_reframe_brief from runs/run_100/pipeline_state.yaml; commit candidate_briefs/run_100__reframe.md as is; run_campaign.py --resume on run_100 to DONE and decide-next. Expected: the queue entry sma_trend_1h_fold_a__more_1, blocked_on_operator_approval. Report the queue row and stop.
+   >
+   > Rules: one test process at a time under tbot_test.lock (scripts in %TEMP%\claude\scripts\lock_pytest_1024.ps1 and lock_fullsuite_1024.ps1); the venv interpreter only, never a bare python; no trailers; never read local_data or holdout_sealed; never print a sealed-window date; Sonnet agents, max 2 concurrent, each in its own worktree under Projects\wt\.
