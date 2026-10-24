@@ -8863,7 +8863,7 @@ def _normalisation_at_spend(run_dir: Path, run_id: str, variant: str, entry: dic
     (artifacts/variants/index.yaml + its protocol.json vs the run protocol,
     _variant_coverage_days, the grading's own functions) -- and refuses
     `bars_changed` unless the evaluation's rows carry exactly them:
-    trade_count_min's and max_drawdown_pct_max's `threshold`,
+    trade_count_min's, max_drawdown_pct_max's and (D-188) calmar_min's `threshold`,
     cost_edge_ratio_min's detail.min_trades, and each row's
     detail.normalisation (absent for a full-coverage variant). So a partial
     variant can never be spent on a full-coverage threshold, nor a full one on
@@ -8894,9 +8894,9 @@ def _normalisation_at_spend(run_dir: Path, run_id: str, variant: str, entry: dic
             f"cannot be re-derived now: {type(e).__name__}: {e}")
     rows = {r.get("name"): r for r in (entry or {}).get("bars") or [] if isinstance(r, dict)}
     problems = []
-    for name in ("trade_count_min", "max_drawdown_pct_max", "cost_edge_ratio_min"):
+    for name in ("trade_count_min", "max_drawdown_pct_max", "calmar_min", "cost_edge_ratio_min"):
         if _bar_is_off(eff, name):
-            continue  # D-118: an off bar has no row to re-derive
+            continue  # D-118: an off bar has no row to re-derive (D-188: nor an unset calmar_min)
         row = rows.get(name)
         if not isinstance(row, dict):
             problems.append(f"{name}: no row")
@@ -16340,8 +16340,11 @@ def _calmar_row(_row, chain: dict, dd: dict, span: str, chain_detail: dict) -> N
     - 1; Calmar = annualised return / (the D-129 drawdown in fraction).
     Edges: a negative total return gives a negative value, which cannot clear the positive
     bar (FAIL); drawdown 0 with total_return <= 0 reads 0.0 (FAIL: no positive return);
-    drawdown 0 with a positive return is undefined -> NOT_EVALUABLE (no divide by zero, no
-    infinite value); an annualisation that overflows -> NOT_EVALUABLE."""
+    drawdown 0 with a positive return PASSes, reason "no drawdown" (direction 2026-10-24,
+    point 4): no division, actual recorded as null (never inf), detail.no_drawdown_pass;
+    otherwise an annualisation that overflows -> NOT_EVALUABLE. The bar this value is compared
+    to is the D-047-normalised calmar_min / sqrt(f) on a partial-coverage variant
+    (_normalised_profit_bars)."""
     first = chain.get("start_level", chain["daily_levels"][0][1])
     final = chain["daily_levels"][-1][1]
     days = chain["n_counted_calendar_days"]
@@ -16357,6 +16360,17 @@ def _calmar_row(_row, chain: dict, dd: dict, span: str, chain_detail: dict) -> N
         ann = (1.0 + total) ** (_CALMAR_DAYS_PER_YEAR / days) - 1.0
     except OverflowError:
         ann = math.inf
+    if dd_pct <= 0 and total > 0:
+        # D-188 point 4 (direction 2026-10-24): a positive return with no drawdown PASSes,
+        # reason "no drawdown". No division; the row's actual is null (never inf), and the
+        # grader reads detail.no_drawdown_pass and writes result PASS, reason "no drawdown".
+        detail.update(total_return=total, no_drawdown=True, no_drawdown_pass=True)
+        if math.isfinite(ann):
+            detail["annualised_return"] = ann
+        _row("calmar_min", None, note=f"no drawdown (0 %) with a positive total return "
+                                      f"{total:.6f}: PASS, no division; {span}",
+             detail={**chain_detail, **detail})
+        return
     if not math.isfinite(ann):
         _row("calmar_min", reason=(f"Calmar NOT_EVALUABLE: the annualised return of total return "
                                    f"{total!r} over {days} counted day(s) overflows"))
@@ -16367,17 +16381,11 @@ def _calmar_row(_row, chain: dict, dd: dict, span: str, chain_detail: dict) -> N
         note = (f"annualised return {ann:.6f} ((1 + {total:.6f})^({_CALMAR_DAYS_PER_YEAR}/{days}) "
                 f"- 1) / drawdown {dd_pct / 100.0:.6f}" + ("; negative total return FAILs"
                                                           if total < 0 else ""))
-    elif total <= 0:
+    else:  # dd_pct <= 0 and total <= 0 (a positive total returned above)
         value = 0.0
         note = (f"no drawdown but total return {total:.6f} <= 0: Calmar 0 (FAIL: no positive "
                 f"return)")
         detail["no_drawdown"] = True
-    else:
-        detail["no_drawdown"] = True
-        _row("calmar_min", reason=(f"Calmar NOT_EVALUABLE: no drawdown (0 %) with a positive "
-                                   f"annualised return {ann:.6f}: the ratio is undefined"),
-             detail=detail)
-        return
     _row("calmar_min", value, note=f"{note}; {span}", detail={**chain_detail, **detail})
 
 
@@ -16638,7 +16646,11 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
             continue  # D-118: an off bar has no row (E-078: an absent optional bar neither)
         row, threshold, comp = rows[name], bars[name], _COMPARATOR_V2[name]
         actual = row["actual"]
-        if actual is None:
+        no_dd_pass = (name == "calmar_min" and actual is None
+                      and (row.get("detail") or {}).get("no_drawdown_pass") is True)
+        if no_dd_pass:
+            outcome = "PASS"  # D-188 point 4: no drawdown, positive return; actual stays null
+        elif actual is None:
             outcome = "NOT_EVALUABLE"
         elif comp == ">=":
             outcome = "PASS" if actual >= threshold else "FAIL"
@@ -16650,7 +16662,9 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
             raise ValueError(f"profit bars v2: unknown comparator {comp!r}")
         entry = {"name": name, "threshold": threshold, "actual": actual, "result": outcome,
                  "basis": _BASIS_V2[name], "comparator": comp}
-        if actual is None:
+        if no_dd_pass:
+            entry["reason"] = "no drawdown"
+        elif actual is None:
             entry["not_evaluable_reason"] = row.get("not_evaluable_reason") or "no value"
         if row.get("note"):
             entry["note"] = row["note"]
@@ -16787,7 +16801,8 @@ def _hold_rows_not_evaluable(results: list, names, reason: str,
         raise ProfitabilityBarsSchemaError(
             f"{reason}: the graded bars lack {missing}, so they cannot be held NOT_EVALUABLE -- "
             f"refusing to grade.")
-    held = [({**r, "result": "NOT_EVALUABLE", "not_evaluable_reason": reason}
+    held = [({**{k: v for k, v in r.items() if k != "reason"},  # D-188: no stale PASS reason
+              "result": "NOT_EVALUABLE", "not_evaluable_reason": reason}
              if r.get("name") in names and not _is_ruin_row(r) else r) for r in results]
     # D-188: an advisory row (the drawdown row beside the Calmar bar, D-119's DSR) never decides
     overall = "PASS" if {r["result"] for r in held if not r.get("advisory")} == {"PASS"} \
@@ -16809,6 +16824,10 @@ COVERAGE_UNMEASURABLE_PREFIX = "coverage_unmeasurable:"
 _D047_NORMALISATION_FORMULAS = {
     "trade_count_min": "max(ceil(trade_count_min * f), trade_count_min_floor)",
     "max_drawdown_pct_max": "max_drawdown_pct_max * sqrt(f)",
+    # D-188 (direction 2026-10-24): the Calmar bar rises as coverage falls, the mirror of the
+    # drawdown limit's fall -- the same sqrt(f) law (a partial period's return/drawdown ratio
+    # scales with its length by the same square root that its drawdown does)
+    "calmar_min": "calmar_min / sqrt(f)",
     # the row's own 2.2 ratio is unchanged; its trade floor (detail.min_trades) scales
     "cost_edge_ratio_min": "min_trades = max(ceil(cost_edge_min_trades * f), "
                            "trade_count_min_floor)",
@@ -16817,9 +16836,9 @@ _D047_NORMALISATION_FORMULAS = {
 
 # D-188: the rows a partial-coverage variant is held NOT_EVALUABLE on where the D-047
 # normalisation cannot be applied (coverage unmeasurable, or the grid's grader): the D-047
-# rows plus calmar_min -- the drawdown row alone no longer decides (it is advisory), and
-# the Calmar bar is not normalised, so it must not let such a variant PASS.
-_D047_HELD_BARS = (*_D047_NORMALISATION_FORMULAS, "calmar_min")
+# rows, which now include calmar_min (normalised by sqrt(f) where it can be applied, held
+# here where it cannot -- the drawdown row alone no longer decides, it is advisory).
+_D047_HELD_BARS = tuple(_D047_NORMALISATION_FORMULAS)
 
 
 def _normalised_profit_bars(bars: dict, coverage_days) -> tuple:
@@ -16832,6 +16851,8 @@ def _normalised_profit_bars(bars: dict, coverage_days) -> tuple:
                                (the floor of the cost_edge_ratio_min row)
       max_drawdown_pct_max  -> limit * sqrt(f) (a positive percent, compared
                                `<=` to the positive-percent chained drawdown)
+      calmar_min (D-188)    -> calmar_min / sqrt(f), when the bar is set (f = 1/4:
+                               0.75 -> 1.5)
     every other bar unchanged (G6). The helpers are variant_coin's (S2b-3a);
     nothing is re-implemented here. f == 1 returns (bars, {}) unchanged (G7).
     A malformed coverage raises (variant_coin.VariantCoinError)."""
@@ -16855,6 +16876,9 @@ def _normalised_profit_bars(bars: dict, coverage_days) -> tuple:
                                                                   floor)
     eff["max_drawdown_pct_max"] = vc.scaled_drawdown_limit(bars["max_drawdown_pct_max"], f)
     norm["max_drawdown_pct_max"] = {**common, "base": bars["max_drawdown_pct_max"], "floor": None}
+    if not _bar_is_off(bars, "calmar_min"):  # D-188: calmar_min / sqrt(f), as the drawdown limit
+        eff["calmar_min"] = bars["calmar_min"] / math.sqrt(f)
+        norm["calmar_min"] = {**common, "base": bars["calmar_min"], "floor": None}
     if not _bar_is_off(bars, "cost_edge_ratio_min"):
         norm["cost_edge_ratio_min"] = {**common, "base": bars["cost_edge_min_trades"],
                                        "floor": floor}
@@ -17168,10 +17192,20 @@ def _profit_bars_stop_route(run_dir: Path, run_id: str) -> str | None:
                       if any(isinstance(r, dict) and r.get("advisory")
                              and r.get("result") == "NOT_EVALUABLE"  # D-188: a FAIL is information
                              for r in ((ev.get("variants") or {}).get(vid) or {}).get("bars") or []))
+    # D-188: the advisory drawdown row is "printed" -- name every passing variant whose
+    # advisory max-drawdown row FAILed, with its value and limit (information, not a blocker)
+    dd_fail = {}
+    for vid in passing:
+        for r in ((ev.get("variants") or {}).get(vid) or {}).get("bars") or []:
+            if (isinstance(r, dict) and r.get("advisory") and r.get("result") == "FAIL"
+                    and r.get("name") == "max_drawdown_pct_max"):
+                dd_fail[vid] = f"{r.get('actual')!r}% > {r.get('threshold')!r}%"
     print(f"\n🛑 PROFIT BARS REACHED: variant(s) {passing} passed every bar in "
           f"config/profitability_bars.yaml"
           + (f" (D-119: {advisory} with a deflated Sharpe that could not be computed -- a "
              f"warning; such a variant cannot be spent until it is computed)" if advisory else "")
+          + (f" (D-188 ADVISORY, not blocking -- the Calmar bar decides: max-drawdown row FAIL "
+             f"for {dd_fail})" if dd_fail else "")
           + f". The grid's idea_status is "
           f"{idea.get('idea_status')!r} (unchanged -- it comes only from the grid). "
           f"Pausing for the operator (branch-3 stop).")

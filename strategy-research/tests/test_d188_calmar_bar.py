@@ -3,7 +3,10 @@ whole-test total return annualised over the COUNTED days, (1 + R)^(365 / counted
 over the D-129 drawdown of the same chain; a negative total return FAILs. `max_drawdown_pct_max`
 stays in the file (20) but its row is ADVISORY (D-119's `advisory: true` flag): computed and
 printed, never decides the verdict. `deflated_sharpe_threshold` unchanged. Applies to backtests
-graded after; nothing regraded (a bars file without `calmar_min` grades exactly as before)."""
+graded after; nothing regraded (a bars file without `calmar_min` grades exactly as before).
+Fix round (direction answers 2026-10-24): calmar_min is normalised for partial coverage as the
+drawdown limit is, calmar_min / sqrt(f); zero drawdown with a positive total return PASSes,
+reason "no drawdown" (actual null)."""
 from __future__ import annotations
 
 import math
@@ -184,12 +187,41 @@ def test_the_calmar_row_carries_its_record():
 
 # -- the edges -----------------------------------------------------------------------------
 
-def test_zero_drawdown_with_a_positive_return_is_not_evaluable_no_division():
+def test_zero_drawdown_with_a_positive_return_passes_no_drawdown_no_division():
+    """Direction 2026-10-24, point 4: PASS, reason "no drawdown"; actual recorded as null (never
+    inf); the bar value is irrelevant (nothing is divided)."""
     row = _calmar(0.30, 0.0)
-    assert row["actual"] is None and "no drawdown" in row["not_evaluable_reason"]
-    assert row["detail"]["no_drawdown"] is True
-    rows, overall, _r = _grade(_metrics(calmar_min=None))
-    assert rows["calmar_min"]["result"] == "NOT_EVALUABLE" and overall == "FAIL"
+    assert row["actual"] is None and row["not_evaluable_reason"] is None
+    assert row["detail"]["no_drawdown"] is True and row["detail"]["no_drawdown_pass"] is True
+    assert row["detail"]["total_return"] == pytest.approx(0.30)
+    rows, overall, reasons = _grade({**_metrics(), "calmar_min": row})
+    entry = rows["calmar_min"]
+    assert entry["result"] == "PASS" and entry["reason"] == "no drawdown"
+    assert entry["actual"] is None and "not_evaluable_reason" not in entry
+    assert overall == "PASS" and not any(r.startswith("calmar_min") for r in reasons)
+    # f = 0.25's effective bar (1.5) changes nothing: still PASS
+    eff, _norm = rpr._normalised_profit_bars(CALMAR_BARS, (1, 4))
+    rows, overall, _r = _grade({**_metrics(), "calmar_min": row}, bars=eff)
+    assert rows["calmar_min"]["result"] == "PASS" and overall == "PASS"
+
+
+def test_zero_drawdown_pass_survives_an_overflowing_annualisation():
+    row = _calmar(50.0, 0.0, days=2)  # 51^(182.5) overflows, but no division happens
+    assert row["actual"] is None and row["detail"]["no_drawdown_pass"] is True
+    assert "annualised_return" not in row["detail"]
+    rows, overall, _r = _grade({**_metrics(), "calmar_min": row})
+    assert rows["calmar_min"]["result"] == "PASS" and overall == "PASS"
+
+
+def test_a_held_zero_drawdown_pass_drops_its_reason():
+    row = _calmar(0.30, 0.0)
+    results, _o, _r = rpr._grade_profit_bars_v2(CALMAR_BARS, dsr=0.99, dsr_note="t",
+                                                metrics={**_metrics(), "calmar_min": row})
+    held, overall, _hr = rpr._hold_rows_not_evaluable(results, rpr._D047_HELD_BARS, "partial",
+                                                      bars=CALMAR_BARS)
+    by = {r["name"]: r for r in held}
+    assert by["calmar_min"]["result"] == "NOT_EVALUABLE" and "reason" not in by["calmar_min"]
+    assert overall == "FAIL"
 
 
 @pytest.mark.parametrize("total", [0.0, -0.05])
@@ -353,3 +385,73 @@ def test_math_is_finite_for_every_graded_actual():
     for total, dd in ((0.3, 10.0), (-0.2, 30.0), (0.0, 5.0)):
         a = _calmar(total, dd)["actual"]
         assert a is not None and math.isfinite(a)
+
+
+# -- partial coverage: the bar is normalised as the drawdown limit is (D-047) ---------------
+
+def _drawdown_norm_keys(norm: dict) -> set:
+    return set(norm["max_drawdown_pct_max"])
+
+
+def test_f_quarter_normalises_the_calmar_bar_to_1_5_and_records_it():
+    """Direction 2026-10-24, point 3: effective calmar_min = calmar_min / sqrt(f); f = 0.25 ->
+    0.75 / 0.5 = 1.5, formula recorded, same keys as the drawdown row's own record."""
+    eff, norm = rpr._normalised_profit_bars(CALMAR_BARS, (1, 4))
+    assert eff["calmar_min"] == 1.5 and CALMAR_BARS["calmar_min"] == 0.75
+    assert eff["max_drawdown_pct_max"] == pytest.approx(10.0)  # the drawdown limit: 20 * 0.5
+    rec = norm["calmar_min"]
+    assert rec == {"covered_days": 1, "full_days": 4, "f": 0.25, "base": 0.75, "floor": None,
+                   "formula": "calmar_min / sqrt(f)"}
+    assert set(rec) == _drawdown_norm_keys(norm)
+    assert rpr._D047_NORMALISATION_FORMULAS["calmar_min"] == "calmar_min / sqrt(f)"
+    # a Calmar of 1.4 FAILs the normalised bar (it would PASS the base 0.75); 1.6 PASSes
+    low, o_low, _r = _grade(_metrics(calmar_min=1.4), bars=eff)
+    high, o_high, _r2 = _grade(_metrics(calmar_min=1.6), bars=eff)
+    assert low["calmar_min"]["threshold"] == 1.5 and low["calmar_min"]["result"] == "FAIL"
+    assert o_low == "FAIL"
+    assert high["calmar_min"]["result"] == "PASS" and o_high == "PASS"
+    assert _grade(_metrics(calmar_min=1.4))[0]["calmar_min"]["result"] == "PASS"  # base bar
+    # the normalisation lands in the calmar row's detail.normalisation
+    attached = rpr._attach_normalisation(list(low.values()), norm)
+    by = {r["name"]: r for r in attached}
+    assert by["calmar_min"]["detail"]["normalisation"] == rec
+    assert set(by["calmar_min"]["detail"]["normalisation"]) == set(
+        by["max_drawdown_pct_max"]["detail"]["normalisation"])
+
+
+def test_f_one_leaves_the_calmar_bar_at_0_75_unrecorded():
+    eff, norm = rpr._normalised_profit_bars(CALMAR_BARS, (100, 100))
+    assert eff is CALMAR_BARS and norm == {}  # the drawdown's f = 1 case, byte for byte
+    assert eff["calmar_min"] == 0.75
+    rows, _o, _r = _grade(_metrics(calmar_min=0.8), bars=eff)
+    assert rows["calmar_min"]["threshold"] == 0.75 and rows["calmar_min"]["result"] == "PASS"
+    assert "normalisation" not in (rows["calmar_min"].get("detail") or {})
+
+
+def test_without_calmar_min_the_normalisation_has_no_calmar_record():
+    eff, norm = rpr._normalised_profit_bars(t62.V2_BARS, (1, 4))
+    assert "calmar_min" not in eff and "calmar_min" not in norm
+
+
+# -- the branch-3 stop prints the advisory drawdown FAIL -----------------------------------
+
+def test_the_stop_names_an_advisory_drawdown_fail_as_advisory(tmp_path, monkeypatch, capsys):
+    results, overall, _r = _grade(_metrics(max_drawdown_pct_max=25.0))
+    assert overall == "PASS"
+    ev = {"generated_at": "g1", "passing": ["base"],
+          "variants": {"base": {"result": "PASS", "bars": list(results.values()),
+                                "trial_id": "run_1"}}}
+    run_dir = tmp_path / "run_1"
+    (run_dir / "artifacts").mkdir(parents=True)
+    (run_dir / "pipeline_state.yaml").write_text(yaml.safe_dump({"status": "active"}),
+                                                 encoding="utf-8")
+    (run_dir / "artifacts" / "idea_status.yaml").write_text(
+        yaml.safe_dump({"idea_status": "validated"}), encoding="utf-8")
+    monkeypatch.setattr(rpr, "update_state", lambda **k: None)
+    monkeypatch.setattr(rpr, "_load_every_backtest_evaluation", lambda *a: ev)
+    assert rpr._profit_bars_stop_route(run_dir, "run_1") == "human_pause"
+    out = capsys.readouterr().out
+    assert "PROFIT BARS REACHED" in out
+    assert "D-188 ADVISORY" in out and "max-drawdown row FAIL" in out
+    assert "25.0% > 20.0%" in out
+    assert "cannot be spent" not in out  # a computed advisory FAIL is not the D-119 warning

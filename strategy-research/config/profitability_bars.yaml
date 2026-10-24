@@ -7,7 +7,11 @@
 # computed as before, never makes the verdict FAIL (the Calmar row decides). The advisory
 # status holds whenever calmar_min is set. deflated_sharpe_threshold unchanged. The
 # 2026-10-14 signature below no longer covers this file: ratified_by / ratified_at are
-# null until the operator signs (SIGNING_CHECKLIST.md).
+# null until the operator signs (SIGNING_CHECKLIST.md); the signed keys will be calmar_min
+# 0.75, the advisory drawdown row and the sqrt(f) normalisation below. Direction answers
+# 2026-10-24: calmar_min is normalised for partial coverage as D-047 normalises the
+# drawdown limit (effective calmar_min = calmar_min / sqrt(f); f = 1 leaves 0.75); zero
+# drawdown with a positive total return PASSes, reason "no drawdown".
 #
 # D-127 (E-078, advisor guideline 2026-10-14 item 2; applies to backtests graded after
 # it): two v2 bars added. trade_frequency_min 0.01: trades without end_of_window forced
@@ -241,14 +245,21 @@
 #                                    Calmar = annualised return / drawdown.
 #                                  A negative R FAILs (the value is then negative, so it
 #                                  cannot clear a positive bar). Drawdown 0: R <= 0 reads
-#                                  as FAIL, R > 0 reads NOT_EVALUABLE (Calmar undefined:
-#                                  no divide by zero, no infinite value). A ruined account
-#                                  (D-101) FAILs. Not normalised for partial coverage (no
-#                                  `f` rule below applies to it); a partial-coverage
-#                                  variant is held NOT_EVALUABLE wherever the D-047
-#                                  normalisation cannot be applied, like the drawdown row.
+#                                  as FAIL; R > 0 PASSes, reason "no drawdown" (direction
+#                                  2026-10-24, point 4): no division, the row's actual is
+#                                  null (never inf), detail.no_drawdown_pass true, the entry
+#                                  carries `reason: no drawdown`. A ruined account (D-101)
+#                                  FAILs. NORMALISED for partial coverage as D-047
+#                                  normalises the drawdown limit (direction 2026-10-24,
+#                                  point 3): effective calmar_min = calmar_min / sqrt(f),
+#                                  f = 1 leaves 0.75 (f = 1/4 -> 1.5); see PARTIAL COVERAGE
+#                                  below. A partial-coverage variant is held NOT_EVALUABLE
+#                                  wherever the D-047 normalisation cannot be applied
+#                                  (coverage unmeasurable, the grid's grader), like the
+#                                  other normalised rows (code: _D047_HELD_BARS).
 #                                  The row's detail: annualised_return, total_return,
-#                                  counted_days, max_drawdown_pct, formula.
+#                                  counted_days, max_drawdown_pct, formula (and, on a partial
+#                                  variant, normalisation).
 #                                  basis: portfolio_equal_weight_whole_test_chained_annualised_return_over_drawdown
 #   trade_count_min            v2: per coin, trades over the whole test WITHOUT
 #                                  the end_of_window forced closes (D-035, G5);
@@ -308,7 +319,8 @@
 #   an exact fraction): trade_count_min -> max(ceil(trade_count_min * f),
 #   trade_count_min_floor); cost_edge_ratio_min's trade floor -> max(ceil(
 #   cost_edge_min_trades * f), trade_count_min_floor) (the 2.2 ratio unchanged);
-#   max_drawdown_pct_max -> max_drawdown_pct_max * sqrt(f) (code, no key). Every
+#   max_drawdown_pct_max -> max_drawdown_pct_max * sqrt(f) (code, no key);
+#   calmar_min -> calmar_min / sqrt(f) (D-188, direction 2026-10-24, when set). Every
 #   other bar unchanged. Such a row records the effective `threshold` (for the
 #   cost row, detail.min_trades) and detail.normalisation {covered_days,
 #   full_days, f, base, floor, formula}. A full-coverage variant (f = 1) is
