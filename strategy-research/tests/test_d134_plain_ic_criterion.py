@@ -27,7 +27,10 @@ import verdict_criteria_evaluator as vce  # noqa: E402
 from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
 import test_c51_menu_criterion_lint as t51  # noqa: E402
 
-MENU = yaml.safe_load((SR / "config" / "criterion_menu.yaml").read_text(encoding="utf-8"))
+# D-186: the raw file now also carries the `horizon` keys that only exist while orchestrator.forecast_ic_horizons
+# is on; this file pins D-134 as the pipeline reads it with that flag OFF (the default), so it reads the menu
+# through the same strip (tests/test_d186_forecast_ic_horizons.py covers the flag-on entry).
+MENU = vce.menu_without_horizon(yaml.safe_load((SR / "config" / "criterion_menu.yaml").read_text(encoding="utf-8")))
 CID = "forecast_ic_median"
 METRIC = "forecast_return_corr_all_bars"
 ENTRY = next(e for e in MENU["criteria"] if e["id"] == CID)

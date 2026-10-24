@@ -12,7 +12,8 @@ Method (guess 8, with the no-lookahead refinement below):
      result INCONCLUSIVE (`reason: composite_coverage`);
   2. per symbol, least-squares fit WITH intercept of the candidate forecast on
      the composite forecast, f_cand = a + b * f_comp + e, and keep e;
-  3. residual_ic = Spearman rank correlation of e with the next-bar return,
+  3. residual_ic = Spearman rank correlation of e with the next-bar return (D-186: the h-bar
+     forward return when the card sets a horizon, see symbol_records_from_protocol_result),
      pooled over every bar of every symbol (all bars, not only bars where the
      block speaks);
   4. n_eff = sum over symbols of the gap-aware one-day block count over those
@@ -307,7 +308,8 @@ def stale_residual_ic(reason: str) -> dict:
             "reason": reason}
 
 
-def symbol_records_from_protocol_result(protocol_result: dict, results_dir) -> tuple:
+def symbol_records_from_protocol_result(protocol_result: dict, results_dir,
+                                         horizon: int = 1) -> tuple:
     """({symbol: records}, {symbol: expected_step}) from a protocol run's
     per-window bars.csv files (<out_dir>/results/<window_run_id>/bars.csv),
     via run_protocol._assemble_pooled_symbol_records -- the one record builder
@@ -315,7 +317,18 @@ def symbol_records_from_protocol_result(protocol_result: dict, results_dir) -> t
     That builder orders windows by their LABEL; the records are re-sorted here
     by (UTC-normalised) timestamp, and compute_residual_ic refuses any
     remaining non-increasing timestamp. Records need a timestamp to be joined:
-    a window without one raises."""
+    a window without one raises.
+
+    D-186 (orchestrator.forecast_ic_horizons): `horizon` (bars, default 1 = the next-bar
+    return, byte-identical) is the card's horizon: the records' return is then the h-bar
+    forward return close[t+h]/close[t]-1, in bps (the last h bars of a window have none
+    and are dropped; a pair never crosses a window end). A string, bool, float or a value
+    below 1 raises. Why it cannot leak: as for the next-bar return, the forward return is
+    only what the residual is ranked against, never an input of the fit.
+    Overlap: h-bar returns of neighbouring bars overlap, so the caller (composite_cache.
+    residual_ic_by_variant) counts n_eff in blocks of at least h bars."""
+    if isinstance(horizon, bool) or not isinstance(horizon, int) or horizon < 1:
+        raise ValueError(f"horizon must be an integer number of bars >= 1, got {horizon!r}")
     import run_protocol as _rp  # lazy: pulls trading-bot's launcher
     by_symbol: dict = {}
     for entry in protocol_result.get("results") or []:
@@ -323,7 +336,8 @@ def symbol_records_from_protocol_result(protocol_result: dict, results_dir) -> t
             by_symbol.setdefault(entry["symbol"], []).append(entry)
     records, steps = {}, {}
     for symbol, rows in sorted(by_symbol.items()):
-        recs, step, all_ts = _rp._assemble_pooled_symbol_records(rows, results_dir)
+        recs, step, all_ts = _rp._assemble_pooled_symbol_records(
+            rows, results_dir, **({"horizon": horizon} if horizon != 1 else {}))
         if recs and not all_ts:
             raise ValueError(f"{symbol}: a window's bars.csv has no timestamp column -- the "
                              f"residual IC joins candidate and composite by timestamp")

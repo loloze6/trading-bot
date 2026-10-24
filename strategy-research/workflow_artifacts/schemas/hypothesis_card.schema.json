@@ -9,16 +9,10 @@
     "required": ["hypothesis_id", "thesis", "timeframe", "composition", "criteria", "pass_through", "source"]
   },
   "else": {
+    "description": "D-186 (direction 2026-10-24, PR-4): the four-step card (idea_quantities, not_expressible, statement, criteria_rationale) replaces the fields thesis, rationale, edge_source, signal_concept, target_market, assumptions and expected_failure_modes. Those stay valid properties but are no longer required; only the identity (hypothesis_id) and the bar size (timeframe) are.",
     "required": [
       "hypothesis_id",
-      "thesis",
-      "rationale",
-      "edge_source",
-      "signal_concept",
-      "target_market",
-      "timeframe",
-      "assumptions",
-      "expected_failure_modes"
+      "timeframe"
     ]
   },
   "properties": {
@@ -251,6 +245,32 @@
         "fail_if": { "type": "string", "minLength": 1, "description": "Plain words restating the code's verdict rule. Decides nothing." },
         "rationale": { "type": "string", "minLength": 1, "description": "Why these tests answer this claim." }
       }
+    },
+    "idea_quantities": {
+      "type": "array",
+      "description": "D-186 (direction 2026-10-24, PR-4; optional, information only): the quantities the idea says matter, one entry each (a plain string or an object, no shape is enforced). Nothing in code picks a criterion or a horizon from it.",
+      "items": {}
+    },
+    "not_expressible": {
+      "type": "array",
+      "description": "D-186 (optional, information only): parts of the idea the available blocks, indicators or feeds cannot express, one entry each. Nothing in code reads it to decide.",
+      "items": {}
+    },
+    "statement": {
+      "type": "object",
+      "description": "D-186 (optional, information only): what the forecast predicts, in the four-step card. `horizon_bars` is the look-ahead in bars; it does NOT set the criterion's horizon -- the card's `criteria` entry does (forecast_ic_median `horizon`, orchestrator.forecast_ic_horizons).",
+      "properties": {
+        "predicts": { "type": "string" },
+        "horizon_bars": { "type": "integer", "minimum": 1 },
+        "condition": { "type": "string" },
+        "if_pass": { "type": "string" },
+        "if_fail": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "criteria_rationale": {
+      "type": "string",
+      "description": "D-186 (optional, information only): why these criteria (and this horizon) answer the statement."
     },
     "source": {
       "type": "string",

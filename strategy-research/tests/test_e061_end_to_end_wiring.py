@@ -242,6 +242,9 @@ TARGET_FLAGS = {
     "explore_confirm": False,
     # D-185: off, so the stub trials' rows and DSR counts read as before.
     "dsr_same_structure": False,
+    # D-186: off, so the stub runs read the metrics, the menu and the residual IC as before.
+    "forecast_ic_horizons": False,
+    "residual_ic_requires_block": False,
 }
 
 # C5.8 (D-050): the four legacy route/rationale keys of a window's core

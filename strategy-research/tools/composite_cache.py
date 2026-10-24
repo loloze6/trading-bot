@@ -419,7 +419,8 @@ def residual_ic_by_variant(variant_summaries: dict, variant_results_dirs: dict, 
                            compositions_path: Path, holdout_range: tuple,
                            breach_cls=CompositeError, exempt_reason: str | None = None,
                            runner=None, python_exe=None,
-                           variant_protocol_paths: dict | None = None) -> dict:
+                           variant_protocol_paths: dict | None = None,
+                           horizon: int = 1) -> dict:
     """The residual-IC diagnostic for every tested variant of one run. Returns
     {timeframe, timeframe_category, composite: {...}, variants: {variant_id:
     diagnostic}} -- or, for an exempt idea (a regime block or a composition
@@ -445,6 +446,8 @@ def residual_ic_by_variant(variant_summaries: dict, variant_results_dirs: dict, 
     if exempt_reason:
         return {**head, "skipped": exempt_reason, "composite": None, "variants": {}}
     block_size = _tf.bars_per_day(timeframe)
+    if horizon != 1:  # D-186: an h-bar return overlaps its neighbours -- blocks no shorter than h bars
+        block_size = max(block_size, horizon)
     resolved = resolve_current_composite(_br.load_active_registry(registry_path),  # D-125
                                          load_compositions(compositions_path), timeframe)
     grouped = variant_protocol_paths is not None
@@ -485,7 +488,8 @@ def residual_ic_by_variant(variant_summaries: dict, variant_results_dirs: dict, 
             diag = _ric.stale_residual_ic(resolved["reason"])
         else:
             records, steps = _ric.symbol_records_from_protocol_result(
-                variant_summaries[vid], variant_results_dirs[vid])
+                variant_summaries[vid], variant_results_dirs[vid],
+                **({"horizon": horizon} if horizon != 1 else {}))
             label = _ric.COMPOSITE_NONE if resolved["kind"] == KIND_NONE else resolved["kind"]
             diag = _ric.compute_residual_ic(records, comp_by_vid.get(vid), block_size=block_size,
                                             expected_step_by_symbol=steps, composite_label=label)

@@ -896,7 +896,7 @@ def _materialize_run(run_id: str, brief: dict, *, promotion_retired: bool = Fals
         # scale_free threshold lock, floor no-lowering), unlike a 1a-written
         # candidate's (_pass_rule_from_card). Same gate as B11/CUL-267 above.
         _menu_path = ROOT / "config" / "criterion_menu.yaml"
-        _menu = (orch.load_yaml(_menu_path) if _menu_path.exists() else {}) or {}
+        _menu = orch._load_criterion_menu(_menu_path)  # D-186: flag-aware
         # D-133: an entry retired for blocks (the lot-based realized_edge_to_cost_ratio) is
         # refused in an operator brief's own pass_rule, but NOT in a decide-next fold
         # child's copy of its source's already-pre-registered criteria (D-121).
@@ -1130,7 +1130,7 @@ def _materialize_refinement_run(child_id: str, brief: dict, brief_path: Path):
     # a refinement brief's own menu-shaped pass_rule gets the same id
     # liveness / card_overridable / scale_free / floor checks.
     _menu_path = ROOT / "config" / "criterion_menu.yaml"
-    _menu = (orch.load_yaml(_menu_path) if _menu_path.exists() else {}) or {}
+    _menu = orch._load_criterion_menu(_menu_path)  # D-186: flag-aware
     # allow_retired=True: pass_rule is copied verbatim from the source brief (see the
     # docstring) -- a COPY of already-chosen criteria is never refused (D-133).
     _menu_violations = vce.lint_menu_shaped_pass_rule(
@@ -3596,6 +3596,8 @@ def _flag_readers() -> dict:
         "exact_config_1b": orch._exact_config_1b_enabled,  # lane 1 (D-110)
         "brief_criteria": orch._brief_criteria_enabled,  # D-121
         "extra_cards_at_1a": orch._extra_cards_at_1a_enabled,  # D-138
+        "forecast_ic_horizons": orch._forecast_ic_horizons_enabled,  # D-186
+        "residual_ic_requires_block": orch._residual_ic_requires_block_enabled,  # D-186
         "explore_confirm": orch._explore_confirm_enabled,  # E-072 (D-080)
         "dsr_same_structure": orch._dsr_same_structure_enabled,  # D-185
         "schedulability_block": _schedulability_block_enabled,
@@ -4963,7 +4965,7 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
         _menu_p = ROOT / "config" / "criterion_menu.yaml"
         rel, text = dn.candidate_brief(
             record, inputs, decision_ref=decision_ref,
-            **({"copy_criteria_menu": (orch.load_yaml(_menu_p) if _menu_p.exists() else {}) or {}}
+            **({"copy_criteria_menu": orch._load_criterion_menu(_menu_p)}
                if _bc else {}))
         brief_path = ROOT / rel
         on_disk_ids = {e.get("id") for e in _load_queue().get("queue") or [] if isinstance(e, dict)}
