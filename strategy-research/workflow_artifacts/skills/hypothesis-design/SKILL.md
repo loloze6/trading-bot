@@ -5,490 +5,80 @@ description: Produces a clear, testable trading strategy hypothesis from a resea
 
 # Hypothesis Design
 
-## Mission
-Create one explicit, testable strategy hypothesis with an honest structural reason it should have edge.
-
-## Required input
-- `research_brief.yaml`
-- `config/available_feeds.yaml`  (A1.2: read before populating evidence_type)
-- `feed_wishlist.yaml`           (A1.2: append new feed requests here if needed)
-
-## Required output
-- `hypothesis_card.yaml`
-
-## Output requirements
-The artifact must include, IN THIS ORDER:
-1. hypothesis_id
-2. thesis
-3. rationale
-4. **edge_source** (MUST be fully populated before signal_concept; see IMPROVEMENT 01 section)
-5. signal_concept
-6. target_market
-7. timeframe
-8. assumptions
-9. expected_failure_modes
-
-Config-direct-authoring flow only (signaled by `config/criterion_menu.yaml` being present
-in your context — see IMPROVEMENT 07/08 below, you cannot read the orchestrator flag
-directly) additionally requires, when not a pass-through candidate (IMPROVEMENT 08):
-`criteria` (from `config/criterion_menu.yaml`) and `cost_feasibility` (relocated from
-`quant-validation/SKILL.md`, see IMPROVEMENT 07). These are absent entirely — not merely
-empty — when that file is absent from your context; this skill produces exactly the
-9-field card above in that case, unchanged.
-
----
+Write the hypothesis card for one research brief, in four steps: 0 Mode, 1 Idea, 2 Statement, 3 Proof.
 
-## IMPROVEMENT 01 — Edge-Source Declaration (A1.1–A1.3)
-
-### Hard constraint: populate `edge_source` BEFORE writing `signal_concept`
-
-If `edge_source` is not fully populated, stop. Do not proceed to `signal_concept`.
-A hypothesis without a declared mechanism is a price permutation, not a hypothesis.
+Input: `research_brief.yaml`, with its scope block. When they are among your inputs: `config/criterion_menu.yaml` and the files named in step 0.
 
-### `edge_source` block
+Output: `hypothesis_card.yaml`. The fields are listed under "The card" below.
 
-```yaml
-edge_source:
-  category: <one of five values below>
-  specific_mechanism: <1-2 sentences — see A1.3>
-  why_not_arbitraged: <see per-category bar below>
-  evidence_type: <must be in config/available_feeds.yaml>
-  measurable_proxy: <A1.3: the observable that distinguishes mechanism-present vs mechanism-absent>
-  requires_new_feed: <present only if evidence_type is NOT in available_feeds.yaml>
-```
+## 0. Mode
 
-### Category definitions (A1.1)
+Read the brief first. It puts the run in one mode. With none of the modes below, write one card.
 
-- **information_asymmetry** — someone knows something before price reflects it; the signal proxies for that knowledge. Bar for `why_not_arbitraged`: must identify a specific speed/capacity/access constraint.
+- **Pass-through.** A brief or candidate that arrives with `config`, `manifest`, `criteria` and `source` is already authored. Copy the four into the card unchanged and set `pass_through: true`. Its criteria stay as they arrive. A candidate missing any of the four is not a pass-through: author it with steps 1 to 3.
+- **Decide-next candidate.** `DECIDE_NEXT_CANDIDATES.md` is among your inputs. That file governs the candidate. Steps 1 to 3 still apply, and criteria that arrive with the candidate stay unchanged.
+- **Composition brief.** Code writes the card. Its criterion is `profit_bars`, the campaign's profit bars. You write no criterion for it.
+- **Pre-filled claim.** `PREFILLED_CLAIM.md` is among your inputs. Copy the brief's `candidate.claim` into the card's `claim` as it is. There is no exception.
+- **Several cards.** `BRIEF_HYPOTHESES.md` is among your inputs. One brief may yield several cards. That file says how to write and score them.
+- **Brief exhausted.** Also `BRIEF_HYPOTHESES.md`. Declare a brief exhausted only when no honest card remains. Never declare it after an approximation run. A run that tested an approximation (a tried_ideas row with `approximation: n`) has not tested the idea.
+- **Claim tests.** `CLAIM_TESTS.md` is among your inputs. It says how to write `claim` (step 3). `CLAIM_TESTS_TRADE.md` adds the trade-level tests. `CLAIM_TESTS_EXECUTION.md` adds the claim kind `execution_behaviour`.
 
-- **structural_forced_flow** — flows that happen for mechanical/contractual reasons, not opinion: funding rate settlement, liquidation cascades, options gamma hedging, index rebalancing. The forcing mechanism must be nameable and verifiable in an available feed.
+## 1. Idea
 
-- **liquidity_provision** — edge from being paid to provide immediacy (spread capture). Not applicable to directional strategies.
+Write the idea in the operator's words first, then in formulas.
 
-- **cross_venue_dislocation** — temporary price divergence between related instruments or venues. Requires cross-exchange or perp/spot data — NOT currently available. Use `requires_new_feed: cross_exchange_data`.
+- `thesis` opens with the brief's `research_goal`, word for word.
+- `idea_quantities` lists every quantity the idea says matters. Give each one as the operator's words, then its formula. Each formula must be computable from the feeds in the brief's scope block.
+- Keep every quantity. A competing reading of a quantity becomes a test (step 3) or a variant. It never deletes the quantity.
+- `not_expressible` lists the parts of the idea a forecast cannot express: exits, holds, position state.
+- `edge_source` says why the edge should exist. `library_lookup` names the library entry the idea builds on.
 
-- **persistent_behavioral_bias** — systematic over/under-reaction, herding, anchoring, or disposition effects that recur because they arise from human/algorithmic behavior patterns, not from exploitable-once information. Bar for `why_not_arbitraged`: must argue why the bias persists despite being publicly known (e.g., capacity limits on the arbitrage trade, recurrence from structural incentives, crowding cycles).
+## 2. Statement
 
-### A1.3 — Anti-confabulation check on `specific_mechanism`
+### 2a. The statement
 
-`specific_mechanism` must satisfy ALL of the following:
-1. It names a **causal chain** (X happens → Y follows because Z).
-2. It names at least one **measurable proxy** from an available feed that would look **different** if the mechanism is real vs. absent.
-3. The proxy is computable from `config/available_feeds.yaml` entries. If it is not, the mechanism is a story, not a hypothesis — fall back to `persistent_behavioral_bias` (whose bar is behavioral recurrence without requiring a non-price proxy) or add the hypothesis to `feed_wishlist.yaml` with `requires_new_feed`.
+Write `statement` after the idea. It has five keys: `predicts`, `horizon_bars`, `condition`, `if_pass` and `if_fail`. The card list gives their meaning.
 
-**Examples that PASS (checkable mechanisms):**
+### 2b. The criterion
+Pick the criterion after the statement is written, from the statement alone, by id from the menu's live entries. Write nothing in `criteria` that is not a menu id.
+1. Match the measure to what the statement predicts. A statement that predicts the direction of a return takes the measure that correlates the forecast with the forward return over all bars. A statement that predicts a market state takes the measure that correlates the label with the outcome the statement names. If the menu holds no measure for what the statement predicts, pick nothing and write `criteria_fit` naming the measure that is missing; the run parks on it.
+2. Measure at the statement's horizon. Set the criterion's horizon to the card's horizon_bars, rounded to the nearest horizon the menu offers. A measure at another horizon tests a different statement.
+3. One criterion per statement. The residual-information criterion is added by code where a block is proven; name nothing beside your one pick.
+4. Never a profit measure. Sharpe, return, drawdown and cost ratios are the campaign's bars, checked on every backtest; a menu entry of that kind exists for briefs and is not yours.
+5. Never a measure because it was picked before. Earlier cards, the brief template, the order of the menu and the number of times an entry was used are not reasons. Write the reason in one sentence in `criteria_rationale`: what the statement predicts, at which horizon, hence which measure.
+6. Pre-registered criteria are not yours. A brief or a pass-through candidate that arrives with criteria keeps them unchanged.
+7. Sign consistency across eras is a criterion only when the protocol's windows lie in two or more eras of the data policy. On one era it adds nothing to the forecast measure.
 
-```
-# PASS — structural_forced_flow with funding feed
-specific_mechanism: "When 8h funding rate exceeds ±0.10%, longs/shorts pay heavily to
-  maintain positions; forced deleveraging creates mean-reversion pressure that is
-  measurable in the funding feed as a spike-then-decay pattern."
-evidence_type: funding_open_interest
-measurable_proxy: "8h funding_rate (absolute value > threshold); mechanism predicts
-  negative correlation between extreme funding and subsequent 4-12h returns."
+## 3. Proof
 
-# PASS — persistent_behavioral_bias with OHLCV only
-specific_mechanism: "Strong directional candles on above-average volume signal broad
-  consensus; observers who missed the move chase price over the next 1-3 bars,
-  creating short-lived momentum detectable in OHLCV."
-evidence_type: price_volume_only
-measurable_proxy: "volume_ratio (current vol / 20-bar MA) and candle body fraction
-  (body / range); mechanism predicts continuation on high-ratio directional bars."
-why_not_arbitraged: "Effect is capacity-limited at the 1h timeframe — institutional
-  arb reversion takes longer than 3 bars at retail sizes."
-```
+The proof of the statement is its test. It is written in the card's `claim`, and `CLAIM_TESTS.md` says how.
 
-**Examples that FAIL (sent to feed_wishlist or rejected):**
+- Test the statement at horizons around `horizon_bars`, not at `horizon_bars` alone.
+- The opposite reading of the statement is its own test.
+- A pre-filled claim is not touched (step 0).
 
-```
-# FAIL — untestable proxy
-specific_mechanism: "Institutions rebalance monthly, creating end-of-month flows."
-→ No institutional flow data in available feeds.
-→ Either rephrase to use a price/volume proxy (e.g., "month-end price levels 
-  tend to show reversal") OR log to feed_wishlist as requires_new_feed: institutional_flows.
+## Regime idea
 
-# FAIL — vague, no proxy
-specific_mechanism: "Smart money accumulates at key price levels."
-→ "Smart money" and "key levels" are not defined observables.
-→ Reject; rewrite with explicit price levels (recent highs/lows, round numbers)
-  as the measurable proxy.
+A regime idea goes through the same steps.
 
-# FAIL — requires unavailable data
-specific_mechanism: "Order-book imbalance predicts short-term direction."
-evidence_type: order_book
-→ order_book is not in available_feeds.yaml.
-→ Add requires_new_feed: order_book; route to feed_wishlist. Do NOT enter queue.
-```
+- Step 1: the regime measure is the idea quantity. Its threshold is a parameter.
+- Step 2: `predicts` is a market state, named by its outcome. `condition` is the label.
+- The host and the twin are code's. Write neither.
+- A bar size with no registered block parks the run with that reason.
 
-### A1.3 Spirit check — two caught confabulations from the campaign's first generation trial
+## The card
 
-These examples passed schema validation but failed the spirit check. Both are documented here to train against the pattern.
-
-**Caught confabulation 1 — Mechanism-impure proxy (volume impulse, H-041-B)**
-
-A hypothesis claiming `persistent_behavioral_bias` (herding/FOMO) with proxy `volume_ratio × body_fraction` is schema-compliant but mechanism-impure:
-- High-volume directional bars are produced by *two competing mechanisms*: (a) FOMO herding → predicts continuation, (b) liquidation cascades → predicts mean-reversion.
-- The proxy cannot distinguish (a) from (b) without `liquidation_data` (unavailable).
-- Result: the correlation sign tells you which mechanism dominated on average but the `specific_mechanism` claim ("herding") is not what the proxy measures.
-
-**Rule added:** A proxy that equally activates on a competing mechanism with the opposite directional prediction fails A1.3 spirit, even if the proxy is computable. Options: (i) rephrase as a net-effect hypothesis with explicit ambiguity, (ii) route to feed_wishlist pending `liquidation_data`.
-
-Feed wishlist entry generated: "liquidation_data needed to make volume-impulse hypotheses mechanism-pure."
-
-**Caught confabulation 2 — Daily feed forward-filled to 1h without signal timing constraint (fear_and_greed, naive H-041-C)**
-
-A hypothesis using Fear & Greed (daily feed, forward-filled to 1h) that does not specify *when* the signal fires is mechanism-ambiguous at IC computation time:
-- All 24 consecutive 1h bars in a calendar day share identical forecast values.
-- Spearman IC computed over all bars is dominated by 24-bar autocorrelation artifact — it measures the feature's within-day persistence, not the mechanism's daily predictive content.
-- Schema-compliant (fear_and_greed is an available feed, proxy is computable). Fails spirit: the IC test does not test the mechanism.
-
-**Fix:** Any hypothesis using a daily feed (fear_and_greed, or future daily feeds) must specify in `signal_concept` exactly when the signal fires: "signal fires ONLY at the first 1h bar of each calendar day; all subsequent bars in the same day hold position but do not re-evaluate entry." This converts the hypothesis to a sparse-signal (A8.3) test with active-bar IC on the meaningful n.
-
-### A1.2 — Evidence type constraint
-
-**Schema enforcement gap (A1.4 finding):** JSON Schema validation will NOT reject `evidence_type: order_book` (or any other unavailable feed) if `requires_new_feed` is absent. The schema allows all `evidence_type` enum values because it cannot cross-reference `available_feeds.yaml`. The A1.2 rule is therefore a **skill-level hard rule only** — schema validation passing does NOT mean this rule is satisfied. You must check `available_feeds.yaml` explicitly.
-
-Read `config/available_feeds.yaml` BEFORE populating `evidence_type`.
-
-| If evidence_type is in `available_feeds.yaml.available` | proceed normally |
-| If evidence_type is in `available_feeds.yaml.unavailable` | set `requires_new_feed: <feed_name>` and append to `feed_wishlist.yaml`; do NOT enter run queue |
-
-The innovation-expansion rule "at least one non-price_volume_only variant per family" is satisfiable TODAY via `funding_open_interest` (the funding rate feed exists). Do not reach for order_book or cross_exchange data that cannot be tested.
-
----
-
-## Graded signal concept (D-051, hard rule)
-
-`signal_concept` must describe a GRADED forecast. The bot turns a forecast in [-20, +20] into a position
-(allocation = forecast / 10), so the position follows the size of the signal. State, in `signal_concept`:
-1. the quantity the signal measures (for example "where the close sits inside its 20-day high-low range"),
-2. how that quantity is scaled: write "standardised" (step 1b puts the component on the scale of its own past
-   values with the standardise op, average absolute forecast about 10, D-149), unless the quantity is bounded by
-   construction (a range position, a distance to a rolling high, a share); then give the map with its anchors and
-   say that the quantity is bounded. Under D-149 step 1b still builds the standardised form and records the map
-   as a deviation; the run then tests an approximation (tried_ideas row "approximation: n").
-3. that position size follows it: a stronger signal is a bigger position, a zero signal is flat.
-   Fills: the engine trades at the close of the bar whose close produced the forecast (STRATEGY_DESIGN_GUIDE.md,
-   "How a config becomes a trade", step 5). Do not ask for a one-bar delay; the leakage note covers the quantity,
-   not the fill.
-
-An on/off rule is not acceptable as written: "long when X crosses Y", "long above the 20-day high, short below the
-20-day low", "enter on the signal, exit on the opposite signal". Restate it as its graded counterpart and say in
-`signal_concept` that you did so and how the graded version differs from the rule as first conceived. Do not write
-the on/off rule and leave the conversion to a later stage.
-
-**Name what the strategy config cannot express.** The config describes one forecast per bar and nothing else. If
-the idea also needs an exit rule, a stop or take-profit, a time-based hold, anything that depends on the current
-position (entry price, bars held, profit and loss), or sizing other than forecast / 10 (Kelly, leverage), say so in
-`signal_concept`, one line per item ("Not expressible in the config: stop at 2 ATR"), so
-the config-writing stage can declare it as a deviation instead of dropping it silently or inventing it. Do not
-leave such a part out to make the idea look simpler. Volatility targeting is not done in the forecast: the campaign's `strategies.sizing` block (kind `vol_target`; window 60 bars, `periods_per_year` 365 daily / 8760 hourly, `target_annual_vol` 0.2, `max_allocation` 2) does it in the allocation step (D-176). It is fixed by the campaign and is not a vehicle: a design variant or a claim may not change it (a patch under `/strategies/sizing` is refused, "a sizing parameter is not a vehicle"), and a `vol_target`, `vol_normalize` or `vol_adjusted` op is not used in `transforms` (`vol_normalize` alone may sit in `history_transforms`). A cap on the position is a `clip`.
-
----
-
-## Regime-gated ideas carry their ungated version
-
-A regime-gated idea ("only works in trends", "valid in RANGING mode") is allowed in the run queue. It must carry its UNGATED version as its design variant: the same config with the regime detector's rules emptied (`"rules": []`), any `vetoes` removed, and `default_regime` set to the regime that holds the strategy, so every bar is in that regime. This is a parameter change; the component classes stay identical. The value of the regime is judged by gated versus ungated, plus the roadmap's regime health checks.
-
-An on/off condition belongs in the regime detector: a graded strategy in the regime it selects, and null (flat) in the others.
-
-**Rule:** If the mechanism needs a regime condition, write it in `target_market` or `signal_concept` ("when TRENDING", "in ranging markets"), and state in `signal_concept` that the ungated version (regime rules emptied) is the design variant.
-
-The former no-regime-gating rule (A2.3) is deleted (D-052). The old knowledge-base verdict `er_detector_unusable_btc_eth_1h` is withdrawn: it is history, never a veto. The detector wishlist is a list of parked detector ideas; it does not gate anything.
-
----
-
-## Success-condition framing
-
-**Quality over volume is the explicit goal.**
-
-Under a "produce hypotheses" instruction, the default LLM behavior is to generate many plausible stories. That is wrong here. The acceptance standard is:
-
-> A small number of honest, edge-source-declared hypotheses that pass the A1.3 anti-confabulation check — plus a well-argued `feed_wishlist.yaml` if untestable ideas arose — is a better outcome than a wide queue of price-permutation hypotheses.
-
-It is acceptable to produce ONE hypothesis if one is all that can be honestly justified. An empty queue with two feed_wishlist entries is a valid and useful output. It is not acceptable to fill the queue with hypotheses that fail the A1.3 check.
-
----
-
----
-
-## IMPROVEMENT 04 — Indicator Library Lookup (A4)
-
-**Before finalizing `signal_concept`, look up the proposed indicator in `config/indicator_library.yaml`.**
-
-### Lookup protocol (4 steps, required in order):
-
-**Step 1 — Regime affinity check**
-Find the indicator's entry in the library (`id` or nearest `category`). Read `known_regime_affinity`.
-- If this hypothesis has a stated or implied target regime and the affinity is `unfavorable`:
-  - Either: justify explicitly why this run expects an exception (new mechanism, different symbol, materially different edge_source than prior trials).
-  - Or: choose a different indicator with `favorable` or `neutral` affinity for the intended regime.
-- If the hypothesis is ungated (no regime condition), note the affinity as a prior risk factor in `expected_failure_modes`.
-
-**Step 2 — Campaign empirical results check**
-Read `campaign_empirical_results` for this indicator category and symbol/timeframe.
-- If an entry exists with `outcome: failed` for the same `symbol_timeframe` and similar regime conditions:
-  - Must not re-propose the same indicator + mechanism combination.
-  - A re-proposal requires a materially different `edge_source.specific_mechanism` — not a parameter change.
-  - Cite the `run_id` of the prior failure and state the mechanism difference explicitly.
-
-**Step 3 — Crowding check**
-Read `crowding_risk` for the indicator class.
-- If `crowding_risk: high` AND `data_requirements: ohlcv_only`:
-  - Check whether a compatible indicator with `data_requirements != ohlcv_only` exists in the library with matching `edge_source_compatibility`.
-  - If such an alternative exists and is available in `config/available_feeds.yaml`: prefer it, or explicitly justify why the high-crowding OHLCV indicator is preferred despite the crowding risk.
-
-**Step 4 — Mechanism purity check**
-Read the `notes` field for any MECHANISM PURITY WARNING.
-- If a warning is present (e.g., volume_ratio / body_fraction), the indicator may not be used for a directional hypothesis without the required additional feed.
-- Route to `feed_wishlist.yaml` with the mechanism purity note.
-
-### Indicator lookup result in hypothesis_card.yaml
-
-Add a `library_lookup` field to document the result of steps 1–4:
-
-```yaml
-library_lookup:
-  indicator_id: "<id from indicator_library.yaml>"
-  regime_affinity_for_target: "<favorable|unfavorable|neutral>"
-  affinity_justification: "<required if unfavorable; else 'n/a'>"
-  prior_campaign_failures: []  # or [{run_id, mechanism_tried}]
-  crowding_risk: "<low|medium|high>"
-  crowding_deviation_justification: "<required if high and no less-crowded alternative used>"
-```
-
----
-
-## IMPROVEMENT 05 — What Was Already Tried: Redirect, Don't Repeat (E-032 S2b; E-036 S2a)
-
-### Optional input
-
-When `config/campaign_config.yaml`'s `orchestrator.exclusion_digest_input.enabled` is
-true, ONE of two files is added to your context files:
-
-- `artifacts/tried_ideas.yaml` — when the campaign record
-  (`campaign_record/campaign_memory.yaml`) exists: one row per recorded run with the
-  idea (`hypothesis_id`), the coins it was tested on (`symbols`), the `timeframe`, and
-  the grid's `idea_status` (`validated`, `refuted`, `inconclusive`; null for an
-  engineering fault). A row with `approximation: n` means the run tested a build that differed from the idea
-  in n clauses: the idea as written is still untested, and its `idea_status` grades the approximation, not the
-  idea.
-- `campaign_record/exclusion_digest.yaml` — the legacy file, used while no campaign
-  record is kept: runs grouped by family, as `(family, instrument, timeframe)` triples
-  with their `run_ids`, plus `failed_families_passthrough` (families with a recorded
-  `root_cause`, or a bare name with no diagnosis).
-
-Either way the question is the same: which idea, on which coins and timeframe, has
-already been tested, and with what result. An idea's identity is its `hypothesis_id`;
-the same idea on other coins or another timeframe is a variant of it. **If neither file
-is present in your context, this section does not apply.** Absence is not evidence of a
-fresh search space.
-
-### When one is present: read it before you commit to an idea
-
-**Before finalizing `edge_source` and `signal_concept`:**
-1. If your candidate is an idea already tested (same mechanism, whatever its name) on
-   the coins and timeframe you intend, do not propose it unchanged. Propose it on
-   coins or a timeframe not yet tested, with a stated reason to expect a different
-   result, or move to a different idea.
-2. A refuted idea (a `refuted` row, or a family the legacy digest lists with a
-   `root_cause`) is evidence against re-proposing it as it was: a redirect must
-   change the mechanism, not a parameter alone. An `inconclusive` row, or a
-   bare-name family entry with no diagnosis, is weaker evidence — say what would make
-   the next test decisive.
-3. Record what you checked in `library_lookup.prior_campaign_failures` (cite each
-   one you are redirecting from as `{run_id, mechanism_tried}`, the object form of
-   that list's items) so the decision is auditable, not just asserted.
-
-**This is raw material, not the gate.** The mechanical refusal is the exact-match
-check at step 5a (`tools/anti_adjacency_gate.py`: same config, coins, timeframe and
-protocol windows), downstream and deterministic. Nothing here overrides it, and a
-hypothesis that ignores this section is not thereby invalid — it is simply more
-likely to be refused later, after you have already written it.
-
----
-
-## A8.6 — Power pre-registration: `plausible_ic_upper` anchor table
-
-**Do not free-hand `plausible_ic_upper` in `power_parameters`.** Pick it from this table by
-signal class first; deviate only with an explicit, cited reason.
-
-Motivating evidence (2026-07-04, P1a shakedown): the IDENTICAL indicator
-(`moving_average_crossover`, same asset/timeframe, same crowding_risk=high entry in
-`config/indicator_library.yaml`) was independently pre-registered at `plausible_ic_upper`
-= 0.05, 0.08, and 0.15 across three separate authoring passes — a 3× spread with zero new
-evidence between them, purely from unconstrained judgment. `min_detectable_ic` (the
-deterministic half of the A8.6 check) converged tightly across all three (~0.026–0.027);
-`plausible_ic_upper` was the only free variable, and it is the ONLY input to the power
-verdict that isn't computed from the config. This table exists to anchor it.
-
-| Signal class | Description | `plausible_ic_upper` | Basis |
-|---|---|---|---|
-| Dense OHLCV, high crowding | Continuous/near-every-bar activation, price-only, textbook-taught (MA crossover, RSI, MACD, Bollinger, Keltner) | **0.03–0.05** | This campaign's own empirical ceiling: Keltner `ic_active_bars=-0.032`, RSI `corr=-0.022` — established technical signals on liquid BTC/ETH 1h top out here or below. `indicator_library.yaml`'s `crowding_risk: high` entries. |
-| Dense OHLCV, lower crowding | Continuous activation, price/volume-only, but not universally taught (volatility filters, volume-flow subject to A1.3 purity caveats) | **0.05–0.08** | Less mechanically arbitraged than MA/RSI-class signals, but still no non-price informational edge. |
-| Sparse feed-based, extreme/threshold-gated | Rare, event-driven activation on a non-OHLCV feed (funding rate extremes, F&G contrarian at 25/75) | **0.10–0.20** | `indicator_library.yaml` literature notes: `funding_rate_extreme` "0.05-0.2", `fear_greed_index_contrarian` "0.05-0.15". Lower crowding (non-standard feed) justifies a higher ceiling than dense OHLCV. |
-| Sparse feed-based, continuous/non-extreme | Fires on EVERY occurrence of a structural event, not just tail cases (e.g. funding-rate sign at every 8h settlement, not only \|rate\|>threshold) | **0.08–0.12** | Same feed/mechanism family as the row above, but the per-event effect is diluted (mild + extreme events pooled together) — anchor below the extreme-only case, not at it. |
-| Cross-sectional | Rank/relative-value signal across the symbol universe (not yet run in this campaign) | **0.10–0.15** | Typical literature range for cross-sectional equity/crypto factors. Aspirational anchor — no in-campaign empirical result yet; revise this row once one exists. |
-
-If a hypothesis doesn't cleanly fit one row, pick the nearest by (a) OHLCV-only vs.
-external feed, (b) activation density, (c) crowding — in that priority order — and state
-which axis drove the choice in `power_parameters.power_note`. A number outside every
-row's range requires a one-sentence justification citing a specific prior result or
-literature figure, not "seems reasonable."
-
----
-
-## IMPROVEMENT 07 — Criteria & Cost Feasibility (config-direct-authoring flow only, E-056 Slice 3b)
-
-**Optional, signaled by input presence — same convention as IMPROVEMENT 05's exclusion-digest section above.**
-`config/criterion_menu.yaml` and `config/cost_model.yaml` are unioned into your required inputs ONLY when
-`orchestrator.config_direct_authoring.enabled` is true (see `run_phase1_research._apply_config_direct_authoring_
-context`). You cannot read that config flag directly — check for these two files in your provided context
-instead. **If `config/criterion_menu.yaml` is absent from your context, this section (and IMPROVEMENT 08 below)
-does not apply — proceed exactly as this skill has always worked, do not populate `criteria` or
-`cost_feasibility` on `hypothesis_card.yaml`.** If it IS present, populate both fields as described below.
-
-### Criteria (pre-registered from `config/criterion_menu.yaml`)
-
-The config-direct-authoring flow pre-registers pass/fail criteria HERE, at 1a, instead of deriving them later in
-a separate validation pass. `config/criterion_menu.yaml` is the anchor table — same "pick from this table, don't
-free-hand" discipline as the `plausible_ic_upper` table above (A8.6). Its LIVE entries for this step are
-`sign_consistent_by_era` (window, sign-consistency-by-era reducer) and `forecast_ic_median` (window, median over
-windows of the all-bars forecast/next-bar IC `>` 0.02, fixed threshold, D-134). Another entry, `realized_edge_to_cost_ratio` (the lot-based edge/cost ratio), is
-RETIRED FOR BLOCKS (`retired_for: [block]`, D-107/D-128/D-133): it stays in the menu file only so criteria already
-pre-registered keep evaluating, and a card naming it is refused — do not pick it. `residual_ic` (card A: the
-residual information coefficient against the current composite) is added by code to every forecast-block idea when
-composition runs are on, whether or not you name it: there you may name it (`{id: residual_ic}`, no overrides) and it
-stays one criterion, code's own; leaving it out removes nothing (D-137). Naming it gains nothing, so if unsure,
-leave it out. It never counts as the card's own criterion: still pick at least one live entry above. Where code does not add it (composition
-runs off, a regime block) a card naming it is refused. `gated_beats_ungated` is commented out — do not reference
-it; a criterion naming an unresolvable id fails at evaluation time, not gracefully.
-
-Choose the card's criteria by answering three closed questions, in order:
-
-1. **What does the hypothesis's forecast predict?**
-   - The next bar's return: pick `forecast_ic_median`.
-   - The sign of window P&L, stable across eras, and the thesis is about that stability: pick
-     `sign_consistent_by_era`.
-   - Neither: pick `forecast_ic_median` as the minimum forecast test, and add `criteria_fit` to the card: the word
-     `none`, then one line on what the menu cannot measure for this hypothesis, as one quoted string, e.g.
-     `criteria_fit: "none: <what the menu cannot measure>"`. It is information only; nothing reads it to decide.
-2. **Is this a decide-next child whose brief carries a pre-filled claim?** That claim already has its test in branch 2
-   (the claim measurement after the backtest). Choose no criterion for the claim; question 1's answer still stands.
-3. **Never a profit criterion.** Sharpe, drawdown and return are branch 3's (the profit bars, checked on every
-   backtest), not the card's.
-
-Pick from the menu by `id`; do not invent a `metric`/`source`/`reducer`/`comparator`/`threshold` combination
-that isn't in the menu.
-
-### Cost feasibility (relocated from `quant-validation/SKILL.md` Improvement 09)
-
-**Correction to the delivery plan's own framing (S2_FINDINGS.md §2):** only THIS check — cost-feasibility,
-`quant-validation/SKILL.md`'s Improvement 09 — needed relocating here. The "daily-feed timing" check the plan
-also named was never in `quant-validation`; it has lived in THIS skill (A1.3 Spirit check, above) all along. Do
-not duplicate it here a second time looking for a section that was never moved.
-
-Populate from `config/cost_model.yaml` (round_trip_cost_bps per symbol) — identical content and rubric to
-`quant-validation/SKILL.md`'s Improvement 09, reproduced here verbatim since that skill's own copy is retired
-for config-direct-authoring runs (quant-validation itself is not invoked at all in this flow — see this
-project's own delivery-plan note that the `validation` stage becomes unreached, not deleted, when the flag is
-on):
-
-```yaml
-cost_feasibility:
-  assumed_round_trip_cost_bps: <from cost_model.yaml for primary symbol, e.g. 17.0 for BTCUSDT>
-  expected_holding_bars:
-    min: <minimum holding period from signal class and timeframe>
-    max: <maximum holding period from signal class and timeframe>
-  expected_trades_per_window: <implied count given holding period and any regime gating>
-  required_gross_edge_bps_per_trade: <= 2 × assumed_round_trip_cost_bps>
-  plausibility: <plausible | marginal | implausible>
-  plausibility_rationale: "<must cite the signal class and timeframe>"
-```
-
-**Information only — never a gate (O-3, operator 2026-10-01: costs are judged ONLY by the backtest).**
-`cost_feasibility` is your estimate, written down so the backtest can be read against it. It is never a reason
-to omit, drop, park or down-rank a hypothesis, nor to declare a brief exhausted — including when
-`plausibility: implausible`. An idea is queued on its mechanism and data; whether it survives costs is measured
-by its backtest (card E profit bars: the campaign-wide cost-edge ratio bar; the lot-based
-`realized_edge_to_cost_ratio` menu entry is retired for blocks, D-133). If
-you expect turnover to be the problem, say so in `rationale` and in `expected_failure_modes`, and still write the
-card. Do not hardcode fee/spread numbers — always read from `config/cost_model.yaml`.
-
-**What this relocation does NOT replace:** `quant-validation/SKILL.md`'s other content — `bias_risks`,
-enumerated `failure_modes` (beyond this card's own `expected_failure_modes` field, required regardless of the
-flag), and `sample_split_design` (walk-forward window layout) — is NOT relocated anywhere by this slice. Under
-`orchestrator.config_direct_authoring.enabled`, the `validation` stage is unreached (see the orchestrator's own
-flag documentation) and nothing else in this flow performs that adversarial pressure-test. This is a real,
-inherited scope boundary from this slice's own dispatch (relocate ONLY cost-feasibility), not an oversight —
-flagged here so a future slice looking to close the gap has a named starting point, not a silent one.
-
-## IMPROVEMENT 08 — Pass-through candidates (config-direct-authoring flow only, E-056 Slice 3b)
-
-**Same file-presence signal as IMPROVEMENT 07 above (`config/criterion_menu.yaml` in your context) — skip this
-section entirely if that file is absent.** If `research_brief.yaml` (or an
-attached `candidate` block within it) already carries a fully-formed `config`, `manifest`, `criteria`, and
-`source` — i.e. the hypothesis, its base config, and its pass criteria were already authored upstream of this
-pipeline (by a human operator, or by a prior campaign artifact being re-run) — do NOT re-derive `edge_source`,
-`signal_concept`, or `criteria` from scratch. Copy the supplied fields through into `hypothesis_card.yaml`
-verbatim, set `pass_through: true` at the card's top level, and state in `rationale` that this card is a
-pass-through, naming the source. `strategy_config_authoring` (the next stage in this flow) reads this same flag
-and, when true, copies the supplied `config` through as its own `backtest_spec.yaml` output rather than
-re-authoring one — see that skill's own required-inputs note. A candidate missing ANY of the four fields
-(`config`, `manifest`, `criteria`, `source`) is NOT a pass-through candidate — author it normally through
-IMPROVEMENT 01/04/07 above; a partial pass-through is a silent gap-filling trap, not a shortcut.
-
----
-
-## Checklist
-- Read `config/available_feeds.yaml` before touching `evidence_type`.
-- Read `config/indicator_library.yaml` before finalizing `signal_concept`. (Improvement 04)
-- Set `power_parameters.plausible_ic_upper` from the A8.6 anchor table above by signal
-  class — do not free-hand it.
-- Populate `edge_source` fully before writing `signal_concept`.
-- Write `signal_concept` as a graded forecast: the quantity, how it is scaled into [-20, +20], and that position
-  size follows it; restate any on/off rule as its graded counterpart and say so. Name every part of the idea the
-  config cannot express (exits, stops, time-based holds, position state, sizing other than forecast / 10).
-  (Graded signal concept section)
-- Check: does `specific_mechanism` name a measurable proxy in an available feed? If not, revise or route to `feed_wishlist.yaml`.
-- Check: is `evidence_type` available? If not, add `requires_new_feed` and route to feed_wishlist.
-- Check: if the hypothesis has a regime condition, does `signal_concept` name its ungated version (regime rules emptied) as the design variant?
-- Check: indicator library lookup steps 1–4 complete; `library_lookup` field populated in card.
-- If `artifacts/tried_ideas.yaml` or `campaign_record/exclusion_digest.yaml` is present
-  in context: check your candidate against it before finalizing `edge_source`. Prefer
-  an idea, or coins/timeframe, not already tested over re-proposing a tested one
-  unchanged. (Improvement 05)
-- State the idea in a way that can be tested without unavailable data.
-- Include at least 3 failure modes.
-- Prefer hypotheses that can be integrated as a minimal change in the current strategy architecture.
-- **Config-direct-authoring flow only:** pick `criteria` from `config/criterion_menu.yaml`'s live entries only
-  (IMPROVEMENT 07); populate `cost_feasibility` from `config/cost_model.yaml` (IMPROVEMENT 07); check for a
-  pass-through candidate (IMPROVEMENT 08) before authoring from scratch.
-
-## Forbidden
-- Do not write `signal_concept` before `edge_source` is complete.
-- Do not write `signal_concept` before indicator library lookup is complete. (Improvement 04)
-- Do not write an on/off rule as the `signal_concept` ("long when X crosses Y"); restate it as its graded
-  counterpart and say so. Do not leave out a part of the idea the config cannot express. (Graded signal concept
-  section)
-- Do not use vague mechanistic claims ("smart money", "key levels", "institutions") without a named measurable proxy.
-- Do not propose a hypothesis with `evidence_type` outside `available_feeds.yaml.available` as a run-queue candidate — route it to feed_wishlist instead.
-- Do not write code.
-- Do not propose more than 3 run-queue variants unless explicitly requested.
-- Do not assume unavailable data.
-- Do not propose ideas that require replacing the whole existing bot architecture.
-- Do not re-propose an indicator + mechanism combination already marked `outcome: failed` in the library's `campaign_empirical_results` for the same symbol/timeframe without a materially new mechanism. (Improvement 04)
-- Do not repropose an idea already tested on the same coins and timeframe (per
-  `artifacts/tried_ideas.yaml` or the legacy exclusion digest, whichever is in context)
-  under a materially unchanged mechanism. (Improvement 05)
-- Do not treat the absence of both files as evidence of a fresh search space.
-  (Improvement 05)
-- **Config-direct-authoring flow only:** do not invent a criterion id, metric, source, or reducer outside
-  `config/criterion_menu.yaml`'s live entries (Improvement 07). Do not hardcode cost numbers — read
-  `config/cost_model.yaml` (Improvement 07). Do not re-derive `edge_source`/`signal_concept`/`criteria` for a
-  candidate that already qualifies as a pass-through (Improvement 08) — copy it through instead.
-- Do not omit, drop or down-rank a hypothesis, and do not declare a brief exhausted, on a cost, breakeven or
-  turnover estimate (`cost_feasibility` included). Costs are judged only by the backtest. (Improvement 07, O-3)
-
-## Context rule
-Read `research_brief.yaml`, `config/available_feeds.yaml`, `feed_wishlist.yaml`, `config/indicator_library.yaml`, and, when present, `artifacts/tried_ideas.yaml` or `campaign_record/exclusion_digest.yaml` and `campaign_record/campaign_knowledge_base.yaml`. Config-direct-authoring flow only: also read `config/criterion_menu.yaml` and `config/cost_model.yaml` (Improvement 07). Do not read other files unless the handoff explicitly requires them.
+- `hypothesis_id`: the id of the idea.
+- `thesis`: opens with the brief's `research_goal`, word for word (step 1).
+- `idea_quantities`: one entry per quantity: the operator's words, then the formula (step 1).
+- `not_expressible`: one entry per part of the idea a forecast cannot express (step 1).
+- `edge_source`: `category` (information_asymmetry, structural_forced_flow, liquidity_provision, cross_venue_dislocation or persistent_behavioral_bias), `specific_mechanism`, `why_not_arbitraged`, `evidence_type` (`price_volume_only` when the idea uses price bars alone) and `measurable_proxy`.
+- `library_lookup`: `indicator_id` (the id in `config/indicator_library.yaml` the idea builds on, null if none), `regime_affinity_for_target` and `crowding_risk` (null if `indicator_id` is null). Code groups tried ideas by `indicator_id`.
+- `target_market`: the coin or coins of the brief.
+- `timeframe`: the bar size of the brief.
+- `statement`: `predicts` is what the forecast predicts. `horizon_bars` is how many bars of `timeframe` ahead it looks, an integer of 1 or more. `condition` is when the statement applies. `if_pass` and `if_fail` say what each result would mean for the idea.
+- `criteria`: written only when `config/criterion_menu.yaml` is among your inputs. A list of `{id: <menu id>}`, with only the fields the menu entry lists under `card_overridable` (the `horizon`, where the entry offers one). Step 2b.
+- `criteria_rationale`: one sentence (step 2b, rule 5).
+- `criteria_fit`: written only when the menu holds no measure for the statement: `none: ` then the measure that is missing (step 2b, rule 1).
+- `claim`: written only when `CLAIM_TESTS.md` is among your inputs (step 3).
+- `pass_through`, `config`, `manifest`, `source`: pass-through mode only (step 0).
