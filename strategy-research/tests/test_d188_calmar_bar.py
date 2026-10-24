@@ -343,13 +343,14 @@ def test_the_ruin_path_fails_the_calmar_row(monkeypatch, tmp_path):
 
 # -- the loader ----------------------------------------------------------------------------
 
-def test_loader_accepts_the_committed_file_with_calmar_and_unsigned():
+def test_loader_accepts_the_committed_file_with_calmar_and_its_signature():
     real = SR_ROOT / "config" / "profitability_bars.yaml"
     for v2 in (False, True):
         doc = rpr._load_profitability_bars(real, v2=v2)
         assert doc["max_drawdown_pct_max"] == 20.0 and doc["deflated_sharpe_threshold"] == 0.5
-        # the file changed after the 2026-10-14 signature: unsigned until the operator signs
-        assert doc["ratified_by"] is None and doc["ratified_at"] is None
+        # signed 2026-10-24 on the operator's line (SIGNING_CHECKLIST.md section 9)
+        assert "sign the bars file on my behalf, 2026-10-24" in doc["ratified_by"]
+        assert str(doc["ratified_at"]) == "2026-10-24"
     assert rpr._load_profitability_bars(real, v2=True)["calmar_min"] == 0.75
 
 
