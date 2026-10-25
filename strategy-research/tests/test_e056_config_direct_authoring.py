@@ -210,14 +210,15 @@ def test_apply_config_direct_authoring_context_noop_when_flag_off():
     assert yaml.safe_dump(handoff) == before, "flag off must never mutate the handoff dict"
 
 
-def test_apply_config_direct_authoring_context_adds_criterion_menu_and_cost_model_for_hypothesis_generation():
+def test_apply_config_direct_authoring_context_adds_the_criterion_menu_for_hypothesis_generation():
     _set_cda_flag(rpr.ROOT, True)
     handoff = {"required_inputs": []}
     run_dir = _minimal_run(rpr.ROOT, "run_801")
     rpr._apply_config_direct_authoring_context("hypothesis_generation", handoff, run_dir)
     paths = {r["path"] for r in handoff["required_inputs"]}
     assert "../../config/criterion_menu.yaml" in paths
-    assert "../../config/cost_model.yaml" in paths
+    # D-190: the card has no cost_feasibility, so 1a is no longer handed cost_model.yaml
+    assert "../../config/cost_model.yaml" not in paths
 
 
 def test_apply_config_direct_authoring_context_adds_backtest_spec_for_innovation_expansion():
@@ -245,7 +246,7 @@ def test_apply_config_direct_authoring_context_is_idempotent():
     rpr._apply_config_direct_authoring_context("hypothesis_generation", handoff, run_dir)
     paths = [r["path"] for r in handoff["required_inputs"]]
     assert paths.count("../../config/criterion_menu.yaml") == 1
-    assert paths.count("../../config/cost_model.yaml") == 1
+    assert paths.count("../../config/cost_model.yaml") == 0
 
 
 # ---------------------------------------------------------------------------

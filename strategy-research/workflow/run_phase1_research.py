@@ -97,6 +97,12 @@ CAMPAIGN_STATE_PATH = ROOT / "campaign_record" / "campaign_state.yaml"
 # orchestrator.profit_bars_v2 only); its presence and sha256 are recorded.
 TRIAL_SHARPE_BASIS_OVERLAY_PATH = ROOT / "campaign_record" / "trial_sharpe_basis_recompute.yaml"
 
+# D-185: the append-only overlay that keys ledger rows written before
+# orchestrator.dsr_same_structure with their (structure_hash, timeframe), written by
+# tools/backfill_structure_hash.py and read, under that flag only, by
+# _whole_test_dsr_context(with_structure_overlay=True).
+TRIAL_STRUCTURE_KEY_OVERLAY_PATH = ROOT / "campaign_record" / "trial_structure_key_overlay.yaml"
+
 # E-054 Layer 2 (2026-09-11): data-availability gate. Originally shipped
 # off-by-default via an env var. delivery_plan_v26.md s:0.4 item 14
 # (2026-09-20) flipped this to ON by default -- see
@@ -1054,7 +1060,8 @@ def _build_stage_prompt(stage_name: str, handoff: dict, path: Path,
         if filepath.exists():
             with open(filepath, "r", encoding="utf-8") as f:
                 content = f.read()
-            context_blocks.append(f"--- CONTENT OF {req['path']} ---\n{content}\n")
+            context_blocks.append(
+                f"--- CONTENT OF {req['path']} ---\n{_prompt_input_content(req['path'], content)}\n")
         elif req in handoff.get("required_inputs", []):
             raise FileNotFoundError(f"Agent strictly requires {filepath}, but it is missing.")
         else:
@@ -1124,16 +1131,46 @@ def _build_stage_prompt(stage_name: str, handoff: dict, path: Path,
     return full_prompt
 
 
-# The model every Claude stage runs on (run_claude_worker and, E-046a 5b-ii-B,
-# run_reader_worker) -- one constant so the two paths cannot drift.
+# The DEFAULT model of every Claude stage (run_claude_worker and, E-046a 5b-ii-B,
+# run_reader_worker) -- one constant so the two paths cannot drift. D-189: a
+# run_claude_worker stage listed in orchestrator.stage_models (see _stage_model) runs
+# on that model instead; readers and every unlisted stage stay on this one.
 _CLAUDE_WORKER_MODEL = "claude-haiku-5-5"
+
+
+def _stage_model(stage_name: str, cfg: dict | None = None) -> str:
+    """D-189 (operator direction 2026-10-24, PR-6): the model one run_claude_worker
+    stage runs on. orchestrator.stage_models in config/campaign_config.yaml maps a
+    stage name to a model id; a stage the mapping does not list -- and an absent
+    mapping or key -- gets _CLAUDE_WORKER_MODEL (the readers and the analyst never
+    come through here: readers use the default, the analyst uses
+    orchestrator.analyst.model). Not a flag: there is no `enabled` key.
+    A present but malformed mapping, or a listed value that is not a non-empty
+    string, raises: a typo'd entry must not silently fall back to another model."""
+    cfg = _orchestrator_config(cfg)
+    mapping = (cfg.get("orchestrator") or {}).get("stage_models")
+    if mapping is None:
+        return _CLAUDE_WORKER_MODEL
+    if not isinstance(mapping, dict):
+        raise ValueError(
+            f"orchestrator.stage_models={mapping!r} must be a mapping of stage name to "
+            f"model id (got {type(mapping).__name__}) -- see config/campaign_config.yaml.")
+    if stage_name not in mapping:
+        return _CLAUDE_WORKER_MODEL
+    model = mapping[stage_name]
+    if not isinstance(model, str) or not model.strip():
+        raise ValueError(
+            f"orchestrator.stage_models.{stage_name}={model!r} must be a non-empty model "
+            f"id string -- fix or remove the entry in config/campaign_config.yaml.")
+    return model.strip()
 
 # CUL-336: see _stage_agent_options.
 _STAGE_AGENT_CWD = Path(tempfile.gettempdir()) / "strategy_research_stage_agent_cwd"
 _DISABLE_AUTO_MEMORY_ENV = "CLAUDE_CODE_DISABLE_AUTO_MEMORY"
 
 
-def _stage_agent_options(*, analyst: dict | None = None) -> ClaudeAgentOptions:
+def _stage_agent_options(*, analyst: dict | None = None,
+                         model: str | None = None) -> ClaudeAgentOptions:
     """CUL-336 (2026-09-27): the options every Claude stage agent runs with.
     run_claude_worker and _invoke_reader_llm both call this, and it is the
     only ClaudeAgentOptions(...) construction in this module
@@ -1189,10 +1226,14 @@ def _stage_agent_options(*, analyst: dict | None = None) -> ClaudeAgentOptions:
     in-process MCP server holding the seven query tools (strict_mcp_config keeps every
     other MCP server out), allowed_tools = exactly those seven (they run without asking),
     permission_mode dontAsk (anything else is denied), a PreToolUse hook that denies
-    any other tool name and records it, and the session caps. None: exactly as before."""
+    any other tool name and records it, and the session caps. None: exactly as before.
+
+    `model` (D-189, from run_claude_worker only): the stage's model, _stage_model(stage).
+    None (readers, and any caller that passes nothing): _CLAUDE_WORKER_MODEL, read at call
+    time. The analyst's own model (spec["model"]) still overrides it."""
     _STAGE_AGENT_CWD.mkdir(parents=True, exist_ok=True)
     kw = dict(
-        model=_CLAUDE_WORKER_MODEL,
+        model=model if model is not None else _CLAUDE_WORKER_MODEL,
         tools=[],  # the option that removes tools: --tools ""
         setting_sources=[],
         strict_mcp_config=True,
@@ -1248,9 +1289,10 @@ def _note_stream_models(message, models: set, result_models: set) -> None:
         result_models.update(k.strip() for k in usage if isinstance(k, str) and k.strip())
 
 
-def _base_provenance(models, result_models) -> dict:
-    """The audit-log `provenance` block written with the stage's entry (S0)."""
-    block = {"requested": _CLAUDE_WORKER_MODEL,
+def _base_provenance(models, result_models, requested: str | None = None) -> dict:
+    """The audit-log `provenance` block written with the stage's entry (S0).
+    `requested` (D-189): the stage's model; None is _CLAUDE_WORKER_MODEL."""
+    block = {"requested": requested if requested is not None else _CLAUDE_WORKER_MODEL,
              "observed_models": sorted({m for m in (models or ()) if isinstance(m, str) and m})}
     extra = sorted({m for m in (result_models or ()) if isinstance(m, str) and m})
     if extra:
@@ -1264,15 +1306,17 @@ def _model_matches_requested(observed: str, requested: str) -> bool:
     return observed == requested or observed.startswith(requested + "-")
 
 
-def _observed_model_facts(models) -> tuple:
+def _observed_model_facts(models, requested: str | None = None) -> tuple:
     """(observed, mismatch). observed: the one observed model id, or several
     sorted and comma-joined (G3); None when nothing was observed. mismatch
     (D-048): the observed model differs from the REQUESTED one -- several
-    distinct models always count; None when nothing was observed."""
+    distinct models always count; None when nothing was observed.
+    `requested` (D-189): the stage's model; None is _CLAUDE_WORKER_MODEL."""
     names = sorted({m for m in (models or ()) if isinstance(m, str) and m.strip()})
     if not names:
         return None, None
-    mismatch = len(names) > 1 or not _model_matches_requested(names[0], _CLAUDE_WORKER_MODEL)
+    requested = requested if requested is not None else _CLAUDE_WORKER_MODEL
+    mismatch = len(names) > 1 or not _model_matches_requested(names[0], requested)
     return ",".join(names), mismatch
 
 
@@ -1293,12 +1337,13 @@ def _stamp_model_ids(items, id_key: str, observed) -> tuple:
 
 
 def _provenance_record(observed, mismatch, self_reported: dict, stamped: bool,
-                       error: str | None = None) -> dict:
+                       error: str | None = None, requested: str | None = None) -> dict:
     """requested / observed / self_reported / mismatch / self_report_differs.
     `mismatch` compares observed with REQUESTED (D-048); `self_report_differs`
-    is informational only (the SKILL never tells the model its own id)."""
+    is informational only (the SKILL never tells the model its own id).
+    `requested` (D-189): the stage's model; None is _CLAUDE_WORKER_MODEL."""
     record = {
-        "requested": _CLAUDE_WORKER_MODEL,
+        "requested": requested if requested is not None else _CLAUDE_WORKER_MODEL,
         "observed": observed,
         "self_reported": self_reported,
         "mismatch": mismatch,
@@ -1341,11 +1386,12 @@ def _stamp_reader_body(body: str, category: str, run_dir: Path, models) -> tuple
     return body, _provenance_record(observed, mismatch, self_reported, stamped, error)
 
 
-def _stamp_card_scores_text(text: str, models) -> tuple:
+def _stamp_card_scores_text(text: str, models, requested: str | None = None) -> tuple:
     """extra_card_scores.yaml text with every card's `model_id` set to the
     observed model. Returns (text, provenance record); never raises, and an
-    unparseable or unexpected file is written as the model wrote it."""
-    observed, mismatch = _observed_model_facts(models)
+    unparseable or unexpected file is written as the model wrote it.
+    `requested` (D-189): the stage's model; None is _CLAUDE_WORKER_MODEL."""
+    observed, mismatch = _observed_model_facts(models, requested)
     self_reported, error = {}, None
     try:
         doc = yaml.safe_load(text)
@@ -1358,7 +1404,8 @@ def _stamp_card_scores_text(text: str, models) -> tuple:
     except Exception as exc:
         error = f"{type(exc).__name__}: {exc}"
     stamped = observed is not None and error is None
-    return text, _provenance_record(observed, mismatch, self_reported, stamped, error)
+    return text, _provenance_record(observed, mismatch, self_reported, stamped, error,
+                                    requested)
 
 
 # A stage deliverable is a fenced ```yaml block whose first line names the file:
@@ -1408,6 +1455,12 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     print(f"\n🧠 [AGENT INVOKED] Waking up specialist for: {stage_name}"
           + (" (YAML-repair retry)" if retry_context else ""))
 
+    # D-189: this stage's model (orchestrator.stage_models, else _CLAUDE_WORKER_MODEL);
+    # read before the prompt build and the paid call, so a malformed mapping raises
+    # here. The one value feeds the CLI model, the provenance `requested` and the
+    # drift check (mismatch) below.
+    stage_model = _stage_model(stage_name)
+
     full_prompt = _build_stage_prompt(stage_name, handoff, path, retry_context=retry_context)
 
     # --- PRE-FLIGHT SAFETY RADAR ---
@@ -1428,7 +1481,7 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     # (see _stage_agent_options). The handoff's inputs are the only context.
     async for message in query(
         prompt=full_prompt,
-        options=_stage_agent_options()
+        options=_stage_agent_options(model=stage_model)
     ):
         if prov_on:
             _note_stream_models(message, prov_models, prov_result_models)
@@ -1495,7 +1548,7 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     }
     if prov_on:
         log_entry[audit_key]["provenance"] = \
-            _base_provenance(prov_models, prov_result_models)
+            _base_provenance(prov_models, prov_result_models, stage_model)
     update_state(path=path, audit_log=log_entry)
 
 
@@ -1518,7 +1571,8 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
         if prov_on and filename.strip() == EXTRA_CARD_SCORES_FILE:
             # S3: the brief-card scores carry the model that answered, not its
             # self-report. brief-card-v1 is still enforced at decide_next.
-            out_text, card_provenance = _stamp_card_scores_text(out_text, prov_models)
+            out_text, card_provenance = _stamp_card_scores_text(
+                out_text, prov_models, stage_model)
             if card_provenance["mismatch"]:
                 print(f"⚠️  score provenance: {EXTRA_CARD_SCORES_FILE} answered by "
                       f"{card_provenance['observed']!r}, requested "
@@ -1569,7 +1623,8 @@ async def run_gemini_worker(stage_name: str, handoff: dict, run_dir: Path):
         if filepath.exists():
             with open(filepath, "r", encoding="utf-8") as f:
                 content = f.read()
-            context_blocks.append(f"--- CONTENT OF {req['path']} ---\n{content}\n")
+            context_blocks.append(
+                f"--- CONTENT OF {req['path']} ---\n{_prompt_input_content(req['path'], content)}\n")
 
     b7_deference_block = (
         f"\n    {_B7_DEFERENCE_SENTENCE}\n"
@@ -2045,6 +2100,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # entire purpose.
         legacy_verdict_args = _legacy_verdict_args()  # C5.6: read once, every variant
         cost_bar_args = _cost_bar_args()  # CUL-414: read once, every variant ([] flag off)
+        forecast_ic_args = _forecast_ic_horizons_args()  # D-186: read once, every variant ([] flag off)
         # C5.8 (C13, D-050): under _promotion_retired_enabled the legacy label is
         # retired for readers -- pass_rule_evaluation.yaml (C7) is not written below
         # and the category reports drop the verdict/route fields. A stale file from
@@ -2179,6 +2235,9 @@ async def run_tool_worker(stage_name: str, run_id: str):
                           f"{refused_variants[variant_id]}; continuing with remaining variants.")
                     _variant_failed(variant_id, refused_variants[variant_id], refused=True)
                     continue
+            # D-185: the protocol this variant runs on (its own per-coin file, else the
+            # run's) gives its rows' timeframe; {} with orchestrator.dsr_same_structure off.
+            _trial_kw.update(_trial_timeframe_kw(_vproto or protocol_path))
             variant_artifacts_dir = ARTIFACTS / "variants" / variant_id
             variant_artifacts_dir.mkdir(parents=True, exist_ok=True)
             variant_run_dir = RUN_DIR / "variants" / variant_id
@@ -2190,6 +2249,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 *_validation_protocol_args(validation_path),
                 *legacy_verdict_args,
                 *cost_bar_args,
+                *forecast_ic_args,
                 "--out-dir", str(variant_run_dir),
             ]
             print(f"--- protocol_execution: variant '{variant_id}' ---")
@@ -2416,7 +2476,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 _pass_rule_for_grid = _vce._find_pass_rule(_pre_reg_for_eval or {})
                 if _vce._is_menu_shaped_pass_rule(_pass_rule_for_grid):
                     _menu_path = ROOT / "config" / "criterion_menu.yaml"
-                    _menu = load_yaml(_menu_path) if _menu_path.exists() else {}
+                    _menu = _load_criterion_menu(_menu_path)
                     # E-061 C2 S2a (D-015, card D): the variants of this idea with
                     # no graded column in this attempt. Passed only when non-empty,
                     # so a run where every variant was graded writes a
@@ -2575,6 +2635,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
             *_validation_protocol_args(validation_path),
             *_legacy_verdict_args(),
             *_cost_bar_args(),  # CUL-414: [] flag off
+            *_forecast_ic_horizons_args(),  # D-186: [] flag off
             "--out-dir", str(RUN_DIR),
         ]
         _windows_before = _window_results(RUN_DIR)
@@ -2592,7 +2653,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
             try:
                 _record_failed_backtest_trial(
                     run_id, config_path,
-                    f"run_protocol.py non-zero exit ({result.returncode})")
+                    f"run_protocol.py non-zero exit ({result.returncode})",
+                    **_trial_timeframe_kw(protocol_path))
             except Exception as _rec_err:
                 print(f"⚠️  H4: could not record failed-backtest trial for {run_id}: {_rec_err}")
             raise RuntimeError(f"run_protocol.py failed:\n{result.stderr}")
@@ -2603,7 +2665,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
             try:
                 _record_failed_backtest_trial(
                     run_id, config_path,
-                    "protocol_summary.json missing after protocol run")
+                    "protocol_summary.json missing after protocol run",
+                    **_trial_timeframe_kw(protocol_path))
             except Exception as _rec_err:
                 print(f"⚠️  H4: could not record failed-backtest trial for {run_id}: {_rec_err}")
             raise FileNotFoundError("protocol_summary.json not found after protocol run")
@@ -2693,7 +2756,7 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     _pass_rule_for_grid = _vce._find_pass_rule(_pre_reg_for_eval or {})
                     if _vce._is_menu_shaped_pass_rule(_pass_rule_for_grid):
                         _menu_path = ROOT / "config" / "criterion_menu.yaml"
-                        _menu = load_yaml(_menu_path) if _menu_path.exists() else {}
+                        _menu = _load_criterion_menu(_menu_path)
                         _grid_result = _vce.evaluate_grid(
                             _with_whole_test_sharpe({run_id: summary}, RUN_DIR,  # D-121
                                                     _pass_rule_for_grid),
@@ -2756,7 +2819,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
                     run_id, config_path,
                     f"post-success window raised {type(_win_err).__name__} "
                     "(protocol_summary.json parse or pass-rule evaluation) "
-                    "after successful protocol run")
+                    "after successful protocol run",
+                    **_trial_timeframe_kw(protocol_path))
             except Exception as _rec_err:
                 print(f"⚠️  H4: could not record failed-backtest trial for {run_id}: {_rec_err}")
             raise
@@ -2779,14 +2843,16 @@ async def run_tool_worker(stage_name: str, run_id: str):
         # the recovery's own.
         try:
             _record_backtest_trial(run_id, summary, config_path,
-                                   **_whole_test_trial_kw(RUN_DIR, summary))
+                                   **_whole_test_trial_kw(RUN_DIR, summary),
+                                   **_trial_timeframe_kw(protocol_path))
         except Exception as _write_err:
             try:
                 _record_failed_backtest_trial(
                     run_id, config_path,
                     f"backtest completed but the trial write raised "
                     f"{type(_write_err).__name__} (ledger/hash write failure after a "
-                    "successful backtest)")
+                    "successful backtest)",
+                    **_trial_timeframe_kw(protocol_path))
             except Exception as _rec_err:
                 print(f"⚠️  G1: backtest completed but the ledger is unwritable for {run_id} — "
                       f"both the trial write ({type(_write_err).__name__}) and its recovery row "
@@ -3618,11 +3684,13 @@ _PROFIT_BARS_OFFABLE = ("trade_count_min", "cost_edge_ratio_min")
 _PROFIT_BARS_OPTIONAL_V2 = {
     "trade_frequency_min": (int, float, type(None)),  # trades / backtest bars, a fraction
     "leave_one_block_out_sharpe_min": (int, float, type(None)),  # the lowest LOO Sharpe
+    "calmar_min": (int, float, type(None)),  # D-188: annualised whole-test return / drawdown
 }
 # E-078: the range each optional bar's value must lie in when set: (low, high, low_open).
 _PROFIT_BARS_OPTIONAL_V2_RANGE = {
     "trade_frequency_min": (0.0, 1.0, True),  # (0, 1]
     "leave_one_block_out_sharpe_min": (-10.0, 10.0, False),  # a Sharpe threshold
+    "calmar_min": (0.0, 100.0, True),  # D-188: (0, 100] -- positive, so a negative Calmar FAILs
 }
 
 
@@ -4521,6 +4589,20 @@ def _brief_criteria_enabled(cfg: dict | None = None) -> bool:
     return _strict_orchestrator_flag("brief_criteria", cfg=cfg)
 
 
+def _dsr_same_structure_enabled(cfg: dict | None = None) -> bool:
+    """D-185: orchestrator.dsr_same_structure.enabled. False when the key, the section
+    or the config file is absent; a non-bool value raises. No dependency (it acts in
+    branch 3's v2 deflated Sharpe, so it changes a grade only with profit_bars_v2 on).
+    While false: byte-identical -- no trial row carries structure_hash or timeframe, N
+    and K are the campaign-wide counts, dsr_basis has no same_structure key. While
+    true: new trial rows carry structure_hash and timeframe (_trial_structure_fields),
+    and the v2 deflated Sharpe's N and K count only the ledger rows with the
+    candidate's own (structure_hash, timeframe) (_same_structure_view); a candidate
+    without a key falls back to the campaign-wide counts, recorded. The holdout
+    spend's N stays campaign-wide."""
+    return _strict_orchestrator_flag("dsr_same_structure", cfg=cfg)
+
+
 def _extra_cards_at_1a_enabled(cfg: dict | None = None) -> bool:
     """D-138 (branch independence PR 1, card M): orchestrator.extra_cards_at_1a.enabled.
     False when the key, the section or the config file is absent; a non-bool value
@@ -4532,6 +4614,104 @@ def _extra_cards_at_1a_enabled(cfg: dict | None = None) -> bool:
     pause or exception leaves the cards in the queue. A 1a that did not complete
     still enqueues nothing."""
     return _strict_orchestrator_flag("extra_cards_at_1a", cfg=cfg)
+
+
+def _forecast_ic_horizons_enabled(cfg: dict | None = None) -> bool:
+    """D-186 (direction 2026-10-24, PR-4): orchestrator.forecast_ic_horizons.enabled.
+    False when the key, the section or the config file is absent; a non-bool value
+    raises. No dependency. While false: byte-identical -- run_protocol is called with
+    the same arguments (no --forecast-ic-horizons), every window's metrics.json core
+    is unchanged, the criterion menu is read with its `horizon` keys stripped
+    (verdict_criteria_evaluator.menu_without_horizon, via _load_criterion_menu) so a
+    resolved pass_rule and every grid cell are as before, a card's `horizon` is refused
+    as an unknown key, and residual_ic.py ranks against the next-bar return.
+    While true: every window's core also carries forecast_return_corr_all_bars_h1/h6/
+    h24/h72/h168 (the all-bars forecast / h-bar forward-return correlation, trading-bot
+    reporting/run_artifact.py build_core); the forecast_ic_median menu entry takes a
+    card `horizon` (default 1, allowed 1/6/24/72/168) and the grid reads the matching
+    field; and the residual IC is ranked against the h-bar forward return for the
+    horizon the pass_rule's forecast_ic_median criterion carries (1 when it has none).
+    Code never picks a criterion or a horizon from the card's statement."""
+    return _strict_orchestrator_flag("forecast_ic_horizons", cfg=cfg)
+
+
+def _residual_ic_requires_block_enabled(cfg: dict | None = None) -> bool:
+    """D-186 (direction 2026-10-24, PR-4): orchestrator.residual_ic_requires_block.enabled.
+    False when the key, the section or the config file is absent; a non-bool value
+    raises. No dependency. While false: byte-identical (_residual_ic_exempt_reason is
+    as before). While true: an idea on a timeframe where no forecast block is
+    registered (composite_cache.resolve_current_composite kind `none` over
+    campaign_record/block_registry.yaml) is exempt from residual IC with the reason
+    "no forecast block on this timeframe" -- the first block on a timeframe has nothing
+    to be residual to, so code no longer adds the criterion for it."""
+    return _strict_orchestrator_flag("residual_ic_requires_block", cfg=cfg)
+
+
+def _forecast_ic_horizons_args() -> list:
+    """D-186: `--forecast-ic-horizons` for run_protocol.py under
+    orchestrator.forecast_ic_horizons, else nothing (the command unchanged)."""
+    return ["--forecast-ic-horizons"] if _forecast_ic_horizons_enabled() else []
+
+
+_D186_MENU_BEGIN = "# D-186 BEGIN"
+_D186_MENU_END = "# D-186 END"
+_D186_MENU_OFF_RE = re.compile(r"^(\s*)# D-186 OFF: (.*)$")
+
+
+def _menu_text_for_prompt(text: str, flag_on: bool) -> str:
+    """D-186: the config/criterion_menu.yaml text a stage prompt inlines. Flag on: `text`
+    unchanged (markers and all). Flag off: every `# D-186 BEGIN` .. `# D-186 END` bracket
+    is removed, the marker lines with it, except a line written `<indent># D-186 OFF:
+    <text>`, which is emitted as `<indent><text>` -- so the result is byte-identical to
+    the menu before D-186 (no `horizon` token reaches step 1a's prompt). A BEGIN with no
+    END raises (a half-open bracket would silently swallow the rest of the menu)."""
+    if flag_on:
+        return text
+    out: list[str] = []
+    inside = False
+    for line in text.splitlines(keepends=True):
+        bare = line.strip()
+        if not inside:
+            if bare == _D186_MENU_BEGIN:
+                inside = True
+            else:
+                out.append(line)
+            continue
+        if bare == _D186_MENU_END:
+            inside = False
+            continue
+        m = _D186_MENU_OFF_RE.match(line.rstrip("\r\n"))
+        if m:
+            out.append(m.group(1) + m.group(2) + line[len(line.rstrip("\r\n")):])
+    if inside:
+        raise ValueError(f"criterion menu: `{_D186_MENU_BEGIN}` without a `{_D186_MENU_END}`")
+    return "".join(out)
+
+
+def _prompt_input_content(req_path: str, content: str) -> str:
+    """D-186: the text of a stage input as the prompt inlines it. Only
+    config/criterion_menu.yaml is filtered (_menu_text_for_prompt, by
+    orchestrator.forecast_ic_horizons); every other input is returned as read."""
+    if str(req_path).replace("\\", "/").endswith("config/criterion_menu.yaml"):
+        return _menu_text_for_prompt(content, _forecast_ic_horizons_enabled())
+    return content
+
+
+def _load_criterion_menu(menu_path: Path | None = None) -> dict:
+    """config/criterion_menu.yaml as the pipeline reads it ({} when absent). The
+    one loader of the menu for resolving, linting and grading criteria: with
+    orchestrator.forecast_ic_horizons off the `horizon` keys are stripped
+    (verdict_criteria_evaluator.menu_without_horizon), so every consumer sees the
+    menu exactly as before D-186. (The raw file is still what step 1a's prompt copies.)"""
+    path = menu_path if menu_path is not None else ROOT / "config" / "criterion_menu.yaml"
+    menu = (load_yaml(path) if Path(path).exists() else {}) or {}
+    if _forecast_ic_horizons_enabled():
+        return menu
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import verdict_criteria_evaluator as _vce
+    return _vce.menu_without_horizon(menu)
 
 
 def _config_replay_gate_enabled(cfg: dict | None = None) -> bool:
@@ -5434,6 +5614,7 @@ def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -
                             if full in errors}
                     errors = errors + [e for e in _reading_content_errors(reading, category, run_dir)
                                        if e not in said]
+        record.pop(asm.UNREPORTED_KEY, None)   # D-184: only the latest attempt's disclosure stays
         record.update(rec)
         record["attempts"].append({"status": "refused" if errors else "accepted",
                                    "errors": errors, "subtype": meta.get("subtype"),
@@ -5459,6 +5640,7 @@ def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -
     _write_skipped_reading(category, run_id, run_dir, {
         "rule": "output_refused_after_retry",
         "reason": ("the analyst's answer was refused twice: " + "; ".join(errors))[:1000]})
+    record["status"] = "refused"   # D-184: after the second refusal (accepted records carry no status)
     save_yaml(run_dir / asm.record_rel(lens), record)
     return dest
 
@@ -6550,7 +6732,7 @@ def _write_exploration_views(run_dir: Path, run_id: str, pr_by_variant: dict, va
         raise FileNotFoundError(f"{arts / 'grid_evaluation.yaml'} is missing or not a mapping -- "
                                 f"no exploration grid can be built from it")
     menu_path = ROOT / "config" / "criterion_menu.yaml"
-    menu = load_yaml(menu_path) if menu_path.exists() else {}
+    menu = _load_criterion_menu(menu_path)
     # the keywords the run's own grid call passes (composition_runs, the v2 era rule)
     grid = ec.exploration_grid(grid_doc, pr_by_variant, pre_registration, menu, shown,
                                single_era_inconclusive=bool(_grid_v2_kw()),
@@ -7218,10 +7400,62 @@ def _residual_ic_menu_entry(menu: dict) -> dict:
     return _code_added_criterion(menu, _RESIDUAL_IC_CRITERION_ID)
 
 
-def _residual_ic_exempt_reason(run_dir: Path) -> str | None:
+RESIDUAL_IC_NO_BLOCK_REASON = "no forecast block on this timeframe"  # D-186
+
+
+def _run_timeframe_for_residual_ic(run_dir: Path) -> str | None:
+    """The run's bar size when it can be read without resolving or generating a
+    protocol: pre_registration.yaml machine_constraints.protocol.timeframe (the
+    generator's own default "1h" when the protocol constraint names none), else the
+    `protocol` file named by run_context.yaml (a pinned or forced protocol) under
+    ROOT/protocols. None when neither exists (the caller then keeps today's answer)."""
+    arts = Path(run_dir) / "artifacts"
+    pre_path = arts / "pre_registration.yaml"
+    pre = (load_yaml(pre_path) if pre_path.exists() else {}) or {}
+    mc = pre.get("machine_constraints") if isinstance(pre, dict) else None
+    proto = mc.get("protocol") if isinstance(mc, dict) else None
+    if isinstance(proto, dict):
+        return proto.get("timeframe", "1h")
+    ctx_path = arts / "run_context.yaml"
+    ctx = (load_yaml(ctx_path) if ctx_path.exists() else {}) or {}
+    name = ctx.get("protocol") if isinstance(ctx, dict) else None
+    if name and (ROOT / "protocols" / str(name)).exists():
+        doc = json.loads((ROOT / "protocols" / str(name)).read_text(encoding="utf-8"))
+        return doc.get("timeframe", "1h") if isinstance(doc, dict) else None
+    return None
+
+
+def _no_forecast_block_on_timeframe(timeframe) -> bool:
+    """True when composite_cache.resolve_current_composite -- the lookup that gives
+    residual_ic its `composite: none` (no forecast block registered on this
+    timeframe) -- returns kind `none` over campaign_record/block_registry.yaml.
+    A CompositeError (blocks exist, their composition is inconsistent) is not
+    "no block": it is left to the grid-time computation, which raises it as before."""
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import composite_cache as _cc
+    import block_registry as _br
+    try:
+        resolved = _cc.resolve_current_composite(
+            _br.load_active_registry(_block_registry_path()),
+            _cc.load_compositions(ROOT / "campaign_record" / "compositions.yaml"), timeframe)
+    except _cc.CompositeError:
+        return False
+    return resolved["kind"] == _cc.KIND_NONE
+
+
+def _residual_ic_exempt_reason(run_dir: Path, *, timeframe=None) -> str | None:
     """Why this run's idea is NOT a forecast-block idea (guess 6: the
     criterion is required for every forecast block, not for composition runs
-    or regime blocks). None = required."""
+    or regime blocks). None = required.
+
+    D-186 (orchestrator.residual_ic_requires_block, off: unchanged): also exempt, with
+    RESIDUAL_IC_NO_BLOCK_REASON, an idea on a timeframe where no forecast block is
+    registered (nothing to be residual to). `timeframe` is the run's bar size when the
+    caller knows it (the grid does, from the protocol it ran); else it is read from the
+    run's pre-registration / run context (_run_timeframe_for_residual_ic), and an
+    undeterminable timeframe keeps today's answer (None)."""
     path = Path(run_dir) / "artifacts" / "research_brief.yaml"
     brief = (load_yaml(path) if path.exists() else {}) or {}
     cand = brief.get("candidate") if isinstance(brief, dict) else None
@@ -7254,6 +7488,10 @@ def _residual_ic_exempt_reason(run_dir: Path) -> str | None:
         doc = (load_yaml(p) if p.exists() else {}) or {}
         if isinstance(doc, dict) and pick(doc) == "regime":
             return "regime block"
+    if _residual_ic_requires_block_enabled():  # D-186; off: the return below, as before
+        tf = timeframe if timeframe is not None else _run_timeframe_for_residual_ic(run_dir)
+        if tf is not None and _no_forecast_block_on_timeframe(tf):
+            return RESIDUAL_IC_NO_BLOCK_REASON
     return None
 
 
@@ -7353,6 +7591,32 @@ def _with_whole_test_sharpe(per_variant_summaries: dict, run_dir: Path, pass_rul
     return out
 
 
+_FORECAST_IC_CRITERION_ID = "forecast_ic_median"  # D-134/D-186: the menu entry that carries `horizon`
+
+
+def _residual_ic_horizon(pre_registration) -> int:
+    """D-186: the horizon (bars) the residual IC is ranked against: the `horizon` of the
+    pass_rule's forecast_ic_median criterion (the card's own choice, written by 1a into
+    the pass_rule). 1 -- today's next-bar return -- when the rule has no such criterion or
+    no horizon on it; when it carries more than one distinct horizon there is no single
+    one to use, so 1 and a printed warning. Nothing here reads the card's statement."""
+    _tools = str(Path(__file__).parent.parent / "tools")
+    if _tools not in sys.path:
+        sys.path.insert(0, _tools)
+    import verdict_criteria_evaluator as _vce
+    rule = _vce._find_pass_rule(pre_registration or {})
+    crit = rule.get("criteria") if isinstance(rule, dict) else None
+    hs = sorted({c["horizon"] for c in (crit or [])
+                 if isinstance(c, dict) and c.get("id") == _FORECAST_IC_CRITERION_ID
+                 and isinstance(c.get("horizon"), int) and not isinstance(c.get("horizon"), bool)
+                 and c["horizon"] >= 1})
+    if len(hs) > 1:
+        print(f"⚠️  [D-186] pass_rule carries several forecast_ic_median horizons {hs}: "
+              f"the residual IC stays on the next-bar return")
+        return 1
+    return hs[0] if hs else 1
+
+
 def _residual_ic_grid_inputs(per_variant_summaries: dict, run_dir: Path, protocol_path,
                              python_exe, pre_registration: dict,
                              variant_protocol_paths: dict | None = None) -> tuple:
@@ -7376,7 +7640,15 @@ def _residual_ic_grid_inputs(per_variant_summaries: dict, run_dir: Path, protoco
     import composite_cache as _cc
     import verdict_criteria_evaluator as _vce
     run_dir = Path(run_dir)
-    exempt = _residual_ic_exempt_reason(run_dir)
+    # D-186: the grid knows the run's bar size from the protocol it ran; passed only
+    # under residual_ic_requires_block (off: the call is the one before D-186).
+    _exempt_kw = ({"timeframe": json.loads(Path(protocol_path).read_text(encoding="utf-8"))
+                   .get("timeframe", "1h")} if _residual_ic_requires_block_enabled() else {})
+    exempt = _residual_ic_exempt_reason(run_dir, **_exempt_kw)
+    # D-186: the residual IC is ranked against the h-bar forward return for the horizon the
+    # pass_rule's forecast_ic_median criterion carries -- only under forecast_ic_horizons
+    # and only when it is not 1 (off, or 1: residual_ic_by_variant is called as before).
+    _horizon = _residual_ic_horizon(pre_registration) if _forecast_ic_horizons_enabled() else 1
     doc = _cc.residual_ic_by_variant(
         per_variant_summaries,
         {vid: run_dir / "variants" / vid / "results" for vid in per_variant_summaries},
@@ -7385,7 +7657,8 @@ def _residual_ic_grid_inputs(per_variant_summaries: dict, run_dir: Path, protoco
         compositions_path=ROOT / "campaign_record" / "compositions.yaml",
         holdout_range=_load_holdout_range(), breach_cls=HoldoutBoundaryBreach,
         exempt_reason=exempt, python_exe=python_exe,
-        **({"variant_protocol_paths": variant_protocol_paths} if variant_protocol_paths else {}))
+        **({"variant_protocol_paths": variant_protocol_paths} if variant_protocol_paths else {}),
+        **({"horizon": _horizon} if _horizon != 1 else {}))
     save_yaml(run_dir / "artifacts" / _RESIDUAL_IC_ARTIFACT, doc)
     if exempt:
         grid_pre = copy.deepcopy(pre_registration)
@@ -7682,7 +7955,8 @@ def _profit_bars_grid_grader(run_dir: Path, run_id: str):
     v2_kw = {"v2": True} if v2 else {}
     bars = _load_profitability_bars(**v2_kw)
     dsr_ctx = _promotion_dsr_context()
-    wctx = _whole_test_dsr_context(dsr_ctx) if v2 else None  # E-062 S2b-2b
+    wctx = (_whole_test_dsr_context(dsr_ctx, **_structure_overlay_kw())
+            if v2 else None)  # E-062 S2b-2b
     invalidated = _invalidated_trial_ids()
     kind = "composite" if _composition_mode(Path(run_dir)) else "variant"
     man_path = Path(run_dir) / "artifacts" / _COMPOSITION_MANIFEST_FILE
@@ -7716,7 +7990,7 @@ def _profit_bars_grid_grader(run_dir: Path, run_id: str):
                 _partial = {variant_id: f"its index coverage record is unusable ({e})"}
             if _partial:
                 results, overall, reasons = _hold_rows_not_evaluable(
-                    results, _D047_NORMALISATION_FORMULAS,
+                    results, _D047_HELD_BARS,
                     f"{_partial[variant_id]} -- the grid's profit-bars grader does not normalise "
                     f"(D-047): only branch 3 grades a partial-coverage variant", bars=bars)
         return {"result": overall, "bars": results, "reasons": reasons, **extra}
@@ -8589,7 +8863,7 @@ def _normalisation_at_spend(run_dir: Path, run_id: str, variant: str, entry: dic
     (artifacts/variants/index.yaml + its protocol.json vs the run protocol,
     _variant_coverage_days, the grading's own functions) -- and refuses
     `bars_changed` unless the evaluation's rows carry exactly them:
-    trade_count_min's and max_drawdown_pct_max's `threshold`,
+    trade_count_min's, max_drawdown_pct_max's and (D-188) calmar_min's `threshold`,
     cost_edge_ratio_min's detail.min_trades, and each row's
     detail.normalisation (absent for a full-coverage variant). So a partial
     variant can never be spent on a full-coverage threshold, nor a full one on
@@ -8620,9 +8894,9 @@ def _normalisation_at_spend(run_dir: Path, run_id: str, variant: str, entry: dic
             f"cannot be re-derived now: {type(e).__name__}: {e}")
     rows = {r.get("name"): r for r in (entry or {}).get("bars") or [] if isinstance(r, dict)}
     problems = []
-    for name in ("trade_count_min", "max_drawdown_pct_max", "cost_edge_ratio_min"):
+    for name in ("trade_count_min", "max_drawdown_pct_max", "calmar_min", "cost_edge_ratio_min"):
         if _bar_is_off(eff, name):
-            continue  # D-118: an off bar has no row to re-derive
+            continue  # D-118: an off bar has no row to re-derive (D-188: nor an unset calmar_min)
         row = rows.get(name)
         if not isinstance(row, dict):
             problems.append(f"{name}: no row")
@@ -8726,6 +9000,8 @@ def _dsr_on_current_ledger_v2(run_dir: Path, variant: str, entry: dict, bars: di
         pr = load_yaml(run_dir / rel) if rel else None
         if not isinstance(pr, dict):
             raise ValueError(f"no readable protocol_result at {rel!r}")
+        # D-185: the spend keeps the CAMPAIGN-WIDE N and K whatever orchestrator.
+        # dsr_same_structure says -- no structure overlay, no same_structure keyword.
         wctx = _whole_test_dsr_context()
         res = _whole_test_dsr_candidate(wctx, run_dir, pr, entry.get("trial_id"),
                                         bars["dsr_min_same_basis_trials"])
@@ -8830,8 +9106,15 @@ def _validate_holdout_decision(run_dir: Path, run_id: str, state: dict) -> dict:
         bar_rows = (entry or {}).get("bars") or []
         if (variant not in (ev.get("passing") or []) or not isinstance(entry, dict)
                 or entry.get("result") != "PASS" or not bar_rows
-                or any(not isinstance(r, dict) or r.get("result") != "PASS" for r in bar_rows)):
-            advisory = [r.get("name") for r in bar_rows if isinstance(r, dict) and r.get("advisory")]
+                or any(not isinstance(r, dict)
+                       or (r.get("result") != "PASS"
+                           # D-188: the advisory drawdown row may FAIL (information); a spend
+                           # still needs it computed (D-119's rule: not NOT_EVALUABLE)
+                           and not (r.get("advisory") and r.get("name") == "max_drawdown_pct_max"
+                                    and r.get("result") == "FAIL"))
+                       for r in bar_rows)):
+            advisory = [r.get("name") for r in bar_rows if isinstance(r, dict)
+                        and r.get("advisory") and r.get("result") == "NOT_EVALUABLE"]
             raise HoldoutUnlockRefused(
                 "variant_not_passing", f"variant {variant!r} is not PASS on every bar in this "
                 f"run's profit_bars_evaluation.yaml (passing: {ev.get('passing')})"
@@ -9518,7 +9801,7 @@ def _route_retired_campaign_review(run_dir: Path, run_id: str) -> str:
 PASS_RULE_PENDING_KEY = "pass_rule_pending"
 PASS_RULE_PENDING_AT_1A = "hypothesis_generation"
 # criterion_menu.yaml keys that describe an entry rather than define a criterion.
-_MENU_META_KEYS = ("basis", "card_overridable", "retired_for")  # D-133: retired_for
+_MENU_META_KEYS = ("basis", "card_overridable", "retired_for", "horizon_allowed")  # D-133: retired_for; D-186: horizon_allowed
 _DECIDE_NEXT_GUIDANCE = "../../workflow_artifacts/skills/hypothesis-design/DECIDE_NEXT_CANDIDATES.md"
 
 
@@ -9661,6 +9944,78 @@ def _pass_rule_from_card(card: dict, menu: dict, where: str, *, block_run: bool 
     return {"criteria": resolved}
 
 
+_CONSISTENCY_FILE = "criterion_consistency.yaml"
+_NO_LABEL_MEASURE = "no label measure in the menu"
+
+
+def _criterion_consistency_warnings(card: dict, pass_rule: dict, menu: dict) -> list:
+    """D-192 (PR-8): what the card's resolved criteria lack against its own `statement`.
+    Warnings only; the caller refuses and retries nothing. No `statement` (an old-shape
+    card): no warning. return_direction expects forecast_ic_median at the menu horizon
+    nearest horizon_bars (a tie takes the smaller; a menu without horizon keys, i.e.
+    orchestrator.forecast_ic_horizons off, offers only 1). market_state expects a menu
+    entry declaring `predicts_kind: market_state`; the menu has none, so it always
+    reads _NO_LABEL_MEASURE until one is added."""
+    st = card.get("statement") if isinstance(card, dict) else None
+    if st is None:
+        return []
+    kind = st.get("predicts_kind") if isinstance(st, dict) else None
+    if kind is None:
+        return ["statement has no predicts_kind"]
+    entries = [e for e in ((menu or {}).get("criteria") or []) if isinstance(e, dict)]
+    crit = [c for c in ((pass_rule or {}).get("criteria") or []) if isinstance(c, dict)]
+    held = sorted(str(c.get("id")) for c in crit)
+    if kind == "market_state":
+        label_ids = {e.get("id") for e in entries if e.get("predicts_kind") == "market_state"}
+        if not label_ids:
+            return [_NO_LABEL_MEASURE]
+        if any(c.get("id") in label_ids for c in crit):
+            return []
+        return [f"predicts_kind is market_state: expected one of {sorted(map(str, label_ids))}, "
+                f"criteria hold {held}"]
+    if kind != "return_direction":
+        return [f"predicts_kind {kind!r} is neither return_direction nor market_state"]
+    ic = next((e for e in entries if e.get("id") == "forecast_ic_median"), {})
+    allowed = [h for h in (ic.get("horizon_allowed") or [1])
+               if isinstance(h, int) and not isinstance(h, bool)] or [1]
+    hb = st.get("horizon_bars")
+    if not isinstance(hb, int) or isinstance(hb, bool) or hb < 1:
+        return [f"predicts_kind is return_direction but horizon_bars {hb!r} is not an integer of 1 "
+                f"or more; expected forecast_ic_median, criteria hold {held}"]
+    want = min(allowed, key=lambda h: (abs(h - hb), h))
+    got = [c for c in crit if c.get("id") == "forecast_ic_median"]
+    if not got:
+        return [f"predicts_kind is return_direction at horizon_bars {hb}: expected "
+                f"forecast_ic_median at horizon {want}, criteria hold {held}"]
+    seen = sorted({c.get("horizon", 1) for c in got}, key=str)
+    if seen != [want]:
+        return [f"predicts_kind is return_direction at horizon_bars {hb}: expected "
+                f"forecast_ic_median at horizon {want}, criteria hold it at horizon {seen}"]
+    return []
+
+
+def _write_criterion_consistency(run_dir: Path, run_id: str, card: dict, pass_rule: dict,
+                                 menu: dict) -> None:
+    """D-192: record _criterion_consistency_warnings in artifacts/criterion_consistency.yaml
+    (the claim_prefill.yaml shape) and print each as a warning. Touches no other file, changes
+    no argument, refuses nothing; any exception is recorded and the run continues."""
+    out = Path(run_dir) / "artifacts" / _CONSISTENCY_FILE
+    try:
+        warns = _criterion_consistency_warnings(card, pass_rule, menu)
+        status = ("warning" if warns else
+                  "ok" if isinstance(card, dict) and card.get("statement") is not None
+                  else "not_checked")
+        save_yaml(out, {"run_id": run_id, "status": status, "warnings": warns})
+        for w in warns:
+            print(f"⚠️  [D-192] {run_id}: criterion does not fit the statement ({w}); "
+                  f"recorded in artifacts/{_CONSISTENCY_FILE}. The run continues.")
+    except Exception as exc:  # noqa: BLE001 -- information only
+        with contextlib.suppress(Exception):
+            save_yaml(out, {"run_id": run_id, "status": "error",
+                            "error": f"{type(exc).__name__}: {exc}"})
+        print(f"⚠️  [D-192] criterion consistency check could not run ({exc}); recorded.")
+
+
 def is_menu_id_pass_rule(pass_rule) -> bool:
     """D-121: True iff `pass_rule` is `{criteria: [...]}` with a non-empty list whose
     every entry references a menu id (verdict_criteria_evaluator.is_menu_referencing_criterion)
@@ -9722,7 +10077,7 @@ def _write_pass_rule_from_card(run_dir: Path, run_id: str, sr_flag: bool) -> boo
             _check_specialist_readers_preflight(run_dir)
         return True
     menu_path = ROOT / "config" / "criterion_menu.yaml"
-    menu = (load_yaml(menu_path) if menu_path.exists() else {}) or {}
+    menu = _load_criterion_menu(menu_path)
     # D-133: only a composition run (criteria written by code, never picked from the menu)
     # may name a menu entry retired for blocks; a run whose kind cannot be told is a block.
     exempt = _residual_ic_exempt_reason(run_dir)
@@ -9749,6 +10104,11 @@ def _write_pass_rule_from_card(run_dir: Path, run_id: str, sr_flag: bool) -> boo
     save_yaml(pre_reg_path, pre_reg)
     print(f"✅ [E-059] pre_registration.yaml pass_rule written from 1a's criteria "
           f"{[c['id'] for c in pass_rule['criteria']]} (not inherited from any source run)")
+    if exempt != "composition run" and not card.get("composition"):
+        # D-192: only criteria 1a picked itself are checked against its statement (2b rule 6:
+        # criteria that arrive with a brief or pass-through are not 1a's -- they returned above;
+        # a composition run's are code's). Warning only; never raises.
+        _write_criterion_consistency(run_dir, run_id, card, pass_rule, menu)
     if sr_flag:
         _check_specialist_readers_preflight(run_dir)
     return True
@@ -10340,7 +10700,7 @@ def _apply_config_direct_authoring_context(stage_name: str, handoff: dict, run_d
     """Union the config-direct-authoring flow's file-presence signals into
     required_inputs for the two stages whose SKILL.md prose branches on
     them (hypothesis-design IMPROVEMENT 07/08, innovation-expansion
-    IMPROVEMENT 07) -- config/criterion_menu.yaml + config/cost_model.yaml
+    IMPROVEMENT 07) -- config/criterion_menu.yaml (D-190: no cost_model.yaml)
     for hypothesis_generation, artifacts/backtest_spec.yaml (strategy_config_
     authoring's own output, written before innovation_expansion runs in this
     flow) for innovation_expansion. Required, not optional: unlike the
@@ -10369,13 +10729,8 @@ def _apply_config_direct_authoring_context(stage_name: str, handoff: dict, run_d
     if stage_name == "hypothesis_generation":
         _add(
             "../../config/criterion_menu.yaml",
-            "E-056 Slice 3b IMPROVEMENT 07: pre-register pass/fail criteria here, at 1a, "
+            "pre-register pass/fail criteria here, at 1a, "
             "picked from this menu's live entries only.",
-        )
-        _add(
-            "../../config/cost_model.yaml",
-            "E-056 Slice 3b IMPROVEMENT 07: populate cost_feasibility from round_trip_cost_bps "
-            "here (relocated from quant-validation, which this flow does not invoke).",
         )
     elif stage_name == "innovation_expansion":
         _add(
@@ -13408,6 +13763,49 @@ def _compute_forecast_hash(config_path: Path) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
+def _structure_key_module():
+    import structure_key  # tools/ sibling (on sys.path)
+    return structure_key
+
+
+def _compute_structure_hash(config: dict) -> str:
+    """D-185: the structure hash of a parsed strategy config -- the config with every
+    parameter value removed (regime detector mode, component classes per regime in
+    order, transform op names in order, the signs of weights and scaling_factors, the
+    sizing kind). The recipe lives in tools/structure_key.py so the backfill tool
+    computes the very same value without importing this module."""
+    return _structure_key_module().compute_structure_hash(config)
+
+
+def _trial_timeframe_kw(protocol_file) -> dict:
+    """D-185: {"timeframe": canonical timeframe of the protocol file the backtest ran
+    on} under orchestrator.dsr_same_structure, else {} (the record calls unchanged).
+    Reads the file for its `timeframe` key only; unreadable: None, and the row is then
+    unkeyed."""
+    if not _dsr_same_structure_enabled():
+        return {}
+    return {"timeframe": _structure_key_module().read_protocol_timeframe(protocol_file)}
+
+
+def _trial_structure_fields(config_path: Path, timeframe: str | None) -> dict:
+    """D-185: {"structure_hash", "timeframe"} for a new trial row under
+    orchestrator.dsr_same_structure, else {} -- every row keeps exactly its keys. A
+    value that cannot be computed (a missing or unparseable config, no timeframe) is
+    left out, so the row is unkeyed rather than carrying a placeholder."""
+    if not _dsr_same_structure_enabled():
+        return {}
+    sk = _structure_key_module()
+    out: dict = {}
+    try:
+        out["structure_hash"] = _compute_structure_hash(
+            json.loads(Path(config_path).read_text(encoding="utf-8")))
+    except Exception:  # noqa: BLE001 -- the config may BE what is broken; the row is unkeyed
+        pass
+    canonical = sk.canonical_timeframe(timeframe) if timeframe is not None else None
+    if canonical is not None:
+        out["timeframe"] = canonical
+    return out
+
 
 def _trial_symbols_field(symbols) -> dict:
     """E-061 C2 S2b (G6): {"symbols": sorted coins} for a trial row written by
@@ -13478,12 +13876,14 @@ def _superseded_attempt(row: dict) -> dict:
     if row.get("invalidated_artifact"):
         kept["invalidated_artifact"] = True
         kept["invalidation_reason"] = row.get("invalidation_reason")
+    if _dsr_same_structure_enabled():  # D-185: the replaced attempt keeps its key; flag off: unchanged
+        kept.update({k: row[k] for k in ("structure_hash", "timeframe") if k in row})
     return kept
 
 
 def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_id: str | None = None,
                            symbols: list | None = None, whole_test: dict | None = None,
-                           windows_sha256: str | None = None):
+                           windows_sha256: str | None = None, timeframe: str | None = None):
     """
     A6.2: record a completed full-backtest as a trial in campaign_state.trial_sharpes.
     Appends {trial_id, source, sharpe, expectancy_bps, n_trades, statistic_valid}.
@@ -13520,6 +13920,12 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_
     orchestrator.profit_bars_v2 for a partial-coverage per-coin variant -- the
     row then carries its window fingerprint (_trial_windows_field). None: no
     such key, the row is byte-identical to before.
+
+    `timeframe` (D-185): the canonical bar size of the protocol the backtest ran
+    on, passed (_trial_timeframe_kw) only under orchestrator.dsr_same_structure.
+    The row then carries `structure_hash` and `timeframe` (_trial_structure_fields),
+    each left out when it cannot be computed. Flag off: no such keys, the row is
+    byte-identical to before.
 
     D-144: the row carries the summary's `protocol_run_id` (key absent when the
     summary has none). The H3 guard still skips a second write for the same
@@ -13603,6 +14009,7 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_
         **symbols_field,
         **windows_field,
         **fold_field,
+        **_trial_structure_fields(config_path, timeframe),  # D-185: {} with the flag off
         **({} if protocol_run_id is None else {"protocol_run_id": protocol_run_id}),
     }
     # CUL-233: carry an explicit reproduces_trial back-reference into the ledger
@@ -13630,12 +14037,16 @@ def _record_backtest_trial(run_id: str, summary: dict, config_path: Path, trial_
 
 
 def _record_failed_backtest_trial(run_id: str, config_path: Path, reason: str, trial_id: str | None = None,
-                                  symbols: list | None = None, windows_sha256: str | None = None):
+                                  symbols: list | None = None, windows_sha256: str | None = None,
+                                  timeframe: str | None = None):
     """
     `symbols` (E-061 C2 S2b, G6): as in _record_backtest_trial -- only the
     variant loop's per-coin variants pass it; None keeps the row unchanged.
     `windows_sha256` (E-062 S2b-3c): likewise, a partial-coverage variant's
     window fingerprint under orchestrator.profit_bars_v2; None: unchanged.
+    `timeframe` (D-185): as in _record_backtest_trial -- under
+    orchestrator.dsr_same_structure the row carries structure_hash and timeframe;
+    flag off: unchanged.
 
 
     `trial_id` param added 2026-09-22 (E-033.1 Slice 4a): optional, defaults
@@ -13712,6 +14123,7 @@ def _record_failed_backtest_trial(run_id: str, config_path: Path, reason: str, t
         **symbols_field,
         **windows_field,
         **fold_field,
+        **_trial_structure_fields(config_path, timeframe),  # D-185: {} with the flag off
     })
     _save_campaign_state(state)
     print(f"⚙️  H4: failed-backtest trial recorded (run={run_id}, reason={reason})")
@@ -15454,6 +15866,8 @@ _BASIS_V2 = {
     "trade_frequency_min": "pooled_trades_excl_window_closes_per_backtest_bar",
     # E-078 (D-127): the lowest whole-test Sharpe with one 4-month block left out
     "leave_one_block_out_sharpe_min": "min_whole_test_sharpe_leaving_one_4_month_block_out",
+    # D-188: annualised chained whole-test return over counted days / the D-129 drawdown
+    "calmar_min": "portfolio_equal_weight_whole_test_chained_annualised_return_over_drawdown",
 }
 # Comparator per v2 row: strict `>` where D-037 ("beats") and D-038 ("> 2.2")
 # say so; every other row keeps its v1 comparator.
@@ -15463,6 +15877,7 @@ _COMPARATOR_V2 = {
     "buy_and_hold_sharpe_excess_min": ">", "cost_edge_ratio_min": ">",
     "trade_frequency_min": ">=",  # E-078: >= 1%
     "leave_one_block_out_sharpe_min": ">",  # E-078: FAIL if any leave-one-out Sharpe <= 0
+    "calmar_min": ">",  # D-188: strict
 }
 _TRADE_DIAGNOSTICS_FILE = "trade_diagnostics.json"
 
@@ -15704,7 +16119,15 @@ def _load_trial_sharpe_basis_overlay() -> tuple:
     return index, {"present": True, "sha256": hashlib.sha256(raw).hexdigest()}
 
 
-def _whole_test_dsr_context(legacy_ctx: dict | None = None) -> dict:
+def _structure_overlay_kw() -> dict:
+    """D-185: {"with_structure_overlay": True} under orchestrator.dsr_same_structure,
+    else {} (the _whole_test_dsr_context call unchanged). Passed by branch 3's grading
+    and the grid's profit_bars grader, never by the holdout spend."""
+    return {"with_structure_overlay": True} if _dsr_same_structure_enabled() else {}
+
+
+def _whole_test_dsr_context(legacy_ctx: dict | None = None, *,
+                            with_structure_overlay: bool = False) -> dict:
     """The campaign-wide inputs of the whole-test DSR, computed once per
     evaluation: N (the legacy context's n_dsr_total -- the unchanged rule,
     every deduped valid row), the same-basis sample (select_same_basis_sample
@@ -15715,6 +16138,12 @@ def _whole_test_dsr_context(legacy_ctx: dict | None = None) -> dict:
     ds, basis = _deflate_sharpe_module(), _portfolio_whole_test_module().WHOLE_TEST_BASIS
     rows = legacy_ctx["campaign"].get("trial_sharpes") or []
     overlay, overlay_record = _load_trial_sharpe_basis_overlay()
+    if with_structure_overlay:
+        # D-185: rows written before the flag take their key from the backfill overlay
+        # (copies; the ledger itself is never mutated). Only the DSR counts read it.
+        sk = _structure_key_module()
+        rows = sk.apply_structure_overlay(
+            rows, sk.load_structure_overlay(TRIAL_STRUCTURE_KEY_OVERLAY_PATH))
     sample = ds.select_same_basis_sample(rows, overlay, basis=basis)
     if sample["N"] != legacy_ctx["n_dsr_total"]:
         raise ValueError(f"whole-test DSR: the same-basis sample counts N={sample['N']} deduped "
@@ -15722,15 +16151,67 @@ def _whole_test_dsr_context(legacy_ctx: dict | None = None) -> dict:
                          f"{legacy_ctx['n_dsr_total']} -- the two dedup implementations disagree")
     return {"rows": rows, "sample": sample, "n_dsr_total": legacy_ctx["n_dsr_total"],
             "n_trials": legacy_ctx["n_trials"], "sharpe_basis": basis,
-            "basis_overlay": overlay_record}
+            "basis_overlay": overlay_record, "overlay": overlay}
 
 
-def _whole_test_dsr_basis(wctx: dict, min_same_basis: int) -> dict:
+def _whole_test_dsr_basis(wctx: dict, min_same_basis: int, same_structure: dict | None = None) -> dict:
     """The v2 evaluation's `dsr_basis` (G7): the legacy counts plus
-    sharpe_basis, n_same_basis (K), min_same_basis and the overlay record."""
-    return {"n_dsr_total": wctx["n_dsr_total"], "n_trials": wctx["n_trials"],
-            "sharpe_basis": wctx["sharpe_basis"], "n_same_basis": wctx["sample"]["K"],
-            "min_same_basis": min_same_basis, "basis_overlay": dict(wctx["basis_overlay"])}
+    sharpe_basis, n_same_basis (K), min_same_basis and the overlay record.
+    D-185: `same_structure` (passed only under orchestrator.dsr_same_structure) adds
+    one `same_structure` entry -- {"enabled": True, "by_variant": {variant id:
+    _same_structure_view's record}}; the campaign-wide fields above are unchanged.
+    None (flag off): no such key, the dict byte-identical."""
+    out = {"n_dsr_total": wctx["n_dsr_total"], "n_trials": wctx["n_trials"],
+           "sharpe_basis": wctx["sharpe_basis"], "n_same_basis": wctx["sample"]["K"],
+           "min_same_basis": min_same_basis, "basis_overlay": dict(wctx["basis_overlay"])}
+    if same_structure is not None:
+        out["same_structure"] = {"enabled": True, "by_variant": dict(same_structure)}
+    return out
+
+
+def _own_backtest_row(wctx: dict, trial_id: str) -> dict | None:
+    """The candidate's one `backtest` ledger row (trial_id, source backtest), or
+    None when there is not exactly one."""
+    own = [r for r in wctx["rows"] if isinstance(r, dict) and r.get("trial_id") == trial_id
+           and r.get("source") == "backtest"]
+    return own[0] if len(own) == 1 else None
+
+
+def _same_structure_view(wctx: dict, row: dict) -> tuple:
+    """D-185: (wctx to grade with, record) for the candidate whose own ledger row is
+    `row`, under orchestrator.dsr_same_structure.
+
+    Keyed (the row carries both structure_hash and timeframe): the returned wctx has
+    N = the counted rows (invalidated out, deduplicated) with exactly that
+    (structure_hash, timeframe) and the same-basis sample restricted to them
+    (deflate_sharpe.select_same_structure_sample; its dedup key carries the row's
+    timeframe too, D-185 direction d1), so N >= K holds. The candidate's own row is
+    among them, in its own (structure, timeframe) key -- the same config and fold
+    backtested on another bar size is a different trial there, not a collapse onto
+    it; only a true duplicate (same forecast_hash, symbols, window fingerprint, fold,
+    timeframe and source as an earlier row) is collapsed, and that candidate is
+    graded NOT_EVALUABLE by dedup_collapse. Unkeyed ledger rows
+    are in no key's N. The record: {"status": "keyed", structure_hash, timeframe,
+    n_same_structure, n_campaign_wide, k_same_structure, k_campaign_wide}.
+
+    Unkeyed (the row lacks structure_hash or timeframe -- written before D-185 or
+    with a config / protocol that could not be read): the campaign-wide wctx,
+    unchanged, and {"status": "unkeyed", "reason", n_campaign_wide, k_campaign_wide}.
+    A design choice recorded in D-185: the candidate is graded on the campaign-wide
+    N and K, the rule it had before the flag, rather than refused."""
+    campaign = {"n_campaign_wide": wctx["n_dsr_total"], "k_campaign_wide": wctx["sample"]["K"]}
+    key = _structure_key_module().row_structure_key(row)  # a malformed field raises
+    if key is None:
+        missing = [f for f in ("structure_hash", "timeframe") if row.get(f) is None]
+        return wctx, {"status": "unkeyed",
+                      "reason": (f"the candidate's ledger row carries no {' and no '.join(missing)}; "
+                                 f"graded on the campaign-wide N and K"),
+                      **campaign}
+    sample = _deflate_sharpe_module().select_same_structure_sample(
+        wctx["rows"], key, wctx["overlay"], basis=wctx["sharpe_basis"])
+    return ({**wctx, "n_dsr_total": sample["N"], "sample": sample},
+            {"status": "keyed", "structure_hash": key[0], "timeframe": key[1],
+             "n_same_structure": sample["N"], "k_same_structure": sample["K"], **campaign})
 
 
 # (ledger block key, whole_test_sharpe_stats key)
@@ -15771,7 +16252,33 @@ def _dsr_not_evaluable(wctx: dict, min_same_basis: int, status: str, reason: str
 
 
 def _whole_test_dsr_candidate(wctx: dict, run_dir: Path, pr: dict, trial_id: str,
-                              min_same_basis: int) -> dict:
+                              min_same_basis: int, *, same_structure: bool = False) -> dict:
+    """compute_dsr_whole_test's result for ONE candidate (D-046).
+
+    D-185: `same_structure=True` (passed only by branch 3's grading, and only under
+    orchestrator.dsr_same_structure) grades the candidate on N and K counted among the
+    ledger rows with its own (structure_hash, timeframe) (_same_structure_view) and adds
+    `same_structure` -- the record of what was counted -- to the result. A keyed
+    candidate whose key holds only its own row (N = 1) is graded at SR0 = 0 (D-185
+    direction a, compute_dsr_whole_test(n1_no_selection=True)); an unkeyed one keeps
+    the campaign-wide N >= 2 rule. False (every
+    other caller, the holdout spend among them, and every flag-off run): campaign-wide
+    N and K, the result exactly as _whole_test_dsr_candidate_on returns it."""
+    if same_structure:
+        row = _own_backtest_row(wctx, trial_id)
+        if row is not None:  # not exactly one row: _whole_test_dsr_candidate_on raises, as before
+            used, record = _same_structure_view(wctx, row)
+            # D-185 direction (a): a KEYED candidate at N = 1 is graded at SR0 = 0 (no selection
+            # among one trial). An unkeyed candidate was counted campaign-wide, so it keeps
+            # the N >= 2 rule (n1_no_selection False).
+            return {**_whole_test_dsr_candidate_on(used, run_dir, pr, trial_id, min_same_basis,
+                                                   n1_no_selection=record["status"] == "keyed"),
+                    "same_structure": record}
+    return _whole_test_dsr_candidate_on(wctx, run_dir, pr, trial_id, min_same_basis)
+
+
+def _whole_test_dsr_candidate_on(wctx: dict, run_dir: Path, pr: dict, trial_id: str,
+                                 min_same_basis: int, *, n1_no_selection: bool = False) -> dict:
     """compute_dsr_whole_test's result for ONE candidate (D-046). The
     candidate's stats are recomputed from its own artifacts and checked, in
     lockstep, against its own ledger row (trial_id, source backtest).
@@ -15860,7 +16367,8 @@ def _whole_test_dsr_candidate(wctx: dict, run_dir: Path, pr: dict, trial_id: str
                 f"grading it would drop it from K")
         candidate = {"status": "ok", **stats}
     return _deflate_sharpe_module().compute_dsr_whole_test(
-        candidate, wctx["sample"]["srs"], wctx["n_dsr_total"], min_same_basis)
+        candidate, wctx["sample"]["srs"], wctx["n_dsr_total"], min_same_basis,
+        **({"n1_no_selection": True} if n1_no_selection else {}))
 
 
 def _whole_test_dsr_note(pr_ref: str, res: dict) -> str:
@@ -15868,11 +16376,89 @@ def _whole_test_dsr_note(pr_ref: str, res: dict) -> str:
     base = (f"{pr_ref}: deflated Sharpe (Bailey & Lopez de Prado 2014, D-046) of the whole-test "
             f"daily Sharpe on the campaign trial ledger; N={res['N']} counted trial(s), "
             f"K={res['K']} same-basis value(s) (floor {res['min_same_basis']})")
+    ss = res.get("same_structure")  # D-185: present only under orchestrator.dsr_same_structure
+    if ss is not None:
+        base += (f"; N and K counted among the trials with this candidate's own (structure_hash, "
+                 f"timeframe) ({ss['structure_hash'][:12]}.., {ss['timeframe']}; campaign-wide "
+                 f"N={ss['n_campaign_wide']}, K={ss['k_campaign_wide']})"
+                 if ss["status"] == "keyed" else
+                 f"; D-185 same-structure N and K not applied, the candidate is unkeyed "
+                 f"(campaign-wide N and K used)")
     if res["dsr"] is None:
         return f"{base}; NOT_EVALUABLE: {res['reason']}"
+    if res["sigma_source"] == "none":  # D-185: N = 1, SR0 = 0 (no selection among one trial)
+        return (f"{base}; SR={res['sr_daily']!r}/day over T={res['T']} daily returns, "
+                f"SR0={res['sr0']!r} ({res['reason']})")
     return (f"{base}; SR={res['sr_daily']!r}/day over T={res['T']} daily returns, "
             f"SR0={res['sr0']!r} (sigma {res['sigma_source']} {res['sigma_used']!r} x "
             f"Z(N) {res['z_expected_max']!r})")
+
+
+# D-188: the Calmar bar's formula, recorded in the row's detail.
+_CALMAR_FORMULA = ("annualised_return / (max_drawdown_pct / 100); annualised_return = "
+                   "(1 + total_return)^(365 / counted_days) - 1; total_return = final chained "
+                   "level / first level - 1; counted_days = the chain's n_counted_calendar_days "
+                   "(D-113); max_drawdown_pct = the D-129 whole-test drawdown of the same chain")
+_CALMAR_DAYS_PER_YEAR = 365  # as whole_test_sharpe's sqrt(365): crypto, every day trades
+
+
+def _calmar_row(_row, chain: dict, dd: dict, span: str, chain_detail: dict) -> None:
+    """D-188: the `calmar_min` row from the chained whole-test curve that the drawdown and
+    Sharpe rows already use. total_return = final chained level / first level - 1 (the first
+    level is the chain's start_level when day-1 returns are chained, D-116, else the first
+    daily level: chained_buy_and_hold's `strategy_total_return`); counted_days = the chain's
+    `n_counted_calendar_days` (D-113: days inside some window's nominal span, planned
+    protocol gaps not counted); annualised return = (1 + total_return)^(365 / counted_days)
+    - 1; Calmar = annualised return / (the D-129 drawdown in fraction).
+    Edges: a negative total return gives a negative value, which cannot clear the positive
+    bar (FAIL); drawdown 0 with total_return <= 0 reads 0.0 (FAIL: no positive return);
+    drawdown 0 with a positive return PASSes, reason "no drawdown" (direction 2026-10-24,
+    point 4): no division, actual recorded as null (never inf), detail.no_drawdown_pass;
+    otherwise an annualisation that overflows -> NOT_EVALUABLE. The bar this value is compared
+    to is the D-047-normalised calmar_min / sqrt(f) on a partial-coverage variant
+    (_normalised_profit_bars)."""
+    first = chain.get("start_level", chain["daily_levels"][0][1])
+    final = chain["daily_levels"][-1][1]
+    days = chain["n_counted_calendar_days"]
+    dd_pct = dd["max_drawdown_pct"]
+    detail = {"counted_days": days, "max_drawdown_pct": dd_pct, "formula": _CALMAR_FORMULA}
+    if not (isinstance(first, (int, float)) and isinstance(final, (int, float))
+            and math.isfinite(first) and math.isfinite(final) and first > 0 and final > 0):
+        _row("calmar_min", reason=f"Calmar NOT_EVALUABLE: chained levels {first!r} -> {final!r} "
+                                  f"are not finite positive numbers")
+        return
+    total = final / first - 1.0
+    try:
+        ann = (1.0 + total) ** (_CALMAR_DAYS_PER_YEAR / days) - 1.0
+    except OverflowError:
+        ann = math.inf
+    if dd_pct <= 0 and total > 0:
+        # D-188 point 4 (direction 2026-10-24): a positive return with no drawdown PASSes,
+        # reason "no drawdown". No division; the row's actual is null (never inf), and the
+        # grader reads detail.no_drawdown_pass and writes result PASS, reason "no drawdown".
+        detail.update(total_return=total, no_drawdown=True, no_drawdown_pass=True)
+        if math.isfinite(ann):
+            detail["annualised_return"] = ann
+        _row("calmar_min", None, note=f"no drawdown (0 %) with a positive total return "
+                                      f"{total:.6f}: PASS, no division; {span}",
+             detail={**chain_detail, **detail})
+        return
+    if not math.isfinite(ann):
+        _row("calmar_min", reason=(f"Calmar NOT_EVALUABLE: the annualised return of total return "
+                                   f"{total!r} over {days} counted day(s) overflows"))
+        return
+    detail.update(total_return=total, annualised_return=ann)
+    if dd_pct > 0:
+        value = ann / (dd_pct / 100.0)
+        note = (f"annualised return {ann:.6f} ((1 + {total:.6f})^({_CALMAR_DAYS_PER_YEAR}/{days}) "
+                f"- 1) / drawdown {dd_pct / 100.0:.6f}" + ("; negative total return FAILs"
+                                                          if total < 0 else ""))
+    else:  # dd_pct <= 0 and total <= 0 (a positive total returned above)
+        value = 0.0
+        note = (f"no drawdown but total return {total:.6f} <= 0: Calmar 0 (FAIL: no positive "
+                f"return)")
+        detail["no_drawdown"] = True
+    _row("calmar_min", value, note=f"{note}; {span}", detail={**chain_detail, **detail})
 
 
 def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
@@ -15891,7 +16477,9 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
       * trade_count_min: whole_test_trade_counts' worst coin of
         excluding_end_of_window (G5, D-035); both counts per coin in `detail`;
       * cost_edge_ratio_min: pooled_edge_to_cost_ratio with the bars file's
-        cost_edge_min_trades (G7, D-038, S2a amendment).
+        cost_edge_min_trades (G7, D-038, S2a amendment);
+      * calmar_min (D-188, when set): the chain's annualised total return over the D-129
+        drawdown (_calmar_row).
     A PortfolioNotEvaluable becomes that row's not_evaluable_reason (the chain's
     reason covers the four chain rows); a malformed artifact raises."""
     pwt = _portfolio_whole_test_module()
@@ -15982,6 +16570,14 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
                               "equity": exc.equity}})
         for name in ("avg_daily_return_min", "sharpe_min", "buy_and_hold_sharpe_excess_min"):
             _row(name, reason=f"not computed past a ruin: {_ruin_text(exc)}")
+        if not _bar_is_off(bars, "calmar_min"):
+            # D-188: the drawdown row is advisory, so the measured total loss must FAIL here:
+            # a ruined account's return is -100 % (annualised -1.0) over its drawdown (>= 100 %).
+            _row("calmar_min", -100.0 / exc.drawdown_pct, note=_ruin_text(exc),
+                 detail={"annualised_return": -1.0, "total_return": -1.0,
+                         "max_drawdown_pct": exc.drawdown_pct, "formula": _CALMAR_FORMULA,
+                         "ruin": {"file": str(exc.path), "timestamp": exc.timestamp,
+                                  "equity": exc.equity}})
         if not _bar_is_off(bars, "leave_one_block_out_sharpe_min"):  # E-078
             _row("leave_one_block_out_sharpe_min",
                  reason=f"not computed past a ruin: {_ruin_text(exc)}")
@@ -15990,6 +16586,8 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
         for name in ("max_drawdown_pct_max", "avg_daily_return_min", "sharpe_min",
                      "buy_and_hold_sharpe_excess_min"):
             _row(name, reason=chain_reason)
+        if not _bar_is_off(bars, "calmar_min"):  # D-188
+            _row("calmar_min", reason=chain_reason)
         if not _bar_is_off(bars, "leave_one_block_out_sharpe_min"):  # E-078
             _row("leave_one_block_out_sharpe_min", reason=chain_reason)
         return out
@@ -16011,6 +16609,8 @@ def _whole_test_profit_metrics(run_dir: Path, pr: dict, bars: dict) -> dict:
          note=f"largest peak-to-trough fall of the chained bar-level curve; {span}",
          detail={**chain_detail, "peak_ts": str(dd["peak_ts"]), "trough_ts": str(dd["trough_ts"]),
                  "n_bars": dd["n_bars"]})
+    if not _bar_is_off(bars, "calmar_min"):
+        _calmar_row(_row, chain, dd, span, chain_detail)
     rets = [r for _d, r in chain["daily_returns"]]
     _row("avg_daily_return_min", sum(rets) / len(rets),
          note=f"arithmetic mean of the {len(rets)} chained daily simple return(s); {span}",
@@ -16100,7 +16700,9 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
     avg_daily_return_min, buy_and_hold_sharpe_excess_min, cost_edge_ratio_min.
     `metrics` is _whole_test_profit_metrics(...). overall is PASS only when every
     row is PASS, except a NOT_EVALUABLE deflated-Sharpe row, which is advisory
-    (D-119). An off bar (D-118) has no row. `dsr_detail` / `dsr_reason`: compute_dsr_whole_test's result
+    (D-119), and the max_drawdown_pct_max row, which is advisory whatever its result
+    whenever calmar_min is set (D-188; the calmar_min row, annualised whole-test return /
+    the D-129 drawdown, comes right after it). An off bar (D-118) has no row. `dsr_detail` / `dsr_reason`: compute_dsr_whole_test's result
     and its NOT_EVALUABLE reason (E-062 S2b-2b)."""
     rows = {**metrics,
             "deflated_sharpe_threshold": {
@@ -16109,14 +16711,18 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
                                          "no deflated Sharpe" + (f": {dsr_reason}"
                                                                  if dsr_reason else ""))}}
     results = []
-    for name in ("sharpe_min", "deflated_sharpe_threshold", "max_drawdown_pct_max",
+    for name in ("sharpe_min", "deflated_sharpe_threshold", "max_drawdown_pct_max", "calmar_min",
                  "trade_count_min", "avg_daily_return_min", "buy_and_hold_sharpe_excess_min",
                  "cost_edge_ratio_min", "trade_frequency_min", "leave_one_block_out_sharpe_min"):
         if _bar_is_off(bars, name):
             continue  # D-118: an off bar has no row (E-078: an absent optional bar neither)
         row, threshold, comp = rows[name], bars[name], _COMPARATOR_V2[name]
         actual = row["actual"]
-        if actual is None:
+        no_dd_pass = (name == "calmar_min" and actual is None
+                      and (row.get("detail") or {}).get("no_drawdown_pass") is True)
+        if no_dd_pass:
+            outcome = "PASS"  # D-188 point 4: no drawdown, positive return; actual stays null
+        elif actual is None:
             outcome = "NOT_EVALUABLE"
         elif comp == ">=":
             outcome = "PASS" if actual >= threshold else "FAIL"
@@ -16128,7 +16734,9 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
             raise ValueError(f"profit bars v2: unknown comparator {comp!r}")
         entry = {"name": name, "threshold": threshold, "actual": actual, "result": outcome,
                  "basis": _BASIS_V2[name], "comparator": comp}
-        if actual is None:
+        if no_dd_pass:
+            entry["reason"] = "no drawdown"
+        elif actual is None:
             entry["not_evaluable_reason"] = row.get("not_evaluable_reason") or "no value"
         if row.get("note"):
             entry["note"] = row["note"]
@@ -16141,12 +16749,17 @@ def _grade_profit_bars_v2(bars: dict, *, dsr, dsr_note: str, metrics: dict,
     for r in results:
         if r["name"] == "deflated_sharpe_threshold" and r["result"] == "NOT_EVALUABLE":
             r["advisory"] = True
+        # D-188: with the Calmar bar set, the drawdown row is advisory in every outcome
+        # (computed and printed as before; the Calmar row decides). Same flag as D-119.
+        if r["name"] == "max_drawdown_pct_max" and not _bar_is_off(bars, "calmar_min"):
+            r["advisory"] = True
     overall = ("PASS" if {r["result"] for r in results if not r.get("advisory")} == {"PASS"}
                else "FAIL")
     reasons = [
         f"{r['name']}: {r['result']} (threshold={r['threshold']!r}, actual={r['actual']!r})"
         + (f" -- {r['not_evaluable_reason']}" if r.get("not_evaluable_reason") else "")
-        + (" [warning, not blocking: D-119]" if r.get("advisory") else "")
+        + ((" [advisory, not blocking: D-188]" if r["name"] == "max_drawdown_pct_max"
+            else " [warning, not blocking: D-119]") if r.get("advisory") else "")
         for r in results if r["result"] != "PASS"
     ]
     return results, overall, reasons
@@ -16172,7 +16785,9 @@ def _grade_profit_bars_protocol_result(run_dir: Path, pr: dict, pr_ref: str, bar
     v2=False: exactly as before."""
     if v2:
         res = _whole_test_dsr_candidate(whole_test_ctx, run_dir, pr, trial_id,
-                                        bars["dsr_min_same_basis_trials"])
+                                        bars["dsr_min_same_basis_trials"],
+                                        **({"same_structure": True}  # D-185; flag off: no new keyword
+                                           if _dsr_same_structure_enabled() else {}))
         return _grade_profit_bars_v2(
             bars, dsr=res["dsr"], dsr_note=_whole_test_dsr_note(pr_ref, res),
             metrics=_whole_test_profit_metrics(run_dir, pr, bars),
@@ -16258,9 +16873,12 @@ def _hold_rows_not_evaluable(results: list, names, reason: str,
         raise ProfitabilityBarsSchemaError(
             f"{reason}: the graded bars lack {missing}, so they cannot be held NOT_EVALUABLE -- "
             f"refusing to grade.")
-    held = [({**r, "result": "NOT_EVALUABLE", "not_evaluable_reason": reason}
+    held = [({**{k: v for k, v in r.items() if k != "reason"},  # D-188: no stale PASS reason
+              "result": "NOT_EVALUABLE", "not_evaluable_reason": reason}
              if r.get("name") in names and not _is_ruin_row(r) else r) for r in results]
-    overall = "PASS" if {r["result"] for r in held} == {"PASS"} else "FAIL"
+    # D-188: an advisory row (the drawdown row beside the Calmar bar, D-119's DSR) never decides
+    overall = "PASS" if {r["result"] for r in held if not r.get("advisory")} == {"PASS"} \
+        else "FAIL"
     reasons = [
         f"{r['name']}: {r['result']} (threshold={r['threshold']!r}, actual={r['actual']!r})"
         + (f" -- {r['not_evaluable_reason']}" if r.get("not_evaluable_reason") else "")
@@ -16278,10 +16896,21 @@ COVERAGE_UNMEASURABLE_PREFIX = "coverage_unmeasurable:"
 _D047_NORMALISATION_FORMULAS = {
     "trade_count_min": "max(ceil(trade_count_min * f), trade_count_min_floor)",
     "max_drawdown_pct_max": "max_drawdown_pct_max * sqrt(f)",
+    # D-188 (direction 2026-10-24): the Calmar bar rises as coverage falls, the mirror of the
+    # drawdown limit's fall -- the same sqrt(f) law (a partial period's return/drawdown ratio
+    # scales with its length by the same square root that its drawdown does)
+    "calmar_min": "calmar_min / sqrt(f)",
     # the row's own 2.2 ratio is unchanged; its trade floor (detail.min_trades) scales
     "cost_edge_ratio_min": "min_trades = max(ceil(cost_edge_min_trades * f), "
                            "trade_count_min_floor)",
 }
+
+
+# D-188: the rows a partial-coverage variant is held NOT_EVALUABLE on where the D-047
+# normalisation cannot be applied (coverage unmeasurable, or the grid's grader): the D-047
+# rows, which now include calmar_min (normalised by sqrt(f) where it can be applied, held
+# here where it cannot -- the drawdown row alone no longer decides, it is advisory).
+_D047_HELD_BARS = tuple(_D047_NORMALISATION_FORMULAS)
 
 
 def _normalised_profit_bars(bars: dict, coverage_days) -> tuple:
@@ -16294,6 +16923,8 @@ def _normalised_profit_bars(bars: dict, coverage_days) -> tuple:
                                (the floor of the cost_edge_ratio_min row)
       max_drawdown_pct_max  -> limit * sqrt(f) (a positive percent, compared
                                `<=` to the positive-percent chained drawdown)
+      calmar_min (D-188)    -> calmar_min / sqrt(f), when the bar is set (f = 1/4:
+                               0.75 -> 1.5)
     every other bar unchanged (G6). The helpers are variant_coin's (S2b-3a);
     nothing is re-implemented here. f == 1 returns (bars, {}) unchanged (G7).
     A malformed coverage raises (variant_coin.VariantCoinError)."""
@@ -16317,6 +16948,9 @@ def _normalised_profit_bars(bars: dict, coverage_days) -> tuple:
                                                                   floor)
     eff["max_drawdown_pct_max"] = vc.scaled_drawdown_limit(bars["max_drawdown_pct_max"], f)
     norm["max_drawdown_pct_max"] = {**common, "base": bars["max_drawdown_pct_max"], "floor": None}
+    if not _bar_is_off(bars, "calmar_min"):  # D-188: calmar_min / sqrt(f), as the drawdown limit
+        eff["calmar_min"] = bars["calmar_min"] / math.sqrt(f)
+        norm["calmar_min"] = {**common, "base": bars["calmar_min"], "floor": None}
     if not _bar_is_off(bars, "cost_edge_ratio_min"):
         norm["cost_edge_ratio_min"] = {**common, "base": bars["cost_edge_min_trades"],
                                        "floor": floor}
@@ -16482,10 +17116,13 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
     candidates = _profit_bars_backtest_candidates(run_dir, run_id, **v2_kw)
     dsr_ctx = _promotion_dsr_context()
     # E-062 S2b-2b: under v2 the whole-test DSR's inputs, once for every variant.
-    wctx = _whole_test_dsr_context(dsr_ctx) if v2 else None
+    wctx = _whole_test_dsr_context(dsr_ctx, **_structure_overlay_kw()) if v2 else None
     # PR-B: the window_economics key exists only under orchestrator.analyst.enabled
     # (flag off: no key, the file byte-identical).
     analyst = _analyst_enabled()
+    # D-185: only meaningful with the v2 whole-test DSR (the legacy DSR has no same-basis K).
+    same_structure_on = bool(v2 and _dsr_same_structure_enabled())
+    same_structure_records: dict = {}
 
     variants: dict = {}
     for cid, cand in candidates.items():
@@ -16513,11 +17150,20 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
         results, overall, reasons = _grade_profit_bars_protocol_result(
             run_dir, cand["protocol_result"], cand["protocol_result_ref"], cand_bars, dsr_ctx,
             **({**v2_kw, "trial_id": cand["trial_id"], "whole_test_ctx": wctx} if v2 else {}))
+        if same_structure_on:
+            # D-185: what this candidate's N and K were counted over (the graded row has
+            # just been read, so its single ledger row exists).
+            _own = _own_backtest_row(wctx, cand["trial_id"])
+            same_structure_records[cid] = (_same_structure_view(wctx, _own)[1] if _own is not None
+                                           else {"status": "unkeyed",
+                                                 "reason": "no single backtest ledger row",
+                                                 "n_campaign_wide": wctx["n_dsr_total"],
+                                                 "k_campaign_wide": wctx["sample"]["K"]})
         if norm:
             results = _attach_normalisation(results, norm)
         if unmeasurable is not None:
             results, overall, reasons = _hold_rows_not_evaluable(
-                results, _D047_NORMALISATION_FORMULAS,
+                results, _D047_HELD_BARS,
                 f"{COVERAGE_UNMEASURABLE_PREFIX} {unmeasurable}", bars=bars)
             entry["coverage_unmeasurable"] = unmeasurable
         if cand.get("partial_coverage"):
@@ -16547,7 +17193,10 @@ def _evaluate_profit_bars_every_backtest(run_dir: Path, run_id: str, *,
         "bars_ratified_at": bars["ratified_at"],
         # E-062 S2b-2b: under v2 also sharpe_basis, n_same_basis, min_same_basis
         # and the overlay's presence / sha256 (G7); flag off, unchanged.
-        "dsr_basis": (_whole_test_dsr_basis(wctx, bars["dsr_min_same_basis_trials"]) if v2 else
+        "dsr_basis": (_whole_test_dsr_basis(
+                          wctx, bars["dsr_min_same_basis_trials"],
+                          **({"same_structure": same_structure_records} if same_structure_on else {}))
+                      if v2 else
                       {"n_dsr_total": dsr_ctx["n_dsr_total"], "n_trials": dsr_ctx["n_trials"]}),
         # Per-variant shape. Composites (slice 7) would add their own graded
         # entries -- see _profit_bars_backtest_candidates' seam note.
@@ -16613,11 +17262,22 @@ def _profit_bars_stop_route(run_dir: Path, run_id: str) -> str | None:
     idea = load_yaml(run_dir / "artifacts" / "idea_status.yaml") or {}
     advisory = sorted(vid for vid in passing
                       if any(isinstance(r, dict) and r.get("advisory")
+                             and r.get("result") == "NOT_EVALUABLE"  # D-188: a FAIL is information
                              for r in ((ev.get("variants") or {}).get(vid) or {}).get("bars") or []))
+    # D-188: the advisory drawdown row is "printed" -- name every passing variant whose
+    # advisory max-drawdown row FAILed, with its value and limit (information, not a blocker)
+    dd_fail = {}
+    for vid in passing:
+        for r in ((ev.get("variants") or {}).get(vid) or {}).get("bars") or []:
+            if (isinstance(r, dict) and r.get("advisory") and r.get("result") == "FAIL"
+                    and r.get("name") == "max_drawdown_pct_max"):
+                dd_fail[vid] = f"{r.get('actual')!r}% > {r.get('threshold')!r}%"
     print(f"\n🛑 PROFIT BARS REACHED: variant(s) {passing} passed every bar in "
           f"config/profitability_bars.yaml"
           + (f" (D-119: {advisory} with a deflated Sharpe that could not be computed -- a "
              f"warning; such a variant cannot be spent until it is computed)" if advisory else "")
+          + (f" (D-188 ADVISORY, not blocking -- the Calmar bar decides: max-drawdown row FAIL "
+             f"for {dd_fail})" if dd_fail else "")
           + f". The grid's idea_status is "
           f"{idea.get('idea_status')!r} (unchanged -- it comes only from the grid). "
           f"Pausing for the operator (branch-3 stop).")

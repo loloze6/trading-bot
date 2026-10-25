@@ -130,3 +130,21 @@ Where the signature goes: flip `ratified: false` to `ratified: true` on the
   - committed LF blob (what git stores; a Mac or Linux checkout): `e71498c5e7aed903338fd2317cee64186fefd830b26786dc503788e0951d4ca0`
   - a Windows checkout with `core.autocrlf=true` (CRLF on disk -- what the runtime hashes there): `3baf8f35b810496ca838e629102bac47334e7efb36d5e89abc2239b08810c650`
 - Evaluations graded under the earlier 2026-10-14 (D-127) file cannot be spent (`bars_changed`).
+
+## 9. Re-signed (2026-10-24, D-188)
+
+- D-188 added `calmar_min: 0.75` (strictly >; the chained whole-test total return annualised
+  over the D-113 counted days, divided by the D-129 drawdown of the same chain; a negative
+  return FAILs; zero drawdown with a positive return PASSes, reason "no drawdown"), made
+  `max_drawdown_pct_max` (20) an advisory row (printed, never FAIL) whenever `calmar_min` is
+  set, and normalised `calmar_min` for partial coverage as D-047 normalises the drawdown
+  limit (effective `calmar_min / sqrt(f)`; f = 1 leaves 0.75). `deflated_sharpe_threshold`
+  is unchanged. The operator authorised signing on their behalf ("sign the bars file on my
+  behalf, 2026-10-24"); Claude recorded the signature at that explicit instruction in this
+  PR's signing commit: `ratified_by` / `ratified_at: 2026-10-24` in
+  `config/profitability_bars.yaml`. `config/criterion_menu.yaml` is unchanged.
+- sha256 of the signed bars file:
+  - committed LF blob (what git stores; a Mac or Linux checkout): `249b6ebd5450b26d1a4d810f8035ec3287953c215cd25df625fe01faa9bec592`
+  - a Windows checkout with `core.autocrlf=true` (CRLF on disk -- what the runtime hashes there): `f6706a102bd77a2405c866f14fae4e5c77e68e248c5e4fb5d24a5049fce0a51a`
+- Evaluations graded under the 2026-10-14 (D-129) file cannot be spent (`bars_changed`).
+  Applies to backtests graded after; nothing is regraded.

@@ -321,7 +321,17 @@ def test_a_1a_rerun_rewrites_the_pass_rule_and_rechecks_the_id(campaign_root):
 # prompt change of the operator's direction 2026-10-23 -- "volatility targeting and a cap ARE expressible, with the vol_target op"
 # is replaced by the D-176 wording (the strategies.sizing block, fixed by the campaign, not a vehicle; a cap is a clip).
 # Previous pin (D-170): c61311bb4ce854574ba5296a6a595e1769c652e280815e6834ff7ebbba1e1732.
-_MASTER_SKILL_SHA256 = "fe011fcc3db4abb60fb5b9b3dacdb0af7a219da05f67689ddac7e34929497992"
+# RE-PINNED by D-190 (2026-10-24, branch docs/d190-hypothesis-design-four-steps): pin updated because of the declared
+# prompt change of the operator's direction 2026-10-24 (PR-7) -- SKILL.md is rewritten to four steps (0 Mode, 1 Idea,
+# 2 Statement with 2b The criterion, 3 Proof); the lookup, power, cost and old criteria sections are gone. Changes
+# hypothesis_generation's prompt on every path. Previous pin (D-176 follow-up): fe011fcc3db4abb60fb5b9b3dacdb0af7a219da05f67689ddac7e34929497992.
+# RE-PINNED again by D-190 (2026-10-24, same branch, review round): the front-matter description names the four steps,
+# "one or more of the modes", the trade/execution notes say "when among your inputs", the card `criteria` line no longer
+# implies `horizon` is the only overridable field. Previous pin (D-190, first round): 30260ba7d0977dce35d3a83e6bb76cb514f45e54433e816f4239404724ad5779.
+# RE-PINNED by D-192 (2026-10-24, branch feat/d192-criterion-consistency-warning): step 2a names the new statement key
+# `predicts_kind` (return_direction | market_state), so "five keys" is "six keys" and the card list's `statement` line gains it.
+# Block 2b is unchanged. Previous pin (D-190, review round): 96cca59420fad67f6e2b26aef4566fbb727e5298a5dc1200d03432c21643a614.
+_MASTER_SKILL_SHA256 = "15da7800827f1f1f15a58f48a5dd1ae72eb29efdc48884b28503cd6cdb4895ab"
 
 
 def test_hypothesis_design_skill_is_byte_identical_to_master():
@@ -361,7 +371,8 @@ def test_flag_on_injects_the_addendum_for_candidates_only(campaign_root, monkeyp
         / "DECIDE_NEXT_CANDIDATES.md").resolve()
     text = (_SR / "workflow_artifacts" / "skills" / "hypothesis-design"
             / "DECIDE_NEXT_CANDIDATES.md").read_text(encoding="utf-8")
-    assert "EXCEPTION to IMPROVEMENT 08" in text
+    assert "EXCEPTION to the four-field rule of step 0 (pass-through)" in text
+    assert "IMPROVEMENT" not in text    # D-190: the dead numbered-section references are gone
     other = _write_fresh_scaffold(campaign_root["runs_dir"], "run_070")
     handoff2 = _hg_handoff()
     rpr._apply_decide_next_context("hypothesis_generation", handoff2, other)

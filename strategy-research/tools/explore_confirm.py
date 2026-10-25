@@ -121,7 +121,7 @@ _RESOLUTION_KEYS = ("variant", "windows_measured", "tests", "measured_in_run", "
 # edge_source, assumptions, failure modes, pass_if/fail_if/rationale of the
 # claim) and numeric evidence (power_parameters, library_lookup,
 # cost_feasibility) are left out. The free text kept is masked (below).
-READER_CARD_KEYS = ("hypothesis_id", "signal_concept", "target_market", "timeframe",
+READER_CARD_KEYS = ("hypothesis_id", "idea_quantities", "statement", "target_market", "timeframe",
                     "composition", "config", "manifest", "criteria")
 READER_CLAIM_KEYS = ("statement", "kind", "tests", "criteria_refs", "missing_block")
 
@@ -145,7 +145,8 @@ _NUMBER_RE = re.compile(
 _DEVIATION_TEXT = ("clause", "built_instead", "missing", "effect")
 READER_FREE_TEXT = {
     # step 1a (or 1b's pass-through manifest)
-    "hypothesis_card.yaml": (("signal_concept",), ("target_market",), ("claim", "statement"),
+    "hypothesis_card.yaml": (("idea_quantities",), ("statement",), ("target_market",),
+                             ("claim", "statement"),
                              ("manifest", "rationale")),
     # step 1b's block manifest
     "block_manifest.yaml": (("rationale",),),
@@ -556,7 +557,7 @@ def reader_card(card: dict) -> dict:
     READER_CARD_KEYS and the claim's READER_CLAIM_KEYS only (a whitelist).
     Every other field (free text that may quote an all-window number, numeric
     evidence) is left out and listed under `withheld_fields`; the free text
-    kept (signal_concept, target_market, claim.statement, manifest.rationale)
+    kept (idea_quantities, statement, target_market, claim.statement, manifest.rationale)
     has its numbers masked (mask_free_text)."""
     if not isinstance(card, dict):
         raise ValueError("hypothesis_card.yaml is not a mapping -- no readers' copy is built")

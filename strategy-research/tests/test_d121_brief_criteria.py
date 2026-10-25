@@ -226,8 +226,10 @@ def test_the_campaign_hands_decide_next_the_menu_only_under_the_flag(campaign_ro
     assert camp.process_once() is True
     assert len(seen) == 1
     if flag:
-        assert seen[0]["copy_criteria_menu"] == yaml.safe_load(
-            (root / "config" / "criterion_menu.yaml").read_text(encoding="utf-8"))
+        # D-186: the campaign hands decide-next the menu as the pipeline reads it (the `horizon` keys
+        # stripped while orchestrator.forecast_ic_horizons is off -- it is not in this config).
+        assert seen[0]["copy_criteria_menu"] == vce.menu_without_horizon(yaml.safe_load(
+            (root / "config" / "criterion_menu.yaml").read_text(encoding="utf-8")))
     else:
         assert "copy_criteria_menu" not in seen[0]
 

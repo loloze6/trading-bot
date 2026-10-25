@@ -1352,6 +1352,55 @@ def _zero_trade_windows_cell(criterion: dict, protocol_result: dict, eras: list,
     return cell
 
 
+# D-186 (orchestrator.forecast_ic_horizons): a menu criterion may carry a
+# `horizon` (bars). Horizon 1, or no `horizon` key at all, reads the criterion's
+# `metric` exactly as before; a horizon h > 1 reads the same metric's per-window
+# field at that horizon, "<metric>_h<h>" (trading-bot reporting/run_artifact.py
+# build_core writes forecast_return_corr_all_bars_h6 etc. under the flag). The
+# key is only ever present on a criterion resolved while the flag was on
+# (menu_without_horizon strips it from the menu otherwise), so with the flag off
+# nothing here changes a cell. A window that lacks the horizon field reads as
+# None and is left out of the median, like any undefined window.
+
+def horizon_metric(criterion: dict, metric):
+    """(metric to read, error text or None) for `criterion`'s optional `horizon`."""
+    if not isinstance(criterion, dict) or criterion.get("horizon") is None:
+        return metric, None
+    h = criterion["horizon"]
+    if isinstance(h, bool) or not isinstance(h, int) or h < 1:
+        return metric, f"horizon={h!r} is not an integer number of bars >= 1"
+    if h == 1 or not isinstance(metric, str):
+        return metric, None
+    return f"{metric}_h{h}", None
+
+
+def menu_without_horizon(menu):
+    """`menu` as it reads with orchestrator.forecast_ic_horizons OFF: every entry's
+    `horizon` / `horizon_allowed` keys removed and `horizon` removed from its
+    `card_overridable`, so a resolved criterion, the override lint and the grid's
+    backfill are byte-identical to the menu before D-186 (a card's `horizon` is then
+    refused as any unknown key is). Returns `menu` itself when nothing needs
+    stripping; never mutates its argument."""
+    if not isinstance(menu, dict) or not isinstance(menu.get("criteria"), list):
+        return menu
+
+    def _has(e):
+        return isinstance(e, dict) and (
+            "horizon" in e or "horizon_allowed" in e
+            or "horizon" in (e.get("card_overridable") or []))
+
+    if not any(_has(e) for e in menu["criteria"]):
+        return menu
+    entries = []
+    for e in menu["criteria"]:
+        if _has(e):
+            e = {k: v for k, v in e.items() if k not in ("horizon", "horizon_allowed")}
+            if "card_overridable" in e:
+                e["card_overridable"] = [k for k in (e["card_overridable"] or []) if k != "horizon"]
+        entries.append(e)
+    return {**menu, "criteria": entries}
+
+
 def _evaluate_grid_cell_for_symbol(criterion: dict, protocol_result: dict, eras: list,
                                     symbol: str | None, composition_runs: bool = False,
                                     single_era_inconclusive: bool = False,
@@ -1387,6 +1436,9 @@ def _evaluate_grid_cell_for_symbol(criterion: dict, protocol_result: dict, eras:
 
     if not metric:
         return {"result": "SPEC_ERROR", "reason": f"criterion {cid!r} has no metric"}
+    metric, _horizon_err = horizon_metric(criterion, metric)  # D-186; no `horizon` key: unchanged
+    if _horizon_err:
+        return {"result": "SPEC_ERROR", "reason": f"criterion {cid!r}: {_horizon_err}"}
     if source not in _VALID_GRID_SOURCES:
         return {"result": "SPEC_ERROR",
                 "reason": f"criterion {cid!r}: source={source!r} not one of {_VALID_GRID_SOURCES}"}
@@ -1871,6 +1923,19 @@ def menu_criterion_overrides_violations(criterion: dict, menu_entry: dict) -> li
                         f"menu's {menu_value!r} -- a criterion may raise its sample "
                         f"floor, never lower or drop it"
                     )
+
+    # D-186: an overridable `horizon` must be one of the entry's `horizon_allowed`
+    # integers (a string "6", a float, a bool or any other number is refused). The
+    # menu carries both keys only while orchestrator.forecast_ic_horizons is on
+    # (menu_without_horizon); with the flag off `horizon` is an unknown key above.
+    horizon_allowed = menu_entry.get("horizon_allowed")
+    if horizon_allowed is not None and "horizon" in criterion:
+        horizon = criterion["horizon"]
+        if isinstance(horizon, bool) or not isinstance(horizon, int) or horizon not in horizon_allowed:
+            violations.append(
+                f"horizon={horizon!r} is not one of the menu's allowed horizons "
+                f"{list(horizon_allowed)} (whole numbers of bars)"
+            )
     return violations
 
 

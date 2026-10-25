@@ -173,46 +173,103 @@ def test_an_observation_whose_floor_was_not_lowered_carries_no_disclosure():
 # D3: completeness
 # ---------------------------------------------------------------------------
 
-def test_a_result_that_met_its_floor_and_is_written_nowhere_is_refused_naming_it():
+def _unreported_q(entries, accounted):
+    return [u["query"] for u in asm.unreported_results(entries, accounted)]
+
+
+def test_a_result_that_met_its_floor_and_is_written_nowhere_is_disclosed_not_refused():
+    """D-184 (disclose, don't refuse): q7 met its floor and nothing in the answer mentions it:
+    the answer is accepted and the record carries q7 with the six fields and the tag."""
     e = _log("sonnet", "forecast")
-    # q7 (the forecast > 0 bars, by window) met its floor; nothing in this answer mentions it
-    _r, _rec, errors = _check(
+    _r, rec, errors = _check(
         _nc(e, [_obs(e, "q12")], best_rejected={"statement": "A candidate.", "killed_by": "q9"}), e)
-    (msg,) = [x for x in errors if "appear nowhere in your answer" in x]
-    assert "q7" in msg.split("cleared")[0]
-    assert "q12" not in msg.split("cleared")[0]          # written, so not named
+    assert not any("cites no query" in x or "nowhere" in x for x in errors), errors
+    unreported = rec[asm.UNREPORTED_KEY]
+    by_q = {u["query"]: u for u in unreported}
+    assert "q7" in by_q and "q12" not in by_q            # written, so not listed
+    u = by_q["q7"]
+    assert set(u) == {"query", "selector", "outcome", "statistic", "effect", "windows",
+                      "unreported_by_model"}
+    assert u["unreported_by_model"] is True
+    t = e["q7"]["result"]["test"]
+    assert u["selector"] == t["selector"] and u["outcome"] == t["outcome"]
+    assert u["statistic"] == t["statistic"] == "mean_diff"
+    assert u["effect"] == {"5": -0.0054079872, "10": -0.011795793}
+    assert u["windows"]["5"] == {"n_windows_with_events": 5, "windows_claimed_sign": 3,
+                                 "windows_with_value": 3}
+    # a different object than the log's: nothing in the record aliases the log
+    assert u["selector"] is not t["selector"]
+    yaml.safe_dump(rec)                                   # serialisable, no aliases needed
 
 
-def test_completeness_counts_why_query_observations_killed_by_and_variants_of_a_written_test():
+def test_a_value_the_log_does_not_hold_is_written_null_never_invented():
+    e = _log("sonnet", "forecast")
+    entry = copy.deepcopy(e["q7"])
+    del entry["result"]["horizons"]["5"]["windows_claimed_sign"]
+    entry["result"]["horizons"]["5"]["effect"] = None
+    del entry["result"]["test"]["statistic"]
+    (u,) = asm.unreported_results({"q7": entry}, set())
+    assert u["statistic"] is None and u["effect"]["5"] is None
+    assert u["windows"]["5"]["windows_claimed_sign"] is None
+    # no horizons at all: effect and windows are null, not {}
+    bare = copy.deepcopy(e["q7"])
+    bare["result"]["horizons"] = {}
+    assert asm.met_own_floor(bare) is None               # cannot tell: not floor-clearing, not listed
+    assert asm.unreported_results({"q7": bare}, set()) == []
+
+
+def test_an_answer_that_cites_no_query_is_refused():
+    e = _log("sonnet", "forecast")
+    (msg,) = asm.completeness_errors(e, set())
+    assert "cites no query" in msg and "q7" in msg
+    # an id that is not an ok query of the session is not a citation either
+    assert asm.completeness_errors(e, {None, "q99"}) != []
+    # one ok query cited: no completeness refusal, whatever else is unreported
+    assert asm.completeness_errors(e, {"q12"}) == []
+    # nothing floor-clearing in the log: nothing to refuse for
+    assert asm.completeness_errors({}, set()) == []
+    # through the whole answer: a no_claim whose killed_by is no query of the session
+    doc = _nc(e, [], best_rejected={"statement": "A candidate.", "killed_by": "q99"})
+    del doc["no_claim"]["observations"]
+    _r, _rec, errors = _check(doc, e)
+    assert any("cites no query" in x for x in errors), errors
+
+
+def test_unreported_results_count_why_query_observations_killed_by_and_variants_of_a_written_test():
     e = _log("sonnet", "forecast")
     met = [q for q, x in e.items() if x["function"] == "conditional_effect"
            and asm.met_own_floor(x) is True]
     assert {"q5", "q6", "q7", "q11", "q12", "q13", "q14", "q15"} == set(met)
-    assert asm.completeness_errors(e, set(met)) == []
+    assert _unreported_q(e, set(met)) == []
     # q11/q13/q15 are one test (same selector, outcome, statistic, direction): writing q15
     # covers them; q7 and q14 are one test (direction less): writing q7 covers q14
-    assert asm.completeness_errors(e, {"q15", "q12", "q5", "q6", "q7"}) == []
-    (msg,) = asm.completeness_errors(e, {"q15", "q12", "q6"})
-    assert all(q in msg.split("cleared")[0] for q in ("q5", "q7", "q14"))
-    assert "q15" not in msg.split("cleared")[0] and "q13" not in msg.split("cleared")[0]
+    assert _unreported_q(e, {"q15", "q12", "q5", "q6", "q7"}) == []
+    got = _unreported_q(e, {"q15", "q12", "q6"})
+    assert set(got) == {"q5", "q7", "q14"}               # q15 covers q11 and q13
     # an unknown or non-string id in `accounted` is ignored, never raises
-    assert asm.completeness_errors(e, {None, "q99", "q15"}) != []
+    assert _unreported_q(e, {None, "q99", "q15"}) != []
 
 
 def test_the_same_selector_in_the_opposite_direction_is_not_accounted_for():
     """Ruling 4: "accounted for" is selector + outcome + statistic + direction. q5 (forecast > 0,
     mean_diff, greater) and q7/q14 (the same, less) are two findings."""
     e = _log("sonnet", "forecast")
-    (msg,) = asm.completeness_errors(e, {"q15", "q12", "q6", "q5"})
-    named = msg.split("cleared")[0]
-    assert "q7" in named and "q14" in named and "q5" not in named
+    got = _unreported_q(e, {"q15", "q12", "q6", "q5"})
+    assert set(got) == {"q7", "q14"}
     # the same direction at another floor/horizon is still the same finding
-    assert asm.completeness_errors(e, {"q15", "q12", "q6", "q5", "q14"}) == []
+    assert _unreported_q(e, {"q15", "q12", "q6", "q5", "q14"}) == []
     # through the whole answer: an observation on q5 does not cover q7
-    _r, _rec, errors = _check(_nc(e, [_obs(e, "q5", mechanism_query="q12"),
-                                      _obs(e, "q15", mechanism_query="q12")]), e)
-    (msg,) = [x for x in errors if "appear nowhere in your answer" in x]
-    assert "q7" in msg.split("cleared")[0]
+    _r, rec, errors = _check(_nc(e, [_obs(e, "q5", mechanism_query="q12"),
+                                     _obs(e, "q15", mechanism_query="q12",
+                                     floor_lowered_reason="r")]), e)
+    assert errors == [], errors
+    assert "q7" in [u["query"] for u in rec[asm.UNREPORTED_KEY]]
+
+
+def test_a_fully_accounted_answer_carries_no_unreported_key():
+    e = _claim_entries()
+    _r, rec, errors = _check(_claim_doc(), e, claim=True)
+    assert errors == [] and asm.UNREPORTED_KEY not in rec
 
 
 # ---------------------------------------------------------------------------
@@ -240,18 +297,22 @@ def _haiku_nc(entries, **obs_over):
             "evidence": [_cite(entries, "q7", "horizons.20.n_events")]}
 
 
-def test_the_haiku_trade_observation_with_no_later_query_is_refused():
+def test_the_haiku_trade_observation_with_no_mechanism_query_is_still_refused():
     e = _log("haiku", "trade_efficiency")
     assert max(int(q[1:]) for q in e) == 9               # q9 is the last query of the session
     _r, _rec, errors = _check(_haiku_nc(e), e, lens="trade_efficiency")
     assert any("mechanism_query" in x and "q9" in x for x in errors), errors
-    # a mechanism_query that is the test itself, or not a query of the session, is refused too
-    for bad in ("q9", "q3", "q40", 9):
+    # D-184: "LATER than the test" is dropped (the test itself or an earlier query is accepted,
+    # tests/test_d184_analyst_disclosure.py); a query that is not an ok query of the session
+    # is refused
+    for bad in ("q40", 9):
         _r, _rec, errors = _check(_haiku_nc(e, mechanism_query=bad), e, lens="trade_efficiency")
-        assert any("mechanism_query" in x and "LATER" in x for x in errors), (bad, errors)
+        assert any("mechanism_query" in x and "ok query of this session" in x for x in errors), \
+            (bad, errors)
+        assert not any("LATER" in x for x in errors), errors
 
 
-def test_a_later_query_or_a_named_tool_limit_satisfies_the_mechanism_rule():
+def test_an_ok_query_or_a_named_tool_limit_satisfies_the_mechanism_rule():
     e = _log("haiku", "trade_efficiency")
     e["q10"] = {"id": "q10", "function": "describe", "status": "ok", "params": {},
                 "result": {"column": "forecast"}}
@@ -267,7 +328,7 @@ def test_a_later_query_or_a_named_tool_limit_satisfies_the_mechanism_rule():
     _r, _rec, errors = _check(_haiku_nc(e2, floors_met=False), e2, lens="trade_efficiency")
     assert not any("mechanism_query" in x for x in errors)
     # a written mechanism_query is checked even when stopped_by is also written
-    _r, _rec, errors = _check(_haiku_nc(e2, mechanism_query="q9", stopped_by="x"), e2,
+    _r, _rec, errors = _check(_haiku_nc(e2, mechanism_query="q40", stopped_by="x"), e2,
                               lens="trade_efficiency")
     assert any("mechanism_query" in x for x in errors)
 
@@ -371,11 +432,11 @@ def test_a_claim_test_on_a_lowered_floor_without_a_reason_is_refused():
                for x in errors), errors
 
 
-def test_the_unwritten_results_of_the_real_sonnet_log_refuse_the_claim_naming_q7():
+def test_the_unwritten_results_of_the_real_sonnet_log_are_disclosed_with_the_claim_naming_q7():
     e = _log("sonnet", "forecast")
-    errors = _check(_claim_doc(), e, claim=True)[2]
-    (msg,) = [x for x in errors if "appear nowhere in your answer" in x]
-    assert "q7" in msg.split("cleared")[0]
+    _r, rec, errors = _check(_claim_doc(), e, claim=True)
+    assert errors == [], errors
+    assert "q7" in [u["query"] for u in rec[asm.UNREPORTED_KEY]]
 
 
 # ---------------------------------------------------------------------------
@@ -545,16 +606,17 @@ def test_a_claim_carries_observations_that_complete_the_account():
     e = _log("sonnet", "forecast")
     doc = _claim_with_observations(e)
     cfg = _base_config()
-    # without the observations the claim is refused naming what is unaccounted
+    # without the observations the claim is accepted and the record discloses what is unaccounted
     bare = copy.deepcopy(doc)
     del bare["claim"]["observations"]
-    errs = _check(bare, e, claim=True, base_config=cfg)[2]
-    (msg,) = [x for x in errs if "appear nowhere in your answer" in x]
-    assert all(q in msg.split("cleared")[0] for q in ("q5", "q6", "q7"))
+    _r, brec, errs = _check(bare, e, claim=True, base_config=cfg)
+    assert errs == [], errs
+    assert all(q in [u["query"] for u in brec[asm.UNREPORTED_KEY]] for q in ("q5", "q6", "q7"))
     # with them: accepted, recorded in the record (masked, spec, floor_lowered), stripped
-    # from the claim the claim card and the reading see
+    # from the claim the claim card and the reading see, and nothing is left unreported
     reading, rec, errors = _check(doc, e, claim=True, base_config=cfg)
     assert errors == [], errors
+    assert asm.UNREPORTED_KEY not in rec
     assert "observations" not in reading["side_findings"][0]["claim"]
     obs = rec["observations"]
     assert [o["test"] for o in obs] == ["q5", "q6", "q7"]
@@ -606,7 +668,7 @@ def test_campaign_memory_reads_a_claim_sessions_observations(tmp_path):
 
 
 def test_the_mechanism_check_is_presence_only():
-    """Ruling 3: any later query of the session satisfies mechanism_query; nothing judges
+    """Ruling 3 (D-184: any ok query, not only a later one): satisfies mechanism_query; nothing judges
     whether it tests the mechanism."""
     e = _log("sonnet", "forecast")
     for later in ("q9", "q12", "q15"):

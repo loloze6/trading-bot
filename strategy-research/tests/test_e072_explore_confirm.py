@@ -1004,7 +1004,12 @@ def _card_with_numbers() -> dict:
                             "measurable_proxy": "p"},
             "assumptions": ["a 919191.5"], "expected_failure_modes": ["f", "g", "h 828282.5"],
             "power_parameters": {"activation_rate": 828282.5, "plausible_ic_upper": 919191.5},
-            "signal_concept": "sign of the 1-bar return", "timeframe": "1d",
+            "idea_quantities": [{"words": "the sign of the 1-bar return",
+                                 "formula": "sign(close[-1] / close[-2] - 1)"}],
+            "statement": {"predicts": "the direction of the next 6-bar return",
+                          "horizon_bars": 6, "condition": "always", "if_pass": "a 2-bar edge",
+                          "if_fail": "no edge"},
+            "timeframe": "1d",
             "target_market": "BTCUSD", "claim": claim}
 
 
@@ -1012,7 +1017,10 @@ def test_the_readers_card_is_a_whitelist():
     out = ec.reader_card(_card_with_numbers())
     _assert_no_leak(yaml.safe_dump(out))
     assert out["claim"] == {k: _pure_claim()[k] for k in ("statement", "kind", "tests")}
-    assert out["signal_concept"] == "sign of the <n>-bar return"     # masked (decision 14)
+    assert out["idea_quantities"] == [{"words": "the sign of the <n>-bar return",
+                                       "formula": "sign(close[<n>] / close[<n>] - <n>)"}]
+    assert out["statement"]["predicts"] == "the direction of the next <n>-bar return"  # masked
+    assert "signal_concept" not in out
     assert out["hypothesis_id"] == "H-TEST-1"
     assert {"rationale", "thesis", "power_parameters", "claim.rationale",
             "claim.pass_if"} <= set(out["withheld_fields"]["fields"])
@@ -1186,7 +1194,9 @@ def _manifest() -> dict:
 def _card_074() -> dict:
     claim = {**_pure_claim(), "statement": RUN_074_STATEMENT}
     return {"hypothesis_id": "H-run_070-1", "timeframe": "1d",
-            "signal_concept": "zscore smoothed to period=2, scaled into [-20, +20]",
+            "idea_quantities": [{"words": "zscore smoothed to period=2, scaled into [-20, +20]",
+                                 "formula": "clip(10 * zscore(ema(close, 2)), -20, 20)"}],
+            "statement": {"predicts": "the 1-bar return", "horizon_bars": 1},
             "target_market": "BTCUSD and ETHUSD, 1h bars",
             "config": {"strategies": {"c1": {"period": 2, "scale": 20.0}}},
             "manifest": _manifest(), "criteria": [{"id": "c_win", "metric": "sharpe"}],
@@ -1198,7 +1208,8 @@ def test_the_readers_card_masks_its_free_text_and_keeps_the_mechanical_spec():
     out = ec.reader_card(card)
     assert out["claim"]["statement"] == ec.mask_numbers(RUN_074_STATEMENT)
     assert "-0.0057" not in yaml.safe_dump(out)
-    assert out["signal_concept"] == "zscore smoothed to period=<n>, scaled into [<n>, <n>]"
+    assert out["idea_quantities"][0]["words"] == "zscore smoothed to period=<n>, scaled into [<n>, <n>]"
+    assert out["statement"]["predicts"] == "the <n>-bar return"
     assert out["target_market"] == "BTCUSD and ETHUSD, <n>h bars"
     assert out["manifest"]["rationale"] == \
         "the period=<n> block measured IC <n> over every window"
@@ -1208,6 +1219,16 @@ def test_the_readers_card_masks_its_free_text_and_keeps_the_mechanical_spec():
     assert out["manifest"]["block"] == _manifest()["block"]
     assert out["hypothesis_id"] == "H-run_070-1" and out["timeframe"] == "1d"
     assert card["claim"]["statement"] == RUN_074_STATEMENT       # input untouched
+
+
+def test_d190_the_readers_card_carries_idea_quantities_and_the_statement():
+    """D-190: the four-step card has no signal_concept; the blind readers see
+    the idea's quantities and the statement (both masked), not a retired field."""
+    assert "idea_quantities" in ec.READER_CARD_KEYS and "statement" in ec.READER_CARD_KEYS
+    assert "signal_concept" not in ec.READER_CARD_KEYS
+    masked = ec.READER_FREE_TEXT["hypothesis_card.yaml"]
+    assert ("idea_quantities",) in masked and ("statement",) in masked
+    assert ("signal_concept",) not in masked
 
 
 def test_the_digest_masks_its_statement_and_approximation(monkeypatch, tmp_path):

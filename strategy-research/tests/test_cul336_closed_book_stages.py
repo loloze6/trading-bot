@@ -497,7 +497,7 @@ _FLAG_GATED_INPUTS = {
     "hypothesis_generation": {
         rpr._TRIED_IDEAS_RELATIVE_PATH, rpr._EXCLUSION_DIGEST_RELATIVE_PATH,  # exclusion digest
         *[v for v in rpr._STALE_INPUT_PATH_FIXES["hypothesis_generation"].values()],  # stale-path fix (on)
-        "../../config/criterion_menu.yaml", "../../config/cost_model.yaml",  # config-direct authoring
+        "../../config/criterion_menu.yaml",  # config-direct authoring (D-190: no cost_model.yaml)
     },
     "innovation_expansion": {
         rpr._TRIED_IDEAS_RELATIVE_PATH, rpr._EXCLUSION_DIGEST_RELATIVE_PATH,
@@ -509,10 +509,8 @@ _FLAG_GATED_INPUTS = {
 # neither delivered nor listed here fails the test: either deliver it or add a
 # row with the reason.
 _WAIVERS = {
-    ("hypothesis_generation", "campaign_record/campaign_memory.yaml"):
-        "named as the source of tried_ideas.yaml, which is what is delivered",
-    ("hypothesis_generation", "config/campaign_config.yaml"):
-        "names the orchestrator flag; the skill says the model cannot read it",
+    # D-190: hypothesis-design/SKILL.md no longer names campaign_memory.yaml or campaign_config.yaml
+    # (the tried-ideas and flag sections are gone), so its two waivers are dropped.
     ("innovation_expansion", "campaign_record/campaign_memory.yaml"):
         "named as the source of tried_ideas.yaml, which is what is delivered",
     ("innovation_expansion", "config/campaign_config.yaml"):

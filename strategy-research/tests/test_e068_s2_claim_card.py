@@ -380,7 +380,10 @@ def test_claim_instructions_live_only_in_flag_on_inputs():
     instructions are in CLAIM_TESTS.md / CLAIM_NOTE.md, added only under the flag."""
     for skill in (SKILL_1A, SKILL_1B):
         text = skill.read_text(encoding="utf-8")
-        assert "CLAIM_TESTS" not in text and "CLAIM_NOTE" not in text and "claim_tests" not in text
+        # D-190: 1a's step 0 names CLAIM_TESTS.md as a mode ("among your inputs"); 1b names none.
+        assert "CLAIM_NOTE" not in text and "claim_tests" not in text
+        assert ("CLAIM_TESTS" in text) == (skill == SKILL_1A)
+    assert "`CLAIM_TESTS.md` is among your inputs" in SKILL_1A.read_text(encoding="utf-8")
     run_dir = SR_ROOT / "runs" / "run_x"
     assert (run_dir / rpr.CLAIM_TESTS_GUIDE).resolve() == GUIDE.resolve()
     assert (run_dir / rpr.CLAIM_1B_NOTE).resolve() == NOTE_1B.resolve()

@@ -752,3 +752,23 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-23 -- A sync merged the local config against the wrong side
 - **Pattern:** the sync script's first version merged the checkout's locally modified campaign_config.yaml against master's file; c4/flag-set commits its own flag values, so the dry run showed 15 local enabled: true flags turning alse. Caught by the dry run's diff before anything was written.
 - **Rule:** a sync merges a locally modified file against the new merge commit's tree (merge-tree of the branch and master), never against master's file; the script refuses to write when any flag other than the approved one would change, and a dry run with that diff is read before --go.
+
+## 2026-10-24 -- The lead told the operator a consequence it had not checked
+- **Pattern:** relaying PR-2's design choice (a), the lead wrote that a same-structure N = 1 candidate "could never spend the holdout". The reviewer showed the spend recomputes the DSR campaign-wide (N >= 2), and that the real effect was a silently waived bar at branch 3 (NOT_EVALUABLE is advisory under D-119). The lead sent a correction before the operator ruled.
+- **Rule:** a consequence put to the operator (blocks, waives, spends, regrades) is checked in code first, with file:line in the question; a builder's or a reviewer's wording is not that check.
+
+## 2026-10-24 -- Agents still started a bare python3 or a heredoc
+- **Pattern:** four agents broke the rule once each:
+  - the PR-2 builder ran `python3 --version`;
+  - the PR-7 fix agent ran `python3 --version`;
+  - the PR-3 builder and the PR-9 tests agent wrote a heredoc that named python3, which failed at parse time.
+  - Nothing ran or was written. One fix agent's quoting bug also queued about 25 empty lock acquisitions.
+- **Rule:** unchanged (2026-10-20/21). Briefs keep the rule. A version check is not needed: the venv path is given. A test runner script is tried once on one file before a loop.
+
+## 2026-10-24 -- A test pinned a fixed line slice of a source file
+- **Pattern:** D-185's premise test read `strategy_components.py` lines 233:693 to collect the component defaults. D-191 grew EMASpreadComponent, two defaults moved past the slice, and only the full suite caught it.
+- **Rule:** a test that reads source text reads the whole file, or anchors on a name (class or def), never on line numbers. Briefs say so where a test reads source.
+
+## 2026-10-24 -- A full suite was queued on a base that was about to move
+- **Pattern:** #541's full suite started on edbf70a3 while #536 merged. The merge condition "full suite on the rebased branch" was then met only by targeted re-runs, because the rebase brought in text only. The operator was told.
+- **Rule:** before queueing a full suite, check whether another PR merges first; if so, merge it, rebase, then queue. A suite on a stale base is stated as such in the PR body.

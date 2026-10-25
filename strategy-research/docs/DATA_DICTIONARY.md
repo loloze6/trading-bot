@@ -540,6 +540,7 @@ variant (`VE:evaluate_grid`, written at `P1:run_tool_worker`). Cells are `PASS`,
 | `grid.<criterion>.<variant>.bars[].note` | Where `actual` comes from. | text | `P1:_grade_profit_bars._bar`, `P1:_grade_profit_bars_v2` | meta |
 | `grid.<criterion>.<variant>.bars[].detail` | v2: the computation's detail (per-coin counts, DSR inputs). | map | `P1:_grade_profit_bars_v2` | run |
 | `grid.<criterion>.<variant>.bars[].not_evaluable_reason` | Why `NOT_EVALUABLE`. | text | `P1:_grade_profit_bars._bar`, `P1:_grade_profit_bars_v2`, `P1:_hold_rows_not_evaluable` | meta |
+| `grid.<criterion>.<variant>.bars[].reason` | v2, the Calmar row (D-188) only: `no drawdown` when the row PASSes because the drawdown is zero and the total return positive (`actual` is then null). | text | `P1:_grade_profit_bars_v2` | meta |
 | `grid.<criterion>.<variant>.weight_schedule` | profit_bars cells: the grader's weight schedule. | map | `VE:_evaluate_profit_bars_cell` | meta |
 <!-- /data-dictionary -->
 

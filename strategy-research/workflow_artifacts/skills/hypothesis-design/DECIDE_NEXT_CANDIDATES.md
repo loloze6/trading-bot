@@ -6,13 +6,13 @@ carries `candidate.criteria_from: hypothesis_generation`, or is a fold child
 with fixed criteria (below; `run_phase1_research._apply_decide_next_context`). If you are reading it, the
 brief is a decide-next candidate and this file governs it.
 
-**This is a deliberate EXCEPTION to IMPROVEMENT 08's four-field rule.**
-IMPROVEMENT 08 says a candidate missing any of `config`, `manifest`, `criteria`,
-`source` is not a pass-through and must be authored normally. A decide-next
+**This is a deliberate EXCEPTION to the four-field rule of step 0 (pass-through).**
+Step 0 says a candidate missing any of `config`, `manifest`, `criteria`,
+`source` is not a pass-through and must be authored with steps 1 to 3. A decide-next
 candidate has no `criteria` on purpose (operator decision 2, 2026-09-24:
 criteria are never inherited from the run the proposal came from). For this
-candidate only, the rules below replace IMPROVEMENT 08; everywhere else
-IMPROVEMENT 08 stands unchanged.
+candidate only, the rules below replace step 0's four-field rule; everywhere else
+step 0 stands unchanged.
 
 The candidate comes from a specialist reader's proposal after an earlier run
 (`candidate.source.proposal`: a side finding, a patch from an older run, or a
@@ -22,17 +22,13 @@ tested. Write THIS idea's card:
 - `hypothesis_id`: exactly `candidate.source.hypothesis_id` (a new idea linked
   to `candidate.source.parent_hypothesis_id`). The orchestrator stops the run
   before stage 1b if it differs.
-- `edge_source`, `signal_concept`, `thesis`: for the proposed change, as
-  IMPROVEMENT 01/04 require.
-- `criteria`: REQUIRED. Pick from `config/criterion_menu.yaml` (IMPROVEMENT 07)
+- `edge_source`, `thesis`, `idea_quantities`, `statement`: for the proposed change, as steps
+  1 and 2 require.
+- `criteria`: REQUIRED. Pick from `config/criterion_menu.yaml` (step 2b)
   for what the proposed idea claims. The live entries are `sign_consistent_by_era`
   and `forecast_ic_median` (median over windows of the all-bars forecast/next-bar IC
   `>` 0.02, fixed threshold, D-134); `realized_edge_to_cost_ratio` is retired for blocks
-  (`retired_for: [block]`, D-107/D-128/D-133) and a card naming it is refused. `residual_ic` (card A) is added by
-  code to every forecast-block idea when composition runs are on; there you may name it (`{id: residual_ic}`, no
-  overrides) and it stays one criterion, code's own; leaving it out removes nothing; elsewhere naming it is refused
-  (D-137). Naming it gains nothing, so if unsure, leave it out; it never counts as the card's own criterion
-  (still pick at least one live entry). Each item is `{id: <menu id>}` plus only
+  (`retired_for: [block]`, D-107/D-128/D-133) and a card naming it is refused. Each item is `{id: <menu id>}` plus only
   the fields that menu entry lists under `card_overridable`; any other field is
   refused. The orchestrator writes `pre_registration.yaml`'s pass_rule from
   these right after this stage (and again on every re-run of it). Never copy

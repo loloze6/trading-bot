@@ -104,7 +104,12 @@ def test_the_instruction_files_are_flag_on_only_inputs():
         if skill.parent.name in ("claim-revision", "analyst"):
             continue
         text = skill.read_text(encoding="utf-8")
+        # D-190: hypothesis-design's step 0 names its addenda as modes, each "among your inputs"
+        # (a name in the skill is not an input; the flag-on input lists still add the files).
+        mode_names = ("CLAIM_TESTS", "PREFILLED_CLAIM") if skill.parent.name == "hypothesis-design" else ()
         for name in ("CLAIM_TESTS", "READING_CONTRACT", "PREFILLED_CLAIM", "claim-revision"):
+            if name in mode_names:
+                continue
             assert name not in text, (skill, name)
 
 

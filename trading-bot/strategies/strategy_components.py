@@ -312,17 +312,57 @@ class EMASpreadComponent(SubStrategyComponent):
     TRENDING REGIME - Primary Directional Alpha.
     Measures the percentage spread between a Fast EMA and a Slow EMA.
     Provides a smoothed, persistent directional forecast that ignores single-candle noise.
+
+    D-191: `average` "ema" (default) is the EMA spread above, unchanged.
+    `average` "sma" swaps both averages for simple means of the last
+    fast_period / slow_period closes including the current one (as
+    MovingAverageDistanceComponent's "sma"): (SMA_fast - SMA_slow) / SMA_slow
+    x 100 x scaling_factor. A NaN close inside either SMA window gives NaN.
+    "sma" is ready at max(fast_period, slow_period) bars; "ema" keeps
+    slow_period. An unknown `average` raises when the component is built.
     """
+
+    AVERAGES = ("ema", "sma")
+
     def __init__(self, name: str = "EMASpread", weight: float = 1.0, parameters: Optional[Dict[str, Any]] = None):
         super().__init__(name, weight, parameters or {})
         self.fast_period = self.parameters.get('fast_period', 9)
         self.slow_period = self.parameters.get('slow_period', 21)
         self.scaling_factor = self.parameters.get('scaling_factor', 5.0)
+        self.average = self.parameters.get('average', 'ema')
+        if self.average not in self.AVERAGES:
+            raise ValueError(f"EMASpreadComponent: average must be one of "
+                             f"{self.AVERAGES}, got {self.average!r}")
+        if self.average == "sma":
+            # Safety review: on "sma" a period that is not an integer >= 1
+            # would slice the wrong window (0 -> whole buffer, negative ->
+            # iloc[k:], 9.7 -> truncated to 9). Integral floats (50.0) are
+            # accepted as ints; bools are refused. "ema" is not checked.
+            self.fast_period = self._sma_period('fast_period', self.fast_period)
+            self.slow_period = self._sma_period('slow_period', self.slow_period)
+
+    @staticmethod
+    def _sma_period(key: str, value: Any) -> int:
+        if isinstance(value, (bool, np.bool_)):
+            ok = False
+        elif isinstance(value, (int, np.integer)):
+            ok = True
+        elif isinstance(value, (float, np.floating)):
+            ok = bool(np.isfinite(value)) and float(value).is_integer()
+        else:
+            ok = False
+        if not ok or int(value) < 1:
+            raise ValueError(f"EMASpreadComponent: {key} must be an integer >= 1 "
+                             f"when average is 'sma', got {value!r}")
+        return int(value)
 
     def update(self, data: pd.DataFrame):
         self.data = data
         if self.is_ready():
             close = data['close']
+            if self.average == "sma":
+                self._update_sma(close)
+                return
             fast_ema = close.ewm(span=self.fast_period, adjust=False).mean().iloc[-1]
             slow_ema = close.ewm(span=self.slow_period, adjust=False).mean().iloc[-1]
             spread_pct = ((fast_ema - slow_ema) / slow_ema) * 100.0
@@ -334,10 +374,26 @@ class EMASpreadComponent(SubStrategyComponent):
                 'spread_pct': float(spread_pct),
             }
 
+    def _update_sma(self, close: pd.Series):
+        # skipna=False: a NaN close in either window gives a NaN spread.
+        fast_sma = close.iloc[-int(self.fast_period):].mean(skipna=False)
+        slow_sma = close.iloc[-int(self.slow_period):].mean(skipna=False)
+        spread_pct = ((fast_sma - slow_sma) / slow_sma) * 100.0
+        self._raw_value = float(spread_pct * self.scaling_factor)
+        self.confidence = 1.0
+        self.debug_info = {
+            'fast_sma': float(fast_sma),
+            'slow_sma': float(slow_sma),
+            'spread_pct': float(spread_pct),
+            'average': 'sma',
+        }
+
     def is_ready(self) -> bool:
-        return self.data is not None and len(self.data) >= self.slow_period
+        return self.data is not None and len(self.data) >= self.get_required_periods()
 
     def get_required_periods(self) -> int:
+        if self.average == "sma":
+            return max(int(self.fast_period), int(self.slow_period))
         return self.slow_period
 
 class PriceOverextensionHedgeComponent(SubStrategyComponent):
