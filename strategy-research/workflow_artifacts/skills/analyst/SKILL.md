@@ -47,7 +47,15 @@ lens.
   per lot against fees per lot (`gross_per_lot_pct`, `fees_per_lot_pct`), then turnover
   (`turnover`, `turnover_annualised`, also per 365 bars). Fees over the absolute gross is never
   the first figure. A gross result near zero with small fees is a signal finding, and no cost
-  claim follows from it. You have 150 comparisons. A refused call costs nothing and tells you
+  claim follows from it. Compare `window_economics`' `median_holding_bars` to the "Hypothesis
+  horizon" line of the run context when it has one (the card's `statement.horizon_bars`);
+  this is information only, with no bar, gate or refusal. `describe` and `distribution` (for
+  `abs_forecast` and `forecast_sign_change`) and `conditional_effect` take an optional
+  `signal`, default `forecast`: set it to a `debug_info.components.<id>.post_pipeline_value` or
+  `debug_info.components.<id>.weighted_contribution` column of the data dictionary (any bars
+  column of unit `forecast`) to test one component's sub-forecast; the pasted `test` block
+  carries `signal` only when it is not `forecast`, and a component the variant does not have is
+  refused. You have 150 comparisons. A refused call costs nothing and tells you
   why.
 
 ## Method (a method, not a form)

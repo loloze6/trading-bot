@@ -26,6 +26,14 @@ The seven functions (all take `variant="base"`, last but for conditional_effect'
 so a claim can carry the floor it will be graded with and still be the test that ran.
 The floor never changes a measured number (claim_tests.effect_sizes does not read it).
 
+`signal` (D-193, optional on describe, distribution and conditional_effect; default
+"forecast"): the forecast column a test, or the derived columns abs_forecast and
+forecast_sign_change, read: "forecast" or a bars.csv column the data dictionary types with
+unit `forecast` (a component's `debug_info.components.<id>.post_pipeline_value` or
+`.weighted_contribution`). It is logged and written into the `test` block only when it is not
+the default, so a call without it is logged and answered exactly as before. A component the
+variant does not have is refused: "no component <id> in this variant".
+
 `conditional_effect` is expressed in the claim-test slots: its condition is one
 bar selector (claim_tests.SELECTORS, `trailing_vol` a plain bar-t field since
 D-153) or the PR-3 `trade` selector, and it calls claim_tests.effect_sizes with
@@ -161,6 +169,8 @@ DERIVED_COLUMNS = ("past_return", "trailing_vol", "abs_forecast", "forecast_sign
                    "allocation_abs")
 _LENGTH_DERIVED = ("past_return", "trailing_vol")
 _BAR_T_DERIVED = tuple(d for d in DERIVED_COLUMNS if d not in _LENGTH_DERIVED)
+# D-193: the derived columns that read the forecast array, so take the `signal` key
+_SIGNAL_DERIVED = ("abs_forecast", "forecast_sign_change")
 # trade_slice fields read from trades.json beside the TradeWindow (PR-B); trade_gross_return
 # reads the TradeWindow's gross_return instead (operator ruling 2026-10-19, S1: the window's
 # basis, the same number the claim outcome sees)
@@ -325,6 +335,16 @@ def dictionary_row(rows: list, column: str):
     return None
 
 
+def _non_default_signal(signal, params: dict):
+    """D-193: the `signal` argument of describe / distribution / conditional_effect. None or
+    the default ("forecast") is no signal: not logged, not threaded, the call as before.
+    Anything else is logged in `params` and returned for the call to check and apply."""
+    if signal is None or (isinstance(signal, str) and signal == ct.DEFAULT_SIGNAL):
+        return None
+    params["signal"] = signal
+    return signal
+
+
 # ---------------------------------------------------------------------------
 # The log
 # ---------------------------------------------------------------------------
@@ -431,28 +451,32 @@ class QueryEngine:
         return self._run("list_columns", {"variant": variant},
                          lambda: self._list_columns(variant))
 
-    def describe(self, column, by=None, variant: str = "base"):
-        return self._run("describe", {"column": column, "by": by, "variant": variant},
-                         lambda: self._describe(column, by, variant))
+    def describe(self, column, by=None, variant: str = "base", signal=None):
+        params = {"column": column, "by": by, "variant": variant}
+        signal = _non_default_signal(signal, params)
+        return self._run("describe", params,
+                         lambda: self._describe(column, by, variant, signal))
 
-    def distribution(self, column, by=None, bins: int = 10, variant: str = "base"):
-        return self._run("distribution",
-                         {"column": column, "by": by, "bins": bins, "variant": variant},
-                         lambda: self._distribution(column, by, bins, variant))
+    def distribution(self, column, by=None, bins: int = 10, variant: str = "base", signal=None):
+        params = {"column": column, "by": by, "bins": bins, "variant": variant}
+        signal = _non_default_signal(signal, params)
+        return self._run("distribution", params,
+                         lambda: self._distribution(column, by, bins, variant, signal))
 
     def conditional_effect(self, condition, horizons=None, outcome=None, baseline=None,
                            statistic: str = "mean_diff", direction: str = "greater", by=None,
-                           variant: str = "base", floor=None):
+                           variant: str = "base", floor=None, signal=None):
         params = {"condition": condition, "horizons": horizons, "outcome": outcome,
                   "baseline": baseline, "statistic": statistic, "direction": direction,
                   "by": by, "variant": variant}
         if floor is not None:
             # logged only when given: a call without it logs exactly as before
             params["floor"] = floor
+        signal = _non_default_signal(signal, params)
         return self._run("conditional_effect", params,
                          lambda: self._conditional_effect(condition, horizons, outcome, baseline,
                                                           statistic, direction, by, variant,
-                                                          floor))
+                                                          floor, signal))
 
     def trade_slice(self, filter, agg, by=None, variant: str = "base"):  # noqa: A002
         return self._run("trade_slice",
@@ -620,6 +644,26 @@ class QueryEngine:
             self._bars[vid] = windows
         return self._bars[vid]
 
+    def _check_signal(self, windows, signal) -> None:
+        """D-193: refuse a signal that is not "forecast" or a unit-`forecast` column of the
+        data dictionary, and one this variant's bars.csv does not hold (for a component's
+        column: "no component <id> in this variant")."""
+        errs = ct.signal_errors(signal)
+        if errs:
+            raise QueryRefused("; ".join(errs))
+        if signal not in self._csv_header(windows[0]):
+            raise QueryRefused(ct.signal_missing_message(signal))
+
+    def _signal_windows(self, windows, signal):
+        """The windows with their forecast array read from `signal` (checked first)."""
+        if signal is None:
+            return windows
+        self._check_signal(windows, signal)
+        try:
+            return [ct.window_with_signal(w, signal) for w in windows]
+        except (OSError, ValueError, KeyError) as exc:
+            raise QueryRefused(str(exc)) from exc
+
     def _trade_windows(self, variant) -> list:
         vid = self._variant(variant)
         if vid not in self._trades:
@@ -659,18 +703,24 @@ class QueryEngine:
             rd = csv.DictReader(f)
             return np.array([_to_float(r.get(column)) for r in rd])
 
-    def _column_values(self, variant, column):
+    def _column_values(self, variant, column, signal=None):
         """(list of per-window float arrays, role label) for an allowed column;
-        refuses anything outside the vocabulary."""
+        refuses anything outside the vocabulary. D-193 `signal`: the forecast column the
+        derived columns abs_forecast and forecast_sign_change are computed from (None: the
+        strategy's `forecast`); refused for any other column."""
         windows = self._bar_windows(variant)
         if not isinstance(column, str) or not column:
             raise QueryRefused("column must be a column name (see list_columns)")
-        key = (variant, column)
+        if signal is not None and column not in _SIGNAL_DERIVED:
+            raise QueryRefused(f"signal applies to the derived columns {list(_SIGNAL_DERIVED)} "
+                               f"only, not to {column!r}")
+        key = (variant, column) if signal is None else (variant, column, signal)
         if key in self._cols:
             return self._cols[key]
         m = _DERIVED_RE.fullmatch(column)
         if column in _BAR_T_DERIVED:
-            vals = [self._bar_t_derived(w, column) for w in windows]
+            vals = [self._bar_t_derived(w, column)
+                    for w in self._signal_windows(windows, signal)]
             if not any(np.isfinite(v).any() for v in vals):
                 raise QueryRefused(f"column {column!r} has no numeric value in this run")
         elif m:
@@ -834,10 +884,10 @@ class QueryEngine:
 
     # -- describe / distribution ---------------------------------------------
 
-    def _describe(self, column, by, variant):
+    def _describe(self, column, by, variant, signal=None):
         windows = self._bar_windows(variant)
         self._check_by(by, BY_BARS, windows)
-        vals = self._column_values(variant, column)
+        vals = self._column_values(variant, column, signal)
         groups = self._grouped(windows, by, vals)
         n = self._calendar_charge(column, by, groups)
         out = {}
@@ -854,15 +904,18 @@ class QueryEngine:
                 cell["share_at_cap"] = (r8((np.abs(fin) >= FORECAST_CAP - 1e-9).sum() / len(fin))
                                         if len(fin) else None)
             out[g] = cell
-        return {"column": column, "by": by, "groups": out}, n
+        res = {"column": column, "by": by, "groups": out}
+        if signal is not None:
+            res["signal"] = signal
+        return res, n
 
-    def _distribution(self, column, by, bins, variant):
+    def _distribution(self, column, by, bins, variant, signal=None):
         windows = self._bar_windows(variant)
         self._check_by(by, BY_BARS, windows)
         if (not isinstance(bins, int) or isinstance(bins, bool)
                 or not BINS_RANGE[0] <= bins <= BINS_RANGE[1]):
             raise QueryRefused(f"bins must be an int in {BINS_RANGE[0]}..{BINS_RANGE[1]}")
-        vals = self._column_values(variant, column)
+        vals = self._column_values(variant, column, signal)
         groups = self._grouped(windows, by, vals)
         n = self._calendar_charge(column, by, groups)
         pooled = np.concatenate([v[np.isfinite(v)] for v in groups.values()])
@@ -871,8 +924,11 @@ class QueryEngine:
         edges = np.histogram_bin_edges(pooled, bins=bins)
         counts = {g: np.histogram(v[np.isfinite(v)], bins=edges)[0].tolist()
                   for g, v in groups.items()}
-        return {"column": column, "by": by, "bin_edges": [r8(e) for e in edges],
-                "groups": counts}, n
+        res = {"column": column, "by": by, "bin_edges": [r8(e) for e in edges],
+               "groups": counts}
+        if signal is not None:
+            res["signal"] = signal
+        return res, n
 
     def _calendar_charge(self, column, by, groups) -> int:
         """Comparisons of a describe / distribution call: one per group with a finite value
@@ -896,7 +952,7 @@ class QueryEngine:
         return [e for e in errs if " cannot be graded under " not in e]
 
     def _conditional_effect(self, condition, horizons, outcome, baseline, statistic,
-                            direction, by, variant, floor=None):
+                            direction, by, variant, floor=None, signal=None):
         if floor is None:
             floor = {"min_events": 1}
         elif not isinstance(floor, dict) or not floor:
@@ -935,6 +991,8 @@ class QueryEngine:
                         else horizons}
         test = {"selector": condition, "outcome": out_spec, "baseline": baseline,
                 "statistic": statistic, "direction": direction, "floor": floor}
+        if signal is not None:
+            test["signal"] = signal         # D-193: written into the block only when not the default
         try:
             spec = ct.TestSpec.from_dict(test)
         except (TypeError, ValueError) as exc:
@@ -946,6 +1004,8 @@ class QueryEngine:
         if errors:
             raise QueryRefused("; ".join(errors[:3]))
         windows = self._trade_windows(variant) if is_trade else self._bar_windows(variant)
+        if signal is not None:
+            self._check_signal(windows, signal)     # "no component <id> in this variant"
         try:
             per, out_h, hz, _ = ct.effect_sizes(windows, spec)
         except (ct.MixedReturnBasis, ValueError) as exc:
