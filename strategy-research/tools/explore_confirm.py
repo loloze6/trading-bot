@@ -11,8 +11,11 @@ nothing here reads a flag). Design: engineering/roadmap/E-072/PHASE_A.md.
     artifacts/exploration/: the category reports (build_reports only_windows),
     the grid re-reduced on those windows (exploration_grid: window-source
     criteria only; every pooled criterion and the idea status are withheld),
-    the claim digest measured on those windows (exploration_digest), and the
-    earlier findings and registry summary with their numbers withheld.
+    and the earlier findings and registry summary with their numbers withheld. (D-198: the
+    readers and the explore_confirm flag are deleted; nothing in the pipeline writes these
+    copies now and the claim digest measured on those windows is gone with the readers'
+    claim_result_digest. What stays live is the fold confirmation's measurement and ledger
+    (measure_on_windows, record_fold_confirmation) and the number mask.)
   * After the readers, each side finding is measured on the confirmation
     windows (confirm_findings): a price-only ("pure") finding in the same run,
     with claim_measure.measure_test on that run's base variant bars; a block
@@ -432,78 +435,6 @@ def measure_on_windows(run_dir: Path, vid: str, tests: list, windows, eras,
             out[name] = {"name": name, "status": cmeas.NOT_MEASURED, "reason": ERROR,
                          "detail": f"{type(exc).__name__}: {exc}"}
     return out, [w.label for w in ws]
-
-
-def exploration_digest(run_dir: Path, windows, eras, holdout_start: str) -> dict:
-    """artifacts/exploration/claim_result_digest.yaml: the claim digest's
-    descriptive part (statement, tests, variant patches, approximation) from
-    reader_findings.claim_result_digest -- its AI free text (statement,
-    approximation) with numbers masked (mask_free_text) -- and per variant its numbers MEASURED
-    AGAIN on the exploration windows only -- for each variant the run-level
-    measurement lists as measured in this attempt (the others keep their
-    reason, without numbers). Never raises: a failure is `status: error`."""
-    import claim_card as cc
-    import claim_findings as cf
-    import claim_measure as cmeas
-    import reader_findings as rf
-    run_dir = Path(run_dir)
-    shown = sorted(set(windows))
-    base = rf.claim_result_digest(run_dir)
-    out = mask_free_text({k: v for k, v in base.items()
-                          if k not in ("variants", "claim_status", "reason")},
-                         "claim_result_digest.yaml")
-    out.update({"windows_shown": shown, "windows_note": READER_NOTE})
-    if base.get("status") == "error":
-        return out
-    try:
-        arts = run_dir / "artifacts"
-        status_path = cmeas.run_file_path(arts)
-        if not status_path.exists():
-            out.update({"claim_status": "absent", "variants": {}})
-            return out
-        sdoc = _load_yaml(status_path) or {}
-        card = _load_yaml(arts / "hypothesis_card.yaml") or {}
-        claim = card.get("claim") if isinstance(card, dict) else None
-        res = cc.check_claim(claim, cc.card_criteria_ids(card if isinstance(card, dict) else {}))
-        names = {t["name"] for t in res.tests}
-        tests = [t for t in (claim or {}).get("tests") or []
-                 if isinstance(t, dict) and t.get("name") in names] \
-            if isinstance(claim, dict) and isinstance(claim.get("tests"), list) else []
-        stats = {str(t["name"]): t.get("statistic") for t in tests}
-        variants = {}
-        for vid, row in sorted((sdoc.get("variants") or {}).items()):
-            vid = str(vid)
-            if not isinstance(row, dict) or not row.get("file") or not tests \
-                    or row.get("status") not in (cmeas.MEASURED, cmeas.NO_EVENTS):
-                variants[vid] = {"status": cmeas.NOT_MEASURED,
-                                 "reason": (row or {}).get("reason") if isinstance(row, dict)
-                                 else "not in the run's measurement"}
-                continue
-            try:
-                results, _measured = measure_on_windows(run_dir, vid, tests, shown, eras,
-                                                        holdout_start)
-            except Exception as exc:  # noqa: BLE001 -- recorded
-                variants[vid] = {"status": cmeas.NOT_MEASURED, "reason": ERROR,
-                                 "detail": f"{type(exc).__name__}: {exc}"}
-                continue
-            compact = {}
-            for n, t in results.items():
-                compact[n] = cf._compact_test(t)
-                if n in stats:
-                    compact[n]["statistic_label"] = rf.statistic_label(stats[n])
-            st = [t.get("status") for t in results.values()]
-            status = (cmeas.MEASURED if cmeas.MEASURED in st
-                      else cmeas.NO_EVENTS if st and all(s == cmeas.NO_EVENTS for s in st)
-                      else cmeas.NOT_MEASURED)
-            variants[vid] = {"status": status, "tests": compact}
-        measured = any(v["status"] == cmeas.MEASURED for v in variants.values())
-        out.update({"claim_status": cmeas.MEASURED if measured else cmeas.NOT_MEASURED,
-                    "reason": None if measured else "nothing measured on the exploration windows",
-                    "variants": variants})
-    except Exception as exc:  # noqa: BLE001 -- information only
-        out.update({"status": "error", "detail": f"{type(exc).__name__}: {exc}"})
-        out.pop("variants", None)
-    return out
 
 
 def withhold_findings_numbers(summary: dict) -> dict:

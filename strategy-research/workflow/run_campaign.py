@@ -2724,12 +2724,12 @@ def _extract_run_numbers(run_dir: Path) -> dict:
         if v:
             out["verdict_status"] = v
 
-    # E-046a Slice 5b-ii-B: under orchestrator.specialist_readers.enabled no
+    # E-046a Slice 5b-ii-B: on the grid route (D-198: orchestrator.grid_evaluation.enabled) no
     # verdict_interpretation.yaml is written; the grid's idea_status is the
     # run's decision, so the log line shows that instead. Flag off: untouched.
     is_path = artifacts / "idea_status.yaml"
     try:
-        _sr_on = orch._specialist_readers_enabled()
+        _sr_on = orch._grid_route_enabled()
     except ValueError:
         _sr_on = False  # best-effort log line: a misconfigured flag fails run_loop, not this
     if _sr_on and is_path.exists():
@@ -2972,14 +2972,9 @@ def _regenerate_summary(queue: dict, dry_run: bool = False):
     if (ROOT / CLAIM_COVERAGE_REL).exists():
         import claim_card as _claim_card  # tools/ sibling; heavy, so imported only here
         lines += _claim_card.coverage_summary_lines(ROOT)
-    # E-068 slice 5: readers skipped by a code rule. Only when
-    # campaign_record/reader_skips.yaml exists (written only under
-    # orchestrator.reader_findings), so a summary without one is unchanged.
-    import reader_findings as _reader_findings  # tools/ sibling
-    lines += _reader_findings.skip_summary_lines(ROOT)
-    # E-072: side findings checked on unseen windows. Only when
-    # campaign_record/confirmations.yaml exists (written only under
-    # orchestrator.explore_confirm), so a summary without one is unchanged.
+    # E-072 / E-077: side findings checked on unseen windows and fold confirmations. Only when
+    # campaign_record/confirmations.yaml exists, so a summary without one is unchanged.
+    # (D-198: the "readers skipped" section went with campaign_record/reader_skips.yaml.)
     import explore_confirm as _explore_confirm  # tools/ sibling
     lines += _explore_confirm.summary_lines(ROOT)
     # D-077: the request files in one place. Only when one exists.
@@ -3569,11 +3564,9 @@ def _flag_readers() -> dict:
         "variant_selection_record": orch._variant_selection_record_enabled,
         "data_availability_gate": orch._data_availability_gate_enabled,
         "grid_evaluation": orch._grid_evaluation_enabled,
-        "category_reports": orch._category_reports_enabled,
         "profit_bars_file": orch._profit_bars_file_enabled,
         "config_direct_authoring": orch._config_direct_authoring_enabled,
         "variant_loop": orch._variant_loop_enabled,
-        "specialist_readers": orch._specialist_readers_enabled,
         "regroup_record": orch._regroup_record_enabled,
         "score_provenance": orch._score_provenance_enabled,  # C5.7b-1
         "profit_bars_every_backtest": orch._profit_bars_every_backtest_enabled,
@@ -3582,14 +3575,12 @@ def _flag_readers() -> dict:
         "verdict_routing_retired": orch._verdict_routing_retired_enabled,
         "composition_runs": orch._composition_runs_enabled,
         "variant_anti_adjacency_gate": orch._variant_anti_adjacency_gate_enabled,
-        "observable_backtest": orch._observable_backtest_enabled,  # E-073 (D-081)
         "cost_bar_all_costs": orch._cost_bar_all_costs_enabled,  # CUL-414 (D-082)
         "zero_trade_windows_not_computed": orch._zero_trade_windows_not_computed_enabled,  # CUL-415 (D-084)
         "folds": orch._folds_enabled,  # E-077 PR-1 (D-085)
         "analyst": orch._analyst_enabled,  # E-075 PR-5a (D-091)
         "forecast_size_probe": orch._forecast_size_probe_enabled,  # D-056
         "claim_tests": orch._claim_tests_enabled,  # E-068 slice 2
-        "reader_findings": orch._reader_findings_enabled,  # E-068 slice 5 (D-073)
         "nearest_build": orch._nearest_build_enabled,  # E-068 nearest build (D-075)
         "deviation_gate": orch._deviation_gate_enabled,  # lane 1 (D-104)
         "config_replay_gate": orch._config_replay_gate_enabled,  # lane 1 (D-109)
@@ -3598,7 +3589,6 @@ def _flag_readers() -> dict:
         "extra_cards_at_1a": orch._extra_cards_at_1a_enabled,  # D-138
         "forecast_ic_horizons": orch._forecast_ic_horizons_enabled,  # D-186
         "residual_ic_requires_block": orch._residual_ic_requires_block_enabled,  # D-186
-        "explore_confirm": orch._explore_confirm_enabled,  # E-072 (D-080)
         "dsr_same_structure": orch._dsr_same_structure_enabled,  # D-185
         "schedulability_block": _schedulability_block_enabled,
         "operator_approval": _operator_approval_enabled,  # E-068 PR 4 (D-071)
@@ -5353,10 +5343,10 @@ def _launch_queued_card(entry: dict, run_id: str) -> None:
                       completed_stages=["hypothesis_generation"], status="active")
     # The run skips 1a, so do what 1a's completion does: write pre_registration's
     # pass_rule from this card's criteria (a criteria_from-1a brief; no-op
-    # otherwise) and run the specialist_readers pre-flight. Without it the
+    # otherwise) and run the grid-route pre-flight. Without it the
     # pass_rule stays null and run_loop's pre-flight refuses the run (found on
     # C4 run_064, the first queued-card launch, 2026-10-02). Raises before spend.
-    orch._write_pass_rule_from_card(run_dir, run_id, orch._specialist_readers_enabled())
+    orch._write_pass_rule_from_card(run_dir, run_id, orch._grid_route_enabled())
 
 
 def _enqueue_queued_hypotheses(entry: dict, run_id: str, *,

@@ -134,34 +134,9 @@ flags:
       than on until a real menu-shaped run exists to prove it end-to-end.
       idea_status.yaml's validated/refuted/inconclusive ->
       promote/kill/human_pause mapping is read by a _resolve_verdict_fields
-      call site only under specialist_readers (E-046a 5b-ii-B, off by
-      default, see that entry); with specialist_readers off it is written
-      but not read.
-
-  - name: category_reports
-    kind: orchestrator_config
-    config_key: orchestrator.category_reports.enabled
-    reader: run_phase1_research._category_reports_enabled
-    owner: Jeremy
-    state: off_incomplete
-    blocked_on: "E-046a slice 5b (specialist readers -- the first real consumer of artifacts/reports/*.yaml)"
-    criterion: >
-      Landed 2026-09-21 (E-046a S5a, delivery_plan_v26.md "Slice 5 -- Reports
-      and readers"). Off by default: tools/build_reports.py is built and
-      tested (tests/test_e046a_category_reports.py) -- it re-projects
-      protocol_result.yaml / trade_diagnostics.json / each window's bars.csv
-      (this run's own output only; CUL-381 removed the campaign-level
-      regime_detector_report.yaml) into the five
-      artifacts/reports/*.yaml files, additive and inert on every current
-      run (no existing artifact changes shape or content either way).
-      Turning this on today would be additive and harmless, but the reports
-      it writes have no reader yet -- slice 5b's five specialist skills are
-      the first thing that consumes artifacts/reports/*.yaml -- so this is
-      held off_incomplete for "nothing would use it yet," the same reasoning
-      grid_evaluation above was held back for, not an unmet correctness
-      criterion. (2026-09-23: the first consumer, the specialist_readers
-      stage, now exists behind its own off-by-default flag -- see that
-      entry.)
+      call site only on the grid route (E-046a 5b-ii-B; D-198: keyed on
+      grid_evaluation, the specialist_readers flag having been deleted); with
+      grid_evaluation off it is not written.
 
   - name: profit_bars_file
     kind: orchestrator_config
@@ -201,7 +176,7 @@ flags:
     criterion: >
       Landed 2026-09-24 (branch 3 on every backtest, operator-approved the
       same day; code-review fixes the same day). Requires profit_bars_file
-      and regroup_record (hence specialist_readers); the run fails
+      and regroup_record (hence grid_evaluation); the run fails
       pre-flight otherwise. Off: byte-identical, promote-path check
       unchanged (golden fixtures from master 83794d9a). On: every variant
       tested on the attempt is graded right after protocol_execution
@@ -311,7 +286,7 @@ flags:
       authoring -> innovation_expansion's patches -> backtest_specification
       -> protocol_execution on the base variant) could not be attempted --
       no Gemini/Claude API key or network access was available in this
-      slice's build environment. Unlike grid_evaluation/category_reports
+      slice's build environment. Unlike grid_evaluation
       above (held back for "nothing would consume it yet"), this is an
       unmet PROOF criterion, not an unmet consumer criterion -- the code
       path has never been exercised end-to-end against a real model.
@@ -354,52 +329,21 @@ flags:
       against a real LLM authoring pass (no API/venv budget in this build
       environment -- see that flag's own entry).
 
-  - name: specialist_readers
-    kind: orchestrator_config
-    config_key: orchestrator.specialist_readers.enabled
-    reader: run_phase1_research._specialist_readers_enabled
-    owner: Jeremy
-    state: off_incomplete
-    blocked_on: "E-046a slice 5b run budget (2 real runs read by all five readers -- no API budget in slice 5b-ii-B's own environment)"
-    criterion: >
-      Landed 2026-09-23 (E-046a Slice 5b-ii-B). Off by default, and
-      hard-dependent on grid_evaluation and category_reports both being on
-      (raises loudly if set true without them -- see
-      _specialist_readers_enabled's own docstring). While true:
-      protocol_execution routes to the new specialist_readers stage (five
-      reader skills, one after another, each writing
-      artifacts/proposals/<category>.yaml through run_reader_worker's explicit
-      output path, validated fail-loud by tools/reader_proposals.py);
-      verdict_interpreter is unreached (not deleted); the route comes from
-      the grid only (component errors -> human_pause, then idea_status.yaml:
-      validated -> promote, refuted -> kill/terminate, inconclusive ->
-      human_pause inconclusive_grid). Unit tested with a mocked LLM
-      (tests/test_e046a_slice5b_ii_b_readers_stage.py), flag-off identity
-      proven there. Held off_incomplete for an unmet PROOF criterion: the
-      five reader prompts have never run against a real model, and the
-      delivery plan's slice-5 run budget (2 real runs) is unspent.
-      E-035 S2c (2026-09-27, slice 8.2, no new flag): under this same flag,
-      each reader's handoff lists the canonical feed names, and after the
-      proposals validate, each feed their optional requires_feed {feed,
-      reason} asks for that is not wired appends one row per run and feed
-      (stage specialist_reader, request acquisition or designation) to
-      campaign_record/data_requests.yaml through the locked, idempotent
-      appender; nothing is written, and the feed registry is not read, when
-      none carries it (tests/test_e035_s2c_feed_requests.py).
-
   - name: regroup_record
     kind: orchestrator_config
     config_key: orchestrator.regroup_record.enabled
     reader: run_phase1_research._regroup_record_enabled
     owner: Jeremy
     state: off_incomplete
-    blocked_on: "the specialist_readers run budget it sits behind (no run on disk has idea_status.yaml / grid_evaluation.yaml yet); block_manifest.yaml is written only by stage 1b under config_direct_authoring (E-056 1b block manifest, 2026-09-24), so the registry stays empty without that flag"
+    blocked_on: "the grid route it sits behind (no run on disk has idea_status.yaml / grid_evaluation.yaml yet); block_manifest.yaml is written only by stage 1b under config_direct_authoring (E-056 1b block manifest, 2026-09-24), so the registry stays empty without that flag"
     criterion: >
       Landed 2026-09-23 (E-058 S2a, delivery_plan_v26.md slice 6a first
-      half). Off by default, and hard-dependent on specialist_readers being
-      on (raises loudly if set true without it -- see
-      _regroup_record_enabled's own docstring). While true:
-      specialist_readers -> regroup_record -> the unchanged grid route;
+      half). Off by default, and hard-dependent on grid_evaluation being
+      on (D-198: it required specialist_readers, deleted with the five readers
+      and itself dependent on the grid; raises loudly if set true without it --
+      see _regroup_record_enabled's own docstring). While true:
+      protocol_execution / analyst -> regroup_record -> the unchanged grid route
+      (and artifacts/registry_summary.yaml is written here, D-198);
       regroup_record writes one entry per run to
       campaign_record/campaign_memory.yaml (tools/campaign_memory.py),
       replaced on re-run, and writes no trial rows. Unit tested with
@@ -426,7 +370,7 @@ flags:
       Landed 2026-09-24 (E-059 S2a, delivery_plan_v26.md slice 6b core;
       engineering/roadmap/E-059/S1_FINDINGS_6B.md + operator decision).
       Off by default; raises if set true without regroup_record (hence
-      specialist_readers, grid_evaluation, category_reports) and
+      grid_evaluation) and
       config_direct_authoring (every picked candidate writes its criteria
       at step 1a from the criterion menu, operator decision 2). While true,
       in run_campaign.process_once's DONE branch: outcome := the grid's
@@ -585,8 +529,8 @@ flags:
     blocked_on: "C4's first real reader output, which measures what AssistantMessage.model returns for the worker model (claude-haiku-5-5 since D-135) and the citation unresolved rate that decides A+/B (D-048 / C5_7B G10); C5.7b-1 and C5.7b-2 are built"
     criterion: >
       Landed 2026-09-29 (C5.7b-1, D-048; engineering/review_2026-09-27/
-      C5_7B_PROVENANCE_S1.md slices S0+S1+S3). Requires specialist_readers; the
-      run fails pre-flight otherwise, and a non-bool value is refused. Off:
+      C5_7B_PROVENANCE_S1.md slices S0+S1+S3). D-198: no dependency (it required
+      specialist_readers); a non-bool value is refused. Off:
       byte-identical -- no capture, reader files, extra_card_scores.yaml and
       audit-log entries unchanged. On: model_id on reader proposals and
       brief-card scores is stamped by code with the model that answered
@@ -670,71 +614,6 @@ flags:
       Information only; no prompt reads either yet. Tested by
       tests/test_e068_4_findings.py.
 
-  - name: reader_findings
-    kind: orchestrator_config
-    config_key: orchestrator.reader_findings.enabled
-    reader: run_phase1_research._reader_findings_enabled
-    owner: Jeremy
-    state: off_incomplete
-    blocked_on: "claim_tests and specialist_readers (reader_findings requires both); the first real run with the flag on measures the v3 readers (cost, skips, side findings)"
-    criterion: >
-      Landed 2026-10-05 (E-068 slice 5, CUL-403, D-073). Off: byte-identical --
-      the v2 reader SKILLs, handoffs, prompts, validation and proposal files
-      are untouched (a v3 file already on disk still loads: v2 and v3
-      coexist). On (requires claim_tests and specialist_readers): readers v3
-      (short SKILLs in workflow_artifacts/skills/readers_v3/ plus
-      READING_CONTRACT.md; CLAIM_TESTS.md replaces the design guide, the
-      catalogue stays; inputs add claim_measurement.yaml,
-      artifacts/claim_result_digest.yaml and
-      artifacts/findings_summary_for_readers.yaml). Code skip rules
-      (regime_power on a scaffolding or constant detector, component_attribution
-      with at most one component) write a `skipped` reading with the rule,
-      counted in campaign_record/reader_skips.yaml and the campaign summary.
-      One reading per reader: explanation, 0-2 side findings (claim blocks,
-      check_claim), at most one patch (resolved against the base config,
-      never on scaffolding); no verdict field. decide_next takes side
-      findings as candidates with candidate.claim pre-filled (1a gets
-      hypothesis-design/PREFILLED_CLAIM.md; a change is recorded in
-      artifacts/claim_prefill.yaml). Repeated spec_hash and blind block
-      claims are warnings only. Tested by tests/test_e068_5_readers_v3.py.
-
-  - name: observable_backtest
-    kind: orchestrator_config
-    config_key: orchestrator.observable_backtest.enabled
-    reader: run_phase1_research._observable_backtest_enabled
-    owner: Jeremy
-    state: off_incomplete
-    blocked_on: "reader_findings (observable_backtest requires it) and E-073's later steps (E-029, E-027); the operator switches it on with reader_findings for the next readers run"
-    criterion: >
-      Landed 2026-10-08 (E-073 step 1, P-CUL-81, D-081). The epic's one flag.
-      Off: byte-identical -- the v3 readers' handoffs and prompts are
-      untouched. On (requires reader_findings): docs/DATA_DICTIONARY_READERS.md,
-      the readers' subset of docs/DATA_DICTIONARY.md generated by
-      tools/data_dictionary.py (every field the readers' files carry: meaning,
-      unit, the code that writes it, known at the bar's close or only after
-      the fact; audit findings; what is not recorded), is an extra required
-      input of every v3 reader, with one line telling the reader to look a
-      field up before citing it. Tested by tests/test_e073_data_dictionary.py
-      (full field paths derived from the code that writes each field; the
-      subset regenerated).
-      Step 2 (2026-10-08, D-083): on, each `path=value` a v3 reading cites is
-      checked against the files the reader received (the exploration copies
-      under explore_confirm; reader_proposals.check_citation_values: a number
-      rounded to the decimals written, within half a unit of its last digit,
-      a 0 with fewer than 2 decimals only |x| < 0.005, any other number form
-      not checked; text the file's whole text, ignoring case); a missing or
-      mis-valued citation gets the reader's one retry with a code-written
-      list (path, cited value, problem -- never a file's value; real paths
-      suggested for a missing one; the retry answer kept only with strictly
-      fewer bad citations and the same side findings), and if still wrong the
-      reading is kept and the citation recorded
-      (artifacts/citation_checks/<category>.yaml; decide-next warning
-      citation_mismatch). Side findings with the same claim kind, tests and config change
-      are merged (artifacts/side_finding_merges.yaml): one confirmation
-      record and look, one decide-next candidate with the first source's
-      scores, never agreement. Off: byte-identical. Tested by
-      tests/test_e073_citations_dedup.py.
-
   - name: zero_trade_windows_not_computed
     kind: orchestrator_config
     config_key: orchestrator.zero_trade_windows_not_computed.enabled
@@ -782,7 +661,7 @@ flags:
       tests and folds, the reading checks); the other three categories are code-skipped
       (replaced_by_analyst). D-197 (2026-10-26): the analyst is a stage of its own and no
       longer requires specialist_readers or reader_findings (nor category_reports); it
-      still requires folds and refuses explore_confirm. Tested by
+      still requires folds (D-198: those three flags and explore_confirm are deleted). Tested by
       tests/test_e075_pr5_analyst.py with a stubbed session and
       tests/test_d197_analyst_own_stage.py.
 
@@ -822,7 +701,7 @@ flags:
       and writes one row (confirmed / not_confirmed / not_measurable / not_comparable;
       a noise rule, about 11% per fold for a null claim, no cost) to
       campaign_record/confirmations.yaml `fold_confirmations`; explore_confirm's in-run
-      route and weak follow-up resolution are unreachable. Off: byte-identical. Tested
+      route and weak follow-up resolution were deleted (D-198). Off: byte-identical. Tested
       by tests/test_e077_pr2_confirm.py.
 
   - name: operator_approval
@@ -991,32 +870,6 @@ flags:
       from residual IC (reason "no forecast block on this timeframe",
       _residual_ic_exempt_reason): code does not add the criterion and the grid drops
       it, as for a regime block. Tested by tests/test_d186_forecast_ic_horizons.py.
-  - name: explore_confirm
-    kind: orchestrator_config
-    config_key: orchestrator.explore_confirm.enabled
-    reader: run_phase1_research._explore_confirm_enabled
-    owner: Jeremy
-    state: off_incomplete
-    blocked_on: "reader_findings and variant_loop (explore_confirm requires both); the first real run with the flag on shows the readers' exploration copies and the first confirmation records"
-    criterion: >
-      Landed 2026-10-08 (E-072, P-CUL-80, D-080). Off: byte-identical -- no
-      split, no artifacts/exploration/, the readers' handoffs, prompts and the
-      stage are untouched. On (requires reader_findings and variant_loop): the
-      protocol windows are split before the backtests
-      (artifacts/explore_confirm.yaml: first half in time order = exploration,
-      the rest = confirmation); the readers read only exploration-window
-      copies of every input carrying a result (artifacts/exploration/:
-      reports, grid -- window criteria re-reduced, pooled criteria and the
-      idea status withheld --, the claim digest measured again, earlier
-      findings and registry summary with numbers withheld) plus
-      readers_v3/EXPLORATION.md; after the readers each side finding is
-      measured on the confirmation windows (pure: same run; block claim:
-      pending until the run built from it) and recorded as
-      confirmation_sign_retained true | false | pending in
-      artifacts/confirmation.yaml and campaign_record/confirmations.yaml,
-      which counts the looks per confirmation set (shown in the campaign
-      summary). Information only. Tested by tests/test_e072_explore_confirm.py.
-
   - name: cost_bar_all_costs
     kind: orchestrator_config
     config_key: orchestrator.cost_bar_all_costs.enabled

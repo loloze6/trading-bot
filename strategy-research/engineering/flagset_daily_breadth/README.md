@@ -37,20 +37,16 @@ Every orchestrator flag after the edit:
 | `profit_bars_file` | on | branch 3: the signed bars file |
 | `profit_bars_every_backtest` | on | branch 3 on every backtest (profit-bar flag) |
 | `profit_bars_v2` | on | whole-test bars as signed (D-118..D-120, D-127) |
-| `category_reports` | on | required by specialist_readers |
 | `data_availability_gate` | on | per variant, before any backtest |
 | `config_direct_authoring` | on | 1b writes the config; variants are patches |
 | `variant_loop` | **on** | see above |
-| `specialist_readers` | on | the analyst replaces its reader lenses (prerequisite) |
 | `regroup_record` | on | writes memory and registers validated blocks (branch 1) |
-| `score_provenance` | on | requires specialist_readers |
+| `score_provenance` | on | stamps the brief-card scores' model id |
 | `decide_next` | on | picks the next run after each one |
 | `verdict_routing_retired` | on | the grid and the bars decide, no refine/pivot/kill route |
 | `composition_runs` | **on** | see above; prerequisites decide_next, variant_loop, profit_bars_every_backtest, verdict_routing_retired are all on |
 | `forecast_size_probe` | on | per-config diagnostic |
-| `claim_tests` | on | prerequisite of reader_findings and the analyst's claims |
-| `reader_findings` | on | analyst prerequisite (D-091/D-092) |
-| `observable_backtest` | off | not asked for |
+| `claim_tests` | on | prerequisite of the analyst's claims |
 | `zero_trade_windows_not_computed` | off | not asked for |
 | `analyst` | **on** | see above |
 | `folds` | on | child runs draw a fold at random (D-123); analyst prerequisite |
@@ -60,7 +56,6 @@ Every orchestrator flag after the edit:
 | `config_replay_gate` | on | acts only on a brief with an exact config (this brief has none) |
 | `exact_config_1b` | on | same: only for an exact-config brief |
 | `brief_criteria` | **on** | see above |
-| `explore_confirm` | off | D-093 |
 | `cost_bar_all_costs` | on | declared output change already in force |
 
 Other consequences, read from the code:
