@@ -1,0 +1,29 @@
+- proposal_id: trade_efficiency-run_070-1
+  kind: patch
+  patch:
+  - component_id: shock_reversal
+    field: params.period
+    before: 1
+    after: 2
+  evidence:
+  - 'variants.base.slices.overall.trade_less_often: boundary_recross_rate=0.9926 and
+    frequency_vs_volatility_ratio=3696 indicate trading frequency ~3700x higher than
+    volatility regime warrants (expected ratio ~1.0), causing constant whipsawing
+    at entry/exit boundary'
+  - 'variants.base.slices.overall: exit_efficiency_median=-0.0266 obscures exit_efficiency_mean=-0.5718;
+    pct_pnl_from_worst_decile_trades=140.65% with signal_flip_pct=99.16% show worst
+    trades held until signal reversal, driven by 1-bar period oscillation crossing
+    position threshold repeatedly before final flip'
+  - 'per_window consistency (all 6 windows 2022-01 through 2023-09): boundary_recross_rate
+    >=0.9926 in every window, exit_efficiency_mean ranges -0.38 to -0.86, confirming
+    high-frequency oscillation pattern is systematic across entire backtest period'
+  - 'Cross-variant: shock_lookback_250 design variant shows boundary_recross_rate=0.9929
+    (nearly identical oscillation), asset variants sol_generalization and uni_defi
+    show degraded exit_efficiency (medians -0.1149 and -0.1183 vs base -0.0266), indicating
+    1-bar period sensitivity harms both base signal and cross-asset generalization'
+  scores:
+    confidence_real: 3
+    distance_to_profitable: 2
+    mechanism_plausibility: 3
+  model_id: claude-haiku-4-5-20251001
+  rubric_version: trade_efficiency-reader-v2
