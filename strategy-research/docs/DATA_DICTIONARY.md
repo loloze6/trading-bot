@@ -587,6 +587,7 @@ Effect sizes are on bars after the fact: `after`.
 | `tests[].selector` | Which bars (card spec; reads bar t only, `CT:SELECTORS`). | map | `RF:claim_result_digest` | meta |
 | `tests[].outcome` | The forward outcome and horizons (card spec, `CT:OUTCOMES`). | map | `RF:claim_result_digest` | meta |
 | `tests[].baseline` | Reference bars (card spec, `CT:BASELINES`). | map | `RF:claim_result_digest` | meta |
+| `tests[].signal` | The bars.csv forecast column the test reads (D-193); written only when the card's test names a signal other than `forecast`. | text | `RF:claim_result_digest`, `CT:signal_errors` | meta |
 | `claim_status` | Run status from claim_measurement.yaml (`absent` without one). | label | `RF:claim_result_digest` | run |
 | `reason` | Its reason. | text | `RF:claim_result_digest` | meta |
 | `variants.<variant>.status` | `measured`, `no_events` or `not_measured`. | label | `RF:_variant_digest` | run |
@@ -724,6 +725,8 @@ bar t, plus bar t-1 where stated, never a later bar):
 these columns, as on any other.
 
 Claim fields: a claim selector reads forecast, close, past_return, trailing_vol, abs_forecast or forecast_sign_change; a trade test's outcome is trade_net_return, post_exit_return or trade_gross_return (see CLAIM_TESTS.md). allocation_abs, trade_cost_pct and the window_economics figures are not claim fields.
+
+**The `signal` key** (D-193; optional on a bar claim test, on `conditional_effect` and, for the derived columns `abs_forecast` and `forecast_sign_change`, on `describe` / `distribution`; default `forecast`). A test reads the forecast array of its signal: `forecast`, or any `bars.csv` column of section 1 whose Unit is `forecast` and whose When known is `close` or `fill` (today the component columns `debug_info.components.<component>.post_pipeline_value` and `.weighted_contribution`, and `debug_info.forecast_delta`). The allowed values are read from the Unit column of that table, not from a list in code. A component the variant does not have is refused ("no component <id> in this variant"). A trade test takes no signal. The key is written into a test block only when it is not `forecast`.
 <!-- /readers: omit -->
 ## Not recorded today
 
