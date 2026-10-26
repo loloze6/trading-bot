@@ -137,9 +137,10 @@ def _variant_doc(vid: str, tested: bool, *, base_figures: bool, economics: bool 
     if not tested:
         return {"kind": "variant", "trial_id": f"run_980:{vid}", "result": "NOT_TESTED",
                 "reason": "not tested", "bars": [], "reasons": []}
-    bars = [{"name": "sharpe_min", "threshold": 0.0, "actual": BASE["sharpe"], "result": "FAIL"},
+    bars = [{"name": "sharpe_min", "threshold": 0.0, "actual": BASE["sharpe"], "result": "FAIL",
+             "basis": rpr._BASIS_V2["sharpe_min"]},
             {"name": "max_drawdown_pct_max", "threshold": 20.0, "actual": BASE["max_dd"],
-             "result": "FAIL", "advisory": True},
+             "result": "FAIL", "advisory": True, "basis": rpr._BASIS_V2["max_drawdown_pct_max"]},
             {"name": "trade_frequency_min", "threshold": 0.01, "actual": 0.3, "result": "PASS"}]
     doc = {"kind": "variant", "trial_id": f"run_980:{vid}", "result": "FAIL", "reason": None,
            "bars": bars, "reasons": []}
@@ -154,7 +155,7 @@ def _variant_doc(vid: str, tested: bool, *, base_figures: bool, economics: bool 
 
 
 def _write_evaluation(run_dir: Path, entry: dict, *, drop_base: bool = False,
-                      economics: bool = True, shape: bool = True) -> None:
+                      economics: bool = True, shape: bool = True, v2: bool = True) -> None:
     graded = {}
     for vid, v in entry["variants"].items():
         graded[vid] = _variant_doc(vid, v["status"] == "tested", base_figures=(vid == "base"),
@@ -164,7 +165,13 @@ def _write_evaluation(run_dir: Path, entry: dict, *, drop_base: bool = False,
     if drop_base:                      # an evaluation with no `base` variant at all
         graded.pop("base")
     doc = {"run_id": "run_980", "generated_at": "t", "scope": cm.PROFIT_BARS_SCOPE_EVERY_BACKTEST,
-           "bars_definitions": "v2", "variants": graded, "passing": [], "result": "FAIL"}
+           "variants": graded, "passing": [], "result": "FAIL"}
+    if v2:  # a v1 evaluation has no bars_definitions key and (here) its rows carry the v1 basis
+        doc["bars_definitions"] = rpr.PROFIT_BARS_DEFINITIONS_V2
+    else:
+        for b in graded.get("base", {}).get("bars", []):
+            b["basis"] = {"sharpe_min": "median_of_coin_median_sharpes",
+                          "max_drawdown_pct_max": rpr._BASIS_PORTFOLIO_WORST_WINDOW}.get(b["name"], "x")
     (run_dir / "artifacts" / "profit_bars_evaluation.yaml").write_text(
         yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
 
@@ -186,7 +193,7 @@ def test_entry_carries_the_five_figures_read_from_the_evaluation():
     entry = cm.build_memory_entry(run_dir, "run_980", profit_bars_evaluated=True, **kw)
     assert entry["base_book"] == {
         "sharpe": BASE["sharpe"], "max_drawdown_pct": BASE["max_dd"],
-        "mean_abs_allocation": BASE["shape_alloc"],      # forecast_shape first, not window_economics
+        "mean_abs_allocation": BASE["econ_alloc"],       # window_economics first, not forecast_shape
         "turnover_annualised": BASE["turnover"], "median_holding_bars": BASE["median"]}
     # nothing else on the entry moved
     assert {k: v for k, v in entry.items() if k not in ("base_book", "profit_bars", "profit_bars_reason")} \
@@ -197,14 +204,60 @@ def test_entry_carries_the_five_figures_read_from_the_evaluation():
     jsonschema.Draft202012Validator({"$ref": "#/$defs/entry", "$defs": schema["$defs"]}).validate(entry)
 
 
-def test_missing_figures_are_null_and_allocation_falls_back_to_window_economics():
+def test_v1_evaluation_gives_null_sharpe_and_drawdown_the_rest_still_copy():
+    run_dir, kw, plain = _seed_entry_inputs()
+    _write_evaluation(run_dir, plain, v2=False)
+    book = cm.build_memory_entry(run_dir, "run_980", profit_bars_evaluated=True, **kw)["base_book"]
+    assert book == {"sharpe": None, "max_drawdown_pct": None,
+                    "mean_abs_allocation": BASE["econ_alloc"],
+                    "turnover_annualised": BASE["turnover"], "median_holding_bars": BASE["median"]}
+
+
+def test_basis_guard_needs_both_the_v2_marker_and_the_row_basis():
+    run_dir, kw, plain = _seed_entry_inputs()
+    path = run_dir / "artifacts" / "profit_bars_evaluation.yaml"
+    _write_evaluation(run_dir, plain)
+    good = yaml.safe_load(path.read_text(encoding="utf-8"))
+    # bars_definitions v2 but a row whose own basis is not the whole-test one: that row is null
+    doc = copy.deepcopy(good)
+    for b in doc["variants"]["base"]["bars"]:
+        if b["name"] == "sharpe_min":
+            b["basis"] = "median_of_coin_median_sharpes"
+    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+    book = cm.base_book_block(run_dir, "run_980")
+    assert book["sharpe"] is None and book["max_drawdown_pct"] == BASE["max_dd"]
+    # a v2-basis row with no top-level marker (or a v1 marker): both null
+    for mutate in (lambda d: d.pop("bars_definitions"), lambda d: d.update(bars_definitions="v1")):
+        doc = copy.deepcopy(good)
+        mutate(doc)
+        path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+        book = cm.base_book_block(run_dir, "run_980")
+        assert book["sharpe"] is None and book["max_drawdown_pct"] is None
+    # a row with no basis at all (a flag-off writer): null
+    doc = copy.deepcopy(good)
+    for b in doc["variants"]["base"]["bars"]:
+        b.pop("basis", None)
+    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+    assert cm.base_book_block(run_dir, "run_980")["sharpe"] is None
+
+
+def test_mirrored_basis_literals_match_the_writers_constants():
+    assert cm.WHOLE_TEST_BARS_DEFINITIONS == rpr.PROFIT_BARS_DEFINITIONS_V2
+    assert cm.WHOLE_TEST_BOOK_BASIS == {n: rpr._BASIS_V2[n] for n in
+                                        ("sharpe_min", "max_drawdown_pct_max")}
+
+
+def test_missing_figures_are_null_and_allocation_prefers_window_economics():
     run_dir, kw, plain = _seed_entry_inputs()
     _write_evaluation(run_dir, plain, economics=False)                # analyst flag off
     book = cm.build_memory_entry(run_dir, "run_980", profit_bars_evaluated=True, **kw)["base_book"]
     assert book == {"sharpe": BASE["sharpe"], "max_drawdown_pct": BASE["max_dd"],
-                    "mean_abs_allocation": BASE["shape_alloc"],
+                    "mean_abs_allocation": BASE["shape_alloc"],     # fallback: window_economics absent
                     "turnover_annualised": None, "median_holding_bars": None}
     _write_evaluation(run_dir, plain, shape=False)                    # no forecast_shape
+    book = cm.build_memory_entry(run_dir, "run_980", profit_bars_evaluated=True, **kw)["base_book"]
+    assert book["mean_abs_allocation"] == BASE["econ_alloc"]
+    _write_evaluation(run_dir, plain)                                 # both: window_economics wins
     book = cm.build_memory_entry(run_dir, "run_980", profit_bars_evaluated=True, **kw)["base_book"]
     assert book["mean_abs_allocation"] == BASE["econ_alloc"]
     _write_evaluation(run_dir, plain, economics=False, shape=False)
@@ -244,7 +297,7 @@ def test_memory_with_old_and_new_entries_loads_and_the_view_passes_the_figures_t
     keys = ["base_sharpe", "base_max_drawdown_pct", "base_mean_abs_allocation",
             "base_turnover_annualised", "base_median_holding_bars"]
     assert [rows["run_980"][k] for k in keys] == [
-        BASE["sharpe"], BASE["max_dd"], BASE["shape_alloc"], BASE["turnover"], BASE["median"]]
+        BASE["sharpe"], BASE["max_dd"], BASE["econ_alloc"], BASE["turnover"], BASE["median"]]
     row_keys = list(rows["run_980"])
     assert row_keys[row_keys.index("variants_tested") + 1:][:5] == keys
     # the old entry: no key at all, row exactly as before

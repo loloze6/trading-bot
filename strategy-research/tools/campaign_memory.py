@@ -532,8 +532,14 @@ def profit_bars_block(run_dir: Path, run_id: str, variants: dict) -> dict:
 # into the tried_ideas row as base_<field>. Record key -> entry key:
 #   sharpe               <- variants.base.bars[name=sharpe_min].actual
 #   max_drawdown_pct     <- variants.base.bars[name=max_drawdown_pct_max].actual
-#   mean_abs_allocation  <- variants.base.forecast_shape.abs_mean_allocation, else
-#                           variants.base.window_economics.total.mean_abs_allocation
+#     ... both ONLY when the record itself says whole-test book: the evaluation's top-level
+#     `bars_definitions` is "v2" (orchestrator.profit_bars_v2) AND the row's own `basis` is
+#     the v2 whole-test basis string below. Under v1 sharpe_min is the median of the coins'
+#     median Sharpes and the drawdown is the worst window's, so they are not the book:
+#     null. Never inferred from config.
+#   mean_abs_allocation  <- variants.base.window_economics.total.mean_abs_allocation (ready
+#                           bars, the same basis as turnover and holding bars), else
+#                           variants.base.forecast_shape.abs_mean_allocation (fallback only)
 #   turnover_annualised  <- variants.base.window_economics.total.turnover_annualised
 #   median_holding_bars  <- variants.base.window_economics.total.median_holding_bars
 # window_economics is written only under orchestrator.analyst.enabled, so those two can be
@@ -544,6 +550,12 @@ BASE_VARIANT_ID = "base"
 BASE_BOOK_FIELDS = ("sharpe", "max_drawdown_pct", "mean_abs_allocation",
                     "turnover_annualised", "median_holding_bars")
 TRIED_IDEAS_BASE_PREFIX = "base_"
+# What a v2 evaluation records (workflow/run_phase1_research.py PROFIT_BARS_DEFINITIONS_V2 and
+# _BASIS_V2): the string literals are mirrored here, not imported (tools/ does not import the
+# workflow), and pinned by a test against the writer's own constants.
+WHOLE_TEST_BARS_DEFINITIONS = "v2"
+WHOLE_TEST_BOOK_BASIS = {"sharpe_min": "portfolio_equal_weight_whole_test_chained_daily_sharpe",
+                         "max_drawdown_pct_max": "portfolio_equal_weight_whole_test_chained"}
 
 
 def _record_number(value):
@@ -564,15 +576,22 @@ def base_book_block(run_dir: Path, run_id: str) -> dict | None:
     base = graded.get(BASE_VARIANT_ID) if isinstance(graded, dict) else None
     if not isinstance(base, dict):
         return None
-    actual = {b.get("name"): b.get("actual") for b in (base.get("bars") or []) if isinstance(b, dict)}
+    rows = {b.get("name"): b for b in (base.get("bars") or []) if isinstance(b, dict)}
+    whole_test = doc.get("bars_definitions") == WHOLE_TEST_BARS_DEFINITIONS
+
+    def _book_actual(name):  # whole-test book figure only when the record says that basis
+        row = rows.get(name) or {}
+        ok = whole_test and row.get("basis") == WHOLE_TEST_BOOK_BASIS[name]
+        return _record_number(row.get("actual")) if ok else None
+
     shape = base.get("forecast_shape") if isinstance(base.get("forecast_shape"), dict) else {}
     econ = base.get("window_economics") if isinstance(base.get("window_economics"), dict) else {}
     total = econ.get("total") if isinstance(econ.get("total"), dict) else {}
-    mean_abs = _record_number(shape.get("abs_mean_allocation"))
+    mean_abs = _record_number(total.get("mean_abs_allocation"))
     if mean_abs is None:
-        mean_abs = _record_number(total.get("mean_abs_allocation"))
-    return {"sharpe": _record_number(actual.get("sharpe_min")),
-            "max_drawdown_pct": _record_number(actual.get("max_drawdown_pct_max")),
+        mean_abs = _record_number(shape.get("abs_mean_allocation"))
+    return {"sharpe": _book_actual("sharpe_min"),
+            "max_drawdown_pct": _book_actual("max_drawdown_pct_max"),
             "mean_abs_allocation": mean_abs,
             "turnover_annualised": _record_number(total.get("turnover_annualised")),
             "median_holding_bars": _record_number(total.get("median_holding_bars"))}
@@ -889,7 +908,9 @@ TRIED_IDEAS_NOTE = (
     "A row from a run that graded a base variant also carries that variant's whole-test "
     "book as the run recorded it: base_sharpe, base_max_drawdown_pct (percent), "
     "base_mean_abs_allocation, base_turnover_annualised, base_median_holding_bars "
-    "(null for a figure the run did not record; older rows carry none of them). "
+    "(null for a figure the run did not record; base_sharpe and base_max_drawdown_pct are "
+    "null unless the run graded on the whole-test book definitions; older rows carry none "
+    "of them). "
     "No family grouping: an idea's identity is its hypothesis_id. Derived fresh from "
     "the memory for this stage; never edited by hand."
 )
