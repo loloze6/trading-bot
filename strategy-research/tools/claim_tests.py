@@ -295,6 +295,7 @@ class Window:
     low: np.ndarray | None = None
     warm: dict | None = None
     signal: dict | None = None
+    forecast_column: str = "forecast"      # D-193: the bars.csv column `forecast` was read from
 
     def __post_init__(self):
         n = len(self.ts)
@@ -343,7 +344,76 @@ def _float(v) -> float:
         return float("nan")
 
 
-def read_bars_csv(path: Path, symbol: str, window: str) -> Window:
+# D-193 (declared tool change, no flag, D-143 precedent): the optional test key `signal`.
+# "forecast" (default) is the strategy's final forecast; any other value is a bars.csv column
+# the data dictionary types with unit `forecast` and a `close` or `fill` time (a feature,
+# known at the bar's close: a component's sub-forecast). The key is applied where a window's
+# forecast array is read (read_bars_csv); every selector, statistic, floor and window
+# agreement then reads that array unchanged. Unused (default), nothing below differs.
+DEFAULT_SIGNAL = "forecast"
+_COMPONENT_COLUMN_PREFIX = ("debug_info", "components")
+
+
+def signal_component_id(column) -> str | None:
+    """The component id of a `debug_info.components.<component>.<field>` column, else None."""
+    parts = column.split(".") if isinstance(column, str) else []
+    if len(parts) >= 4 and tuple(parts[:2]) == _COMPONENT_COLUMN_PREFIX:
+        return parts[2]
+    return None
+
+
+def signal_missing_message(column: str) -> str:
+    """The refusal for a signal column the variant's bars.csv does not hold: for a component
+    column, exactly "no component <id> in this variant"."""
+    cid = signal_component_id(column)
+    return (f"no component {cid} in this variant" if cid is not None
+            else f"signal column {column!r} is not a column of this variant's bars.csv")
+
+
+_DICTIONARY_CACHE: dict = {}
+
+
+def _bars_dictionary() -> list:
+    """The bars.csv table of docs/DATA_DICTIONARY.md (tools/analyst_queries.py loads it;
+    imported here, not at the top, because that module imports this one)."""
+    if "rows" not in _DICTIONARY_CACHE:
+        import analyst_queries as aq
+        _DICTIONARY_CACHE["rows"] = aq.load_bars_dictionary()
+    return _DICTIONARY_CACHE["rows"]
+
+
+def signal_errors(signal) -> list[str]:
+    """Why `signal` is not an allowed test signal; [] when it is. Allowed: "forecast", or a
+    bars.csv column the data dictionary types with unit `forecast` and a `close`/`fill`
+    time. Resolved from the dictionary (analyst_queries.load_bars_dictionary), never a
+    hard-coded list: a new dictionary row of that unit is allowed with no code change."""
+    if signal == DEFAULT_SIGNAL:
+        return []
+    if not isinstance(signal, str) or not signal.strip():
+        return [f"signal: must be {DEFAULT_SIGNAL!r} or a bars.csv column name, got {signal!r}"]
+    import analyst_queries as aq
+    row = aq.dictionary_row(_bars_dictionary(), signal)
+    if row is None:
+        return [f"signal: {signal!r} is not a column of the data dictionary"]
+    if row["unit"] != "forecast" or row["role"] != "feature":
+        return [f"signal: {signal!r} is typed {row['unit']!r} (known {row['when']!r}) in the "
+                f"data dictionary; a signal is {DEFAULT_SIGNAL!r} or a column of unit "
+                f"'forecast' known at the bar's close"]
+    return []
+
+
+def _signal_array(rows: list, signal: str) -> np.ndarray:
+    """The forecast array a window reads: the `forecast` column, or the signal column."""
+    if signal != DEFAULT_SIGNAL:
+        errs = signal_errors(signal)
+        if errs:
+            raise ValueError("; ".join(errs))
+        if signal not in rows[0]:
+            raise ValueError(signal_missing_message(signal))
+    return np.array([_float(r.get(signal)) for r in rows])
+
+
+def read_bars_csv(path: Path, symbol: str, window: str, signal: str = DEFAULT_SIGNAL) -> Window:
     raw = Path(path).read_bytes()
     rows = list(csv.DictReader(raw.decode("utf-8").splitlines()))
     if len(rows) < 2:
@@ -353,11 +423,24 @@ def read_bars_csv(path: Path, symbol: str, window: str) -> Window:
     close = np.array([_float(r["close"]) for r in rows])
     has_hl = "high" in rows[0] and "low" in rows[0]
     return Window(symbol=symbol, window=window, ts=ts, close=close,
-                  forecast=np.array([_float(r.get("forecast")) for r in rows]),
+                  forecast=_signal_array(rows, signal),
                   regime=np.array([r.get("regime") or "" for r in rows], dtype=object),
                   step=step, source=str(path), sha256=hashlib.sha256(raw).hexdigest(),
                   high=np.array([_float(r["high"]) for r in rows]) if has_hl else None,
-                  low=np.array([_float(r["low"]) for r in rows]) if has_hl else None)
+                  low=np.array([_float(r["low"]) for r in rows]) if has_hl else None,
+                  forecast_column=signal)
+
+
+def window_with_signal(w: Window, signal: str) -> Window:
+    """`w` with its forecast array read from the `signal` column of its own bars.csv. A window
+    already read from that column is returned as it is (the default on a default window: no
+    file is touched). A window with no source file cannot change signal."""
+    if getattr(w, "forecast_column", DEFAULT_SIGNAL) == signal:
+        return w
+    if not w.source:
+        raise ValueError(f"{w.label}: no bars.csv to read the signal {signal!r} from")
+    return replace(w, forecast=read_bars_csv(Path(w.source), w.symbol, w.window, signal).forecast,
+                   forecast_column=signal)
 
 
 def read_warmup(cache_path: Path, first_ts: int, step: int, n_bars: int) -> dict:
@@ -838,11 +921,12 @@ class TestSpec:
     alpha: float = 0.05
     consistency: dict | None = None
     significance: dict = field(default_factory=lambda: dict(DEFAULT_SIGNIFICANCE))
+    signal: str = DEFAULT_SIGNAL            # D-193: "forecast" or a unit-`forecast` column
 
     @classmethod
     def from_dict(cls, d: dict) -> "TestSpec":
         known = {"selector", "outcome", "baseline", "statistic", "direction",
-                 "floor", "alpha", "consistency", "significance"}
+                 "floor", "alpha", "consistency", "significance", "signal"}
         unknown = set(d) - known - {"name"}
         if unknown:
             raise ValueError(f"unknown spec keys: {sorted(unknown)}")
@@ -868,6 +952,10 @@ def spec_hash(spec: TestSpec) -> str:
     """Identity of a test: sha256 of canonical JSON (keys sorted, numbers as
     floats, horizons sorted). Key order and 12 vs 12.0 do not change it."""
     d = asdict(spec)
+    if d.get("signal") == DEFAULT_SIGNAL:
+        # D-193: the default signal is not part of the identity, so every hash written
+        # before the key existed is unchanged
+        d.pop("signal")
     d["outcome"] = dict(d["outcome"], horizons=sorted(d["outcome"].get("horizons") or []))
     sel = d.get("selector")
     if isinstance(sel, dict) and sel.get("kind") == TRADE_SELECTOR:
@@ -1031,7 +1119,10 @@ def check_spec(spec: TestSpec, trade_tests: bool = False) -> list[str]:
                  or (isinstance(spec.baseline, dict)
                      and spec.baseline.get("kind") in TRADE_BASELINES))
         if is_trade:
-            return _check_trade_head(spec) + _check_tail(spec)
+            return _check_trade_head(spec) + _check_tail(spec) + (
+                [] if spec.signal == DEFAULT_SIGNAL else
+                ["signal: only a bar test takes a signal (a trade test reads the lot's own "
+                 "entry forecast)"])
         if mixed:
             return [f"selector: the trade outcomes {list(TRADE_OUTCOMES)} and the baseline "
                     f"{list(TRADE_BASELINES)} need a selector of kind {TRADE_SELECTOR!r}"]
@@ -1055,7 +1146,7 @@ def check_spec(spec: TestSpec, trade_tests: bool = False) -> list[str]:
         e.append(f"baseline: unknown {spec.baseline!r}; known: {sorted(BASELINES)}")
     elif spec.baseline["kind"] == "other_selector":
         e += _check_selector(spec.baseline.get("selector"), "baseline.selector")
-    return e + _check_tail(spec)
+    return e + _check_tail(spec) + signal_errors(spec.signal)
 
 
 def _check_tail(spec: TestSpec) -> list[str]:
@@ -1867,6 +1958,10 @@ def effect_sizes(windows: list[Window], spec: TestSpec, eras: list | None = None
     stat = STATISTICS[spec.statistic]
     opposite = "less" if spec.direction == "greater" else "greater"
 
+    # D-193: the test's signal is the forecast array every selector and statistic below reads
+    # (the default signal touches nothing: the windows are read as the caller loaded them)
+    if spec.signal != DEFAULT_SIGNAL:
+        windows = [window_with_signal(w, spec.signal) for w in windows]
     per = _prepare(windows, spec, horizons, base_rng, eras)
     out_h = {}
     for h in horizons:
@@ -1916,6 +2011,12 @@ def _graded(result, per, out_h, horizons, base_rng, windows, spec, eras) -> dict
             out_h[h]["a851a"] = a
             judged[h] = (a["pooled_ic"], a["p_value"], a["p_value_opposite"], a["per_window"])
     else:
+        if spec.signal != DEFAULT_SIGNAL:
+            # D-193: method B's null rebuilds the variant's own final forecast from its single
+            # component (forecast_check, fake_window); it has no null for a sub-forecast column
+            raise ValueError(f"signal {spec.signal!r}: {method} builds its null from the "
+                             f"variant's own forecast; a verdict on another signal needs an "
+                             f"a851a method")
         result["verdict_statistic"] = f"{spec.statistic} ({spec.direction})"
         checks = {}
         for w in windows:

@@ -74,7 +74,10 @@ CLAIM_KEYS = {"statement", "kind", "tests", "criteria_refs", "missing_block",
               "pass_if", "fail_if", "rationale"}
 TEXT_KEYS = ("statement", "pass_if", "fail_if", "rationale")
 TEST_KEYS = {"name", "selector", "outcome", "baseline", "statistic", "direction",
-             "floor", "consistency"}
+             "floor", "consistency", "signal"}
+# D-193: `signal` is optional (default "forecast"); a test that does not write it is exactly
+# the test it was before the key existed
+OPTIONAL_TEST_KEYS = {"consistency", "baseline", "signal"}
 CODE_FIXED_KEYS = ("alpha", "significance")
 MAX_TESTS = 3
 NO_TEST = "none"
@@ -82,6 +85,10 @@ REGIME_REASON = "no calibrated significance method for regime selectors"
 # E-075 PR-3 review: a trade-level test has an effect size and no p-value (the
 # null of claim_tests.run_test is built from bars; E-077 may add one for trades)
 TRADE_REASON = "trade-level tests are effect-size only: no p-value is computed for them"
+# D-193: method B's null is built from the variant's own forecast; a verdict on another
+# signal needs an a851a method (claim_tests._graded refuses it otherwise)
+SIGNAL_REASON = ("a verdict on a non-default signal needs an a851a significance method: "
+                 "method B's null is built from the variant's own forecast")
 TEST_REQUESTS_REL = "campaign_record/test_requests.yaml"
 
 
@@ -140,7 +147,7 @@ def _check_test(test, where: str, trade_tests: bool = False) -> tuple:
     unknown = sorted(set(test) - TEST_KEYS - set(CODE_FIXED_KEYS))
     if unknown:
         errors.append(f"{where}: unknown keys {unknown}; allowed: {sorted(TEST_KEYS)}")
-    missing = sorted(k for k in TEST_KEYS - {"consistency", "baseline"} if k not in test)
+    missing = sorted(k for k in TEST_KEYS - OPTIONAL_TEST_KEYS if k not in test)
     if missing:
         errors.append(f"{where}: missing {missing}")
     if errors:
@@ -169,7 +176,12 @@ def _check_test(test, where: str, trade_tests: bool = False) -> tuple:
         h = ct.spec_hash(spec)
     except (TypeError, ValueError, AttributeError, KeyError) as exc:
         return [f"{where}: malformed test ({type(exc).__name__}: {exc})"], None, False
-    return [], h, not regime and not _is_trade_test(test)
+    # D-193: claim_tests._graded raises for a non-default signal under method B (its null
+    # rebuilds the variant's own forecast), so no verdict is possible. Not refused here: the
+    # analyst needs method B to pass check_spec, so this only marks verdict_possible false.
+    signal_blocked = (spec.signal != ct.DEFAULT_SIGNAL
+                      and spec.significance.get("method") not in ct.A851A_METHODS)
+    return [], h, not regime and not _is_trade_test(test) and not signal_blocked
 
 
 def _is_trade_test(test) -> bool:
@@ -242,10 +254,94 @@ def check_claim(claim, criteria_ids=(), trade_tests: bool = False, *,
         if not errs:
             res.tests.append({"name": t["name"], "spec_hash": h, "verdict_possible": possible,
                               **({} if possible else
-                                 {"reason": TRADE_REASON if _is_trade_test(t) else REGIME_REASON})})
+                                 {"reason": TRADE_REASON if _is_trade_test(t) else
+                                  REGIME_REASON if _regime_selector_paths(t) else
+                                  SIGNAL_REASON})})
     if e:
         res.tests = []
     return res
+
+
+# ---------------------------------------------------------------------------
+# D-193: a test's `signal` against its own claim's vehicle
+# ---------------------------------------------------------------------------
+
+def _strategy_components(config) -> dict:
+    """{component id: [weights]} over the strategy components of a config
+    (strategies.regimes.*.components): where the bars.csv columns
+    `debug_info.components.<id>.*` come from."""
+    out: dict = {}
+    strategies = config.get("strategies") if isinstance(config, dict) else None
+    regimes = strategies.get("regimes") if isinstance(strategies, dict) else None
+    for rcfg in (regimes.values() if isinstance(regimes, dict) else []):
+        comps = rcfg.get("components") if isinstance(rcfg, dict) else None
+        for comp in comps if isinstance(comps, list) else []:
+            if isinstance(comp, dict) and isinstance(comp.get("id"), str):
+                out.setdefault(comp["id"], []).append(comp.get("weight"))
+    return out
+
+
+def _is_zero(v) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and v == 0
+
+
+def vehicle_removed_components(vehicle, base_config=None, named=()) -> tuple:
+    """(absent, zero_weighted): the strategy components a claim's vehicle takes out of the
+    strategy, in the two ways the vehicle forms can say it.
+      * absent: the component is gone from the strategy, so the child run's bars.csv has no
+        column of it at all. Config form: a component of the base config's strategies that the
+        vehicle's complete config no longer has. When `base_config` is missing the vehicle's
+        own config decides: a component in `named` (the ids the claim's tests name) that a
+        non-empty strategy of the vehicle does not have is absent; a vehicle with no readable
+        components decides nothing (not a refusal: nothing is known to be removed).
+      * zero_weighted: the component stays in the strategy at weight 0 (change list: an item
+        {component_id, field: weight, after: 0}; config form: every weight of it is 0).
+        strategy_engine.forecast still computes its `post_pipeline_value` (normalised weight 0
+        only zeroes `weighted_contribution`), so a weight of 0 removes the second column only.
+    Pure; an unreadable vehicle removes nothing."""
+    absent: set = set()
+    zeroed: set = set()
+    if isinstance(vehicle, list):
+        for item in vehicle:
+            if (isinstance(item, dict) and isinstance(item.get("component_id"), str)
+                    and item.get("field") == "weight" and _is_zero(item.get("after"))):
+                zeroed.add(item["component_id"])
+    elif isinstance(vehicle, dict) and isinstance(vehicle.get("config"), dict):
+        after = _strategy_components(vehicle["config"])
+        zeroed |= {cid for cid, ws in after.items() if ws and all(_is_zero(w) for w in ws)}
+        if isinstance(base_config, dict):
+            absent |= set(_strategy_components(base_config)) - set(after)
+        elif after:
+            absent |= set(named) - set(after)
+    return absent, zeroed
+
+
+def vehicle_signal_errors(claim, vehicle, base_config=None) -> list:
+    """Errors for a claim test whose `signal` names a column its own vehicle removes: the child
+    run backtests the vehicle, and its bars.csv has no such column, so the test could not be
+    re-run. A component absent from the vehicle removes both of its signal columns; a component
+    at weight 0 removes only `weighted_contribution` (its `post_pipeline_value` is still
+    emitted). [] when no test names a signal, or none names a removed column. Pure; the caller
+    adds these to the claim card's errors."""
+    tests = claim.get("tests") if isinstance(claim, dict) else None
+    named = [(i, t) for i, t in enumerate(tests if isinstance(tests, list) else [])
+             if isinstance(t, dict) and isinstance(t.get("signal"), str)
+             and ct.signal_component_id(t["signal"]) is not None]
+    if not named:
+        return []
+    absent, zeroed = vehicle_removed_components(
+        vehicle, base_config, {ct.signal_component_id(t["signal"]) for _, t in named})
+    out = []
+    for i, t in named:
+        cid = ct.signal_component_id(t["signal"])
+        removed = cid in absent or (cid in zeroed
+                                    and t["signal"].endswith(".weighted_contribution"))
+        if removed:
+            out.append(f"claim.tests[{i}].signal {t['signal']!r} names the component {cid!r}, "
+                       f"which this claim's own vehicle removes: the child run has no such "
+                       f"column, so it could not re-run the test. Test another signal, or "
+                       f"change the vehicle")
+    return out
 
 
 def card_criteria_ids(card: dict) -> list:

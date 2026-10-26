@@ -33,7 +33,7 @@ import block_registry as br  # noqa: E402
 import reader_proposals as rpp  # noqa: E402
 import research_folds as rf  # noqa: E402
 import verdict_criteria_evaluator as vce  # noqa: E402
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
+from _reader_test_helpers import _set_orchestrator, reader_docs  # noqa: E402,F401
 import test_e059_s2a_decide_next as t59  # noqa: E402
 from test_e059_6c_s2a_route_retirement import RETIRED_ON  # noqa: E402
 
@@ -274,10 +274,14 @@ def test_the_cli():
 def test_every_reading_of_a_refold_is_a_code_written_skip(_seed, monkeypatch):
     _source(_seed)
     _e, run_id, run_dir = _launch(_seed)
-    monkeypatch.setattr(rpr, "run_reader_worker",
-                        lambda *a, **k: pytest.fail("a reader was called"))
-    rpr._run_specialist_readers(run_id, run_dir)
-    for cat in rpr._reader_categories():
+    monkeypatch.setattr(rpr, "run_analyst_worker",
+                        lambda *a, **k: pytest.fail("the analyst was called"))
+    monkeypatch.setattr(rpr, "_analyst_enabled", lambda *a: True)   # D-198: the readers are gone
+    monkeypatch.setattr(rpr, "_grid_route_enabled", lambda cfg=None: False)  # no idea_status here
+    monkeypatch.delenv("WORKFLOW_ARTIFACT_VALIDATION", raising=False)   # a stub protocol_result
+    rpr.save_yaml(run_dir / "artifacts" / "protocol_result.yaml", {"results": []})
+    rpr._run_analyst_stage(run_id, run_dir)
+    for cat in rpr.ANALYST_LENS_CATEGORIES:
         doc = yaml.safe_load((run_dir / "artifacts" / "proposals" / f"{cat}.yaml").read_text(
             encoding="utf-8"))
         assert doc["skipped"]["rule"] == "operator_refold"

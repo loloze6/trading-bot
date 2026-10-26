@@ -30,7 +30,7 @@ import run_phase1_research as rpr  # noqa: E402
 import claim_card as cc  # noqa: E402
 
 from test_k3_protocol_pinning import _minimal_run  # noqa: E402
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
+from _reader_test_helpers import _set_orchestrator  # noqa: E402
 
 ON = {"config_direct_authoring": {"enabled": True}, "claim_tests": {"enabled": True}}
 CARD = {"hypothesis_id": "H-1", "thesis": "t", "rationale": "r",

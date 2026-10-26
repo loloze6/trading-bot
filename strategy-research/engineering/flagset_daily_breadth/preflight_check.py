@@ -20,11 +20,10 @@ WANT = {
     "variant_loop": True, "config_direct_authoring": True, "profit_bars_file": True,
     "profit_bars_every_backtest": True, "profit_bars_v2": True, "decide_next": True,
     "operator_approval": True, "folds": True, "brief_criteria": True, "analyst": True,
-    "specialist_readers": True, "reader_findings": True, "claim_tests": True,
-    "regroup_record": True, "grid_evaluation": True, "category_reports": True,
+    "claim_tests": True,
+    "regroup_record": True, "grid_evaluation": True,
     "verdict_routing_retired": True, "nearest_build": True, "deviation_gate": False,
     "config_replay_gate": True, "exact_config_1b": True, "composition_runs": True,
-    "explore_confirm": False,
 }
 
 

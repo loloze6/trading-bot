@@ -232,23 +232,20 @@ def test_the_caps_default_to_the_stage_model_and_refuse_bad_values():
         rpr._analyst_caps({"orchestrator": {"analyst": {"max_budget_usd": "1"}}})
 
 
-@pytest.mark.parametrize("on,missing", [
-    ({"folds"}, "specialist_readers.enabled=true and orchestrator.reader_findings"),
-    ({"folds", "specialist_readers"}, "reader_findings.enabled=true"),
-    ({"folds", "reader_findings"}, "specialist_readers.enabled=true"),
-    ({"specialist_readers", "reader_findings"}, "folds.enabled=true"),
+@pytest.mark.parametrize("on,ok", [
+    ({"folds"}, True),                                   # D-197: folds alone is enough
+    (set(), False),                                      # folds is still required
 ])
-def test_the_flag_needs_its_stages(monkeypatch, on, missing):
-    def reader(name):
-        return lambda cfg=None: name in on
-    for name in ("folds", "specialist_readers", "reader_findings"):
-        monkeypatch.setattr(rpr, f"_{name}_enabled", reader(name))
+def test_the_flag_needs_folds_only(monkeypatch, on, ok):
+    """D-197: the analyst is a stage of its own; D-198 deleted the flags it no longer
+    depends on. The folds dependency stays."""
+    monkeypatch.setattr(rpr, "_folds_enabled", lambda cfg=None: "folds" in on)
     cfg = {"orchestrator": {"analyst": {"enabled": True}}}
-    with pytest.raises(ValueError, match=missing):
-        _REAL_ANALYST_ENABLED(cfg)
-    for name in ("folds", "specialist_readers", "reader_findings"):
-        monkeypatch.setattr(rpr, f"_{name}_enabled", lambda cfg=None: True)
-    assert _REAL_ANALYST_ENABLED(cfg) is True
+    if ok:
+        assert _REAL_ANALYST_ENABLED(cfg) is True
+    else:
+        with pytest.raises(ValueError, match="folds.enabled=true"):
+            _REAL_ANALYST_ENABLED(cfg)
     assert _REAL_ANALYST_ENABLED({"orchestrator": {}}) is False
 
 
@@ -264,7 +261,7 @@ def test_a_stubbed_session_writes_a_reading_decide_next_turns_into_a_fold_b_chil
     assert doc["rubric_version"] == "trade_efficiency-analyst-v1"
     (side,) = doc["side_findings"]
     assert side["vehicle"] == _vehicle() and side["fold_observed"] == "A"
-    assert side["scores"]["distance_to_profitable"] == 1 == side["scores"]["mechanism_plausibility"]
+    assert set(side["scores"]) == {"confidence_real"}      # D-194: the two fixed fields are gone
     rp.check_reading(doc, "trade_efficiency", "file", strict_provenance=True, analyst=True)
     # the log and the record
     log = yaml.safe_load((run / asm.log_rel("trade_efficiency")).read_text(encoding="utf-8"))
@@ -408,7 +405,9 @@ def test_an_empty_vehicle_is_refused_by_the_reading_check_for_every_kind(run, mo
 # 5. the stage
 # ---------------------------------------------------------------------------
 
-def test_under_the_flag_the_lenses_replace_the_readers(run, monkeypatch):
+def test_the_stage_runs_the_two_lenses_and_writes_only_their_readings(run, monkeypatch):
+    """D-198: the readers' stage (which wrote `replaced_by_analyst` readings for the other three
+    categories) is deleted; the analyst's own stage writes the two lens files and nothing else."""
     called = []
 
     def fake_worker(lens, run_id, run_dir, stage_attempt=0):
@@ -417,31 +416,12 @@ def test_under_the_flag_the_lenses_replace_the_readers(run, monkeypatch):
         rpr._write_skipped_reading(cat, run_id, run_dir, {"rule": "output_refused_after_retry",
                                                           "reason": "stub"})
     monkeypatch.setattr(rpr, "run_analyst_worker", fake_worker)
-    monkeypatch.setattr(rpr, "run_reader_worker", lambda *a, **k: pytest.fail("a reader ran"))
-    monkeypatch.setattr(rpr, "_reader_findings_enabled", lambda *a: True)
     monkeypatch.setattr(rpr, "_check_reader_budget", lambda *a: None)
-    out = rpr._run_specialist_readers(RUN_ID, run)
+    rpr.save_yaml(run / "artifacts" / "protocol_result.yaml", {"results": []})
+    rpr._run_analyst_stage(RUN_ID, run)
     assert sorted(called) == ["forecast", "trade_efficiency"]
-    for cat in ("profitability", "regime_power", "component_attribution"):
-        doc = yaml.safe_load((run / "artifacts" / "proposals" / f"{cat}.yaml").read_text(encoding="utf-8"))
-        assert doc["skipped"]["rule"] == "replaced_by_analyst"
-    assert set(out) == set(rpr._reader_categories())
-
-
-def test_flag_off_the_readers_run_as_before(run, monkeypatch):
-    monkeypatch.setattr(rpr, "_analyst_enabled", lambda *a: False)
-    ran = []
-
-    def fake_reader(category, run_id, run_dir, stage_attempt=0):
-        ran.append(category)
-        rpr._write_skipped_reading(category, run_id, run_dir, {"rule": "single_component",
-                                                               "reason": "stub"})
-    monkeypatch.setattr(rpr, "run_reader_worker", fake_reader)
-    monkeypatch.setattr(rpr, "run_analyst_worker", lambda *a, **k: pytest.fail("analyst ran"))
-    monkeypatch.setattr(rpr, "_reader_findings_enabled", lambda *a: False)
-    monkeypatch.setattr(rpr, "_check_reader_budget", lambda *a: None)
-    rpr._run_specialist_readers(RUN_ID, run)
-    assert ran == rpr._reader_categories()
+    written = sorted(p.stem for p in (run / "artifacts" / "proposals").glob("*.yaml"))
+    assert written == ["forecast_power", "trade_efficiency"]
 
 
 def test_the_strictness_keyword_names_the_analyst_only_under_the_flag(monkeypatch):
@@ -819,14 +799,6 @@ def test_a_new_stage_attempt_starts_a_new_query_log(run):
         (run / rel).write_text("queries: []\n", encoding="utf-8")
     rpr._clear_specialist_readers_artifacts(run)
     assert not (run / asm.LOG_DIR_REL).exists() and not (run / asm.RECORD_DIR_REL).exists()
-
-
-def test_the_analyst_refuses_explore_confirm(monkeypatch):
-    """L3: the analyst's queries read E-072's confirmation windows too."""
-    for name in ("folds", "specialist_readers", "reader_findings", "explore_confirm"):
-        monkeypatch.setattr(rpr, f"_{name}_enabled", lambda cfg=None: True)
-    with pytest.raises(ValueError, match="cannot run with orchestrator.explore_confirm"):
-        _REAL_ANALYST_ENABLED({"orchestrator": {"analyst": {"enabled": True}}})
 
 
 def test_evidence_from_another_conditional_effect_is_not_the_tests_own():
@@ -1241,7 +1213,10 @@ def _fixed_answers():
 #: `unverified_numbers` (and a claim's `claim_card_ok`); cases 2, 6 and 8 no longer carry a
 #: prose-number error and their prose is masked ("the effect is <n> huge"); case 6 keeps
 #: its sealed-date refusal; every other reading and error list is unchanged.
-GOLDEN_ONE_OR_NO_BLOCK = "76930a7254b3a18150b46df7173dafe2e4fac95ce699e2b2ff4ac3947b7e6231"
+#: Re-pinned by D-194 (2026-10-26): the scores dicts lose the two fixed fields
+#: (distance_to_profitable, mechanism_plausibility, both 1) and nothing else; putting them
+#: back into every scores dict reproduces 76930a72...e6231, the pin above.
+GOLDEN_ONE_OR_NO_BLOCK = "1aea14ba751876b87aefe470ed900383d553cb5db2899026ce2cb4a0476eb030"
 
 
 def test_a_one_block_or_no_block_answer_checks_byte_identically_to_before():

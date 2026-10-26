@@ -24,7 +24,7 @@ sys.path.insert(0, str(SR_ROOT / "tools"))
 import run_phase1_research as rpr  # noqa: E402
 import run_campaign as camp  # noqa: E402
 
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
+from _reader_test_helpers import _set_orchestrator  # noqa: E402
 from test_e056_1b_block_manifest import CONFIG, GOOD, _authored_1b, _minimal_run  # noqa: E402
 
 CDA = {"config_direct_authoring": {"enabled": True}}

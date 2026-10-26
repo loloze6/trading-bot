@@ -34,7 +34,7 @@ import reader_findings as rf  # noqa: E402
 import campaign_lock  # noqa: E402
 
 from test_k3_protocol_pinning import _minimal_run  # noqa: E402
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
+from _reader_test_helpers import _set_orchestrator  # noqa: E402
 from test_e056_1b_block_manifest import GOOD  # noqa: E402
 from test_e068_s2_claim_card import CARD, UPPER, _claim  # noqa: E402
 from test_e068_3b_claim_visibility import (  # noqa: E402
@@ -235,32 +235,6 @@ VP = {"base_config_ref": "artifacts/backtest_spec.yaml", "variants": [
      "patch": [{"path": "/strategies/regimes/unknown/components/0/params/period", "value": 3}],
      "rationale": "Sensitivity test ..."},
     {"variant_id": "asset_xrp", "kind": "asset", "symbol": "XRPUSDT", "patch": []}]}
-
-
-def test_the_digest_carries_each_variants_exact_patch(tmp_path):
-    arts = tmp_path / "artifacts"
-    arts.mkdir()
-    (arts / "variant_patches.yaml").write_text(yaml.safe_dump(VP), encoding="utf-8")
-    d = rf.claim_result_digest(tmp_path)
-    vp = d["variant_patches"]
-    assert [v["variant_id"] for v in vp["variants"]] == ["base", "design_period_3", "asset_xrp"]
-    assert vp["variants"][1]["patch"] == [
-        {"path": "/strategies/regimes/unknown/components/0/params/period", "value": 3}]
-    assert vp["variants"][2]["symbol"] == "XRPUSDT"
-    assert "rationale" not in yaml.safe_dump(vp["variants"])   # no prose, only settings
-    assert "never infer them from its name" in vp["note"]
-    keys = list(d)
-    assert keys.index("variant_patches") < keys.index("statement") and "status" not in d
-
-
-@pytest.mark.parametrize("content", [None, "variants: [unclosed\n", "just a string\n"])
-def test_no_or_bad_variant_patches_leave_the_digest_whole(tmp_path, content):
-    arts = tmp_path / "artifacts"
-    arts.mkdir()
-    if content is not None:
-        (arts / "variant_patches.yaml").write_text(content, encoding="utf-8")
-    d = rf.claim_result_digest(tmp_path)
-    assert "variant_patches" not in d and "status" not in d
 
 
 # ---------------------------------------------------------------------------

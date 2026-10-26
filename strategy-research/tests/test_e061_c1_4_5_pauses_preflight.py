@@ -179,7 +179,6 @@ def test_unwritable_run_state_still_pauses_the_entry(monkeypatch):
 
 _ONCE_PLAIN_BOOL_READERS = {
     "grid_evaluation": rpr._grid_evaluation_enabled,
-    "category_reports": rpr._category_reports_enabled,
     "profit_bars_file": rpr._profit_bars_file_enabled,
     "exclusion_digest_input": rpr._exclusion_digest_input_enabled,
     "stale_input_path_fix": rpr._stale_input_path_fix_enabled,

@@ -25,7 +25,7 @@ import run_campaign as camp  # noqa: E402
 import block_manifest as bm  # noqa: E402
 import nearest_build as nb  # noqa: E402
 
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
+from _reader_test_helpers import _set_orchestrator  # noqa: E402
 from test_e056_1b_block_manifest import CONFIG, GOOD, HANDOFF_1B, _minimal_run  # noqa: E402
 
 CDA = {"config_direct_authoring": {"enabled": True}}

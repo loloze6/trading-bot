@@ -52,15 +52,14 @@ What plan v26 delivered and what C4's two real runs showed:
 → **[`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)** — pipeline stage map, every artifact's
 field-by-field schema, skill goals, tools overview, glossary.
 For the run outputs the AI steps read (per-bar `bars.csv`, `trade_diagnostics.json`,
-the five category reports, `grid_evaluation.yaml`, `claim_result_digest.yaml`,
-`claim_measurement.yaml`): **[`docs/DATA_DICTIONARY.md`](docs/DATA_DICTIONARY.md)**
-(E-073 step 1) — each field's meaning, unit, the code that writes it
-(`KEY:symbol`), whether it is known at the bar's close or only after the fact,
-the audit findings against the engine, and what is not recorded. Kept honest by
-`tests/test_e073_data_dictionary.py` (full field paths derived from the writers'
-code). The v3 readers get its generated subset,
-[`docs/DATA_DICTIONARY_READERS.md`](docs/DATA_DICTIONARY_READERS.md)
-(`tools/data_dictionary.py`; no `bars.csv` section, no per-trade labels).
+`grid_evaluation.yaml`, `claim_measurement.yaml`):
+**[`docs/DATA_DICTIONARY.md`](docs/DATA_DICTIONARY.md)** (E-073 step 1) — each field's
+meaning, unit, the code that writes it (`KEY:symbol`), whether it is known at the bar's
+close or only after the fact, the audit findings against the engine, and what is not
+recorded. D-198: the readers' generated subset (`DATA_DICTIONARY_READERS.md`,
+`tools/data_dictionary.py`), the ratchet test that kept the report sections honest and the
+five category reports themselves (`tools/build_reports.py`) are deleted; section 6 of the
+dictionary describes reports old runs still hold.
 
 ### "What does the trading-bot ENGINE currently do (config, data, forecast, risk, execution, artifacts, metrics)?"
 → **[`../trading-bot/DOC/USER_GUIDE.md`](../trading-bot/DOC/USER_GUIDE.md)** —
@@ -183,23 +182,19 @@ briefs. Design and operator decisions:
 `engineering/roadmap/E-059/S1_FINDINGS_6B.md`.
 
 ### "What happens to a proposal that needs a data feed we don't have?"
-→ **[`docs/USER_GUIDE.md` stage 16, item 7](docs/USER_GUIDE.md#stage-16--specialist_readers)**
-and §5 `run_campaign.py` (decide-next feasibility) — the feed-acquisition lane
-(E-035 S2c, delivery_plan_v26.md slice 8.2; no flag of its own, it runs only
-where `specialist_readers` / `decide_next` run). A reader proposal may carry
-`requires_feed: {feed, reason}` (`workflow_artifacts/schemas/proposal.schema.json`,
-checked by `tools/reader_proposals.py`); stage 16 appends one row per run and
-feed that is not wired to `campaign_record/data_requests.yaml` (`request:
-acquisition`, or `designation` for a reserved feed), and decide-next keeps the
-candidate `INFEASIBLE` (`requires_feed:<feed>` / `requires_feed_reserved:<feed>`)
-while the feed is not a `FEED_REGISTRY` key in `trading-bot/data/feed_registry.py`
-and the candidate would read it. Coverage of a wired feed stays the
-data-availability gate's check ([`docs/RUNBOOK.md`](docs/RUNBOOK.md) "Reader
-proposals waiting on a feed"). The older `requires_new_feed` →
-`campaign_record/feed_wishlist.yaml` lane (step 1a, prose-only) is separate;
-its names are shown to the readers as wishlist-only. The automated
-external-knowledge dispatch (the rest of E-035) is not built. Design:
-`engineering/roadmap/E-036/S1_FINDINGS_SLICE8.md` §3-§4.
+→ §5 `run_campaign.py` in **[`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)** (decide-next
+feasibility) — the feed-acquisition lane (E-035 S2c, delivery_plan_v26.md slice 8.2).
+D-198 deleted the five readers and with them the router that appended a
+`campaign_record/data_requests.yaml` row (`request: acquisition`, or `designation` for a
+reserved feed) for a proposal's `requires_feed: {feed, reason}`; old rows stay readable.
+Decide-next still keeps a candidate `INFEASIBLE` (`requires_feed:<feed>` /
+`requires_feed_reserved:<feed>`, checked by `tools/reader_proposals.py`) while the feed is
+not a `FEED_REGISTRY` key in `trading-bot/data/feed_registry.py` and the candidate would
+read it. Coverage of a wired feed stays the data-availability gate's check
+([`docs/RUNBOOK.md`](docs/RUNBOOK.md) "Reader proposals waiting on a feed"). The older
+`requires_new_feed` → `campaign_record/feed_wishlist.yaml` lane (step 1a, prose-only) is
+separate. The automated external-knowledge dispatch (the rest of E-035) is not built.
+Design: `engineering/roadmap/E-036/S1_FINDINGS_SLICE8.md` §3-§4.
 
 ### "How does the campaign stop re-running an idea it already tested?"
 → **[`docs/USER_GUIDE.md` stage 6, item 2](docs/USER_GUIDE.md#stage-6--backtest_specification)**

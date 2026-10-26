@@ -881,7 +881,9 @@ def test_the_module_imports_no_sdk_and_nothing_imports_it():
     # E-075 PR-5 (D-092) wires them (this pinned "nothing yet" before, changed deliberately):
     # analyst_session names the log directory; the orchestrator imports both modules only
     # inside their lazy loaders, which only the analyst stage (its flag) calls
-    assert sorted(users) == ["analyst_session.py", "run_phase1_research.py"]
+    # D-193: claim_tests resolves the allowed `signal` values from this module's dictionary
+    # loader (load_bars_dictionary), imported lazily inside one function
+    assert sorted(users) == ["analyst_session.py", "claim_tests.py", "run_phase1_research.py"]
     tree = ast.parse((SR_ROOT / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8"))
     loaders = {}
     for fn in ast.walk(tree):

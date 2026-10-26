@@ -100,6 +100,19 @@
         "protocol_ref": { "$ref": "#/$defs/nullable_string" },
         "timeframe": { "$ref": "#/$defs/nullable_string" },
         "fold": { "enum": ["A", "B", "C", "D"] },
+        "base_book": {
+          "type": "object",
+          "required": ["sharpe", "max_drawdown_pct", "mean_abs_allocation", "turnover_annualised", "median_holding_bars"],
+          "additionalProperties": false,
+          "description": "D-196, OPTIONAL (tools/campaign_memory.py::base_book_block): the BASE variant's whole-test book as artifacts/profit_bars_evaluation.yaml records it, copied and never recomputed -- sharpe and max_drawdown_pct (percent) from the sharpe_min and max_drawdown_pct_max bars' actual, mean_abs_allocation from forecast_shape (else window_economics.total), turnover_annualised and median_holding_bars from window_economics.total (written only under orchestrator.analyst.enabled). null = the record holds no such figure. Absent (not null) when profit_bars is null or the evaluation has no base variant; every entry written before D-196 lacks it. tried_ideas() passes it into the row as base_<field>.",
+          "properties": {
+            "sharpe": { "type": ["number", "null"] },
+            "max_drawdown_pct": { "type": ["number", "null"] },
+            "mean_abs_allocation": { "type": ["number", "null"] },
+            "turnover_annualised": { "type": ["number", "null"] },
+            "median_holding_bars": { "type": ["number", "null"] }
+          }
+        },
         "proposals": {
           "type": "array",
           "items": {

@@ -21,7 +21,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 sys.path.insert(0, str(ROOT / "workflow"))
 
 import block_registry as br  # noqa: E402
-import build_reports  # noqa: E402
+import reader_categories  # noqa: E402
 import decide_next as dn  # noqa: E402
 
 
@@ -29,8 +29,8 @@ def main() -> None:
     reg_path = ROOT / "campaign_record" / "block_registry.yaml"
     raw = br.load_registry(reg_path)
     queue = yaml.safe_load((ROOT / "config" / "campaign_queue.yaml").read_text(encoding="utf-8")) or {}
-    # the campaign's own category list (workflow/run_phase1_research.py:4602 _reader_categories)
-    inputs = dn.load_inputs(ROOT, queue, categories=list(build_reports.REPORT_CATEGORIES),
+    # the campaign's own category list (tools/reader_categories.py, D-197)
+    inputs = dn.load_inputs(ROOT, queue, categories=list(reader_categories.READER_CATEGORIES),
                             composition_runs=True, dsr_basis=None)
     seen = [b["block_id"] for b in inputs["composition"]["registry"]["blocks"]]
     all_ids = [b["block_id"] for b in raw["blocks"]]

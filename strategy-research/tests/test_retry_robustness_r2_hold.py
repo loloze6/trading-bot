@@ -27,7 +27,7 @@ sys.path.insert(0, str(SR_ROOT / "tools"))
 
 import decide_next as dn  # noqa: E402
 import run_phase1_research as rpr  # noqa: E402
-import test_c5_7b1_model_id_stamp as stamp  # noqa: E402
+import _reader_test_helpers as stamp  # noqa: E402
 
 RUN_069 = (Path(__file__).parent / "fixtures" / "run_069_step1a_blank_line_before_fence.txt"
            ).read_text(encoding="utf-8")

@@ -429,9 +429,9 @@ def test_grid_kw_is_empty_flag_off(monkeypatch):
 
 def test_every_grid_call_site_carries_the_keyword():
     src = (SR_ROOT / "workflow" / "run_phase1_research.py").read_text(encoding="utf-8")
-    assert src.count("**_zero_trade_grid_kw())") == 4
+    assert src.count("**_zero_trade_grid_kw())") == 3    # D-198: the exploration grid call is gone
     assert src.count("_vce.evaluate_grid(") == 3
-    assert src.count("ec.exploration_grid(") == 1
+    assert src.count("ec.exploration_grid(") == 0
 
 
 def test_flag_is_in_the_launch_preflight():

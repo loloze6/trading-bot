@@ -42,122 +42,14 @@ import run_phase1_research as rpr  # noqa: E402
 import run_campaign as camp  # noqa: E402
 import campaign_memory as cm  # noqa: E402
 import reader_proposals  # noqa: E402
-from build_reports import REPORT_CATEGORIES  # noqa: E402
+from reader_categories import READER_CATEGORIES as REPORT_CATEGORIES  # noqa: E402
 
 from test_k3_protocol_pinning import _minimal_run  # noqa: E402
 from test_e033_slice4b_gate_conformance_promotion import _minimal_run_at  # noqa: E402
-from test_e046a_slice5b_ii_b_readers_stage import (  # noqa: E402
-    _proposal, _fake_llm, _set_orchestrator, _write_menu_pre_registration)
-
-RUN_ID = "run_980"
-READERS_ON = {"grid_evaluation": {"enabled": True}, "category_reports": {"enabled": True},
-              "specialist_readers": {"enabled": True}}
-ALL_ON = {**READERS_ON, "regroup_record": {"enabled": True}}
-CRITERIA = ["ic_median", "trade_floor"]
-
-
-@pytest.fixture(autouse=True)
-def _stub_tbot_python(monkeypatch):
-    monkeypatch.setattr(rpr, "_resolve_tbot_python", lambda: Path("stub-python"))
-
-
-def _memory_path() -> Path:
-    return rpr.ROOT / "campaign_record" / "campaign_memory.yaml"
-
-
-def _grid(variants: list, idea_status: str) -> dict:
-    cell = {"result": "PASS", "value": 0.031, "threshold": 0.02, "n_windows": 2, "n_trades": 40}
-    grid = {c: {v: dict(cell) for v in variants} for c in CRITERIA}
-    if idea_status == "refuted":
-        grid["ic_median"][variants[-1]] = {"result": "FAIL", "value": 0.001, "threshold": 0.02,
-                                           "n_windows": 2, "n_trades": 40}
-        reason = "at least one criterion FAILed with sufficient data on at least one variant"
-    elif idea_status == "inconclusive":
-        grid["trade_floor"][variants[0]] = {"result": "INCONCLUSIVE", "n_windows": 2, "n_trades": 3,
-                                            "reason": "n_trades=3 < floor 20"}
-        reason = "no criterion FAILed, but at least one cell lacked sufficient data to judge"
-    else:
-        reason = "every criterion PASSed on every variant"
-    return {"result": "GRID_EVALUATED", "criteria": list(CRITERIA), "variants": list(variants),
-            "grid": grid, "idea_status": idea_status, "reason": reason,
-            "evaluated_at": "2026-09-23T00:00:00+00:00"}
-
-
-def _pr(errors_count=None, symbols=("BTCUSDT",)) -> dict:
-    results = []
-    for sym in symbols:
-        for w in ("w1", "w2"):
-            entry = {"symbol": sym, "window": w, "core": {"sharpe": 0.1, "trade_count": 20}}
-            if errors_count is not None:
-                entry["component_errors"] = {"count": errors_count, "samples": []}
-            results.append(entry)
-    return {"verdict": "kill", "protocol_file": str(rpr.ROOT / "protocols" / "p.json"),
-            "results": results}
-
-
-def _seed(run_id=RUN_ID, idea_status="refuted", errors_count=None, variant_loop=False,
-          pending="regroup_record", proposals=1, score=2) -> Path:
-    run_dir = _minimal_run(rpr.ROOT, run_id)
-    state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
-    state["pending_stage"] = pending
-    rpr.save_yaml(run_dir / "pipeline_state.yaml", state)
-    arts = run_dir / "artifacts"
-    rpr.save_yaml(arts / "hypothesis_card.yaml", {"hypothesis_id": "H-MEM-1", "timeframe": "1h"})
-    _write_menu_pre_registration(run_dir)
-    rpr.save_yaml(arts / "protocol_result.yaml", _pr(errors_count))
-    (arts / "candidate_strategy_config.json").write_text(json.dumps({"a": 1}), encoding="utf-8")
-    if variant_loop:
-        variants = ["base", "design"]
-        index = {}
-        # E-061 C2 S2b (CUL-342 item 2): a validated idea has every variant graded
-        # -- the memory's belt check refuses one with a failed / untested variant
-        # -- so a validated seed's index holds only the graded columns.
-        whole = idea_status == "validated"
-        for v in variants + ([] if whole else ["broken"]):
-            cfg = arts / "variants" / v / "strategy_config.json"
-            cfg.parent.mkdir(parents=True, exist_ok=True)
-            cfg.write_text(json.dumps({"v": v}), encoding="utf-8")
-            index[v] = {"status": "validated", "config_path": f"artifacts/variants/{v}/strategy_config.json"}
-        if not whole:
-            index["asset"] = {"status": "not_tested", "reason": "patch application failed: /x"}
-        rpr.save_yaml(arts / "variants" / "index.yaml", {"variants": index})
-        for v in variants:
-            rpr.save_yaml(arts / "variants" / v / "protocol_result.yaml",
-                          _pr(errors_count, symbols=("BTCUSDT", "ETHUSDT") if v == "design" else ("BTCUSDT",)))
-    else:
-        variants = [run_id]
-    grid = _grid(variants, idea_status)
-    rpr.save_yaml(arts / "grid_evaluation.yaml", grid)
-    rpr.save_yaml(arts / "idea_status.yaml", rpr._build_idea_status_artifact(grid, run_id))
-    for c in REPORT_CATEGORIES:
-        rpr.save_yaml(arts / "reports" / f"{c}.yaml", {"category": c})
-        rpr.save_yaml(arts / "proposals" / f"{c}.yaml",
-                      [_proposal(c, run_id, n, score) for n in range(1, proposals + 1)])
-    _seed_trials(run_id, variant_loop)
-    return run_dir
-
-
-def _seed_trials(run_id: str, variant_loop: bool) -> None:
-    # forecast_hash values are deliberately NOT the hash of any file on disk: the
-    # memory must copy them from the ledger, never recompute them.
-    rows = [{"trial_id": run_id, "source": "prescreen", "sharpe": 0.1, "forecast_hash": "fh-prescreen"}]
-    if variant_loop:
-        rows += [{"trial_id": f"{run_id}:base", "source": "backtest", "sharpe": 0.3,
-                  "forecast_hash": "fh-base"},
-                 {"trial_id": f"{run_id}:design", "source": "backtest", "sharpe": 0.3,
-                  "forecast_hash": "fh-design"},
-                 {"trial_id": f"{run_id}:broken", "source": "backtest_failed", "sharpe": None,
-                  "forecast_hash": "fh-broken"}]
-    else:
-        rows += [{"trial_id": run_id, "source": "backtest", "sharpe": 0.2, "forecast_hash": "fh-run"}]
-    rows += [{"trial_id": "run_001", "source": "backtest", "sharpe": 0.9, "forecast_hash": "x"},
-             {"trial_id": f"{run_id}0", "source": "backtest", "sharpe": 0.9,
-              "forecast_hash": "x"}]  # prefix trap
-    rpr.save_yaml(rpr.CAMPAIGN_STATE_PATH, {"campaign_id": "t", "runs": [], "trial_sharpes": rows})
-
-
-def _memory() -> dict:
-    return yaml.safe_load(_memory_path().read_text(encoding="utf-8"))
+from _reader_test_helpers import (  # noqa: E402,F401  (D-197: the shared reader-test helpers)
+    CRITERIA, READERS_ON, REGROUP_ALL_ON as ALL_ON, REGROUP_RUN_ID as RUN_ID, _fake_llm, _grid,
+    _loop_from_specialist_readers, _memory, _memory_path, _proposal, _seed, _set_orchestrator,
+    _stub_tbot_python, _write_menu_pre_registration, reader_docs)
 
 
 # ---------------------------------------------------------------------------
@@ -183,24 +75,24 @@ def test_flag_non_bool_raises(bad):
         rpr._regroup_record_enabled()
 
 
-def test_flag_on_without_specialist_readers_raises():
+def test_flag_on_without_the_grid_raises():
+    """D-198: it required specialist_readers (deleted); it requires grid_evaluation now."""
     _set_orchestrator({"regroup_record": {"enabled": True}})
-    with pytest.raises(ValueError, match="requires orchestrator.specialist_readers.enabled=true"):
+    with pytest.raises(ValueError, match="requires orchestrator.grid_evaluation.enabled=true"):
         rpr._regroup_record_enabled()
 
 
-def test_run_loop_fails_at_start_when_readers_off(monkeypatch):
-    _set_orchestrator({"grid_evaluation": {"enabled": True}, "category_reports": {"enabled": True},
-                       "regroup_record": {"enabled": True}})
-    run_dir = _seed(pending="specialist_readers")
+def test_run_loop_fails_at_start_when_the_grid_is_off(monkeypatch):
+    _set_orchestrator({"regroup_record": {"enabled": True}})
+    run_dir = _seed(pending="protocol_execution")
     invoked = []
     monkeypatch.setattr(rpr, "_invoke_agent_with_yaml_retry", lambda *a, **k: invoked.append(a[0]))
     monkeypatch.setattr(rpr, "_invoke_reader_llm", _fake_llm(calls=invoked))
     rpr.run_loop(RUN_ID)
     state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
     assert invoked == []
-    assert state["status"] == "failed" and "specialist_readers" in state["last_error"]
-    assert state["pending_stage"] == "specialist_readers"
+    assert state["status"] == "failed" and "grid_evaluation" in state["last_error"]
+    assert state["pending_stage"] == "protocol_execution"
     assert not _memory_path().exists()
 
 
@@ -212,30 +104,8 @@ def test_registered_without_skill_and_existing_entries_unchanged():
     assert rpr.STAGE_CONFIGS["regroup_record"] == {
         "handoff": "specialist_readers_to_regroup_record.yaml", "default_next": "dynamic_routing"}
     assert "regroup_record" not in rpr._SKILL_MAP
-    assert rpr.STAGE_CONFIGS["specialist_readers"] == {
-        "handoff": "protocol_to_specialist_readers.yaml", "default_next": "dynamic_routing"}
+    assert "specialist_readers" not in rpr.STAGE_CONFIGS      # D-198
     assert rpr.STAGE_CONFIGS["protocol_execution"]["default_next"] == "verdict_interpreter"
-
-
-def _loop_from_specialist_readers(monkeypatch, orchestrator, idea_status, errors_count=None,
-                                  run_id=RUN_ID, spy=None):
-    _set_orchestrator(orchestrator)
-    run_dir = _seed(run_id=run_id, idea_status=idea_status, errors_count=errors_count,
-                    pending="specialist_readers")
-    calls = []
-    monkeypatch.setattr(rpr, "_invoke_reader_llm", _fake_llm(calls=calls))
-    # A validated route continues into holdout_evaluation; stop there without running it.
-    monkeypatch.setitem(rpr.STAGE_CONFIGS, "holdout_evaluation",
-                        {**rpr.STAGE_CONFIGS["holdout_evaluation"], "handoff": "missing.yaml"})
-    if spy is not None:
-        monkeypatch.setattr(rpr, "determine_post_specialist_readers_route", spy)
-    if idea_status == "validated" and not errors_count:
-        with pytest.raises(FileNotFoundError):
-            rpr.run_loop(run_id)
-    else:
-        rpr.run_loop(run_id)
-    assert calls == []  # proposals pre-seeded: no reader re-run, no LLM
-    return run_dir, rpr.load_yaml(run_dir / "pipeline_state.yaml")
 
 
 def _routing_view(state: dict) -> dict:
@@ -249,7 +119,7 @@ def test_flag_off_specialist_readers_routes_directly(monkeypatch, idea_status, e
     run_dir, state = _loop_from_specialist_readers(monkeypatch, READERS_ON, idea_status)
     assert "regroup_record" not in (state.get("completed_stages") or [])
     if expected:
-        assert state["completed_stages"][-1] == "specialist_readers"
+        assert "specialist_readers" not in (state.get("completed_stages") or [])   # D-198
         assert state["pending_stage"] == expected
     else:
         assert state["pending_stage"] == "specialist_readers"
@@ -278,12 +148,13 @@ def test_flag_on_same_route_after_regroup_record(monkeypatch, idea_status):
     assert seen == [True]
     assert _routing_view(on) == _routing_view(off)
     if idea_status == "inconclusive":
-        assert on["completed_stages"][-1] == "specialist_readers"
-        assert on["pending_stage"] == "regroup_record"  # pause leaves the stage, like readers flag-off
+        assert "specialist_readers" not in (on.get("completed_stages") or [])   # D-198
+        assert on["pending_stage"] == "regroup_record"  # pause leaves the stage, like regroup_record off
         assert on["flags"] == {"inconclusive_grid": True}
         assert camp._classify_human_pause(run_dir, on) == "inconclusive_grid"
     else:
-        assert on["completed_stages"][-2:] == ["specialist_readers", "regroup_record"]
+        assert on["completed_stages"][-1:] == ["regroup_record"]
+        assert "specialist_readers" not in on["completed_stages"]
         assert on["pending_stage"] == off["pending_stage"]
     assert (run_dir / "handoffs" / "specialist_readers_to_regroup_record.yaml").exists()
     assert _memory()["runs"][RUN_ID]["idea_status"] == idea_status
@@ -308,8 +179,8 @@ def test_full_loop_from_protocol_execution_stage_order(monkeypatch):
     rpr.run_loop(RUN_ID)
     state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
     assert stages == ["protocol_execution"]  # regroup_record never goes through async_invoke_agent
-    assert len(calls) == 5
-    assert state["completed_stages"][-3:] == ["protocol_execution", "specialist_readers", "regroup_record"]
+    assert calls == []                       # D-198: no reader call
+    assert state["completed_stages"][-2:] == ["protocol_execution", "regroup_record"]
     assert state["pending_stage"] == "completed_rejected"
     entry = _memory()["runs"][RUN_ID]
     assert entry["idea_status"] == "refuted"
@@ -344,13 +215,14 @@ def test_regroup_record_survives_the_loop_top_budget_check(monkeypatch):
 
 def test_budget_check_unchanged_for_other_stages(monkeypatch):
     _set_orchestrator(ALL_ON)
-    run_dir = _seed(idea_status="refuted", pending="specialist_readers")
+    monkeypatch.setattr(rpr, "_analyst_enabled", lambda *a: True)
+    run_dir = _seed(idea_status="refuted", pending="analyst")   # D-198: a stage that spends
     monkeypatch.setattr(rpr, "_load_token_budget", lambda: 1)
     monkeypatch.setattr(rpr, "_compute_weighted_budget_usage", lambda log: (10**9, []))
     rpr.run_loop(RUN_ID)
     state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
     assert state["status"] == "rejected_budget_exceeded"
-    assert state["pending_stage"] == "specialist_readers"
+    assert state["pending_stage"] == "analyst"
     assert not _memory_path().exists()
 
 

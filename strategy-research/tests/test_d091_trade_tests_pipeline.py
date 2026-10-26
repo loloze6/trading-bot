@@ -98,7 +98,8 @@ def test_every_claim_check_of_the_orchestrator_takes_the_keywords():
              and isinstance(n.func, ast.Attribute) and n.func.attr in names]
     # was 10 (E-075 PR-5: + the analyst's check); D-139: + _keep_prefilled_claim's check;
     # D-157 (a): that check now goes through _check_1a_claim's one call, so 10 again
-    assert len(calls) == 10
+    # D-198: 8 -- the citation retry's two reading_structure calls went with the readers
+    assert len(calls) == 8
     for c in calls:
         star = [k.value for k in c.keywords if k.arg is None]
         assert any(isinstance(v, ast.Call) and getattr(v.func, "id", None) == "_claim_check_kw"
@@ -404,29 +405,6 @@ def test_one_coins_records_are_used_whatever_their_symbol_spelling(tmp_path):
     path.write_text(json.dumps(doc), encoding="utf-8")
     assert {tw.basis for tw in ct.load_variant_trade_windows(child, "base")} == {"all_costs"}
 
-
-@pytest.mark.parametrize("on", [False, True])
-def test_the_in_run_record_gets_the_family_only_under_the_flag(on, monkeypatch, tmp_path):
-    seen = []
-
-    class Stop(Exception):
-        pass
-
-    def spy(*a, **kw):
-        seen.append({k: v for k, v in kw.items() if k == "trade_tests"})
-        raise Stop()
-    monkeypatch.setattr(ec, "confirm_findings", spy)
-    monkeypatch.setattr(rpr, "_explore_confirm_module", lambda: ec)
-    monkeypatch.setattr(ec, "load_split", lambda arts: {"exploration": [], "confirmation": []})
-    monkeypatch.setattr(rpr, "_folds_enabled", lambda *a: True)
-    monkeypatch.setattr(rpr, "_analyst_enabled", lambda *a: on)
-    monkeypatch.setattr(rpr, "_load_holdout_range", lambda: (base.HOLDOUT, None))
-    (tmp_path / "artifacts" / "proposals").mkdir(parents=True)
-    try:
-        rpr._record_confirmations("run_x", tmp_path)
-    except Stop:
-        pass
-    assert seen == [{"trade_tests": True} if on else {}]
 
 
 def test_confirm_findings_routes_a_trade_claim_pending_only_with_the_family(tmp_path):

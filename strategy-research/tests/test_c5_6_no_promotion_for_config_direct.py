@@ -542,10 +542,3 @@ def test_trial_rows_do_not_depend_on_the_legacy_verdict(tmp_path):
     rows = {r["trial_id"]: {k: v for k, v in r.items() if k != "trial_id"}
             for r in rpr.load_campaign_state()["trial_sharpes"]}
     assert rows["run_a"] == rows["run_b"]
-
-
-def test_profitability_report_does_not_depend_on_the_legacy_verdict():
-    import build_reports as br
-    a = br.build_profitability_report({"protocol_result": _summary("kill", "legacy")})
-    b = br.build_profitability_report({"protocol_result": _summary(None, "none")})
-    assert a == b

@@ -36,7 +36,7 @@ import reader_proposals as rp  # noqa: E402
 import decide_next as dn  # noqa: E402
 import nearest_build as nb  # noqa: E402
 
-from test_e068_5_readers_v3 import (  # noqa: E402
+from _reader_test_helpers import (  # noqa: E402
     RUN_ID, _claim, _fenced, _memory_entry, _patch, _reading, _run070_shaped, _scores,
     _seed_run, _side, _side_with_change, _src, _inputs, _write)
 from test_e068_7_block_test_variants_relaunch import _failed_entry, _queue  # noqa: E402
@@ -368,17 +368,11 @@ def test_config_diff_leaves_and_lists():
 # one proposal kind
 # ---------------------------------------------------------------------------
 
-def test_salvage_drops_a_model_written_patch_and_says_why(monkeypatch):
-    run_dir = _run070_shaped(monkeypatch)
+def test_a_model_written_patch_is_refused_by_the_reading_check_and_says_why():
+    """D-198: the reader answer validation and salvage are deleted; the shape check stays."""
     doc = _reading(patch=_patch())
-    body, err = rpr._validate_reader_output(_fenced(doc), "trade_efficiency", run_dir)
-    assert err and "stand-alone `patch` is removed" in err
-    salvaged = rpr._salvage_reading_output(_fenced(doc), "trade_efficiency", run_dir)
-    assert salvaged is not None
-    kept_body, dropped = salvaged[0], salvaged[1]
-    kept = yaml.safe_load(kept_body)
-    assert "patch" not in kept and len(kept["side_findings"]) == 1
-    assert any("stand-alone `patch` is removed" in str(d) for d in dropped)
+    with pytest.raises(rp.ProposalError, match="stand-alone `patch` is removed"):
+        rp.check_reading(doc, "trade_efficiency", "reading", from_model=True)
 
 
 def test_a_model_written_null_patch_is_accepted():

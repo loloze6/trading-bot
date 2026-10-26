@@ -50,7 +50,9 @@ What decides, in order:
      orchestrator.exact_config_1b is off (exact_config_1b_off).
   3. Eligible candidates collapse (card I, full novelty key; ineligible ones
      never collapse into them) and are ranked: confidence_real desc,
-     distance_to_profitable desc, cost (backtests) asc, candidate_id asc.
+     cost (backtests) asc, candidate_id asc (D-194: two retired score fields
+     no longer rank). When the pick shares both keys with other candidates,
+     the pick carries `tie_with` (their ids) and its why text names them.
      There is NO lineage-depth demotion (operator decision 6, dropped).
   4. Nothing scheduled and nothing eligible -> R2 (E-059 S2b): for every
      brief whose owner entry is `brief_status: open`, ask step 1a for more
@@ -66,7 +68,7 @@ What decides, in order:
 E-059 S2b adds the brief's extra hypotheses (card M, operator decisions 4 and
 9) as candidates next to the reader proposals: a `queued` queue entry with
 `origin: brief` and a `card_ref` (the card 1a already wrote, so it skips
-authoring when picked), ranked on the three anchored scores step 1a wrote
+authoring when picked), ranked on the confidence_real score step 1a wrote
 for it (rubric brief-card-v1, runs/<run>/artifacts/queued_hypotheses.yaml),
 with the same key as a proposal. Its pick flips it `queued` -> `ready`.
 
@@ -1186,10 +1188,10 @@ def _memory_run_ranges(root: Path, memory: dict) -> dict:
 
 
 def _observable_inputs(arts: Path) -> dict:
-    """E-073 step 2 (D-083): the run's in-run merges (side_finding_merges.yaml)
-    and its flagged citations (citation_checks/<category>.yaml: {proposal id:
-    [bad citations]}), each only when its file exists. Information only: an
-    unreadable file counts as absent (a warning is never worth a stop)."""
+    """E-073 step 2 (D-083): the run's in-run merges (side_finding_merges.yaml), only when its
+    file exists. Information only: an unreadable file counts as absent (a warning is never
+    worth a stop). D-198: the flagged citations (citation_checks/) went with the readers'
+    citation check; an old run's files there are no longer read."""
     import reader_findings as _rf  # tools/ sibling; only E-073 runs need it
     out = {}
     merges_path = arts / _rf.MERGES_ARTIFACT
@@ -1198,20 +1200,6 @@ def _observable_inputs(arts: Path) -> dict:
             out["side_finding_merges"] = _rf.merge_index(_load_yaml_opt(merges_path))
         except (yaml.YAMLError, OSError, UnicodeDecodeError):
             out["side_finding_merges"] = {}
-    checks_dir = arts / _rp.CITATION_CHECKS_DIR
-    if checks_dir.is_dir():
-        flagged = {}
-        for path in sorted(checks_dir.glob("*.yaml")):
-            try:
-                doc = _load_yaml_opt(path)
-            except (yaml.YAMLError, OSError, UnicodeDecodeError):
-                continue
-            items = doc.get("items") if isinstance(doc, dict) else None
-            for pid, rec in (items.items() if isinstance(items, dict) else []):
-                bad = rec.get("bad") if isinstance(rec, dict) else None
-                if isinstance(bad, list) and bad:
-                    flagged[str(pid)] = bad
-        out["citation_flags"] = flagged
     return out
 
 
@@ -1843,10 +1831,6 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
         # E-068 slice 5: a repeated spec_hash or a block-kind claim whose tests
         # cannot see the block -- WARNINGS ONLY, never a reason or a rank change
         warnings = warnings + list(side_review["warnings"])
-    if p["kind"] == _rp.SIDE_FINDING and pid in (src.get("citation_flags") or {}):
-        # E-073 step 2 (D-083): kept, flagged -- a WARNING, never a reason or a rank change
-        warnings = warnings + [{"kind": CITATION_WARNING,
-                                "bad": copy.deepcopy(src["citation_flags"][pid])}]
     if warnings:  # E-068 PR 4 (D-071): only when non-empty -- other records unchanged
         cand["warnings"] = warnings
     if p["kind"] == _rp.SIDE_FINDING and p.get("floor_lowered"):
@@ -2143,9 +2127,6 @@ def _side_finding_review(run_id: str, src: dict, p: dict, inputs: dict) -> dict:
 UNKNOWN_CLASS_WARNING = "unknown_component_class"
 
 
-# E-073 step 2 (D-083): a side finding whose cited value did not match the file
-# its reader read, after the reader's one retry (citation_checks/<category>.yaml)
-CITATION_WARNING = "citation_mismatch"
 MERGE_NOTE = ("in-run duplicates merged (E-073): the same tests proposed by more than one "
               "reader; not agreement and not extra evidence (the readers share their inputs), "
               "so this candidate keeps its first source's scores")
@@ -2326,8 +2307,7 @@ def _r2(entries: list, *, select: bool) -> dict:
 
 
 def _score_key(c: dict) -> tuple:
-    return (-c["scores"]["confidence_real"], -c["scores"]["distance_to_profitable"],
-            c["candidate_id"])
+    return (-c["scores"]["confidence_real"], c["candidate_id"])
 
 
 def _fold_in_run_merges(cands: list) -> list:
@@ -2374,13 +2354,27 @@ def _collapse(cands: list) -> list:
     return out
 
 
-def rank_key(c: dict) -> tuple:
-    """confidence_real desc, distance_to_profitable desc, cost asc (unknown
-    cost last), candidate_id asc. mechanism_plausibility is recorded, not
-    ranked on (the plan's key). No lineage term (operator decision 6)."""
+def _rank_pair(c: dict) -> tuple:
+    """The two ranking keys (D-194): confidence_real desc, cost asc (unknown
+    cost last). Two candidates with the same pair are tied."""
     cost = c["cost"]["backtests"]
-    return (-c["scores"]["confidence_real"], -c["scores"]["distance_to_profitable"],
-            cost if cost is not None else math.inf, c["candidate_id"])
+    return (-c["scores"]["confidence_real"], cost if cost is not None else math.inf)
+
+
+def rank_key(c: dict) -> tuple:
+    """confidence_real desc, cost asc (unknown cost last), candidate_id asc
+    (D-194: the two score fields that once ranked between them are gone; the
+    candidate_id term only keeps the order deterministic, and a pick that
+    shares both keys with others declares it: see tie_with). No lineage term
+    (operator decision 6)."""
+    return (*_rank_pair(c), c["candidate_id"])
+
+
+def _tied_with(top: dict, eligible: list) -> list:
+    """candidate_id (ascending) of every other eligible candidate tied with
+    `top` on BOTH ranking keys; [] when none."""
+    pair = _rank_pair(top)
+    return sorted(c["candidate_id"] for c in eligible[1:] if _rank_pair(c) == pair)
 
 
 def _operator_entries(queue: dict) -> list:
@@ -2480,9 +2474,13 @@ def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
     elif eligible:
         top = eligible[0]
         why = (f"rank 1 of {len(eligible)} eligible: confidence_real="
-               f"{top['scores']['confidence_real']}, distance_to_profitable="
-               f"{top['scores']['distance_to_profitable']}, backtests="
+               f"{top['scores']['confidence_real']}, backtests="
                f"{top['cost']['backtests']}")
+        tie = _tied_with(top, eligible)
+        if tie:
+            # D-194: a declared tie; the lowest candidate_id is the pick.
+            why += (f"; tied on both keys with {', '.join(tie)}: the lowest "
+                    f"candidate_id breaks the tie")
         if top["origin"] == ORIGIN_BRIEF:
             # A waiting extra card: flipped queued -> ready by the caller.
             picked = {"candidate_id": top["candidate_id"], "queue_entry_id": top["candidate_id"],
@@ -2494,6 +2492,8 @@ def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
                 "brief_path": f"{CANDIDATE_BRIEFS_DIR}/{top['candidate_id']}.md",
                 "why": why,
             }
+        if tie:
+            picked["tie_with"] = tie
     r2 = _r2(entries, select=scheduled is None and not eligible and r1_request is None)
     requests = r2.pop("_requests", None)
     if requests:

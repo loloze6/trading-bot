@@ -87,7 +87,8 @@ STATUSES = (CONFIRMED, NOT_CONFIRMED, NOT_MEASURABLE, PENDING)
 MEMORY_REL = "campaign_record/campaign_memory.yaml"
 LEDGER_REL = ec.LEDGER_REL
 STATEMENT_CHARS = 400
-TEST_SPEC_KEYS = ("selector", "outcome", "baseline", "statistic", "direction")
+TEST_SPEC_KEYS = ("selector", "outcome", "baseline", "statistic", "direction",
+                  "signal")      # D-193: `signal` is shown only when the test wrote it
 NOTE = ("earlier claims and what became of them: effect numbers only for confirmed claims, "
         "measured on the fold that confirmed them; pending, not_confirmed and not_measurable claims "
         "carry none; every fold a claim was measured on shows, for every status, its reason "

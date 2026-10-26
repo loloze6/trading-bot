@@ -32,7 +32,7 @@ import forecast_rules as fr  # noqa: E402
 
 from test_d051_d053_forecast_rules import (  # noqa: E402
     CONFIG, COMP0, _authored_1b, _cfg, _design, _refusals, _run_5a)
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
+from _reader_test_helpers import _set_orchestrator  # noqa: E402
 
 GUIDE = SR_ROOT / "docs" / "STRATEGY_DESIGN_GUIDE.md"
 SKILL = SR_ROOT / "workflow_artifacts" / "skills" / "strategy-config-authoring" / "SKILL.md"

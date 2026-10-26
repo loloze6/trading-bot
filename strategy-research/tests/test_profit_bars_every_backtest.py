@@ -61,9 +61,11 @@ import run_campaign as rc  # noqa: E402
 import campaign_memory as cm  # noqa: E402
 import golden_harness  # noqa: E402
 
-from test_e058_s2a_regroup_record import (  # noqa: E402
-    ALL_ON, RUN_ID, _seed, _grid, _memory, _memory_path, _set_orchestrator, _fake_llm,
-    REPORT_CATEGORIES, _minimal_run_at)
+from _reader_test_helpers import (  # noqa: E402,F401
+    REGROUP_ALL_ON as ALL_ON, REGROUP_RUN_ID as RUN_ID, _seed, _grid, _memory, _memory_path,
+    _set_orchestrator, _fake_llm, reader_docs)
+from reader_categories import READER_CATEGORIES as REPORT_CATEGORIES  # noqa: E402
+from test_e033_slice4b_gate_conformance_promotion import _minimal_run_at  # noqa: E402
 
 PB = {"profit_bars_file": {"enabled": True}, "profit_bars_every_backtest": {"enabled": True}}
 FULL_ON = {**ALL_ON, **PB}  # grid + reports + readers + regroup_record + both profit flags
@@ -315,7 +317,7 @@ def test_flag_off_run_loop_reads_and_writes_nothing_new(monkeypatch):
     """No bars file exists at all: any read of it would fail the run."""
     run_dir, _stages, _calls = _loop(monkeypatch, ALL_ON)
     state = _state(run_dir)
-    assert state["completed_stages"][-3:] == ["protocol_execution", "specialist_readers", "regroup_record"]
+    assert state["completed_stages"][-2:] == ["protocol_execution", "regroup_record"]   # D-198
     assert state["pending_stage"] == "completed_rejected"
     assert not (run_dir / "artifacts" / "profit_bars_evaluation.yaml").exists()
     assert "profit_bars_reached" not in (state.get("flags") or {})
@@ -730,8 +732,8 @@ def test_cr1_stop_raised_after_regroup_record_not_at_protocol_execution(monkeypa
     _write_bars()
     run_dir, stages, calls = _loop(monkeypatch, FULL_ON, good=True)
     state = _state(run_dir)
-    assert stages == ["protocol_execution"] and len(calls) == 5  # readers ran
-    assert state["completed_stages"][-2:] == ["protocol_execution", "specialist_readers"]
+    assert stages == ["protocol_execution"] and calls == []  # D-198: no readers any more
+    assert state["completed_stages"][-1:] == ["protocol_execution"]
     assert state["pending_stage"] == "regroup_record"  # past protocol_execution
     assert state["status"] == "paused_for_human"
     assert state["flags"]["profit_bars_reached"] is True

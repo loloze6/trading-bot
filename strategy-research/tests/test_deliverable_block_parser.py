@@ -22,7 +22,7 @@ sys.path.insert(0, str(SR_ROOT / "workflow"))
 sys.path.insert(0, str(SR_ROOT / "tools"))
 
 import run_phase1_research as rpr  # noqa: E402
-from test_c5_7b1_model_id_stamp import DATED, _run_1a  # noqa: E402
+from _reader_test_helpers import DATED, _run_1a  # noqa: E402
 
 # The pattern before this fix, kept here only to prove unchanged behaviour.
 _OLD = r"```yaml\s*#\s*([a-zA-Z0-9_.]+\.yaml)\s*(.*?)```"

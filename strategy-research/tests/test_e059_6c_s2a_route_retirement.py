@@ -43,8 +43,8 @@ import campaign_memory as cm  # noqa: E402
 import record_schema as rs  # noqa: E402
 import verdict_criteria_evaluator as vce  # noqa: E402
 
-from test_e058_s2a_regroup_record import (  # noqa: E402
-    RUN_ID, _seed, _set_orchestrator)
+from _reader_test_helpers import (  # noqa: E402,F401
+    REGROUP_RUN_ID as RUN_ID, _seed, _set_orchestrator, reader_docs)
 from test_profit_bars_every_backtest import (  # noqa: E402
     FULL_ON, _loop, _write_bars, _state, _pbe, _single_run)
 from test_halt_quarantine_policy import (  # noqa: E402

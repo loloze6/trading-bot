@@ -36,7 +36,7 @@ import claim_findings as cf  # noqa: E402
 import reader_findings as rf  # noqa: E402
 import decide_next as dn  # noqa: E402
 
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
+from _reader_test_helpers import _set_orchestrator  # noqa: E402
 from test_e056_1b_block_manifest import GOOD, _authored_1b  # noqa: E402
 from test_k3_protocol_pinning import _minimal_run  # noqa: E402
 
@@ -173,7 +173,6 @@ def test_flag_off_finding_and_digest_unchanged(tmp_path):
     finding = cf.build_finding(run070, "run_070", entry)
     assert "approximation" not in finding and list(finding)[0] == "finding_id"
     assert "deviations" not in cf._summary_row("run_070", finding)
-    assert "approximation" not in rf.claim_result_digest(run070)
 
 
 # ---------------------------------------------------------------------------
@@ -452,17 +451,6 @@ def test_the_summary_rows_carry_a_deviations_count(run070_approx):
     finding = cf.build_finding(run070_approx, "run_070", entry)
     row = cf._summary_row("run_070", finding)
     assert list(row)[0] == "deviations" and row["deviations"] == 2
-    memory = {"runs": {"run_070": {"recorded_at": "t1", cf.FINDING_KEY: finding}}}
-    [r] = rf.reader_findings_summary(memory, "run_071")["findings"]
-    assert list(r)[0] == "deviations" and r["deviations"] == 2
-
-
-def test_the_digest_says_approximation_before_the_claim(run070_approx):
-    d = rf.claim_result_digest(run070_approx)
-    keys = list(d)
-    assert "approximation" in d and keys.index("approximation") < keys.index("statement")
-    assert d["approximation"]["line"].startswith(nb.APPROX_LINE)
-    assert "status" not in d   # no error
 
 
 # ---------------------------------------------------------------------------

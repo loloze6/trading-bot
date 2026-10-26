@@ -91,7 +91,8 @@ def test_the_addenda_name_idea_quantities_and_the_statement_not_signal_concept()
         assert "signal_concept" not in text, name
         assert "cost_feasibility" not in text and "expected_failure_modes" not in text, name
     assert "`idea_quantities`" in _flat(HD / "PREFILLED_CLAIM.md")
-    assert "`idea_quantities`" in _flat(HD / "BRIEF_HYPOTHESES.md")
+    # D-194: BRIEF_HYPOTHESES.md named idea_quantities only to place a card against the block
+    # registry (the distance score); that score is gone, so the addendum no longer names it.
 
 
 def test_decide_next_no_longer_tells_1a_to_name_residual_ic_or_pick_a_live_entry():

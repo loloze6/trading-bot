@@ -402,9 +402,10 @@ def source_item(root: Path, ref: tuple):
     """The flattened reader proposal the ref names (reader_proposals.load_proposals), or None
     when the file has no such proposal. Raises ProposalError / OSError when unreadable."""
     import reader_proposals as rp
+    from reader_categories import READER_CATEGORIES  # D-197: the five names, an old run's too
     run, _cat, pid = ref
     items = rp.load_proposals(Path(root) / "runs" / run / "artifacts" / "proposals",
-                              list(rp.READER_RUBRIC_VERSIONS))
+                              list(READER_CATEGORIES))
     for cat_items in items.values():
         for item in cat_items:
             if item.get("proposal_id") == pid:

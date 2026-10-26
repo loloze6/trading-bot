@@ -40,8 +40,8 @@ import run_phase1_research as rpr  # noqa: E402
 
 import test_e075_pr4_queries as q4  # noqa: E402
 from test_d089_vehicle_and_coins import EMPTY, _check_model  # noqa: E402
-from test_e058_s2a_regroup_record import ALL_ON, _memory, _seed  # noqa: E402
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
+from _reader_test_helpers import (  # noqa: E402,F401
+    REGROUP_ALL_ON as ALL_ON, _memory, _seed, _set_orchestrator, reader_docs)
 from test_e075_pr5_analyst import LONG, RUN_ID, _entries_for_claim  # noqa: E402
 from d178_legacy_fixture import d178_checks_off  # noqa: E402,F401  (D-178)
 

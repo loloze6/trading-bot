@@ -31,7 +31,7 @@ sys.path.insert(0, str(_SR / "tools"))
 import run_phase1_research as rpr  # noqa: E402
 import run_campaign as camp  # noqa: E402
 
-from test_e058_s2a_regroup_record import RUN_ID  # noqa: E402
+from _reader_test_helpers import REGROUP_RUN_ID as RUN_ID  # noqa: E402
 from test_profit_bars_every_backtest import _VALID_BARS, _write_bars, _state  # noqa: E402
 from test_e059_6c_s2a_route_retirement import _forbid  # noqa: E402
 from test_e059_6c_s2d_holdout_unlock import (  # noqa: E402

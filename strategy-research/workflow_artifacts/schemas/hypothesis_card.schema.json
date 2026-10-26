@@ -91,8 +91,9 @@
       "description": "Pseudo-formula or English description of the signal computation. Must be derivable from edge_source.measurable_proxy."
     },
     "target_market": {
-      "type": "string",
-      "description": "Symbol and conditions where the signal applies, including the regime condition if the idea has one."
+      "type": ["string", "array"],
+      "items": { "type": "string" },
+      "description": "Symbol and conditions where the signal applies, including the regime condition if the idea has one. D-196: a string, or a list of symbol strings for a card naming several coins (the hypothesis-design skill says 'the coin or coins of the brief'; run_phase1_research._coerce_scalar_instrument and build_exclusion_digest.extract_instruments already read both shapes)."
     },
     "timeframe": { "type": "string" },
     "assumptions": {
@@ -296,7 +297,8 @@
         "statistic": { "enum": ["mean_diff", "rank_ic", "hit_rate", "decay_curve"] },
         "direction": { "enum": ["greater", "less"] },
         "floor": { "type": "object", "minProperties": 1 },
-        "consistency": { "type": "object" }
+        "consistency": { "type": "object" },
+        "signal": { "type": "string", "minLength": 1, "description": "D-193 (optional; leave it out for the default): the forecast column this test reads. \"forecast\" (the default) or a bars.csv column the data dictionary types with unit forecast, e.g. debug_info.components.<component>.post_pipeline_value. Written only when it is not the default." }
       }
     }
   }

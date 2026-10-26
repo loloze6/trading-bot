@@ -38,7 +38,7 @@ import claim_tests as ct  # noqa: E402
 from test_e068_claim_tests import (DON, EVENT, FAST, make_windows, passed_summary,  # noqa: E402
                                    spec)
 from test_k3_protocol_pinning import _minimal_run  # noqa: E402
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
+from _reader_test_helpers import _set_orchestrator  # noqa: E402
 
 ON = {"config_direct_authoring": {"enabled": True}, "claim_tests": {"enabled": True}}
 FAR = "2099-01-01"          # a holdout start after every synthetic bar

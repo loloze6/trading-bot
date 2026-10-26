@@ -36,9 +36,9 @@ import run_phase1_research as rpr  # noqa: E402
 import run_campaign as rc  # noqa: E402
 import golden_harness  # noqa: E402
 
-from test_e058_s2a_regroup_record import (  # noqa: E402
-    ALL_ON, RUN_ID, _seed, _set_orchestrator, _minimal_run_at)
-from test_e058_s2a_regroup_record import _grid  # noqa: E402
+from _reader_test_helpers import (  # noqa: E402
+    REGROUP_ALL_ON as ALL_ON, REGROUP_RUN_ID as RUN_ID, _grid, _seed, _set_orchestrator)
+from test_e033_slice4b_gate_conformance_promotion import _minimal_run_at  # noqa: E402
 from test_profit_bars_every_backtest import VARIANT_LOOP_ON, _seed_dsr_ledger  # noqa: E402
 
 PB = {"profit_bars_file": {"enabled": True}, "profit_bars_every_backtest": {"enabled": True}}

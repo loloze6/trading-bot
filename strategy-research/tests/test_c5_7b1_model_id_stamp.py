@@ -40,38 +40,18 @@ import reader_proposals  # noqa: E402
 import decide_next as dn  # noqa: E402
 from claude_agent_sdk import AssistantMessage, ResultMessage, TextBlock  # noqa: E402
 
-from test_e046a_slice5b_ii_b_readers_stage import (  # noqa: E402
-    ALL_ON, RUN_ID, _seed_run, _set_orchestrator,
+from _reader_test_helpers import (  # noqa: E402,F401  (D-197: the shared reader-test helpers)
+    ALL_ON, BASELINE_ENTRY_KEYS, DATED, ON, REQUESTED, RUN_ID, _assistant, _bytes, _loaded, _one_proposal,
+    _reader_text, _result, _run_1a, _seed_run, _set_orchestrator, _stream, _stub_tbot_python,
 )
 from test_e059_s2a_decide_next import _decide, _one_source, _patch  # noqa: E402
 
 CAT = "profitability"
-REQUESTED = rpr._CLAUDE_WORKER_MODEL
-DATED = f"{REQUESTED}-20251001"
-ON = {**ALL_ON, "score_provenance": {"enabled": True}}
-BASELINE_ENTRY_KEYS = {"timestamp", "engine", "execution_time_seconds", "cost_usd",
-                       "num_turns", "tokens"}
-
-
-@pytest.fixture(autouse=True)
-def _stub_tbot_python(monkeypatch):
-    monkeypatch.setattr(rpr, "_resolve_tbot_python", lambda: Path("stub-python"))
 
 
 # ---------------------------------------------------------------------------
 # helpers
 # ---------------------------------------------------------------------------
-
-def _reader_text(proposals: list) -> str:
-    return "```yaml\n# proposals/profitability.yaml\n" + yaml.safe_dump(proposals) + "```"
-
-
-def _one_proposal(model_id="self-reported-model", pid="profitability-run_990-1") -> dict:
-    p = _patch(pid)
-    p["model_id"] = model_id
-    p["rubric_version"] = "profitability-reader-v2"  # C5.7b-2: the flag-on closed set
-    return p
-
 
 def _stub_llm(text: str, models=None, calls: list | None = None):
     """An async stand-in for _invoke_reader_llm. `models` None models a stub with
@@ -95,33 +75,6 @@ def _run_reader(monkeypatch, llm, orchestrator=ON):
     dest = rpr.run_reader_worker(CAT, RUN_ID, run_dir, stage_attempt=0)
     audit = rpr.load_yaml(run_dir / "pipeline_state.yaml")["audit_log"]
     return run_dir, dest, audit[f"specialist_readers_{CAT}_attempt_0"]
-
-
-def _bytes(path: Path) -> bytes:
-    """File bytes with the platform's text-mode newline translation undone (the
-    workers write with open(..., "w"), unchanged by this slice)."""
-    return path.read_bytes().replace(b"\r\n", b"\n")
-
-
-def _loaded(dest: Path) -> list:
-    return yaml.safe_load(dest.read_text(encoding="utf-8"))
-
-
-def _stream(*messages):
-    async def _q(*, prompt, options=None):
-        for m in messages:
-            yield m
-    return _q
-
-
-def _assistant(text: str, model: str):
-    return AssistantMessage(content=[TextBlock(text=text)], model=model)
-
-
-def _result(model_usage=None):
-    return ResultMessage(subtype="success", duration_ms=1, duration_api_ms=1, is_error=False,
-                         num_turns=1, session_id="s", total_cost_usd=0.0,
-                         usage={"input_tokens": 1, "output_tokens": 1}, model_usage=model_usage)
 
 
 # ---------------------------------------------------------------------------
@@ -151,15 +104,10 @@ def test_flag_on_with_specialist_readers_reads_true():
     assert rpr._score_provenance_enabled() is True
 
 
-def test_flag_on_without_specialist_readers_raises():
+def test_flag_on_alone_reads_true():
+    """D-198: no dependency any more (it required specialist_readers)."""
     _set_orchestrator({"score_provenance": {"enabled": True}})
-    with pytest.raises(ValueError, match="requires orchestrator.specialist_readers.enabled=true"):
-        rpr._score_provenance_enabled()
-    # specialist_readers on but its own dependency off: its own message surfaces
-    _set_orchestrator({"specialist_readers": {"enabled": True},
-                       "score_provenance": {"enabled": True}})
-    with pytest.raises(ValueError, match="orchestrator.grid_evaluation.enabled=true"):
-        rpr._score_provenance_enabled()
+    assert rpr._score_provenance_enabled() is True
 
 
 def test_the_launch_preflight_reads_and_refuses_it():
@@ -167,24 +115,9 @@ def test_the_launch_preflight_reads_and_refuses_it():
     _set_orchestrator({**ALL_ON, "score_provenance": {"enabled": "true"}})
     refusal = camp._flag_preflight_refusal()
     assert refusal and "orchestrator.score_provenance.enabled='true'" in refusal
-    _set_orchestrator({"score_provenance": {"enabled": True}})
-    refusal = camp._flag_preflight_refusal()
-    assert refusal and "score_provenance.enabled=true requires" in refusal
     _set_orchestrator(ON)
     values, refusal = camp._flag_preflight()
     assert refusal is None and values["score_provenance"] is True
-
-
-def test_run_loop_fails_at_start_when_specialist_readers_is_off(monkeypatch):
-    _set_orchestrator({"score_provenance": {"enabled": True}})
-    run_dir = _seed_run(pending="protocol_execution")
-    invoked = []
-    monkeypatch.setattr(rpr, "_invoke_agent_with_yaml_retry", lambda *a, **k: invoked.append(a[0]))
-    rpr.run_loop(RUN_ID)  # sets status=failed, does not escape
-    state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
-    assert invoked == []
-    assert state["pending_stage"] == "protocol_execution"
-    assert state["status"] == "failed" and "score_provenance" in state["last_error"]
 
 
 # ---------------------------------------------------------------------------
@@ -233,147 +166,9 @@ def test_model_facts_rules():
 
 
 # ---------------------------------------------------------------------------
-# 3. S1: the reader stamp
+# 3. (D-198: the reader stamp, the reader flag-off identity and decide_next's stamped reader
+#     proposals went with the readers; the brief-card stamp below stays)
 # ---------------------------------------------------------------------------
-
-def test_stamp_overwrites_the_self_report_and_records_both(monkeypatch):
-    calls = []
-    _, dest, entry = _run_reader(monkeypatch, _stub_llm(_reader_text([_one_proposal()]),
-                                                        [DATED], calls))
-    (p,) = _loaded(dest)
-    assert p["model_id"] == DATED
-    # everything else is what the model wrote
-    assert p["rubric_version"] == "profitability-reader-v2"
-    assert p["scores"] == _one_proposal()["scores"] and p["evidence"] == _one_proposal()["evidence"]
-    reader_proposals.load_proposals(dest.parent, [CAT])       # still a valid proposals file
-    prov = entry["provenance"]
-    assert prov["requested"] == REQUESTED and prov["observed_models"] == [DATED]
-    assert prov["observed"] == DATED and prov["stamped"] is True
-    assert prov["self_reported"] == {"profitability-run_990-1": "self-reported-model"}
-    assert prov["mismatch"] is False              # observed matches the REQUESTED model
-    assert prov["self_report_differs"] is True    # informational only
-    assert len(calls) == 1
-
-
-def test_a_mismatch_is_recorded_and_the_run_continues(monkeypatch):
-    calls = []
-    _, dest, entry = _run_reader(monkeypatch, _stub_llm(_reader_text([_one_proposal()]),
-                                                        ["claude-sonnet-4-5"], calls))
-    assert dest.exists() and _loaded(dest)[0]["model_id"] == "claude-sonnet-4-5"
-    assert entry["provenance"]["mismatch"] is True
-    assert entry["provenance"]["requested"] == REQUESTED
-    assert len(calls) == 1                         # no retry on a mismatch
-    reader_proposals.load_proposals(dest.parent, [CAT])
-
-
-def test_several_distinct_models_are_sorted_joined_and_a_mismatch(monkeypatch):
-    _, dest, entry = _run_reader(monkeypatch, _stub_llm(_reader_text([_one_proposal()]),
-                                                        [REQUESTED, "claude-other"]))
-    assert _loaded(dest)[0]["model_id"] == f"{REQUESTED},claude-other"
-    assert entry["provenance"]["mismatch"] is True
-    assert entry["provenance"]["observed_models"] == [REQUESTED, "claude-other"]
-
-
-def test_every_proposal_in_the_file_is_stamped(monkeypatch):
-    two = [_one_proposal(pid="profitability-run_990-1"),
-           _one_proposal(model_id="another", pid="profitability-run_990-2")]
-    _, dest, entry = _run_reader(monkeypatch, _stub_llm(_reader_text(two), [REQUESTED]))
-    assert [p["model_id"] for p in _loaded(dest)] == [REQUESTED, REQUESTED]
-    assert entry["provenance"]["self_reported"] == {"profitability-run_990-1": "self-reported-model",
-                                                    "profitability-run_990-2": "another"}
-
-
-def test_no_observation_leaves_the_self_report_and_records_null(monkeypatch):
-    text = _reader_text([_one_proposal()])
-    _, dest, entry = _run_reader(monkeypatch, _stub_llm(text, models=None))
-    body = rpr._READER_OUTPUT_BLOCK_RE.findall(text)[0].strip() + "\n"
-    assert dest.read_text(encoding="utf-8") == body            # verbatim: never fabricated
-    prov = entry["provenance"]
-    assert prov["observed_models"] == [] and prov["observed"] is None
-    assert prov["mismatch"] is None and prov["self_report_differs"] is None
-    assert prov["stamped"] is False
-    assert prov["self_reported"] == {"profitability-run_990-1": "self-reported-model"}
-
-
-def test_an_already_equal_self_report_leaves_the_body_verbatim(monkeypatch):
-    text = _reader_text([_one_proposal(model_id=REQUESTED)])
-    _, dest, entry = _run_reader(monkeypatch, _stub_llm(text, [REQUESTED]))
-    assert dest.read_text(encoding="utf-8") == rpr._READER_OUTPUT_BLOCK_RE.findall(text)[0].strip() + "\n"
-    assert entry["provenance"]["self_report_differs"] is False
-    assert entry["provenance"]["mismatch"] is False
-
-
-def test_an_empty_proposal_list_is_not_rewritten(monkeypatch):
-    _, dest, entry = _run_reader(monkeypatch, _stub_llm("```yaml\n# p.yaml\n[]\n```", [DATED]))
-    assert dest.read_text(encoding="utf-8") == "# p.yaml\n[]\n"  # verbatim, header comment kept
-    assert entry["provenance"]["self_reported"] == {} and entry["provenance"]["observed"] == DATED
-
-
-def test_end_to_end_through_the_real_invoke_with_a_stub_stream(monkeypatch):
-    _set_orchestrator(ON)
-    monkeypatch.chdir(SR_ROOT)
-    run_dir = _seed_run()
-    monkeypatch.setattr(rpr, "query", _stream(
-        _assistant(_reader_text([_one_proposal()]), DATED), _result({DATED: {}})))
-    dest = rpr.run_reader_worker(CAT, RUN_ID, run_dir, stage_attempt=0)
-    assert _loaded(dest)[0]["model_id"] == DATED
-    entry = rpr.load_yaml(run_dir / "pipeline_state.yaml")["audit_log"][f"specialist_readers_{CAT}_attempt_0"]
-    assert entry["provenance"]["observed_models"] == [DATED]
-    assert entry["provenance"]["result_models"] == [DATED]
-
-
-def test_stamp_reader_body_never_raises_and_leaves_the_body_on_failure(tmp_path):
-    (tmp_path / "artifacts").mkdir()
-    body, prov = rpr._stamp_reader_body("just: a mapping\n", CAT, tmp_path, [DATED])
-    assert body == "just: a mapping\n"
-    assert prov["stamped"] is False and "not a list" in prov["stamp_error"]
-    assert prov["observed"] == DATED and prov["mismatch"] is False
-
-
-def test_a_stamped_body_that_fails_validation_is_not_used(monkeypatch, tmp_path):
-    (tmp_path / "artifacts").mkdir()
-    monkeypatch.setattr(rpr, "_validate_reader_output", lambda *a, **k: (None, "boom"))
-    body, prov = rpr._stamp_reader_body(yaml.safe_dump([_one_proposal()]), CAT, tmp_path, [DATED])
-    assert yaml.safe_load(body)[0]["model_id"] == "self-reported-model"
-    assert prov["stamped"] is False and "stamped body failed validation: boom" in prov["stamp_error"]
-
-
-def test_the_budget_sum_ignores_the_provenance_block(monkeypatch):
-    run_dir, _, entry = _run_reader(monkeypatch, _stub_llm(_reader_text([_one_proposal()]), [DATED]))
-    assert "provenance" in entry
-    audit = rpr.load_yaml(run_dir / "pipeline_state.yaml")["audit_log"]
-    total, _ = rpr._compute_weighted_budget_usage(audit)
-    assert total == entry["tokens"]["weighted"]
-
-
-# ---------------------------------------------------------------------------
-# 4. flag-off byte identity
-# ---------------------------------------------------------------------------
-
-@pytest.mark.parametrize("orchestrator", [ALL_ON, {**ALL_ON, "score_provenance": {"enabled": False}}])
-def test_flag_off_reader_file_and_audit_entry_are_unchanged(monkeypatch, orchestrator):
-    text = _reader_text([_one_proposal()])
-    # even a stub that reports models (a flag-on meta) must change nothing flag-off
-    _, dest, entry = _run_reader(monkeypatch, _stub_llm(text, ["claude-sonnet-4-5"]), orchestrator)
-    assert _bytes(dest) == (rpr._READER_OUTPUT_BLOCK_RE.findall(text)[0].strip() + "\n").encode("utf-8")
-    assert _loaded(dest)[0]["model_id"] == "self-reported-model"
-    assert set(entry) == BASELINE_ENTRY_KEYS and "provenance" not in entry
-
-
-# ---------------------------------------------------------------------------
-# 5. decide_next carries the stamped value
-# ---------------------------------------------------------------------------
-
-def test_decide_next_records_the_stamped_model_id(monkeypatch):
-    p = _one_proposal(pid="profitability-run_061-1")
-    _, dest, _ = _run_reader(monkeypatch, _stub_llm(_reader_text([p]), [DATED]))
-    proposals = reader_proposals.load_proposals(dest.parent, [CAT])[CAT]
-    assert proposals[0]["model_id"] == DATED
-    rec = _decide(_one_source(proposals))
-    cand = next(c for c in rec["candidates"] if c["candidate_id"] == "profitability-run_061-1")
-    assert cand["scores"]["model_id"] == DATED
-    assert cand["scores"]["rubric_version"] == "profitability-reader-v2"
-
 
 # ---------------------------------------------------------------------------
 # 6. S3: the brief-card scores
@@ -390,24 +185,6 @@ def _card_scores(rubric="brief-card-v1", model_id="self-reported-model"):
 def _stage_text(scores_yaml: str) -> str:
     return ("Done.\n```yaml\n# hypothesis_card.yaml\nhypothesis_id: H-1\n```\n"
             f"```yaml\n# extra_card_scores.yaml\n{scores_yaml}```\n")
-
-
-def _run_1a(monkeypatch, tmp_path, text, models, orchestrator=ON):
-    _set_orchestrator(orchestrator)
-    monkeypatch.chdir(SR_ROOT)  # _build_stage_prompt opens the skill relative to cwd
-    run_dir = tmp_path / "runs" / "run_c57"
-    (run_dir / "artifacts").mkdir(parents=True)
-    (run_dir / "pipeline_state.yaml").write_text(
-        yaml.safe_dump({"status": "active", "audit_log": {}}), encoding="utf-8")
-    # `models` empty: an AssistantMessage whose model is "" -- no observation
-    first = models[0] if models else ""
-    monkeypatch.setattr(rpr, "query", _stream(
-        _assistant(text, first), *[_assistant("", m) for m in models[1:]],
-        _result({first: {}} if first else None)))
-    handoff = {"required_inputs": [], "optional_inputs": [], "injected_context": {"stage_attempt": "0"}}
-    asyncio.run(rpr.run_claude_worker("validation", handoff, run_dir))
-    audit = rpr.load_yaml(run_dir / "pipeline_state.yaml")["audit_log"]
-    return run_dir, audit["validation_attempt_0"]
 
 
 def test_card_scores_are_stamped_and_recorded(monkeypatch, tmp_path):

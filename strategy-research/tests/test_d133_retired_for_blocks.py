@@ -26,7 +26,7 @@ import run_phase1_research as rpr  # noqa: E402
 import run_campaign as camp  # noqa: E402
 import verdict_criteria_evaluator as vce  # noqa: E402
 import decide_next as dn  # noqa: E402
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
+from _reader_test_helpers import _set_orchestrator  # noqa: E402
 import test_c51_menu_criterion_lint as t51  # noqa: E402
 
 MENU = yaml.safe_load((SR / "config" / "criterion_menu.yaml").read_text(encoding="utf-8"))

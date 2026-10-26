@@ -32,7 +32,7 @@ import forecast_size_probe as fsp  # noqa: E402
 
 from test_d051_d053_forecast_rules import (  # noqa: E402
     CONFIG, COMP0, _authored_1b, _design, _refusals, _run_5a)
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
+from _reader_test_helpers import _set_orchestrator  # noqa: E402
 
 
 # ---------------------------------------------------------------------------

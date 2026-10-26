@@ -30,7 +30,7 @@ Write the idea in the operator's words first, then in formulas.
 - `thesis` opens with the brief's `research_goal`, word for word.
 - `idea_quantities` lists every quantity the idea says matters. Give each one as the operator's words, then its formula. Each formula must be computable from the feeds in the brief's scope block.
 - Keep every quantity. A competing reading of a quantity becomes a test (step 3) or a variant. It never deletes the quantity.
-- `not_expressible` lists the parts of the idea a forecast cannot express: exits, holds, position state.
+- `not_expressible` lists the parts of the idea a forecast cannot express, and only three kinds: exits, position state and order placement. Anything else is a quantity with a formula, not an exclusion: write it in `idea_quantities`. The config-authoring stage (1b) checks each entry against the engine's transforms and the component catalogue before it is declared a deviation.
 - `edge_source` says why the edge should exist. `library_lookup` names the library entry the idea builds on.
 
 ## 2. Statement
@@ -71,7 +71,7 @@ A regime idea goes through the same steps.
 - `hypothesis_id`: the id of the idea.
 - `thesis`: opens with the brief's `research_goal`, word for word (step 1).
 - `idea_quantities`: one entry per quantity: the operator's words, then the formula (step 1).
-- `not_expressible`: one entry per part of the idea a forecast cannot express (step 1).
+- `not_expressible`: one entry per exit, position-state or order-placement part of the idea a forecast cannot express (step 1).
 - `edge_source`: `category` (information_asymmetry, structural_forced_flow, liquidity_provision, cross_venue_dislocation or persistent_behavioral_bias), `specific_mechanism`, `why_not_arbitraged`, `evidence_type` (`price_volume_only` when the idea uses price bars alone) and `measurable_proxy`.
 - `library_lookup`: `indicator_id` (the id in `config/indicator_library.yaml` the idea builds on, null if none), `regime_affinity_for_target` and `crowding_risk` (null if `indicator_id` is null). Code groups tried ideas by `indicator_id`.
 - `target_market`: the coin or coins of the brief.

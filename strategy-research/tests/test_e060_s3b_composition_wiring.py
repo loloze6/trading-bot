@@ -994,14 +994,14 @@ def test_end_to_end_registry_change_to_graded_composite(campaign_root, monkeypat
                 [_patch(f"profitability-{run_id}-1", component_id="b0__sig",
                         field="params.period", before=period, after=period + 2)]),
                 encoding="utf-8")
-    monkeypatch.setattr(rpr, "_run_specialist_readers_stage", _readers)
-    import build_reports
-    # E-061 C2 S2d: the variant-loop call site now also passes
-    # variants=/failed_variants=/untested_variants= -- accept and ignore them,
-    # this stub only exists to skip real report building against fixture
-    # protocol results that aren't full protocol_result documents.
-    monkeypatch.setattr(build_reports, "build_reports",
-                         lambda run_dir, write=True, **kwargs: {})
+    # D-198: the readers' stage is deleted; the proposal the first run's reader wrote is
+    # written here instead, right before regroup_record builds the memory entry from it.
+    _real_regroup = rpr._run_regroup_record_stage
+
+    def _regroup_after_readers(run_id, run_dir, *a, **k):
+        _readers(run_id, run_dir, 0)
+        return _real_regroup(run_id, run_dir, *a, **k)
+    monkeypatch.setattr(rpr, "_run_regroup_record_stage", _regroup_after_readers)
 
     def _scaffold(run_id):
         run_dir = _write_fresh_scaffold(campaign_root["runs_dir"], run_id,
