@@ -3426,9 +3426,12 @@ candidate stays in the pool and is re-checked at every decision; its
 available, reason}`, and when picked its brief's goal says which feed it
 needs. Candidates without `requires_feed` are unchanged.
 Ranking (after collapsing eligible duplicates on that
-key): `confidence_real` desc, `distance_to_profitable` desc, cost (backtests)
-asc, id asc; no lineage demotion. Scores only rank and appear only in the
-decision record. A picked candidate is a new idea (`<parent>__<proposal_id>`)
+key): `confidence_real` desc, cost (backtests) asc, id asc (D-194: the
+`distance_to_profitable` and `mechanism_plausibility` scores are retired; old
+records that carry them still load). When the pick shares both keys with other
+candidates, `picked.tie_with` lists their ids and `picked.why` names them; the
+lowest id is the pick. No lineage demotion. Scores only rank and appear only in
+the decision record. A picked candidate is a new idea (`<parent>__<proposal_id>`)
 that enters step 1a: its brief carries **no criteria**; `_materialize_run`
 writes `pre_registration.yaml` with `pass_rule: null` + `pass_rule_pending:
 hypothesis_generation`; run_loop defers the readers pre-flight; 1a gets the

@@ -10294,14 +10294,6 @@ def _apply_brief_hypotheses_context(stage_name: str, handoff: dict, run_dir: Pat
              "E-059 S2b: the hypotheses already produced from this brief -- do not repeat them.")):
         if path not in existing:
             required.append({"path": path, "reason": reason})
-    # O-3 / D-017: an extra card's distance_to_profitable is its distance from the
-    # validated blocks, so 1a reads the registry -- only when it exists (no block
-    # validated yet: no file, and the addendum scores every card 3).
-    registry = "../../campaign_record/block_registry.yaml"
-    if registry not in existing and (Path(run_dir) / registry).exists():
-        required.append({"path": registry, "reason": (
-            "O-3 / D-017: the validated blocks -- score each extra card's "
-            "distance_to_profitable against them (BRIEF_HYPOTHESES.md rubric).")})
 
 
 def _queue_extra_hypothesis_cards(run_id: str, run_dir: Path, cards: list) -> bool:
