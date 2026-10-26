@@ -64,7 +64,7 @@ CLAIM_STATUS_ABSENT = "claim_status_absent"
 NOTE = ("information only: effect sizes measured on this run's own bars, no p-value and "
         "no verdict (CUL-394); a finding never bans, routes or stops anything (D-055)")
 _TEST_SPEC_KEYS = ("selector", "outcome", "baseline", "statistic", "direction", "floor",
-                   "consistency", "eras")
+                   "consistency", "eras", "signal")     # D-193: `signal` only when written
 
 
 def _load(path: Path):
