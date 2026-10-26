@@ -6973,8 +6973,9 @@ def _run_specialist_readers_stage(run_id: str, run_dir: Path, stage_attempt=0) -
     idea = _load_idea_status(run_dir, run_id)
     _check_retune_firewall(run_dir)
     # E-061 C2 S2e (card I, D-017): what earlier runs validated, written by code
-    # BEFORE the first reader so every reader can score "distance to profitable"
-    # against the registry. This stage is the only caller (tests pin it).
+    # BEFORE the first reader, as context for the readers and for the run viewer
+    # (no score is derived from it since D-194). This stage is the only caller
+    # (tests pin it).
     _write_registry_summary(run_dir, idea_status=idea["idea_status"])
     v3 = _reader_findings_enabled()  # E-068 slice 5
     if v3:
@@ -10235,7 +10236,7 @@ def _write_pass_through_manifest(artifacts: Path) -> bool:
 # never a decide-next reader candidate). Its presence is what makes step 1a
 # get the BRIEF_HYPOTHESES.md addendum, which lets 1a:
 #   * write several cards (hypothesis_card_<n>.yaml) plus
-#     artifacts/extra_card_scores.yaml -- the three anchored 0-3 scores
+#     artifacts/extra_card_scores.yaml -- the one 0-3 score (confidence_real)
 #     (rubric brief-card-v1) per card, used ONLY to rank the extra cards;
 #   * or write no card and artifacts/brief_status.yaml
 #     {brief_status: exhausted, reason} -> terminal completed_brief_exhausted.
@@ -10297,14 +10298,6 @@ def _apply_brief_hypotheses_context(stage_name: str, handoff: dict, run_dir: Pat
              "E-059 S2b: the hypotheses already produced from this brief -- do not repeat them.")):
         if path not in existing:
             required.append({"path": path, "reason": reason})
-    # O-3 / D-017: an extra card's distance_to_profitable is its distance from the
-    # validated blocks, so 1a reads the registry -- only when it exists (no block
-    # validated yet: no file, and the addendum scores every card 3).
-    registry = "../../campaign_record/block_registry.yaml"
-    if registry not in existing and (Path(run_dir) / registry).exists():
-        required.append({"path": registry, "reason": (
-            "O-3 / D-017: the validated blocks -- score each extra card's "
-            "distance_to_profitable against them (BRIEF_HYPOTHESES.md rubric).")})
 
 
 def _queue_extra_hypothesis_cards(run_id: str, run_dir: Path, cards: list) -> bool:

@@ -26,7 +26,7 @@ side_findings:                           # 0, 1 or 2 -- `[]` when nothing else s
       fail_if: "..."
       rationale: "..."
     evidence: ["..."]
-    scores: {confidence_real: 0-3, distance_to_profitable: 0-3, mechanism_plausibility: 0-3}
+    scores: {confidence_real: 0-3}
     # config_change: [{component_id: <id in the base config>, field: <path inside it>,
     #                  before: <current>, after: <new>}]    # optional, see rule 5
 ```
@@ -73,12 +73,3 @@ config is proposed only inside a side finding, with the claim it is expected to 
 
 - `confidence_real`: 0 = one cell of the report; 1 = base only; 2 = two or more windows;
   3 = most windows and every variant.
-- `distance_to_profitable` (read `registry_summary.yaml`; the lower score wins when two apply):
-  0 = the same block type as a registered block (`this_run.type_already_registered`, a
-  `same_type` relation), or a config change on a registered block; 1 = the same component classes with
-  another timeframe category or kind, or `this_run.correlation_to_composite.max_abs` >= 0.6;
-  2 = a type not in the registry with `max_abs` 0.3-0.6 or not measurable (the default for a
-  side finding); 3 = a type not in the registry with `max_abs` < 0.3, or no composite exists.
-  Cite the registry field you used.
-- `mechanism_plausibility`: 0 = no mechanism; 1 = a pattern only; 2 = a mechanism consistent
-  with the evidence; 3 = a mechanism that names who is on the other side and why it persists.

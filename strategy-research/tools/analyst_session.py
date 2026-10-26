@@ -59,7 +59,6 @@ ANSWER_KEYS = {"claim": {"outcome", "claim", "why_query", "evidence", "vehicle",
                "no_claim": {"outcome", "no_claim", "evidence"}}
 _CITE_RE = re.compile(r"^(q[0-9]+):([A-Za-z0-9_.\-/<>]+)=(.+)$")
 _DATE_RE = re.compile(r"(?<!\d)(\d{4})-(\d{2})(?:-(\d{2}))?(?!\d)")
-FIXED_SCORE = 1            # distance_to_profitable and mechanism_plausibility (no self-score)
 
 
 def log_rel(lens: str) -> str:
@@ -1447,8 +1446,7 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
     # the reading checks (shape, vehicle) need a claim the claim card accepted
     record["claim_card_ok"] = not res.errors
     record.update(why_query=why, test_spec_hashes=hashes)
-    scores = {"confidence_real": in_run_score(score_keys, entries) if hashes else 0,
-              "distance_to_profitable": FIXED_SCORE, "mechanism_plausibility": FIXED_SCORE}
+    scores = {"confidence_real": in_run_score(score_keys, entries) if hashes else 0}
     record["scores"] = {**scores, "source": "code: in-run window agreement (PR5_DESIGN 11.3)"}
     side = {"proposal_id": f"{rid}-1", "claim": claim,
             "evidence": list(evidence), "scores": scores,
