@@ -45,6 +45,7 @@ import window_economics as we  # noqa: E402
 import run_phase1_research as rpr  # noqa: E402
 import test_e075_pr4_queries as pr4  # noqa: E402
 import test_profit_bars_every_backtest as tpb  # noqa: E402
+from _reader_test_helpers import reader_docs  # noqa: E402,F401  (fixture, D-197)
 from test_e075_pr4_queries import HOLDS, N, engine, log_of, make_run  # noqa: E402
 
 CELL_KEYS = set(we.CELL_KEYS)

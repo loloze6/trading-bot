@@ -970,8 +970,10 @@ orchestrator:
       # step 1a's card and the side-finding merges accept it; the child run measures it
       # (claim_measure.measure_variant with trade_tests); fold confirmation checks it and
       # measures it on the child's trades (tools/fold_confirm.measure_on_fold).
-      # While true (PR-5, D-092; also REQUIRES orchestrator.specialist_readers.enabled and
-      # orchestrator.reader_findings.enabled): in the specialist_readers stage two analyst
+      # While true (PR-5, D-092; D-197: a stage of its own, "analyst", right after
+      # protocol_execution and before specialist_readers when that flag is on, else before
+      # verdict_interpreter; NO dependency on category_reports, specialist_readers or
+      # reader_findings, and it runs with all three off): two analyst
       # lenses replace the v3 readers -- `forecast` writes forecast_power.yaml and
       # `trade_efficiency` writes trade_efficiency.yaml, each a session with only the six
       # query tools (tools/analyst_queries.py, one log and 150 comparisons per lens), the

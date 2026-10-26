@@ -52,8 +52,7 @@ import run_campaign as camp  # noqa: E402
 import data_dictionary as dd  # noqa: E402
 from build_reports import REPORT_CATEGORIES  # noqa: E402
 
-from test_e046a_slice5b_ii_b_readers_stage import RUN_ID, _set_orchestrator  # noqa: E402
-from test_e068_5_readers_v3 import V3_ON, CLAIMS_ON, _run070_shaped  # noqa: E402
+from _reader_test_helpers import CLAIMS_ON, RUN_ID, V3_ON, _run070_shaped, _set_orchestrator  # noqa: E402
 
 OB_ON = {**V3_ON, "observable_backtest": {"enabled": True}}
 OB_OFF = {**V3_ON, "observable_backtest": {"enabled": False}}
@@ -1184,7 +1183,7 @@ def test_flag_on_does_not_touch_the_v2_readers(monkeypatch):
     read there (the launch pre-flight refuses that combination)."""
     _set_orchestrator({**CLAIMS_ON})
     monkeypatch.chdir(SR_ROOT)
-    from test_e046a_slice5b_ii_b_readers_stage import _seed_run
+    from _reader_test_helpers import _seed_run
     run_dir = _seed_run()
     v2 = rpr._reader_handoff("profitability", RUN_ID, 0, run_dir)
     _set_orchestrator({**CLAIMS_ON, "observable_backtest": {"enabled": True}})

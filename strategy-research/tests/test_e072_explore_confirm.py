@@ -46,208 +46,17 @@ import verdict_criteria_evaluator as vce  # noqa: E402
 import protocol_resolution as pres  # noqa: E402
 from build_reports import REPORT_CATEGORIES  # noqa: E402
 
-from test_e046a_slice5b_ii_b_readers_stage import (  # noqa: E402
-    RUN_ID, _seed_run, _set_orchestrator, _fake_llm)
-from test_e068_5_readers_v3 import V3_ON, _seed_v3_docs, _reading, _fenced, _scores  # noqa: E402
+from _reader_test_helpers import (  # noqa: E402,F401  (D-197: the shared reader-test helpers)
+    EC_ON, N_BARS, PRE_REG, RUN_ID, SENT_CONF, SENT_POOL, SYMBOLS, V3_ON, VARIANTS, WINDOWS,
+    _bars_rows, _block_claim, _child_run, _confirmation, _ec_run, _eras_holdout, _fake_llm,
+    _fenced, _make_run, _meta, _protocol_execution_part, _prs, _pure_claim, _reading,
+    _readings_llm, _save, _scores, _seed_run, _seed_v3_docs, _set_orchestrator, _sides,
+    _stub_tbot_python, _write_csv)
 
-EC_ON = {**V3_ON, "variant_loop": {"enabled": True}, "explore_confirm": {"enabled": True}}
 EC_OFF = {**V3_ON, "variant_loop": {"enabled": True}}
-WINDOWS = [("2022-01", "2022-01-01", "2022-04-30"), ("2022-05", "2022-05-01", "2022-08-31"),
-           ("2022-09", "2022-09-01", "2022-12-31"), ("2023-01", "2023-01-01", "2023-04-30"),
-           ("2023-05", "2023-05-01", "2023-08-31"), ("2023-09", "2023-09-01", "2023-12-31")]
 EXPL = ["2022-01", "2022-05", "2022-09"]
 CONF = ["2023-01", "2023-05", "2023-09"]
-SYMBOLS = ["BTCUSD", "ETHUSD"]
-VARIANTS = ["base", "design"]
-SENT_CONF = 919191.0     # every confirmation-window number
-SENT_POOL = 828282.0     # every all-window aggregate
 SENTINELS = ("919191", "828282")
-N_BARS = 110
-
-
-@pytest.fixture(autouse=True)
-def _stub_tbot_python(monkeypatch):
-    monkeypatch.setattr(rpr, "_resolve_tbot_python", lambda: Path("stub-python"))
-
-
-def _pure_claim() -> dict:
-    return {"statement": "After an up day the next day is higher.", "kind": "event_behaviour",
-            "tests": [{"name": "up_day_followthrough",
-                       "selector": {"kind": "event", "field": "past_return", "bars": 1,
-                                    "op": ">", "value": 0.0},
-                       "outcome": {"kind": "fwd_return", "horizons": [1]},
-                       "baseline": {"kind": "complement"}, "statistic": "mean_diff",
-                       "direction": "greater", "floor": {"min_events": 10}}],
-            "pass_if": "effect above zero", "fail_if": "effect at or below zero",
-            "rationale": "seen on the exploration windows"}
-
-
-def _block_claim() -> dict:
-    return {"statement": "The forecast ranks next-day returns.", "kind": "direction_forecast",
-            "tests": [{"name": "forecast_rank", "selector": {"kind": "all"},
-                       "outcome": {"kind": "fwd_return", "horizons": [1]},
-                       "statistic": "rank_ic", "direction": "greater",
-                       "floor": {"min_events": 10}}],
-            "pass_if": "rank IC above zero", "fail_if": "rank IC at or below zero",
-            "rationale": "the forecast read on the exploration windows"}
-
-
-def _bars_rows(start: str, sign: float, seed: int, conf: bool) -> list:
-    """Daily bars: r[t+1] = 0.004 * sign * sign(r[t]) + noise (momentum when
-    sign is +1, reversal when -1). A confirmation window's component value
-    carries the sentinel."""
-    import pandas as pd
-    rng = np.random.default_rng(seed)
-    ts = pd.date_range(start, periods=N_BARS, freq="1D", tz="UTC")
-    r = np.zeros(N_BARS)
-    r[0] = 0.01
-    for t in range(N_BARS - 1):
-        r[t + 1] = 0.004 * sign * np.sign(r[t]) + rng.normal(0.0, 0.01)
-    close = 100.0 * np.cumprod(1.0 + r)
-    rows = []
-    for t in range(N_BARS):
-        rows.append({"timestamp": ts[t].strftime("%Y-%m-%dT%H:%M:%SZ"),
-                     "high": f"{close[t] * 1.01:.6f}", "low": f"{close[t] * 0.99:.6f}",
-                     "close": f"{close[t]:.6f}", "forecast": f"{r[t] * 100:.6f}",
-                     "regime": "unknown" if t < N_BARS - 1 else "",
-                     "debug_info.components.c1.value":
-                         f"{SENT_CONF:.1f}" if conf else f"{0.5 + t / 1000:.4f}"})
-    return rows
-
-
-def _write_csv(path: Path, rows: list) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=list(rows[0]))
-        w.writeheader()
-        w.writerows(rows)
-
-
-def _save(path: Path, doc) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
-
-
-PRE_REG = {"pass_rule": {"criteria": [
-    {"id": "c_win", "metric": "sharpe", "source": "window", "reducer": "median",
-     "comparator": ">", "threshold": 0.0, "floor": {"min_windows": 1}},
-    {"id": "c_pool", "metric": "realized_edge_to_cost_ratio", "source": "pooled",
-     "comparator": ">", "threshold": 2.2}]}}
-
-
-def _eras_holdout():
-    return pres.load_policy_eras(rpr._DATA_POLICY_PATH), rpr._load_holdout_range()[0]
-
-
-def _make_run(run_dir: Path, conf_sign: float = -1.0, windows=WINDOWS, card_claim=None) -> None:
-    """The synthetic run's backtest output (no backtest is run)."""
-    arts = run_dir / "artifacts"
-    arts.mkdir(parents=True, exist_ok=True)
-    conf_labels = {w[0] for w in windows[len(windows) // 2:]}
-    (run_dir / "protocol.json").write_text(json.dumps({
-        "symbols": SYMBOLS, "timeframe": "1d",
-        "windows": [{"label": l, "test": {"start": s, "end": e}} for l, s, e in windows]}),
-        encoding="utf-8")
-    for vi, vid in enumerate(VARIANTS):
-        results, trades = [], []
-        for si, sym in enumerate(SYMBOLS):
-            for wi, (label, start, _end) in enumerate(windows):
-                conf = label in conf_labels
-                rid = f"{vid}_{sym}_{label}"
-                v = SENT_CONF if conf else round(0.1 * (wi + 1) + 0.01 * si, 4)
-                results.append({"symbol": sym, "window": label, "run_id": rid,
-                                "core": {"sharpe": v, "net_return_pct": v, "trade_count": 20,
-                                         "forecast_return_corr": v,
-                                         "forecast_return_corr_pvalue": 0.5},
-                                "per_regime": {"unknown": {"return_pct": v}},
-                                "regime_validity": {"unknown": {"n_bars": N_BARS, "x": v}}})
-                _write_csv(run_dir / "variants" / vid / "results" / rid / "bars.csv",
-                           _bars_rows(start, conf_sign if conf else 1.0,
-                                      seed=1000 * vi + 100 * si + wi, conf=conf))
-                for k in range(3):
-                    trades.append({"symbol": sym, "window": label, "regime_at_entry": "unknown",
-                                   "trade_id": f"{rid}-{k}", "pnl_pct": v, "bars_held": 2})
-        pr = {"results": results,
-              "hypothesis_verdict": {"verdict": "x", "diagnostics": {
-                  "median_forecast_return_corr": SENT_POOL, "median_sharpe": SENT_POOL}},
-              "trade_diagnostics_summary": {"realized_edge_to_cost_ratio": SENT_POOL,
-                                            "n_trades": 828282},
-              "per_symbol_summary": {s: {"sharpe": SENT_POOL} for s in SYMBOLS}}
-        _save(arts / "variants" / vid / "protocol_result.yaml", pr)
-        (run_dir / "variants" / vid).mkdir(parents=True, exist_ok=True)
-        (run_dir / "variants" / vid / "trade_diagnostics.json").write_text(
-            json.dumps({"trades": trades}), encoding="utf-8")
-    _save(arts / "pre_registration.yaml", PRE_REG)
-    _save(arts / "hypothesis_card.yaml", {"hypothesis_id": "H-TEST-1",
-                                          "claim": card_claim or _pure_claim()})
-    eras, holdout = _eras_holdout()
-    card = yaml.safe_load((arts / "hypothesis_card.yaml").read_text(encoding="utf-8"))
-    tests = card["claim"]["tests"]
-    variants = {}
-    for vid in VARIANTS:
-        doc = cmeas.measure_variant(run_dir, vid, tests, eras, holdout)
-        _save(arts / "variants" / vid / cmeas.VARIANT_FILE, doc)
-        variants[vid] = doc
-    import claim_card as cc
-    status = cc.status_of(cc.check_claim(card["claim"]), None, [])
-    _save(arts / cmeas.RUN_FILE, cmeas.run_doc(run_dir.name, status, variants))
-    prs = _prs(run_dir)
-    grid = vce.evaluate_grid(prs, PRE_REG, None, {})
-    _save(arts / "grid_evaluation.yaml", grid)
-    br.build_reports(run_dir, write=True, variants=_meta())
-
-
-def _prs(run_dir: Path) -> dict:
-    return {vid: yaml.safe_load((run_dir / "artifacts" / "variants" / vid
-                                 / "protocol_result.yaml").read_text(encoding="utf-8"))
-            for vid in VARIANTS}
-
-
-def _meta() -> dict:
-    return {vid: {"kind": None, "symbol": None, "status": "graded"} for vid in VARIANTS}
-
-
-def _ec_run(monkeypatch, flags=EC_ON, conf_sign=-1.0, run_id=RUN_ID, windows=WINDOWS,
-            card_claim=None) -> Path:
-    _set_orchestrator(flags)
-    monkeypatch.chdir(SR_ROOT)
-    _seed_v3_docs()
-    dst = rpr.ROOT / "workflow_artifacts" / "skills" / "readers_v3" / "EXPLORATION.md"
-    shutil.copyfile(SR_ROOT / "workflow_artifacts" / "skills" / "readers_v3" / "EXPLORATION.md",
-                    dst)
-    run_dir = _seed_run(run_id)
-    _make_run(run_dir, conf_sign, windows=windows, card_claim=card_claim)
-    monkeypatch.setattr(rpr, "_resolve_protocol_path",
-                        lambda rd, rid: Path(rd) / "protocol.json")
-    return run_dir
-
-
-def _protocol_execution_part(run_dir: Path, run_id: str = RUN_ID) -> None:
-    """What protocol_execution does under the flag: the split at entry, the
-    readers' copies after the reports."""
-    rpr._prepare_explore_confirm(run_dir, run_id)
-    rpr._write_exploration_views(run_dir, run_id, _prs(run_dir), _meta(),
-                                 pre_registration=PRE_REG)
-
-
-def _readings_llm(prompts: list, sides: dict | None = None):
-    sides = sides or {}
-
-    async def _llm(prompt):
-        prompts.append(prompt)
-        cat = next(c for c in REPORT_CATEGORIES if f"reader_category: {c}\n" in prompt)
-        return (_fenced(_reading(cat, sides=sides.get(cat, []))),
-                {"usage": {}, "cost_usd": 0.0, "num_turns": 1})
-    return _llm
-
-
-def _sides():
-    return {"trade_efficiency": [{"proposal_id": f"trade_efficiency-{RUN_ID}-1",
-                                  "claim": _pure_claim(), "evidence": ["exploration only"],
-                                  "scores": _scores()}],
-            "forecast_power": [{"proposal_id": f"forecast_power-{RUN_ID}-1",
-                                "claim": _block_claim(), "evidence": ["exploration only"],
-                                "scores": _scores()}]}
 
 
 def _text_of_tree(root: Path) -> str:
@@ -607,11 +416,6 @@ def test_a_missing_exploration_report_stops_the_prompt(monkeypatch):
 # 5. Confirmation
 # ---------------------------------------------------------------------------
 
-def _confirmation(run_dir: Path) -> dict:
-    return yaml.safe_load((run_dir / "artifacts" / ec.CONFIRMATION_ARTIFACT).read_text(
-        encoding="utf-8"))
-
-
 @pytest.mark.parametrize("conf_sign,held", [(1.0, True), (-1.0, False)])
 def test_a_pure_finding_is_measured_in_run_on_the_confirmation_windows(conf_sign, held,
                                                                        monkeypatch):
@@ -711,16 +515,6 @@ def _seed_pending(monkeypatch) -> dict:
     monkeypatch.setattr(rpr, "_invoke_reader_llm", _readings_llm([], _sides()))
     rpr._run_specialist_readers_stage(RUN_ID, run_dir)
     return ec.load_ledger(rpr.ROOT)["findings"][f"forecast_power-{RUN_ID}-1"]
-
-
-def _child_run(monkeypatch, run_id: str, windows=WINDOWS) -> Path:
-    """The run built from forecast_power-run_990-1: its brief names the finding,
-    its card carries the block claim."""
-    run_dir = _ec_run(monkeypatch, run_id=run_id, windows=windows, card_claim=_block_claim())
-    _save(run_dir / "artifacts" / "research_brief.yaml", {"candidate": {"source": {
-        "proposal_ref": f"runs/{RUN_ID}/artifacts/proposals/forecast_power.yaml"
-                        f"#forecast_power-{RUN_ID}-1"}}})
-    return run_dir
 
 
 def test_the_run_built_from_a_block_claim_resolves_it(monkeypatch):

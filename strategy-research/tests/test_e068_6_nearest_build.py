@@ -36,7 +36,7 @@ import claim_findings as cf  # noqa: E402
 import reader_findings as rf  # noqa: E402
 import decide_next as dn  # noqa: E402
 
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
+from _reader_test_helpers import _set_orchestrator  # noqa: E402
 from test_e056_1b_block_manifest import GOOD, _authored_1b  # noqa: E402
 from test_k3_protocol_pinning import _minimal_run  # noqa: E402
 

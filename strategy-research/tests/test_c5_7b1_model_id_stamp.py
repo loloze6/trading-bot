@@ -40,38 +40,18 @@ import reader_proposals  # noqa: E402
 import decide_next as dn  # noqa: E402
 from claude_agent_sdk import AssistantMessage, ResultMessage, TextBlock  # noqa: E402
 
-from test_e046a_slice5b_ii_b_readers_stage import (  # noqa: E402
-    ALL_ON, RUN_ID, _seed_run, _set_orchestrator,
+from _reader_test_helpers import (  # noqa: E402,F401  (D-197: the shared reader-test helpers)
+    ALL_ON, BASELINE_ENTRY_KEYS, DATED, ON, REQUESTED, RUN_ID, _assistant, _bytes, _loaded, _one_proposal,
+    _reader_text, _result, _run_1a, _seed_run, _set_orchestrator, _stream, _stub_tbot_python,
 )
 from test_e059_s2a_decide_next import _decide, _one_source, _patch  # noqa: E402
 
 CAT = "profitability"
-REQUESTED = rpr._CLAUDE_WORKER_MODEL
-DATED = f"{REQUESTED}-20251001"
-ON = {**ALL_ON, "score_provenance": {"enabled": True}}
-BASELINE_ENTRY_KEYS = {"timestamp", "engine", "execution_time_seconds", "cost_usd",
-                       "num_turns", "tokens"}
-
-
-@pytest.fixture(autouse=True)
-def _stub_tbot_python(monkeypatch):
-    monkeypatch.setattr(rpr, "_resolve_tbot_python", lambda: Path("stub-python"))
 
 
 # ---------------------------------------------------------------------------
 # helpers
 # ---------------------------------------------------------------------------
-
-def _reader_text(proposals: list) -> str:
-    return "```yaml\n# proposals/profitability.yaml\n" + yaml.safe_dump(proposals) + "```"
-
-
-def _one_proposal(model_id="self-reported-model", pid="profitability-run_990-1") -> dict:
-    p = _patch(pid)
-    p["model_id"] = model_id
-    p["rubric_version"] = "profitability-reader-v2"  # C5.7b-2: the flag-on closed set
-    return p
-
 
 def _stub_llm(text: str, models=None, calls: list | None = None):
     """An async stand-in for _invoke_reader_llm. `models` None models a stub with
@@ -95,33 +75,6 @@ def _run_reader(monkeypatch, llm, orchestrator=ON):
     dest = rpr.run_reader_worker(CAT, RUN_ID, run_dir, stage_attempt=0)
     audit = rpr.load_yaml(run_dir / "pipeline_state.yaml")["audit_log"]
     return run_dir, dest, audit[f"specialist_readers_{CAT}_attempt_0"]
-
-
-def _bytes(path: Path) -> bytes:
-    """File bytes with the platform's text-mode newline translation undone (the
-    workers write with open(..., "w"), unchanged by this slice)."""
-    return path.read_bytes().replace(b"\r\n", b"\n")
-
-
-def _loaded(dest: Path) -> list:
-    return yaml.safe_load(dest.read_text(encoding="utf-8"))
-
-
-def _stream(*messages):
-    async def _q(*, prompt, options=None):
-        for m in messages:
-            yield m
-    return _q
-
-
-def _assistant(text: str, model: str):
-    return AssistantMessage(content=[TextBlock(text=text)], model=model)
-
-
-def _result(model_usage=None):
-    return ResultMessage(subtype="success", duration_ms=1, duration_api_ms=1, is_error=False,
-                         num_turns=1, session_id="s", total_cost_usd=0.0,
-                         usage={"input_tokens": 1, "output_tokens": 1}, model_usage=model_usage)
 
 
 # ---------------------------------------------------------------------------
@@ -390,24 +343,6 @@ def _card_scores(rubric="brief-card-v1", model_id="self-reported-model"):
 def _stage_text(scores_yaml: str) -> str:
     return ("Done.\n```yaml\n# hypothesis_card.yaml\nhypothesis_id: H-1\n```\n"
             f"```yaml\n# extra_card_scores.yaml\n{scores_yaml}```\n")
-
-
-def _run_1a(monkeypatch, tmp_path, text, models, orchestrator=ON):
-    _set_orchestrator(orchestrator)
-    monkeypatch.chdir(SR_ROOT)  # _build_stage_prompt opens the skill relative to cwd
-    run_dir = tmp_path / "runs" / "run_c57"
-    (run_dir / "artifacts").mkdir(parents=True)
-    (run_dir / "pipeline_state.yaml").write_text(
-        yaml.safe_dump({"status": "active", "audit_log": {}}), encoding="utf-8")
-    # `models` empty: an AssistantMessage whose model is "" -- no observation
-    first = models[0] if models else ""
-    monkeypatch.setattr(rpr, "query", _stream(
-        _assistant(text, first), *[_assistant("", m) for m in models[1:]],
-        _result({first: {}} if first else None)))
-    handoff = {"required_inputs": [], "optional_inputs": [], "injected_context": {"stage_attempt": "0"}}
-    asyncio.run(rpr.run_claude_worker("validation", handoff, run_dir))
-    audit = rpr.load_yaml(run_dir / "pipeline_state.yaml")["audit_log"]
-    return run_dir, audit["validation_attempt_0"]
 
 
 def test_card_scores_are_stamped_and_recorded(monkeypatch, tmp_path):

@@ -58,7 +58,7 @@ import decide_next as dn  # noqa: E402
 import reader_proposals as rp  # noqa: E402
 from build_reports import REPORT_CATEGORIES  # noqa: E402
 
-from test_e046a_slice5b_ii_b_readers_stage import (  # noqa: E402
+from _reader_test_helpers import (  # noqa: E402
     ALL_ON, RUN_ID, _fake_llm, _proposal, _seed_run, _set_orchestrator,
     _stub_tbot_python,  # noqa: F401  (autouse fixture)
 )

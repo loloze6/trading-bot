@@ -178,7 +178,7 @@ def test_the_retry_message_reaches_1b_through_the_real_invoke_path(monkeypatch):
     import asyncio
     import shutil
     from test_d051_d053_forecast_rules import _authored_1b, ON_OFF_BASE
-    from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator
+    from _reader_test_helpers import _set_orchestrator
     _set_orchestrator({"config_direct_authoring": {"enabled": True}})
     run_dir = _authored_1b("run_964", ON_OFF_BASE)
     name = "hypothesis_to_strategy_config_authoring.yaml"

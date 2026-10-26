@@ -27,10 +27,10 @@ import near_miss_scoreboard as nms  # noqa: E402
 import record_schema  # noqa: E402
 import verdict_criteria_evaluator as vce  # noqa: E402
 
-from test_e058_s2a_regroup_record import (  # noqa: E402
-    RUN_ID, READERS_ON, ALL_ON, _seed, _memory, _memory_path, _loop_from_specialist_readers,
+from _reader_test_helpers import (  # noqa: E402
+    REGROUP_RUN_ID as RUN_ID, READERS_ON, REGROUP_ALL_ON as ALL_ON, _seed, _memory,
+    _memory_path, _loop_from_specialist_readers, _set_orchestrator,
     _stub_tbot_python)  # noqa: F401  (autouse fixture re-exported)
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
 
 BASE_CONFIG = {
     "regime_detector": {"rules": [{"regime": "trending", "op": "gte", "value": 0.5}]},

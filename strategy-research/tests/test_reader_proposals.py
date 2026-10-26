@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 import reader_proposals as rp  # noqa: E402
 import build_reports  # noqa: E402
-from test_e046a_slice5b_i_reader_skills import _VALID_EXAMPLES  # noqa: E402
+from _reader_test_helpers import _VALID_EXAMPLES  # noqa: E402
 
 CATEGORIES = list(build_reports.REPORT_CATEGORIES)
 SCHEMA = json.loads((SR_ROOT / "workflow_artifacts" / "schemas" / "proposal.schema.json")

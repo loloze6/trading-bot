@@ -218,6 +218,19 @@ STAGE_CONFIGS = {
         "default_next": "dynamic_routing",
         "skill": "verdict-interpreter",
     },
+    # D-197 (orchestrator.analyst.enabled, off by default): the analyst's own stage, registered
+    # UNCONDITIONALLY (same convention as specialist_readers below) but only ROUTED to when its
+    # flag is on -- see run_loop's protocol_execution override. It runs right after
+    # protocol_execution (the backtest artifacts its query tools read) and before
+    # specialist_readers when that stage is on, else before verdict_interpreter, and has no
+    # dependency on category_reports, specialist_readers or reader_findings. Two lens sessions
+    # (_run_analyst_stage -> run_analyst_worker), each writing
+    # artifacts/proposals/<category>.yaml for its category (tools/reader_categories.py); no
+    # "skill" key (the analyst skill is loaded by analyst_session.build_prompt).
+    "analyst": {
+        "handoff": "protocol_to_analyst.yaml",
+        "default_next": "dynamic_routing",
+    },
     # E-046a Slice 5b-ii-B (orchestrator.specialist_readers.enabled, off by default):
     # registered UNCONDITIONALLY (same convention as strategy_config_authoring above) but
     # only ROUTED to when the flag is on -- see run_loop's protocol_execution override.
@@ -1783,6 +1796,8 @@ def _legacy_verdict_args() -> list:
 import protocol_refusal as _protocol_refusal  # noqa: E402  (tools/: one definition)
 import holdout_policy as _holdout_policy  # noqa: E402  (tools/: CUL-339, the ONE strict holdout_range parser)
 import research_folds as _research_folds  # noqa: E402  (tools/: E-077 PR-1, D-085: the fixed folds + the validation guard)
+from reader_categories import (  # noqa: E402  (tools/: D-197, the proposals' category names, no build_reports import)
+    ANALYST_LENS_CATEGORIES, READER_CATEGORIES)
 
 
 class _RefusedBeforeAnyBacktest(RuntimeError):
@@ -1850,6 +1865,11 @@ async def run_tool_worker(stage_name: str, run_id: str):
     _sr_on = stage_name == "protocol_execution" and _specialist_readers_enabled()
     if _sr_on:
         _clear_specialist_readers_artifacts(RUN_DIR)
+    # D-197: the analyst runs with specialist_readers off too, so its own per-attempt
+    # artifacts (query logs, records, its two readings) are cleared here when only the
+    # analyst's flag is on. Both flags on: the clear above already removed them.
+    elif stage_name == "protocol_execution" and _analyst_enabled():
+        _clear_analyst_artifacts(RUN_DIR)
     # Branch 3 on every backtest (code review 2026-09-24): the per-variant profit
     # evaluation must come from THIS attempt too -- a stale one from a previous
     # attempt would otherwise be recorded / routed on. Flag off: nothing deleted.
@@ -4427,7 +4447,10 @@ def _analyst_enabled(cfg: dict | None = None) -> bool:
     """E-075 PR-5a (D-091): orchestrator.analyst.enabled. False when the key, the section
     or the config file is absent. A non-bool value raises.
 
-    Requires orchestrator.folds.enabled (refused otherwise, D-091 review).
+    Requires orchestrator.folds.enabled (refused otherwise, D-091 review) and refuses
+    orchestrator.explore_confirm.enabled. D-197: no dependency on category_reports,
+    specialist_readers or reader_findings -- the analyst is a stage of its own
+    (STAGE_CONFIGS["analyst"], _run_analyst_stage) and runs with all three off.
     While false: byte-identical. While true (PR-5a, the first part of the analyst's flag;
     E-075 PR-5 adds the analyst stage under the same flag): the trade-level claim-test family
     (D-086) reaches the pipeline -- the claim checks at the reading, decide-next, step 1a's
@@ -4450,12 +4473,8 @@ def _analyst_enabled(cfg: dict | None = None) -> bool:
             "(E-077), and without folds a trade-level claim would be measured in the run that "
             "inspired it, which E-072's in-run route cannot do. Enable them together.")
     if value:
-        # E-075 PR-5 (D-092): the analyst runs in the specialist_readers stage and writes
-        # v3 readings (reader_findings)
-        missing = [name for name, on in (
-                       ("specialist_readers", _flag_dep(_specialist_readers_enabled, cfg)),
-                       ("reader_findings", _flag_dep(_reader_findings_enabled, cfg)))
-                   if not on]
+        # D-197: E-075 PR-5's (D-092) dependency on specialist_readers and reader_findings is
+        # gone -- the analyst runs in its own stage and writes its readings itself
         if _flag_dep(_explore_confirm_enabled, cfg):
             # review of #359 (D-093): E-072 hides the confirmation windows from the readers;
             # the analyst's query engine reads every window of the run
@@ -4464,12 +4483,6 @@ def _analyst_enabled(cfg: dict | None = None) -> bool:
                 "orchestrator.explore_confirm.enabled=true -- the analyst's queries read every "
                 "window of the run, including E-072's confirmation windows; its claims are "
                 "confirmed on folds (E-077) instead. Turn explore_confirm off.")
-        if missing:
-            raise ValueError(
-                "orchestrator.analyst.enabled=true requires "
-                + " and ".join(f"orchestrator.{m}.enabled=true" for m in missing)
-                + " as well -- the analyst replaces the readers in the specialist_readers "
-                "stage and writes v3 readings. Enable them together.")
     return value
 
 
@@ -4796,6 +4809,9 @@ _SPECIALIST_READERS_RUN_SCOPED_FILES = ("idea_status.yaml", "grid_evaluation.yam
 # (they exist only under orchestrator.analyst.enabled)
 _SPECIALIST_READERS_RUN_SCOPED_DIRS = ("reports", "proposals", "citation_checks",
                                        "analyst_queries", "analyst")
+# D-197: the analyst's own per-attempt directories (the part of the list above that is the
+# analyst's), cleared by _clear_analyst_artifacts when specialist_readers is off
+_ANALYST_RUN_SCOPED_DIRS = ("analyst_queries", "analyst")
 
 
 def _clear_specialist_readers_artifacts(run_dir: Path) -> None:
@@ -4818,6 +4834,27 @@ def _clear_specialist_readers_artifacts(run_dir: Path) -> None:
         removed.append(dbg.name)
     if removed:
         print(f"🧹 [E-046a] protocol_execution re-run: cleared previous attempt's {removed}")
+
+
+def _clear_analyst_artifacts(run_dir: Path) -> None:
+    """D-197: with the analyst on and specialist_readers off, what only the analyst stage
+    writes must come from THIS protocol_execution attempt, so a re-run can never skip a lens
+    because an earlier attempt's reading is still there: its query logs and records
+    (analyst_queries/, analyst/) and its two readings (proposals/<ANALYST_LENS_CATEGORIES>.yaml).
+    Called only under that flag combination, at protocol_execution entry."""
+    arts = run_dir / "artifacts"
+    removed = []
+    for name in _ANALYST_RUN_SCOPED_DIRS:
+        if (arts / name).exists():
+            shutil.rmtree(arts / name)
+            removed.append(f"{name}/")
+    for category in ANALYST_LENS_CATEGORIES:
+        reading = arts / "proposals" / f"{category}.yaml"
+        if reading.exists():
+            reading.unlink()
+            removed.append(f"proposals/{category}.yaml")
+    if removed:
+        print(f"🧹 [D-197] protocol_execution re-run: cleared previous attempt's {removed}")
 
 
 def _raise_specialist_readers_prereq_errors(errors: list) -> None:
@@ -4848,16 +4885,6 @@ def _check_specialist_readers_preflight(run_dir: Path) -> None:
             f"{path}: pass_rule is not menu-shaped (no criterion carries source/reducer) -- "
             f"the grid cannot evaluate it, so under orchestrator.specialist_readers.enabled "
             f"this run could only fail after its backtest. Refusing before any spend.")
-
-
-def _reader_categories() -> list:
-    """The five categories, from tools/build_reports.py::REPORT_CATEGORIES --
-    one source of truth shared with the report builder (Slice 5a)."""
-    _tools = str(Path(__file__).parent.parent / "tools")
-    if _tools not in sys.path:
-        sys.path.insert(0, _tools)
-    import build_reports as _br
-    return list(_br.REPORT_CATEGORIES)
 
 
 def _reader_proposals_module():
@@ -4900,7 +4927,36 @@ def _ensure_specialist_readers_handoff(run_id: str, run_dir: Path) -> Path:
                 {"path": "artifacts/protocol_result.yaml",
                  "reason": "component-error check, before any reader runs"},
             ],
-            "deliverables": [f"proposals/{c}.yaml" for c in _reader_categories()],
+            "deliverables": [f"proposals/{c}.yaml" for c in READER_CATEGORIES],
+        })
+    return handoff_path
+
+
+_ANALYST_HANDOFF = "protocol_to_analyst.yaml"
+
+
+def _ensure_analyst_handoff(run_id: str, run_dir: Path) -> Path:
+    """D-197: the analyst stage's handoff, written once, lazily at stage entry (a run with the
+    flag off never gets this file), like _ensure_specialist_readers_handoff. Its only
+    required input is protocol_result.yaml (the component-error check); the lenses' own
+    inputs are the backtest artifacts the query tools read."""
+    handoff_path = run_dir / "handoffs" / _ANALYST_HANDOFF
+    if not handoff_path.exists():
+        save_yaml(handoff_path, {
+            "handoff_version": 1, "run_id": run_id,
+            "from_stage": "protocol_execution", "to_stage": "analyst",
+            "assigned_engine": "claude",
+            "objective": (
+                "D-197: run the analyst's two lenses (E-075), one after another. Each is a "
+                "session with only the query tools over this run's backtest artifacts and "
+                "writes artifacts/proposals/<category>.yaml for its category. The analyst "
+                "decides and routes nothing."
+            ),
+            "required_inputs": [
+                {"path": "artifacts/protocol_result.yaml",
+                 "reason": "component-error check, before any lens runs"},
+            ],
+            "deliverables": [f"proposals/{c}.yaml" for c in ANALYST_LENS_CATEGORIES],
         })
     return handoff_path
 
@@ -6385,8 +6441,15 @@ def _run_specialist_readers(run_id: str, run_dir: Path, stage_attempt=0) -> dict
     reader call. The budget is checked before every reader (five calls share
     one stage). Returns the validated proposals: nothing in this module
     routes the run on them; the stage body only copies their requires_feed
-    requests into data_requests.yaml (E-035 S2c)."""
-    categories = _reader_categories()
+    requests into data_requests.yaml (E-035 S2c).
+
+    D-197: under orchestrator.analyst.enabled the analyst's two lenses run in their own stage,
+    BEFORE this one (_run_analyst_stage), so their files are already here and the loop
+    below only validates them; this stage writes the other three categories' code-skipped
+    readings (replaced_by_analyst). The lens branch below runs the analyst only for a run whose
+    pipeline_state predates the stage and was paused inside specialist_readers (resumed
+    here, the file still absent) -- the one route by which an old state completes."""
+    categories = list(READER_CATEGORIES)
     rp = _reader_proposals_module()
     proposals_dir = run_dir / "artifacts" / "proposals"
     v3 = _reader_findings_enabled()  # E-068 slice 5
@@ -6612,7 +6675,7 @@ def _record_reader_skips(run_id: str, run_dir: Path) -> None:
         rf = _reader_findings_module()
         rp = _reader_proposals_module()
         readings = rp.load_readings(Path(run_dir) / "artifacts" / "proposals",
-                                    _reader_categories())
+                                    list(READER_CATEGORIES))
         skips = {c: d["skipped"] for c, d in readings.items() if "skipped" in d}
         if skips or (ROOT / rf.SKIPS_REL).exists():
             rf.record_skips(ROOT, run_id, skips)
@@ -6841,7 +6904,7 @@ def _record_side_finding_merges(run_id: str, run_dir: Path) -> dict:
     path = Path(run_dir) / "artifacts" / rf.MERGES_ARTIFACT
     try:
         readings = _reader_proposals_module().load_readings(
-            Path(run_dir) / "artifacts" / "proposals", _reader_categories())
+            Path(run_dir) / "artifacts" / "proposals", list(READER_CATEGORIES))
         doc = rf.merges_doc(run_id, rf.side_finding_merges(readings, **_claim_check_kw()))
         save_yaml(path, doc)
         for g in doc["merged"]:
@@ -6877,7 +6940,7 @@ def _record_confirmations(run_id: str, run_dir: Path, merges: dict | None = None
         graded = sorted(vid for vid in (load_yaml(arts / "grid_evaluation.yaml") or {}).get(
             "variants") or []) if (arts / "grid_evaluation.yaml").exists() else []
         base_vid = _json_pointer_module().base_variant_id(graded) if graded else None
-        readings = rp.load_readings(arts / "proposals", _reader_categories())
+        readings = rp.load_readings(arts / "proposals", list(READER_CATEGORIES))
         # E-077 PR-2 (D-087): under orchestrator.folds.enabled a claim is never confirmed
         # inside the run that inspired it (every measurable finding is pending) and the
         # weak follow-up resolution does not exist: confirm_on_fold measures the claim on
@@ -6955,6 +7018,59 @@ def _write_registry_summary(run_dir: Path, idea_status: str | None = None) -> Pa
     print(f"📚 specialist_readers: {_br.REGISTRY_SUMMARY_ARTIFACT} written "
           f"({summary['registry']['n_blocks']} earlier validated block(s)).")
     return dest
+
+
+def _run_analyst_stage(run_id: str, run_dir: Path, stage_attempt=0) -> None:
+    """D-197, the analyst's own stage (STAGE_CONFIGS["analyst"]): the two lenses of
+    run_analyst_worker, one after another, each writing artifacts/proposals/<category>.yaml
+    for ANALYST_LENS_CATEGORIES. Runs right after protocol_execution -- the backtest
+    artifacts its query tools read -- and before specialist_readers when that stage is on.
+    No dependency on category_reports, specialist_readers or reader_findings: it reads
+    neither the reports, the grid nor the registry summary, and writes nothing but its own
+    readings, query logs and records.
+
+    Same order of work as the lens branch of _run_specialist_readers had: component errors in
+    protocol_result.yaml -> nothing runs (the backtest is meaningless); a file already present
+    is validated, not re-run (a resume); an operator re-run (D-122) gets the code-written
+    skipped reading; the weighted token budget is checked before every lens. When the
+    specialist_readers stage is on, its entry checks (a valid idea_status.yaml, the retune
+    firewall) are made here too, so a run that stage would refuse still stops before the
+    analyst spends. Whether a lens file written here is complete for the other stage is that
+    stage's business: it validates the file and writes the other three categories."""
+    if not _analyst_enabled():
+        raise RuntimeError("analyst reached with orchestrator.analyst.enabled off -- reset "
+                           "pending_stage to verdict_interpreter (specialist_readers when that "
+                           "stage is on) or enable the flag.")
+    if _protocol_component_errors(run_dir):
+        print("⏭️  analyst: component errors in protocol_result.yaml -- the lenses are not run "
+              "(the backtest is meaningless); the route pauses for a human.")
+        return
+    if _specialist_readers_enabled():
+        _load_idea_status(run_dir, run_id)
+        _check_retune_firewall(run_dir)
+    rp = _reader_proposals_module()
+    proposals_dir = run_dir / "artifacts" / "proposals"
+    lens_of = {cat: lens for lens, cat in _analyst_session_module().LENS_CATEGORY.items()}
+    refold_off = _refold_readers_off(run_dir)  # D-122: None unless an operator re-run
+    categories = list(READER_CATEGORIES)
+    for category in ANALYST_LENS_CATEGORIES:
+        dest = proposals_dir / f"{category}.yaml"
+        if dest.exists():
+            rp.load_proposals(proposals_dir, categories, **_reader_strictness())
+            print(f"⏭️  proposals/{category}.yaml already present and valid -- lens not re-run.")
+            continue
+        if refold_off is not None:
+            _write_skipped_reading(category, run_id, run_dir, refold_off)
+            print(f"⏭️  [D-122] {category} lens skipped by rule {refold_off['rule']} "
+                  f"(no model call).")
+            rp.load_proposals(proposals_dir, categories, **_reader_strictness())
+            continue
+        _check_reader_budget(run_dir, category)
+        run_analyst_worker(lens_of[category], run_id, run_dir, stage_attempt)
+        rp.load_proposals(proposals_dir, categories, **_reader_strictness())
+    missing = [c for c in ANALYST_LENS_CATEGORIES if not (proposals_dir / f"{c}.yaml").exists()]
+    if missing:
+        raise FileNotFoundError(f"analyst finished without proposals for {missing}")
 
 
 def _run_specialist_readers_stage(run_id: str, run_dir: Path, stage_attempt=0) -> None:
@@ -10581,7 +10697,7 @@ def _run_regroup_record_stage(run_id: str, run_dir: Path,
         entry = cm.build_memory_entry(
             run_dir, run_id,
             trial_sharpes=(load_campaign_state() or {}).get("trial_sharpes") or [],
-            categories=_reader_categories(),
+            categories=list(READER_CATEGORIES),
             protocol_root=ROOT,
             # Branch 3 on every backtest: the per-variant profit-bars results
             # (written after protocol_execution) fill `profit_bars`; flag off
@@ -21347,6 +21463,18 @@ def run_loop(run_id: str, *, after_1a=None):
         print(f"❌ specialist_readers pre-flight failed: {e}")
         update_state(path=RUN_DIR, status="failed", last_error=str(e))
         return
+    # D-197: the analyst's flag, resolved ONCE the same way (its dependency on folds, the
+    # explore_confirm refusal, or a non-bool value, fails the run here, before any spend).
+    # It has no dependency on specialist_readers: it routes protocol_execution -> analyst
+    # with that stage off too.
+    _an_flag = False
+    try:
+        if _pending_at_start and not _pending_at_start.startswith(_TERMINAL_AT_START):
+            _an_flag = _analyst_enabled()
+    except Exception as e:
+        print(f"❌ analyst pre-flight failed: {e}")
+        update_state(path=RUN_DIR, status="failed", last_error=str(e))
+        return
     # E-058 S2a: the regroup_record flag, resolved ONCE the same way (its
     # dependency on specialist_readers fails the run here, before any spend).
     # A run already at a terminal stage is skipped, like the specialist_readers
@@ -21431,7 +21559,17 @@ def run_loop(run_id: str, *, after_1a=None):
         # as specialist_readers (after this check); stopping it here would leave
         # a run with no memory entry and no route. The next stage is checked as
         # usual. Every other stage: unchanged.
-        if total_weighted_used > budget and current_stage != "regroup_record":
+        # D-197: specialist_readers right after the analyst stage is exempt too. On master the
+        # lenses ran INSIDE specialist_readers, so a run pushed over budget by the lens
+        # sessions went straight on to regroup_record. With the analyst stage done that stage
+        # makes no model call (_run_specialist_readers only validates the lens files and writes
+        # replaced_by_analyst for the other three), so stopping it here would only drop the
+        # run's memory entry and route. verdict_interpreter is NOT exempt: with the readers off
+        # master budget-checked before it as well.
+        _after_analyst = (current_stage == "specialist_readers" and _an_flag
+                          and "analyst" in (state.get("completed_stages") or []))
+        if (total_weighted_used > budget and current_stage != "regroup_record"
+                and not _after_analyst):
             print(f"🛑 RUN TERMINATED: Weighted token budget exceeded "
                   f"({total_weighted_used:,.0f} > {budget:,.0f}).")
             print("   Per-stage weighted breakdown:")
@@ -21450,7 +21588,19 @@ def run_loop(run_id: str, *, after_1a=None):
         # rebuilt here from the current flags at every entry.
         handoff_path = (_config_direct_handoff_path(current_stage, run_id, RUN_DIR, rebuild=True)
                         or handoff_path)
-        if current_stage == "specialist_readers":
+        if current_stage == "analyst":
+            # D-197: a run routed here while the flag was on, resumed with it off, stops
+            # loudly instead of skipping the lenses or guessing a route.
+            if not _an_flag:
+                _msg = ("analyst is unreached with orchestrator.analyst.enabled off -- this run "
+                        "was routed here while the flag was on. Reset pending_stage to "
+                        + ("specialist_readers" if _sr_flag else "verdict_interpreter")
+                        + " (or switch the flag on) and resume.")
+                print(f"❌ {_msg}")
+                update_state(path=RUN_DIR, status="failed", last_error=_msg)
+                break
+            _ensure_analyst_handoff(run_id, RUN_DIR)
+        elif current_stage == "specialist_readers":
             # E-046a Slice 5b-ii-B: created lazily at stage entry, so flag-off
             # runs never get this file.
             _ensure_specialist_readers_handoff(run_id, RUN_DIR)
@@ -21679,7 +21829,11 @@ def run_loop(run_id: str, *, after_1a=None):
                 _claim_gate_before_1b(RUN_DIR, run_id)
             _comp_mode = (current_stage in _COMPOSITION_CODE_STAGES
                           and _composition_mode(RUN_DIR))
-            if current_stage == "specialist_readers":
+            if current_stage == "analyst":
+                # D-197: the analyst's two lens sessions (run_analyst_worker), never
+                # through _invoke_agent_with_yaml_retry/_SKILL_MAP.
+                _run_analyst_stage(run_id, RUN_DIR, _this_stage_attempt)
+            elif current_stage == "specialist_readers":
                 # E-046a Slice 5b-ii-B: five reader calls, each through
                 # run_reader_worker (explicit output path), never through
                 # _invoke_agent_with_yaml_retry/_SKILL_MAP.
@@ -21785,6 +21939,15 @@ def run_loop(run_id: str, *, after_1a=None):
             # still override this with human_pause on a conformance violation.
             if current_stage == "protocol_execution" and _sr_flag:
                 next_stage = "specialist_readers"
+            # D-197: the analyst is a stage of its own, between protocol_execution and
+            # whatever follows it without the analyst (specialist_readers when that flag is
+            # on, else verdict_interpreter). The protocol_execution branches below can still
+            # override this with human_pause on a conformance violation.
+            if current_stage == "protocol_execution" and _an_flag:
+                next_stage = "analyst"
+            elif current_stage == "analyst":
+                next_stage = "specialist_readers" if _sr_flag \
+                    else STAGE_CONFIGS["protocol_execution"]["default_next"]
 
             if current_stage == "validation":
                 next_stage = determine_post_validation_route(RUN_DIR) # Used to trigger state of refinement until (Artifact State is validated OR max refinement reached OR rejected)

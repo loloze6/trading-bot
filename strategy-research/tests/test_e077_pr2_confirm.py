@@ -56,7 +56,7 @@ import reader_proposals as rp  # noqa: E402
 import research_folds as rf  # noqa: E402
 import protocol_resolution as pres  # noqa: E402
 
-from test_e046a_slice5b_ii_b_readers_stage import RUN_ID, _set_orchestrator  # noqa: E402
+from _reader_test_helpers import RUN_ID, _set_orchestrator  # noqa: E402
 
 REAL_POLICY = SR_ROOT / "config" / "campaign_data_policy.yaml"
 REAL_FOLDS = SR_ROOT / "config" / "folds.yaml"
@@ -343,12 +343,12 @@ def test_the_vehicle_reaches_decide_next_as_the_findings_config_change(tmp_path)
 
 
 def _orch(flags_extra, monkeypatch):
-    from test_e068_5_readers_v3 import V3_ON, _run070_shaped
+    from _reader_test_helpers import V3_ON, _run070_shaped
     return _run070_shaped(monkeypatch, {**V3_ON, **flags_extra})
 
 
 def _model_text(*, cat="trade_efficiency", run_id=RUN_ID, **envelope) -> str:
-    from test_e068_5_readers_v3 import _claim as _c, _fenced, _scores as _s
+    from _reader_test_helpers import _claim as _c, _fenced, _scores as _s
     rid = f"{cat}-{run_id}"
     side = {"proposal_id": f"{rid}-1", "claim": _c(), "evidence": ["variants.base.slices.overall.y=2"],
             "scores": _s(), **envelope}
@@ -358,7 +358,7 @@ def _model_text(*, cat="trade_efficiency", run_id=RUN_ID, **envelope) -> str:
 
 
 def test_the_orchestrators_reading_check_applies_the_envelope_only_under_the_flag(monkeypatch):
-    from test_e068_5_readers_v3 import _patch
+    from _reader_test_helpers import _patch
     change = _patch()["patch"]                 # valid on run_070's config
     run_dir = _orch(FOLDS_ON, monkeypatch)
     ok = rpr._validate_reading_output(_model_text(vehicle=change, combines_as="execution_rule"),
@@ -378,7 +378,7 @@ def test_the_orchestrators_reading_check_applies_the_envelope_only_under_the_fla
 
 
 def test_fold_observed_must_match_the_fold_the_run_ran_on(monkeypatch):
-    from test_e068_5_readers_v3 import _patch
+    from _reader_test_helpers import _patch
     change = _patch()["patch"]
     run_dir = _orch(FOLDS_ON, monkeypatch)
     _save(run_dir / "artifacts" / "pre_registration.yaml",
@@ -395,7 +395,7 @@ def test_fold_observed_must_match_the_fold_the_run_ran_on(monkeypatch):
 
 
 def _answer(sides, *, explanation="x", cat="trade_efficiency") -> str:
-    from test_e068_5_readers_v3 import _fenced
+    from _reader_test_helpers import _fenced
     rid = f"{cat}-{RUN_ID}"
     return _fenced({"schema_version": 3, "reading_id": rid, "model_id": "m",
                     "rubric_version": f"{cat}-reading-v1", "explanation": explanation,
@@ -403,7 +403,7 @@ def _answer(sides, *, explanation="x", cat="trade_efficiency") -> str:
 
 
 def _side(n=1, **envelope) -> dict:
-    from test_e068_5_readers_v3 import _claim as _c, _scores as _s
+    from _reader_test_helpers import _claim as _c, _scores as _s
     return {"proposal_id": f"trade_efficiency-{RUN_ID}-{n}", "claim": _c(),
             "evidence": ["variants.base.slices.overall.y=2"], "scores": _s(), **envelope}
 
@@ -422,7 +422,7 @@ def _drive_reader(monkeypatch, run_dir, answers):
 
 
 def test_under_the_flag_todays_readers_side_findings_are_not_accepted_and_not_retried(monkeypatch):
-    from test_e068_5_readers_v3 import _patch
+    from _reader_test_helpers import _patch
     change = _patch()["patch"]
     # with a valid vehicle, without one, and two findings at once: none is accepted, one call
     for sides in ([_side(vehicle=change, combines_as="execution_rule")], [_side()],
@@ -437,7 +437,7 @@ def test_under_the_flag_todays_readers_side_findings_are_not_accepted_and_not_re
 
 
 def test_a_retry_answer_with_a_vehicle_is_still_not_accepted_and_the_shape_is_not_echoed(monkeypatch):
-    from test_e068_5_readers_v3 import _patch
+    from _reader_test_helpers import _patch
     change = _patch()["patch"]
     run_dir = _orch(FOLDS_ON, monkeypatch)
     # first answer: refused for ANOTHER reason (empty explanation), carrying a finding;
@@ -1236,7 +1236,7 @@ def test_routes_in_run_does_not_exist_under_the_folds_flag():
 
 
 def _e072_stage(monkeypatch, flags, run_id=RUN_ID, **kw):
-    import test_e072_explore_confirm as t72
+    import _reader_test_helpers as t72
     run_dir = t72._ec_run(monkeypatch, flags=flags, run_id=run_id, **kw)
     t72._protocol_execution_part(run_dir, run_id)
     monkeypatch.setattr(rpr, "_invoke_reader_llm", t72._readings_llm([], t72._sides()))
@@ -1247,14 +1247,14 @@ def _write_readings(run_dir: Path) -> None:
     """Two readings on disk (a pure finding and a block claim), as a reader stage leaves them.
     Written directly: under the folds flag a model's answer without a vehicle is refused, and
     the sandbox run's base config is a stub no vehicle could resolve against."""
-    import test_e072_explore_confirm as t72
-    from test_e068_5_readers_v3 import _reading as _rd
+    import _reader_test_helpers as t72
+    from _reader_test_helpers import _reading as _rd
     for cat, sides in t72._sides().items():
         _save(run_dir / "artifacts" / "proposals" / f"{cat}.yaml", _rd(cat, sides=sides))
 
 
 def test_under_the_folds_flag_no_finding_is_measured_in_run(monkeypatch):
-    import test_e072_explore_confirm as t72
+    import _reader_test_helpers as t72
     t72_flags = {**t72.EC_ON, "folds": {"enabled": True}}
     t72, run_dir = _e072_stage(monkeypatch, t72_flags)
     _write_readings(run_dir)
@@ -1268,7 +1268,7 @@ def test_under_the_folds_flag_no_finding_is_measured_in_run(monkeypatch):
 
 
 def test_flag_off_the_in_run_route_is_exactly_as_before(monkeypatch):
-    import test_e072_explore_confirm as t72
+    import _reader_test_helpers as t72
     t72, run_dir = _e072_stage(monkeypatch, t72.EC_ON)
     rpr._run_specialist_readers_stage(RUN_ID, run_dir)
     pure = next(r for r in t72._confirmation(run_dir)["side_findings"]
@@ -1277,7 +1277,7 @@ def test_flag_off_the_in_run_route_is_exactly_as_before(monkeypatch):
 
 
 def test_under_the_folds_flag_the_weak_follow_up_resolution_is_unreachable(monkeypatch):
-    import test_e072_explore_confirm as t72
+    import _reader_test_helpers as t72
     flags = {**t72.EC_ON, "folds": {"enabled": True}}
     t72, run_dir = _e072_stage(monkeypatch, flags)
     _write_readings(run_dir)
@@ -1297,7 +1297,7 @@ def test_under_the_folds_flag_the_weak_follow_up_resolution_is_unreachable(monke
 
 
 def test_flag_off_the_follow_up_resolution_still_works(monkeypatch):
-    import test_e072_explore_confirm as t72
+    import _reader_test_helpers as t72
     t72, run_dir = _e072_stage(monkeypatch, t72.EC_ON)
     rpr._run_specialist_readers_stage(RUN_ID, run_dir)
     child = t72._child_run(monkeypatch, "run_991")

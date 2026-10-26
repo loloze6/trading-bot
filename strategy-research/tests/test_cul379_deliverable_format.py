@@ -22,7 +22,7 @@ sys.path.insert(0, str(SR_ROOT / "workflow"))
 sys.path.insert(0, str(SR_ROOT / "tools"))
 
 import run_phase1_research as rpr  # noqa: E402
-from test_c5_7b1_model_id_stamp import DATED, _run_1a  # noqa: E402
+from _reader_test_helpers import DATED, _run_1a  # noqa: E402
 from test_deliverable_block_parser import UNPREFIXED_SAMPLES  # noqa: E402
 
 RUN_065 = (Path(__file__).parent / "fixtures" / "run_065_step1a_name_outside_fence.txt"
@@ -146,7 +146,7 @@ def test_an_engine_that_reports_nothing_is_not_retried(monkeypatch, tmp_path):
 def _worker_outcome(monkeypatch, tmp_path, text):
     """The real run_claude_worker's return value for one stubbed answer."""
     import asyncio
-    import test_c5_7b1_model_id_stamp as stamp
+    import _reader_test_helpers as stamp
     stamp._set_orchestrator(stamp.ON)
     monkeypatch.chdir(SR_ROOT)
     run_dir = tmp_path / "runs" / "run_w"

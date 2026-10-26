@@ -4902,7 +4902,7 @@ def _finish_lineage_with_decision(queue: dict, entry: dict, run_id: str, *,
 
     def _decide():
         inputs = dn.load_inputs(
-            ROOT, final_queue, categories=orch._reader_categories(), known_classes=known,
+            ROOT, final_queue, categories=list(orch.READER_CATEGORIES), known_classes=known,
             digest=digest, feed_set=feeds,
             **({"composition_runs": True, "dsr_basis": _ledger_dsr_basis()} if comp_on else {}),
             **({"folds": folds_doc, "fold_data": fold_data} if folds_doc is not None else {}),

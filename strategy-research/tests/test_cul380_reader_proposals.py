@@ -26,8 +26,7 @@ sys.path.insert(0, str(SR_ROOT / "tools"))
 
 import reader_proposals  # noqa: E402
 import run_phase1_research as rpr  # noqa: E402
-from test_e046a_slice5b_ii_b_readers_stage import ALL_ON, RUN_ID, _fake_llm, _seed_run  # noqa: E402
-from test_c5_7b1_model_id_stamp import _set_orchestrator  # noqa: E402
+from _reader_test_helpers import ALL_ON, RUN_ID, _fake_llm, _seed_run, _set_orchestrator  # noqa: E402
 
 RUN_065 = (Path(__file__).parent / "fixtures" / "run_065_regime_power_reader_no_rationale.txt"
            ).read_text(encoding="utf-8")

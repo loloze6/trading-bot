@@ -32,7 +32,7 @@ from performance.signal_statistics import spearman_correlation  # noqa: E402
 from test_k3_protocol_pinning import _minimal_run, _write_protocol  # noqa: E402
 from test_e058_s2b_registry_kb_scoreboard import BASE_CONFIG, MANIFEST  # noqa: E402
 from test_e059_6c_s2a_route_retirement import RETIRED_ON  # noqa: E402
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
+from _reader_test_helpers import _set_orchestrator  # noqa: E402
 
 REAL_MENU = yaml.safe_load((SR_ROOT / "config" / "criterion_menu.yaml").read_text(encoding="utf-8"))
 COMP_ON = {**RETIRED_ON, "variant_loop": {"enabled": True}, "composition_runs": {"enabled": True}}

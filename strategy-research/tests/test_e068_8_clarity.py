@@ -38,8 +38,7 @@ import claim_tests as ct  # noqa: E402
 import reader_findings as rf  # noqa: E402
 
 from test_e068_s3_claim_measure import ON, UP, _claim, _fixture_run  # noqa: E402
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
-from test_e068_5_readers_v3 import V3_ON  # noqa: E402
+from _reader_test_helpers import V3_ON, _set_orchestrator  # noqa: E402
 
 SKILLS = SR_ROOT / "workflow_artifacts" / "skills"
 FIX4 = SR_ROOT / "tests" / "fixtures" / "e068_4" / "run_070"
@@ -275,7 +274,7 @@ def test_the_v3_handoff_names_the_file_the_run_has(tmp_path):
 
 
 def test_the_v3_handoff_lists_the_measurement_file(monkeypatch):
-    from test_e068_5_readers_v3 import RUN_ID, _run070_shaped
+    from _reader_test_helpers import RUN_ID, _run070_shaped
     run_dir = _run070_shaped(monkeypatch)
     arts = run_dir / "artifacts"
 

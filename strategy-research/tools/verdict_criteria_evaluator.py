@@ -132,7 +132,7 @@ _NON_VERDICT_OUTCOMES = frozenset({
     # outcome can be its pending stage). Pinned by
     # tests/test_e058_s2a_regroup_record.py so a new stage cannot be missed again.
     "strategy_config_authoring", "data_availability_gate", "specialist_readers",
-    "regroup_record",
+    "regroup_record", "analyst",
     "completed_reframed", "completed_escalated", "completed_refined",
     "done", "ready", "pending", "superseded", "not_launched",
     # E-030 S2a. Registered here DELIBERATELY, as the same kind of act the

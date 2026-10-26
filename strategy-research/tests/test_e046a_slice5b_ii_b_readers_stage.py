@@ -41,96 +41,11 @@ from build_reports import REPORT_CATEGORIES  # noqa: E402
 from test_k3_protocol_pinning import _minimal_run  # noqa: E402
 from test_e033_slice4b_gate_conformance_promotion import _minimal_run_at, _noop_invoke  # noqa: E402
 
-RUN_ID = "run_990"
-ALL_ON = {"grid_evaluation": {"enabled": True}, "category_reports": {"enabled": True},
-          "specialist_readers": {"enabled": True}}
-
-
-@pytest.fixture(autouse=True)
-def _stub_tbot_python(monkeypatch):
-    monkeypatch.setattr(rpr, "_resolve_tbot_python", lambda: Path("stub-python"))
-
-
-def _set_orchestrator(orchestrator: dict | None) -> None:
-    config_dir = rpr.ROOT / "config"
-    config_dir.mkdir(parents=True, exist_ok=True)
-    path = config_dir / "campaign_config.yaml"
-    if orchestrator is None:
-        if path.exists():
-            path.unlink()
-        return
-    with open(path, "w", encoding="utf-8") as f:
-        yaml.safe_dump({"orchestrator": orchestrator}, f)
-
-
-def _protocol_result(errors_count=None, variant_dir: Path | None = None) -> dict:
-    entry = {"symbol": "BTCUSDT", "window": "w1", "core": {"sharpe": 0.1}}
-    if errors_count is not None:
-        entry["component_errors"] = {"count": errors_count, "samples": []}
-    return {"verdict": "kill", "results": [entry]}
-
-
-def _seed_run(run_id=RUN_ID, idea_status="refuted", errors_count=None, pending="specialist_readers",
-              with_reports=True) -> Path:
-    run_dir = _minimal_run(rpr.ROOT, run_id)
-    state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
-    state["pending_stage"] = pending
-    rpr.save_yaml(run_dir / "pipeline_state.yaml", state)
-    arts = run_dir / "artifacts"
-    rpr.save_yaml(arts / "protocol_result.yaml", _protocol_result(errors_count))
-    rpr.save_yaml(arts / "grid_evaluation.yaml", {"result": "X", "marker": "GRID_MARKER"})
-    # E-061 C2 S2e: the stage writes this before the first reader; tests that call
-    # _run_specialist_readers directly need the stand-in the handoff now requires.
-    rpr.save_yaml(arts / "registry_summary.yaml", {"marker": "REGISTRY_SUMMARY_MARKER"})
-    rpr.save_yaml(arts / "hypothesis_card.yaml", {"hypothesis_id": "H-TEST-1"})
-    # Reader inputs: this run's base config and the two design docs step 2 also
-    # gets (resolved run-relative as ../../docs/, i.e. under the sandbox ROOT).
-    (arts / "candidate_strategy_config.json").write_text('{"marker": "CONFIG_MARKER"}\n',
-                                                         encoding="utf-8")
-    for doc in ("COMPONENT_CATALOG.md", "STRATEGY_DESIGN_GUIDE.md"):
-        path = rpr.ROOT / "docs" / doc
-        path.parent.mkdir(parents=True, exist_ok=True)
-        if not path.exists():
-            path.write_text(f"{doc} stub\n", encoding="utf-8")
-    _write_menu_pre_registration(run_dir)
-    if idea_status is not None:
-        rpr.save_yaml(arts / "idea_status.yaml",
-                      rpr._build_idea_status_artifact({"idea_status": idea_status, "reason": "r"}, run_id))
-    if with_reports:
-        for c in REPORT_CATEGORIES:
-            rpr.save_yaml(arts / "reports" / f"{c}.yaml", {"category": c, "marker": f"REPORT_{c.upper()}"})
-    return run_dir
-
-
-MENU_PASS_RULE = {"criteria": [{"id": "c1", "source": "core.sharpe", "reducer": "median"}]}
-
-
-def _write_menu_pre_registration(run_dir: Path) -> None:
-    rpr.save_yaml(run_dir / "artifacts" / "pre_registration.yaml", {"pass_rule": MENU_PASS_RULE})
-
-
-def _proposal(cat: str, run_id: str = RUN_ID, n: int = 1, score: int = 2) -> dict:
-    return {
-        "proposal_id": f"{cat}-{run_id}-{n}", "kind": "patch",
-        "patch": [{"component_id": "c1", "field": "params.x", "before": 1, "after": 2}],
-        "evidence": [f"slices.overall.x=1 ({cat})"],
-        "scores": {"confidence_real": score, "distance_to_profitable": score,
-                   "mechanism_plausibility": score},
-        "model_id": "m", "rubric_version": f"{cat}-reader-v1",
-    }
-
-
-def _fake_llm(outputs: dict | None = None, calls: list | None = None):
-    """An async stand-in for _invoke_reader_llm. `outputs` maps category ->
-    raw model text; default is an honest empty list for every reader."""
-    async def _fake(prompt: str):
-        cat = next(c for c in REPORT_CATEGORIES if f"reader_category: {c}\n" in prompt)
-        if calls is not None:
-            calls.append((cat, prompt))
-        text = (outputs or {}).get(cat, f"```yaml\n# {cat}.yaml\n[]\n```")
-        return text, {"usage": {"input_tokens": 10, "output_tokens": 5}, "cost_usd": 0.0,
-                      "num_turns": 1}
-    return _fake
+# D-197: the run seeding, flag set and stub model call every reader-stage test builds on live in
+# tests/_reader_test_helpers.py (the autouse _stub_tbot_python fixture is imported with them)
+from _reader_test_helpers import (  # noqa: E402,F401
+    ALL_ON, RUN_ID, _fake_llm, _proposal, _protocol_result, _seed_run, _set_orchestrator,
+    _stub_tbot_python, _write_menu_pre_registration)
 
 
 # ---------------------------------------------------------------------------

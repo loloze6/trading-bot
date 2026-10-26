@@ -1146,7 +1146,7 @@ def test_end_to_end_two_runs_with_the_real_run_setup(harness):
     assert owner["status"] == "done" and owner["outcome"] == "refuted"
     assert owner["pass_rule_evaluation_ref"] == f"runs/{r1}/artifacts/idea_status.yaml"
     assert h.llm_calls == [(s, r1) for s in STAGE_AGENTS]
-    assert sorted(c for c, _ in h.reader_calls) == sorted(rpr._reader_categories())
+    assert sorted(c for c, _ in h.reader_calls) == sorted(rpr.READER_CATEGORIES)
     # the real worker parsed the stub's fenced blocks into the deliverables
     for rel in ("hypothesis_card.yaml", "backtest_spec.yaml", "decision.yaml",
                 "block_manifest.yaml", "expanded_hypothesis_card.yaml", "innovation_notes.yaml",
@@ -1169,7 +1169,7 @@ def test_end_to_end_two_runs_with_the_real_run_setup(harness):
     grid = h.art(r1, "grid_evaluation.yaml")
     assert sorted(grid["variants"]) == ["asset", "base", "design"]
     assert h.art(r1, "idea_status.yaml")["idea_status"] == "refuted" == grid["idea_status"]
-    for cat in rpr._reader_categories():
+    for cat in rpr.READER_CATEGORIES:
         assert h.art(r1, f"reports/{cat}.yaml") is not None, cat
         assert h.art(r1, f"proposals/{cat}.yaml") is not None, cat
     _assert_legacy_label_retired(h, r1)
@@ -1798,7 +1798,7 @@ def _assert_c5_6_run_completed(h: Harness, r1: str = "run_001") -> None:
     assert h.art(r1, "idea_status.yaml")["idea_status"] == "refuted" == grid["idea_status"]
     pbe = h.art(r1, "profit_bars_evaluation.yaml")
     assert sorted(pbe["variants"]) == ["asset", "base", "design"]
-    for cat in rpr._reader_categories():
+    for cat in rpr.READER_CATEGORIES:
         assert h.art(r1, f"reports/{cat}.yaml") is not None, cat
     _assert_legacy_label_retired(h, r1)
     memory = yaml.safe_load(rpr._campaign_memory_path().read_text(encoding="utf-8"))
@@ -2180,7 +2180,7 @@ def test_c2_3_run_2_readers_see_run_1s_validated_block_with_this_run_as_its_neig
     assert s1["this_run"]["idea_status"] == "validated"
     assert s1["registry"]["n_forecast_blocks"] == 0
     r1_prompts = [p for s, r, p in h.prompts if s == "specialist_readers" and r == r1]
-    assert len(r1_prompts) == len(rpr._reader_categories())
+    assert len(r1_prompts) == len(rpr.READER_CATEGORIES)
     assert all("registry_summary.yaml" in p for p in r1_prompts)
     assert not any(block_id in p for p in r1_prompts)
 
@@ -2204,7 +2204,7 @@ def test_c2_3_run_2_readers_see_run_1s_validated_block_with_this_run_as_its_neig
     assert s2["this_run"]["type_already_registered"] is True
     assert s2["this_run"]["patches_registered_block"] == block_id
     r2_prompts = [p for s, r, p in h.prompts if s == "specialist_readers" and r == r2]
-    assert len(r2_prompts) == len(rpr._reader_categories())
+    assert len(r2_prompts) == len(rpr.READER_CATEGORIES)
     for p in r2_prompts:
         assert "--- CONTENT OF artifacts/registry_summary.yaml ---" in p
         assert block_id in p and "same_classes_timeframe_unknown" in p
@@ -2606,7 +2606,7 @@ def test_c4_flag_set_v2_plus_score_provenance_end_to_end(harness):
     requested = rpr._CLAUDE_WORKER_MODEL
     assert STUB_MODEL != requested  # else the mismatch assertion below proves nothing
     audit = st["audit_log"]
-    categories = rpr._reader_categories()
+    categories = rpr.READER_CATEGORIES
     assert sorted(c for c, rid in h.reader_calls if rid == r1) == sorted(categories)
     for category in categories:
         keys = [k for k in audit if k.startswith(f"specialist_readers_{category}_attempt_")]

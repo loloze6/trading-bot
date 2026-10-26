@@ -23,7 +23,7 @@ sys.path.insert(0, str(SR / "tools"))
 
 import run_phase1_research as rpr  # noqa: E402
 import run_campaign as camp  # noqa: E402
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
+from _reader_test_helpers import _set_orchestrator  # noqa: E402
 from test_e060_s2_residual_ic import COMP_ON  # noqa: E402
 import test_c51_menu_criterion_lint as t51  # noqa: E402
 

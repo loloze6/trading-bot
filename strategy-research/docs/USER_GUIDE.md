@@ -23,6 +23,7 @@ Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
     - [Stage 9 — `regime_detector_validation`](#stage-9--regime_detector_validation)
     - [Not a stage — `regime_auditor` (a human procedure)](#not-a-stage--regime_auditor-a-human-procedure)
     - [Stage 11 — `verdict_interpreter`](#stage-11--verdict_interpreter)
+    - [Stage 18 — `analyst`](#stage-18--analyst)
     - [Stage 16 — `specialist_readers`](#stage-16--specialist_readers)
     - [Stage 17 — `regroup_record`](#stage-17--regroup_record)
     - [Stage 12 — `campaign_review`](#stage-12--campaign_review)
@@ -314,6 +315,7 @@ one place to read when the answer matters.
 | 9 | [**regime_detector_validation**](#stage-9--regime_detector_validation) | Python tool | Establish whether the regime detector is trustworthy enough to condition any metric. |
 | — | [**regime_auditor**](#not-a-stage--regime_auditor-a-human-procedure) | ⚠️ Human, not dispatched | Judge the detector without letting profitability leak into the decision. **Not dispatched by the orchestrator** — see the block. |
 | 11 | [**verdict_interpreter**](#stage-11--verdict_interpreter) | Claude | Decide what the result means, what to do next, and at what size of change. |
+| 18 | [**analyst**](#stage-18--analyst) | Claude (×2 lens sessions) | Off by default (E-075 PR-5, D-197, `orchestrator.analyst.enabled`; requires `folds`, nothing else). Runs right after stage 8: two lens sessions with query tools over the backtest artifacts write `proposals/forecast_power.yaml` and `proposals/trade_efficiency.yaml`. Needs none of stage 16's flags; goes before stage 16 when that is on, else before stage 11. |
 | 16 | [**specialist_readers**](#stage-16--specialist_readers) | Claude (×5 reader skills) | Off by default (E-046a Slice 5b-ii-B, `orchestrator.specialist_readers.enabled`). Replaces stage 11 when on: five readers each propose evidence-grounded changes from one category report; the route comes from the grid (`idea_status.yaml`), never from the readers. |
 | 17 | [**regroup_record**](#stage-17--regroup_record) | Python tool | Off by default (E-058 S2a, `orchestrator.regroup_record.enabled`; requires stage 16's flag). Sits between 16 and its route: records the run in `campaign_record/campaign_memory.yaml` before the grid's route is taken. Decides nothing, writes no trial rows. |
 | 12 | [**campaign_review**](#stage-12--campaign_review) | Claude | Ask whether the campaign's whole line of attack is still worth pursuing. |
@@ -1344,6 +1346,41 @@ enforced zero promotion-code access to the scoreboard
 by operator decision, once this stage became a reviewed, named exception to
 it — the firewall is now verified by inspection of the routing functions,
 not by a standing test.
+
+---
+
+#### Stage 18 — `analyst`
+**Engine:** Claude — two lens sessions (`forecast`, `trade_efficiency`), one after
+the other (`workflow/run_phase1_research.py::_run_analyst_stage` →
+`run_analyst_worker`; skill `workflow_artifacts/skills/analyst/`, query tools
+`tools/analyst_queries.py`).
+**Runs:** right after `protocol_execution`, only when `orchestrator.analyst.enabled`
+is on (off by default; requires `orchestrator.folds.enabled`, refuses
+`orchestrator.explore_confirm.enabled`; D-197: no dependency on
+`category_reports`, `specialist_readers` or `reader_findings`). The next stage is
+`specialist_readers` when that flag is on, else `verdict_interpreter`.
+`default_next: dynamic_routing`.
+
+**Objective.** Find, from the run's own backtest artifacts, one testable claim
+(or an honest no-claim) per lens, written as the reading
+`artifacts/proposals/<category>.yaml` for categories `trade_efficiency` and
+`forecast_power` (`tools/reader_categories.py::ANALYST_LENS_CATEGORIES`).
+
+**Design rationale.** The analyst reads only the backtest artifacts, never the
+reports, the grid or the registry summary, so it needs nothing the readers stage
+prepares; giving it a stage of its own lets it run with the readers off. With stage
+16 on, that stage finds the two lens files, validates them, and writes the other
+three categories' code-skipped readings (`replaced_by_analyst`).
+
+**Stage input:** `artifacts/protocol_result.yaml` (the component-error check: a run
+with component errors runs no lens), the variants' bars, trades and protocol
+results, `artifacts/hypothesis_card.yaml`, `artifacts/variant_patches.yaml`.
+**Stage output:** `artifacts/proposals/{trade_efficiency,forecast_power}.yaml`,
+`artifacts/analyst/<lens>.yaml` (the record), `artifacts/analyst_queries/<lens>.yaml`
+(the query log); audit-log keys `specialist_readers_analyst_<lens>_attempt_N`.
+A file already present is validated, not re-run; an operator re-run (D-122) gets the
+code-written skipped reading. A re-run of `protocol_execution` clears these files.
+Old runs whose `pipeline_state.yaml` has no `analyst` stage resume unchanged.
 
 ---
 
