@@ -123,6 +123,19 @@ def _sizing_line(config_text: str | None) -> str | None:
             f"the unsized signal, the allocation columns are sized)")
 
 
+def _card_horizon_bars(arts: Path):
+    """D-193: the hypothesis card's statement.horizon_bars (a whole number >= 1), or None when
+    the card, its statement or the key is absent or unreadable. Information only."""
+    text = _read(Path(arts) / "hypothesis_card.yaml")
+    try:
+        card = yaml.safe_load(text) if text else None
+    except yaml.YAMLError:
+        return None
+    stmt = card.get("statement") if isinstance(card, dict) else None
+    h = stmt.get("horizon_bars") if isinstance(stmt, dict) else None
+    return h if isinstance(h, int) and not isinstance(h, bool) and h >= 1 else None
+
+
 def run_context(run_dir: Path, base_config_rel: str, fold: str | None) -> str:
     """The run context as text: the base config, the variant patches, the protocol (coins,
     timeframe, windows), the fold, the cost model. Absent files are said to be absent."""
@@ -140,6 +153,10 @@ def run_context(run_dir: Path, base_config_rel: str, fold: str | None) -> str:
                 for w in p.get("windows") or []))
         except ValueError:
             parts.append("run_protocol.json: unreadable")
+    horizon = _card_horizon_bars(arts)
+    if horizon is not None:
+        parts.append(f"Hypothesis horizon: {horizon} bars (the card's statement.horizon_bars; "
+                     f"information only)")
     base_config_text = _read(run_dir / base_config_rel)
     sizing_line = _sizing_line(base_config_text)
     if sizing_line:
@@ -488,7 +505,10 @@ def _same_selector_outcome_key(entry) -> str:
     t = _test_block_of(entry)
     out = t.get("outcome")
     kind = out.get("kind") if isinstance(out, dict) else out
-    return json.dumps([t.get("selector"), kind, t.get("statistic")], sort_keys=True, default=str)
+    key = [t.get("selector"), kind, t.get("statistic")]
+    if "signal" in t:           # D-193: another signal is another test (absent: the key as before)
+        key.append(t["signal"])
+    return json.dumps(key, sort_keys=True, default=str)
 
 
 def _accounted_key(entry) -> str:
@@ -895,7 +915,7 @@ def _observation_spec(entry: dict) -> dict:
     # write the second as an alias, &id001 / *id001, in the record)
     return {"spec_hash": res.get("spec_hash"),
             **{k: copy.deepcopy(block[k]) for k in ("selector", "outcome", "baseline", "statistic",
-                                                    "direction", "floor") if k in block}}
+                                                    "direction", "floor", "signal") if k in block}}
 
 
 def _tests_of(claim) -> list:
@@ -1299,6 +1319,10 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
         errors.append("claim: `tests: none` cannot be confirmed on a fold; write the test in the "
                       "slots or end with no_claim")
     errors += exit_selector_own_outcome_errors(claim)
+    # D-193: a test on a component's signal cannot be re-run by a child whose vehicle removes
+    # that component (the claim card's own check, claim_card.vehicle_signal_errors)
+    import claim_card as _cc
+    errors += _cc.vehicle_signal_errors(claim, doc.get("vehicle"), base_config)
     # D-098 (pilot 2a): the forecast's rank IC over all bars is what the run's protocol
     # already tests; restating it spends a fold-B child to learn nothing new
     for i, t in enumerate(_tests_of(claim)):
