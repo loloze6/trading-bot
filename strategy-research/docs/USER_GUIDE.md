@@ -1378,7 +1378,8 @@ for none), each validated by `tools/reader_proposals.py::load_proposals`; a
 malformed file stops the run. A proposal's fields
 (`workflow_artifacts/schemas/proposal.schema.json`): `proposal_id`
 (`<category>-<run_id>-<n>`), `kind` (`patch` | `new_block`), `patch` or
-`block`, `evidence`, `scores` (three 0-3 anchors), `model_id`,
+`block`, `evidence`, `scores` (one 0-3 score, `confidence_real`; old records may still carry the
+two legacy keys), `model_id`,
 `rubric_version`, and the optional `requires_feed: {feed, reason}` (E-035
 S2c, item 7). Plus, only when some proposal carries `requires_feed` for a
 feed that is not wired, one row per such feed in
@@ -3464,8 +3465,8 @@ and status `queued` (never auto-picked).
   `workflow_artifacts/skills/hypothesis-design/BRIEF_HYPOTHESES.md` (flag on
   only; `SKILL.md` is unchanged, so the flag-off prompt is byte-identical).
 - **Several cards** from 1a: card 1 runs now; cards 2..k are copied to
-  `campaign_record/queued_cards/<run_id>/`, listed with the three anchored
-  scores 1a wrote for each (`artifacts/extra_card_scores.yaml`, rubric
+  `campaign_record/queued_cards/<run_id>/`, listed with the one
+  score (`confidence_real`, 0-3; old records may still carry the two legacy keys) 1a wrote for each (`artifacts/extra_card_scores.yaml`, rubric
   `brief-card-v1`) in `artifacts/queued_hypotheses.yaml`, and registered as
   `queued` entries `<entry>__h<n>` (`origin: brief`, `card_ref`, `source:
   agent`, priority 999). No sibling run and no `hypothesis_splits` row. A

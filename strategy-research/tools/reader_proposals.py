@@ -309,7 +309,8 @@ def check_scores(scores, where: str) -> None:
     cards are scored on the same shape). Raises ProposalError."""
     if not isinstance(scores, dict) or not set(SCORE_KEYS) <= set(scores) \
             or set(scores) - set(SCORE_KEYS) - _LEGACY_SCORE_KEYS:
-        raise ProposalError(f"{where}: scores must have exactly {list(SCORE_KEYS)}")
+        raise ProposalError(f"{where}: scores must include {list(SCORE_KEYS)}; only the legacy "
+                                f"keys {sorted(_LEGACY_SCORE_KEYS)} are tolerated besides")
     for key in scores:
         v = scores[key]
         if isinstance(v, bool) or not isinstance(v, int) or not 0 <= v <= 3:
