@@ -21566,7 +21566,17 @@ def run_loop(run_id: str, *, after_1a=None):
         # as specialist_readers (after this check); stopping it here would leave
         # a run with no memory entry and no route. The next stage is checked as
         # usual. Every other stage: unchanged.
-        if total_weighted_used > budget and current_stage != "regroup_record":
+        # D-197: specialist_readers right after the analyst stage is exempt too. On master the
+        # lenses ran INSIDE specialist_readers, so a run pushed over budget by the lens
+        # sessions went straight on to regroup_record. With the analyst stage done that stage
+        # makes no model call (_run_specialist_readers only validates the lens files and writes
+        # replaced_by_analyst for the other three), so stopping it here would only drop the
+        # run's memory entry and route. verdict_interpreter is NOT exempt: with the readers off
+        # master budget-checked before it as well.
+        _after_analyst = (current_stage == "specialist_readers" and _an_flag
+                          and "analyst" in (state.get("completed_stages") or []))
+        if (total_weighted_used > budget and current_stage != "regroup_record"
+                and not _after_analyst):
             print(f"🛑 RUN TERMINATED: Weighted token budget exceeded "
                   f"({total_weighted_used:,.0f} > {budget:,.0f}).")
             print("   Per-stage weighted breakdown:")

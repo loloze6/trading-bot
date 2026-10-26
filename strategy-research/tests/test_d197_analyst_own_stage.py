@@ -47,8 +47,8 @@ import verdict_criteria_evaluator as vce  # noqa: E402
 import test_e075_pr4_queries as q4  # noqa: E402  (a synthetic run with bars and trades)
 import test_e075_pr5_analyst as t75  # noqa: E402  (the stubbed analyst session)
 from _reader_test_helpers import (  # noqa: E402,F401
-    ALL_ON, REGROUP_ALL_ON, REGROUP_RUN_ID, RUN_ID, _fake_llm, _protocol_result, _seed, _seed_run,
-    _set_orchestrator, _stub_tbot_python)
+    ALL_ON, REGROUP_ALL_ON, REGROUP_RUN_ID, RUN_ID, _fake_llm, _memory, _memory_path,
+    _protocol_result, _seed, _seed_run, _set_orchestrator, _stub_tbot_python)
 from d178_legacy_fixture import d178_checks_off  # noqa: E402,F401
 from test_e033_slice4b_gate_conformance_promotion import _minimal_run_at, _noop_invoke  # noqa: E402
 
@@ -433,3 +433,68 @@ def test_an_old_state_paused_after_the_readers_stage_is_untouched(monkeypatch):
     state = _state(run_dir)
     assert state["completed_stages"][-1] == "regroup_record"
     assert "analyst" not in state["completed_stages"]
+
+
+# ---------------------------------------------------------------------------
+# 7. the token budget boundary is kept as on master
+# ---------------------------------------------------------------------------
+
+def _over_budget(monkeypatch):
+    monkeypatch.setattr(rpr, "_load_token_budget", lambda: 1)
+    monkeypatch.setattr(rpr, "_compute_weighted_budget_usage", lambda log: (10**9, []))
+
+
+def _mark_completed(run_dir, *stages):
+    state = _state(run_dir)
+    state["completed_stages"] = list(stages)
+    rpr.save_yaml(run_dir / "pipeline_state.yaml", state)
+
+
+def test_over_budget_after_the_analyst_stage_the_readers_stage_and_the_record_still_run(monkeypatch):
+    """On master the lenses ran inside specialist_readers, so a run pushed over budget by them
+    went straight on to regroup_record (exempt) and kept its memory entry and route. With the
+    analyst a stage of its own the loop-top check must not stop specialist_readers either."""
+    _set_orchestrator(REGROUP_ALL_ON)
+    monkeypatch.setattr(rpr, "_analyst_enabled", lambda *a: True)
+    run_dir = _seed(idea_status="refuted", pending="specialist_readers")
+    _mark_completed(run_dir, "hypothesis_generation", "protocol_execution", "analyst")
+    _over_budget(monkeypatch)
+    monkeypatch.setattr(rpr, "run_analyst_worker", lambda *a, **k: pytest.fail("analyst ran"))
+    monkeypatch.setattr(rpr, "run_reader_worker", lambda *a, **k: pytest.fail("a reader ran"))
+    monkeypatch.setattr(rpr, "_invoke_reader_llm", _fake_llm(calls=[]))
+    rpr.run_loop(REGROUP_RUN_ID)
+    state = _state(run_dir)
+    assert state["status"] == "rejected"                       # not rejected_budget_exceeded
+    assert state["completed_stages"][-2:] == ["specialist_readers", "regroup_record"]
+    assert state["pending_stage"] == "completed_rejected"
+    assert REGROUP_RUN_ID in _memory()["runs"]                 # the memory entry and the route
+
+
+def test_over_budget_with_the_readers_off_the_check_before_the_verdict_interpreter_applies(monkeypatch):
+    """Master with the readers off budget-checked before verdict_interpreter; so does this."""
+    _set_orchestrator(None)
+    monkeypatch.setattr(rpr, "_analyst_enabled", lambda *a: True)
+    run_dir = _loop_run("verdict_interpreter")
+    _mark_completed(run_dir, "hypothesis_generation", "protocol_execution", "analyst")
+    _over_budget(monkeypatch)
+    rpr.run_loop(RUN_ID)
+    state = _state(run_dir)
+    assert state["status"] == "rejected_budget_exceeded"
+    assert state["pending_stage"] == "verdict_interpreter"
+    assert state["completed_stages"][-1] == "analyst"
+    assert not _memory_path().exists()
+
+
+def test_over_budget_the_readers_stage_without_a_finished_analyst_stage_is_still_stopped(monkeypatch):
+    """The exemption is for a run the analyst stage has finished (no model call left in the
+    readers stage); an old state paused inside specialist_readers can still run a lens there."""
+    _set_orchestrator(REGROUP_ALL_ON)
+    monkeypatch.setattr(rpr, "_analyst_enabled", lambda *a: True)
+    run_dir = _seed(idea_status="refuted", pending="specialist_readers")
+    _mark_completed(run_dir, "hypothesis_generation", "protocol_execution")
+    _over_budget(monkeypatch)
+    rpr.run_loop(REGROUP_RUN_ID)
+    state = _state(run_dir)
+    assert state["status"] == "rejected_budget_exceeded"
+    assert state["pending_stage"] == "specialist_readers"
+    assert not _memory_path().exists()
