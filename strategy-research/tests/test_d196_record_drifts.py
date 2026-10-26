@@ -177,12 +177,12 @@ def _write_evaluation(run_dir: Path, entry: dict, *, drop_base: bool = False,
 
 
 def _seed_entry_inputs():
-    import test_e058_s2a_regroup_record as t58
-    t58._set_orchestrator(t58.ALL_ON)
-    run_dir = t58._seed(idea_status="refuted", variant_loop=True)
+    import _reader_test_helpers as h   # D-197: the shared reader-test helpers
+    h._set_orchestrator(h.REGROUP_ALL_ON)
+    run_dir = h._seed(idea_status="refuted", variant_loop=True)
     kw = dict(trial_sharpes=rpr.load_campaign_state()["trial_sharpes"],
-              categories=rpr._reader_categories(), protocol_root=rpr.ROOT, recorded_at="t")
-    plain = cm.build_memory_entry(run_dir, t58.RUN_ID, **kw)
+              categories=list(rpr.READER_CATEGORIES), protocol_root=rpr.ROOT, recorded_at="t")
+    plain = cm.build_memory_entry(run_dir, h.REGROUP_RUN_ID, **kw)
     return run_dir, kw, plain
 
 
