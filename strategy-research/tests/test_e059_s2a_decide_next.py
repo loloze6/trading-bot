@@ -265,15 +265,17 @@ def test_register_kwargs_write_an_agent_entry(campaign_root):
 # ---------------------------------------------------------------------------
 
 def test_ranking_order_and_tie_break():
+    # D-194: only confidence_real and cost rank; the dist argument is ignored.
     props = [_patch("profitability-run_061-1", after=0.6, conf=1, dist=3),
              _patch("profitability-run_061-2", after=0.7, conf=3, dist=0),
              _patch("profitability-run_061-3", after=0.8, conf=3, dist=2),
              _patch("profitability-run_061-4", after=0.9, conf=3, dist=2)]  # tie -> id asc
     rec = _decide(_one_source(props))
     ranked = [c["candidate_id"] for c in rec["candidates"] if c["rank"]]
-    assert ranked == ["profitability-run_061-3", "profitability-run_061-4",
-                      "profitability-run_061-2", "profitability-run_061-1"]
-    assert rec["picked"]["candidate_id"] == "profitability-run_061-3"
+    assert ranked == ["profitability-run_061-2", "profitability-run_061-3",
+                      "profitability-run_061-4", "profitability-run_061-1"]
+    assert rec["picked"]["candidate_id"] == "profitability-run_061-2"
+    assert rec["picked"]["tie_with"] == ["profitability-run_061-3", "profitability-run_061-4"]
     assert rec["stop"] is None
 
 

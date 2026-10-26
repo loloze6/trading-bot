@@ -332,7 +332,7 @@ def test_malformed_negative_score_fails():
 
 def test_malformed_missing_score_dimension_fails():
     bad = copy.deepcopy(_VALID_EXAMPLES["component_attribution"])
-    del bad["scores"]["distance_to_profitable"]
+    del bad["scores"]["confidence_real"]      # D-194: the one required score
     with pytest.raises(jsonschema.ValidationError):
         _validate(bad)
 

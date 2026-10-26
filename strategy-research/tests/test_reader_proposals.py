@@ -97,7 +97,7 @@ _BAD_ENTRIES = {
     "score_out_of_range": lambda p: p["scores"].__setitem__("confidence_real", 4),
     "score_bool": lambda p: p["scores"].__setitem__("confidence_real", True),
     "score_float": lambda p: p["scores"].__setitem__("confidence_real", 2.0),
-    "score_missing": lambda p: p["scores"].pop("mechanism_plausibility"),
+    "score_missing": lambda p: p["scores"].pop("confidence_real"),   # D-194: the one required score
     "missing_model_id": lambda p: p.pop("model_id"),
     "bad_id_pattern": lambda p: p.__setitem__("proposal_id", "profitability-run_1"),
     # E-035 S2c: the optional requires_feed field, exactly {feed, reason}.

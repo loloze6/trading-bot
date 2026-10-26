@@ -22,7 +22,11 @@ from pathlib import Path
 
 import yaml
 
-SCORE_KEYS = ("confidence_real", "distance_to_profitable", "mechanism_plausibility")
+SCORE_KEYS = ("confidence_real",)
+# D-194: two score fields once ranked candidates and were removed (they never
+# decided a pick). Records written before D-194 still carry them; check_scores
+# ACCEPTS them so those records load, and nothing here reads or writes them.
+_LEGACY_SCORE_KEYS = frozenset({"distance_to_profitable", "mechanism_plausibility"})
 _PROPOSAL_KEYS = frozenset(
     {"proposal_id", "kind", "patch", "block", "evidence", "scores", "model_id", "rubric_version",
      "requires_feed"})
@@ -298,12 +302,15 @@ def _check_requires_feed(rf, where: str) -> None:
 
 
 def check_scores(scores, where: str) -> None:
-    """The anchored score shape: exactly SCORE_KEYS, each an integer 0..3.
-    Shared with tools/decide_next.py (E-059 S2b: a brief's extra cards are
-    scored on the same shape). Raises ProposalError."""
-    if not isinstance(scores, dict) or set(scores) != set(SCORE_KEYS):
+    """The anchored score shape: SCORE_KEYS, each an integer 0..3. A record
+    written before D-194 may also carry the two retired keys
+    (_LEGACY_SCORE_KEYS), each held to the same 0..3 rule; any other key is
+    refused. Shared with tools/decide_next.py (E-059 S2b: a brief's extra
+    cards are scored on the same shape). Raises ProposalError."""
+    if not isinstance(scores, dict) or not set(SCORE_KEYS) <= set(scores) \
+            or set(scores) - set(SCORE_KEYS) - _LEGACY_SCORE_KEYS:
         raise ProposalError(f"{where}: scores must have exactly {list(SCORE_KEYS)}")
-    for key in SCORE_KEYS:
+    for key in scores:
         v = scores[key]
         if isinstance(v, bool) or not isinstance(v, int) or not 0 <= v <= 3:
             raise ProposalError(f"{where}: scores.{key}={v!r} is not an integer in 0..3")

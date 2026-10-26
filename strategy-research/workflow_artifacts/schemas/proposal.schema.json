@@ -82,7 +82,7 @@
     "scores": {
       "type": "object",
       "description": "0-3 anchored scores -- see each reader SKILL.md's own 'Scoring (0-3 anchors)' table. Do not free-hand; pick from the anchor table by what the report's own fields show.",
-      "required": ["confidence_real", "distance_to_profitable", "mechanism_plausibility"],
+      "required": ["confidence_real"],
       "additionalProperties": false,
       "properties": {
         "confidence_real": {
@@ -95,13 +95,13 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 3,
-          "description": "How close is the cited metric to a genuinely passing/profitable state if this proposal were realized?"
+          "description": "LEGACY (retired D-194): present only in proposals written before; never written now, never ranked on."
         },
         "mechanism_plausibility": {
           "type": "integer",
           "minimum": 0,
           "maximum": 3,
-          "description": "Does the evidence support a real causal story tied to a specific config element, or a single-cell curve-fit coincidence?"
+          "description": "LEGACY (retired D-194): present only in proposals written before; never written now, never ranked on."
         }
       }
     },
