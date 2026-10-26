@@ -41,7 +41,6 @@ sys.path.insert(0, str(SR_ROOT / "tools"))
 
 import run_phase1_research as rpr  # noqa: E402
 import reader_proposals as rp  # noqa: E402
-import build_reports as br  # noqa: E402
 import claim_card as cc  # noqa: E402
 import claim_measure as cmeas  # noqa: E402
 import explore_confirm as ec  # noqa: E402
@@ -386,7 +385,6 @@ V3_ON = {**CLAIMS_ON, "reader_findings": {"enabled": True}}
 def _seed_v3_docs() -> None:
     """The real flag-on input files, under the sandbox ROOT (run-relative ../../)."""
     for rel in ("workflow_artifacts/skills/hypothesis-design/CLAIM_TESTS.md",
-                "workflow_artifacts/skills/readers_v3/READING_CONTRACT.md",
                 "workflow_artifacts/skills/hypothesis-design/PREFILLED_CLAIM.md"):
         dst = rpr.ROOT / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
@@ -467,8 +465,6 @@ def _run070_shaped(monkeypatch, flags=V3_ON) -> Path:
     shutil.copyfile(FIX4 / "artifacts" / "block_manifest.yaml", arts / "block_manifest.yaml")
     shutil.copyfile(FIX5 / "component_attribution_overall.yaml",
                     arts / "reports" / "component_attribution.yaml")
-    if flags.get("reader_findings", {}).get("enabled"):
-        rpr._write_reader_v3_inputs(run_dir, RUN_ID)  # the stage writes them before any reader
     return run_dir
 
 
@@ -649,7 +645,6 @@ def _make_run(run_dir: Path, conf_sign: float = -1.0, windows=WINDOWS, card_clai
     prs = _prs(run_dir)
     grid = vce.evaluate_grid(prs, PRE_REG, None, {})
     _save(arts / "grid_evaluation.yaml", grid)
-    br.build_reports(run_dir, write=True, variants=_meta())
 
 
 def _prs(run_dir: Path) -> dict:
@@ -667,33 +662,11 @@ def _ec_run(monkeypatch, flags=EC_ON, conf_sign=-1.0, run_id=RUN_ID, windows=WIN
     _set_orchestrator(flags)
     monkeypatch.chdir(SR_ROOT)
     _seed_v3_docs()
-    dst = rpr.ROOT / "workflow_artifacts" / "skills" / "readers_v3" / "EXPLORATION.md"
-    shutil.copyfile(SR_ROOT / "workflow_artifacts" / "skills" / "readers_v3" / "EXPLORATION.md",
-                    dst)
     run_dir = _seed_run(run_id)
     _make_run(run_dir, conf_sign, windows=windows, card_claim=card_claim)
     monkeypatch.setattr(rpr, "_resolve_protocol_path",
                         lambda rd, rid: Path(rd) / "protocol.json")
     return run_dir
-
-
-def _protocol_execution_part(run_dir: Path, run_id: str = RUN_ID) -> None:
-    """What protocol_execution does under the flag: the split at entry, the
-    readers' copies after the reports."""
-    rpr._prepare_explore_confirm(run_dir, run_id)
-    rpr._write_exploration_views(run_dir, run_id, _prs(run_dir), _meta(),
-                                 pre_registration=PRE_REG)
-
-
-def _readings_llm(prompts: list, sides: dict | None = None):
-    sides = sides or {}
-
-    async def _llm(prompt):
-        prompts.append(prompt)
-        cat = next(c for c in READER_CATEGORIES if f"reader_category: {c}\n" in prompt)
-        return (_fenced(_reading(cat, sides=sides.get(cat, []))),
-                {"usage": {}, "cost_usd": 0.0, "num_turns": 1})
-    return _llm
 
 
 def _sides():

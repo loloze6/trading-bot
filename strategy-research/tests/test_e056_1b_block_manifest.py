@@ -478,18 +478,6 @@ def test_stale_manifest_untouched_with_the_flag_off(monkeypatch):
 # Code-review fixes 4, 7, 8, 9: docs, card schema, config text, one registry check
 # ---------------------------------------------------------------------------
 
-def test_reader_skills_and_proposal_schema_no_longer_call_7c_unbuilt():
-    readers = SR_ROOT / "workflow_artifacts" / "skills" / "readers"
-    stale = ("PROPOSED, NOT BUILT", "PROPOSED-NOT-BUILT", "Nothing reads block_manifest",
-             "nothing reads block_manifest")
-    for skill in readers.glob("*/SKILL.md"):
-        text = skill.read_text(encoding="utf-8")
-        assert not any(s in text for s in stale), skill
-    schema = (SCHEMAS / "proposal.schema.json").read_text(encoding="utf-8")
-    assert not any(s in schema for s in stale)
-    assert "the manifest contract is built" in schema
-
-
 def _card_errors(card: dict) -> list:
     import jsonschema
     import workflow_artifact_validation as wav
@@ -598,22 +586,6 @@ def _prompts(sr: Path, run_dir: Path, stages) -> dict:
     return {stage: rpr._build_stage_prompt(stage, _handoff(sr, stage), run_dir) for stage in stages}
 
 
-def _reader_prompts(run_dir: Path) -> dict:
-    """The five specialist-reader prompts, built exactly as run_reader_worker
-    builds them (_reader_handoff + _reader_skill_dir)."""
-    out = {}
-    for category in rpr.READER_CATEGORIES:
-        handoff = rpr._reader_handoff(category, "run_001", 0)
-        for req in handoff["required_inputs"]:
-            p = run_dir / req["path"]
-            if not p.exists():
-                p.parent.mkdir(parents=True, exist_ok=True)
-                p.write_text(f"stub for {req['path']}\n", encoding="utf-8")
-        out[category] = rpr._build_stage_prompt("specialist_readers", handoff, run_dir,
-                                                skill_file_name=rpr._reader_skill_dir(category))
-    return out
-
-
 def test_flag_off_prompts_do_not_depend_on_the_changed_files(tmp_path, monkeypatch):
     sr = tmp_path / "sr"
     shutil.copytree(SR_ROOT / "workflow_artifacts", sr / "workflow_artifacts")
@@ -625,8 +597,6 @@ def test_flag_off_prompts_do_not_depend_on_the_changed_files(tmp_path, monkeypat
     assert "backtest_specification" in flag_off
     _stub_required_inputs(sr, run_dir)
     before = _prompts(sr, run_dir, flag_off)
-    readers_before = _reader_prompts(run_dir)
-    assert len(readers_before) == 5
     on_before = _prompts(sr, run_dir, ["strategy_config_authoring"])
     changed = [sr / "workflow_artifacts" / "skills" / "strategy-config-authoring" / "SKILL.md",
                sr / "workflow_artifacts" / "templates" / "handoffs" / HANDOFF_1B.name,
@@ -636,10 +606,6 @@ def test_flag_off_prompts_do_not_depend_on_the_changed_files(tmp_path, monkeypat
         p.write_text("constraints: []\n" if p.suffix == ".yaml" else "BLANKED\n", encoding="utf-8")
     after = _prompts(sr, run_dir, flag_off)
     assert after == before
-    # code-review fix 5 pinned the readers as independent of these files; the
-    # reader-inputs change makes them read the design guide on purpose
-    # (flag-on stage only -- every flag-off prompt above is unchanged).
-    assert _reader_prompts(run_dir) != readers_before
     # the harness does see a dependency where there is one
     assert _prompts(sr, run_dir, ["strategy_config_authoring"]) != on_before
 

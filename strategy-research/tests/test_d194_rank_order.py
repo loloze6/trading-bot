@@ -191,18 +191,6 @@ def _validator(name):
     return jsonschema, schema
 
 
-def test_proposal_schema_accepts_old_and_new_scores():
-    jsonschema, schema = _validator("proposal.schema.json")
-    sub = {"$defs": schema.get("$defs", {}), **schema["properties"]["scores"]}
-    jsonschema.validate({"confidence_real": 2}, sub)
-    jsonschema.validate({"confidence_real": 2, "distance_to_profitable": 1,
-                         "mechanism_plausibility": 2}, sub)
-    with pytest.raises(jsonschema.ValidationError):
-        jsonschema.validate({"distance_to_profitable": 1}, sub)       # confidence still required
-    with pytest.raises(jsonschema.ValidationError):
-        jsonschema.validate({"confidence_real": 2, "other": 1}, sub)  # still closed
-
-
 def test_decision_record_schema_accepts_old_and_new_candidates_and_tie_with():
     jsonschema, schema = _validator("decision_record.schema.json")
     rec = _decide(_one_source([_patch("profitability-run_061-1", after=0.6, conf=2),
@@ -246,7 +234,6 @@ def test_the_constants_are_gone_from_the_ranking_and_analyst_code():
 
 
 @pytest.mark.parametrize("rel", [
-    "workflow_artifacts/skills/readers_v3/READING_CONTRACT.md",
     "workflow_artifacts/skills/hypothesis-design/BRIEF_HYPOTHESES.md",
 ])
 def test_the_prompts_that_ask_for_scores_no_longer_ask_for_the_retired_ones(rel):

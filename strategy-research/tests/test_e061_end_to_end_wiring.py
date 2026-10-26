@@ -194,8 +194,6 @@ TARGET_FLAGS = {
     "config_direct_authoring": True,
     "variant_loop": True,
     "grid_evaluation": True,
-    "category_reports": True,
-    "specialist_readers": True,
     "regroup_record": True,
     "profit_bars_file": True,
     "profit_bars_every_backtest": True,
@@ -214,22 +212,20 @@ TARGET_FLAGS = {
     "score_provenance": False,
     # D-056: runs the real engine on real data; this harness feeds stub configs.
     "forecast_size_probe": False,
-    # E-073 (D-081): requires reader_findings, which is off here.
-    "observable_backtest": False,
     # CUL-414 (D-082): off, so the stub backtests' cost bar reads as before.
     "cost_bar_all_costs": False,
     # CUL-415 (D-084): off, so the stub grids' window cells read as before.
     "zero_trade_windows_not_computed": False,
     # E-077 PR-1 (D-085): off, so the stub briefs' windows are copied as before.
     "folds": False,
-    # E-075 PR-5a (D-091): off, so the stub claims are checked as before.
+    # E-075 PR-5a (D-091): off in the written config (the stub claims are checked as before,
+    # folds is off); D-198: Harness.build() patches the analyst's flag reader to True and its
+    # lens worker to a stub, so the analyst stage runs in every scenario where the readers' stage ran.
     "analyst": False,
     # E-068 slice 2: the stub cards carry no claim block.
     "claim_tests": False,
     # D-071 (CUL-399): off, so decide-next's picks stay `ready` as these scenarios expect.
     "operator_approval": False,
-    # E-068 slice 5 (D-073): requires claim_tests, which is off here.
-    "reader_findings": False,
     # E-068 nearest build (D-075): off, so the stub 1b answers route as before.
     "nearest_build": False,
     # D-104: requires nearest_build, which is off here.
@@ -238,8 +234,6 @@ TARGET_FLAGS = {
     "config_replay_gate": False,
     # D-110.
     "exact_config_1b": False,
-    # E-072 (D-080): requires reader_findings, which is off here.
-    "explore_confirm": False,
     # D-185: off, so the stub trials' rows and DSR counts read as before.
     "dsr_same_structure": False,
     # D-186: off, so the stub runs read the metrics, the menu and the residual IC as before.
@@ -589,6 +583,11 @@ class Harness:
         self.mp.setattr(rpr, "query", self._query)
         self.mp.setattr(rpr, "run_gemini_worker", self._gemini_worker)
         self.mp.setattr(rpr, "_resolve_tbot_python", lambda: Path(_STUB_PYTHON))
+        # D-198: the analyst's stage replaces the readers' one. Its flag reads True here (the
+        # written config keeps folds off, which a real analyst run needs) and its lens worker
+        # is this stub, which writes the lens category's file the way a lens would.
+        self.mp.setattr(rpr, "_analyst_enabled", lambda cfg=None: True)
+        self.mp.setattr(rpr, "run_analyst_worker", self._analyst_worker)
         self.mp.setattr(_subprocess_mod, "run", self._subprocess_run)
         self.mp.setattr(_subprocess_mod, "Popen", _GuardedPopen)
         self.mp.setattr(_GuardedPopen, "harness", self)
@@ -641,10 +640,6 @@ class Harness:
             self.violation(f"LLM call with no run_id in its handoff (stage {stage!r})")
             raise AssertionError("E-061 guard: LLM call without a run_id")
         run_dir = self.run_dir(run_id)
-        if stage == "specialist_readers":
-            category = re.search(r"^\s*reader_category: (\w+)", segment, re.M).group(1)
-            self.reader_calls.append((category, run_id))
-            return self._reader_answer(category, run_id)
         if stage not in STAGE_AGENTS:
             self.violation(f"unexpected LLM stage {stage!r} on {run_id}")
             raise AssertionError(f"E-061 guard: unexpected LLM stage {stage!r} on {run_id}")
@@ -752,24 +747,28 @@ class Harness:
                 "variant_patches.yaml": {"base_config_ref": "artifacts/backtest_spec.yaml",
                                          "variants": variants}}
 
-    def _reader_answer(self, category: str, run_id: str) -> str:
-        body = "[]\n"
-        if category == "profitability" and self.reader_proposals and run_id == "run_001":
-            proposal = {
-                "proposal_id": f"profitability-{run_id}-1", "kind": "patch",
+    def _analyst_worker(self, lens, run_id, run_dir, stage_attempt=0):
+        """Stub of rpr.run_analyst_worker (D-198): writes the lens category's file. The
+        trade_efficiency lens proposes one patch on run_001 (the old profitability reader's
+        proposal, now under the analyst's category); every other file is an empty list."""
+        category = {"forecast": "forecast_power", "trade_efficiency": "trade_efficiency"}[lens]
+        self.reader_calls.append((category, run_id))
+        body = []
+        if category == "trade_efficiency" and self.reader_proposals and run_id == "run_001":
+            body = [{
+                "proposal_id": f"trade_efficiency-{run_id}-1", "kind": "patch",
                 "patch": [{"component_id": "rsi", "field": "params.period",
                            "before": _rsi_period(BASE_CONFIG), "after": 10}],
-                "evidence": ["reports/profitability.yaml per_symbol: median sharpe 0.2 on both "
+                "evidence": ["variants.base.slices.overall: median sharpe 0.2 on both "
                              "coins, cost ratio 0.1"],
                 "scores": {"confidence_real": 2, "distance_to_profitable": 1,
                            "mechanism_plausibility": 2},
                 "model_id": "stub-reader",
-                # The closed set the real reader is held to under score_provenance
-                # (the SKILL files all say v2); read from the module, never a literal.
-                "rubric_version": _reader_proposals_mod.READER_RUBRIC_VERSIONS["profitability"]}
-            _schema_check("proposal", proposal)
-            body = yaml.safe_dump([proposal], sort_keys=False)
-        return f"Here are my proposals.\n```yaml\n{body}```\n"
+                "rubric_version": _reader_proposals_mod.READER_RUBRIC_VERSIONS["trade_efficiency"]}]
+        dest = Path(run_dir) / "artifacts" / "proposals" / f"{category}.yaml"
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(yaml.safe_dump(body, sort_keys=False), encoding="utf-8")
+        return dest
 
     # -- subprocesses --------------------------------------------------------
     def _subprocess_run(self, cmd, *a, **k):
@@ -1146,7 +1145,7 @@ def test_end_to_end_two_runs_with_the_real_run_setup(harness):
     assert owner["status"] == "done" and owner["outcome"] == "refuted"
     assert owner["pass_rule_evaluation_ref"] == f"runs/{r1}/artifacts/idea_status.yaml"
     assert h.llm_calls == [(s, r1) for s in STAGE_AGENTS]
-    assert sorted(c for c, _ in h.reader_calls) == sorted(rpr.READER_CATEGORIES)
+    assert sorted(c for c, _ in h.reader_calls) == sorted(rpr.ANALYST_LENS_CATEGORIES)  # D-198
     # the real worker parsed the stub's fenced blocks into the deliverables
     for rel in ("hypothesis_card.yaml", "backtest_spec.yaml", "decision.yaml",
                 "block_manifest.yaml", "expanded_hypothesis_card.yaml", "innovation_notes.yaml",
@@ -1169,9 +1168,11 @@ def test_end_to_end_two_runs_with_the_real_run_setup(harness):
     grid = h.art(r1, "grid_evaluation.yaml")
     assert sorted(grid["variants"]) == ["asset", "base", "design"]
     assert h.art(r1, "idea_status.yaml")["idea_status"] == "refuted" == grid["idea_status"]
-    for cat in rpr.READER_CATEGORIES:
-        assert h.art(r1, f"reports/{cat}.yaml") is not None, cat
+    for cat in rpr.ANALYST_LENS_CATEGORIES:       # D-198: the analyst's two lens files, no reports
         assert h.art(r1, f"proposals/{cat}.yaml") is not None, cat
+    assert sorted(p.stem for p in (h.run_dir(r1) / "artifacts" / "proposals").glob("*.yaml")) == \
+        sorted(rpr.ANALYST_LENS_CATEGORIES)
+    assert not (h.run_dir(r1) / "artifacts" / "reports").exists()
     _assert_legacy_label_retired(h, r1)
     pbe = h.art(r1, "profit_bars_evaluation.yaml")
     assert pbe["scope"] == "every_backtest" and pbe["passing"] == []
@@ -1183,7 +1184,7 @@ def test_end_to_end_two_runs_with_the_real_run_setup(harness):
     assert not reg.exists() or not (yaml.safe_load(reg.read_text(encoding="utf-8")) or {}).get(
         "blocks"), "a refuted idea registered a block"
     record1 = h.art(r1, "decision_record.yaml")
-    cid = f"profitability-{r1}-1"
+    cid = f"trade_efficiency-{r1}-1"
     assert record1["picked"]["candidate_id"] == cid
     # C2 S2b: the candidate's cost basis is one coin (the source base variant's)
     picked = next(c for c in record1["candidates"] if c["candidate_id"] == cid)
@@ -1702,12 +1703,11 @@ def _generated_constraints(promotion="absent") -> dict:
 def _assert_no_promotion_or_verdict_in_prompts(h: Harness) -> None:
     """Review fix 4: no assembled prompt (skill + handoff + every context file)
     delivered to any LLM stage carries a protocol's promotion block or the
-    legacy top-level verdict. Not vacuous: the stage agents and every reader
-    were prompted, and the readers' context files are inlined."""
+    legacy top-level verdict. Not vacuous: the stage agents were prompted
+    (D-198: the readers and their inlined reports are gone)."""
     import run_protocol as rp
     stages = {stage for stage, _r, _p in h.prompts}
-    assert set(STAGE_AGENTS) | {"specialist_readers"} <= stages, stages
-    assert any("--- CONTENT OF artifacts/reports/" in p for _s, _r, p in h.prompts)
+    assert set(STAGE_AGENTS) <= stages, stages
     for stage, run_id, prompt in h.prompts:
         where = f"{stage} on {run_id}"
         for key in (*rp.LEGACY_VERDICT_PROMOTION_KEYS, "promotion_provenance"):
@@ -1715,49 +1715,20 @@ def _assert_no_promotion_or_verdict_in_prompts(h: Harness) -> None:
         assert rp.LEGACY_VERDICT_RETIRED_REASON not in prompt, where
         top = re.findall(r"(?m)^(verdict|verdict_reason):", prompt)
         assert top == [], f"{where}: prompt carries a top-level {top}"
-    # C5.8 (C13, D-050): in every READER prompt, the legacy label as a key at ANY
-    # indentation (the profitability report nests it), and the cost-check route
-    # labels. Readers only: the innovation-expansion SKILL's own diversity check
-    # carries an unrelated nested `verdict: "real_diversity"` key (measured).
-    offenders = []
-    for stage, run_id, prompt in h.prompts:
-        if stage != "specialist_readers":
-            continue
-        nested = re.findall(r"(?m)^[ \t]*(?:-[ \t]+)?(verdict|verdict_reason):", prompt)
-        routes = re.findall(r"(?m)^[ \t]*(?:-[ \t]+)?(post_backtest_route\w*|cost_dominated_real):",
-                            prompt)
-        routes += [v for v in STUB_ROUTE_CORE.values() if v in prompt]
-        if nested or routes:
-            offenders.append((stage, run_id, len(nested), sorted(set(nested + routes))))
-    assert offenders == [], f"prompts carrying the legacy label: {offenders}"
 
 
 def _assert_legacy_label_retired(h: Harness, run_id: str) -> None:
-    """C5.8 (C13, D-050) under the target flags: no pass_rule_evaluation.yaml, and
-    reports/profitability.yaml carries no verdict/verdict_reason and no cost-check
-    route label under any variant, while the numbers stay. Not vacuous: every
-    variant's own protocol_result.yaml still carries the labels the strip dropped."""
+    """C5.8 (C13, D-050) under the target flags: no pass_rule_evaluation.yaml. (D-198: the
+    category reports this also checked, with their stripped legacy labels, are gone.) Not
+    vacuous: every variant's own protocol_result.yaml still carries the labels."""
     assert h.art(run_id, "pass_rule_evaluation.yaml") is None
-    prof = h.art(run_id, "reports/profitability.yaml")
-    assert prof["schema_version"] == 2 and prof["variants"], run_id
-    for vid, block in prof["variants"].items():
+    variants = h.art(run_id, "grid_evaluation.yaml")["variants"]
+    assert variants, run_id
+    for vid in variants:
         source = h.art(run_id, f"variants/{vid}/protocol_result.yaml")
         assert "verdict" in source["hypothesis_verdict"], vid
         assert set(_ROUTE_DIAGNOSTICS_KEYS) <= set(source["hypothesis_verdict"]["diagnostics"])
         assert all(set(STUB_ROUTE_CORE) <= set(r["core"]) for r in source["results"]), vid
-        slices = block["slices"]
-        overall = slices["overall"]
-        assert not overall.get("unavailable"), vid
-        assert "verdict" not in overall and "verdict_reason" not in overall, vid
-        assert not set(_ROUTE_DIAGNOSTICS_KEYS) & set(overall["diagnostics"]), vid
-        assert "median_forecast_return_corr" in overall["diagnostics"], vid
-        assert slices["per_window"], vid
-        for row in slices["per_window"]:
-            assert not set(STUB_ROUTE_CORE) & set(row["core"]), vid
-            assert row["core"]["forecast_return_corr"] == 0.02, vid
-        for rows in slices["per_symbol"].values():  # CUL-370: an index, no core copy
-            for row in rows:
-                assert set(row) == {"window", "run_id"}, vid
 
 
 def _assert_c5_6_run_completed(h: Harness, r1: str = "run_001") -> None:
@@ -1798,8 +1769,8 @@ def _assert_c5_6_run_completed(h: Harness, r1: str = "run_001") -> None:
     assert h.art(r1, "idea_status.yaml")["idea_status"] == "refuted" == grid["idea_status"]
     pbe = h.art(r1, "profit_bars_evaluation.yaml")
     assert sorted(pbe["variants"]) == ["asset", "base", "design"]
-    for cat in rpr.READER_CATEGORIES:
-        assert h.art(r1, f"reports/{cat}.yaml") is not None, cat
+    for cat in rpr.ANALYST_LENS_CATEGORIES:        # D-198: the analyst's lens files, no reports
+        assert h.art(r1, f"proposals/{cat}.yaml") is not None, cat
     _assert_legacy_label_retired(h, r1)
     memory = yaml.safe_load(rpr._campaign_memory_path().read_text(encoding="utf-8"))
     assert memory["runs"][r1]["idea_status"] == "refuted"
@@ -2093,54 +2064,11 @@ def test_c2_5_two_invalid_shapes_pause_variant_shape_invalid(harness):
 # B2 / A3 §3.4: the category reports under the variant loop
 # ---------------------------------------------------------------------------
 
-_TRADE_OR_BAR_SOURCE = re.compile(r"trade_diagnostics\.json|bars\.csv")
-
-
-def _unavailable_slices(node, path="") -> list:
-    """Every {unavailable: true} slice whose reason is a missing trade or bar source."""
-    out = []
-    if isinstance(node, dict):
-        if node.get("unavailable") is True and _TRADE_OR_BAR_SOURCE.search(str(node.get("reason"))):
-            out.append((path, node.get("reason")))
-        for k, v in node.items():
-            out += _unavailable_slices(v, f"{path}.{k}")
-    elif isinstance(node, list):
-        for i, v in enumerate(node):
-            out += _unavailable_slices(v, f"{path}[{i}]")
-    return out
-
-
-def test_b2_category_reports_carry_trade_and_bar_slices(harness):
-    """FIXED by E-061 C2 S2d (was strict-xfail on master: build_reports read
-    RUN_DIR/trade_diagnostics.json and RUN_DIR/results/<w>/bars.csv, while the
-    variant loop writes them under RUN_DIR/variants/<id>/ -- every slice came
-    out {unavailable: true} with no error). build_reports now reads each
-    variant's OWN artifacts/variants/<vid>/protocol_result.yaml,
-    variants/<vid>/trade_diagnostics.json and variants/<vid>/results/<w>/
-    bars.csv (`_variant_sources`), so no trade/bar slice is unavailable for
-    a missing source under the variant loop."""
-    h = harness.build()
-    run_dir = _stage_at_protocol_execution(h, validation_protocol=True)
-    asyncio.run(rpr.run_tool_worker("protocol_execution", "run_001"))
-    reports = {cat: h.art("run_001", f"reports/{cat}.yaml")
-               for cat in ("trade_efficiency", "regime_power", "component_attribution")}
-    assert all(reports.values()), sorted(p.name for p in (run_dir / "artifacts").iterdir())
-    bad = {cat: _unavailable_slices(doc) for cat, doc in reports.items()}
-    assert not any(bad.values()), (
-        f"slices unavailable for a missing trade/bar source: "
-        f"{ {c: [p for p, _ in v] for c, v in bad.items()} }")
-    # E-061 C2 S2d shape check: every reader-facing report is schema_version 2
-    # with a `variants` map holding each of the three graded variants
-    # (asset/base/design, per this test's own fixture) -- not the pre-S2d
-    # bare `slices` shape.
-    for cat, doc in reports.items():
-        assert doc.get("schema_version") == 2, f"{cat}.yaml: expected schema_version 2, got {doc!r}"
-        assert set(doc.get("variants") or {}) == {"asset", "base", "design"}, \
-            f"{cat}.yaml: expected all 3 graded variants, got {sorted(doc.get('variants') or {})}"
+# (D-198: the B2 test of the category reports' trade/bar slices went with tools/build_reports.py.)
 
 
 # ---------------------------------------------------------------------------
-# C2.3 (E-061 C2 S2e, D-017): the readers see what earlier runs validated
+# C2.3 (E-061 C2 S2e, D-017): the registry summary shows what earlier runs validated
 # ---------------------------------------------------------------------------
 
 @pytest.mark.slow
@@ -2175,17 +2103,13 @@ def test_c2_3_run_2_readers_see_run_1s_validated_block_with_this_run_as_its_neig
     assert s1["this_run"]["block_type"]["component_classes"] == [
         BASE_CONFIG["strategies"]["regimes"]["unknown"]["components"][0]["class"]]
     assert s1["this_run"]["type_already_registered"] is False
-    # run 1 is validated: its own block is registered only AFTER its readers, so the
-    # summary carries the status (the SKILLs score a patch on a validated run as 0)
+    # run 1 is validated: its own block is registered only AFTER the summary is written
+    # (D-198: by regroup_record), so the summary carries the status
     assert s1["this_run"]["idea_status"] == "validated"
     assert s1["registry"]["n_forecast_blocks"] == 0
-    r1_prompts = [p for s, r, p in h.prompts if s == "specialist_readers" and r == r1]
-    assert len(r1_prompts) == len(rpr.READER_CATEGORIES)
-    assert all("registry_summary.yaml" in p for p in r1_prompts)
-    assert not any(block_id in p for p in r1_prompts)
 
     keep_going, exc = _drive(h)
-    cid = f"profitability-{r1}-1"
+    cid = f"trade_efficiency-{r1}-1"
     entry = h.entry(cid)
     r2 = entry["run_ids"][0]
     assert r2 == "run_002", (r2, entry)
@@ -2203,12 +2127,6 @@ def test_c2_3_run_2_readers_see_run_1s_validated_block_with_this_run_as_its_neig
     assert s2["this_run"]["neighbour_block_ids"] == [block_id]
     assert s2["this_run"]["type_already_registered"] is True
     assert s2["this_run"]["patches_registered_block"] == block_id
-    r2_prompts = [p for s, r, p in h.prompts if s == "specialist_readers" and r == r2]
-    assert len(r2_prompts) == len(rpr.READER_CATEGORIES)
-    for p in r2_prompts:
-        assert "--- CONTENT OF artifacts/registry_summary.yaml ---" in p
-        assert block_id in p and "same_classes_timeframe_unknown" in p
-        assert "idea_status" in p
     _assert_holdout_untouched(h)
 
 
@@ -2603,35 +2521,10 @@ def test_c4_flag_set_v2_plus_score_provenance_end_to_end(harness):
     for vid in ("base", "design"):
         assert grid[vid]["result"] == "INCONCLUSIVE" and grid[vid]["reason"].startswith("single_era:")
 
-    requested = rpr._CLAUDE_WORKER_MODEL
-    assert STUB_MODEL != requested  # else the mismatch assertion below proves nothing
-    audit = st["audit_log"]
-    categories = rpr.READER_CATEGORIES
-    assert sorted(c for c, rid in h.reader_calls if rid == r1) == sorted(categories)
-    for category in categories:
-        keys = [k for k in audit if k.startswith(f"specialist_readers_{category}_attempt_")]
-        assert keys, f"no audit entry for the {category} reader"
-        for key in keys:
-            prov = audit[key].get("provenance")
-            assert prov is not None, f"{key} carries no provenance block"
-            assert prov["requested"] == requested
-            assert prov["observed"] == STUB_MODEL
-            assert prov["mismatch"] is True
-            assert "citations" in prov and "proposals" in prov["citations"]
-
-    (prof_key,) = [k for k in audit if k.startswith("specialist_readers_profitability_attempt_")]
-    pid = f"profitability-{r1}-1"
-    prof = audit[prof_key]["provenance"]
-    assert list(prof["citations"]["proposals"]) == [pid]
-    assert prof["self_reported"] == {pid: "stub-reader"}
-    assert prof["stamped"] is True and prof["self_report_differs"] is True
-
-    stored = yaml.safe_load((h.run_dir(r1) / "artifacts" / "proposals" / "profitability.yaml")
-                            .read_text(encoding="utf-8"))
-    (proposal,) = stored
-    assert proposal["proposal_id"] == pid
-    assert proposal["model_id"] == STUB_MODEL != "stub-reader"
-    assert proposal["rubric_version"] == _reader_proposals_mod.READER_RUBRIC_VERSIONS["profitability"]
+    # D-198: the readers' audit entries (provenance blocks, citations) and their stamped
+    # proposal went with the readers; the stage agents' provenance is pinned by
+    # tests/test_c5_7b1_model_id_stamp.py. What is pinned here: the analyst's lenses ran.
+    assert sorted(c for c, rid in h.reader_calls if rid == r1) == sorted(rpr.ANALYST_LENS_CATEGORIES)
     # C5.8 (C13, D-050) under the C4 flag set too
     _assert_legacy_label_retired(h, r1)
     _assert_no_promotion_or_verdict_in_prompts(h)

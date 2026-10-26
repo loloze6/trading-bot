@@ -1,28 +1,28 @@
-"""D-197 (build window run_101, PR-5): the analyst is a stage of its own.
+"""D-197 (build window run_101, PR-5): the analyst is a stage of its own. D-198 (PR-6) deleted the
+five readers' stage; this file is adapted to that.
 
-Before: the analyst's two lenses ran inside the specialist_readers stage and the analyst flag
-required specialist_readers and reader_findings. Now: STAGE_CONFIGS["analyst"] sits right after
-protocol_execution (before specialist_readers when that stage is on, else before
-verdict_interpreter), `orchestrator.analyst` depends on folds only, and the five category names
-are a constant (tools/reader_categories.py) instead of an import of the report builder.
+Before D-197: the analyst's two lenses ran inside the specialist_readers stage and the analyst flag
+required specialist_readers and reader_findings. D-197: STAGE_CONFIGS["analyst"] sits right after
+protocol_execution, `orchestrator.analyst` depends on folds only, and the five category names are
+a constant (tools/reader_categories.py) instead of an import of the report builder. D-198: the
+specialist_readers stage, the report builder and the readers' flags are gone; the stage after the
+analyst is regroup_record (flag) or the grid route.
 
 Pins:
-  1. the constant: the same five names in build_reports.REPORT_CATEGORIES' order, split into the
-     analyst's two lens categories and the three legacy ones; no build_reports import;
+  1. the constant: the five names, split into the analyst's two lens categories and the three
+     legacy ones; no build_reports import;
   2. the loaders (load_proposals, decide_next.load_inputs, campaign_memory, fold_confirm) still
      read an old run's five proposal files;
-  3. the flag: no dependency on specialist_readers / reader_findings / category_reports;
-  4. the stage: runs with those three off; routes protocol_execution -> analyst -> (specialist_readers
-     | verdict_interpreter); skips on component errors; refuses to run with its flag off;
-  5. all flags on: the analyst's records are byte-identical to what the in-stage path wrote;
-  6. an old pipeline_state (no analyst stage) resumes at specialist_readers and completes.
+  3. the flag: needs folds only (a leftover removed-flag key in the config is not an error);
+  4. the stage: routes protocol_execution -> analyst -> (grid route | verdict_interpreter); skips
+     on component errors; refuses to run with its flag off;
+  5. the analyst's records are written by the stage alone.
 
 No API key: the SDK `query` is stubbed the way tests/test_e075_pr5_analyst.py stubs it.
 """
 from __future__ import annotations
 
 import json
-import shutil
 import sys
 from pathlib import Path
 
@@ -35,7 +35,6 @@ sys.path.insert(0, str(SR_ROOT / "tools"))
 sys.path.insert(0, str(SR_ROOT / "tests"))
 
 import analyst_session as asm  # noqa: E402
-import build_reports as br  # noqa: E402
 import campaign_memory as cm  # noqa: E402
 import decide_next as dn  # noqa: E402
 import fold_confirm as fc  # noqa: E402
@@ -53,15 +52,13 @@ from d178_legacy_fixture import d178_checks_off  # noqa: E402,F401
 from test_e033_slice4b_gate_conformance_promotion import _minimal_run_at, _noop_invoke  # noqa: E402
 
 LENS_ORDER = ["trade_efficiency", "forecast"]            # the order the categories are in
-NO_READERS = {"specialist_readers", "reader_findings", "category_reports"}
 
 
 # ---------------------------------------------------------------------------
 # 1. the constant
 # ---------------------------------------------------------------------------
 
-def test_the_constant_is_the_report_categories_in_the_same_order():
-    assert rcat.READER_CATEGORIES == br.REPORT_CATEGORIES      # while build_reports still exists
+def test_the_constant_is_the_five_names_in_the_old_report_order():
     assert list(rcat.READER_CATEGORIES) == ["profitability", "trade_efficiency", "forecast_power",
                                             "regime_power", "component_attribution"]
     assert rpr.READER_CATEGORIES is rcat.READER_CATEGORIES
@@ -116,19 +113,16 @@ def test_the_loaders_still_read_an_old_runs_five_proposal_files():
 # 3. the flag
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("on", [{"folds"}, {"folds", "specialist_readers"},
-                                {"folds", "reader_findings", "category_reports"}])
-def test_the_flag_needs_folds_only(monkeypatch, on):
-    for name in ("folds", "specialist_readers", "reader_findings", "category_reports",
-                 "explore_confirm"):
-        monkeypatch.setattr(rpr, f"_{name}_enabled", lambda cfg=None, n=name: n in on)
+def test_the_flag_needs_folds_only(monkeypatch):
+    monkeypatch.setattr(rpr, "_folds_enabled", lambda cfg=None: True)
     assert t75._REAL_ANALYST_ENABLED({"orchestrator": {"analyst": {"enabled": True}}}) is True
 
 
-def test_the_real_config_flag_reads_with_the_three_off(tmp_path):
+def test_the_real_config_flag_reads_with_leftover_removed_flags():
     cfg = {"orchestrator": {"folds": {"enabled": True}, "analyst": {"enabled": True},
                             "specialist_readers": {"enabled": False},
-                            "reader_findings": {"enabled": False},
+                            "reader_findings": {"enabled": True},
+                            "explore_confirm": {"enabled": True},
                             "category_reports": {"enabled": False}}}
     assert t75._REAL_ANALYST_ENABLED(cfg) is True
     with pytest.raises(ValueError, match="requires orchestrator.folds.enabled=true"):
@@ -140,8 +134,7 @@ def test_the_registered_flag_and_the_stage():
                                             "default_next": "dynamic_routing"}
     assert "analyst" not in rpr._SKILL_MAP
     assert "analyst" in vce._NON_VERDICT_OUTCOMES
-    # the specialist_readers entry and the flag-off route are untouched
-    assert rpr.STAGE_CONFIGS["specialist_readers"]["handoff"] == "protocol_to_specialist_readers.yaml"
+    assert "specialist_readers" not in rpr.STAGE_CONFIGS      # D-198
     assert rpr.STAGE_CONFIGS["protocol_execution"]["default_next"] == "verdict_interpreter"
     register = yaml.safe_load((SR_ROOT / "config" / "feature_flag_register.yaml")
                               .read_text(encoding="utf-8"))
@@ -180,20 +173,18 @@ def _proposal_names(run_dir):
 
 
 # ---------------------------------------------------------------------------
-# 4. the stage: with the three flags off, and in the order
+# 4. the stage: with the grid route off, and in the order
 # ---------------------------------------------------------------------------
 
-def test_the_analyst_stage_runs_with_the_three_flags_off(monkeypatch):
-    """protocol_execution -> analyst -> verdict_interpreter, nothing of the readers touched."""
+def test_the_analyst_stage_runs_with_the_grid_route_off(monkeypatch):
+    """protocol_execution -> analyst -> verdict_interpreter."""
     _set_orchestrator(None)
-    for name in NO_READERS:
-        assert getattr(rpr, f"_{name}_enabled")() is False
+    assert rpr._grid_route_enabled() is False
     monkeypatch.setattr(rpr, "_analyst_enabled", lambda *a: True)
     run_dir = _loop_run("protocol_execution")
     monkeypatch.setattr(rpr, "async_invoke_agent", _noop_invoke)
     called = []
     monkeypatch.setattr(rpr, "run_analyst_worker", _fake_worker(called))
-    monkeypatch.setattr(rpr, "run_reader_worker", lambda *a, **k: pytest.fail("a reader ran"))
     monkeypatch.setattr(rpr, "_invoke_reader_llm", _fake_llm(calls=[]))
     # stop at verdict_interpreter without running it: its handoff is absent
     monkeypatch.setitem(rpr.STAGE_CONFIGS, "verdict_interpreter",
@@ -206,10 +197,10 @@ def test_the_analyst_stage_runs_with_the_three_flags_off(monkeypatch):
     assert state["pending_stage"] == "verdict_interpreter"
     assert _proposal_names(run_dir) == sorted(rcat.ANALYST_LENS_CATEGORIES)   # the lenses' only
     assert (run_dir / "handoffs" / "protocol_to_analyst.yaml").exists()
-    assert not (run_dir / "handoffs" / "protocol_to_specialist_readers.yaml").exists()
 
 
-def test_with_every_flag_on_the_order_is_analyst_then_the_readers_stage(monkeypatch):
+def test_on_the_grid_route_the_order_is_analyst_then_the_route(monkeypatch):
+    """D-198: no readers stage between them; the route is taken in the analyst's iteration."""
     _set_orchestrator(ALL_ON)
     monkeypatch.chdir(SR_ROOT)
     monkeypatch.setattr(rpr, "_analyst_enabled", lambda *a: True)
@@ -222,20 +213,16 @@ def test_with_every_flag_on_the_order_is_analyst_then_the_readers_stage(monkeypa
     async def _record(stage_name, run_id, retry_context=None):
         stages.append(stage_name)
     monkeypatch.setattr(rpr, "async_invoke_agent", _record)
-    called, reader_calls = [], []
+    called = []
     monkeypatch.setattr(rpr, "run_analyst_worker", _fake_worker(called))
-    monkeypatch.setattr(rpr, "_invoke_reader_llm", _fake_llm(calls=reader_calls))
     rpr.run_loop(RUN_ID)
     state = _state(run_dir)
     assert stages == ["protocol_execution"]
-    assert called == LENS_ORDER and reader_calls == []     # no reader call: the analyst replaces them
-    assert state["completed_stages"][-3:] == ["protocol_execution", "analyst", "specialist_readers"]
+    assert called == LENS_ORDER
+    assert state["completed_stages"][-2:] == ["protocol_execution", "analyst"]
+    assert "specialist_readers" not in state["completed_stages"]
     assert state["pending_stage"] == "completed_rejected"
-    assert _proposal_names(run_dir) == sorted(rcat.READER_CATEGORIES)
-    for category in rcat.LEGACY_READER_CATEGORIES:             # the three code-skipped readings
-        doc = yaml.safe_load((run_dir / "artifacts" / "proposals" / f"{category}.yaml")
-                             .read_text(encoding="utf-8"))
-        assert doc["skipped"]["rule"] == asm.REPLACED_RULE
+    assert _proposal_names(run_dir) == sorted(rcat.ANALYST_LENS_CATEGORIES)   # no replaced_by_analyst
 
 
 def test_the_analyst_stage_skips_a_run_with_component_errors(monkeypatch):
@@ -307,7 +294,7 @@ def test_protocol_execution_clears_the_analysts_attempt_when_only_its_flag_is_on
 
 
 # ---------------------------------------------------------------------------
-# 5. all flags on: the analyst's records are the ones the in-stage path wrote
+# 5. the analyst's records are written by the stage alone
 # ---------------------------------------------------------------------------
 
 @pytest.fixture()
@@ -335,94 +322,38 @@ def lens_run(tmp_path, monkeypatch, d178_checks_off):
 
 
 def _tree(run_dir):
-    """{relative path: bytes} of every record the analyst (and the readers stage) writes."""
+    """{relative path: bytes} of every record the analyst writes."""
     arts = run_dir / "artifacts"
     return {p.relative_to(arts).as_posix(): p.read_bytes().replace(b"\r\n", b"\n")
             for sub in ("proposals", "analyst", "analyst_queries")
             for p in sorted((arts / sub).glob("*.yaml"))}
 
 
-def test_the_analysts_records_are_byte_identical_to_the_in_stage_path(lens_run, tmp_path,
-                                                                      monkeypatch):
+def test_the_analyst_stage_writes_its_readings_with_the_grid_route_off(lens_run, monkeypatch):
+    """The real worker over a stubbed session; no readers-stage prelude, no registry summary."""
     _set_orchestrator(None)
     t75._install(monkeypatch, t75._good_claim)
-    monkeypatch.setattr(rpr, "_reader_findings_enabled", lambda *a: True)
-    monkeypatch.setattr(rpr, "run_reader_worker", lambda *a, **k: pytest.fail("a reader ran"))
-    other = tmp_path / "other" / t75.RUN_ID                  # the same run, an untouched copy
-    shutil.copytree(lens_run, other)
-
-    # before D-197: the lenses ran inside the readers stage's loop (still its fallback path)
-    rpr._run_specialist_readers(t75.RUN_ID, lens_run)
-    old = _tree(lens_run)
-    # now: the analyst stage first, then the readers stage over the same directory
-    rpr._run_analyst_stage(t75.RUN_ID, other)
-    after_stage = _tree(other)
-    rpr._run_specialist_readers(t75.RUN_ID, other)
-    new = _tree(other)
-
-    assert sorted(old) == sorted(new)
-    assert {"analyst/forecast.yaml", "analyst/trade_efficiency.yaml",
-            "proposals/forecast_power.yaml", "proposals/trade_efficiency.yaml",
-            "analyst_queries/forecast.yaml", "analyst_queries/trade_efficiency.yaml"} <= set(new)
-    for rel in old:
-        assert old[rel] == new[rel], rel
-    # the analyst stage alone wrote the lenses' files and nothing of the other three categories
-    assert sorted(p for p in after_stage if p.startswith("proposals/")) == [
-        "proposals/forecast_power.yaml", "proposals/trade_efficiency.yaml"]
-    for run in (lens_run, other):
-        audit = yaml.safe_load((run / "pipeline_state.yaml").read_text(encoding="utf-8"))["audit_log"]
-        assert sorted(audit) == ["specialist_readers_analyst_forecast_attempt_0",
-                                 "specialist_readers_analyst_trade_efficiency_attempt_0"]
-
-
-def test_the_analyst_stage_writes_its_readings_with_the_three_flags_off(lens_run, monkeypatch):
-    """The real worker over a stubbed session, no readers-stage flag set."""
-    _set_orchestrator(None)
-    for name in NO_READERS:
-        assert getattr(rpr, f"_{name}_enabled")() is False
-    t75._install(monkeypatch, t75._good_claim)
-    monkeypatch.setattr(rpr, "run_reader_worker", lambda *a, **k: pytest.fail("a reader ran"))
     rpr._run_analyst_stage(t75.RUN_ID, lens_run)
     tree = _tree(lens_run)
     assert sorted(p for p in tree if p.startswith("proposals/")) == [
         "proposals/forecast_power.yaml", "proposals/trade_efficiency.yaml"]
+    assert {"analyst/forecast.yaml", "analyst/trade_efficiency.yaml",
+            "analyst_queries/forecast.yaml", "analyst_queries/trade_efficiency.yaml"} <= set(tree)
     record = yaml.safe_load(tree["analyst/trade_efficiency.yaml"])
     assert record["lens"] == "trade_efficiency" and record["category"] == "trade_efficiency"
     assert record["attempts"][-1]["status"] == "accepted"
-    assert not (lens_run / "artifacts" / "registry_summary.yaml").exists()  # no readers-stage prelude
+    assert not (lens_run / "artifacts" / "registry_summary.yaml").exists()
+    audit = yaml.safe_load((lens_run / "pipeline_state.yaml").read_text(encoding="utf-8"))["audit_log"]
+    assert sorted(audit) == ["specialist_readers_analyst_forecast_attempt_0",
+                             "specialist_readers_analyst_trade_efficiency_attempt_0"]
 
 
 # ---------------------------------------------------------------------------
-# 6. an old pipeline_state resumes
+# 6. a state paused after the readers stage is untouched
 # ---------------------------------------------------------------------------
 
-def test_an_old_pipeline_state_without_the_analyst_stage_resumes_and_completes(monkeypatch):
-    """A run paused inside specialist_readers before D-197 has completed_stages without
-    `analyst` and no lens file: the readers stage runs the lenses itself (its fallback), the
-    run completes, and `analyst` never appears in its completed stages."""
-    _set_orchestrator(ALL_ON)
-    monkeypatch.chdir(SR_ROOT)
-    monkeypatch.setattr(rpr, "_analyst_enabled", lambda *a: True)
-    run_dir = _seed_run(pending="specialist_readers", idea_status="refuted")
-    state = _state(run_dir)
-    state["completed_stages"] = ["hypothesis_generation", "protocol_execution"]
-    rpr.save_yaml(run_dir / "pipeline_state.yaml", state)
-    assert "analyst" not in state["completed_stages"]
-    called, reader_calls = [], []
-    monkeypatch.setattr(rpr, "run_analyst_worker", _fake_worker(called))
-    monkeypatch.setattr(rpr, "_invoke_reader_llm", _fake_llm(calls=reader_calls))
-    rpr.run_loop(RUN_ID)
-    state = _state(run_dir)
-    assert sorted(called) == sorted(LENS_ORDER) and reader_calls == []
-    assert state["completed_stages"][-1] == "specialist_readers"
-    assert "analyst" not in state["completed_stages"]
-    assert state["pending_stage"] == "completed_rejected"
-    assert _proposal_names(run_dir) == sorted(rcat.READER_CATEGORIES)
-
-
-def test_an_old_state_paused_after_the_readers_stage_is_untouched(monkeypatch):
-    """pending_stage regroup_record (the next stage after specialist_readers): the analyst flag
-    plays no part in it."""
+def test_a_state_at_regroup_record_is_untouched_by_the_analyst_flag(monkeypatch):
+    """pending_stage regroup_record: the analyst flag plays no part in it."""
     _set_orchestrator(REGROUP_ALL_ON)
     monkeypatch.setattr(rpr, "_analyst_enabled", lambda *a: True)
     run_dir = _seed(pending="regroup_record")
@@ -436,7 +367,7 @@ def test_an_old_state_paused_after_the_readers_stage_is_untouched(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# 7. the token budget boundary is kept as on master
+# 7. the token budget boundary
 # ---------------------------------------------------------------------------
 
 def _over_budget(monkeypatch):
@@ -450,27 +381,24 @@ def _mark_completed(run_dir, *stages):
     rpr.save_yaml(run_dir / "pipeline_state.yaml", state)
 
 
-def test_over_budget_after_the_analyst_stage_the_readers_stage_and_the_record_still_run(monkeypatch):
-    """On master the lenses ran inside specialist_readers, so a run pushed over budget by them
-    went straight on to regroup_record (exempt) and kept its memory entry and route. With the
-    analyst a stage of its own the loop-top check must not stop specialist_readers either."""
+def test_over_budget_after_the_analyst_stage_the_record_and_the_route_still_run(monkeypatch):
+    """A run pushed over budget by the lens sessions goes straight on to regroup_record
+    (exempt) and keeps its memory entry and route."""
     _set_orchestrator(REGROUP_ALL_ON)
     monkeypatch.setattr(rpr, "_analyst_enabled", lambda *a: True)
-    run_dir = _seed(idea_status="refuted", pending="specialist_readers")
+    run_dir = _seed(idea_status="refuted", pending="regroup_record")
     _mark_completed(run_dir, "hypothesis_generation", "protocol_execution", "analyst")
     _over_budget(monkeypatch)
     monkeypatch.setattr(rpr, "run_analyst_worker", lambda *a, **k: pytest.fail("analyst ran"))
-    monkeypatch.setattr(rpr, "run_reader_worker", lambda *a, **k: pytest.fail("a reader ran"))
-    monkeypatch.setattr(rpr, "_invoke_reader_llm", _fake_llm(calls=[]))
     rpr.run_loop(REGROUP_RUN_ID)
     state = _state(run_dir)
     assert state["status"] == "rejected"                       # not rejected_budget_exceeded
-    assert state["completed_stages"][-2:] == ["specialist_readers", "regroup_record"]
+    assert state["completed_stages"][-2:] == ["analyst", "regroup_record"]
     assert state["pending_stage"] == "completed_rejected"
     assert REGROUP_RUN_ID in _memory()["runs"]                 # the memory entry and the route
 
 
-def test_over_budget_with_the_readers_off_the_check_before_the_verdict_interpreter_applies(monkeypatch):
+def test_over_budget_with_the_grid_route_off_the_check_before_the_verdict_interpreter_applies(monkeypatch):
     """Master with the readers off budget-checked before verdict_interpreter; so does this."""
     _set_orchestrator(None)
     monkeypatch.setattr(rpr, "_analyst_enabled", lambda *a: True)
@@ -482,19 +410,4 @@ def test_over_budget_with_the_readers_off_the_check_before_the_verdict_interpret
     assert state["status"] == "rejected_budget_exceeded"
     assert state["pending_stage"] == "verdict_interpreter"
     assert state["completed_stages"][-1] == "analyst"
-    assert not _memory_path().exists()
-
-
-def test_over_budget_the_readers_stage_without_a_finished_analyst_stage_is_still_stopped(monkeypatch):
-    """The exemption is for a run the analyst stage has finished (no model call left in the
-    readers stage); an old state paused inside specialist_readers can still run a lens there."""
-    _set_orchestrator(REGROUP_ALL_ON)
-    monkeypatch.setattr(rpr, "_analyst_enabled", lambda *a: True)
-    run_dir = _seed(idea_status="refuted", pending="specialist_readers")
-    _mark_completed(run_dir, "hypothesis_generation", "protocol_execution")
-    _over_budget(monkeypatch)
-    rpr.run_loop(REGROUP_RUN_ID)
-    state = _state(run_dir)
-    assert state["status"] == "rejected_budget_exceeded"
-    assert state["pending_stage"] == "specialist_readers"
     assert not _memory_path().exists()

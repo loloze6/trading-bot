@@ -256,21 +256,15 @@ def test_the_orchestrator_passes_folds_to_merges_and_structure_only_under_the_fl
                                                                                    tmp_path):
     seen = []
 
-    def spy_struct(doc, **kw):
-        seen.append(("structure", kw))
-        return []
-
     def spy_merges(readings, **kw):
         seen.append(("merges", kw))
         return []
-    monkeypatch.setattr(rfi, "reading_structure", spy_struct)
     monkeypatch.setattr(rfi, "side_finding_merges", spy_merges)
     monkeypatch.setattr(rpr, "_reader_findings_module", lambda: rfi)
     monkeypatch.setattr(rpr, "_folds_enabled", lambda: flag_on)
-    rpr._same_reading_structure("a: 1\n", "a: 1\n")
     rpr._record_side_finding_merges("run_x", tmp_path)
     want = {"folds": True} if flag_on else {}
-    assert ("structure", want) in seen
+    assert ("merges", want) in seen        # D-198: _same_reading_structure (citation retry) is gone
     assert all(kw == want for _what, kw in seen)
 
 

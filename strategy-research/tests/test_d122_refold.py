@@ -274,10 +274,14 @@ def test_the_cli():
 def test_every_reading_of_a_refold_is_a_code_written_skip(_seed, monkeypatch):
     _source(_seed)
     _e, run_id, run_dir = _launch(_seed)
-    monkeypatch.setattr(rpr, "run_reader_worker",
-                        lambda *a, **k: pytest.fail("a reader was called"))
-    rpr._run_specialist_readers(run_id, run_dir)
-    for cat in rpr.READER_CATEGORIES:
+    monkeypatch.setattr(rpr, "run_analyst_worker",
+                        lambda *a, **k: pytest.fail("the analyst was called"))
+    monkeypatch.setattr(rpr, "_analyst_enabled", lambda *a: True)   # D-198: the readers are gone
+    monkeypatch.setattr(rpr, "_grid_route_enabled", lambda cfg=None: False)  # no idea_status here
+    monkeypatch.delenv("WORKFLOW_ARTIFACT_VALIDATION", raising=False)   # a stub protocol_result
+    rpr.save_yaml(run_dir / "artifacts" / "protocol_result.yaml", {"results": []})
+    rpr._run_analyst_stage(run_id, run_dir)
+    for cat in rpr.ANALYST_LENS_CATEGORIES:
         doc = yaml.safe_load((run_dir / "artifacts" / "proposals" / f"{cat}.yaml").read_text(
             encoding="utf-8"))
         assert doc["skipped"]["rule"] == "operator_refold"
