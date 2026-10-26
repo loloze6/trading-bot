@@ -152,10 +152,14 @@ not build as written (an exit, a stop, a time-based hold, position state, sizing
 targeting is the `strategies.sizing` block (D-176) and a cap is a `clip`, so those are built, not declared), an
 on/off rule restated as a graded measure) gets its own entry whose `config_choice` starts with `DEVIATION:` and
 says what was built instead, or that nothing was. Never silently build a different signal, and never leave an
-item unmapped. Each entry of the card's `not_expressible` is a part step 1a already declared a forecast cannot
-express: copy it into the deviation record as step 1a declared it, with no new argument and no `tried` list. That is
-one `config_rationale` entry per item, its `hypothesis_claim` the card's text unchanged and its `config_choice`
-`DEVIATION: declared by step 1a`, then what was built instead or that nothing was; code reads the `DEVIATION:` entries into the run's deviation record. Where
+item unmapped. Each entry of the card's `not_expressible` is a part step 1a declared a forecast cannot express.
+Verify it before you copy it (D-195, supersedes D-190's copy sentence): check the entry against
+`trading-bot/strategies/registry.py` (the transform ops of `TRANSFORM_OPS_REGISTRY`, for example `ema` and
+`threshold_filter`) and `COMPONENT_CATALOG.md`. An entry that can be expressed there is expressed: build it and map it
+in `config_rationale`, with no deviation. Only an entry that survives the check becomes a declared deviation: one
+`config_rationale` entry, its `hypothesis_claim` the card's text unchanged and its `config_choice`
+`DEVIATION: declared by step 1a`, then what was built instead or that nothing was, with no new argument and no `tried`
+list; code reads the `DEVIATION:` entries into the run's deviation record. Where
 `NEAREST_BUILD.md` is among your inputs, the same item is also listed in `decision.yaml` `deviations`, as that note
 asks. A fill-timing clause in a card ("applied from the next bar", "no same-bar fill") is not a
 deviation: the engine's fill at the signal bar's close is the convention; note it in config_rationale and build

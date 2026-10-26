@@ -1,6 +1,6 @@
 ---
 name: innovation-expansion
-description: Expands a base trading hypothesis into novel but testable variants using alternative data, reverse thinking, and behavioral indicators. A regime-gated variant may enter the run queue if it carries its ungated version as a design variant.
+description: Expands a base trading hypothesis into novel but testable variants. A regime-gated variant may enter the run queue if it carries its ungated version as a design variant.
 ---
 
 # Innovation Expansion
@@ -11,7 +11,6 @@ Expand the hypothesis space before strict validation — while keeping only feed
 ## Required inputs
 - `research_brief.yaml`
 - `hypothesis_card.yaml`
-- `config/available_feeds.yaml`  (A1.2: constrain evidence_type choices)
 - `config/coin_universe.yaml`  (Improvement 06: asset-generalizability check, see below)
 
 ## Required outputs
@@ -26,24 +25,7 @@ Expand the hypothesis space before strict validation — while keeping only feed
 The expanded artifact must include:
 - base_hypothesis_id
 - expanded_variants          (variants for the run queue, regime-gated ones included — see the regime section below)
-- alternative_data_candidates
-- reverse_hypothesis
-- behavioral_features
 - regime_specific_variants   (required field; may be an empty list — regime-gated variants go in `expanded_variants`, see the regime section below)
-
----
-
-## IMPROVEMENT 01 — Evidence-type constraint (A1.2)
-
-**At least one variant per family must use a non-`price_volume_only` evidence_type.**
-
-This rule is satisfiable TODAY: `funding_open_interest` (the funding rate feed) is available per `config/available_feeds.yaml`. The alternative_data_candidates field should prioritize this feed over feeds that are not yet available.
-
-Routing:
-- Any variant with evidence_type in `available_feeds.yaml.available` → run queue
-- Any variant with evidence_type in `available_feeds.yaml.unavailable` → `requires_new_feed` tag → `feed_wishlist.yaml` backlog, NOT the run queue
-
-Do not reach for `order_book`, `cross_exchange`, or `liquidation_data` variants as queue candidates. They cannot be tested and inflate the queue with dead weight. A feed_wishlist entry explaining what would be unlocked is more useful than a variant that immediately hits `component_gap`.
 
 ---
 
@@ -302,6 +284,17 @@ another is not a design variant (a sign flip is a transform change of the same c
 step); not a negative `scaling_factor`, which only some classes honour). Find the parameters to vary in the component's row and in the "Variant patterns" section of
 `COMPONENT_CATALOG.md`.
 
+**The split variant (D-195).** When the forecast has two or more components, step 2 adds ONE `design` variant that
+halves the weight of the modifier component. The modifier is the component carrying the negated or subtracted term
+of step 1a's formula (the term the formula subtracts, i.e. the one with a negative weight in the base config); with
+no such term, the second listed component. This is a `design` variant: a component's weight is a parameter of the
+component, not a component swap, and the structure key holds a weight's sign only, never its magnitude
+(`tools/structure_key.py`), so the variant stays the same structure as the base. Patch path:
+`/strategies/regimes/<regime>/components/<index>/weight`, the value the base weight times 0.5, same sign (a sign
+flip is a different structure). Keep the regime's total weight above 0. It counts as a `design` variant inside the 3
+or 4 allowed above (one `base`, at least one `design`, one or two `asset`), never on top of them: if it is your
+second design variant, you write one asset coin. With one component, no split variant.
+
 A variant must not introduce an on/off component: every component in `strategies` after the patch is applied must
 be graded (the catalogue's "Kind" column; the guide's "The design principle" lists the on/off ones), apart from a
 constant the base config already uses as an offset. A `design` variant is by construction the same library
@@ -311,7 +304,7 @@ replace a component in this flow; the `asset` variant carries the diversity (IMP
 ### Relationship to `expanded_hypothesis_card.yaml` and `innovation_notes.yaml`
 
 Still produce both — `variant_patches.yaml` does not replace them. `expanded_hypothesis_card.yaml`'s other
-fields (`regime_specific_variants`, `alternative_data_candidates`, `reverse_hypothesis`, `behavioral_features`)
+field (`regime_specific_variants`)
 and `innovation_notes.yaml`'s `diversity_audit`/`asset_diversity_audit` sections are unaffected by this
 section — populate them exactly as IMPROVEMENT 04/05/06 above describe, using the same variants you are about
 to express as patches. `expanded_variants` itself may be omitted or left thin when `variant_patches.yaml` is
@@ -322,13 +315,9 @@ patch form.
 
 ## Checklist
 - Add novelty without destroying testability.
-- Suggest alternative data only if the feed is in `available_feeds.yaml.available`.
-- Consider the reverse version of the thesis (a cheap experiment — same signal, reversed polarity).
-- Add behavioral or positioning proxies where meaningful and available.
 - Keep at least one conservative variant in the run queue.
 - Prefer variants that fit the current strategy/regime/component framework.
 - Check `research_brief.yaml` constraints field first. If variant count is constrained, honor it before applying expansion logic.
-- Ensure at least one variant uses `evidence_type != price_volume_only` (use funding_open_interest if no other non-price feed applies).
 - **Improvement 04: run diversity test against indicator_library.yaml; reject cosmetic expansions.** (Config-direct
   flow: `design` variants are exempt, the `asset` variant carries the diversity; D-053.)
 - Populate `library_category`, `data_requirements`, `diversity_axis` on every variant.
@@ -349,7 +338,6 @@ patch form.
 
 ## Forbidden
 - Do not skip interpretability.
-- Do not require data from `available_feeds.yaml.unavailable` for run-queue variants — use `requires_new_feed` and feed_wishlist instead.
 - Do not output generic brainstorming prose only.
 - Do not propose ideas that require rebuilding execution, portfolio, or backtest infrastructure unless explicitly requested.
 - If `research_brief.yaml` contains "one variant only", "single variant", or "no variants" in its `constraints` field, do NOT expand into multiple variants. Pass the base hypothesis through to a single variant (V1 only) matching the brief's signal_concept exactly. Expansion is only appropriate when the brief does not constrain variant count.
@@ -372,4 +360,4 @@ patch form.
   when the latter is produced.**
 
 ## Context rule
-Use `research_brief.yaml`, `hypothesis_card.yaml`, `config/available_feeds.yaml`, `config/indicator_library.yaml`, `config/coin_universe.yaml`, and, when present, `artifacts/tried_ideas.yaml` or `campaign_record/exclusion_digest.yaml` and `artifacts/backtest_spec.yaml` (Improvement 07, config-direct-authoring flow only). Do not read other files unless explicitly required.
+Use `research_brief.yaml`, `hypothesis_card.yaml`, `config/indicator_library.yaml`, `config/coin_universe.yaml`, and, when present, `artifacts/tried_ideas.yaml` or `campaign_record/exclusion_digest.yaml` and `artifacts/backtest_spec.yaml` (Improvement 07, config-direct-authoring flow only). Do not read other files unless explicitly required.
