@@ -42,7 +42,7 @@ import run_phase1_research as rpr  # noqa: E402
 import run_campaign as camp  # noqa: E402
 import campaign_memory as cm  # noqa: E402
 import reader_proposals  # noqa: E402
-from build_reports import REPORT_CATEGORIES  # noqa: E402
+from reader_categories import READER_CATEGORIES as REPORT_CATEGORIES  # noqa: E402
 
 from test_k3_protocol_pinning import _minimal_run  # noqa: E402
 from test_e033_slice4b_gate_conformance_promotion import _minimal_run_at  # noqa: E402
@@ -75,24 +75,24 @@ def test_flag_non_bool_raises(bad):
         rpr._regroup_record_enabled()
 
 
-def test_flag_on_without_specialist_readers_raises():
+def test_flag_on_without_the_grid_raises():
+    """D-198: it required specialist_readers (deleted); it requires grid_evaluation now."""
     _set_orchestrator({"regroup_record": {"enabled": True}})
-    with pytest.raises(ValueError, match="requires orchestrator.specialist_readers.enabled=true"):
+    with pytest.raises(ValueError, match="requires orchestrator.grid_evaluation.enabled=true"):
         rpr._regroup_record_enabled()
 
 
-def test_run_loop_fails_at_start_when_readers_off(monkeypatch):
-    _set_orchestrator({"grid_evaluation": {"enabled": True}, "category_reports": {"enabled": True},
-                       "regroup_record": {"enabled": True}})
-    run_dir = _seed(pending="specialist_readers")
+def test_run_loop_fails_at_start_when_the_grid_is_off(monkeypatch):
+    _set_orchestrator({"regroup_record": {"enabled": True}})
+    run_dir = _seed(pending="protocol_execution")
     invoked = []
     monkeypatch.setattr(rpr, "_invoke_agent_with_yaml_retry", lambda *a, **k: invoked.append(a[0]))
     monkeypatch.setattr(rpr, "_invoke_reader_llm", _fake_llm(calls=invoked))
     rpr.run_loop(RUN_ID)
     state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
     assert invoked == []
-    assert state["status"] == "failed" and "specialist_readers" in state["last_error"]
-    assert state["pending_stage"] == "specialist_readers"
+    assert state["status"] == "failed" and "grid_evaluation" in state["last_error"]
+    assert state["pending_stage"] == "protocol_execution"
     assert not _memory_path().exists()
 
 
@@ -104,8 +104,7 @@ def test_registered_without_skill_and_existing_entries_unchanged():
     assert rpr.STAGE_CONFIGS["regroup_record"] == {
         "handoff": "specialist_readers_to_regroup_record.yaml", "default_next": "dynamic_routing"}
     assert "regroup_record" not in rpr._SKILL_MAP
-    assert rpr.STAGE_CONFIGS["specialist_readers"] == {
-        "handoff": "protocol_to_specialist_readers.yaml", "default_next": "dynamic_routing"}
+    assert "specialist_readers" not in rpr.STAGE_CONFIGS      # D-198
     assert rpr.STAGE_CONFIGS["protocol_execution"]["default_next"] == "verdict_interpreter"
 
 
@@ -120,7 +119,7 @@ def test_flag_off_specialist_readers_routes_directly(monkeypatch, idea_status, e
     run_dir, state = _loop_from_specialist_readers(monkeypatch, READERS_ON, idea_status)
     assert "regroup_record" not in (state.get("completed_stages") or [])
     if expected:
-        assert state["completed_stages"][-1] == "specialist_readers"
+        assert "specialist_readers" not in (state.get("completed_stages") or [])   # D-198
         assert state["pending_stage"] == expected
     else:
         assert state["pending_stage"] == "specialist_readers"
@@ -149,12 +148,13 @@ def test_flag_on_same_route_after_regroup_record(monkeypatch, idea_status):
     assert seen == [True]
     assert _routing_view(on) == _routing_view(off)
     if idea_status == "inconclusive":
-        assert on["completed_stages"][-1] == "specialist_readers"
-        assert on["pending_stage"] == "regroup_record"  # pause leaves the stage, like readers flag-off
+        assert "specialist_readers" not in (on.get("completed_stages") or [])   # D-198
+        assert on["pending_stage"] == "regroup_record"  # pause leaves the stage, like regroup_record off
         assert on["flags"] == {"inconclusive_grid": True}
         assert camp._classify_human_pause(run_dir, on) == "inconclusive_grid"
     else:
-        assert on["completed_stages"][-2:] == ["specialist_readers", "regroup_record"]
+        assert on["completed_stages"][-1:] == ["regroup_record"]
+        assert "specialist_readers" not in on["completed_stages"]
         assert on["pending_stage"] == off["pending_stage"]
     assert (run_dir / "handoffs" / "specialist_readers_to_regroup_record.yaml").exists()
     assert _memory()["runs"][RUN_ID]["idea_status"] == idea_status
@@ -179,8 +179,8 @@ def test_full_loop_from_protocol_execution_stage_order(monkeypatch):
     rpr.run_loop(RUN_ID)
     state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
     assert stages == ["protocol_execution"]  # regroup_record never goes through async_invoke_agent
-    assert len(calls) == 5
-    assert state["completed_stages"][-3:] == ["protocol_execution", "specialist_readers", "regroup_record"]
+    assert calls == []                       # D-198: no reader call
+    assert state["completed_stages"][-2:] == ["protocol_execution", "regroup_record"]
     assert state["pending_stage"] == "completed_rejected"
     entry = _memory()["runs"][RUN_ID]
     assert entry["idea_status"] == "refuted"
@@ -215,13 +215,14 @@ def test_regroup_record_survives_the_loop_top_budget_check(monkeypatch):
 
 def test_budget_check_unchanged_for_other_stages(monkeypatch):
     _set_orchestrator(ALL_ON)
-    run_dir = _seed(idea_status="refuted", pending="specialist_readers")
+    monkeypatch.setattr(rpr, "_analyst_enabled", lambda *a: True)
+    run_dir = _seed(idea_status="refuted", pending="analyst")   # D-198: a stage that spends
     monkeypatch.setattr(rpr, "_load_token_budget", lambda: 1)
     monkeypatch.setattr(rpr, "_compute_weighted_budget_usage", lambda log: (10**9, []))
     rpr.run_loop(RUN_ID)
     state = rpr.load_yaml(run_dir / "pipeline_state.yaml")
     assert state["status"] == "rejected_budget_exceeded"
-    assert state["pending_stage"] == "specialist_readers"
+    assert state["pending_stage"] == "analyst"
     assert not _memory_path().exists()
 
 

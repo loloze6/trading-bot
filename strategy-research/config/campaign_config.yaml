@@ -109,8 +109,9 @@ orchestrator:
     # verdict_interpreter) while still catching genuinely runaway behavior. CORRECTED 2026-09-28:
     # that stage list is 2026-07-05 history, not today's — under orchestrator.config_direct_
     # authoring.enabled, backtest_specification is a code/tool stage, not LLM (strategy_config_
-    # authoring is the new LLM stage instead), and under orchestrator.specialist_readers.enabled,
-    # five reader calls replace verdict_interpreter. Revisit if a normal run trips this again —
+    # authoring is the new LLM stage instead), and on the grid route (orchestrator.grid_evaluation.
+    # enabled; D-198: the five reader calls this comment used to name are deleted) the analyst's
+    # two lens calls (orchestrator.analyst.enabled) replace verdict_interpreter. Revisit if a normal run trips this again —
     # widen the constant, don't disable the breaker.
   max_refinements_default: 2            # default fallback when not in pipeline_state.yaml governance block
   review_every_n_runs_default: 6        # default campaign-review cadence
@@ -390,7 +391,7 @@ orchestrator:
       # target row "8 · profit bars ... one file, every backtest, stop rule"). OFF BY
       # DEFAULT, read by run_phase1_research._profit_bars_every_backtest_enabled().
       # REQUIRES profit_bars_file.enabled above AND regroup_record.enabled (hence
-      # specialist_readers, grid_evaluation, category_reports): on without them (or
+      # grid_evaluation): on without them (or
       # a non-bool value) fails the run in run_loop's pre-flight, before any spend.
       #
       # While false: byte-identical -- nothing new is read or written, the
@@ -459,33 +460,6 @@ orchestrator:
       # single era stays FAIL). The bars file must
       # also carry trade_count_min_floor. The legacy promote path keeps the cap
       # (G9). The legacy promote path and the deflate_sharpe CLI never use v2.
-  category_reports:
-    enabled: false
-      # E-046a Slice 5a (delivery_plan_v26.md, "Slice 5 -- Reports and
-      # readers"). OFF BY DEFAULT and read at runtime by
-      # run_phase1_research._category_reports_enabled() -- same shape as
-      # orchestrator.grid_evaluation.enabled directly above.
-      #
-      # While false, the protocol_execution branch's existing behavior
-      # (pass_rule_evaluation.yaml write, the grid-evaluation block directly
-      # above) is completely untouched, and tools/build_reports.py is never
-      # imported or called -- artifacts/reports/{profitability,
-      # trade_efficiency,forecast_power,regime_power,component_attribution}.yaml
-      # are never written. Proven by
-      # tests/test_e046a_category_reports.py's flag-off byte-identity test.
-      #
-      # While true: after the grid-evaluation block, ALSO calls
-      # tools/build_reports.py::build_reports(RUN_DIR, write=True), which
-      # re-projects protocol_result.yaml / trade_diagnostics.json /
-      # each window's bars.csv (this run's own output only; CUL-381 removed
-      # the campaign-level regime_detector_report.yaml) into the five files above -- one
-      # category x slice (overall/per_window/per_regime/per_symbol) each.
-      # Zero new computation except regime_power's hindsight-lag comparison
-      # (E-040's decided regime-power checks, items b+c only per this
-      # slice's scope -- see build_reports.py's own module docstring).
-      # Held off_incomplete (see config/feature_flag_register.yaml): these
-      # reports have no consumer yet -- Slice 5b (the five specialist
-      # readers) is the first thing that reads artifacts/reports/*.yaml.
   data_availability_gate:
     enabled: true
       # delivery_plan_v26.md s:0.4 item 14 (2026-09-20). THE ONE FLAG IN
@@ -603,60 +577,28 @@ orchestrator:
       # tests/test_e033_slice4b_gate_conformance_promotion.py) -- this flag
       # stays off_incomplete only because config_direct_authoring, its hard
       # dependency, itself still needs a real end-to-end LLM-authoring proof.
-  specialist_readers:
-    enabled: false
-      # E-046a Slice 5b-ii-B (delivery_plan_v26.md slices 2 and 5;
-      # engineering/roadmap/E-046a/S1_FINDINGS_5B_II.md, REALIGNMENT). OFF BY
-      # DEFAULT and read at runtime by
-      # run_phase1_research._specialist_readers_enabled() -- same shape as
-      # orchestrator.config_direct_authoring.enabled above. HARD DEPENDENCIES:
-      # raises (does not silently no-op) if this is true while
-      # grid_evaluation.enabled or category_reports.enabled is false/absent --
-      # the readers read artifacts/reports/<category>.yaml and the route reads
-      # artifacts/idea_status.yaml, which only those two write. run_loop
-      # resolves the flag once at start, so the misconfiguration fails there.
-      #
-      # While false, STAGE_CONFIGS["specialist_readers"] is registered
-      # (unconditionally, same convention as strategy_config_authoring) but
-      # never routed to: protocol_execution's default_next stays
-      # verdict_interpreter and every route is byte-identical to before this
-      # slice -- proven by tests/test_e046a_slice5b_ii_b_readers_stage.py's
-      # flag-off tests.
-      #
-      # While true: protocol_execution -> specialist_readers, which runs the
-      # five reader skills (workflow_artifacts/skills/readers/) one after
-      # another, each seeing only its own report plus grid_evaluation.yaml
-      # and writing artifacts/proposals/<category>.yaml (validated by
-      # tools/reader_proposals.load_proposals, fail loud). The retune firewall
-      # runs before the regime_power reader. verdict_interpreter becomes
-      # unreached (not deleted) and verdict_interpretation.yaml is never
-      # written. The route then comes from the grid only: component errors in
-      # protocol_result.yaml -> human_pause (component_execution_error);
-      # idea_status validated -> promote; refuted -> kill/terminate;
-      # inconclusive -> human_pause (inconclusive_grid). Missing or malformed
-      # idea_status.yaml fails the run. Proposal scores never affect the
-      # route -- they are for the decide-next step (slice 6b).
-      #
-      # Held off_incomplete (see feature_flag_register.yaml): the orchestration
-      # is unit tested with a mocked LLM; no reader has yet run against a real
-      # model (no API budget in this slice's environment).
   regroup_record:
     enabled: false
       # E-058 S2a (delivery_plan_v26.md slice 6a, first half;
       # engineering/roadmap/E-058/S1_FINDINGS.md). OFF BY DEFAULT and read at
       # runtime by run_phase1_research._regroup_record_enabled() -- same shape
-      # as orchestrator.specialist_readers.enabled above. HARD DEPENDENCY:
+      # as orchestrator.config_direct_authoring.enabled above. HARD DEPENDENCY:
       # raises (does not silently no-op) if this is true while
-      # specialist_readers.enabled is false/absent. run_loop resolves the flag
-      # once at start, so the misconfiguration fails there.
+      # grid_evaluation.enabled is false/absent (D-198: it required
+      # specialist_readers, which required the grid; both specialist_readers and
+      # category_reports are deleted with the five readers). run_loop resolves
+      # the flag once at start, so the misconfiguration fails there.
       #
       # While false, STAGE_CONFIGS["regroup_record"] is registered
-      # (unconditionally) but never routed to: specialist_readers still routes
-      # straight through determine_post_specialist_readers_route, and no
+      # (unconditionally) but never routed to: the analyst (or protocol_execution)
+      # still routes straight through determine_post_specialist_readers_route
+      # (the route from the grid, taken whenever grid_evaluation is on), and no
       # campaign_record/campaign_memory.yaml is written -- proven by
       # tests/test_e058_s2a_regroup_record.py's flag-off tests.
       #
-      # While true: specialist_readers -> regroup_record -> the same grid route.
+      # While true: protocol_execution / analyst -> regroup_record -> the same grid
+      # route. It also writes artifacts/registry_summary.yaml (what earlier runs
+      # validated; the run viewer reads it) before it registers this run's block.
       # regroup_record (a tool stage, no LLM) writes one entry per run to
       # campaign_record/campaign_memory.yaml (tools/campaign_memory.py), keyed
       # by run_id and replaced on re-run: idea_status copied from the grid,
@@ -672,17 +614,18 @@ orchestrator:
     enabled: false
       # C5.7b-1 (D-048; engineering/review_2026-09-27/C5_7B_PROVENANCE_S1.md,
       # review finding C12). OFF BY DEFAULT, read by
-      # run_phase1_research._score_provenance_enabled(). HARD DEPENDENCY: raises
-      # (strict bool; on without specialist_readers) in run_loop's pre-flight
-      # and run_campaign's launch pre-flight, before any spend.
+      # run_phase1_research._score_provenance_enabled(). No dependency (D-198: it
+      # required specialist_readers, deleted with the five readers); a strict
+      # bool, checked in run_loop's pre-flight and run_campaign's launch pre-flight,
+      # before any spend.
       #
-      # While false: nothing is captured, stamped or recorded -- reader
-      # proposal files, extra_card_scores.yaml and every audit-log entry are
+      # While false: nothing is captured, stamped or recorded --
+      # extra_card_scores.yaml and every audit-log entry are
       # byte-identical (tests/test_c5_7b1_model_id_stamp.py).
       #
       # While true: the model that actually answered (AssistantMessage.model)
-      # is captured on each reader call and each Claude stage call. The reader
-      # proposals' and the brief-card scores' `model_id` is STAMPED by code with
+      # is captured on each Claude stage call. The
+      # brief-card scores' `model_id` is STAMPED by code with
       # that observed id (several distinct models: sorted, comma-joined); the
       # model's own self-report is kept only in the audit log. The stage's
       # audit-log entry gains a `provenance` block: requested, observed
@@ -711,7 +654,7 @@ orchestrator:
       # run_phase1_research._decide_next_enabled(), called once per step by
       # run_campaign.process_once. HARD DEPENDENCIES: raises (does not
       # silently no-op) if true while regroup_record.enabled (hence
-      # specialist_readers, grid_evaluation, category_reports) or
+      # grid_evaluation) or
       # config_direct_authoring.enabled is false/absent.
       #
       # While false: process_once, its DONE branch, register_hypothesis's
@@ -733,8 +676,8 @@ orchestrator:
       # Novelty = the exact match (config hash + measured symbols + the
       # protocol file's timeframe + a content hash of its windows) against
       # campaign_memory.yaml, binding; the legacy digest is recorded for
-      # information only. Ranking: confidence_real desc, distance_to_profitable
-      # desc, cost asc; no lineage demotion. The candidate's brief
+      # information only. Ranking: confidence_real desc, cost.backtests asc,
+      # candidate_id asc (ties declared in tie_with); no lineage demotion. The candidate's brief
       # (campaign_record/candidate_briefs/) carries NO criteria: step 1a writes
       # them for the proposed idea (with the DECIDE_NEXT_CANDIDATES.md addendum,
       # injected only under this flag), and run_loop defers the readers
@@ -761,8 +704,8 @@ orchestrator:
       # run_phase1_research._verdict_routing_retired_enabled(), resolved once
       # in run_loop's pre-flight and once per step in run_campaign.process_once.
       # HARD DEPENDENCIES: raises (does not silently no-op) if true while
-      # decide_next.enabled (hence regroup_record, specialist_readers,
-      # grid_evaluation, category_reports, config_direct_authoring) or
+      # decide_next.enabled (hence regroup_record,
+      # grid_evaluation, config_direct_authoring) or
       # profit_bars_every_backtest.enabled (hence profit_bars_file) is
       # false/absent. DECLARED BEHAVIOUR CHANGE when switched on.
       #
@@ -877,62 +820,6 @@ orchestrator:
       # with a reason), counted in claim_test_coverage.yaml. No p-value, no
       # verdict (CUL-394); not a grid criterion; any error is recorded and
       # the run continues.
-  reader_findings:
-    enabled: false
-      # E-068 slice 5 (CUL-403, D-073, DESIGN_PROPOSAL.md sections 6 and 8).
-      # OFF BY DEFAULT, read by run_phase1_research._reader_findings_enabled().
-      # HARD DEPENDENCY: raises if true while claim_tests.enabled or
-      # specialist_readers.enabled is false/absent. While false: byte-
-      # identical (the v2 reader SKILLs, handoffs, prompts and files are
-      # untouched; v3 files already written still load).
-      #
-      # While true: readers v3. Short SKILLs under workflow_artifacts/skills/
-      # readers_v3/ plus READING_CONTRACT.md; CLAIM_TESTS.md replaces the
-      # design guide (the catalogue stays); added inputs: claim_measurement.yaml,
-      # artifacts/claim_result_digest.yaml (the variants' claim_test.yaml
-      # numbers, bound to this attempt's bars) and artifacts/
-      # findings_summary_for_readers.yaml (earlier runs' findings). Code skips
-      # regime_power when the manifest lists /regime_detector as scaffolding
-      # or the detector is constant, and component_attribution when every
-      # variant has at most one component: a `skipped` reading with its rule
-      # (never `[]`), counted in campaign_record/reader_skips.yaml and the
-      # campaign summary. Each reader writes ONE reading: an explanation,
-      # 0-2 side findings (claim blocks, check_claim) and at most one patch
-      # (resolved against the base config, never on scaffolding). No verdict
-      # field. Decide-next takes a side finding as a candidate whose brief
-      # carries the claim pre-filled; a repeated spec_hash or a block claim
-      # whose tests cannot see the block is a warning, never a refusal.
-  observable_backtest:
-    enabled: false
-      # E-073 (P-CUL-81, D-081): the observable-backtest epic's ONE flag. OFF
-      # BY DEFAULT, read by run_phase1_research._observable_backtest_enabled().
-      # HARD DEPENDENCY: raises if true while reader_findings.enabled is
-      # false/absent (step 1 changes only the v3 readers' inputs). While false:
-      # byte-identical (the v3 readers' handoffs and prompts are untouched).
-      #
-      # While true (step 1): docs/DATA_DICTIONARY_READERS.md -- the readers'
-      # subset of docs/DATA_DICTIONARY.md (generated by tools/data_dictionary.py;
-      # no bars.csv section, no per-trade labels): every field the readers
-      # read, its meaning, unit, the code that writes it and whether it is
-      # known at the bar's close or only after the fact, plus the audit
-      # findings and what is not recorded -- is an extra required input of
-      # every v3 reader, with one line in the handoff telling the reader to
-      # look a field up there before citing it.
-      #
-      # While true (step 2, D-083): every `path=value` a v3 reading cites is
-      # checked against the files the reader received (the exploration copies
-      # under explore_confirm): a missing path or a value that is not the
-      # file's value as written or rounded gets the reader's ONE retry with a
-      # code-written list (path, cited value, problem -- never a value from the
-      # files; a missing path with up to 3 real paths that end in the same
-      # key); the retry answer is kept only with strictly fewer bad citations
-      # and the same side findings; still wrong, the reading is kept and the citation
-      # recorded in artifacts/citation_checks/<category>.yaml (decide-next: a
-      # citation_mismatch warning, never a refusal). Side findings proposing
-      # the same test (same claim kind, spec_hashes and config change) are merged into one
-      # (artifacts/side_finding_merges.yaml): measured, counted and ranked
-      # once, with the first source's scores -- never as agreement. Later
-      # E-073 steps (E-029, E-027) will add to this flag.
   zero_trade_windows_not_computed:
     enabled: false
       # CUL-415 (D-084, audit finding A8 in docs/DATA_DICTIONARY.md). OFF BY
@@ -971,9 +858,8 @@ orchestrator:
       # (claim_measure.measure_variant with trade_tests); fold confirmation checks it and
       # measures it on the child's trades (tools/fold_confirm.measure_on_fold).
       # While true (PR-5, D-092; D-197: a stage of its own, "analyst", right after
-      # protocol_execution and before specialist_readers when that flag is on, else before
-      # verdict_interpreter; NO dependency on category_reports, specialist_readers or
-      # reader_findings, and it runs with all three off): two analyst
+      # protocol_execution and before regroup_record / the grid route; NO dependency on
+      # category_reports, specialist_readers or reader_findings, which D-198 deleted): two analyst
       # lenses replace the v3 readers -- `forecast` writes forecast_power.yaml and
       # `trade_efficiency` writes trade_efficiency.yaml, each a session with only the six
       # query tools (tools/analyst_queries.py, one log and 150 comparisons per lens), the
@@ -1048,8 +934,8 @@ orchestrator:
       #    from is measured on the child's fold (tools/fold_confirm.py) and written
       #    as one row of campaign_record/confirmations.yaml. A NOISE rule (pooled
       #    sign at every horizon and the claimed sign in all but one window, at
-      #    least 4 windows), no cost. explore_confirm's in-run route and weak
-      #    follow-up resolution are unreachable while this is true.
+      #    least 4 windows), no cost. (explore_confirm's in-run route and weak
+      #    follow-up resolution were deleted with the explore_confirm flag, D-198.)
   operator_approval:
     enabled: false
       # E-068 PR 4 (D-071, CUL-399). OFF BY DEFAULT, read by
@@ -1176,35 +1062,6 @@ orchestrator:
       # and a later failure, pause or exception leaves them in the queue (the
       # enqueue after the run is then a no-op). A 1a that did not complete enqueues
       # nothing, as before.
-  explore_confirm:
-    enabled: false
-      # E-072 (P-CUL-80, D-080, engineering/roadmap/E-072/PHASE_A.md). OFF BY
-      # DEFAULT, read by run_phase1_research._explore_confirm_enabled(). HARD
-      # DEPENDENCY: raises if true while reader_findings.enabled or
-      # variant_loop.enabled is false/absent. While false: byte-identical (no
-      # split, no artifacts/exploration/, the readers' handoffs unchanged).
-      #
-      # While true (tools/explore_confirm.py; information only): at
-      # protocol_execution entry, BEFORE the backtests, the run's protocol
-      # windows are split and recorded in artifacts/explore_confirm.yaml (in
-      # time order, first half = exploration, the rest = confirmation; the
-      # 6 x 4-month 2022-2023 protocol: 2022-01/05/09 vs 2023-01/05/09). The
-      # readers see exploration windows only: code writes their copies under
-      # artifacts/exploration/ (the five reports, the grid re-reduced on those
-      # windows with pooled criteria and the idea status withheld, the claim
-      # digest measured again on those windows, the earlier findings and the
-      # registry summary with their numbers withheld) plus
-      # readers_v3/EXPLORATION.md. After the readers, each side finding is
-      # measured on the confirmation windows: a price-only finding in the same
-      # run (claim_measure on the base variant's bars), a block claim
-      # (forecast/regime) `pending` until the run built from it measures its
-      # own claim on its own confirmation windows. Recorded as
-      # confirmation_sign_retained: true | false | pending in
-      # artifacts/confirmation.yaml and campaign_record/confirmations.yaml,
-      # which counts every look (tests and test x horizon comparisons) per
-      # confirmation set; the campaign summary shows the counts. The bar is
-      # "the sign held on unseen windows, counted against the looks", never
-      # "proven". Nothing here routes, stops, parks or ranks a run.
   cost_bar_all_costs:
     enabled: false
       # CUL-414 (D-082; audit finding A7 in docs/DATA_DICTIONARY.md). OFF BY

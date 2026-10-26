@@ -219,35 +219,23 @@ STAGE_CONFIGS = {
         "skill": "verdict-interpreter",
     },
     # D-197 (orchestrator.analyst.enabled, off by default): the analyst's own stage, registered
-    # UNCONDITIONALLY (same convention as specialist_readers below) but only ROUTED to when its
-    # flag is on -- see run_loop's protocol_execution override. It runs right after
-    # protocol_execution (the backtest artifacts its query tools read) and before
-    # specialist_readers when that stage is on, else before verdict_interpreter, and has no
-    # dependency on category_reports, specialist_readers or reader_findings. Two lens sessions
-    # (_run_analyst_stage -> run_analyst_worker), each writing
+    # UNCONDITIONALLY but only ROUTED to when its flag is on -- see run_loop's
+    # protocol_execution override. It runs right after protocol_execution (the backtest
+    # artifacts its query tools read) and before regroup_record / the grid route. Two lens
+    # sessions (_run_analyst_stage -> run_analyst_worker), each writing
     # artifacts/proposals/<category>.yaml for its category (tools/reader_categories.py); no
-    # "skill" key (the analyst skill is loaded by analyst_session.build_prompt).
+    # "skill" key (the analyst skill is loaded by analyst_session.build_prompt). D-198: the
+    # five readers' stage (specialist_readers) is deleted; under the grid route
+    # (grid_evaluation on) verdict_interpreter is unreached (not deleted) and the post-run
+    # route comes from the grid (idea_status.yaml) -- see determine_post_specialist_readers_route.
     "analyst": {
         "handoff": "protocol_to_analyst.yaml",
         "default_next": "dynamic_routing",
     },
-    # E-046a Slice 5b-ii-B (orchestrator.specialist_readers.enabled, off by default):
-    # registered UNCONDITIONALLY (same convention as strategy_config_authoring above) but
-    # only ROUTED to when the flag is on -- see run_loop's protocol_execution override.
-    # Runs the five reader skills (workflow_artifacts/skills/readers/<category>-reader/)
-    # one after another; each writes artifacts/proposals/<category>.yaml. No "skill" key:
-    # this stage is 1:5, not 1:1, so it never goes through _SKILL_MAP -- see
-    # _run_specialist_readers. Under the flag verdict_interpreter above is unreached (not
-    # deleted), and the post-run route comes from the grid (idea_status.yaml), never from
-    # the readers' proposals -- see determine_post_specialist_readers_route.
-    "specialist_readers": {
-        "handoff": "protocol_to_specialist_readers.yaml",
-        "default_next": "dynamic_routing",
-    },
     # E-058 S2a (orchestrator.regroup_record.enabled, off by default; requires
-    # specialist_readers): registered UNCONDITIONALLY, same convention as
-    # specialist_readers above, but only ROUTED to when the flag is on -- then it sits
-    # between specialist_readers and determine_post_specialist_readers_route ("memory
+    # grid_evaluation): registered UNCONDITIONALLY
+    # but only ROUTED to when the flag is on -- then it sits
+    # between protocol_execution / analyst and determine_post_specialist_readers_route ("memory
     # before decision", roadmap card H). A tool stage, no LLM and no "skill" key: it
     # writes one entry per run to campaign_record/campaign_memory.yaml
     # (tools/campaign_memory.py) and writes no trial rows -- see _run_regroup_record_stage.
@@ -1145,9 +1133,10 @@ def _build_stage_prompt(stage_name: str, handoff: dict, path: Path,
 
 
 # The DEFAULT model of every Claude stage (run_claude_worker and, E-046a 5b-ii-B,
-# run_reader_worker) -- one constant so the two paths cannot drift. D-189: a
+# the deleted run_reader_worker; the analyst and the claim calls use it too) -- one
+# constant so the paths cannot drift. D-189: a
 # run_claude_worker stage listed in orchestrator.stage_models (see _stage_model) runs
-# on that model instead; readers and every unlisted stage stay on this one.
+# on that model instead; every unlisted stage stays on this one.
 _CLAUDE_WORKER_MODEL = "claude-haiku-5-5"
 
 
@@ -1268,7 +1257,7 @@ def _stage_agent_options(*, analyst: dict | None = None,
 def _usage_token_record(usage: dict) -> dict:
     """The audit_log `tokens` block for one SDK `usage` dict: raw counts, total,
     and the F4c weighted units the budget breaker sums. Shared by
-    run_claude_worker and run_reader_worker (E-046a 5b-ii-B)."""
+    run_claude_worker and run_analyst_worker."""
     usage = usage or {}
     input_tokens = usage.get("input_tokens", 0)
     output_tokens = usage.get("output_tokens", 0)
@@ -1367,36 +1356,6 @@ def _provenance_record(observed, mismatch, self_reported: dict, stamped: bool,
     if error:
         record["stamp_error"] = error
     return record
-
-
-def _stamp_reader_body(body: str, category: str, run_dir: Path, models) -> tuple:
-    """A validated reader body with every proposal's `model_id` set to the
-    observed model. Returns (body, provenance record). Never raises: any
-    failure leaves the body exactly as the model wrote it and is recorded. The
-    stamped text is re-validated for its category before it is used."""
-    observed, mismatch = _observed_model_facts(models)
-    self_reported, error = {}, None
-    try:
-        doc = yaml.safe_load(body)
-        if isinstance(doc, dict) and doc.get("schema_version") == 3 and "skipped" not in doc:
-            # E-068 slice 5: a v3 reading carries one model_id, at its top
-            changed, self_reported = _stamp_model_ids([doc], "reading_id", observed)
-        elif isinstance(doc, dict) and "skipped" in doc:
-            changed = False  # written by code: no model answered it
-        elif not isinstance(doc, list):
-            raise ValueError("reader body is not a list of proposals")
-        else:
-            changed, self_reported = _stamp_model_ids(doc, "proposal_id", observed)
-        if changed:
-            new_body = yaml.safe_dump(doc, sort_keys=False, allow_unicode=True)
-            _, verr = _validate_reader_output(f"```yaml\n{new_body}```", category, run_dir)
-            if verr is not None:
-                raise ValueError(f"stamped body failed validation: {verr}")
-            body = new_body
-    except Exception as exc:  # a normal-run condition never raises out of the stage
-        error = f"{type(exc).__name__}: {exc}"
-    stamped = observed is not None and error is None
-    return body, _provenance_record(observed, mismatch, self_reported, stamped, error)
 
 
 def _stamp_card_scores_text(text: str, models, requested: str | None = None) -> tuple:
@@ -1521,7 +1480,7 @@ async def run_claude_worker(stage_name: str, handoff: str, path: Path, retry_con
     # deliverable's file size would suggest; num_turns is what makes that
     # attributable at a glance instead of looking like unexplained bloat.
     # (E-046a 5b-ii-B: extracted into _usage_token_record, shared with
-    # run_reader_worker so both paths weight tokens identically.)
+    # run_analyst_worker so both paths weight tokens identically.)
     _tok = _usage_token_record(exact_usage)
     input_tokens, output_tokens = _tok["input"], _tok["output"]
     cache_read, cache_creation = _tok["cache_read"], _tok["cache_creation"]
@@ -1857,17 +1816,16 @@ async def run_tool_worker(stage_name: str, run_id: str):
     ARTIFACTS = RUN_DIR / "artifacts"
     TBOT_PYTHON = _resolve_tbot_python()
 
-    # E-046a Slice 5b-ii-B (code-review fix 1): under specialist_readers every
-    # grid/report/proposal artifact must come from THIS protocol_execution
-    # attempt. A re-run (the RUNBOOK's recovery path) would otherwise route on
-    # the previous attempt's idea_status.yaml and skip readers whose stale
-    # proposals already exist. Flag off: nothing is deleted.
-    _sr_on = stage_name == "protocol_execution" and _specialist_readers_enabled()
+    # E-046a Slice 5b-ii-B (code-review fix 1): on the grid route (grid_evaluation on, D-198)
+    # every grid artifact must come from THIS protocol_execution attempt. A re-run (the
+    # RUNBOOK's recovery path) would otherwise route on the previous attempt's
+    # idea_status.yaml. Grid route off: nothing is deleted.
+    _sr_on = stage_name == "protocol_execution" and _grid_route_enabled()
     if _sr_on:
         _clear_specialist_readers_artifacts(RUN_DIR)
-    # D-197: the analyst runs with specialist_readers off too, so its own per-attempt
+    # D-197: the analyst runs with grid_evaluation off too, so its own per-attempt
     # artifacts (query logs, records, its two readings) are cleared here when only the
-    # analyst's flag is on. Both flags on: the clear above already removed them.
+    # analyst's flag is on. Both on: the clear above already removed them.
     elif stage_name == "protocol_execution" and _analyst_enabled():
         _clear_analyst_artifacts(RUN_DIR)
     # Branch 3 on every backtest (code review 2026-09-24): the per-variant profit
@@ -1884,11 +1842,6 @@ async def run_tool_worker(stage_name: str, run_id: str):
     if stage_name == "protocol_execution":
         _clear_claim_measure_files(RUN_DIR)
         _clear_fold_confirmation(RUN_DIR)    # E-077 PR-2; no-op unless orchestrator.folds.enabled
-    # E-072: the exploration/confirmation split is pre-registered BEFORE the
-    # backtests, and the readers' copies of an earlier attempt are cleared.
-    # Flag off: nothing is read, written or deleted.
-    if stage_name == "protocol_execution" and _explore_confirm_enabled():
-        _prepare_explore_confirm(RUN_DIR, run_id)
 
     if stage_name == "data_availability_gate" and _variant_loop_enabled():
         # E-033.1 Slice 4b (delivery_plan_v26.md Slice 4, sub-slice 2 of 2:
@@ -2560,80 +2513,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
                 if _sr_on:
                     _sr_errors.append(f"grid evaluation raised {type(_grid_err).__name__}: {_grid_err}")
 
-        if _category_reports_enabled():
-            try:
-                _br_tools_path = str(Path(__file__).parent.parent / "tools")
-                if _br_tools_path not in sys.path:
-                    sys.path.insert(0, _br_tools_path)
-                import build_reports as _br
-                # E-061 C2 S2d (G8, D-003 "experts see every variant"): every GRADED
-                # variant gets its own {kind, symbol, status} row -- kind/symbol read
-                # from index.yaml only when present (E-061 C2 S2b adds them; this stage
-                # never invents them). failed_variants/untested_variants are passed
-                # through unchanged (already {vid: reason}, same shape the grid uses)
-                # so every reader sees every variant of the idea, graded or not.
-                # `status` is "graded", not "validated" (review fix, C2 S2d fix round):
-                # it means only "this variant was backtested and graded" -- a reader
-                # must never take it as a pass/fail verdict, which comes from the grid.
-                # `coverage` is a plain passthrough of the M1/D-042 partial-coverage
-                # marker already computed above (partial_coverage_variants) -- no new
-                # logic here, present only for a variant that actually ran partial.
-                def _variant_coverage_note(_vid):
-                    if _vid not in partial_coverage_variants:
-                        return None
-                    _cov = (variants_idx.get(_vid) or {}).get("coverage") or {}
-                    _run, _total = _cov.get("windows_run"), _cov.get("windows_total")
-                    if _run is None or _total is None:
-                        return "partial"
-                    return f"partial, windows run {len(_run)} of {_total}"
-                _variant_report_meta = {
-                    _vid: {
-                        "kind": (variants_idx.get(_vid) or {}).get("kind"),
-                        "symbol": (variants_idx.get(_vid) or {}).get("symbol"),
-                        "status": "graded",
-                        **({"coverage": _variant_coverage_note(_vid)}
-                           if _vid in partial_coverage_variants else {}),
-                    }
-                    for _vid in per_variant_summaries
-                }
-                # C5.8 (C13, D-050): passed only under the gate, so the gate-off
-                # call is exactly the pre-C5.8 one.
-                _reports = _br.build_reports(
-                    RUN_DIR, write=True, variants=_variant_report_meta,
-                    failed_variants=failed_variants or None,
-                    untested_variants=untested_variants or None,
-                    **({"legacy_verdict_retired": True} if legacy_label_retired else {}),
-                    **_report_statistic_labels_kw())
-                print(f"✅ [E-046a] artifacts/reports/*.yaml written: {sorted(_reports.keys())} "
-                      f"(variants: {sorted(_variant_report_meta)}"
-                      + (f", failed: {sorted(failed_variants)}" if failed_variants else "")
-                      + (f", untested: {sorted(untested_variants)}" if untested_variants else "")
-                      + ")")
-            except Exception as _reports_err:
-                print(f"⚠️  [E-046a] category report build raised {type(_reports_err).__name__}: "
-                      f"{_reports_err} -- at least one variant's backtest already succeeded; "
-                      "artifacts/reports/*.yaml are simply not written this run.")
-                if _sr_on:
-                    _sr_errors.append(f"category reports raised {type(_reports_err).__name__}: "
-                                      f"{_reports_err}")
-
-        # E-072: the readers' copies of the reports and the grid, from the
-        # exploration windows only. A failure never fails protocol_execution
-        # (D-080: nothing stops; D-061: the readers never block the grid's
-        # record): it is logged loudly, the partial copies are removed, and
-        # each reader is then skipped by rule exploration_inputs_unavailable --
-        # never given the all-window files. Flag off, or the split not
-        # applicable to this run: skipped.
-        if _sr_on and not _sr_errors and _explore_confirm_active(RUN_DIR):
-            try:
-                _write_exploration_views(
-                    RUN_DIR, run_id, per_variant_summaries, _variant_report_meta,
-                    pre_registration=_pre_reg_for_eval or {},
-                    failed_variants=failed_variants or None,
-                    untested_variants=untested_variants or None,
-                    legacy_verdict_retired=bool(legacy_label_retired))
-            except Exception as _ec_err:
-                _exploration_views_failed(RUN_DIR, _ec_err)
+        # D-198: the category reports (tools/build_reports.py) and the readers' exploration
+        # views are gone with the readers.
 
         print(f"✅ protocol_execution (variant loop): {len(per_variant_summaries)}/"
               f"{len(validated)} variant(s) succeeded: {sorted(per_variant_summaries)}")
@@ -2805,34 +2686,8 @@ async def run_tool_worker(stage_name: str, run_id: str):
                         _sr_errors.append(f"grid evaluation raised {type(_grid_err).__name__}: "
                                           f"{_grid_err}")
 
-            # E-046a Slice 5a (delivery_plan_v26.md, "Slice 5 -- Reports and
-            # readers"). ADDITIVE, called AFTER the grid block above, same
-            # isolation pattern: category reports are a pure re-projection of
-            # artifacts that already exist once the backtest above succeeded
-            # (protocol_result.yaml/summary, trade_diagnostics.json,
-            # bars.csv -- this run's own output only, CUL-381),
-            # so a bug in report-building must never turn an already-
-            # successful trial into a recorded failure -- its own try/except,
-            # logs loudly, never re-raises.
-            if _category_reports_enabled() and refold_of(RUN_DIR) is None:  # D-122: none on a re-run
-                try:
-                    _br_tools_path = str(Path(__file__).parent.parent / "tools")
-                    if _br_tools_path not in sys.path:
-                        sys.path.insert(0, _br_tools_path)
-                    import build_reports as _br
-                    _reports = _br.build_reports(RUN_DIR, write=True,
-                                                 **_report_statistic_labels_kw())
-                    print(f"✅ [E-046a] artifacts/reports/*.yaml written: "
-                          f"{sorted(_reports.keys())}")
-                except Exception as _reports_err:
-                    print(f"⚠️  [E-046a] category report build raised "
-                          f"{type(_reports_err).__name__}: {_reports_err} -- the "
-                          "backtest itself already succeeded; artifacts/reports/*.yaml "
-                          "are simply not written this run. Not re-raised, same "
-                          "reasoning as the grid-evaluation block above.")
-                    if _sr_on:
-                        _sr_errors.append(f"category reports raised "
-                                          f"{type(_reports_err).__name__}: {_reports_err}")
+            # D-198: the category-report build that followed the grid block is gone
+            # with the readers (tools/build_reports.py).
         except Exception as _win_err:
             try:
                 _record_failed_backtest_trial(
@@ -3523,20 +3378,6 @@ def _grid_evaluation_enabled(cfg: dict | None = None) -> bool:
     return _strict_orchestrator_flag("grid_evaluation", cfg=cfg)  # E-061 C1.5: strict
 
 
-# E-046a Slice 5a (delivery_plan_v26.md, "Slice 5 -- Reports and readers").
-# Off-by-default flag, same shape as _grid_evaluation_enabled() above. See
-# config/campaign_config.yaml's orchestrator.category_reports.enabled
-# comment for the full rationale.
-def _category_reports_enabled(cfg: dict | None = None) -> bool:
-    """False (no behavior change) when the key, the section, or the file is
-    absent -- same silence-is-never-a-green-light rule as
-    _grid_evaluation_enabled() above. While false, nothing under
-    artifacts/reports/ is ever written and every other artifact the
-    protocol_execution branch produces is untouched."""
-    cfg = _orchestrator_config(cfg)
-    return _strict_orchestrator_flag("category_reports", cfg=cfg)  # E-061 C1.5: strict
-
-
 # delivery_plan_v26.md 0.2 (item 2) -- config/profitability_bars.yaml and the
 # branch-3 stop. Off-by-default flag, same shape as _grid_evaluation_enabled()
 # above. See config/campaign_config.yaml's orchestrator.profit_bars_file.enabled
@@ -3559,7 +3400,7 @@ def _profit_bars_file_enabled(cfg: dict | None = None) -> bool:
 def _profit_bars_every_backtest_enabled(cfg: dict | None = None) -> bool:
     """False when the key, the section or the config file is absent. A non-bool
     value raises. Requires orchestrator.profit_bars_file.enabled AND
-    orchestrator.regroup_record.enabled (hence specialist_readers): raises,
+    orchestrator.regroup_record.enabled (hence grid_evaluation): raises,
     loudly, if this flag is on without them. run_loop resolves it once, in its
     pre-flight, so a misconfiguration fails the run before any spend.
 
@@ -3591,12 +3432,12 @@ def _profit_bars_every_backtest_enabled(cfg: dict | None = None) -> bool:
     if value and not _flag_dep(_regroup_record_enabled, cfg):
         # Code review 2026-09-24 (order judge -> learn -> profit check -> regroup +
         # record -> decide): the stop is raised in the route AFTER regroup_record,
-        # which itself requires specialist_readers (and grid_evaluation +
-        # category_reports) -- _regroup_record_enabled raises on those.
+        # which itself requires grid_evaluation -- _regroup_record_enabled raises
+        # on that.
         raise ValueError(
             "orchestrator.profit_bars_every_backtest.enabled=true requires "
             "orchestrator.regroup_record.enabled=true as well (and therefore "
-            "specialist_readers, grid_evaluation and category_reports) -- the profit "
+            "grid_evaluation) -- the profit "
             "result is recorded in the campaign memory by regroup_record and the "
             "profit_bars_reached stop is raised in the route after it."
         )
@@ -4146,21 +3987,20 @@ def _variant_loop_enabled(cfg: dict | None = None) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# E-046a Slice 5b-ii-B -- the specialist_readers stage and the interim route
-# from the grid (delivery_plan_v26.md slices 2 and 5; S1_FINDINGS_5B_II.md
-# §2-§4 and its REALIGNMENT section). OFF BY DEFAULT. When on:
-#   - protocol_execution routes to specialist_readers instead of
-#     verdict_interpreter (verdict_interpreter stays registered, unreached --
-#     the validation/config-direct-authoring precedent, not a deletion).
-#   - specialist_readers runs the five reader skills one after another. Each
-#     sees ONLY its own artifacts/reports/<category>.yaml plus
-#     artifacts/grid_evaluation.yaml and writes artifacts/proposals/
-#     <category>.yaml through run_reader_worker, which owns that explicit
-#     output path (run_claude_worker's shared filename regex is untouched).
-#   - the route after the stage comes from the grid ONLY: a component-error
+# E-046a Slice 5b-ii-B -- the interim route from the grid
+# (delivery_plan_v26.md slices 2 and 5; S1_FINDINGS_5B_II.md
+# §2-§4 and its REALIGNMENT section). D-198: the specialist_readers STAGE and
+# its flag are gone with the five readers; what that flag also switched -- the
+# post-run route from the grid instead of verdict_interpreter -- is keyed on
+# orchestrator.grid_evaluation.enabled (_grid_route_enabled), which the old flag
+# required. On the grid route:
+#   - protocol_execution does not route to verdict_interpreter (it stays
+#     registered, unreached -- the validation/config-direct-authoring
+#     precedent, not a deletion): analyst (flag), regroup_record (flag), route.
+#   - the route comes from the grid ONLY: a component-error
 #     check on protocol_result.yaml first (an engineering fault makes the grid
 #     meaningless), then idea_status.yaml through the existing binding path
-#     (_resolve_verdict_fields -> _dispatch_verdict_route). The proposals'
+#     (_resolve_verdict_fields -> _dispatch_verdict_route). The analyst's
 #     scores are never read here -- they rank the next candidate in the later
 #     decide-next step (slice 6b), and nothing else.
 # Nothing here reintroduces refine/pivot/escalate routing, the per-family
@@ -4168,55 +4008,26 @@ def _variant_loop_enabled(cfg: dict | None = None) -> bool:
 # in slice 6c): the route is only ever promote, kill/terminate or a pause.
 # ---------------------------------------------------------------------------
 
-def _specialist_readers_enabled(cfg: dict | None = None) -> bool:
-    """False (no behavior change) when the key, the section, or the config
-    file is absent -- same silence-is-never-a-green-light rule as
-    _config_direct_authoring_enabled(). A non-bool value raises (a quoted
-    "false" must never read truthy). Structurally requires
-    orchestrator.grid_evaluation.enabled (the route reads idea_status.yaml,
-    which only the grid writes) and orchestrator.category_reports.enabled
-    (each reader reads its artifacts/reports/<category>.yaml, which only the
-    report builder writes): raises, loudly, if this flag is on while either
-    is off -- with either off the stage could only fail later, after spend,
-    or route on a guess."""
-    cfg = _orchestrator_config(cfg)
-    sr_cfg = ((cfg.get("orchestrator") or {}).get("specialist_readers") or {})
-    value = sr_cfg.get("enabled", False)
-    if not isinstance(value, bool):
-        raise ValueError(
-            f"orchestrator.specialist_readers.enabled={value!r} is not a real "
-            f"boolean (got {type(value).__name__}) -- write an unquoted `true` or "
-            f"`false` in config/campaign_config.yaml, not a quoted string or null."
-        )
-    if value:
-        missing = [name for name, on in (
-                       ("grid_evaluation", _flag_dep(_grid_evaluation_enabled, cfg)),
-                       ("category_reports", _flag_dep(_category_reports_enabled, cfg)))
-                   if not on]
-        if missing:
-            raise ValueError(
-                "orchestrator.specialist_readers.enabled=true requires "
-                + " and ".join(f"orchestrator.{m}.enabled=true" for m in missing)
-                + " as well -- the readers read artifacts/reports/<category>.yaml "
-                "(written only under category_reports) and the route reads "
-                "artifacts/idea_status.yaml (written only under grid_evaluation). "
-                "Enable all three together."
-            )
-    return value
+def _grid_route_enabled(cfg: dict | None = None) -> bool:
+    """D-198: True when the post-run route comes from the grid (idea_status.yaml)
+    instead of verdict_interpreter. It is orchestrator.grid_evaluation.enabled:
+    the readers flag (specialist_readers) that used to switch this, and that
+    required the grid flag, was deleted with the readers stage. False (no
+    behavior change) when the key, the section or the config file is absent; a
+    non-bool value raises, as _grid_evaluation_enabled does."""
+    return _grid_evaluation_enabled(cfg)
 
 
 def _score_provenance_enabled(cfg: dict | None = None) -> bool:
     """C5.7b-1 (D-048; engineering/review_2026-09-27/C5_7B_PROVENANCE_S1.md).
     False when the key, the section or the config file is absent. A non-bool
-    value raises (a quoted "false" must never read truthy). Requires
-    orchestrator.specialist_readers.enabled (itself requiring grid_evaluation
-    and category_reports): raises, loudly, if this flag is on without it --
-    the reader proposals it stamps exist only under that flag.
+    value raises (a quoted "false" must never read truthy). D-198: no
+    dependency (it required specialist_readers, deleted with the readers).
 
-    While false: nothing is captured, stamped or recorded -- every reader file,
-    extra_card_scores.yaml and audit-log entry is byte-identical.
+    While false: nothing is captured, stamped or recorded --
+    extra_card_scores.yaml and every audit-log entry is byte-identical.
     While true: the model that actually answered (AssistantMessage.model) is
-    stamped over `model_id` on reader proposals and brief-card scores, and the
+    stamped over `model_id` on brief-card scores, and the
     audit-log entry gains a `provenance` block (requested / observed / the
     self-reported value / mismatch). Nothing raises or retries on a mismatch."""
     cfg = _orchestrator_config(cfg)
@@ -4228,94 +4039,6 @@ def _score_provenance_enabled(cfg: dict | None = None) -> bool:
             f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
             f"config/campaign_config.yaml, not a quoted string or null."
         )
-    if value and not _flag_dep(_specialist_readers_enabled, cfg):
-        raise ValueError(
-            "orchestrator.score_provenance.enabled=true requires "
-            "orchestrator.specialist_readers.enabled=true as well -- the score "
-            "provenance stamps the reader proposals that only that stage writes "
-            "(and, with them, the brief-card scores read by decide_next). Enable both."
-        )
-    return value
-
-
-def _reader_findings_enabled(cfg: dict | None = None) -> bool:
-    """E-068 slice 5 (D-073, CUL-403). False when the key, the section or the
-    config file is absent. A non-bool value raises. Requires, loudly,
-    orchestrator.claim_tests.enabled (the readers read the claim's measured
-    numbers and write side findings as claim blocks) and
-    orchestrator.specialist_readers.enabled (the stage it changes).
-
-    While false: byte-identical -- the v2 reader SKILLs, handoffs, prompts,
-    validation and files are untouched (v3 files already on disk still load).
-    While true: readers v3 (tools/reader_findings.py, tools/reader_proposals.py
-    check_reading): short SKILLs under workflow_artifacts/skills/readers_v3/,
-    CLAIM_TESTS.md instead of the design guide, the run's claim numbers and the
-    earlier findings as inputs, code skip rules, an explanation plus side
-    findings (claim blocks, check_claim) plus an optional patch resolved
-    against the base config when written."""
-    cfg = _orchestrator_config(cfg)
-    rf_cfg = ((cfg.get("orchestrator") or {}).get("reader_findings") or {})
-    value = rf_cfg.get("enabled", False)
-    if not isinstance(value, bool):
-        raise ValueError(
-            f"orchestrator.reader_findings.enabled={value!r} is not a real boolean "
-            f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
-            f"config/campaign_config.yaml, not a quoted string or null."
-        )
-    if value:
-        missing = [name for name, on in (
-                       ("claim_tests", _flag_dep(_claim_tests_enabled, cfg)),
-                       ("specialist_readers", _flag_dep(_specialist_readers_enabled, cfg)))
-                   if not on]
-        if missing:
-            raise ValueError(
-                "orchestrator.reader_findings.enabled=true requires "
-                + " and ".join(f"orchestrator.{m}.enabled=true" for m in missing)
-                + " as well -- readers v3 read the claim's measured numbers (claim_tests) "
-                "and change the specialist_readers stage. Enable them together."
-            )
-    return value
-
-
-def _observable_backtest_enabled(cfg: dict | None = None) -> bool:
-    """E-073 (P-CUL-81, D-081): the observable-backtest epic's one flag. False
-    when the key, the section or the config file is absent. A non-bool value
-    raises. Requires, loudly, orchestrator.reader_findings.enabled: step 1 (the
-    data dictionary) changes only the v3 readers' inputs, so without them the
-    flag would silently do nothing.
-
-    While false: byte-identical -- the v3 readers' handoffs and prompts are
-    untouched (tested).
-    While true (step 1): docs/DATA_DICTIONARY_READERS.md -- the readers'
-    subset of docs/DATA_DICTIONARY.md (what every field the readers read
-    means, its unit, the code that writes it and whether it is known at the
-    bar's close; without the bars.csv section and the per-trade labels, files
-    the readers never receive), generated by tools/data_dictionary.py -- is an
-    extra required input of every v3 reader, with one line telling them to use
-    it (_with_data_dictionary).
-    While true (step 2, D-083): every `path=value` a v3 reading cites is
-    checked against the files the reader received (under E-072 its
-    exploration copies; reader_proposals.check_citation_values); a missing or
-    mis-valued citation gets the reader's one retry with a code-written list,
-    and if still wrong the reading is kept and the citation recorded in
-    artifacts/citation_checks/<category>.yaml (decide-next: a
-    citation_mismatch warning). Side findings proposing the same test are
-    merged into one (artifacts/side_finding_merges.yaml), measured, counted
-    and ranked once -- never as agreement."""
-    cfg = _orchestrator_config(cfg)
-    ob_cfg = ((cfg.get("orchestrator") or {}).get("observable_backtest") or {})
-    value = ob_cfg.get("enabled", False)
-    if not isinstance(value, bool):
-        raise ValueError(
-            f"orchestrator.observable_backtest.enabled={value!r} is not a real boolean "
-            f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
-            f"config/campaign_config.yaml, not a quoted string or null."
-        )
-    if value and not _flag_dep(_reader_findings_enabled, cfg):
-        raise ValueError(
-            "orchestrator.observable_backtest.enabled=true requires "
-            "orchestrator.reader_findings.enabled=true as well -- the data dictionary "
-            "is an input of the v3 readers only. Enable them together.")
     return value
 
 
@@ -4447,10 +4170,10 @@ def _analyst_enabled(cfg: dict | None = None) -> bool:
     """E-075 PR-5a (D-091): orchestrator.analyst.enabled. False when the key, the section
     or the config file is absent. A non-bool value raises.
 
-    Requires orchestrator.folds.enabled (refused otherwise, D-091 review) and refuses
-    orchestrator.explore_confirm.enabled. D-197: no dependency on category_reports,
-    specialist_readers or reader_findings -- the analyst is a stage of its own
-    (STAGE_CONFIGS["analyst"], _run_analyst_stage) and runs with all three off.
+    Requires orchestrator.folds.enabled (refused otherwise, D-091 review). D-197: no
+    dependency on category_reports, specialist_readers or reader_findings -- the analyst is
+    a stage of its own (STAGE_CONFIGS["analyst"], _run_analyst_stage); D-198 deleted those
+    three flags and explore_confirm (which it used to refuse) with the readers.
     While false: byte-identical. While true (PR-5a, the first part of the analyst's flag;
     E-075 PR-5 adds the analyst stage under the same flag): the trade-level claim-test family
     (D-086) reaches the pipeline -- the claim checks at the reading, decide-next, step 1a's
@@ -4472,48 +4195,7 @@ def _analyst_enabled(cfg: dict | None = None) -> bool:
             "well -- an analyst's claim is confirmed only on a fold its lineage has not used "
             "(E-077), and without folds a trade-level claim would be measured in the run that "
             "inspired it, which E-072's in-run route cannot do. Enable them together.")
-    if value:
-        # D-197: E-075 PR-5's (D-092) dependency on specialist_readers and reader_findings is
-        # gone -- the analyst runs in its own stage and writes its readings itself
-        if _flag_dep(_explore_confirm_enabled, cfg):
-            # review of #359 (D-093): E-072 hides the confirmation windows from the readers;
-            # the analyst's query engine reads every window of the run
-            raise ValueError(
-                "orchestrator.analyst.enabled=true cannot run with "
-                "orchestrator.explore_confirm.enabled=true -- the analyst's queries read every "
-                "window of the run, including E-072's confirmation windows; its claims are "
-                "confirmed on folds (E-077) instead. Turn explore_confirm off.")
     return value
-
-
-# E-073 step 1 (D-081): the readers' subset of the field dictionary
-# (tools/data_dictionary.reader_subset of docs/DATA_DICTIONARY.md; operator
-# default, the full file being the alternative), run-relative like the catalogue.
-DATA_DICTIONARY_DOC = "../../docs/DATA_DICTIONARY_READERS.md"
-DATA_DICTIONARY_LINE = (
-    "Before you cite a field, look it up in docs/DATA_DICTIONARY_READERS.md: its meaning, "
-    "unit, and when it is known (`after` / `run` = computed with hindsight, never a "
-    "signal input). A field it lists under 'Not recorded today' does not exist: "
-    "never infer it. "
-    # E-073 step 2 (D-083): the citation check, said where the reader cites
-    "Code checks every `path=value` you cite against the file you read: write the path as "
-    "that file has it and the value as it shows it (or rounded), and cite a setting you "
-    "state (a period, a threshold) from the base config by its path.")
-
-
-def _with_data_dictionary(handoff: dict) -> dict:
-    """A copy of a v3 reader handoff with the data dictionary added (an extra
-    required input, one sentence in the objective, the rule in
-    injected_context). Called only under orchestrator.observable_backtest."""
-    import copy as _copy
-    out = _copy.deepcopy(handoff)
-    out["required_inputs"].append({
-        "path": DATA_DICTIONARY_DOC,
-        "reason": "what every field you read means, its unit, the code that writes it, "
-                  "and whether it is known at the bar's close or only after the fact"})
-    out["objective"] += " " + DATA_DICTIONARY_LINE
-    out["injected_context"]["data_dictionary"] = DATA_DICTIONARY_LINE
-    return out
 
 
 def _nearest_build_enabled(cfg: dict | None = None) -> bool:
@@ -4747,68 +4429,27 @@ def _nearest_build_module():
     return _nb
 
 
-def _explore_confirm_enabled(cfg: dict | None = None) -> bool:
-    """E-072 (P-CUL-80): ideas are confirmed on data the proposer never saw.
-    False when the key, the section or the config file is absent. A non-bool
-    value raises. Requires, loudly, orchestrator.reader_findings.enabled (the
-    readers it restricts and the side findings it confirms are v3's) and
-    orchestrator.variant_loop.enabled (the split, the readers' copies and the
-    confirmation read the variants' own protocol files and bars).
-
-    While false: byte-identical -- no split, no artifacts/exploration/, the
-    readers' handoffs and the stage are untouched.
-    While true (tools/explore_confirm.py): the run's protocol windows are split
-    before the backtests (artifacts/explore_confirm.yaml: first half in time
-    order = exploration, the rest = confirmation); the readers see only
-    exploration-window copies of every input carrying a result
-    (artifacts/exploration/: reports, grid, claim digest, earlier findings and
-    registry summary, numbers over all windows withheld); after the readers each
-    side finding is measured on the confirmation windows (a pure finding in this
-    run, a block claim pending until the run built from it measures it):
-    artifacts/confirmation.yaml and campaign_record/confirmations.yaml, which
-    counts every look per confirmation set. Information only."""
-    cfg = _orchestrator_config(cfg)
-    ec_cfg = ((cfg.get("orchestrator") or {}).get("explore_confirm") or {})
-    value = ec_cfg.get("enabled", False)
-    if not isinstance(value, bool):
-        raise ValueError(
-            f"orchestrator.explore_confirm.enabled={value!r} is not a real boolean "
-            f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
-            f"config/campaign_config.yaml, not a quoted string or null."
-        )
-    if value:
-        missing = [name for name, on in (
-                       ("reader_findings", _flag_dep(_reader_findings_enabled, cfg)),
-                       ("variant_loop", _flag_dep(_variant_loop_enabled, cfg)))
-                   if not on]
-        if missing:
-            raise ValueError(
-                "orchestrator.explore_confirm.enabled=true requires "
-                + " and ".join(f"orchestrator.{m}.enabled=true" for m in missing)
-                + " as well -- it restricts the v3 readers' inputs and confirms their side "
-                "findings on the variants' own bars. Enable them together.")
-    return value
-
-
 def _explore_confirm_module():
+    """tools/explore_confirm.py. D-198: the explore_confirm FLAG and its in-run split are
+    gone with the readers; the module stays because the fold confirmation
+    (_confirm_on_fold_after_backtests, E-077) and the analyst's memory view use its
+    measurement and ledger functions."""
     _json_pointer_module()  # puts tools/ on sys.path
     import explore_confirm as _ec
     return _ec
 
 
-_SPECIALIST_READERS_HANDOFF = "protocol_to_specialist_readers.yaml"
 _READER_OUTPUT_BLOCK_RE = re.compile(r"```ya?ml[^\n]*\n(.*?)```", re.DOTALL)
 
 # Artifacts that must come from the CURRENT protocol_execution attempt under
 # specialist_readers (code-review fix 1). Cleared at protocol_execution entry.
-# E-073 step 2 (D-083): side_finding_merges.yaml and citation_checks/ exist only
-# under orchestrator.observable_backtest; listed so an attempt never inherits them.
+# E-073 step 2 (D-083): side_finding_merges.yaml; D-198: nothing writes it now, listed so an
+# attempt never inherits one from an older run directory.
 _SPECIALIST_READERS_RUN_SCOPED_FILES = ("idea_status.yaml", "grid_evaluation.yaml",
                                         "side_finding_merges.yaml")
 # E-075 PR-5 review (D-093): the analyst's query logs and session records are per attempt too
 # (they exist only under orchestrator.analyst.enabled)
-_SPECIALIST_READERS_RUN_SCOPED_DIRS = ("reports", "proposals", "citation_checks",
-                                       "analyst_queries", "analyst")
+_SPECIALIST_READERS_RUN_SCOPED_DIRS = ("reports", "proposals", "analyst_queries", "analyst")
 # D-197: the analyst's own per-attempt directories (the part of the list above that is the
 # analyst's), cleared by _clear_analyst_artifacts when specialist_readers is off
 _ANALYST_RUN_SCOPED_DIRS = ("analyst_queries", "analyst")
@@ -4858,18 +4499,18 @@ def _clear_analyst_artifacts(run_dir: Path) -> None:
 
 
 def _raise_specialist_readers_prereq_errors(errors: list) -> None:
-    """Under specialist_readers the grid and the reports are prerequisites, not
-    optional extras: a failure in either fails protocol_execution (after its
-    trial rows are recorded) instead of being logged and swallowed."""
+    """On the grid route (D-198: grid_evaluation on) the grid is a prerequisite, not an
+    optional extra: a failure fails protocol_execution (after its trial rows are
+    recorded) instead of being logged and swallowed."""
     if errors:
         raise RuntimeError(
-            "orchestrator.specialist_readers.enabled requires the grid and the category "
-            "reports, and protocol_execution could not produce them: " + "; ".join(errors))
+            "orchestrator.grid_evaluation.enabled routes only from the grid, and "
+            "protocol_execution could not produce it: " + "; ".join(errors))
 
 
 def _check_specialist_readers_preflight(run_dir: Path) -> None:
-    """Before any spend under the flag: pre_registration.yaml must carry a
-    menu-shaped pass_rule, or the grid is never evaluated and the run would
+    """Before any spend on the grid route (D-198: grid_evaluation on): pre_registration.yaml
+    must carry a menu-shaped pass_rule, or the grid is never evaluated and the run would
     only fail after a full backtest and a trial row."""
     _tools = str(Path(__file__).parent.parent / "tools")
     if _tools not in sys.path:
@@ -4878,13 +4519,13 @@ def _check_specialist_readers_preflight(run_dir: Path) -> None:
     path = run_dir / "artifacts" / "pre_registration.yaml"
     if not path.exists():
         raise FileNotFoundError(
-            f"{path} is missing -- orchestrator.specialist_readers.enabled routes only from "
-            f"the grid, which needs a pre-registered, menu-shaped pass_rule.")
+            f"{path} is missing -- the grid route (orchestrator.grid_evaluation.enabled) routes "
+            f"only from the grid, which needs a pre-registered, menu-shaped pass_rule.")
     if not _vce._is_menu_shaped_pass_rule(_vce._find_pass_rule(load_yaml(path) or {})):
         raise ValueError(
             f"{path}: pass_rule is not menu-shaped (no criterion carries source/reducer) -- "
-            f"the grid cannot evaluate it, so under orchestrator.specialist_readers.enabled "
-            f"this run could only fail after its backtest. Refusing before any spend.")
+            f"the grid cannot evaluate it, so on the grid route (orchestrator.grid_evaluation."
+            f"enabled) this run could only fail after its backtest. Refusing before any spend.")
 
 
 def _reader_proposals_module():
@@ -4895,49 +4536,12 @@ def _reader_proposals_module():
     return _rp
 
 
-def _reader_skill_dir(category: str) -> str:
-    """Skill directory under workflow_artifacts/skills/ for one category
-    (E-068 slice 5: the short v3 SKILL under orchestrator.reader_findings;
-    the v2 SKILLs are untouched)."""
-    if _reader_findings_enabled():
-        return f"readers_v3/{category}-reader"
-    return f"readers/{category}-reader"
-
-
-def _ensure_specialist_readers_handoff(run_id: str, run_dir: Path) -> Path:
-    """Write the stage-level handoff run_loop loads for specialist_readers,
-    once. Created lazily at stage entry (not in _create_remaining_handoffs),
-    so flag-off runs never get this file. Its only required input is
-    protocol_result.yaml -- the component-error check runs before any
-    reader, and each reader's own inputs are checked per reader."""
-    handoff_path = run_dir / "handoffs" / _SPECIALIST_READERS_HANDOFF
-    if not handoff_path.exists():
-        save_yaml(handoff_path, {
-            "handoff_version": 1, "run_id": run_id,
-            "from_stage": "protocol_execution", "to_stage": "specialist_readers",
-            "assigned_engine": "claude",
-            "objective": (
-                "E-046a: run the five specialist readers, one after another. Each "
-                "reads only its own artifacts/reports/<category>.yaml plus "
-                "artifacts/grid_evaluation.yaml and proposes evidence-grounded "
-                "changes to artifacts/proposals/<category>.yaml. Readers never "
-                "decide or route; the route comes from artifacts/idea_status.yaml."
-            ),
-            "required_inputs": [
-                {"path": "artifacts/protocol_result.yaml",
-                 "reason": "component-error check, before any reader runs"},
-            ],
-            "deliverables": [f"proposals/{c}.yaml" for c in READER_CATEGORIES],
-        })
-    return handoff_path
-
-
 _ANALYST_HANDOFF = "protocol_to_analyst.yaml"
 
 
 def _ensure_analyst_handoff(run_id: str, run_dir: Path) -> Path:
     """D-197: the analyst stage's handoff, written once, lazily at stage entry (a run with the
-    flag off never gets this file), like _ensure_specialist_readers_handoff. Its only
+    flag off never gets this file), like _ensure_regroup_record_handoff. Its only
     required input is protocol_result.yaml (the component-error check); the lenses' own
     inputs are the backtest artifacts the query tools read."""
     handoff_path = run_dir / "handoffs" / _ANALYST_HANDOFF
@@ -4984,7 +4588,7 @@ def _load_idea_status(run_dir: Path, run_id: str) -> dict:
     path = run_dir / "artifacts" / "idea_status.yaml"
     if not path.exists():
         raise FileNotFoundError(
-            f"{path} is missing -- under orchestrator.specialist_readers.enabled the "
+            f"{path} is missing -- on the grid route (orchestrator.grid_evaluation.enabled) the "
             f"route comes only from the grid. It is written by protocol_execution when "
             f"grid_evaluation is on AND the pass_rule is menu-shaped; check that run's "
             f"protocol_execution log for a grid-evaluation warning. Refusing to guess a route.")
@@ -5024,11 +4628,11 @@ def _idea_hypothesis_id(run_dir: Path) -> str:
 
 
 def _reader_base_config_rel(run_dir: Path | None) -> str:
-    """The run-relative path of the config a reader's `patch` is resolved
+    """The run-relative path of the config a reading's `patch` is resolved
     against: the base variant's strategy_config.json when the variant loop
     wrote artifacts/variants/index.yaml, else candidate_strategy_config.json --
     the same base decide_next.resolve_patch reads (via campaign_memory's
-    config_ref)."""
+    config_ref). Kept by D-198: the analyst's lenses use it."""
     default = "artifacts/candidate_strategy_config.json"
     index_path = Path(run_dir) / "artifacts" / "variants" / "index.yaml" if run_dir else None
     if index_path is None or not index_path.exists():
@@ -5047,309 +4651,10 @@ def _reader_base_config_rel(run_dir: Path | None) -> str:
     return rel if (Path(run_dir) / rel).exists() else default
 
 
-def _reader_handoff(category: str, run_id: str, stage_attempt, run_dir: Path | None = None) -> dict:
-    """The per-reader handoff, built in memory. Its inputs are this category's
-    report, the grid, and -- so a reader knows what was claimed and which
-    components and settings really exist, and does not invent them -- the
-    idea (hypothesis_card.yaml), the block (block_manifest.yaml, optional: a
-    composition run or a flag-off authoring run has none), this run's base
-    config, and the same design guide and component catalogue step 2 gets
-    (O-4, D-053); then (E-061 C2 S2e) the registry summary code writes before
-    the first reader, last. Deliberately none of the stage-wide unions (B7
-    pre-registration, exclusion digest, config-direct context).
-    E-068 slice 5: under orchestrator.reader_findings the v3 handoff
-    (_reader_handoff_v3); flag off, exactly the dict below."""
-    if _reader_findings_enabled():
-        handoff = _reader_handoff_v3(category, run_id, stage_attempt, run_dir)
-        # E-073 step 1 (D-081): the data dictionary, flag on only.
-        return _with_data_dictionary(handoff) if _observable_backtest_enabled() else handoff
-    return {
-        "handoff_version": 1, "run_id": run_id,
-        "from_stage": "protocol_execution", "to_stage": "specialist_readers",
-        "reader_category": category,
-        "assigned_engine": "claude",
-        "objective": (f"Read artifacts/reports/{category}.yaml (and artifacts/grid_evaluation.yaml) "
-                      f"and propose zero or more evidence-grounded changes. Output a single YAML "
-                      f"list (`[]` for none) -- it is written to "
-                      f"artifacts/proposals/{category}.yaml."),
-        "required_inputs": [
-            {"path": f"artifacts/reports/{category}.yaml", "reason": f"the {category} report"},
-            {"path": "artifacts/grid_evaluation.yaml", "reason": "the grid's per-criterion result"},
-            {"path": "artifacts/hypothesis_card.yaml",
-             "reason": "the idea this run tested: its claim, signal and assumptions"},
-            {"path": _reader_base_config_rel(run_dir),
-             "reason": "this run's base config: the real component ids and settings a "
-                       "`patch` must name (component_id is the config's `id`)"},
-            {"path": "../../docs/COMPONENT_CATALOG.md",
-             "reason": "every component's exact output, kind and settings -- never propose "
-                       "a component or setting that is not here"},
-            {"path": "../../docs/STRATEGY_DESIGN_GUIDE.md",
-             "reason": "how a config is shaped and what it cannot express"},
-            {"path": "artifacts/registry_summary.yaml",
-             "reason": "what earlier runs validated (the distance-to-profitable anchors read it)"},
-        ],
-        "optional_inputs": [
-            {"path": "artifacts/block_manifest.yaml",
-             "reason": "which config paths are the tested block and which are scaffolding "
-                       "(absent on a composition run)"},
-        ],
-        "deliverables": [f"proposals/{category}.yaml"],
-        "injected_context": {"stage_attempt": str(stage_attempt),
-                             "feed_names": _reader_feed_vocabulary()},
-    }
-
-
-# E-068 slice 5 (D-073): the v3 readers' shared rules and the slot grammar
-# their side findings are written in (the same CLAIM_TESTS.md step 1a gets).
-READER_V3_CONTRACT = "../../workflow_artifacts/skills/readers_v3/READING_CONTRACT.md"
-
-
-def _reader_handoff_v3(category: str, run_id: str, stage_attempt, run_dir: Path | None) -> dict:
-    """The per-reader handoff under orchestrator.reader_findings. Same report,
-    grid, card, base config, catalogue and registry summary as v2; the design
-    guide is replaced by CLAIM_TESTS.md (operator, 2026-10-05: a v3 reader
-    mostly writes tests; its patch is resolved against the real config by
-    code); added: the shared reading contract, this run's measured claim
-    numbers (claim_measurement.yaml when measured -- an older run's
-    claim_status.yaml, D-077 --, and the code digest of the
-    variants' claim_test.yaml) and the earlier runs' findings.
-    One of those two code-written files absent (_write_reader_v3_inputs could
-    not write it) is not a stop: it moves to optional_inputs, named as missing
-    in this run, so the reader runs without it."""
-    _rf = _reader_findings_module()
-    handoff = {
-        "handoff_version": 1, "run_id": run_id,
-        "from_stage": "protocol_execution", "to_stage": "specialist_readers",
-        "reader_category": category,
-        "assigned_engine": "claude",
-        "objective": (f"Read artifacts/reports/{category}.yaml with this run's measured claim "
-                      f"result (artifacts/{_rf.DIGEST_ARTIFACT}) and the grid. Explain the "
-                      f"result, then propose at most "
-                      f"{_reader_proposals_module().MAX_SIDE_FINDINGS} side findings (each a "
-                      f"claim block whose tests are composed from CLAIM_TESTS.md, optionally "
-                      f"with the config change to test it with). Output ONE YAML mapping "
-                      f"(schema_version: 3, "
-                      f"reading_id: {category}-{run_id}) -- it is written to "
-                      f"artifacts/proposals/{category}.yaml."),
-        "required_inputs": [
-            {"path": READER_V3_CONTRACT, "reason": "the reading's exact shape and rules"},
-            {"path": f"artifacts/reports/{category}.yaml", "reason": f"the {category} report"},
-            {"path": "artifacts/grid_evaluation.yaml", "reason": "the grid's per-criterion result"},
-            {"path": "artifacts/hypothesis_card.yaml",
-             "reason": "the idea this run tested: its claim, signal and assumptions"},
-            {"path": f"artifacts/{_rf.DIGEST_ARTIFACT}",
-             "reason": "the claim's tests and their measured effect sizes per variant "
-                       "(measured, not proven; numbers only when bound to this run's bars)"},
-            {"path": _reader_base_config_rel(run_dir),
-             "reason": "this run's base config: the real component ids and settings a "
-                       "`patch` must name (component_id is the config's `id`)"},
-            {"path": "../../docs/COMPONENT_CATALOG.md",
-             "reason": "every component's exact output, kind and settings -- never propose "
-                       "a component or setting that is not here"},
-            {"path": CLAIM_TESTS_GUIDE,
-             "reason": "the only blocks a side finding's tests may be composed from"},
-            {"path": f"artifacts/{_rf.READER_SUMMARY_ARTIFACT}",
-             "reason": "what earlier runs already measured: do not propose a test already "
-                       "listed there"},
-            {"path": "artifacts/registry_summary.yaml",
-             "reason": "what earlier runs validated (the distance-to-profitable anchors read it)"},
-        ],
-        "optional_inputs": [
-            {"path": "artifacts/block_manifest.yaml",
-             "reason": "which config paths are the tested block and which are scaffolding "
-                       "(absent on a composition run)"},
-            {"path": f"artifacts/{_claim_measurement_name(run_dir)}",
-             "reason": "the claim measurement's run-level status (absent when nothing was "
-                       "measured)"},
-        ],
-        "deliverables": [f"proposals/{category}.yaml"],
-        "injected_context": {"stage_attempt": str(stage_attempt),
-                             "feed_names": _reader_feed_vocabulary()},
-    }
-    if _explore_confirm_active(run_dir):
-        handoff = _explore_confirm_handoff(handoff, category, run_dir)
-    missing = _reader_v3_missing_inputs(run_dir) if run_dir is not None else []
-    for name in missing:
-        # Not listed as an input at all, not even optional: _build_stage_prompt
-        # pastes any listed path that exists, and an older attempt's copy may
-        # still be on disk (review round 2).
-        rel = f"artifacts/{name}"
-        handoff["required_inputs"] = [r for r in handoff["required_inputs"] if r["path"] != rel]
-    if missing:
-        handoff["injected_context"]["missing_inputs"] = {
-            f"artifacts/{name}": (f"MISSING in this run: it could not be written before the "
-                                  f"readers (see artifacts/{_rf.INPUT_GAPS_ARTIFACT}). Read "
-                                  f"without it; never guess its content.")
-            for name in missing}
-        handoff["objective"] += (f" Missing in this run (read without them): "
-                                 f"{', '.join(missing)}.")
-    return handoff
-
-
-# E-072: the flag-on-only rule a reader gets with the exploration copies (the
-# v3 SKILLs and READING_CONTRACT.md are untouched).
-READER_V3_EXPLORATION = "../../workflow_artifacts/skills/readers_v3/EXPLORATION.md"
-
-
-def _explore_confirm_handoff(handoff: dict, category: str, run_dir: Path | None) -> dict:
-    """E-072: the v3 handoff with every input that carries a result replaced
-    by its exploration copy (artifacts/exploration/: report, grid, claim
-    digest, earlier findings, registry summary, and the card -- its
-    whitelisted copy without free text or numeric evidence), the run-level
-    claim_measurement.yaml dropped (its statuses cover every window), and
-    EXPLORATION.md plus the exploration windows added. Raises when the split
-    is missing: the readers never get the all-window files instead (the stage
-    skips such a reader by rule before its handoff is built)."""
-    ec = _explore_confirm_module()
-    rf = _reader_findings_module()
-    if run_dir is None:
-        raise ValueError("orchestrator.explore_confirm: a reader handoff needs its run directory")
-    split = ec.load_split(Path(run_dir) / "artifacts")
-    shown = ec.labels(split["exploration"])
-    # every readers' copy; the AI free text in them is number-masked
-    # (ec.READER_FREE_TEXT, operator decision 14)
-    swap = {f"artifacts/{n}": f"artifacts/{_exploration_rel(n)}"
-            for n in (f"reports/{category}.yaml", "grid_evaluation.yaml",
-                      rf.DIGEST_ARTIFACT, rf.READER_SUMMARY_ARTIFACT, "registry_summary.yaml",
-                      "hypothesis_card.yaml", "block_manifest.yaml")}
-    import copy as _copy
-    out = _copy.deepcopy(handoff)
-    req = []
-    for r in out["required_inputs"]:
-        req.append({**r, "path": swap.get(r["path"], r["path"])})
-        if r["path"] == "artifacts/hypothesis_card.yaml":
-            req[-1]["reason"] = ("the idea this run tested: its claim and signal (its free text "
-                                 "and evidence are withheld: they may quote all-window numbers)")
-        if r["path"] == READER_V3_CONTRACT:
-            req.append({"path": READER_V3_EXPLORATION,
-                        "reason": "you see the exploration windows only; how your side findings "
-                                  "are checked on windows you never saw"})
-    out["required_inputs"] = req
-    measurement = f"artifacts/{_claim_measurement_name(run_dir)}"
-    # an optional copy (the block manifest's) is given only when this attempt
-    # wrote it (ec.current_copies): never an earlier attempt's copy
-    current = ec.current_copies(Path(run_dir) / "artifacts")
-    prefix = f"artifacts/{ec.EXPLORATION_DIR}/"
-    out["optional_inputs"] = [
-        {**r, "path": swap.get(r["path"], r["path"])} for r in out["optional_inputs"]
-        if r["path"] != measurement]
-    out["optional_inputs"] = [r for r in out["optional_inputs"]
-                              if not r["path"].startswith(prefix)
-                              or r["path"][len(prefix):] in current]
-    for old, new in swap.items():
-        out["objective"] = out["objective"].replace(old, new)
-    out["objective"] += (f" Every result you read comes from the exploration windows {shown} "
-                         f"only; each side finding is measured on the confirmation windows, "
-                         f"which you never see.")
-    out["injected_context"]["explore_confirm"] = {
-        "exploration_windows": shown,
-        "rule": "results on the other windows are withheld; your side findings are checked "
-                "there (EXPLORATION.md)"}
-    return out
-
-
-def _reader_v3_missing_inputs(run_dir: Path) -> list:
-    """The code-written v3 reader inputs this run lacks: absent from disk, or
-    named in artifacts/reader_input_gaps.yaml (a file that could not be
-    rewritten AND could not be removed is still on disk with an older
-    attempt's content -- the gap record wins). Never raises: an unreadable
-    gap record counts as naming nothing."""
-    rf = _reader_findings_module()
-    arts = Path(run_dir) / "artifacts"
-    try:
-        doc = yaml.safe_load((arts / rf.INPUT_GAPS_ARTIFACT).read_text(encoding="utf-8"))
-        recorded = set((doc or {}).get("missing") or {})
-    except Exception:  # noqa: BLE001 -- absent (the normal case) or unreadable
-        recorded = set()
-    names = _reader_v3_input_names(run_dir)
-    if _explore_confirm_active(run_dir):
-        # E-072 (review round 2, finding 4): an exploration copy this attempt
-        # did not stamp is an earlier attempt's -- missing
-        ec = _explore_confirm_module()
-        current = {_exploration_rel(n) for n in ec.current_copies(arts)}
-        recorded |= {n for n in names if n not in current}
-    return [name for name in names if name in recorded or not (arts / name).exists()]
-
-
-def _reader_v3_input_names(run_dir: Path | None = None) -> tuple:
-    """The two code-written v3 reader inputs, relative to artifacts/: the
-    claim digest and the earlier findings -- under orchestrator.explore_confirm
-    (E-072) their exploration copies (unless the split is not applicable to
-    `run_dir`), else exactly the slice-5 names."""
-    rf = _reader_findings_module()
-    names = (rf.DIGEST_ARTIFACT, rf.READER_SUMMARY_ARTIFACT)
-    if _explore_confirm_active(run_dir):
-        return tuple(_exploration_rel(n) for n in names)
-    return names
-
-
-def _report_statistic_labels_kw() -> dict:
-    """CUL-413 (D-077): build_reports' `label_statistics=True` under
-    orchestrator.reader_findings only (the v3 readers); {} otherwise, so the
-    flag-off call -- and the report every v2 reader reads -- is unchanged. A
-    flag that cannot be read gives {} (the stages that own it report it)."""
-    try:
-        return {"label_statistics": True} if _reader_findings_enabled() else {}
-    except Exception:  # noqa: BLE001
-        return {}
-
-
-def _claim_measurement_name(run_dir: Path | None) -> str:
-    """D-077: the run's claim measurement file name to READ --
-    claim_measurement.yaml, or an older run's claim_status.yaml when only that
-    one exists (claim_measure.run_file_path)."""
-    cm = _claim_measure_module()
-    if run_dir is None:
-        return cm.RUN_FILE
-    return cm.run_file_path(Path(run_dir) / "artifacts").name
-
-
 def _reader_findings_module():
     _json_pointer_module()  # puts tools/ on sys.path
     import reader_findings as _rf
     return _rf
-
-
-FEED_WISHLIST_REL = "campaign_record/feed_wishlist.yaml"
-
-
-def _reader_feed_vocabulary() -> dict:
-    """E-035 S2c: the canonical names a reader's `requires_feed.feed` must use
-    when one fits, so readers do not invent synonyms:
-      wired         -- FEED_REGISTRY keys (usable today);
-      reserved      -- RESERVED_FEED_REGISTRY keys (need a data-policy designation);
-      wishlist_only -- feed_name entries of campaign_record/feed_wishlist.yaml
-                       not in either registry (named, never built).
-    Built for every reader call, so it never raises: an unreadable registry
-    or wishlist is reported in the dict (and printed) instead -- a campaign
-    whose readers never ask for a feed must not stop on the registry's
-    syntax. The router (_route_reader_feed_requests) reads the registry again
-    and fails loud when a proposal does carry requires_feed."""
-    import decide_next as _dn  # tools/ sibling (on sys.path, module top)
-    out = {"rule": ("Set requires_feed.feed to one of these names when one fits; coin a new "
-                    "lowercase snake_case name only when none does, never a synonym of a "
-                    "listed one. wishlist_only names are wishlist entries, not wired feeds.")}
-    try:
-        reg = _dn.load_feed_registry(_TRADING_BOT_ROOT)
-        out["wired"], out["reserved"] = reg["wired"], reg["reserved"]
-    except _dn.DecideNextError as exc:
-        print(f"⚠️ WARNING: reader feed names: feed registry unreadable: {exc}")
-        reg = {"wired": [], "reserved": []}
-        out["registry_error"] = str(exc)
-    wishlist = []
-    path = ROOT / FEED_WISHLIST_REL
-    try:
-        doc = yaml.safe_load(path.read_text(encoding="utf-8")) if path.exists() else {}
-        for item in (doc or {}).get("wishlist") or []:
-            name = item.get("feed_name") if isinstance(item, dict) else None
-            if isinstance(name, str) and name not in wishlist:
-                wishlist.append(name)
-    except (OSError, yaml.YAMLError, AttributeError) as exc:
-        print(f"⚠️ WARNING: reader feed names: {FEED_WISHLIST_REL} unreadable: {exc}")
-        out["wishlist_error"] = str(exc)
-    known = set(reg["wired"]) | set(reg["reserved"])
-    out["wishlist_only"] = sorted(n for n in wishlist if n not in known)
-    return out
 
 
 async def _invoke_reader_llm(prompt: str) -> tuple:
@@ -5733,207 +5038,9 @@ def _reader_strictness() -> dict:
     return {"strict_provenance": True, **({"analyst": True} if _analyst_enabled() else {})}
 
 
-def _reader_received_files(category: str, run_dir: Path) -> tuple:
-    """({artifacts-relative path: parsed document}, [unavailable paths]) -- the
-    citable files a reader received: its report, the grid, the registry
-    summary, the card, the block manifest and the base config; under
-    reader_findings also the claim digest, the earlier findings and the claim
-    measurement; under E-072 the exploration copies instead (never the
-    all-window files). Shared by _citation_provenance (record only) and the
-    E-073 value check. Raises only on a broken flag."""
-    arts = run_dir / "artifacts"
-    files, unavailable = {}, []
-    config_rel = _reader_base_config_rel(run_dir)
-    config_rel = config_rel[len("artifacts/"):] if config_rel.startswith("artifacts/") else config_rel
-    rels = (f"reports/{category}.yaml", "grid_evaluation.yaml", "registry_summary.yaml",
-            "hypothesis_card.yaml", "block_manifest.yaml", config_rel)
-    if _reader_findings_enabled():  # E-068 slice 5: the v3 inputs a reading may cite too
-        _rf = _reader_findings_module()
-        gone = set(_reader_v3_missing_inputs(run_dir))  # an older copy is not this run's
-        if _explore_confirm_active(run_dir):  # E-072: the exploration copies it received
-            rels = (tuple(_exploration_rel(r) for r in (
-                        f"reports/{category}.yaml", "grid_evaluation.yaml",
-                        "registry_summary.yaml", "hypothesis_card.yaml",
-                        "block_manifest.yaml"))
-                    + (config_rel,)
-                    + tuple(n for n in _reader_v3_input_names(run_dir) if n not in gone))
-        else:
-            rels += tuple(n for n in (_rf.DIGEST_ARTIFACT, _rf.READER_SUMMARY_ARTIFACT)
-                          if n not in gone) + (_claim_measurement_name(run_dir),)
-    for rel in rels:
-        try:
-            doc = yaml.safe_load((arts / rel).read_text(encoding="utf-8"))
-        except (OSError, yaml.YAMLError):
-            doc = None
-        if isinstance(doc, dict):
-            files[rel] = doc
-        else:
-            unavailable.append(rel)
-    return files, unavailable
-
-
-def _citation_provenance(category: str, run_dir: Path, body: str) -> dict:
-    """C5.7b-2 (D-048, S4, option A -- record only): for each proposal in a
-    validated reader body, which cited field paths exist in the files the reader
-    received (reports/<category>.yaml, grid_evaluation.yaml, registry_summary.yaml).
-    Returns the audit-log block. Never raises and never gates: any failure is
-    recorded as `error` (whole block) or per proposal, and an unreadable file is
-    listed in `files_unavailable` -- an absent grid or registry summary is a
-    normal condition, not a fault."""
-    try:
-        rp = _reader_proposals_module()
-        v3 = _reader_findings_enabled()
-        files, unavailable = _reader_received_files(category, run_dir)
-        block = {"files_read": sorted(files), "files_unavailable": sorted(unavailable),
-                 "proposals": {}}
-        proposals = yaml.safe_load(body)
-        if v3 and isinstance(proposals, dict):
-            # a v3 reading: its own evidence (keyed by reading_id), then each item's
-            proposals = [] if "skipped" in proposals else (
-                [{"proposal_id": proposals.get("reading_id"), "evidence": proposals.get("evidence")}]
-                + rp.flatten_reading(proposals))
-        for i, p in enumerate(proposals if isinstance(proposals, list) else []):
-            if not isinstance(p, dict):
-                continue
-            pid = p.get("proposal_id")
-            pid = pid if isinstance(pid, str) and pid.strip() else f"#{i}"
-            try:
-                block["proposals"][pid] = rp.resolve_evidence_paths(files, p.get("evidence"))
-            except Exception as exc:  # recorded per proposal, never raised
-                block["proposals"][pid] = {"error": f"{type(exc).__name__}: {exc}"}
-        return block
-    except Exception as exc:  # a normal-run condition never raises out of the stage
-        return {"error": f"{type(exc).__name__}: {exc}"}
-
-
 # ---------------------------------------------------------------------------
-# E-073 step 2 (D-083): value-checked citations, under
-# orchestrator.observable_backtest only (v3 readers). A reading's cited
-# path=value pairs are compared with the files the reader received
-# (reader_proposals.check_citation_values); a missing or mis-valued citation
-# gets the reader's ONE retry with a code-written note; still wrong, the
-# reading is kept and the citation recorded (citation_checks/<category>.yaml),
-# which decide-next shows as a warning. Never a stop.
-# ---------------------------------------------------------------------------
-
-CITATION_RETRY_MAX_LINES = 30
-
-
-def _citation_value_check(category: str, run_dir: Path, body: str) -> dict:
-    """{files_read, items: {item id: {checked, bad}}, n_bad} for a validated v3
-    reading body: the reading's own evidence (keyed by reading_id) and each
-    side finding's. Never raises: a failure is {"error": ...} (no retry, no
-    flag -- an unchecked citation is not a wrong one)."""
-    try:
-        rp = _reader_proposals_module()
-        doc = yaml.safe_load(body)
-        if not isinstance(doc, dict) or "skipped" in doc:
-            return {"files_read": [], "items": {}, "n_bad": 0}
-        files, _unavailable = _reader_received_files(category, run_dir)
-        items = [(doc.get("reading_id"), doc.get("evidence"))] + [
-            (s.get("proposal_id"), s.get("evidence"))
-            for s in doc.get("side_findings") or [] if isinstance(s, dict)]
-        out = {}
-        for iid, evidence in items:
-            res = rp.check_citation_values(files, evidence if isinstance(evidence, list) else [])
-            out[str(iid)] = {"checked": len(res["citations"]), "bad": res["bad"]}
-        return {"files_read": sorted(files), "items": out,
-                "n_bad": sum(len(v["bad"]) for v in out.values())}
-    except Exception as exc:  # noqa: BLE001 -- information only, never a stop
-        return {"error": f"{type(exc).__name__}: {exc}"}
-
-
-def _citation_line(iid: str, bad: dict) -> str:
-    """One retry line: the cited path, the cited value and the problem -- never
-    a value from the files (the reader re-reads its inputs; a shown value
-    could be copied without checking anything)."""
-    line = f"- {iid}: `{bad['path']}` cited {bad.get('cited')!r}: "
-    if bad.get("status") != _reader_proposals_module().CITATION_MISSING:
-        return line + "value does not match the file"
-    near = [f"`{s['path']}`" for s in bad.get("suggestions") or [] if isinstance(s, dict)]
-    return line + "path not found" + ("; nearest real paths: " + ", ".join(near) if near else "")
-
-
-def _citation_retry_note(check: dict, body: str) -> str:
-    """The code-written retry block: each bad citation (path, cited value,
-    problem), the rule, and the reader's own answer verbatim -- a citation
-    fix is a repair, not a new answer (run_067/run_069)."""
-    lines = [_citation_line(iid, b) for iid, rec in check["items"].items() for b in rec["bad"]]
-    more = len(lines) - CITATION_RETRY_MAX_LINES
-    lines = lines[:CITATION_RETRY_MAX_LINES] + ([f"- ... and {more} more"] if more > 0 else [])
-    return ("\n\n    YOUR PREVIOUS OUTPUT CITED FIELDS THAT DO NOT MATCH THE FILES YOU READ "
-            "(checked by code):\n    " + "\n    ".join(lines)
-            + "\n\n    The rule: " + _reader_proposals_module().CITATION_VALUE_RULE
-            + "\n\n    Fix each listed citation -- the exact path and the value as that file "
-              "shows it -- or remove it, and correct any statement that rests on it. Keep "
-              "everything else exactly as it was. Output ONE fenced ```yaml block holding ONE "
-              "reading mapping (schema_version: 3).\n"
-            + "\n    Your previous answer, verbatim:\n<<<PREVIOUS ANSWER\n" + body
-            + "PREVIOUS ANSWER>>>\n")
-
-
-def _same_reading_structure(first: str, retry: str) -> bool:
-    """Whether a citation retry kept the first answer's structure
-    (reader_findings.reading_structure: the same items, kinds, claim kinds
-    and tests). Never raises: a failure is False (the first answer is kept)."""
-    try:
-        rf = _reader_findings_module()
-        return rf.reading_structure(yaml.safe_load(first), **_claim_check_kw()) == \
-            rf.reading_structure(yaml.safe_load(retry), **_claim_check_kw())
-    except Exception:  # noqa: BLE001 -- unreadable = not shown to be the same
-        return False
-
-
-def _write_citation_check(category: str, run_id: str, run_dir: Path, record: dict) -> None:
-    """artifacts/citation_checks/<category>.yaml, atomically. Never raises."""
-    try:
-        rp = _reader_proposals_module()
-        dest = Path(run_dir) / "artifacts" / rp.CITATION_CHECKS_DIR / f"{category}.yaml"
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        doc = {"schema_version": 1, "run_id": run_id, "category": category,
-               "rule": rp.CITATION_VALUE_RULE, **record,
-               "note": ("kept, not dropped: a flagged side finding is still a candidate; "
-                        "decide-next shows a citation_mismatch warning on it")}
-        fd, tmp_name = tempfile.mkstemp(prefix=f".{category}.", suffix=".tmp",
-                                        dir=str(dest.parent))
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as f:
-                f.write(yaml.safe_dump(doc, sort_keys=False, allow_unicode=True))
-            os.replace(tmp_name, dest)
-        except BaseException:
-            with contextlib.suppress(OSError):
-                os.unlink(tmp_name)
-            raise
-    except Exception as exc:  # noqa: BLE001 -- information only
-        print(f"⚠️  [E-073] {category}: the citation check could not be written ({exc}); "
-              f"the run continues.")
-
-
-def _validate_reader_output(text: str, category: str, run_dir: Path):
-    """Parse one reader response and validate it for its category in a scratch
-    directory. Returns (body, None) when valid, (None, error message) when not.
-    Never touches artifacts/proposals/."""
-    if _reader_findings_enabled():  # E-068 slice 5: a v3 reading
-        return _validate_reading_output(text, category, run_dir)
-    blocks = _READER_OUTPUT_BLOCK_RE.findall(text or "")
-    if len(blocks) != 1:
-        return None, (f"{category} reader returned {len(blocks)} fenced YAML block(s); "
-                      f"exactly one is required.")
-    body = blocks[0].strip() + "\n"
-    rp = _reader_proposals_module()
-    scratch = Path(tempfile.mkdtemp(prefix=f".reader_{category}_", dir=str(run_dir / "artifacts")))
-    try:
-        (scratch / f"{category}.yaml").write_text(body, encoding="utf-8")
-        rp.load_proposals(scratch, [category], **_reader_strictness())
-    except rp.ProposalError as exc:
-        return None, str(exc).replace(str(scratch), "proposals")
-    finally:
-        shutil.rmtree(scratch, ignore_errors=True)
-    return body, None
-
-
-# ---------------------------------------------------------------------------
-# E-068 slice 5 (D-073): v3 readings, under orchestrator.reader_findings only.
+# E-068 slice 5 (D-073): v3 readings (D-198: the analyst writes them now; the
+# reader_findings flag and the five readers are gone).
 # ---------------------------------------------------------------------------
 
 def _scaffolding_pointers(run_dir: Path) -> list:
@@ -6053,128 +5160,8 @@ def _envelope_content_errors(s, i: int, run_dir: Path) -> list:
     return []
 
 
-def _validate_reading_output(text: str, category: str, run_dir: Path):
-    """(body, None) for a valid v3 reading, else (None, message): exactly one
-    fenced YAML block holding one reading for this category and run (shape:
-    reader_proposals.check_reading, from the model, so `skipped` is refused),
-    then _reading_content_errors."""
-    blocks = _READER_OUTPUT_BLOCK_RE.findall(text or "")
-    if len(blocks) != 1:
-        return None, (f"{category} reader returned {len(blocks)} fenced YAML block(s); "
-                      f"exactly one is required.")
-    body = blocks[0].strip() + "\n"
-    rp = _reader_proposals_module()
-    try:
-        doc = yaml.safe_load(body)
-    except yaml.YAMLError as exc:
-        return None, f"{category} reader output is not YAML: {exc}"
-    try:
-        rp.check_reading(doc, category, "reading", from_model=True,
-                         **({"envelope": True} if _folds_enabled() else {}),
-                         **_reader_strictness())
-    except rp.ProposalError as exc:
-        return None, str(exc)
-    expected = f"{category}-{Path(run_dir).name}"
-    if doc["reading_id"] != expected:
-        return None, f"reading: reading_id={doc['reading_id']!r} must be {expected!r}"
-    errors = _reading_content_errors(doc, category, run_dir)
-    if errors:
-        return None, "; ".join(errors)
-    return body, None
-
-
 def _dump_reading(doc: dict) -> str:
     return yaml.safe_dump(doc, sort_keys=False, allow_unicode=True)
-
-
-SIDE_FINDINGS_NEED_ANALYST = "side_findings_need_the_analyst"
-
-
-def _refuse_side_findings_under_folds(text: str, category: str) -> tuple:
-    """(text, record) for a v3 reader answer. E-077 PR-2 (D-087), review fix: under
-    orchestrator.folds.enabled a claim needs a vehicle, and only the analyst (PR-5, not
-    built yet) writes one. Until it exists today's readers produce NO side findings: every
-    side finding of a reader's answer is refused here, BEFORE validation, with no retry and
-    without a refusal text that could teach the reader the vehicle shape. The reading's
-    explanation and evidence are kept (the answer is rewritten with `side_findings: []`).
-    `record` is None when nothing was refused, else {rule, n, proposal_ids}. An answer that
-    cannot be parsed, or without a side-finding list, is returned unchanged (the usual
-    validation reports it, and none of its messages names the vehicle). Flag off: unchanged."""
-    if not _folds_enabled():
-        return text, None
-    blocks = _READER_OUTPUT_BLOCK_RE.findall(text or "")
-    if len(blocks) != 1:
-        return text, None
-    try:
-        doc = yaml.safe_load(blocks[0])
-    except yaml.YAMLError:
-        return text, None
-    sides = doc.get("side_findings") if isinstance(doc, dict) else None
-    if not isinstance(sides, list) or not sides:
-        return text, None
-    record = {"rule": SIDE_FINDINGS_NEED_ANALYST, "n": len(sides),
-              "proposal_ids": [s.get("proposal_id") if isinstance(s, dict) else None for s in sides]}
-    print(f"⚠️  [E-077] {category}: {len(sides)} side finding(s) not accepted under "
-          f"orchestrator.folds.enabled ({SIDE_FINDINGS_NEED_ANALYST}); the reading is kept "
-          f"without them, no retry.")
-    return "```yaml\n" + _dump_reading({**doc, "side_findings": []}) + "```", record
-
-
-def _salvage_reading_output(text: str, category: str, run_dir: Path) -> tuple:
-    """(body, dropped) for a v3 answer refused after its retry. When the
-    reading itself is unusable (no single block, not YAML, or its explanation
-    / evidence / ids / rubric refused), the body is a code-written `skipped`
-    reading with rule output_refused_after_retry -- never an empty reading,
-    which would read as "nothing to propose". Otherwise each side finding is
-    validated on its own: the valid ones are kept, the others dropped and
-    listed. A stand-alone `patch` (removed in continuation 2) is dropped and
-    listed. Nothing is repaired: a missing key is not filled in."""
-    rf = _reader_findings_module()
-    run_id = Path(run_dir).name
-
-    def _refused(error: str) -> tuple:
-        doc = rf.skipped_reading(category, run_id, {
-            "rule": rf.SKIP_OUTPUT_REFUSED,
-            "reason": f"the reader's answer was refused after its retry: {error}"})
-        return _dump_reading(doc), [{"index": None, "proposal_id": None, "error": error}]
-
-    def _check(doc) -> str | None:
-        return _validate_reading_output("```yaml\n" + _dump_reading(doc) + "```",
-                                        category, run_dir)[1]
-
-    blocks = _READER_OUTPUT_BLOCK_RE.findall(text or "")
-    if len(blocks) != 1:
-        return _refused(f"{len(blocks)} fenced YAML block(s); exactly one is required")
-    try:
-        doc = yaml.safe_load(blocks[0])
-    except yaml.YAMLError as exc:
-        return _refused(f"not YAML: {exc}")
-    if not isinstance(doc, dict) or not isinstance(doc.get("side_findings"), list):
-        return _refused("not a reading mapping with side_findings")
-    sides = doc["side_findings"]
-    patch = doc.get("patch")
-    base = {k: v for k, v in doc.items() if k != "patch"}
-    base["side_findings"] = []
-    err = _check(base)
-    if err is not None:
-        return _refused(err)
-    kept, dropped = [], []
-    for i, s in enumerate(sides):
-        err = _check({**base, "side_findings": kept + [s]})
-        if err is None:
-            kept.append(s)
-        else:
-            dropped.append({"index": i, "proposal_id": s.get("proposal_id")
-                            if isinstance(s, dict) else None, "error": err})
-    final = {**base, "side_findings": kept}
-    if patch is not None:  # continuation 2: never kept, always listed
-        dropped.append({"index": "patch", "proposal_id": patch.get("proposal_id")
-                        if isinstance(patch, dict) else None,
-                        "error": _reader_proposals_module().PATCH_REMOVED_MESSAGE})
-    err = _check(final)
-    if err is not None:  # kept items that only fail together
-        return _refused(f"kept set refused: {err}")
-    return _dump_reading(final), dropped
 
 
 def _review_written_reading(category: str, run_id: str, run_dir: Path, body: str) -> dict:
@@ -6214,319 +5201,6 @@ def _review_written_reading(category: str, run_id: str, run_dir: Path, body: str
     except Exception as exc:  # noqa: BLE001 -- information only
         print(f"⚠️  [E-068] {category} reading review could not run ({exc}); recorded.")
         return {"error": f"{type(exc).__name__}: {exc}"}
-
-
-def run_reader_worker(category: str, run_id: str, run_dir: Path, stage_attempt=0) -> Path:
-    """Run ONE reader skill and write its output to the explicit path
-    artifacts/proposals/<category>.yaml (S1_FINDINGS_5B_II.md §2 option (a):
-    this function owns the path; any filename the model writes in its fenced
-    block is ignored). The output is validated for this category
-    (reader_proposals) BEFORE it reaches the final path, via a temp file and
-    os.replace, so a bad output can never sit at the final path and block a
-    resume. An invalid output gets exactly one retry with the validation
-    error appended to the prompt (same bound as _invoke_agent_with_yaml_retry).
-    CUL-380 (run_065, 2026-10-02): if that also fails, the raw output is saved
-    as debug_specialist_readers_<category>_raw_output.txt and the run does NOT
-    stop. Readers only propose next ideas; one malformed proposal must not
-    block the run, nor the recording of the grid's verdict that follows. Each
-    proposal is re-validated on its own (_salvage_reader_output): the valid
-    ones are kept, the invalid ones are dropped and listed with their errors
-    in the audit log (`dropped_proposals`). A dropped proposal is never
-    repaired or guessed at."""
-    handoff = _reader_handoff(category, run_id, stage_attempt, run_dir)
-    base_prompt = _build_stage_prompt("specialist_readers", handoff, run_dir,
-                                      skill_file_name=_reader_skill_dir(category))
-    prompt = base_prompt
-    dest = run_dir / "artifacts" / "proposals" / f"{category}.yaml"
-    prov_on = _score_provenance_enabled()  # C5.7b-1
-    v3 = _reader_findings_enabled()  # E-068 slice 5
-    missing_inputs = _reader_v3_missing_inputs(run_dir) if v3 else []
-    cite_on = v3 and _observable_backtest_enabled()  # E-073 step 2 (D-083)
-    cite = {"retried": False}  # the citation check's state across the two attempts
-
-    def _accept(body, entry, key, meta):
-        """Write a validated body to the final path (provenance stamped first)."""
-        if cite_on:
-            # E-073 step 2: the final body's citations, recorded; still wrong
-            # after the one retry = kept and flagged (never dropped, never a stop)
-            check = _citation_value_check(category, run_dir, body)
-            flagged = sorted(i for i, r in (check.get("items") or {}).items() if r["bad"])
-            record = {"status": ("error" if "error" in check else
-                                 "flagged" if flagged else "clean"),
-                      "retried": cite["retried"],
-                      **{k: cite[k] for k in ("first_attempt_bad", "retry_attempt_bad",
-                                              "kept_answer", "retry_skipped",
-                                              "retry_answer_refused") if k in cite},
-                      "flagged": flagged, **check}
-            entry["citation_check"] = {k: record[k] for k in
-                                       ("status", "retried", "flagged", "n_bad", "error")
-                                       if k in record}
-            update_state(path=run_dir, audit_log={key: entry})
-            _write_citation_check(category, run_id, run_dir, record)
-            if flagged:
-                print(f"⚠️  [E-073] {category}: {check['n_bad']} citation(s) still missing or "
-                      f"mis-valued after the retry, in {flagged} -- kept and flagged "
-                      f"(artifacts/citation_checks/{category}.yaml).")
-        if prov_on:
-            # S1: the proposals carry the model that answered, not its
-            # self-report; recorded in the audit log, never a stop or retry.
-            body, record = _stamp_reader_body(body, category, run_dir, meta.get("models"))
-            entry["provenance"].update(record)
-            # S4 (option A): which cited field paths exist; record only.
-            entry["provenance"]["citations"] = _citation_provenance(category, run_dir, body)
-            update_state(path=run_dir, audit_log={key: entry})
-            if record["mismatch"]:
-                print(f"⚠️  score provenance: {category} reader answered by "
-                      f"{record['observed']!r}, requested {record['requested']!r} "
-                      f"(recorded, not stopped).")
-        if v3:
-            # E-068 slice 5: warnings and test requests BEFORE the file lands --
-            # a resume finds the file and never re-reviews it (review fix 4).
-            # Information only; test-request rows are idempotent on a re-run.
-            # Accepted trade-off (review round 2): a crash between this review
-            # and os.replace leaves a test-request row for a reading that never
-            # landed; the resumed reader answers again. Over-recording a request
-            # is preferred to losing one.
-            review = _review_written_reading(category, run_id, run_dir, body)
-            if review:
-                entry["reading_review"] = review
-                update_state(path=run_dir, audit_log={key: entry})
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        fd, tmp_name = tempfile.mkstemp(prefix=f".{category}.", suffix=".tmp", dir=str(dest.parent))
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as f:
-                f.write(body)
-            os.replace(tmp_name, dest)
-        except BaseException:
-            with contextlib.suppress(OSError):
-                os.unlink(tmp_name)
-            raise
-        print(f"✅ [READER COMPLETE] {category} -> {dest.relative_to(run_dir).as_posix()}")
-        return dest
-
-    for attempt in range(2):
-        if attempt:
-            _check_reader_budget(run_dir, category)
-        print(f"\n🧠 [READER INVOKED] {category} ({_reader_skill_dir(category)})"
-              + (" (validation retry)" if attempt else ""))
-        start = time.time()
-        text, meta = asyncio.run(_invoke_reader_llm(prompt))
-        key = f"specialist_readers_{category}_attempt_{stage_attempt}" + (f"_retry{attempt}" if attempt else "")
-        entry = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "engine": "claude-agent-sdk",
-            "execution_time_seconds": round(time.time() - start, 2),
-            "cost_usd": meta.get("cost_usd", 0.0),
-            "num_turns": meta.get("num_turns"),
-            "tokens": _usage_token_record(meta.get("usage") or {}),
-        }
-        if prov_on:
-            entry["provenance"] = _base_provenance(meta.get("models"), meta.get("result_models"))
-        if missing_inputs:  # E-068 slice 5: kept per reading, a resume cannot erase it
-            entry["missing_inputs"] = list(missing_inputs)
-        if v3:  # E-077 PR-2: under the folds flag a reader's side findings are not accepted
-            text, refused = _refuse_side_findings_under_folds(text, category)
-            if refused:
-                entry["side_findings_refused"] = refused
-        update_state(path=run_dir, audit_log={key: entry})
-        body, error = _validate_reader_output(text, category, run_dir)
-        if error is None and cite_on and attempt == 0:
-            check = _citation_value_check(category, run_dir, body)
-            if check.get("n_bad"):
-                try:
-                    _check_reader_budget(run_dir, category)
-                except _ReaderBudgetExceeded as exc:  # E-073: a citation retry never stops a run
-                    cite["retry_skipped"] = f"no retry: {exc}"
-                else:
-                    cite.update(retried=True, first_attempt_bad=check["n_bad"],
-                                first_body=body, first_meta=meta)
-                    entry["citation_check"] = {"status": "retry", "n_bad": check["n_bad"]}
-                    update_state(path=run_dir, audit_log={key: entry})
-                    print(f"⚠️  [E-073] {category}: {check['n_bad']} citation(s) missing or "
-                          f"mis-valued -- retrying once with the list.")
-                    prompt = base_prompt + _citation_retry_note(check, body)
-                    continue
-        if error is None and cite.get("first_body") is not None:
-            # the citation retry's answer replaces the first one only when it has
-            # strictly fewer bad citations AND proposes the same side findings
-            # (a check error is no evidence)
-            retry_check = _citation_value_check(category, run_dir, body)
-            cite["retry_attempt_bad"] = retry_check.get("n_bad")
-            if ("error" in retry_check or retry_check["n_bad"] >= cite["first_attempt_bad"]
-                    or not _same_reading_structure(cite["first_body"], body)):
-                cite["kept_answer"] = "first"
-                print(f"⚠️  [E-073] {category}: the citation retry did not reduce the bad "
-                      f"citations ({cite['first_attempt_bad']} -> "
-                      f"{retry_check.get('n_bad', 'check error')}) or changed the side "
-                      f"findings; the first answer is kept.")
-                return _accept(cite["first_body"], entry, key, cite["first_meta"])
-            cite["kept_answer"] = "retry"
-        if error is None:
-            return _accept(body, entry, key, meta)
-        if cite_on and attempt == 0:
-            cite["retried"] = True  # the one retry is spent on the shape error
-        if attempt == 0:
-            print(f"⚠️  {category} reader output invalid -- retrying once with the error: {error}")
-            prompt = base_prompt + (
-                "\n\n    YOUR PREVIOUS OUTPUT FAILED VALIDATION:\n    " + error +
-                ("\n\n    Fix exactly this and output ONE fenced ```yaml block holding ONE "
-                 "reading mapping (schema_version: 3; `side_findings: []` when there is "
-                 "none).\n" if v3 else
-                 "\n\n    Fix exactly this and output ONE fenced ```yaml block holding a YAML "
-                 "list of proposals (`[]` for none).\n"))
-    debug_path = run_dir / "artifacts" / f"debug_specialist_readers_{category}_raw_output.txt"
-    debug_path.write_text(text or "", encoding="utf-8")
-    if cite.get("first_body") is not None:
-        # E-073 step 2: the citation retry's answer failed the shape check -- the
-        # first answer (valid, its citations flagged) is kept, never salvaged away
-        cite["retry_answer_refused"] = error
-        cite["kept_answer"] = "first"
-        print(f"⚠️  [E-073] {category}: the citation retry's answer was refused ({error}); the "
-              f"first answer is kept with its citations flagged. Raw retry output saved to "
-              f"{debug_path}.")
-        return _accept(cite["first_body"], entry, key, cite["first_meta"])
-    body, dropped = _salvage_reader_output(text, category, run_dir)
-    entry["dropped_proposals"] = dropped
-    update_state(path=run_dir, audit_log={key: entry})
-    print(f"⚠️  {category} reader output invalid after one retry: {error} -- kept the valid "
-          f"proposals, dropped {len(dropped)} (listed in the audit log under {key}); the run "
-          f"continues. Raw output saved to {debug_path}.")
-    return _accept(body, entry, key, meta)
-
-
-def _salvage_reader_output(text: str, category: str, run_dir: Path) -> tuple:
-    """CUL-380: (body, dropped) from a reader answer that failed validation even
-    after its retry. Each proposal is validated on its own, exactly as a whole
-    answer is (_validate_reader_output); the valid ones form the body, the
-    invalid ones are listed as {index, proposal_id, error}. An answer that
-    cannot be read as one YAML list at all gives `[]` and one dropped entry
-    (index None). The body always passes _validate_reader_output."""
-    if _reader_findings_enabled():  # E-068 slice 5: a v3 reading
-        return _salvage_reading_output(text, category, run_dir)
-    blocks = _READER_OUTPUT_BLOCK_RE.findall(text or "")
-    if len(blocks) != 1:
-        return "[]\n", [{"index": None, "proposal_id": None,
-                         "error": f"{len(blocks)} fenced YAML block(s); exactly one is required"}]
-    try:
-        items = yaml.safe_load(blocks[0])
-    except yaml.YAMLError as exc:
-        return "[]\n", [{"index": None, "proposal_id": None, "error": f"not YAML: {exc}"}]
-    if not isinstance(items, list):
-        return "[]\n", [{"index": None, "proposal_id": None,
-                         "error": f"not a YAML list (got {type(items).__name__})"}]
-    kept, dropped = [], []
-    for i, item in enumerate(items):
-        one = "```yaml\n" + yaml.safe_dump([item], sort_keys=False, allow_unicode=True) + "```"
-        _body, err = _validate_reader_output(one, category, run_dir)
-        if err is None:
-            kept.append(item)
-        else:
-            dropped.append({"index": i,
-                            "proposal_id": item.get("proposal_id") if isinstance(item, dict) else None,
-                            "error": err})
-    body = yaml.safe_dump(kept, sort_keys=False, allow_unicode=True) if kept else "[]\n"
-    final, err = _validate_reader_output("```yaml\n" + body + "```", category, run_dir)
-    if err is not None:  # kept proposals that only fail together (e.g. duplicate ids)
-        dropped += [{"index": None, "proposal_id": None, "error": f"kept set refused: {err}"}]
-        return "[]\n", dropped
-    return final, dropped
-
-
-def _run_specialist_readers(run_id: str, run_dir: Path, stage_attempt=0) -> dict:
-    """The per-category loop (S1_FINDINGS_5B_II.md §3 shape (a)). Sequential:
-    the orchestrator has no fan-out. A category whose proposals file already
-    exists is re-validated, not re-run -- safe because protocol_execution
-    clears artifacts/proposals/ on every attempt under this flag, so an
-    existing file can only come from this same attempt's earlier, validated
-    reader call. The budget is checked before every reader (five calls share
-    one stage). Returns the validated proposals: nothing in this module
-    routes the run on them; the stage body only copies their requires_feed
-    requests into data_requests.yaml (E-035 S2c).
-
-    D-197: under orchestrator.analyst.enabled the analyst's two lenses run in their own stage,
-    BEFORE this one (_run_analyst_stage), so their files are already here and the loop
-    below only validates them; this stage writes the other three categories' code-skipped
-    readings (replaced_by_analyst). The lens branch below runs the analyst only for a run whose
-    pipeline_state predates the stage and was paused inside specialist_readers (resumed
-    here, the file still absent) -- the one route by which an old state completes."""
-    categories = list(READER_CATEGORIES)
-    rp = _reader_proposals_module()
-    proposals_dir = run_dir / "artifacts" / "proposals"
-    v3 = _reader_findings_enabled()  # E-068 slice 5
-    analyst = _analyst_enabled()     # E-075 PR-5 (D-092): the analyst replaces the readers
-    lens_of = ({cat: lens for lens, cat in _analyst_session_module().LENS_CATEGORY.items()}
-               if analyst else {})
-    refold_off = _refold_readers_off(run_dir)  # D-122: None unless an operator re-run
-    for category in categories:
-        dest = proposals_dir / f"{category}.yaml"
-        if dest.exists():
-            rp.load_proposals(proposals_dir, categories, **_reader_strictness())
-            print(f"⏭️  proposals/{category}.yaml already present and valid -- reader not re-run.")
-            continue
-        if refold_off is not None:
-            _write_skipped_reading(category, run_id, run_dir, refold_off)
-            print(f"⏭️  [D-122] {category} reader skipped by rule {refold_off['rule']} "
-                  f"(no model call).")
-            rp.load_proposals(proposals_dir, categories, **_reader_strictness())
-            continue
-        if analyst:
-            if category in lens_of:
-                _check_reader_budget(run_dir, category)
-                run_analyst_worker(lens_of[category], run_id, run_dir, stage_attempt)
-            else:
-                _write_skipped_reading(category, run_id, run_dir, {
-                    "rule": _analyst_session_module().REPLACED_RULE,
-                    "reason": ("orchestrator.analyst.enabled: the analyst's lenses "
-                               f"({sorted(lens_of.values())}) replace the readers; no lens "
-                               f"writes {category}")})
-                print(f"⏭️  [E-075] {category}: replaced by the analyst (no model call).")
-            rp.load_proposals(proposals_dir, categories, **_reader_strictness())
-            continue
-        if v3 and _skip_reader_by_rule(category, run_id, run_dir):
-            rp.load_proposals(proposals_dir, categories, **_reader_strictness())
-            continue
-        if v3 and _skip_reader_exploration_unavailable(category, run_id, run_dir):
-            rp.load_proposals(proposals_dir, categories, **_reader_strictness())
-            continue
-        _check_reader_budget(run_dir, category)
-        run_reader_worker(category, run_id, run_dir, stage_attempt)
-        rp.load_proposals(proposals_dir, categories, **_reader_strictness())
-    missing = [c for c in categories if not (proposals_dir / f"{c}.yaml").exists()]
-    if missing:
-        raise FileNotFoundError(f"specialist_readers finished without proposals for {missing}")
-    return rp.load_proposals(proposals_dir, categories, **_reader_strictness())
-
-
-def _skip_reader_by_rule(category: str, run_id: str, run_dir: Path) -> bool:
-    """E-068 slice 5 (operator, 2026-10-05): a reader whose report has nothing
-    to read is not called (reader_findings.skip_rule). Its proposals file is a
-    code-written `skipped` reading with the rule -- never `[]` -- written
-    atomically. Returns True when skipped. An unreadable input means "do not
-    skip" (the reader then runs as usual)."""
-    rf = _reader_findings_module()
-    arts = Path(run_dir) / "artifacts"
-
-    def _opt(path: Path):
-        try:
-            if path.suffix == ".json":
-                return json.loads(path.read_text(encoding="utf-8"))
-            return load_yaml(path)
-        except (OSError, ValueError, yaml.YAMLError):
-            return None
-    try:
-        skip = rf.skip_rule(category,
-                            manifest=_opt(arts / "block_manifest.yaml"),
-                            base_config=_opt(Path(run_dir) / _reader_base_config_rel(run_dir)),
-                            report=_opt(arts / "reports" / f"{category}.yaml"))
-    except Exception as exc:  # noqa: BLE001 -- an odd input means "do not skip"
-        print(f"⚠️  [E-068] {category} skip rule could not be read ({exc}); the reader runs.")
-        skip = None
-    if skip is None:
-        return False
-    _write_skipped_reading(category, run_id, run_dir, skip)
-    print(f"⏭️  [E-068] {category} reader skipped by rule {skip['rule']} (no model call): "
-          f"{skip['reason']}")
-    return True
 
 
 REFOLD_BRIEF_KEY = "refold"  # D-122: research_brief.yaml {source_run, fold}
@@ -6574,328 +5248,10 @@ def _write_skipped_reading(category: str, run_id: str, run_dir: Path, skip: dict
         raise
 
 
-# E-072: the readers' copies (under artifacts/exploration/) a v3 reader cannot
-# run without; any one absent -> the reader is skipped by rule
-# exploration_inputs_unavailable. The digest and earlier-findings copies are
-# not here: they follow slice 5's gap rule (the reader runs without them).
-_EXPLORATION_REQUIRED_COPIES = ("reports/{category}.yaml", "grid_evaluation.yaml",
-                                "registry_summary.yaml", "hypothesis_card.yaml")
-
-
-def _skip_reader_exploration_unavailable(category: str, run_id: str, run_dir: Path) -> bool:
-    """E-072 (PR #340 review, finding 2): under orchestrator.explore_confirm, a
-    reader whose exploration copies are not all there (the split unreadable,
-    or a report / grid / registry / card copy that could not be written) is
-    not called: its proposals file is a code-written `skipped` reading with
-    rule exploration_inputs_unavailable, recorded in reader_skips.yaml like
-    every skip. Never the all-window files instead, never a stop: the stage
-    and the run continue. Flag off, or the split not applicable: False."""
-    if not _explore_confirm_active(run_dir):
-        return False
-    reason = _explore_confirm_module().exploration_inputs_missing(
-        Path(run_dir) / "artifacts", category, _EXPLORATION_REQUIRED_COPIES)
-    if reason is None:
-        return False
-    skip = {"rule": _reader_findings_module().SKIP_EXPLORATION_UNAVAILABLE, "reason": reason}
-    _write_skipped_reading(category, run_id, run_dir, skip)
-    print(f"⏭️  [E-072] {category} reader skipped by rule {skip['rule']} (no model call): "
-          f"{reason}")
-    return True
-
-
-def _write_reader_v3_inputs(run_dir: Path, run_id: str) -> dict:
-    """E-068 slice 5: before the first v3 reader, this run's measured claim
-    numbers (claim_result_digest.yaml) and the earlier runs' findings
-    (findings_summary_for_readers.yaml, this run left out). Information only:
-    an unreadable memory writes an `error` summary, never a stop.
-    Never stops the stage: a file that cannot be written (an OSError, or any
-    other error) is recorded -- console, and artifacts/reader_input_gaps.yaml
-    best effort -- an older copy of it is removed so it cannot pass as this
-    run's, and the readers run without it (_reader_handoff_v3 then names it
-    as missing). Returns {file name: error} for the files not written."""
-    rf = _reader_findings_module()
-    arts = Path(run_dir) / "artifacts"
-    gaps = {}
-    try:
-        save_yaml(arts / rf.DIGEST_ARTIFACT, rf.claim_result_digest(run_dir))
-    except Exception as exc:  # noqa: BLE001 -- information only
-        gaps[rf.DIGEST_ARTIFACT] = f"{type(exc).__name__}: {exc}"
-    try:
-        memory = _campaign_memory_module().load_memory(_campaign_memory_path())
-        summary = rf.reader_findings_summary(memory, run_id)
-    except Exception as exc:  # noqa: BLE001 -- information only
-        summary = {"schema_version": 1, "run_id": run_id, "status": "error",
-                   "detail": f"{type(exc).__name__}: {exc}", "findings": []}
-    try:
-        save_yaml(arts / rf.READER_SUMMARY_ARTIFACT, summary)
-    except Exception as exc:  # noqa: BLE001 -- information only
-        gaps[rf.READER_SUMMARY_ARTIFACT] = f"{type(exc).__name__}: {exc}"
-    for name in gaps:
-        try:
-            (arts / name).unlink(missing_ok=True)
-        except OSError as exc:
-            gaps[name] += f" (an older copy could not be removed: {type(exc).__name__}: {exc})"
-        print(f"⚠️  [E-068] readers v3: {name} could not be written ({gaps[name]}); the readers "
-              f"run without it.")
-    if _explore_confirm_active(run_dir):
-        # E-072: the readers read the exploration copies (never raises; a
-        # required copy that cannot be written skips the readers by rule --
-        # never the all-window file instead)
-        gaps.update(_write_exploration_reader_inputs(run_dir, run_id))
-    _record_reader_input_gaps(arts, run_id, gaps)
-    if not gaps:
-        print(f"📚 [E-068] readers v3: {rf.DIGEST_ARTIFACT} and {rf.READER_SUMMARY_ARTIFACT} "
-              f"written ({len(summary.get('findings') or [])} earlier finding(s) listed).")
-    return gaps
-
-
-def _record_reader_input_gaps(arts: Path, run_id: str, gaps: dict) -> None:
-    """artifacts/reader_input_gaps.yaml: the v3 inputs this stage attempt could
-    not write; no file when there were none (a gap file left by an earlier
-    attempt is removed). Never raises."""
-    try:
-        path = arts / _reader_findings_module().INPUT_GAPS_ARTIFACT
-        if gaps:
-            save_yaml(path, {"schema_version": 1, "run_id": run_id, "missing": dict(gaps),
-                             "effect": "the readers ran without these inputs"})
-        else:
-            path.unlink(missing_ok=True)
-    except Exception as exc:  # noqa: BLE001 -- information only
-        print(f"⚠️  [E-068] readers v3: the input gaps could not be recorded ({exc}); the "
-              f"readers run anyway.")
-        with contextlib.suppress(Exception):  # never leave an older attempt's record
-            (arts / _reader_findings_module().INPUT_GAPS_ARTIFACT).unlink(missing_ok=True)
-
-
-def _record_reader_skips(run_id: str, run_dir: Path) -> None:
-    """E-068 slice 5: every skipped reading of this run (a rule, or an answer
-    refused after its retry) in campaign_record/reader_skips.yaml, which the
-    campaign summary counts. Information only: never raises."""
-    try:
-        rf = _reader_findings_module()
-        rp = _reader_proposals_module()
-        readings = rp.load_readings(Path(run_dir) / "artifacts" / "proposals",
-                                    list(READER_CATEGORIES))
-        skips = {c: d["skipped"] for c, d in readings.items() if "skipped" in d}
-        if skips or (ROOT / rf.SKIPS_REL).exists():
-            rf.record_skips(ROOT, run_id, skips)
-    except Exception as exc:  # noqa: BLE001
-        print(f"⚠️  [E-068] reader skips could not be recorded ({exc}); the run continues.")
-
-
-# ---------------------------------------------------------------------------
-# E-072 (P-CUL-80): ideas are confirmed on data the proposer never saw, under
-# orchestrator.explore_confirm only (tools/explore_confirm.py).
-# ---------------------------------------------------------------------------
-
-def _exploration_rel(name: str) -> str:
-    """A readers' copy, relative to artifacts/: exploration/<name>."""
-    return f"{_explore_confirm_module().EXPLORATION_DIR}/{name}"
-
-
-def _explore_confirm_active(run_dir: Path | None) -> bool:
-    """E-072 for THIS run: the flag is on and the run's split is not recorded
-    as `not_applicable` (fewer than 2 windows -- the run then proceeds as if
-    the flag were off). Flag off: False, and no file is read. A missing or
-    unreadable split counts as active, so the readers are skipped by rule
-    rather than given the all-window files."""
-    if not _explore_confirm_enabled():
-        return False
-    if run_dir is None:
-        return True
-    return not _explore_confirm_module().split_not_applicable(Path(run_dir) / "artifacts")
-
-
-def _prepare_explore_confirm(run_dir: Path, run_id: str) -> dict | None:
-    """At protocol_execution entry, BEFORE any backtest: the previous
-    attempt's readers' copies and confirmation file are removed (a look
-    already counted in the campaign ledger stays counted), then the
-    pre-registered split (artifacts/explore_confirm.yaml, kept on a re-run)
-    is written from the run protocol and the variants' own protocol files.
-    Never raises (D-080: nothing stops): fewer than 2 windows is recorded as
-    `not_applicable` and the run proceeds as if the flag were off; any other
-    failure is logged loudly and the readers are then skipped by rule
-    exploration_inputs_unavailable. Returns the split doc, or None."""
-    ec = _explore_confirm_module()
-    arts = Path(run_dir) / "artifacts"
-    try:
-        # review round 2, finding 4: a fresh attempt id first -- a copy this
-        # attempt does not stamp with it counts as missing, even when the
-        # removal below fails
-        ec.new_attempt(arts)
-    except Exception as exc:  # noqa: BLE001 -- never a stop (D-080)
-        with contextlib.suppress(OSError):
-            (arts / ec.ATTEMPT_ARTIFACT).unlink(missing_ok=True)
-        with contextlib.suppress(OSError):
-            (arts / ec.EXPLORATION_DIR / ec.COPIES_STAMP).unlink(missing_ok=True)
-        print(f"⚠️⚠️  [E-072] this attempt's id could NOT be written ({type(exc).__name__}: "
-              f"{exc}); the readers' copies cannot be stamped, so the readers will be skipped "
-              f"by rule exploration_inputs_unavailable.")
-    try:
-        stale = arts / ec.EXPLORATION_DIR
-        if stale.exists():
-            shutil.rmtree(stale)
-        (arts / ec.CONFIRMATION_ARTIFACT).unlink(missing_ok=True)
-    except OSError as exc:
-        print(f"⚠️  [E-072] the previous attempt's exploration copies could not be removed "
-              f"({type(exc).__name__}: {exc}); they are rewritten after the backtests.")
-    try:
-        split = ec.ensure_split(arts, run_id,
-                                extra_files=[_resolve_protocol_path(Path(run_dir), run_id)])
-    except Exception as exc:  # noqa: BLE001 -- never a stop (D-080)
-        print(f"⚠️⚠️  [E-072] the windows could NOT be split ({type(exc).__name__}: {exc}). The "
-              f"run continues; its readers will be skipped by rule exploration_inputs_unavailable "
-              f"(never given the all-window files) and no side finding is confirmed.")
-        return None
-    if split.get("status") == ec.NOT_APPLICABLE:
-        print(f"⚠️  [E-072] explore_confirm not applicable to {run_id}: {split.get('reason')}. "
-              f"{ec.NOT_APPLICABLE_EFFECT} (artifacts/{ec.SPLIT_ARTIFACT}).")
-        return split
-    print(f"🔒 [E-072] windows split before the backtests: exploration "
-          f"{ec.labels(split['exploration'])}, confirmation {ec.labels(split['confirmation'])} "
-          f"(artifacts/{ec.SPLIT_ARTIFACT}); the readers see exploration only.")
-    return split
-
-
-def _exploration_views_failed(run_dir: Path, exc: BaseException) -> None:
-    """protocol_execution: the readers' exploration copies could not be
-    written. Logged loudly; the partial copies are removed (best effort) so no
-    reader reads half a set; protocol_execution is NOT failed -- each reader
-    is then skipped by rule exploration_inputs_unavailable."""
-    print(f"⚠️⚠️  [E-072] the readers' exploration copies could NOT be written "
-          f"({type(exc).__name__}: {exc}). protocol_execution continues; the readers will be "
-          f"skipped by rule exploration_inputs_unavailable (never given the all-window files).")
-    try:
-        stale = Path(run_dir) / "artifacts" / _explore_confirm_module().EXPLORATION_DIR
-        if stale.exists():
-            shutil.rmtree(stale)
-    except Exception as rm_exc:  # noqa: BLE001 -- a missing copy still skips the reader
-        print(f"⚠️  [E-072] the partial exploration copies could not be removed ({rm_exc}).")
-
-
-def _write_exploration_views(run_dir: Path, run_id: str, pr_by_variant: dict, variant_meta: dict,
-                             *, pre_registration: dict, failed_variants=None,
-                             untested_variants=None, legacy_verdict_retired: bool = False) -> None:
-    """protocol_execution (variant loop), after the reports: the readers'
-    copies of the five category reports and of the grid, from the
-    exploration windows only (artifacts/exploration/). Raises on any failure."""
-    ec = _explore_confirm_module()
-    import build_reports as _br  # tools/ sibling (on sys.path via _explore_confirm_module)
-    arts = Path(run_dir) / "artifacts"
-    split = ec.load_split(arts)
-    shown = ec.labels(split["exploration"])
-    reports = _br.build_reports(
-        run_dir, write=False, variants=variant_meta,
-        failed_variants=failed_variants or None, untested_variants=untested_variants or None,
-        **({"legacy_verdict_retired": True} if legacy_verdict_retired else {}),
-        **_report_statistic_labels_kw(), only_windows=shown)
-    out = arts / ec.EXPLORATION_DIR
-    for name, report in reports.items():
-        _br._write_yaml_atomic(out / "reports" / f"{name}.yaml", report)
-    grid_doc = load_yaml(arts / "grid_evaluation.yaml") if (arts / "grid_evaluation.yaml").exists() \
-        else None
-    if not isinstance(grid_doc, dict):
-        raise FileNotFoundError(f"{arts / 'grid_evaluation.yaml'} is missing or not a mapping -- "
-                                f"no exploration grid can be built from it")
-    menu_path = ROOT / "config" / "criterion_menu.yaml"
-    menu = _load_criterion_menu(menu_path)
-    # the keywords the run's own grid call passes (composition_runs, the v2 era rule)
-    grid = ec.exploration_grid(grid_doc, pr_by_variant, pre_registration, menu, shown,
-                               single_era_inconclusive=bool(_grid_v2_kw()),
-                               composition_runs=_composition_runs_enabled(),
-                               **_zero_trade_grid_kw())  # CUL-415: {} flag off
-    _br._write_yaml_atomic(out / "grid_evaluation.yaml", grid)
-    # written LAST: these copies are this attempt's (review round 2, finding 4)
-    ec.stamp_copies(arts, [f"reports/{name}.yaml" for name in reports]
-                    + ["grid_evaluation.yaml"])
-    print(f"🔒 [E-072] readers' copies written from the exploration windows {shown}: "
-          f"{ec.EXPLORATION_DIR}/reports/*.yaml, {ec.EXPLORATION_DIR}/grid_evaluation.yaml")
-
-
-def _write_exploration_reader_inputs(run_dir: Path, run_id: str) -> dict:
-    """specialist_readers, before the first reader (after _write_reader_v3_inputs):
-    the readers' copies of the claim digest (measured again on the exploration
-    windows), the earlier findings (numbers and free text withheld), the
-    registry summary (numbers over all windows withheld), the card (its
-    whitelisted claim and signal spec) and the block manifest (optional) --
-    AI free text number-masked (ec.mask_free_text) -- then stamped as this
-    attempt's copies (ec.stamp_copies). Never raises (D-061: the readers never
-    block the record of the grid): the registry and card copies are required
-    -- one that cannot be written (or a split that cannot be read) is logged
-    loudly, any older copy is removed, and each reader is then skipped by rule
-    exploration_inputs_unavailable, never given the all-window file; the
-    digest and findings copies follow _write_reader_v3_inputs' rule -- a file
-    that cannot be written is recorded as a gap and the readers run without
-    it. Returns the gaps."""
-    ec = _explore_confirm_module()
-    rf = _reader_findings_module()
-    import build_reports as _br
-    import protocol_resolution as _pres
-    arts = Path(run_dir) / "artifacts"
-    out = arts / ec.EXPLORATION_DIR
-    try:
-        split = ec.load_split(arts)
-    except Exception as exc:  # noqa: BLE001 -- the readers are skipped by rule
-        print(f"⚠️⚠️  [E-072] the split cannot be read ({type(exc).__name__}: {exc}); every "
-              f"reader is skipped by rule exploration_inputs_unavailable.")
-        return {}
-    shown = ec.labels(split["exploration"])
-    written = []  # stamped LAST as this attempt's copies (review round 2, finding 4)
-    for rel, build in (("registry_summary.yaml", ec.withhold_registry_numbers),
-                       ("hypothesis_card.yaml", ec.reader_card),
-                       ("block_manifest.yaml", ec.reader_manifest)):
-        if rel == "block_manifest.yaml" and not (arts / rel).exists():
-            continue  # optional (absent on a composition run): no copy, no skip
-        try:
-            src = load_yaml(arts / rel)
-            if not isinstance(src, dict):
-                raise FileNotFoundError(f"{arts / rel} is missing or not a mapping")
-            _br._write_yaml_atomic(out / rel, build(src))
-            written.append(rel)
-        except Exception as exc:  # noqa: BLE001 -- required copy: the readers are skipped
-            with contextlib.suppress(OSError):
-                (out / rel).unlink(missing_ok=True)
-            effect = ("the readers run without it" if rel == "block_manifest.yaml" else
-                      "every reader is skipped by rule exploration_inputs_unavailable")
-            print(f"⚠️⚠️  [E-072] the readers' copy {ec.EXPLORATION_DIR}/{rel} could NOT be "
-                  f"written ({type(exc).__name__}: {exc}); {effect} (never the all-window file).")
-    gaps = {}
-    digest_rel = _exploration_rel(rf.DIGEST_ARTIFACT)
-    summary_rel = _exploration_rel(rf.READER_SUMMARY_ARTIFACT)
-    try:
-        digest = ec.exploration_digest(run_dir, shown, _pres.load_policy_eras(_DATA_POLICY_PATH),
-                                       _load_holdout_range()[0])
-        _br._write_yaml_atomic(arts / digest_rel, digest)
-        written.append(rf.DIGEST_ARTIFACT)
-    except Exception as exc:  # noqa: BLE001 -- a gap, like _write_reader_v3_inputs
-        gaps[digest_rel] = f"{type(exc).__name__}: {exc}"
-    try:
-        summary = load_yaml(arts / rf.READER_SUMMARY_ARTIFACT)
-        if not isinstance(summary, dict):
-            raise FileNotFoundError(f"{rf.READER_SUMMARY_ARTIFACT} was not written")
-        _br._write_yaml_atomic(arts / summary_rel, ec.withhold_findings_numbers(summary))
-        written.append(rf.READER_SUMMARY_ARTIFACT)
-    except Exception as exc:  # noqa: BLE001
-        gaps[summary_rel] = f"{type(exc).__name__}: {exc}"
-    try:
-        ec.stamp_copies(arts, written)
-    except Exception as exc:  # noqa: BLE001 -- unstamped copies count as missing
-        print(f"⚠️⚠️  [E-072] the readers' copies {written} could NOT be stamped as this "
-              f"attempt's ({type(exc).__name__}: {exc}); they count as missing (the readers are "
-              f"skipped by rule exploration_inputs_unavailable).")
-        for rel in written:
-            if rel in (rf.DIGEST_ARTIFACT, rf.READER_SUMMARY_ARTIFACT):
-                gaps[_exploration_rel(rel)] = f"not stamped: {type(exc).__name__}: {exc}"
-    for name in gaps:
-        with contextlib.suppress(OSError):
-            (arts / name).unlink(missing_ok=True)
-        print(f"⚠️  [E-072] {name} could not be written ({gaps[name]}); the readers run without it.")
-    return gaps
-
-
 def _record_side_finding_merges(run_id: str, run_dir: Path) -> dict:
-    """E-073 step 2 (D-083), orchestrator.observable_backtest only: the run's
-    side findings that are the same test (reader_findings.MERGE_RULE), written
+    """E-073 step 2 (D-083; D-198: kept, no caller since the observable_backtest flag and the
+    readers stage were deleted): the run's side findings that are the same test
+    (reader_findings.MERGE_RULE), written
     to artifacts/side_finding_merges.yaml (`merged: []` when none) and returned
     as reader_findings.merge_index -- what the confirmation and decide-next
     read, so a merged finding is measured, counted and ranked once (never as
@@ -6920,76 +5276,10 @@ def _record_side_finding_merges(run_id: str, run_dir: Path) -> dict:
         return {}
 
 
-def _record_confirmations(run_id: str, run_dir: Path, merges: dict | None = None) -> None:
-    """specialist_readers, after every reader: each side finding of this run
-    measured on the confirmation windows (or marked pending), and -- when this
-    run was built from a pending side finding -- that finding measured by this
-    run's own claim on this run's confirmation windows. Written to
-    artifacts/confirmation.yaml and campaign_record/confirmations.yaml (looks
-    counted). Information only: never raises, never routes.
-    `merges` (E-073 step 2, observable_backtest only): the in-run merge index;
-    a merged duplicate is measured and counted once (None: as before)."""
-    try:
-        ec = _explore_confirm_module()
-        rp = _reader_proposals_module()
-        import protocol_resolution as _pres
-        arts = Path(run_dir) / "artifacts"
-        split = ec.load_split(arts)
-        eras = _pres.load_policy_eras(_DATA_POLICY_PATH)
-        holdout_start = _load_holdout_range()[0]
-        graded = sorted(vid for vid in (load_yaml(arts / "grid_evaluation.yaml") or {}).get(
-            "variants") or []) if (arts / "grid_evaluation.yaml").exists() else []
-        base_vid = _json_pointer_module().base_variant_id(graded) if graded else None
-        readings = rp.load_readings(arts / "proposals", list(READER_CATEGORIES))
-        # E-077 PR-2 (D-087): under orchestrator.folds.enabled a claim is never confirmed
-        # inside the run that inspired it (every measurable finding is pending) and the
-        # weak follow-up resolution does not exist: confirm_on_fold measures the claim on
-        # the child run's fold instead (_confirm_on_fold_after_backtests).
-        folds = _folds_enabled()
-        records = ec.confirm_findings(run_dir, run_id, readings, split, base_variant=base_vid,
-                                      eras=eras, holdout_start=holdout_start,
-                                      **({"merges": merges} if merges is not None else {}),
-                                      **({"folds": True} if folds else {}),
-                                      **({"trade_tests": True} if _analyst_enabled() else {}))
-        source = None if folds else ec.source_finding_id(arts)
-
-        def _resolve(findings: dict) -> list:
-            # called by ec.record UNDER the ledger lock: the pending lookup reads
-            # the ledger as it is now; a finding this same run already resolved
-            # (a resume or re-run) is measured again, so resolved_pending is kept
-            pending = ec.pending_for(findings, source, run_id)
-            if pending is None:
-                return []
-            return [ec.resolve_pending(run_dir, run_id, pending, split, base_variant=base_vid,
-                                       eras=eras, holdout_start=holdout_start)]
-        written = ec.record(ROOT, run_id, records, resolve=_resolve if source else None)
-        resolved = written[len(records):]
-        save_yaml(arts / ec.CONFIRMATION_ARTIFACT, {
-            "schema_version": ec.SCHEMA_VERSION, "run_id": run_id, "note": ec.LEDGER_NOTE,
-            "bar": ec.HONEST_BAR, "exploration": ec.labels(split["exploration"]),
-            "confirmation": ec.labels(split["confirmation"]),
-            "side_findings": written[:len(records)], "resolved_pending": written[len(records):]})
-        counts = {}
-        for r in written:
-            v = r.get("confirmation_sign_retained")
-            counts[str(v)] = counts.get(str(v), 0) + 1
-        print(f"🔎 [E-072] {run_id}: {len(records)} side finding(s) checked on the confirmation "
-              f"windows {ec.labels(split['confirmation'])}"
-              + (f", {len(resolved)} pending finding resolved" if resolved else "")
-              + f" (sign retained: {counts}); information only, not proven.")
-    except Exception as exc:  # noqa: BLE001 -- information only
-        print(f"⚠️  [E-072] the confirmation could not be recorded ({type(exc).__name__}: {exc}); "
-              f"the run continues.")
-        with contextlib.suppress(Exception):
-            save_yaml(Path(run_dir) / "artifacts" / _explore_confirm_module().CONFIRMATION_ARTIFACT,
-                      {"run_id": run_id, "status": "error",
-                       "detail": f"{type(exc).__name__}: {exc}"})
-
-
 def _check_retune_firewall(run_dir: Path) -> None:
     """A2.2 retune firewall, relocated from the verdict_interpreter branch to
-    specialist_readers stage entry (before any reader call, and on every
-    resume)."""
+    the specialist_readers stage entry (D-198: now the analyst stage's entry, on the
+    grid route; checked before any model call, and on every resume)."""
     aud_path = run_dir / "artifacts" / "regime_audit_decision.yaml"
     if not aud_path.exists():
         return
@@ -7003,10 +5293,11 @@ def _check_retune_firewall(run_dir: Path) -> None:
 
 
 def _write_registry_summary(run_dir: Path, idea_status: str | None = None) -> Path:
-    """artifacts/registry_summary.yaml for the readers (E-061 C2 S2e, G9): the
-    pure tools/block_registry.registry_summary over the campaign registry
-    (absent registry = an empty one, exactly as load_registry reads it). A
-    malformed registry or manifest raises -- a summary is never guessed."""
+    """artifacts/registry_summary.yaml (E-061 C2 S2e, G9; D-198: no longer for the readers --
+    the run viewer reads it): the pure tools/block_registry.registry_summary over the
+    campaign registry (absent registry = an empty one, exactly as load_registry reads it).
+    A malformed registry or manifest raises -- a summary is never guessed. Written by
+    _run_regroup_record_stage, BEFORE it registers this run's own block."""
     _tools = str(Path(__file__).parent.parent / "tools")
     if _tools not in sys.path:
         sys.path.insert(0, _tools)
@@ -7015,7 +5306,7 @@ def _write_registry_summary(run_dir: Path, idea_status: str | None = None) -> Pa
                                    run_dir, idea_status=idea_status)
     dest = Path(run_dir) / "artifacts" / _br.REGISTRY_SUMMARY_ARTIFACT
     save_yaml(dest, summary)
-    print(f"📚 specialist_readers: {_br.REGISTRY_SUMMARY_ARTIFACT} written "
+    print(f"📚 regroup_record: {_br.REGISTRY_SUMMARY_ARTIFACT} written "
           f"({summary['registry']['n_blocks']} earlier validated block(s)).")
     return dest
 
@@ -7024,30 +5315,27 @@ def _run_analyst_stage(run_id: str, run_dir: Path, stage_attempt=0) -> None:
     """D-197, the analyst's own stage (STAGE_CONFIGS["analyst"]): the two lenses of
     run_analyst_worker, one after another, each writing artifacts/proposals/<category>.yaml
     for ANALYST_LENS_CATEGORIES. Runs right after protocol_execution -- the backtest
-    artifacts its query tools read -- and before specialist_readers when that stage is on.
-    No dependency on category_reports, specialist_readers or reader_findings: it reads
-    neither the reports, the grid nor the registry summary, and writes nothing but its own
-    readings, query logs and records.
+    artifacts its query tools read -- and before regroup_record / the grid route.
+    No dependency on category_reports, specialist_readers or reader_findings (deleted,
+    D-198): it reads neither the reports, the grid nor the registry summary, and writes
+    nothing but its own readings, query logs and records.
 
-    Same order of work as the lens branch of _run_specialist_readers had: component errors in
-    protocol_result.yaml -> nothing runs (the backtest is meaningless); a file already present
-    is validated, not re-run (a resume); an operator re-run (D-122) gets the code-written
-    skipped reading; the weighted token budget is checked before every lens. When the
-    specialist_readers stage is on, its entry checks (a valid idea_status.yaml, the retune
-    firewall) are made here too, so a run that stage would refuse still stops before the
-    analyst spends. Whether a lens file written here is complete for the other stage is that
-    stage's business: it validates the file and writes the other three categories."""
+    Order of work: component errors in protocol_result.yaml -> nothing runs (the backtest is
+    meaningless); a file already present is validated, not re-run (a resume); an operator
+    re-run (D-122) gets the code-written skipped reading; the weighted token budget is
+    checked before every lens. On the grid route (grid_evaluation on) the route's entry checks
+    (a valid idea_status.yaml, the retune firewall) are made here too, so a run the route
+    would refuse still stops before the analyst spends."""
     if not _analyst_enabled():
         raise RuntimeError("analyst reached with orchestrator.analyst.enabled off -- reset "
-                           "pending_stage to verdict_interpreter (specialist_readers when that "
-                           "stage is on) or enable the flag.")
+                           "pending_stage to verdict_interpreter (regroup_record on the grid "
+                           "route) or enable the flag.")
     if _protocol_component_errors(run_dir):
         print("⏭️  analyst: component errors in protocol_result.yaml -- the lenses are not run "
               "(the backtest is meaningless); the route pauses for a human.")
         return
-    if _specialist_readers_enabled():
-        _load_idea_status(run_dir, run_id)
-        _check_retune_firewall(run_dir)
+    if _grid_route_enabled():
+        _grid_route_entry_checks(run_dir, run_id)
     rp = _reader_proposals_module()
     proposals_dir = run_dir / "artifacts" / "proposals"
     lens_of = {cat: lens for lens, cat in _analyst_session_module().LENS_CATEGORY.items()}
@@ -7073,53 +5361,42 @@ def _run_analyst_stage(run_id: str, run_dir: Path, stage_attempt=0) -> None:
         raise FileNotFoundError(f"analyst finished without proposals for {missing}")
 
 
-def _run_specialist_readers_stage(run_id: str, run_dir: Path, stage_attempt=0) -> None:
-    """Stage body. Engineering errors first: when protocol_result.yaml reports
-    component errors the readers are not run at all (the grid they read is
-    meaningless and determine_post_specialist_readers_route pauses). Then
-    idea_status.yaml and the retune firewall are checked BEFORE any reader
-    spends a call."""
-    if not _specialist_readers_enabled():
-        raise RuntimeError("specialist_readers reached with orchestrator.specialist_readers.enabled "
-                           "off -- reset pending_stage to verdict_interpreter or enable the flag.")
-    if _protocol_component_errors(run_dir):
-        print("⏭️  specialist_readers: component errors in protocol_result.yaml -- readers not "
-              "run (the grid is meaningless); the route pauses for a human.")
-        return
-    idea = _load_idea_status(run_dir, run_id)
+# D-198: the name of the deleted five-readers stage. A pipeline_state.yaml written before
+# the deletion can carry it as pending_stage (or in completed_stages); run_loop maps a
+# pending one to the next live stage (_resume_stage_after_readers_deleted).
+LEGACY_READERS_STAGE = "specialist_readers"
+
+
+def _grid_route_entry_checks(run_dir: Path, run_id: str) -> None:
+    """On the grid route (D-198: the checks the deleted specialist_readers stage made at its
+    entry): idea_status.yaml is valid (raises otherwise) and the retune firewall holds,
+    before any model call or record. Called by the analyst stage, the regroup_record stage
+    and the route itself when no stage precedes it; the caller has already ruled out
+    component errors (a run with them is paused by the route, not checked here)."""
+    _load_idea_status(run_dir, run_id)
     _check_retune_firewall(run_dir)
-    # E-061 C2 S2e (card I, D-017): what earlier runs validated, written by code
-    # BEFORE the first reader, as context for the readers and for the run viewer
-    # (no score is derived from it since D-194). This stage is the only caller
-    # (tests pin it).
-    _write_registry_summary(run_dir, idea_status=idea["idea_status"])
-    v3 = _reader_findings_enabled()  # E-068 slice 5
-    if v3:
-        _write_reader_v3_inputs(run_dir, run_id)
-    proposals = _run_specialist_readers(run_id, run_dir, stage_attempt)
-    if v3:
-        _record_reader_skips(run_id, run_dir)
-        # E-073 step 2 (D-083): in-run duplicates merged before anything counts them
-        merges = _record_side_finding_merges(run_id, run_dir) \
-            if _observable_backtest_enabled() else None
-        if _explore_confirm_active(run_dir):
-            # E-072: after every reader, so no reader ever sees it (not when the
-            # split is not applicable to this run: it then runs as flag-off)
-            _record_confirmations(run_id, run_dir, merges=merges)
-    # E-035 S2c: each feed the validated proposals ask for and do not have
-    # becomes a data_requests.yaml row (idempotent per run and feed; nothing
-    # written when no proposal carries requires_feed).
-    n_feed = _route_reader_feed_requests(run_id, proposals)
-    if n_feed:
-        print(f"📥 specialist_readers: {n_feed} feed request(s) offered to "
-              f"campaign_record/data_requests.yaml (stage {READER_FEED_REQUEST_STAGE}).")
+
+
+def _resume_stage_after_readers_deleted(run_dir: Path, analyst_on: bool, regroup_on: bool):
+    """D-198: the live stage a pending_stage `specialist_readers` (deleted) resumes into:
+    `analyst` when the analyst flag is on and a lens reading is still missing (an old state
+    paused inside the readers stage before the analyst ran); else `regroup_record` when that
+    flag is on; else None (the run goes straight to the grid route, which is where the
+    deleted stage led with regroup_record off)."""
+    proposals = Path(run_dir) / "artifacts" / "proposals"
+    if analyst_on and any(not (proposals / f"{c}.yaml").exists() for c in ANALYST_LENS_CATEGORIES):
+        return "analyst"
+    if regroup_on:
+        return "regroup_record"
+    return None
 
 
 def determine_post_specialist_readers_route(path: Path, run_id: str, *,
                                            component_errors: list | None = None,
                                            idea: dict | None = None,
                                            routing_retired: bool = False) -> str:
-    """The interim route under orchestrator.specialist_readers.enabled
+    """The interim route on the grid route (D-198: orchestrator.grid_evaluation.enabled; it
+    was orchestrator.specialist_readers.enabled)
     (delivery_plan_v26.md slice 2: "until slice 6c"). Reads ONLY
     protocol_result.yaml and idea_status.yaml -- never proposals/*.yaml and
     never verdict_interpretation.yaml.
@@ -7143,9 +5420,9 @@ def determine_post_specialist_readers_route(path: Path, run_id: str, *,
     The component-error pause is unchanged; after it the run ends
     completed_<idea_status> (_route_retired_idea_status) -- no inconclusive
     pause, no _resolve_verdict_fields, no _dispatch_verdict_route."""
-    if not _specialist_readers_enabled():
+    if not _grid_route_enabled():
         raise RuntimeError("determine_post_specialist_readers_route called with "
-                           "orchestrator.specialist_readers.enabled off")
+                           "orchestrator.grid_evaluation.enabled off")
     errors = component_errors if component_errors is not None else _protocol_component_errors(path)
     if errors:
         print("\n⚠️  component_execution_error: a strategy component raised during the "
@@ -7201,10 +5478,10 @@ _REGROUP_RECORD_HANDOFF = "specialist_readers_to_regroup_record.yaml"
 
 def _regroup_record_enabled(cfg: dict | None = None) -> bool:
     """False when the key, the section or the config file is absent. A
-    non-bool value raises. Requires orchestrator.specialist_readers.enabled
-    (itself requiring grid_evaluation + category_reports): raises, loudly, if
-    this flag is on without it -- without the readers flag the stage is never
-    routed to and there is no idea_status route to record before."""
+    non-bool value raises. Requires orchestrator.grid_evaluation.enabled (D-198: it
+    required specialist_readers, which required the grid): raises, loudly, if
+    this flag is on without it -- without the grid there is no idea_status route
+    to record before."""
     cfg = _orchestrator_config(cfg)
     rr_cfg = ((cfg.get("orchestrator") or {}).get("regroup_record") or {})
     value = rr_cfg.get("enabled", False)
@@ -7214,12 +5491,12 @@ def _regroup_record_enabled(cfg: dict | None = None) -> bool:
             f"(got {type(value).__name__}) -- write an unquoted `true` or `false` in "
             f"config/campaign_config.yaml, not a quoted string or null."
         )
-    if value and not _flag_dep(_specialist_readers_enabled, cfg):
+    if value and not _flag_dep(_grid_route_enabled, cfg):
         raise ValueError(
             "orchestrator.regroup_record.enabled=true requires "
-            "orchestrator.specialist_readers.enabled=true as well -- regroup_record runs "
-            "only after the specialist_readers stage and records the grid's idea_status "
-            "before its route. Enable both (with grid_evaluation and category_reports)."
+            "orchestrator.grid_evaluation.enabled=true as well -- regroup_record runs "
+            "only on the grid route and records the grid's idea_status "
+            "before its route. Enable both."
         )
     return value
 
@@ -7315,8 +5592,8 @@ def _decide_next_enabled(cfg: dict | None = None) -> bool:
     operator decision). False when the key, the section or the config file is
     absent. A non-bool value raises. Requires, loudly:
       * orchestrator.regroup_record.enabled (itself requiring
-        specialist_readers, grid_evaluation, category_reports) -- decide_next
-        reads campaign_record/campaign_memory.yaml and the reader proposals it
+        grid_evaluation) -- decide_next
+        reads campaign_record/campaign_memory.yaml and the readings it
         references, which exist only under those flags;
       * orchestrator.config_direct_authoring.enabled -- operator decision 2:
         every proposal-sourced candidate enters step 1a, which writes its
@@ -7346,7 +5623,7 @@ def _decide_next_enabled(cfg: dict | None = None) -> bool:
                 "orchestrator.decide_next.enabled=true requires "
                 + " and ".join(f"orchestrator.{m}.enabled=true" for m in missing)
                 + " as well -- decide_next reads the campaign memory and reader proposals "
-                "(regroup_record, hence specialist_readers, grid_evaluation, category_reports), "
+                "(regroup_record, hence grid_evaluation), "
                 "and every picked candidate writes its criteria at step 1a from the criterion "
                 "menu (config_direct_authoring). Enable them together."
             )
@@ -8296,15 +6573,14 @@ def _append_data_requests(run_id: str, requests: list, *, dedupe: bool = False,
                           stage: str = "data_availability_gate", key=None) -> None:
     """campaign_record/data_requests.yaml, a flat append-only {requests: [...]}
     list, each row stamped with run_id and `stage` (default
-    data_availability_gate; E-035 S2c's reader router passes
-    specialist_reader). dedupe=False: the per-variant gate's writer, moved here
+    data_availability_gate; E-035 S2c's reader router, deleted with the readers in
+    D-198, passed specialist_reader). dedupe=False: the per-variant gate's writer, moved here
     unchanged (E-033.1 Slice 4b) -- flag-off byte-identical. dedupe=True (under
-    orchestrator.verdict_routing_retired, slice 6c S2c review fix 7; always for
-    the reader router): the locked, idempotent appender shared with
-    component_requests.yaml, so a park/unpark cycle re-running the gate (or a
-    re-run of the readers stage) adds no duplicate row. `key` is the row
-    identity (default campaign_review_retired.request_key, the gate's; the
-    reader router passes feed_request_key)."""
+    orchestrator.verdict_routing_retired, slice 6c S2c review fix 7):
+    the locked, idempotent appender shared with
+    component_requests.yaml, so a park/unpark cycle re-running the gate
+    adds no duplicate row. `key` is the row
+    identity (default campaign_review_retired.request_key, the gate's)."""
     requests_path = ROOT / "campaign_record" / "data_requests.yaml"
     rows = [{"run_id": run_id, "stage": stage, **req} for req in requests]
     if dedupe:
@@ -8315,73 +6591,6 @@ def _append_data_requests(run_id: str, requests: list, *, dedupe: bool = False,
     existing_requests = existing.get("requests", [])
     existing_requests.extend(rows)
     save_yaml(requests_path, {"requests": existing_requests})
-
-
-# E-035 S2c (delivery_plan_v26.md slice 8.2): the feed-acquisition lane's intake.
-READER_FEED_REQUEST_STAGE = "specialist_reader"
-
-
-# What a reader feed-request row asks a human for, by the gate's own
-# classification (decide_next.feed_status): a reserved feed needs a
-# campaign_data_policy.yaml designation; an unknown one must be built.
-READER_FEED_REQUEST_KINDS = {"reserved": "designation", "unknown": "acquisition"}
-
-
-def _reader_feed_request_rows(proposals: dict, feed_set: dict) -> list:
-    """The data_requests.yaml rows (without run_id/stage) for the validated
-    proposals carrying `requires_feed`: ONE row per feed, in first-seen order
-    (category order, then file order):
-      {feed, request: designation|acquisition,
-       proposals: [{category, proposal_id, reason}, ...],
-       reason: '<requires_feed|requires_feed_reserved>:<feed> -- ...'}
-    A feed already WIRED (a FEED_REGISTRY key, not reserved) gets no row:
-    there is nothing to acquire -- whether it covers the run's venue, symbols
-    and windows is the data-availability gate's check at step 3."""
-    import decide_next as _dn  # tools/ sibling (on sys.path, module top)
-    by_feed: dict = {}
-    for category, items in proposals.items():
-        for p in items or []:
-            rf = p.get("requires_feed")
-            if rf is not None:
-                by_feed.setdefault(rf["feed"], []).append(
-                    {"category": category, "proposal_id": p["proposal_id"], "reason": rf["reason"]})
-    rows = []
-    for feed, asks in by_feed.items():
-        status = _dn.feed_status(feed, feed_set)
-        if status not in READER_FEED_REQUEST_KINDS:  # wired
-            continue
-        request = READER_FEED_REQUEST_KINDS[status]
-        prefix = "requires_feed_reserved" if status == "reserved" else "requires_feed"
-        rows.append({"feed": feed, "request": request, "proposals": asks,
-                     "reason": f"{prefix}:{feed} -- {request} asked by {len(asks)} reader "
-                               f"proposal(s): {', '.join(a['proposal_id'] for a in asks)}"})
-    return rows
-
-
-def _route_reader_feed_requests(run_id: str, proposals: dict, *, feed_registry=None) -> int:
-    """After specialist_readers validates the proposals: append one row per
-    feed they ask for and do not have to campaign_record/data_requests.yaml
-    through the locked, idempotent appender, keyed on (run, stage, feed)
-    (campaign_review_retired.feed_request_key) -- a resume or a re-attempt
-    that asks for the same feed again, whatever its wording or proposal_id,
-    adds nothing. The feed registry is read (decide_next.load_feed_registry,
-    or the `feed_registry` document passed in) only when some proposal
-    carries requires_feed, and then fails loud when unreadable. Writes
-    nothing -- the file is not even created -- when no proposal carries it or
-    every feed asked for is already wired. Proposes only: it never changes
-    the idea's status, the route or the queue (decide_next gates the
-    candidate). Returns the number of rows offered."""
-    if not any(p.get("requires_feed") is not None
-               for items in proposals.values() for p in items or []):
-        return 0
-    if feed_registry is None:
-        import decide_next as _dn  # tools/ sibling (on sys.path, module top)
-        feed_registry = _dn.load_feed_registry(_TRADING_BOT_ROOT)
-    rows = _reader_feed_request_rows(proposals, feed_registry)
-    if rows:
-        _append_data_requests(run_id, rows, dedupe=True, stage=READER_FEED_REQUEST_STAGE,
-                              key=_crr.feed_request_key)
-    return len(rows)
 
 
 def _park_run(run_dir: Path, *, kind: str, stage: str, reason: str, request_refs: list,
@@ -8465,8 +6674,8 @@ def _holdout_hypothesis_id(run_dir: Path, run_id: str) -> tuple:
     if audit_path.exists():
         audit = load_yaml(audit_path) or {}
         return audit.get("hypothesis_id", run_id), audit.get("passes_deflated_threshold")
-    if _specialist_readers_enabled():
-        # E-046a Slice 5b-ii-B: no verdict_interpretation.yaml under this flag --
+    if _grid_route_enabled():
+        # E-046a Slice 5b-ii-B: no verdict_interpretation.yaml on the grid route (D-198) --
         # same re-point as _write_promotion_audit (hypothesis_card.yaml).
         return _idea_hypothesis_id(run_dir), None
     interp = load_yaml(artifacts / "verdict_interpretation.yaml") or {}
@@ -10615,12 +8824,12 @@ def _verdict_criteria_evaluator_module():
 
 def _ensure_regroup_record_handoff(run_id: str, run_dir: Path) -> Path:
     """Stage-level handoff, written lazily at stage entry (flag-off runs never
-    get this file), like _ensure_specialist_readers_handoff."""
+    get this file), like _ensure_analyst_handoff."""
     handoff_path = run_dir / "handoffs" / _REGROUP_RECORD_HANDOFF
     if not handoff_path.exists():
         save_yaml(handoff_path, {
             "handoff_version": 1, "run_id": run_id,
-            "from_stage": "specialist_readers", "to_stage": "regroup_record",
+            "from_stage": "protocol_execution", "to_stage": "regroup_record",
             "assigned_engine": "tool",
             "objective": (
                 "E-058: record this run in campaign_record/campaign_memory.yaml (one "
@@ -10655,6 +8864,13 @@ def _run_regroup_record_stage(run_id: str, run_dir: Path,
     then the full entry. campaign_state.trial_sharpes is only READ."""
     errors = _protocol_component_errors(run_dir)
     idea = None if errors else _load_idea_status(run_dir, run_id)
+    if not errors:
+        # D-198: the checks the deleted specialist_readers stage made at its entry, and its
+        # registry summary (E-061 C2 S2e, card I, D-017: what earlier runs validated, read
+        # by the run viewer) -- written here, once per run that reaches this stage without
+        # component errors, BEFORE record_run below registers this run's own block.
+        _check_retune_firewall(run_dir)
+        _write_registry_summary(run_dir, idea_status=idea["idea_status"])
     cm = _campaign_memory_module()
     import block_registry as _br  # tools/ sibling, on sys.path via _campaign_memory_module
     import grid_kb_writer as _kbw
@@ -13781,8 +11997,8 @@ def _route_kill(path: Path, run_id: str, interp: dict, campaign: dict) -> str:
     """
     print("\n🛑 KILL: hypothesis dead (mechanism falsified / no edge / question answered negatively).")
     diag = _extract_diagnostics(path)
-    if _specialist_readers_enabled():
-        # E-046a 5b-ii-B (code-review fix 8): under the flag the kill feeds none of
+    if _grid_route_enabled():
+        # E-046a 5b-ii-B (code-review fix 8): on the grid route (D-198) the kill feeds none of
         # the retired machinery (v26 card G, slice 6c) -- no altitude_history row
         # (family-keyed), no failed_families, no continuation_* writes. Only the
         # run list and the diagnostics log are kept; trial accounting is untouched
@@ -15211,9 +13427,9 @@ def _write_promotion_audit(run_dir: Path, run_id: str):
     so the dict's insertion order was preserved exactly, not just its keys).
     """
     # --- Load verdict interpretation for hypothesis_id ---
-    if _specialist_readers_enabled():
-        # E-046a Slice 5b-ii-B: verdict_interpretation.yaml is never written under
-        # this flag; the idea's id comes from hypothesis_card.yaml (which the old
+    if _grid_route_enabled():
+        # E-046a Slice 5b-ii-B: verdict_interpretation.yaml is never written on the
+        # grid route (D-198); the idea's id comes from hypothesis_card.yaml (which the old
         # stage only restated). Raises rather than falling back to run_id.
         hyp_id = _idea_hypothesis_id(run_dir)
     else:
@@ -21444,29 +19660,27 @@ def run_loop(run_id: str, *, after_1a=None):
                                           folds_enabled=_folds_enabled)
         _ensure_protocol_ref_pinned(RUN_DIR, run_id, _machine_constraints)
 
-    # E-046a Slice 5b-ii-B: resolve the specialist_readers flag ONCE per run_loop,
-    # up front, inside a try (code-review fix 9): a flag set on without its
-    # grid_evaluation/category_reports dependencies, or a non-menu-shaped
-    # pass_rule under the flag (fix 6), stops the run with status=failed before
+    # E-046a Slice 5b-ii-B: resolve the grid-route flag (D-198: grid_evaluation; it was
+    # specialist_readers) ONCE per run_loop,
+    # up front, inside a try (code-review fix 9): a non-bool flag, or a non-menu-shaped
+    # pass_rule on the grid route (fix 6), stops the run with status=failed before
     # any stage spends anything, instead of escaping run_loop.
     _TERMINAL_AT_START = ("completed", "rejected", "human_pause", "failed_validation")
     _pending_at_start = state.get("pending_stage") or ""
     try:
-        _sr_flag = _specialist_readers_enabled()
-        if _sr_flag and _pending_at_start and not _pending_at_start.startswith(_TERMINAL_AT_START):
+        _gr_flag = _grid_route_enabled()
+        if _gr_flag and _pending_at_start and not _pending_at_start.startswith(_TERMINAL_AT_START):
             # E-059 S2a (operator decision 2): a decide_next candidate's pass_rule
             # is written by 1a, so the check runs right after 1a instead
             # (_write_pass_rule_from_card), still before any backtest.
             if not _specialist_readers_preflight_deferred(RUN_DIR, _pending_at_start):
                 _check_specialist_readers_preflight(RUN_DIR)
     except Exception as e:
-        print(f"❌ specialist_readers pre-flight failed: {e}")
+        print(f"❌ grid-route pre-flight failed: {e}")
         update_state(path=RUN_DIR, status="failed", last_error=str(e))
         return
-    # D-197: the analyst's flag, resolved ONCE the same way (its dependency on folds, the
-    # explore_confirm refusal, or a non-bool value, fails the run here, before any spend).
-    # It has no dependency on specialist_readers: it routes protocol_execution -> analyst
-    # with that stage off too.
+    # D-197: the analyst's flag, resolved ONCE the same way (its dependency on folds, or a
+    # non-bool value, fails the run here, before any spend).
     _an_flag = False
     try:
         if _pending_at_start and not _pending_at_start.startswith(_TERMINAL_AT_START):
@@ -21476,8 +19690,8 @@ def run_loop(run_id: str, *, after_1a=None):
         update_state(path=RUN_DIR, status="failed", last_error=str(e))
         return
     # E-058 S2a: the regroup_record flag, resolved ONCE the same way (its
-    # dependency on specialist_readers fails the run here, before any spend).
-    # A run already at a terminal stage is skipped, like the specialist_readers
+    # dependency on grid_evaluation fails the run here, before any spend).
+    # A run already at a terminal stage is skipped, like the grid-route
     # pre-flight: it will not reach any stage, so a misconfiguration must not
     # overwrite its finished status with "failed".
     _rr_flag = False
@@ -21550,26 +19764,44 @@ def run_loop(run_id: str, *, after_1a=None):
             print(f"🏁 Pipeline finished. Final state: {current_stage}")
             break
 
+        # D-198: a pipeline_state.yaml written before the five readers' stage was deleted can
+        # carry it as pending_stage. It resumes into the next live stage: `analyst` (flag on,
+        # a lens reading still missing), else `regroup_record` (flag on), else the grid route
+        # itself, which is where the deleted stage led. Nothing else of it is run.
+        if current_stage == LEGACY_READERS_STAGE:
+            _live = _resume_stage_after_readers_deleted(RUN_DIR, _an_flag, _rr_flag)
+            print(f"ℹ️  [D-198] pending_stage {LEGACY_READERS_STAGE} (a stage deleted with the "
+                  f"readers) resumes into {_live or 'the grid route'}.")
+            try:
+                if _live is None:
+                    # the route-only resume: the entry checks the deleted stage made on every
+                    # entry (a valid idea_status.yaml, the retune firewall) are made here
+                    # too, unless the backtest had component errors (the route pauses on them)
+                    if not _protocol_component_errors(RUN_DIR):
+                        _grid_route_entry_checks(RUN_DIR, run_id)
+                    _live = determine_post_specialist_readers_route(RUN_DIR, run_id)
+                    if _live == "human_pause":
+                        update_state(path=RUN_DIR, status="paused_for_human")
+                        break
+                update_state(path=RUN_DIR, pending_stage=_live,
+                             status="active" if _live != "completed_rejected" else "rejected")
+            except Exception as e:
+                print(f"❌ Error resuming {LEGACY_READERS_STAGE}: {e}")
+                update_state(path=RUN_DIR, status="failed", last_error=str(e))
+                break
+            state = load_yaml(STATE_FILE)
+            continue
+
         # --- TOKEN CIRCUIT BREAKER (F4c: weighted units, not raw token sum) ---
         budget = _load_token_budget()
         total_weighted_used, stage_breakdown = _compute_weighted_budget_usage(state.get("audit_log", {}))
 
         # E-058 S2a: regroup_record is exempt. It is a zero-cost tool stage
-        # carrying the grid route that flag-off runs take in the SAME iteration
-        # as specialist_readers (after this check); stopping it here would leave
+        # carrying the grid route; stopping it here would leave
         # a run with no memory entry and no route. The next stage is checked as
-        # usual. Every other stage: unchanged.
-        # D-197: specialist_readers right after the analyst stage is exempt too. On master the
-        # lenses ran INSIDE specialist_readers, so a run pushed over budget by the lens
-        # sessions went straight on to regroup_record. With the analyst stage done that stage
-        # makes no model call (_run_specialist_readers only validates the lens files and writes
-        # replaced_by_analyst for the other three), so stopping it here would only drop the
-        # run's memory entry and route. verdict_interpreter is NOT exempt: with the readers off
-        # master budget-checked before it as well.
-        _after_analyst = (current_stage == "specialist_readers" and _an_flag
-                          and "analyst" in (state.get("completed_stages") or []))
-        if (total_weighted_used > budget and current_stage != "regroup_record"
-                and not _after_analyst):
+        # usual. Every other stage: unchanged. (D-198: the analyst's own lens calls are what
+        # can push a run over budget; the stages after it make no model call.)
+        if (total_weighted_used > budget and current_stage != "regroup_record"):
             print(f"🛑 RUN TERMINATED: Weighted token budget exceeded "
                   f"({total_weighted_used:,.0f} > {budget:,.0f}).")
             print("   Per-stage weighted breakdown:")
@@ -21594,23 +19826,20 @@ def run_loop(run_id: str, *, after_1a=None):
             if not _an_flag:
                 _msg = ("analyst is unreached with orchestrator.analyst.enabled off -- this run "
                         "was routed here while the flag was on. Reset pending_stage to "
-                        + ("specialist_readers" if _sr_flag else "verdict_interpreter")
+                        + ("regroup_record" if _rr_flag else "verdict_interpreter")
                         + " (or switch the flag on) and resume.")
                 print(f"❌ {_msg}")
                 update_state(path=RUN_DIR, status="failed", last_error=_msg)
                 break
             _ensure_analyst_handoff(run_id, RUN_DIR)
-        elif current_stage == "specialist_readers":
-            # E-046a Slice 5b-ii-B: created lazily at stage entry, so flag-off
-            # runs never get this file.
-            _ensure_specialist_readers_handoff(run_id, RUN_DIR)
         elif current_stage == "regroup_record":
             # E-058 S2a: a run routed here while the flag was on, resumed with it
             # off, stops loudly instead of skipping the record or guessing a route.
             if not _rr_flag:
                 _msg = ("regroup_record is unreached with orchestrator.regroup_record.enabled "
                         "off -- this run was routed here while the flag was on. Reset "
-                        "pending_stage to specialist_readers (or switch the flag on) and resume.")
+                        "pending_stage to analyst or protocol_execution (or switch the flag "
+                        "on) and resume.")
                 print(f"❌ {_msg}")
                 update_state(path=RUN_DIR, status="failed", last_error=_msg)
                 break
@@ -21728,15 +19957,15 @@ def run_loop(run_id: str, *, after_1a=None):
         _brief_exhausted = False  # E-059 S2b: set only by hypothesis_generation below
         _brief_no_new = False  # E-059 S2b review fix 1: likewise
         try:
-            # E-046a Slice 5b-ii-B: under the flag verdict_interpreter is never
-            # invoked. A run already routed there before the flag was switched on
-            # stops here instead of spending the LLM call.
-            if current_stage == "verdict_interpreter" and _sr_flag:
+            # E-046a Slice 5b-ii-B: on the grid route (D-198: grid_evaluation on)
+            # verdict_interpreter is never invoked. A run already routed there before the
+            # flag was switched on stops here instead of spending the LLM call.
+            if current_stage == "verdict_interpreter" and _gr_flag:
                 raise RuntimeError(
                     "verdict_interpreter is unreached under "
-                    "orchestrator.specialist_readers.enabled -- this run was routed here "
+                    "orchestrator.grid_evaluation.enabled -- this run was routed here "
                     "before the flag was switched on. Reset pending_stage to "
-                    "specialist_readers (or switch the flag off) and resume.")
+                    "regroup_record or analyst (or switch the flag off) and resume.")
 
             # 3. Inject dynamic state directly into the run's existing handoff file
             handoff_data["run_id"] = state.get("run_id", run_id)
@@ -21833,18 +20062,13 @@ def run_loop(run_id: str, *, after_1a=None):
                 # D-197: the analyst's two lens sessions (run_analyst_worker), never
                 # through _invoke_agent_with_yaml_retry/_SKILL_MAP.
                 _run_analyst_stage(run_id, RUN_DIR, _this_stage_attempt)
-            elif current_stage == "specialist_readers":
-                # E-046a Slice 5b-ii-B: five reader calls, each through
-                # run_reader_worker (explicit output path), never through
-                # _invoke_agent_with_yaml_retry/_SKILL_MAP.
-                _run_specialist_readers_stage(run_id, RUN_DIR, _this_stage_attempt)
             elif current_stage == "regroup_record":
                 # E-058 S2a: tool stage, no LLM call, no _SKILL_MAP entry. Its
                 # component-error / idea_status checks are reused by the route below.
                 _rr_checks = _run_regroup_record_stage(run_id, RUN_DIR,
                                                        profit_bars_evaluated=_pbe_flag)
             elif _comp_mode:
-                _run_composition_code_stage(current_stage, run_id, RUN_DIR, _sr_flag)
+                _run_composition_code_stage(current_stage, run_id, RUN_DIR, _gr_flag)
             elif (current_stage == "strategy_config_authoring" and not _skip_agent
                   and _exact_config_1b_mode(RUN_DIR)):
                 _exact_config_1b(RUN_DIR, run_id)  # D-110: the brief's config, by code
@@ -21891,7 +20115,7 @@ def run_loop(run_id: str, *, after_1a=None):
                         if not _brief_no_new:
                             # E-059 S2a (operator decision 2): no-op unless pre_registration.yaml
                             # is pending at 1a; raises (-> status failed) before any spend.
-                            if (not _write_pass_rule_from_card(RUN_DIR, run_id, _sr_flag)
+                            if (not _write_pass_rule_from_card(RUN_DIR, run_id, _gr_flag)
                                     and _composition_runs_enabled()):
                                 # E-060 S2: a pass_rule 1a wrote itself gets the same
                                 # code-added residual_ic, still before any spend.
@@ -21932,22 +20156,26 @@ def run_loop(run_id: str, *, after_1a=None):
             elif current_stage == "hypothesis_generation" and _brief_no_new:
                 next_stage = NO_NEW_HYPOTHESIS_STAGE
 
-            # E-046a Slice 5b-ii-B: under specialist_readers, protocol_execution's
-            # default_next (verdict_interpreter) is redirected -- verdict_interpreter
-            # becomes unreached, not deleted (same pattern as validation under
-            # config-direct authoring). The protocol_execution branches below can
-            # still override this with human_pause on a conformance violation.
-            if current_stage == "protocol_execution" and _sr_flag:
-                next_stage = "specialist_readers"
-            # D-197: the analyst is a stage of its own, between protocol_execution and
-            # whatever follows it without the analyst (specialist_readers when that flag is
-            # on, else verdict_interpreter). The protocol_execution branches below can still
-            # override this with human_pause on a conformance violation.
-            if current_stage == "protocol_execution" and _an_flag:
+            # E-046a Slice 5b-ii-B: on the grid route (D-198: grid_evaluation on),
+            # protocol_execution's default_next (verdict_interpreter) is redirected --
+            # verdict_interpreter becomes unreached, not deleted (same pattern as
+            # validation under config-direct authoring). D-198: the deleted readers stage
+            # used to follow; what follows now is the analyst (flag), then regroup_record
+            # (flag), then the grid route itself (_GRID_ROUTE_NOW, taken below in this same
+            # iteration). The protocol_execution branches below can still override this
+            # with human_pause on a conformance violation.
+            _GRID_ROUTE_NOW = "grid_route"
+            if current_stage == "protocol_execution" and _gr_flag:
+                next_stage = ("analyst" if _an_flag else
+                              "regroup_record" if _rr_flag else _GRID_ROUTE_NOW)
+            # D-197: the analyst is a stage of its own, right after protocol_execution; with
+            # the grid route off it leads to what protocol_execution led to
+            # (verdict_interpreter).
+            elif current_stage == "protocol_execution" and _an_flag:
                 next_stage = "analyst"
             elif current_stage == "analyst":
-                next_stage = "specialist_readers" if _sr_flag \
-                    else STAGE_CONFIGS["protocol_execution"]["default_next"]
+                next_stage = (("regroup_record" if _rr_flag else _GRID_ROUTE_NOW) if _gr_flag
+                              else STAGE_CONFIGS["protocol_execution"]["default_next"])
 
             if current_stage == "validation":
                 next_stage = determine_post_validation_route(RUN_DIR) # Used to trigger state of refinement until (Artifact State is validated OR max refinement reached OR rejected)
@@ -22336,20 +20564,6 @@ def run_loop(run_id: str, *, after_1a=None):
                     update_state(path=RUN_DIR, status="paused_for_human")
                     break
 
-            elif current_stage == "specialist_readers":
-                if _rr_flag:
-                    # E-058 S2a: record before deciding -- the same route runs
-                    # after regroup_record instead of here.
-                    next_stage = "regroup_record"
-                else:
-                    # E-046a Slice 5b-ii-B: the route comes from the grid only
-                    # (component-error check, then idea_status.yaml). The readers'
-                    # proposals play no part in it.
-                    next_stage = determine_post_specialist_readers_route(RUN_DIR, run_id)
-                    if next_stage == "human_pause":
-                        update_state(path=RUN_DIR, status="paused_for_human")
-                        break
-
             elif current_stage == "regroup_record":
                 # E-058 S2a: the unchanged grid route, after the memory is written,
                 # on the checks the stage already made this iteration.
@@ -22427,6 +20641,29 @@ def run_loop(run_id: str, *, after_1a=None):
                 # E-077 PR-2 (D-087): the claim this run was built from, measured on its
                 # own fold. No-op unless orchestrator.folds.enabled.
                 _confirm_on_fold_after_backtests(RUN_DIR, run_id)
+
+            # D-198: the grid route taken in this iteration, when no regroup_record stage
+            # follows (the deleted specialist_readers stage used to take it in its own). E-046a
+            # Slice 5b-ii-B: the route comes from the grid only (component-error check, then
+            # idea_status.yaml); the analyst's readings play no part in it. The entry checks
+            # first (a valid idea_status.yaml, the retune firewall) unless the backtest had
+            # component errors, which the route itself pauses on.
+            if next_stage == _GRID_ROUTE_NOW:
+                if not _protocol_component_errors(RUN_DIR):
+                    _grid_route_entry_checks(RUN_DIR, run_id)
+                next_stage = determine_post_specialist_readers_route(RUN_DIR, run_id)
+                if next_stage == "human_pause":
+                    # a pause at the route resumes into the route and nothing else: after
+                    # protocol_execution never the backtest again, after the analyst never
+                    # the lenses (pending_stage `analyst` would put a resume through the
+                    # loop-top budget check -- an over-budget run would be terminated
+                    # instead of routed, where master exempted the route after the analyst).
+                    # The deleted stage's name is the sentinel: run_loop maps it to a
+                    # route-only resume (_resume_stage_after_readers_deleted) ahead of that
+                    # check, and the route's entry checks are made there.
+                    update_state(path=RUN_DIR, status="paused_for_human",
+                                 pending_stage=LEGACY_READERS_STAGE)
+                    break
 
             # 6. Mark completed and stage next phase
             completed = state.get("completed_stages", [])

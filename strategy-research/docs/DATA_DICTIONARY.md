@@ -1,17 +1,16 @@
 # Data dictionary: what the AI steps read
 
-E-073 step 1 (P-CUL-81, D-081). Every field of the run outputs the readers and the
+E-073 step 1 (P-CUL-81, D-081). Every field of the run outputs the analyst and the
 other AI steps read: what it means, its unit, the code that computes or writes it
 (`KEY:symbol`: a function, `Class.method`, a nested `outer.inner` or a module
 constant of the file `KEY` names below), and **when it is known**. Audited against
 the engine on 2026-10-08; the discrepancies found are in
 [Audit findings](#audit-findings) (not fixed here).
-`tests/test_e073_data_dictionary.py` derives each file's full field paths from the
-code that writes it and fails when a path is missing here or an entry here is no
-longer written, when a cited symbol does not exist, or when it does not contain
-the field's key.
+D-198: the sections on the five category reports (6) and the readers' claim digest (8) were
+removed with the readers; their numbers stay as headings so the other sections keep theirs.
+The `bars.csv` table is parsed by `tools/analyst_queries.py`.
 
-**Readers:** use this file to know what a field means before you cite it. A number
+**Analyst:** use this file to know what a field means before you cite it. A number
 whose field says `after` or `run` was computed with hindsight: it can describe a
 result, never be a signal input. Fields listed under [Not recorded](#not-recorded-today)
 do not exist; never infer them.
@@ -67,7 +66,7 @@ do not exist; never infer them.
 | `SS` | `trading-bot/performance/signal_statistics.py` |
 | `RP` | `strategy-research/tools/run_protocol.py` |
 | `CH` | `strategy-research/tools/cost_helpers.py` |
-| `BR` | `strategy-research/tools/build_reports.py` |
+| `BR` | `strategy-research/tools/build_reports.py` (deleted in D-198; only the audit findings below cite it) |
 | `VE` | `strategy-research/tools/verdict_criteria_evaluator.py` |
 | `RF` | `strategy-research/tools/reader_findings.py` |
 | `CF` | `strategy-research/tools/claim_findings.py` |
@@ -77,7 +76,6 @@ do not exist; never infer them.
 | `P1` | `strategy-research/workflow/run_phase1_research.py` |
 <!-- /data-dictionary-sources -->
 
-<!-- readers: omit -->
 ## 1. bars.csv (one per window and variant)
 
 `variants/<variant>/results/<window run id>/bars.csv`: one row per traded bar of
@@ -152,7 +150,6 @@ portfolio risk gate, which `run_protocol` never passes).
 | `sizing_target_allocation` | `strategies.sizing` block only (D-176): the sized target allocation, clipped to +/- `max_allocation` (what `allocation_change` is measured towards). Campaign default block (D-176): kind `vol_target`, window 60 bars, `periods_per_year` 365 for daily bars and 8760 for hourly bars, `target_annual_vol` 0.2, `max_allocation` 2; unmeasurable volatility: flat, remembered (held) signal 0.0; the sizing window does not follow D-166; it changes only by an operator D-row. | alloc | `TB:TradingBot._process_symbol_candle_completion`, `FM:ForecastManager.forecast_to_allocation` | close |
 | `sizing_signal_change` | `strategies.sizing` block only (D-176): the change in the unsized signal (forecast / 10) since the position was last set, which is one of the two changes the min_allocation_change band accepts (the other is `allocation_change`). Empty on a NaN-forecast bar. | alloc | `TB:TradingBot._process_symbol_candle_completion`, `RM:RiskManager.approve_allocation_change` | close |
 <!-- /data-dictionary -->
-<!-- /readers: omit -->
 
 ## 2. trade_diagnostics.json (one per variant)
 
@@ -160,9 +157,7 @@ portfolio risk gate, which `run_protocol` never passes).
 from each window's `trades.json` and `bars.csv`. Trades from all windows, in order.
 `summary` is also copied as `protocol_result.yaml` `trade_diagnostics_summary`.
 
-<!-- readers: omit -->
-Per-trade labels: in `trade_diagnostics.json` only (no report carries them; the
-readers' subset leaves this table out).
+Per-trade labels: in `trade_diagnostics.json` only.
 
 <!-- data-dictionary: trade_diagnostics.json -->
 | Field | Meaning | Unit | Code | When known |
@@ -195,9 +190,8 @@ else `net_profit_loss_percent` of `trades.json`, after the commission with the s
 in the fill prices; the basis used is recorded per window and windows on different bases are
 not pooled) and `post_exit_return` (exit bar's close to the close h bars later, signed by side;
 lots closing on one bar on one side are one event). MAE and MFE are not used (A6).
-<!-- /readers: omit -->
 
-Per-trade numbers (the trade_efficiency report aggregates each of them) and the summary.
+Per-trade numbers and the summary.
 
 <!-- data-dictionary: trade_diagnostics.json -->
 | Field | Meaning | Unit | Code | When known |
@@ -370,120 +364,10 @@ Over all windows of a variant (`RP:_build_diagnostics`); the profitability repor
 | `fee_reduction_metrics` | Copy of summary.fee_reduction_metrics. | map | `RP:_build_diagnostics` | run |
 <!-- /data-dictionary -->
 
-## 6. The five category reports
+## 6. (removed)
 
-`artifacts/reports/<category>.yaml` (`BR:build_reports`). With the variant loop: one block per
-graded variant under `variants.<variant>`; a single-run report has `slices` at the
-top instead. A slice that cannot be built is `{unavailable: true, reason}`.
-Reports re-project the blocks above; they add only the hindsight lag and the G7
-aggregates. The `mean` / `median` / `p10` / `p90` aggregates (`BR:_aggregate_records`)
-are over records, where `n` counts records, numeric or not (A11). A field without a
-`category:` prefix is in every report.
-
-<!-- data-dictionary: reports -->
-| Field | Meaning | Unit | Code | When known |
-|---|---|---|---|---|
-| `category` | Report name. | label | `BR:_wrap`, `BR:build_reports` | meta |
-| `source_run_id` | Run id. | id | `BR:build_reports` | meta |
-| `generated_at` | When built (UTC). | time | `BR:build_reports` | meta |
-| `schema_version` | 2 with the variant loop. | int | `BR:build_reports` | meta |
-| `variants.<variant>.kind` | Variant kind (base, design, asset) from the variant index. | label | `BR:build_reports` | meta |
-| `variants.<variant>.symbol` | Its symbol. | id | `BR:build_reports` | meta |
-| `variants.<variant>.status` | `graded` (backtested and graded; not a verdict). | label | `BR:build_reports` | meta |
-| `variants.<variant>.coverage` | Partial-coverage note, when given. | text | `BR:build_reports` | meta |
-| `variants.<variant>.slices` | The four slices of this variant (the `slices.*` rows below). | map | `BR:build_reports` | run |
-| `failed_variants` | {variant: reason} for each variant that produced no graded result. | map | `BR:build_reports` | meta |
-| `untested_variants` | {variant: reason} for each variant of the idea not run in this run. | map | `BR:build_reports` | meta |
-| `slices.overall` | Whole-variant slice. | map | `BR:_wrap` | run |
-| `slices.per_window` | Per protocol window. | list/map | `BR:_wrap` | run |
-| `slices.per_regime` | Per regime label. | map | `BR:_wrap` | run |
-| `slices.per_symbol` | Per symbol. | map | `BR:_wrap` | run |
-| `slices.<slice>.unavailable` | The slice could not be built (any report, any slice). | bool | `BR:_unavailable` | meta |
-| `slices.<slice>.reason` | Why. | text | `BR:_unavailable` | meta |
-| `slices.overall.unavailable` | Readers' exploration copy only (E-072, `explore_confirm`): `true` in the profitability, trade_efficiency and forecast_power reports, because their `overall` slice is an aggregate over every window, the confirmation windows included. | bool | `BR:_withhold_pooled_overall`, `BR:_unavailable` | meta |
-| `slices.overall.reason` | Readers' exploration copy only (E-072): why that `overall` slice is withheld (`WINDOWS_WITHHELD_REASON`). | text | `BR:_withhold_pooled_overall`, `BR:_unavailable` | meta |
-| `windows_shown` | Readers' exploration copy only (E-072): the window labels this report was built from; every other window is left out. | list | `BR:build_reports` | meta |
-| `profitability: slices.overall.source` | Where the block comes from. | text | `BR:build_profitability_report` | meta |
-| `profitability: slices.overall.diagnostics` | Section 5. | map | `BR:build_profitability_report` | run |
-| `profitability: slices.overall.verdict` | Legacy verdict (removed when retired). | label | `BR:build_profitability_report` | run |
-| `profitability: slices.overall.verdict_reason` | Its text (removed when retired). | text | `BR:build_profitability_report` | run |
-| `profitability: slices.per_window[].symbol` | Symbol. | id | `BR:build_profitability_report` | meta |
-| `profitability: slices.per_window[].window` | Window label. | label | `BR:build_profitability_report` | meta |
-| `profitability: slices.per_window[].run_id` | Window backtest run id (its bars.csv folder). | id | `BR:build_profitability_report` | meta |
-| `profitability: slices.per_window[].core` | Section 3. | map | `BR:build_profitability_report` | run |
-| `profitability: slices.per_regime.<regime>[].symbol` | Symbol. Each row also carries the window's section 4 `per_regime` fields for this regime. | id | `BR:build_profitability_report` | meta |
-| `profitability: slices.per_regime.<regime>[].window` | Window label. | label | `BR:build_profitability_report` | meta |
-| `profitability: slices.per_symbol.<symbol>[].window` | Window label (an index of the symbol's windows). | label | `BR:build_profitability_report` | meta |
-| `profitability: slices.per_symbol.<symbol>[].run_id` | Window backtest run id. | id | `BR:build_profitability_report` | meta |
-| `trade_efficiency: slices.overall.source` | Where the block comes from; the block also carries every `summary` field of section 2. | text | `BR:build_trade_efficiency_report` | meta |
-| `trade_efficiency: slices.per_window.<window>.n` | Trades in the window's group. | count | `BR:_aggregate_records` | run |
-| `trade_efficiency: slices.per_window.<window>.<trade field>.mean` | Mean of a numeric trade field (section 2) over the window's trades; booleans and labels dropped (A10). | field | `BR:_aggregate_records` | run |
-| `trade_efficiency: slices.per_window.<window>.<trade field>.median` | Median, same trades. | field | `BR:_aggregate_records` | run |
-| `trade_efficiency: slices.per_window.<window>.<trade field>.p10` | 10th percentile (linear interpolation), same trades. | field | `BR:_aggregate_records` | run |
-| `trade_efficiency: slices.per_window.<window>.<trade field>.p90` | 90th percentile (linear interpolation), same trades. | field | `BR:_aggregate_records` | run |
-| `trade_efficiency: slices.per_regime.<regime>.n` | Trades in the entry regime's group. | count | `BR:_aggregate_records` | run |
-| `trade_efficiency: slices.per_regime.<regime>.<trade field>.mean` | Mean of a numeric trade field (section 2) over the entry regime's trades; booleans and labels dropped (A10). | field | `BR:_aggregate_records` | run |
-| `trade_efficiency: slices.per_regime.<regime>.<trade field>.median` | Median, same trades. | field | `BR:_aggregate_records` | run |
-| `trade_efficiency: slices.per_regime.<regime>.<trade field>.p10` | 10th percentile (linear interpolation), same trades. | field | `BR:_aggregate_records` | run |
-| `trade_efficiency: slices.per_regime.<regime>.<trade field>.p90` | 90th percentile (linear interpolation), same trades. | field | `BR:_aggregate_records` | run |
-| `trade_efficiency: slices.per_symbol.<symbol>.n` | Trades in the symbol's group. | count | `BR:_aggregate_records` | run |
-| `trade_efficiency: slices.per_symbol.<symbol>.<trade field>.mean` | Mean of a numeric trade field (section 2) over the symbol's trades; booleans and labels dropped (A10). | field | `BR:_aggregate_records` | run |
-| `trade_efficiency: slices.per_symbol.<symbol>.<trade field>.median` | Median, same trades. | field | `BR:_aggregate_records` | run |
-| `trade_efficiency: slices.per_symbol.<symbol>.<trade field>.p10` | 10th percentile (linear interpolation), same trades. | field | `BR:_aggregate_records` | run |
-| `trade_efficiency: slices.per_symbol.<symbol>.<trade field>.p90` | 90th percentile (linear interpolation), same trades. | field | `BR:_aggregate_records` | run |
-| `forecast_power: statistic_labels.forecast_return_corr` | What that statistic is (a top-level key of this report, under reader_findings only). | text | `BR:FORECAST_POWER_STATISTIC_LABELS` | meta |
-| `forecast_power: statistic_labels.forecast_return_corr_pvalue` | Same. | text | `BR:FORECAST_POWER_STATISTIC_LABELS` | meta |
-| `forecast_power: statistic_labels.median_forecast_return_corr` | Same. | text | `BR:FORECAST_POWER_STATISTIC_LABELS` | meta |
-| `forecast_power: statistic_labels.prescreen_pooled_ic` | Same. | text | `BR:FORECAST_POWER_STATISTIC_LABELS` | meta |
-| `forecast_power: slices.overall.median_forecast_return_corr` | Section 5 field. | corr | `BR:build_forecast_power_report` | after |
-| `forecast_power: slices.overall.median_forecast_return_corr_source` | Where it comes from. | text | `BR:build_forecast_power_report` | meta |
-| `forecast_power: slices.overall.prescreen_backtest_cross_check` | Legacy block, only when the run had a prescreen (stage removed). | map | `BR:build_forecast_power_report` | run |
-| `forecast_power: slices.per_window[].symbol` | Symbol. | id | `BR:build_forecast_power_report` | meta |
-| `forecast_power: slices.per_window[].window` | Window label. | label | `BR:build_forecast_power_report` | meta |
-| `forecast_power: slices.per_window[].run_id` | Window backtest run id. | id | `BR:build_forecast_power_report` | meta |
-| `forecast_power: slices.per_window[].forecast_return_corr` | core.forecast_return_corr of the window. | corr | `BR:build_forecast_power_report` | after |
-| `forecast_power: slices.per_window[].forecast_return_corr_pvalue` | core p-value (not block-adjusted). | p | `BR:build_forecast_power_report` | after |
-| `forecast_power: slices.per_regime.<regime>[].symbol` | Symbol. Each row also carries the window's section 4 `regime_validity` fields for this regime. | id | `BR:build_forecast_power_report` | meta |
-| `forecast_power: slices.per_regime.<regime>[].window` | Window label. | label | `BR:build_forecast_power_report` | meta |
-| `forecast_power: slices.per_symbol.<symbol>[].window` | Window label. | label | `BR:build_forecast_power_report` | meta |
-| `forecast_power: slices.per_symbol.<symbol>[].forecast_return_corr` | As in per_window. | corr | `BR:build_forecast_power_report` | after |
-| `forecast_power: slices.per_symbol.<symbol>[].forecast_return_corr_pvalue` | As in per_window. | p | `BR:build_forecast_power_report` | after |
-| `regime_power: slices.overall.note` | Fixed text: what this report computes. | text | `BR:build_regime_power_report` | meta |
-| `regime_power: slices.per_window[].symbol` | Symbol. | id | `BR:build_regime_power_report` | meta |
-| `regime_power: slices.per_window[].window` | Window label. | label | `BR:build_regime_power_report` | meta |
-| `regime_power: slices.per_window[].run_id` | Window backtest run id. | id | `BR:build_regime_power_report` | meta |
-| `regime_power: slices.per_window[].per_regime` | Section 4 per_regime of the window. | map | `BR:build_regime_power_report` | run |
-| `regime_power: slices.per_window[].regime_validity` | Section 4 regime_validity of the window. | map | `BR:build_regime_power_report` | after |
-| `regime_power: slices.per_window[].hindsight_lag` | Lag of the live regime changes behind hindsight direction changes. | map | `BR:build_regime_power_report`, `BR:_compute_hindsight_lag` | after |
-| `regime_power: slices.per_window[].hindsight_lag.live_transition_count` | Live label changes (unknown/blank excluded). | count | `BR:_compute_hindsight_lag` | run |
-| `regime_power: slices.per_window[].hindsight_lag.hindsight_transition_count` | Changes of the 5-bar-ahead price direction label. | count | `BR:_compute_hindsight_lag` | after |
-| `regime_power: slices.per_window[].hindsight_lag.lags_bars` | live index - nearest hindsight index within 20 bars. | bars | `BR:_compute_hindsight_lag` | after |
-| `regime_power: slices.per_window[].hindsight_lag.median_lag_bars` | Their median. | bars | `BR:_compute_hindsight_lag` | after |
-| `regime_power: slices.per_window[].hindsight_lag.reason` | Why no lag, or why the lag could not be computed. | text | `BR:_compute_hindsight_lag`, `BR:_unavailable` | meta |
-| `regime_power: slices.per_window[].hindsight_lag.unavailable` | The window's bars.csv is missing or has no usable close. | bool | `BR:_unavailable` | meta |
-| `regime_power: slices.per_regime.<regime>[].symbol` | Symbol. | id | `BR:build_regime_power_report` | meta |
-| `regime_power: slices.per_regime.<regime>[].window` | Window label. | label | `BR:build_regime_power_report` | meta |
-| `regime_power: slices.per_regime.<regime>[].per_regime` | Section 4 per_regime block of this regime in the window. | map | `BR:build_regime_power_report` | run |
-| `regime_power: slices.per_regime.<regime>[].regime_validity` | Section 4 regime_validity block of this regime in the window. | map | `BR:build_regime_power_report` | after |
-| `regime_power: slices.per_symbol.<symbol>[]` | The symbol's per_window rows (same fields as `per_window[]`). | list | `BR:build_regime_power_report`, `BR:_wrap` | after |
-| `component_attribution: slices.overall.components_discovered` | Component ids found in bars.csv columns. | list | `BR:build_component_attribution_report` | meta |
-| `component_attribution: slices.overall.note` | Fixed text. | text | `BR:build_component_attribution_report` | meta |
-| `component_attribution: slices.per_window.<window>.<component>.n` | Bar records of the component in the window's bars, warm-up and not-ready bars included (A11). | count | `BR:_aggregate_records` | run |
-| `component_attribution: slices.per_window.<window>.<component>.<metric>.mean` | Mean of a bars.csv component metric (`last_history_value`, `post_pipeline_value`, ...) over the window's bars. | field | `BR:_aggregate_records` | run |
-| `component_attribution: slices.per_window.<window>.<component>.<metric>.median` | Median, same bars. | field | `BR:_aggregate_records` | run |
-| `component_attribution: slices.per_window.<window>.<component>.<metric>.p10` | 10th percentile (linear interpolation), same bars. | field | `BR:_aggregate_records` | run |
-| `component_attribution: slices.per_window.<window>.<component>.<metric>.p90` | 90th percentile (linear interpolation), same bars. | field | `BR:_aggregate_records` | run |
-| `component_attribution: slices.per_regime.<regime>.<component>.n` | Bar records of the component in the regime's (bar label) bars, warm-up and not-ready bars included (A11). | count | `BR:_aggregate_records` | run |
-| `component_attribution: slices.per_regime.<regime>.<component>.<metric>.mean` | Mean of a bars.csv component metric (`last_history_value`, `post_pipeline_value`, ...) over the regime's (bar label) bars. | field | `BR:_aggregate_records` | run |
-| `component_attribution: slices.per_regime.<regime>.<component>.<metric>.median` | Median, same bars. | field | `BR:_aggregate_records` | run |
-| `component_attribution: slices.per_regime.<regime>.<component>.<metric>.p10` | 10th percentile (linear interpolation), same bars. | field | `BR:_aggregate_records` | run |
-| `component_attribution: slices.per_regime.<regime>.<component>.<metric>.p90` | 90th percentile (linear interpolation), same bars. | field | `BR:_aggregate_records` | run |
-| `component_attribution: slices.per_symbol.<symbol>.<component>.n` | Bar records of the component in the symbol's bars, warm-up and not-ready bars included (A11). | count | `BR:_aggregate_records` | run |
-| `component_attribution: slices.per_symbol.<symbol>.<component>.<metric>.mean` | Mean of a bars.csv component metric (`last_history_value`, `post_pipeline_value`, ...) over the symbol's bars. | field | `BR:_aggregate_records` | run |
-| `component_attribution: slices.per_symbol.<symbol>.<component>.<metric>.median` | Median, same bars. | field | `BR:_aggregate_records` | run |
-| `component_attribution: slices.per_symbol.<symbol>.<component>.<metric>.p10` | 10th percentile (linear interpolation), same bars. | field | `BR:_aggregate_records` | run |
-| `component_attribution: slices.per_symbol.<symbol>.<component>.<metric>.p90` | 90th percentile (linear interpolation), same bars. | field | `BR:_aggregate_records` | run |
-<!-- /data-dictionary -->
+D-198: the five category reports (`artifacts/reports/<category>.yaml`) are no longer built; this
+section described them and was removed from the dictionary the analyst reads.
 
 ## 7. grid_evaluation.yaml
 
@@ -544,70 +428,11 @@ variant (`VE:evaluate_grid`, written at `P1:run_tool_worker`). Cells are `PASS`,
 | `grid.<criterion>.<variant>.weight_schedule` | profit_bars cells: the grader's weight schedule. | map | `VE:_evaluate_profit_bars_cell` | meta |
 <!-- /data-dictionary -->
 
-## 8. claim_result_digest.yaml
+## 8. (removed)
 
-`artifacts/claim_result_digest.yaml`, written by code for the v3 readers (`RF:claim_result_digest`).
-Effect sizes are on bars after the fact: `after`.
-
-<!-- data-dictionary: claim_result_digest.yaml -->
-| Field | Meaning | Unit | Code | When known |
-|---|---|---|---|---|
-| `schema_version` | 1. | int | `RF:claim_result_digest` | meta |
-| `label` | `measured, not proven`. | text | `RF:claim_result_digest`, `CF:LABEL` | meta |
-| `note` | Fixed text (information only). | text | `RF:claim_result_digest` | meta |
-| `information_only` | true. | bool | `RF:claim_result_digest` | meta |
-| `status` | `error` when the digest could not be built. | label | `RF:claim_result_digest` | meta |
-| `detail` | Error text. | text | `RF:claim_result_digest` | meta |
-| `approximation` | The run tested an approximation of the idea (nearest build). | map | `RF:claim_result_digest`, `NB:approximation_block` | meta |
-| `approximation.line` | One-line summary. | text | `NB:approximation_block` | meta |
-| `approximation.n_deviations` | Number of differences. | count | `NB:approximation_block` | meta |
-| `approximation.deviations[].clause` | Claim clause approximated. | text | `NB:approximation_block` | meta |
-| `approximation.deviations[].built_instead` | What was built. | text | `NB:approximation_block` | meta |
-| `approximation.deviations[].missing` | What is missing to build it. | text | `NB:approximation_block` | meta |
-| `approximation.deviations[].effect` | Expected effect of the difference. | text | `NB:approximation_block` | meta |
-| `approximation.ref` | `artifacts/deviations.yaml`. | path | `NB:approximation_block` | meta |
-| `variant_patches` | Each variant's exact change to the base config. | map | `RF:claim_result_digest`, `RF:variant_patches_digest` | meta |
-| `variant_patches.note` | Fixed text. | text | `RF:variant_patches_digest` | meta |
-| `variant_patches.base_config_ref` | Base config path. | path | `RF:variant_patches_digest` | meta |
-| `variant_patches.variants[].variant_id` | Variant id. | id | `RF:variant_patches_digest` | meta |
-| `variant_patches.variants[].kind` | Variant kind. | label | `RF:variant_patches_digest` | meta |
-| `variant_patches.variants[].symbol` | Symbol. | id | `RF:variant_patches_digest` | meta |
-| `variant_patches.variants[].patch[].path` | JSON pointer changed. | path | `RF:variant_patches_digest` | meta |
-| `variant_patches.variants[].patch[].value` | New value. | value | `RF:variant_patches_digest` | meta |
-| `statement` | The claim, verbatim from the card. | text | `RF:claim_result_digest` | meta |
-| `kind` | Claim kind. | label | `RF:claim_result_digest` | meta |
-| `block_visibility` | Whether a test reads the block (ok / blind / not_applicable). | label | `RF:claim_result_digest` | meta |
-| `manifest_kind` | Block kind of the manifest (forecast / regime). | label | `RF:claim_result_digest` | meta |
-| `statistics_note` | Fixed text on the statistics. | text | `RF:claim_result_digest` | meta |
-| `tests[].name` | Test name. | id | `RF:claim_result_digest` | meta |
-| `tests[].spec_hash` | Hash of the test spec. | hash | `RF:claim_result_digest` | meta |
-| `tests[].statistic` | `rank_ic`, `mean_diff`, `hit_rate` or `decay_curve`. | label | `RF:claim_result_digest` | meta |
-| `tests[].statistic_label` | What that statistic is. | text | `RF:claim_result_digest` | meta |
-| `tests[].direction` | `greater` or `less`. | label | `RF:claim_result_digest` | meta |
-| `tests[].selector` | Which bars (card spec; reads bar t only, `CT:SELECTORS`). | map | `RF:claim_result_digest` | meta |
-| `tests[].outcome` | The forward outcome and horizons (card spec, `CT:OUTCOMES`). | map | `RF:claim_result_digest` | meta |
-| `tests[].baseline` | Reference bars (card spec, `CT:BASELINES`). | map | `RF:claim_result_digest` | meta |
-| `tests[].signal` | The bars.csv forecast column the test reads (D-193); written only when the card's test names a signal other than `forecast`. | text | `RF:claim_result_digest`, `CT:signal_errors` | meta |
-| `claim_status` | Run status from claim_measurement.yaml (`absent` without one). | label | `RF:claim_result_digest` | run |
-| `reason` | Its reason. | text | `RF:claim_result_digest` | meta |
-| `variants.<variant>.status` | `measured`, `no_events` or `not_measured`. | label | `RF:_variant_digest` | run |
-| `variants.<variant>.reason` | Why not measured (`stale` = not this attempt's bars). | text | `RF:_variant_digest` | meta |
-| `variants.<variant>.detail` | Detail of a stale reason. | text | `RF:_variant_digest` | meta |
-| `variants.<variant>.tests.<test>.status` | Test status. | label | `CF:_compact_test` | run |
-| `variants.<variant>.tests.<test>.spec_hash` | Spec hash. | hash | `CF:_compact_test` | meta |
-| `variants.<variant>.tests.<test>.reason` | Why not measured. | text | `CF:_compact_test` | meta |
-| `variants.<variant>.tests.<test>.statistic_label` | What the effect is. | text | `RF:_variant_digest` | meta |
-| `variants.<variant>.tests.<test>.peak_horizon` | decay_curve: horizon of the largest claim-signed effect. | bars | `CF:_compact_test` | after |
-| `variants.<variant>.tests.<test>.floor_not_met` | Floors of the card not reached. | list | `CF:_compact_test` | run |
-| `variants.<variant>.tests.<test>.horizons.<h>.effect` | The test's statistic at horizon h over all windows (6 significant digits, raw sign). | stat | `CF:_compact_test`, `CM:measure_test` | after |
-| `variants.<variant>.tests.<test>.horizons.<h>.n_events` | Selected bars with an outcome. | count | `CF:_compact_test` | after |
-| `variants.<variant>.tests.<test>.horizons.<h>.windows_claimed_sign` | Windows whose effect has the claimed sign. | count | `CF:_compact_test` | after |
-| `variants.<variant>.tests.<test>.horizons.<h>.windows_with_value` | Windows with a defined effect. | count | `CF:_compact_test` | after |
-| `variants.<variant>.tests.<test>.horizons.<h>.per_coin.<symbol>.effect` | `effect` for this coin's bars (only with several coins). | stat | `CF:_compact_test` | after |
-| `variants.<variant>.tests.<test>.horizons.<h>.per_coin.<symbol>.n_events` | `n_events` for this coin. | count | `CF:_compact_test` | after |
-| `variants.<variant>.tests.<test>.horizons.<h>.per_coin.<symbol>.windows_claimed_sign` | `windows_claimed_sign` for this coin. | count | `CF:_compact_test` | after |
-| `variants.<variant>.tests.<test>.horizons.<h>.per_coin.<symbol>.windows_with_value` | `windows_with_value` for this coin. | count | `CF:_compact_test` | after |
-<!-- /data-dictionary -->
+D-198: `claim_result_digest.yaml` (the readers' digest of the claim's measured numbers) is no
+longer written; this section described it and was removed from the dictionary the analyst reads.
+The claim's measured numbers are in `claim_measurement.yaml` (section 9).
 
 ## 9. claim_measurement.yaml
 
@@ -637,15 +462,13 @@ measurement status (`CM:run_doc`, error case `CM:error_doc`). Per-variant detail
 | `tests[].status` | `measured`, `no_events` or `not_measured`. | label | `CM:run_doc` | run |
 <!-- /data-dictionary -->
 
-<!-- readers: omit -->
 ## 10. The analyst's economics tools (PR-B, orchestrator.analyst.enabled)
 
 Not run-artifact fields: figures the analyst's query engine (`tools/analyst_queries.py`)
 reports per window. Most are READ from the run's own record: the window's `core` block (section 3;
 `protocol_result.yaml` `results[].core`) and `metrics.json` `bar_equity`. Only four are computed
-here, from `bars.csv` and `trades.json`. This section is not parsed by
-`tests/test_e073_data_dictionary.py` (it has no `data-dictionary` marker) and is left out of
-the readers' subset.
+here, from `bars.csv` and `trades.json`. This section has no `data-dictionary` marker, so no
+code parses it.
 
 **`window_economics`** (`tools/window_economics.py`; counts 0 comparisons; refused above 12
 cells). Returns `windows.<symbol>/<window>` and `total`, one cell each. The same object is
@@ -727,7 +550,7 @@ these columns, as on any other.
 Claim fields: a claim selector reads forecast, close, past_return, trailing_vol, abs_forecast or forecast_sign_change; a trade test's outcome is trade_net_return, post_exit_return or trade_gross_return (see CLAIM_TESTS.md). allocation_abs, trade_cost_pct and the window_economics figures are not claim fields.
 
 **The `signal` key** (D-193; optional on a bar claim test, on `conditional_effect` and, for the derived columns `abs_forecast` and `forecast_sign_change`, on `describe` / `distribution`; default `forecast`). A test reads the forecast array of its signal: `forecast`, or any `bars.csv` column of section 1 whose Unit is `forecast` and whose When known is `close` or `fill` (today the component columns `debug_info.components.<component>.post_pipeline_value` and `.weighted_contribution`, and `debug_info.forecast_delta`). The allowed values are read from the Unit column of that table, not from a list in code. A component the variant does not have is refused ("no component <id> in this variant"). A trade test takes no signal. The key is written into a test block only when it is not `forecast`.
-<!-- /readers: omit -->
+
 ## Not recorded today
 
 These do not exist in any file the AI steps read. Do not infer them.

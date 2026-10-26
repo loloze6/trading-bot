@@ -41,7 +41,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import block_registry as br  # noqa: E402
 import reader_proposals  # noqa: E402
 import run_phase1_research as rpr  # noqa: E402
-from build_reports import REPORT_CATEGORIES  # noqa: E402
+from reader_categories import READER_CATEGORIES as REPORT_CATEGORIES  # noqa: E402
 
 from _reader_test_helpers import (  # noqa: E402
     ALL_ON, RUN_ID, _VALID_EXAMPLES, _fake_llm, _seed_run, _set_orchestrator)
@@ -355,35 +355,18 @@ def test_summary_is_deterministic_and_writes_nothing(tmp_path):
 # 2. Wiring: handoff, stage, only caller, flag off
 # ---------------------------------------------------------------------------
 
-def test_every_reader_handoff_lists_the_registry_summary_last():
-    for cat in REPORT_CATEGORIES:
-        req = [r["path"] for r in rpr._reader_handoff(cat, "run_001", 0)["required_inputs"]]
-        assert req == [f"artifacts/reports/{cat}.yaml", "artifacts/grid_evaluation.yaml",
-                       "artifacts/hypothesis_card.yaml",
-                       "artifacts/candidate_strategy_config.json",
-                       "../../docs/COMPONENT_CATALOG.md", "../../docs/STRATEGY_DESIGN_GUIDE.md",
-                       "artifacts/registry_summary.yaml"]
-
-
-def test_stage_writes_the_summary_before_the_first_reader(monkeypatch):
+def test_the_summary_is_written_with_the_registry_and_the_runs_idea_status(monkeypatch):
+    """D-198: written by _write_registry_summary (called from regroup_record), no longer by
+    the readers' stage."""
     _set_orchestrator(ALL_ON)
     monkeypatch.chdir(SR_ROOT)
     run_dir = _seed_run()
     (run_dir / "artifacts" / "registry_summary.yaml").unlink()  # the stub _seed_run leaves
     rpr._block_registry_path().parent.mkdir(parents=True, exist_ok=True)
     rpr._block_registry_path().write_text(yaml.safe_dump(_doc(_block("H-1:run_001"))), encoding="utf-8")
-    seen = []
-
-    async def _spy(prompt):
-        path = run_dir / "artifacts" / "registry_summary.yaml"
-        seen.append(path.exists() and "H-1:run_001" in prompt)
-        return await _fake_llm()(prompt)
-    monkeypatch.setattr(rpr, "_invoke_reader_llm", _spy)
-    rpr._run_specialist_readers_stage(RUN_ID, run_dir)
-    assert seen == [True] * len(REPORT_CATEGORIES)
+    rpr._write_registry_summary(run_dir, idea_status="refuted")
     written = yaml.safe_load((run_dir / "artifacts" / "registry_summary.yaml").read_text(encoding="utf-8"))
     assert written["run_id"] == RUN_ID and written["registry"]["n_blocks"] == 1
-    # the run's own grid status (the seeded run is refuted) rides along for the SKILLs' row 0
     assert written["this_run"]["idea_status"] == "refuted"
     # no manifest in this seeded run: the type is unknown, with a reason
     assert written["this_run"]["reason"] == "no_block_manifest"
@@ -392,34 +375,17 @@ def test_stage_writes_the_summary_before_the_first_reader(monkeypatch):
 @pytest.mark.parametrize("bad", ["schema_version: 1\nrevision: 0\nblocks: nope\n",
                                  "schema_version: 1\nrevision: 0\nblocks: [oops]\n",
                                  "not: [valid"])
-def test_a_malformed_registry_raises_from_the_stage_before_any_reader(monkeypatch, bad):
-    """Not only load_registry: the STAGE stops on a registry it cannot read (a summary is
-    never guessed), before the first reader is prompted and before anything is written."""
+def test_a_malformed_registry_raises_from_the_writer_and_writes_nothing(monkeypatch, bad):
+    """Not only load_registry: the writer stops on a registry it cannot read (a summary is
+    never guessed) and writes nothing."""
     _set_orchestrator(ALL_ON)
     monkeypatch.chdir(SR_ROOT)
     run_dir = _seed_run()
     (run_dir / "artifacts" / "registry_summary.yaml").unlink()
     rpr._block_registry_path().parent.mkdir(parents=True, exist_ok=True)
     rpr._block_registry_path().write_text(bad, encoding="utf-8")
-    prompts = []
-
-    async def _spy(prompt):
-        prompts.append(prompt)
-        return await _fake_llm()(prompt)
-    monkeypatch.setattr(rpr, "_invoke_reader_llm", _spy)
     with pytest.raises(br.BlockRegistryError):
-        rpr._run_specialist_readers_stage(RUN_ID, run_dir)
-    assert prompts == []
-    assert not (run_dir / "artifacts" / "registry_summary.yaml").exists()
-
-
-def test_flag_off_the_stage_refuses_before_writing_the_summary(monkeypatch):
-    _set_orchestrator({})
-    monkeypatch.chdir(SR_ROOT)
-    run_dir = _seed_run()
-    (run_dir / "artifacts" / "registry_summary.yaml").unlink()
-    with pytest.raises(RuntimeError, match="specialist_readers"):
-        rpr._run_specialist_readers_stage(RUN_ID, run_dir)
+        rpr._write_registry_summary(run_dir, idea_status="refuted")
     assert not (run_dir / "artifacts" / "registry_summary.yaml").exists()
 
 
@@ -444,12 +410,12 @@ def _callers(paths, name):
     return found
 
 
-def test_the_readers_stage_is_the_only_caller():
+def test_the_regroup_record_stage_is_the_only_caller():
     sources = sorted((SR_ROOT / "workflow").glob("*.py")) + sorted((SR_ROOT / "tools").glob("*.py"))
     sources = [p for p in sources if p.name != "block_registry.py"] + [SR_ROOT / "tools" / "block_registry.py"]
     assert _callers(sources, "registry_summary") == [("run_phase1_research.py", "_write_registry_summary")]
     assert _callers(sources, "_write_registry_summary") == [
-        ("run_phase1_research.py", "_run_specialist_readers_stage")]
+        ("run_phase1_research.py", "_run_regroup_record_stage")]
     # nothing else names the artifact as a path either
     for p in sources:
         text = p.read_text(encoding="utf-8")
@@ -458,105 +424,8 @@ def test_the_readers_stage_is_the_only_caller():
 
 
 # ---------------------------------------------------------------------------
-# 3. The SKILLs
+# 3. (D-198: the five reader SKILLs this section pinned are deleted)
 # ---------------------------------------------------------------------------
-
-_SKILLS = SR_ROOT / "workflow_artifacts" / "skills" / "readers"
-
-
-@pytest.mark.parametrize("cat", REPORT_CATEGORIES)
-def test_reader_skill_carries_the_card_i_anchors_and_the_extra_input(cat):
-    text = (_SKILLS / f"{cat}-reader" / "SKILL.md").read_text(encoding="utf-8")
-    # CUL-381: regime_power is -v3 (its scoring rows no longer use detector health)
-    current = "v3" if cat == "regime_power" else "v2"
-    assert f'{cat}-reader-{current}' in text and f"{cat}-reader-v1" not in text
-    assert "artifacts/registry_summary.yaml" in text
-    context_rule = text.split("## Context rule")[1]
-    assert "registry_summary.yaml" in context_rule
-    scope = text.split("**Scope boundary.**")[1].split("\n## ")[0]
-    assert "block_registry.yaml" in scope  # the registry itself stays out of scope
-    rows = {int(l.split("|")[1]): l.split(" | ")[2] for l in text.split("## Scoring")[1].splitlines()
-            if l.startswith(("| 0 |", "| 1 |", "| 2 |", "| 3 |"))}
-    assert set(rows) == {0, 1, 2, 3}
-    assert "patches_registered_block" in rows[0] and "same block type as a registered" in rows[0]
-    assert "0.6" in rows[1] and "different timeframe category or kind" in rows[1]
-    assert "0.3-0.6" in rows[2] and "new_block" in rows[2]
-    assert "0.3" in rows[3] and "not in the registry" in rows[3]
-    assert "rank-only placeholders" in text
-    # the other two score columns keep their own anchors (only distance changed)
-    assert "`confidence_real`" in text and "`mechanism_plausibility`" in text
-
-
-def test_the_five_skills_carry_the_same_distance_rows():
-    """Card I is category-independent: the distance column is identical across readers."""
-    cols = []
-    for cat in REPORT_CATEGORIES:
-        text = (_SKILLS / f"{cat}-reader" / "SKILL.md").read_text(encoding="utf-8")
-        cols.append([l.split(" | ")[2] for l in text.split("## Scoring")[1].splitlines()
-                     if l.startswith(("| Score ", "| 0 |", "| 1 |", "| 2 |", "| 3 |"))])
-    assert all(c == cols[0] for c in cols) and len(cols[0]) == 5
-
-
-def _distance_section(cat: str) -> str:
-    text = (_SKILLS / f"{cat}-reader" / "SKILL.md").read_text(encoding="utf-8").replace("\r\n", "\n")
-    return text.split("### Distance to profitable")[1].split("\n## ")[0]
-
-
-def test_the_five_skills_carry_a_byte_identical_distance_section():
-    sections = [_distance_section(cat) for cat in REPORT_CATEGORIES]
-    assert all(s == sections[0] for s in sections) and len(sections[0]) > 500
-
-
-def test_skills_state_the_round_1_rules():
-    """Row 0 and the precedence rule, patch-only scope, idea_status, n_forecast_blocks."""
-    for cat in REPORT_CATEGORIES:
-        text = (_SKILLS / f"{cat}-reader" / "SKILL.md").read_text(encoding="utf-8").replace("\r\n", "\n")
-        row0 = [l for l in text.split("## Scoring")[1].splitlines() if l.startswith("| 0 |")][0]
-        assert "never a `new_block` sketch" in row0
-        assert "this_run.idea_status" in row0 and "`validated`" in row0
-        row2 = [l for l in text.split("## Scoring")[1].splitlines() if l.startswith("| 2 |")][0]
-        row3 = [l for l in text.split("## Scoring")[1].splitlines() if l.startswith("| 3 |")][0]
-        assert "`no_residual_ic_artifact` while `registry.n_forecast_blocks` > 0" in row2
-        assert "`no_residual_ic_artifact` with `registry.n_forecast_blocks` = 0" in row3
-        assert "`no_residual_ic_artifact`" not in row3.replace(
-            "`no_residual_ic_artifact` with `registry.n_forecast_blocks` = 0", "")
-        section = _distance_section(cat)
-        assert "Precedence (a lower score always wins" in section
-        assert "Take the LOWEST row" not in section  # replaced by the explicit precedence rule
-        assert "never scores 3" in section
-        assert "apply to a `patch`" in section and "never to a `new_block` sketch" in section
-
-
-def _skill_cited_fields(section: str):
-    """(this_run.<field> / registry.<field> paths, relation names) a distance section cites."""
-    import re
-    paths = set(re.findall(r"`((?:this_run|registry)\.[a-z_]+(?:\.[a-z_]+)*)`", section))
-    relations = set(re.findall(r"`(same_[a-z_]+)`", section))
-    return paths, relations
-
-
-def test_every_field_and_relation_a_skill_cites_is_written_by_the_code(tmp_path):
-    run_dir = _run(tmp_path)
-    _residual_ic(run_dir, category="low", composite_kind="block", corr={"base": 0.2})
-    s = br.registry_summary(_doc(_block("H-1:run_001", tf_category="low")), run_dir, idea_status="validated")
-    written = {"this_run": s["this_run"], "registry": s["registry"]}
-    for cat in REPORT_CATEGORIES:
-        paths, relations = _skill_cited_fields(_distance_section(cat))
-        assert "this_run.idea_status" in paths and "registry.n_forecast_blocks" in paths
-        for path in paths:
-            node = written
-            for part in path.split("."):
-                assert isinstance(node, dict) and part in node, (cat, path)
-                node = node[part]
-        # relation names: exactly the ones the code can emit
-        assert relations == set(br.RELATIONS), (cat, relations ^ set(br.RELATIONS))
-    # a `blocks[*].relation_to_this_run` row field the SKILLs also cite
-    assert "relation_to_this_run" in s["blocks"][0]
-    # and the statuses the SKILLs branch on are the statuses the code writes
-    text = _distance_section(REPORT_CATEGORIES[0])
-    for status in ("measured", "no_composite", "no_residual_ic_artifact", "not_measurable"):
-        assert f"`{status}`" in text
-
 
 @pytest.mark.parametrize("this,other,expected", [
     (("forecast", "low"), ("forecast", "low"), "same_type"),

@@ -234,17 +234,12 @@ def test_the_caps_default_to_the_stage_model_and_refuse_bad_values():
 
 @pytest.mark.parametrize("on,ok", [
     ({"folds"}, True),                                   # D-197: folds alone is enough
-    ({"folds", "specialist_readers", "reader_findings"}, True),
-    ({"specialist_readers", "reader_findings"}, False),  # folds is still required
-    (set(), False),
+    (set(), False),                                      # folds is still required
 ])
 def test_the_flag_needs_folds_only(monkeypatch, on, ok):
-    """D-197: the analyst is a stage of its own -- no dependency on specialist_readers,
-    reader_findings or category_reports; the folds dependency stays."""
-    def reader(name):
-        return lambda cfg=None: name in on
-    for name in ("folds", "specialist_readers", "reader_findings", "category_reports"):
-        monkeypatch.setattr(rpr, f"_{name}_enabled", reader(name))
+    """D-197: the analyst is a stage of its own; D-198 deleted the flags it no longer
+    depends on. The folds dependency stays."""
+    monkeypatch.setattr(rpr, "_folds_enabled", lambda cfg=None: "folds" in on)
     cfg = {"orchestrator": {"analyst": {"enabled": True}}}
     if ok:
         assert _REAL_ANALYST_ENABLED(cfg) is True
@@ -410,7 +405,9 @@ def test_an_empty_vehicle_is_refused_by_the_reading_check_for_every_kind(run, mo
 # 5. the stage
 # ---------------------------------------------------------------------------
 
-def test_under_the_flag_the_lenses_replace_the_readers(run, monkeypatch):
+def test_the_stage_runs_the_two_lenses_and_writes_only_their_readings(run, monkeypatch):
+    """D-198: the readers' stage (which wrote `replaced_by_analyst` readings for the other three
+    categories) is deleted; the analyst's own stage writes the two lens files and nothing else."""
     called = []
 
     def fake_worker(lens, run_id, run_dir, stage_attempt=0):
@@ -419,31 +416,12 @@ def test_under_the_flag_the_lenses_replace_the_readers(run, monkeypatch):
         rpr._write_skipped_reading(cat, run_id, run_dir, {"rule": "output_refused_after_retry",
                                                           "reason": "stub"})
     monkeypatch.setattr(rpr, "run_analyst_worker", fake_worker)
-    monkeypatch.setattr(rpr, "run_reader_worker", lambda *a, **k: pytest.fail("a reader ran"))
-    monkeypatch.setattr(rpr, "_reader_findings_enabled", lambda *a: True)
     monkeypatch.setattr(rpr, "_check_reader_budget", lambda *a: None)
-    out = rpr._run_specialist_readers(RUN_ID, run)
+    rpr.save_yaml(run / "artifacts" / "protocol_result.yaml", {"results": []})
+    rpr._run_analyst_stage(RUN_ID, run)
     assert sorted(called) == ["forecast", "trade_efficiency"]
-    for cat in ("profitability", "regime_power", "component_attribution"):
-        doc = yaml.safe_load((run / "artifacts" / "proposals" / f"{cat}.yaml").read_text(encoding="utf-8"))
-        assert doc["skipped"]["rule"] == "replaced_by_analyst"
-    assert set(out) == set(rpr.READER_CATEGORIES)
-
-
-def test_flag_off_the_readers_run_as_before(run, monkeypatch):
-    monkeypatch.setattr(rpr, "_analyst_enabled", lambda *a: False)
-    ran = []
-
-    def fake_reader(category, run_id, run_dir, stage_attempt=0):
-        ran.append(category)
-        rpr._write_skipped_reading(category, run_id, run_dir, {"rule": "single_component",
-                                                               "reason": "stub"})
-    monkeypatch.setattr(rpr, "run_reader_worker", fake_reader)
-    monkeypatch.setattr(rpr, "run_analyst_worker", lambda *a, **k: pytest.fail("analyst ran"))
-    monkeypatch.setattr(rpr, "_reader_findings_enabled", lambda *a: False)
-    monkeypatch.setattr(rpr, "_check_reader_budget", lambda *a: None)
-    rpr._run_specialist_readers(RUN_ID, run)
-    assert ran == list(rpr.READER_CATEGORIES)
+    written = sorted(p.stem for p in (run / "artifacts" / "proposals").glob("*.yaml"))
+    assert written == ["forecast_power", "trade_efficiency"]
 
 
 def test_the_strictness_keyword_names_the_analyst_only_under_the_flag(monkeypatch):
@@ -821,14 +799,6 @@ def test_a_new_stage_attempt_starts_a_new_query_log(run):
         (run / rel).write_text("queries: []\n", encoding="utf-8")
     rpr._clear_specialist_readers_artifacts(run)
     assert not (run / asm.LOG_DIR_REL).exists() and not (run / asm.RECORD_DIR_REL).exists()
-
-
-def test_the_analyst_refuses_explore_confirm(monkeypatch):
-    """L3: the analyst's queries read E-072's confirmation windows too."""
-    for name in ("folds", "specialist_readers", "reader_findings", "explore_confirm"):
-        monkeypatch.setattr(rpr, f"_{name}_enabled", lambda cfg=None: True)
-    with pytest.raises(ValueError, match="cannot run with orchestrator.explore_confirm"):
-        _REAL_ANALYST_ENABLED({"orchestrator": {"analyst": {"enabled": True}}})
 
 
 def test_evidence_from_another_conditional_effect_is_not_the_tests_own():

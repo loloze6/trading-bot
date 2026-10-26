@@ -1,35 +1,25 @@
 """
-tools/reader_proposals.py: load + validate the readers' proposal files.
+tools/reader_proposals.py: load + validate the proposal files (an old run's v2 lists included).
 
-The loader and proposal.schema.json must agree: every schema-valid example
-from the 5b-i test suite loads, and every malformed case below is rejected
-by BOTH (where the schema can express the rule).
+D-198: proposal.schema.json (the v2 list's JSON schema) was deleted with the readers; the loader
+is the one definition now. Every valid example loads and every malformed case below is rejected.
 """
 import copy
-import json
 import sys
 from pathlib import Path
 
 import pytest
 import yaml
 
-jsonschema = pytest.importorskip("jsonschema")
-
 SR_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(SR_ROOT / "tools"))
 sys.path.insert(0, str(Path(__file__).parent))
 
 import reader_proposals as rp  # noqa: E402
-import build_reports  # noqa: E402
+import reader_categories  # noqa: E402
 from _reader_test_helpers import _VALID_EXAMPLES  # noqa: E402
 
-CATEGORIES = list(build_reports.REPORT_CATEGORIES)
-SCHEMA = json.loads((SR_ROOT / "workflow_artifacts" / "schemas" / "proposal.schema.json")
-                    .read_text(encoding="utf-8"))
-
-
-def _schema_ok(p) -> bool:
-    return not list(jsonschema.Draft202012Validator(SCHEMA).iter_errors(p))
+CATEGORIES = list(reader_categories.READER_CATEGORIES)
 
 
 def _write(tmp_path, files: dict) -> Path:
@@ -55,7 +45,6 @@ def test_every_schema_valid_example_loads(tmp_path):
     files = {}
     for cat, ex in _VALID_EXAMPLES.items():
         p = _with_id(ex, cat)
-        assert _schema_ok(p)
         files[f"{cat}.yaml"] = yaml.safe_dump([p])
     out = rp.load_proposals(_write(tmp_path, files), CATEGORIES)
     assert all(len(out[c]) == 1 for c in _VALID_EXAMPLES)
@@ -67,7 +56,6 @@ def test_every_valid_example_with_requires_feed_loads_and_validates(tmp_path):
     for cat, ex in _VALID_EXAMPLES.items():
         p = _with_id(ex, cat)
         p["requires_feed"] = {"feed": "open_interest", "reason": "slices.overall.x=1"}
-        assert _schema_ok(p)
         files[f"{cat}.yaml"] = yaml.safe_dump([p])
     out = rp.load_proposals(_write(tmp_path, files), CATEGORIES)
     assert all(out[c][0]["requires_feed"]["feed"] == "open_interest" for c in _VALID_EXAMPLES)
@@ -126,12 +114,10 @@ _BAD_ENTRIES = {
 
 
 @pytest.mark.parametrize("name", sorted(_BAD_ENTRIES))
-def test_malformed_entry_is_rejected_by_loader_and_schema(tmp_path, name):
+def test_malformed_entry_is_rejected_by_the_loader(tmp_path, name):
     bad = _mutated(_BAD_ENTRIES[name])
     with pytest.raises(rp.ProposalError):
         rp.load_proposals(_write(tmp_path, {"profitability.yaml": yaml.safe_dump([bad])}), CATEGORIES)
-    if name not in ("score_float",):  # JSON Schema treats 2.0 as an integer; the loader is stricter
-        assert not _schema_ok(bad), f"schema accepted {name}"
 
 
 @pytest.mark.parametrize("files", [

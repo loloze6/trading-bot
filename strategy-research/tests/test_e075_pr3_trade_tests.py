@@ -660,12 +660,10 @@ def test_the_trade_guide_lists_exactly_the_engine_fields_causes_and_blocks():
         assert f not in ct.TRADE_FIELDS
 
 
-def test_the_readers_data_dictionary_subset_is_unchanged_by_the_new_note():
-    import data_dictionary as dd
-    full = dd.FULL_DOC.read_text(encoding="utf-8")
-    assert "Trade-level claim tests (E-075 PR-3" in full
-    assert dd.reader_subset(full) == dd.READERS_DOC.read_text(encoding="utf-8")
-    assert "E-075 PR-3" not in dd.READERS_DOC.read_text(encoding="utf-8")
+def test_the_data_dictionary_carries_the_trade_level_claim_tests_note():
+    full = (Path(__file__).resolve().parent.parent / "docs" / "DATA_DICTIONARY.md").read_text(
+        encoding="utf-8")
+    assert "Trade-level claim tests (E-075 PR-3" in full       # D-198: the readers' subset is gone
 
 
 # ---------------------------------------------------------------------------

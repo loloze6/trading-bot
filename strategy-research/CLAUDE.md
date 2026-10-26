@@ -51,14 +51,19 @@ Two caveats the guide explains in full:
 
 - The engine's own registry, `STAGE_CONFIGS`
   (`workflow/run_phase1_research.py::STAGE_CONFIGS`), holds **12** entries as
-  of E-058 S2a (2026-09-23). The 11th, `specialist_readers` (E-046a Slice
-  5b-ii-B), is registered unconditionally but routed to only when
-  `orchestrator.specialist_readers.enabled` is on (off by default), replacing
-  `verdict_interpreter` after `protocol_execution` (see `docs/USER_GUIDE.md`
-  stage 16). The 12th, `regroup_record`, is registered the same way and routed
-  to only when `orchestrator.regroup_record.enabled` is on (off by default;
-  requires `specialist_readers`): it sits between `specialist_readers` and its
-  route and writes `campaign_record/campaign_memory.yaml` (`docs/USER_GUIDE.md`
+  of D-198 (2026-10-26). The five specialist readers and their stage
+  (`specialist_readers`, E-046a Slice 5b-ii-B) are deleted; what that stage's
+  flag also switched, the post-run route from the grid
+  (`determine_post_specialist_readers_route`, in place of `verdict_interpreter`
+  after `protocol_execution`), is keyed on `orchestrator.grid_evaluation.enabled`
+  now (see `docs/USER_GUIDE.md`, "Route from the grid"). The `analyst` stage
+  (D-197) is registered unconditionally and routed to only when
+  `orchestrator.analyst.enabled` is on (stage 18). `regroup_record` is
+  registered the same way and routed to only when
+  `orchestrator.regroup_record.enabled` is on (off by default; requires
+  `grid_evaluation`): it sits between `protocol_execution` / `analyst` and the
+  route and writes `campaign_record/campaign_memory.yaml` and
+  `artifacts/registry_summary.yaml` (`docs/USER_GUIDE.md`
   stage 17). With `orchestrator.verdict_routing_retired.enabled` also on
   (E-059 S3 / slice 6c S2a, off by default; requires `decide_next` and
   `profit_bars_every_backtest`), that route ends the run at
