@@ -30,7 +30,7 @@ Write the idea in the operator's words first, then in formulas.
 - `thesis` opens with the brief's `research_goal`, word for word.
 - `idea_quantities` lists every quantity the idea says matters. Give each one as the operator's words, then its formula. Each formula must be computable from the feeds in the brief's scope block.
 - Keep every quantity. A competing reading of a quantity becomes a test (step 3) or a variant. It never deletes the quantity.
-- `not_expressible` lists the parts of the idea a forecast cannot express, and only three kinds: exits, position state and order placement. Anything else is a quantity with a formula, not an exclusion: write it in `idea_quantities`. Step 1b checks each entry against the engine's transforms and the component catalogue before it is declared a deviation.
+- `not_expressible` lists the parts of the idea a forecast cannot express, and only three kinds: exits, position state and order placement. Anything else is a quantity with a formula, not an exclusion: write it in `idea_quantities`. The config-authoring stage (1b) checks each entry against the engine's transforms and the component catalogue before it is declared a deviation.
 - `edge_source` says why the edge should exist. `library_lookup` names the library entry the idea builds on.
 
 ## 2. Statement

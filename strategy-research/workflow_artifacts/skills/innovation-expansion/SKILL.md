@@ -31,10 +31,10 @@ The expanded artifact must include:
 
 ## IMPROVEMENT 01 — Anti-confabulation rule carries forward
 
-Every variant inherited from or derived from `hypothesis_card.yaml` must satisfy A1.3:
-its `edge_source.specific_mechanism` must name a measurable proxy in an available feed.
+Every variant inherited from or derived from `hypothesis_card.yaml` must keep the card's `edge_source.specific_mechanism`
+measurable from the feeds in the brief's scope block.
 
-Do NOT expand into variants whose mechanism cannot be expressed in available feeds unless they are tagged `requires_new_feed` and routed to the wishlist.
+Do NOT expand into variants whose mechanism needs data outside the brief's scope block.
 
 ---
 
@@ -286,12 +286,14 @@ step); not a negative `scaling_factor`, which only some classes honour). Find th
 
 **The split variant (D-195).** When the forecast has two or more components, step 2 adds ONE `design` variant that
 halves the weight of the modifier component. The modifier is the component carrying the negated or subtracted term
-of step 1a's formula (the term the formula subtracts, i.e. the one with a negative weight in the base config); with
+of step 1a's formula (the term the formula subtracts: in the base config either a component with a negative weight, or
+a positive weight plus a `negate` transform in its `transforms`); with
 no such term, the second listed component. This is a `design` variant: a component's weight is a parameter of the
 component, not a component swap, and the structure key holds a weight's sign only, never its magnitude
 (`tools/structure_key.py`), so the variant stays the same structure as the base. Patch path:
 `/strategies/regimes/<regime>/components/<index>/weight`, the value the base weight times 0.5, same sign (a sign
-flip is a different structure). Keep the regime's total weight above 0. It counts as a `design` variant inside the 3
+flip is a different structure). Halve the modifier in every regime where it appears: one patch entry per regime,
+which is the single regime the base uses (`unknown`, as in the example above) unless the base is regime-gated. Keep the regime's total weight above 0. It counts as a `design` variant inside the 3
 or 4 allowed above (one `base`, at least one `design`, one or two `asset`), never on top of them: if it is your
 second design variant, you write one asset coin. With one component, no split variant.
 
@@ -315,7 +317,6 @@ patch form.
 
 ## Checklist
 - Add novelty without destroying testability.
-- Keep at least one conservative variant in the run queue.
 - Prefer variants that fit the current strategy/regime/component framework.
 - Check `research_brief.yaml` constraints field first. If variant count is constrained, honor it before applying expansion logic.
 - **Improvement 04: run diversity test against indicator_library.yaml; reject cosmetic expansions.** (Config-direct

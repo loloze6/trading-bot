@@ -69,9 +69,11 @@ def test_the_split_variant_claim_about_the_structure_key_is_true():
 def test_step_1b_verifies_a_not_expressible_entry_before_copying_it():
     text = _flat(SKILLS / "strategy-config-authoring" / "SKILL.md")
     assert "Verify it before you copy it (D-195, supersedes D-190's copy sentence)" in text
-    assert "`trading-bot/strategies/registry.py`" in text
-    assert "`TRANSFORM_OPS_REGISTRY`" in text and "`ema`" in text and "`threshold_filter`" in text
+    assert 'the "Transform ops" section of `STRATEGY_DESIGN_GUIDE.md`' in text
+    assert "`ema`" in text and "`threshold_filter`" in text
     assert "`COMPONENT_CATALOG.md`" in text
+    assert "both are in your context" in text
+    assert "that file is where the ops live, not a file to open" in text
     assert "An entry that can be expressed there is expressed" in text
     assert "Only an entry that survives the check becomes a declared deviation" in text
     assert "`DEVIATION: declared by step 1a`" in text
@@ -87,7 +89,7 @@ def test_step_1a_limits_not_expressible_to_exits_position_state_and_order_placem
     text = _flat(SKILLS / "hypothesis-design" / "SKILL.md")
     assert "and only three kinds: exits, position state and order placement" in text
     assert "exits, holds, position state" not in text
-    assert "Step 1b checks each entry" in text
+    assert "The config-authoring stage (1b) checks each entry" in text
 
 
 # ---- (c) the legacy clauses are gone from both handoffs --------------------------------
