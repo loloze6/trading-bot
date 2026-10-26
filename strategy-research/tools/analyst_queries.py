@@ -711,6 +711,10 @@ class QueryEngine:
         windows = self._bar_windows(variant)
         if not isinstance(column, str) or not column:
             raise QueryRefused("column must be a column name (see list_columns)")
+        if signal is not None and not isinstance(signal, str):
+            # checked before the cache lookup below: a list or dict signal is unhashable
+            raise QueryRefused(f"signal must be a string (a signal column name), got "
+                               f"{type(signal).__name__}")
         if signal is not None and column not in _SIGNAL_DERIVED:
             raise QueryRefused(f"signal applies to the derived columns {list(_SIGNAL_DERIVED)} "
                                f"only, not to {column!r}")

@@ -308,6 +308,18 @@ def test_the_window_reader_refuses_an_absent_component_with_the_exact_text(run):
         ct.window_with_signal(w, C9_POST)
 
 
+@pytest.mark.parametrize("bad", [["a"], {"a": 1}])
+def test_an_unhashable_signal_is_refused_not_a_crash(run, bad):
+    e = engine(run)
+    for r in (e.describe("abs_forecast", signal=bad),
+              e.distribution("abs_forecast", signal=bad)):
+        assert r["status"] == "refused" and r["reason"].startswith("signal must be a string")
+    with pytest.raises(aq.QueryRefused, match="signal must be a string"):
+        e._column_values("base", "abs_forecast", bad)
+    r = e.conditional_effect(COND, horizons=[1], signal=bad)
+    assert r["status"] == "refused"
+
+
 def test_the_engine_refuses_a_signal_that_is_not_a_forecast_column(run):
     r = engine(run).conditional_effect(COND, horizons=[1], signal=C1_WN)
     assert r["status"] == "refused" and "signal:" in r["reason"]
@@ -331,7 +343,7 @@ BASE_CONFIG = {"strategies": {"regimes": {"r": {"components": [
 
 def test_the_claim_card_accepts_a_valid_signal_and_refuses_an_invalid_one():
     ok = cc.check_claim(claim_with(C1_POST))
-    assert ok.errors == [] and ok.tests[0]["verdict_possible"] is True
+    assert ok.errors == [] and ok.tests[0]["verdict_possible"] is False  # method B
     assert ok.tests[0]["spec_hash"] == ct.spec_hash(ct.TestSpec.from_dict(
         dict(TEST, signal=C1_POST)))
     default = cc.check_claim(claim_with("forecast"))
@@ -342,15 +354,18 @@ def test_the_claim_card_accepts_a_valid_signal_and_refuses_an_invalid_one():
     assert cc.check_claim(claim_with("forecast", tests=[plain])).errors == []
 
 
-def test_a_vehicle_that_zeroes_the_weight_removes_the_component():
+def test_a_vehicle_that_zeroes_the_weight_removes_only_the_weighted_contribution():
+    # strategy_engine.forecast still emits post_pipeline_value for a weight-0 component; only
+    # weighted_contribution becomes 0
     vehicle = [{"component_id": "c1", "field": "weight", "before": 1.0, "after": 0}]
-    errs = cc.vehicle_signal_errors(claim_with(C1_POST), vehicle)
+    errs = cc.vehicle_signal_errors(claim_with(C1_WC), vehicle)
     assert len(errs) == 1 and "claim.tests[0].signal" in errs[0] and "'c1'" in errs[0]
     assert "removes" in errs[0]
+    assert cc.vehicle_signal_errors(claim_with(C1_POST), vehicle) == []
     # a component the vehicle keeps, a signal on `forecast`, and a different change: no error
-    assert cc.vehicle_signal_errors(claim_with(C1_POST), [
+    assert cc.vehicle_signal_errors(claim_with(C1_WC), [
         {"component_id": "c2", "field": "weight", "before": 1.0, "after": 0}]) == []
-    assert cc.vehicle_signal_errors(claim_with(C1_POST), [
+    assert cc.vehicle_signal_errors(claim_with(C1_WC), [
         {"component_id": "c1", "field": "weight", "before": 1.0, "after": 2.0}]) == []
     assert cc.vehicle_signal_errors(claim_with("forecast"), vehicle) == []
 
@@ -364,13 +379,39 @@ def test_a_config_vehicle_that_drops_the_component_removes_it():
                                     vehicle, BASE_CONFIG) == []
     zero = {"kind": "config", "config": {"strategies": {"regimes": {"r": {"components": [
         {"id": "c1", "weight": 0}, {"id": "c2", "weight": 1.0}]}}}}}
-    assert cc.vehicle_signal_errors(claim_with(C1_POST), zero)       # no base config needed
-    assert cc.vehicle_signal_errors(claim_with(C1_POST), vehicle) == []   # absent: needs the base
+    assert cc.vehicle_signal_errors(claim_with(C1_WC), zero)         # no base config needed
+    assert cc.vehicle_signal_errors(claim_with(C1_POST), zero) == []  # weight 0 keeps the column
+
+
+def test_a_component_absent_from_the_vehicle_removes_both_columns():
+    kept = {"strategies": {"regimes": {"r": {"components": [{"id": "c2", "weight": 1.0}]}}}}
+    vehicle = {"kind": "config", "config": kept}
+    for sig in (C1_POST, C1_WC):
+        assert len(cc.vehicle_signal_errors(claim_with(sig), vehicle, BASE_CONFIG)) == 1
+        # no base config: the vehicle's own non-empty strategy decides
+        assert len(cc.vehicle_signal_errors(claim_with(sig), vehicle)) == 1
+    # no base config and a vehicle with no readable strategy: nothing known, not a refusal
+    for opaque in ({"kind": "config", "config": {}}, {"kind": "config", "config": {"x": 1}}):
+        assert cc.vehicle_signal_errors(claim_with(C1_POST), opaque) == []
+    # a change-list vehicle never makes a component absent
+    assert cc.vehicle_signal_errors(claim_with(C1_POST), [
+        {"component_id": "c1", "field": "weight", "before": 1.0, "after": 0}]) == []
+
+
+def test_verdict_possible_is_false_for_a_signal_under_method_b_with_a_reason():
+    res = cc.check_claim(claim_with(C1_POST))          # default significance: method B
+    assert res.errors == []
+    assert res.tests[0]["verdict_possible"] is False
+    assert res.tests[0]["reason"] == cc.SIGNAL_REASON
+    # a claim card cannot name a significance method (fixed by code), so this is the only case
+    # a card can reach; the a851a path is a method override at run time
+    # the default signal is unchanged under method B
+    assert cc.check_claim(claim_with("forecast")).tests[0]["verdict_possible"] is True
 
 
 def test_the_analyst_answer_check_applies_the_claim_card_refusal():
     vehicle = [{"component_id": "c1", "field": "weight", "before": 1.0, "after": 0}]
-    claim = {"tests": [{"name": "t", **TEST, "signal": C1_POST}]}
+    claim = {"tests": [{"name": "t", **TEST, "signal": C1_WC}]}
     text = q5._claim_answer(claim=claim, vehicle=vehicle)
     errors = q5._check(text)
     assert [e for e in errors if "which this claim's own vehicle removes" in e]
@@ -395,7 +436,8 @@ def test_the_pasted_block_carries_the_signal_and_a_child_re_runs_it_on_the_same_
     assert res["spec_hash"] != GOLDEN_SPEC_HASH
     # the card tool, the child's measurement and the findings record all read the same key
     errs, h, possible = cc._check_test(block, "test", True)
-    assert errs == [] and h == res["spec_hash"] and possible
+    assert errs == [] and h == res["spec_hash"]
+    assert possible is False        # default significance is method B: no verdict on a signal
     spec, h2 = cm.test_spec(block, True)
     assert spec.signal == C1_POST and h2 == res["spec_hash"]
     measured = cm.measure_test(windows_of(run), block, None)
