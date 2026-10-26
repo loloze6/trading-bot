@@ -604,9 +604,9 @@ def test_1a_prompt_flag_on_carries_the_addendum_for_brief_runs_only(campaign_roo
     assert after == base
 
 
-def test_1a_brief_run_reads_the_block_registry_only_when_it_exists(campaign_root, monkeypatch):
-    """O-3 / D-017: extra cards score distance_to_profitable against the validated
-    blocks, so 1a gets campaign_record/block_registry.yaml -- only when it exists."""
+def test_1a_brief_run_is_never_handed_the_block_registry(campaign_root, monkeypatch):
+    """D-194: the distance score (D-017) is gone, so 1a no longer reads
+    campaign_record/block_registry.yaml to score extra cards -- present or not."""
     monkeypatch.chdir(_SR)
     _write_flags(campaign_root["root"], **_ALL_ON)
     run_dir = _exhausted_run(campaign_root["root"], campaign_root["runs_dir"])
@@ -620,20 +620,21 @@ def test_1a_brief_run_reads_the_block_registry_only_when_it_exists(campaign_root
     assert registry not in paths()
     (run_dir / registry).parent.mkdir(parents=True, exist_ok=True)
     (run_dir / registry).write_text("blocks: []\n")
-    assert paths().count(registry) == 1
-    # a decide-next reader candidate never gets it (no addendum, no scores)
+    assert registry not in paths() and len(paths()) == 2   # the addendum and the context file
+    # a decide-next reader candidate never gets the addendum (no addendum, no scores)
     (run_dir / "artifacts" / "research_brief.yaml").write_text(yaml.safe_dump(
         {"candidate": {"criteria_from": "hypothesis_generation"}}))
     assert paths() == []
 
 
-def test_brief_card_rubric_scores_distance_from_the_registry_not_cost():
-    """O-3 / D-017: the brief-card rubric's distance_to_profitable is registry
-    distance; no cost estimate ranks or removes a card."""
+def test_brief_card_rubric_scores_confidence_only_and_no_cost():
+    """D-194: the brief-card rubric scores confidence_real alone; no cost
+    estimate ranks or removes a card."""
     text = (_SR / "workflow_artifacts" / "skills" / "hypothesis-design"
             / "BRIEF_HYPOTHESES.md").read_text(encoding="utf-8")
     assert "edge vs cost" not in text and "round-trip cost" not in text
-    assert "block_registry.yaml" in text and "D-017" in text
+    assert "confidence_real" in text and "block_registry" not in text
+    assert "distance_to_profitable" not in text and "mechanism_plausibility" not in text
     assert "never declare the brief exhausted" in text.lower()
 
 

@@ -81,12 +81,12 @@ def test_innovation_expansion_template_has_one_required_inputs_key():
 
 def test_innovation_expansion_template_parses_as_before():
     """The parse is unchanged: PyYAML kept the LAST duplicate key, which is the
-    one left in place (the four inputs, indicator_library.yaml included)."""
+    one left in place (indicator_library.yaml included; D-195 dropped available_feeds.yaml)."""
     doc = yaml.safe_load((_TEMPLATES / "hypothesis_to_innovation_expansion.yaml")
                          .read_text(encoding="utf-8"))
     assert [x["path"] for x in doc["required_inputs"]] == [
         "artifacts/research_brief.yaml", "artifacts/hypothesis_card.yaml",
-        "../../config/available_feeds.yaml", "../../config/indicator_library.yaml"]
+        "../../config/indicator_library.yaml"]
     assert doc["deliverables"] == ["expanded_hypothesis_card.yaml", "innovation_notes.yaml"]
 
 

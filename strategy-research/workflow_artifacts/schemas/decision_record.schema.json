@@ -128,12 +128,16 @@
           "additionalProperties": false,
           "properties": { "candidate_id": { "type": "string" }, "queue_entry_id": { "type": "string" },
                           "brief_path": { "type": "string" }, "why": { "type": "string" },
+                          "tie_with": { "type": "array", "items": { "type": "string" },
+                                        "description": "D-194: present only when other eligible candidates tie the pick on both ranking keys (confidence_real, cost.backtests); their candidate_ids, ascending. The lowest candidate_id is the pick." },
                           "status": { "const": "blocked_on_operator_approval", "description": "E-068 PR 4 (D-071): present only when orchestrator.operator_approval held the picked entry at apply time (run_campaign.py --approve <id> releases it)." } } },
         { "type": "object", "required": ["candidate_id", "queue_entry_id", "card_ref", "why"],
           "additionalProperties": false,
           "description": "E-059 S2b: a brief's waiting extra card, flipped queued -> ready.",
           "properties": { "candidate_id": { "type": "string" }, "queue_entry_id": { "type": "string" },
                           "card_ref": { "type": "string" }, "why": { "type": "string" },
+                          "tie_with": { "type": "array", "items": { "type": "string" },
+                                        "description": "D-194: as on the reader pick above." },
                           "status": { "const": "blocked_on_operator_approval", "description": "E-068 PR 4 (D-071): present only when orchestrator.operator_approval held the picked entry at apply time (run_campaign.py --approve <id> releases it)." } } },
         { "type": "object",
           "required": ["r2_request", "queue_entry_id", "brief_owner", "brief_path", "new", "why"],
@@ -191,13 +195,14 @@
         "merge_note": { "type": "string", "description": "E-073 step 2: present with merged_sources." },
         "scores": {
           "type": "object",
-          "required": ["confidence_real", "distance_to_profitable", "mechanism_plausibility",
-                       "model_id", "rubric_version"],
+          "required": ["confidence_real", "model_id", "rubric_version"],
           "additionalProperties": false,
           "properties": {
             "confidence_real": { "type": "integer", "minimum": 0, "maximum": 3 },
-            "distance_to_profitable": { "type": "integer", "minimum": 0, "maximum": 3 },
-            "mechanism_plausibility": { "type": "integer", "minimum": 0, "maximum": 3 },
+            "distance_to_profitable": { "type": "integer", "minimum": 0, "maximum": 3,
+                                        "description": "LEGACY (retired D-194): present only in records written before; never written now, never ranked on." },
+            "mechanism_plausibility": { "type": "integer", "minimum": 0, "maximum": 3,
+                                        "description": "LEGACY (retired D-194): present only in records written before; never written now, never ranked on." },
             "model_id": { "type": ["string", "null"] },
             "rubric_version": { "type": ["string", "null"] }
           }
@@ -329,6 +334,14 @@
               }
             ]
           }
+        },
+        "angle": {
+          "enum": ["regime", "sizing"],
+          "description": "D-196 (the D-178 item D4 tag, written by decide_next on a side_finding candidate from the analyst's reading): the angle of the finding. The writer (tools/decide_next.py, reader_proposals.ANGLES) has emitted it since D-178; this schema had no entry for it."
+        },
+        "floor_lowered": {
+          "type": ["object", "array"],
+          "description": "D-196 (the D-178 item D1 disclosure, written by decide_next on a side_finding candidate): one {from, to, after, reason[, test]} mapping or a list of them (reader_proposals.floor_lowered_items). Same drift as angle: written since D-178, absent here."
         }
       }
     }

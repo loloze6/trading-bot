@@ -36,39 +36,30 @@ cards:
   - card: hypothesis_card_2.yaml
     scores:
       confidence_real: 0-3
-      distance_to_profitable: 0-3
-      mechanism_plausibility: 0-3
     model_id: <your model id>
     rubric_version: brief-card-v1
   - card: hypothesis_card_3.yaml
     ...
 ```
 
-Every card file needs exactly one item. Missing, extra or out-of-range keys
-stop the run. These scores ONLY rank waiting cards against each other and
-against reader proposals. They never decide whether an idea is true; only the
-backtest grid does that.
+Every card file needs exactly one item with exactly the key above. Missing,
+extra or out-of-range keys stop the run. The score ONLY ranks waiting cards
+against each other and against reader proposals (ties go to the cheaper
+backtest, then the lower candidate id). It never decides whether an idea is
+true; only the backtest grid does that.
 
 Rubric `brief-card-v1` (anchored; a card with no backtest yet usually scores
 `confidence_real` 0-1):
 
-| Score | `confidence_real` (is the effect real?) | `distance_to_profitable` (card I / D-017: how far is this idea from the validated blocks?) | `mechanism_plausibility` (causal story) |
-|---|---|---|---|
-| 0 | Story only: no cited measurement. | Same block type as a block in `block_registry.yaml`: same kind, same component classes, same timeframe category (or the block's timeframe category is unrecorded: an assumed match) -- a neighbour of something already validated. | No counterparty named; the pattern could be coincidence. |
-| 1 | One cited observation (one prior run, window or published result). | Same component classes as a registered block, but a different kind or timeframe category. | A mechanism is named, but not who pays or why. |
-| 2 | Cited evidence from 2+ independent sources or prior runs with a consistent sign. | The registry holds a forecast block and this card is not plainly the same classes as any registered block -- including when you cannot tell (correlation to the registry cannot be measured before a backtest). | A constrained or non-economic actor who pays is named. |
-| 3 | A prior run in this campaign measured this exact effect with a consistent sign across windows (cite it). | Nothing is validated yet: `campaign_record/block_registry.yaml` is not in your inputs, or it holds no forecast block (`kind: forecast`). | Actor named AND a cited reason why the edge is not arbitraged away. |
+| Score | `confidence_real` (is the effect real?) |
+|---|---|
+| 0 | Story only: no cited measurement. |
+| 1 | One cited observation (one prior run, window or published result). |
+| 2 | Cited evidence from 2+ independent sources or prior runs with a consistent sign. |
+| 3 | A prior run in this campaign measured this exact effect with a consistent sign across windows (cite it). |
 
-`distance_to_profitable` is the same score the readers give (card I, D-017), read
-from `campaign_record/block_registry.yaml` (an input only when the file exists).
-A block type is (kind, component classes, timeframe category). A card has no config
-yet, so score 0 or 1 only when the card's `idea_quantities` and `statement` plainly use the same
-component classes as a registered block's `config_fragment` (`class` keys) -- never
-guess class names; when you cannot tell, score 2 (the readers' default for a type they
-cannot place). Timeframe categories: high <= 15min < medium < 1h <= low < 1d <= daily;
-a block with no recorded `timeframe_category` is an assumed match. It is NOT a
-cost estimate: no cost figure ranks anything here (O-3, operator 2026-10-01 --
-costs are judged only by the backtest).
+The score is NOT a cost estimate: no cost figure ranks anything here (O-3, operator
+2026-10-01 -- costs are judged only by the backtest).
 
 ## 3. The brief is exhausted
 

@@ -266,7 +266,7 @@ def test_a_stubbed_session_writes_a_reading_decide_next_turns_into_a_fold_b_chil
     assert doc["rubric_version"] == "trade_efficiency-analyst-v1"
     (side,) = doc["side_findings"]
     assert side["vehicle"] == _vehicle() and side["fold_observed"] == "A"
-    assert side["scores"]["distance_to_profitable"] == 1 == side["scores"]["mechanism_plausibility"]
+    assert set(side["scores"]) == {"confidence_real"}      # D-194: the two fixed fields are gone
     rp.check_reading(doc, "trade_efficiency", "file", strict_provenance=True, analyst=True)
     # the log and the record
     log = yaml.safe_load((run / asm.log_rel("trade_efficiency")).read_text(encoding="utf-8"))
@@ -1243,7 +1243,10 @@ def _fixed_answers():
 #: `unverified_numbers` (and a claim's `claim_card_ok`); cases 2, 6 and 8 no longer carry a
 #: prose-number error and their prose is masked ("the effect is <n> huge"); case 6 keeps
 #: its sealed-date refusal; every other reading and error list is unchanged.
-GOLDEN_ONE_OR_NO_BLOCK = "76930a7254b3a18150b46df7173dafe2e4fac95ce699e2b2ff4ac3947b7e6231"
+#: Re-pinned by D-194 (2026-10-26): the scores dicts lose the two fixed fields
+#: (distance_to_profitable, mechanism_plausibility, both 1) and nothing else; putting them
+#: back into every scores dict reproduces 76930a72...e6231, the pin above.
+GOLDEN_ONE_OR_NO_BLOCK = "1aea14ba751876b87aefe470ed900383d553cb5db2899026ce2cb4a0476eb030"
 
 
 def test_a_one_block_or_no_block_answer_checks_byte_identically_to_before():
