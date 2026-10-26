@@ -4443,14 +4443,13 @@ _READER_OUTPUT_BLOCK_RE = re.compile(r"```ya?ml[^\n]*\n(.*?)```", re.DOTALL)
 
 # Artifacts that must come from the CURRENT protocol_execution attempt under
 # specialist_readers (code-review fix 1). Cleared at protocol_execution entry.
-# E-073 step 2 (D-083): side_finding_merges.yaml and citation_checks/ exist only
-# under orchestrator.observable_backtest; listed so an attempt never inherits them.
+# E-073 step 2 (D-083): side_finding_merges.yaml; D-198: nothing writes it now, listed so an
+# attempt never inherits one from an older run directory.
 _SPECIALIST_READERS_RUN_SCOPED_FILES = ("idea_status.yaml", "grid_evaluation.yaml",
                                         "side_finding_merges.yaml")
 # E-075 PR-5 review (D-093): the analyst's query logs and session records are per attempt too
 # (they exist only under orchestrator.analyst.enabled)
-_SPECIALIST_READERS_RUN_SCOPED_DIRS = ("reports", "proposals", "citation_checks",
-                                       "analyst_queries", "analyst")
+_SPECIALIST_READERS_RUN_SCOPED_DIRS = ("reports", "proposals", "analyst_queries", "analyst")
 # D-197: the analyst's own per-attempt directories (the part of the list above that is the
 # analyst's), cleared by _clear_analyst_artifacts when specialist_readers is off
 _ANALYST_RUN_SCOPED_DIRS = ("analyst_queries", "analyst")
@@ -19775,6 +19774,11 @@ def run_loop(run_id: str, *, after_1a=None):
                   f"readers) resumes into {_live or 'the grid route'}.")
             try:
                 if _live is None:
+                    # the route-only resume: the entry checks the deleted stage made on every
+                    # entry (a valid idea_status.yaml, the retune firewall) are made here
+                    # too, unless the backtest had component errors (the route pauses on them)
+                    if not _protocol_component_errors(RUN_DIR):
+                        _grid_route_entry_checks(RUN_DIR, run_id)
                     _live = determine_post_specialist_readers_route(RUN_DIR, run_id)
                     if _live == "human_pause":
                         update_state(path=RUN_DIR, status="paused_for_human")
@@ -20649,13 +20653,16 @@ def run_loop(run_id: str, *, after_1a=None):
                     _grid_route_entry_checks(RUN_DIR, run_id)
                 next_stage = determine_post_specialist_readers_route(RUN_DIR, run_id)
                 if next_stage == "human_pause":
-                    # a pause right after the backtest must resume into the route, never
-                    # re-run the backtest: the deleted stage's name maps to exactly that
-                    # (_resume_stage_after_readers_deleted); after the analyst, re-entering
-                    # it is safe (its lens files are validated, not re-run)
+                    # a pause at the route resumes into the route and nothing else: after
+                    # protocol_execution never the backtest again, after the analyst never
+                    # the lenses (pending_stage `analyst` would put a resume through the
+                    # loop-top budget check -- an over-budget run would be terminated
+                    # instead of routed, where master exempted the route after the analyst).
+                    # The deleted stage's name is the sentinel: run_loop maps it to a
+                    # route-only resume (_resume_stage_after_readers_deleted) ahead of that
+                    # check, and the route's entry checks are made there.
                     update_state(path=RUN_DIR, status="paused_for_human",
-                                 **({"pending_stage": LEGACY_READERS_STAGE}
-                                    if current_stage == "protocol_execution" else {}))
+                                 pending_stage=LEGACY_READERS_STAGE)
                     break
 
             # 6. Mark completed and stage next phase
