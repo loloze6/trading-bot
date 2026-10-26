@@ -2269,9 +2269,6 @@ Each [run](#g-run) stores its artifacts in `runs/{run_id}/artifacts/`. Campaign-
 |---|---|
 | `base_hypothesis_id` | Links back to the parent hypothesis_card |
 | `expanded_variants` | List of 3–6 concrete variants (V1–V6), each with its own signal variant and regime gate |
-| `alternative_data_candidates` | Signals from different data sources that could replace or augment the core signal |
-| `reverse_hypothesis` | The inverted version of the thesis (what if the signal works the opposite way?) |
-| `behavioral_features` | Signals derived from trader psychology or crowd behavior rather than price mechanics |
 | `regime_specific_variants` | Versions of the signal that only activate under a particular market regime |
 
 ---
