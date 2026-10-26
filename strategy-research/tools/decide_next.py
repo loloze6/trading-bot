@@ -50,7 +50,9 @@ What decides, in order:
      orchestrator.exact_config_1b is off (exact_config_1b_off).
   3. Eligible candidates collapse (card I, full novelty key; ineligible ones
      never collapse into them) and are ranked: confidence_real desc,
-     distance_to_profitable desc, cost (backtests) asc, candidate_id asc.
+     cost (backtests) asc, candidate_id asc (D-194: two retired score fields
+     no longer rank). When the pick shares both keys with other candidates,
+     the pick carries `tie_with` (their ids) and its why text names them.
      There is NO lineage-depth demotion (operator decision 6, dropped).
   4. Nothing scheduled and nothing eligible -> R2 (E-059 S2b): for every
      brief whose owner entry is `brief_status: open`, ask step 1a for more
@@ -66,7 +68,7 @@ What decides, in order:
 E-059 S2b adds the brief's extra hypotheses (card M, operator decisions 4 and
 9) as candidates next to the reader proposals: a `queued` queue entry with
 `origin: brief` and a `card_ref` (the card 1a already wrote, so it skips
-authoring when picked), ranked on the three anchored scores step 1a wrote
+authoring when picked), ranked on the confidence_real score step 1a wrote
 for it (rubric brief-card-v1, runs/<run>/artifacts/queued_hypotheses.yaml),
 with the same key as a proposal. Its pick flips it `queued` -> `ready`.
 
@@ -2326,8 +2328,7 @@ def _r2(entries: list, *, select: bool) -> dict:
 
 
 def _score_key(c: dict) -> tuple:
-    return (-c["scores"]["confidence_real"], -c["scores"]["distance_to_profitable"],
-            c["candidate_id"])
+    return (-c["scores"]["confidence_real"], c["candidate_id"])
 
 
 def _fold_in_run_merges(cands: list) -> list:
@@ -2374,13 +2375,27 @@ def _collapse(cands: list) -> list:
     return out
 
 
-def rank_key(c: dict) -> tuple:
-    """confidence_real desc, distance_to_profitable desc, cost asc (unknown
-    cost last), candidate_id asc. mechanism_plausibility is recorded, not
-    ranked on (the plan's key). No lineage term (operator decision 6)."""
+def _rank_pair(c: dict) -> tuple:
+    """The two ranking keys (D-194): confidence_real desc, cost asc (unknown
+    cost last). Two candidates with the same pair are tied."""
     cost = c["cost"]["backtests"]
-    return (-c["scores"]["confidence_real"], -c["scores"]["distance_to_profitable"],
-            cost if cost is not None else math.inf, c["candidate_id"])
+    return (-c["scores"]["confidence_real"], cost if cost is not None else math.inf)
+
+
+def rank_key(c: dict) -> tuple:
+    """confidence_real desc, cost asc (unknown cost last), candidate_id asc
+    (D-194: the two score fields that once ranked between them are gone; the
+    candidate_id term only keeps the order deterministic, and a pick that
+    shares both keys with others declares it: see tie_with). No lineage term
+    (operator decision 6)."""
+    return (*_rank_pair(c), c["candidate_id"])
+
+
+def _tied_with(top: dict, eligible: list) -> list:
+    """candidate_id (ascending) of every other eligible candidate tied with
+    `top` on BOTH ranking keys; [] when none."""
+    pair = _rank_pair(top)
+    return sorted(c["candidate_id"] for c in eligible[1:] if _rank_pair(c) == pair)
 
 
 def _operator_entries(queue: dict) -> list:
@@ -2480,9 +2495,13 @@ def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
     elif eligible:
         top = eligible[0]
         why = (f"rank 1 of {len(eligible)} eligible: confidence_real="
-               f"{top['scores']['confidence_real']}, distance_to_profitable="
-               f"{top['scores']['distance_to_profitable']}, backtests="
+               f"{top['scores']['confidence_real']}, backtests="
                f"{top['cost']['backtests']}")
+        tie = _tied_with(top, eligible)
+        if tie:
+            # D-194: a declared tie; the lowest candidate_id is the pick.
+            why += (f"; tied on both keys with {', '.join(tie)}: the lowest "
+                    f"candidate_id breaks the tie")
         if top["origin"] == ORIGIN_BRIEF:
             # A waiting extra card: flipped queued -> ready by the caller.
             picked = {"candidate_id": top["candidate_id"], "queue_entry_id": top["candidate_id"],
@@ -2494,6 +2513,8 @@ def decide(inputs: dict, *, now: str, trigger: dict, select_entry=None) -> dict:
                 "brief_path": f"{CANDIDATE_BRIEFS_DIR}/{top['candidate_id']}.md",
                 "why": why,
             }
+        if tie:
+            picked["tie_with"] = tie
     r2 = _r2(entries, select=scheduled is None and not eligible and r1_request is None)
     requests = r2.pop("_requests", None)
     if requests:
