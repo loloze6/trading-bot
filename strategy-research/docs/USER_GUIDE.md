@@ -24,7 +24,7 @@ Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
     - [Not a stage — `regime_auditor` (a human procedure)](#not-a-stage--regime_auditor-a-human-procedure)
     - [Stage 11 — `verdict_interpreter`](#stage-11--verdict_interpreter)
     - [Stage 18 — `analyst`](#stage-18--analyst)
-    - [Stage 16 — `specialist_readers`](#stage-16--specialist_readers)
+    - [Route from the grid (the deleted `specialist_readers` stage, D-198)](#route-from-the-grid-the-deleted-specialist_readers-stage-d-198)
     - [Stage 17 — `regroup_record`](#stage-17--regroup_record)
     - [Stage 12 — `campaign_review`](#stage-12--campaign_review)
     - [Stage 13 — `holdout_evaluation`](#stage-13--holdout_evaluation)
@@ -173,9 +173,9 @@ On the new pipeline, every backtest's results feed three branches:
 - **Branch 1, pass/fail:** the grid (`grid_evaluation.yaml` → `idea_status.yaml`)
   judges the idea on its pre-registered criteria. It is the only branch that
   decides the idea's status.
-- **Branch 2, specialist patterns:** five category reports and their readers
-  (stage 16). They propose next ideas and decide nothing. Since D-061 a
-  malformed proposal is dropped and recorded, never a stop.
+- **Branch 2, specialist patterns:** the analyst's two lens readings (stage 18; D-198
+  deleted the five category reports and their readers). They propose next ideas and decide
+  nothing.
 - **Branch 3, campaign-wide bar:** the profit bars, checked on every backtest.
   Passing them is the only way to the holdout (D-021).
 
@@ -269,7 +269,7 @@ SKILL.md for the full mechanics.
 **Verdict-routing-retired variant (E-059 S3, slice 6c S2a, off by default —
 `orchestrator.verdict_routing_retired.enabled`; requires `decide_next` and
 `profit_bars_every_backtest`).** Under the readers/regroup flags the graph
-already reads `protocol_execution` → `specialist_readers` (16) →
+already reads `protocol_execution` → `analyst` (18, flag) →
 `regroup_record` (17) → the grid's route. With this flag on, that route no
 longer branches into promote / kill / refine / pivot / escalate: after the
 `component_execution_error` pause and the `profit_bars_reached` stop
@@ -315,9 +315,8 @@ one place to read when the answer matters.
 | 9 | [**regime_detector_validation**](#stage-9--regime_detector_validation) | Python tool | Establish whether the regime detector is trustworthy enough to condition any metric. |
 | — | [**regime_auditor**](#not-a-stage--regime_auditor-a-human-procedure) | ⚠️ Human, not dispatched | Judge the detector without letting profitability leak into the decision. **Not dispatched by the orchestrator** — see the block. |
 | 11 | [**verdict_interpreter**](#stage-11--verdict_interpreter) | Claude | Decide what the result means, what to do next, and at what size of change. |
-| 18 | [**analyst**](#stage-18--analyst) | Claude (×2 lens sessions) | Off by default (E-075 PR-5, D-197, `orchestrator.analyst.enabled`; requires `folds`, nothing else). Runs right after stage 8: two lens sessions with query tools over the backtest artifacts write `proposals/forecast_power.yaml` and `proposals/trade_efficiency.yaml`. Needs none of stage 16's flags; goes before stage 16 when that is on, else before stage 11. |
-| 16 | [**specialist_readers**](#stage-16--specialist_readers) | Claude (×5 reader skills) | Off by default (E-046a Slice 5b-ii-B, `orchestrator.specialist_readers.enabled`). Replaces stage 11 when on: five readers each propose evidence-grounded changes from one category report; the route comes from the grid (`idea_status.yaml`), never from the readers. |
-| 17 | [**regroup_record**](#stage-17--regroup_record) | Python tool | Off by default (E-058 S2a, `orchestrator.regroup_record.enabled`; requires stage 16's flag). Sits between 16 and its route: records the run in `campaign_record/campaign_memory.yaml` before the grid's route is taken. Decides nothing, writes no trial rows. |
+| 18 | [**analyst**](#stage-18--analyst) | Claude (×2 lens sessions) | Off by default (E-075 PR-5, D-197, `orchestrator.analyst.enabled`; requires `folds`, nothing else). Runs right after stage 8: two lens sessions with query tools over the backtest artifacts write `proposals/forecast_power.yaml` and `proposals/trade_efficiency.yaml`. Needs no other flag; goes before stage 17 / the grid route when `grid_evaluation` is on, else before stage 11. (Stage 16, the five readers' `specialist_readers`, was deleted in D-198; see "Route from the grid" below.) |
+| 17 | [**regroup_record**](#stage-17--regroup_record) | Python tool | Off by default (E-058 S2a, `orchestrator.regroup_record.enabled`; requires `grid_evaluation`). Sits between stage 8 / 18 and the grid's route: records the run in `campaign_record/campaign_memory.yaml` and writes `registry_summary.yaml` before the grid's route is taken. Decides nothing, writes no trial rows. |
 | 12 | [**campaign_review**](#stage-12--campaign_review) | Claude | Ask whether the campaign's whole line of attack is still worth pursuing. |
 | 13 | [**holdout_evaluation**](#stage-13--holdout_evaluation) | Python tool + human | Spend the one-shot holdout, and only after everything cheaper has passed. |
 
@@ -956,7 +955,7 @@ record what happened.
 |---|---|---|
 | `protocol_summary.json` → `protocol_result.yaml` | run dir → `artifacts/` | verdict_interpreter |
 | `pass_rule_evaluation.yaml` | `artifacts/` | **verdict_interpreter — REQUIRED input, and the decision authority** — not written by the variant loop under `config_direct_authoring` AND `verdict_routing_retired` (C5.8), where nothing binding reads it |
-| `grid_evaluation.yaml`, `idea_status.yaml` | `artifacts/` | **optional, E-046b S2 (2026-09-20) — only written when `orchestrator.grid_evaluation.enabled` is true (off by default) AND `pre_registration.yaml`'s pass_rule is menu-shaped (criteria carry `source`/`reducer` fields, `config/criterion_menu.yaml`). Additive: `evaluate_pass_rule_criteria`'s own call and `pass_rule_evaluation.yaml`'s write are unaffected either way. `idea_status.yaml` carries `validated`/`refuted`/`inconclusive` plus a `pass_rule_evaluation.yaml`-shaped `result`/`hypothesis_verdict`/`lineage_routing` triple. **CORRECTED 2026-09-28** (re-verified directly against `run_phase1_research.py`): the claim that it is "NOT yet read by any routing call site" is stale — `determine_post_specialist_readers_route` (under `orchestrator.specialist_readers.enabled`) reads it via `_load_idea_status` and drives the whole post-backtest route from it (promote / kill / human-pause), and the DONE branch's decide-next step re-reads it the same way. It still does not override `verdict_interpreter`'s own (stage 11) narrative verdict when that stage runs — the two are separate routing paths, never merged.** |
+| `grid_evaluation.yaml`, `idea_status.yaml` | `artifacts/` | **optional, E-046b S2 (2026-09-20) — only written when `orchestrator.grid_evaluation.enabled` is true (off by default) AND `pre_registration.yaml`'s pass_rule is menu-shaped (criteria carry `source`/`reducer` fields, `config/criterion_menu.yaml`). Additive: `evaluate_pass_rule_criteria`'s own call and `pass_rule_evaluation.yaml`'s write are unaffected either way. `idea_status.yaml` carries `validated`/`refuted`/`inconclusive` plus a `pass_rule_evaluation.yaml`-shaped `result`/`hypothesis_verdict`/`lineage_routing` triple. **CORRECTED 2026-09-28** (re-verified directly against `run_phase1_research.py`): the claim that it is "NOT yet read by any routing call site" is stale — `determine_post_specialist_readers_route` (on the grid route, D-198: `orchestrator.grid_evaluation.enabled`) reads it via `_load_idea_status` and drives the whole post-backtest route from it (promote / kill / human-pause), and the DONE branch's decide-next step re-reads it the same way. It still does not override `verdict_interpreter`'s own (stage 11) narrative verdict when that stage runs — the two are separate routing paths, never merged.** |
 | `trade_diagnostics.json` | run dir (or `variants/<id>/` under `orchestrator.variant_loop.enabled`), not `artifacts/` — **CORRECTED 2026-09-28**, `run_protocol.py`'s `--out-dir` argument | verdict_interpreter |
 | a row in `campaign_state.trial_sharpes` | campaign root | DSR accounting |
 
@@ -1355,10 +1354,10 @@ the other (`workflow/run_phase1_research.py::_run_analyst_stage` →
 `run_analyst_worker`; skill `workflow_artifacts/skills/analyst/`, query tools
 `tools/analyst_queries.py`).
 **Runs:** right after `protocol_execution`, only when `orchestrator.analyst.enabled`
-is on (off by default; requires `orchestrator.folds.enabled`, refuses
-`orchestrator.explore_confirm.enabled`; D-197: no dependency on
-`category_reports`, `specialist_readers` or `reader_findings`). The next stage is
-`specialist_readers` when that flag is on, else `verdict_interpreter`.
+is on (off by default; requires `orchestrator.folds.enabled`, nothing else; D-198
+deleted `category_reports`, `specialist_readers`, `reader_findings` and
+`explore_confirm`). The next stage is `regroup_record` when that flag is on, else the
+grid route in the same iteration (`grid_evaluation` on), else `verdict_interpreter`.
 `default_next: dynamic_routing`.
 
 **Objective.** Find, from the run's own backtest artifacts, one testable claim
@@ -1368,9 +1367,8 @@ is on (off by default; requires `orchestrator.folds.enabled`, refuses
 
 **Design rationale.** The analyst reads only the backtest artifacts, never the
 reports, the grid or the registry summary, so it needs nothing the readers stage
-prepares; giving it a stage of its own lets it run with the readers off. With stage
-16 on, that stage finds the two lens files, validates them, and writes the other
-three categories' code-skipped readings (`replaced_by_analyst`).
+prepared. A new run writes only the two lens files; the other three categories'
+files exist only in an old run's directory (D-198).
 
 **Stage input:** `artifacts/protocol_result.yaml` (the component-error check: a run
 with component errors runs no lens), the variants' bars, trades and protocol
@@ -1384,303 +1382,72 @@ Old runs whose `pipeline_state.yaml` has no `analyst` stage resume unchanged.
 
 ---
 
-#### Stage 16 — `specialist_readers`
-**Engine:** Claude — five skills, one call each, in order
-(`workflow_artifacts/skills/readers/<category>-reader/`, categories from
-`tools/build_reports.py::REPORT_CATEGORIES`).
-**Runs:** after `protocol_execution`, only when
-`orchestrator.specialist_readers.enabled` is on (off by default; requires
-`grid_evaluation` and `category_reports` on too, or the run fails at start).
-`default_next: dynamic_routing`.
+#### Route from the grid (the deleted `specialist_readers` stage, D-198)
+D-198 deleted the five specialist readers, their stage (`specialist_readers`), the category
+report builder (`tools/build_reports.py`), the reader skills and the flags
+`category_reports`, `specialist_readers`, `reader_findings`, `observable_backtest` and
+`explore_confirm`. The analyst (stage 18) is the idea source now. What the deleted stage's
+flag also switched stays, keyed on `orchestrator.grid_evaluation.enabled`
+(`run_phase1_research._grid_route_enabled`):
 
-**Objective.** Turn each category report into concrete, evidence-cited
-proposals for what to try next — without deciding anything about this idea.
-
-**Design rationale.** An idea's status is the grid's job (`idea_status.yaml`,
-mechanical). Readers only propose; their scores rank the next candidate in the
-later decide-next step (delivery_plan_v26.md slice 6b). Keeping them out of the
-route means an LLM can never soften or harden a verdict.
-
-**Stage input (per reader):** `artifacts/reports/<category>.yaml`,
-`artifacts/grid_evaluation.yaml`, and (D-063) what was claimed and what really
-exists: `artifacts/hypothesis_card.yaml`, this run's base config (the base
-variant's `strategy_config.json`, else `candidate_strategy_config.json`),
-`docs/COMPONENT_CATALOG.md` and `docs/STRATEGY_DESIGN_GUIDE.md` (the two docs
-step 2 gets), `artifacts/block_manifest.yaml` when present, then
-`artifacts/registry_summary.yaml`. Nothing else (no pre-registration, no other
-category's report, no regime-audit decision).
-
-**Stage output:** `artifacts/proposals/<category>.yaml` × 5 (a YAML list, `[]`
-for none), each validated by `tools/reader_proposals.py::load_proposals`; a
-malformed file stops the run. A proposal's fields
-(`workflow_artifacts/schemas/proposal.schema.json`): `proposal_id`
-(`<category>-<run_id>-<n>`), `kind` (`patch` | `new_block`), `patch` or
-`block`, `evidence`, `scores` (one 0-3 score, `confidence_real`; old records may still carry the
-two legacy keys), `model_id`,
-`rubric_version`, and the optional `requires_feed: {feed, reason}` (E-035
-S2c, item 7). Plus, only when some proposal carries `requires_feed` for a
-feed that is not wired, one row per such feed in
-`campaign_record/data_requests.yaml`.
-
-**Features / logic in place**
-
-1. **Explicit output path, validated before it lands.** `run_reader_worker`
-   validates each reader's single fenced YAML block for its category, then
-   moves it into `proposals/<category>.yaml` (temp file + `os.replace`);
-   `run_claude_worker`'s shared filename regex is not used or changed. An
-   invalid output gets one retry with the error in the prompt. After a second
-   failure the raw answer is saved as
-   `debug_specialist_readers_<category>_raw_output.txt`, and the run does
-   **not** stop (D-061, CUL-380). Each proposal is re-validated on its own;
-   the valid ones go to the final path, and the invalid ones are dropped and
-   listed with their error in the audit log (`dropped_proposals`). An invalid
-   proposal never reaches the final path. A `new_block`'s `block` is exactly
-   `{kind: forecast|regime, config_paths, scaffolding (optional), rationale}`.
-   `rationale` is required: it becomes the next idea's research goal if
-   decide-next picks the proposal.
-2. **Retune firewall** (`_validate_retune_firewall`) runs at stage entry,
-   before any reader call (and on every resume).
-3. **Everything comes from this attempt.** Under the flag `protocol_execution`
-   deletes `idea_status.yaml`, `grid_evaluation.yaml`, `reports/` and
-   `proposals/` on entry, builds the reports from this run's own output only
-   (CUL-381: never the campaign-level `regime_detector_report.yaml`), and
-   fails (after its trial rows are recorded) if the grid or the reports
-   cannot be produced. `run_loop` also refuses to start
-   a flag-on run whose `pre_registration.yaml` pass_rule is not menu-shaped.
-   A token budget exceeded between readers ends the run as
-   `rejected_budget_exceeded`, like the loop-top check.
-4. **Route from the grid only** (`::determine_post_specialist_readers_route`):
-   any `results[*].component_errors.count > 0` in `protocol_result.yaml` →
-   human pause `component_execution_error` (readers are not run); then
-   `idea_status.yaml`: `validated` → promote (holdout path, unchanged),
-   `refuted` → kill/terminate, `inconclusive` → human pause
-   `inconclusive_grid`. Missing or malformed `idea_status.yaml` fails the run.
-   No refine/pivot/escalate and no circuit breaker under this flag; a kill
-   records the run and its diagnostics only (no `altitude_history`, family
-   or `continuation_*` bookkeeping).
-5. **Stage 11 is unreached, not deleted.** Its registry entry and code stay
-   for flag-off runs; `verdict_interpretation.yaml` is never written under the
-   flag. Its readers are listed in
-   `engineering/roadmap/E-046a/S2_5B_II_B_CALLERS.md`.
-6. **With stage 17 on**, the route in item 4 runs after `regroup_record`
-   instead of here (same function, same result).
-7. **Feed requests** (E-035 S2c, delivery_plan_v26.md slice 8.2; no flag of
-   its own). A proposal of either `kind` may carry `requires_feed: {feed,
-   reason}` when its report shows the missing data would plausibly change the
-   result: `feed` is a lowercase snake_case name as a strategy config's
-   `aux_feeds` would name it, `reason` a non-empty string; any other shape
-   stops the run. One vocabulary: each reader's handoff carries
-   `injected_context.feed_names` (`run_phase1_research._reader_feed_vocabulary`)
-   -- `wired` (`FEED_REGISTRY` keys), `reserved` (`RESERVED_FEED_REGISTRY`
-   keys) and `wishlist_only` (`campaign_record/feed_wishlist.yaml` names in
-   neither) -- and its SKILL.md tells it to use a listed name, never a
-   synonym. An unreadable registry or wishlist is reported in that block,
-   never raised. After the proposals validate, `_route_reader_feed_requests`
-   reads the feed registry (only if some proposal carries the field; then an
-   unreadable registry stops the run) and appends ONE row per feed asked for
-   that is not wired to `campaign_record/data_requests.yaml`:
-   `{run_id, stage: specialist_reader, feed, request, proposals: [{category,
-   proposal_id, reason}], reason}`, where `request` is `acquisition` (never
-   built; reason `requires_feed:<feed> -- ...`) or `designation` (a reserved
-   feed, which needs a `campaign_data_policy.yaml` designation; reason
-   `requires_feed_reserved:<feed> -- ...`). A wired feed gets no row. Rows are
-   keyed on (run, stage, feed) (`campaign_review_retired.feed_request_key`),
-   so a resume, or a re-attempt that asks for the same feed in other words or
-   under another proposal id, adds nothing. It changes no status, route or
-   queue entry: decide-next gates the candidate (§5 `run_campaign.py`).
-8. **Readers v3** (E-068 slice 5, D-073, `orchestrator.reader_findings.enabled`,
-   off by default; requires `claim_tests` and `specialist_readers`). Off, items
-   1-7 are exactly as above. On:
-   - **SKILLs:** `workflow_artifacts/skills/readers_v3/<category>-reader/SKILL.md`
-     (one focus each, under 3 KB) plus the shared
-     `readers_v3/READING_CONTRACT.md`. The v2 SKILLs are untouched.
-   - **Inputs:** the same report, grid, card, base config, catalogue and registry
-     summary; `hypothesis-design/CLAIM_TESTS.md` instead of the design guide; and,
-     written by code before the first reader, `artifacts/claim_result_digest.yaml`
-     (the claim's tests and each variant's effect sizes from its
-     `claim_test.yaml`, numbers only when measured on this attempt's bars, else
-     `stale`; and, CUL-410, `variant_patches`: each variant's id, kind, symbol
-     and exact patch from `variant_patches.yaml`, so a reader never infers a
-     variant's settings from its name) and `artifacts/findings_summary_for_readers.yaml` (earlier runs'
-     findings from the campaign memory, this run left out, newest 10, compact);
-     `claim_measurement.yaml` when it exists (an older run's `claim_status.yaml`,
-     its name before D-077). The digest labels every number with its statistic
-     (`statistic_label`, e.g. rank IC (Spearman) vs a difference of means;
-     CUL-413), and with this flag on the forecast_power report carries
-     `statistic_labels` (its `forecast_return_corr` is a Pearson correlation of
-     the forecast with the next bar's return on active bars). If either
-     code-written file cannot be
-     written (e.g. an OSError), the stage does not stop: the error is printed and
-     listed in `artifacts/reader_input_gaps.yaml`, an older copy is removed when
-     possible (a file named there counts as missing even if it is still on disk),
-     and the readers run without that file: their handoff names it as missing and
-     each reading's audit entry keeps it as `missing_inputs`.
-     Under `orchestrator.observable_backtest.enabled` (E-073, D-081; off by
-     default; requires `reader_findings`), every v3 reader also gets
-     [`docs/DATA_DICTIONARY_READERS.md`](DATA_DICTIONARY_READERS.md) (each field it
-     reads: meaning, unit, the code that writes it, known at the bar's close or
-     only after the fact) and one handoff line telling it to look a field up
-     before citing it. That file is the readers' subset of
-     [`docs/DATA_DICTIONARY.md`](DATA_DICTIONARY.md), generated by
-     `tools/data_dictionary.py` (no `bars.csv` section and no per-trade labels:
-     files the readers never receive); a test fails when it is not regenerated.
-     Off, the handoff and prompt are byte-identical.
-     Step 2 (D-083), same flag: each `path=value` (or `path: value`) a v3 reading
-     cites in `evidence` is checked against the files that reader received
-     (under E-072 its exploration copies, never the all-window files). The path
-     must exist (rooted at a top-level key, a known root or the file's own name,
-     e.g. `grid_evaluation.grid.residual_ic.base.value`; keys as the file has
-     them, `2022-09` included -- a hyphenated key the file does not have is
-     cut at its first hyphen; a key with spaces as `x["a key"]`), looked up in
-     the file it names, else the first received file that has it (the
-     reader's own report first). Dictionary-style paths (`summary.`,
-     `trades[]`, `slices.`) are not checked unless a received file has that
-     top-level key. Only the first value after the path is compared. A number
-     matches when the file's value, rounded to the decimals written, is the
-     cited number (half a unit of the last digit); `%` also compares the value
-     x 100 that way; the one exception: a `0` written with fewer than 2
-     decimals matches only |x| < 0.005. A number written any other way (`3k`,
-     `approx 120`, `~0.08`, a word) is not checked (`path_only`), never a
-     mismatch. Text matches when the file's whole text, ignoring case and
-     surrounding spaces, is the cited value (more words may follow); long
-     free text is not a citation target. A missing or mis-valued citation gets
-     the reader's one retry, with a code-written list (the path, the cited
-     value and the problem -- "value does not match the file", or "path not
-     found" with up to 3 real paths that end in the same key, as citable
-     paths; never a value from the files, so the reader must re-read them) and
-     its own answer; the retry answer replaces the first only with strictly
-     fewer bad citations AND the same side findings (count, claim kind,
-     spec_hash set, item kind); both counts and the kept answer are
-     recorded; still wrong, the reading is kept and the citation recorded in
-     `artifacts/citation_checks/<category>.yaml`, and decide-next shows a
-     `citation_mismatch` warning on that side finding. Prose is not checked.
-     Side findings of one run with the same claim kind, the same test
-     spec_hashes and the same `config_change` are merged (`artifacts/side_finding_merges.yaml`):
-     one E-072 confirmation record and one look, listing every source; one
-     decide-next candidate with the first source's scores (`merged_sources`).
-     Readers share their inputs, so a merge is never agreement or extra
-     evidence.
-   - **Skip rules (no model call):** `regime_power` when `block_manifest.yaml`
-     lists `/regime_detector` as scaffolding or the base config's detector has no
-     components and no rules; `component_attribution` when every graded variant
-     has at most one component. The proposals file is then a `skipped` reading
-     with the rule (never `[]`); the memory entry's proposals block carries
-     `skipped`; `campaign_record/reader_skips.yaml` counts it and the campaign
-     summary shows "Readers skipped by a code rule". An answer refused after its
-     retry is recorded the same way (rule `output_refused_after_retry`), as is a
-     reader whose E-072 exploration copies are missing (rule
-     `exploration_inputs_unavailable`, item 9).
-   - **Output:** `proposals/<category>.yaml` is ONE mapping: `schema_version: 3`,
-     `reading_id`, `model_id`, `rubric_version: <category>-reading-v1`,
-     `explanation`, `evidence`, `side_findings` (0-2, each a full claim block plus
-     evidence and scores, optionally with `config_change`: the
-     `[{component_id, field, before, after}]` change to test the claim with).
-     No verdict field. **One proposal kind (D-078):** the stand-alone `patch` is
-     removed from what a reader writes; a reading carrying one is refused with a
-     message naming `config_change` (salvage drops it). A LEGACY reading with a
-     `patch` still loads and flattens as before. Where it is
-     written, code checks each side finding with `claim_card.check_claim`,
-     resolves its `config_change` against the base config
-     (`decide_next.resolve_patch`) and refuses a change under a scaffolding path;
-     a refusal gets the one retry, then each item is kept or dropped on its own. Warnings only, in the audit
-     log (`reading_review`): a test whose `spec_hash` is already in the findings
-     or is this run's own claim test; a block-kind claim whose tests cannot see
-     the block. `tests: none` adds a `test_requests.yaml` row. v2 list files and
-     v3 readings load side by side (`load_proposals` flattens a reading into
-     items). The v3 shape is enforced in code (`reader_proposals.check_reading`);
-     `proposal.schema.json` describes v2 only.
-   - **Decide-next:** two side findings with the same tests collapse inside ONE
-     decision only. The twin left in `collapsed_sources` is not in the queue, so
-     a later decision can offer it again; once the first one's finding is
-     recorded it carries a `repeats_measured_spec` warning (repeats warn, never
-     refuse, by decision; with approval mode on, the operator sees it).
-   - **The start config (CUL-412, D-078):** a side finding starts from the
-     source run's base config and block manifest (its `config_change` applied,
-     when it has one). Decide-next marks it INFEASIBLE when they are not on disk
-     or the change does not resolve; a change gets a novelty key like a patch
-     (NOVEL / REPEAT), an unchanged start is `NOT_APPLICABLE` ("a new claim on
-     it"); same tests collapse only on the same config. The brief carries
-     `candidate.start_config` / `start_manifest` (never `config` / `manifest`,
-     which mark a pass-through) and `source.start_config_sha256`. Step 1b gets
-     them as `artifacts/start_config.json` / `start_block_manifest.yaml` plus
-     `START_FROM_CONFIG.md`; after 1b's manifest is accepted, every difference
-     between what 1b built and the start (config leaves, the manifest's block or
-     scaffolding) is a structured deviation in `artifacts/deviations.yaml`
-     (`source: code_diff_from_start_config`), listed by 1b or not. A composite
-     source carries no start config.
-9. **Exploration and confirmation windows** (E-072, D-080,
-   `orchestrator.explore_confirm.enabled`, off by default; requires
-   `reader_findings` and `variant_loop`). Off, items 1-8 are exactly as above.
-   On (`tools/explore_confirm.py`; design and defaults in
-   `engineering/roadmap/E-072/PHASE_A.md`):
-   - **The split:** at protocol_execution entry, before any backtest,
-     `artifacts/explore_confirm.yaml` records the run's protocol windows in
-     time order, first half exploration, the rest confirmation (an odd count
-     gives the extra window to confirmation). A re-run keeps the file. Nothing
-     here stops a run: fewer than 2 windows records `status: not_applicable`
-     and that run proceeds exactly as with the flag off; any other split
-     failure is logged and the readers are skipped (next bullet).
-   - **What the readers see:** only `artifacts/exploration/` copies of every
-     input that carries a result -- the five reports (cut to the exploration
-     windows; the pooled `overall` slices `withheld`), the grid (window criteria
-     re-evaluated on those windows; pooled criteria and the idea status
-     `withheld`), the claim digest (measured again on those windows), the
-     earlier findings (numbers and `reason` withheld) and the registry summary
-     (numbers `withheld`), a whitelisted card copy (the claim's
-     statement/kind/tests and the signal spec; free text and numeric evidence
-     left out) and the block manifest -- plus `readers_v3/EXPLORATION.md`.
-     Every AI-written free text kept (card statement, signal concept, target
-     market, manifest rationale, the digest's statement and approximation
-     lines, earlier statements) has its numbers shown as `<n>` (one rule,
-     `explore_confirm.mask_free_text`; the test specs, params and config are not
-     masked). A copy left by an earlier attempt counts as missing (an attempt
-     id stamps each attempt's copies);
-     `claim_measurement.yaml` is not given. A split that cannot be read, or a
-     missing report, grid, registry or card copy, skips that reader with the
-     code rule `exploration_inputs_unavailable` (recorded in
-     `reader_skips.yaml`; the run continues); a digest or findings copy that
-     cannot be written is a recorded gap (item 8's rule). Never the all-window
-     file instead. The run's own grid, idea status and routing are unchanged.
-   - **Confirmation, after every reader:** each side finding's tests on the
-     confirmation windows. A pure (price-only) finding is measured in this run
-     on the base variant's bars; a forecast/regime block claim (or a finding
-     whose `config_change` alters what its tests read) is `pending` until the
-     run built from it (its brief's `candidate.source.proposal_ref`) measures
-     its own claim on its own confirmation windows -- not when those overlap
-     the windows the proposer saw. Result: `confirmation_sign_retained: true /
-     false / pending` (true only when every test keeps the claimed sign at every
-     horizon with a value; no events is false; `null` only when nothing could
-     be measured), in `artifacts/confirmation.yaml` and
-     `campaign_record/confirmations.yaml`. A resolution by the follow-up run is
-     WEAK and marked so (`confirmation_basis: follow_up_run`,
-     `proposer_exposure: step_1a_saw_all_window_knowledge_base`, `weak: true`):
-     step 1a wrote that run's card after reading the all-window knowledge base.
-     When its tests differ from the finding's, the result is `not_comparable`.
-   - **Looks:** the ledger counts every look per confirmation set (tests and
-     test x horizon comparisons; a resume never counts twice; a re-run replaces
-     the run's own findings but its earlier looks stay counted, and never a
-     result another run measured) and the
-     campaign summary shows "Side findings on unseen windows", with follow-up
-     resolutions on their own line, never in the clean held / not-held counts.
-     The bar is "the sign held on unseen windows, counted against the looks",
-     never "proven"; the confirmation windows are within the reader model's
-     training period, so "unseen" means unseen in this pipeline.
-     Information only: nothing routes, stops, parks or ranks on it.
+- **Route from the grid only** (`::determine_post_specialist_readers_route`): any
+  `results[*].component_errors.count > 0` in `protocol_result.yaml` → human pause
+  `component_execution_error`; then `idea_status.yaml`: `validated` → promote (holdout path,
+  unchanged), `refuted` → kill/terminate, `inconclusive` → human pause `inconclusive_grid`.
+  Missing or malformed `idea_status.yaml` fails the run. No refine/pivot/escalate and no
+  circuit breaker; a kill records the run and its diagnostics only. Stage 11
+  (`verdict_interpreter`) is unreached, not deleted; `verdict_interpretation.yaml` is never
+  written.
+- **Order:** `protocol_execution` → `analyst` (flag) → `regroup_record` (flag) → the route.
+  With neither flag on, the route is taken in the same iteration as the stage before it.
+  The route's entry checks (a valid `idea_status.yaml`, the retune firewall
+  `_validate_retune_firewall`) run before the analyst spends, or in `regroup_record`, or
+  before the route when no stage precedes it. `run_loop` refuses to start a grid-route run
+  whose `pre_registration.yaml` pass_rule is not menu-shaped. Every artifact comes from this
+  attempt: `protocol_execution` deletes `idea_status.yaml` and `grid_evaluation.yaml` on
+  entry and fails (after its trial rows are recorded) if the grid cannot be produced.
+- **Old runs.** A `pipeline_state.yaml` written before the deletion can carry
+  `specialist_readers` as `pending_stage`; `run_loop` resumes it into `analyst` (flag on and a
+  lens reading missing), else `regroup_record` (flag on), else straight to the route.
+  An old run's five proposal files still load (`tools/reader_categories.py`).
+- **Flags in a config.** The five deleted flags are not read. A leftover
+  `orchestrator.<deleted flag>.enabled` key in `config/campaign_config.yaml` does nothing,
+  but must be a real boolean (the launch pre-flight refuses a quoted string).
+- `artifacts/registry_summary.yaml` (what earlier runs validated; the run viewer reads it)
+  is written by stage 17, before it registers the run's own block.
+- **What stays of the readers' v3 machinery (D-198).** The analyst's readings use the same
+  shape: `proposals/<category>.yaml` is ONE mapping (`schema_version: 3`, `reading_id`,
+  `model_id`, `rubric_version`, `explanation`, `evidence`, `side_findings`, each side finding a
+  full claim block checked by `claim_card.check_claim`, optionally with `config_change` or a
+  `vehicle`), enforced in code by `reader_proposals.check_reading`; v2 list files and v3
+  readings load side by side. Side findings with the same claim kind, test spec_hashes and
+  `config_change` can be merged (`reader_findings.side_finding_merges`, never agreement).
+  Decide-next takes a side finding as a candidate; a repeated `spec_hash` or a block claim
+  whose tests cannot see the block is a warning, never a refusal. Deleted with the readers:
+  the reader skills (`workflow_artifacts/skills/readers*`), the category reports
+  (`tools/build_reports.py`), the code skip rules and `campaign_record/reader_skips.yaml`,
+  the claim digest and earlier-findings inputs, the readers' data dictionary subset, the
+  citation check and its retry, the feed-request router, and the explore/confirm split with
+  the readers' exploration copies (`tools/explore_confirm.py` stays for the fold
+  confirmation).
 
 ---
 
 #### Stage 17 — `regroup_record`
 **Engine:** Python tool (`workflow/run_phase1_research.py::_run_regroup_record_stage`,
 writer `tools/campaign_memory.py`). No LLM call.
-**Runs:** after `specialist_readers`, only when `orchestrator.regroup_record.enabled`
-is on (off by default; requires `orchestrator.specialist_readers.enabled`, or the
-run fails at start). `default_next: dynamic_routing`.
+**Runs:** after `protocol_execution` (or `analyst`, D-198), only when
+`orchestrator.regroup_record.enabled` is on (off by default; requires
+`orchestrator.grid_evaluation.enabled`, or the run fails at start). It also writes
+`artifacts/registry_summary.yaml` (what earlier runs validated; the run viewer reads
+it) before it registers the run's own block, on a run without component errors.
+`default_next: dynamic_routing`.
 
 **Objective.** Write down what this run found, in one place that later steps
 can read, before the grid's route is taken ("memory before decision", roadmap
 card H; delivery_plan_v26.md slice 6a).
 
-**Design rationale.** Under stage 16's flag, `campaign_state.runs` misses
+**Design rationale.** On the grid route, `campaign_state.runs` misses
 promoted and paused runs, and the legacy KB writer is never reached. The
 memory is the complete per-run list. It only records: the idea's status is
 copied from the grid, and reader proposals are referenced, never scored.
@@ -1759,7 +1526,7 @@ engineering_fault_detail}`.
    (or a variant's copy) has component errors, only the fault-only entry is
    written; the run's grid, variants and proposals are not parsed. If even
    that write fails, the failure is logged loudly and the route still pauses
-   as `component_execution_error` (stage 16).
+   as `component_execution_error`.
 3. **No trial rows, and the ledger must be complete.** `protocol_execution`
    already wrote them; this stage only reads them. A tested variant without its
    `backtest` row (or with no `forecast_hash` on it) stops the run. Any
@@ -1999,7 +1766,7 @@ engineering_fault_detail}`.
    repository yet**, so no overlay exists and those rows count in N but not in
    K.
 16. **Score provenance (C5.7b, D-048, `orchestrator.score_provenance.enabled`,
-   off by default; requires `specialist_readers`).** Flag off, nothing changes.
+   off by default; D-198: no dependency, it required `specialist_readers`).** Flag off, nothing changes.
    On: (a) the `model_id` on reader proposals and brief-card scores is stamped
    by code from the model that actually answered, and the model's own claim is
    kept in the audit log's `provenance` block; a `mismatch` means the observed
@@ -2859,7 +2626,7 @@ rewritten by code from the current flags at every stage entry
 it, used by `run_loop` and `async_invoke_agent`), never by `setup_run`;
 flag-off runs never get them. `verdict_interpreter`'s is the legacy template minus
 `validation_protocol.yaml`; it is reached under config-direct only with
-`specialist_readers` off, which is outside the target flag set.
+`grid_evaluation` off (D-198: it was `specialist_readers` off), which is outside the target flag set.
 
 ---
 
@@ -3561,7 +3328,7 @@ row per reason with its resolution.
    `campaign_memory.yaml` does not exist (→ `variant_selection_record` on the
    legacy path). Refused: `paused:flag_misconfiguration`, before `setup_run`
    for a fresh entry. `--resume` re-runs the check. The seven readers that used
-   plain `bool()` (`grid_evaluation`, `category_reports`, `profit_bars_file`,
+   plain `bool()` (`grid_evaluation`, `profit_bars_file`,
    `exclusion_digest_input`, `stale_input_path_fix`, `variant_selection_record`,
    `variant_anti_adjacency_gate`) and `schedulability_block` now use the one
    strict check (`_strict_orchestrator_flag`); an unquoted boolean or a missing
