@@ -477,6 +477,7 @@ Effect sizes are on bars after the fact: `after`.
 | `tests[].selector` | Which bars (card spec; reads bar t only, `CT:SELECTORS`). | map | `RF:claim_result_digest` | meta |
 | `tests[].outcome` | The forward outcome and horizons (card spec, `CT:OUTCOMES`). | map | `RF:claim_result_digest` | meta |
 | `tests[].baseline` | Reference bars (card spec, `CT:BASELINES`). | map | `RF:claim_result_digest` | meta |
+| `tests[].signal` | The bars.csv forecast column the test reads (D-193); written only when the card's test names a signal other than `forecast`. | text | `RF:claim_result_digest`, `CT:signal_errors` | meta |
 | `claim_status` | Run status from claim_measurement.yaml (`absent` without one). | label | `RF:claim_result_digest` | run |
 | `reason` | Its reason. | text | `RF:claim_result_digest` | meta |
 | `variants.<variant>.status` | `measured`, `no_events` or `not_measured`. | label | `RF:_variant_digest` | run |

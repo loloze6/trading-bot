@@ -258,7 +258,7 @@ def claim_result_digest(run_dir: Path) -> dict:
                        "statistic": t["statistic"],
                        "statistic_label": statistic_label(t["statistic"]),
                        "direction": t["direction"],
-                       **{k: t["spec"][k] for k in ("selector", "outcome", "baseline")
+                       **{k: t["spec"][k] for k in ("selector", "outcome", "baseline", "signal")
                           if k in t["spec"]}} for t in tests],
         })
         status_path = cmeas.run_file_path(arts)  # an older run: claim_status.yaml (D-077)
@@ -317,6 +317,7 @@ def reader_findings_summary(memory: dict, run_id: str,
                 "name": t.get("name"), "spec_hash": t.get("spec_hash"),
                 "statistic": t.get("statistic"), "direction": t.get("direction"),
                 "selector": spec.get("selector"), "outcome": spec.get("outcome"),
+                **({"signal": spec["signal"]} if "signal" in spec else {}),     # D-193
                 "by_variant": {vid: {"status": v.get("status"), "largest_effect": _largest(v)}
                                for vid, v in sorted((t.get("by_variant") or {}).items())}})
         compact = {k: row.get(k) for k in ("finding_id", "run_id", "kind", "status", "reason",
