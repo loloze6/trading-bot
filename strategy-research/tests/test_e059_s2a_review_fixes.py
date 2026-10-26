@@ -331,7 +331,10 @@ def test_a_1a_rerun_rewrites_the_pass_rule_and_rechecks_the_id(campaign_root):
 # RE-PINNED by D-192 (2026-10-24, branch feat/d192-criterion-consistency-warning): step 2a names the new statement key
 # `predicts_kind` (return_direction | market_state), so "five keys" is "six keys" and the card list's `statement` line gains it.
 # Block 2b is unchanged. Previous pin (D-190, review round): 96cca59420fad67f6e2b26aef4566fbb727e5298a5dc1200d03432c21643a614.
-_MASTER_SKILL_SHA256 = "15da7800827f1f1f15a58f48a5dd1ae72eb29efdc48884b28503cd6cdb4895ab"
+# RE-PINNED by D-195 (2026-10-26, branch docs/d195-skills-handoffs): `not_expressible` is limited to exits, position
+# state and order placement, and 1b verifies each entry (two lines). Block 2b is unchanged.
+# Previous pin (D-192): 15da7800827f1f1f15a58f48a5dd1ae72eb29efdc48884b28503cd6cdb4895ab.
+_MASTER_SKILL_SHA256 = "77c01a1beec1e321f50cec628b3017ee77371e4cdb78e00b7ae28ce0d8f721a5"
 
 
 def test_hypothesis_design_skill_is_byte_identical_to_master():
