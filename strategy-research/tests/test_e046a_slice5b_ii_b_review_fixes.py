@@ -21,7 +21,7 @@ import run_campaign as camp  # noqa: E402
 import reader_proposals  # noqa: E402
 
 from test_k3_protocol_pinning import _minimal_run, _write_protocol  # noqa: E402
-from test_e046a_slice5b_ii_b_readers_stage import (  # noqa: E402
+from _reader_test_helpers import (  # noqa: E402
     ALL_ON, RUN_ID, _seed_run, _set_orchestrator, _write_menu_pre_registration,
 )
 

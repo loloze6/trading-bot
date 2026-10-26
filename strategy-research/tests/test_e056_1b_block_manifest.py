@@ -38,8 +38,8 @@ import block_manifest as bm  # noqa: E402
 import block_registry as br  # noqa: E402
 
 from test_k3_protocol_pinning import _minimal_run  # noqa: E402
-from test_e058_s2a_regroup_record import RUN_ID, ALL_ON, _seed, _memory  # noqa: E402
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
+from _reader_test_helpers import (  # noqa: E402
+    REGROUP_ALL_ON as ALL_ON, REGROUP_RUN_ID as RUN_ID, _memory, _seed, _set_orchestrator)
 
 SCHEMAS = SR_ROOT / "workflow_artifacts" / "schemas"
 SKILL_1B = SR_ROOT / "workflow_artifacts" / "skills" / "strategy-config-authoring" / "SKILL.md"
@@ -602,7 +602,7 @@ def _reader_prompts(run_dir: Path) -> dict:
     """The five specialist-reader prompts, built exactly as run_reader_worker
     builds them (_reader_handoff + _reader_skill_dir)."""
     out = {}
-    for category in rpr._reader_categories():
+    for category in rpr.READER_CATEGORIES:
         handoff = rpr._reader_handoff(category, "run_001", 0)
         for req in handoff["required_inputs"]:
             p = run_dir / req["path"]

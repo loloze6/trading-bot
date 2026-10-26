@@ -35,11 +35,9 @@ sys.path.insert(0, str(SR_ROOT / "tools"))
 import run_phase1_research as rpr  # noqa: E402
 import reader_proposals as rp  # noqa: E402
 
-from test_e046a_slice5b_ii_b_readers_stage import (  # noqa: E402
-    ALL_ON, RUN_ID, _seed_run, _set_orchestrator,
-)
-from test_c5_7b1_model_id_stamp import (  # noqa: E402
-    BASELINE_ENTRY_KEYS, ON, _bytes, _loaded, _one_proposal, _reader_text,
+from _reader_test_helpers import (  # noqa: E402
+    ALL_ON, BASELINE_ENTRY_KEYS, ON, RUN_ID, _bytes, _loaded, _one_proposal, _reader_text,
+    _seed_run, _set_orchestrator,
 )
 
 CAT = "profitability"
@@ -152,7 +150,7 @@ def _resolve(evidence, files=FILES):
 
 def test_the_closed_set_covers_exactly_the_reader_categories():
     assert sorted(rp.READER_RUBRIC_VERSIONS) == sorted(CATEGORIES)
-    assert sorted(rpr._reader_categories()) == sorted(CATEGORIES)
+    assert sorted(rpr.READER_CATEGORIES) == sorted(CATEGORIES)
 
 
 @pytest.mark.parametrize("cat", CATEGORIES)

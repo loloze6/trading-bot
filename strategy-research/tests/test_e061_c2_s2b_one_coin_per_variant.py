@@ -716,8 +716,8 @@ def test_single_column_grid_lists_the_index_variants_as_untested():
 
 
 def test_belt_check_refuses_a_validated_idea_with_ungraded_variants():
-    import test_e058_s2a_regroup_record as t58
-    t58._set_orchestrator(t58.ALL_ON)
+    import _reader_test_helpers as t58
+    t58._set_orchestrator(t58.REGROUP_ALL_ON)
     # single column, variant loop off, index lists design: only base ran
     run_dir = t58._seed(idea_status="validated")
     rpr.save_yaml(run_dir / "artifacts" / "variants" / "index.yaml", {"variants": {
@@ -725,7 +725,7 @@ def test_belt_check_refuses_a_validated_idea_with_ungraded_variants():
         "design": {"status": "validated",
                    "config_path": "artifacts/variants/design/strategy_config.json"}}})
     with pytest.raises(cm.CampaignMemoryError, match="only the base config ran"):
-        rpr._run_regroup_record_stage(t58.RUN_ID, run_dir)
+        rpr._run_regroup_record_stage(t58.REGROUP_RUN_ID, run_dir)
     assert not t58._memory_path().exists()
 
 
@@ -734,8 +734,8 @@ def test_belt_check_refuses_a_validated_idea_with_ungraded_variants():
     ("failed_variants", {"asset": "backtest_failed: x"}, "failed_variants"),
 ])
 def test_belt_check_refuses_a_validated_grid_carrying_unscored_variants(key, value, needle):
-    import test_e058_s2a_regroup_record as t58
-    t58._set_orchestrator(t58.ALL_ON)
+    import _reader_test_helpers as t58
+    t58._set_orchestrator(t58.REGROUP_ALL_ON)
     run_dir = t58._seed(idea_status="validated", variant_loop=True)
     arts = run_dir / "artifacts"
     index = rpr.load_yaml(arts / "variants" / "index.yaml")
@@ -746,16 +746,16 @@ def test_belt_check_refuses_a_validated_grid_carrying_unscored_variants(key, val
     grid[key] = value  # a hand-edited grid: its own rollup would say inconclusive
     rpr.save_yaml(arts / "grid_evaluation.yaml", grid)
     with pytest.raises(cm.CampaignMemoryError, match=needle):
-        rpr._run_regroup_record_stage(t58.RUN_ID, run_dir)
+        rpr._run_regroup_record_stage(t58.REGROUP_RUN_ID, run_dir)
     assert not t58._memory_path().exists()
 
 
 def test_belt_check_passes_a_whole_validated_idea():
-    import test_e058_s2a_regroup_record as t58
-    t58._set_orchestrator(t58.ALL_ON)
+    import _reader_test_helpers as t58
+    t58._set_orchestrator(t58.REGROUP_ALL_ON)
     run_dir = t58._seed(idea_status="validated", variant_loop=True)
-    rpr._run_regroup_record_stage(t58.RUN_ID, run_dir)
-    e = t58._memory()["runs"][t58.RUN_ID]
+    rpr._run_regroup_record_stage(t58.REGROUP_RUN_ID, run_dir)
+    e = t58._memory()["runs"][t58.REGROUP_RUN_ID]
     assert e["idea_status"] == "validated"
     assert {v["status"] for v in e["variants"].values()} == {"tested"}
 
@@ -1009,27 +1009,27 @@ def test_m1_promote_path_bars_are_capped_when_the_bridge_is_a_partial_variant():
 
 
 def test_m1_memory_refuses_a_validated_grid_with_a_partial_variant():
-    import test_e058_s2a_regroup_record as t58
-    t58._set_orchestrator(t58.ALL_ON)
+    import _reader_test_helpers as t58
+    t58._set_orchestrator(t58.REGROUP_ALL_ON)
     run_dir = t58._seed(idea_status="validated", variant_loop=True)
     grid = rpr.load_yaml(run_dir / "artifacts" / "grid_evaluation.yaml")
     grid["partial_coverage_variants"] = {"design": "partial coverage: 1/2"}
     rpr.save_yaml(run_dir / "artifacts" / "grid_evaluation.yaml", grid)
     with pytest.raises(cm.CampaignMemoryError, match="partial_coverage_variants"):
-        rpr._run_regroup_record_stage(t58.RUN_ID, run_dir)
+        rpr._run_regroup_record_stage(t58.REGROUP_RUN_ID, run_dir)
 
 
 def test_m3_a_per_coin_memory_entry_records_the_run_protocol(monkeypatch):
     """protocol_result.yaml (the bridge) mirrors one variant's own protocol.json;
     a per-coin run's memory entry names the RUN protocol instead -- the key the
     repeat gate builds. Without a per-coin index nothing changes."""
-    import test_e058_s2a_regroup_record as t58
-    t58._set_orchestrator(t58.ALL_ON)
+    import _reader_test_helpers as t58
+    t58._set_orchestrator(t58.REGROUP_ALL_ON)
     run_dir = t58._seed(idea_status="refuted", variant_loop=True)
     arts = run_dir / "artifacts"
     kw = dict(trial_sharpes=rpr.load_campaign_state()["trial_sharpes"],
-              categories=rpr._reader_categories(), protocol_root=rpr.ROOT, recorded_at="t")
-    legacy = cm.build_memory_entry(run_dir, t58.RUN_ID, **kw)
+              categories=list(rpr.READER_CATEGORIES), protocol_root=rpr.ROOT, recorded_at="t")
+    legacy = cm.build_memory_entry(run_dir, t58.REGROUP_RUN_ID, **kw)
     assert legacy["protocol_ref"] == "protocols/p.json"  # unchanged without a per-coin index
     index = rpr.load_yaml(arts / "variants" / "index.yaml")
     for vid in ("base", "design"):
@@ -1039,11 +1039,11 @@ def test_m3_a_per_coin_memory_entry_records_the_run_protocol(monkeypatch):
     bridge["protocol_file"] = str(arts / "variants" / "asset" / "protocol.json")  # partial asset
     rpr.save_yaml(arts / "protocol_result.yaml", bridge)
     with pytest.raises(cm.CampaignMemoryError, match="run_protocol_file"):
-        cm.build_memory_entry(run_dir, t58.RUN_ID, **kw)
+        cm.build_memory_entry(run_dir, t58.REGROUP_RUN_ID, **kw)
     run_proto = rpr.ROOT / "protocols" / "run_m3.json"
     monkeypatch.setattr(rpr, "_resolve_protocol_path", lambda rd, rid: run_proto)
-    rpr._run_regroup_record_stage(t58.RUN_ID, run_dir)
-    assert t58._memory()["runs"][t58.RUN_ID]["protocol_ref"] == "protocols/run_m3.json"
+    rpr._run_regroup_record_stage(t58.REGROUP_RUN_ID, run_dir)
+    assert t58._memory()["runs"][t58.REGROUP_RUN_ID]["protocol_ref"] == "protocols/run_m3.json"
 
 
 def test_repeat_gate_refuses_only_the_variant_with_a_broken_protocol():

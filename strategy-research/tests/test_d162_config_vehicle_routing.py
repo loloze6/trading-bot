@@ -49,10 +49,8 @@ import run_phase1_research as rpr  # noqa: E402
 
 import test_e077_pr2_confirm as e077  # noqa: E402
 from test_d051_d053_forecast_rules import CONFIG, MANIFEST, SC  # noqa: E402
-from test_e068_5_readers_v3 import _claim, _scores  # noqa: E402
-from test_e072_explore_confirm import _pure_claim  # noqa: E402
+from _reader_test_helpers import _claim, _pure_claim, _scores, _set_orchestrator  # noqa: E402
 from test_exact_config_1b import ON, _run  # noqa: E402
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
 from test_halt_quarantine_policy import campaign_root  # noqa: E402,F401  (fixture)
 
 RUN, CAT = "run_070", "trade_efficiency"

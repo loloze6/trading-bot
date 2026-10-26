@@ -20,7 +20,7 @@ sys.path.insert(0, str(SR_ROOT / "tools"))
 import run_phase1_research as rpr  # noqa: E402
 import variant_coin as vc  # noqa: E402
 
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
+from _reader_test_helpers import _set_orchestrator  # noqa: E402
 from test_exact_config_1b import CDA, ON, _arts, _run  # noqa: E402
 
 LOOP_ON = {**ON, "variant_loop": {"enabled": True}}

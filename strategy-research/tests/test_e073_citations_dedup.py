@@ -47,11 +47,10 @@ import reader_findings as rf  # noqa: E402
 import decide_next as dn  # noqa: E402
 import explore_confirm as ec  # noqa: E402
 
-from test_e046a_slice5b_ii_b_readers_stage import RUN_ID, _set_orchestrator  # noqa: E402
-from test_e068_5_readers_v3 import (  # noqa: E402
-    V3_ON, _claim, _scores, _reading, _fenced, _run070_shaped, _memory_entry, _src, _inputs)
-from test_e072_explore_confirm import (  # noqa: E402
-    EC_ON, _ec_run, _protocol_execution_part, _pure_claim, _confirmation)
+from _reader_test_helpers import (  # noqa: E402
+    EC_ON, RUN_ID, V3_ON, _claim, _confirmation, _ec_run, _fenced, _inputs, _memory_entry,
+    _protocol_execution_part, _pure_claim, _reading, _run070_shaped, _scores, _set_orchestrator,
+    _src)
 from test_e073_data_dictionary import _seed_dictionary  # noqa: E402
 
 OB_ON = {**V3_ON, "observable_backtest": {"enabled": True}}
@@ -642,7 +641,7 @@ def test_flag_off_confirm_findings_is_unchanged_without_merges(monkeypatch):
     _protocol_execution_part(run_dir)
     readings = _readings(_two_readers_same_test())
     split = ec.load_split(run_dir / "artifacts")
-    from test_e072_explore_confirm import _eras_holdout
+    from _reader_test_helpers import _eras_holdout
     eras, holdout = _eras_holdout()
     kw = dict(base_variant="base", eras=eras, holdout_start=holdout)
     assert ec.confirm_findings(run_dir, RUN_ID, readings, split, **kw) \

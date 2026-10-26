@@ -50,15 +50,12 @@ import claim_findings as cf  # noqa: E402
 import campaign_memory as cm  # noqa: E402
 from build_reports import REPORT_CATEGORIES  # noqa: E402
 
-from test_e046a_slice5b_ii_b_readers_stage import (  # noqa: E402
-    RUN_ID, _seed_run, _set_orchestrator, _fake_llm, _proposal)
-from test_e058_s2a_regroup_record import ALL_ON as REGROUP_ON  # noqa: E402
+from _reader_test_helpers import (  # noqa: E402,F401  (D-197: the shared reader-test helpers)
+    CLAIMS_ON, FIX4, FIX5, REGROUP_ALL_ON as REGROUP_ON, RUN_ID, V3_ON, _claim, _fake_llm,
+    _fenced, _fix, _inputs, _memory_entry, _patch, _proposal, _reading, _run070_shaped,
+    _scores, _seed_run, _seed_v3_docs, _set_orchestrator, _side, _side_with_change, _src,
+    _stub_tbot_python, _write)
 
-FIX4 = SR_ROOT / "tests" / "fixtures" / "e068_4" / "run_070"
-FIX5 = SR_ROOT / "tests" / "fixtures" / "e068_5"
-CLAIMS_ON = {**REGROUP_ON, "config_direct_authoring": {"enabled": True},
-             "claim_tests": {"enabled": True}}
-V3_ON = {**CLAIMS_ON, "reader_findings": {"enabled": True}}
 HIGH, LOW = "high_close_shock_reversion", "low_close_shock_reversion"
 HIGH_HASH = "c688b1863f8cb3ff4d3a3bb05e0c15d5b885d27a65d3b805ad1990263fa83a99"
 VERDICT_WORDS = re.compile(r"\b(true|false|supported|refuted|supports|refutes)\b", re.IGNORECASE)
@@ -73,100 +70,6 @@ V2_SKILL_SHA256 = {
     "component_attribution": "96783aec70dc2fc806e71b00af7baec28e32a55d1542624599ddc335852f2dbe",
     "trade_efficiency": "da251b6efa68faf174f22eeae2e187ebfb2228d1b9251e34076c3b8701147785",
 }
-
-
-@pytest.fixture(autouse=True)
-def _stub_tbot_python(monkeypatch):
-    monkeypatch.setattr(rpr, "_resolve_tbot_python", lambda: Path("stub-python"))
-
-
-def _seed_v3_docs() -> None:
-    """The real flag-on input files, under the sandbox ROOT (run-relative ../../)."""
-    for rel in ("workflow_artifacts/skills/hypothesis-design/CLAIM_TESTS.md",
-                "workflow_artifacts/skills/readers_v3/READING_CONTRACT.md",
-                "workflow_artifacts/skills/hypothesis-design/PREFILLED_CLAIM.md"):
-        dst = rpr.ROOT / rel
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(SR_ROOT / rel, dst)
-
-
-def _claim(statement="After a large 1h up-move, the next 1-6h returns are higher.",
-           kind="event_behaviour", field="past_return", side="top", tests=None) -> dict:
-    sel = {"kind": "quantile", "field": field, "side": side, "q": 0.1, "lookback": 100}
-    if field == "past_return":
-        sel["bars"] = 1
-    return {
-        "statement": statement, "kind": kind,
-        "tests": tests if tests is not None else [{
-            "name": "big_move_followthrough", "selector": sel,
-            "outcome": {"kind": "fwd_return", "horizons": [1, 2, 4, 6]},
-            "baseline": {"kind": "complement"}, "statistic": "decay_curve",
-            "direction": "greater", "floor": {"min_events": 50, "min_windows": 4},
-            "consistency": {"unit": "window", "min_same_sign": 3}}],
-        "pass_if": "effect above zero at 1-6h in most windows",
-        "fail_if": "effect at or below zero",
-        "rationale": "seen in the trade report's entry drift",
-    }
-
-
-def _scores(n=2) -> dict:
-    return {"confidence_real": n, "distance_to_profitable": n, "mechanism_plausibility": n}
-
-
-def _reading(cat="trade_efficiency", run_id=RUN_ID, sides=None, patch=None, **over) -> dict:
-    rid = f"{cat}-{run_id}"
-    doc = {"schema_version": 3, "reading_id": rid, "model_id": "m",
-           "rubric_version": f"{cat}-reading-v1",
-           "explanation": "Entries came one bar late on most trades.",
-           "evidence": ["variants.base.slices.overall.x=1"],
-           "side_findings": sides if sides is not None else [
-               {"proposal_id": f"{rid}-1", "claim": _claim(),
-                "evidence": ["variants.base.slices.overall.y=2"], "scores": _scores()}]}
-    if patch is not None:   # a LEGACY v3 file (before continuation 2 removed the patch)
-        doc["patch"] = patch
-    doc.update(over)
-    return doc
-
-
-def _side_with_change(cat="trade_efficiency", run_id=RUN_ID, n=1, **patch_kw) -> dict:
-    """Continuation 2: a side finding carrying the config change to test it with."""
-    return {"proposal_id": f"{cat}-{run_id}-{n}", "claim": _claim(),
-            "evidence": ["variants.base.slices.overall.y=2"], "scores": _scores(),
-            "config_change": _patch(cat, run_id, **patch_kw)["patch"]}
-
-
-def _patch(cat="trade_efficiency", run_id=RUN_ID, n=2, component="shock_reversal",
-           field="params.period", before=1, after=2) -> dict:
-    return {"proposal_id": f"{cat}-{run_id}-{n}",
-            "patch": [{"component_id": component, "field": field, "before": before,
-                       "after": after}],
-            "evidence": ["variants.base.slices.overall.boundary_recross_rate=0.9926"],
-            "scores": _scores(3)}
-
-
-def _fenced(doc) -> str:
-    return "```yaml\n" + yaml.safe_dump(doc, sort_keys=False) + "```"
-
-
-def _write(path: Path, doc) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
-
-
-def _run070_shaped(monkeypatch, flags=V3_ON) -> Path:
-    """A seeded run with run_070's real base config and block manifest."""
-    _set_orchestrator(flags)
-    monkeypatch.chdir(SR_ROOT)
-    _seed_v3_docs()
-    run_dir = _seed_run()
-    arts = run_dir / "artifacts"
-    shutil.copyfile(FIX5 / "base_strategy_config.json", arts / "candidate_strategy_config.json")
-    shutil.copyfile(FIX4 / "artifacts" / "block_manifest.yaml", arts / "block_manifest.yaml")
-    shutil.copyfile(FIX5 / "component_attribution_overall.yaml",
-                    arts / "reports" / "component_attribution.yaml")
-    if flags.get("reader_findings", {}).get("enabled"):
-        rpr._write_reader_v3_inputs(run_dir, RUN_ID)  # the stage writes them before any reader
-    return run_dir
 
 
 def _strings(obj, skip=("statement", "evidence", "explanation")):
@@ -564,12 +467,6 @@ def test_an_unusable_answer_becomes_a_recorded_skip_not_an_empty_list(monkeypatc
 # ---------------------------------------------------------------------------
 # 6. Skip rules (run_070's real manifest, config and report)
 # ---------------------------------------------------------------------------
-
-def _fix(name):
-    path = FIX5 / name
-    return json.loads(path.read_text(encoding="utf-8")) if name.endswith(".json") else \
-        yaml.safe_load(path.read_text(encoding="utf-8"))
-
 
 def test_skip_rules_on_run_070():
     manifest = yaml.safe_load((FIX4 / "artifacts" / "block_manifest.yaml").read_text(
@@ -1068,39 +965,6 @@ def test_the_review_lands_before_the_file(monkeypatch):
 
 
 # decide-next -------------------------------------------------------------
-
-def _memory_entry() -> dict:
-    return {"run_id": "run_070", "hypothesis_id": "H-070", "timeframe": "1h",
-            "variants": {"base": {"status": "tested", "symbols": ["BTCUSD"], "n_windows": 6,
-                                  "config_ref": "runs/run_070/artifacts/variants/base/"
-                                                "strategy_config.json"}}}
-
-
-def _src(items=None) -> dict:
-    card = yaml.safe_load((FIX4 / "artifacts" / "hypothesis_card.yaml").read_text(
-        encoding="utf-8"))
-    return {"proposals": items or [], "base_variant": "base",
-            "base_config": _fix("base_strategy_config.json"),
-            "base_config_ref": "runs/run_070/artifacts/variants/base/strategy_config.json",
-            "manifest": yaml.safe_load((FIX4 / "artifacts" / "block_manifest.yaml").read_text(
-                encoding="utf-8")),
-            "pre_registration": {"machine_constraints": {"protocol_ref": "protocols/p.json"}},
-            "research_brief": {"strategy_domain": "d", "market_universe": "u",
-                               "timeframe": "1h", "venue": "kraken", "product": "perp"},
-            "card": card, "card_text": yaml.safe_dump(card)}
-
-
-def _inputs(memory=None, runs=None) -> dict:
-    return {"memory": memory or {"runs": {}}, "queue": {"queue": []},
-            "existing_candidate_briefs": [], "known_classes": None, "feed_set": None,
-            "digest": None, "protocol_specs": {}, "runs": runs or {}}
-
-
-def _side(cat="trade_efficiency", n=1, claim=None) -> dict:
-    return {"proposal_id": f"{cat}-run_070-{n}", "kind": rp.SIDE_FINDING,
-            "claim": claim or _claim(), "evidence": ["variants.base.slices.overall.y=2"],
-            "scores": _scores(), "model_id": "m", "rubric_version": f"{cat}-reading-v1"}
-
 
 def test_a_side_finding_becomes_an_eligible_candidate():
     p = _side()

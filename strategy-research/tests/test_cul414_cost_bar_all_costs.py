@@ -45,7 +45,7 @@ import run_phase1_research as rpr  # noqa: E402
 import run_protocol as rp  # noqa: E402
 import verdict_criteria_evaluator as vce  # noqa: E402
 
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
+from _reader_test_helpers import _set_orchestrator  # noqa: E402
 
 FLAG_ON = {"cost_bar_all_costs": {"enabled": True}}
 FLAG_OFF = {"cost_bar_all_costs": {"enabled": False}}

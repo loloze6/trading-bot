@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent / "fixtures" / "profit_bars_golden"
 
 import run_phase1_research as rpr  # noqa: E402
 import campaign_memory as cm  # noqa: E402
+from _reader_test_helpers import reader_docs  # noqa: E402,F401  (fixture, D-197)
 import test_profit_bars_every_backtest as tpb  # noqa: E402
 from test_profit_bars_every_backtest import RUN_ID  # noqa: E402
 

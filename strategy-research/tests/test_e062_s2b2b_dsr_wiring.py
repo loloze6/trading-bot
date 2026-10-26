@@ -45,7 +45,7 @@ import decide_next  # noqa: E402
 import deflate_sharpe  # noqa: E402
 import portfolio_whole_test as pwt  # noqa: E402
 
-from test_e058_s2a_regroup_record import RUN_ID, _seed, _set_orchestrator  # noqa: E402
+from _reader_test_helpers import REGROUP_RUN_ID as RUN_ID, _seed, _set_orchestrator  # noqa: E402
 from test_profit_bars_every_backtest import _seed_dsr_ledger  # noqa: E402
 from test_e062_s2b1_profit_bars_v2 import (  # noqa: E402
     FULL_ON, V1_BARS, V2_BARS, V2_ON, _attach_whole_test, _build, _pbe, _v2_run,

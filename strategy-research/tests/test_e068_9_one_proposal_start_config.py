@@ -36,7 +36,7 @@ import reader_proposals as rp  # noqa: E402
 import decide_next as dn  # noqa: E402
 import nearest_build as nb  # noqa: E402
 
-from test_e068_5_readers_v3 import (  # noqa: E402
+from _reader_test_helpers import (  # noqa: E402
     RUN_ID, _claim, _fenced, _memory_entry, _patch, _reading, _run070_shaped, _scores,
     _seed_run, _side, _side_with_change, _src, _inputs, _write)
 from test_e068_7_block_test_variants_relaunch import _failed_entry, _queue  # noqa: E402

@@ -28,7 +28,7 @@ sys.path.insert(0, str(SR_ROOT / "tools"))
 import run_phase1_research as rpr  # noqa: E402
 from claude_agent_sdk import AssistantMessage, ResultMessage, TextBlock  # noqa: E402
 
-from test_e046a_slice5b_ii_b_readers_stage import ALL_ON, _set_orchestrator  # noqa: E402
+from _reader_test_helpers import ALL_ON, _set_orchestrator  # noqa: E402
 
 SONNET = "claude-sonnet-5-5"
 DEFAULT = rpr._CLAUDE_WORKER_MODEL

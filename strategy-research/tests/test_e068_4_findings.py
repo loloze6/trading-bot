@@ -40,8 +40,8 @@ import campaign_memory as cm  # noqa: E402
 import claim_findings as cf  # noqa: E402
 import novelty as nv  # noqa: E402
 
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
-from test_e058_s2a_regroup_record import ALL_ON, _seed, _memory_path, _memory  # noqa: E402
+from _reader_test_helpers import (  # noqa: E402
+    REGROUP_ALL_ON as ALL_ON, _memory, _memory_path, _seed, _set_orchestrator)
 
 FIXTURE = SR_ROOT / "tests" / "fixtures" / "e068_4" / "run_070"
 VIDS = ["base", "shock_lookback_250", "sol_generalization", "uni_defi"]

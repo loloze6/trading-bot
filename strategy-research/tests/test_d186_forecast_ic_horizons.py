@@ -33,7 +33,7 @@ import run_campaign as camp  # noqa: E402
 import verdict_criteria_evaluator as vce  # noqa: E402
 import composite_cache as cc  # noqa: E402
 import residual_ic as ric  # noqa: E402
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
+from _reader_test_helpers import _set_orchestrator  # noqa: E402
 from test_k3_protocol_pinning import _minimal_run, _write_protocol  # noqa: E402
 from test_e060_s2_residual_ic import (  # noqa: E402
     _block, _protocol, _registry_file, _seal, _summary, _variant_results, Z_CAND, Z_COMP,

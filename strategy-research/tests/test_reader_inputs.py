@@ -28,7 +28,7 @@ sys.path.insert(0, str(SR_ROOT / "tools"))
 
 import run_phase1_research as rpr  # noqa: E402
 
-from test_e046a_slice5b_ii_b_readers_stage import (  # noqa: E402
+from _reader_test_helpers import (  # noqa: E402
     ALL_ON, RUN_ID, _seed_run, _set_orchestrator)
 
 CAT = "trade_efficiency"

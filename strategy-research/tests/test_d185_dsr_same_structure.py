@@ -45,8 +45,7 @@ import portfolio_whole_test as pwt  # noqa: E402
 import run_phase1_research as rpr  # noqa: E402
 import structure_key as sk  # noqa: E402
 
-from test_e058_s2a_regroup_record import RUN_ID  # noqa: E402
-from test_e046a_slice5b_ii_b_readers_stage import _set_orchestrator  # noqa: E402
+from _reader_test_helpers import REGROUP_RUN_ID as RUN_ID, _set_orchestrator  # noqa: E402
 from test_e062_s2b1_profit_bars_v2 import V2_ON  # noqa: E402
 from test_e062_s2b2b_dsr_wiring import (  # noqa: E402
     _block, _dsr_row, _edit_rows, _evaluate, _hand_dsr, _own_row, _run_protocol_execution, _state,
@@ -714,7 +713,7 @@ def test_the_grid_grader_grades_on_the_same_structure_n_like_branch_3():
     # two variants keyed (H1, 1h) and two more rows on that key.
     from test_profit_bars_every_backtest import VARIANT_LOOP_ON, _seed_dsr_ledger
     from test_e062_s2b1_profit_bars_v2 import V2_BARS, _attach_whole_test, _build, _write_bars, _write_cost_model
-    from test_e058_s2a_regroup_record import _seed
+    from _reader_test_helpers import _seed
     _set_orchestrator({**V2_ON, **VARIANT_LOOP_ON})
     _write_bars(V2_BARS)
     _write_cost_model()
