@@ -74,7 +74,10 @@ CLAIM_KEYS = {"statement", "kind", "tests", "criteria_refs", "missing_block",
               "pass_if", "fail_if", "rationale"}
 TEXT_KEYS = ("statement", "pass_if", "fail_if", "rationale")
 TEST_KEYS = {"name", "selector", "outcome", "baseline", "statistic", "direction",
-             "floor", "consistency"}
+             "floor", "consistency", "signal"}
+# D-193: `signal` is optional (default "forecast"); a test that does not write it is exactly
+# the test it was before the key existed
+OPTIONAL_TEST_KEYS = {"consistency", "baseline", "signal"}
 CODE_FIXED_KEYS = ("alpha", "significance")
 MAX_TESTS = 3
 NO_TEST = "none"
@@ -140,7 +143,7 @@ def _check_test(test, where: str, trade_tests: bool = False) -> tuple:
     unknown = sorted(set(test) - TEST_KEYS - set(CODE_FIXED_KEYS))
     if unknown:
         errors.append(f"{where}: unknown keys {unknown}; allowed: {sorted(TEST_KEYS)}")
-    missing = sorted(k for k in TEST_KEYS - {"consistency", "baseline"} if k not in test)
+    missing = sorted(k for k in TEST_KEYS - OPTIONAL_TEST_KEYS if k not in test)
     if missing:
         errors.append(f"{where}: missing {missing}")
     if errors:
@@ -246,6 +249,70 @@ def check_claim(claim, criteria_ids=(), trade_tests: bool = False, *,
     if e:
         res.tests = []
     return res
+
+
+# ---------------------------------------------------------------------------
+# D-193: a test's `signal` against its own claim's vehicle
+# ---------------------------------------------------------------------------
+
+def _strategy_components(config) -> dict:
+    """{component id: [weights]} over the strategy components of a config
+    (strategies.regimes.*.components): where the bars.csv columns
+    `debug_info.components.<id>.*` come from."""
+    out: dict = {}
+    strategies = config.get("strategies") if isinstance(config, dict) else None
+    regimes = strategies.get("regimes") if isinstance(strategies, dict) else None
+    for rcfg in (regimes.values() if isinstance(regimes, dict) else []):
+        comps = rcfg.get("components") if isinstance(rcfg, dict) else None
+        for comp in comps if isinstance(comps, list) else []:
+            if isinstance(comp, dict) and isinstance(comp.get("id"), str):
+                out.setdefault(comp["id"], []).append(comp.get("weight"))
+    return out
+
+
+def _is_zero(v) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and v == 0
+
+
+def vehicle_removed_components(vehicle, base_config=None) -> set:
+    """The strategy components a claim's vehicle takes out of the strategy. A vehicle removes
+    a component by either of the two ways the vehicle forms can say it:
+      * change list: an item {component_id, field: weight, after: 0} (a zero weight takes the
+        component out of the weighted mean);
+      * config form: a component of the base config's strategies that the vehicle's complete
+        config no longer has, or has with every weight 0 (the absent case needs `base_config`).
+    Pure; an unreadable vehicle removes nothing."""
+    gone: set = set()
+    if isinstance(vehicle, list):
+        for item in vehicle:
+            if (isinstance(item, dict) and isinstance(item.get("component_id"), str)
+                    and item.get("field") == "weight" and _is_zero(item.get("after"))):
+                gone.add(item["component_id"])
+    elif isinstance(vehicle, dict) and isinstance(vehicle.get("config"), dict):
+        after = _strategy_components(vehicle["config"])
+        gone |= {cid for cid, ws in after.items() if ws and all(_is_zero(w) for w in ws)}
+        if isinstance(base_config, dict):
+            gone |= set(_strategy_components(base_config)) - set(after)
+    return gone
+
+
+def vehicle_signal_errors(claim, vehicle, base_config=None) -> list:
+    """Errors for a claim test whose `signal` names a component its own vehicle removes: the
+    child run backtests the vehicle, and its bars.csv has no column for that component, so
+    the test could not be re-run. [] when no test names a signal, or none names a removed
+    component. Pure; the caller adds these to the claim card's errors."""
+    tests = claim.get("tests") if isinstance(claim, dict) else None
+    named = [(i, t) for i, t in enumerate(tests if isinstance(tests, list) else [])
+             if isinstance(t, dict) and isinstance(t.get("signal"), str)
+             and ct.signal_component_id(t["signal"]) is not None]
+    if not named:
+        return []
+    gone = vehicle_removed_components(vehicle, base_config)
+    return [f"claim.tests[{i}].signal {t['signal']!r} names the component "
+            f"{ct.signal_component_id(t['signal'])!r}, which this claim's own vehicle removes: "
+            f"the child run has no such column, so it could not re-run the test. Test another "
+            f"signal, or change the vehicle"
+            for i, t in named if ct.signal_component_id(t["signal"]) in gone]
 
 
 def card_criteria_ids(card: dict) -> list:
