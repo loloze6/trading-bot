@@ -527,6 +527,57 @@ def profit_bars_block(run_dir: Path, run_id: str, variants: dict) -> dict:
             "passing": expected_passing, "variants": out_variants}
 
 
+# D-196: the BASE variant's whole-test book, copied (never recomputed) from the run's own
+# artifacts/profit_bars_evaluation.yaml into the memory entry as `base_book`, and from there
+# into the tried_ideas row as base_<field>. Record key -> entry key:
+#   sharpe               <- variants.base.bars[name=sharpe_min].actual
+#   max_drawdown_pct     <- variants.base.bars[name=max_drawdown_pct_max].actual
+#   mean_abs_allocation  <- variants.base.forecast_shape.abs_mean_allocation, else
+#                           variants.base.window_economics.total.mean_abs_allocation
+#   turnover_annualised  <- variants.base.window_economics.total.turnover_annualised
+#   median_holding_bars  <- variants.base.window_economics.total.median_holding_bars
+# window_economics is written only under orchestrator.analyst.enabled, so those two can be
+# absent: the value is then null (the entry's convention for a measured value the record
+# does not hold, as profit_bars.*.actual). The whole block is absent -- not null -- when the
+# evaluation has no `base` variant (like `fold`), so an entry without it reads as before.
+BASE_VARIANT_ID = "base"
+BASE_BOOK_FIELDS = ("sharpe", "max_drawdown_pct", "mean_abs_allocation",
+                    "turnover_annualised", "median_holding_bars")
+TRIED_IDEAS_BASE_PREFIX = "base_"
+
+
+def _record_number(value):
+    """A finite real number as the record holds it, else None (bool, str, NaN, inf, absent)."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    return value if value == value and value not in (float("inf"), float("-inf")) else None
+
+
+def base_book_block(run_dir: Path, run_id: str) -> dict | None:
+    """D-196: the memory entry's `base_book` -- the five whole-test figures of the BASE variant,
+    read from artifacts/profit_bars_evaluation.yaml as the run wrote them (see the mapping
+    above). None when the evaluation holds no `base` variant. Call only after profit_bars_block
+    has accepted the same file. Read only; decides nothing."""
+    path = Path(run_dir) / "artifacts" / "profit_bars_evaluation.yaml"
+    doc = _load_mapping(path, "the per-backtest profit-bars evaluation (base variant's book)")
+    graded = doc.get("variants")
+    base = graded.get(BASE_VARIANT_ID) if isinstance(graded, dict) else None
+    if not isinstance(base, dict):
+        return None
+    actual = {b.get("name"): b.get("actual") for b in (base.get("bars") or []) if isinstance(b, dict)}
+    shape = base.get("forecast_shape") if isinstance(base.get("forecast_shape"), dict) else {}
+    econ = base.get("window_economics") if isinstance(base.get("window_economics"), dict) else {}
+    total = econ.get("total") if isinstance(econ.get("total"), dict) else {}
+    mean_abs = _record_number(shape.get("abs_mean_allocation"))
+    if mean_abs is None:
+        mean_abs = _record_number(total.get("mean_abs_allocation"))
+    return {"sharpe": _record_number(actual.get("sharpe_min")),
+            "max_drawdown_pct": _record_number(actual.get("max_drawdown_pct_max")),
+            "mean_abs_allocation": mean_abs,
+            "turnover_annualised": _record_number(total.get("turnover_annualised")),
+            "median_holding_bars": _record_number(total.get("median_holding_bars"))}
+
+
 def _find_retired(obj, path="") -> list:
     found = []
     if isinstance(obj, dict):
@@ -782,6 +833,12 @@ def build_memory_entry(run_dir: Path, run_id: str, *, trial_sharpes, categories,
     fold = _folds.fold_of_run_dir(run_dir)
     if fold is not None:
         entry["fold"] = fold
+    # D-196: the base variant's book, copied from the run's own profit-bars evaluation.
+    # Absent -- not null -- without that evaluation or a `base` variant in it.
+    if profit_bars_evaluated:
+        base_book = base_book_block(run_dir, run_id)
+        if base_book is not None:
+            entry["base_book"] = base_book
     # Operator, 2026-10-19 (PR-A): absent -- not [] -- without an analyst observation
     observations = analyst_observations(run_dir, run_id)
     if observations:
@@ -829,6 +886,10 @@ TRIED_IDEAS_NOTE = (
     "A row also carries approximation: <n> when the run tested an approximation of the "
     "idea -- n is how many deviations from the idea as written were recorded; "
     "information only. "
+    "A row from a run that graded a base variant also carries that variant's whole-test "
+    "book as the run recorded it: base_sharpe, base_max_drawdown_pct (percent), "
+    "base_mean_abs_allocation, base_turnover_annualised, base_median_holding_bars "
+    "(null for a figure the run did not record; older rows carry none of them). "
     "No family grouping: an idea's identity is its hypothesis_id. Derived fresh from "
     "the memory for this stage; never edited by hand."
 )
@@ -847,7 +908,8 @@ def tried_ideas(memory: dict, *, root: Path, max_rows: int = TRIED_IDEAS_MAX_ROW
     card's -- tools/novelty.py's rule), idea_status, variants_tested}, with
     `approximation` (the int finding.approximation.n_deviations, D-136;
     information only) right after idea_status only when the entry's finding
-    has one, plus `engineering_fault` on a fault entry. `root` is strategy-research/ (a
+    has one, D-196: the five `base_*` book figures right after variants_tested when the
+    entry carries `base_book`, plus `engineering_fault` on a fault entry. `root` is strategy-research/ (a
     memory entry's protocol_ref is relative to it). An unreadable protocol
     file is listed under `warnings` (key present only then)."""
     import novelty as _nov  # tools/ sibling, imported lazily for the caller's sys.path
@@ -883,6 +945,13 @@ def tried_ideas(memory: dict, *, root: Path, max_rows: int = TRIED_IDEAS_MAX_ROW
         if isinstance(n_dev, int) and not isinstance(n_dev, bool):
             row["approximation"] = n_dev
         row["variants_tested"] = len(tested)
+        # D-196: the base variant's book, passed through from the entry's base_book as
+        # the run recorded it (null for a figure the record did not hold). Absent keys
+        # for an entry without base_book -- every entry written before D-196.
+        book = e.get("base_book")
+        if isinstance(book, dict):
+            for name in BASE_BOOK_FIELDS:
+                row[TRIED_IDEAS_BASE_PREFIX + name] = book.get(name)
         if e.get("engineering_fault"):
             row["engineering_fault"] = e["engineering_fault"]
         rows.append(row)
