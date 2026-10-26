@@ -1342,3 +1342,43 @@
    > 4. "clear the halt": remove campaign_review_reframe_brief from runs/run_100/pipeline_state.yaml; commit candidate_briefs/run_100__reframe.md as is; run_campaign.py --resume on run_100 to DONE and decide-next. Expected: the queue entry sma_trend_1h_fold_a__more_1, blocked_on_operator_approval. Report the queue row and stop.
    >
    > "--approve" and "launch" are the operator's words. Rules: one test process at a time under tbot_test.lock (%TEMP%\claude\scripts\lock_pytest_1024.ps1, lock_fullsuite_1024.ps1); the venv interpreter only, never a bare python; no trailers; never read local_data or holdout_sealed; never print a sealed-window date.
+
+## 2026-10-26 -- Implementation lead: build window run_101, PR-1..PR-6; D-193..D-198 merged (#546-#551); checkout not synced
+
+1. **Hypothesis:** run_101 (sma_trend_1h_fold_a, refuted) showed six defects: the analyst could not test sub-forecast columns; decide-next ranked on two dead score fields; step 2 never varied a multi-component weight split; step 1b copied step 1a's "not expressible" entries unchecked; three record files drifted from their schemas; the legacy readers still ran as a stage. Six PRs fix exactly these.
+2. **Result:**
+   - **Runs read:** 0. **PRs merged:** 6. **Blocks in the registry:** not read this window (no run reviewed).
+   - **Merged (merge order 1-6; every PR from origin/master in its own worktree, Sonnet build and review, full suite under the lock, CI 4/4):**
+
+     | PR | D-row | Reviews | Full suite (strategy-research) | What |
+     |---|---|---|---|---|
+     | #547 | D-193 | 2 | 8211 passed | test key `signal` on claim tests and the analyst; refusals; horizon_bars input line. Master 408a6820 reported to the operator at once |
+     | #546 | D-194 | 1 + lead check | 8235 passed | distance_to_profitable / mechanism_plausibility deleted; rank confidence_real, cost.backtests, candidate_id; `tie_with` |
+     | #548 | D-195 | 1 + lead check | 8245 passed (+ re-pin) | half-weight split variant; 1b verifies not_expressible against STRATEGY_DESIGN_GUIDE "Transform ops" + catalogue (closed-book stage); legacy handoff text |
+     | #549 | D-196 | 1 + lead check | 8270 passed | three schema drifts (all schema-side); `base_book` on memory/tried_ideas rows (Sharpe/drawdown only on the v2 whole-test basis); D-189 sentence |
+     | #550 | D-197 | 1 + lead check | 8295 passed | analyst stage of its own; flag independent of the reader flags; READER_CATEGORIES constant; shared reader-test helpers |
+     | #551 | D-198 | 2 | 7612 passed | readers, their stage, skills, build_reports, citation machinery and five flags deleted; kept-code tests restored |
+
+   - trading-bot: 1428 passed on every suite. strategy-research failed only the Windows-environment set of 18 each time. On PR-6's first run, test_d146 crashed xdist workers (memory), a known flake.
+   - **Found, not fixed:**
+     - a fourth run_101 warning on expanded_hypothesis_card.yaml (`expanded_variants` entry);
+     - the run viewer's tried-ideas table shows fixed columns, so the new base_* fields are not displayed;
+     - `debug_info.forecast_delta` (unit forecast) is an allowed `signal` value;
+     - the data dictionary's `tests[].signal` row went with the claim-digest table in D-198 (the analyst skill still documents `signal`);
+     - a pause at the route writes the deleted stage name `specialist_readers` as a resume sentinel;
+     - `_record_side_finding_merges` and the merge functions are kept with no caller;
+     - stale names (`determine_post_specialist_readers_route`, `_clear_specialist_readers_artifacts`).
+   - **Behaviour changes disclosed in the D-rows:**
+     - with grid_evaluation on and the old specialist_readers off, the route now comes from the grid (no live config has that combination);
+     - registry_summary.yaml is written in regroup_record;
+     - the analyst prompt's data dictionary lost sections 6 and 8.
+   - **Process:**
+     - The test lock leaked twice (tool timeouts killed foreground lock-script runs); the operator approved one removal. New `%TEMP%\claude\scripts\lock_pytest_1026.ps1` / `lock_fullsuite_1026.ps1` recover a lock whose owner PID is gone.
+     - Rule slips by agents, each disclosed:
+       - `sed -i` on their own temp/test files;
+       - bare `python3` twice (one text edit in PR-3's skill, one stopped command);
+       - restored test files built from `git show` slices, then fixed with Edit.
+   - **Sync note:** the checkout's local campaign_config.yaml and feature_flag_register.yaml are modified, and D-197/D-198 edit both (D-198 removes five flags), so the sync must merge them.
+3. **Files touched:** PRs #546-#551 (see their diffs) and this PR (SESSION_LOG.md). Operator checkout: none (still at 56da4cd8).
+4. **Next-session prompt (paste verbatim):**
+   > You are the implementation lead. Read SESSION_LOG.md's 2026-10-26 implementation-lead entry and CLAUDE.md's working rules. Master is a8dbfdde or later; D-193..D-198 are merged. First check the state read-only: the queue, the registry, the flags in c4/flag-set's campaign_config.yaml (category_reports, specialist_readers, reader_findings, observable_backtest, explore_confirm no longer exist on master), whether the next run was launched on 408a6820 and where it stands, and git status of the checkout. Then act only on the operator's words. A sync to a8dbfdde must merge the checkout's local campaign_config.yaml and feature_flag_register.yaml with D-197/D-198 (five flags removed). Rules: one test process at a time via %TEMP%\claude\scripts\lock_pytest_1026.ps1 / lock_fullsuite_1026.ps1 launched in the background; the venv interpreter only; no trailers; never read local_data or holdout_sealed; never print a sealed-window date.
