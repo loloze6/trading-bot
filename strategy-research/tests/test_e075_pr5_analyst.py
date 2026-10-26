@@ -232,23 +232,25 @@ def test_the_caps_default_to_the_stage_model_and_refuse_bad_values():
         rpr._analyst_caps({"orchestrator": {"analyst": {"max_budget_usd": "1"}}})
 
 
-@pytest.mark.parametrize("on,missing", [
-    ({"folds"}, "specialist_readers.enabled=true and orchestrator.reader_findings"),
-    ({"folds", "specialist_readers"}, "reader_findings.enabled=true"),
-    ({"folds", "reader_findings"}, "specialist_readers.enabled=true"),
-    ({"specialist_readers", "reader_findings"}, "folds.enabled=true"),
+@pytest.mark.parametrize("on,ok", [
+    ({"folds"}, True),                                   # D-197: folds alone is enough
+    ({"folds", "specialist_readers", "reader_findings"}, True),
+    ({"specialist_readers", "reader_findings"}, False),  # folds is still required
+    (set(), False),
 ])
-def test_the_flag_needs_its_stages(monkeypatch, on, missing):
+def test_the_flag_needs_folds_only(monkeypatch, on, ok):
+    """D-197: the analyst is a stage of its own -- no dependency on specialist_readers,
+    reader_findings or category_reports; the folds dependency stays."""
     def reader(name):
         return lambda cfg=None: name in on
-    for name in ("folds", "specialist_readers", "reader_findings"):
+    for name in ("folds", "specialist_readers", "reader_findings", "category_reports"):
         monkeypatch.setattr(rpr, f"_{name}_enabled", reader(name))
     cfg = {"orchestrator": {"analyst": {"enabled": True}}}
-    with pytest.raises(ValueError, match=missing):
-        _REAL_ANALYST_ENABLED(cfg)
-    for name in ("folds", "specialist_readers", "reader_findings"):
-        monkeypatch.setattr(rpr, f"_{name}_enabled", lambda cfg=None: True)
-    assert _REAL_ANALYST_ENABLED(cfg) is True
+    if ok:
+        assert _REAL_ANALYST_ENABLED(cfg) is True
+    else:
+        with pytest.raises(ValueError, match="folds.enabled=true"):
+            _REAL_ANALYST_ENABLED(cfg)
     assert _REAL_ANALYST_ENABLED({"orchestrator": {}}) is False
 
 
@@ -425,7 +427,7 @@ def test_under_the_flag_the_lenses_replace_the_readers(run, monkeypatch):
     for cat in ("profitability", "regime_power", "component_attribution"):
         doc = yaml.safe_load((run / "artifacts" / "proposals" / f"{cat}.yaml").read_text(encoding="utf-8"))
         assert doc["skipped"]["rule"] == "replaced_by_analyst"
-    assert set(out) == set(rpr._reader_categories())
+    assert set(out) == set(rpr.READER_CATEGORIES)
 
 
 def test_flag_off_the_readers_run_as_before(run, monkeypatch):
@@ -441,7 +443,7 @@ def test_flag_off_the_readers_run_as_before(run, monkeypatch):
     monkeypatch.setattr(rpr, "_reader_findings_enabled", lambda *a: False)
     monkeypatch.setattr(rpr, "_check_reader_budget", lambda *a: None)
     rpr._run_specialist_readers(RUN_ID, run)
-    assert ran == rpr._reader_categories()
+    assert ran == list(rpr.READER_CATEGORIES)
 
 
 def test_the_strictness_keyword_names_the_analyst_only_under_the_flag(monkeypatch):
