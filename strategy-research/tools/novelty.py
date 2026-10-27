@@ -259,6 +259,30 @@ def exact_index(memory: dict, specs: dict) -> dict:
     return out
 
 
+def window_free_key(key: tuple) -> tuple:
+    """D-201: a novelty key without its window set (key[3]): (forecast_hash, symbols,
+    timeframe). Two keys with the same window-free part are the same config, coins and
+    bar size, measured on the same or on different windows."""
+    return tuple(key[:3])
+
+
+def matches_on_other_windows(key: tuple, index: dict) -> list:
+    """D-201: the run ids in `index` (exact_index's shape, {novelty_key: [run_id, ...]})
+    whose key equals `key` in everything but the window set, in first-seen order, each
+    once; [] when none. Read AFTER an exact lookup missed: a hit is the same config
+    measured on other windows (another fold), which the exact key, by design, calls
+    NOVEL. Nothing here changes the exact key or the 5a gate's use of it."""
+    free = window_free_key(key)
+    out: list = []
+    for k, runs in index.items():
+        if window_free_key(k) != free:
+            continue
+        for run_id in runs:
+            if run_id not in out:
+                out.append(run_id)
+    return out
+
+
 def exact_matches(key: tuple, memory: dict, specs: dict, *, exclude_run_id=None) -> list:
     """Every tested memory variant whose key equals `key`, as
     [{run_id, variant_id}] in sorted run order."""

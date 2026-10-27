@@ -1,0 +1,100 @@
+# D-201 / D-205 fixture: the fields of campaign_memory.yaml that decide-next reads for run_101
+# and run_102, copied from the real records. Kept as they are: hashes, symbols, fold ids.
+# Not copied: grids, bars, proposals, finding text. `observations` of run_102 are SYNTHETIC
+# (the real entry carries none yet): the old shape plus the keys the memory-entry shape change
+# of D-204 adds (`variant`, `measured`), to pin what the brief carries.
+runs:
+  run_101:
+    run_id: run_101
+    hypothesis_id: SMA_PULLBACK_IN_TREND_24H_1H_BTC_FOLD_A
+    legacy: false
+    engineering_fault: null
+    protocol_ref: protocols/run_101_generated.json
+    timeframe: 1h
+    fold: A
+    variants:
+      asset_avaxusdt:
+        status: tested
+        forecast_hash: b45d1013d9eabd228bdf3e1eb80917ef5c8651bdb64f72dcdd645f1fc1702b18
+        symbols: [AVAXUSD]
+        n_windows: 5
+        windows_sha256: 0e44a80d57fa2290dff866ecd182bc6aa80d447ce4e97f93d43834b5a9b52ff5
+      asset_linkusdt:
+        status: tested
+        forecast_hash: b45d1013d9eabd228bdf3e1eb80917ef5c8651bdb64f72dcdd645f1fc1702b18
+        symbols: [LINKUSD]
+        n_windows: 6
+      base:
+        status: tested
+        forecast_hash: b45d1013d9eabd228bdf3e1eb80917ef5c8651bdb64f72dcdd645f1fc1702b18
+        symbols: [BTCUSD]
+        n_windows: 6
+      design_stretch_sma48:
+        status: tested
+        forecast_hash: dd24912a43d7f9de4b30f9729a9c5b6a13a602e49de9d6ac71638b4be7a0d5be
+        symbols: [BTCUSD]
+        n_windows: 6
+  run_102:
+    run_id: run_102
+    hypothesis_id: SMA_PULLBACK_IN_TREND_24H_1H_BTC_FOLD_A__trade_efficiency-run_101-1
+    legacy: false
+    engineering_fault: null
+    protocol_ref: protocols/run_102_generated.json
+    timeframe: 1h
+    fold: B
+    variants:
+      asset_ltc_altcoin_l1:
+        status: tested
+        forecast_hash: b0adcce3649ed9d17db07da9f572a7bdb298f7baa3bc22fe8b2fde61e3d92ea3
+        symbols: [LTCUSD]
+        n_windows: 6
+      asset_xrp_payment:
+        status: tested
+        forecast_hash: b0adcce3649ed9d17db07da9f572a7bdb298f7baa3bc22fe8b2fde61e3d92ea3
+        symbols: [XRPUSD]
+        n_windows: 6
+      base:
+        status: tested
+        forecast_hash: b0adcce3649ed9d17db07da9f572a7bdb298f7baa3bc22fe8b2fde61e3d92ea3
+        symbols: [BTCUSD]
+        n_windows: 6
+      split_stretch_weight:
+        status: tested
+        forecast_hash: 727c1260204c33260bb05156377b56ff01b2c4eff1646e14413fbcd7cbea7578
+        symbols: [BTCUSD]
+        n_windows: 6
+    observations:
+    - lens: forecast
+      statement: 'Bars with forecast at or above 8 show a lower next-day return than the
+        other bars, but the sign holds in fewer windows than the floor.
+
+        '
+      test: q6
+      evidence:
+      - q6:horizons.24.effect=-0.0012
+      floors_met: false
+      spec:
+        spec_hash: 03e2555e76b4982c2454775e569d228b93395fc0a834f2a3ff60027222e614f2
+      variant: base
+      measured:
+        effect: -0.0012
+        windows_claimed_sign: 3
+        n_events: 120
+      vehicle:
+      - component_id: stretch_from_short_sma
+        field: weight
+        before: 0.25
+        after: 1.0
+      ref: runs/run_102/artifacts/analyst/forecast.yaml
+    - lens: trade_efficiency
+      statement: 'Long lots opened at a forecast of 15 or more earn a lower mean net
+        return than the other lots.
+
+        '
+      test: q8
+      evidence:
+      - q8:horizons.trade.effect=-0.0057
+      floors_met: true
+      spec:
+        spec_hash: 03e2555e76b4982c2454775e569d228b93395fc0a834f2a3ff60027222e614f2
+      ref: runs/run_102/artifacts/analyst/trade_efficiency.yaml

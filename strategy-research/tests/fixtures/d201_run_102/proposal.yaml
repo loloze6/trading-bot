@@ -1,0 +1,61 @@
+# The post-load shape (reader_proposals.load_proposals) of run_102's trade_efficiency side
+# finding (D-201 fixture): the claim and vehicle as the analyst wrote them, the vehicle list
+# read as `config_change` (the weight of the stretch leg back to its first value).
+proposal_id: trade_efficiency-run_102-1
+kind: side_finding
+claim:
+  statement: 'On this strategy, when the negated standardised distance of the close from
+    its 24-bar SMA (the stretch_from_short_sma sub-forecast) is at or below -8, which means
+    the price sits far above its 24-bar mean, BTC''s 24-bar forward return is lower than
+    on the other bars.
+
+    '
+  kind: conditional_behaviour
+  tests:
+  - name: stretched_up_bars_fall_over_a_day
+    selector:
+      kind: event
+      field: forecast
+      op: <=
+      value: -8
+    outcome:
+      kind: fwd_return
+      horizons:
+      - 24
+    baseline:
+      kind: complement
+    statistic: mean_diff
+    direction: less
+    floor:
+      min_events: 100
+      min_windows: 4
+    signal: debug_info.components.stretch_from_short_sma.post_pipeline_value
+  pass_if: 'On the unseen fold, bars where the stretch sub-forecast is at or below -8 have
+    a lower mean 24-bar forward return than the other bars, in at least <n> windows, with
+    at least 100 such bars.
+
+    '
+  fail_if: 'The mean 24-bar forward return of those bars is higher than or equal to the
+    other bars'', or the claimed sign appears in fewer than 4 windows.
+
+    '
+  rationale: 'A close far above its 24-bar mean has over-extended in the short term and gives
+    part of the move back over about a day.
+
+    '
+evidence:
+- q15:horizons.24.effect=-0.00154630790
+- q15:horizons.24.windows_claimed_sign=6
+scores:
+  confidence_real: 3
+  model_id: claude-sonnet-5-5
+  rubric_version: trade_efficiency-analyst-v1
+model_id: claude-sonnet-5-5
+rubric_version: trade_efficiency-analyst-v1
+config_change:
+- component_id: stretch_from_short_sma
+  field: weight
+  before: 0.25
+  after: 1.0
+combines_as: forecast_block
+fold_observed: B
