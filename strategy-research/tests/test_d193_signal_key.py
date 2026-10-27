@@ -519,6 +519,11 @@ def _context(run, card):
     return asm.run_context(Path(run), "artifacts/base_config.json", "A")
 
 
+def _without_book(text):
+    head, _sep, rest = text.partition("\n\n## " + asm.BOOK_TITLE)
+    return head + "\n\n## " + rest.split("\n\n## ", 1)[1] if _sep else text
+
+
 def test_the_prompt_names_the_cards_horizon_bars(run):
     text = _context(run, yaml.safe_dump({"statement": {"predicts": "x",
                                                        "predicts_kind": "return_direction",
@@ -536,7 +541,9 @@ def test_no_horizon_line_when_the_card_has_none_and_nothing_else_changes(run, ca
     baseline = _context(run, None)
     text = _context(run, card)
     assert "Hypothesis horizon" not in text
-    assert text == baseline
+    # D-203: the run's book shows the card's statement (a section of its own), so it is set
+    # aside; everything else is the same
+    assert _without_book(text) == _without_book(baseline)
 
 
 def test_the_skill_names_the_horizon_comparison_and_the_signal_key():

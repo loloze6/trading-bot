@@ -121,6 +121,11 @@ def test_met_own_floor_is_judged_at_any_horizon_on_the_units_the_result_reports(
 # D1: floor_lowered (observation path, the real Sonnet forecast log)
 # ---------------------------------------------------------------------------
 
+def _own(observations):
+    """D-204: the observations the model wrote (code adds the unreported results to the list)."""
+    return [o for o in observations if not o.get("unreported_by_model")]
+
+
 def _obs(entries, qid, **over):
     o = {"statement": "Bars with the claimed condition were followed by lower returns.",
          "test": qid, "evidence": [_cite(entries, qid, "horizons.5.effect")],
@@ -155,7 +160,7 @@ def test_an_observation_on_a_lowered_floor_needs_a_reason_and_records_the_disclo
     # with the reason the reader writes floor_lowered from the log
     _r, rec, errors = _check(_nc(e, [_obs(e, qid, floor_lowered_reason="Fewer bars qualify.")]), e)
     assert not any("floor_lowered_reason" in x for x in errors), errors
-    (o,) = rec["no_claim"]["observations"]
+    (o,) = _own(rec["no_claim"]["observations"])
     assert o["floor_lowered"] == {"from": floors[0], "to": floors[1], "after": after,
                                   "reason": "Fewer bars qualify."}
     assert "floor_lowered_reason" not in o
@@ -165,7 +170,7 @@ def test_an_observation_on_a_lowered_floor_needs_a_reason_and_records_the_disclo
 def test_an_observation_whose_floor_was_not_lowered_carries_no_disclosure():
     e = _log("sonnet", "forecast")
     _r, rec, errors = _check(_nc(e, [_obs(e, "q12")]), e)
-    (o,) = rec["no_claim"]["observations"]
+    (o,) = _own(rec["no_claim"]["observations"])
     assert "floor_lowered" not in o and not any("floor_lowered" in x for x in errors)
 
 
@@ -459,7 +464,7 @@ def test_a_selector_with_no_forecast_field_is_tagged_regime_by_code():
     ee = _log("sonnet", "forecast")
     _r, rec, _err = _check(_nc(ee, [_obs(ee, "q11", floor_lowered_reason="r"),
                                     _obs(ee, "q7", floor_lowered_reason="r")]), ee)
-    tags = [o.get("angle") for o in rec["no_claim"]["observations"]]
+    tags = [o.get("angle") for o in _own(rec["no_claim"]["observations"])]
     assert tags == ["regime", None]
     # operator 2026-10-23: a regime needs a bar field other than the forecast in the selector,
     # a statistic that does not use the forecast, and a selector that is neither all nor trade
@@ -620,7 +625,9 @@ def test_a_claim_carries_observations_that_complete_the_account():
     assert "observations" not in reading["side_findings"][0]["claim"]
     obs = rec["observations"]
     assert [o["test"] for o in obs] == ["q5", "q6", "q7"]
-    assert all("spec" in o and "floor_lowered_reason" not in o for o in obs)
+    assert all("measured" in o and "spec" not in o and "floor_lowered_reason" not in o
+               for o in obs)
+    assert [o["id"] for o in obs] == [f"O-run_099-forecast-{i}" for i in (1, 2, 3)]
     assert obs[2]["floor_lowered"]["after"] == "q5" and obs[2]["floor_lowered"]["reason"] == "Too few bars."
     rp.check_reading(reading, "forecast_power", "reading", analyst=True, from_model=True,
                      envelope=True)
@@ -630,12 +637,12 @@ def test_a_claims_observations_follow_the_no_claim_rules():
     e = _log("sonnet", "forecast")
     cfg = _base_config()
     doc = _claim_with_observations(e)
-    # the maximum is the same (3)
+    # D-204: no maximum (a fourth observation is accepted)
     over = copy.deepcopy(doc)
     over["claim"]["observations"].append(
         _obs(e, "q9", floors_met=asm.floors_met_in_log(e["q9"]), mechanism_query="q12"))
     errs = _check(over, e, claim=True, base_config=cfg)[2]
-    assert any(x.startswith("claim.observations has 4 entries") for x in errs), errs
+    assert not any("entries" in x and "observations" in x for x in errs), errs
     # the same shape check, naming the claim
     bad = copy.deepcopy(doc)
     bad["claim"]["observations"][0]["surprise"] = 1
@@ -749,7 +756,7 @@ def test_campaign_memory_carries_the_observation_tags(tmp_path):
     run_dir = tmp_path / "run_099"
     (run_dir / "artifacts" / "analyst").mkdir(parents=True)
     (run_dir / asm.record_rel("forecast")).write_text(yaml.safe_dump(rec), encoding="utf-8")
-    (row,) = cm.analyst_observations(run_dir, "run_099")
+    row = cm.analyst_observations(run_dir, "run_099")[0]      # the model's, before the unreported
     assert row["angle"] == "regime" and row["floor_lowered"]["after"] == "q10"
     assert rp.floor_lowered_text(row["floor_lowered"]) == "on a lowered floor (100 to 50)"
     # a key outside the declared ones is still refused

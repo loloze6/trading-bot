@@ -4914,6 +4914,10 @@ def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -
         settings = asm.config_settings(analyst_base_config)
     except (OSError, ValueError):
         analyst_base_config, settings = None, set()
+    # D-203: the figures of the run's book (shown in the prompt) are settings too, so that the
+    # number check (D-096) does not mask a figure the analyst was given
+    settings = settings | asm.book_settings(run_dir)
+    run_variants = asm.run_variants(run_dir)
     record = {"schema_version": 1, "lens": lens, "category": category, "run_id": run_id,
               "model": caps["model"], "caps": caps, "attempts": []}
     errors: list = []
@@ -4952,7 +4956,8 @@ def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -
             text, lens=lens, run_id=run_id, entries=entries,
             claim_check=lambda claim: cc.check_claim(claim, **_claim_check_kw()),
             holdout_start=holdout_start, fold=fold, model_id=model_id, settings=settings,
-            base_config=analyst_base_config if isinstance(analyst_base_config, dict) else None)
+            base_config=analyst_base_config if isinstance(analyst_base_config, dict) else None,
+            variants=run_variants)
         # D-096: the reading checks run on every readable answer, so the first attempt hears
         # every error (smoke 6: a vehicle error surfaced only on the retry); the content checks
         # (claim card again, vehicle) need a claim the claim card accepted

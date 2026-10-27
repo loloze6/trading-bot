@@ -135,6 +135,243 @@ def _card_horizon_bars(arts: Path):
     return h if isinstance(h, int) and not isinstance(h, bool) and h >= 1 else None
 
 
+# ---------------------------------------------------------------------------
+# D-203: the run's book (code-built from the run's own artifacts)
+# ---------------------------------------------------------------------------
+
+BOOK_TITLE = ("The run's book (code-built from this run's artifacts: the grid, the idea status, "
+              "the profit bars with the window economics, each variant's claim test, the fold "
+              "confirmation, the card's statement; measurements of this run, evidence never the "
+              "claim)")
+_BOOK_ERRORS = (ValueError, TypeError, AttributeError, KeyError)
+#: the card statement's keys, in this order (any other key follows); the keys of
+#: window_economics.total are printed as the record holds them (all non-null)
+_STATEMENT_KEYS = ("predicts", "predicts_kind", "horizon_bars", "condition", "if_pass", "if_fail")
+
+
+def _book_doc(path: Path):
+    """(state, mapping): "ok" with the parsed mapping, "absent" (no such file) or "unreadable"
+    (not YAML, or not a mapping)."""
+    text = _read(path)
+    if text is None:
+        return "absent", None
+    try:
+        doc = yaml.safe_load(text)
+    except (yaml.YAMLError, ValueError, RecursionError):
+        return "unreadable", None
+    return ("ok", doc) if isinstance(doc, dict) else ("unreadable", None)
+
+
+def _num(v, nums: set) -> str:
+    """A number as the book shows it: a count as is, a float in fixed notation with at most four
+    significant digits (no exponent). The value as shown joins `nums`, so the prose check
+    (number_hits, `settings`) accepts what the prompt shows; anything else is printed as is."""
+    if isinstance(v, bool) or v is None or not isinstance(v, (int, float)):
+        return str(v)
+    if isinstance(v, int):
+        nums.add(v)
+        return str(v)
+    if not math.isfinite(v):
+        return str(v)
+    if v == 0:
+        return "0"
+    digits = min(12, max(0, 3 - math.floor(math.log10(abs(v)))))
+    text = f"{v:.{digits}f}"
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    shown = float(text)
+    if shown != 0:
+        nums.add(shown)
+    return text
+
+
+def _one_line(v) -> str:
+    return " ".join(str(v).split())
+
+
+def _book_variant_ids(arts: Path, *docs) -> list:
+    """The variant ids the book rows are for: those named by the grid and the profit bars and
+    those with a claim_test.yaml, `base` first, then in name order."""
+    ids = set()
+    for d in docs:
+        vs = d.get("variants") if isinstance(d, dict) else None
+        if isinstance(vs, (dict, list)):
+            ids.update(str(k) for k in vs)
+    root = arts / "variants"
+    try:
+        ids.update(p.name for p in root.iterdir() if (p / "claim_test.yaml").is_file())
+    except OSError:
+        pass
+    return sorted(ids, key=lambda v: (v != "base", v))
+
+
+def _bar_line(b, nums: set) -> str:
+    if not isinstance(b, dict):
+        return _one_line(b)
+    cmp_ = f"{b.get('comparator')} " if b.get("comparator") else ""
+    return (f"{b.get('name')} {_num(b.get('actual'), nums)} (needs {cmp_}"
+            f"{_num(b.get('threshold'), nums)}) {b.get('result')}"
+            + (" [advisory]" if b.get("advisory") else ""))
+
+
+def _claim_test_lines(state, doc, rel: str, nums: set) -> list:
+    if state != "ok":
+        return [f"  claim test ({rel}): {state}"]
+    out = []
+    tests = doc.get("tests") if isinstance(doc.get("tests"), dict) else {}
+    if not tests:
+        out.append(f"  claim test ({rel}): status {doc.get('status')}"
+                   + (f"; reason: {_one_line(doc.get('reason'))}" if doc.get("reason") else "")
+                   + "; no test")
+    for name, t in tests.items():
+        if not isinstance(t, dict):
+            continue
+        hs = t.get("horizons") if isinstance(t.get("horizons"), dict) else {}
+        parts = []
+        for h, r in hs.items():
+            if not isinstance(r, dict):
+                continue
+            parts.append(
+                f"h{h} effect {_num(r.get('value'), nums)} (oriented {_num(r.get('oriented'), nums)}), "
+                f"{_num(r.get('windows_with_claimed_sign'), nums)} of "
+                f"{_num(r.get('windows_with_a_value'), nums)} windows with the claimed sign, "
+                f"{_num(r.get('n_events'), nums)} events")
+        out.append(f"  claim test {name} ({rel}, {t.get('status')}"
+                   + (f", {t.get('statistic')} {t.get('direction')}" if t.get("statistic") else "")
+                   + "): " + ("; ".join(parts) if parts else
+                              _one_line(t.get("reason") or "no horizon measured")))
+    return out
+
+
+def run_book(run_dir) -> tuple:
+    """D-203: (text, numbers). The text is "the run's book" of run_context: the card's statement,
+    one line each for the grid, the idea status, the profit bars and the fold confirmation, then
+    one block per variant (grid value and result, each profit bar's actual / threshold / result,
+    the whole-test sharpe and max drawdown, window_economics' totals, the claim test's effect
+    and windows agreeing per horizon). Written by code from the files, nothing recomputed;
+    a file that is absent or unreadable is said so. `numbers` are the figures as shown (the
+    run's book joins `settings`, so D-096 does not mask them in the analyst's prose)."""
+    arts = Path(run_dir) / "artifacts"
+    nums: set = set()
+    lines = []
+
+    cstate, card = _book_doc(arts / "hypothesis_card.yaml")
+    stmt = card.get("statement") if cstate == "ok" else None
+    if isinstance(stmt, dict) and stmt:
+        lines.append("Card statement (artifacts/hypothesis_card.yaml):")
+        keys = [k for k in _STATEMENT_KEYS if k in stmt] + [k for k in stmt if k not in _STATEMENT_KEYS]
+        lines += [f"  {k}: {_one_line(stmt[k])}" for k in keys]
+    elif isinstance(stmt, str) and stmt.strip():
+        lines.append(f"Card statement (artifacts/hypothesis_card.yaml): {_one_line(stmt)}")
+    else:
+        lines.append("Card statement (artifacts/hypothesis_card.yaml): "
+                     + ("no statement in the card" if cstate == "ok" else cstate))
+
+    gstate, grid = _book_doc(arts / "grid_evaluation.yaml")
+    if gstate == "ok":
+        crit = grid.get("criteria")
+        lines.append(f"Grid (artifacts/grid_evaluation.yaml): result {grid.get('result')}; criteria "
+                     + (", ".join(map(str, crit)) if isinstance(crit, list) else str(crit)))
+    else:
+        lines.append(f"Grid (artifacts/grid_evaluation.yaml): {gstate}")
+
+    istate, ist = _book_doc(arts / "idea_status.yaml")
+    if istate == "ok":
+        shown = "; ".join(f"{k} {_one_line(ist[k])}" for k in
+                          ("idea_status", "result", "hypothesis_verdict", "lineage_routing")
+                          if k in ist)
+        lines.append(f"Idea status (artifacts/idea_status.yaml): {shown}"
+                     + (f"; reason: {_one_line(ist['reason'])}" if ist.get("reason") else ""))
+    else:
+        lines.append(f"Idea status (artifacts/idea_status.yaml): {istate}")
+
+    pstate, pb = _book_doc(arts / "profit_bars_evaluation.yaml")
+    if pstate == "ok":
+        passing = pb.get("passing")
+        lines.append("Profit bars (artifacts/profit_bars_evaluation.yaml): result "
+                     f"{pb.get('result')}; passing "
+                     + (", ".join(map(str, passing)) if passing else "none")
+                     + f"; scope {pb.get('scope')}; bars_definitions {pb.get('bars_definitions')}"
+                     " (sharpe and max drawdown are whole-test figures under v2)")
+    else:
+        lines.append(f"Profit bars (artifacts/profit_bars_evaluation.yaml): {pstate}")
+
+    fstate, fc = _book_doc(arts / "fold_confirmation.yaml")
+    if fstate == "ok":
+        agree = fc.get("agreement") if isinstance(fc.get("agreement"), dict) else {}
+        effect = fc.get("effect") if isinstance(fc.get("effect"), dict) else {}
+        ag = "; ".join(f"{t}: " + ", ".join(f"h{h} {v}" for h, v in (hz or {}).items())
+                       for t, hz in agree.items() if isinstance(hz, dict))
+        ef = "; ".join(f"{t}: " + ", ".join(f"h{h} {_num(v, nums)}" for h, v in (hz or {}).items())
+                       for t, hz in effect.items() if isinstance(hz, dict))
+        lines.append(f"Fold confirmation (artifacts/fold_confirmation.yaml): {fc.get('status')} on "
+                     f"fold {fc.get('fold')} ({fc.get('basis')}; finding {fc.get('finding_id')}, "
+                     f"vehicle variant {fc.get('vehicle_variant')}); reason: "
+                     f"{_one_line(fc.get('reason'))}; windows with the claimed sign: {ag or 'none'}"
+                     f"; pooled effect: {ef or 'none'}")
+    else:
+        lines.append(f"Fold confirmation (artifacts/fold_confirmation.yaml): {fstate}")
+
+    gvars = (grid or {}).get("grid") if gstate == "ok" and isinstance(grid.get("grid"), dict) else {}
+    pvars = pb.get("variants") if pstate == "ok" and isinstance(pb.get("variants"), dict) else {}
+    ids = _book_variant_ids(arts, grid if gstate == "ok" else None, pb if pstate == "ok" else None)
+    lines.append("")
+    lines.append("Variants:" if ids else "Variants: none (no grid, profit-bars or claim-test file "
+                 "names one)")
+    for vid in ids:
+        lines.append(f"- {vid}")
+        rows = []
+        for crit, per in gvars.items():
+            r = per.get(vid) if isinstance(per, dict) else None
+            if isinstance(r, dict):
+                rows.append(f"  grid {crit}: {r.get('result')}, value {_num(r.get('value'), nums)} "
+                            f"(needs {r.get('comparator')} {_num(r.get('threshold'), nums)}), "
+                            f"{_num(r.get('n_windows'), nums)} windows, "
+                            f"{_num(r.get('n_trades'), nums)} trades")
+        lines += rows or ["  grid: " + (gstate if gstate != "ok" else "no value for this variant")]
+        v = pvars.get(vid)
+        if isinstance(v, dict):
+            bars = [b for b in v.get("bars") or [] if isinstance(b, dict)]
+            by_name = {b.get("name"): b for b in bars}
+            lines.append(f"  profit bars: {v.get('result')}"
+                         + (f" ({_one_line(v['reason'])})" if v.get("reason") else "")
+                         + ("; " + "; ".join(_bar_line(b, nums) for b in bars) if bars else ""))
+            sh, dd = by_name.get("sharpe_min"), by_name.get("max_drawdown_pct_max")
+            lines.append(f"  sharpe {_num((sh or {}).get('actual'), nums)}; max drawdown "
+                         f"{_num((dd or {}).get('actual'), nums)} percent")
+            tot = ((v.get("window_economics") or {}).get("total")
+                   if isinstance(v.get("window_economics"), dict) else None)
+            if isinstance(tot, dict):
+                lines.append("  window economics, all windows: " + ", ".join(
+                    f"{k} {_num(x, nums) if not isinstance(x, str) else _one_line(x)}"
+                    for k, x in tot.items() if x is not None))
+            else:
+                lines.append("  window economics: none for this variant")
+        else:
+            lines.append("  profit bars: " + (pstate if pstate != "ok" else
+                                             "no entry for this variant"))
+        rel = f"artifacts/variants/{vid}/claim_test.yaml"
+        cs, cdoc = _book_doc(arts / "variants" / vid / "claim_test.yaml")
+        lines += _claim_test_lines(cs, cdoc, rel, nums)
+    return "\n".join(lines), nums
+
+
+def book_settings(run_dir) -> set:
+    """D-203: the figures run_book shows, to join `settings` (config_settings) in check_answer,
+    so that D-096 does not mask a number the prompt itself gave the analyst."""
+    try:
+        return run_book(run_dir)[1]
+    except _BOOK_ERRORS:    # a context line must never stop the analyst (as in run_context)
+        return set()
+
+
+def _book_text(run_dir) -> str:
+    try:
+        return run_book(run_dir)[0]
+    except _BOOK_ERRORS as exc:
+        return f"(the run's book could not be built: {type(exc).__name__})"
+
+
 def run_context(run_dir: Path, base_config_rel: str, fold: str | None) -> str:
     """The run context as text: the base config, the variant patches, the protocol (coins,
     timeframe, windows), the fold, the cost model. Absent files are said to be absent."""
@@ -164,6 +401,7 @@ def run_context(run_dir: Path, base_config_rel: str, fold: str | None) -> str:
     out += _section(f"Base strategy config ({base_config_rel})", base_config_text)
     out += _section("Variant patches (artifacts/variant_patches.yaml)",
                     _read(arts / "variant_patches.yaml"))
+    out += _section(BOOK_TITLE, _book_text(run_dir))
     out += _section("Cost model (config/cost_model.yaml; a measurement of this run, evidence never the claim)",
                     _read(SR_ROOT / "config" / "cost_model.yaml"))
     return out
@@ -453,10 +691,14 @@ def _cite_path(c) -> str:
 # regroup_record stage copies an accepted no_claim's observations into the run's
 # campaign_memory entry (campaign_memory.analyst_observations); the memory view shows them as
 # "observed, no vehicle yet" (analyst_memory_view).
-# Operator, 2026-10-19: at most OBSERVATIONS_MAX observations per no_claim, each citing a different
-# test (the prompt grows with every recorded observation).
+# D-204 (operator, 2026-10-28): no cap on the number of observations (OBSERVATIONS_MAX is gone;
+# the memory view keeps the newest OBSERVATION_ROWS_MAX rows). `test` is the id of ANY ok query
+# of this session (one query per observation; two queries of one spec_hash are one test);
+# `floors_met` is true or false for a conditional_effect call (whose test has floors) and null for
+# any other tool; `variant` (optional, a variant of this run; code fills the test query's own
+# variant when it is left out). Code writes the rest of a recorded observation: `id`
+# (O-<run>-<lens>-<n>), `measured`, `angle`, `fold_observed`.
 OBSERVATION_KEYS = ("statement", "test", "evidence", "floors_met")
-OBSERVATIONS_MAX = 3
 
 # D-178 (operator item D, 2026-10-22). Optional keys of an observation: `mechanism_query` (a
 # later query of this session) or `stopped_by` (a named tool limit) -- one of them is required
@@ -464,7 +706,8 @@ OBSERVATIONS_MAX = 3
 # an earlier query's selector and outcome on a lower floor (floor_lowered_info).
 # `vehicle` (ruling 1, 2026-10-23) -- the strategy change the finding points at, the claim's
 # change-list shape; code reads only its path to tag a sizing finding (angle_of).
-OBSERVATION_OPTIONAL = ("mechanism_query", "stopped_by", "floor_lowered_reason", "vehicle")
+OBSERVATION_OPTIONAL = ("variant", "mechanism_query", "stopped_by", "floor_lowered_reason",
+                        "vehicle")
 #: the four lines of the next-steps ledger (`claim.next_steps` / `no_claim.next_steps`)
 NEXT_STEPS_KEYS = ("opposite_direction", "another_horizon", "all_bars_version", "mechanism")
 #: keys a claim may carry for code only: stripped before the claim card sees the claim
@@ -810,17 +1053,15 @@ def floors_met_in_log(entry: dict):
     return True if known else None
 
 
-def observation_errors(observations, entries: dict, where: str = "no_claim.observations") -> list:
+def observation_errors(observations, entries: dict, where: str = "no_claim.observations",
+                       variants=None) -> list:
     """Errors of the `observations` of a no_claim or of a claim (`where` names which;
-    OBSERVATION_KEYS); [] for a valid list, `[]` included."""
+    OBSERVATION_KEYS); [] for a valid list, `[]` included. D-204: no cap on the count; `test` is
+    any ok query of the session; `variants`: the variant ids of this run (None: not checked)."""
     if not isinstance(observations, list):
         return [f"{where} must be a list of {{statement, test, evidence, "
                 "floors_met} (leave the key out, or write [], when there is none)"]
     errors = []
-    if len(observations) > OBSERVATIONS_MAX:
-        errors.append(f"{where} has {len(observations)} entries: at "
-                      f"most {OBSERVATIONS_MAX} observations are recorded, each citing a different test (keep the "
-                      f"{OBSERVATIONS_MAX} that matter most)")
     seen_tests = set()
     for i, o in enumerate(observations):
         w = f"{where}[{i}]"
@@ -838,39 +1079,50 @@ def observation_errors(observations, entries: dict, where: str = "no_claim.obser
                 _rpm._check_change_items(o["vehicle"], f"{w}.vehicle")
             except _rpm.ProposalError as exc:
                 errors.append(str(exc))
+        if "variant" in o and (not isinstance(o["variant"], str) or not o["variant"].strip()
+                               or (variants is not None and o["variant"] not in variants)):
+            errors.append(f"{w}.variant={o['variant']!r} must be a variant of this run"
+                          + (f" (one of {sorted(variants)})" if variants is not None else ""))
         qid = o["test"]
-        is_ce = _ok_call(entries, qid) and entries[qid].get("function") == "conditional_effect"
-        if is_ce:
-            # one observation per test: the same query, or the same test block run again (the
-            # same spec_hash), is the same test
-            sh = (entries[qid].get("result") or {}).get("spec_hash")
+        is_ok = _ok_call(entries, qid)
+        is_ce = is_ok and entries[qid].get("function") == "conditional_effect"
+        if is_ok:
+            # one observation per test: the same query, or (conditional_effect) the same test
+            # block run again (the same spec_hash), is the same test
+            sh = (entries[qid].get("result") or {}).get("spec_hash") if is_ce else None
             key = sh if isinstance(sh, str) and sh else qid
             if key in seen_tests:
                 errors.append(f"{w}.test={qid!r} measures the same test as an earlier observation "
                               f"of this answer: each observation cites a different test")
             seen_tests.add(key)
-        if not is_ce:
-            errors.append(f"{w}.test={qid!r} must be the id of an ok conditional_effect call of "
-                          f"this session (the call that measured the behaviour)")
+        else:
+            errors.append(f"{w}.test={qid!r} must be the id of an ok query of this session "
+                          f"(the call that measured the behaviour)")
         errors += [f"{w}.{e}" for e in check_citations(o["evidence"], entries)]
-        if is_ce and isinstance(o["evidence"], list) \
+        if is_ok and isinstance(o["evidence"], list) \
                 and not any(_cite_qid(c) == qid for c in o["evidence"]):
             errors.append(f"{w}.evidence must cite its test's own result "
-                          f"(`{qid}:horizons.<h>.<field>=<value>`)")
-        if not isinstance(o["floors_met"], bool):
-            errors.append(f"{w}.floors_met must be true or false")
+                          f"(`{qid}:<path>=<value>`, for a conditional_effect "
+                          f"`{qid}:horizons.<h>.<field>=<value>`)")
+        fm = o["floors_met"]
+        if fm is not None and not isinstance(fm, bool):
+            errors.append(f"{w}.floors_met must be true, false or null (null for a tool "
+                          f"without floors)")
         elif is_ce:
             met = floors_met_in_log(entries[qid])
-            if met is not None and met != o["floors_met"]:
-                errors.append(f"{w}.floors_met is {str(o['floors_met']).lower()}, but {qid}'s "
-                              f"result {'clears' if met else 'does not clear'} its test's floor "
-                              f"on every horizon (n_events, n_windows_with_events, n_blocks "
-                              f"against `floor`)")
-        if is_ce:
+            if met is not None and met != fm:
+                errors.append(f"{w}.floors_met is {'null' if fm is None else str(fm).lower()}, "
+                              f"but {qid}'s result {'clears' if met else 'does not clear'} its "
+                              f"test's floor on every horizon (n_events, n_windows_with_events, "
+                              f"n_blocks against `floor`)")
+        elif is_ok and fm is not None:
+            errors.append(f"{w}.floors_met must be null: {qid} is a "
+                          f"{entries[qid].get('function')} call, a tool without floors")
+        if is_ok:
             errors += _mechanism_errors(o, qid, w, entries)
-            if floor_lowered_info(qid, entries) is not None \
-                    and not _non_empty_text(o.get("floor_lowered_reason")):
-                errors.append(_floor_reason_error(f"{w}.floor_lowered_reason", qid, entries))
+        if is_ce and floor_lowered_info(qid, entries) is not None \
+                and not _non_empty_text(o.get("floor_lowered_reason")):
+            errors.append(_floor_reason_error(f"{w}.floor_lowered_reason", qid, entries))
     return errors
 
 
@@ -906,7 +1158,7 @@ def _floor_reason_error(where: str, qid: str, entries: dict) -> str:
 
 
 def _observation_spec(entry: dict) -> dict:
-    """The code-written `spec` of a recorded observation: the measured test block's slots
+    """The code-written spec of a conditional_effect call: the measured test block's slots
     (selector, outcome, baseline, statistic, direction, floor; no result) and its spec_hash."""
     res = entry.get("result") or {}
     block = res.get("test") if isinstance(res.get("test"), dict) else {}
@@ -915,6 +1167,27 @@ def _observation_spec(entry: dict) -> dict:
     return {"spec_hash": res.get("spec_hash"),
             **{k: copy.deepcopy(block[k]) for k in ("selector", "outcome", "baseline", "statistic",
                                                     "direction", "floor", "signal") if k in block}}
+
+
+def observation_measured(entry: dict) -> dict:
+    """D-204: the code-written `measured` of an observation, whatever tool the query was:
+    {function, params, statistic}, plus for a conditional_effect call today's spec (spec_hash,
+    selector, outcome, baseline, direction, floor, signal). `statistic` is the test's statistic
+    (a conditional_effect), else null. Deep copies, no result."""
+    fn = entry.get("function")
+    params = copy.deepcopy(entry.get("params")) if isinstance(entry.get("params"), dict) else {}
+    spec = _observation_spec(entry) if fn == "conditional_effect" else {}
+    out = {"function": fn, "params": params,
+           "statistic": spec.get("statistic", params.get("statistic"))}
+    out.update({k: v for k, v in spec.items() if k not in out})
+    return out
+
+
+def _query_variant(entry: dict) -> str:
+    """The variant a query was run on (the tools' default, base, when the log has none)."""
+    v = (entry.get("params") or {}).get("variant") if isinstance(entry.get("params"), dict) \
+        else None
+    return v if isinstance(v, str) and v else "base"
 
 
 def _tests_of(claim) -> list:
@@ -1171,11 +1444,27 @@ def exit_selector_own_outcome_errors(claim) -> list[str]:
             for h in exit_selector_own_outcome_hits(claim)]
 
 
+def run_variants(run_dir) -> list | None:
+    """D-204: the graded variant ids of the run (the ones the query tools can read), or None when
+    the run has no artifacts/variants folder."""
+    import claim_tests as ct
+    try:
+        return ct.graded_variants(Path(run_dir))[0]
+    except OSError:
+        return None
+
+
+def observation_id(run_id, lens, n: int) -> str:
+    """D-204: the id code gives an observation, O-<run>-<lens>-<n> (n from 1 within the lens)."""
+    return f"O-{run_id}-{lens}-{n}"
+
+
 def _record_observations(observations: list, entries: dict, evidence, settings, base_config,
-                         where: str) -> tuple:
+                         where: str, *, run_id=None, lens=None, fold=None, start: int = 0) -> tuple:
     """(recorded observations, unverified numbers) of a valid `observations` list (a claim's or a
-    no_claim's): each masked (D-096), with its code spec, the floor disclosure (D1) and the
-    angle tag (D4) written by code."""
+    no_claim's): each masked (D-096), with its code-written id, `measured`, `variant` (the test
+    query's own when the model left it out), fold_observed, the floor disclosure (D1) and the
+    angle tag (D4)."""
     recorded, unverified = [], []
     for i, o in enumerate(observations):
         test = entries[o["test"]]
@@ -1184,14 +1473,17 @@ def _record_observations(observations: list, entries: dict, evidence, settings, 
             {"observation.statement": o["statement"]},
             list(o["evidence"]) + list(evidence), entries,
             tests=[block] if isinstance(block, dict) else None, settings=settings)
-        item = {k: v for k, v in mask_hits(o, "observation", ohits).items()
-                if k != "floor_lowered_reason"}
-        item["spec"] = _observation_spec(test)
+        item = {"id": observation_id(run_id, lens, start + i + 1)}
+        item.update({k: v for k, v in mask_hits(o, "observation", ohits).items()
+                     if k != "floor_lowered_reason"})
+        item.setdefault("variant", _query_variant(test))
+        item["measured"] = observation_measured(test)
+        item["fold_observed"] = fold
         lowered = floor_lowered_info(o["test"], entries)
         if lowered is not None:
             item["floor_lowered"] = {**lowered, "reason": o["floor_lowered_reason"].strip()}
-        angle = angle_of([item["spec"].get("selector")], o.get("vehicle"), base_config,
-                         [item["spec"].get("statistic")])
+        angle = angle_of([item["measured"].get("selector")], o.get("vehicle"), base_config,
+                         [item["measured"].get("statistic")])
         if angle is not None:
             item["angle"] = angle
         recorded.append(item)
@@ -1200,11 +1492,40 @@ def _record_observations(observations: list, entries: dict, evidence, settings, 
     return recorded, unverified
 
 
+def unreported_observations(entries: dict, unreported: list, base_config, *, run_id, lens, fold,
+                            start: int = 0) -> list:
+    """D-204: the rows of `unreported_results` (D-184) as observations of the same list, tagged
+    unreported_by_model, written by code only from the query log (no model text): id, a fixed
+    statement, the test, evidence (the logged effects, as citations), floors_met true (the call
+    cleared its own floor), variant, measured, angle, fold_observed, and the logged effect and
+    windows."""
+    rows = []
+    for i, u in enumerate(unreported):
+        e = entries[u["query"]]
+        cites = [f"{u['query']}:horizons.{h}.effect={v}" for h, v in (u.get("effect") or {}).items()
+                 if isinstance(v, (int, float)) and not isinstance(v, bool)]
+        row = {"id": observation_id(run_id, lens, start + i + 1),
+               "statement": (f"Not reported by the model: query {u['query']} (conditional_effect) "
+                             f"cleared its own floor; what it measured is in `measured`."),
+               "test": u["query"], "evidence": cites, "floors_met": True,
+               "variant": _query_variant(e), "measured": observation_measured(e),
+               "fold_observed": fold, UNREPORTED_TAG: True,
+               "effect": copy.deepcopy(u.get("effect")), "windows": copy.deepcopy(u.get("windows"))}
+        angle = angle_of([row["measured"].get("selector")], None, base_config,
+                         [row["measured"].get("statistic")])
+        if angle is not None:
+            row["angle"] = angle
+        rows.append(row)
+    return rows
+
+
 def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_check,
                  holdout_start: str, fold: str | None, model_id: str,
-                 settings=None, base_config=None) -> tuple:
+                 settings=None, base_config=None, variants=None) -> tuple:
     """(reading, record, errors). `base_config`: the run's base strategy config (a mapping),
-    against which a vehicle's path is resolved for the sizing tag (D-178, ruling 1). `entries`: {id: log entry} of this lens's query log.
+    against which a vehicle's path is resolved for the sizing tag (D-178, ruling 1). `variants`:
+    the variant ids of the run, which an observation's `variant` must be one of (D-204; None: not
+    checked). `entries`: {id: log entry} of this lens's query log.
     `claim_check(claim)`: claim_card.check_claim with the pipeline's keywords (folds and the
     trade family). The reading is the v3 reader-proposal shape decide-next reads unchanged;
     the record holds what the reading cannot (why_query, the no-claim block, what was
@@ -1227,7 +1548,8 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
         # only the sub-check's errors are kept: its reading and record never leave
         last = check_answer("```yaml\n" + blocks[-1] + "```", lens=lens, run_id=run_id,
                             entries=entries, claim_check=claim_check,
-                            holdout_start=holdout_start, fold=fold, model_id=model_id)[2]
+                            holdout_start=holdout_start, fold=fold, model_id=model_id,
+                            variants=variants)[2]
         last = last or ["passes this answer check (the reading checks run once it is the "
                         "only block): write only that block"]
         return None, record, [err] + [f"(your last block) {e}" for e in last]
@@ -1252,6 +1574,7 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
                           "of this session}")
         errors += next_steps_errors(nc.get("next_steps") if isinstance(nc, dict) else None,
                                     entries, "no_claim")
+        obs_errors = []
         if isinstance(nc, dict):
             # smoke 5 (2026-10-09): the killing test's own numbers (its threshold, horizons,
             # floor) may be written here, as the claim's own test's are on the claim path.
@@ -1272,13 +1595,15 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
             record["unverified_numbers"] = _unverified(hits)
             if "observations" in nc:
                 # operator, 2026-10-19 (PR-A): absent = none, so a no_claim without the key is
-                # unchanged; a valid list is recorded masked (D-096), each with its code spec
-                obs_errors = observation_errors(nc["observations"], entries)
+                # unchanged; a valid list is recorded masked (D-096), each with its code
+                # `measured` (D-204)
+                obs_errors = observation_errors(nc["observations"], entries,
+                                                variants=variants)
                 errors += obs_errors
                 if not obs_errors:
                     nc["observations"], unv = _record_observations(
                         nc["observations"], entries, evidence, settings, base_config,
-                        "no_claim.observations")
+                        "no_claim.observations", run_id=run_id, lens=lens, fold=fold)
                     record["unverified_numbers"] += unv
         # D-178 (item D3) as amended by D-184: a call that cleared its own floor and is not
         # accounted for is disclosed in the record (unreported_results), not refused
@@ -1292,6 +1617,13 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
         unreported = unreported_results(entries, acc)
         if unreported:
             record[UNREPORTED_KEY] = unreported
+            # D-204: the same results join the observations list, tagged unreported_by_model
+            if isinstance(nc, dict) and ("observations" not in nc or (
+                    isinstance(nc["observations"], list) and not obs_errors)):
+                kept = nc.get("observations") or []
+                nc["observations"] = kept + unreported_observations(
+                    entries, unreported, base_config, run_id=run_id, lens=lens, fold=fold,
+                    start=len(kept))
         if isinstance(nc, dict) and isinstance(nc.get("next_steps"), dict):
             record["next_steps"] = copy.deepcopy(nc["next_steps"])
         record["no_claim"] = nc
@@ -1324,8 +1656,13 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
     errors += _cc.vehicle_signal_errors(claim, doc.get("vehicle"), base_config)
     # D-098 (pilot 2a): the forecast's rank IC over all bars is what the run's protocol
     # already tests; restating it spends a fold-B child to learn nothing new
+    # D-199: a test on a component's signal (a `signal` other than the final forecast) is a new
+    # measurement the protocol does not make, so it is not refused here
+    import claim_tests as _ct
     for i, t in enumerate(_tests_of(claim)):
         sel = t.get("selector")
+        if t.get("signal") not in (None, _ct.DEFAULT_SIGNAL):
+            continue
         if t.get("statistic") == "rank_ic" and isinstance(sel, dict) and sel.get("kind") == "all":
             errors.append(
                 f"claim test {t.get('name', i)!r} is the forecast's rank IC over all bars: the "
@@ -1416,7 +1753,8 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
     claim_obs = claim_extra.get("observations")
     claim_obs_ok = False
     if "observations" in claim_extra:
-        obs_errors = observation_errors(claim_obs, entries, "claim.observations")
+        obs_errors = observation_errors(claim_obs, entries, "claim.observations",
+                                        variants=variants)
         errors += obs_errors
         claim_obs_ok = not obs_errors
         if claim_obs_ok:
@@ -1459,10 +1797,19 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
         record["angle"] = angle
     if isinstance(claim_extra.get("next_steps"), dict):
         record["next_steps"] = copy.deepcopy(claim_extra["next_steps"])
+    recorded_obs = []
     if claim_obs_ok and claim_obs:
-        record["observations"], unv = _record_observations(
-            claim_obs, entries, evidence, settings, base_config, "claim.observations")
+        recorded_obs, unv = _record_observations(
+            claim_obs, entries, evidence, settings, base_config, "claim.observations",
+            run_id=run_id, lens=lens, fold=fold)
         record["unverified_numbers"] = list(record.get("unverified_numbers") or []) + unv
+    if unreported and ("observations" not in claim_extra or claim_obs_ok):
+        # D-204: the unreported results join the same list, tagged unreported_by_model
+        recorded_obs = recorded_obs + unreported_observations(
+            entries, unreported, base_config, run_id=run_id, lens=lens, fold=fold,
+            start=len(recorded_obs))
+    if recorded_obs:
+        record["observations"] = recorded_obs
     if fold:
         side["fold_observed"] = fold
     reading = {**base, "explanation": str((claim or {}).get("rationale") or "")
