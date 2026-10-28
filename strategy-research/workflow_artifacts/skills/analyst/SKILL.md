@@ -21,6 +21,15 @@ lens.
 
 - **The run context:** the base strategy config and each variant's patch, the coins, venue,
   timeframe, the fold and its windows, and the cost model (a measurement of this run: evidence, never the claim).
+- **The run's book:** a section of the run context that code writes from this run's own
+  artifacts: the hypothesis card's statement; one line each for the grid, the idea status, the
+  profit bars and the fold confirmation; then one block per variant (the base first) with its
+  grid value and result, every profit bar's actual, threshold and result, the whole-test sharpe
+  and max drawdown, the totals of `window_economics`, and each claim test's effect, the windows
+  that agree with the claimed sign and the events per horizon. Every figure is the record's,
+  none recomputed; a file that is absent is named as absent. Read it before you spend a query on
+  a figure it already holds, and write its figures in your text as figures of this run. It is
+  not in the query log: a result you cite as evidence still needs a query of this session.
 - **The data dictionary:** what every column of the bars and every field of a trade means, and
   when it is known (`close`, `fill` = usable as a condition; `exit`, `after` = outcomes only).
 - **The claim-test vocabulary:** CLAIM_TESTS.md (bar tests), CLAIM_TESTS_TRADE.md (trade
@@ -75,10 +84,11 @@ lens.
    `distribution` gives bin counts, whose end bins hold the bars at or near the clip; a lot
    count with a filter on `entry_forecast` costs nothing. A forecast
    at the clip on most bars is on/off in practice, and the mechanisms start there.
-2. **Find the surprise.** One place where the market or the strategy does what the run's design
+2. **Cost.** When fees exceed the gross in most windows, find the cause of the turnover before any claim, and measure it. Causes you have seen: the whole forecast flips sign on most bars, one component flips far more than the others, the sizing turns small forecasts into full trades, the min-change gate lets many small rebalances through. A claim whose vehicle changes the turnover says in which direction.
+3. **Find the surprise.** One place where the market or the strategy does what the run's design
    did not expect. A surprise is a conditional difference, not a level: "losing" is not a
    surprise; "lots closed by a flip lose and the others do not" is.
-3. **Ask why.** Name the mechanism: who is on the other side and why it persists (market), or
+4. **Ask why.** Name the mechanism: who is on the other side and why it persists (market), or
    which pipeline rule produces it (mechanical). Write the horizon and the direction from the
    mechanism before the query runs; chosen after seeing several, they are a fit and the claim is
    refused. Pre-registration binds the child run, not this exploration: when a result holds in
@@ -104,11 +114,11 @@ lens.
    the condition; claim it with all_of. A behaviour that holds under a
    named condition and not in its complement is a `conditional_behaviour` claim with the
    condition in its selector.
-4. **Rule out rivals,** one query each where it matters: one window (`by: window`), one coin
+5. **Rule out rivals,** one query each where it matters: one window (`by: window`), one coin
    (`by: coin`), a data gap, the strategy's own mechanics. Before writing a rival or a vehicle,
    check it against every result already logged in this session; a rival contradicted by your
    own earlier query is not a rival, and a vehicle contradicted by one is not the vehicle.
-5. **Write the claim with its test,** or stop with no claim. A `conditional_effect` reply with
+6. **Write the claim with its test,** or stop with no claim. A `conditional_effect` reply with
    `compiles_as_claim` true that clears the floor is written as a claim or recorded as an
    observation (`observations`, under `claim` or `no_claim`); the only `killed_by` is a query of this session that
    measured a rival, named. When a result clears its floors and you name a mechanism for it, run
@@ -206,6 +216,9 @@ with its **vehicle**: the strategy change that follows from the observation.
   know whether a new op you list is a history op (one that reads the component's history,
   as `standardise`, `zscore`, `ema` do): it reads it as an ordinary op, so an existing
   history op placed after it is refused (V5). Put the new op after them.
+- Adding a transform step to a component (a new op in its `transforms`) is written in the config
+  form (D-162). The list form above only edits a field that already exists in the base config:
+  a value, a param.
 - No empty vehicle. If you cannot say what to change you do not have a claim yet: ask the
   next why, or record the behaviour under `no_claim.observations`.
 
@@ -254,8 +267,8 @@ claim:
     mechanism: q10
   floor_lowered_reasons:           # only for a test that repeats an earlier query's selector and
     my_test: one sentence on why the floor was lowered   # outcome on a lower floor: {test name: reason}
-  observations: []                 # optional: other behaviour you measured, same shape and
-                                   # maximum as under no_claim below
+  observations: []                 # optional: other behaviour you measured, same shape as
+                                   # under no_claim below, no cap on the number
 why_query: q9                      # the second query your mechanism predicted (another selector)
 evidence:                          # citations: query id, a path in that result, the value
   - q7:horizons.24.effect=0.0012   # at least one from your claim test's own conditional_effect
@@ -278,11 +291,13 @@ no_claim:
   observations:                    # optional (leave out, or [], when none): behaviour you
     - statement: >                 # measured with no strategy change following from it yet
         the behaviour, in words
-      test: q7                     # the id of a conditional_effect query of this session
+      test: q7                     # the id of any ok query of this session; one query per observation
       evidence:                    # citations, at least one from that query
         - q7:horizons.24.effect=0.0012
-      floors_met: true             # true or false: that query cleared its test's floor
-      mechanism_query: q9          # floors_met true: any ok query of this session, or stopped_by: <tool limit>
+      floors_met: true             # conditional_effect: true or false (cleared its test's floor);
+                                   # null for a tool without floors
+      mechanism_query: q9          # only when floors_met is true: any ok query of this session,
+                                   # or stopped_by: <tool limit>
       floor_lowered_reason: one sentence   # only when that test repeats an earlier query's selector
                                            # and outcome on a lower floor
   next_steps:                      # required: the closing ledger on your best observation
@@ -294,21 +309,29 @@ evidence:
   - q12:groups.long.trade_net_return_mean=-0.0008
 ```
 
-Observations live under `claim.observations` or `no_claim.observations`; each has four keys: `statement` (the behaviour you measured), `test`
-(the id of the `conditional_effect` query of this session that measured it), `evidence`
-(citations, at least one of that query) and `floors_met` (true or false: whether that query
-cleared its test's floor on every horizon); and, where they apply, `mechanism_query` (or
-`stopped_by`: the tool limit; one of the two is required when `floors_met` is true) and
-`floor_lowered_reason` (one sentence; required when the test repeats an earlier query's selector
-and outcome on a lower floor; in a claim the same reasons are `claim.floor_lowered_reasons`,
-test name to reason). A `no_claim` carries at most 3 observations, each citing a different test.
-A claim carries at most 3 under `claim.observations`, on the same terms. An observation may carry `vehicle` (the change list a claim's vehicle takes), the
-change the finding points at, for the operator's reading; it is never ranked. Code writes the `floor_lowered` entry and the `angle` tag itself:
-`regime` for a test whose selector names a bar field other than the forecast and whose statistic
-does not use the forecast (never for an all-bars or a trade selector), `sizing` for a vehicle that changes the
-sizing block or the params of a vol_target op. A sizing finding is an observation, never a claim
-with a vehicle. An observation is recorded, not confirmed; the memory view shows it
-as "observed, no vehicle yet".
+Observations live under `claim.observations` or `no_claim.observations`. Record every result you
+measured, in either direction, at any horizon, and whether or not it supports your claim; there is
+no cap on their number. Each has four keys: `statement` (the behaviour you measured), `test` (the id
+of any ok query of this session that measured it: `describe`, `trade_slice`, `event_study` and
+`window_economics` count as well as `conditional_effect`; one query per observation, and two
+`conditional_effect` calls of the same test are one test), `evidence` (citations, at least one of
+that query) and `floors_met` (true or false for a `conditional_effect` query: whether it cleared
+its test's floor on every horizon; null for a tool without floors, and only for those); and, where
+they apply, `variant` (optional: left out, code writes the variant the test query ran on; written,
+it must be a graded variant of this run and the one that query ran on), `mechanism_query` (or
+`stopped_by`: the tool limit; one of the two is required only when `floors_met` is true, never for
+a null or a false), and `floor_lowered_reason` (one sentence; required when the test repeats an
+earlier query's selector and outcome on a lower floor; in a claim the same reasons are
+`claim.floor_lowered_reasons`, test name to reason). An observation may carry `vehicle` (the change
+list a claim's vehicle takes), the change the finding points at, for the operator's reading; it is
+never ranked. Code writes the rest itself: `id`, `measured` (the query's tool, its params and
+statistic and, for a `conditional_effect` call, its test), `fold_observed`, the `floor_lowered`
+entry and the `angle` tag: `regime` for a test whose selector names a bar field other than the
+forecast and whose statistic does not use the forecast (never for an all-bars or a trade
+selector), `sizing` for a vehicle that changes the sizing block or the params of a vol_target op. A
+result that cleared its floors and that you left out joins the list by code, tagged
+`unreported_by_model`. A sizing finding is an observation, never a claim with a vehicle. An
+observation is recorded, not confirmed; the memory view shows it as "observed, no vehicle yet".
 
 Code checks, before anything is kept: the claim block (CLAIM_TESTS), every citation against the
 query log (the id exists, the path exists in that result, the value equals the logged value),
@@ -355,9 +378,10 @@ fewer.
   or the fill: never on an exit field, an `after` column or a future return.
 - Profit and cost are measurements of this run: cost share, fees and net are evidence,
   never the claim. A cost claim names the cause of the weak gross edge (the edge lasts one
-  bar, the forecast changes sign on most bars, the forecast is large when the move is small,
-  the signal predicts only the next bar); its test tests that cause; its vehicle changes that
-  cause.
+  bar, the forecast changes sign on most bars, one component flips far more than the others,
+  the sizing turns small forecasts into full trades, the min-change gate lets many small
+  rebalances through, the forecast is large when the move is small, the signal predicts only
+  the next bar); its test tests that cause; its vehicle changes that cause.
 - A trade test may not select lots by an exit-time field (`holding_bars`, `exit_cause`) and
   measure the same lots' own result (`trade_net_return` or `trade_gross_return`): it is near-mechanical (a losing lot stays
   open longer). Select on an entry-time field (side, entry_hour, entry_weekday,

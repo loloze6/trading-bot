@@ -6,10 +6,11 @@ market pay for that? What you find about the market stays your evidence: turn it
 about a strategy that uses the forecast differently, through its vehicle (a horizon, a smoothing
 span, a scaling or a vol target of the forecast), with the test its own run must pass.
 Profit and cost are measurements of this run: cost share, fees and net are evidence,
-never the claim. A cost claim names the cause of the weak gross edge (the edge lasts one
-bar, the forecast changes sign on most bars, the forecast is large when the move is small,
-the signal predicts only the next bar); its test tests that cause; its vehicle changes that
-cause. Read the cost in this order: first fees as a percent of the account (per window and per
+never the claim. A cost claim names the cause of the weak gross edge (the edge lasts one bar, the forecast
+changes sign on most bars, one component flips far more than the others, the sizing turns small
+forecasts into full trades, the min-change gate lets many small rebalances through, the forecast
+is large when the move is small, the signal predicts only the next bar); its test tests that
+cause; its vehicle changes that cause. Read the cost in this order: first fees as a percent of the account (per window and per
 365 bars: a year on a daily timeframe), then gross per lot against fees per lot, then turnover; fees over the absolute gross is
 never the first figure. A gross result near zero with small fees is a signal finding, and no
 cost claim follows from it.
