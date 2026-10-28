@@ -1,0 +1,9 @@
+block:
+  kind: forecast
+  config_paths:
+    - /strategies/regimes/unknown/components/0
+    - /strategies/regimes/unknown/components/1
+scaffolding:
+  - /regime_detector
+  - /strategies/sizing
+rationale: Component 0 is the SMA24/SMA168 trend leg and component 1 is the negated SMA24-distance stretch leg at weight 0.25, which together are the block the claim is about. The ungated detector and the vol-target sizing block only run and size it.

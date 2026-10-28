@@ -1,0 +1,66 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "trend_spread",
+            "class": "strategies.strategy_components.EMASpreadComponent",
+            "params": {
+              "fast_period": 24,
+              "slow_period": 168,
+              "average": "sma"
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 500,
+                  "min_periods": 120
+                }
+              }
+            ]
+          },
+          {
+            "id": "stretch_from_short_sma",
+            "class": "strategies.strategy_components.MovingAverageDistanceComponent",
+            "params": {
+              "period": 24,
+              "average": "sma"
+            },
+            "weight": 0.25,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 500,
+                  "min_periods": 120
+                }
+              },
+              {
+                "op": "negate"
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 60,
+      "target_annual_vol": 0.2,
+      "periods_per_year": 8760,
+      "max_allocation": 2
+    }
+  }
+}
