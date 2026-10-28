@@ -983,12 +983,15 @@ PYTHONUTF8=1 ../venv/Scripts/python.exe workflow/run_campaign.py --once
 
 It takes the campaign lock. It refuses, changing nothing, unless the run is `completed`,
 the queue entry that holds it is `done` and the run is that entry's last, the run is not
-an operator re-run (`refold`), `artifacts/proposals/` exists, `orchestrator.analyst` and
-`orchestrator.regroup_record` are on, and the run is within its token budget. Otherwise it:
+an operator re-run (`refold`), its `pipeline_state.yaml` carries no `campaign_review_trigger`
+or `campaign_review_reframe_brief` (the DONE branch would register that review's reframe
+brief a second time), `orchestrator.analyst` and `orchestrator.regroup_record` are on, and the
+run is within its token budget. It also refuses, changing nothing, if the queue with the
+entry reset would not save (the verdict-provenance check every queue write runs). Otherwise it:
 
 - copies `artifacts/analyst/`, `analyst_queries/`, `proposals/` and `decision_record.yaml`
-  to `artifacts/retry_<n>/` (`<n>` = 1 + the `retry_*` folders already there; the copy is
-  never touched again);
+  to `artifacts/retry_<n>/` (`<n>` = 1 + the highest `retry_<number>` already there; the copy
+  is never touched again; with no `proposals/` there is simply no copy of it);
 - removes the live `analyst/`, `analyst_queries/` and the two lens readings
   (`proposals/trade_efficiency.yaml`, `forecast_power.yaml`): the analyst stage validates a
   reading it finds instead of re-running the lens, and continues a query log it finds, so

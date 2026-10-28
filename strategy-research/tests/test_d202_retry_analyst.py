@@ -6,8 +6,9 @@ Pins:
      live ones the stage would validate instead of re-run, puts the run back at pending_stage
      `analyst` (status active, last_error cleared) and its entry at `in_progress` with a note,
      logs RETRY-ANALYST; <n> = 1 + the retry folders already there;
-  2. its refusals (each changes nothing): entry not done, run not completed, a refold, no
-     proposals/, a flag off, over budget, an unknown run, the campaign lock held;
+  2. its refusals (each changes nothing): entry not done, run not completed, a refold, a
+     campaign-review trigger or reframe brief on the run, a flag off, over budget, an unknown
+     run, the campaign lock held, a queue that would not save; no proposals/ is not a refusal;
   3. the proposal ids continue after the archived ones (analyst_session.archived_proposal_count,
      check_answer's first_proposal_n) and are unchanged for a run with no retry folder;
   4. the three claims the command rests on, run for real: run_loop re-enters a completed run from
@@ -18,6 +19,7 @@ All synthetic and under the per-test sandbox: no model call, no backtest, no rea
 """
 from __future__ import annotations
 
+import copy
 import json
 import sys
 from pathlib import Path
@@ -38,6 +40,8 @@ import run_phase1_research as rpr  # noqa: E402
 import verdict_criteria_evaluator as vce  # noqa: E402
 
 from d178_legacy_fixture import d178_checks_off  # noqa: E402,F401  (D-178, as test_e075_pr5)
+from test_d184_analyst_disclosure import _worker_flags  # noqa: E402,F401  (fixture)
+from test_e075_pr5_analyst import RUN_ID as WORKER_RUN_ID, _install, run  # noqa: E402,F401
 import test_e075_pr4_queries as q4  # noqa: E402
 import test_e075_pr5_analyst as t75  # noqa: E402
 from _reader_test_helpers import (  # noqa: E402,F401
@@ -202,9 +206,19 @@ def _refuse_refold(cr, run_dir):
                   {"refold": {"source_run": "run_001", "fold": "B"}})
 
 
-def _refuse_no_proposals(cr, run_dir):
-    import shutil
-    shutil.rmtree(run_dir / "artifacts" / "proposals")
+def _refuse_review_trigger(cr, run_dir):
+    rpr.update_state(path=run_dir, **{rpr.CAMPAIGN_REVIEW_TRIGGER_KEY: "review_every_n"})
+
+
+def _refuse_review_reframe(cr, run_dir):
+    rpr.update_state(path=run_dir, **{rpr.CAMPAIGN_REVIEW_REFRAME_KEY: "briefs/reframe.yaml"})
+
+
+def _refuse_invalid_sibling(cr, run_dir):
+    """Another entry whose verdict has no provenance: the queue would not save."""
+    q = _queue(cr)
+    q.append({**_entry("run_901", "E901"), "status": "done", "outcome": "refuted"})
+    _save_queue_entries(cr["queue_path"], q)
 
 
 def _refuse_over_budget(cr, run_dir):
@@ -217,7 +231,9 @@ def _refuse_over_budget(cr, run_dir):
     (_refuse_not_last, "not the last run"),
     (_refuse_not_completed, "not 'completed'"),
     (_refuse_refold, "operator re-run"),
-    (_refuse_no_proposals, "no artifacts/proposals/"),
+    (_refuse_review_trigger, "campaign-review state"),
+    (_refuse_review_reframe, "campaign-review state"),
+    (_refuse_invalid_sibling, "the queue would not save"),
     (_refuse_over_budget, "over its weighted token budget"),
 ])
 def test_retry_refusals_change_nothing(campaign_root, flags_on, capsys, damage, needle):
@@ -236,6 +252,54 @@ def test_the_over_budget_fixture_really_is_over_budget(campaign_root):
     _refuse_over_budget(campaign_root, run_dir)
     used, _ = rpr._compute_weighted_budget_usage(_read(run_dir / "pipeline_state.yaml")["audit_log"])
     assert used > rpr._load_token_budget()
+
+
+def test_the_folder_number_is_after_the_highest_retry_not_the_count(campaign_root, flags_on):
+    """retry_2 exists and retry_1 was removed by hand: the new folder is retry_3 and retry_2
+    is untouched (a count would have picked retry_2 and removed the existing one on error)."""
+    run_dir = _finished_run(campaign_root)
+    arts = run_dir / "artifacts"
+    (arts / "retry_2").mkdir()
+    (arts / "retry_2" / "keep.txt").write_text("kept\n", encoding="utf-8")
+    (arts / "retry_x").mkdir()                    # not a number: ignored
+    assert camp._retry_analyst(RUN) is True
+    assert (arts / "retry_3" / "decision_record.yaml").exists()
+    assert not (arts / "retry_1").exists()
+    assert [p.name for p in (arts / "retry_2").iterdir()] == ["keep.txt"]
+    assert "artifacts/retry_3/" in _queue(campaign_root)[0]["notes"]
+
+
+def test_a_queue_that_would_not_save_leaves_no_archive_and_no_change(
+        campaign_root, flags_on, capsys):
+    run_dir = _finished_run(campaign_root)
+    _refuse_invalid_sibling(campaign_root, run_dir)
+    before = _snapshot(campaign_root, run_dir)
+    assert camp._retry_analyst(RUN) is False
+    out = capsys.readouterr().out
+    assert "RETRY-ANALYST REFUSED" in out and "nothing changed" in out
+    assert _snapshot(campaign_root, run_dir) == before          # no retry_1, live files kept
+    assert (run_dir / "artifacts" / "analyst").is_dir()
+    assert _read(run_dir / "pipeline_state.yaml")["status"] == "completed"
+
+
+def test_no_proposals_folder_is_not_a_refusal(campaign_root, flags_on):
+    import shutil
+    run_dir = _finished_run(campaign_root)
+    shutil.rmtree(run_dir / "artifacts" / "proposals")
+    assert camp._retry_analyst(RUN) is True
+    arts = run_dir / "artifacts"
+    assert (arts / "retry_1" / "analyst").is_dir() and not (arts / "retry_1" / "proposals").exists()
+    assert _read(run_dir / "pipeline_state.yaml")["pending_stage"] == "analyst"
+
+
+def test_the_note_has_no_leading_space_when_the_entry_had_no_notes(campaign_root, flags_on):
+    _finished_run(campaign_root)
+    queue = _queue(campaign_root)
+    queue[0]["notes"] = ""
+    _save_queue_entries(campaign_root["queue_path"], queue)
+    assert camp._retry_analyst(RUN) is True
+    notes = _queue(campaign_root)[0]["notes"]
+    assert notes.startswith("RETRY-ANALYST ") and "artifacts/retry_1/" in notes
 
 
 @pytest.mark.parametrize("off", ["analyst", "regroup_record"])
@@ -325,6 +389,38 @@ def test_the_proposal_id_is_one_by_default_and_continues_on_request(d178_checks_
     assert reading["reading_id"] == f"trade_efficiency-{t75.RUN_ID}"      # the reading keeps its id
 
 
+def _numbering_probe(monkeypatch):
+    """Every first_proposal_n check_answer is called with (the model is stubbed to refuse)."""
+    seen: list = []
+
+    def fake_check(text, **kw):
+        seen.append(kw["first_proposal_n"])
+        return None, {"lens": kw["lens"], "category": "trade_efficiency", "outcome": None}, ["no"]
+    monkeypatch.setattr(asm, "check_answer", fake_check)
+
+    async def script(call):
+        return "no answer"
+    _install(monkeypatch, script)
+    return seen
+
+
+def test_run_analyst_worker_numbers_after_the_archived_proposals(run, monkeypatch, _worker_flags):
+    """The numbering line in run_analyst_worker: no retry folder -> 1; a retry folder whose
+    trade_efficiency reading holds k side findings -> k + 1 (another category's do not count)."""
+    seen = _numbering_probe(monkeypatch)
+    rpr.run_analyst_worker("trade_efficiency", WORKER_RUN_ID, run)
+    assert seen == [1, 1]                       # both attempts of the refused answer
+    proposals = run / "artifacts" / "retry_1" / "proposals"
+    proposals.mkdir(parents=True)
+    (proposals / "trade_efficiency.yaml").write_text(
+        yaml.safe_dump(_reading("trade_efficiency", WORKER_RUN_ID, 2)), encoding="utf-8")
+    (proposals / "forecast_power.yaml").write_text(
+        yaml.safe_dump(_reading("forecast_power", WORKER_RUN_ID, 5)), encoding="utf-8")
+    seen.clear()
+    rpr.run_analyst_worker("trade_efficiency", WORKER_RUN_ID, run)
+    assert seen == [3, 3]
+
+
 # ---------------------------------------------------------------------------
 # 4. the three claims, for real
 # ---------------------------------------------------------------------------
@@ -370,7 +466,7 @@ def test_run_loop_reenters_a_completed_run_and_runs_analyst_regroup_record_and_t
     assert (arts / "retry_1" / "analyst" / "trade_efficiency.yaml").exists()
     assert _read(run_dir / "pipeline_state.yaml")["pending_stage"] == "analyst"
 
-    memory_before = _memory()["runs"][REGROUP_RUN_ID]
+    memory_before = copy.deepcopy(_memory()["runs"][REGROUP_RUN_ID])
     rpr.run_loop(REGROUP_RUN_ID)
 
     state = _read(run_dir / "pipeline_state.yaml")
@@ -387,8 +483,15 @@ def test_run_loop_reenters_a_completed_run_and_runs_analyst_regroup_record_and_t
         assert "output_refused_after_retry" in now.decode("utf-8")
     # regroup_record replaced the run's memory entry (same key, recorded again)
     assert list(_memory()["runs"]) == [REGROUP_RUN_ID]
-    assert _memory()["runs"][REGROUP_RUN_ID]["recorded_at"] != memory_before["recorded_at"] \
-        or _memory()["runs"][REGROUP_RUN_ID] != first_memory
+    memory_after = _memory()["runs"][REGROUP_RUN_ID]
+    assert memory_after["recorded_at"] != memory_before["recorded_at"]
+    assert memory_after["run_id"] == memory_before["run_id"] == REGROUP_RUN_ID
+    # the entry now describes the second pass's readings: the first pass's seeded proposals
+    # are gone from it, the code-written skipped readings carry none
+    def ids(entry):
+        return {p["category"]: p["proposal_ids"] for p in entry["proposals"]}
+    assert all(ids(memory_before)[c] for c in LENSES)
+    assert all(ids(memory_after)[c] == [] for c in LENSES)
     # and nothing of the first pass was touched
     assert (arts / "retry_1" / "analyst" / "trade_efficiency.yaml").read_text(
         encoding="utf-8") == "record: first\n"
