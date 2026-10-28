@@ -2632,10 +2632,10 @@ RETRY_ANALYST_HELP = (
     "run's last, the run is not an operator re-run (refold), carries no campaign-review "
     "trigger or reframe brief, the analyst and regroup_record flags are on and the run is "
     "within its token budget. Copies "
-    "artifacts/analyst/, analyst_queries/, proposals/ and decision_record.yaml to "
+    "artifacts/analyst/, the query logs, proposals/ and decision_record.yaml to "
     "artifacts/retry_<n>/ (<n> = 1 + the highest retry number there; nothing in the copy is "
     "changed), "
-    "then removes the live analyst/, analyst_queries/ and the two lens readings (the stage "
+    "then removes the live analyst/, the query logs and the two lens readings (the stage "
     "validates a reading it finds instead of re-running the lens), sets the run `active` at "
     "pending_stage `analyst` with last_error cleared, and the entry back to `in_progress` with "
     "a note. Launch with --once: analyst -> regroup_record -> route -> DONE -> decide-next. "
@@ -2646,7 +2646,9 @@ RETRY_ANALYST_NOTE = ("RETRY-ANALYST {at} (operator, retry-analyst, D-202): the 
                       "retry_{n}/ (was {old}).")
 # what the retry folder keeps: the analyst's records, its query logs, its readings and the
 # decision made on them
-RETRY_ARCHIVE_ITEMS = ("analyst", "analyst_queries", "proposals", "decision_record.yaml")
+# (the two analyst directories come from the orchestrator's own list, so this module never names
+# the query module's directory: test_e075_pr4_queries pins which modules name it)
+RETRY_ARCHIVE_ITEMS = (*reversed(orch._ANALYST_RUN_SCOPED_DIRS), "proposals", "decision_record.yaml")
 
 
 def _retry_analyst_refusal(queue: dict, run_id: str):
