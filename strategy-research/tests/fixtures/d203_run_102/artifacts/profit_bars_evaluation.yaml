@@ -1,0 +1,1390 @@
+run_id: run_102
+generated_at: 'TIMESTAMP'
+scope: every_backtest
+bars_definitions: v2
+bars_ratified_by: 'Jeremy Alauze (loloze6) -- recorded by Claude at the operator''s
+  explicit instruction (DATE session: ''sign the bars file on my behalf, DATE'')'
+bars_ratified_at: 'DATE'
+dsr_basis:
+  n_dsr_total: 86
+  n_trials: 65
+  sharpe_basis: whole_test_daily_equal_weight_v2
+  n_same_basis: 37
+  min_same_basis: 10
+  basis_overlay:
+    present: false
+    sha256: null
+  same_structure:
+    enabled: true
+    by_variant:
+      asset_ltc_altcoin_l1:
+        status: keyed
+        structure_hash: 05c14345bce18192399284e94b0b0beb01a758f99bbe9f9fdd0902821bb6a884
+        timeframe: 1h
+        n_same_structure: 8
+        k_same_structure: 8
+        n_campaign_wide: 86
+        k_campaign_wide: 37
+      asset_xrp_payment:
+        status: keyed
+        structure_hash: 05c14345bce18192399284e94b0b0beb01a758f99bbe9f9fdd0902821bb6a884
+        timeframe: 1h
+        n_same_structure: 8
+        k_same_structure: 8
+        n_campaign_wide: 86
+        k_campaign_wide: 37
+      base:
+        status: keyed
+        structure_hash: 05c14345bce18192399284e94b0b0beb01a758f99bbe9f9fdd0902821bb6a884
+        timeframe: 1h
+        n_same_structure: 8
+        k_same_structure: 8
+        n_campaign_wide: 86
+        k_campaign_wide: 37
+      split_stretch_weight:
+        status: keyed
+        structure_hash: 05c14345bce18192399284e94b0b0beb01a758f99bbe9f9fdd0902821bb6a884
+        timeframe: 1h
+        n_same_structure: 8
+        k_same_structure: 8
+        n_campaign_wide: 86
+        k_campaign_wide: 37
+variants:
+  asset_ltc_altcoin_l1:
+    kind: variant
+    trial_id: run_102:asset_ltc_altcoin_l1
+    protocol_result_ref: artifacts/variants/asset_ltc_altcoin_l1/protocol_result.yaml
+    result: FAIL
+    reason: null
+    bars:
+    - name: sharpe_min
+      threshold: 0.0
+      actual: -0.16018907613302613
+      result: FAIL
+      basis: portfolio_equal_weight_whole_test_chained_daily_sharpe
+      comparator: '>'
+      note: mean / sample stdev (ddof 1) x sqrt(365), rf 0, of the 730 chained daily
+        return(s); equal-weight portfolio of 1 coin(s) ['LTCUSD'], 6 window(s) chained
+        over DATE..DATE (730 counted day(s), coverage 1.0000, 611 protocol
+        gap day(s), 0 engine edge day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+    - name: deflated_sharpe_threshold
+      threshold: 0.5
+      actual: 0.0460557449163988
+      result: FAIL
+      basis: deflated_sharpe_whole_test_daily_on_campaign_trial_ledger
+      comparator: '>='
+      note: 'artifacts/variants/asset_ltc_altcoin_l1/protocol_result.yaml: deflated
+        Sharpe (Bailey & Lopez de Prado 2014, D-046) of the whole-test daily Sharpe
+        on the campaign trial ledger; N=8 counted trial(s), K=8 same-basis value(s)
+        (floor 10); N and K counted among the trials with this candidate''s own (structure_hash,
+        timeframe) (05c14345bce1.., 1h; campaign-wide N=86, K=37); SR=-0.008384679458565093/day
+        over T=730 daily returns, SR0=0.05403755842374036 (sigma null 0.037037037037037035
+        x Z(N) 1.4590140774409899)'
+      detail:
+        status: ok
+        reason: null
+        dsr: 0.0460557449163988
+        sr0: 0.05403755842374036
+        sigma_used: 0.037037037037037035
+        sigma_source: 'null'
+        sigma_null: 0.037037037037037035
+        sigma_cross: null
+        mean_same_basis: null
+        z_expected_max: 1.4590140774409899
+        sr_daily: -0.008384679458565093
+        K: 8
+        N: 8
+        T: 730
+        min_same_basis: 10
+        same_structure:
+          status: keyed
+          structure_hash: 05c14345bce18192399284e94b0b0beb01a758f99bbe9f9fdd0902821bb6a884
+          timeframe: 1h
+          n_same_structure: 8
+          k_same_structure: 8
+          n_campaign_wide: 86
+          k_campaign_wide: 37
+    - name: max_drawdown_pct_max
+      threshold: 20.0
+      actual: 14.807808674647738
+      result: PASS
+      basis: portfolio_equal_weight_whole_test_chained
+      comparator: <=
+      note: largest peak-to-trough fall of the chained bar-level curve; equal-weight
+        portfolio of 1 coin(s) ['LTCUSD'], 6 window(s) chained over DATE..DATE
+        (730 counted day(s), coverage 1.0000, 611 protocol gap day(s), 0 engine edge
+        day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        peak_ts: 'TIMESTAMP'
+        trough_ts: 'TIMESTAMP'
+        n_bars: 17376
+      advisory: true
+    - name: calmar_min
+      threshold: 0.75
+      actual: -0.2994123880975925
+      result: FAIL
+      basis: portfolio_equal_weight_whole_test_chained_annualised_return_over_drawdown
+      comparator: '>'
+      note: annualised return -0.044336 ((1 + -0.086707)^(365/730) - 1) / drawdown
+        0.148078; negative total return FAILs; equal-weight portfolio of 1 coin(s)
+        ['LTCUSD'], 6 window(s) chained over DATE..DATE (730 counted day(s),
+        coverage 1.0000, 611 protocol gap day(s), 0 engine edge day(s) excluded, 0
+        multi-day step(s))
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        counted_days: 730
+        max_drawdown_pct: 14.807808674647738
+        formula: annualised_return / (max_drawdown_pct / 100); annualised_return =
+          (1 + total_return)^(365 / counted_days) - 1; total_return = final chained
+          level / first level - 1; counted_days = the chain's n_counted_calendar_days
+          (D-113); max_drawdown_pct = the D-129 whole-test drawdown of the same chain
+        total_return: -0.08670710958643901
+        annualised_return: -0.04433641357768525
+    - name: avg_daily_return_min
+      threshold: 0.0005
+      actual: -7.943406474424542e-05
+      result: FAIL
+      basis: portfolio_equal_weight_whole_test_chained_mean_daily_return
+      comparator: '>='
+      note: arithmetic mean of the 730 chained daily simple return(s); equal-weight
+        portfolio of 1 coin(s) ['LTCUSD'], 6 window(s) chained over DATE..DATE
+        (730 counted day(s), coverage 1.0000, 611 protocol gap day(s), 0 engine edge
+        day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+    - name: buy_and_hold_sharpe_excess_min
+      threshold: 0.0
+      actual: -0.8883046339043713
+      result: FAIL
+      basis: whole_test_sharpe_minus_buy_and_hold_whole_test_sharpe
+      comparator: '>'
+      note: 'whole-test Sharpe -0.160189 minus equal-weight buy-and-hold''s 0.728116
+        on the same 730 chained day(s), buy-and-hold charged one round trip per coin
+        at {''LTCUSD'': 12.5} bps per side; information: total return -0.086707 vs
+        0.644863; equal-weight portfolio of 1 coin(s) [''LTCUSD''], 6 window(s) chained
+        over DATE..DATE (730 counted day(s), coverage 1.0000, 611 protocol
+        gap day(s), 0 engine edge day(s) excluded, 0 multi-day step(s))'
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        strategy_sharpe: -0.16018907613302613
+        buy_and_hold_sharpe: 0.7281155577713452
+        strategy_total_return: -0.08670710958643901
+        buy_and_hold_total_return: 0.644862912368025
+        buy_and_hold_gross_return: 0.6489827928144472
+        excess_return: -0.731570021954464
+        cost_multiplier: 0.9975015625000001
+        cost_per_side_bps:
+          LTCUSD: 12.5
+    - name: trade_frequency_min
+      threshold: 0.01
+      actual: 0.13589128697042366
+      result: PASS
+      basis: pooled_trades_excl_window_closes_per_backtest_bar
+      comparator: '>='
+      note: 2380 trade(s) without end_of_window forced closes / 17514 backtest bar(s),
+        pooled over every coin and window (52 forced close(s) not counted); source
+        variants/asset_ltc_altcoin_l1/trade_diagnostics.json
+      detail:
+        trades: 2380
+        bars: 17514
+        end_of_window: 52
+        n_coin_windows: 6
+    - name: leave_one_block_out_sharpe_min
+      threshold: 0.0
+      actual: -0.3654643758600683
+      result: FAIL
+      basis: min_whole_test_sharpe_leaving_one_4_month_block_out
+      comparator: '>'
+      note: lowest whole-test Sharpe with one 4-month block left out (block W5),
+        over 6 block(s); equal-weight portfolio of 1 coin(s) ['LTCUSD'], 6 window(s)
+        chained over DATE..DATE (730 counted day(s), coverage 1.0000,
+        611 protocol gap day(s), 0 engine edge day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        worst_block: W5
+        by_block:
+          W1: -0.2922008532179779
+          W2: 0.15712493006765635
+          W3: -0.09265242817578224
+          W4: -0.08255727442497499
+          W5: -0.3654643758600683
+          W6: -0.27588260142166965
+    reasons:
+    - 'sharpe_min: FAIL (threshold=0.0, actual=-0.16018907613302613)'
+    - 'deflated_sharpe_threshold: FAIL (threshold=0.5, actual=0.0460557449163988)'
+    - 'calmar_min: FAIL (threshold=0.75, actual=-0.2994123880975925)'
+    - 'avg_daily_return_min: FAIL (threshold=0.0005, actual=-7.943406474424542e-05)'
+    - 'buy_and_hold_sharpe_excess_min: FAIL (threshold=0.0, actual=-0.8883046339043713)'
+    - 'leave_one_block_out_sharpe_min: FAIL (threshold=0.0, actual=-0.3654643758600683)'
+    forecast_shape:
+      abs_mean_forecast: 7.0495306
+      share_at_cap: 0.00782231
+      abs_mean_allocation: 0.16670128
+      n_bars: 17514
+      n_windows: 6
+    window_economics:
+      windows:
+        LTCUSD/W1:
+          n_bars: 2952
+          trades: 403
+          turnover: 23.865401
+          direction_changes: 48
+          mean_abs_allocation: 0.15955201
+          max_abs_allocation: 0.536191
+          gross_pct: 4.1391478
+          fees_pct: 1.2129252
+          net_pct: 2.9262227
+          cost_drag_pct: null
+          avg_trade_duration_bars: 49.12
+          median_holding_bars: 24.0
+          fees_pct_annualised: 0.14997212
+          gross_per_lot_pct: 0.010270838
+          fees_per_lot_pct: 0.00300974
+          turnover_annualised: 2.9508372
+          cost_drag_note: 'gross near zero: a signal finding, not a cost finding'
+        LTCUSD/W2:
+          n_bars: 2880
+          trades: 348
+          turnover: 21.94492
+          direction_changes: 46
+          mean_abs_allocation: 0.15033821
+          max_abs_allocation: 0.688648
+          gross_pct: -9.4785958
+          fees_pct: 1.0264643
+          net_pct: -10.50506
+          cost_drag_pct: 10.8293
+          avg_trade_duration_bars: 44.94
+          median_holding_bars: 29.0
+          fees_pct_annualised: 0.13009009
+          gross_per_lot_pct: -0.027237344
+          fees_per_lot_pct: 0.0029496101
+          turnover_annualised: 2.7812138
+          cost_drag_note: null
+        LTCUSD/W3:
+          n_bars: 2925
+          trades: 385
+          turnover: 30.483095
+          direction_changes: 43
+          mean_abs_allocation: 0.19591629
+          max_abs_allocation: 0.744595
+          gross_pct: -2.2425674
+          fees_pct: 1.500385
+          net_pct: -3.7429524
+          cost_drag_pct: null
+          avg_trade_duration_bars: 46.61
+          median_holding_bars: 28.0
+          fees_pct_annualised: 0.18722753
+          gross_per_lot_pct: -0.0058248504
+          fees_per_lot_pct: 0.0038971039
+          turnover_annualised: 3.8038734
+          cost_drag_note: 'gross near zero: a signal finding, not a cost finding'
+        LTCUSD/W4:
+          n_bars: 2950
+          trades: 446
+          turnover: 39.177613
+          direction_changes: 50
+          mean_abs_allocation: 0.2344064
+          max_abs_allocation: 0.876012
+          gross_pct: -1.861852
+          fees_pct: 1.8635667
+          net_pct: -3.7254188
+          cost_drag_pct: null
+          avg_trade_duration_bars: 45.02
+          median_holding_bars: 23.0
+          fees_pct_annualised: 0.2305769
+          gross_per_lot_pct: -0.0041745561
+          fees_per_lot_pct: 0.0041784007
+          turnover_annualised: 4.8473996
+          cost_drag_note: 'gross near zero: a signal finding, not a cost finding'
+        LTCUSD/W5:
+          n_bars: 2879
+          trades: 418
+          turnover: 17.091405
+          direction_changes: 37
+          mean_abs_allocation: 0.11444903
+          max_abs_allocation: 0.383906
+          gross_pct: 6.0192872
+          fees_pct: 0.8670556
+          net_pct: 5.1522315
+          cost_drag_pct: 14.4046
+          avg_trade_duration_bars: 46.52
+          median_holding_bars: 26.0
+          fees_pct_annualised: 0.10992542
+          gross_per_lot_pct: 0.014400209
+          fees_per_lot_pct: 0.0020742957
+          turnover_annualised: 2.1668506
+          cost_drag_note: null
+        LTCUSD/W6:
+          n_bars: 2928
+          trades: 432
+          turnover: 24.234546
+          direction_changes: 48
+          mean_abs_allocation: 0.14398287
+          max_abs_allocation: 0.526281
+          gross_pct: 2.9878106
+          fees_pct: 1.2405108
+          net_pct: 1.7472998
+          cost_drag_pct: null
+          avg_trade_duration_bars: 42.58
+          median_holding_bars: 24.0
+          fees_pct_annualised: 0.15464018
+          gross_per_lot_pct: 0.0069162282
+          fees_per_lot_pct: 0.0028715528
+          turnover_annualised: 3.0210414
+          cost_drag_note: 'gross near zero: a signal finding, not a cost finding'
+      total:
+        n_bars: 17514
+        trades: 2432
+        turnover: 156.79698
+        direction_changes: 272
+        mean_abs_allocation: 0.16670128
+        max_abs_allocation: 0.876012
+        gross_pct: -0.4367696
+        fees_pct: 7.7109076
+        net_pct: -8.1476772
+        cost_drag_pct: null
+        avg_trade_duration_bars: 45.76405
+        median_holding_bars: 25.5
+        fees_pct_annualised: 0.16069894
+        gross_per_lot_pct: -0.00017959276
+        fees_per_lot_pct: 0.0031706035
+        turnover_annualised: 3.2677228
+        cost_drag_note: 'gross near zero: a signal finding, not a cost finding'
+  asset_xrp_payment:
+    kind: variant
+    trial_id: run_102:asset_xrp_payment
+    protocol_result_ref: artifacts/variants/asset_xrp_payment/protocol_result.yaml
+    result: FAIL
+    reason: null
+    bars:
+    - name: sharpe_min
+      threshold: 0.0
+      actual: 0.2437553353783088
+      result: PASS
+      basis: portfolio_equal_weight_whole_test_chained_daily_sharpe
+      comparator: '>'
+      note: mean / sample stdev (ddof 1) x sqrt(365), rf 0, of the 730 chained daily
+        return(s); equal-weight portfolio of 1 coin(s) ['XRPUSD'], 6 window(s) chained
+        over DATE..DATE (730 counted day(s), coverage 1.0000, 611 protocol
+        gap day(s), 0 engine edge day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+    - name: deflated_sharpe_threshold
+      threshold: 0.5
+      actual: 0.13139940706606407
+      result: FAIL
+      basis: deflated_sharpe_whole_test_daily_on_campaign_trial_ledger
+      comparator: '>='
+      note: 'artifacts/variants/asset_xrp_payment/protocol_result.yaml: deflated Sharpe
+        (Bailey & Lopez de Prado 2014, D-046) of the whole-test daily Sharpe on the
+        campaign trial ledger; N=8 counted trial(s), K=8 same-basis value(s) (floor
+        10); N and K counted among the trials with this candidate''s own (structure_hash,
+        timeframe) (05c14345bce1.., 1h; campaign-wide N=86, K=37); SR=0.01275873737960075/day
+        over T=730 daily returns, SR0=0.05403755842374036 (sigma null 0.037037037037037035
+        x Z(N) 1.4590140774409899)'
+      detail:
+        status: ok
+        reason: null
+        dsr: 0.13139940706606407
+        sr0: 0.05403755842374036
+        sigma_used: 0.037037037037037035
+        sigma_source: 'null'
+        sigma_null: 0.037037037037037035
+        sigma_cross: null
+        mean_same_basis: null
+        z_expected_max: 1.4590140774409899
+        sr_daily: 0.01275873737960075
+        K: 8
+        N: 8
+        T: 730
+        min_same_basis: 10
+        same_structure:
+          status: keyed
+          structure_hash: 05c14345bce18192399284e94b0b0beb01a758f99bbe9f9fdd0902821bb6a884
+          timeframe: 1h
+          n_same_structure: 8
+          k_same_structure: 8
+          n_campaign_wide: 86
+          k_campaign_wide: 37
+    - name: max_drawdown_pct_max
+      threshold: 20.0
+      actual: 24.01186386274925
+      result: FAIL
+      basis: portfolio_equal_weight_whole_test_chained
+      comparator: <=
+      note: largest peak-to-trough fall of the chained bar-level curve; equal-weight
+        portfolio of 1 coin(s) ['XRPUSD'], 6 window(s) chained over DATE..DATE
+        (730 counted day(s), coverage 1.0000, 611 protocol gap day(s), 0 engine edge
+        day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        peak_ts: 'TIMESTAMP'
+        trough_ts: 'TIMESTAMP'
+        n_bars: 17380
+      advisory: true
+    - name: calmar_min
+      threshold: 0.75
+      actual: 0.12201514325093693
+      result: FAIL
+      basis: portfolio_equal_weight_whole_test_chained_annualised_return_over_drawdown
+      comparator: '>'
+      note: annualised return 0.029298 ((1 + 0.059455)^(365/730) - 1) / drawdown 0.240119;
+        equal-weight portfolio of 1 coin(s) ['XRPUSD'], 6 window(s) chained over DATE..DATE
+        (730 counted day(s), coverage 1.0000, 611 protocol gap day(s), 0 engine edge
+        day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        counted_days: 730
+        max_drawdown_pct: 24.01186386274925
+        formula: annualised_return / (max_drawdown_pct / 100); annualised_return =
+          (1 + total_return)^(365 / counted_days) - 1; total_return = final chained
+          level / first level - 1; counted_days = the chain's n_counted_calendar_days
+          (D-113); max_drawdown_pct = the D-129 whole-test drawdown of the same chain
+        total_return: 0.05945459943351494
+        annualised_return: 0.029298110089353457
+    - name: avg_daily_return_min
+      threshold: 0.0005
+      actual: 0.00013362925886490723
+      result: FAIL
+      basis: portfolio_equal_weight_whole_test_chained_mean_daily_return
+      comparator: '>='
+      note: arithmetic mean of the 730 chained daily simple return(s); equal-weight
+        portfolio of 1 coin(s) ['XRPUSD'], 6 window(s) chained over DATE..DATE
+        (730 counted day(s), coverage 1.0000, 611 protocol gap day(s), 0 engine edge
+        day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+    - name: buy_and_hold_sharpe_excess_min
+      threshold: 0.0
+      actual: -0.546082743763515
+      result: FAIL
+      basis: whole_test_sharpe_minus_buy_and_hold_whole_test_sharpe
+      comparator: '>'
+      note: 'whole-test Sharpe 0.243755 minus equal-weight buy-and-hold''s 0.789838
+        on the same 730 chained day(s), buy-and-hold charged one round trip per coin
+        at {''XRPUSD'': 12.5} bps per side; information: total return 0.059455 vs
+        0.869780; equal-weight portfolio of 1 coin(s) [''XRPUSD''], 6 window(s) chained
+        over DATE..DATE (730 counted day(s), coverage 1.0000, 611 protocol
+        gap day(s), 0 engine edge day(s) excluded, 0 multi-day step(s))'
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        strategy_sharpe: 0.2437553353783088
+        buy_and_hold_sharpe: 0.7898380791418238
+        strategy_total_return: 0.05945459943351494
+        buy_and_hold_total_return: 0.8697802615501511
+        buy_and_hold_gross_return: 0.8744634914295193
+        excess_return: -0.8103256621166361
+        cost_multiplier: 0.9975015625000001
+        cost_per_side_bps:
+          XRPUSD: 12.5
+    - name: trade_frequency_min
+      threshold: 0.01
+      actual: 0.13294896677702933
+      result: PASS
+      basis: pooled_trades_excl_window_closes_per_backtest_bar
+      comparator: '>='
+      note: 2329 trade(s) without end_of_window forced closes / 17518 backtest bar(s),
+        pooled over every coin and window (47 forced close(s) not counted); source
+        variants/asset_xrp_payment/trade_diagnostics.json
+      detail:
+        trades: 2329
+        bars: 17518
+        end_of_window: 47
+        n_coin_windows: 6
+    - name: leave_one_block_out_sharpe_min
+      threshold: 0.0
+      actual: -0.23825654284131453
+      result: FAIL
+      basis: min_whole_test_sharpe_leaving_one_4_month_block_out
+      comparator: '>'
+      note: lowest whole-test Sharpe with one 4-month block left out (block W5),
+        over 6 block(s); equal-weight portfolio of 1 coin(s) ['XRPUSD'], 6 window(s)
+        chained over DATE..DATE (730 counted day(s), coverage 1.0000,
+        611 protocol gap day(s), 0 engine edge day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        worst_block: W5
+        by_block:
+          W1: 0.08877277852466764
+          W2: 0.8536461779944795
+          W3: 0.2258176669114649
+          W4: 0.04849262536354355
+          W5: -0.23825654284131453
+          W6: 0.52978776027228
+    reasons:
+    - 'deflated_sharpe_threshold: FAIL (threshold=0.5, actual=0.13139940706606407)'
+    - 'max_drawdown_pct_max: FAIL (threshold=20.0, actual=24.01186386274925) [advisory,
+      not blocking: D-188]'
+    - 'calmar_min: FAIL (threshold=0.75, actual=0.12201514325093693)'
+    - 'avg_daily_return_min: FAIL (threshold=0.0005, actual=0.00013362925886490723)'
+    - 'buy_and_hold_sharpe_excess_min: FAIL (threshold=0.0, actual=-0.546082743763515)'
+    - 'leave_one_block_out_sharpe_min: FAIL (threshold=0.0, actual=-0.23825654284131453)'
+    forecast_shape:
+      abs_mean_forecast: 6.98791401
+      share_at_cap: 0.01250143
+      abs_mean_allocation: 0.18890982
+      n_bars: 17518
+      n_windows: 6
+    window_economics:
+      windows:
+        XRPUSD/W1:
+          n_bars: 2951
+          trades: 366
+          turnover: 21.280722
+          direction_changes: 41
+          mean_abs_allocation: 0.14913488
+          max_abs_allocation: 0.566763
+          gross_pct: 7.504749
+          fees_pct: 1.0845836
+          net_pct: 6.4201655
+          cost_drag_pct: 14.452
+          avg_trade_duration_bars: 51.54
+          median_holding_bars: 26.0
+          fees_pct_annualised: 0.13414877
+          gross_per_lot_pct: 0.020504779
+          fees_per_lot_pct: 0.0029633432
+          turnover_annualised: 2.6321462
+          cost_drag_note: null
+        XRPUSD/W2:
+          n_bars: 2880
+          trades: 403
+          turnover: 41.746436
+          direction_changes: 48
+          mean_abs_allocation: 0.26133729
+          max_abs_allocation: 1.331056
+          gross_pct: -14.497068
+          fees_pct: 1.825431
+          net_pct: -16.322499
+          cost_drag_pct: 12.5917
+          avg_trade_duration_bars: 46.59
+          median_holding_bars: 25.0
+          fees_pct_annualised: 0.23134803
+          gross_per_lot_pct: -0.035972874
+          fees_per_lot_pct: 0.0045296055
+          turnover_annualised: 5.290781
+          cost_drag_note: null
+        XRPUSD/W3:
+          n_bars: 2928
+          trades: 405
+          turnover: 37.214538
+          direction_changes: 41
+          mean_abs_allocation: 0.24390585
+          max_abs_allocation: 0.829221
+          gross_pct: 3.4023938
+          fees_pct: 1.8314575
+          net_pct: 1.5709364
+          cost_drag_pct: null
+          avg_trade_duration_bars: 48.25
+          median_holding_bars: 27.0
+          fees_pct_annualised: 0.22830669
+          gross_per_lot_pct: 0.0084009723
+          fees_per_lot_pct: 0.0045221173
+          turnover_annualised: 4.6391074
+          cost_drag_note: 'gross near zero: a signal finding, not a cost finding'
+        XRPUSD/W4:
+          n_bars: 2952
+          trades: 417
+          turnover: 39.276336
+          direction_changes: 52
+          mean_abs_allocation: 0.23084905
+          max_abs_allocation: 0.974516
+          gross_pct: 9.9254105
+          fees_pct: 1.9630223
+          net_pct: 7.9623883
+          cost_drag_pct: 19.7777
+          avg_trade_duration_bars: 42.32
+          median_holding_bars: 22.0
+          fees_pct_annualised: 0.24271787
+          gross_per_lot_pct: 0.023801944
+          fees_per_lot_pct: 0.0047074875
+          turnover_annualised: 4.856322
+          cost_drag_note: null
+        XRPUSD/W5:
+          n_bars: 2879
+          trades: 346
+          turnover: 12.064511
+          direction_changes: 33
+          mean_abs_allocation: 0.083024505
+          max_abs_allocation: 0.392548
+          gross_pct: 19.028923
+          fees_pct: 0.6286567
+          net_pct: 18.400267
+          cost_drag_pct: 3.3037
+          avg_trade_duration_bars: 52.0
+          median_holding_bars: 27.0
+          fees_pct_annualised: 0.079701179
+          gross_per_lot_pct: 0.054996888
+          fees_per_lot_pct: 0.0018169269
+          turnover_annualised: 1.5295403
+          cost_drag_note: null
+        XRPUSD/W6:
+          n_bars: 2928
+          trades: 439
+          turnover: 25.923206
+          direction_changes: 49
+          mean_abs_allocation: 0.16459139
+          max_abs_allocation: 0.546832
+          gross_pct: -7.1554191
+          fees_pct: 1.2109065
+          net_pct: -8.3663257
+          cost_drag_pct: 16.9229
+          avg_trade_duration_bars: 45.62
+          median_holding_bars: 27.0
+          fees_pct_annualised: 0.15094975
+          gross_per_lot_pct: -0.01629936
+          fees_per_lot_pct: 0.0027583292
+          turnover_annualised: 3.2315472
+          cost_drag_note: null
+      total:
+        n_bars: 17518
+        trades: 2376
+        turnover: 177.50575
+        direction_changes: 264
+        mean_abs_allocation: 0.18890982
+        max_abs_allocation: 1.331056
+        gross_pct: 18.208989
+        fees_pct: 8.5440576
+        net_pct: 9.6649318
+        cost_drag_pct: null
+        avg_trade_duration_bars: 47.494646
+        median_holding_bars: 26.0
+        fees_pct_annualised: 0.17802152
+        gross_per_lot_pct: 0.007663716
+        fees_per_lot_pct: 0.0035959838
+        turnover_annualised: 3.6984586
+        cost_drag_note: 'gross near zero: a signal finding, not a cost finding'
+  base:
+    kind: variant
+    trial_id: run_102:base
+    protocol_result_ref: artifacts/variants/base/protocol_result.yaml
+    result: FAIL
+    reason: null
+    bars:
+    - name: sharpe_min
+      threshold: 0.0
+      actual: -0.33713394247652784
+      result: FAIL
+      basis: portfolio_equal_weight_whole_test_chained_daily_sharpe
+      comparator: '>'
+      note: mean / sample stdev (ddof 1) x sqrt(365), rf 0, of the 730 chained daily
+        return(s); equal-weight portfolio of 1 coin(s) ['BTCUSD'], 6 window(s) chained
+        over DATE..DATE (730 counted day(s), coverage 1.0000, 611 protocol
+        gap day(s), 0 engine edge day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+    - name: deflated_sharpe_threshold
+      threshold: 0.5
+      actual: 0.03239504100027396
+      result: FAIL
+      basis: deflated_sharpe_whole_test_daily_on_campaign_trial_ledger
+      comparator: '>='
+      note: 'artifacts/variants/base/protocol_result.yaml: deflated Sharpe (Bailey
+        & Lopez de Prado 2014, D-046) of the whole-test daily Sharpe on the campaign
+        trial ledger; N=8 counted trial(s), K=8 same-basis value(s) (floor 10); N
+        and K counted among the trials with this candidate''s own (structure_hash,
+        timeframe) (05c14345bce1.., 1h; campaign-wide N=86, K=37); SR=-0.017646397060936767/day
+        over T=730 daily returns, SR0=0.05403755842374036 (sigma null 0.037037037037037035
+        x Z(N) 1.4590140774409899)'
+      detail:
+        status: ok
+        reason: null
+        dsr: 0.03239504100027396
+        sr0: 0.05403755842374036
+        sigma_used: 0.037037037037037035
+        sigma_source: 'null'
+        sigma_null: 0.037037037037037035
+        sigma_cross: null
+        mean_same_basis: null
+        z_expected_max: 1.4590140774409899
+        sr_daily: -0.017646397060936767
+        K: 8
+        N: 8
+        T: 730
+        min_same_basis: 10
+        same_structure:
+          status: keyed
+          structure_hash: 05c14345bce18192399284e94b0b0beb01a758f99bbe9f9fdd0902821bb6a884
+          timeframe: 1h
+          n_same_structure: 8
+          k_same_structure: 8
+          n_campaign_wide: 86
+          k_campaign_wide: 37
+    - name: max_drawdown_pct_max
+      threshold: 20.0
+      actual: 21.704429031802842
+      result: FAIL
+      basis: portfolio_equal_weight_whole_test_chained
+      comparator: <=
+      note: largest peak-to-trough fall of the chained bar-level curve; equal-weight
+        portfolio of 1 coin(s) ['BTCUSD'], 6 window(s) chained over DATE..DATE
+        (730 counted day(s), coverage 1.0000, 611 protocol gap day(s), 0 engine edge
+        day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        peak_ts: 'TIMESTAMP'
+        trough_ts: 'TIMESTAMP'
+        n_bars: 17381
+      advisory: true
+    - name: calmar_min
+      threshold: 0.75
+      actual: -0.5378033678766005
+      result: FAIL
+      basis: portfolio_equal_weight_whole_test_chained_annualised_return_over_drawdown
+      comparator: '>'
+      note: annualised return -0.116727 ((1 + -0.219829)^(365/730) - 1) / drawdown
+        0.217044; negative total return FAILs; equal-weight portfolio of 1 coin(s)
+        ['BTCUSD'], 6 window(s) chained over DATE..DATE (730 counted day(s),
+        coverage 1.0000, 611 protocol gap day(s), 0 engine edge day(s) excluded, 0
+        multi-day step(s))
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        counted_days: 730
+        max_drawdown_pct: 21.704429031802842
+        formula: annualised_return / (max_drawdown_pct / 100); annualised_return =
+          (1 + total_return)^(365 / counted_days) - 1; total_return = final chained
+          level / first level - 1; counted_days = the chain's n_counted_calendar_days
+          (D-113); max_drawdown_pct = the D-129 whole-test drawdown of the same chain
+        total_return: -0.21982907300301924
+        annualised_return: -0.11672715031142233
+    - name: avg_daily_return_min
+      threshold: 0.0005
+      actual: -0.000246397182566679
+      result: FAIL
+      basis: portfolio_equal_weight_whole_test_chained_mean_daily_return
+      comparator: '>='
+      note: arithmetic mean of the 730 chained daily simple return(s); equal-weight
+        portfolio of 1 coin(s) ['BTCUSD'], 6 window(s) chained over DATE..DATE
+        (730 counted day(s), coverage 1.0000, 611 protocol gap day(s), 0 engine edge
+        day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+    - name: buy_and_hold_sharpe_excess_min
+      threshold: 0.0
+      actual: -1.257104629689624
+      result: FAIL
+      basis: whole_test_sharpe_minus_buy_and_hold_whole_test_sharpe
+      comparator: '>'
+      note: 'whole-test Sharpe -0.337134 minus equal-weight buy-and-hold''s 0.919971
+        on the same 730 chained day(s), buy-and-hold charged one round trip per coin
+        at {''BTCUSD'': 7.5} bps per side; information: total return -0.219829 vs
+        1.178028; equal-weight portfolio of 1 coin(s) [''BTCUSD''], 6 window(s) chained
+        over DATE..DATE (730 counted day(s), coverage 1.0000, 611 protocol
+        gap day(s), 0 engine edge day(s) excluded, 0 multi-day step(s))'
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        strategy_sharpe: -0.33713394247652784
+        buy_and_hold_sharpe: 0.9199706872130963
+        strategy_total_return: -0.21982907300301924
+        buy_and_hold_total_return: 1.1780278229486636
+        buy_and_hold_gross_return: 1.1812985437839085
+        excess_return: -1.3978568959516828
+        cost_multiplier: 0.9985005625
+        cost_per_side_bps:
+          BTCUSD: 7.5
+    - name: trade_frequency_min
+      threshold: 0.01
+      actual: 0.1327130543980821
+      result: PASS
+      basis: pooled_trades_excl_window_closes_per_backtest_bar
+      comparator: '>='
+      note: 2325 trade(s) without end_of_window forced closes / 17519 backtest bar(s),
+        pooled over every coin and window (49 forced close(s) not counted); source
+        variants/base/trade_diagnostics.json
+      detail:
+        trades: 2325
+        bars: 17519
+        end_of_window: 49
+        n_coin_windows: 6
+    - name: leave_one_block_out_sharpe_min
+      threshold: 0.0
+      actual: -0.5628264683294574
+      result: FAIL
+      basis: min_whole_test_sharpe_leaving_one_4_month_block_out
+      comparator: '>'
+      note: lowest whole-test Sharpe with one 4-month block left out (block W2),
+        over 6 block(s); equal-weight portfolio of 1 coin(s) ['BTCUSD'], 6 window(s)
+        chained over DATE..DATE (730 counted day(s), coverage 1.0000,
+        611 protocol gap day(s), 0 engine edge day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        worst_block: W2
+        by_block:
+          W1: -0.4226852874808298
+          W2: -0.5628264683294574
+          W3: -0.2276074065318283
+          W4: -0.21586757180926308
+          W5: -0.4586200265044908
+          W6: -0.1968653581078928
+    reasons:
+    - 'sharpe_min: FAIL (threshold=0.0, actual=-0.33713394247652784)'
+    - 'deflated_sharpe_threshold: FAIL (threshold=0.5, actual=0.03239504100027396)'
+    - 'max_drawdown_pct_max: FAIL (threshold=20.0, actual=21.704429031802842) [advisory,
+      not blocking: D-188]'
+    - 'calmar_min: FAIL (threshold=0.75, actual=-0.5378033678766005)'
+    - 'avg_daily_return_min: FAIL (threshold=0.0005, actual=-0.000246397182566679)'
+    - 'buy_and_hold_sharpe_excess_min: FAIL (threshold=0.0, actual=-1.257104629689624)'
+    - 'leave_one_block_out_sharpe_min: FAIL (threshold=0.0, actual=-0.5628264683294574)'
+    forecast_shape:
+      abs_mean_forecast: 7.04460674
+      share_at_cap: 0.00462355
+      abs_mean_allocation: 0.27297048
+      n_bars: 17519
+      n_windows: 6
+    window_economics:
+      windows:
+        BTCUSD/W1:
+          n_bars: 2952
+          trades: 383
+          turnover: 35.515969
+          direction_changes: 40
+          mean_abs_allocation: 0.24478236
+          max_abs_allocation: 0.766675
+          gross_pct: 3.1357567
+          fees_pct: 1.7578221
+          net_pct: 1.3779346
+          cost_drag_pct: null
+          avg_trade_duration_bars: 49.29
+          median_holding_bars: 29.0
+          fees_pct_annualised: 0.21734589
+          gross_per_lot_pct: 0.0081873543
+          fees_per_lot_pct: 0.0045896138
+          turnover_annualised: 4.3913715
+          cost_drag_note: 'gross near zero: a signal finding, not a cost finding'
+        BTCUSD/W2:
+          n_bars: 2880
+          trades: 363
+          turnover: 56.523976
+          direction_changes: 44
+          mean_abs_allocation: 0.37442457
+          max_abs_allocation: 2.003387
+          gross_pct: 0.3924956
+          fees_pct: 2.5544317
+          net_pct: -2.1619362
+          cost_drag_pct: null
+          avg_trade_duration_bars: 50.45
+          median_holding_bars: 26.0
+          fees_pct_annualised: 0.32373874
+          gross_per_lot_pct: 0.0010812551
+          fees_per_lot_pct: 0.0070370019
+          turnover_annualised: 7.1636289
+          cost_drag_note: 'gross near zero: a signal finding, not a cost finding'
+        BTCUSD/W3:
+          n_bars: 2928
+          trades: 358
+          turnover: 38.942622
+          direction_changes: 48
+          mean_abs_allocation: 0.2602037
+          max_abs_allocation: 1.096151
+          gross_pct: -6.6786432
+          fees_pct: 1.887685
+          net_pct: -8.5663282
+          cost_drag_pct: null
+          avg_trade_duration_bars: 52.22
+          median_holding_bars: 32.0
+          fees_pct_annualised: 0.23531592
+          gross_per_lot_pct: -0.018655428
+          fees_per_lot_pct: 0.0052728631
+          turnover_annualised: 4.8545277
+          cost_drag_note: 'gross near zero: a signal finding, not a cost finding'
+        BTCUSD/W4:
+          n_bars: 2952
+          trades: 412
+          turnover: 54.973915
+          direction_changes: 58
+          mean_abs_allocation: 0.32948817
+          max_abs_allocation: 1.495848
+          gross_pct: -5.9252801
+          fees_pct: 2.4842739
+          net_pct: -8.409554
+          cost_drag_pct: null
+          avg_trade_duration_bars: 44.36
+          median_holding_bars: 25.0
+          fees_pct_annualised: 0.30716801
+          gross_per_lot_pct: -0.014381748
+          fees_per_lot_pct: 0.006029791
+          turnover_annualised: 6.797249
+          cost_drag_note: 'gross near zero: a signal finding, not a cost finding'
+        BTCUSD/W5:
+          n_bars: 2879
+          trades: 421
+          turnover: 25.020077
+          direction_changes: 44
+          mean_abs_allocation: 0.17515265
+          max_abs_allocation: 0.611295
+          gross_pct: 4.678216
+          fees_pct: 1.284403
+          net_pct: 3.393813
+          cost_drag_pct: null
+          avg_trade_duration_bars: 49.07
+          median_holding_bars: 24.0
+          fees_pct_annualised: 0.16283678
+          gross_per_lot_pct: 0.011112152
+          fees_per_lot_pct: 0.0030508385
+          turnover_annualised: 3.1720487
+          cost_drag_note: 'gross near zero: a signal finding, not a cost finding'
+        BTCUSD/W6:
+          n_bars: 2928
+          trades: 437
+          turnover: 36.808011
+          direction_changes: 38
+          mean_abs_allocation: 0.25356542
+          max_abs_allocation: 0.802624
+          gross_pct: -7.3918948
+          fees_pct: 1.7659169
+          net_pct: -9.1578117
+          cost_drag_pct: null
+          avg_trade_duration_bars: 50.13
+          median_holding_bars: 30.0
+          fees_pct_annualised: 0.2201365
+          gross_per_lot_pct: -0.016915091
+          fees_per_lot_pct: 0.0040409998
+          turnover_annualised: 4.5884303
+          cost_drag_note: 'gross near zero: a signal finding, not a cost finding'
+      total:
+        n_bars: 17519
+        trades: 2374
+        turnover: 247.78457
+        direction_changes: 272
+        mean_abs_allocation: 0.27297048
+        max_abs_allocation: 2.003387
+        gross_pct: -11.78935
+        fees_pct: 11.734533
+        net_pct: -23.523882
+        cost_drag_pct: null
+        avg_trade_duration_bars: 49.169242
+        median_holding_bars: 27.0
+        fees_pct_annualised: 0.24448338
+        gross_per_lot_pct: -0.0049660277
+        fees_per_lot_pct: 0.0049429371
+        turnover_annualised: 5.1624732
+        cost_drag_note: 'gross near zero: a signal finding, not a cost finding'
+  split_stretch_weight:
+    kind: variant
+    trial_id: run_102:split_stretch_weight
+    protocol_result_ref: artifacts/variants/split_stretch_weight/protocol_result.yaml
+    result: FAIL
+    reason: null
+    bars:
+    - name: sharpe_min
+      threshold: 0.0
+      actual: 0.08192082557780432
+      result: PASS
+      basis: portfolio_equal_weight_whole_test_chained_daily_sharpe
+      comparator: '>'
+      note: mean / sample stdev (ddof 1) x sqrt(365), rf 0, of the 730 chained daily
+        return(s); equal-weight portfolio of 1 coin(s) ['BTCUSD'], 6 window(s) chained
+        over DATE..DATE (730 counted day(s), coverage 1.0000, 611 protocol
+        gap day(s), 0 engine edge day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+    - name: deflated_sharpe_threshold
+      threshold: 0.5
+      actual: 0.08668513688078067
+      result: FAIL
+      basis: deflated_sharpe_whole_test_daily_on_campaign_trial_ledger
+      comparator: '>='
+      note: 'artifacts/variants/split_stretch_weight/protocol_result.yaml: deflated
+        Sharpe (Bailey & Lopez de Prado 2014, D-046) of the whole-test daily Sharpe
+        on the campaign trial ledger; N=8 counted trial(s), K=8 same-basis value(s)
+        (floor 10); N and K counted among the trials with this candidate''s own (structure_hash,
+        timeframe) (05c14345bce1.., 1h; campaign-wide N=86, K=37); SR=0.004287931986576305/day
+        over T=730 daily returns, SR0=0.05403755842374036 (sigma null 0.037037037037037035
+        x Z(N) 1.4590140774409899)'
+      detail:
+        status: ok
+        reason: null
+        dsr: 0.08668513688078067
+        sr0: 0.05403755842374036
+        sigma_used: 0.037037037037037035
+        sigma_source: 'null'
+        sigma_null: 0.037037037037037035
+        sigma_cross: null
+        mean_same_basis: null
+        z_expected_max: 1.4590140774409899
+        sr_daily: 0.004287931986576305
+        K: 8
+        N: 8
+        T: 730
+        min_same_basis: 10
+        same_structure:
+          status: keyed
+          structure_hash: 05c14345bce18192399284e94b0b0beb01a758f99bbe9f9fdd0902821bb6a884
+          timeframe: 1h
+          n_same_structure: 8
+          k_same_structure: 8
+          n_campaign_wide: 86
+          k_campaign_wide: 37
+    - name: max_drawdown_pct_max
+      threshold: 20.0
+      actual: 21.338606798873816
+      result: FAIL
+      basis: portfolio_equal_weight_whole_test_chained
+      comparator: <=
+      note: largest peak-to-trough fall of the chained bar-level curve; equal-weight
+        portfolio of 1 coin(s) ['BTCUSD'], 6 window(s) chained over DATE..DATE
+        (730 counted day(s), coverage 1.0000, 611 protocol gap day(s), 0 engine edge
+        day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        peak_ts: 'TIMESTAMP'
+        trough_ts: 'TIMESTAMP'
+        n_bars: 17381
+      advisory: true
+    - name: calmar_min
+      threshold: 0.75
+      actual: -0.08911708194390504
+      result: FAIL
+      basis: portfolio_equal_weight_whole_test_chained_annualised_return_over_drawdown
+      comparator: '>'
+      note: annualised return -0.019016 ((1 + -0.037671)^(365/730) - 1) / drawdown
+        0.213386; negative total return FAILs; equal-weight portfolio of 1 coin(s)
+        ['BTCUSD'], 6 window(s) chained over DATE..DATE (730 counted day(s),
+        coverage 1.0000, 611 protocol gap day(s), 0 engine edge day(s) excluded, 0
+        multi-day step(s))
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        counted_days: 730
+        max_drawdown_pct: 21.338606798873816
+        formula: annualised_return / (max_drawdown_pct / 100); annualised_return =
+          (1 + total_return)^(365 / counted_days) - 1; total_return = final chained
+          level / first level - 1; counted_days = the chain's n_counted_calendar_days
+          (D-113); max_drawdown_pct = the D-129 whole-test drawdown of the same chain
+        total_return: -0.03767106608531112
+        annualised_return: -0.01901634370664007
+    - name: avg_daily_return_min
+      threshold: 0.0005
+      actual: 6.87755760287003e-05
+      result: FAIL
+      basis: portfolio_equal_weight_whole_test_chained_mean_daily_return
+      comparator: '>='
+      note: arithmetic mean of the 730 chained daily simple return(s); equal-weight
+        portfolio of 1 coin(s) ['BTCUSD'], 6 window(s) chained over DATE..DATE
+        (730 counted day(s), coverage 1.0000, 611 protocol gap day(s), 0 engine edge
+        day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+    - name: buy_and_hold_sharpe_excess_min
+      threshold: 0.0
+      actual: -0.8380498616352919
+      result: FAIL
+      basis: whole_test_sharpe_minus_buy_and_hold_whole_test_sharpe
+      comparator: '>'
+      note: 'whole-test Sharpe 0.081921 minus equal-weight buy-and-hold''s 0.919971
+        on the same 730 chained day(s), buy-and-hold charged one round trip per coin
+        at {''BTCUSD'': 7.5} bps per side; information: total return -0.037671 vs
+        1.178028; equal-weight portfolio of 1 coin(s) [''BTCUSD''], 6 window(s) chained
+        over DATE..DATE (730 counted day(s), coverage 1.0000, 611 protocol
+        gap day(s), 0 engine edge day(s) excluded, 0 multi-day step(s))'
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        strategy_sharpe: 0.08192082557780432
+        buy_and_hold_sharpe: 0.9199706872130963
+        strategy_total_return: -0.03767106608531112
+        buy_and_hold_total_return: 1.1780278229486636
+        buy_and_hold_gross_return: 1.1812985437839085
+        excess_return: -1.2156988890339746
+        cost_multiplier: 0.9985005625
+        cost_per_side_bps:
+          BTCUSD: 7.5
+    - name: trade_frequency_min
+      threshold: 0.01
+      actual: 0.1000057080883612
+      result: PASS
+      basis: pooled_trades_excl_window_closes_per_backtest_bar
+      comparator: '>='
+      note: 1752 trade(s) without end_of_window forced closes / 17519 backtest bar(s),
+        pooled over every coin and window (45 forced close(s) not counted); source
+        variants/split_stretch_weight/trade_diagnostics.json
+      detail:
+        trades: 1752
+        bars: 17519
+        end_of_window: 45
+        n_coin_windows: 6
+    - name: leave_one_block_out_sharpe_min
+      threshold: 0.0
+      actual: -0.0593536207687157
+      result: FAIL
+      basis: min_whole_test_sharpe_leaving_one_4_month_block_out
+      comparator: '>'
+      note: lowest whole-test Sharpe with one 4-month block left out (block W2),
+        over 6 block(s); equal-weight portfolio of 1 coin(s) ['BTCUSD'], 6 window(s)
+        chained over DATE..DATE (730 counted day(s), coverage 1.0000,
+        611 protocol gap day(s), 0 engine edge day(s) excluded, 0 multi-day step(s))
+      detail:
+        first_day: 'DATE'
+        last_day: 'DATE'
+        n_windows: 6
+        n_daily_returns: 730
+        n_counted_calendar_days: 730
+        coverage: 1.0
+        worst_block: W2
+        by_block:
+          W1: -0.03409575082020998
+          W2: -0.0593536207687157
+          W3: 0.1803613539780259
+          W4: 0.2477506247850411
+          W5: -0.03965902964703931
+          W6: 0.17062045241175633
+    reasons:
+    - 'deflated_sharpe_threshold: FAIL (threshold=0.5, actual=0.08668513688078067)'
+    - 'max_drawdown_pct_max: FAIL (threshold=20.0, actual=21.338606798873816) [advisory,
+      not blocking: D-188]'
+    - 'calmar_min: FAIL (threshold=0.75, actual=-0.08911708194390504)'
+    - 'avg_daily_return_min: FAIL (threshold=0.0005, actual=6.87755760287003e-05)'
+    - 'buy_and_hold_sharpe_excess_min: FAIL (threshold=0.0, actual=-0.8380498616352919)'
+    - 'leave_one_block_out_sharpe_min: FAIL (threshold=0.0, actual=-0.0593536207687157)'
+    forecast_shape:
+      abs_mean_forecast: 7.86853777
+      share_at_cap: 0.00462355
+      abs_mean_allocation: 0.30349069
+      n_bars: 17519
+      n_windows: 6
+    window_economics:
+      windows:
+        BTCUSD/W1:
+          n_bars: 2952
+          trades: 295
+          turnover: 25.076448
+          direction_changes: 20
+          mean_abs_allocation: 0.27379355
+          max_abs_allocation: 0.80049
+          gross_pct: 7.6510853
+          fees_pct: 1.263303
+          net_pct: 6.3877823
+          cost_drag_pct: 16.5114
+          avg_trade_duration_bars: 73.64
+          median_holding_bars: 49.0
+          fees_pct_annualised: 0.15620108
+          gross_per_lot_pct: 0.025935882
+          fees_per_lot_pct: 0.0042823831
+          turnover_annualised: 3.1005771
+          cost_drag_note: null
+        BTCUSD/W2:
+          n_bars: 2880
+          trades: 292
+          turnover: 44.302916
+          direction_changes: 36
+          mean_abs_allocation: 0.41313304
+          max_abs_allocation: 2.005601
+          gross_pct: 5.1683559
+          fees_pct: 2.0428497
+          net_pct: 3.1255062
+          cost_drag_pct: null
+          avg_trade_duration_bars: 68.53
+          median_holding_bars: 48.0
+          fees_pct_annualised: 0.25890283
+          gross_per_lot_pct: 0.017699849
+          fees_per_lot_pct: 0.0069960606
+          turnover_annualised: 5.6147793
+          cost_drag_note: 'gross near zero: a signal finding, not a cost finding'
+        BTCUSD/W3:
+          n_bars: 2928
+          trades: 274
+          turnover: 28.417015
+          direction_changes: 26
+          mean_abs_allocation: 0.28979413
+          max_abs_allocation: 1.254356
+          gross_pct: -4.1622271
+          fees_pct: 1.3960143
+          net_pct: -5.5582414
+          cost_drag_pct: null
+          avg_trade_duration_bars: 75.05
+          median_holding_bars: 54.0
+          fees_pct_annualised: 0.17402501
+          gross_per_lot_pct: -0.01519061
+          fees_per_lot_pct: 0.0050949427
+          turnover_annualised: 3.5424216
+          cost_drag_note: 'gross near zero: a signal finding, not a cost finding'
+        BTCUSD/W4:
+          n_bars: 2952
+          trades: 328
+          turnover: 41.911692
+          direction_changes: 38
+          mean_abs_allocation: 0.36357227
+          max_abs_allocation: 1.450362
+          gross_pct: -6.7898045
+          fees_pct: 1.8701671
+          net_pct: -8.6599716
+          cost_drag_pct: null
+          avg_trade_duration_bars: 62.33
+          median_holding_bars: 38.5
+          fees_pct_annualised: 0.23123679
+          gross_per_lot_pct: -0.020700623
+          fees_per_lot_pct: 0.005701729
+          turnover_annualised: 5.1821706
+          cost_drag_note: 'gross near zero: a signal finding, not a cost finding'
+        BTCUSD/W5:
+          n_bars: 2879
+          trades: 294
+          turnover: 16.057573
+          direction_changes: 26
+          mean_abs_allocation: 0.19681744
+          max_abs_allocation: 0.641912
+          gross_pct: 7.6906874
+          fees_pct: 0.8443854
+          net_pct: 6.846302
+          cost_drag_pct: 10.9793
+          avg_trade_duration_bars: 78.01
+          median_holding_bars: 48.0
+          fees_pct_annualised: 0.10705129
+          gross_per_lot_pct: 0.026158801
+          fees_per_lot_pct: 0.0028720592
+          turnover_annualised: 2.0357812
+          cost_drag_note: null
+        BTCUSD/W6:
+          n_bars: 2928
+          trades: 314
+          turnover: 25.922964
+          direction_changes: 26
+          mean_abs_allocation: 0.28359692
+          max_abs_allocation: 0.83528
+          gross_pct: -3.5579567
+          fees_pct: 1.276224
+          net_pct: -4.8341807
+          cost_drag_pct: null
+          avg_trade_duration_bars: 74.97
+          median_holding_bars: 53.0
+          fees_pct_annualised: 0.15909213
+          gross_per_lot_pct: -0.011331072
+          fees_per_lot_pct: 0.0040644076
+          turnover_annualised: 3.231517
+          cost_drag_note: 'gross near zero: a signal finding, not a cost finding'
+      total:
+        n_bars: 17519
+        trades: 1797
+        turnover: 181.68861
+        direction_changes: 172
+        mean_abs_allocation: 0.30349069
+        max_abs_allocation: 2.005601
+        gross_pct: 6.0001403
+        fees_pct: 8.6929435
+        net_pct: -2.6928032
+        cost_drag_pct: null
+        avg_trade_duration_bars: 71.907635
+        median_holding_bars: 49.0
+        fees_pct_annualised: 0.18111333
+        gross_per_lot_pct: 0.0033389762
+        fees_per_lot_pct: 0.0048374755
+        turnover_annualised: 3.7853954
+        cost_drag_note: 'gross near zero: a signal finding, not a cost finding'
+passing: []
+result: FAIL
+bars_file_sha256: f6706a102bd77a2405c866f14fae4e5c77e68e248c5e4fb5d24a5049fce0a51a

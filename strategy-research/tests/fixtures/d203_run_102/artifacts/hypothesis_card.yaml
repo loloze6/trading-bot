@@ -1,0 +1,163 @@
+hypothesis_id: SMA_PULLBACK_IN_TREND_24H_1H_BTC_FOLD_A__trade_efficiency-run_101-1
+thesis: 'Test a finding the trade_efficiency reader noticed after run_101 on idea
+  SMA_PULLBACK_IN_TREND_24H_1H_BTC_FOLD_A: After bars whose past 168-hour return is
+  in the top 20% of its trailing 500 bars, BTC returns over the next 6 and 24 hours
+  are higher than on other bars. The slow trend leg therefore carries the persistent
+  part of the forecast, and the negated 24-bar stretch leg, which bets on reversal,
+  adds sign flips without a matching reversal edge. Its claim block is pre-filled
+  (candidate.claim). Evidence: q19:horizons.6.effect=0.00086019856; q19:horizons.24.effect=0.0027784451;
+  q19:horizons.6.windows_claimed_sign=5; q19:horizons.24.windows_claimed_sign=4 It
+  backtests on fold B (W1, W2, W3, W4, W5, W6; config/folds.yaml),
+  drawn among the folds its source run run_101 is not on (B, C, D). It starts from
+  run_101''s base config (candidate.start_config) with the finding''s config change:
+  /strategies/regimes/unknown/components/1/weight -> 0.25; -- the block the claim
+  is about.
+
+
+  In the operator''s words, the block is the run_101 trend-minus-stretch forecast
+  with its stretch leg turned down from weight 1.0 to 0.25. The slow trend leg keeps
+  the graded forecast. The negated stretch leg bets on a reversal that the data do
+  not show, so it is kept only as a small correction that adds fewer sign flips.
+
+  '
+idea_quantities:
+- name: trend_leg
+  operator_words: The slow trend leg, the 24-hour SMA minus the 168-hour SMA, scaled
+    against its own recent history.
+  formula: trend_z[t] = standardise(SMA24[t] - SMA168[t]), rolling window 500 bars,
+    min_periods 120; component trend_spread (EMASpreadComponent, average sma, fast
+    24, slow 168), weight 1.0, from the 1h close of the kraken perp feed.
+- name: stretch_leg
+  operator_words: The stretch leg, the distance of price from its 24-hour SMA, negated,
+    so it bets on reversal.
+  formula: stretch_neg[t] = -standardise(distance of close[t] from SMA24[t]), rolling
+    window 500 bars, min_periods 120; component stretch_from_short_sma (MovingAverageDistanceComponent,
+    period 24, average sma) then negate; weight 0.25 (run_101 base had 1.0).
+- name: block_forecast
+  operator_words: The forecast is the trend leg plus the down-weighted negated stretch
+    leg.
+  formula: F[t] = 1.0 * trend_z[t] + 0.25 * stretch_neg[t] on the single unknown regime;
+    the final scale of F is set by step 1b, and vol_target sizing (window 60, target
+    vol 0.2, max allocation 2) only sizes it.
+- name: week_return_quintile
+  operator_words: The past 168-hour return is in the top 20% of its trailing 500 bars,
+    the persistent-trend condition.
+  formula: r168[t] = close[t] / close[t-168] - 1; selected when r168[t] is in the
+    top 20% of the trailing 500 bars of r168 (past only).
+- name: forward_return_6_24
+  operator_words: BTC returns over the next 6 and 24 hours.
+  formula: fwd_h[t] = close[t+h] / close[t] - 1 for h = 6 and h = 24 bars of 1h.
+- name: day_return_quintile
+  operator_words: A top-quintile 24-hour rise is not followed by a reversal, which
+    is what the stretch leg would need.
+  formula: r24[t] = close[t] / close[t-24] - 1, top 20% of the trailing 500 bars;
+    compared with other bars by the mean of fwd_h[t], h = 6 and 24 (the reader's q13
+    finding).
+- name: forecast_sign_changes
+  operator_words: How often the forecast flips sign, which drives turnover and shortens
+    the holding.
+  formula: flip[t] = 1 when sign(F[t-1]) and sign(F[t]) are strictly opposite, else
+    0; the rate of flip[t] over the windows is compared between stretch weight 1.0
+    and 0.25.
+not_expressible: []
+edge_source:
+  category: persistent_behavioral_bias
+  specific_mechanism: After a strong 168-hour BTC rise, trend-following and herding
+    flows keep pushing the price the same way over the next 6 to 24 hours, so the
+    slow SMA24/SMA168 spread carries a persistent part of the forward return. The
+    negated 24-bar stretch leg assumes a pullback that the data (q13, q19) do not
+    show.
+  why_not_arbitraged: Not claimed to be unarbitraged. SMA-trend signals on liquid
+    BTC at 1h are crowded, and the measured effect is small (0.00086 at 6 hours, 0.0028
+    at 24 hours). The only reason it may survive is that the net edge after fees and
+    slippage is too thin to be worth competing for.
+  evidence_type: price_volume_only
+  measurable_proxy: Mean fwd_return at 6 and 24 bars on bars with past_return(168)
+    in the top 20% of the trailing 500 bars, minus the mean on other bars, from the
+    1h kraken perp OHLCV feed; and the median-over-windows correlation of F[t] with
+    the 24-bar forward return.
+library_lookup:
+  indicator_id: moving_average_crossover
+  regime_affinity_for_target: trending favorable, ranging unfavorable, high_vol unfavorable;
+    the block runs ungated on the single unknown regime, so it meets all three.
+  crowding_risk: high
+target_market:
+- BTCUSDT
+timeframe: 1h
+statement:
+  predicts: 'The direction of BTC''s return over the next 24 hours: the forecast F
+    (slow SMA24/SMA168 trend leg plus the negated SMA24-distance leg at weight 0.25)
+    correlates positively with the forward 24-bar return.'
+  predicts_kind: return_direction
+  horizon_bars: 24
+  condition: Every bar of the fold B windows (W1, W2, W3, W4,
+    W5, W6), with no regime gate.
+  if_pass: The slow trend leg carries a persistent forecast of the 24-hour BTC return
+    that survives on unseen fold B windows, and turning the reversal leg down to 0.25
+    keeps it. The idea goes on to the profit bars, where costs still decide.
+  if_fail: The forecast does not rank 24-hour forward returns above the 0.02 median
+    IC level on fold B. The persistence seen on fold A at the bar level is then too
+    weak, or too fold-specific, to carry the forecast, and the idea is refuted as
+    stated.
+criteria:
+- id: forecast_ic_median
+  horizon: 24
+criteria_rationale: The statement predicts the direction of the 24-bar forward return
+  from the forecast over all bars, so it takes the all-bars forecast IC at horizon
+  24, which is the criterion the fold child's brief fixes.
+claim:
+  statement: 'After bars whose past 168-hour return is in the top 20% of its trailing
+    500 bars, BTC returns over the next 6 and 24 hours are higher than on other bars.
+    The slow trend leg therefore carries the persistent part of the forecast, and
+    the negated 24-bar stretch leg, which bets on reversal, adds sign flips without
+    a matching reversal edge.
+
+    '
+  kind: conditional_behaviour
+  tests:
+  - name: week_uptrend_continues
+    selector:
+      kind: quantile
+      field: past_return
+      bars: 168
+      side: top
+      q: 0.2
+      lookback: 500
+    outcome:
+      kind: fwd_return
+      horizons:
+      - 6
+      - 24
+    baseline:
+      kind: complement
+    statistic: mean_diff
+    direction: greater
+    floor:
+      min_events: 100
+      min_windows: 4
+  pass_if: 'On the unseen fold, the top 20% of 168-hour past returns have a higher
+    mean forward return than other bars at both 6 and 24 hours. The effect has the
+    claimed sign in at least 4 of the windows at each horizon, with at least 100 events.
+
+    '
+  fail_if: 'The effect is lower than the baseline at 6 or 24 hours, or has the claimed
+    sign in fewer than 4 windows.
+
+    '
+  rationale: 'Fees per lot exceed gross per lot in 5 of 6 windows (q2), and gross
+    is negative in total. The median lot is held <n> bars, and the forecast changes
+    sign often. The forecast ranks forward returns weakly positively (q9: rank IC
+    <n> at 1 bar, <n> at 24 bars). The top and bottom forecast deciles show no consistent
+    edge (q15, q16). Short lots lose more than long lots (q8). The strategy averages
+    a trend leg (24/168 SMA spread) with a negated distance from the 24-bar SMA. The
+    negated leg bets on reversal, and the data do not show a reversal. After a top-quintile
+    24-hour rise the mean forward return is higher than on other bars, not lower (q13),
+    and after a top-quintile 168-hour rise it is higher at 6 and 24 hours (q19). The
+    negated stretch leg therefore fights the slower trend leg. It shortens the average
+    holding and adds turnover, with no reversal edge to pay for it. Down-weighting
+    that leg keeps the graded trend forecast and cuts the sign changes. Limits: this
+    is a bar-level test on a proxy for the trend leg, and the effect is small. It
+    does not isolate the stretch leg. The child run on the unseen fold is the real
+    test.
+
+    '

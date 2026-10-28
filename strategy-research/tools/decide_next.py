@@ -1594,6 +1594,21 @@ def _append_notes(cand: dict, *notes: str) -> None:
     cand["notes"] = list(cand.get("notes") or []) + [n for n in notes if n]
 
 
+def _same_config_other_fold_note(matched_runs: list, memory) -> str:
+    """D-201: the novelty note of a wildcarded-window REPEAT. The fold is the matched memory
+    entry's own `fold` (campaign_memory writes the run's pre-registered fold); a matched entry
+    without one is said so, never guessed."""
+    runs = ((memory or {}).get("runs") or {})
+    folds = []
+    for run_id in matched_runs:
+        fold = (runs.get(run_id) or {}).get("fold")
+        if fold and fold not in folds:
+            folds.append(str(fold))
+    where = (f"fold {folds[0]}" if len(folds) == 1 else
+             f"folds {', '.join(folds)}" if folds else "another window set (fold not recorded)")
+    return f"same config measured on {where}: a refold is the operator's command (D-122)"
+
+
 def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inputs: dict,
                exact: dict) -> dict:
     pid = p["proposal_id"]
@@ -1741,6 +1756,16 @@ def _candidate(run_id: str, entry: dict, src: dict, category: str, p: dict, inpu
             matched = list(exact.get(key) or [])
             novelty = {"exact_match": "REPEAT" if matched else "NOVEL", "matched_runs": matched,
                        "spec_hashes": list(side_review["spec_hashes"])}
+            if not matched and fold_sha:
+                # D-201 (only with a drawn fold): the same config, coins and bar size already
+                # measured on other windows is a REPEAT too; re-measuring it on another fold
+                # is the operator's refold command (D-122), not a candidate. The exact key
+                # above and the 5a gate are unchanged.
+                other = _nov.matches_on_other_windows(key, exact)
+                if other:
+                    novelty["exact_match"] = "REPEAT"
+                    novelty["matched_runs"] = other
+                    novelty["note"] = _same_config_other_fold_note(other, inputs.get("memory"))
         elif start["config"] is not None:
             novelty = {"exact_match": "NOT_APPLICABLE", "matched_runs": [],
                        "note": "the source run's config, unchanged: a new claim on it",
@@ -2598,6 +2623,26 @@ def fold_protocol(proto: dict, folds_doc: dict, fold: str) -> dict:
             "fold": fold}
 
 
+# D-205: the keys of a source run's memory-entry observation the brief carries to the child
+# (what the source run measured and could not turn into a claim yet).
+# Copied as the entry holds them; a key an entry lacks (an older entry has no `variant` or
+# `floors_met`) is left out, never defaulted.
+SOURCE_OBSERVATION_KEYS = ("statement", "variant", "measured", "floors_met", "vehicle")
+
+
+def source_observations(inputs: dict, run_id: str) -> list:
+    """D-205: the source run's memory-entry `observations`, each reduced to
+    SOURCE_OBSERVATION_KEYS, verbatim. [] when the entry has none."""
+    entry = ((inputs.get("memory") or {}).get("runs") or {}).get(run_id) or {}
+    out = []
+    for o in entry.get("observations") or []:
+        row = ({k: copy.deepcopy(o[k]) for k in SOURCE_OBSERVATION_KEYS if k in o}
+               if isinstance(o, dict) else {})
+        if row:
+            out.append(row)
+    return out
+
+
 def candidate_brief(record: dict, inputs: dict, *, decision_ref: str,
                     copy_criteria_menu: dict | None = None) -> tuple:
     """(rel_path, text) of the brief for record['picked'] (a candidate).
@@ -2765,6 +2810,9 @@ def candidate_brief(record: dict, inputs: dict, *, decision_ref: str,
     else:
         candidate["criteria_from"] = CRITERIA_FROM_1A
     candidate["source"] = source
+    observations = source_observations(inputs, run_id)
+    if observations:
+        candidate["source_observations"] = observations
     front["candidate"] = candidate
     rel = picked["brief_path"]
     text = ("---\n" + yaml.safe_dump(front, sort_keys=False, allow_unicode=True) + "---\n\n"

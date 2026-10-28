@@ -1,0 +1,41 @@
+result: GRID_EVALUATED
+criteria:
+- forecast_ic_median
+variants:
+- asset_ltc_altcoin_l1
+- asset_xrp_payment
+- base
+- split_stretch_weight
+grid:
+  forecast_ic_median:
+    asset_ltc_altcoin_l1:
+      result: FAIL
+      value: -0.000255
+      threshold: 0.02
+      comparator: '>'
+      n_windows: 6
+      n_trades: 2432
+    asset_xrp_payment:
+      result: PASS
+      value: 0.028596
+      threshold: 0.02
+      comparator: '>'
+      n_windows: 6
+      n_trades: 2376
+    base:
+      result: FAIL
+      value: -0.0083525
+      threshold: 0.02
+      comparator: '>'
+      n_windows: 6
+      n_trades: 2374
+    split_stretch_weight:
+      result: FAIL
+      value: -0.013586
+      threshold: 0.02
+      comparator: '>'
+      n_windows: 6
+      n_trades: 1797
+idea_status: refuted
+reason: at least one criterion FAILed with sufficient data on at least one variant
+evaluated_at: 'TIMESTAMP'

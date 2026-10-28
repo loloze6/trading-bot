@@ -175,6 +175,19 @@ def _load_queue() -> dict:
         return yaml.safe_load(f)
 
 
+def _validate_queue_provenance(queue: dict):
+    """The verdict-provenance gate over the WHOLE queue (the check _save_queue runs before
+    it writes): raises vce.UngatedVerdictError for the first entry that fails. Split out so
+    retry-analyst (D-202) can ask "would this queue save?" before it changes anything."""
+    for entry in queue.get("queue") or []:
+        if isinstance(entry, dict):
+            # C7-EXT-R2: the QUEUE schema, not the KB one -- `status`, `priority`
+            # and `relation` are legitimate here and meaningless there.
+            vce.validate_verdict_provenance(
+                entry, entry_ref=f"campaign_queue.yaml entry {entry.get('id')!r}",
+                root=ROOT, schema=record_schema.QUEUE_ENTRY_SCHEMA)
+
+
 def _save_queue(queue: dict):
     """R4 (K4 kernel, 2026-07-13): temp-file-then-os.replace in QUEUE_PATH's
     own directory -- see run_phase1_research.save_yaml's identical rationale.
@@ -191,13 +204,7 @@ def _save_queue(queue: dict):
     kill with nothing behind it. Validating the WHOLE list, not just the entry a
     caller happened to touch, is deliberate: it means a hand edit cannot ride into
     the file behind an unrelated legitimate write."""
-    for entry in queue.get("queue") or []:
-        if isinstance(entry, dict):
-            # C7-EXT-R2: the QUEUE schema, not the KB one -- `status`, `priority`
-            # and `relation` are legitimate here and meaningless there.
-            vce.validate_verdict_provenance(
-                entry, entry_ref=f"campaign_queue.yaml entry {entry.get('id')!r}",
-                root=ROOT, schema=record_schema.QUEUE_ENTRY_SCHEMA)
+    _validate_queue_provenance(queue)
 
     fd, tmp_name = tempfile.mkstemp(prefix=".campaign_queue.", suffix=".tmp",
                                      dir=str(QUEUE_PATH.parent))
@@ -2615,6 +2622,151 @@ def _relaunch_entry(entry_id: str) -> bool:
         return True
     finally:
         campaign_lock.release(lock_path)
+
+
+# D-202: the analyst's second pass on a finished run, by the operator.
+RETRY_ANALYST_HELP = (
+    "D-202: run the analyst stage again on a finished run, by the operator, after its first "
+    "reading was rejected by hand (its minted candidate entry set to `superseded`). Takes the "
+    "campaign lock. Refuses unless the run is `completed`, its queue entry is `done` and the "
+    "run's last, the run is not an operator re-run (refold), carries no campaign-review "
+    "trigger or reframe brief, the analyst and regroup_record flags are on and the run is "
+    "within its token budget. Copies "
+    "artifacts/analyst/, the query logs, proposals/ and decision_record.yaml to "
+    "artifacts/retry_<n>/ (<n> = 1 + the highest retry number there; nothing in the copy is "
+    "changed), "
+    "then removes the live analyst/, the query logs and the two lens readings (the stage "
+    "validates a reading it finds instead of re-running the lens), sets the run `active` at "
+    "pending_stage `analyst` with last_error cleared, and the entry back to `in_progress` with "
+    "a note. Launch with --once: analyst -> regroup_record -> route -> DONE -> decide-next. "
+    "The new readings number their proposals after the archived ones, so a proposal id never "
+    "repeats one the queue already holds.")
+RETRY_ANALYST_NOTE = ("RETRY-ANALYST {at} (operator, retry-analyst, D-202): the analyst stage of "
+                      "{run} runs again; its first result is kept in runs/{run}/artifacts/"
+                      "retry_{n}/ (was {old}).")
+# what the retry folder keeps: the analyst's records, its query logs, its readings and the
+# decision made on them
+# (the two analyst directories come from the orchestrator's own list, so this module never names
+# the query module's directory: test_e075_pr4_queries pins which modules name it)
+RETRY_ARCHIVE_ITEMS = (*reversed(orch._ANALYST_RUN_SCOPED_DIRS), "proposals", "decision_record.yaml")
+
+
+def _retry_analyst_refusal(queue: dict, run_id: str):
+    """(entry, state, refusal): the queue entry that holds `run_id` and the run's state when
+    every precondition of retry-analyst holds, else (None, None, the reason)."""
+    owners = [e for e in queue.get("queue") or []
+              if isinstance(e, dict) and run_id in (e.get("run_ids") or [])]
+    if not owners:
+        return None, None, f"no queue entry holds {run_id!r}."
+    if len(owners) > 1:
+        return None, None, f"{run_id} is held by several entries ({[e.get('id') for e in owners]})."
+    entry = owners[0]
+    status = str(entry.get("status") or "")
+    if status != "done":
+        return None, None, (f"{entry.get('id')} is {status!r}, not 'done' (a run still in the "
+                            f"queue's hands is continued, not re-read).")
+    if (entry.get("run_ids") or [])[-1] != run_id:
+        return None, None, (f"{run_id} is not the last run of {entry.get('id')} "
+                            f"({entry.get('run_ids')}).")
+    run_dir = ROOT / "runs" / run_id
+    state = _run_state(run_id)
+    if state.get("status") != "completed":
+        return None, None, f"{run_id} is status={state.get('status')!r}, not 'completed'."
+    if orch.refold_of(run_dir) is not None:
+        return None, None, (f"{run_id} is an operator re-run (refold, D-122): it has no analyst "
+                            f"pass to repeat.")
+    if state.get(orch.CAMPAIGN_REVIEW_TRIGGER_KEY) or state.get(orch.CAMPAIGN_REVIEW_REFRAME_KEY):
+        return None, None, (f"{run_id} carries a campaign-review state in pipeline_state "
+                            f"({orch.CAMPAIGN_REVIEW_TRIGGER_KEY} / "
+                            f"{orch.CAMPAIGN_REVIEW_REFRAME_KEY}): the DONE branch would "
+                            f"register the review's reframe brief a second time.")
+    try:
+        analyst_on, regroup_on = orch._analyst_enabled(), orch._regroup_record_enabled()
+    except ValueError as exc:
+        return None, None, f"the flags do not resolve ({exc})."
+    if not (analyst_on and regroup_on):
+        return None, None, ("orchestrator.analyst.enabled and orchestrator.regroup_record."
+                            "enabled must both be on: run_loop would fail the run at the "
+                            "analyst stage otherwise.")
+    used, _ = orch._compute_weighted_budget_usage(state.get("audit_log") or {})
+    budget = orch._load_token_budget()
+    if used > budget:
+        return None, None, (f"{run_id} is over its weighted token budget ({used:,.0f} > "
+                            f"{budget:,.0f}): the loop would end it rejected_budget_exceeded.")
+    return entry, state, None
+
+
+def _retry_analyst(run_id: str) -> bool:
+    """retry-analyst --run <run_id> (D-202). Under the campaign lock (the single-writer
+    rule): checks (_retry_analyst_refusal), copies the analyst's artifacts to
+    artifacts/retry_<n>/, clears the live ones the stage would otherwise validate instead
+    of re-run (the same helper protocol_execution uses), puts the run back at
+    pending_stage `analyst` and its entry at `in_progress`. Nothing is minted and
+    decide-next is not called: the next --once does the rest."""
+    lock_path = campaign_lock.lock_path_for(orch.CAMPAIGN_STATE_PATH)
+    try:
+        campaign_lock.acquire(lock_path)
+    except campaign_lock.CampaignLockHeld as exc:
+        print(f"--retry-analyst refused: {exc}")
+        return False
+    try:
+        queue = _load_queue()  # re-read under the lock
+        entry, state, refusal = _retry_analyst_refusal(queue, run_id)
+        if refusal:
+            print(f"RETRY-ANALYST REFUSED: {refusal}")
+            return False
+        run_dir = ROOT / "runs" / run_id
+        arts = run_dir / "artifacts"
+        # 1 + the highest retry number there, not 1 + the count: a folder removed by hand
+        # must never make the next one land on (and overwrite or rmtree) an existing one
+        taken = [int(m.group(1)) for p in arts.glob("retry_*")
+                 if p.is_dir() and (m := re.fullmatch(r"retry_(\d+)", p.name))]
+        n = 1 + max(taken, default=0)
+        dest = arts / f"retry_{n}"
+        # the queue change, made in memory and checked BEFORE any disk change: if the queue
+        # would not save, nothing has happened yet
+        old = entry.get("outcome")
+        entry["status"] = "in_progress"
+        entry["outcome"] = None
+        at = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        note = RETRY_ANALYST_NOTE.format(at=at, run=run_id, n=n, old=old)
+        kept = str(entry.get("notes") or "")
+        entry["notes"] = f"{kept} {note}" if kept else note
+        try:
+            _validate_queue_provenance(queue)
+        except ValueError as exc:
+            print(f"RETRY-ANALYST REFUSED: the queue would not save ({exc}); nothing changed.")
+            return False
+        dest.mkdir()  # n is free (above): a folder this call did not create is never removed
+        try:
+            for name in RETRY_ARCHIVE_ITEMS:
+                src = arts / name
+                if src.is_dir():
+                    shutil.copytree(src, dest / name)
+                elif src.is_file():
+                    shutil.copy2(src, dest / name)
+        except OSError as exc:
+            shutil.rmtree(dest, ignore_errors=True)  # a partial copy is never left behind
+            print(f"RETRY-ANALYST REFUSED: could not archive into {dest} ({exc}); nothing changed.")
+            return False
+        orch._clear_analyst_artifacts(run_dir)
+        orch.update_state(path=run_dir, status="active", pending_stage="analyst",
+                          last_error=None)
+        _save_queue(queue)
+        _regenerate_summary(queue)
+        _log(f"RETRY-ANALYST {entry['id']} / {run_id}: first analyst result kept in "
+             f"artifacts/retry_{n}/; the run is active at pending_stage analyst, the entry "
+             f"in_progress (was done, outcome {old}). Launch with --once.")
+        _write_loop_health()
+        if _schedulability_block_enabled():
+            _write_schedulability()
+        return True
+    finally:
+        campaign_lock.release(lock_path)
+
+
+def _retry_analyst_from_cli(run_id: str) -> int:
+    return 0 if _retry_analyst(run_id) else 1
 
 
 def _approve_entry(entry_id: str) -> bool:
@@ -5816,6 +5968,10 @@ if __name__ == "__main__":
                                help="Queue priority (lower sorts first; default 0). --once "
                                     "runs an in_progress entry first, else the lowest-priority "
                                     "ready one: check the queue before launching.")
+    retry_parser = subparsers.add_parser("retry-analyst", help=RETRY_ANALYST_HELP,
+                                         description=RETRY_ANALYST_HELP)
+    retry_parser.add_argument("--run", required=True,
+                              help="The finished run whose analyst stage runs again, e.g. run_102.")
     args = parser.parse_args()
 
     if Path(".").resolve() != ROOT:
@@ -5829,6 +5985,10 @@ if __name__ == "__main__":
 
     if args.command == "refold":
         sys.exit(_refold_from_cli(args.run, args.fold, args.priority))
+
+    if args.command == "retry-analyst":
+        # Takes and releases the campaign lock itself; launch with --once afterwards.
+        sys.exit(_retry_analyst_from_cli(args.run))
 
     if args.dry_run:
         dry_run_verify()

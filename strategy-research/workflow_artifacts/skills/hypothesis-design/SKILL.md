@@ -73,7 +73,7 @@ A regime idea goes through the same steps.
 - `idea_quantities`: one entry per quantity: the operator's words, then the formula (step 1).
 - `not_expressible`: one entry per exit, position-state or order-placement part of the idea a forecast cannot express (step 1).
 - `edge_source`: `category` (information_asymmetry, structural_forced_flow, liquidity_provision, cross_venue_dislocation or persistent_behavioral_bias), `specific_mechanism`, `why_not_arbitraged`, `evidence_type` (`price_volume_only` when the idea uses price bars alone) and `measurable_proxy`.
-- `library_lookup`: `indicator_id` (the id in `config/indicator_library.yaml` the idea builds on, null if none), `regime_affinity_for_target` and `crowding_risk` (null if `indicator_id` is null). Code groups tried ideas by `indicator_id`.
+- `library_lookup`: `indicator_id` (the id in `config/indicator_library.yaml` the idea builds on, null if none), `regime_affinity_for_target` (one of `favorable`, `unfavorable`, `neutral`, or null) and `crowding_risk` (null if `indicator_id` is null). Code groups tried ideas by `indicator_id`.
 - `target_market`: the coin or coins of the brief.
 - `timeframe`: the bar size of the brief.
 - `statement`: `predicts` is what the forecast predicts. `predicts_kind` is its kind, `return_direction` or `market_state`. `horizon_bars` is how many bars of `timeframe` ahead it looks, an integer of 1 or more. `condition` is when the statement applies. `if_pass` and `if_fail` say what each result would mean for the idea.

@@ -962,6 +962,56 @@ known; if that write fails, the message says so and reconcile will list the run
 as unexpected), and logs `RELAUNCH`. The old run's files and any trial rows are
 left as they are.
 
+### Run the analyst again on a finished run — `retry-analyst` (D-202)
+
+For one case: a run is finished (`completed`, its entry `done`), the analyst's reading of
+it was rejected by hand, and the same run's backtest should be read a second time. No
+backtest is repeated; the two analyst lenses run again (two model calls, charged to the
+run's weighted token budget, which counts the first pass too), and decide-next decides
+again on the new readings. With no campaign running:
+
+1. Reject the first reading by hand. Open `config/campaign_queue.yaml`, find the entry
+   decide-next minted from it (`<category>-<run>-<n>`, `status: ready` or
+   `blocked_on_operator_approval`) and set its `status` to `superseded`. Leave its brief
+   file and `proposal_ref` as they are: they are the record of what was rejected.
+2. Run:
+
+```bash
+PYTHONUTF8=1 ../venv/Scripts/python.exe workflow/run_campaign.py retry-analyst --run <run_id>
+PYTHONUTF8=1 ../venv/Scripts/python.exe workflow/run_campaign.py --once
+```
+
+It takes the campaign lock. It refuses, changing nothing, unless the run is `completed`,
+the queue entry that holds it is `done` and the run is that entry's last, the run is not
+an operator re-run (`refold`), its `pipeline_state.yaml` carries no `campaign_review_trigger`
+or `campaign_review_reframe_brief` (the DONE branch would register that review's reframe
+brief a second time), `orchestrator.analyst` and `orchestrator.regroup_record` are on, and the
+run is within its token budget. It also refuses, changing nothing, if the queue with the
+entry reset would not save (the verdict-provenance check every queue write runs). Otherwise it:
+
+- copies `artifacts/analyst/`, `analyst_queries/`, `proposals/` and `decision_record.yaml`
+  to `artifacts/retry_<n>/` (`<n>` = 1 + the highest `retry_<number>` already there; the copy
+  is never touched again; with no `proposals/` there is simply no copy of it);
+- removes the live `analyst/`, `analyst_queries/` and the two lens readings
+  (`proposals/trade_efficiency.yaml`, `forecast_power.yaml`): the analyst stage validates a
+  reading it finds instead of re-running the lens, and continues a query log it finds, so
+  without this the second pass would be a no-op. Everything else of the run stays;
+- sets the run `status: active`, `pending_stage: analyst`, `last_error: null`, and the
+  entry `in_progress` with `outcome: null` and a note naming the archive;
+- logs `RETRY-ANALYST` and exits.
+
+The `--once` that follows runs the same run: analyst, then `regroup_record` (the run's
+campaign-memory entry, knowledge-base entry and the near-miss scoreboard are written
+again), then the route, DONE, and decide-next (which overwrites
+`artifacts/decision_record.yaml`; the first one is in `retry_<n>/`). The new readings
+number their proposals after the archived ones (`<category>-<run>-2` where `-1` was
+archived), so the new entry and brief never reuse the superseded entry's id. A run whose
+readings had no proposals starts again at `-1`.
+
+If the second pass stops (a pause, a budget stop), nothing is rolled back: resume it as
+any run (section above). A third pass is another `retry-analyst`: it archives to
+`retry_<n+1>/` and counts both archives when it numbers its proposals.
+
 ### Approval mode — `--approve` (E-068 PR 4, D-071, CUL-399)
 
 Under `orchestrator.operator_approval.enabled` (off by default; requires
