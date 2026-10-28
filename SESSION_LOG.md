@@ -1382,3 +1382,32 @@
 3. **Files touched:** PRs #546-#551 (see their diffs) and this PR (SESSION_LOG.md). Operator checkout: none (still at 56da4cd8).
 4. **Next-session prompt (paste verbatim):**
    > You are the implementation lead. Read SESSION_LOG.md's 2026-10-26 implementation-lead entry and CLAUDE.md's working rules. Master is a8dbfdde or later; D-193..D-198 are merged. First check the state read-only: the queue, the registry, the flags in c4/flag-set's campaign_config.yaml (category_reports, specialist_readers, reader_findings, observable_backtest, explore_confirm no longer exist on master), whether the next run was launched on 408a6820 and where it stands, and git status of the checkout. Then act only on the operator's words. A sync to a8dbfdde must merge the checkout's local campaign_config.yaml and feature_flag_register.yaml with D-197/D-198 (five flags removed). Rules: one test process at a time via %TEMP%\claude\scripts\lock_pytest_1026.ps1 / lock_fullsuite_1026.ps1 launched in the background; the venv interpreter only; no trailers; never read local_data or holdout_sealed; never print a sealed-window date.
+
+## 2026-10-28 -- Implementation lead: run_102 analyst-retry window; D-199..D-205 merged (#553-#556); D-206..D-208 (PR-A, #557); checkout not synced
+
+1. **Hypothesis:** the run_102 review found defects in the analyst's inputs and in decide-next, and the operator had no way to run the analyst stage again on a finished run after rejecting its reading. Four PRs (#553-#556, D-199..D-205) fix these and add the retry; the retry itself then revealed three more defects (PR-A, D-206..D-208).
+2. **Result:**
+   - **Runs read:** 1 (run_102, its analyst retry; decision record checked read-only). **PRs merged:** 5 (#553-#556 and PR-A #557) plus this PR. **Blocks in the registry:** not read this window.
+   - **Merged (#553-#556, every PR from origin/master in its own worktree):**
+
+     | PR | Merge | D-rows | What |
+     |---|---|---|---|
+     | #554 | cf9d27e5 | D-199, D-203, D-204 | the all-bars rank-IC refusal skips a test on a component's `signal`; "The run's book" section of the run context, built by code from the run's own artifacts; observations without a cap, `test` any ok query, optional `variant`, `floors_met` rules |
+     | #553 | 9c236b33 | D-201, D-205 | decide-next: a side-finding config already measured on other windows is a REPEAT, not NOVEL; the candidate brief carries the source run's observations (`candidate.source_observations`) |
+     | #555 | ee017765 | D-202 | `run_campaign.py retry-analyst --run <run_id>`: the analyst stage again on a finished run |
+     | #556 | e0c286ac | D-200 | analyst skill text (cost step, the run's book, the D-204 observation shape, the config form for a transform step, the design-variant instruction) and the `regime_affinity` values; hypothesis-design skill hash re-pinned |
+
+   - **run_102 retry outcome:** decide-next picked `forecast_power-run_102-2` (novelty NOVEL; brief `campaign_record/candidate_briefs/forecast_power-run_102-2.md`). `trade_efficiency-run_102-2` read REPEAT, matched run_101 (D-201 working as built).
+   - **PR-A (#557, merge 0d07fb33), three defects the retry revealed:**
+     - D-206: `tools/window_economics.py` `COST_DRAG_NOTE` reads "cost_drag_pct not reported: |gross| under 5x fees (D-168)" in place of "gross near zero: a signal finding, not a cost finding"; the 5x rule is unchanged; one emitter (both callers go through `window_economics.window_economics`); recorded runs and their fixture copies keep the old text.
+     - D-207: analyst SKILL.md: Orient makes `window_economics` on every variant (0 comparisons each) mandatory before any outcome, with what changed between the base and each design variant (trades, turnover, direction changes, fees, gross, net); a claim's rationale says which way its vehicle moves the turnover. No hash pin of an analyst skill file exists.
+     - D-208: the analyst memory view: a memory claim carries its finding's `vehicle` when it has one (none does today: `build_finding` writes no vehicle); each component line ends with "; weight <w>". The run_102 analyst prompt: forecast 223480 -> 224517 characters, trade_efficiency 223858 -> 224895.
+     - Tests: targeted 963 passed, 529 after the review fix. Full suite: trading-bot 1428 passed; strategy-research 7699 passed, 18 failed. 1 of the 18 is the expected zstandard test (`test_shard_reader.py::test_compacted_shard_reads_identically`). The other 17 (`test_holdout_date_gate.py`, `test_supervisor_sh.py`) fail because `system32ash.EXE` is the WSL launcher with no distro; the same 17 fail on pristine origin/master. One Sonnet review round. It found that the vehicle was lost when a fold row replaces the claim; that is fixed and tested.
+   - **Parked (operator decisions at the run_102 retry review):**
+     - more claims per lens: trigger, two runs in a row leave decide-next a single eligible candidate; then K = 2 claims per lens (the second differs from the first in both signal and vehicle component; each lens's first claim is ranked before any lens's second; analyst budget $4.00). Reason: run_102's single candidate came from a blind spot (the lens could not see the parent's vehicle and weights, D-208), not from the one-claim rule;
+     - book figures get a citation form (today a book figure quoted in a claim's prose is masked as `<n>`: only `q<n>` citations exist);
+     - the candidate brief copies the parent's `base_book` row beside the source observations;
+     - the retry-analyst cleanup log line says "protocol_execution re-run" (shared helper; cosmetic).
+3. **Files touched:** PRs #553-#556 and PR-A #557 (see their diffs) and this PR (SESSION_LOG.md). Operator checkout: none (still at adc2f737, branch c4/flag-set).
+4. **Next-session prompt (paste verbatim):**
+   > You are the implementation lead. Read SESSION_LOG.md's 2026-10-28 implementation-lead entry and CLAUDE.md's working rules. Master is 0d07fb33 or later; D-199..D-208 are merged. First check the state read-only: the queue (forecast_power-run_102-2 should be its next entry), the registry, the flags in c4/flag-set's campaign_config.yaml, whether the next run was launched and where it stands, and git status of the checkout. Then act only on the operator's words. Rules: one test process at a time via %TEMP%\claude\scripts\lock_pytest_1026.ps1 / lock_fullsuite_1026.ps1 launched in the background; the venv interpreter only; no trailers; never read local_data or holdout_sealed; never print a sealed-window date.
