@@ -6,6 +6,8 @@ good" (engineering/roadmap/E-075/ANALYST_SKILL_REVIEW_1.md P5; plan A1.11 item
 
     claim_id, source_run, statement, kind, fold_observed, fold_confirmed, status
 
+(and, D-208, a memory claim's `vehicle` when its finding has one, copied as data)
+
 with status one of `confirmed`, `not_confirmed`, `not_measurable`, `pending`, and
 numbers (the confirmed effect and the per-window agreement, with the fold) for
 CONFIRMED claims only. Each fold a claim was measured on (`folds`) also shows, for
@@ -216,13 +218,17 @@ def _memory_claims(memory: dict) -> list:
         if not isinstance(f, dict):
             continue
         tests = f.get("tests") or []
-        out.append({
+        row = {
             "claim_id": f.get("finding_id") or f"F-{rid}-1", "source_run": str(rid),
             "statement": _statement(f.get("statement")),
             "kind": _kind(f.get("kind")),
             "fold_observed": entry.get("fold"), "fold_confirmed": None,
             "status": PENDING if tests else NOT_MEASURABLE,
-            "tests": _specs(tests)})
+            "tests": _specs(tests)}
+        # D-208: the finding's vehicle, copied as data (as an observation's is), when it has one
+        if f.get("vehicle") is not None:
+            row["vehicle"] = copy.deepcopy(f["vehicle"])
+        out.append(row)
     return out
 
 
@@ -361,8 +367,9 @@ def _kv(params) -> str:
 def strategy_summary(config) -> list | None:
     """The components of a run's base strategy config, one line each, written by code from
     the config (no model text; parameters stay readable, as test specs do):
-    `<regime>/<id>: <Class>(<params>); transforms <op>(<params>) ...`. None if the config
-    has no component."""
+    `<regime>/<id>: <Class>(<params>); transforms <op>(<params>) ...; weight <w>`, the weight
+    (a sibling of params in the config, D-208) only when the component has one. None if the
+    config has no component."""
     strategies = config.get("strategies") if isinstance(config, dict) else None
     regimes = strategies.get("regimes") if isinstance(strategies, dict) else None
     if not isinstance(regimes, dict):
@@ -381,6 +388,8 @@ def strategy_summary(config) -> list | None:
                 if ops:
                     line += f"; {key} " + " ".join(f"{t.get('op')}({_kv(t.get('params'))})"
                                                    for t in ops)
+            if c.get("weight") is not None:
+                line += f"; weight {c['weight']}"
             out.append(line)
     return out or None
 
@@ -406,6 +415,8 @@ def build_memory_view(memory: dict, ledger: dict | None = None,
             for key in ("statement", "kind", "source_run", "fold_observed"):
                 if c.get(key) is None:
                     c[key] = old.get(key)
+            if "vehicle" in old and c.get("vehicle") is None:    # D-208: the finding's vehicle
+                c["vehicle"] = old["vehicle"]
         by_id[c["claim_id"]] = c                       # the ledger knows what became of it
     claims = list(by_id.values())
     runs = (memory or {}).get("runs") or {}

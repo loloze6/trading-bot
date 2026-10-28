@@ -1419,7 +1419,7 @@ _BASE_074 = {"regime_detector": {}, "strategies": {"regimes": {
                        {"op": "scale", "params": {"factor": 10.0}}]}]},
     "trending": None, "mean_reversion": None, "chop": None}}}
 _LINE_074 = ("unknown/shock_zscore: PriceOverextensionHedgeComponent(period=21, "
-             "scaling_factor=1.0); transforms ema(span=2) scale(factor=10.0)")
+             "scaling_factor=1.0); transforms ema(span=2) scale(factor=10.0); weight 1.0")
 
 
 def test_the_strategy_summary_is_one_code_written_line_per_component():
@@ -1429,7 +1429,49 @@ def test_the_strategy_summary_is_one_code_written_line_per_component():
     comp["history_transforms"] = [{"op": "zscore", "params": {"window": 20}}]
     assert amv.strategy_summary(two) == [
         "unknown/shock_zscore: PriceOverextensionHedgeComponent(period=21, scaling_factor=1.0)"
-        "; history_transforms zscore(window=20); transforms ema(span=2) scale(factor=10.0)"]
+        "; history_transforms zscore(window=20); transforms ema(span=2) scale(factor=10.0)"
+        "; weight 1.0"]
+
+
+def test_d208_the_strategy_summary_line_carries_the_components_weight_only_when_it_has_one():
+    cfg = json.loads(json.dumps(_BASE_074))
+    comps = cfg["strategies"]["regimes"]["unknown"]["components"]
+    comps.append({**comps[0], "id": "second", "weight": 0.25})
+    comps.append({k: v for k, v in comps[0].items() if k != "weight"} | {"id": "third"})
+    comps.append({**comps[0], "id": "fourth", "weight": None})
+    lines = amv.strategy_summary(cfg)
+    assert lines[1].endswith("; transforms ema(span=2) scale(factor=10.0); weight 0.25")
+    assert lines[2].endswith("; transforms ema(span=2) scale(factor=10.0)")
+    assert lines[3].endswith("; transforms ema(span=2) scale(factor=10.0)")
+    assert all("weight" not in ln.split(")", 1)[0] for ln in lines)     # never inside params
+
+
+def test_d208_a_memory_claim_carries_the_findings_vehicle_copied_as_data():
+    memory = _run074_memory()
+    vehicle = {"base_config_patch": [{"op": "replace", "path": "/x", "value": 1}]}
+    memory["runs"]["run_074"]["finding"]["vehicle"] = vehicle
+    view = amv.build_memory_view(memory, {})
+    c = next(c for c in view["claims"] if c["claim_id"] == "F-run_074-1")
+    assert c["vehicle"] == vehicle and c["vehicle"] is not vehicle
+    assert c["vehicle"]["base_config_patch"] is not vehicle["base_config_patch"]
+    other = next(c for c in view["claims"] if c["claim_id"] == "F-run_073-1")
+    assert "vehicle" not in other                                  # the finding has none
+
+
+def test_d208_the_claim_vehicle_survives_a_fold_row_of_the_same_id(tmp_path):
+    memory = _run074_memory()
+    vehicle = {"base_config_patch": [{"op": "replace", "path": "/x", "value": 1}]}
+    memory["runs"]["run_074"]["finding"]["vehicle"] = vehicle
+    row = dict(_same_claim_on("B", "run_080", "not_confirmed"), finding_id="F-run_074-1",
+               statement=RUN074_STATEMENT)
+    e072 = {"F-run_074-1": {"finding_id": "F-run_074-1", "status": "pending",
+                            "statement": RUN074_STATEMENT}}
+    view = amv.build_memory_view(memory, _write_ledger(tmp_path, [row], e072))
+    c = next(c for c in view["claims"] if c["claim_id"] == "F-run_074-1")
+    assert c["status"] == "not_confirmed" and c["vehicle"] == vehicle
+    no_vehicle = amv.build_memory_view(_run074_memory(), _write_ledger(tmp_path, [row], e072))
+    assert "vehicle" not in next(c for c in no_vehicle["claims"]
+                                 if c["claim_id"] == "F-run_074-1")
 
 
 @pytest.mark.parametrize("junk", [None, {}, [], "x", {"strategies": None},

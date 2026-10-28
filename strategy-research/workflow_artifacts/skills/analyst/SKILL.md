@@ -84,6 +84,9 @@ lens.
    `distribution` gives bin counts, whose end bins hold the bars at or near the clip; a lot
    count with a filter on `entry_forecast` costs nothing. A forecast
    at the clip on most bars is on/off in practice, and the mechanisms start there.
+   Mandatory, before any outcome: run `window_economics` on every variant of the run
+   (`variant`: its id; 0 comparisons each), and state in your answer what changed between the
+   base and each design variant: trades, turnover, direction changes, fees, gross, net.
 2. **Cost.** When fees exceed the gross in most windows, find the cause of the turnover before any claim, and measure it. Causes you have seen: the whole forecast flips sign on most bars, one component flips far more than the others, the sizing turns small forecasts into full trades, the min-change gate lets many small rebalances through. A claim whose vehicle changes the turnover says in which direction.
 3. **Find the surprise.** One place where the market or the strategy does what the run's design
    did not expect. A surprise is a conditional difference, not a level: "losing" is not a
@@ -382,6 +385,7 @@ fewer.
   the sizing turns small forecasts into full trades, the min-change gate lets many small
   rebalances through, the forecast is large when the move is small, the signal predicts only
   the next bar); its test tests that cause; its vehicle changes that cause.
+- A claim's rationale says in which direction its vehicle moves the turnover (step 2).
 - A trade test may not select lots by an exit-time field (`holding_bars`, `exit_cause`) and
   measure the same lots' own result (`trade_net_return` or `trade_gross_return`): it is near-mechanical (a losing lot stays
   open longer). Select on an entry-time field (side, entry_hour, entry_weekday,

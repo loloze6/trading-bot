@@ -199,7 +199,7 @@ def test_cost_drag_is_withheld_with_the_note_when_gross_is_near_zero(tmp_path):
     cell, tot = c["windows"]["X/w"], c["total"]
     for x in (cell, tot):
         assert x["cost_drag_pct"] is None
-        assert x["cost_drag_note"] == "gross near zero: a signal finding, not a cost finding"
+        assert x["cost_drag_note"] == "cost_drag_pct not reported: |gross| under 5x fees (D-168)"
     # the other fields are what they are with the run's cost drag of 300 % in the core
     assert cell["gross_pct"] == approx(0.1) and cell["fees_pct"] == approx(0.3)
     assert cell["net_pct"] == approx(-0.2) and cell["trades"] == 2
