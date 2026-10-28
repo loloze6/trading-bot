@@ -51,7 +51,7 @@ DERIVED from the cell's own figures above (D-168, 2026-10-21; None when an input
   fees_per_lot_pct     fees_pct / trades (the same, for fees)
   turnover_annualised  turnover x 365 / n_bars
   cost_drag_pct        reported only when abs(gross_pct) >= 5 x fees_pct; otherwise None and
-                       cost_drag_note = "gross near zero: a signal finding, not a cost finding"
+                       cost_drag_note = "cost_drag_pct not reported: |gross| under 5x fees (D-168)"
                        (cost_drag_note is None otherwise; a cell with no gross or no fees figure
                        cannot be judged and keeps the read cost_drag_pct)
 `total`: trades, turnover, direction_changes and the three *_pct summed over the cells (each
@@ -108,7 +108,7 @@ CELL_KEYS = ("n_bars", "trades", "turnover", "direction_changes", "mean_abs_allo
 ANNUALISE_BARS = 365
 #: D-168: cost_drag_pct is reported only when abs(gross_pct) >= COST_DRAG_MIN_GROSS_X x fees_pct
 COST_DRAG_MIN_GROSS_X = 5
-COST_DRAG_NOTE = "gross near zero: a signal finding, not a cost finding"
+COST_DRAG_NOTE = "cost_drag_pct not reported: |gross| under 5x fees (D-168)"
 
 
 def _r8(v):

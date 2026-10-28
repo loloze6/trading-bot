@@ -495,7 +495,7 @@ analyst flag on; null when the windows cannot be read). All figures are post-run
 | `gross_per_lot_pct` | `gross_pct` / `trades`: the mean over the window's lots of the lot's gross, as a percent of the window's starting account. Null without lots or without a gross. | % of V0 per lot | derived |
 | `fees_per_lot_pct` | `fees_pct` / `trades`: the same for fees. Read it against `gross_per_lot_pct`. Null without lots or without fees. | % of V0 per lot | derived |
 | `turnover_annualised` | `turnover` x 365 / `n_bars`. Null when `turnover` is null. | alloc per 365 bars | derived |
-| `cost_drag_note` | "gross near zero: a signal finding, not a cost finding" when `cost_drag_pct` was withheld by the 5 x `fees_pct` test (see `cost_drag_pct`); otherwise null. | text | derived |
+| `cost_drag_note` | "cost_drag_pct not reported: \|gross\| under 5x fees (D-168)" when `cost_drag_pct` was withheld by the 5 x `fees_pct` test (see `cost_drag_pct`); otherwise null. | text | derived |
 
 Read, not recomputed (operator ruling 2026-10-19): a figure marked read is the run's own number.
 Nothing is summed from the lots of `trades.json` and nothing is re-derived from the bars. A
