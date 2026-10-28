@@ -172,15 +172,31 @@
           "description": "Operator 2026-10-19 (PR-A; tools/campaign_memory.py::analyst_observations), OPTIONAL: present only when an analyst session of this run ended accepted with outcome no_claim and recorded observations (artifacts/analyst/<lens>.yaml no_claim.observations) -- behaviour measured with no strategy change following from it yet. The memory view shows them as 'observed, no vehicle yet'. Never a claim: no vehicle, nothing confirmed.",
           "items": {
             "type": "object",
-            "required": ["lens", "statement", "test", "evidence", "floors_met", "spec", "ref"],
+            "required": ["lens", "statement", "test", "evidence", "floors_met", "ref"],
+            "anyOf": [
+              { "required": ["id", "variant", "measured", "fold_observed"] },
+              { "required": ["spec"] }
+            ],
             "additionalProperties": false,
             "properties": {
               "lens": { "enum": ["forecast", "trade_efficiency"] },
+              "id": { "type": "string", "pattern": "^O-.+-[0-9]+$", "description": "D-204: code-written, O-<run>-<lens>-<n>." },
               "statement": { "type": "string", "minLength": 1 },
-              "test": { "type": "string", "pattern": "^q[0-9]+$" },
-              "evidence": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
-              "floors_met": { "type": "boolean" },
-              "spec": { "type": "object" },
+              "test": { "type": "string", "pattern": "^q[0-9]+$", "description": "D-204: any ok query of the session." },
+              "evidence": { "type": "array", "items": { "type": "string" } },
+              "floors_met": { "type": ["boolean", "null"], "description": "D-204: null for a tool without floors." },
+              "variant": { "type": "string" },
+              "measured": { "type": "object", "description": "D-204: code-written {function, params, statistic} plus, for a conditional_effect, its spec." },
+              "fold_observed": { "type": ["string", "null"] },
+              "spec": { "type": "object", "description": "LEGACY (before D-204): the measured test block's spec." },
+              "mechanism_query": { "type": "string" },
+              "stopped_by": { "type": "string" },
+              "floor_lowered": { "type": "object" },
+              "angle": { "enum": ["regime", "sizing"] },
+              "vehicle": {},
+              "unreported_by_model": { "const": true },
+              "effect": { "type": ["object", "null"] },
+              "windows": { "type": ["object", "null"] },
               "ref": { "type": "string" }
             }
           }

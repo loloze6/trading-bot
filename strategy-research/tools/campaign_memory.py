@@ -409,14 +409,21 @@ def _proposals_block(run_dir: Path, run_id: str, categories) -> list:
 # Operator, 2026-10-19 (PR-A): what an analyst session measured but could not turn into a
 # claim yet (no strategy change follows from it): an ACCEPTED no_claim's `observations` in
 # artifacts/analyst/<lens>.yaml (analyst_session.OBSERVATION_KEYS plus the code-written
-# `spec`), copied into the entry's `observations` with the lens and the record's ref. The
+# fields), copied into the entry's `observations` with the lens and the record's ref. The
 # key is absent -- not [] -- when no lens recorded one, so every other entry is unchanged.
-OBSERVATION_FIELDS = ("statement", "test", "evidence", "floors_met", "spec")
+# D-204 (operator, 2026-10-28): the recorded shape is OBSERVATION_FIELDS -- the code-written `id`
+# (O-<run>-<lens>-<n>), `measured` (function, params, statistic, and a conditional_effect's
+# spec), `variant`, `fold_observed` -- and `test` is any ok query of the session (`floors_met` is
+# null for a tool without floors). An older record written with the shape before D-204 (no id,
+# `spec` in place of `measured`; LEGACY_OBSERVATION_FIELDS) still loads and is copied as it is.
+OBSERVATION_FIELDS = ("id", "statement", "test", "evidence", "floors_met", "variant", "measured",
+                      "fold_observed")
+LEGACY_OBSERVATION_FIELDS = ("statement", "test", "evidence", "floors_met", "spec")
 # D-178 (operator item D, 2026-10-22): optional fields the analyst's code or model adds to a
 # recorded observation; copied when present, so the direction review can list
 # `angle: sizing` observations and the memory shows a lowered floor.
 OBSERVATION_OPTIONAL_FIELDS = ("mechanism_query", "stopped_by", "floor_lowered", "angle",
-                               "vehicle")
+                               "vehicle", "unreported_by_model", "effect", "windows")
 
 
 def analyst_observations(run_dir: Path, run_id: str) -> list:
@@ -448,12 +455,17 @@ def analyst_observations(run_dir: Path, run_id: str) -> list:
         if not isinstance(obs, list):
             raise CampaignMemoryError(f"{path}: the observations are not a list")
         for i, o in enumerate(obs):
-            if not isinstance(o, dict) or not set(OBSERVATION_FIELDS) <= set(o) \
-                    or set(o) - set(OBSERVATION_FIELDS) - set(OBSERVATION_OPTIONAL_FIELDS):
+            known = set(OBSERVATION_FIELDS) | set(LEGACY_OBSERVATION_FIELDS) \
+                | set(OBSERVATION_OPTIONAL_FIELDS)
+            if not isinstance(o, dict) or o.keys() - known \
+                    or not any(set(req) <= set(o)
+                               for req in (OBSERVATION_FIELDS, LEGACY_OBSERVATION_FIELDS)):
                 raise CampaignMemoryError(f"{path}: observations[{i}] is not exactly "
-                                          f"{list(OBSERVATION_FIELDS)} (plus, where they apply, "
-                                          f"{list(OBSERVATION_OPTIONAL_FIELDS)})")
-            out.append({"lens": lens, **{k: o[k] for k in OBSERVATION_FIELDS},
+                                          f"{list(OBSERVATION_FIELDS)} (or, written before D-204, "
+                                          f"{list(LEGACY_OBSERVATION_FIELDS)}; plus, where they "
+                                          f"apply, {list(OBSERVATION_OPTIONAL_FIELDS)})")
+            fields = [k for k in (*OBSERVATION_FIELDS, *LEGACY_OBSERVATION_FIELDS) if k in o]
+            out.append({"lens": lens, **{k: o[k] for k in dict.fromkeys(fields)},
                         **{k: o[k] for k in OBSERVATION_OPTIONAL_FIELDS if k in o},
                         "ref": _ref(run_id, rel)})
     return out

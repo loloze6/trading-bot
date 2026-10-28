@@ -109,8 +109,9 @@ OBSERVATIONS_NOTE = ("behaviour an earlier session measured with no strategy cha
                      "describes only the strategy of its source run (`source_strategy`)")
 # Operator, 2026-10-19: the view keeps the newest OBSERVATION_ROWS_MAX observation rows, the same
 # mechanism as campaign_memory.TRIED_IDEAS_MAX_ROWS (newest by the source run's recorded_at, run
-# order breaks ties; the older ones are counted, not listed).
-OBSERVATION_ROWS_MAX = 20
+# order breaks ties; the older ones are counted, not listed). D-204 (2026-10-28): 20 -> 100, the
+# recorded count no longer being capped per answer.
+OBSERVATION_ROWS_MAX = 100
 FLOOR_UNITS = ("min_events", "min_windows", "min_eras", "min_blocks")   # claim_tests.FLOOR_UNITS
 # operator, 2026-10-08: confirmed on any fold wins; a refutation on another fold stays in `folds`
 _FOLD_STATUS_ORDER = (CONFIRMED, NOT_CONFIRMED, NOT_MEASURABLE)   # the first present wins
@@ -250,20 +251,38 @@ def _memory_observations(memory: dict) -> list:
         for j, o in enumerate(obs if isinstance(obs, list) else []):
             if not isinstance(o, dict):
                 continue
-            spec = o.get("spec") if isinstance(o.get("spec"), dict) else {}
-            test = {"spec_hash": spec.get("spec_hash"),
-                    **{k: copy.deepcopy(spec[k]) for k in TEST_SPEC_KEYS if k in spec}}
-            floor = _floor(spec)
-            if floor is not None:
-                test["floor"] = floor
-            keyed.append(((str(entry.get("recorded_at") or ""), _run_order(str(rid)), j), {
-                "source_run": str(rid), "lens": o.get("lens"),
-                "statement": _statement(o.get("statement")),
-                "fold_observed": entry.get("fold"),
-                "floors_met": o.get("floors_met") if isinstance(o.get("floors_met"), bool)
-                else None,
-                "status": OBSERVED,
-                "test": test}))
+            # D-204: `measured` (function, params, statistic and a conditional_effect's spec); a
+            # record written before it has `spec`, the same slots
+            spec = o.get("measured") if isinstance(o.get("measured"), dict) \
+                else o.get("spec") if isinstance(o.get("spec"), dict) else {}
+            fn = spec.get("function")
+            if isinstance(fn, str) and fn != "conditional_effect":
+                # a tool without a test block: what was asked of it (no result)
+                test = {"function": fn,
+                        "params": copy.deepcopy(spec.get("params"))
+                        if isinstance(spec.get("params"), dict) else {}}
+            else:
+                test = {"spec_hash": spec.get("spec_hash"),
+                        **{k: copy.deepcopy(spec[k]) for k in TEST_SPEC_KEYS if k in spec}}
+                floor = _floor(spec)
+                if floor is not None:
+                    test["floor"] = floor
+            row = {"source_run": str(rid), "lens": o.get("lens"),
+                   "statement": _statement(o.get("statement")),
+                   "fold_observed": entry.get("fold") or o.get("fold_observed"),
+                   "floors_met": o.get("floors_met") if isinstance(o.get("floors_met"), bool)
+                   else None,
+                   "status": OBSERVED,
+                   "test": test}
+            if isinstance(o.get("id"), str):
+                row = {"id": o["id"], **row}
+            if isinstance(o.get("variant"), str):
+                row["variant"] = o["variant"]
+            if o.get("vehicle") is not None:
+                row["vehicle"] = copy.deepcopy(o["vehicle"])
+            if o.get("unreported_by_model") is True:
+                row["unreported_by_model"] = True
+            keyed.append(((str(entry.get("recorded_at") or ""), _run_order(str(rid)), j), row))
     keyed.sort(key=lambda kr: kr[0])
     return [row for _k, row in keyed]
 

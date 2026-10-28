@@ -114,12 +114,15 @@ def test_a_no_claim_with_valid_observations_is_accepted_and_recorded():
     for o, (qid, h) in zip(recorded, (("q7", "hq7"), ("q8", "hq8"))):
         # D-178 (operator 2026-10-23): re-pinned with the angle tags on; these LONG-selector trade
         # tests are not regime findings, so no `angle` key is recorded
-        assert set(o) == set(asm.OBSERVATION_KEYS) | {"spec"}
+        # D-204: the code adds id, variant, measured and fold_observed (the model's `variant`
+        # is optional: code writes the test query's own)
+        assert set(o) == set(asm.OBSERVATION_KEYS) | {"id", "variant", "measured",
+                                                      "fold_observed"}
         assert o["test"] == qid and o["floors_met"] is True
-        # the spec is code-written: the measured test block without its result, plus its hash
-        assert o["spec"]["spec_hash"] == h and o["spec"]["selector"] == LONG
-        assert o["spec"]["floor"] == {"min_events": 5}
-        assert "horizons" not in o["spec"] and "effect" not in o["spec"]
+        # `measured` is code-written: the measured test block without its result, plus its hash
+        assert o["measured"]["spec_hash"] == h and o["measured"]["selector"] == LONG
+        assert o["measured"]["floor"] == {"min_events": 5}
+        assert "horizons" not in o["measured"] and "effect" not in o["measured"]
     assert rec["outcome"] == "no_claim" and reading["side_findings"] == []
 
 
@@ -170,17 +173,19 @@ _BAD_ROW = dict(ROW, n_events=2)
     (["just text"], None, "must have exactly the keys"),
     ([_obs(statement="   ")], None, "statement must be a non-empty text"),
     ([_obs(statement=3)], None, "statement must be a non-empty text"),
-    ([_obs(test="q3")], None, "must be the id of an ok conditional_effect call"),
-    ([_obs(test="q99")], None, "must be the id of an ok conditional_effect call"),
-    ([_obs()], _entries(status="error"), "must be the id of an ok conditional_effect call"),
+    # D-204: any ok query is a test; a trade_slice has no floors, so floors_met must be null
+    ([_obs(test="q3")], None, "floors_met must be null"),
+    ([_obs(test="q99")], None, "must be the id of an ok query"),
+    ([_obs()], _entries(status="error"), "must be the id of an ok query"),
     ([_obs(evidence=["q7:horizons.1.effect=0.999"])], None, "returned"),
     ([_obs(evidence=["q7:horizons.9.effect=1"])], None, "has no"),
     ([_obs(evidence=[])], None, "non-empty list"),
     ([_obs(evidence=["q1:horizons.1.effect=0.0123"])], None,
      "must cite its test's own result"),
-    ([_obs(floors_met="yes")], None, "floors_met must be true or false"),
-    ([_obs(floors_met=1)], None, "floors_met must be true or false"),
-    ([_obs(floors_met=None)], None, "floors_met must be true or false"),
+    ([_obs(floors_met="yes")], None, "floors_met must be true, false or null"),
+    ([_obs(floors_met=1)], None, "floors_met must be true, false or null"),
+    # D-204: null is allowed, but not for a conditional_effect whose log can tell
+    ([_obs(floors_met=None)], None, "floors_met is null"),
     # the logged result clears the floor on every horizon: floors_met false contradicts it
     ([_obs(floors_met=False)], _entries(floor=_GOOD_ROW_FLOOR), "floors_met is false"),
     # the logged result does not clear it (n_events 2 < 5): floors_met true contradicts it
@@ -210,11 +215,11 @@ def test_three_observations_citing_three_different_tests_are_accepted():
     assert [o["test"] for o in rec["no_claim"]["observations"]] == ["q7", "q8", "q9"]
 
 
-def test_a_fourth_observation_is_refused_with_the_cap_in_the_message():
-    _r, _rec, errors = _check(_answer(_n_obs(4)), _n_entries(4))
-    assert any("no_claim.observations has 4 entries" in e and "at most 3" in e
-               and "different test" in e for e in errors), errors
-    assert asm.OBSERVATIONS_MAX == 3
+def test_a_fourth_observation_is_accepted_d204_removed_the_cap():
+    _r, rec, errors = _check(_answer(_n_obs(4)), _n_entries(4))
+    assert errors == [], errors
+    assert len(rec["no_claim"]["observations"]) == 4
+    assert not hasattr(asm, "OBSERVATIONS_MAX")
 
 
 def test_two_observations_citing_the_same_query_are_refused():
@@ -298,7 +303,8 @@ def test_observations_of_an_accepted_no_claim_are_copied(tmp_path):
     _write_record(tmp_path, _record_doc())
     (row,) = cm.analyst_observations(tmp_path, "run_080")
     assert row["lens"] == "trade_efficiency"
-    assert {k: row[k] for k in cm.OBSERVATION_FIELDS if k != "spec"} == \
+    # this record is written in the shape before D-204 (`spec`, no id): it still loads as it is
+    assert {k: row[k] for k in cm.LEGACY_OBSERVATION_FIELDS if k != "spec"} == \
         {k: _obs()[k] for k in ("statement", "test", "evidence", "floors_met")}
     assert row["spec"]["spec_hash"] == "hq7"
     assert row["ref"] == f"runs/run_080/{asm.record_rel('trade_efficiency')}"
@@ -475,9 +481,10 @@ def _memory_with_runs(n, *, recorded_at):
 
 
 def test_the_view_keeps_the_newest_20_observation_rows_and_counts_the_rest():
-    assert amv.OBSERVATION_ROWS_MAX == 20
+    assert amv.OBSERVATION_ROWS_MAX == 100          # D-204 (was 20); the limit is a parameter
     view = amv.build_memory_view(
-        _memory_with_runs(21, recorded_at=lambda i: f"2026-10-01T00:00:{i:02d}"), {})
+        _memory_with_runs(21, recorded_at=lambda i: f"2026-10-01T00:00:{i:02d}"), {},
+        max_observation_rows=20)
     rows = view["observations"]
     assert len(rows) == 20
     assert rows[0]["source_run"] == "run_002" and rows[-1]["source_run"] == "run_021"
@@ -490,7 +497,7 @@ def test_newest_means_the_latest_recorded_at_not_the_highest_run_number():
     # run_001 was recorded last: it is kept, and run_002 (the oldest recorded) is dropped
     view = amv.build_memory_view(
         _memory_with_runs(21, recorded_at=lambda i: "2026-10-02T00:00:00" if i == 1
-                          else f"2026-10-01T00:00:{i:02d}"), {})
+                          else f"2026-10-01T00:00:{i:02d}"), {}, max_observation_rows=20)
     runs = [r["source_run"] for r in view["observations"]]
     assert len(runs) == 20 and "run_001" in runs and "run_002" not in runs
     assert runs[-1] == "run_001"                                    # oldest first, newest last
