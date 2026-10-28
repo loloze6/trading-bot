@@ -31,6 +31,7 @@ import campaign_memory as cm  # noqa: E402
 import run_phase1_research as rpr  # noqa: E402
 
 import test_e075_pr4_queries as q4  # noqa: E402
+from d178_legacy_fixture import d178_checks_off  # noqa: E402,F401
 from test_e075_pr5_analyst import (  # noqa: E402,F401
     LONG, RUN_ID, _claim_answer, _entries_for_claim, _good_claim_with_rationale, _install, run)
 
@@ -367,12 +368,12 @@ def test_d204_variant_must_be_a_variant_of_the_run_and_defaults_to_the_tests_own
     errors = _check([_obs(variant="no_such_variant")], entries)[2]
     assert any("variant='no_such_variant' must be a variant of this run" in e for e in errors)
     assert any("variant=''" in e for e in _check([_obs(variant="")], entries)[2])
-    _r, rec, errors = _check([_obs(variant="base")], entries)
-    assert errors == [] and rec["no_claim"]["observations"][0]["variant"] == "base"
+    _r, rec, errors = _check([_obs(variant="split_stretch_weight")], entries)
+    assert errors == [] and rec["no_claim"]["observations"][0]["variant"] == "split_stretch_weight"
     _r, rec, errors = _check([_obs()], entries)
     assert errors == [] and rec["no_claim"]["observations"][0]["variant"] == "split_stretch_weight"
     # the run's variants are not known: not checked
-    assert _check([_obs(variant="whatever")], entries, variants=None)[2] == []
+    assert _check([_obs(variant="split_stretch_weight")], entries, variants=None)[2] == []
 
 
 def test_d204_a_test_that_is_not_an_ok_query_is_refused():
@@ -530,3 +531,80 @@ def test_d204_the_unreported_tag_is_shown():
     (out,) = amv.build_memory_view(_memory([_mem_row(NEW, unreported_by_model=True)]))[
         "observations"]
     assert out["unreported_by_model"] is True
+
+
+# ---------------------------------------------------------------------------
+# review round 1 (same PR)
+# ---------------------------------------------------------------------------
+
+def test_review1_a_refused_attempts_observations_do_not_survive_into_the_final_record(
+        run, monkeypatch, d178_checks_off):
+    """The record merges each attempt's `rec`; `observations` is set on a refused attempt that
+    has unreported rows, so the next attempt (which has none) must not inherit them."""
+    calls = {"n": 0}
+    stale = [{"id": "O-run_102-trade_efficiency-1", "unreported_by_model": True}]
+
+    def fake_check(text, **kw):
+        calls["n"] += 1
+        rec = {"lens": kw["lens"], "category": "trade_efficiency", "outcome": "claim"}
+        if calls["n"] == 1:
+            rec["observations"] = stale
+        return None, rec, [f"refused {calls['n']}"]
+    monkeypatch.setattr(asm, "check_answer", fake_check)
+    monkeypatch.setattr(rpr, "_analyst_enabled", lambda *a: True)
+    monkeypatch.setattr(rpr, "_folds_enabled", lambda *a: True)
+    monkeypatch.setattr(rpr, "_score_provenance_enabled", lambda *a: False)
+    monkeypatch.setattr(rpr, "_resolve_tbot_python", lambda: Path("stub-python"))
+
+    async def script(call):
+        return "no answer"
+    _install(monkeypatch, script)
+    rpr.run_analyst_worker("trade_efficiency", RUN_ID, run)
+    record = yaml.safe_load((run / asm.record_rel("trade_efficiency")).read_text(encoding="utf-8"))
+    assert calls["n"] == 2 and "observations" not in record
+
+
+def test_review1_an_observations_variant_must_be_the_variant_its_test_ran_on():
+    entries = _entries(_ce_entry("q7", variant="base"))
+    errors = _check([_obs(variant="split_stretch_weight")], entries)[2]
+    assert any("variant='split_stretch_weight' differs from the variant q7 ran on ('base')" in e
+               for e in errors), errors
+    assert _check([_obs(variant="base")], entries)[2] == []
+    # a variant given on a test that ran on another one, in the other direction
+    entries = _entries(_ce_entry("q7", variant="split_stretch_weight"))
+    assert any("differs from the variant q7 ran on" in e
+               for e in _check([_obs(variant="base")], entries)[2])
+    assert _check([_obs(variant="split_stretch_weight")], entries)[2] == []
+
+
+def test_review1_agreement_counts_and_the_card_horizon_join_settings_without_a_claim_test(tmp_path):
+    arts = tmp_path / "artifacts"
+    arts.mkdir()
+    (arts / "fold_confirmation.yaml").write_text(
+        "status: not_confirmed\nfold: B\nreason: x\nagreement:\n  t:\n    '6': 5 of 7\n"
+        "    '24': 3 of 7\n", encoding="utf-8")
+    (arts / "hypothesis_card.yaml").write_text(
+        "statement:\n  predicts: p\n  horizon_bars: 24\n", encoding="utf-8")
+    assert not (arts / "variants").exists()                      # no claim test anywhere
+    text, nums = asm.run_book(tmp_path)
+    assert "h6 5 of 7" in text and "h24 3 of 7" in text
+    assert {5, 7, 3, 24} <= nums
+    assert asm.book_settings(tmp_path) == nums
+    fields = {"claim.rationale": "5 of 7 windows held at the 24-bar horizon."}
+    assert asm.number_hits(fields, [], {}, settings=nums) == []
+
+
+def test_review1_floors_met_null_is_refused_on_a_conditional_effect_even_with_an_unknown_floor():
+    # the log cannot tell: min_eras is not in the result, so floors_met_in_log is None
+    unknown = _entries(_ce_entry("q7", floor={"min_events": 5, "min_eras": 3}))
+    assert asm.floors_met_in_log(unknown["q7"]) is None
+    errors = _check([_obs(floors_met=None)], unknown)[2]
+    assert any("floors_met must be true or false" in e and "q7" in e for e in errors), errors
+    # true or false as the model wrote it is accepted
+    assert _check([_obs(floors_met=True)], unknown)[2] == []
+    assert _check([_obs(floors_met=False)], unknown)[2] == []
+    # null stays right for a tool without floors
+    other = _entries(_other_entry("q8"))
+    bare = _obs("q8", floors_met=None, evidence=["q8:n=100"])
+    bare.pop("mechanism_query")
+    assert _check([bare], other)[2] == []

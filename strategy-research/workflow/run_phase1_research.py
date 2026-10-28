@@ -4984,6 +4984,9 @@ def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -
                     errors = errors + [e for e in _reading_content_errors(reading, category, run_dir)
                                        if e not in said]
         record.pop(asm.UNREPORTED_KEY, None)   # D-184: only the latest attempt's disclosure stays
+        # D-204 review: a refused attempt's observations (set whenever rows were unreported, errors
+        # or not) must not survive into the accepted attempt's record when that one has none
+        record.pop("observations", None)
         record.update(rec)
         record["attempts"].append({"status": "refused" if errors else "accepted",
                                    "errors": errors, "subtype": meta.get("subtype"),

@@ -260,6 +260,10 @@ def run_book(run_dir) -> tuple:
     if isinstance(stmt, dict) and stmt:
         lines.append("Card statement (artifacts/hypothesis_card.yaml):")
         keys = [k for k in _STATEMENT_KEYS if k in stmt] + [k for k in stmt if k not in _STATEMENT_KEYS]
+        hb = stmt.get("horizon_bars")     # D-203 review: the card's horizon joins `settings`
+        for x in (hb if isinstance(hb, list) else [hb]):
+            if isinstance(x, int) and not isinstance(x, bool):
+                nums.add(x)
         lines += [f"  {k}: {_one_line(stmt[k])}" for k in keys]
     elif isinstance(stmt, str) and stmt.strip():
         lines.append(f"Card statement (artifacts/hypothesis_card.yaml): {_one_line(stmt)}")
@@ -302,6 +306,9 @@ def run_book(run_dir) -> tuple:
         effect = fc.get("effect") if isinstance(fc.get("effect"), dict) else {}
         ag = "; ".join(f"{t}: " + ", ".join(f"h{h} {v}" for h, v in (hz or {}).items())
                        for t, hz in agree.items() if isinstance(hz, dict))
+        for hz in agree.values():         # D-203 review: the counts of "5 of 6" join `settings`
+            for v in (hz.values() if isinstance(hz, dict) else ()):
+                nums.update(int(n) for n in re.findall(r"\d+", str(v)))
         ef = "; ".join(f"{t}: " + ", ".join(f"h{h} {_num(v, nums)}" for h, v in (hz or {}).items())
                        for t, hz in effect.items() if isinstance(hz, dict))
         lines.append(f"Fold confirmation (artifacts/fold_confirmation.yaml): {fc.get('status')} on "
@@ -1098,6 +1105,10 @@ def observation_errors(observations, entries: dict, where: str = "no_claim.obser
         else:
             errors.append(f"{w}.test={qid!r} must be the id of an ok query of this session "
                           f"(the call that measured the behaviour)")
+        if is_ok and isinstance(o.get("variant"), str) and o["variant"].strip()                 and o["variant"] != _query_variant(entries[qid]):
+            errors.append(f"{w}.variant={o['variant']!r} differs from the variant {qid} ran on "
+                          f"({_query_variant(entries[qid])!r}): an observation's variant is the one "
+                          f"its test was measured on")
         errors += [f"{w}.{e}" for e in check_citations(o["evidence"], entries)]
         if is_ok and isinstance(o["evidence"], list) \
                 and not any(_cite_qid(c) == qid for c in o["evidence"]):
@@ -1110,7 +1121,11 @@ def observation_errors(observations, entries: dict, where: str = "no_claim.obser
                           f"without floors)")
         elif is_ce:
             met = floors_met_in_log(entries[qid])
-            if met is not None and met != fm:
+            if fm is None and met is None:
+                errors.append(f"{w}.floors_met must be true or false: {qid} is a "
+                              f"conditional_effect call, a tool with floors (null is for a tool "
+                              f"without floors)")
+            elif met is not None and met != fm:
                 errors.append(f"{w}.floors_met is {'null' if fm is None else str(fm).lower()}, "
                               f"but {qid}'s result {'clears' if met else 'does not clear'} its "
                               f"test's floor on every horizon (n_events, n_windows_with_events, "
