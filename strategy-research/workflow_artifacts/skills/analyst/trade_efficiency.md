@@ -12,12 +12,17 @@ rule acts on (for example a smoothing span that cuts sign flips). Exit fields de
 happened; a vehicle may only act on what was known at entry.
 
 Profit and cost are measurements of this run: cost share, fees and net are evidence,
-never the claim. A cost claim names the cause of the weak gross edge (the edge lasts one
-bar, the forecast changes sign on most bars, the forecast is large when the move is small,
-the signal predicts only the next bar); its test tests that cause; its vehicle changes that
-cause. Read `window_economics` first: it gives, per window and
+never the claim. A cost claim names the cause of the weak gross edge (the edge lasts one bar, the forecast
+changes sign on most bars, one component flips far more than the others, the sizing turns small
+forecasts into full trades, the min-change gate lets many small rebalances through, the forecast
+is large when the move is small, the signal predicts only the next bar); its test tests that
+cause; its vehicle changes that cause. Read `window_economics` first: it gives, per window and
 coin, the trades, the turnover, the direction changes, the allocation, gross, fees, net and
 cost drag, so the cause is named from a measurement. Read the cost in this order: first fees
 as a percent of the account (per window and per 365 bars: a year on a daily timeframe), then gross per lot against fees per
 lot, then turnover; fees over the absolute gross is never the first figure. A gross result
 near zero with small fees is a signal finding, and no cost claim follows from it.
+
+With a design variant, run `window_economics` on it (`variant`: its id) and say what changed
+between the base and the variant: the turnover, the direction changes, the allocation, the fees
+and the gross.

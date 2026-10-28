@@ -602,7 +602,7 @@ def test_the_skill_states_the_vehicle_rule_and_the_observation_shape():
     assert "observations:" in text and "floors_met:" in text
     assert "observed, no vehicle yet" in text
     assert "the child run on the next fold is the proof" in text
-    assert "A `no_claim` carries at most 3 observations, each citing a different test." in text
+    assert "there is no cap on their number" in text and "at most 3" not in text
     assert ("While every bar's regime is unknown: no claim on regime or regime_at_entry; a market "
             "condition is claimed through past_return, trailing_vol or any selector in the "
             "vocabulary.") in text
