@@ -4957,7 +4957,8 @@ def run_analyst_worker(lens: str, run_id: str, run_dir: Path, stage_attempt=0) -
             claim_check=lambda claim: cc.check_claim(claim, **_claim_check_kw()),
             holdout_start=holdout_start, fold=fold, model_id=model_id, settings=settings,
             base_config=analyst_base_config if isinstance(analyst_base_config, dict) else None,
-            variants=run_variants)
+            variants=run_variants,
+            first_proposal_n=1 + asm.archived_proposal_count(run_dir, category))  # D-202
         # D-096: the reading checks run on every readable answer, so the first attempt hears
         # every error (smoke 6: a vehicle error surfaced only on the retry); the content checks
         # (claim card again, vehicle) need a claim the claim card accepted

@@ -1534,9 +1534,26 @@ def unreported_observations(entries: dict, unreported: list, base_config, *, run
     return rows
 
 
+def archived_proposal_count(run_dir, category: str) -> int:
+    """D-202 (retry-analyst): how many proposals the readings kept in
+    artifacts/retry_*/proposals/<category>.yaml (every retry folder) hold. A retried
+    analyst numbers its proposals after them (check_answer's first_proposal_n), so an id
+    never repeats one a queue entry or brief of the superseded pass already carries. 0 for
+    every run with no retry folder, which leaves the ids of a normal run unchanged."""
+    total = 0
+    for path in sorted(Path(run_dir).glob(f"artifacts/retry_*/proposals/{category}.yaml")):
+        doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if isinstance(doc, dict):          # a v3 reading: its side findings
+            total += len(doc.get("side_findings") or [])
+        elif isinstance(doc, list):        # an older list of proposals
+            total += len(doc)
+    return total
+
+
 def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_check,
                  holdout_start: str, fold: str | None, model_id: str,
-                 settings=None, base_config=None, variants=None) -> tuple:
+                 settings=None, base_config=None, variants=None,
+                 first_proposal_n: int = 1) -> tuple:
     """(reading, record, errors). `base_config`: the run's base strategy config (a mapping),
     against which a vehicle's path is resolved for the sizing tag (D-178, ruling 1). `variants`:
     the variant ids of the run, which an observation's `variant` must be one of (D-204; None: not
@@ -1564,7 +1581,7 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
         last = check_answer("```yaml\n" + blocks[-1] + "```", lens=lens, run_id=run_id,
                             entries=entries, claim_check=claim_check,
                             holdout_start=holdout_start, fold=fold, model_id=model_id,
-                            variants=variants)[2]
+                            variants=variants, first_proposal_n=first_proposal_n)[2]
         last = last or ["passes this answer check (the reading checks run once it is the "
                         "only block): write only that block"]
         return None, record, [err] + [f"(your last block) {e}" for e in last]
@@ -1801,7 +1818,7 @@ def check_answer(text: str, *, lens: str, run_id: str, entries: dict, claim_chec
     record.update(why_query=why, test_spec_hashes=hashes)
     scores = {"confidence_real": in_run_score(score_keys, entries) if hashes else 0}
     record["scores"] = {**scores, "source": "code: in-run window agreement (PR5_DESIGN 11.3)"}
-    side = {"proposal_id": f"{rid}-1", "claim": claim,
+    side = {"proposal_id": f"{rid}-{first_proposal_n}", "claim": claim,
             "evidence": list(evidence), "scores": scores,
             "vehicle": doc.get("vehicle"), "combines_as": doc.get("combines_as")}
     if lowered_items:      # D-178: written by code from the log; one test -> a mapping
