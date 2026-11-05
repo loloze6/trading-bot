@@ -1,0 +1,23 @@
+claim: breakout_spike_continues_inside_spike_reverts
+symbol: BTCUSD
+bar_size: 1h
+fold: A
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+fold_totals:
+  net_return: 0.0
+  median_window_sharpe: 0.9942
+  worst_window_drawdown: 0.149519
+  trades: 0
+windows:
+- window: W1
+  net_return: 0.0
+  trades: 0
+  sharpe: 0.9942
+  max_drawdown: -14.9519
+  run_dir: strategy_designer_v2/tries/try_07/engine_smoke/results/20261105T191951Z_eb0c9e0c
+  seconds: 32
+checks:
+  net_positive_in_5_of_1: false
+  median_window_sharpe_ge_1.0: false
+  worst_window_drawdown_le_20%: true
+verdict: fail

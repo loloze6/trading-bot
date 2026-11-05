@@ -5,8 +5,8 @@ The operator decides: the brief, the fold, the budget. The pipeline discovers th
 import sys, re, argparse, pathlib, datetime as dt, yaml
 
 HERE = pathlib.Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE / "steps")); sys.path.insert(0, str(HERE / "steps" / "judge")); sys.path.insert(0, str(HERE / "steps" / "profit"))
-import ask as A, judge as J, profit as P  # noqa: E402
+sys.path.insert(0, str(HERE / "steps")); sys.path.insert(0, str(HERE / "steps" / "judge")); sys.path.insert(0, str(HERE / "steps" / "engine"))
+import ask as A, judge as J, backtest as E  # noqa: E402
 
 MODELS = {"ideas": "claude-opus-5-5", "analyst": "claude-opus-5-5"}
 RETURN_MEASURES = {"mean_diff", "hit_rate", "net_return"}
@@ -67,10 +67,10 @@ def judge_and_profit(claims_path, fold, bar_size, symbols, run_name, run_dir, la
     profits = {}
     for c in claims_doc["ideas"]:
         if verdicts["ideas"][c["id"]]["verdict"] == "pass" and c["claim"]["measure"] in RETURN_MEASURES:
-            for s in symbols:
-                out = run_dir / f"profit_{label}_{c['id']}_{s}.yaml"
-                profits[f"{c['id']}/{s}"] = yaml.safe_load(out.read_text()) if out.exists() else \
-                    P.profit_claim(claims_path, c["id"], fold, bar_size, s, out_path=out, try_name=run_name)
+            for s in symbols:   # branch 3 is the engine's backtest, one folder per claim and symbol
+                out_dir = run_dir / f"engine_{label}_{c['id']}_{s}"; done = out_dir / "engine_verdict.yaml"
+                profits[f"{c['id']}/{s}"] = yaml.safe_load(done.read_text()) if done.exists() else \
+                    E.backtest_claim(claims_path, c["id"], fold, bar_size, s, out_dir=out_dir)
     return claims_doc, verdicts, profits
 
 
