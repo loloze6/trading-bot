@@ -83,6 +83,8 @@ Remarks: send them as "stop 24a: <remark>"; mark "direct" for an answer.
 
 ## Operator remarks (verbatim, with the guide's direct answers)
 
+Global feeling on this one: seems a bit complex, but maybe for good. Here objective is to decide xhat's next based on the claim proposal. Again to avoid complexity, we should ensure we do not have repeated controls or overcomplexifying check that control edge case.
+
 ## Inspector notes
 
 (Checkout note: no `SR/runs/run_102/`; the committed `campaign_config.yaml` has `decide_next`, `operator_approval`, `verdict_routing_retired` off; the committed `config/campaign_queue.yaml` holds 5 entries (4 done, 1 hand-blocked), not the 76 stop 02 read on the operator's machine. Notes judge the mechanism under the tour's flag set.)
