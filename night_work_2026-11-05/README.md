@@ -61,4 +61,6 @@ route). This was not verified and not fixed. It is a lead for tour stop 26.
   the sealed verification reports. None settles a design question.
 
 ## Test status
-See the end of this file once the full fast suite on the round-4 head has finished.
+Full fast suites as CI runs them (`run_tests.py`, `CI=true`, no slow tests) on `f79a0ffc` (all round-4 doc
+edits): **ALL SUITES PASSED**. trading-bot PASS; strategy-research 7733 passed, 33 skipped, 0 failed;
+holdout date gate PASS; validate_config exit 0.
