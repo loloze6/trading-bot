@@ -2733,7 +2733,7 @@ reflects the audit rarely triggering or the mechanism being under-used.
 
 > **Why this file exists.** The one-shot final exam. Single-use, terminal, and pre-registered — reading it is spending it.
 
-**Created by:** Human (after running holdout backtest) + orchestrator (marks consumed_at)
+**Created by:** the `holdout_evaluation` stage, after the holdout backtest (its handoff template, `workflow_artifacts/templates/handoffs/holdout_evaluation.yaml`, asks for `consumed_at`); the orchestrator records the spend separately, in `config/campaign_data_policy.yaml` `holdout_consumed_by` (`workflow/run_phase1_research.py:6720`)
 **Read by:** holdout_evaluation tool
 **Schema:** `workflow_artifacts/schemas/holdout_result.schema.json`
 
