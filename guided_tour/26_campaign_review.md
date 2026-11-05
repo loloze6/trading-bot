@@ -69,6 +69,16 @@ Remarks: send them as "stop 26: <remark>"; mark "direct" for an answer.
 
 ## Operator remarks (verbatim, with the guide's direct answers)
 
+Ok, linked to my remarks a few stop ago on the campaign review. 
+Confirmed it seems a bit legacy, no ? 
+
+Overall, i agree on a step back each X runs. But the step back should be on the process workflow results seeking for unexpected behavior / loop / backlog of parked elements. 
+Here it could be a simple manual AI call on complex model getting an external review on previous runs and simply providing and storing an analyzis on :
+/ Observations on past results
+/ Challenge across the workflow mechanisms 
+/ Potential improvments on the workflows
+/ Suggestions of manual entries or suggestion of financial trading adaptations
+
 ## Inspector notes
 
 (Checkout note: no `SR/runs/run_102/`; the committed review log (3 reviews) and memory (24 entries) were read; `verdict_routing_retired` is off in the committed switchboard. Notes judge the mechanism under the tour's flag set.)
