@@ -75,6 +75,10 @@ Remarks: send them as "stop 25: <remark>"; mark "direct" for an answer.
 
 ## Operator remarks (verbatim, with the guide's direct answers)
 
+Again another record and control stop... 
+I feel, if the stops are reflecting the code that we have duplicate and redundancy in the code.. to be checked. 
+Knowing that i challenge the deflated sharp, i would challenge the need to keep all, or to harmonize the record steps
+
 ## Inspector notes
 
 (Checkout note: the committed `campaign_record/` was listed and counted; `composite/`, the lock files, `compositions.yaml`, `trial_structure_key_overlay.yaml` and `campaign_decision.yaml` are absent here, as the speech says.)
