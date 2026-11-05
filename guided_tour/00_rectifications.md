@@ -182,3 +182,7 @@ Tour paused by the operator after stop 19 was written (stops 20 to 29 not yet wr
 Tour resumed by the operator in a cloud session (the PC was unreachable), on a copy of guided_tour/ rebuilt from the session transcripts. Checkout: /home/user/trading-bot at master 78790e5f (2026-10-28, PR #558). In this checkout the run folders under SR/runs/ stop at run_060 (they are not tracked in git) and the committed SR/campaign_record/ files stop at run_097; run_102's own files are not available, so stops 20 to 29 take run_102 facts only from earlier stop files and say so where an example is missing. Operator remarks recorded for stops 08 to 14 and 19; none for 15 to 18; no "direct" asked. Stops 20 to 29 written in one go (rectification 3).
 
 inspector relaunched at stop 19
+
+## Tour closed (operator, 2026-11-05)
+
+All 30 stops presented and remarked (no remarks on 15 to 18 and 21a). The operator said "done". The post-tour reports in `_post_tour/` are no longer sealed from the operator. The post-tour analysis, led by the direction session, can start.
