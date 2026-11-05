@@ -1,6 +1,6 @@
 # RUNBOOK — autonomous campaign mode
 
-Not sure this is the doc you need? See [`DOC_INDEX.md`](../DOC_INDEX.md) first.
+Not sure this is the doc you need? See [`CLAUDE.md`](../CLAUDE.md) §1, "Where to read", first.
 
 Registering a hypothesis at a NEW TIMEFRAME (not one this campaign has run
 before)? Read `docs/DATA_AVAILABILITY.md` first (cache availability, the
@@ -1112,8 +1112,9 @@ kill -0 "$(cat campaign.pid)" 2>/dev/null && echo STILL RUNNING || echo STOPPED
 
 ## Standing rules (unchanged by this wrapper)
 
-Holdout (2026-01-01 to 2026-06-30) is untouchable outside `holdout_evaluation`,
-once per hypothesis. All conformance/pre-registration gates
+The sealed holdout period (dates in `config/campaign_data_policy.yaml`, key
+`holdout_range`) is untouchable outside `holdout_evaluation`, once per hypothesis.
+All conformance/pre-registration gates
 (`config/campaign_config.yaml`, F4d) stay active. Trial recording
 (`campaign_state.trial_sharpes`) is always on — nothing in this wrapper can disable
 it. Cost model is taker-only (`config/cost_model.yaml`

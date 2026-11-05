@@ -274,7 +274,7 @@ touch:
 
 ---
 
-Cross-linked from `strategy-research/DOC_INDEX.md` and
+Cross-linked from
 `workflow_artifacts/skills/verdict-interpreter/SKILL.md`. Bundled out of
 `docs/TIMEFRAME_CHANGE_PLAYBOOK.md` (E-045 S5); see that epic for the rest of
 the split (light data-availability doc, trading-bot user guide, concealment-

@@ -1,6 +1,6 @@
 # Strategy-Research Workflow — User Guide
 
-Not sure this is the doc you need? See [`DOC_INDEX.md`](../DOC_INDEX.md) first.
+Not sure this is the doc you need? See [`CLAUDE.md`](../CLAUDE.md) §1, "Where to read", first.
 
 ---
 
@@ -310,7 +310,7 @@ one place to read when the answer matters.
 | 3 | [**innovation_expansion**](#stage-3--innovation_expansion) | Claude | Produce variants that differ in kind, so a [kill](#g-kill) blames the idea rather than one setting. Config-direct-authoring flow: produces `variant_patches.yaml` (patches against stage 15's base config) instead of a prose variant menu. |
 | 4 | [**validation_gate**](#stage-4--validation_gate) | Claude | Try to kill the hypothesis on paper, before any code is written for it. If it decides `refine`, the same call also decides whether the blockers can be fixed inside the current engine, and how. |
 | 6 | [**backtest_specification**](#stage-6--backtest_specification) | Claude | Compile the validated idea into a config the engine can actually execute. Config-direct-authoring flow: becomes a Python tool stage instead — applies stage 3's `variant_patches.yaml` to stage 15's base config, validates each variant, writes one config per variant. |
-| 14 | [**data_availability_gate**](#stage-14--data_availability_gate) | Python tool | Off by default (E-054). Check, per window and per declared aux feed, whether the data this variant needs can actually be assembled — before spending an expensive backtest on it. |
+| 14 | [**data_availability_gate**](#stage-14--data_availability_gate) | Python tool | On by default (E-054 Layer 2, `orchestrator.data_availability_gate.enabled`, default `true` in `run_phase1_research.py::_data_availability_gate_enabled`; only an explicit `false` skips it). Check, per window and per declared aux feed, whether the data this variant needs can actually be assembled — before spending an expensive backtest on it. |
 | 8 | [**protocol_execution**](#stage-8--protocol_execution) | Python tool | Trade the strategy across every walk-forward window and record what happened. |
 | 9 | [**regime_detector_validation**](#stage-9--regime_detector_validation) | Python tool | Establish whether the regime detector is trustworthy enough to condition any metric. |
 | — | [**regime_auditor**](#not-a-stage--regime_auditor-a-human-procedure) | ⚠️ Human, not dispatched | Judge the detector without letting profitability leak into the decision. **Not dispatched by the orchestrator** — see the block. |
@@ -2768,7 +2768,7 @@ reflects the audit rarely triggering or the mechanism being under-used.
 | `expected_*` / `min_detectable_ic` / `plausible_ic_upper` / `power_verdict` | A-priori power figures recorded at registration on the legacy shape. No new run writes these fields. | floats / verdict string | present on the legacy shape (e.g. run_043) |
 | `disconfirming_outcome` | Written in advance: what result would falsify the hypothesis. | prose | — |
 | `run_id` / `hypothesis_id` / `registered_at` | Provenance. | string / string / ISO-8601 | `run_060` / … / … |
-| `sample_split_design` | A6.1's holdout-range declaration, alongside `pass_rule` — written by `_materialize_run`/`_materialize_refinement_run` (2026-09-13; see the enforcement ledger, §8.2). | dict: `holdout_range` (the frozen `[start, end]` pair from `campaign_data_policy.yaml`), `holdout_note` | `{holdout_range: ["2026-01-01", "2026-06-30"], holdout_note: "Single-use per A6.1. Evaluated only at holdout_evaluation stage after the deflated Sharpe gate passes."}` |
+| `sample_split_design` | A6.1's holdout-range declaration, alongside `pass_rule` — written by `_materialize_run`/`_materialize_refinement_run` (2026-09-13; see the enforcement ledger, §8.2). | dict: `holdout_range` (the frozen `[start, end]` pair from `campaign_data_policy.yaml`), `holdout_note` | `{holdout_range: ["<start>", "<end>"], holdout_note: "Single-use per A6.1. Evaluated only at holdout_evaluation stage after the deflated Sharpe gate passes."}` (`<start>`/`<end>`: the sealed holdout period, dates in `config/campaign_data_policy.yaml`, key `holdout_range`) |
 
 **Notes**
 

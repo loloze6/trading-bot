@@ -2,7 +2,7 @@
 
 **This file's content has been fully redistributed. It is kept only as a
 pointer so existing cross-links keep resolving — it is not updated any
-more.** Read `strategy-research/DOC_INDEX.md` first for the current map.
+more.** Read `strategy-research/CLAUDE.md` §1 ("Where to read") first for the current map.
 
 Per section, where the content actually lives now:
 
@@ -16,7 +16,7 @@ Per section, where the content actually lives now:
 | §5 Read-back verification doctrine | `strategy-research/docs/VERIFICATION_DOCTRINE.md` §5 |
 | §6 Concealment-instruction doctrine | `strategy-research/docs/CONCEALMENT_INSTRUCTION_DOCTRINE.md` |
 | §7 Three-role model for fragment data | `strategy-research/docs/VERIFICATION_DOCTRINE.md` §2 |
-| Checklist addition (doc-index maintenance) | folded into `strategy-research/DOC_INDEX.md`'s own header |
+| Checklist addition (doc-index maintenance) | retired with `strategy-research/DOC_INDEX.md` (file deleted) |
 | §8 "Derive, never enumerate" | `strategy-research/docs/DATA_AVAILABILITY.md` §2, §5 |
 | §8a Bars derived from a finer cache | `strategy-research/docs/DATA_AVAILABILITY.md` §2 (also `trading-bot/DOC/USER_GUIDE.md` §3.2 for the full engine mechanism) |
 | §8b Zero data is not a finding | `strategy-research/docs/DATA_AVAILABILITY.md` §5 |
