@@ -68,6 +68,9 @@ Remarks: send them as "stop 23: <remark>"; mark "direct" for an answer.
 
 ## Operator remarks (verbatim, with the guide's direct answers)
 
+23 remarks
+"If at least six counted runs have finished since the last campaign review, the run goes to the review first." What happen there ? Isnt it legacy behavior ?
+
 ## Inspector notes
 
 (Checkout note: no `SR/runs/run_102/`; the committed switchboard has `verdict_routing_retired`, `decide_next`, `profit_bars_every_backtest` off. Notes judge the mechanism under the tour's flag set.)
