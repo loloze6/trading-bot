@@ -31,3 +31,10 @@ Five questions, answered in one line each, before each try.
 3. **Building what a run asked?** The component was the BTC run's ask and the operator approved it. Nothing else was added.
 4. **Operator deciding, pipeline discovering?** Two decisions still pending with the operator: the candidate's holdout, and a real brief.
 5. **Deviation from v2's rule?** One more v1 piece pulled by hand, with its reason: the backtester itself (`run_backtest`). The engine grew by one file; no v1 doc, config or test was touched.
+
+## Before try 08, the first real brief (2026-11-05)
+1. **Simpler or more complex?** Nothing added. The brief is the operator's own text in v2's four-line head; a run is one command.
+2. **Fooling ourselves?** Fold A is the brief's own fold. A claim must pass on BTC and on a coin of another category, as the brief asks. The closed lane is in the tried list so it is not re-proposed. The holdout is untouched.
+3. **Building what a run asked?** Nothing built; this is a run.
+4. **Operator deciding, pipeline discovering?** The operator wrote the brief and chose the fold and the budget (two rounds). The pipeline does the rest.
+5. **Deviation from v2's rule?** None. One choice made for the operator, said plainly: ADA as the other-category coin, from the brief's clean list.
