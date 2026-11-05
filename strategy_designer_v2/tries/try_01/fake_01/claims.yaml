@@ -1,0 +1,113 @@
+brief: fake_01_btc_overreaction.md
+ideas:
+  - id: large_bar_fade_baseline
+    belief: Hourly BTC/USD bars that are at least three times the usual size overshoot, and price drifts back within the next 24 hours by more than the round-trip fee.
+    claim:
+      when: The bar's absolute close-to-close return is at least 3 times the median absolute hourly return of the prior 168 bars, and no other such event occurred in the prior 24 bars.
+      then: The return from this bar's close to the close 24 bars later, signed against the direction of the large bar (positive means reversion).
+      compared_to: All other bars, with their next 24h return signed against the direction of their own close-to-close return.
+      measure: Mean signed 24h forward return of event bars, the difference from the baseline mean, and the mean net of a 0.2% round-trip fee.
+      pass_if: Event mean exceeds the baseline mean by at least 0.30% and is at least 0.40% gross (so at least 0.20% net of fee), with at least 100 events, and the event mean is positive net of fee in at least 4 of 5 equal-length time windows.
+    why_no_lookahead: The size test uses only this bar's close and the 168 bars before it, and the forward return starts at this bar's close.
+    how_it_trades: At the close of a large bar, enter opposite to its direction and exit 24 bars later.
+  - id: low_volume_shock_reverts_more
+    belief: A large move made on thin volume reflects an empty order book rather than new information, so it reverts more than a large move made on heavy volume.
+    claim:
+      when: A large bar (absolute return at least 3 times the prior 168-bar median absolute return, first in 24 bars) whose volume is below the median volume of the prior 168 bars.
+      then: The next 24h close-to-close return signed against the large bar's direction.
+      compared_to: Large bars under the same definition whose volume is at least 2 times the median volume of the prior 168 bars.
+      measure: Difference in mean signed 24h forward return between low-volume and high-volume large bars.
+      pass_if: Difference of at least 0.40%, same sign in at least 4 of 5 time windows, at least 30 events in each group, and the low-volume group mean is positive net of a 0.2% round-trip fee.
+    why_no_lookahead: Volume and return of the signal bar are known at its close, and the medians use only the prior 168 bars.
+    how_it_trades: Fade large bars only when their volume is below the trailing median, hold 24 bars.
+  - id: volume_climax_exhaustion
+    belief: A large move on extreme volume marks capitulation or a liquidation flush that exhausts one side, after which price snaps back.
+    claim:
+      when: A large bar (absolute return at least 3 times the prior 168-bar median absolute return, first in 24 bars) whose volume is at least 4 times the median volume of the prior 168 bars.
+      then: The next 12h close-to-close return signed against the large bar's direction.
+      compared_to: Large bars under the same definition whose volume is below 4 times the prior 168-bar median volume.
+      measure: Difference in mean signed 12h forward return between climax-volume and other large bars, and the climax group mean net of a 0.2% round-trip fee.
+      pass_if: Difference of at least 0.30%, same sign in at least 4 of 5 time windows, at least 30 climax events, and the climax group mean net of fee is positive in at least 4 of 5 windows.
+    why_no_lookahead: Volume ratio and return are computed from the signal bar and the 168 bars before it, all closed.
+    how_it_trades: Fade large bars that print climax volume, hold 12 bars.
+  - id: thin_hours_overreaction
+    belief: Large moves during low-liquidity hours (Asian night for Western traders, and weekends) are pushed by small order flow into thin books and revert more than moves during the US and European overlap.
+    claim:
+      when: A large bar (absolute return at least 3 times the prior 168-bar median absolute return, first in 24 bars) whose open timestamp falls between 00:00 and 07:59 UTC on any day, or at any hour on Saturday or Sunday UTC.
+      then: The next 24h close-to-close return signed against the large bar's direction.
+      compared_to: Large bars under the same definition that open between 13:00 and 20:59 UTC on Monday to Friday.
+      measure: Difference in mean signed 24h forward return between thin-hours and overlap-hours large bars.
+      pass_if: Difference of at least 0.30%, same sign in at least 4 of 5 time windows, at least 30 events in each group, and the thin-hours group mean is positive net of a 0.2% round-trip fee.
+    why_no_lookahead: The hour and weekday come from the bar's own timestamp, known before it closes.
+    how_it_trades: Fade large bars only in thin hours, hold 24 bars.
+  - id: counter_trend_shock_reverts
+    belief: A large bar against the prevailing multi-day trend is a temporary shock that the trend reabsorbs, while a large bar with the trend is more often continuation.
+    claim:
+      when: A large bar (absolute return at least 3 times the prior 168-bar median absolute return, first in 24 bars) whose direction is opposite to the sign of the 72-bar close-to-close return ending at the previous bar's close.
+      then: The next 24h close-to-close return signed against the large bar's direction.
+      compared_to: Large bars under the same definition whose direction matches the sign of the prior 72-bar return.
+      measure: Difference in mean signed 24h forward return between counter-trend and with-trend large bars.
+      pass_if: Difference of at least 0.40%, same sign in at least 4 of 5 time windows, at least 30 events in each group, and the counter-trend group mean is positive net of a 0.2% round-trip fee.
+    why_no_lookahead: The trend uses closes up to the previous bar and the direction uses the signal bar's own close.
+    how_it_trades: Fade large bars that go against the 72-bar trend, hold 24 bars.
+  - id: close_at_extreme_forced_flow
+    belief: A large bar that closes at its extreme was driven by forced flow (stops, liquidations) still in progress at the close, so it overshoots more than a large bar that already shows a wick of rejection.
+    claim:
+      when: A large bar (absolute return at least 3 times the prior 168-bar median absolute return, first in 24 bars) whose close lies in the outer 15% of its high-low range in the direction of the move.
+      then: The next 24h close-to-close return signed against the large bar's direction.
+      compared_to: Large bars under the same definition whose close lies more than 40% of the range back from the extreme in the direction of the move.
+      measure: Difference in mean signed 24h forward return between close-at-extreme and wicked large bars.
+      pass_if: Difference of at least 0.30%, same sign in at least 4 of 5 time windows, at least 30 events in each group, and the better group's mean is positive net of a 0.2% round-trip fee.
+    why_no_lookahead: High, low and close of the signal bar are all final at its close.
+    how_it_trades: Fade large bars that close at their extreme, hold 24 bars.
+  - id: calm_regime_shock_reverts
+    belief: A large bar arriving in a calm regime is an isolated overreaction, while in a turbulent regime large bars cluster and carry information, so reversion is stronger in calm regimes.
+    claim:
+      when: A large bar (absolute return at least 3 times the prior 168-bar median absolute return, first in 24 bars) where the standard deviation of hourly returns over the prior 720 bars is in the lowest third of its own trailing 4320-bar history.
+      then: The next 24h close-to-close return signed against the large bar's direction.
+      compared_to: Large bars under the same definition where that 720-bar standard deviation is in the highest third of its trailing 4320-bar history.
+      measure: Difference in mean signed 24h forward return between calm-regime and turbulent-regime large bars.
+      pass_if: Difference of at least 0.30%, same sign in at least 4 of 5 time windows, at least 30 events in each group, and the calm group mean is positive net of a 0.2% round-trip fee.
+    why_no_lookahead: Regime is measured over bars ending before the signal bar, and its percentile only uses earlier values.
+    how_it_trades: Fade large bars only when the trailing regime is calm, hold 24 bars.
+  - id: cascade_exhaustion
+    belief: A multi-hour liquidation cascade (several large bars in the same direction) exhausts forced sellers or buyers, and the snap-back after the cascade is larger than after a single isolated large bar.
+    claim:
+      when: The cumulative close-to-close return of the last 3 bars is at least 6 times the median absolute hourly return of the prior 168 bars, all 3 bars move in the same direction, and at least 2 of them are individually large (at least 2 times that median), first such event in 24 bars.
+      then: The next 24h close-to-close return signed against the cascade direction.
+      compared_to: Single large bars (at least 3 times the median) where neither of the 2 prior bars moved at least 2 times the median in the same direction.
+      measure: Difference in mean signed 24h forward return between cascade events and isolated large bars.
+      pass_if: Difference of at least 0.30%, same sign in at least 4 of 5 time windows, at least 30 events in each group, and the cascade group mean is positive net of a 0.2% round-trip fee.
+    why_no_lookahead: The three-bar window ends at the signal bar's close and the median uses only the prior 168 bars.
+    how_it_trades: Fade at the close of the third bar of a same-direction cascade, hold 24 bars.
+  - id: down_shock_asymmetry
+    belief: Large down bars are driven by leveraged long liquidations and attract dip buyers, so they revert, while large up bars more often reflect demand that persists.
+    claim:
+      when: A large bar (absolute return at least 3 times the prior 168-bar median absolute return, first in 24 bars) with a negative return.
+      then: The next 24h close-to-close return signed against the large bar's direction.
+      compared_to: Large bars under the same definition with a positive return.
+      measure: Difference in mean signed 24h forward return between down and up large bars, and the down group mean net of a 0.2% round-trip fee.
+      pass_if: Difference of at least 0.30%, same sign in at least 4 of 5 time windows, at least 30 events in each group, and the down group mean net of fee is positive in at least 4 of 5 windows.
+    why_no_lookahead: The sign and size of the signal bar are known at its close.
+    how_it_trades: Buy after large down bars only, hold 24 bars, stay flat after large up bars.
+  - id: failed_range_breakout
+    belief: A large bar that pushes through the prior 24-hour high or low triggers resting stops that overshoot the level, and price falls back inside the range more than after a large bar that stays within the range.
+    claim:
+      when: A large bar (absolute return at least 3 times the prior 168-bar median absolute return, first in 24 bars) whose close is beyond the highest high (for up bars) or the lowest low (for down bars) of the prior 24 bars.
+      then: The next 24h close-to-close return signed against the large bar's direction.
+      compared_to: Large bars under the same definition whose close stays inside the prior 24-bar high-low range.
+      measure: Difference in mean signed 24h forward return between breakout and inside-range large bars.
+      pass_if: Difference of at least 0.30%, same sign in at least 4 of 5 time windows, at least 30 events in each group, and the breakout group mean is positive net of a 0.2% round-trip fee.
+    why_no_lookahead: The prior 24-bar range ends at the previous bar and the comparison uses the signal bar's own close.
+    how_it_trades: Fade large bars that close outside the prior 24-bar range, hold 24 bars.
+notes: >
+  The brief implies a fixed shock definition (an hourly bar about 3 to 4 times the usual size), a horizon of at most 24 hours,
+  conditioning on time of day, volume and trend context, and a net-of-fee test at about 0.2% per round trip.
+  All ideas share one large-bar definition (absolute close-to-close return at least 3 times the median absolute hourly return
+  of the prior 168 bars, non-overlapping within 24 bars) so the conditional ideas are compared on the same event set as the baseline.
+  Signed forward return means positive when price moves back against the shock. Windows are 5 equal-length time slices of the sample.
+  Every conditional idea also requires the favoured group to beat the fee, because a conditional difference that cannot pay 0.2% does not answer the brief.
+  Struck: a weekend-only idea (merged into thin_hours_overreaction, same liquidity mechanism); variants by horizon or threshold
+  (parameter changes of large_bar_fade_baseline); a gap idea (spot BTC trades continuously, so there are no session gaps);
+  any order-book, funding or liquidation-data idea (data not named in the brief, so the cascade and liquidation beliefs are tested through bars only).
+  No already_tried list was given.
