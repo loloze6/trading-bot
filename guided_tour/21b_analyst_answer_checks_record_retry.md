@@ -75,6 +75,15 @@ Remarks: send them as "stop 21b: <remark>"; mark "direct" for an answer.
 
 ## Operator remarks (verbatim, with the guide's direct answers)
 
+stop 21b remarks: 
+Here i am thinking about extending the number of claim that can be given by analyst. Why 1? Why not infinite ? What could be the limit ? 
+
+Widnering also if "the forecast's rank correlation over all bars, because the protocol already tests that" is justified 
+
+Here, multiple control that i feel as "patch based on previous runs". I agree that there should be control and retry but we need to step back on the need behind this control: ensuring that AI do not hallucinate (and here worst case it would be verified via branch 1 of the run testing the claim"). I think that's all, correct ? 
+
+I would more focus in this step in pushing AI to observe and think wisely (eg the why no claim) or retry.
+
 ## Inspector notes
 
 (Checkout note: no `SR/runs/run_102/`; the readings, records, query logs and `retry_1/` are not checkable. The committed switchboard has `analyst` off.)
