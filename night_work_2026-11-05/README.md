@@ -37,8 +37,8 @@ route). This was not verified and not fixed. It is a lead for tour stop 26.
 - Three tool docstrings say nothing calls the module, but RP or RC imports it (`analyst_queries.py`,
   `composition.py`, `portfolio_whole_test.py`). Several docstrings still name the deleted
   `prescreen_signal.py` and `power_check.py`.
-- USER_GUIDE section 3 (`holdout_result.yaml`, around line 2736) says the orchestrator "marks
-  consumed_at"; it does not (it updates `holdout_consumed_by`).
+- USER_GUIDE section 3 (`holdout_result.yaml`, line 2736) said the orchestrator "marks consumed_at";
+  it does not (it updates `holdout_consumed_by`). Fixed afterwards in `e7c3607c`; 408 guide tests pass.
 - In the "Not reached" column of `skills_stale_references.md`, "reached under the committed defaults" is
   not the operator's live flag set: under the live set the config-direct, claim-tests, decide-next,
   analyst and retired-routing addenda are reached.
