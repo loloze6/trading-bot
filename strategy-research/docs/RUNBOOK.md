@@ -13,7 +13,8 @@ hypothesis and split out of the retired `TIMEFRAME_CHANGE_PLAYBOOK.md`.
 Operational playbook for `workflow/run_campaign.py`, the multi-run wrapper around
 `workflow/run_phase1_research.py`. Every command below assumes:
 
-- Shell: bash (Git Bash / WSL / any POSIX shell). No PowerShell syntax used here.
+- Shell: bash (Git Bash / WSL / any POSIX shell). No PowerShell syntax used here,
+  except the run-viewer line in section 2 (PowerShell, as written there).
 - Working directory: `trading-bot/strategy-research/` (same convention as the
   single-run orchestrator — `cd` there first, every command below is relative to it).
 - Python: `../venv/Scripts/python.exe` (the trading-bot venv — same interpreter every
@@ -359,8 +360,8 @@ pipeline runs); `venue`, `product`, the coin(s), `timeframe`, the windows and
 `available_data` are the machine fields, one guidance line each in the template;
 the dated `scope` block (what the pipeline can test for now) is copied unchanged
 into every brief and step 1a reads it with the brief. Only operator-written
-briefs carry `scope`: the briefs decide-next writes (`tools/decide_next.py:1494`,
-`:2343-2344`) and refold writes (`workflow/run_campaign.py:5443`) are built from a fixed
+briefs carry `scope`: the briefs decide-next writes (`tools/decide_next.py:1537`,
+`:2664-2665`) and refold writes (`workflow/run_campaign.py:5707`) are built from a fixed
 key list that does not include it, so step 1a does not see the scope block in those
 runs (operator decision 2026-10-14: deferred). `criteria_from:
 hypothesis_generation` is pre-filled (step 1a picks the criteria from
@@ -529,13 +530,13 @@ for e in q['queue']:
 ### Tail the campaign log
 
 ```bash
-tail -n 20 campaign_log.md
+tail -n 20 campaign_record/campaign_log.md
 ```
 
 ### Read the scoreboard
 
 ```bash
-cat campaign_summary.md
+cat campaign_record/campaign_summary.md
 ```
 
 Regenerated every time a brief reaches `done` or the campaign halts — trial count,
@@ -1028,7 +1029,7 @@ decision record carries `picked.status: blocked_on_operator_approval` (R2:
 loop stops with `Queue exhausted — ... Awaiting operator approval: [...]` (a
 decide-next stop line names them the same way). A held R2 request or extra card
 holds its brief (R2 never mints another request behind it). Operator actions
-are unchanged: `register`, `--unpark` and `--resume` set `ready` as before.
+are unchanged: `register` and `--unpark` set `ready`, and `--resume` sets `in_progress`, as before.
 
 1. Read the entry's brief (`brief_path`) and its decision record (`decision_ref`).
 2. With no campaign running (it takes the campaign lock):
