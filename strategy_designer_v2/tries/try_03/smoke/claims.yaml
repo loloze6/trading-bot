@@ -1,0 +1,34 @@
+brief: fake_01_btc_overreaction.md
+ideas:
+  - id: large_bar_fade_baseline_ported
+    belief: Large hourly bars revert within 24 hours.
+    claim:
+      when: bars whose absolute return is at least 3x the prior 168-bar median absolute return, one per 24 bars
+      then: the next 24h return, signed against the bar's direction
+      compared_to: all other bars, signed against their own direction
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.003
+      code: |
+        med = ret.abs().rolling(168, min_periods=168).median().shift(1)
+        a = spaced(ret.abs() >= 3 * med, 24)
+        b = ~a
+        signal = -np.sign(ret)
+    why_no_lookahead: the median uses the prior 168 bars and the event is the bar's own close
+    how_it_trades: fade the large bar for 24 bars
+  - id: smoke_rank_corr
+    belief: smoke test of rank_corr
+    claim:
+      when: all bars
+      then: next 24h return
+      compared_to: n/a
+      measure: rank_corr
+      horizon_bars: 24
+      direction: negative
+      min_effect: 0.02
+      code: |
+        a = ret.notna()
+        feature = ret.rolling(24).sum().shift(0)
+    why_no_lookahead: trailing sum
+    how_it_trades: n/a
