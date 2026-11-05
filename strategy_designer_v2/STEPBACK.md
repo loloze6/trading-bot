@@ -17,3 +17,10 @@ Five questions, answered in one line each, before each try.
 3. **Building what a run asked?** Try 06 is the loop runner, so the pipeline runs on its own: the objective's own words. Yes.
 4. **Operator deciding, pipeline discovering?** The pipeline discovered: two volatility filters, no return edge on three fake briefs. The operator's decisions pending: a real brief; the engine's first ask (an event component); whether a validated filter goes on a shelf.
 5. **Deviation from v2's rule?** No new v1 piece pulled. `profit.py` stayed at fifty lines.
+
+## After try 06 (2026-11-05)
+1. **Simpler or more complex?** Two prompts, one runner, one adapter, three step files: about 650 lines in all. No flags, no config file, no schema. The models are two names at the top of the runner.
+2. **Fooling ourselves?** The first candidate passed on one fold after 21 looks on its brief, by a hair. It is written up as a candidate with its caveats, not as a strategy. The holdout is untouched and stays the operator's. The profit answer is not the engine's; said in the record.
+3. **Building what a run asked?** The runs asked for: the engine's event component (open, for the operator), a shelf rule for filters (a filter waits for a book), and nothing else. No piece was built that a run did not ask for.
+4. **Operator deciding, pipeline discovering?** The pipeline discovered three filters and one candidate book on fake briefs; the operator now has two decisions and has written no brief yet. This is the shape the objective asks for.
+5. **Deviation from v2's rule?** Nothing new copied from v1. The adapter mirrors v1's closed-book options by reading them, not by importing v1.
