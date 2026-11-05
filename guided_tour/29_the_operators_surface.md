@@ -82,6 +82,8 @@ Remarks: send them as "stop 29: <remark>"; mark "direct" for an answer.
 
 ## Operator remarks (verbatim, with the guide's direct answers)
 
+Happy to keep memory of our discussion. Special focus should be done on the manual input i do in the discussion session with my inputs stored by words, so that i do not repeat myself. Decision log is maybe a bit too rich and some might be conflicting, legacy '..
+
 ## Inspector notes
 
 (Checkout note: the committed `campaign_summary.md` is the operator's working-tree summary as of run_097's end; `SESSION_LOG.md`, `tasks/` and the decision log are committed and were read at their heads and tails.)
