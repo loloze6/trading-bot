@@ -63,6 +63,14 @@ Remarks: send them as "stop 27: <remark>"; mark "direct" for an answer.
 
 ## Operator remarks (verbatim, with the guide's direct answers)
 
+Overcomplexity for a check i can do on my own. 
+I would really simplify the mechanism into : 
+Indicating a strategy config and the need to test on holdout
+Testing it
+Recording the results (branch 3) 
+
+Having a way to do it via manual command CLI and that's it..
+
 ## Inspector notes
 
 (Hard rule kept: no sealed date is written here; the policy was read by key name only (`grep` of top-level keys); the sealed store was not listed or opened. No `SR/runs/run_102/`.)
