@@ -60,5 +60,19 @@ a design question the direction session has not ruled on.
 - **Test fixtures `strategy-research/tests/fixtures/d201_run_102/`, `d203_run_102/`** hold partial
   run_102 copies. They could supply examples for stops 20 to 29.
 
+- **Latent upgrade breakage (not fixed: numpy is pinned at 2.5.1, and two sites are in the bot
+  engine's core, which calls for a safety review).** Seven project-code sites raise deprecation
+  warnings that will become errors in a future numpy/Python:
+  - numpy "generic" timedelta unit: `trading-bot/reporting/run_artifact.py:92`, `:373`, `:419`, `:469`;
+    `strategy-research/tools/composition.py:881`; `strategy-research/tools/data_availability_gate.py:516`.
+  - `datetime.utcnow()`: `trading-bot/data/data_manager.py:1389`. Replacing it can change
+    naive/aware timestamp comparisons, so it is not a mechanical edit.
+
 ## Test status
-See the last section, added when the full fast suite on the final branch head finished.
+Fast suites as CI runs them (`run_tests.py`, `CI=true`; slow tests, which use live market data, were not run):
+
+| Commit | trading-bot | strategy-research | Holdout gate | validate_config |
+|---|---|---|---|---|
+| `aeb86e0a` (before tonight) | PASS (1432 passed, 16 skipped) | 7732 passed, 32 skipped, 1 environment-only failure (installed-hook check; skipped under CI) | PASS | exit 0 |
+| `8a6ef199` (with the docs clean-up) | PASS | 7732 passed, 33 skipped, 0 failed | PASS | exit 0 |
+| `986eaa2e` (final, with round 3) | PASS | 7733 passed, 33 skipped, 0 failed | PASS | exit 0 |
