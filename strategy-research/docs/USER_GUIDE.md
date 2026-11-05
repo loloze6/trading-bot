@@ -268,7 +268,7 @@ SKILL.md for the full mechanics.
 
 **Verdict-routing-retired variant (E-059 S3, slice 6c S2a, off by default —
 `orchestrator.verdict_routing_retired.enabled`; requires `decide_next` and
-`profit_bars_every_backtest`).** Under the readers/regroup flags the graph
+`profit_bars_every_backtest`).** Under the grid/regroup flags the graph
 already reads `protocol_execution` → `analyst` (18, flag) →
 `regroup_record` (17) → the grid's route. With this flag on, that route no
 longer branches into promote / kill / refine / pivot / escalate: after the
@@ -359,7 +359,7 @@ family, [altitude](#g-altitude), exhausted — are in the [Glossary](#6-glossary
 | **conformance gate** | A check that a run actually obeyed what it registered in advance — the [protocol](#g-protocol) it pinned, the method it declared. |
 | **upsert** | Write-or-replace. Used for trial rows so a re-run replaces its earlier row instead of adding a second one and inflating the count. |
 | **orchestrator** | The Python program that actually runs the pipeline: `workflow/run_phase1_research.py`. It decides which stage runs next and calls it. When this guide says "the orchestrator does X", it means that file. |
-| **`STAGE_CONFIGS`** | The orchestrator's **list of stages it knows how to run**. If a stage name is not a key in it, the orchestrator has no way to reach that stage. It holds 11 entries. |
+| **`STAGE_CONFIGS`** | The orchestrator's **list of stages it knows how to run**. If a stage name is not a key in it, the orchestrator has no way to reach that stage. It holds 12 entries. |
 | **`_SKILL_MAP`** | The orchestrator's **list of which stages are run by an LLM, and which instruction file each uses**. 7 entries. A stage missing from it cannot be given to Claude — `_build_stage_prompt` refuses and raises an error rather than guessing. |
 | **skill** | The instruction file an LLM stage is given, e.g. `workflow_artifacts/skills/quant-validation/SKILL.md`. It tells the model what to produce. A skill file can exist on disk without anything ever calling it. |
 | **`library_category`** | A field in `config/indicator_library.yaml` saying what **kind** of indicator something is — trend, volatility, funding, and so on. Two variants built from different categories are genuinely different ideas; two that differ only in a threshold are the same idea twice. |
@@ -465,13 +465,13 @@ rebalance frequency; the holdout gate reads it to check tradability.
 | `research_brief.yaml` | stage 1 | yes |
 | handoff `research_brief_to_hypothesis.yaml` | orchestrator | yes |
 | `config/indicator_library.yaml` | 15 seeded entries | consulted by the skill |
-| `config/available_feeds.yaml` | which feeds are testable today | consulted by the skill |
+| `config/available_feeds.yaml` | which feeds are testable today | not an input since D-195 (dropped from the handoff; no code adds it) |
 
 **Stage output**
 
 | What | Written where | Read by |
 |---|---|---|
-| `hypothesis_card.yaml` | `runs/{run_id}/artifacts/` | innovation_expansion, validation |
+| `hypothesis_card.yaml` | `runs/{run_id}/artifacts/` | innovation_expansion, strategy_config_authoring (flag on) |
 
 **Features / logic in place**
 
@@ -650,7 +650,7 @@ others do not).
 `workflow/` and `tools/` — and not even in a prompt: it is inside a *docstring*
 recounting a YAML-repair incident
 (`run_phase1_research.py::ensure_files`). The rule lives in
-`workflow_artifacts/skills/innovation-expansion/SKILL.md:74-105`, and the model
+`workflow_artifacts/skills/innovation-expansion/SKILL.md:55-104`, and the model
 self-reports the verdict. **No code can produce the "rejected" outcome.**
 See [E037-18](../engineering/roadmap/E-037/FINDINGS.md#e037-18).
 
@@ -681,7 +681,7 @@ how (E-039 S4, 2026-09-12 — see item 4 below).
   `max_refinements_after_validation`) so a hypothesis cannot be refined
   indefinitely into a fit.
 
-**Stage input:** `expanded_hypothesis_card.yaml`, `hypothesis_card.yaml`,
+**Stage input:** `expanded_hypothesis_card.yaml`,
 `innovation_notes.yaml` (only needed on the refine path), handoff
 `innovation_expansion_to_validation.yaml`, `pipeline_state.yaml`
 (for the refinement counter), `pre_registration.yaml` if present (the
@@ -771,14 +771,14 @@ actually execute.
   engine's component set honest.
 
 **Stage input:** `expanded_hypothesis_card.yaml`,
-`validation_decision.yaml`, handoff
+`validation_protocol.yaml`, handoff
 `validation_to_backtest_specification.yaml`; added by code (CUL-336):
 `quant-fundamentals/SKILL.md` (required) and, when present,
 `innovation_notes.yaml`, `docs/DATA_AVAILABILITY.md`,
 `findings_carryover.yaml`, `run_context.yaml`.
 
-**Stage output:** `candidate_strategy_config.json`, `decision.yaml`,
-`variant_selection.yaml`.
+**Stage output:** `backtest_spec.yaml`, `candidate_strategy_config.json` (its `config`,
+written by code), `decision.yaml`, `variant_selection.yaml`.
 
 **Config-direct flow (tool stage, E-061 C1.2).** The stage loads
 `handoffs/config_direct_backtest_specification.yaml` instead, rewritten by code
@@ -839,7 +839,7 @@ subprocess by the orchestrator (`workflow/run_phase1_research.py::run_tool_worke
 No LLM call, no token cost.
 **Runs:** after `backtest_specification` emits `spec_ready` and the config
 passes schema validation — **by default** (delivery_plan_v26.md s:0.4 item
-14, 2026-09-20: the one flag in this codebase that ships on). Gated by
+14, 2026-09-20: the one flag in this codebase that defaults on). Gated by
 `orchestrator.data_availability_gate.enabled` in `config/campaign_config.yaml`,
 default `true` on a missing key/section/file
 (`run_phase1_research.py::_data_availability_gate_enabled`). Only when
@@ -883,9 +883,10 @@ mid-`protocol_execution` on exactly this failure mode (CUL-230).
   interval (e.g. daily `fear_greed` under an hourly strategy) is measured in
   its OWN native cadence, never candle units — measuring in candle units
   would make every normal daily feed look ~95%+ "missing" by construction.
-- Off by default, unlike every other stage in this table: a brand-new,
+- Shipped off by default at first (2026-09-11): a brand-new,
   unproven pre-flight check gates every future campaign run the moment it is
-  turned on, so it ships opt-in first (bit-identity discipline).
+  turned on, so it shipped opt-in first (bit-identity discipline).
+  delivery_plan_v26.md s:0.4 item 14 turned it on by default (2026-09-20).
 
 **Stage input:** `candidate_strategy_config.json` (declared `aux_feeds`), the
 resolved protocol JSON (symbols/timeframe/windows).
@@ -947,7 +948,7 @@ record what happened.
 
 **`signal_real_but_subscale_vs_costs`** (a `root_cause.mechanism_failure` value): written by the `verdict_interpreter` LLM stage — a soft judgment call, not a threshold. Do not confuse it with `kill_cost_hurdle`/`refine_cost_hurdle` (`determine_route`, `trading-bot/performance/signal_statistics.py`), a real mechanical threshold (`edge ÷ cost` vs. 2.0/0.5) computed from real, measured backtest data — see `protocol_result.yaml`'s post-backtest fields below.
 
-**E-016 (fee-reduction autopsy field), not yet merged to master (branch `feat/e016-fee-reduction-autopsy`):** once landed, a cost-dominated kill (`kill_cost_hurdle`/`refine_cost_hurdle`) is meant to feed `root_cause.fee_reduction_assessment.candidate_system` — narrowed from an earlier 5-option infra-level enum to 4 timing-only options: `trade_less_often`, `combine_nearby_trades`, `exit_later`, `enter_earlier`. See `workflow_artifacts/skills/verdict-interpreter/SKILL.md`'s "IMPROVEMENT 10" for the selection rule, and `trade_diagnostics.json`'s `summary.fee_reduction_metrics` for the 8 supporting diagnostic metrics (2 per lever) it reads to pick between them.
+**E-016 (fee-reduction autopsy field), merged to master:** a cost-dominated kill (`kill_cost_hurdle`/`refine_cost_hurdle`) feeds `root_cause.fee_reduction_assessment.candidate_system` — narrowed from an earlier 5-option infra-level enum to 4 timing-only options: `trade_less_often`, `combine_nearby_trades`, `exit_later`, `enter_earlier`. See `workflow_artifacts/skills/verdict-interpreter/SKILL.md`'s "IMPROVEMENT 10" for the selection rule, and `trade_diagnostics.json`'s `summary.fee_reduction_metrics` for the 8 supporting diagnostic metrics (2 per lever) it reads to pick between them.
 
 **Stage output**
 
@@ -988,8 +989,8 @@ per-trade expectancy (A3.4). E-061 C1.3:
   cost drag, gross PnL, forecast/return correlation, `below_floor_pct`, per-trade
   expectancy, … — with `verdict: null`, `criteria_results: []`, and
   `win_rate_vs_sharpe: "N/A (no rule set)"`
-  (`run_protocol.py::diagnostics_only_hypothesis_verdict`, G14), so the category
-  reports and the trial row keep their inputs. For the trial row this is a change:
+  (`run_protocol.py::diagnostics_only_hypothesis_verdict`, G14), so the
+  trial row keeps its inputs. For the trial row this is a change:
   on master a config-direct run's variants recorded only a `backtest_failed` row
   (the missing `validation_protocol.yaml` made `run_protocol.py` exit 1 after every
   window ran); now each records a full `backtest` row. Compared with a row built
@@ -1013,9 +1014,9 @@ before K2. Every pre-K2 run, including run_057's, is that legacy shape.
 **C5.8 (C13, D-050):** under `config_direct_authoring` AND `verdict_routing_retired`
 (`_promotion_retired_enabled`, the C5.6 condition) the variant loop does not write
 this file at all (every binding reader of it is retired there; a stale one from an
-earlier attempt is deleted), and `reports/profitability.yaml` drops
-`verdict`/`verdict_reason` and the `post_backtest_route*` / `cost_dominated_real`
-labels (`build_reports(legacy_verdict_retired=True)`), keeping every number. Trial
+earlier attempt is deleted), and `run_protocol.py` gets `--legacy-verdict-retired`
+(the legacy top-level `verdict` is recorded as null; the category reports that also
+dropped it were deleted with `tools/build_reports.py`, D-198). Trial
 rows are unchanged; the single-run branch still writes the file.
 
 **3. Every failure path still records the trial (H4-core, issue #28 / E-025).**
@@ -1094,8 +1095,8 @@ than letting an un-registered test reach a verdict.
 <details>
 <summary><strong>Notes, history and traps</strong> — measured counts, past incidents, and the reasons behind each guard. Open when you need the evidence; skip when you need the flow.</summary>
 
-- The `pass_rule_evaluation.yaml` step is invisible in §3 — it has no artifact
-  entry. See [E037-19](../engineering/roadmap/E-037/FINDINGS.md#e037-19).
+- The `pass_rule_evaluation.yaml` step had no §3 artifact entry; it now has
+  [one](#pass_rule_evaluationyaml). See [E037-19](../engineering/roadmap/E-037/FINDINGS.md#e037-19).
 - **E-018 (2026-09-13):** a verdict that contradicts `pass_rule_evaluation.yaml`
   no longer halts the pipeline. Before this date, any disagreement between
   verdict_interpreter's own restated verdict and this file's binding one was a
@@ -1254,15 +1255,14 @@ of this run's `trade_diagnostics.json`, written by code — the per-trade list
 this stage.) `post_backtest_routes` (CUL-264) is
 injected directly into this stage's own handoff — not a separate file — when a real
 backtest produced measured trade/window data; see item 7 below.
-`config/coin_universe.yaml` and `innovation_notes.yaml`, if available, feed
+`config/coin_universe.yaml` feeds
 the asset-stability gate (E-026, 2026-09-12 — see item 8). `near_miss_scoreboard.yaml`
 (E-018, 2026-09-13 — see item 9) is given as an optional input, whether or not
 this run has a registered `pass_rule`. `grid_evaluation.yaml`/`idea_status.yaml`
-(E-046b S2, 2026-09-20 — see stage 8's own output table) are optional inputs,
-present only when `orchestrator.grid_evaluation.enabled` is on and this run's
-pass_rule is menu-shaped; not yet wired to override this stage's own
-verdict — see `verdict_criteria_evaluator.py::evaluate_grid`'s docstring for
-why `idea_status.yaml`'s routing isn't binding yet.
+(E-046b S2, 2026-09-20 — see stage 8's own output table) are not inputs of
+this stage: with `orchestrator.grid_evaluation.enabled` on, the route comes
+from `idea_status.yaml` and this stage is unreached (D-198, "Route from the
+grid" below).
 
 **Stage output:** `verdict_interpretation.yaml`; possibly `proposed_brief.yaml`,
 `escalation_request.yaml`, `findings_carryover.yaml`, `promotion_audit.yaml`.
@@ -1277,7 +1277,7 @@ marked failed. F6 (2026-07-04) — a component bug is not a research finding.
 
 **2. Regime misattribution pauses rather than routes.**
 `mechanism_failure == regime_misattribution` pauses for the regime-auditor
-(`::determine_post_verdict_route`) — see stage 10 for what that actually means.
+(`::determine_post_verdict_route`) — see the `regime_auditor` block for what that actually means.
 
 **3. [Circuit breaker](#g-circuit-breaker) — anti-loop protection, scoped per family.**
 `_apply_circuit_breaker` (`::_apply_circuit_breaker`) can force `refine` up to `pivot` when the
@@ -1838,7 +1838,7 @@ already been passed.
 `research_brief.yaml`, `holdout_result.yaml` (human-produced).
 
 **Stage output:** updated `campaign_data_policy.yaml`
-(`holdout_consumed_by`, `consumed_at`); terminal promote or kill.
+(`holdout_consumed_by`); terminal promote or kill.
 
 **Features / logic in place** — *in execution order; the order is the design*
 (`_route_holdout_evaluation`, `::_route_holdout_evaluation`).
@@ -1866,7 +1866,7 @@ because those are the acts it exists to prevent. Safe to fail closed:
 If `holdout_result.yaml` is absent, pause.
 
 **4. Mark consumed, then evaluate against a range fixed in advance.**
-`consumed_at` is stamped, then `status` is read. The comparison is against
+The `hypothesis_id` is added to `holdout_consumed_by`, then `status` is read. The comparison is against
 `holdout_result.yaml`'s **pre-registered `expected_range`**
 (`{min_sharpe, max_sharpe, rationale}`), which must be written **before** the
 holdout is run — otherwise "within expectations" is decided after seeing the
@@ -1955,7 +1955,7 @@ The orchestrator detects search-space exhaustion and forces an altitude climb au
 | `reframe` | Write a new research_brief with a different angle; spawn next run |
 | `escalate_instrument` | Target a new symbol/timeframe; spawn next run |
 | `escalate_component` | Identify missing bot component; human pause |
-| `terminate` | Kill entire campaign; write research_decision |
+| `terminate` | Kill entire campaign; write `campaign_decision.yaml` |
 
 #### After holdout_evaluation
 
