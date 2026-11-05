@@ -75,6 +75,11 @@ Remarks: send them as "stop 24b: <remark>"; mark "direct" for an answer.
 
 ## Operator remarks (verbatim, with the guide's direct answers)
 
+A regime piece is refused. - why ?? 
+Here we should ensure that ideas arounf régime are tested
+ 
+I find it risky to possibly delete or merge ideas here. We could loose useful ideas without even knowing. I would rather prefer ensure an entry is controlled before writing than treating recorded and queued ideas
+
 ## Inspector notes
 
 (Checkout note: no `SR/runs/run_102/`, so `decision_record.yaml` and `retry_1/` are not checkable; the candidate brief of stop 01 is committed and was read there.)
