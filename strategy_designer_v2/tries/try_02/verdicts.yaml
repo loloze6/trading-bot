@@ -1,0 +1,145 @@
+try: try_02
+brief: fake_01_btc_overreaction.md
+symbol: BTCUSD
+fold: A
+windows: 6
+rule: claim threshold on the fold, same sign in >= 5 of 6 windows, claim's minimum
+  events, cost 0.1500% per round trip
+bars_in_fold: 17519
+claims:
+  large_bar_fade_baseline:
+    fold_totals:
+      n_a: 138
+      n_b: 17381
+      mean_a: -1.9821080233053273e-05
+      mean_b: -5.817554515796907e-05
+      diff: 3.83544649249158e-05
+    windows:
+    - window: W1
+      n_a: 24
+      n_b: 2856
+      mean_a: 0.013901734054588352
+      diff: 0.014070566821214745
+    - window: W2
+      n_a: 27
+      n_b: 2925
+      mean_a: -0.010996728322162471
+      diff: -0.01148497382450604
+    - window: W3
+      n_a: 23
+      n_b: 2905
+      mean_a: -0.00541531243453842
+      diff: -0.005427581406389703
+    - window: W4
+      n_a: 21
+      n_b: 2859
+      mean_a: 0.0048194131432918496
+      diff: 0.0059364203852734325
+    - window: W5
+      n_a: 22
+      n_b: 2929
+      mean_a: 0.0016187223238169144
+      diff: 0.001602891392317169
+    - window: W6
+      n_a: 21
+      n_b: 2907
+      mean_a: -0.0024634591820291603
+      diff: -0.002860580846966894
+    net_positive_windows: 3 of 6
+    checks:
+      diff_ge_0.30%: false
+      event_mean_ge_0.40%: false
+      events_ge_100: true
+      net_positive_in_5_of_6: false
+    verdict: fail
+  low_volume_shock_reverts_more:
+    fold_totals:
+      n_a: 18
+      n_b: 87
+      mean_a: -0.00893284667913351
+      mean_b: 0.0010522297600149594
+      diff: -0.009985076439148468
+    windows:
+    - window: W1
+      n_a: 1
+      n_b: 16
+      mean_a: -0.06678263898916126
+      diff: -0.08517372765127848
+    - window: W2
+      n_a: 1
+      n_b: 20
+      mean_a: -0.060388942310925176
+      diff: -0.04650281127024528
+    - window: W3
+      n_a: 5
+      n_b: 14
+      mean_a: -0.018358229799732118
+      diff: -0.019320065308346266
+    - window: W4
+      n_a: 3
+      n_b: 12
+      mean_a: 0.027564128779114034
+      diff: 0.023531218349596178
+    - window: W5
+      n_a: 4
+      n_b: 15
+      mean_a: -0.005280345459678343
+      diff: -0.008415519789134865
+    - window: W6
+      n_a: 4
+      n_b: 10
+      mean_a: -0.0008498786060712193
+      diff: 0.00253802598149242
+    same_sign_windows: 4 of 6
+    checks:
+      diff_ge_0.40%: false
+      same_sign_in_5_of_6: false
+      min_30_per_group: false
+      low_vol_mean_net_positive: false
+    verdict: fail
+  volume_climax_exhaustion:
+    fold_totals:
+      n_a: 42
+      n_b: 96
+      mean_a: -0.0006130288848770786
+      mean_b: -0.00154987806941709
+      diff: 0.0009368491845400115
+    windows:
+    - window: W1
+      n_a: 9
+      n_b: 15
+      mean_a: 0.006093923600634186
+      diff: 0.0018256623721398932
+    - window: W2
+      n_a: 9
+      n_b: 18
+      mean_a: -0.015434432833008802
+      diff: -0.007224914498153922
+    - window: W3
+      n_a: 6
+      n_b: 17
+      mean_a: 0.0031058015803193673
+      diff: 0.005178900331197977
+    - window: W4
+      n_a: 7
+      n_b: 14
+      mean_a: 0.008442531049266908
+      diff: 0.008108409494686608
+    - window: W5
+      n_a: 7
+      n_b: 15
+      mean_a: -0.00011610605956772055
+      diff: -0.0006160850373088429
+    - window: W6
+      n_a: 4
+      n_b: 17
+      mean_a: -0.004650603620819066
+      diff: -0.002181451224973663
+    same_sign_windows: 3 of 6
+    climax_net_positive_windows: 3 of 6
+    checks:
+      diff_ge_0.30%: false
+      same_sign_in_5_of_6: false
+      climax_events_ge_30: true
+      climax_net_positive_in_5_of_6: false
+    verdict: fail
