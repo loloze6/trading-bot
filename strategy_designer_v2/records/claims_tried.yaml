@@ -60,6 +60,79 @@ fake_01_btc_overreaction.md:
   measure: abs_ratio
   verdict: fail
   run: try_03/fake_01
+- id: wick_rejection_follows_close
+  belief: A big-range hourly bar with a small body and a long wick shows a level that
+    was tested and rejected within the hour, and price keeps moving away from the
+    rejected side.
+  measure: mean_diff
+  verdict: fail
+  run: fake_01_btc_overreaction/001
+- id: breakout_spike_continues_inside_spike_reverts
+  belief: A big bar that closes beyond the prior 24-hour high or low has triggered
+    resting stops and breakout orders and keeps going, while a big bar that stays
+    inside the day's range is noise that reverts.
+  measure: mean_diff
+  verdict: pass
+  run: fake_01_btc_overreaction/001
+- id: spike_from_quiet_regime_continues
+  belief: A big bar that comes after a quiet day is a new information shock that continues,
+    while a big bar during an already-volatile day is exhaustion that reverts.
+  measure: mean_diff
+  verdict: fail
+  run: fake_01_btc_overreaction/001
+- id: failed_follow_through_fade
+  belief: The overshoot shows only when the next hour fails to follow through, retracing
+    on collapsing volume, and fading at that point captures the reversion that a blind
+    fade misses.
+  measure: mean_diff
+  verdict: fail
+  run: fake_01_btc_overreaction/001
+- id: vwap_stretch_reverts
+  belief: Overreaction is about how far price has run from the volume-weighted price
+    of the last day, not about any single candle, and the further it stretches the
+    more it gives back.
+  measure: rank_corr
+  verdict: fail
+  run: fake_01_btc_overreaction/001
+- id: heavy_volume_spike_follow_net
+  belief: The continuation after big bars on extreme volume, which passed as a gross
+    effect, is large enough to pay a round trip of about 0.2% and still leave a profit.
+  measure: net_return
+  verdict: fail
+  run: fake_01_btc_overreaction/001
+- id: down_spike_rebounds
+  belief: Down spikes are forced liquidations of leveraged longs in a market structurally
+    long BTC, so they are bought back, while up spikes do not show the same reversion.
+  measure: mean_diff
+  verdict: fail
+  run: fake_01_btc_overreaction/001
+- id: round_number_spike_reverts
+  belief: A big bar that crosses a round 1000-dollar level runs through clustered
+    stops and option strikes at that level and then gets pulled back to it, more than
+    a big bar that crosses no round level.
+  measure: mean_diff
+  verdict: fail
+  run: fake_01_btc_overreaction/001
+- id: late_day_stretch_reverts_to_day_open
+  belief: When the UTC day has moved unusually far from its open by the evening, intraday
+    participants flatten into the daily close, and price drifts back toward the day's
+    open.
+  measure: mean_diff
+  verdict: fail
+  run: fake_01_btc_overreaction/001
+- id: second_spike_exhaustion
+  belief: A second big bar in the same direction within six hours of a first one is
+    a climax of capitulation or a short squeeze, and it reverts more than an isolated
+    first spike.
+  measure: mean_diff
+  verdict: fail
+  run: fake_01_btc_overreaction/001
+- id: inside_range_spike_fade_net
+  belief: A big hourly bar that closes inside the prior 24-hour range has not broken
+    any level, is noise, and gives back enough within 12 hours to pay the round trip.
+  measure: net_return
+  verdict: fail
+  run: fake_01_btc_overreaction/001
 fake_02_eth_vol_regime_trend.md:
 - id: vol_rising_trend_pays
   belief: A moving-average trend signal on ETH earns more when realized volatility

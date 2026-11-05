@@ -1,0 +1,38 @@
+brief: fake_01_btc_overreaction.md
+source: analyst round 1
+ideas:
+- id: inside_range_spike_fade_net
+  belief: A big hourly bar that closes inside the prior 24-hour range has not broken
+    any level, is noise, and gives back enough within 12 hours to pay the round trip.
+  claim:
+    when: bars whose absolute return exceeds 3 times the prior 168-bar return std
+      and whose close stays within the prior 24-hour high-low range, one event per
+      12 bars
+    then: price moves against the spike's direction over the next 12 bars by more
+      than the round-trip cost
+    compared_to: zero after the 0.15% round-trip cost
+    measure: net_return
+    horizon_bars: 12
+    direction: positive
+    min_effect: 0.001
+    code: 'sd = ret.rolling(168).std().shift(1)
+
+      big = ret.abs() > 3 * sd
+
+      hi24 = df.high.rolling(24).max().shift(1)
+
+      lo24 = df.low.rolling(24).min().shift(1)
+
+      inside = (df.close <= hi24) & (df.close >= lo24)
+
+      a = spaced(big & inside, 12)
+
+      b = ~a
+
+      signal = -np.sign(ret)
+
+      '
+  why_no_lookahead: The std and the 24h high/low use only prior bars via shift(1),
+    and the spike and its close are known at the bar's close.
+  how_it_trades: At the close of an inside-range spike bar, enter against its direction
+    and exit 12 bars later.
