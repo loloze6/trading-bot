@@ -1,0 +1,30 @@
+run: /tmp/sdv2_qs6g1bf7
+observations:
+  - "turn_of_month_inflow nearly held: ADA passed at 0.0037 with 5 of 6 windows positive, and BTC had 5 of 6 windows positive (only -0.0086 in window 4) but a whole-fold effect of 0.0015, under the 0.002 asked."
+  - "deep_drawdown_reversion was negative inside every window on BTC (all 6 windows, -0.017 to -0.697) and in 5 of 6 on ADA (down to -0.797), yet the whole-fold correlation was +0.056 on BTC and -0.002 on ADA, so the belief held within blocks but a level shift between blocks erased it on the fold."
+  - "range_position_reversion shows the same split: 5 of 6 BTC windows were negative (down to -0.625) and 4 of 6 ADA windows were negative, while the whole-fold correlation was +0.0007 on BTC and +0.0007 on ADA."
+  - "channel_breakout_both_sides lost on both coins (net -0.0145 BTC, -0.0129 ADA at 10 bars), so 20-day breakouts did not continue on 2022-2023 daily bars."
+  - "high_volume_up_day_continuation reversed hard on ADA (-0.047, 5 of 6 windows negative), while BTC was +0.0099 with only 2 of 6 windows positive, so the two coins disagree."
+  - "vol_regime_negative_drift came out with the opposite sign on BTC (+0.136), and its windows swung from +0.49 to -0.41, so volatility level carries no stable sign."
+  - "down_streak_exhaustion (-0.011 BTC, -0.007 ADA) and shock_capitulation_rebound (-0.029 BTC, -0.025 ADA) both lost after cost, so short-horizon daily rebounds did not pay."
+  - "shock_capitulation_rebound (n_a 11 and 8) and lower_wick_rejection (n_a 15 and 19) never reached the 30-bar minimum, so their hit or loss numbers are not evidence either way."
+  - "signed_volume_flow_persistence came out at -0.052 on BTC and +0.055 on ADA, with 4 of 6 BTC windows negative, so the coins disagree and neither fits the persistence belief."
+next_claim:
+  id: monthly_return_reversal
+  belief: "A large vol-adjusted move over the past month overshoots because forced and slow flows push price too far, so the next month partly gives it back."
+  claim:
+    when: "every daily bar with a defined 20-day vol-scaled past return"
+    then: "a larger past 20-day return (scaled by recent volatility) is followed by a lower 20-day forward return"
+    compared_to: "the ranking across all bars (rank correlation)"
+    measure: rank_corr
+    horizon_bars: 20
+    direction: negative
+    min_effect: 0.15
+    code: |
+      vol = ret.rolling(60).std() * np.sqrt(20)
+      feature = (df.close / df.close.shift(20) - 1) / vol
+      a = feature.notna()
+      b = ~a
+  why_no_lookahead: "Both the past 20-day return and the 60-day volatility use only closes at or before the bar's close."
+  how_it_trades: "Go long after a strongly negative vol-scaled month and short after a strongly positive one, holding about 20 days, rebalanced rarely."
+why: "Both drawdown depth and range position showed consistent within-block monthly mean reversion on both coins (BTC 6/6 and 5/6 negative windows), so this tests the reversion with a different, self-normalising feature: the vol-scaled past return. Because overlapping 20-day returns leave only about 36 independent points, 0.15 is the lowest effect I would not call luck."

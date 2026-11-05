@@ -1,0 +1,210 @@
+brief: real_01_daily_breadth_fold_a.md
+ideas:
+  - id: channel_breakout_both_sides
+    belief: When a daily close breaks the prior 20-day high or low, slow trend-following flows and stop orders carry price further in the break's direction for about two weeks.
+    claim:
+      when: the close is above the highest high of the prior 20 days (long) or below the lowest low of the prior 20 days (short), at most one event per 5 bars
+      then: the 10-day forward return, signed in the break's direction, is positive after the round-trip cost
+      compared_to: zero after cost (net_return)
+      measure: net_return
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.008
+      code: |
+        hh = df.high.rolling(20).max().shift(1)
+        ll = df.low.rolling(20).min().shift(1)
+        up = (df.close > hh).fillna(False)
+        dn = (df.close < ll).fillna(False)
+        a = spaced(up | dn, 5)
+        b = ~a
+        signal = pd.Series(np.where(up, 1, -1), index=df.index)
+    why_no_lookahead: The channel uses highs and lows of the 20 bars before this one (shift 1), compared with this bar's close.
+    how_it_trades: Enter in the break's direction at the close and exit 10 days later.
+
+  - id: shock_capitulation_rebound
+    belief: A one-day drop far outside recent volatility is driven by forced sellers (liquidations, margin calls), and price partly rebounds over the next few days once that selling is done.
+    claim:
+      when: the day's return is below -2.5 times the prior 60-day return standard deviation, at most one event per 3 bars
+      then: the 3-day forward return of a long position is positive after the round-trip cost
+      compared_to: zero after cost (net_return)
+      measure: net_return
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.006
+      code: |
+        sd = ret.rolling(60).std().shift(1)
+        z = ret / sd
+        a = spaced((z < -2.5).fillna(False), 3)
+        b = ~a
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: The volatility scale uses the 60 returns before this bar, and the shock is this bar's own close-to-close return.
+    how_it_trades: Buy at the close of the shock day and sell 3 days later.
+
+  - id: down_streak_exhaustion
+    belief: A run of four or more consecutive down closes reflects slow, sequential selling that exhausts itself, after which price drifts back up for a few days.
+    claim:
+      when: the bar closes the 4th (or later) consecutive down day, at most one event per 4 bars
+      then: the 3-day forward return of a long position is positive after the round-trip cost
+      compared_to: zero after cost (net_return)
+      measure: net_return
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.005
+      code: |
+        dn = (ret < 0).astype(int)
+        streak = dn.groupby((dn == 0).cumsum()).cumsum()
+        a = spaced((streak >= 4).fillna(False), 4)
+        b = ~a
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: The streak counts signs of returns up to and including this bar's close.
+    how_it_trades: Buy at the close of the 4th down day and sell 3 days later.
+
+  - id: compression_release_follow
+    belief: After a stretch of unusually narrow daily ranges, the first close outside the recent range starts a volatility expansion, and that move keeps its direction for several days.
+    claim:
+      when: the prior bar was in a compressed state (5-day mean range below the 25th percentile of its 250-day history), and this bar closes above the prior 5-day high (long) or below the prior 5-day low (short), at most one event per 5 bars
+      then: the 5-day forward return, signed in the release direction, is positive after the round-trip cost
+      compared_to: zero after cost (net_return)
+      measure: net_return
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.006
+      code: |
+        rng = (df.high - df.low) / df.close
+        r5 = rng.rolling(5).mean()
+        comp = (r5 < r5.rolling(250).quantile(0.25)).fillna(False)
+        hh = df.high.rolling(5).max().shift(1)
+        ll = df.low.rolling(5).min().shift(1)
+        up = (df.close > hh).fillna(False)
+        dn = (df.close < ll).fillna(False)
+        a = spaced(comp.shift(1, fill_value=False) & (up | dn), 5)
+        b = ~a
+        signal = pd.Series(np.where(up, 1, -1), index=df.index)
+    why_no_lookahead: Compression is measured through the prior bar, and the 5-day range uses the bars before this one, compared with this bar's close.
+    how_it_trades: Enter in the release direction at the close and exit 5 days later.
+
+  - id: high_volume_up_day_continuation
+    belief: An up day on more than twice normal volume, closing near its high, marks informed or institutional buying that keeps arriving over the following days.
+    claim:
+      when: volume is above 2 times the prior 30-day median, the return is positive, and the close is in the top 30% of the day's range, at most one event per 3 bars
+      then: the 5-day forward return is higher
+      compared_to: all other bars
+      measure: mean_diff
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.006
+      code: |
+        vz = df.volume / df.volume.rolling(30).median().shift(1)
+        loc = (df.close - df.low) / (df.high - df.low).replace(0, np.nan)
+        cond = (vz > 2) & (ret > 0) & (loc > 0.7)
+        a = spaced(cond.fillna(False), 3)
+        b = ~a
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: The volume baseline uses the 30 bars before this one, and the close location uses this bar's own high, low and close.
+    how_it_trades: Buy at the close of the high-volume up day and sell 5 days later.
+
+  - id: lower_wick_rejection
+    belief: A wide day with a long lower wick shows that sellers pushed price down intraday but buyers absorbed it, and the next days lean up more often than not.
+    claim:
+      when: the lower wick (body low minus low) is more than 60% of the day's range and the range exceeds the prior 20-day mean range, at most one event per 2 bars
+      then: the 2-day forward return is positive more often
+      compared_to: all other bars
+      measure: hit_rate
+      horizon_bars: 2
+      direction: positive
+      min_effect: 0.07
+      code: |
+        rng_abs = (df.high - df.low).replace(0, np.nan)
+        lw = (np.minimum(df.open, df.close) - df.low) / rng_abs
+        rng = (df.high - df.low) / df.close
+        wide = rng > rng.rolling(20).mean().shift(1)
+        a = spaced(((lw > 0.6) & wide).fillna(False), 2)
+        b = ~a
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: The wick and range come from this bar's own OHLC, and the range baseline uses the 20 bars before it.
+    how_it_trades: Buy at the close of the rejection day and sell 2 days later.
+
+  - id: turn_of_month_inflow
+    belief: Month-end and month-start flows (salaries, DCA purchases, fund rebalancing and new allocations) push crypto prices up around the turn of the month.
+    claim:
+      when: the bar's calendar day is the 27th or later, or the 1st or 2nd
+      then: the next 1-day return is higher
+      compared_to: all other days of the month
+      measure: mean_diff
+      horizon_bars: 1
+      direction: positive
+      min_effect: 0.002
+      code: |
+        day = pd.Series(df.index.day, index=df.index)
+        a = (day >= 27) | (day <= 2)
+        b = ~a
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: The calendar day of a bar's timestamp is known at that bar's close.
+    how_it_trades: Hold long from the close of the 26th until the close of about the 3rd, flat otherwise.
+
+  - id: vol_regime_negative_drift
+    belief: When realized volatility is high relative to its own one-year norm, deleveraging and risk-off flows dominate, so forward returns are lower.
+    claim:
+      when: every bar with a valid volatility ratio
+      then: the 10-day forward return falls as the ratio of 20-day realized volatility to its 250-day median rises
+      compared_to: not used (rank correlation over all bars)
+      measure: rank_corr
+      horizon_bars: 10
+      direction: negative
+      min_effect: 0.08
+      code: |
+        rv = ret.rolling(20).std()
+        feature = rv / rv.rolling(250).median()
+        a = feature.notna()
+        b = ~a
+    why_no_lookahead: Realized volatility and its median use returns up to and including this bar only.
+    how_it_trades: Hold long when the volatility ratio is low and short or flat when it is high, rebalancing daily.
+
+  - id: deep_drawdown_reversion
+    belief: Far below their one-year high, coins are held mostly by long-horizon buyers after forced sellers have left, so deeper drawdowns are followed by higher multi-week returns.
+    claim:
+      when: every bar with a valid 365-day drawdown
+      then: the 20-day forward return rises as the drawdown from the 365-day high deepens (a more negative feature goes with a higher return)
+      compared_to: not used (rank correlation over all bars)
+      measure: rank_corr
+      horizon_bars: 20
+      direction: negative
+      min_effect: 0.10
+      code: |
+        feature = df.close / df.close.rolling(365).max() - 1
+        a = feature.notna()
+        b = ~a
+    why_no_lookahead: The 365-day high includes only closes up to this bar.
+    how_it_trades: Scale long exposure up as the drawdown deepens and down near the one-year high.
+
+  - id: signed_volume_flow_persistence
+    belief: Net buying pressure, measured as volume on up days minus volume on down days over two weeks, persists because slow allocators spread their orders across days.
+    claim:
+      when: every bar with a valid 10-day signed-volume share
+      then: the 5-day forward return rises with the signed-volume share
+      compared_to: not used (rank correlation over all bars)
+      measure: rank_corr
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.08
+      code: |
+        sv = np.sign(ret) * df.volume
+        feature = sv.rolling(10).sum() / df.volume.rolling(10).sum()
+        a = feature.notna()
+        b = ~a
+    why_no_lookahead: The signed volume uses returns and volumes up to and including this bar's close.
+    how_it_trades: Hold long when the 10-day signed-volume share is clearly positive and short when it is clearly negative.
+
+notes: >
+  Ten ideas across price structure (breakout, compression release, wick rejection),
+  forced-seller mean reversion (shock and slow streak, kept apart because one is a single
+  liquidation event and the other is sequential selling), volume (high-volume up-day
+  continuation, signed-volume flow), calendar (turn of month), volatility regime, and
+  drawdown depth. The SMA 50/100/200 distance family is excluded as already tried.
+  Breakout, compression release and signed flow (continuation) may contradict the shock,
+  streak and drawdown ideas (reversion); both kinds are kept on purpose so the data decides.
+  The calendar idea assumes the daily index is the bar's close time; a one-day labeling
+  offset would shift the turn-of-month window by one day without changing the idea.
+  Short-horizon reversal ideas have fewer trades and lower exposure, which helps with
+  branch 3's 20% drawdown cap. The trend and regime ideas are expected to be blocks that
+  are registered and composed later.

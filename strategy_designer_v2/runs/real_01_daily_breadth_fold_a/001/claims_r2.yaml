@@ -1,0 +1,28 @@
+brief: real_01_daily_breadth_fold_a.md
+source: analyst round 2
+ideas:
+- id: monthly_return_reversal
+  belief: A large vol-adjusted move over the past month overshoots because forced
+    and slow flows push price too far, so the next month partly gives it back.
+  claim:
+    when: every daily bar with a defined 20-day vol-scaled past return
+    then: a larger past 20-day return (scaled by recent volatility) is followed by
+      a lower 20-day forward return
+    compared_to: the ranking across all bars (rank correlation)
+    measure: rank_corr
+    horizon_bars: 20
+    direction: negative
+    min_effect: 0.15
+    code: 'vol = ret.rolling(60).std() * np.sqrt(20)
+
+      feature = (df.close / df.close.shift(20) - 1) / vol
+
+      a = feature.notna()
+
+      b = ~a
+
+      '
+  why_no_lookahead: Both the past 20-day return and the 60-day volatility use only
+    closes at or before the bar's close.
+  how_it_trades: Go long after a strongly negative vol-scaled month and short after
+    a strongly positive one, holding about 20 days, rebalanced rarely.

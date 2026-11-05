@@ -414,3 +414,83 @@ fake_03_time_of_week.md:
   measure: mean_diff
   verdict: fail
   run: fake_03_time_of_week/001
+real_01_daily_breadth_fold_a.md:
+- id: channel_breakout_both_sides
+  belief: When a daily close breaks the prior 20-day high or low, slow trend-following
+    flows and stop orders carry price further in the break's direction for about two
+    weeks.
+  measure: net_return
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- id: shock_capitulation_rebound
+  belief: A one-day drop far outside recent volatility is driven by forced sellers
+    (liquidations, margin calls), and price partly rebounds over the next few days
+    once that selling is done.
+  measure: net_return
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- id: down_streak_exhaustion
+  belief: A run of four or more consecutive down closes reflects slow, sequential
+    selling that exhausts itself, after which price drifts back up for a few days.
+  measure: net_return
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- id: compression_release_follow
+  belief: After a stretch of unusually narrow daily ranges, the first close outside
+    the recent range starts a volatility expansion, and that move keeps its direction
+    for several days.
+  measure: net_return
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- id: high_volume_up_day_continuation
+  belief: An up day on more than twice normal volume, closing near its high, marks
+    informed or institutional buying that keeps arriving over the following days.
+  measure: mean_diff
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- id: lower_wick_rejection
+  belief: A wide day with a long lower wick shows that sellers pushed price down intraday
+    but buyers absorbed it, and the next days lean up more often than not.
+  measure: hit_rate
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- id: turn_of_month_inflow
+  belief: Month-end and month-start flows (salaries, DCA purchases, fund rebalancing
+    and new allocations) push crypto prices up around the turn of the month.
+  measure: mean_diff
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- id: vol_regime_negative_drift
+  belief: When realized volatility is high relative to its own one-year norm, deleveraging
+    and risk-off flows dominate, so forward returns are lower.
+  measure: rank_corr
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- id: deep_drawdown_reversion
+  belief: Far below their one-year high, coins are held mostly by long-horizon buyers
+    after forced sellers have left, so deeper drawdowns are followed by higher multi-week
+    returns.
+  measure: rank_corr
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- id: signed_volume_flow_persistence
+  belief: Net buying pressure, measured as volume on up days minus volume on down
+    days over two weeks, persists because slow allocators spread their orders across
+    days.
+  measure: rank_corr
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- id: range_position_reversion
+  belief: Within a medium-term trading range, closes near the bottom of the range
+    are followed by higher multi-week returns than closes near the top, because forced
+    sellers push price to the range floor and slower buyers absorb it there, whatever
+    the long-run trend regime.
+  measure: rank_corr
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- id: monthly_return_reversal
+  belief: A large vol-adjusted move over the past month overshoots because forced
+    and slow flows push price too far, so the next month partly gives it back.
+  measure: rank_corr
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001

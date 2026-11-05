@@ -1,0 +1,46 @@
+claims_file: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/001/claims_r1.yaml
+fold: A
+bar_size: 1d
+symbols:
+- BTCUSD
+- ADAUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  range_position_reversion:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.0006924697519720705
+        n_a: 730
+        n_b: 730
+        windows:
+        - -0.1242308493645392
+        - -0.21444970398937202
+        - -0.6248839307252306
+        - -0.56680325022571
+        - -0.4306019527672802
+        - 0.040641594601828694
+        agreeing_windows: 1 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ADAUSD:
+        verdict: fail
+        effect: 0.0006586922444143531
+        n_a: 730
+        n_b: 730
+        windows:
+        - -0.5125703173831515
+        - -0.26961473475126085
+        - -0.5464293621394417
+        - -0.5978540176401138
+        - 0.02597025705846694
+        - 0.26044127803424083
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

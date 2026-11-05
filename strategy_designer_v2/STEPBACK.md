@@ -38,3 +38,10 @@ Five questions, answered in one line each, before each try.
 3. **Building what a run asked?** Nothing built; this is a run.
 4. **Operator deciding, pipeline discovering?** The operator wrote the brief and chose the fold and the budget (two rounds). The pipeline does the rest.
 5. **Deviation from v2's rule?** None. One choice made for the operator, said plainly: ADA as the other-category coin, from the brief's clean list.
+
+## After try 08 (2026-11-05)
+1. **Simpler or more complex?** Nothing added. One brief file written, one YAML fix.
+2. **Fooling ourselves?** The answer was no, on both coins, with the numbers; a one-coin pass was not called a pass. 12 looks on this brief are recorded.
+3. **Building what a run asked?** The run asked for nothing. The near miss is recorded, not acted on.
+4. **Operator deciding, pipeline discovering?** The operator's brief, the operator's fold; the pipeline found nothing and said so. The next brief or fold is the operator's.
+5. **Deviation from v2's rule?** None.

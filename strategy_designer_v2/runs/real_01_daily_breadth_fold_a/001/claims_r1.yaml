@@ -1,0 +1,32 @@
+brief: real_01_daily_breadth_fold_a.md
+source: analyst round 1
+ideas:
+- id: range_position_reversion
+  belief: Within a medium-term trading range, closes near the bottom of the range
+    are followed by higher multi-week returns than closes near the top, because forced
+    sellers push price to the range floor and slower buyers absorb it there, whatever
+    the long-run trend regime.
+  claim:
+    when: every bar with a full 60-day range available
+    then: the lower the close sits within its prior 60-day high-low range, the higher
+      the 20-bar forward return
+    compared_to: not used (rank_corr)
+    measure: rank_corr
+    horizon_bars: 20
+    direction: negative
+    min_effect: 0.1
+    code: 'hh = df.high.rolling(60).max()
+
+      ll = df.low.rolling(60).min()
+
+      feature = (df.close - ll) / (hh - ll).replace(0, np.nan)
+
+      a = feature.notna()
+
+      b = ~a
+
+      '
+  why_no_lookahead: The 60-day high, low and close all come from bars at or before
+    the current bar's close, and no forward shift is used.
+  how_it_trades: Hold a long that is scaled up as the close sits lower in its 60-day
+    range, hold it 20 days, and pay costs only a few times per quarter.

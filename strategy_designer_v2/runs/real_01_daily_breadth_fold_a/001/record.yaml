@@ -1,0 +1,575 @@
+brief: real_01_daily_breadth_fold_a.md
+fold: A
+symbols:
+- BTCUSD
+- ADAUSD
+bar_size: 1d
+claims:
+- id: channel_breakout_both_sides
+  belief: When a daily close breaks the prior 20-day high or low, slow trend-following
+    flows and stop orders carry price further in the break's direction for about two
+    weeks.
+  measure: net_return
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.008
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.014507948543168635
+      n_a: 31
+      n_b: 31
+      windows:
+      - -0.007899749436578524
+      - 0.07679989275206633
+      - -0.0881311837540883
+      - -0.04631080704737441
+      - -0.024148651386753362
+      - 0.013900955285676402
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: -0.012859709570908415
+      n_a: 36
+      n_b: 36
+      windows:
+      - -0.06391467107433774
+      - -0.07606737278412133
+      - -0.05043505682482688
+      - -0.0008991550749421286
+      - 0.0030066909580595187
+      - 0.13834211702276816
+      verdict: fail
+      why: null
+  code: 'hh = df.high.rolling(20).max().shift(1)
+
+    ll = df.low.rolling(20).min().shift(1)
+
+    up = (df.close > hh).fillna(False)
+
+    dn = (df.close < ll).fillna(False)
+
+    a = spaced(up | dn, 5)
+
+    b = ~a
+
+    signal = pd.Series(np.where(up, 1, -1), index=df.index)
+
+    '
+- id: shock_capitulation_rebound
+  belief: A one-day drop far outside recent volatility is driven by forced sellers
+    (liquidations, margin calls), and price partly rebounds over the next few days
+    once that selling is done.
+  measure: net_return
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.006
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.029237290398427762
+      n_a: 11
+      n_b: 11
+      windows:
+      - -0.024770745840039743
+      - -0.044506685956326925
+      - -0.05227316462665338
+      - null
+      - 0.003501456791996188
+      - null
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: -0.024734967159984078
+      n_a: 8
+      n_b: 8
+      windows:
+      - null
+      - -0.08597475827638684
+      - 0.01281570647457231
+      - null
+      - -0.08316984108934816
+      - 0.058791482844745724
+      verdict: fail
+      why: null
+  code: 'sd = ret.rolling(60).std().shift(1)
+
+    z = ret / sd
+
+    a = spaced((z < -2.5).fillna(False), 3)
+
+    b = ~a
+
+    signal = pd.Series(1, index=df.index)
+
+    '
+- id: down_streak_exhaustion
+  belief: A run of four or more consecutive down closes reflects slow, sequential
+    selling that exhausts itself, after which price drifts back up for a few days.
+  measure: net_return
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.010957214793196944
+      n_a: 25
+      n_b: 25
+      windows:
+      - 0.004733495849604865
+      - -0.08173381266460972
+      - 0.03372854260737815
+      - 0.03257697243292299
+      - -0.008349022315496389
+      - 0.026674445652542973
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: -0.006992241355304447
+      n_a: 24
+      n_b: 24
+      windows:
+      - -0.005767517354236428
+      - -0.058486592938871734
+      - -0.02477690316013324
+      - 0.06450980487029666
+      - 0.002754139808967605
+      - -0.013584459328311184
+      verdict: fail
+      why: null
+  code: 'dn = (ret < 0).astype(int)
+
+    streak = dn.groupby((dn == 0).cumsum()).cumsum()
+
+    a = spaced((streak >= 4).fillna(False), 4)
+
+    b = ~a
+
+    signal = pd.Series(1, index=df.index)
+
+    '
+- id: compression_release_follow
+  belief: After a stretch of unusually narrow daily ranges, the first close outside
+    the recent range starts a volatility expansion, and that move keeps its direction
+    for several days.
+  measure: net_return
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.006
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.008428603799223191
+      n_a: 42
+      n_b: 42
+      windows:
+      - 0.04380060861889962
+      - 0.030794061522382142
+      - -0.05913126081648784
+      - -0.004297931158640613
+      - -0.01999667674326608
+      - -0.02340569798068648
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.010500264689915927
+      n_a: 37
+      n_b: 37
+      windows:
+      - 0.07495790961005175
+      - -0.056729413341715273
+      - -0.020405191864458848
+      - 0.062401087238429465
+      - -0.004646930183190857
+      - 0.020586272694946395
+      verdict: fail
+      why: null
+  code: 'rng = (df.high - df.low) / df.close
+
+    r5 = rng.rolling(5).mean()
+
+    comp = (r5 < r5.rolling(250).quantile(0.25)).fillna(False)
+
+    hh = df.high.rolling(5).max().shift(1)
+
+    ll = df.low.rolling(5).min().shift(1)
+
+    up = (df.close > hh).fillna(False)
+
+    dn = (df.close < ll).fillna(False)
+
+    a = spaced(comp.shift(1, fill_value=False) & (up | dn), 5)
+
+    b = ~a
+
+    signal = pd.Series(np.where(up, 1, -1), index=df.index)
+
+    '
+- id: high_volume_up_day_continuation
+  belief: An up day on more than twice normal volume, closing near its high, marks
+    informed or institutional buying that keeps arriving over the following days.
+  measure: mean_diff
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.006
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0098967506170117
+      n_a: 21
+      n_b: 709
+      windows:
+      - 0.01637646407522214
+      - -0.008902532594803485
+      - -0.005858366127537349
+      - 0.06369994403270081
+      - -0.008734820628627954
+      - -0.004969978801241261
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: -0.04741687868143535
+      n_a: 23
+      n_b: 707
+      windows:
+      - -0.10646769445992613
+      - -0.07897171814883285
+      - -0.046776965792559216
+      - -0.040725257257101716
+      - -0.11597777819454845
+      - 0.05604390239717911
+      verdict: fail
+      why: null
+  code: 'vz = df.volume / df.volume.rolling(30).median().shift(1)
+
+    loc = (df.close - df.low) / (df.high - df.low).replace(0, np.nan)
+
+    cond = (vz > 2) & (ret > 0) & (loc > 0.7)
+
+    a = spaced(cond.fillna(False), 3)
+
+    b = ~a
+
+    signal = pd.Series(1, index=df.index)
+
+    '
+- id: lower_wick_rejection
+  belief: A wide day with a long lower wick shows that sellers pushed price down intraday
+    but buyers absorbed it, and the next days lean up more often than not.
+  measure: hit_rate
+  horizon_bars: 2
+  direction: positive
+  min_effect: 0.07
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.09090909090909094
+      n_a: 15
+      n_b: 715
+      windows:
+      - 0.5169491525423728
+      - -0.16176470588235292
+      - -0.1624649859943978
+      - 0.38983050847457623
+      - 0.55
+      - -0.6033057851239669
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.10777999851950554
+      n_a: 19
+      n_b: 711
+      windows:
+      - -0.1896551724137931
+      - 0.5371900826446281
+      - -0.39669421487603307
+      - 0.1367521367521367
+      - 0.07983193277310924
+      - 0.2188034188034188
+      verdict: fail
+      why: null
+  code: 'rng_abs = (df.high - df.low).replace(0, np.nan)
+
+    lw = (np.minimum(df.open, df.close) - df.low) / rng_abs
+
+    rng = (df.high - df.low) / df.close
+
+    wide = rng > rng.rolling(20).mean().shift(1)
+
+    a = spaced(((lw > 0.6) & wide).fillna(False), 2)
+
+    b = ~a
+
+    signal = pd.Series(1, index=df.index)
+
+    '
+- id: turn_of_month_inflow
+  belief: Month-end and month-start flows (salaries, DCA purchases, fund rebalancing
+    and new allocations) push crypto prices up around the turn of the month.
+  measure: mean_diff
+  horizon_bars: 1
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0015046585930715303
+      n_a: 154
+      n_b: 576
+      windows:
+      - 0.005734834671853403
+      - 0.003657048743589209
+      - 0.0032177033573907703
+      - -0.008556252807108502
+      - 0.002996736748439804
+      - 0.001951624535421921
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.0037142245684687065
+      n_a: 154
+      n_b: 576
+      windows:
+      - 0.0034793854521494613
+      - 0.0105401624624172
+      - 0.005902856128363164
+      - -0.0026322347409829918
+      - 0.0036186938047970308
+      - 0.001063158232914264
+      verdict: pass
+      why: null
+  code: 'day = pd.Series(df.index.day, index=df.index)
+
+    a = (day >= 27) | (day <= 2)
+
+    b = ~a
+
+    signal = pd.Series(1, index=df.index)
+
+    '
+- id: vol_regime_negative_drift
+  belief: When realized volatility is high relative to its own one-year norm, deleveraging
+    and risk-off flows dominate, so forward returns are lower.
+  measure: rank_corr
+  horizon_bars: 10
+  direction: negative
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.13647934570962802
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.49019376345579546
+      - 0.21669396757426063
+      - -0.056655023940836886
+      - -0.40927842211264664
+      - 0.3750048367749675
+      - 0.04175189428360887
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.03210379349943384
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.2503923883603028
+      - -0.033554320207400914
+      - 0.10622858294698648
+      - -0.1819431904993402
+      - 0.22664482594059154
+      - -0.03553289428030441
+      verdict: fail
+      why: null
+  code: 'rv = ret.rolling(20).std()
+
+    feature = rv / rv.rolling(250).median()
+
+    a = feature.notna()
+
+    b = ~a
+
+    '
+- id: deep_drawdown_reversion
+  belief: Far below their one-year high, coins are held mostly by long-horizon buyers
+    after forced sellers have left, so deeper drawdowns are followed by higher multi-week
+    returns.
+  measure: rank_corr
+  horizon_bars: 20
+  direction: negative
+  min_effect: 0.1
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.05626875228634399
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.5572192513368984
+      - -0.6938901858611395
+      - -0.2332587626106582
+      - -0.6968261684839224
+      - -0.24210706215923128
+      - -0.017156789168983718
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: -0.002287971496097838
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.3417528995069102
+      - -0.7302046923166219
+      - -0.7031864939974424
+      - -0.7972498090145147
+      - -0.6218544840128465
+      - 0.00396218247404974
+      verdict: fail
+      why: null
+  code: 'feature = df.close / df.close.rolling(365).max() - 1
+
+    a = feature.notna()
+
+    b = ~a
+
+    '
+- id: signed_volume_flow_persistence
+  belief: Net buying pressure, measured as volume on up days minus volume on down
+    days over two weeks, persists because slow allocators spread their orders across
+    days.
+  measure: rank_corr
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.051581693485467844
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.12983540523647474
+      - -0.18580309811559248
+      - -0.24263682956569438
+      - 0.03191888325578165
+      - 0.0043982407037185135
+      - -0.2258038933187056
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.055407559174838625
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.12030002083478018
+      - -0.10021152829190905
+      - -0.035347844333341046
+      - -0.0053059240225015614
+      - -0.07507319652784049
+      - 0.24604042680448485
+      verdict: fail
+      why: null
+  code: 'sv = np.sign(ret) * df.volume
+
+    feature = sv.rolling(10).sum() / df.volume.rolling(10).sum()
+
+    a = feature.notna()
+
+    b = ~a
+
+    '
+- id: range_position_reversion
+  belief: Within a medium-term trading range, closes near the bottom of the range
+    are followed by higher multi-week returns than closes near the top, because forced
+    sellers push price to the range floor and slower buyers absorb it there, whatever
+    the long-run trend regime.
+  measure: rank_corr
+  horizon_bars: 20
+  direction: negative
+  min_effect: 0.1
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0006924697519720705
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.1242308493645392
+      - -0.21444970398937202
+      - -0.6248839307252306
+      - -0.56680325022571
+      - -0.4306019527672802
+      - 0.040641594601828694
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.0006586922444143531
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.5125703173831515
+      - -0.26961473475126085
+      - -0.5464293621394417
+      - -0.5978540176401138
+      - 0.02597025705846694
+      - 0.26044127803424083
+      verdict: fail
+      why: null
+  code: 'hh = df.high.rolling(60).max()
+
+    ll = df.low.rolling(60).min()
+
+    feature = (df.close - ll) / (hh - ll).replace(0, np.nan)
+
+    a = feature.notna()
+
+    b = ~a
+
+    '
+- id: monthly_return_reversal
+  belief: A large vol-adjusted move over the past month overshoots because forced
+    and slow flows push price too far, so the next month partly gives it back.
+  measure: rank_corr
+  horizon_bars: 20
+  direction: negative
+  min_effect: 0.15
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.08084248507138274
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.10634071810542398
+      - -0.2153009763836401
+      - -0.4448369412565552
+      - -0.24386415723314117
+      - -0.0863525557518928
+      - 0.053608308742618654
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: -0.03550261278275071
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.12251545246197651
+      - -0.3169183939327495
+      - -0.6648679371226716
+      - -0.09792346690742411
+      - -0.2931472572261418
+      - 0.011033603087690544
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(60).std() * np.sqrt(20)
+
+    feature = (df.close / df.close.shift(20) - 1) / vol
+
+    a = feature.notna()
+
+    b = ~a
+
+    '
+profit: 'none: no return claim passed'
