@@ -1,0 +1,30 @@
+run: fake_03_time_of_week / fold A
+observations:
+  - "volume_surprise_vs_clock held on all three pairs: the hour after a bar whose volume is above twice its 20-day same-hour average moves 1.86x (BTC), 1.63x (ETH) and 1.72x (SOL) as much as the hour after a below-norm bar, and every one of the 18 windows is above 1.34."
+  - "seasonal_vol_profile_forecast nearly held: BTC passed at 1.43 and ETH missed the 1.40 bar by a hair at 1.397, but SOL reached only 1.21, so the clock-based volatility forecast is real but weaker than the volume-based one (the lowest window is SOL at 1.03)."
+  - "europe_open_vol pointed the right way but the number asked was too high: 07-09 UTC weekday hours are 1.09x (BTC), 1.18x (ETH) and 1.08x (SOL) as volatile as 03-05 UTC, short of the 1.25 bar, with 17 of 18 windows above 1 (BTC window 2 at 0.99)."
+  - "nfp_friday_vol did not hold: payroll-Friday 12-13 UTC hours are only 1.07x, 1.17x and 1.00x as volatile as other Fridays, and only window 1 (about 1.58-1.73 on all three) shows the effect strongly, so the 48-bar sample is dominated by one period."
+  - "us_session_reverted_in_asia failed with the opposite sign on all three pairs (-0.13% BTC, -0.33% ETH, -0.13% SOL; 16 of 18 windows negative), so weekday 13-21 UTC moves reverse less in the next 8 hours than weekend ones, which reads as relative continuation of weekday flow."
+  - "friday_afternoon_derisk failed the wrong way: Friday 16 UTC returns over the next 5 hours exceed Monday-Thursday's by 0.13% (BTC), 0.19% (ETH) and 0.50% (SOL), with 14 of 18 windows agreeing that there is no derisking drift down."
+  - "The window-to-window return claims are unstable. weekend_hold_drift on SOL swings from +4.2% to -1.3% across windows. turn_of_month_drift is driven by window 1 alone (+1.4% to +3.6%), and 13 of its other 15 windows are near zero or negative."
+  - "us_session_momentum_next_day split by period: windows 1-3 are mostly positive on all pairs (up to +0.60% ETH), while windows 5-6 are negative on all pairs (down to -0.77% ETH), for whole-fold effects of +0.07%, -0.13% and -0.03%."
+  - "None of the five return-based clock claims reached even half its min_effect with the right sign on all three pairs, so the brief's return-seasonality idea has no support in this fold, while volatility effects tied to activity do."
+next_claim:
+  id: volume_surprise_direction_carries
+  belief: "A bar whose volume is far above its usual level for that hour carries unscheduled flow that is not finished in one bar, so its direction tends to continue over the next few hours more than the direction of a normal-volume bar (return effect, volume adjusted for the UTC clock)."
+  claim:
+    when: "Hourly bars whose volume is more than twice the average volume of the same UTC hour over the prior 20 days, at most one every 4 bars."
+    then: "The next 4 hours move in the same direction as that bar's return."
+    compared_to: "Hourly bars whose volume is below the same-hour 20-day average, at most one every 4 bars, with the same continuation signal."
+    measure: mean_diff
+    horizon_bars: 4
+    direction: positive
+    min_effect: 0.001
+    code: |
+      vnorm = sum(df.volume.shift(24 * k) for k in range(1, 21)) / 20
+      a = spaced(df.volume > 2 * vnorm, 4)
+      b = spaced(df.volume < vnorm, 4)
+      signal = pd.Series(np.where(ret >= 0, 1.0, -1.0), index=df.index)
+  why_no_lookahead: "Volume norm uses only same-hour bars 1 to 20 days back; the bar's own volume and return are known at its close."
+  how_it_trades: "At the close of a volume-surprise bar, enter in that bar's direction and exit 4 bars later."
+why: "The only robust finding is that clock-adjusted volume surprise flags flow that carries over (1.6-1.9x next-hour volatility). The weekday US-session result hints that flow-driven moves continue. This claim tests whether that carry-over has a direction, using a 0.10% edge over 4 hours, which is small against the larger moves after surprise bars but not luck at more than 2,000 events per pair."

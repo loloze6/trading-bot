@@ -1,0 +1,599 @@
+brief: fake_03_time_of_week.md
+fold: A
+symbols:
+- BTCUSD
+- ETHUSD
+- SOLUSD
+bar_size: 1h
+claims:
+- id: us_session_reverted_in_asia
+  belief: The weekday US-session move (about 13-21 UTC) is pushed by desk and ETF
+    flow that has no follow-through once US desks log off, so the following Asian
+    hours partly undo it, and more than after a weekend 13-21 UTC move (return effect,
+    UTC clock approximating New York).
+  measure: mean_diff
+  horizon_bars: 8
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0012702358455100305
+      n_a: 520
+      n_b: 210
+      windows:
+      - -0.0015774255345341842
+      - -0.004269993315879569
+      - -0.00047962708259861994
+      - -0.00037418735069494953
+      - -0.0014066029622947004
+      - 0.0005019545241709805
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.0033364700682245556
+      n_a: 520
+      n_b: 210
+      windows:
+      - -0.002823835773041228
+      - -0.013926914186000554
+      - -0.00025838564251083824
+      - -0.0027987496632742863
+      - -4.105767951431368e-05
+      - -0.00012377746316497872
+      verdict: fail
+      why: null
+    SOLUSD:
+      effect: -0.0013415692488811626
+      n_a: 520
+      n_b: 210
+      windows:
+      - 0.007522929134675861
+      - -0.006270983000903851
+      - -0.0004629588670904848
+      - -0.003417188009033947
+      - -0.0054830702137062
+      - -8.532862100406731e-05
+      verdict: fail
+      why: null
+  code: 'us = df.close / df.close.shift(8) - 1
+
+    a = (hour == 21) & (dow <= 4)
+
+    b = (hour == 21) & (dow >= 5)
+
+    signal = -np.sign(us)
+
+    '
+- id: us_session_momentum_next_day
+  belief: Institutional flow is spread over several days, so the direction of yesterday's
+    US session repeats in today's US session on consecutive weekdays (return effect,
+    UTC clock approximating New York).
+  measure: mean_diff
+  horizon_bars: 8
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0006821861408430184
+      n_a: 416
+      n_b: 314
+      windows:
+      - 0.004090423686619483
+      - 0.0008425827883835507
+      - 0.002891700214754582
+      - 0.0015931086579135396
+      - -0.0028879713519689176
+      - -0.0024138630164806914
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.001271873570488141
+      n_a: 416
+      n_b: 314
+      windows:
+      - 0.005950434409643324
+      - -0.0026124700034132154
+      - 0.0028478096111258944
+      - -0.0018615314367301935
+      - -0.004069367948001999
+      - -0.007746774575604895
+      verdict: fail
+      why: null
+    SOLUSD:
+      effect: -0.000301986289975102
+      n_a: 416
+      n_b: 314
+      windows:
+      - 0.003862827783989075
+      - -0.002757158201933148
+      - 0.0033705018320697336
+      - 0.0026633210658348516
+      - -0.007354848739410217
+      - -0.0013226429548099904
+      verdict: fail
+      why: null
+  code: 'prev_us = df.close.shift(16) / df.close.shift(24) - 1
+
+    a = (hour == 13) & (dow >= 1) & (dow <= 4)
+
+    b = (hour == 13) & ~a
+
+    signal = np.sign(prev_us)
+
+    '
+- id: friday_afternoon_derisk
+  belief: Desks and leveraged traders cut crypto exposure into the weekend, so Friday's
+    US afternoon (16-21 UTC) drifts down compared with the same hours on Monday to
+    Thursday (return effect, UTC clock).
+  measure: mean_diff
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.0015
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0013159247331106004
+      n_a: 104
+      n_b: 416
+      windows:
+      - 0.003246720853300067
+      - -0.0009966155190372892
+      - -0.003616675440576804
+      - -0.0051118692329822244
+      - -0.0004603544153478909
+      - -0.0007606959021246979
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.0019400301362738346
+      n_a: 104
+      n_b: 416
+      windows:
+      - 0.0029472486259740274
+      - -0.0010645991421111079
+      - -0.004330302823545186
+      - -0.0053601969749217495
+      - -0.0023418149925239894
+      - -0.0014062976436695464
+      verdict: fail
+      why: null
+    SOLUSD:
+      effect: -0.005042951606835722
+      n_a: 104
+      n_b: 416
+      windows:
+      - 0.005671266655088316
+      - -0.007039621500391731
+      - -0.010454165177514642
+      - -0.013823721051168891
+      - 0.0011176273082826825
+      - -0.005386819801268423
+      verdict: fail
+      why: null
+  code: 'a = (dow == 4) & (hour == 16)
+
+    b = (dow <= 3) & (hour == 16)
+
+    signal = pd.Series(-1.0, index=df.index)
+
+    '
+- id: weekend_hold_drift
+  belief: Retail buyers are the marginal flow on weekends while institutional sellers
+    are away, so prices drift up from Friday evening to Sunday evening more than over
+    a two-day weekday stretch (return effect, UTC clock).
+  measure: mean_diff
+  horizon_bars: 48
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0011695524213595643
+      n_a: 104
+      n_b: 312
+      windows:
+      - 0.002725689613433015
+      - 0.0033518720975545665
+      - -0.0019958863547041546
+      - 0.007319757026403097
+      - 0.0028436296844036187
+      - -0.007694307239196127
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.001702133854046706
+      n_a: 104
+      n_b: 312
+      windows:
+      - -0.00024689885742005396
+      - 0.006728954891521872
+      - -0.011448725601201429
+      - 0.006203834649864996
+      - -0.00113837415351122
+      - -0.01044790558839678
+      verdict: fail
+      why: null
+    SOLUSD:
+      effect: 0.007231848078952608
+      n_a: 104
+      n_b: 312
+      windows:
+      - -0.00877398402779045
+      - 0.030188865834633313
+      - -0.0006470317612153765
+      - 0.04246387285801046
+      - -0.007840774621301616
+      - -0.01267829276976
+      verdict: fail
+      why: null
+  code: 'a = (dow == 4) & (hour == 21)
+
+    b = (dow <= 2) & (hour == 21)
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: turn_of_month_drift
+  belief: Month-end fund rebalancing, salary-day retail buying and recurring purchase
+    plans put net buying into the turn of the month, so the days around it return
+    more than other days (return effect, UTC calendar).
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -9.823743017898514e-06
+      n_a: 72
+      n_b: 658
+      windows:
+      - 0.013819332165829546
+      - -0.003556594965797969
+      - -0.0018543761379556222
+      - -0.0017580046969723285
+      - -0.007600099522758017
+      - 0.0008064000821424748
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.001728488371451382
+      n_a: 72
+      n_b: 658
+      windows:
+      - 0.021777725009861932
+      - -0.009609016385537588
+      - -0.002761827096294499
+      - 0.000944117676414123
+      - -8.831884266405777e-05
+      - 7.037758846664124e-05
+      verdict: fail
+      why: null
+    SOLUSD:
+      effect: 0.003650787020454019
+      n_a: 72
+      n_b: 658
+      windows:
+      - 0.035948740072089064
+      - -0.018072828228063782
+      - -0.003142862989878901
+      - 9.633026804454006e-05
+      - -0.006419847397937612
+      - 0.013460583832746044
+      verdict: fail
+      why: null
+  code: 'day = pd.Series(df.index.day, index=df.index)
+
+    dim = pd.Series(df.index.days_in_month, index=df.index)
+
+    tom = (day >= dim) | (day <= 2)
+
+    a = (hour == 0) & tom
+
+    b = (hour == 0) & ~tom
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: europe_open_vol
+  belief: The London and European desk open (07-09 UTC) brings a wave of order flow
+    after the quiet late-Asian hours, so hourly moves just after it are larger than
+    in the 03-06 UTC lull on weekdays (volatility effect, UTC clock approximating
+    London).
+  measure: abs_ratio
+  horizon_bars: 1
+  direction: above
+  min_effect: 1.25
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 1.0901189544584118
+      n_a: 1560
+      n_b: 1560
+      windows:
+      - 1.114651018430751
+      - 0.9909778017670455
+      - 1.0333685283536802
+      - 1.210270403269386
+      - 1.0571785977547166
+      - 1.2406289227123242
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 1.1817621249616976
+      n_a: 1560
+      n_b: 1560
+      windows:
+      - 1.1934305566874517
+      - 1.0793989469221286
+      - 1.232177238624783
+      - 1.268511045757654
+      - 1.0428916069632153
+      - 1.3810995324824857
+      verdict: fail
+      why: null
+    SOLUSD:
+      effect: 1.0772432690174987
+      n_a: 1560
+      n_b: 1560
+      windows:
+      - 1.068785773839437
+      - 1.078765510561964
+      - 1.023160998829515
+      - 1.0648663670411216
+      - 1.0296392620263983
+      - 1.1860382958668665
+      verdict: fail
+      why: null
+  code: 'a = (hour >= 7) & (hour <= 9) & (dow <= 4)
+
+    b = (hour >= 3) & (hour <= 5) & (dow <= 4)
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: nfp_friday_vol
+  belief: US payrolls are released on the first Friday of the month at 12:30 or 13:30
+    UTC, and the macro repricing spills into crypto, so those hours are more volatile
+    than the same hours on other Fridays (volatility effect, UTC clock approximating
+    New York, macro calendar).
+  measure: abs_ratio
+  horizon_bars: 1
+  direction: above
+  min_effect: 1.3
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 1.0653369583073662
+      n_a: 48
+      n_b: 160
+      windows:
+      - 1.650542400646943
+      - 1.0000397034976216
+      - 0.7769673969775929
+      - 0.6698733386338627
+      - 0.8715635179126867
+      - 1.3500411077427523
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 1.1694869375028192
+      n_a: 48
+      n_b: 160
+      windows:
+      - 1.7346680333483175
+      - 0.9734127098583795
+      - 0.9234918427080715
+      - 0.9514363013604596
+      - 1.406920857880213
+      - 0.9860994276975549
+      verdict: fail
+      why: null
+    SOLUSD:
+      effect: 1.0041298753497774
+      n_a: 48
+      n_b: 160
+      windows:
+      - 1.5804542456035884
+      - 1.0174751319723998
+      - 0.6479139972375931
+      - 0.8966830466823305
+      - 1.030541319219728
+      - 0.8106024486715326
+      verdict: fail
+      why: null
+  code: 'day = pd.Series(df.index.day, index=df.index)
+
+    fri = (dow == 4) & (hour >= 12) & (hour <= 13)
+
+    a = fri & (day <= 7)
+
+    b = fri & (day > 7)
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: seasonal_vol_profile_forecast
+  belief: The intraday volatility profile is stable (sessions are habitual), so an
+    hour that has been volatile on recent days at that time of day will again be volatile,
+    across all hours and not only the US open (volatility effect, UTC clock, data-driven).
+  measure: abs_ratio
+  horizon_bars: 1
+  direction: above
+  min_effect: 1.4
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 1.42964058845234
+      n_a: 2692
+      n_b: 4868
+      windows:
+      - 1.5269130482543891
+      - 1.2504936578553316
+      - 1.1383538639360369
+      - 1.6870327676695693
+      - 1.7336651167417103
+      - 1.4910020350240083
+      verdict: pass
+      why: null
+    ETHUSD:
+      effect: 1.3965234659860888
+      n_a: 2589
+      n_b: 4672
+      windows:
+      - 1.4753485235641906
+      - 1.1217839555835138
+      - 1.3863055644479922
+      - 1.8254240666262758
+      - 1.569606712145102
+      - 1.4852628194566324
+      verdict: fail
+      why: null
+    SOLUSD:
+      effect: 1.209826778591658
+      n_a: 1792
+      n_b: 3511
+      windows:
+      - 1.2462381144249255
+      - 1.2524582746662385
+      - 1.0314460253126365
+      - 1.394208304314032
+      - 1.2477420654242712
+      - 1.1951612752009335
+      verdict: fail
+      why: null
+  code: 'absr = ret.abs()
+
+    nxt = sum(absr.shift(23 + 24 * k) for k in range(30)) / 30
+
+    base = absr.rolling(720).mean()
+
+    ratio = nxt / base
+
+    a = ratio > 1.3
+
+    b = ratio < 0.8
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: volume_surprise_vs_clock
+  belief: Volume far above its usual level for that hour of the day marks unscheduled
+    news or flow that the clock does not explain, and it carries over into a more
+    volatile next hour (volatility effect, volume adjusted for the UTC clock).
+  measure: abs_ratio
+  horizon_bars: 1
+  direction: above
+  min_effect: 1.4
+  verdict: pass
+  by_symbol:
+    BTCUSD:
+      effect: 1.86413102022697
+      n_a: 2292
+      n_b: 11681
+      windows:
+      - 1.5629072252805156
+      - 1.7897649792281916
+      - 2.1090521998405496
+      - 2.0659664744976554
+      - 1.9184133764555384
+      - 1.829362238054778
+      verdict: pass
+      why: null
+    ETHUSD:
+      effect: 1.625041311393353
+      n_a: 2416
+      n_b: 11910
+      windows:
+      - 1.5056380027283713
+      - 1.4858243194096414
+      - 2.0354404440995943
+      - 1.6819638514236992
+      - 1.7212580163521805
+      - 1.4741110427175688
+      verdict: pass
+      why: null
+    SOLUSD:
+      effect: 1.7241914578626385
+      n_a: 2468
+      n_b: 11377
+      windows:
+      - 1.4983293033853515
+      - 1.89123115361721
+      - 2.4668853045247308
+      - 1.6416906970108844
+      - 1.5505196230625318
+      - 1.3492706175014624
+      verdict: pass
+      why: null
+  code: 'vnorm = sum(df.volume.shift(24 * k) for k in range(1, 21)) / 20
+
+    a = df.volume > 2 * vnorm
+
+    b = df.volume < vnorm
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: volume_surprise_direction_carries
+  belief: A bar whose volume is far above its usual level for that hour carries unscheduled
+    flow that is not finished in one bar, so its direction tends to continue over
+    the next few hours more than the direction of a normal-volume bar (return effect,
+    volume adjusted for the UTC clock).
+  measure: mean_diff
+  horizon_bars: 4
+  direction: positive
+  min_effect: 0.001
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 1.501440364146558e-05
+      n_a: 811
+      n_b: 389
+      windows:
+      - 0.0030604663960248682
+      - -0.0024951419277434842
+      - 0.001356707654833062
+      - -0.00019795482630578315
+      - -0.0016420592609207446
+      - -0.0003868099984938203
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.0012661089131674596
+      n_a: 917
+      n_b: 344
+      windows:
+      - 0.003819987207195074
+      - 0.0004008340744253835
+      - 0.001788958231528349
+      - 0.00044672355017899893
+      - 0.0014754557892349457
+      - 0.0001291425013220291
+      verdict: pass
+      why: null
+    SOLUSD:
+      effect: -0.0026619230954524143
+      n_a: 834
+      n_b: 389
+      windows:
+      - -0.005220333919828209
+      - -0.0013884240058401234
+      - -0.004435059643159972
+      - -0.011855181603531864
+      - 0.00354135691410368
+      - 0.002126959629612579
+      verdict: fail
+      why: null
+  code: 'vnorm = sum(df.volume.shift(24 * k) for k in range(1, 21)) / 20
+
+    a = spaced(df.volume > 2 * vnorm, 4)
+
+    b = spaced(df.volume < vnorm, 4)
+
+    signal = pd.Series(np.where(ret >= 0, 1.0, -1.0), index=df.index)
+
+    '
+profit: 'none: no return claim passed'
