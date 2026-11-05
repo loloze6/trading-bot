@@ -74,6 +74,10 @@ Remarks: send them as "stop 22a: <remark>"; mark "direct" for an answer.
 
 ## Operator remarks (verbatim, with the guide's direct answers)
 
+Wondering here if the record should be more structured ? Each claim with results associated or not as reference. Reference and results with grid separated. 
+Run results as it own. Etc.. with a system of reference to join everything if necessary
+Instead of having a big record data storage mixed with everything.
+
 ## Inspector notes
 
 (Checkout note: no `SR/runs/run_102/`; `regroup_record` is off in the committed switchboard (`:581`). The committed `campaign_memory.yaml` (24 entries, run_065 to run_097) was read; the notes judge the mechanism under the tour's flag set.)
