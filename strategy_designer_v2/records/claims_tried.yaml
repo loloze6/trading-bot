@@ -1,0 +1,343 @@
+fake_01_btc_overreaction.md:
+- id: big_bar_fade
+  belief: An hourly BTC bar three or more times its usual size overshoots, and price
+    drifts back over the next half day.
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_01
+- id: big_bar_fade_net_of_fees
+  belief: Fading big hourly bars pays more than the round-trip fee the brief names
+    (about 0.2%), not only in gross terms.
+  measure: net_return
+  verdict: fail
+  run: try_03/fake_01
+- id: low_volume_spike_reverts
+  belief: A big move made on ordinary volume is a liquidity air pocket, not information,
+    so it reverts more often than a big move made on heavy volume.
+  measure: hit_rate
+  verdict: fail
+  run: try_03/fake_01
+- id: heavy_volume_spike_continues
+  belief: A big bar on extreme volume carries informed flow and keeps going rather
+    than reverting.
+  measure: mean_diff
+  verdict: pass
+  run: try_03/fake_01
+- id: counter_trend_spike_reverts
+  belief: A big bar against the prior three-day trend is a shakeout that the trend
+    reclaims, so it reverts more than a big bar with the trend.
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_01
+- id: close_at_extreme_reverts
+  belief: A big bar that closes at its extreme shows forced, unabsorbed flow (stops,
+    liquidations) and reverts more than a big bar that already pulled back from its
+    extreme within the hour.
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_01
+- id: thin_hours_spike_reverts
+  belief: Big moves in thin hours (weekends and the Asia-early UTC hours) come from
+    shallow books and revert more than big moves in the active US/Europe hours.
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_01
+- id: overreaction_scales_with_size
+  belief: Among big bars, the bigger the move relative to recent volatility, the bigger
+    the reversion (overreaction is proportional).
+  measure: rank_corr
+  verdict: fail
+  run: try_03/fake_01
+- id: multi_bar_cascade_reverts
+  belief: A run of four same-direction hours that adds up to a large move, with no
+    single big candle, is a slow stop cascade that also overshoots and reverts.
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_01
+- id: spike_raises_next_volatility
+  belief: After a big hourly bar, the following hours stay volatile (volatility clusters),
+    which matters for sizing and stops on any fade.
+  measure: abs_ratio
+  verdict: fail
+  run: try_03/fake_01
+fake_02_eth_vol_regime_trend.md:
+- id: vol_rising_trend_pays
+  belief: A moving-average trend signal on ETH earns more when realized volatility
+    is rising than when it is falling, because rising vol marks moves that are being
+    repriced rather than drift.
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_02
+- id: efficiency_ratio_regime
+  belief: Chop can be read from the path itself; when price has travelled efficiently
+    (net move large relative to the sum of daily moves), the 20-day trend keeps going.
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_02
+- id: vol_compression_precedes_move
+  belief: Periods of compressed short-term volatility relative to longer-term volatility
+    are followed by larger moves, so the calm phase is where a trend is born.
+  measure: abs_ratio
+  verdict: fail
+  run: try_03/fake_02
+- id: donchian_breakout_net
+  belief: A close beyond the prior 55-day closing range is a robust trend definition
+    on ETH that pays after cost without any regime filter.
+  measure: net_return
+  verdict: fail
+  run: try_03/fake_02
+- id: vol_scaled_momentum_rank
+  belief: Trend strength measured in units of its own volatility (a trend t-statistic)
+    is what carries forward; a big move in calm conditions means more than the same
+    move in a storm.
+  measure: rank_corr
+  verdict: fail
+  run: try_03/fake_02
+- id: multi_horizon_agreement
+  belief: A trend that is visible on short, medium and long horizons at once is robust
+    to chop; disagreement between horizons marks the flat stretches that eat the gains.
+  measure: hit_rate
+  verdict: fail
+  run: try_03/fake_02
+- id: volume_confirmed_trend
+  belief: Trends backed by rising participation (short-term volume above its longer
+    average) are real repricing and persist; trends on fading volume are drift that
+    chops out.
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_02
+- id: vol_spike_reverts
+  belief: In extreme volatility (the top tenth of the past year) moves are liquidation-driven
+    and revert, so trend loses there; this contradicts vol_rising_trend_pays at the
+    extreme.
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_02
+- id: uptrend_pullback_entry
+  belief: Inside an established uptrend, a sharp pullback is a better entry than an
+    arbitrary uptrend day, because trend followers who entered late are shaken out
+    and the trend resumes.
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_02
+- id: autocorr_regime_trend
+  belief: ETH alternates between regimes where daily returns are positively serially
+    correlated, so trend pays, and negatively correlated, so it chops; the recent
+    sign of return autocorrelation tells which regime holds.
+  measure: mean_diff
+  verdict: fail
+  run: fake_02_eth_vol_regime_trend/001
+- id: close_vol_vs_range_vol
+  belief: When close-to-close volatility is large relative to intraday high-low range
+    volatility, prices are relocating day after day (trend); when ranges are wide
+    but closes go nowhere, it is chop.
+  measure: mean_diff
+  verdict: fail
+  run: fake_02_eth_vol_regime_trend/001
+- id: close_location_trend_conviction
+  belief: In a real trend, buyers or sellers hold control into each day's close, so
+    daily closes sit near the extreme in the trend direction; trends whose closes
+    drift mid-range are weak and stall.
+  measure: mean_diff
+  verdict: fail
+  run: fake_02_eth_vol_regime_trend/001
+- id: young_trend_pays
+  belief: Trend gains on ETH come in the first days after the price crosses its moving
+    average, and mature trends are where the flat stretches that eat the gains live.
+  measure: mean_diff
+  verdict: fail
+  run: fake_02_eth_vol_regime_trend/001
+- id: long_side_asymmetry
+  belief: ETH trends are asymmetric; uptrends persist through reflexive inflows, while
+    downtrends get cut by sharp short-covering bounces, so the trend signal pays on
+    the long side only.
+  measure: mean_diff
+  verdict: fail
+  run: fake_02_eth_vol_regime_trend/001
+- id: stable_vol_trend
+  belief: It is not the level or the direction of volatility but its stability that
+    matters; when vol is steady, flows are orderly and trends persist, while erratic
+    vol marks chop.
+  measure: mean_diff
+  verdict: fail
+  run: fake_02_eth_vol_regime_trend/001
+- id: year_high_anchor
+  belief: Traders anchor on the past-year high; ETH trading close to it underreacts
+    and keeps rising, while price far below it is in a regime where rallies fade.
+  measure: rank_corr
+  verdict: fail
+  run: fake_02_eth_vol_regime_trend/001
+- id: semivariance_asymmetry
+  belief: Before a trend shows in net price, the side that holds the volatility reveals
+    it; when upside variance dominates downside variance while price is still flat,
+    accumulation is under way and a rise follows.
+  measure: rank_corr
+  verdict: fail
+  run: fake_02_eth_vol_regime_trend/001
+- id: whipsaw_count_fade
+  belief: Chop can be recognised by how often price has recently crossed its own moving
+    average; in that regime the right trade is to fade the last move, not follow it.
+  measure: mean_diff
+  verdict: fail
+  run: fake_02_eth_vol_regime_trend/001
+- id: ma_extension_reverts
+  belief: On daily ETH, price stretched far from its 50-day average tends to give
+    back part of the stretch over the next two weeks, which is why mature, orderly
+    trends stall and close to the year high is a poor place to buy.
+  measure: rank_corr
+  verdict: fail
+  run: fake_02_eth_vol_regime_trend/001
+fake_03_time_of_week.md:
+- id: weekend_vol_compression
+  belief: With institutional desks and market makers away, hourly volatility on Saturday
+    and Sunday (UTC clock) is clearly lower than on weekdays.
+  measure: abs_ratio
+  verdict: pass
+  run: try_03/fake_03
+- id: weekend_hourly_reversion
+  belief: Thin weekend books make hourly moves overshoot and partly revert, more often
+    than on weekdays (return effect, UTC clock).
+  measure: hit_rate
+  verdict: fail
+  run: try_03/fake_03
+- id: monday_reverses_weekend
+  belief: Weekend moves are made on thin liquidity by retail flow and are partly undone
+    in the first day after weekday desks return (return effect, UTC clock).
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_03
+- id: us_open_vol
+  belief: The US equity open (13:30 or 14:30 UTC depending on US daylight time) brings
+    ETF, futures and desk flow, so the hours around it are more volatile on weekdays
+    (volatility effect, UTC clock approximating New York).
+  measure: abs_ratio
+  verdict: pass
+  run: try_03/fake_03
+- id: us_open_selloff
+  belief: US-hours flow has been a net seller of crypto at the equity open (hedging,
+    ETF rebalancing), so the first hours after the US open drift down on weekdays
+    but not on weekends (return effect, UTC clock).
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_03
+- id: asian_session_drift
+  belief: Returns accrue disproportionately in the Asian session (00-08 UTC) while
+    US hours give them back, enough that a long-only Asian-session hold pays the fee
+    (return effect, UTC clock).
+  measure: net_return
+  verdict: fail
+  run: try_03/fake_03
+- id: funding_hour_vol
+  belief: Perpetual-swap funding settles at 00, 08 and 16 UTC on the large derivatives
+    venues; positioning before settlement spills into spot, so the hour into each
+    settlement is more volatile (volatility effect, UTC clock).
+  measure: abs_ratio
+  verdict: fail
+  run: try_03/fake_03
+- id: daily_close_reversal
+  belief: Moves into the 00:00 UTC daily candle close are partly painted by traders
+    and bots targeting the daily close, and revert in the next hours (return effect,
+    UTC clock).
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_03
+- id: cme_reopen_vol
+  belief: CME bitcoin and ether futures reopen on Sunday evening (22:00 or 23:00 UTC
+    depending on US daylight time); price discovery against the weekend's spot move
+    makes those hours more volatile than the rest of Sunday (volatility effect, UTC
+    clock approximating Chicago).
+  measure: abs_ratio
+  verdict: fail
+  run: try_03/fake_03
+- id: expiry_morning_vol
+  belief: Monthly crypto options expire on the last Friday of the month at 08:00 UTC;
+    hedge unwinds and pinning make the hours around expiry more volatile than the
+    same hours on other Fridays (volatility effect, UTC clock).
+  measure: abs_ratio
+  verdict: fail
+  run: try_03/fake_03
+- id: hour_of_day_persistence
+  belief: 'Intraday return seasonality persists: an hour of the day that has had above-average
+    returns over the past month tends to keep them (return effect, UTC clock).'
+  measure: rank_corr
+  verdict: fail
+  run: try_03/fake_03
+- id: us_open_continuation
+  belief: continuation from the US open hour
+  measure: mean_diff
+  verdict: fail
+  run: try_05/fake_03
+- id: us_session_reverted_in_asia
+  belief: The weekday US-session move (about 13-21 UTC) is pushed by desk and ETF
+    flow that has no follow-through once US desks log off, so the following Asian
+    hours partly undo it, and more than after a weekend 13-21 UTC move (return effect,
+    UTC clock approximating New York).
+  measure: mean_diff
+  verdict: fail
+  run: fake_03_time_of_week/001
+- id: us_session_momentum_next_day
+  belief: Institutional flow is spread over several days, so the direction of yesterday's
+    US session repeats in today's US session on consecutive weekdays (return effect,
+    UTC clock approximating New York).
+  measure: mean_diff
+  verdict: fail
+  run: fake_03_time_of_week/001
+- id: friday_afternoon_derisk
+  belief: Desks and leveraged traders cut crypto exposure into the weekend, so Friday's
+    US afternoon (16-21 UTC) drifts down compared with the same hours on Monday to
+    Thursday (return effect, UTC clock).
+  measure: mean_diff
+  verdict: fail
+  run: fake_03_time_of_week/001
+- id: weekend_hold_drift
+  belief: Retail buyers are the marginal flow on weekends while institutional sellers
+    are away, so prices drift up from Friday evening to Sunday evening more than over
+    a two-day weekday stretch (return effect, UTC clock).
+  measure: mean_diff
+  verdict: fail
+  run: fake_03_time_of_week/001
+- id: turn_of_month_drift
+  belief: Month-end fund rebalancing, salary-day retail buying and recurring purchase
+    plans put net buying into the turn of the month, so the days around it return
+    more than other days (return effect, UTC calendar).
+  measure: mean_diff
+  verdict: fail
+  run: fake_03_time_of_week/001
+- id: europe_open_vol
+  belief: The London and European desk open (07-09 UTC) brings a wave of order flow
+    after the quiet late-Asian hours, so hourly moves just after it are larger than
+    in the 03-06 UTC lull on weekdays (volatility effect, UTC clock approximating
+    London).
+  measure: abs_ratio
+  verdict: fail
+  run: fake_03_time_of_week/001
+- id: nfp_friday_vol
+  belief: US payrolls are released on the first Friday of the month at 12:30 or 13:30
+    UTC, and the macro repricing spills into crypto, so those hours are more volatile
+    than the same hours on other Fridays (volatility effect, UTC clock approximating
+    New York, macro calendar).
+  measure: abs_ratio
+  verdict: fail
+  run: fake_03_time_of_week/001
+- id: seasonal_vol_profile_forecast
+  belief: The intraday volatility profile is stable (sessions are habitual), so an
+    hour that has been volatile on recent days at that time of day will again be volatile,
+    across all hours and not only the US open (volatility effect, UTC clock, data-driven).
+  measure: abs_ratio
+  verdict: fail
+  run: fake_03_time_of_week/001
+- id: volume_surprise_vs_clock
+  belief: Volume far above its usual level for that hour of the day marks unscheduled
+    news or flow that the clock does not explain, and it carries over into a more
+    volatile next hour (volatility effect, volume adjusted for the UTC clock).
+  measure: abs_ratio
+  verdict: pass
+  run: fake_03_time_of_week/001
+- id: volume_surprise_direction_carries
+  belief: A bar whose volume is far above its usual level for that hour carries unscheduled
+    flow that is not finished in one bar, so its direction tends to continue over
+    the next few hours more than the direction of a normal-volume bar (return effect,
+    volume adjusted for the UTC clock).
+  measure: mean_diff
+  verdict: fail
+  run: fake_03_time_of_week/001

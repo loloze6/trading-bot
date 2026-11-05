@@ -1,0 +1,30 @@
+validated:
+- id: heavy_volume_spike_continues
+  brief: fake_01_btc_overreaction.md
+  run: try_03/fake_01
+  kind: book
+  belief: A big bar on extreme volume carries informed flow and keeps going rather
+    than reverting.
+  profit: fail (try_04)
+- id: weekend_vol_compression
+  brief: fake_03_time_of_week.md
+  run: try_03/fake_03
+  kind: filter
+  belief: With institutional desks and market makers away, hourly volatility on Saturday
+    and Sunday (UTC clock) is clearly lower than on weekdays.
+  profit: not applicable (filter)
+- id: us_open_vol
+  brief: fake_03_time_of_week.md
+  run: try_03/fake_03
+  kind: filter
+  belief: The US equity open (13:30 or 14:30 UTC depending on US daylight time) brings
+    ETF, futures and desk flow, so the hours around it are more volatile on weekdays
+    (volatility effect, UTC clock approximating New York).
+  profit: not applicable (filter)
+- id: volume_surprise_vs_clock
+  brief: fake_03_time_of_week.md
+  run: fake_03_time_of_week/001
+  kind: filter
+  belief: Volume far above its usual level for that hour of the day marks unscheduled
+    news or flow that the clock does not explain, and it carries over into a more
+    volatile next hour (volatility effect, volume adjusted for the UTC clock).

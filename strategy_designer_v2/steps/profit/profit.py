@@ -14,8 +14,9 @@ import judge as J  # the same bars, seal mask, windows and code runner  # noqa: 
 SHARPE_MIN, DD_MAX, AGREE = 1.0, 0.20, 5
 
 
-def main():
-    claims_path, cid, fold, bar_size, symbol = pathlib.Path(sys.argv[1]).resolve(), sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
+def profit_claim(claims_path, cid, fold, bar_size, symbol, out_path=None, try_name="try_04"):
+    """Branch 3 for one claim on one symbol; writes profit_<id>.yaml; appends a trial row; returns the dict."""
+    claims_path = pathlib.Path(claims_path).resolve()
     idea = next(i for i in yaml.safe_load(claims_path.read_text())["ideas"] if i["id"] == cid)
     c = idea["claim"]; h = int(c["horizon_bars"])
     df = J.load_bars(symbol, bar_size)
@@ -49,13 +50,19 @@ def main():
            "fold_totals": {"net_return": round(tot, 4), "sharpe": round(sharpe, 2), "max_drawdown": round(dd, 4),
                            "time_in_market": round(exposure, 3), "trades": int((pos.diff().abs()[wn > 0] > 0).sum() // 2)},
            "windows": rows, "checks": checks, "verdict": "pass" if all(checks.values()) else "fail"}
-    out_path = claims_path.parent.parent.parent / "try_04" / f"profit_{cid}.yaml"
+    out_path = pathlib.Path(out_path) if out_path else claims_path.parent / f"profit_{cid}.yaml"
     out_path.write_text(yaml.safe_dump(out, sort_keys=False), encoding="utf-8")
     ledger = yaml.safe_load(J.LEDGER.read_text()); ledger["trials"].append(
-        {"at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"), "try": "try_04", "claim": cid, "symbols": [symbol],
+        {"at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"), "try": try_name, "claim": cid, "symbols": [symbol],
          "bar_size": bar_size, "fold": fold, "verdict": f"profit:{out['verdict']}"})
     J.LEDGER.write_text(yaml.safe_dump(ledger, sort_keys=False))
-    print(yaml.safe_dump(out, sort_keys=False))
+    print(f"{cid} {symbol}: profit {out['verdict']}  sharpe={sharpe:.2f} net={tot:+.1%} dd={dd:.1%}")
+    return out
+
+
+def main():
+    profit_claim(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5],
+                 out_path=pathlib.Path(sys.argv[1]).resolve().parent.parent.parent / "try_04" / f"profit_{sys.argv[2]}.yaml")
 
 
 if __name__ == "__main__":

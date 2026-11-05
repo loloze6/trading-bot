@@ -111,8 +111,9 @@ def judge_claim(idea, df, wn):
             "n_a": int(na), "n_b": int(nb), "windows": wins, "agreeing_windows": f"{agree} of {N_WIN}", "checks": checks}
 
 
-def main():
-    claims_path, fold, bar_size, symbols = pathlib.Path(sys.argv[1]).resolve(), sys.argv[2], sys.argv[3], sys.argv[4:]
+def judge_file(claims_path, fold, bar_size, symbols, try_name=None):
+    """Judge every idea of a claims file; write verdicts.yaml beside it; append trial rows; return the verdicts doc."""
+    claims_path = pathlib.Path(claims_path).resolve()
     doc = yaml.safe_load(claims_path.read_text(encoding="utf-8"))
     windows = rf.load_fold_windows(fold)
     out = {"claims_file": str(claims_path.relative_to(ROOT)), "fold": fold, "bar_size": bar_size, "symbols": symbols,
@@ -128,15 +129,20 @@ def main():
         verdicts = {v["verdict"] for v in per.values()}
         overall = "refused" if "refused" in verdicts else ("pass" if verdicts == {"pass"} else "fail")
         out["ideas"][idea["id"]] = {"verdict": overall, "by_symbol": per}
-        ledger["trials"].append({"at": stamp, "try": claims_path.parent.name, "claim": idea["id"], "symbols": symbols,
+        ledger["trials"].append({"at": stamp, "try": try_name or claims_path.parent.name, "claim": idea["id"], "symbols": symbols,
                                  "bar_size": bar_size, "fold": fold, "verdict": overall})
         line = " | ".join(f"{s}: {v['verdict']}" + (f" effect={v['effect']:+.4f} n={v['n_a']}/{v['n_b']} agree={v['agreeing_windows']}"
                           if v["verdict"] != "refused" else f" ({v['why']})") for s, v in per.items())
         print(f"{idea['id']}: {overall.upper()}  {line}")
-    out_path = claims_path.parent / "verdicts.yaml"
+    out_path = claims_path.parent / ("verdicts.yaml" if claims_path.stem == "claims" else f"verdicts_{claims_path.stem}.yaml")
     out_path.write_text(yaml.safe_dump(out, sort_keys=False, allow_unicode=True), encoding="utf-8")
     LEDGER.write_text(yaml.safe_dump(ledger, sort_keys=False), encoding="utf-8")
     print(f"written {out_path.relative_to(ROOT)}")
+    return out
+
+
+def main():
+    judge_file(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4:])
 
 
 if __name__ == "__main__":
