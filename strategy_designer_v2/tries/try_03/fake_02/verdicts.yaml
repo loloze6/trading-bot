@@ -1,0 +1,188 @@
+claims_file: strategy_designer_v2/tries/try_03/fake_02/claims.yaml
+fold: A
+bar_size: 1d
+symbols:
+- ETHUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  vol_rising_trend_pays:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: fail
+        effect: -0.004323416282680212
+        n_a: 360
+        n_b: 370
+        windows:
+        - -0.046706783747071906
+        - 0.034627474690101176
+        - 0.0016101225247825493
+        - -0.00913444340166353
+        - -0.014011766919507635
+        - -0.016352449181855043
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  efficiency_ratio_regime:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: fail
+        effect: 0.005165640677942016
+        n_a: 358
+        n_b: 372
+        windows:
+        - -0.02115282770095233
+        - -0.012527866104660529
+        - -0.031489149372472255
+        - 0.008231521386031124
+        - 0.0003361276426672088
+        - 0.03478976646312987
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  vol_compression_precedes_move:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: fail
+        effect: 0.9644663591154262
+        n_a: 131
+        n_b: 599
+        windows:
+        - 0.6205989144139689
+        - 0.5689934561436314
+        - 1.4573773970437227
+        - 2.235500847823417
+        - 1.0242466855328076
+        - 0.42514122612662825
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  donchian_breakout_net:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: fail
+        effect: 0.021792934154155792
+        n_a: 17
+        n_b: 17
+        windows:
+        - -0.07788263595648726
+        - 0.20525492069672718
+        - -0.047669559923554206
+        - -0.02869902209548808
+        - -0.007010883615856648
+        - 0.028237306856146005
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+  vol_scaled_momentum_rank:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: fail
+        effect: 0.030191554713122924
+        n_a: 730
+        n_b: 730
+        windows:
+        - -0.047183832210570174
+        - 0.25336961989397794
+        - -0.4113098562228002
+        - -0.18008195013542605
+        - -0.16238665823992984
+        - 0.018276986725970768
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  multi_horizon_agreement:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: fail
+        effect: 0.11089794258263053
+        n_a: 419
+        n_b: 311
+        windows:
+        - 0.10776942355889724
+        - 0.5100795755968169
+        - 0.10344827586206895
+        - -0.17554858934169282
+        - 0.07777164920022062
+        - -0.3105281814959234
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  volume_confirmed_trend:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: fail
+        effect: 0.028294158531421608
+        n_a: 287
+        n_b: 443
+        windows:
+        - -0.05268914504172141
+        - 0.12256774473147981
+        - 0.007423724893375099
+        - 0.01705864723772536
+        - -0.013454319385643228
+        - 0.029214040791255398
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  vol_spike_reverts:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: fail
+        effect: 0.026796849505853156
+        n_a: 73
+        n_b: 657
+        windows:
+        - null
+        - 0.05562780758440346
+        - -0.02451592981503755
+        - null
+        - null
+        - 0.032725170439367325
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  uptrend_pullback_entry:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: fail
+        effect: 0.024609587954213787
+        n_a: 7
+        n_b: 304
+        windows:
+        - 0.014448415191435977
+        - 0.06595036353214041
+        - -0.01156698674156384
+        - 0.09027029972680015
+        - 0.022895420808992487
+        - null
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false

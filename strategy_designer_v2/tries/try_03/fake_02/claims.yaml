@@ -1,0 +1,177 @@
+brief: fake_02_eth_vol_regime_trend.md
+ideas:
+  - id: vol_rising_trend_pays
+    belief: A moving-average trend signal on ETH earns more when realized volatility is rising than when it is falling, because rising vol marks moves that are being repriced rather than drift.
+    claim:
+      when: bars where 20-day realized volatility is higher than it was 10 bars ago
+      then: the 50-day SMA side (long above, short below) earns more over the next 10 days
+      compared_to: bars where 20-day realized volatility is at or below its level 10 bars ago
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.01
+      code: |
+        sma = df.close.rolling(50).mean()
+        vol = ret.rolling(20).std()
+        valid = sma.notna() & vol.shift(10).notna()
+        a = valid & (vol > vol.shift(10))
+        b = valid & ~a
+        signal = pd.Series(np.where(df.close > sma, 1, -1), index=df.index)
+    why_no_lookahead: SMA and volatility use closes up to and including the bar; the comparison level is 10 bars in the past.
+    how_it_trades: Run the SMA-50 trend book only while 20-day vol is above its level 10 days ago; flat otherwise.
+  - id: efficiency_ratio_regime
+    belief: Chop can be read from the path itself; when price has travelled efficiently (net move large relative to the sum of daily moves), the 20-day trend keeps going.
+    claim:
+      when: bars where the 20-day Kaufman efficiency ratio is above its trailing one-year median
+      then: the sign of the 20-day return predicts the next 10 days better
+      compared_to: bars where the efficiency ratio is at or below that median
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.01
+      code: |
+        n = 20
+        er = (df.close - df.close.shift(n)).abs() / df.close.diff().abs().rolling(n).sum()
+        thr = er.rolling(365, min_periods=120).median()
+        valid = er.notna() & thr.notna()
+        a = valid & (er > thr)
+        b = valid & ~a
+        signal = pd.Series(np.where(df.close > df.close.shift(n), 1, -1), index=df.index)
+    why_no_lookahead: The ratio and its median use only closes at or before the bar.
+    how_it_trades: Hold the 20-day momentum side only when the efficiency ratio is above its trailing median.
+  - id: vol_compression_precedes_move
+    belief: Periods of compressed short-term volatility relative to longer-term volatility are followed by larger moves, so the calm phase is where a trend is born.
+    claim:
+      when: bars where 10-day realized vol is below 0.6 times 90-day realized vol
+      then: the absolute 10-day forward move is larger
+      compared_to: all other bars with both vols defined
+      measure: abs_ratio
+      horizon_bars: 10
+      direction: above
+      min_effect: 1.15
+      code: |
+        v10 = ret.rolling(10).std()
+        v90 = ret.rolling(90).std()
+        r = v10 / v90
+        valid = r.notna()
+        a = valid & (r < 0.6)
+        b = valid & ~a
+    why_no_lookahead: Both volatilities are trailing windows ending at the bar's close.
+    how_it_trades: Arm a trend entry (breakout or SMA side) only after a compression bar; ignore signals in non-compressed periods.
+  - id: donchian_breakout_net
+    belief: A close beyond the prior 55-day closing range is a robust trend definition on ETH that pays after cost without any regime filter.
+    claim:
+      when: first close above the prior 55-day high close or below the prior 55-day low close, at most one event per 10 bars
+      then: following the breakout direction earns more than the round-trip cost over the next 20 days
+      compared_to: the round-trip cost (net_return)
+      measure: net_return
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.02
+      code: |
+        hi = df.close.rolling(55).max().shift(1)
+        lo = df.close.rolling(55).min().shift(1)
+        up = df.close > hi
+        dn = df.close < lo
+        a = spaced(up | dn, 10)
+        b = ~a
+        signal = pd.Series(np.where(up, 1, -1), index=df.index)
+    why_no_lookahead: The channel is built from the 55 closes before the bar (shift(1)) and compared with the bar's own close.
+    how_it_trades: Enter long on a 55-day high close, short (or flat in spot) on a 55-day low close, hold about 20 days.
+  - id: vol_scaled_momentum_rank
+    belief: Trend strength measured in units of its own volatility (a trend t-statistic) is what carries forward; a big move in calm conditions means more than the same move in a storm.
+    claim:
+      when: all bars where the feature is defined
+      then: the vol-scaled 20-day return ranks with the 10-day forward return
+      compared_to: not used (rank correlation)
+      measure: rank_corr
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.05
+      code: |
+        vol = ret.rolling(20).std()
+        feature = (df.close / df.close.shift(20) - 1) / (vol * np.sqrt(20))
+        a = feature.notna()
+        b = ~a
+    why_no_lookahead: Return and volatility are both trailing 20-bar quantities ending at the bar.
+    how_it_trades: Size the trend position in proportion to the vol-scaled 20-day return, capped.
+  - id: multi_horizon_agreement
+    belief: A trend that is visible on short, medium and long horizons at once is robust to chop; disagreement between horizons marks the flat stretches that eat the gains.
+    claim:
+      when: bars where the signs of the 20, 60 and 120-day returns all agree
+      then: the 60-day trend direction is right more often over the next 10 days
+      compared_to: bars where the three signs disagree
+      measure: hit_rate
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.04
+      code: |
+        r20 = df.close / df.close.shift(20) - 1
+        r60 = df.close / df.close.shift(60) - 1
+        r120 = df.close / df.close.shift(120) - 1
+        s = np.sign(r20) + np.sign(r60) + np.sign(r120)
+        valid = r120.notna()
+        a = valid & (s.abs() == 3)
+        b = valid & (s.abs() < 3)
+        signal = pd.Series(np.where(r60 > 0, 1, -1), index=df.index)
+    why_no_lookahead: All three returns compare the bar's close with past closes.
+    how_it_trades: Hold the trend side only when all three horizons agree; flat on disagreement.
+  - id: volume_confirmed_trend
+    belief: Trends backed by rising participation (short-term volume above its longer average) are real repricing and persist; trends on fading volume are drift that chops out.
+    claim:
+      when: bars where 10-day mean volume is above 60-day mean volume
+      then: the 50-day SMA side earns more over the next 10 days
+      compared_to: bars where 10-day mean volume is at or below 60-day mean volume
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.01
+      code: |
+        sma = df.close.rolling(50).mean()
+        v10 = df.volume.rolling(10).mean()
+        v60 = df.volume.rolling(60).mean()
+        valid = sma.notna() & v60.notna()
+        a = valid & (v10 > v60)
+        b = valid & ~a
+        signal = pd.Series(np.where(df.close > sma, 1, -1), index=df.index)
+    why_no_lookahead: Volume and price averages are trailing windows ending at the bar's close.
+    how_it_trades: Run the SMA-50 trend book only while short-term volume exceeds its 60-day average.
+  - id: vol_spike_reverts
+    belief: In extreme volatility (the top tenth of the past year) moves are liquidation-driven and revert, so trend loses there; this contradicts vol_rising_trend_pays at the extreme.
+    claim:
+      when: bars where 20-day realized vol is above its trailing one-year 90th percentile
+      then: fading the 5-day move earns more over the next 5 days
+      compared_to: bars with vol at or below that percentile
+      measure: mean_diff
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.008
+      code: |
+        vol = ret.rolling(20).std()
+        thr = vol.rolling(365, min_periods=180).quantile(0.9)
+        valid = vol.notna() & thr.notna() & df.close.shift(5).notna()
+        a = valid & (vol > thr)
+        b = valid & ~a
+        signal = pd.Series(np.where(df.close > df.close.shift(5), -1, 1), index=df.index)
+    why_no_lookahead: Volatility, its percentile and the 5-day move all use closes at or before the bar.
+    how_it_trades: Switch the trend book off (or to a short-horizon fade) while vol is in its top decile.
+  - id: uptrend_pullback_entry
+    belief: Inside an established uptrend, a sharp pullback is a better entry than an arbitrary uptrend day, because trend followers who entered late are shaken out and the trend resumes.
+    claim:
+      when: bars above the 100-day SMA that are more than 8% below their 10-day high close, at most one event per 5 bars
+      then: being long earns more over the next 10 days
+      compared_to: bars above the 100-day SMA that are not in such a pullback
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.01
+      code: |
+        sma = df.close.rolling(100).mean()
+        up = sma.notna() & (df.close > sma)
+        dip = (df.close / df.close.rolling(10).max() - 1) < -0.08
+        a = spaced(up & dip, 5)
+        b = up & ~dip
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: The SMA and the 10-day high include only closes up to the bar.
+    how_it_trades: In an uptrend, add or enter long on pullback bars rather than on breakouts.
+notes: Single symbol (ETH/USD, Kraken, daily), so no cross-asset ideas. Time-of-week ideas were left out as outside the brief's regime and trend scope. The chop recognisers here differ by mechanism (vol slope, path efficiency, horizon agreement, participation, vol compression); an SMA-cross-count chop filter was struck as the same mechanism as the efficiency ratio. vol_spike_reverts deliberately contradicts vol_rising_trend_pays at the extreme of the vol distribution.

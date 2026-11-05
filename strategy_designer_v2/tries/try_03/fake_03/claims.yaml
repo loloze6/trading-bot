@@ -1,0 +1,204 @@
+brief: fake_03_time_of_week.md
+ideas:
+  - id: weekend_vol_compression
+    belief: "With institutional desks and market makers away, hourly volatility on Saturday and Sunday (UTC clock) is clearly lower than on weekdays."
+    claim:
+      when: "bars closing on Saturday or Sunday, UTC"
+      then: "the absolute return of the next hour is smaller"
+      compared_to: "bars closing Monday to Friday, UTC"
+      measure: abs_ratio
+      horizon_bars: 1
+      direction: below
+      min_effect: 0.80
+      code: |
+        d = pd.Series(np.asarray(dow), index=df.index)
+        a = d >= 5
+        b = ~a
+    why_no_lookahead: "The selector uses only the bar's own UTC weekday, known in advance."
+    how_it_trades: "Lower size or widen mean-reversion bands on weekends; tighten them on weekdays."
+
+  - id: weekend_hourly_reversion
+    belief: "Thin weekend books make hourly moves overshoot and partly revert, more often than on weekdays (return effect, UTC clock)."
+    claim:
+      when: "bars closing on Saturday or Sunday, UTC"
+      then: "the next hour moves against the sign of this hour's return"
+      compared_to: "weekday bars with the same rule"
+      measure: hit_rate
+      horizon_bars: 1
+      direction: positive
+      min_effect: 0.02
+      code: |
+        d = pd.Series(np.asarray(dow), index=df.index)
+        a = d >= 5
+        b = ~a
+        signal = -np.sign(ret)
+    why_no_lookahead: "Uses the bar's own weekday and its own close-to-close return, both known at its close."
+    how_it_trades: "Fade the last hour's move on weekends only."
+
+  - id: monday_reverses_weekend
+    belief: "Weekend moves are made on thin liquidity by retail flow and are partly undone in the first day after weekday desks return (return effect, UTC clock)."
+    claim:
+      when: "the bar closing Monday 00:00 UTC, signed against the return of the prior 48 hours (the weekend)"
+      then: "the next 24 hours move against the weekend move"
+      compared_to: "bars closing 00:00 UTC Wednesday to Friday, signed against their own prior 48 hours"
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.003
+      code: |
+        h = pd.Series(np.asarray(hour), index=df.index)
+        d = pd.Series(np.asarray(dow), index=df.index)
+        a = (d == 0) & (h == 0)
+        b = d.isin([2, 3, 4]) & (h == 0)
+        signal = -np.sign(df.close.pct_change(48))
+    why_no_lookahead: "The 48-hour return ends at the bar's own close; the weekday and hour are calendar facts."
+    how_it_trades: "At Monday 00:00 UTC take a one-day position against the weekend's move."
+
+  - id: us_open_vol
+    belief: "The US equity open (13:30 or 14:30 UTC depending on US daylight time) brings ETF, futures and desk flow, so the hours around it are more volatile on weekdays (volatility effect, UTC clock approximating New York)."
+    claim:
+      when: "weekday bars closing at 13:00 or 14:00 UTC"
+      then: "the absolute return of the next hour (13-14 and 14-15 UTC) is larger"
+      compared_to: "all other weekday bars"
+      measure: abs_ratio
+      horizon_bars: 1
+      direction: above
+      min_effect: 1.25
+      code: |
+        h = pd.Series(np.asarray(hour), index=df.index)
+        d = pd.Series(np.asarray(dow), index=df.index)
+        a = (d < 5) & h.isin([13, 14])
+        b = (d < 5) & ~h.isin([13, 14])
+    why_no_lookahead: "The selector uses only the bar's UTC hour and weekday, known in advance."
+    how_it_trades: "Enable breakout entries or widen stops only in the US-open window."
+
+  - id: us_open_selloff
+    belief: "US-hours flow has been a net seller of crypto at the equity open (hedging, ETF rebalancing), so the first hours after the US open drift down on weekdays but not on weekends (return effect, UTC clock)."
+    claim:
+      when: "weekday bars closing at 13:00 UTC, betting short"
+      then: "the next 3 hours (13-16 UTC) have a lower return"
+      compared_to: "weekend bars closing at 13:00 UTC, same short bet"
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.0015
+      code: |
+        h = pd.Series(np.asarray(hour), index=df.index)
+        d = pd.Series(np.asarray(dow), index=df.index)
+        a = (d < 5) & (h == 13)
+        b = (d >= 5) & (h == 13)
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: "The selector uses only the bar's UTC hour and weekday; the signal is a constant."
+    how_it_trades: "Short or stay flat from 13:00 to 16:00 UTC on weekdays."
+
+  - id: asian_session_drift
+    belief: "Returns accrue disproportionately in the Asian session (00-08 UTC) while US hours give them back, enough that a long-only Asian-session hold pays the fee (return effect, UTC clock)."
+    claim:
+      when: "bars closing at 00:00 UTC, betting long"
+      then: "the next 8 hours (00-08 UTC) return more than the round-trip cost"
+      compared_to: "the round-trip cost (no baseline bars)"
+      measure: net_return
+      horizon_bars: 8
+      direction: positive
+      min_effect: 0.0005
+      code: |
+        h = pd.Series(np.asarray(hour), index=df.index)
+        a = h == 0
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: "The selector uses only the bar's UTC hour; the signal is a constant."
+    how_it_trades: "Buy at 00:00 UTC, sell at 08:00 UTC, every day."
+
+  - id: funding_hour_vol
+    belief: "Perpetual-swap funding settles at 00, 08 and 16 UTC on the large derivatives venues; positioning before settlement spills into spot, so the hour into each settlement is more volatile (volatility effect, UTC clock)."
+    claim:
+      when: "bars closing at 23:00, 07:00 or 15:00 UTC"
+      then: "the absolute return of the next hour (the hour into settlement) is larger"
+      compared_to: "all other bars"
+      measure: abs_ratio
+      horizon_bars: 1
+      direction: above
+      min_effect: 1.10
+      code: |
+        h = pd.Series(np.asarray(hour), index=df.index)
+        a = h.isin([23, 7, 15])
+        b = ~a
+    why_no_lookahead: "The selector uses only the bar's UTC hour, a fixed schedule known in advance."
+    how_it_trades: "Avoid passive entries or tighten risk in the hour before funding settlement."
+
+  - id: daily_close_reversal
+    belief: "Moves into the 00:00 UTC daily candle close are partly painted by traders and bots targeting the daily close, and revert in the next hours (return effect, UTC clock)."
+    claim:
+      when: "bars closing at 00:00 UTC, signed against the prior 3-hour return"
+      then: "the next 3 hours move against the move into the daily close"
+      compared_to: "all other bars, signed the same way"
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.001
+      code: |
+        h = pd.Series(np.asarray(hour), index=df.index)
+        a = h == 0
+        b = ~a
+        signal = -np.sign(df.close.pct_change(3))
+    why_no_lookahead: "The 3-hour return ends at the bar's own close; the hour is a calendar fact."
+    how_it_trades: "At 00:00 UTC fade the last three hours' move for three hours."
+
+  - id: cme_reopen_vol
+    belief: "CME bitcoin and ether futures reopen on Sunday evening (22:00 or 23:00 UTC depending on US daylight time); price discovery against the weekend's spot move makes those hours more volatile than the rest of Sunday (volatility effect, UTC clock approximating Chicago)."
+    claim:
+      when: "Sunday bars closing at 21:00 or 22:00 UTC"
+      then: "the absolute return of the next hour (21-23 UTC) is larger"
+      compared_to: "Sunday bars closing 10:00 to 20:00 UTC"
+      measure: abs_ratio
+      horizon_bars: 1
+      direction: above
+      min_effect: 1.30
+      code: |
+        h = pd.Series(np.asarray(hour), index=df.index)
+        d = pd.Series(np.asarray(dow), index=df.index)
+        a = (d == 6) & h.isin([21, 22])
+        b = (d == 6) & h.between(10, 20)
+    why_no_lookahead: "The selector uses only the bar's UTC hour and weekday, known in advance."
+    how_it_trades: "Stand aside or widen stops across the Sunday futures reopen."
+
+  - id: expiry_morning_vol
+    belief: "Monthly crypto options expire on the last Friday of the month at 08:00 UTC; hedge unwinds and pinning make the hours around expiry more volatile than the same hours on other Fridays (volatility effect, UTC clock)."
+    claim:
+      when: "bars closing 05:00 to 08:00 UTC on the last Friday of the month"
+      then: "the absolute return over the next 2 hours is larger"
+      compared_to: "bars closing 05:00 to 08:00 UTC on other Fridays"
+      measure: abs_ratio
+      horizon_bars: 2
+      direction: above
+      min_effect: 1.25
+      code: |
+        h = pd.Series(np.asarray(hour), index=df.index)
+        d = pd.Series(np.asarray(dow), index=df.index)
+        day = pd.Series(df.index.day, index=df.index)
+        dim = pd.Series(df.index.days_in_month, index=df.index)
+        last_fri = (d == 4) & (day + 7 > dim)
+        a = last_fri & h.between(5, 8)
+        b = (d == 4) & ~last_fri & h.between(5, 8)
+    why_no_lookahead: "The last Friday of a month is a calendar fact known in advance; the hour is the bar's own."
+    how_it_trades: "Reduce size or skip entries in the expiry morning window."
+
+  - id: hour_of_day_persistence
+    belief: "Intraday return seasonality persists: an hour of the day that has had above-average returns over the past month tends to keep them (return effect, UTC clock)."
+    claim:
+      when: "all bars, ranked by the mean return of the next clock hour over its last 30 days"
+      then: "the next hour's return rises with that historical mean"
+      compared_to: "rank correlation, no baseline bars"
+      measure: rank_corr
+      horizon_bars: 1
+      direction: positive
+      min_effect: 0.03
+      code: |
+        h = pd.Series(np.asarray(hour), index=df.index)
+        hourly_mean = ret.groupby(h).transform(lambda s: s.rolling(30, min_periods=20).mean())
+        feature = hourly_mean.shift(23)
+        a = feature.notna()
+        b = ~a
+    why_no_lookahead: "shift(23) takes yesterday's bar at the next clock hour, whose 30-day mean ends at that past bar's close."
+    how_it_trades: "Each hour, hold long or short for the next hour by the sign of that hour's trailing 30-day mean."
+notes: "All clocks are UTC; US and Chicago sessions are approximated with two adjacent hours to cover daylight time. The judge measures each claim on BTC/USD, ETH/USD and SOL/USD separately, so every claim is a multi-coin claim. expiry_morning_vol has about 4 a-bars per month; it may fall short of 30 a-bars on a short fold. An hour-of-week variant of hour_of_day_persistence was left out as a parameter variant of the same idea. Weekend reversion and Monday reversal differ in mechanism (intra-weekend liquidity versus post-weekend correction)."
