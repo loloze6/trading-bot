@@ -1,0 +1,103 @@
+brief: "fake_03_time_of_week.md"
+ideas:
+  - id: weekend_vol_compression
+    belief: "With institutional desks and market makers away, crypto realized volatility is materially lower on weekends than on weekdays, an effect in volatility only, on the UTC weekday clock."
+    claim:
+      when: "1h bars whose close timestamp falls on Saturday or Sunday UTC."
+      then: "the absolute close-to-close return of that same hour and of the next 1h bar."
+      compared_to: "1h bars whose close timestamp falls Monday to Friday UTC."
+      measure: "ratio of mean absolute hourly return (weekend over weekday), computed per pair."
+      pass_if: "ratio below 0.80 for each of BTC/USD, ETH/USD and SOL/USD, in at least 4 of 5 equal consecutive time windows."
+    why_no_lookahead: "The selector is the bar's own calendar timestamp, known before the bar opens."
+    how_it_trades: "Volatility input only: raise position size toward the vol target over the weekend, or stay flat with breakout signals that fire on weekend bars."
+  - id: weekend_move_monday_reversal
+    belief: "Thin weekend liquidity lets price overshoot, and returning weekday flow partly reverses the weekend move on Monday, an effect in returns on the UTC weekday clock."
+    claim:
+      when: "the bar closing Monday 00:00 UTC, with the weekend return defined as the close of that bar over the close of the bar ending Friday 21:00 UTC."
+      then: "the return from the Monday 00:00 UTC close to the Monday 20:00 UTC close."
+      compared_to: "zero, the unconditional Monday 00:00 to 20:00 UTC return, and weekends with absolute weekend return below 3%."
+      measure: "Spearman rank correlation between weekend return and next Monday return, plus the mean signed Monday return of a fade when the absolute weekend return exceeds 3%."
+      pass_if: "rank correlation below -0.10 and negative in at least 4 of 5 windows for at least 2 of 3 pairs, and the mean fade return on weekends beyond 3% exceeds 0.40% net of a 0.40% round-trip cost."
+    why_no_lookahead: "The weekend return uses only closes at or before the Monday 00:00 UTC bar, where the decision is taken."
+    how_it_trades: "At Monday 00:00 UTC go long after a weekend drop beyond 3%, go flat (or short where allowed) after a rise beyond 3%, and exit at Monday 20:00 UTC."
+  - id: us_hours_underperformance
+    belief: "Returns accrue mostly outside US cash-equity hours and are weaker inside them, because US risk desks de-risk or sell into their own session, an effect in returns on the New York clock (DST-aware)."
+    claim:
+      when: "1h bars whose close timestamp falls from 10:00 to 16:00 America/New_York on NYSE trading days."
+      then: "the return of that 1h bar, summed per day to a US-session return."
+      compared_to: "the summed return of all other hours of the same 24h day (non-US session)."
+      measure: "mean daily difference, non-US session return minus US session return, and net return of being long only outside US hours after costs."
+      pass_if: "mean daily difference above 0.40% (one round trip per day at 0.40%), positive in at least 4 of 5 windows, same sign for all three pairs."
+    why_no_lookahead: "The selector is the bar's clock time and a published exchange calendar, both known before the bar opens."
+    how_it_trades: "Long from the 16:00 New York close to the next 09:00 New York close, flat during US cash hours."
+  - id: asian_session_continuation
+    belief: "Information priced first in the Asian session diffuses slowly into European and US flow, so the Asian session direction continues into the rest of the day, an effect in returns on the UTC clock."
+    claim:
+      when: "the bar closing 08:00 UTC, with the Asian session return defined as close at 08:00 UTC over close at 00:00 UTC."
+      then: "the return from the 08:00 UTC close to the 20:00 UTC close of the same day."
+      compared_to: "zero, and days where the absolute Asian session return is below 1.5%."
+      measure: "Spearman rank correlation between Asian session return and the following 12h return, plus mean signed continuation return when the absolute Asian return exceeds 1.5%."
+      pass_if: "rank correlation above 0.05 and positive in at least 4 of 5 windows for all three pairs, and mean signed continuation on days beyond 1.5% exceeds 0.40% round-trip cost."
+    why_no_lookahead: "The Asian session return uses only closes at or before 08:00 UTC, the decision bar."
+    how_it_trades: "At 08:00 UTC take the direction of the Asian session (long, or flat after a drop if shorting is unavailable) when it moved more than 1.5%, exit at 20:00 UTC."
+  - id: options_expiry_vol_release
+    belief: "Dealer hedging pins spot into the monthly crypto options expiry and releases it after, so realized volatility rises after expiry relative to before, an effect in volatility on the UTC clock of the Friday 08:00 UTC monthly expiry."
+    claim:
+      when: "the bar closing 08:00 UTC on the last Friday of each calendar month (monthly options expiry)."
+      then: "realized volatility of hourly returns over the next 48 bars divided by realized volatility over the prior 48 bars."
+      compared_to: "the same post over pre ratio computed at 08:00 UTC on every other Friday (controls for the weekend inside the post window)."
+      measure: "difference of median post over pre volatility ratio, expiry Fridays minus non-expiry Fridays."
+      pass_if: "median ratio at expiry exceeds the non-expiry median by more than 0.15 for both BTC/USD and ETH/USD, with the expiry ratio above the non-expiry median in at least 60% of expiries and in at least 4 of 5 windows."
+    why_no_lookahead: "The expiry date follows a fixed calendar rule known months in advance, and the pre window ends at the decision bar."
+    how_it_trades: "Volatility input only: cut size before expiry and allow breakout entries in the 48h after expiry."
+  - id: month_turn_inflow
+    belief: "Recurring month-end and month-start flows (salary-funded buying, scheduled purchase plans, fund rebalancing) lift prices around the turn of the month, an effect in returns on the UTC calendar."
+    claim:
+      when: "the bar closing 00:00 UTC on the last calendar day of each month."
+      then: "the 72h close-to-close return to the bar closing 00:00 UTC on day 3 of the next month."
+      compared_to: "all other 72h windows that start at a 00:00 UTC close on any other day of the month."
+      measure: "mean difference of 72h forward returns, turn-of-month minus other windows, and net return per trade after a 0.40% round-trip cost."
+      pass_if: "mean difference above 0.60% per window, net mean per trade above zero, positive in at least 4 of 5 windows, same sign for all three pairs."
+    why_no_lookahead: "The selector is a calendar date known in advance; entry is at the selecting bar's close."
+    how_it_trades: "Long from the 00:00 UTC close on the last day of the month to the 00:00 UTC close on day 3, flat otherwise."
+  - id: funding_settlement_hour_vol
+    belief: "Perpetual futures funding settles at 00:00, 08:00 and 16:00 UTC on the large derivatives venues, and the hedging and arbitrage around settlement spills into spot volatility, an effect in volatility on the UTC hour clock."
+    claim:
+      when: "1h bars closing at 00:00, 08:00 or 16:00 UTC."
+      then: "the absolute return of that bar."
+      compared_to: "the two 1h bars on each side of each settlement bar (four neighbours)."
+      measure: "ratio of mean absolute hourly return, settlement bars over neighbour bars."
+      pass_if: "ratio above 1.10 for all three pairs, in at least 4 of 5 windows."
+    why_no_lookahead: "The selector is the bar's clock hour, known before the bar opens."
+    how_it_trades: "Execution filter only: do not open or rebalance positions in the settlement hour; trade the hour after."
+  - id: cme_weekend_gap_fill
+    belief: "Basis traders anchor to the CME bitcoin and ether futures Friday close, so a spot move during the CME weekend closure tends to retrace to the Friday close level during the following week, a market-structure effect in returns on the Chicago clock (DST-aware)."
+    claim:
+      when: "the bar closing Sunday 17:00 America/Chicago (CME reopen), when spot close differs from the spot close of the bar ending Friday 16:00 America/Chicago by more than 1%."
+      then: "whether spot trades back through the Friday reference level (bar high or low crossing it) within the next 120 bars, and the return of a fade held until that touch or 120 bars."
+      compared_to: "displacements of more than 1% over the same 49h span ending at any other weekday hour, with the same 120-bar touch test back to their own start level."
+      measure: "touch rate difference in percentage points, plus mean net return of the fade after a 0.40% round-trip cost."
+      pass_if: "touch rate exceeds baseline by more than 10 percentage points with at least 30 events per pair, in at least 4 of 5 windows for BTC/USD and ETH/USD, and the fade's mean net return is above zero."
+    why_no_lookahead: "Both reference prices are closes at or before the Sunday decision bar; the touch is only the outcome."
+    how_it_trades: "At the Sunday CME reopen hour, go long below the Friday reference (flat or short above it), exit at the touch or after 120 bars."
+  - id: weekend_retail_beta_rotation
+    belief: "Weekend trading is retail-dominated and retail favours higher-beta coins, so SOL and ETH outperform BTC over weekends, a cross-asset effect in returns on the UTC weekday clock."
+    claim:
+      when: "the bar closing Friday 21:00 UTC."
+      then: "the 51h log return spread SOL/USD minus BTC/USD (and ETH/USD minus BTC/USD) to the bar closing Monday 00:00 UTC."
+      compared_to: "the same 51h spread over windows starting at 21:00 UTC Monday to Thursday."
+      measure: "mean difference of the spread, weekend minus weekday windows, net of a 0.80% cost for rotating out of BTC and back."
+      pass_if: "net mean SOL minus BTC weekend excess above zero (gross above 0.80%), positive in at least 4 of 5 windows, and the ETH minus BTC excess of the same sign in at least 4 of 5 windows."
+    why_no_lookahead: "Entry is at the Friday 21:00 UTC close, selected by calendar only."
+    how_it_trades: "Rotate the crypto allocation from BTC into SOL (or ETH) at Friday 21:00 UTC and back at Monday 00:00 UTC."
+  - id: us_open_vol_burst
+    belief: "The US equity cash open brings a burst of cross-asset repricing that crypto absorbs, so crypto volatility spikes in the first hour of the US session and not at the same clock hour on days without a US open, an effect in volatility on the New York clock (DST-aware)."
+    claim:
+      when: "1h bars closing at 10:00 America/New_York on NYSE trading days."
+      then: "the absolute return of that bar."
+      compared_to: "all other weekday 1h bars, with a placebo of bars closing 10:00 America/New_York on weekends and NYSE holidays."
+      measure: "ratio of mean absolute hourly return, US-open bars over other weekday bars, and the same ratio for placebo bars."
+      pass_if: "US-open ratio above 1.40 and placebo ratio below 1.15, for all three pairs, in at least 4 of 5 windows."
+    why_no_lookahead: "The selector is the bar's clock time and a published exchange calendar, both known before the bar opens."
+    how_it_trades: "Volatility input only: lower size or avoid rebalancing into the US open hour; on its own it is flat."
+notes: "Brief implies four clocks (UTC weekday, UTC hour, New York with DST, Chicago with DST for CME) and one calendar rule (last Friday 08:00 UTC monthly expiry), all computable from bar timestamps; no data beyond Kraken 1h OHLCV of the three pairs. No already_tried list in the brief. Windows means 5 equal consecutive slices of the research period. Fee assumption written into pass conditions is 0.40% per round trip including spread, so intraday ideas that trade daily need large edges and are expected to fail honestly; four ideas are volatility-only and pass or fail as filters, not as standalone books. Struck as parameter variants or overlaps: volume-conditioned weekend reversal (variant of weekend_move_monday_reversal), quarterly expiry (subset of options_expiry_vol_release), Asian session volatility (overlap with weekend and US-open vol profile), Sunday Asia-open gap (overlap with weekend_move_monday_reversal). Struck as not computable: anything using funding rates, options open interest or order book, since the brief names bars only."
