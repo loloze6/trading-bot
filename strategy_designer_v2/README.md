@@ -27,4 +27,4 @@ v2 starts empty. A v1 piece enters only by hand, one at a time, with a one-line 
 `python3 run.py briefs/<brief>.md --fold A --rounds 2`. One brief, one fold, a round budget. Outputs under `runs/<brief>/<n>/`; records under `records/`. A run resumes from the last file written.
 
 ## Status
-Tries 01 to 06 under `tries/`: the ideas step, the claim judge, brief to verdict, the profit answer, the analyst and the next idea, the runner. The pipeline runs on its own on three fake briefs. First candidate book on the shelf (`records/shelf.yaml`), one fold, awaiting the operator. Step-backs in `STEPBACK.md`; every addition in `CHANGES.md`.
+Tries 01 to 07 under `tries/`: the ideas step, the claim judge, brief to verdict, the profit answer, the analyst and the next idea, the runner, the engine's backtest at the end of the loop. The pipeline runs on its own on three fake briefs. First candidate book on the shelf (`records/shelf.yaml`), one fold, awaiting the operator. Step-backs in `STEPBACK.md`; every addition in `CHANGES.md`.

@@ -24,3 +24,10 @@ Five questions, answered in one line each, before each try.
 3. **Building what a run asked?** The runs asked for: the engine's event component (open, for the operator), a shelf rule for filters (a filter waits for a book), and nothing else. No piece was built that a run did not ask for.
 4. **Operator deciding, pipeline discovering?** The pipeline discovered three filters and one candidate book on fake briefs; the operator now has two decisions and has written no brief yet. This is the shape the objective asks for.
 5. **Deviation from v2's rule?** Nothing new copied from v1. The adapter mirrors v1's closed-book options by reading them, not by importing v1.
+
+## After try 07 (2026-11-05)
+1. **Simpler or more complex?** One component added to the engine (about 80 lines), one step in v2 (about 80 lines). The lite profit check left the loop. Net: the loop has the same number of steps and the real backtester at the end.
+2. **Fooling ourselves?** The engine and the lite check agree on the candidate, which checks the component and the claim code against each other. Still one fold, still 21 looks. Nothing changed about the holdout.
+3. **Building what a run asked?** The component was the BTC run's ask and the operator approved it. Nothing else was added.
+4. **Operator deciding, pipeline discovering?** Two decisions still pending with the operator: the candidate's holdout, and a real brief.
+5. **Deviation from v2's rule?** One more v1 piece pulled by hand, with its reason: the backtester itself (`run_backtest`). The engine grew by one file; no v1 doc, config or test was touched.
