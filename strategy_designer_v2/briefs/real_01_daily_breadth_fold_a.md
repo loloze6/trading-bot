@@ -1,11 +1,11 @@
 ---
-research_goal: Daily breadth: find daily-bar signal rules (any mechanism: trend, momentum, mean reversion, volatility, volume, calendar; long or short) that earn more than Kraken perp costs on SPOT prices, on fold A (six 4-month blocks of 2022-2023), and that hold on coins of other categories. Each idea is tested one coin per variant: a base variant on BTC, design variants on BTC, and an asset variant on a coin of another category (config/coin_universe.yaml). Step 1a should extract several distinct ideas from this brief (one runs now, the others wait in the queue) rather than one. Who pays: slow flows and forced sellers on daily horizons; why it may survive costs: a daily signal trades rarely, so costs are paid a few times a year per coin. Information for step 1a (a fact about the branch-3 bars signed by the operator, not a rule of this brief): branch 3 caps the whole-test maximum drawdown at 20%, and a long-only book that targets about 40% a year volatility usually breaches 20% drawdown, so a single block will rarely pass branch 3 by itself; blocks that validate on their own criteria are registered and composed later. Lane 1 (a slow SMA-distance trend on BTC, ETH, LTC) is closed (D-128): its SMA 50 / 100 / 200 distance family is not a new idea here. (the operator's full text is below)
+research_goal: 'Daily breadth: find daily-bar signal rules, any mechanism, that earn more than Kraken perp costs on spot prices on fold A and hold on a coin of another category (the operator''s full text is below)'
 venue: kraken
 product: BTC/USD, ADA/USD spot (Kraken perp fees applied to spot prices, as in the operator's brief)
 strategy_domain: daily_breadth
 bar_size: 1d
 already_tried:
-  - "Lane 1, closed (D-128): a slow SMA-distance trend on BTC, ETH, LTC; the SMA 50 / 100 / 200 distance family is not a new idea here."
+- 'Lane 1, closed (D-128): a slow SMA-distance trend on BTC, ETH, LTC; the SMA 50 / 100 / 200 distance family is not a new idea here.'
 ---
 # Daily breadth, fold A: the operator's brief (strategy-research/briefs/daily_breadth_fold_a.md), in v2 form
 
