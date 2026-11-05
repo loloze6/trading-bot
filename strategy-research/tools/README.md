@@ -1,545 +1,234 @@
-# tools/ — what each tool is for
-
-Lookup table for an operator who has forgotten what a file does. One entry per
-tracked file in `strategy-research/tools/` (20 files).
-
-**Reading the STATUS field**
-
-| Status | Meaning |
-|---|---|
-| `live` | Some production file imports it or shells out to it. Breaking it breaks a pipeline stage. |
-| `CLI-only` | Nothing imports it. That is its **normal, healthy state** — it is a command you run by hand or from a runbook/dispatch. A CLI entry point is never imported, so "no referrer" is not evidence of death. |
-| `orphaned` | Genuinely unreferenced *and* superseded. Only one file here. |
-
-"PROD referrer" below means a non-test `.py`/`.sh`, a `config/*.yaml`, a
-`workflow/*.yaml`, or the git hook. Tests, docs, briefs, `runs/` and `results/`
-are excluded — a tool referenced only from those is still CLI-only, not dead.
-
----
-
-## build_inventory.sh
-
-**PURPOSE** — Regenerates `engineering/improvements/done/restructure-planning-E-002/INVENTORY.tsv`: every tracked file under
-`strategy-research/` with its byte count and git-history aggregates.
-*In plain terms: takes stock of the repo so you can decide what to archive.*
-
-**WHO READS IT** — No PROD referrer. CLI entry point, run by hand during cleanup work.
-
-**HOW IT IS INVOKED** — `sh strategy-research/tools/build_inventory.sh` (no
-arguments). `cd`s to the repo root itself (`:12`), so it can be run from anywhere.
-
-**KEY PARAMETERS** — None. Three paths are excluded by design (`:5-10`, `:36`,
-`:193`): its own output TSVs and the script itself — self-description would make
-the generator non-idempotent.
-
-**STATUS** — CLI-only.
-
----
-
-## check_data.py
-
-**PURPOSE** — Confirms the OHLCV bars a protocol needs are actually on disk, and
-refuses if the protocol's date range overlaps the sealed holdout window.
-*In plain terms: "do we have the data, and are we about to cheat?"*
-
-**WHO READS IT** — No PROD referrer. CLI entry point; run before launching a
-protocol. Reads `config/campaign_data_policy.yaml` (`:36`).
-
-**HOW IT IS INVOKED** (docstring `:4-12`, argparse `:195-212`):
-```
-python strategy-research/tools/check_data.py
-python strategy-research/tools/check_data.py --protocol strategy-research/protocols/baseline_v2.json
-        [--policy PATH] [--skip-data-check] [--timeframe 1h|1d|...]
-```
-
-**KEY PARAMETERS**
-- `--protocol` — the protocol to check; also where symbols and dates are read from.
-- `--policy` — override which data-policy file defines the sealed window.
-- `--skip-data-check` — only test for holdout overlap; don't download anything.
-- Exit codes (`:14-17`): `0` clean, `1` **holdout overlap — hard rejection**, `2` data gap > 1 day.
-
-**STATUS** — CLI-only.
-
----
-
-## deflate_sharpe.py
-
-**PURPOSE** — Applies the Bailey & López de Prado (2014) Deflated Sharpe Ratio,
-discounting a run's Sharpe for how many hypotheses the campaign has already tried.
-*In plain terms: if you test enough ideas, one will look good by luck. This says
-how good it would have to look to not be luck.*
-
-**WHO READS IT (PROD, measured)**
-- `workflow/stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/; never drove the pipeline]:153` — `tool: tools/deflate_sharpe.py` for the robustness stage
-- `workflow/run_phase1_research.py:3940` — mirrors its `exclude_invalidated_trials` logic in a separate copy
-
-**HOW IT IS INVOKED** (docstring `:11-13`, argparse `:351-363`):
-```
-python strategy-research/tools/deflate_sharpe.py <run_id> [--campaign-state PATH]
-```
-
-**KEY PARAMETERS**
-- `run_id` — which run to deflate; artifacts read from `runs/<run_id>/artifacts/`.
-- `--campaign-state` — where the trial history comes from (defaults to `strategy-research/campaign_record/campaign_state.yaml`). This file supplies the trial count that drives the whole correction.
-
-**STATUS** — live.
-
----
-
-## episode_significance.py
-
-**PURPOSE** — Computes IC significance by bootstrapping over **episodes** (runs of
-consecutive active bars) rather than fixed 24-bar blocks.
-*In plain terms: if a signal only fires during a handful of multi-day events, you
-have a handful of independent observations — not thousands. This counts them honestly.*
-
-**WHO READS IT (PROD, measured)**
-- `workflow/run_phase1_research.py:2141` — `import episode_significance as _es`; `:2132` cites its `VALID_METHODS`
-- `config/campaign_config.yaml:46,51` — the `episode_significance:` block holds its thresholds
-- Imports `prescreen_signal` at `:48` to reuse `_spearman` / `_block_adjusted_significance` rather than reimplement them
-
-**HOW IT IS INVOKED** — As a library, imported by the orchestrator. No `main()`.
-
-**KEY PARAMETERS** (all live in `campaign_config.yaml`, not here)
-- `gap_bars: 48` — how long a quiet stretch has to be before it ends one episode and starts another.
-- `min_n_episodes: 8` — below this, no significance claim is made at all ("a bootstrap over 4 episodes is theater", `:27-29`).
-- `density_fallback_pct: 50` — if the signal is on more than half the time, episodes are meaningless; fall back to the old 24-bar method.
-
-**STATUS** — live.
-
----
-
-## fragment_patterns.py
-
-**PURPOSE** — Diagnostic tables over LIFO trade fragments in `trades.json`.
-*In plain terms: descriptive "what did the trades look like" statistics, for
-coming up with new ideas — never for judging an existing one.*
-
-**WHO READS IT** — **No PROD referrer, by design.** A firewall (`:5-16`) forbids
-any decision-path code from importing it; `tests/test_fragment_patterns_firewall.py`
-enforces this mechanically, and `tests/…` asserts `run_protocol.py` does not import it.
-
-**HOW IT IS INVOKED** — As a library: `compute_fragment_patterns_for_run(run_dir,
-protocol_result)` (`:314`) → `write_fragment_patterns_yaml(path, data)` (`:360`).
-
-**KEY PARAMETERS** — None to tune. Every table it emits is stamped
-`basis: lifo_fragment, ideation_only` (`:11-12`). If you find yourself citing this
-output in a verdict, the firewall has been breached.
-
-**STATUS** — CLI-only (library; deliberately unreferenced).
-
----
-
-## holdout_date_gate.sh
-
-**PURPOSE** — Scans the git index for any date inside the sealed holdout window
-(defined by `campaign_data_policy.yaml:holdout_range`) and blocks the commit if it
-finds an unregistered one.
-*In plain terms: the mechanical lock on the data we promised not to look at.*
-
-**WHO READS IT (PROD, measured)**
-- `tools/hooks/pre-commit:23` — resolves it as `$GATE`; `:33` runs it, `:26-31` blocks the commit if the file is missing
-- `config/holdout_gate_exemptions.txt:1,23,32` — the registry it consumes, which documents this tool as its consumer
-- Reads the registry at `:57`
-
-**HOW IT IS INVOKED** (`:42-45`)
-```
-sh strategy-research/tools/holdout_date_gate.sh              # scan the index (hook mode)
-sh strategy-research/tools/holdout_date_gate.sh --self-test-only
-sh strategy-research/tools/holdout_date_gate.sh --report-residual   # path<TAB>count, registry format
-```
-
-**KEY PARAMETERS**
-- `--report-residual` — lists what would block, in the exact format the exemption registry uses. This is how you generate candidate entries.
-- **Deny by default** (`:17-21`): missing git, failed self-test, unreadable registry, or *zero files scanned* all FAIL the commit. Silence is never success. Exit `0` clean, `1` blocked.
-
-**STATUS** — live.
-
----
-
-## hooks/pre-commit
-
-**PURPOSE** — The versioned source of truth for the git pre-commit hook: runs the
-holdout gate, then the test suite.
-*In plain terms: `.git/hooks/` isn't tracked, so a fresh clone would silently have
-no checks at all. This is the copy that survives cloning.*
-
-**WHO READS IT** — Nothing imports it; git runs the **installed copy**, not this one.
-
-**HOW IT IS INVOKED** — Install once per clone (`:7-8`):
-```
-cp strategy-research/tools/hooks/pre-commit .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-```
-Thereafter git runs it on every `git commit`.
-
-**KEY PARAMETERS**
-- Gate 1, holdout date gate (`:22-33`) — fast, unconditional, runs first.
-- Gate 2, `pytest tests/ -q` in `trading-bot/` (`:38-40`) — blocks on exit 1/2/3; exit 5 (no tests collected) is tolerated.
-- Bypass is `git commit --no-verify` (`:18`) — and if you use it, say why in the commit message.
-
-**STATUS** — live.
-
----
-
-## lint_verdict_provenance.py
-
-**PURPOSE** — Standalone checker that every verdict-bearing record in the knowledge
-base and the queue either cites a resolvable `pass_rule_evaluation.yaml` or honestly
-declares itself `ungated`.
-*In plain terms: audits whether the campaign's memory is making claims it can't back up.*
-
-**WHO READS IT** — No PROD referrer. CLI entry point — deliberately so: it exists
-precisely because the same check previously ran *only* as a side effect of the
-orchestrator writing a file, so hand edits went unexamined between runs (`:4-21`).
-It imports `record_schema` (`:43`) and `verdict_criteria_evaluator` (`:44`).
-
-**HOW IT IS INVOKED** (`:23-24`, argparse `:87`)
-```
-python strategy-research/tools/lint_verdict_provenance.py [--root <dir>]
-```
-
-**KEY PARAMETERS**
-- `--root` — audit a different tree (used by tests).
-- Exit `0` = every claim is backed; exit `1` = at least one record asserts something nothing in the repo supports (`:26-29`).
-
-**STATUS** — CLI-only. Run it after any hand edit to the KB or the queue.
-
----
-
-## measure_bar_sigma.py
-
-**PURPOSE** — Measures `sigma_bar_bps` — the standard deviation of one-bar returns,
-in bps — for the 19 recorded Kraken pairs.
-*In plain terms: how much a typical bar moves. It sets the bar for how big an edge
-has to be to beat costs.*
-
-**WHO READS IT (PROD, measured)**
-- `config/holdout_gate_exemptions.txt:192,198` — registered (1 line) with a note explaining it measures the walk-forward window only
-- Mirrors `prescreen_signal._sigma_from_records` (`:172`, `:224`) and calls out `_DEFAULT_SIGMA_BAR_BPS` as a fallback that was wrongly used as a measurement (`:18`)
-
-**HOW IT IS INVOKED** (`:5`, argparse `:261-267`)
-```
-python -m tools.measure_bar_sigma [--pairs ...] [--start ...] [--end ...]
-                                  [--local-data PATH] [--full-history]
-```
-
-**KEY PARAMETERS**
-- `--pairs` / `--start` / `--end` — which instruments and window. Defaults are the walk-forward extension window; it **refuses** to read sealed candles (`:125`).
-- `--full-history` — widen beyond the default window.
-- Why it exists: this figure was wrong twice, in opposite directions, and one wrong scalar produced a terminal "the family is untradeable" verdict (`:11-25`). Do not substitute a remembered number.
-
-**STATUS** — CLI-only.
-
----
-
-## measure_funding_carry.py
-
-**PURPOSE** — Measures realized perpetual-funding carry on the in-sample window only.
-*In plain terms: how much you'd actually have earned or paid just for holding a
-perp position, historically.*
-
-**WHO READS IT** — No PROD referrer under the `config/*.yaml` definition.
-`config/holdout_gate_exemptions.txt:181` registers it (1 line) — that file is `.txt`,
-so it falls outside the measured PROD set but is a real reference.
-
-**HOW IT IS INVOKED** — `python strategy-research/tools/measure_funding_carry.py`
-(no arguments; `main()` at `:73`). Reads exactly two CSVs (`:4-5`).
-
-**KEY PARAMETERS**
-- `WINDOW_START` / `WINDOW_END` (`:25-26`) — hardcoded `2019-12-01 .. 2023-12-31`, **on purpose**: the CSVs on disk physically contain the frozen holdout and a sealed Kraken tranche, and the shared loader applies no bound of its own (`:7-12`). The bound lives here so it cannot be forgotten.
-- `SYMBOLS` (`:28`) — BTCUSDT, ETHUSDT.
-- No repair, no imputation: malformed input raises (`:17`).
-
-**STATUS** — CLI-only.
-
----
-
-## panel_backtester.py
-
-**PURPOSE** — Research-only vectorized backtester for cross-sectional (multi-symbol)
-strategies that the production engine structurally cannot express.
-*In plain terms: the real engine trades one symbol at a time. This one ranks a
-basket against itself — long the strong, short the weak.*
-
-**WHO READS IT (PROD, measured)**
-- `config/campaign_queue.yaml:237` — named as the tool for that entry; `:256` records `research_path_panel_backtester_20260722`
-- `config/campaign_data_policy.yaml:170` — its flat + `kraken_1h` cache-path patterns
-- `config/holdout_gate_exemptions.txt:182` — registered, 1 line
-
-**HOW IT IS INVOKED** (`:483-491`)
-```
-python strategy-research/tools/panel_backtester.py gate
-python strategy-research/tools/panel_backtester.py xs [--lookback 168] [--rebalance 24] [--min-n 6]
-```
-
-**KEY PARAMETERS**
-- `gate` — **run this first.** Reproduces an archived production run (run_054) to prove this file's accounting matches the trusted engine (`:11-14`). A cross-sectional result from an ungated build is not evidence.
-- `xs --lookback` — how many hours of past return the ranking uses (default 168 = 1 week).
-- `--rebalance` — how often to re-rank, in bars (default 24 = daily).
-- `--min-n` — minimum eligible symbols before it will trade at all.
-- Its Sharpe/drawdown formulas are deliberate copies of the engine's (`:18-22`) so the gate catches drift.
-
-**STATUS** — live (research path; explicitly NOT production, `:4-8`).
-
----
-
-## power_check.py
-
-**PURPOSE** — A-priori statistical power check at hypothesis registration: can this
-test detect the effect it's looking for, given how rarely the signal fires?
-*In plain terms: asks "even if we're right, do we have enough data to prove it?"
-before spending a backtest finding out.*
-
-**WHO READS IT (PROD, measured)**
-- `workflow/run_phase1_research.py:3284` — `"A8.6: A-priori power pre-flight (inline of power_check.py logic)"`; `:3436` — `"Mirrors power_check.py logic identically — both must be updated together."`
-
-⚠️ Note: that is a **duplicate, not an import**. `_run_a86_power_check` (`:3432`)
-reimplements this file. Change one and you must change the other.
-
-**HOW IT IS INVOKED** (`:22`, argparse `:123-127`)
-```
-python power_check.py --hypothesis-card path/to/hypothesis_card.yaml
-                      [--config path/to/campaign_config.yaml] [--out path/to/out.yaml]
-```
-
-**KEY PARAMETERS**
-- `--hypothesis-card` — supplies activation rate, symbol count, plausible IC ceiling.
-- `--config` — where `rho_bar` (how correlated the symbols are) is read from; defaults to `../config/campaign_config.yaml`.
-- Exit `0` power adequate, `1` insufficient power a priori, `2` missing params (`:24`).
-- For market-wide signals the `sqrt(n)` shortcut is **not** used — it materially overstates power (`:10-12`).
-
-**STATUS** — CLI-only (but its logic is live via the orchestrator's copy).
-
----
-
-## prescreen_signal.py
-
-**RETIRED** — the file was removed (E-039 step 5, 2026-09-12) and its
-`prescreen_result.schema.json` deleted (O-3, 2026-10-01). Kept below as history; no
-idea is stopped on a cost estimate before its backtest.
-
-**PURPOSE** — The cheap gate before a full walk-forward backtest: feeds bars into
-the signal layer only (no portfolio simulation), computes information coefficient,
-significance, and the Layer-2 cost hurdle.
-*In plain terms: does this signal predict anything at all, and is the prediction
-big enough to pay for the trading? Kills bad ideas for pennies.*
-
-**WHO READS IT (PROD, measured)**
-- `workflow/run_phase1_research.py:1002` — the real invocation, `subprocess.run`; `:1011` raises on failure
-- `workflow/stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/; never drove the pipeline]:70` — `tool: tools/prescreen_signal.py` for the `signal_prescreen` stage
-- `config/campaign_config.yaml:15,24` — the `prescreen:` block; `config/cost_model.yaml:258` — its Layer 2 formula
-- `tools/episode_significance.py:48`, `tools/measure_bar_sigma.py:18`, `tools/fragment_patterns.py:68` — reuse its statistics
-- `config/campaign_queue.yaml:115,176,179` — notes on what it does and does not read
-
-**HOW IT IS INVOKED** (`:32-34`, argparse `:1360-1363`)
-```
-python strategy-research/tools/prescreen_signal.py <config_path> <protocol_path>
-       [--run-id run_041] [--out-dir DIR]
-```
-
-**KEY PARAMETERS**
-- `config_path` / `protocol_path` — the candidate strategy and the windows to screen it on.
-- `--run-id`, `--out-dir` — artifact labelling and destination; the orchestrator sets both.
-- Route out (`:13-14`): `proceed_to_backtest` requires **both** a significant IC and a passing cost check. Otherwise `kill_no_ic` / `refine_inverted_ic` / `kill_cost_hurdle`. (Historical.)
-- It evaluates IC on **active bars**, not all bars (`:16-18`) — a sparse signal's all-bar IC collapses toward zero from tie mass at forecast=0.
-
-**STATUS** — retired (see top of this section).
-
----
-
-## record_schema.py
-
-**PURPOSE** — Closed (allow-list) schema for knowledge-base findings and queue
-entries: a record may contain **only** the enumerated fields, and a verdict may
-live in exactly one designated field.
-*In plain terms: stops anyone — human or model — from smuggling a conclusion into
-the campaign's memory under a field name nobody thought to forbid.*
-
-**WHO READS IT (PROD, measured)**
-- `workflow/run_campaign.py:69` — `import record_schema`; `:124` validates each queue entry against `QUEUE_ENTRY_SCHEMA` on save
-- `tools/lint_verdict_provenance.py:43,64,66` — uses both `KB_FINDING_SCHEMA` and `QUEUE_ENTRY_SCHEMA`
-
-**HOW IT IS INVOKED** — Library only. `validate_kb_finding(entry)` / the queue
-equivalent (`:366`, `:370`), both wrapping `validate_record_schema` (`:336`).
-
-**KEY PARAMETERS**
-- `KB_FINDING_SCHEMA`, `QUEUE_ENTRY_SCHEMA` — the two allow-lists. Adding a field means editing these.
-- Design rationale (`:5-36`) is worth reading before you widen anything: three previous rounds used *denylists* of forbidden field names and each was defeated within minutes by a synonym. Enumerating good names is the fix; enumerating bad ones is not.
-
-**STATUS** — live.
-
----
-
-## retune_regime_detector.py
-
-**PURPOSE** — One-shot grid search over regime-detector parameters
-(`ER_enter`, `ER_exit`, `min_dwell`), scored only on intrinsic criteria.
-*In plain terms: hunts for detector settings that produce stable, sensibly-sized
-regimes — deliberately without looking at whether they make money.*
-
-**WHO READS IT** — No PROD referrer. It writes `config/regime_retune_winner.json`
-(`:72`).
-
-⚠️ **This file is already slated for deletion elsewhere.** Documented here for
-completeness; no action taken in this pass.
-
-**HOW IT IS INVOKED** (`:22-24`, argparse `:363-366`)
-```
-python strategy-research/tools/retune_regime_detector.py [--symbols ...]
-       [--start 2024-01-01] [--end 2025-12-31] [--skip-validate]
-```
-
-**KEY PARAMETERS**
-- Grid (`:12-16`): `ER_enter` 0.20–0.45, `ER_exit_ratio` {1.00, 0.80}, `min_dwell` {1, 6, 12, 24} bars.
-- Scoring is the four intrinsic criteria only (`:4-10`), max 8 points — persistence, activation band, class-conditional sensitivity, transition frequency. **No PnL, Sharpe or IC**, by firewall.
-
-**STATUS** — orphaned, pending deletion.
-
----
-
-## run_protocol.py
-
-**PURPOSE** — Walk-forward protocol runner: executes each protocol window as an
-independent backtest via `core.launcher.run_backtest`, then emits
-`protocol_result.yaml` / `protocol_summary.json`.
-*In plain terms: this is the thing that actually runs the backtest. It takes a
-strategy and a list of date ranges, trades each range separately so results can't
-leak between periods, and writes down what happened.*
-
-**WHO READS IT (PROD, measured)**
-- `workflow/run_phase1_research.py:1048` — the real invocation, `subprocess.run` on the `protocol_execution` stage
-- `workflow/stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/; never drove the pipeline]:89` — `tool: tools/run_protocol.py` for that stage
-- `config/cost_model.yaml:4,66,115` — names it as the consumer of the fee blocks
-- `config/campaign_queue.yaml:174` — notes it never reads `timeframe` from the protocol
-- `config/campaign_data_policy.yaml:333` — `run_protocol.py:1173` used as a reproduction fixture
-- `tools/verdict_criteria_evaluator.py:5,9` — replaces this file's `evaluate_against_decision_rules`
-- `tools/fragment_patterns.py:7`, `tools/panel_backtester.py:234` — reference its decision-rule and `_SPARSE_TRADE_FLOOR` semantics
-
-**HOW IT IS INVOKED** (argparse `:980-1008`)
-```
-python strategy-research/tools/run_protocol.py <config_path> <protocol_path>
-       [--validation-protocol PATH] [--out-dir DIR]
-       [--cost-product {spot,perp}] [--commission-bps FLOAT]
-       [--holdout --i-understand]      # both or neither, enforced at :1011
-```
-
-**KEY PARAMETERS**
-- `config_path` — the strategy being tested (its parameters).
-- `protocol_path` — which date windows to test it over.
-- `--validation-protocol` — the pass/fail rules for this specific hypothesis.
-- `--out-dir` — where results land; the orchestrator points this at the run folder.
-- `--cost-product` — which fee table to charge the run at: `spot` (default) or `perp`. Don't use `perp` for funding-carry ideas.
-- `--commission-bps` — manual fee override, to ask "does the edge still hold at X bps?". Beats `--cost-product` when both are given.
-- `--holdout` + `--i-understand` — unlocks the sealed final test data. Two flags on purpose, so it can't happen by accident. The range is `holdout_range` from `config/campaign_data_policy.yaml`, never the protocol's own `holdout` block (CUL-339): a block that disagrees on either end (`end: null` included), or an open-ended policy range, is refused before any fetch (exit 3, `NO DATA TOUCHED`). `--holdout` also needs `--hypothesis-id <id>` and refuses an id already in `holdout_consumed_by`. Walk-forward runs bound every window by min(protocol holdout start, policy holdout start) and check every window (strict `YYYY-MM-DD` start and end, end strictly before that bound) before any backtest; see `config/README.md`.
-- `_SPARSE_TRADE_FLOOR = 5` (`:33`) — windows with fewer closed trades get a **null** Sharpe rather than a noisy one.
-
-**STATUS** — live.
-
----
-
-## stamp_protocol.py
-
-**PURPOSE** — Version-stamps a protocol JSON file and prints its content hash for
-pasting into a pre-registration's `protocol_ref_content_hash`.
-*In plain terms: fingerprints the test plan, so you can prove afterwards that the
-plan wasn't edited once the results came in.*
-
-**WHO READS IT (PROD, measured)**
-- `workflow/run_phase1_research.py:2198` — cited over the field-name collision with K3's own §5 stamp
-
-**HOW IT IS INVOKED** (`:18-20`, argparse `:60-61`)
-```
-python strategy-research/tools/stamp_protocol.py protocols/ts_trend_daily_v2.json
-python strategy-research/tools/stamp_protocol.py protocols/<file>.json --version 2026-07-15
-```
-
-**KEY PARAMETERS**
-- `protocol_path` — the file to stamp.
-- `--version` — the version label to write (defaults to today).
-- The hash is **structural**, not byte-verbatim (`:6-11`): keys are sorted before hashing, so hand-editing whitespace or reordering keys does not change it. It also excludes the protocol's own version/hash fields, avoiding a hash-of-a-hash loop.
-- The formula is deliberately duplicated from `run_phase1_research.py`'s `_compute_protocol_content_hash` (`:11-16`) because importing that module drags in the agent SDK. A round-trip test pins the two together.
-
-**STATUS** — live.
-
----
-
-## validate_regime_detector.py
-
-**PURPOSE** — Deterministic validation of the regime detector: persistence,
-transition frequency, parameter sensitivity, activation rate — and a confidence
-grade derived from them.
-*In plain terms: before trusting "the market is trending", checks that the label is
-stable, not hair-trigger, and doesn't fire absurdly often or almost never.*
-
-**WHO READS IT (PROD, measured)**
-- `workflow/run_phase1_research.py:1465` — invokes it via subprocess; `:1439` re-runs it when the report is stale or absent; `:1472` warns on failure
-- `workflow/stages.yaml [ARCHIVED 2026-08-24 -> E-033/artifacts/; never drove the pipeline]:122` — `tool: tools/validate_regime_detector.py`
-- `config/campaign_config.yaml:64` — the `regime_detector:` thresholds block
-- Reads `config/campaign_data_policy.yaml` at `:426`
-
-**HOW IT IS INVOKED** (`:31-34`, argparse `:419-423`)
-```
-python strategy-research/tools/validate_regime_detector.py
-       [--config PATH] [--symbols ...] [--start 2024-01-01] [--end 2025-12-31] [--out PATH]
-```
-
-**KEY PARAMETERS**
-- `--config` — the strategy config whose detector is being graded.
-- `--start` / `--end` — the window to grade over.
-- `--out` — defaults to campaign-level `regime_detector_report.yaml` at the root of `strategy-research/`.
-- Confidence rules (`:15-23`): `high` needs persistence ≥ 24 bars, ≤ 4 transitions/window, sensitivity ≤ 0.15 **and** activation inside the band. Rare labels (activation < 10%) are graded on class-conditional sensitivity instead.
-- **Retune firewall** (`:25-27`): detector parameters may only be tuned on intrinsic criteria. PnL, Sharpe or IC must never appear in retune acceptance.
-
-**STATUS** — live.
-
----
-
-## verdict_criteria_evaluator.py
-
-**PURPOSE** — The machine-checkable pass-rule evaluator (K2 kernel): reads a run's
-computed results plus its pre-registered criteria and resolves the verdict
-deterministically — no keyword matching, no prose parsing, no LLM.
-*In plain terms: the pre-registration said what "success" means; this decides
-whether it happened, with no room for interpretation.*
-
-**WHO READS IT (PROD, measured)**
-- `workflow/run_campaign.py:70` — `import verdict_criteria_evaluator as vce`
-- `workflow/run_phase1_research.py:1082`, `:3066`, `:3271` — `import verdict_criteria_evaluator as _vce`; `:2272` cites its `legacy_not_evaluable` path
-- `tools/lint_verdict_provenance.py:44`, `tools/record_schema.py:40` — provenance validation
-
-**HOW IT IS INVOKED** — Library only, imported by the orchestrator. Gates are
-composed in the evaluator list at `:490`.
-
-**KEY PARAMETERS**
-- Gate ids at `:55` onward, e.g. `cost_model_completeness` (G1, implemented `:329`).
-- Read `:26-35` before trusting a pass: **G1–G4 are presence checks, not content checks.** They establish that a figure was *reported*, not that it was reported carefully — `skew: 0`, `cost_basis: ""` and `mechanism_explanation: "."` all clear their gates. A MET precondition is not a quality warrant.
-- It supersedes `run_protocol.py`'s `evaluate_against_decision_rules` as the decision authority (`:9-12`); that function's output is informational from here on.
-
-**STATUS** — live.
-
----
-
-## whale_footprint_evaluation.py
-
-**PURPOSE** — Evaluation harness for `prereg_whale_footprint_v2.yaml`: applies the
-pre-registration's own thresholds and verdict mapping mechanically.
-*In plain terms: the Phase 2.3 scorer. Every number it checks against comes out of
-the pre-registration file, so it cannot be talked into a different answer.*
-
-**WHO READS IT** — No PROD referrer. CLI entry point — this is the Phase 2.3
-evaluation path, invoked from its dispatch.
-
-**HOW IT IS INVOKED** (argparse `:296-300`)
-```
-python strategy-research/tools/whale_footprint_evaluation.py --prereg <path> [--run-id manual_run]
-```
-
-**KEY PARAMETERS**
-- `--prereg` — required; **every** threshold is read from it, none are hardcoded here (`:5-6`).
-- `--run-id` — labels the run for the single-use mark.
-- Gate order is fixed (`:13-18`): single-use → economic feasibility → coverage floor → minimum-N. The first blocking gate stops evaluation, and a blocked run does **not** consume the single-use mark.
-- Economic feasibility (`:20-30`) is data-independent: if the required IC exceeds what a correlation can even express, the idea is untradeable before any data is collected.
-- ⚠️ `:8-11`: this module is **unrun against the real capture**. Every existing test uses synthetic planted-answer fixtures.
-
-**STATUS** — CLI-only.
+# tools/ — inventory
+
+`strategy-research/tools/` holds the research pipeline's deterministic helpers: the
+modules the orchestrator imports (gates, record writers, claim and criteria code, the
+backtest runner), the standalone command-line tools an operator runs by hand, the git
+hook and holdout gate, the Kraken forward recorder (`recorder/`) and the run viewer
+(`run_viewer/`). This page is a lookup table only. **The code is the source of truth**:
+each module's docstring says what it does and why; when this page and the code disagree,
+the code wins and this page is the thing to fix.
+
+## How to read the table
+
+- **RP** = `workflow/run_phase1_research.py`, **RC** = `workflow/run_campaign.py`,
+  **SR** = `strategy-research/`, **TB** = `trading-bot/`. A bare `name.py:N` is a sibling
+  in `tools/`.
+- **Live** means the live pipeline reaches the file: an import chain from RP or RC was
+  found by an AST scan of every import statement (imports inside functions included),
+  or RP runs the file as a subprocess. The chain shown is one shortest chain. This is a
+  grep fact, not a judgement: many live modules only run under an `orchestrator.*` flag
+  that is off by default.
+- **Used by** lists the non-test importers as `file:line` (lines as of the commit that
+  last edited this page; they drift), then the number of test files that import it.
+- A CLI tool with no importer is in its normal state: a command is run, not imported,
+  so "no importer found" is not evidence that a tool is dead.
+- `power_check.py` and `prescreen_signal.py` are no longer in `tools/` (see git history).
+
+## Conventions
+
+- Tools import each other as bare sibling modules (`import decide_next`): RC and RP put
+  `tools/` on `sys.path` first (`RC:80`, `RP:83`). Heavy imports (anything that pulls in
+  `core.launcher` or the agent SDK) are kept lazy, inside the function that needs them.
+- Small shared-definition modules (`composition_names.py`, `protocol_refusal.py`,
+  `reader_categories.py`) have no imports of their own, so any side can import them
+  without weight. When two places need one rule, the rule lives in one tool and both
+  import it.
+- RP runs subprocess tools with the trading-bot interpreter (`TBOT_PYTHON`, `RP:1817`).
+- The sealed holdout range is read only through `holdout_policy.py` from
+  `config/campaign_data_policy.yaml`. No tool or doc writes its dates out.
+- Two firewalls: no decision-path code may import `fragment_patterns.py`
+  (`SR/tests/test_fragment_patterns_firewall.py`), and per `near_miss_scoreboard.py`'s
+  docstring nothing that computes a verdict, routing or promotion may consult the
+  scoreboard.
+- Adding a tool: give it a module docstring whose first paragraph states its purpose,
+  add a row to the table below, and test it under `SR/tests/`. A tool that touches market
+  data also follows the repository's hard rules (no lookahead, a "why this can't leak"
+  note, a trial-ledger row per experiment; see the repository `CLAUDE.md`).
+
+## Inventory
+
+### Queue, decide-next and launch
+
+| tool | purpose | used by | CLI |
+|---|---|---|---|
+| `decide_next.py` | Picks the next idea when a lineage finishes: loads memory, registry and proposals, writes `decision_record.yaml` and the brief for a picked candidate (called by RC under `orchestrator.decide_next.enabled`). | **Live** (RP imports it). Imported by `RP:6443,8596`; `RC:2444,2484,5013,5229,5276,5342,5386,5422,5460,5510,5594,5694`; `analyst_session.py:995`; `config_vehicle.py:270`; `fold_confirm.py:422,497`; `SR/engineering/lane1_replay/lane1_registry_check.py:25`. Tests: 34 files. | - |
+| `campaign_lock.py` | Single-writer campaign launch lock: a second launch on the same host refuses instead of racing on `campaign_state.yaml`. | **Live** (campaign_memory &larr; RP). Imported by `RC:82`; `campaign_memory.py:50`. Tests: 11 files. | - |
+| `abandoned_launch.py` | Marks and recognises run dirs left by a launch that raised before `run_loop` (`status: abandoned_launch`), so scanners skip them. | **Live** (near_miss_scoreboard &larr; RP). Imported by `RC:90`; `build_exclusion_digest.py:65`; `near_miss_scoreboard.py:117`; `replay_repeat_gate.py:90`. Tests: 1 file. | - |
+| `campaign_review_retired.py` | Shared constants and append-only files of campaign review under retired verdict routing (`component_requests.yaml`, `campaign_review_log.yaml`, `campaign_decision.yaml`). | **Live** (RP imports it). Imported by `RP:7723`; `RC:85`; `claim_card.py:571,605`; `claim_measure.py:375`; `explore_confirm.py:1001,1090`. Tests: 3 files. | - |
+| `research_folds.py` | The fixed folds of time windows (`config/folds.yaml`) and the seeded fold draw for a child run; dates resolved from the data policy. | **Live** (RP imports it). Imported by `RP:1757`; `RC:89`; `campaign_memory.py:51`; `decide_next.py:126`; `fold_confirm.py:531`; `reader_proposals.py:488`; `run_protocol.py:2169`; `SR/engineering/FOLD-FLOORS-2/real_return_null.py:101`. Tests: 5 files. | - |
+| `venue_resolver.py` | Turns a brief's (venue, product) into the protocol keys the backtest reads (`exchange`, `market_type`, venue labels). | **Live** (RP imports it). Imported by `RP:19017`; `decide_next.py:1922`; `variant_coin.py:171,648`; `SR/engineering/FOLD-FLOORS-2/real_return_null.py:102`. Tests: 1 file. | - |
+
+### Stages, protocol and routing
+
+| tool | purpose | used by | CLI |
+|---|---|---|---|
+| `protocol_resolution.py` | The one shared resolver of which protocol file a run uses (with the promotion guard `assert_promotion_ratified`). | **Live** (RP imports it). Imported by `RP:11045,18491,18599,19337`; `RC:87`; `claim_tests.py:1722,1816,1885,2260`; `replay_repeat_gate.py:95`; `run_protocol.py:38`; `verdict_criteria_evaluator.py:51`. Tests: 9 files. | - |
+| `protocol_refusal.py` | Shared wording/exit for "run_protocol refused before any window ran, no market data touched" (no trial row recorded). | **Live** (RP imports it). Imported by `RP:1755`; `run_protocol.py:2011`. Tests: 6 files. | - |
+| `stamp_protocol.py` | Version-stamps a protocol JSON and prints its structural content hash for a pre-registration's `protocol_ref_content_hash`. | CLI run by hand; no importer found. Tests: 1 file. | `python strategy-research/tools/stamp_protocol.py <protocol.json> [--version V]` |
+| `novelty.py` | The one definition of "this exact thing was already tested": the exact-match key (forecast_hash, symbols, timeframe, window_set). | **Live** (RP imports it). Imported by `RP:9390,9451,19264`; `anti_adjacency_gate.py:73`; `campaign_memory.py:250,948`; `claim_findings.py:254`; `decide_next.py:124`; `replay_repeat_gate.py:94`; `research_folds.py:57`. Tests: 8 files. | - |
+| `anti_adjacency_gate.py` | Step 5a repeat gate: ADMIT or REFUSE a candidate variant by the exact-match key against campaign memory. | **Live** (RP imports it). Imported by `RP:9388`; `replay_repeat_gate.py:91`. Tests: 2 files. | `python strategy-research/tools/anti_adjacency_gate.py <config> <protocol> [--memory] [--kb] [--runs-dir] [--hypothesis-id] [--exclude-run-id] [--out]` |
+| `build_exclusion_digest.py` | Digest of what was already tried, per family. Its docstring calls it legacy since E-036 S2a: nothing refuses on it; decide_next records `legacy_family_lookup` as an advisory. | **Live** (decide_next &larr; RP). Imported by `anti_adjacency_gate.py:74`; `decide_next.py:1586`; `replay_repeat_gate.py:92`. Tests: 5 files. | `python strategy-research/tools/build_exclusion_digest.py [--runs-dir] [--campaign-state] [--out]` |
+| `replay_repeat_gate.py` | Read-only replay of the 5a exact-match repeat gate over past `runs/run_*`, beside the retired family-grain answer. | CLI run by hand; no importer found. Tests: 2 files. | `python strategy-research/tools/replay_repeat_gate.py [--runs-dir] [--root] [--campaign-state] [--out]` |
+| `variant_coin.py` | One coin per variant at step 5a: per-variant protocol files with `symbols: [<coin>]` (kinds base / design / asset). | **Live** (RP imports it). Imported by `RP:18993`; `decide_next.py:1923`; `verdict_criteria_evaluator.py:1471`. Tests: 10 files. | - |
+| `forecast_rules.py` | The D-051, D-053 and D-149 config checks (no on/off classes or dead-zone ops in graded forecasts; a variant keeps the idea's classes). | **Live** (RP imports it). Imported by `RP:19001`; `catalogue_section.py:35`; `config_vehicle.py:271`. Tests: 6 files. | - |
+| `forecast_size_probe.py` | Bug detector: refuses a config whose forecast is broken in size (all NaN, or largest magnitude far below a working size). Never judges trade frequency. | **Live** (subprocess from RP). Run as a subprocess by `RP:5584` (its file hash read at `RP:5568`). Tests: 1 file. | `python strategy-research/tools/forecast_size_probe.py --config C --protocol P --json-out F` |
+| `nearest_build.py` | Parses step 1b's nearest-build answers into `artifacts/deviations.yaml` and component-request rows (under `orchestrator.nearest_build.enabled`). | **Live** (RP imports it). Imported by `RP:4428`; `claim_findings.py:50`; `config_vehicle.py:556`; `fold_confirm.py:449,459`. Tests: 5 files. | - |
+| `json_pointer.py` | Shared RFC 6901 JSON-pointer helpers and the variant patch applier, so the orchestrator, block registry and decide_next use one implementation. | **Live** (RP imports it). Imported by `RP:18967,18976`; `analyst_session.py:996`; `block_manifest.py:54`; `block_registry.py:70`; `composition.py:75`; `config_vehicle.py:240,458,496,533,555`; `decide_next.py:123`; `fold_confirm.py:423,529`. Tests: 5 files. | - |
+| `data_availability_gate.py` | E-054 Layer 2: per-window data-touch check that a variant's data can be assembled (validate / refine / decline) before the engine runs. | **Live** (RP imports it). Imported by `RP:6505,19336,19369`. Also run as a subprocess by `RP:1903,2018`. Tests: 7 files. | `python strategy-research/tools/data_availability_gate.py <config> <protocol> [--run-id] [--out-dir] [--exchange] [--gap-tolerance] [--layer1-path]` |
+| `refresh_coin_start_dates.py` | Writes per-coin `earliest_ohlcv_utc` into the venue data-capability file from the header/first row of each local 1h cache. | CLI run by hand; no importer found. Tests: 1 file. | `python strategy-research/tools/refresh_coin_start_dates.py [--dry-run]` |
+| `timeframe.py` | Timeframe arithmetic derived from the string (`timeframe_seconds`, bars per day) instead of a lookup table. | **Live** (structure_key &larr; RP). Imported by `RC:92`; `claim_tests.py:1871`; `composite_cache.py:85`; `composition.py:866`; `decide_next.py:1391`; `run_protocol.py:1557`; `structure_key.py:57`; `whale_footprint_evaluation.py:107`. Tests: 2 files. | - |
+| `workflow_artifact_validation.py` | Opt-in JSON-Schema validation of workflow artifacts at write/read time (schema found by file stem; warn mode by default). | **Live** (RP imports it). Imported by `RP:85`; `block_registry.py:71`; `campaign_memory.py:52`; `deflate_sharpe.py:38`; `run_protocol.py:36`; `validate_regime_detector.py:54`. Tests: 5 files. | - |
+| `config_vehicle.py` | Content check of a config vehicle (a side finding's complete strategy config): its `requires` list, TB `validate_config.py` rules, `forecast_rules`, and the regime-gate form. | **Live** (RP imports it). Imported by `RP:19009`; `decide_next.py:1985,2040,2749`. Tests: 4 files. | - |
+
+### Claims, criteria and readings
+
+| tool | purpose | used by | CLI |
+|---|---|---|---|
+| `claim_card.py` | The `claim` block step 1a writes (statement, kind, tests), checked by code (under `orchestrator.claim_tests.enabled`). | **Live** (RP imports it). Imported by `RP:17405`; `RC:3125`; `analyst_memory_view.py:80`; `analyst_queries.py:1058`; `analyst_session.py:97,1687`; `claim_findings.py:48`; `claim_measure.py:46`; `decide_next.py:2134`; `explore_confirm.py:631,864,917`; `fold_confirm.py:526`; `reader_findings.py:97,122`. Tests: 20 files. | - |
+| `claim_tests.py` | The claim test engine: selector / outcome / baseline / statistic measured on a run's saved `bars.csv`. | **Live** (RP imports it). Imported by `RP:17496,18463`; `analyst_queries.py:139`; `analyst_session.py:584,1222,1426,1453,1465,1693`; `claim_card.py:50`; `claim_measure.py:47`; `claim_tests_calibration.py:56`; `explore_confirm.py:423`; `fold_confirm.py:285,318,527`; `window_economics.py:96`; `SR/engineering/FOLD-FLOORS-2026-10-19/fold_floor_sim.py:43`; `SR/engineering/FOLD-FLOORS-2026-10-19/regrade.py:32`. Tests: 13 files. | `python tools/claim_tests.py --run R --spec S --out F --cache-dir D [--cache-pattern] [--method] [--calibration]` |
+| `claim_tests_calibration.py` | Pre-registered calibration gate for `claim_tests.py`: on simulated no-edge prices, rejection share must be about 0.05 per side. | CLI run by hand; no importer found. Tests: 2 files. | `python tools/claim_tests_calibration.py {cell,summarize,reevaluate} ...` |
+| `claim_measure.py` | Measures a run's claim-card tests on each graded variant's bars after the backtests (effect sizes only, no verdict). | **Live** (RP imports it). Imported by `RP:18374`; `analyst_queries.py:138`; `analyst_session.py:818,1044`; `claim_findings.py:49`; `explore_confirm.py:422,658,710`; `fold_confirm.py:169,317`; `SR/engineering/FOLD-FLOORS-2026-10-19/fold_floor_sim.py:42`; `SR/engineering/FOLD-FLOORS-2026-10-19/regrade.py:31`. Tests: 14 files. | - |
+| `claim_findings.py` | Builds the run's `finding` for campaign memory and `artifacts/findings_summary.yaml`. | **Live** (RP imports it). Imported by `RP:18638`; `reader_findings.py:57,74`. Tests: 7 files. | - |
+| `fold_confirm.py` | Confirms a claim on the fold of the child run built from it (`confirm_on_fold`, under `orchestrator.folds.enabled`). | **Live** (RP imports it). Imported by `RP:18570`; `SR/engineering/FOLD-FLOORS-2026-10-19/fold_floor_sim.py:44`; `SR/engineering/FOLD-FLOORS-2026-10-19/regrade.py:33`. Tests: 6 files. | - |
+| `explore_confirm.py` | Exploration / confirmation split of a run's windows; readers see exploration windows only (under `orchestrator.explore_confirm.enabled`). | **Live** (RP imports it). Imported by `RP:4438`; `RC:3130`; `analyst_memory_view.py:81`; `analyst_session.py:1392`; `fold_confirm.py:319,528`. Tests: 8 files. | - |
+| `verdict_criteria_evaluator.py` | K2 kernel: resolves a run's pre-registered pass rule from its computed results, deterministically (plus the C7-EXT gates and provenance checks). | **Live** (RP imports it). Imported by `RP:2397,2615,4408,4518,5928,6012,6047,8245,8364,8378,8830,11389,12513,12772`; `RC:84`; `campaign_memory.py:283,309`; `explore_confirm.py:387`; `grid_kb_writer.py:54`; `lint_verdict_provenance.py:44`; `near_miss_scoreboard.py:510`. Tests: 39 files. | - |
+| `lint_verdict_provenance.py` | Standalone G6 check: every verdict-bearing KB / queue record cites a resolvable `pass_rule_evaluation.yaml` or declares itself `ungated`. Exit 1 on an unbacked claim. | CLI run by hand; no importer found. Tests: 1 file. | `python strategy-research/tools/lint_verdict_provenance.py [--root DIR]` |
+| `reader_proposals.py` | Loads and validates proposal files (`runs/<id>/artifacts/proposals/<category>.yaml`) by hand against `proposal.schema.json`. | **Live** (RP imports it). Imported by `RP:4535`; `analyst_session.py:73,1084`; `campaign_memory.py:392`; `decide_next.py:125`; `explore_confirm.py:731`; `fold_confirm.py:404,530`; `reader_findings.py:31`. Tests: 27 files. | - |
+| `reader_findings.py` | Readings v3: the code-written `skipped` reading and the side-finding review (warnings only). | **Live** (RP imports it). Imported by `RP:4656`; `decide_next.py:1195,2141`; `explore_confirm.py:773`. Tests: 9 files. | - |
+| `reader_categories.py` | The proposal categories as one constant: the analyst's two lens categories and the three legacy reader names. | **Live** (RP imports it). Imported by `RP:1758`; `fold_confirm.py:405`; `SR/engineering/lane1_replay/lane1_registry_check.py:24`. Tests: 7 files. | - |
+
+### Analyst
+
+| tool | purpose | used by | CLI |
+|---|---|---|---|
+| `analyst_session.py` | The analyst session's pure part: builds the prompt and checks the model's answer (citations against the query log, claim tests, holdout dates). | **Live** (RP imports it). Imported by `RP:4706`; `campaign_memory.py:433`; `reader_findings.py:85`. Tests: 18 files. | `python tools/analyst_session.py --run <copy of a run> --lens <lens>` (smoke CLI; one real model session, spends money; refuses a run under `runs/`) |
+| `analyst_queries.py` | The analyst's query engine: fixed functions over one saved run's bars and trades (no SDK, no network). Its docstring still says nothing imports it yet; RP does. | **Live** (RP imports it). Imported by `RP:4714`; `claim_tests.py:380,394`. Tests: 6 files. | - |
+| `analyst_memory_view.py` | What the analyst is told about earlier claims: one row per claim with status, numbers for confirmed claims only. | **Live** (RP imports it). Imported by `RP:4722`. Tests: 4 files. | - |
+| `catalogue_section.py` | Renders the component and transform-op catalogue as one prompt section from `COMPONENT_CATALOG.md` and `STRATEGY_DESIGN_GUIDE.md`. | **Live** (analyst_session &larr; RP). Imported by `analyst_session.py:44`. Tests: 1 file. | `python tools/catalogue_section.py` (prints the section; no arguments) |
+
+### Backtest and economics
+
+| tool | purpose | used by | CLI |
+|---|---|---|---|
+| `run_protocol.py` | Walk-forward protocol runner: each window an independent backtest via `core.launcher.run_backtest`; writes `protocol_result.yaml` / `protocol_summary.json`. | **Live** (residual_ic &larr; composite_cache &larr; RP). Imported by `RC:2831`; `residual_ic.py:332`. Run as a subprocess by `RP:2220,2534` and `composite_cache:261`. Tests: 30 files. | `python strategy-research/tools/run_protocol.py <config> <protocol> [--validation-protocol] [--out-dir] [--cost-product {spot,perp}] [--commission-bps] [--exchange] [--drop-feeds] [--cost-bar-all-costs] [--forecast-ic-horizons] [--diagnostics-only] [--legacy-verdict-retired] [--holdout --i-understand --hypothesis-id ID]` |
+| `cost_helpers.py` | One definition of per-symbol commission (bps and per-side fraction) and the realized gross-edge / cost ratio, importable without `core.launcher`. | **Live** (portfolio_whole_test &larr; RP). Imported by `portfolio_whole_test.py:92`; `run_protocol.py:37`. Tests: 2 files. | - |
+| `portfolio_daily.py` | The equal-weight portfolio's daily closes and returns: one definition for the profit bars and the composition's block returns. | **Live** (RP imports it). Imported by `RP:14029`; `composition.py:76`; `curve_cost_ratio.py:52`; `portfolio_whole_test.py:93`. Tests: 10 files. | - |
+| `portfolio_whole_test.py` | Whole-test (profit bars v2) portfolio functions. Its docstring says nothing in the orchestrator calls it yet; RP:14223 imports it. | **Live** (RP imports it). Imported by `RP:14223`; `deflate_sharpe.py:798`; `variant_coin.py:362`. Tests: 13 files. | - |
+| `window_economics.py` | Per (coin, window) economics of one variant, read from the run's own files; shared by the analyst query and `profit_bars_evaluation.yaml`. | **Live** (RP imports it). Imported by `RP:15407`; `analyst_queries.py:140`. Tests: 2 files. | - |
+| `curve_cost_ratio.py` | Curve-based gross / cost ratio for pre-registration (equity change plus costs over costs, per coin-window account). | Imported by `SR/engineering/lane1_replay/fold_c_reading.py:23`. That importer is a hand-run engineering script; not reached from RP or RC. Tests: 1 file. | - |
+| `deflate_sharpe.py` | Bailey and Lopez de Prado (2014) Deflated Sharpe Ratio over the campaign's trials, with trial deduplication. | **Live** (RP imports it). Imported by `RP:14379`; `backfill_structure_hash.py:153`; `dual_writer_demo.py:39`; `killed_run_gate.py:54`. RP also keeps its own transcription of parts of it (see the comments near `RP:13017-13234`). Tests: 20 files. | `python strategy-research/tools/deflate_sharpe.py <run_id> [--campaign-state PATH] [--allow-unmerged]` |
+| `structure_key.py` | D-185 structure key of a trial, (structure_hash, timeframe): sizes the deflated Sharpe's N by what was tested. | **Live** (RP imports it). Imported by `RP:12104`; `backfill_structure_hash.py:58`; `deflate_sharpe.py:197,1161`. Tests: 2 files. | - |
+| `backfill_structure_hash.py` | Keys old trial-ledger rows with their (structure_hash, timeframe); dry run (counts only) by default. | CLI run by hand; no importer found. Tests: 1 file. | `python tools/backfill_structure_hash.py [--root DIR] [--write]` |
+| `episode_significance.py` | IC significance by bootstrapping over episodes (runs of active bars) instead of fixed 24-bar blocks. | **Live** (RP imports it). Imported by `RP:11141`; `claim_tests.py:153,1870`; `run_protocol.py:1556`. Tests: 5 files. | - |
+| `panel_backtester.py` | Research-only vectorized panel backtester for cross-sectional strategies; `gate` reproduces an archived engine run first. | CLI run by hand; no importer found. Tests: 3 files. | `python strategy-research/tools/panel_backtester.py gate` / `... xs [--lookback] [--rebalance] [--min-n]` |
+| `validate_regime_detector.py` | Deterministic regime-detector validation (persistence, transitions, sensitivity, activation) and a confidence grade. | **Live** (subprocess from RP). Imported by `retune_regime_detector.py:45`. Run as a subprocess by `RP:10172` and `retune_regime_detector:544`. Tests: 1 file. | `python strategy-research/tools/validate_regime_detector.py [--config] [--symbols] [--start] [--end] [--out]` |
+| `retune_regime_detector.py` | One-shot grid search over regime-detector parameters, scored on intrinsic criteria only (no PnL). | CLI run by hand; no importer found. Referenced by path in `TB/tests/test_tbot_python_resolver.py:81`. | `python strategy-research/tools/retune_regime_detector.py [--symbols] [--start] [--end] [--skip-validate]` |
+| `killed_run_gate.py` | Synthetic proof that a completed KILL backtest lands one trial row and is counted by both deflated-Sharpe N paths. | CLI run by hand; no importer found. Tests: 1 file. | `python strategy-research/tools/killed_run_gate.py` (no arguments) |
+| `dual_writer_demo.py` | Synthetic end-to-end demo of the two-writer trial-ledger contract (union merge, no DSR until merged). Writes no live record. | CLI run by hand; no importer found. Tests: 1 file. | `python strategy-research/tools/dual_writer_demo.py` (no arguments) |
+| `dual_writer_demo_fixtures/` | Two fabricated writer ledgers (`master_ledger.yaml`, `fork_ledger.yaml`) for the demo. | Read by `dual_writer_demo.py:41` (`FIXTURE_DIR`). | - |
+
+### Blocks and composition
+
+| tool | purpose | used by | CLI |
+|---|---|---|---|
+| `block_registry.py` | `campaign_record/block_registry.yaml`: validated blocks, append-only; written by the `regroup_record` stage. CLI appends a status record. | **Live** (RP imports it). Imported by `RP:5313,5844,6140,8884`; `composite_cache.py:442`; `decide_next.py:120`; `SR/engineering/lane1_replay/lane1_hand_block.py:30`; `SR/engineering/lane1_replay/lane1_registry_check.py:23`; `run_viewer/loaders.py:724`. Tests: 9 files. | `python tools/block_registry.py status --block-id ID --status {voided,active} --reason R --by NAME [--registry PATH]` (from strategy-research/) |
+| `block_manifest.py` | The one implementation of the `artifacts/block_manifest.yaml` contract (which part of the base config is the block). | **Live** (RP imports it). Imported by `RP:18985`; `block_registry.py:68`; `claim_findings.py:109`; `config_vehicle.py:623`; `decide_next.py:2039`. Tests: 4 files. | - |
+| `composite_cache.py` | The current composite forecast series a candidate block's residual IC is measured against, per exact timeframe (under `orchestrator.composition_runs`). | **Live** (RP imports it). Imported by `RP:5843,6046`; `RC:5343`; `composition.py:73`; `decide_next.py:1287,1390`; `SR/engineering/lane1_replay/lane1_hand_block.py:31`. Tests: 9 files. | - |
+| `composition.py` | Deterministic composition assembly: weights and the composed config from the registry's blocks on one timeframe. Its docstring says nothing calls it yet; RP and RC import it. | **Live** (RP imports it). Imported by `RP:6132`; `RC:5344,5387`; `decide_next.py:1212,1288`. Tests: 3 files. | - |
+| `composition_names.py` | Names shared by composition, decide_next, RC and RP (one definition each, no imports). | **Live** (RP imports it). Imported by `RP:6124`; `RC:86`; `composition.py:74`; `decide_next.py:121`. Tests: 1 file. | - |
+| `residual_ic.py` | Residual IC: does a candidate block hold information the current composite does not. | **Live** (composite_cache &larr; RP). Imported by `composite_cache.py:84`; `composition.py:865`. Tests: 2 files. | - |
+
+### Records and memory
+
+| tool | purpose | used by | CLI |
+|---|---|---|---|
+| `campaign_memory.py` | `campaign_record/campaign_memory.yaml`: one entry per run (full or fault-only), written by `regroup_record`; also the file lock and atomic write helpers. | **Live** (RP imports it). Imported by `RP:3802,8822,9389,9450`; `anti_adjacency_gate.py:72`; `block_registry.py:69`; `campaign_review_retired.py:25`; `claim_card.py:604`; `claim_measure.py:374`; `composite_cache.py:338`; `composition.py:689,733`; `decide_next.py:122`; `explore_confirm.py:277,533,559,1000,1089`; `grid_kb_writer.py:53`; `replay_repeat_gate.py:93`. Tests: 25 files. | - |
+| `grid_kb_writer.py` | Adds one grid-based entry per run to `campaign_knowledge_base.yaml`. | **Live** (RP imports it). Imported by `RP:8885,12635`. Tests: 2 files. | - |
+| `record_schema.py` | Closed (allow-list) schema for KB findings and queue entries; a verdict may live in one designated field only. | **Live** (verdict_criteria_evaluator &larr; RP). Imported by `RC:83`; `lint_verdict_provenance.py:43`; `verdict_criteria_evaluator.py:50`. Tests: 13 files. | - |
+| `near_miss_scoreboard.py` | Ranked near-miss table over every tested run, raw material for idea generation. Not a promotion input. | **Live** (RP imports it). Imported by `RP:8982`. Tests: 4 files. | `python tools/near_miss_scoreboard.py [--runs-dir] [--out-dir]` |
+| `fragment_patterns.py` | Ideation-only diagnostics over LIFO trade fragments (`trades.json`). Under a firewall: no decision-path code may import it. | No importer found. `SR/tests/test_fragment_patterns_firewall.py` only checks that nothing imports it. | - |
+
+### Holdout and data policy
+
+| tool | purpose | used by | CLI |
+|---|---|---|---|
+| `holdout_policy.py` | The one strict reader of `campaign_data_policy.yaml`'s `holdout_range` (strict day parsing, `windows_overlap`). | **Live** (RP imports it). Imported by `RP:1756`; `RC:88`; `analyst_queries.py:585`; `check_data.py:36`; `composite_cache.py:86`; `measure_bar_sigma.py:90,92`; `research_folds.py:56`; `run_protocol.py:2022`; `SR/engineering/FOLD-FLOORS-2/real_return_null.py:100`; `run_viewer/sanitize.py:105`. Tests: 8 files. | - |
+| `seal_safe_cache.py` | Seal-safe reads of local OHLCV caches for research tools, reusing the engine's seal guards. | Imported by `measure_funding_carry.py:38`; `panel_backtester.py:58`. Both importers are CLI tools; not reached from RP or RC. Tests: 3 files. | - |
+| `check_data.py` | Checks the bars a protocol needs are on disk and refuses a protocol that overlaps the sealed holdout. Exit 0 clean, 1 holdout overlap, 2 gap over a day. | CLI run by hand; no importer found. Tests: 2 files. | `python strategy-research/tools/check_data.py [--protocol P] [--policy PATH] [--skip-data-check] [--timeframe TF]` |
+| `cache_gap_census.py` | Timestamp-continuity census over the local OHLCV caches (gap pairs, contiguous runs, gap-aware n_eff). Read-only. | CLI run by hand; no importer found. | `python strategy-research/tools/cache_gap_census.py [--data-dir] [--timeframe] [--warmup] [--block] [--gate-floor]` |
+| `measure_bar_sigma.py` | Measures `sigma_bar_bps` (std of 1-bar returns, bps) for the recorded Kraken pairs, refusing sealed candles. | CLI run by hand; no importer found. Tests: 1 file. | `python -m tools.measure_bar_sigma [--pairs] [--start] [--end] [--local-data] [--full-history]` (from strategy-research/) |
+| `measure_funding_carry.py` | Measures realized perp funding carry on the in-sample window only (window bound hard-coded in the file). | CLI run by hand; no importer found. Tests: 1 file. | `python strategy-research/tools/measure_funding_carry.py` (no arguments) |
+
+### Forward recorder (Kraken WS)
+
+| tool | purpose | used by | CLI |
+|---|---|---|---|
+| `recorder/` | Standalone Kraken WS v2 forward-recorder package (capture, journal, compaction, retrieval, whale features). See `recorder/RUNBOOK.md`. | **Live**, partly: `recorder/shard_reader`, `whale_features` and `journal` via TB/data/fetchers/whale_footprint_fetcher.py:91-92 &larr; TB/data/feed_registry.py:18 &larr; data_availability_gate (RP) and TB/core/launcher (run_protocol). Its tests (`recorder/tests/`) run via `run_tests.py`; CI installs `recorder/requirements.txt` (`.github/workflows/tests.yml:47`). | `python -m recorder.<module>` with `strategy-research/tools/` on the path (the supervisors `cd` there, e.g. `recorder/supervise.sh:130`) |
+| `whale_footprint_evaluation.py` | Evaluation harness for `prereg_whale_footprint_v2.yaml`: every threshold read from the pre-registration; its docstring says it has not been run on the real capture. | CLI run by hand; no importer found. Tests: 1 file. | `python strategy-research/tools/whale_footprint_evaluation.py --prereg PATH [--run-id ID]` |
+
+### Viewer
+
+| tool | purpose | used by | CLI |
+|---|---|---|---|
+| `run_viewer/` | Read-only local web page over run folders and records (D-180); every output string passes through `sanitize.py`. Design in `run_viewer/DESIGN.md`. | Tests: `SR/tests/test_run_viewer.py`. | `python tools/run_viewer/server.py --runs runs [--root] [--host 127.0.0.1] [--port 8765]` (from strategy-research/) |
+
+### Hooks and gates
+
+| tool | purpose | used by | CLI |
+|---|---|---|---|
+| `hooks/pre-commit` | Tracked pre-commit hook: the secret scan and the holdout date gate (the test suite is deliberately not in it). | Run by git once `setup_hooks.sh` has set `core.hooksPath`. Tests: `SR/tests/test_installed_hook_matches_tracked.py`, `test_precommit_gate0_delete_allowed.py`. | Installed once per clone by `setup_hooks.sh` (sets `core.hooksPath`); git then runs it on every commit. |
+| `setup_hooks.sh` | One-time per clone: points git's `core.hooksPath` at `tools/hooks/`. | CLI run by hand, once per clone (named in the header of `hooks/pre-commit`); no code or test runs it. | `sh strategy-research/tools/setup_hooks.sh [--check]` |
+| `holdout_date_gate.sh` | Scans the git index for dates inside the sealed holdout range and blocks the commit unless exempted in `config/holdout_gate_exemptions.txt`. Deny by default. | Run by `hooks/pre-commit:83` and CI (`.github/workflows/tests.yml:60`). Tests: `SR/tests/test_holdout_date_gate.py`. | `sh strategy-research/tools/holdout_date_gate.sh [--self-test-only \| --report-residual]` |
+
+### Misc
+
+| tool | purpose | used by | CLI |
+|---|---|---|---|
+| `build_inventory.sh` | Regenerates the E-002 `INVENTORY.tsv` (every tracked file under strategy-research/ with bytes and git-history aggregates). | CLI run by hand; no code or test runs it. | `sh strategy-research/tools/build_inventory.sh` (no arguments; cds to the repo root) |
+| `gen_user_guide_toc.py` | Generates `docs/USER_GUIDE.md`'s table of contents from its headings. | `--check` is run by `SR/tests/test_user_guide_toc.py`. | `python tools/gen_user_guide_toc.py [--check]` |
+| `README.md` | This file. | Documentation; no test reads it. | - |
+
+### Package members
+
+`recorder/` (standalone; imports nothing from `trading-bot/`; its data is reserved,
+see `config/campaign_data_policy.yaml:kraken_ws_forward_recorder`):
+
+| file | purpose | used by | CLI |
+|---|---|---|---|
+| `__init__.py` | Package marker; states the reserved-data rule. | Loaded by every `recorder.<module>` import. | - |
+| `record_kraken_ws.py` | The capture daemon: verbatim `book` (depth 10), `trade`, `instrument`, `status`, `heartbeat` from Kraken WS v2 for the 19 pairs. | Run by `supervise.sh:117` and `supervise.ps1:107`. Imported by `coverage_report.py:75,80`; `journal_mark.py:39,42`; `liveness.py:53,56`; `retrieval_manifest.py:62,65`. | `python -m recorder.record_kraken_ws run [--out] [--depth] [--book-mode] [--snapshot-interval] [--roll] [--no-compress] [--min-free-gb] ...` |
+| `shard_writer.py` | Verbatim NDJSON shard writer (frame bytes spliced, never re-serialised). | Imported by `record_kraken_ws.py:76,85`. | - |
+| `book_state.py` | Local depth-N book behind the lossy SNAPSHOT cadence mode. | Imported by `record_kraken_ws.py:69,78`. | - |
+| `compaction.py` | Hourly zstd compaction of shards, verified before the raw file is deleted. | Imported by `record_kraken_ws.py:70,79`; `shard_writer.py:77,79`. | - |
+| `disk_guard.py` | Free-space floor checked while recording; a breach writes `DISK_GUARD_ABORT` and exits 3. | Imported by `record_kraken_ws.py:71,80`. | - |
+| `journal.py` | Coverage journal: attests what was captured, since the book channel has no sequence numbers. | **Live** (shard_reader &larr; TB whale fetcher, see above). Imported by `coverage_report.py:72,77`; `journal_mark.py:38,41`; `liveness.py:50,55`; `record_kraken_ws.py:75,84`; `retrieval_manifest.py:61,64`; `shard_reader.py:82,91`. | - |
+| `journal_mark.py` | Supervisor-side journal writer (`RESTART_BOUNDARY` records). | Run by `supervise.sh:182` and `supervise.ps1:169`. | `python -m recorder.journal_mark restart --out DIR --exit-code N [--attempt] [--backoff] [--reason]` |
+| `shard_reader.py` | The read side: frames in timestamp order across pairs, with journal gaps interleaved, never interpolated. | **Live** (TB/data/fetchers/whale_footprint_fetcher.py:91). Imported by `whale_features.py:195,197`; `whale_persistence.py:109,119`; `whale_report.py:47,57`. | - |
+| `whale_features.py` | Whale-footprint features from public trades, aggregated to bars (no forward return, no IC). | **Live** (TB/data/fetchers/whale_footprint_fetcher.py:92). Imported by `whale_persistence.py:110,120`; `whale_report.py:48,58`. | - |
+| `kraken_crc.py` | Kraken WS v2 L2 book CRC32 checksum verifier, replayable over the shards. | No importer found (listed in `__init__.py`'s `__all__`); tests only (`tests/test_kraken_crc.py`, `test_cadence_modes.py`). | - |
+| `coverage_report.py` | Report of the intervals NOT captured over the capture's life, and why. | CLI run by hand. | `python -m recorder.coverage_report [--out] [--journal] [--start] [--end] [--symbol] [--channel] [--fail-on-gap]` |
+| `liveness.py` | Operator health check; exit 0 healthy, non-zero down or degraded. | CLI run by hand (printed as a next step by `install_systemd_unit.sh:142`). | `python -m recorder.liveness [--out] [--window] [--expect-symbols] [--max-staleness]` |
+| `retrieval_manifest.py` | Capture-host manifest (sha256 and bytes of every compacted shard and the journal). | Run over SSH by `retrieve_shards.py:132`; imported by `retrieve_shards.py:71,75,186,188`. | `python -m recorder.retrieval_manifest --out DIR` |
+| `retrieve_shards.py` | Pulls shards from the capture host and verifies them against the manifest; `prune` deletes only confirmed remote files. | CLI run by hand. | `python -m recorder.retrieve_shards {pull,prune} --host H --remote-out D --local-out D [--identity] ...` |
+| `whale_persistence.py` | Sign persistence (holding bars) of each whale feature. | CLI run by hand. | `python -m recorder.whale_persistence [--root] [--symbols] [--start] [--end] [--bar-seconds] ...` |
+| `whale_report.py` | Descriptive statistics of the whale features (no predictive statistic). | CLI run by hand; no test found. | `python -m recorder.whale_report [--root] [--symbols] [--bar-seconds] ...` |
+| `supervise.sh` | Linux restart supervisor (no relaunch after exit 0 or `DISK_GUARD_ABORT`). | Run by the systemd unit that `install_systemd_unit.sh:69` writes. Tests: `tests/test_supervisor_sh.py`. | `bash tools/recorder/supervise.sh [--out DIR] [--min-free-gb N] [--book-mode MODE] ...` |
+| `supervise.ps1` | Windows restart supervisor, same policy. | Run by the scheduled task `register_scheduled_task.ps1:65` registers. Tests: `tests/test_supervisor.py`. | - |
+| `install_systemd_unit.sh` | Registers `supervise.sh` as a systemd system service. | Run by hand. | `bash tools/recorder/install_systemd_unit.sh` |
+| `register_scheduled_task.ps1` | Registers `supervise.ps1` as a Windows Scheduled Task. | Run by hand. | - |
+| `RUNBOOK.md` | Operator runbook for the recorder. | Documentation. | - |
+| `requirements.txt` | The recorder's dependencies (websockets, zstandard). | Installed by CI (`.github/workflows/tests.yml:47`). | - |
+| `.gitattributes` | Forces LF line endings on `*.sh`. | git. | - |
+| `tests/` | The recorder's own test suite (16 test files, a conftest and a fixture). | Run by `run_tests.py` as a sibling suite. | - |
+
+`run_viewer/` (read-only; GET and HEAD only; binds 127.0.0.1 unless `--host`):
+
+| file | purpose | used by | CLI |
+|---|---|---|---|
+| `server.py` | Stdlib `http.server` page and JSON API over the run folders; refuses to start if the sealed-window policy cannot be read. | CLI run by hand. Tests: `SR/tests/test_run_viewer.py`. | see `run_viewer/` above |
+| `loaders.py` | The data layer: one JSON-able document per view, never raises on a missing or unparseable file. | Imported by `server.py:39`. | - |
+| `sanitize.py` | The one output filter: masks any date inside the sealed window in every string the viewer emits. | Imported by `server.py:40`. | - |
+| `DESIGN.md` | The viewer's design. | Documentation. | - |
+| `SHAPES_run_099.md` | The artifact shapes the loaders are written against (`DESIGN.md:75`). | Documentation. | - |
+| `static/` | The page: `index.html`, `app.js`, `style.css`, `view4.js`, `view4.css`. | Served by `server.py` (`STATIC_DIR`, `server.py:42`). | - |
+| `static/vendor/` | Vendored uPlot (`uplot/uPlot.iife.min.js`, `uPlot.min.css`, `LICENSE`, `README.md`) and a `.gitattributes` (`* -text`). | Loaded by `static/index.html:9,22`. | - |
