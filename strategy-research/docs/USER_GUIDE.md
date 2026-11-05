@@ -1,6 +1,6 @@
 # Strategy-Research Workflow — User Guide
 
-Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
+Not sure this is the doc you need? See [`DOC_INDEX.md`](../DOC_INDEX.md) first.
 
 ---
 
@@ -3611,8 +3611,8 @@ which explains each in one line without jargon.
 | <a id="g-circuit-breaker"></a>**Circuit Breaker** | An automatic rule that interrupts a search loop when exhaustion is detected. Prevents infinite refinement of a dead-end hypothesis by forcing an altitude climb after a fixed number of failed attempts. |
 | <a id="g-findings-carryover"></a>**Findings Carryover** | An artifact that preserves diagnostic memory across run boundaries. It tells the next run what was tried, what failed, and what parameter range to search next — preventing the campaign from cycling through the same dead ends. |
 | <a id="g-artifact"></a>**Artifact** | Any structured YAML or JSON file produced by a pipeline stage. Artifacts are the only allowed communication between stages. They must conform to their schema before the pipeline advances. |
-| <a id="g-schema"></a>**Schema** | A JSON Schema definition (Draft 7) in `schemas/` that specifies the required fields and types for an artifact. Validation against the schema is a hard gate — a stage cannot advance if its output fails schema validation. |
-| <a id="g-skill"></a>**Skill** | A Markdown file in `skills/` that defines a specialist LLM persona: its mission, required inputs/outputs, checklists, constraints, and forbidden actions. The orchestrator loads the relevant skill as the system prompt for each stage. |
+| <a id="g-schema"></a>**Schema** | A JSON Schema definition (Draft 7) in `workflow_artifacts/schemas/` that specifies the required fields and types for an artifact. Validation against the schema is a hard gate — a stage cannot advance if its output fails schema validation. |
+| <a id="g-skill"></a>**Skill** | A Markdown file in `workflow_artifacts/skills/` that defines a specialist LLM persona: its mission, required inputs/outputs, checklists, constraints, and forbidden actions. The orchestrator loads the relevant skill as the system prompt for each stage. |
 | <a id="g-backtest-window"></a>**Backtest Window** | A single contiguous date range used for one out-of-sample evaluation. The baseline protocol uses 11 monthly windows (January–November 2024). Results from all windows are aggregated to produce the final verdict. |
 | <a id="g-forecast-return-correlation"></a>**Forecast-Return Correlation** | A diagnostic metric measuring how well the strategy's forecast predicts next-bar returns. A value near 0 means the signal is noise. A negative value means the signal is inverted. The verdict_interpreter uses this as the primary signal-quality gate. |
 | <a id="g-cost-drag-"></a>**Cost Drag %** | The fraction of gross returns consumed by trading costs (spreads, fees). A value above 80% means the strategy's edge is real but smaller than transaction costs — the fix is to trade less frequently. |

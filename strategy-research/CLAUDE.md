@@ -1,120 +1,84 @@
-# CLAUDE.md
+# CLAUDE.md (strategy-research)
 
-Start with `DOC_INDEX.md` — it maps every doc in this directory by the
-question you're arriving with, not by file location.
+The root `CLAUDE.md` hard rules (secrets, no lookahead, trial ledger, sealed
+holdout) and working rules apply here too and are not repeated.
 
-## Project
-Research-only trading strategy factory.
+## 1. Objective and overview
 
-## Objective
-Generate, expand, validate, backtest, analyze, and decide on strategy hypotheses.
+A research-only trading strategy factory: it generates, expands, validates,
+backtests, analyses and decides on strategy hypotheses, using the
+`trading-bot/` engine as its backtester. Nothing here trades live.
 
-## Global rules
-- Use structured artifacts for all handoffs.
-- Never pass full transcript/history by default.
-- Load only the files needed for the current task.
-- Innovation happens before validation.
-- Validation is falsification-first.
-- Promising ideas must pass screening, then walk-forward, then holdout.
-- Large outputs must be written to files, not kept inline.
-- After each stage, write a short summary artifact.
+Where to read:
+- `docs/USER_GUIDE.md`: what the system is, its stages, artifacts, skills and tools.
+- `docs/RUNBOOK.md`: how to operate a campaign (preflight, launch, status, pauses, resume, stop).
+- `docs/CAMPAIGN_PROGRAM.md` (phase plan) and `config/campaign_queue.yaml` (queue state).
+- `engineering/roadmap/EPICS.md` (engineering work) and `engineering/DECISION_LOG.md` (operator decisions).
 
-> **Schemas are checked at write time, warn-only by default.** This file
-> once said *"Validate outputs against schemas before moving to the next
-> stage"*, and a later correction said no schema was loaded by any code. Neither
-> is right now: `save_yaml` (and the standalone tools that write artifacts) call
-> `tools/workflow_artifact_validation.py`, which checks an artifact against
-> `workflow_artifacts/schemas/<file stem>.schema.json` when one exists. A
-> violation is logged and swallowed (a bug in the check must never crash a write
-> path); only `WORKFLOW_ARTIFACT_VALIDATION=raise` makes it block the write. So a
-> schema is a checked contract, but a warning is not a stop: where a rule must
-> stop a run it is still written in code at the seam that reads the value. See
-> E-037 [E037-09](engineering/roadmap/E-037/FINDINGS.md#e037-09) for the
-> original correction and the C5.7a schemas (`grid_evaluation`, `idea_status`,
-> `variant_patches`, ...).
+### Workflow stages
 
-## Workflow stages
+The code is the source of truth: the stage registry
+`workflow/run_phase1_research.py::STAGE_CONFIGS` and the `determine_post_*`
+routing functions; `docs/USER_GUIDE.md` §2 describes them. The registry holds
+12 stages: `hypothesis_generation`, `strategy_config_authoring`,
+`innovation_expansion`, `validation`, `backtest_specification`,
+`data_availability_gate`, `protocol_execution`, `verdict_interpreter`,
+`analyst`, `regroup_record`, `campaign_review`, `holdout_evaluation`.
+`research_brief` is the input, not a stage. Which stages a run reaches depends
+on the `orchestrator.*` flags in `config/campaign_config.yaml`; for example,
+with `orchestrator.verdict_routing_retired.enabled` on, a run ends after
+`regroup_record` and decide-next picks the next run. Stage 4 is called
+`validation_gate` in the docs and `validation` in the code.
 
-**`docs/USER_GUIDE.md` §2.2 is authoritative.** Read it there rather than
-here — this list is a pointer, kept short deliberately so it cannot drift out
-of step again.
+## 2. Behaviour rules
 
-The pipeline is 12 numbered stages:
+- Default to minimal context: load only the files the current task needs, and
+  never pass a full transcript or history by default (hand over files and paths).
+- Write large outputs to files, not inline.
+- Runtime records (operator decision 2026-10-17, Option C):
+  - `runs/` is ignored (repo `.gitignore`): never stage a run file. Back run
+    folders up outside git (copy only, junctions excluded). run_0001..run_060
+    stay tracked on master as history; an ignore rule never untracks a file.
+  - `campaign_record/` is committed once per session, as a docs PR from master.
+    Its `composite/` folder is ignored: a backtest cache that
+    `tools/composite_cache.py` rebuilds.
+  - Nothing stays staged between sessions. Never run `git clean` in the main
+    checkout: it would delete the ignored run folders, which exist nowhere else.
 
-`research_brief` → `hypothesis_generation` → `innovation_expansion` →
-`validation_gate` → `backtest_specification` →
-`data_availability_gate` → `protocol_execution` → `regime_detector_validation` →
-`regime_auditor` → `verdict_interpreter` → `campaign_review` →
-`holdout_evaluation`
+## 3. Development and test process
 
-Two caveats the guide explains in full:
-
-- The engine's own registry, `STAGE_CONFIGS`
-  (`workflow/run_phase1_research.py::STAGE_CONFIGS`), holds **12** entries as
-  of D-198 (2026-10-26). The five specialist readers and their stage
-  (`specialist_readers`, E-046a Slice 5b-ii-B) are deleted; what that stage's
-  flag also switched, the post-run route from the grid
-  (`determine_post_specialist_readers_route`, in place of `verdict_interpreter`
-  after `protocol_execution`), is keyed on `orchestrator.grid_evaluation.enabled`
-  now (see `docs/USER_GUIDE.md`, "Route from the grid"). The `analyst` stage
-  (D-197) is registered unconditionally and routed to only when
-  `orchestrator.analyst.enabled` is on (stage 18). `regroup_record` is
-  registered the same way and routed to only when
-  `orchestrator.regroup_record.enabled` is on (off by default; requires
-  `grid_evaluation`): it sits between `protocol_execution` / `analyst` and the
-  route and writes `campaign_record/campaign_memory.yaml` and
-  `artifacts/registry_summary.yaml` (`docs/USER_GUIDE.md`
-  stage 17). With `orchestrator.verdict_routing_retired.enabled` also on
-  (E-059 S3 / slice 6c S2a, off by default; requires `decide_next` and
-  `profit_bars_every_backtest`), that route ends the run at
-  `completed_<idea_status>` and decide-next picks the next run: refine /
-  pivot / escalate / kill, the circuit breaker, continuation children and the
-  route to `holdout_evaluation` are unreachable (code kept, marked
-  `# legacy routing (v26 card G)`). `data_availability_gate` (E-054 Layer 2)
-  sits between `backtest_specification` and `protocol_execution`.
-  **CORRECTED 2026-09-20** (delivery_plan_v26.md s:0.4 item 14): it is now ON
-  BY DEFAULT, gated by `orchestrator.data_availability_gate.enabled` in
-  `config/campaign_config.yaml` (default `true` — the one flag in this
-  project that defaults on; see `feature_flag_register.yaml`), not the old
-  `E054_DATA_AVAILABILITY_GATE` env var, which this change removed. So it
-  now DOES appear in a default run's stage list. Only an explicit
-  `enabled: false` reproduces the old skip-it behavior. There is no
-  pre-backtest signal-prescreen stage — every run always executes a full
-  backtest. `research_brief` is a human input; `regime_detector_validation`
-  is a helper function; `regime_auditor` is not dispatched by the
-  orchestrator at all; and there is no separate `refinement_planner` stage
-  (E-039 S4, 2026-09-12) — a "refine" verdict from `validation_gate` produces
-  its own refinement plan in the same call and loops back to
-  `innovation_expansion` directly. **The 10th entry, `strategy_config_authoring`**
-  (E-056 Slice 3b, 2026-09-21), is registered UNCONDITIONALLY — same
-  documentation convention as `data_availability_gate`'s own addition — but
-  only ROUTED to when `orchestrator.config_direct_authoring.enabled` is true
-  (off by default). When on, it sits between `hypothesis_generation` and
-  `innovation_expansion`, authors the single BASE strategy config, and the
-  `validation` stage becomes naturally unreached (not deleted — its registry
-  entry and code path stay intact for flag-off runs); `backtest_specification`
-  becomes a deterministic tool stage instead of an LLM call, applying
-  `innovation_expansion`'s `variant_patches.yaml` patches to that base config.
-  See `docs/USER_GUIDE.md` §2.1/§2.2 for the full diagram.
-- Stage 4 is `validation_gate` in the docs and **`validation`** in the code —
-  the latter is the key you would grep for.
-
-## Context policy
-- Default to minimal context.
-- Maximum required reads per stage: 3 files unless explicitly justified.
-- Prefer YAML/JSON artifacts over prose.
-
-## Running the tests (operator decision 2026-10-03: the full suite is too slow to run after every edit)
-- Interpreter: `../venv/Scripts/python.exe` on Windows (`../.venv/bin/python` on Mac/Linux); run strategy-research tests from `strategy-research/` (the workflow resolves the venv from the CWD).
-- **`TBOT_PYTHON`** (operator decision 2026-10-17): when this environment variable holds an absolute path to an interpreter, the workflow uses it before either venv above. It points at a venv outside every checkout, so a worktree needs no venv of its own: run tests there as `& $env:TBOT_PYTHON -m pytest <files>`. Never junction a venv into a worktree: checking out a commit from before 2026-09-09 (which tracked `venv/`) and moving away deletes the linked venv's files.
-- **While developing:** run only the test files the change touches (and their direct neighbours). Seconds to a minute.
-- **CI runs the FAST suite on every push** (Ubuntu + Windows, `.github/workflows/tests.yml` -> `run_tests.py`, ~8 / ~14 min): trading-bot and strategy-research, including `tools/recorder/tests/`, with `-m "not slow"`. Push, then read `gh pr checks <n>`; fix what CI reports. Do not also run it locally before every push.
-- **Slow tests never run in CI.** They are marked `slow` (live market data, network). Run them on purpose when a change touches data fetching or the regression backtests: `python run_tests.py --slow` from the repo root.
-- **Locally, the same fast suite as CI** (only when CI cannot be used, or for a large refactor), from the repo root: `venv/Scripts/python.exe run_tests.py -- -q -n 4`. Use 4 workers, not 8 (measured 2026-10-03 on strategy-research `tests/`: serial ~20 min; `-n 4` 12.2 min, 0 failures; `-n 8` 15.6 min with 2 crashed workers -- memory, 16 GB machine).
-- Never re-run a full suite for a test-only or doc-only follow-up fix; re-run the touched files and say so in the PR.
-- One test process at a time on this machine.
-
-## Runtime records (operator decision 2026-10-17, Option C)
-- `runs/` is ignored (repo `.gitignore`): never stage a run file. Back run folders up outside git (copy only, junctions excluded). run_0001..run_060 stay tracked on master as history; an ignore rule never untracks a file.
-- `campaign_record/` is committed once per session, as a docs PR from master. Its `composite/` folder is ignored: a backtest cache that `tools/composite_cache.py` rebuilds.
-- Nothing stays staged between sessions. Never run `git clean` in the main checkout: it would delete the ignored run folders, which exist nowhere else in git.
+- Prefer structured YAML/JSON artifacts over prose for anything a stage or tool
+  reads. A stage requires at most 3 file reads unless explicitly justified.
+- A new stage is registered in `STAGE_CONFIGS` unconditionally and routed to
+  only when its flag is on (the precedent of `data_availability_gate`,
+  `strategy_config_authoring`, `analyst` and `regroup_record`).
+- Artifact schemas warn, they do not stop: a violation of
+  `workflow_artifacts/schemas/<stem>.schema.json` is only logged (blocking only
+  under `WORKFLOW_ARTIFACT_VALIDATION=raise`; see
+  `tools/workflow_artifact_validation.py`). A rule that must stop a run is
+  written in code at the seam that reads the value.
+- Tests (operator decisions 2026-10-03 and 2026-10-17; the full suite is too
+  slow to run after every edit):
+  - Interpreter: `../venv/Scripts/python.exe` on Windows (`../.venv/bin/python`
+    on Mac/Linux); run strategy-research tests from `strategy-research/` (the
+    workflow resolves the venv from the CWD). When `TBOT_PYTHON` holds an
+    absolute interpreter path it is used first, so a worktree needs no venv of
+    its own: `& $env:TBOT_PYTHON -m pytest <files>`. Never junction a venv into
+    a worktree: checking out a commit from before 2026-09-09 (which tracked
+    `venv/`) and moving away deletes the linked venv's files.
+  - While developing, run only the test files the change touches and their
+    direct neighbours.
+  - CI runs the fast suite (`-m "not slow"`: trading-bot and strategy-research,
+    including `tools/recorder/tests/`) on every push
+    (`.github/workflows/tests.yml` -> `run_tests.py`, Ubuntu and Windows). Push,
+    read `gh pr checks <n>`, fix what CI reports; do not also run it locally
+    before every push.
+  - Slow tests (marked `slow`: live market data, network) never run in CI. Run
+    them on purpose when a change touches data fetching or the regression
+    backtests: `python run_tests.py --slow` from the repo root.
+  - Run the fast suite locally only when CI cannot be used, or for a large
+    refactor, from the repo root: `venv/Scripts/python.exe run_tests.py -- -q -n 4`
+    (4 workers, not 8: 8 crashed workers on memory on the 16 GB machine).
+  - Never re-run a full suite for a test-only or doc-only follow-up fix; re-run
+    the touched files and say so in the PR.
+  - One test process at a time on this machine.

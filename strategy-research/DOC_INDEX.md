@@ -19,7 +19,7 @@ every operator decision from 2026-09-16 onward; `engineering_roadmap.html` (v27)
 updated since 2026-09-20 and no longer carries these on its own.
 → For **campaign/research work**: **[`docs/CAMPAIGN_PROGRAM.md`](docs/CAMPAIGN_PROGRAM.md)** (phase
 plan) and `config/campaign_queue.yaml` (current queue state).
-→ **[`HANDOFF_CURRENT.md`](engineering/sessions/HANDOFF_20260724.md)** —
+→ **[`HANDOFF_20260724.md`](engineering/sessions/HANDOFF_20260724.md)** —
 archived, superseded by EPICS.md and docs/CAMPAIGN_PROGRAM.md above. Retained for its 20 DONE rows'
 verified commit SHAs.
 
@@ -39,7 +39,7 @@ derived its own task queue from this; engineering work now tracks separately in
 `engineering/roadmap/EPICS.md`.
 
 ### "How do I operate the campaign?"
-→ **[`RUNBOOK.md`](RUNBOOK.md)** — launch/status/resume/stop commands, the
+→ **[`docs/RUNBOOK.md`](docs/RUNBOOK.md)** — launch/status/resume/stop commands, the
 hard-pause table (section 3), the block on background/`nohup` mode (grounds: ledger P0 kernel — see
 engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md).
 Short operator one-pagers (C6.3): [`docs/OPERATOR_START_CAMPAIGN.md`](docs/OPERATOR_START_CAMPAIGN.md)
@@ -97,11 +97,11 @@ is an ARCHIVED snapshot with the same title — not the current version.
 → **[`engineering/improvements/done/IMPROVEMENTS_REGISTER.md`](engineering/improvements/done/IMPROVEMENTS_REGISTER.md)**
 — per-improvement status index (01–11): specified vs. implemented vs. accepted,
 built from PROD-corpus references and acceptance artifacts.
-→ **[`campaign_summary.md`](campaign_summary.md)** — machine-generated
+→ **[`campaign_record/campaign_summary.md`](campaign_record/campaign_summary.md)** — machine-generated
 scoreboard (written by `workflow/run_campaign.py`, regenerated on `done`/halt
 transitions only — check its own staleness banner if present before trusting
 it against `campaign_queue.yaml`).
-→ **[`campaign_log.md`](campaign_log.md)** — machine-generated, curated
+→ **[`campaign_record/campaign_log.md`](campaign_record/campaign_log.md)** — machine-generated, curated
 one-line-per-transition log (written by `workflow/run_campaign.py`).
 
 ### "What happened in the security incident?"
@@ -239,7 +239,7 @@ memory-count trigger, reframe → a `ready` queue entry, terminate → the
 `engineering/roadmap/E-059/S1_FINDINGS_6C.md`.
 
 ### "What can run autonomously vs needs a human?"
-→ **[`RUNBOOK.md`](RUNBOOK.md) section 3** — which halt conditions are
+→ **[`docs/RUNBOOK.md`](docs/RUNBOOK.md) section 3** — which halt conditions are
 mechanically resolved vs. remain human-gated across a whole campaign.
 
 ### "How do I design a strategy config? Which components exist and what do they output?"
@@ -265,7 +265,7 @@ truth is `STAGE_CONFIGS` + `workflow_artifacts/templates/handoffs/` + the
 `determine_post_*` routing functions.
 
 ### "How does stage X decide?"
-Each is an LLM persona in `skills/{name}/SKILL.md`:
+Each is an LLM persona in `workflow_artifacts/skills/{name}/SKILL.md`:
 - **`hypothesis-design`** — turns a research brief into one concrete, falsifiable hypothesis.
 - **`strategy-config-authoring`** — E-056 Slice 3b, off by default (`orchestrator.config_direct_authoring.enabled`). Config-direct-authoring flow only: authors the base `strategy_config` directly from the hypothesis, before variant expansion.
 - **`innovation-expansion`** — multiplies a hypothesis into 3–6 testable variants. Config-direct-authoring flow: also produces `variant_patches.yaml`.
@@ -278,7 +278,7 @@ Each is an LLM persona in `skills/{name}/SKILL.md`:
 - **`quant-fundamentals`** — verified math identities/code behaviors other skills must defer to before applying diagnostic rules.
 
 ### "What's historical/archived?"
-→ **`docs/plan/`** — superseded enhancement-plan design docs (`00_overview_v2.md`,
+→ **`engineering/improvements/done/design_and_docs/`** — superseded enhancement-plan design docs (`00_overview_v2.md`,
 `01`–`11_*.md`, `AMENDMENTS_01-06.md`), plus the archived `00_closing_state.md`
 namesake above. Read only for historical rationale, never as current guidance.
 → Archived `NEXT_SESSION.md` snapshots (moved to `archive/improvements/`), each
@@ -296,7 +296,7 @@ the session's own framing, never as current guidance):
 (post-H-041-family close, pre-generator-session),
 [`archive/improvements/NEXT_SESSION_20260719_superseded.md`](archive/improvements/NEXT_SESSION_20260719_superseded.md)
 (post-run_059 close, pre-Phase-1 venue/cost arc).
-→ **[`SESSION_LOG.md`](SESSION_LOG.md)** — chronological per-session handoff log
+→ **[`engineering/sessions/SESSION_LOG.md`](engineering/sessions/SESSION_LOG.md)** — chronological per-session handoff log
 (hypothesis / result / files touched / next-session prompt). Historical once superseded by a newer entry.
 → **`engineering/improvements/done/design_and_docs/STEP_05_FINDINGS.md`, `engineering/improvements/done/design_and_docs/p1b_fetch_manifest.md`** — dated,
 self-contained investigation notes. Historical, not living docs.
@@ -310,4 +310,4 @@ mechanisms it also describes (those are still substantively accurate).
 
 ---
 
-Cross-linked from the top of `RUNBOOK.md`, `docs/USER_GUIDE.md`, and `CLAUDE.md`.
+Cross-linked from the top of `docs/RUNBOOK.md`, `docs/USER_GUIDE.md` and `../trading-bot/DOC/USER_GUIDE.md`.
