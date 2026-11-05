@@ -86,6 +86,10 @@ Remarks: send them as "stop 28: <remark>"; mark "direct" for an answer.
 
 ## Operator remarks (verbatim, with the guide's direct answers)
 
+Lot of legacy stuff. 
+Here again we are weighting ourself and the engineering process keeping those
+I am even at the step of wondering if we should not even recreate a workflow from scratch knowing the amount of legacy stuff / comment / extra cleaning necessary identified over the stops..
+
 ## Inspector notes
 
 (Checkout note: the committed switchboard has 6 of 34 flags on, so in this checkout "not reached" and "reached" trade places for most of the list; the notes judge the tour's flag set, as the speech does. `quarantine/` does not exist in this checkout.)
