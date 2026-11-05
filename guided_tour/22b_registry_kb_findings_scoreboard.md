@@ -70,6 +70,9 @@ Remarks: send them as "stop 22b: <remark>"; mark "direct" for an answer.
 
 ## Operator remarks (verbatim, with the guide's direct answers)
 
+Same remark. We should sit and review if each element stored is succesfully tagged and identified in a structured way. 
+The block logic (validated claim) is partially developed if i am not wrong.
+
 ## Inspector notes
 
 (Checkout note: no `SR/runs/run_102/`; the committed registry, KB and scoreboard files were read; `run_viewer/loaders.py` lines were not opened.)
