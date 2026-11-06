@@ -1,0 +1,147 @@
+claim: trend_with_short_pullback
+symbol: ADAUSD
+bar_size: 1d
+fold: A
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 200
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: -0.7254
+  median_window_sharpe: -0.79405
+  worst_window_drawdown: 0.6034
+  trades: 453
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: -0.4831
+    trades: 67
+    sharpe: -1.6176
+    max_drawdown: 0.5361
+    exposure_pct: 98.3333
+    cost_drag_pct: 2.9578
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r2_trend_with_short_pullback_ADAUSD/results/full_size/20261106T195949Z_2d8e29a2
+    seconds: 4
+  - window: W2
+    net_return: 0.4115
+    trades: 90
+    sharpe: 1.4434
+    max_drawdown: 0.3579
+    exposure_pct: 98.374
+    cost_drag_pct: 8.2051
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r2_trend_with_short_pullback_ADAUSD/results/full_size/20261106T195953Z_2d8e29a2
+    seconds: 4
+  - window: W3
+    net_return: 0.5998
+    trades: 75
+    sharpe: 2.221
+    max_drawdown: 0.2675
+    exposure_pct: 98.3607
+    cost_drag_pct: 4.1806
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r2_trend_with_short_pullback_ADAUSD/results/full_size/20261106T195957Z_2d8e29a2
+    seconds: 4
+  - window: W4
+    net_return: -0.4988
+    trades: 84
+    sharpe: -1.9547
+    max_drawdown: 0.5225
+    exposure_pct: 99.1667
+    cost_drag_pct: 3.4169
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r2_trend_with_short_pullback_ADAUSD/results/full_size/20261106T200001Z_2d8e29a2
+    seconds: 4
+  - window: W5
+    net_return: -0.4601
+    trades: 86
+    sharpe: -1.5474
+    max_drawdown: 0.6034
+    exposure_pct: 99.187
+    cost_drag_pct: 3.7889
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r2_trend_with_short_pullback_ADAUSD/results/full_size/20261106T200006Z_2d8e29a2
+    seconds: 4
+  - window: W6
+    net_return: -0.1305
+    trades: 51
+    sharpe: -0.0407
+    max_drawdown: 0.4087
+    exposure_pct: 93.4426
+    cost_drag_pct: 11.5689
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r2_trend_with_short_pullback_ADAUSD/results/full_size/20261106T200010Z_2d8e29a2
+    seconds: 4
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: -0.3994
+    median_window_sharpe: -1.2688000000000001
+    worst_window_drawdown: 0.2701
+    trades: 443
+  windows:
+  - window: W1
+    net_return: -0.1256
+    trades: 69
+    sharpe: -1.8178
+    max_drawdown: 0.1661
+    exposure_pct: 98.3333
+    cost_drag_pct: 2.8344
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r2_trend_with_short_pullback_ADAUSD/results/vol_target/20261106T200014Z_a2398a64
+    seconds: 4
+  - window: W2
+    net_return: 0.0851
+    trades: 87
+    sharpe: 1.2369
+    max_drawdown: 0.0642
+    exposure_pct: 98.374
+    cost_drag_pct: 6.5683
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r2_trend_with_short_pullback_ADAUSD/results/vol_target/20261106T200018Z_a2398a64
+    seconds: 4
+  - window: W3
+    net_return: 0.0971
+    trades: 75
+    sharpe: 1.2386
+    max_drawdown: 0.13
+    exposure_pct: 98.3607
+    cost_drag_pct: 6.3139
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r2_trend_with_short_pullback_ADAUSD/results/vol_target/20261106T200022Z_a2398a64
+    seconds: 4
+  - window: W4
+    net_return: -0.1749
+    trades: 78
+    sharpe: -2.0122
+    max_drawdown: 0.2146
+    exposure_pct: 99.1667
+    cost_drag_pct: 4.2119
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r2_trend_with_short_pullback_ADAUSD/results/vol_target/20261106T200027Z_a2398a64
+    seconds: 5
+  - window: W5
+    net_return: -0.2366
+    trades: 83
+    sharpe: -2.3296
+    max_drawdown: 0.2701
+    exposure_pct: 99.187
+    cost_drag_pct: 3.38
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r2_trend_with_short_pullback_ADAUSD/results/vol_target/20261106T200032Z_a2398a64
+    seconds: 4
+  - window: W6
+    net_return: -0.084
+    trades: 51
+    sharpe: -0.7198
+    max_drawdown: 0.2275
+    exposure_pct: 93.4426
+    cost_drag_pct: 8.365
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r2_trend_with_short_pullback_ADAUSD/results/vol_target/20261106T200036Z_a2398a64
+    seconds: 4
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail

@@ -1,0 +1,135 @@
+brief: real_01_daily_breadth_fold_a.md
+ideas:
+  - id: short_horizon_reversal_3d
+    belief: Daily crypto moves over a few days overshoot because liquidity providers widen out and late chasers pile in, so a vol-scaled 3-day move partly reverses over the next 3 days.
+    claim:
+      when: every daily bar
+      then: the next 3 days' return leans against the sign and size of the last 3 days' vol-scaled move
+      compared_to: bars with a smaller or opposite 3-day move
+      horizon_bars: 3
+      min_effect: 0.04
+      code: |
+        sd = ret.rolling(60, min_periods=60).std()
+        r3 = df.close.pct_change(3)
+        event = pd.Series(True, index=df.index)
+        strength = -(r3 / (sd * np.sqrt(3))).fillna(0)
+    why_no_lookahead: The 3-day return and the 60-day volatility use closes at or before the bar's close.
+    how_it_trades: Positions are graded against the recent 3-day stretch, faded toward the mean and held a few days.
+  - id: trend_efficiency_follow
+    belief: A move made in a straight line, with little back-and-forth, reflects one-sided slow allocation that keeps arriving, while the same net move made through chop does not persist.
+    claim:
+      when: every daily bar
+      then: the next 10 days' return has the sign of the 20-day efficiency ratio (net move over path length) and grows with it
+      compared_to: bars where the 20-day path was choppy or pointed the other way
+      horizon_bars: 10
+      min_effect: 0.04
+      code: |
+        net = df.close.diff(20)
+        path = df.close.diff().abs().rolling(20, min_periods=20).sum()
+        event = pd.Series(True, index=df.index)
+        strength = (net / path.replace(0, np.nan)).fillna(0)
+    why_no_lookahead: The net change and the path length use only the 21 closes up to and including the bar's close.
+    how_it_trades: The book is long or short in proportion to the signed efficiency ratio and is rebalanced daily as it drifts.
+  - id: close_location_accumulation
+    belief: Days that repeatedly close near their highs show buyers absorbing supply into the close (accumulation), and days that close near their lows show distribution, which leads price over the following week.
+    claim:
+      when: every daily bar
+      then: the next 5 days' return rises with the 10-day average of where each day closed within its high-low range
+      compared_to: bars whose recent closes sat mid-range or near the lows
+      horizon_bars: 5
+      min_effect: 0.03
+      code: |
+        rng = (df.high - df.low).replace(0, np.nan)
+        clv = ((df.close - df.low) - (df.high - df.close)) / rng
+        event = pd.Series(True, index=df.index)
+        strength = clv.fillna(0).rolling(10, min_periods=10).mean().fillna(0)
+    why_no_lookahead: Each day's high, low and close are final at that day's close, and the average covers past days only.
+    how_it_trades: The long or short tilt follows the 10-day close-location average and is held about a week.
+  - id: volume_confirmed_move
+    belief: A multi-week move made on rising participation is backed by new money and continues, while the same move on fading volume is a drift without sponsors that gives back.
+    claim:
+      when: every daily bar
+      then: the next 10 days' return follows the vol-scaled 20-day move when volume is expanding, and leans against it when volume is contracting
+      compared_to: bars where price and volume trends disagree, or where either is flat
+      horizon_bars: 10
+      min_effect: 0.03
+      code: |
+        sd = ret.rolling(60, min_periods=60).std()
+        z = df.close.pct_change(20) / (sd * np.sqrt(20))
+        vr = np.log(df.volume.rolling(10, min_periods=10).mean() / df.volume.rolling(60, min_periods=60).mean())
+        event = pd.Series(True, index=df.index)
+        strength = (z * vr).fillna(0)
+    why_no_lookahead: Price change, volatility and volume averages use only bars closed at or before this bar.
+    how_it_trades: The position follows the product of the price stretch and the volume trend, sized and held over about two weeks.
+  - id: negative_skew_premium
+    belief: Holders demand compensation after a coin has shown crash-like (negatively skewed) daily returns, and they overpay for lottery-like positive skew, so recent skewness predicts lower forward returns.
+    claim:
+      when: every daily bar
+      then: the next 20 days' return is higher the more negative the 60-day skewness of daily returns
+      compared_to: bars with positively skewed recent returns
+      horizon_bars: 20
+      min_effect: 0.04
+      code: |
+        sk = ret.rolling(60, min_periods=60).skew()
+        event = pd.Series(True, index=df.index)
+        strength = (-sk).fillna(0)
+    why_no_lookahead: The skewness uses the 60 daily returns up to and including the bar's close.
+    how_it_trades: A slow tilt long when skew is negative and short when it is positive, held for weeks.
+  - id: vol_decline_deleveraging_end
+    belief: The end of a deleveraging episode shows up as short-term realized volatility falling below its recent norm, after which risk is re-added and prices drift up, while rising short-term volatility marks deleveraging under way (the vol trend, not its level against a one-year norm).
+    claim:
+      when: every daily bar
+      then: the next 10 days' return rises as 10-day realized volatility falls relative to 60-day realized volatility
+      compared_to: bars where short-term volatility is rising above its 60-day level
+      horizon_bars: 10
+      min_effect: 0.03
+      code: |
+        rv10 = ret.rolling(10, min_periods=10).std()
+        rv60 = ret.rolling(60, min_periods=60).std()
+        event = pd.Series(True, index=df.index)
+        strength = (-np.log(rv10 / rv60)).replace([np.inf, -np.inf], np.nan).fillna(0)
+    why_no_lookahead: Both volatilities are computed from returns at or before the bar's close.
+    how_it_trades: The book leans long while volatility is compressing and short while it is expanding, rebalanced daily and held about two weeks.
+  - id: autocorr_regime_adaptive
+    belief: Crypto alternates between trending and mean-reverting regimes that last months, so the sign of recent daily return autocorrelation tells whether to follow or fade the last few days' move.
+    claim:
+      when: every daily bar
+      then: the next 3 days' return has the sign of the 3-day vol-scaled move times the 90-day lag-1 autocorrelation of daily returns
+      compared_to: bars where the same move occurred in the opposite autocorrelation regime
+      horizon_bars: 3
+      min_effect: 0.03
+      code: |
+        sd = ret.rolling(60, min_periods=60).std()
+        ac = ret.rolling(90, min_periods=90).corr(ret.shift(1))
+        r3 = df.close.pct_change(3) / (sd * np.sqrt(3))
+        event = pd.Series(True, index=df.index)
+        strength = (ac * r3).fillna(0)
+    why_no_lookahead: The autocorrelation pairs each past return with the one before it, and both it and the 3-day move end at the bar's close.
+    how_it_trades: The book follows or fades the recent move by the regime-signed amount and is held a few days.
+  - id: illiquidity_rise_premium
+    belief: When price impact per dollar traded (Amihud illiquidity) rises above its norm, market makers and arbitrage capital have withdrawn, and the holders who remain earn a liquidity premium over the following weeks.
+    claim:
+      when: every daily bar
+      then: the next 10 days' return is higher when 20-day average illiquidity is above its 120-day average
+      compared_to: bars when the market is more liquid than its recent norm
+      horizon_bars: 10
+      min_effect: 0.03
+      code: |
+        dv = (df.close * df.volume).replace(0, np.nan)
+        ill = (ret.abs() / dv).rolling(20, min_periods=20).mean()
+        base = ill.rolling(120, min_periods=120).mean()
+        event = pd.Series(True, index=df.index)
+        strength = np.log(ill / base).replace([np.inf, -np.inf], np.nan).fillna(0)
+    why_no_lookahead: Absolute returns and dollar volume are final at each day's close, and both averages cover past days only.
+    how_it_trades: The book is long in proportion to the illiquidity stretch and short when liquidity is abundant, held about two weeks.
+notes: >-
+  The ideas avoid every listed already_tried mechanism and the SMA-distance family. Monthly
+  reversal failed, so the short-term idea uses a 3-day horizon and a different mechanism
+  (liquidity overshoot), and the vol idea uses the short-versus-medium vol trend rather than
+  the level against a one-year norm. A weekday-seasonality idea was left out: its strength
+  would flip sign daily, so at a 1-day horizon it would churn against the 0.15% round-trip
+  cost, and turn-of-month calendar flows already failed. Some ideas contradict each other on
+  purpose and are kept so the data can decide: short_horizon_reversal_3d against
+  trend_efficiency_follow and volume_confirmed_move, and vol_decline_deleveraging_end against
+  illiquidity_rise_premium. Every strength is dense (defined on every bar after warm-up) and
+  is measured on BTC and ADA.

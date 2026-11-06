@@ -534,6 +534,78 @@ real_01_daily_breadth_fold_a.md:
   measure: rank_corr
   verdict: fail
   run: real_01_daily_breadth_fold_a/001
+- id: short_horizon_reversal_3d
+  belief: Daily crypto moves over a few days overshoot because liquidity providers
+    widen out and late chasers pile in, so a vol-scaled 3-day move partly reverses
+    over the next 3 days.
+  branch1: fail
+  branch3: fail
+  run: real_01_daily_breadth_fold_a/003
+- id: trend_efficiency_follow
+  belief: A move made in a straight line, with little back-and-forth, reflects one-sided
+    slow allocation that keeps arriving, while the same net move made through chop
+    does not persist.
+  branch1: fail
+  branch3: fail
+  run: real_01_daily_breadth_fold_a/003
+- id: close_location_accumulation
+  belief: Days that repeatedly close near their highs show buyers absorbing supply
+    into the close (accumulation), and days that close near their lows show distribution,
+    which leads price over the following week.
+  branch1: fail
+  branch3: fail
+  run: real_01_daily_breadth_fold_a/003
+- id: volume_confirmed_move
+  belief: A multi-week move made on rising participation is backed by new money and
+    continues, while the same move on fading volume is a drift without sponsors that
+    gives back.
+  branch1: fail
+  branch3: fail
+  run: real_01_daily_breadth_fold_a/003
+- id: negative_skew_premium
+  belief: Holders demand compensation after a coin has shown crash-like (negatively
+    skewed) daily returns, and they overpay for lottery-like positive skew, so recent
+    skewness predicts lower forward returns.
+  branch1: fail
+  branch3: fail
+  run: real_01_daily_breadth_fold_a/003
+- id: vol_decline_deleveraging_end
+  belief: The end of a deleveraging episode shows up as short-term realized volatility
+    falling below its recent norm, after which risk is re-added and prices drift up,
+    while rising short-term volatility marks deleveraging under way (the vol trend,
+    not its level against a one-year norm).
+  branch1: fail
+  branch3: fail
+  run: real_01_daily_breadth_fold_a/003
+- id: autocorr_regime_adaptive
+  belief: Crypto alternates between trending and mean-reverting regimes that last
+    months, so the sign of recent daily return autocorrelation tells whether to follow
+    or fade the last few days' move.
+  branch1: fail
+  branch3: fail
+  run: real_01_daily_breadth_fold_a/003
+- id: illiquidity_rise_premium
+  belief: When price impact per dollar traded (Amihud illiquidity) rises above its
+    norm, market makers and arbitrage capital have withdrawn, and the holders who
+    remain earn a liquidity premium over the following weeks.
+  branch1: fail
+  branch3: fail
+  run: real_01_daily_breadth_fold_a/003
+- id: efficiency_excess_fade
+  belief: A 20-day move that is more orderly than the coin's own recent norm marks
+    one-sided flow that has run out, so the excess efficiency reverts over the next
+    two weeks.
+  branch1: fail
+  branch3: fail
+  run: real_01_daily_breadth_fold_a/003
+- id: trend_with_short_pullback
+  belief: 'The 20-day fade lost exactly where a slow trend persisted (W4, W6 on both
+    coins), so short-term stretches should be faded only as entries in the direction
+    of the slower 60-day trend: pullbacks inside a trend get bought, extensions inside
+    a downtrend get sold.'
+  branch1: fail
+  branch3: fail
+  run: real_01_daily_breadth_fold_a/003
 n01_session_vol_regime_book_1h.md:
 - id: volume_surprise_fade
   belief: A large hourly move printed on 3x volume is forced flow, such as liquidations

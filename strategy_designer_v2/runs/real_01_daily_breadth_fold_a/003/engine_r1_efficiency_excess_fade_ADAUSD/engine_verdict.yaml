@@ -1,0 +1,147 @@
+claim: efficiency_excess_fade
+symbol: ADAUSD
+bar_size: 1d
+fold: A
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 332
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: -0.6318
+  median_window_sharpe: 0.13540000000000002
+  worst_window_drawdown: 0.7493
+  trades: 380
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: 0.7694
+    trades: 73
+    sharpe: 2.1373
+    max_drawdown: 0.459
+    exposure_pct: 99.1667
+    cost_drag_pct: 5.4357
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r1_efficiency_excess_fade_ADAUSD/results/full_size/20261106T195718Z_82b8e778
+    seconds: 5
+  - window: W2
+    net_return: 0.2411
+    trades: 72
+    sharpe: 1.1484
+    max_drawdown: 0.351
+    exposure_pct: 99.187
+    cost_drag_pct: 6.6371
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r1_efficiency_excess_fade_ADAUSD/results/full_size/20261106T195723Z_82b8e778
+    seconds: 5
+  - window: W3
+    net_return: 0.161
+    trades: 69
+    sharpe: 0.9622
+    max_drawdown: 0.3832
+    exposure_pct: 99.1803
+    cost_drag_pct: 12.145
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r1_efficiency_excess_fade_ADAUSD/results/full_size/20261106T195728Z_82b8e778
+    seconds: 5
+  - window: W4
+    net_return: -0.4259
+    trades: 52
+    sharpe: -1.7683
+    max_drawdown: 0.5627
+    exposure_pct: 99.1667
+    cost_drag_pct: 1.7361
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r1_efficiency_excess_fade_ADAUSD/results/full_size/20261106T195733Z_82b8e778
+    seconds: 5
+  - window: W5
+    net_return: -0.1836
+    trades: 61
+    sharpe: -0.6914
+    max_drawdown: 0.3591
+    exposure_pct: 99.187
+    cost_drag_pct: 7.3977
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r1_efficiency_excess_fade_ADAUSD/results/full_size/20261106T195738Z_82b8e778
+    seconds: 5
+  - window: W6
+    net_return: -0.6919
+    trades: 53
+    sharpe: -3.394
+    max_drawdown: 0.7493
+    exposure_pct: 99.1803
+    cost_drag_pct: 1.5766
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r1_efficiency_excess_fade_ADAUSD/results/full_size/20261106T195743Z_82b8e778
+    seconds: 5
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: -0.3594
+    median_window_sharpe: -0.16315000000000007
+    worst_window_drawdown: 0.4076
+    trades: 386
+  windows:
+  - window: W1
+    net_return: 0.1389
+    trades: 73
+    sharpe: 1.7109
+    max_drawdown: 0.1217
+    exposure_pct: 99.1667
+    cost_drag_pct: 3.8293
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r1_efficiency_excess_fade_ADAUSD/results/vol_target/20261106T195748Z_06917462
+    seconds: 5
+  - window: W2
+    net_return: 0.0805
+    trades: 74
+    sharpe: 1.3149
+    max_drawdown: 0.0653
+    exposure_pct: 99.187
+    cost_drag_pct: 4.3197
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r1_efficiency_excess_fade_ADAUSD/results/vol_target/20261106T195753Z_06917462
+    seconds: 5
+  - window: W3
+    net_return: 0.0779
+    trades: 68
+    sharpe: 0.9207
+    max_drawdown: 0.168
+    exposure_pct: 99.1803
+    cost_drag_pct: 7.4195
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r1_efficiency_excess_fade_ADAUSD/results/vol_target/20261106T195758Z_06917462
+    seconds: 5
+  - window: W4
+    net_return: -0.1544
+    trades: 52
+    sharpe: -1.8564
+    max_drawdown: 0.2375
+    exposure_pct: 99.1667
+    cost_drag_pct: 2.1219
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r1_efficiency_excess_fade_ADAUSD/results/vol_target/20261106T195803Z_06917462
+    seconds: 5
+  - window: W5
+    net_return: -0.0988
+    trades: 68
+    sharpe: -1.247
+    max_drawdown: 0.1414
+    exposure_pct: 99.187
+    cost_drag_pct: 5.9381
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r1_efficiency_excess_fade_ADAUSD/results/vol_target/20261106T195808Z_06917462
+    seconds: 5
+  - window: W6
+    net_return: -0.3663
+    trades: 51
+    sharpe: -3.6838
+    max_drawdown: 0.4076
+    exposure_pct: 99.1803
+    cost_drag_pct: 1.5808
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r1_efficiency_excess_fade_ADAUSD/results/vol_target/20261106T195814Z_06917462
+    seconds: 5
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail

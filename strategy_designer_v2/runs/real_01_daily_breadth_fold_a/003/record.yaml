@@ -1,0 +1,359 @@
+brief: real_01_daily_breadth_fold_a.md
+fold: A
+symbols:
+- BTCUSD
+- ADAUSD
+bar_size: 1d
+claims:
+- id: short_horizon_reversal_3d
+  belief: Daily crypto moves over a few days overshoot because liquidity providers
+    widen out and late chasers pile in, so a vol-scaled 3-day move partly reverses
+    over the next 3 days.
+  horizon: 3
+  min_effect: 0.04
+  by_symbol:
+    BTCUSD:
+      branch1:
+        fold_correlation: -0.01270543256971939
+        t_stat: -0.33857406397550793
+        verdict: fail
+      branch3:
+        net: -0.8613
+        median_window_sharpe: -0.8464499999999999
+        worst_drawdown: 0.6149
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/real_01_daily_breadth_fold_a/003/engine_r0_short_horizon_reversal_3d_BTCUSD
+    ADAUSD:
+      branch1:
+        fold_correlation: -0.03244662502832197
+        t_stat: -0.8650225591111342
+        verdict: fail
+      branch3:
+        net: -0.939
+        median_window_sharpe: -0.4512
+        worst_drawdown: 0.7642
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/real_01_daily_breadth_fold_a/003/engine_r0_short_horizon_reversal_3d_ADAUSD
+  verdict_branch1: fail
+  verdict_branch3: fail
+- id: trend_efficiency_follow
+  belief: A move made in a straight line, with little back-and-forth, reflects one-sided
+    slow allocation that keeps arriving, while the same net move made through chop
+    does not persist.
+  horizon: 10
+  min_effect: 0.04
+  by_symbol:
+    BTCUSD:
+      branch1:
+        fold_correlation: -0.020708895050000294
+        t_stat: -0.5353506123635956
+        verdict: fail
+      branch3:
+        net: -0.4226
+        median_window_sharpe: -0.11879999999999996
+        worst_drawdown: 0.6339
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/real_01_daily_breadth_fold_a/003/engine_r0_trend_efficiency_follow_BTCUSD
+    ADAUSD:
+      branch1:
+        fold_correlation: 0.03630875913529136
+        t_stat: 0.9390443369542871
+        verdict: fail
+      branch3:
+        net: -0.2603
+        median_window_sharpe: 0.16425
+        worst_drawdown: 0.6148
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/real_01_daily_breadth_fold_a/003/engine_r0_trend_efficiency_follow_ADAUSD
+  verdict_branch1: fail
+  verdict_branch3: fail
+- id: close_location_accumulation
+  belief: Days that repeatedly close near their highs show buyers absorbing supply
+    into the close (accumulation), and days that close near their lows show distribution,
+    which leads price over the following week.
+  horizon: 5
+  min_effect: 0.03
+  by_symbol:
+    BTCUSD:
+      branch1:
+        fold_correlation: 0.03376556692537642
+        t_stat: 0.8925847673443897
+        verdict: fail
+      branch3:
+        net: 0.7077
+        median_window_sharpe: 0.698
+        worst_drawdown: 0.4669
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/real_01_daily_breadth_fold_a/003/engine_r0_close_location_accumulation_BTCUSD
+    ADAUSD:
+      branch1:
+        fold_correlation: 0.05111074615175995
+        t_stat: 1.352097252306649
+        verdict: fail
+      branch3:
+        net: -0.0059
+        median_window_sharpe: -0.0791
+        worst_drawdown: 0.546
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/real_01_daily_breadth_fold_a/003/engine_r0_close_location_accumulation_ADAUSD
+  verdict_branch1: fail
+  verdict_branch3: fail
+- id: volume_confirmed_move
+  belief: A multi-week move made on rising participation is backed by new money and
+    continues, while the same move on fading volume is a drift without sponsors that
+    gives back.
+  horizon: 10
+  min_effect: 0.03
+  by_symbol:
+    BTCUSD:
+      branch1:
+        fold_correlation: 0.16600328155126431
+        t_stat: 4.350837341414376
+        verdict: fail
+      branch3:
+        net: 0.0664
+        median_window_sharpe: 0.8503499999999999
+        worst_drawdown: 0.4274
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/real_01_daily_breadth_fold_a/003/engine_r0_volume_confirmed_move_BTCUSD
+    ADAUSD:
+      branch1:
+        fold_correlation: 0.11011044836072763
+        t_stat: 2.863291825117567
+        verdict: fail
+      branch3:
+        net: -0.2771
+        median_window_sharpe: -0.0797
+        worst_drawdown: 0.6199
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/real_01_daily_breadth_fold_a/003/engine_r0_volume_confirmed_move_ADAUSD
+  verdict_branch1: fail
+  verdict_branch3: fail
+- id: negative_skew_premium
+  belief: Holders demand compensation after a coin has shown crash-like (negatively
+    skewed) daily returns, and they overpay for lottery-like positive skew, so recent
+    skewness predicts lower forward returns.
+  horizon: 20
+  min_effect: 0.04
+  by_symbol:
+    BTCUSD:
+      branch1:
+        fold_correlation: -0.08436191557716946
+        t_stat: -2.0876090460610706
+        verdict: fail
+      branch3:
+        net: -0.8065
+        median_window_sharpe: -0.27890000000000004
+        worst_drawdown: 0.5591
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_BTCUSD
+    ADAUSD:
+      branch1:
+        fold_correlation: 0.1660226500294706
+        t_stat: 4.151341969374055
+        verdict: fail
+      branch3:
+        net: 2.4508
+        median_window_sharpe: 1.5742
+        worst_drawdown: 0.4908
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_ADAUSD
+  verdict_branch1: fail
+  verdict_branch3: fail
+- id: vol_decline_deleveraging_end
+  belief: The end of a deleveraging episode shows up as short-term realized volatility
+    falling below its recent norm, after which risk is re-added and prices drift up,
+    while rising short-term volatility marks deleveraging under way (the vol trend,
+    not its level against a one-year norm).
+  horizon: 10
+  min_effect: 0.03
+  by_symbol:
+    BTCUSD:
+      branch1:
+        fold_correlation: -0.026567484658107734
+        t_stat: -0.6868975907527669
+        verdict: fail
+      branch3:
+        net: -0.2303
+        median_window_sharpe: 0.1598
+        worst_drawdown: 0.4146
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_BTCUSD
+    ADAUSD:
+      branch1:
+        fold_correlation: -0.0070807170764138495
+        t_stat: -0.1830106486019567
+        verdict: fail
+      branch3:
+        net: -0.2182
+        median_window_sharpe: 0.8028500000000001
+        worst_drawdown: 0.567
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_ADAUSD
+  verdict_branch1: fail
+  verdict_branch3: fail
+- id: autocorr_regime_adaptive
+  belief: Crypto alternates between trending and mean-reverting regimes that last
+    months, so the sign of recent daily return autocorrelation tells whether to follow
+    or fade the last few days' move.
+  horizon: 3
+  min_effect: 0.03
+  by_symbol:
+    BTCUSD:
+      branch1:
+        fold_correlation: -0.008541119956292092
+        t_stat: -0.2275934909802722
+        verdict: fail
+      branch3:
+        net: -0.8542
+        median_window_sharpe: -1.9487
+        worst_drawdown: 0.613
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_BTCUSD
+    ADAUSD:
+      branch1:
+        fold_correlation: 0.05126431859080758
+        t_stat: 1.3677785357423957
+        verdict: fail
+      branch3:
+        net: -0.9113
+        median_window_sharpe: -0.3499
+        worst_drawdown: 0.6566
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_ADAUSD
+  verdict_branch1: fail
+  verdict_branch3: fail
+- id: illiquidity_rise_premium
+  belief: When price impact per dollar traded (Amihud illiquidity) rises above its
+    norm, market makers and arbitrage capital have withdrawn, and the holders who
+    remain earn a liquidity premium over the following weeks.
+  horizon: 10
+  min_effect: 0.03
+  by_symbol:
+    BTCUSD:
+      branch1:
+        fold_correlation: -0.10835944157026929
+        t_stat: -2.8172135547295056
+        verdict: fail
+      branch3:
+        net: -0.7761
+        median_window_sharpe: -0.8080499999999999
+        worst_drawdown: 0.6175
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_BTCUSD
+    ADAUSD:
+      branch1:
+        fold_correlation: -0.08379867527680948
+        t_stat: -2.173479852712862
+        verdict: fail
+      branch3:
+        net: -0.8666
+        median_window_sharpe: -0.28805
+        worst_drawdown: 0.8618
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_ADAUSD
+  verdict_branch1: fail
+  verdict_branch3: fail
+- id: efficiency_excess_fade
+  belief: A 20-day move that is more orderly than the coin's own recent norm marks
+    one-sided flow that has run out, so the excess efficiency reverts over the next
+    two weeks.
+  horizon: 10
+  min_effect: 0.05
+  by_symbol:
+    BTCUSD:
+      branch1:
+        fold_correlation: 0.011554854260614374
+        t_stat: 0.2986631887808246
+        verdict: fail
+      branch3:
+        net: -0.327
+        median_window_sharpe: -0.0892
+        worst_drawdown: 0.5187
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/real_01_daily_breadth_fold_a/003/engine_r1_efficiency_excess_fade_BTCUSD
+    ADAUSD:
+      branch1:
+        fold_correlation: -0.033055971630607965
+        t_stat: -0.854821750989854
+        verdict: fail
+      branch3:
+        net: -0.6318
+        median_window_sharpe: 0.13540000000000002
+        worst_drawdown: 0.7493
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/real_01_daily_breadth_fold_a/003/engine_r1_efficiency_excess_fade_ADAUSD
+  verdict_branch1: fail
+  verdict_branch3: fail
+- id: trend_with_short_pullback
+  belief: 'The 20-day fade lost exactly where a slow trend persisted (W4, W6 on both
+    coins), so short-term stretches should be faded only as entries in the direction
+    of the slower 60-day trend: pullbacks inside a trend get bought, extensions inside
+    a downtrend get sold.'
+  horizon: 10
+  min_effect: 0.04
+  by_symbol:
+    BTCUSD:
+      branch1:
+        fold_correlation: -0.03960520183376507
+        t_stat: -1.0244277649657105
+        verdict: fail
+      branch3:
+        net: -0.5599
+        median_window_sharpe: -0.01924999999999999
+        worst_drawdown: 0.4636
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/real_01_daily_breadth_fold_a/003/engine_r2_trend_with_short_pullback_BTCUSD
+    ADAUSD:
+      branch1:
+        fold_correlation: -0.06392700259055126
+        t_stat: -1.655624324602027
+        verdict: fail
+      branch3:
+        net: -0.7254
+        median_window_sharpe: -0.79405
+        worst_drawdown: 0.6034
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/real_01_daily_breadth_fold_a/003/engine_r2_trend_with_short_pullback_ADAUSD
+  verdict_branch1: fail
+  verdict_branch3: fail

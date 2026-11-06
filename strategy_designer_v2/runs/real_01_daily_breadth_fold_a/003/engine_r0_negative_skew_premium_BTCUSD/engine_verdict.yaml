@@ -1,0 +1,147 @@
+claim: negative_skew_premium
+symbol: BTCUSD
+bar_size: 1d
+fold: A
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 200
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: -0.8065
+  median_window_sharpe: -0.27890000000000004
+  worst_window_drawdown: 0.5591
+  trades: 123
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: -0.2218
+    trades: 27
+    sharpe: -0.2213
+    max_drawdown: 0.4536
+    exposure_pct: 99.1667
+    cost_drag_pct: 2.7113
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_BTCUSD/results/full_size/20261106T194958Z_85298895
+    seconds: 3
+  - window: W2
+    net_return: -0.1816
+    trades: 25
+    sharpe: 0.0001
+    max_drawdown: 0.5591
+    exposure_pct: 98.374
+    cost_drag_pct: 2.7913
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_BTCUSD/results/full_size/20261106T195001Z_85298895
+    seconds: 3
+  - window: W3
+    net_return: -0.1735
+    trades: 14
+    sharpe: -0.3365
+    max_drawdown: 0.3091
+    exposure_pct: 99.1803
+    cost_drag_pct: 2.8567
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_BTCUSD/results/full_size/20261106T195004Z_85298895
+    seconds: 3
+  - window: W4
+    net_return: -0.4504
+    trades: 22
+    sharpe: -2.065
+    max_drawdown: 0.5097
+    exposure_pct: 99.1667
+    cost_drag_pct: 1.506
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_BTCUSD/results/full_size/20261106T195007Z_85298895
+    seconds: 3
+  - window: W5
+    net_return: 0.3005
+    trades: 16
+    sharpe: 2.3207
+    max_drawdown: 0.0779
+    exposure_pct: 99.187
+    cost_drag_pct: 1.9444
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_BTCUSD/results/full_size/20261106T195010Z_85298895
+    seconds: 3
+  - window: W6
+    net_return: -0.4856
+    trades: 19
+    sharpe: -3.1418
+    max_drawdown: 0.5417
+    exposure_pct: 99.1803
+    cost_drag_pct: 0.7296
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_BTCUSD/results/full_size/20261106T195013Z_85298895
+    seconds: 3
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: -0.3617
+    median_window_sharpe: -0.26685000000000003
+    worst_window_drawdown: 0.331
+    trades: 104
+  windows:
+  - window: W1
+    net_return: 0.0057
+    trades: 15
+    sharpe: 0.2191
+    max_drawdown: 0.1738
+    exposure_pct: 99.1667
+    cost_drag_pct: 24.3136
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_BTCUSD/results/vol_target/20261106T195016Z_7750142f
+    seconds: 3
+  - window: W2
+    net_return: 0.0019
+    trades: 24
+    sharpe: 0.1727
+    max_drawdown: 0.1897
+    exposure_pct: 98.374
+    cost_drag_pct: 54.5037
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_BTCUSD/results/vol_target/20261106T195019Z_7750142f
+    seconds: 3
+  - window: W3
+    net_return: -0.0813
+    trades: 15
+    sharpe: -0.7064
+    max_drawdown: 0.1237
+    exposure_pct: 99.1803
+    cost_drag_pct: 3.1208
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_BTCUSD/results/vol_target/20261106T195022Z_7750142f
+    seconds: 3
+  - window: W4
+    net_return: -0.1745
+    trades: 21
+    sharpe: -1.8176
+    max_drawdown: 0.2228
+    exposure_pct: 99.1667
+    cost_drag_pct: 1.924
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_BTCUSD/results/vol_target/20261106T195026Z_7750142f
+    seconds: 3
+  - window: W5
+    net_return: 0.1525
+    trades: 18
+    sharpe: 2.3134
+    max_drawdown: 0.035
+    exposure_pct: 99.187
+    cost_drag_pct: 1.8154
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_BTCUSD/results/vol_target/20261106T195029Z_7750142f
+    seconds: 3
+  - window: W6
+    net_return: -0.2752
+    trades: 11
+    sharpe: -3.0137
+    max_drawdown: 0.331
+    exposure_pct: 99.1803
+    cost_drag_pct: 0.6455
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_BTCUSD/results/vol_target/20261106T195032Z_7750142f
+    seconds: 3
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail

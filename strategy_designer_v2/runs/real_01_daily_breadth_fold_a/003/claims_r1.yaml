@@ -1,0 +1,36 @@
+brief: real_01_daily_breadth_fold_a.md
+source: analyst round 1
+ideas:
+- id: efficiency_excess_fade
+  belief: A 20-day move that is more orderly than the coin's own recent norm marks
+    one-sided flow that has run out, so the excess efficiency reverts over the next
+    two weeks.
+  claim:
+    when: every daily bar
+    then: the next 10 days' return leans against the 20-day efficiency ratio's deviation
+      from its prior 120-day mean, in units of its prior 120-day std
+    compared_to: bars whose 20-day efficiency sits at or below its own recent regime
+      level
+    horizon_bars: 10
+    min_effect: 0.05
+    code: 'net = df.close.diff(20)
+
+      path = df.close.diff().abs().rolling(20, min_periods=20).sum()
+
+      er = net / path.replace(0, np.nan)
+
+      mu = er.rolling(120, min_periods=120).mean().shift(1)
+
+      sdv = er.rolling(120, min_periods=120).std().shift(1)
+
+      event = pd.Series(True, index=df.index)
+
+      strength = (-(er - mu) / sdv.replace(0, np.nan)).fillna(0)
+
+      '
+  why_no_lookahead: The efficiency ratio uses closes up to the bar's close, and its
+    anchor and scale are rolling stats of prior bars only (shift(1)); there is no
+    negative shift.
+  how_it_trades: Graded short after unusually straight rallies and graded long after
+    unusually straight selloffs, relative to the coin's 120-day regime, held over
+    about 10 days.

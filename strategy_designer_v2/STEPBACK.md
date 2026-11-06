@@ -213,3 +213,10 @@ Five questions, answered in one line each, before each try.
 3. **Fooling ourselves?** All results since the clean-up are on one fold and all books lost; the record says so. The dense-strength rule makes fees the first enemy, which the analyst saw from the book and said.
 4. **Operator deciding, pipeline discovering?** Next and last: the operator's brief once on fold A, then stop.
 5. **Deviation from v2's rule?** None.
+
+## The operator's brief through the engine-only loop (2026-11-06, 20:00)
+1. **Whose job is this?** The pipeline's. Ten claims on BTC and ADA daily, fold A: branch 1 zero, branch 3 zero, two analyst rounds that read the books and proposed twice; 0.63 USD, fourteen minutes. The answer is no, from the engine's own outputs. I report it and stop.
+2. **Simpler or more complex?** Nothing added since piece 5.
+3. **Fooling ourselves?** Every number came from one engine run per claim and symbol; nothing else read a bar. The shelf holds one validated claim from the fake brief and nothing profitable.
+4. **Operator deciding, pipeline discovering?** The next step is the operator's guided tour; the itinerary and the prompt are in `guided_tour/`.
+5. **Deviation from v2's rule?** None.

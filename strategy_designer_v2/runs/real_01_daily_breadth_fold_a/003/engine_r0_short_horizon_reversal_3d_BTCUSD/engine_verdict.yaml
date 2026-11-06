@@ -1,0 +1,147 @@
+claim: short_horizon_reversal_3d
+symbol: BTCUSD
+bar_size: 1d
+fold: A
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 200
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: -0.8613
+  median_window_sharpe: -0.8464499999999999
+  worst_window_drawdown: 0.6149
+  trades: 559
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: -0.1294
+    trades: 91
+    sharpe: -0.4909
+    max_drawdown: 0.2492
+    exposure_pct: 99.1667
+    cost_drag_pct: 32.295
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_short_horizon_reversal_3d_BTCUSD/results/full_size/20261106T194427Z_a633d1fd
+    seconds: 4
+  - window: W2
+    net_return: -0.525
+    trades: 86
+    sharpe: -1.5489
+    max_drawdown: 0.6149
+    exposure_pct: 99.187
+    cost_drag_pct: 5.2267
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_short_horizon_reversal_3d_BTCUSD/results/full_size/20261106T194430Z_a633d1fd
+    seconds: 4
+  - window: W3
+    net_return: 0.0225
+    trades: 94
+    sharpe: 0.4884
+    max_drawdown: 0.3448
+    exposure_pct: 99.1803
+    cost_drag_pct: 61.7066
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_short_horizon_reversal_3d_BTCUSD/results/full_size/20261106T194433Z_a633d1fd
+    seconds: 3
+  - window: W4
+    net_return: -0.5675
+    trades: 93
+    sharpe: -3.5974
+    max_drawdown: 0.572
+    exposure_pct: 97.5
+    cost_drag_pct: 3.9775
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_short_horizon_reversal_3d_BTCUSD/results/full_size/20261106T194436Z_a633d1fd
+    seconds: 3
+  - window: W5
+    net_return: 0.0189
+    trades: 95
+    sharpe: 0.3501
+    max_drawdown: 0.2462
+    exposure_pct: 99.187
+    cost_drag_pct: 68.0543
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_short_horizon_reversal_3d_BTCUSD/results/full_size/20261106T194439Z_a633d1fd
+    seconds: 3
+  - window: W6
+    net_return: -0.2557
+    trades: 100
+    sharpe: -1.202
+    max_drawdown: 0.4093
+    exposure_pct: 99.1803
+    cost_drag_pct: 17.7319
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_short_horizon_reversal_3d_BTCUSD/results/full_size/20261106T194443Z_a633d1fd
+    seconds: 4
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: -0.5645
+    median_window_sharpe: -1.1921
+    worst_window_drawdown: 0.301
+    trades: 554
+  windows:
+  - window: W1
+    net_return: -0.0359
+    trades: 93
+    sharpe: -0.5549
+    max_drawdown: 0.0994
+    exposure_pct: 99.1667
+    cost_drag_pct: 45.0094
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_short_horizon_reversal_3d_BTCUSD/results/vol_target/20261106T194446Z_ba1690be
+    seconds: 3
+  - window: W2
+    net_return: -0.1992
+    trades: 84
+    sharpe: -1.9129
+    max_drawdown: 0.2448
+    exposure_pct: 99.187
+    cost_drag_pct: 5.4765
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_short_horizon_reversal_3d_BTCUSD/results/vol_target/20261106T194450Z_ba1690be
+    seconds: 4
+  - window: W3
+    net_return: -0.026
+    trades: 94
+    sharpe: -0.1293
+    max_drawdown: 0.1632
+    exposure_pct: 99.1803
+    cost_drag_pct: 109.332
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_short_horizon_reversal_3d_BTCUSD/results/vol_target/20261106T194453Z_ba1690be
+    seconds: 3
+  - window: W4
+    net_return: -0.2975
+    trades: 91
+    sharpe: -3.9118
+    max_drawdown: 0.301
+    exposure_pct: 97.5
+    cost_drag_pct: 4.0336
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_short_horizon_reversal_3d_BTCUSD/results/vol_target/20261106T194457Z_ba1690be
+    seconds: 3
+  - window: W5
+    net_return: -0.0052
+    trades: 94
+    sharpe: 0.058
+    max_drawdown: 0.147
+    exposure_pct: 99.187
+    cost_drag_pct: 133.6551
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_short_horizon_reversal_3d_BTCUSD/results/vol_target/20261106T194500Z_ba1690be
+    seconds: 3
+  - window: W6
+    net_return: -0.1713
+    trades: 98
+    sharpe: -1.8293
+    max_drawdown: 0.2502
+    exposure_pct: 99.1803
+    cost_drag_pct: 12.9255
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_short_horizon_reversal_3d_BTCUSD/results/vol_target/20261106T194503Z_ba1690be
+    seconds: 3
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
