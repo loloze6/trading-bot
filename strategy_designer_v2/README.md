@@ -5,6 +5,11 @@ A research workflow that finds a profitable trading strategy by itself, runs on 
 ## The rule of v2
 v2 starts empty. A v1 piece enters only by hand, one at a time, with a one-line reason, when a v2 run asks for it. Nothing is copied by default. Every addition to this folder names the run that asked for it and the reason, in `CHANGES.md`.
 
+## The two rules that come before everything else (operator, 2026-11-06)
+- **The engine is the only reader of bars.** Branch 1 (was the idea right?) and branch 3 (is the book profitable?) are computed from the engine's own outputs. No step reads the price cache on its own. No quick check beside the engine, ever; if the engine is too slow, make the engine faster.
+- **Forecasts are linear.** A claim carries a continuous strength, never a direction switch. The component emits that strength; the engine's standardise transform grades it. No on-off book.
+These rules were not on this page before 2026-11-06, and the first version of v2 drifted from both. Everything built against them was deleted that morning (see `CHANGES.md`); their results are history, not evidence.
+
 ## The scars (rules learned in v1, kept as rules, not as code)
 1. No lookahead: a bar's decision uses only data at or before that bar's close. Every claim says in one line why it cannot leak.
 2. The holdout is sealed. Its dates are read only from `strategy-research/config/campaign_data_policy.yaml`, never written out. Its store is `local_data/holdout_sealed/`, never opened by research.
@@ -23,8 +28,7 @@ v2 starts empty. A v1 piece enters only by hand, one at a time, with a one-line 
 6. **Record**: ideas, claims, configs, runs, results and the why, separate and referenced.
 7. **Next idea**: picked from the record. The operator approves only new briefs and the holdout.
 
-## How to run
-`python3 run.py briefs/<brief>.md --fold A --rounds 2`. One brief, one fold, a round budget. Outputs under `runs/<brief>/<n>/`; records under `records/`. A run resumes from the last file written.
-
-## Status
-Tries 01 to 07 under `tries/`: the ideas step, the claim judge, brief to verdict, the profit answer, the analyst and the next idea, the runner, the engine's backtest at the end of the loop. The pipeline runs on its own on three fake briefs. First candidate book on the shelf (`records/shelf.yaml`), one fold, awaiting the operator. Step-backs in `STEPBACK.md`; every addition in `CHANGES.md`.
+## Status (2026-11-06 morning, after the clean-up)
+What remains and stands: the brief format and the briefs; the ideas step (`steps/ideas/`), to be changed so a claim carries a continuous strength; the analyst step (`steps/analyst/`); the engine step (`steps/engine/backtest.py`), which runs the bot's backtester over a fold at two sizes; the runner (`run.py`), which does not run until branch 1 is rebuilt; the records (`records/`), the query and the morning-file generator; `STEPBACK.md` and `CHANGES.md`; the tries and the runs as history.
+What was deleted: the judge that read the price cache, the quick profit check and its sweep, the cache-based replication, the on-off engine component.
+What is to be built, in this order: a linear claim format and component; branch 1 computed from the engine's per-window outputs; replication as the engine on other coins. The night's nine engine passes and twenty-three judge passes are void.

@@ -192,3 +192,10 @@ Five questions, answered in one line each, before each try.
 3. **Fooling ourselves?** The last 11 briefs produced 1 judge pass (a volatility filter) and no engine pass: breadth is at its noise floor too. Said in the analysis.
 4. **Operator deciding, pipeline discovering?** Unchanged.
 5. **Deviation from v2's rule?** None.
+
+## 2026-11-06 morning: after the clean-up, on what remains
+1. **Whose job is this?** The operator ruled: forecasts linear, the engine the only reader, branch 1 from the engine's outputs, no quick checks. I deleted what broke those rules and wrote the rules first on the page they were missing from.
+2. **What remains, and is it right?** The brief, the ideas step, the analyst, the engine step, the runner, the records, the process files. Each of these is on the spine and reads nothing it should not. The ideas step must change its format (strength, not direction); the runner is idle until branch 1 exists.
+3. **Why did it drift?** The first page carried v1's scars but not v1's two deepest rules. I treated speed as a virtue inside a night and built a cheap reader, then a cheap profit check, then replication on top of both. Every shortcut became a file. The fix is the page, not the code: a rule that is not written is not a rule.
+4. **Fooling ourselves?** Every result so far is void and says so in the shelf and in the morning file. No holdout was touched, so nothing is lost that cannot be re-run.
+5. **What next, and only when the operator says.** Linear claim format and component; branch 1 from the engine's per-window bars; one run of the operator's brief on fold A; stop.

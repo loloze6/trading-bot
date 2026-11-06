@@ -1,5 +1,7 @@
 # Night of 2026-11-06: what ran, what passed, what it cost
 
+**Void (2026-11-06 morning).** Every judge pass and every engine pass below was produced by a judge that read the price cache and by on-off books. Under the rules written that morning (the engine is the only reader; forecasts are linear) none of them counts. Kept as history.
+
 Generated 2026-11-06 06:14 UTC by `night_2026-11-06/make_readme.py` from the records. Numbers only. The operator delegated the night: briefs by the delegate, runs by the pipeline, no holdout spent, no git until morning.
 
 ## Totals
