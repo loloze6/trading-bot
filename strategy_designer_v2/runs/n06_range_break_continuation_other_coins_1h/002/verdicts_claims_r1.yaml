@@ -1,0 +1,46 @@
+claims_file: strategy_designer_v2/runs/n06_range_break_continuation_other_coins_1h/002/claims_r1.yaml
+fold: A
+bar_size: 1h
+symbols:
+- SOLUSD
+- AVAXUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  weekly_momentum_daily_hold:
+    verdict: fail
+    by_symbol:
+      SOLUSD:
+        verdict: pass
+        effect: 0.0032531165631727566
+        n_a: 730
+        n_b: 730
+        windows:
+        - -0.0006058126430437725
+        - 0.001097913192892402
+        - 0.002412277169178414
+        - 0.004570966126274096
+        - 0.0017650259445315315
+        - 0.010266535611357071
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      AVAXUSD:
+        verdict: fail
+        effect: 0.002818503791944717
+        n_a: 730
+        n_b: 730
+        windows:
+        - -0.0022385522178540976
+        - 0.0013979393116183895
+        - 0.0002232334492052537
+        - 0.0028613396696174367
+        - 0.0015419876293902035
+        - 0.013064981798040535
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true

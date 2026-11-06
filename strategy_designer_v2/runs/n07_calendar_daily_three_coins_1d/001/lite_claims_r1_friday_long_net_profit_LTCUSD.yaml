@@ -1,0 +1,41 @@
+claim: friday_long_net_profit
+symbol: LTCUSD
+bar_size: 1d
+fold: B
+cost_per_round_trip: 0.0015
+fold_totals:
+  net_return: 1.5545
+  sharpe: 1.73
+  max_drawdown: -0.1554
+  time_in_market: 0.141
+  trades: 103
+windows:
+- window: W1
+  net_return: -0.0404
+  trades: 17
+  max_drawdown: -0.1554
+- window: W2
+  net_return: 0.4648
+  trades: 17
+  max_drawdown: -0.042
+- window: W3
+  net_return: 0.0631
+  trades: 17
+  max_drawdown: -0.0758
+- window: W4
+  net_return: 0.4186
+  trades: 18
+  max_drawdown: -0.0484
+- window: W5
+  net_return: 0.2041
+  trades: 17
+  max_drawdown: -0.0945
+- window: W6
+  net_return: 0.0008
+  trades: 17
+  max_drawdown: -0.1389
+checks:
+  net_positive_in_5_of_6: true
+  sharpe_ge_1.0: true
+  max_drawdown_le_20%: true
+verdict: pass

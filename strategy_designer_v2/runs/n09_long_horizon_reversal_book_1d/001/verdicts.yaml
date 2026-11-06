@@ -1,0 +1,442 @@
+claims_file: strategy_designer_v2/runs/n09_long_horizon_reversal_book_1d/001/claims.yaml
+fold: A
+bar_size: 1d
+symbols:
+- LTCUSD
+- XMRUSD
+- ZECUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  deep_12m_loser_long_book:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: -0.12938954635108474
+        n_a: 1
+        n_b: 1
+        windows:
+        - -0.12938954635108474
+        - null
+        - null
+        - null
+        - null
+        - null
+        agreeing_windows: 1 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      XMRUSD:
+        verdict: fail
+        effect: 0.0752717829155847
+        n_a: 4
+        n_b: 4
+        windows:
+        - 0.19384336029786153
+        - null
+        - 0.0254569371459768
+        - -0.11205652607936106
+        - null
+        - null
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      ZECUSD:
+        verdict: fail
+        effect: -0.18736693260670423
+        n_a: 4
+        n_b: 4
+        windows:
+        - -0.4989543539325843
+        - -0.07104436645485557
+        - null
+        - null
+        - -0.10842464358452147
+        - null
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+  extreme_12m_winner_short_book:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: null
+        n_a: 0
+        n_b: 0
+        windows:
+        - null
+        - null
+        - null
+        - null
+        - null
+        - null
+        agreeing_windows: 0 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      XMRUSD:
+        verdict: fail
+        effect: null
+        n_a: 0
+        n_b: 0
+        windows:
+        - null
+        - null
+        - null
+        - null
+        - null
+        - null
+        agreeing_windows: 0 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      ZECUSD:
+        verdict: fail
+        effect: null
+        n_a: 0
+        n_b: 0
+        windows:
+        - null
+        - null
+        - null
+        - null
+        - null
+        - null
+        agreeing_windows: 0 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+  drawdown_depth_hit_rate:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: -0.03873284596639737
+        n_a: 339
+        n_b: 391
+        windows:
+        - null
+        - null
+        - -0.08333333333333337
+        - null
+        - null
+        - null
+        agreeing_windows: 1 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XMRUSD:
+        verdict: fail
+        effect: 0.4028502609393817
+        n_a: 94
+        n_b: 636
+        windows:
+        - 0.7693803834398444
+        - 0.6404040404040404
+        - null
+        - null
+        - null
+        - null
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ZECUSD:
+        verdict: fail
+        effect: -0.04960378519772268
+        n_a: 536
+        n_b: 194
+        windows:
+        - 0.7861339600470035
+        - 0.22950819672131148
+        - null
+        - null
+        - 0.09239130434782608
+        - 0.5225225225225225
+        agreeing_windows: 0 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  capitulation_volume_in_drawdown:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.06913350071523473
+        n_a: 3
+        n_b: 3
+        windows:
+        - null
+        - -0.05498540379584793
+        - 0.3173713097374001
+        - null
+        - null
+        - null
+        agreeing_windows: 1 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      XMRUSD:
+        verdict: fail
+        effect: -0.07790253219821003
+        n_a: 1
+        n_b: 1
+        windows:
+        - null
+        - -0.07790253219821003
+        - null
+        - null
+        - null
+        - null
+        agreeing_windows: 1 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      ZECUSD:
+        verdict: fail
+        effect: -0.08910038855541329
+        n_a: 6
+        n_b: 6
+        windows:
+        - -0.14592086282076214
+        - null
+        - null
+        - -0.17030574287578853
+        - 0.2193868628263574
+        - null
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+  turned_loser_vs_falling_knife:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.030869429606150165
+        n_a: 95
+        n_b: 188
+        windows:
+        - -0.1644108032475145
+        - -0.05829249550844057
+        - -0.12842934445808163
+        - null
+        - null
+        - null
+        agreeing_windows: 0 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XMRUSD:
+        verdict: fail
+        effect: -0.19550430448781178
+        n_a: 83
+        n_b: 153
+        windows:
+        - -0.98626800271855
+        - -0.14803670792976376
+        - -0.07405588051666057
+        - 0.02862721348048733
+        - null
+        - null
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ZECUSD:
+        verdict: fail
+        effect: -0.131085586537721
+        n_a: 76
+        n_b: 265
+        windows:
+        - null
+        - -0.11760449959302238
+        - 0.006397497386906453
+        - -0.13219327965027516
+        - null
+        - null
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  quiet_base_after_decline:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.06967975879378764
+        n_a: 3
+        n_b: 3
+        windows:
+        - -0.2540685564343262
+        - 0.012356397336692528
+        - 0.4507514354789966
+        - null
+        - null
+        - null
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      XMRUSD:
+        verdict: fail
+        effect: 0.18608014721020155
+        n_a: 6
+        n_b: 6
+        windows:
+        - 0.3355324363995801
+        - 0.07596529526001589
+        - 0.2151186696635528
+        - 0.09037870338096893
+        - 0.06395334215751164
+        - null
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: false
+      ZECUSD:
+        verdict: fail
+        effect: -0.042539157420039164
+        n_a: 8
+        n_b: 8
+        windows:
+        - -0.5486267547195907
+        - 0.19403305188485626
+        - 0.028609890109889957
+        - -0.2547467532467533
+        - -0.1265850104735684
+        - 0.299554275673565
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+  stale_high_time_exhaustion:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.0849106727767816
+        n_a: 252
+        n_b: 478
+        windows:
+        - -0.3249738766980146
+        - -0.3037151702786378
+        - null
+        - 0.6434782608695653
+        - null
+        - null
+        agreeing_windows: 1 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XMRUSD:
+        verdict: fail
+        effect: 0.031927989679045865
+        n_a: 187
+        n_b: 543
+        windows:
+        - 0.052794072244519874
+        - 0.4811965811965812
+        - -0.2291434927697441
+        - 0.6890756302521008
+        - null
+        - null
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ZECUSD:
+        verdict: fail
+        effect: 0.01944035346097206
+        n_a: 485
+        n_b: 245
+        windows:
+        - 0.12197159565580618
+        - -0.28
+        - -0.18627450980392157
+        - null
+        - null
+        - 0.8529411764705882
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  rolled_over_winner_short:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: null
+        n_a: 0
+        n_b: 0
+        windows:
+        - null
+        - null
+        - null
+        - null
+        - null
+        - null
+        agreeing_windows: 0 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      XMRUSD:
+        verdict: fail
+        effect: null
+        n_a: 0
+        n_b: 0
+        windows:
+        - null
+        - null
+        - null
+        - null
+        - null
+        - null
+        agreeing_windows: 0 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      ZECUSD:
+        verdict: fail
+        effect: null
+        n_a: 0
+        n_b: 0
+        windows:
+        - null
+        - null
+        - null
+        - null
+        - null
+        - null
+        agreeing_windows: 0 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false

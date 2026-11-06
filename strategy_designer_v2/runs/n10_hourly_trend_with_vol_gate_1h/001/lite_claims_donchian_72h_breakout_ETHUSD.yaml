@@ -1,0 +1,41 @@
+claim: donchian_72h_breakout
+symbol: ETHUSD
+bar_size: 1h
+fold: C
+cost_per_round_trip: 0.0015
+fold_totals:
+  net_return: 3.6162
+  sharpe: 1.45
+  max_drawdown: -0.4484
+  time_in_market: 0.288
+  trades: 209
+windows:
+- window: W1
+  net_return: 1.1644
+  trades: 31
+  max_drawdown: -0.2819
+- window: W2
+  net_return: 0.2848
+  trades: 32
+  max_drawdown: -0.2449
+- window: W3
+  net_return: 0.1443
+  trades: 34
+  max_drawdown: -0.2036
+- window: W4
+  net_return: 0.5875
+  trades: 36
+  max_drawdown: -0.1561
+- window: W5
+  net_return: -0.0063
+  trades: 37
+  max_drawdown: -0.2384
+- window: W6
+  net_return: -0.0804
+  trades: 39
+  max_drawdown: -0.4484
+checks:
+  net_positive_in_5_of_6: false
+  sharpe_ge_1.0: true
+  max_drawdown_le_20%: false
+verdict: fail

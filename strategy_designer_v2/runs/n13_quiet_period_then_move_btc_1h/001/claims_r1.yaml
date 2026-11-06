@@ -1,0 +1,38 @@
+brief: n13_quiet_period_then_move_btc_1h.md
+source: analyst round 1
+ideas:
+- id: long_quiet_drift_reverts
+  belief: In a quiet regime with no large bar for a day, liquidity is two-sided and
+    range-bound, so the 12h drift is unwound rather than extended, unlike in loud
+    regimes.
+  claim:
+    when: the first bar reaching 24 or more hours since the last large bar (over 2.5x
+      the 168h std)
+    then: the next 12h return goes against the prior 12h drift
+    compared_to: bars less than 24h after a large bar, spaced one per 12 bars, with
+      the same fade signal
+    measure: mean_diff
+    horizon_bars: 12
+    direction: positive
+    min_effect: 0.003
+    code: 'r_std = ret.rolling(168).std().shift(1)
+
+      big = ret.abs() > 2.5 * r_std
+
+      idx = pd.Series(np.arange(len(df)), index=df.index, dtype=float)
+
+      since = idx - idx.where(big).ffill()
+
+      drift = df.close / df.close.shift(12) - 1
+
+      a = spaced(since >= 24, 12)
+
+      b = spaced((since < 24) & since.notna(), 12)
+
+      signal = -np.sign(drift).replace(0, 1)
+
+      '
+  why_no_lookahead: Large bars use the std shifted by one bar, and the time since
+    the last large bar and the 12h drift use only closes at or before the bar.
+  how_it_trades: On the first bar of a day-long quiet regime, fade the prior 12h drift
+    and exit 12 bars later.

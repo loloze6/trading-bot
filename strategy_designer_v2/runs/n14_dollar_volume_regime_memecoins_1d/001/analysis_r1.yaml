@@ -1,0 +1,13 @@
+run: n14_dollar_volume_regime_memecoins_1d / fold A (DOGEUSD, SOLUSD, 1d)
+observations:
+  - Every event-style claim had fewer than 30 `a` bars on at least one coin, from surge_close_location (23 DOGE, 16 SOL) down to unconfirmed_high_fades (5 DOGE, 2 SOL), so none of them could pass whatever their effect.
+  - Only two claims had enough bars, volume_trend_predicts_drift (730 per coin) and hot_regime_momentum (91 DOGE, 82 SOL), and both split by coin, so neither passed.
+  - volume_trend_predicts_drift nearly held on SOL, with rank_corr 0.177 against a 0.08 threshold, but only 4 of 6 windows were positive, while DOGE was -0.037 with only 2 of 6 windows positive.
+  - hot_regime_momentum showed +0.087 on SOL for the whole fold, but only 1 of its 4 non-empty windows was positive, so the fold number comes from one stretch; DOGE was -0.037.
+  - The continuation and exhaustion readings of a surge day flip between coins: DOGE favored exhaustion (+0.009 against continuation -0.005) and SOL favored continuation (+0.048 against exhaustion -0.003).
+  - confirmed_breakout_long cleared the cost hurdle for the whole fold (+0.044 DOGE, +0.106 SOL net of 0.15%), but on only 10 and 8 events, with window signs split 3/6 on DOGE and 3/5 on SOL.
+  - Window 3 dominates most claims with extreme values of opposite sign across coins, for example surge_move_continuation at +0.388 on DOGE and -0.524 on SOL.
+  - capitulation_bounce on SOL alternated sign in every window (-0.43, +0.58, -0.42, +0.51, -0.43, +0.36) on 7 events, which is noise rather than an effect.
+  - drought_precedes_expansion was below 1 on both coins (0.97 DOGE, 0.74 SOL against 1.2 asked), so a drought did not even point toward larger moves.
+next_claim: none
+why: On daily bars the event claims never reach 30 events per coin, and the only claims with enough bars had opposite signs on DOGE and SOL, so no direction follows from these numbers that both coins could pass.

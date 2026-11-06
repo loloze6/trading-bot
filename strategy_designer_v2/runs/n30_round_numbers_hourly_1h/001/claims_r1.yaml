@@ -1,0 +1,45 @@
+brief: n30_round_numbers_hourly_1h.md
+source: analyst round 1
+ideas:
+- id: cross_vol_burst_regime_matched
+  belief: Crossing a fine round level releases clustered stops and adds volatility
+    beyond what the bar's own size and the current volatility regime already imply.
+  claim:
+    when: Bars whose close crosses a fine round level (a tenth of the leading power
+      of ten), where the bar's absolute return is 1 to 2.5 times the prior 24-bar
+      std and that std is within 0.8 to 1.25 of its 30-day median.
+    then: The absolute 6-bar forward return is larger.
+    compared_to: Bars with no level cross that meet the same bar-size and volatility-regime
+      band.
+    measure: abs_ratio
+    horizon_bars: 6
+    direction: above
+    min_effect: 1.1
+    code: 'step = 10.0 ** np.floor(np.log10(df.close)) / 10
+
+      k = np.floor(df.close / step)
+
+      kp = np.floor(df.close.shift(1) / step)
+
+      cross = (k != kp) & kp.notna()
+
+      sd = ret.rolling(24).std().shift(1)
+
+      z = ret.abs() / sd
+
+      reg = sd / sd.rolling(720).median()
+
+      band = (z >= 1.0) & (z <= 2.5) & (reg >= 0.8) & (reg <= 1.25)
+
+      a = cross & band
+
+      b = ~cross & band
+
+      signal = pd.Series(1, index=df.index)
+
+      '
+  why_no_lookahead: The level, cross, bar size and volatility regime all use closes
+    at or before the bar, and the std is shifted one bar before normalising.
+  how_it_trades: If the claim holds, buy straddle-like exposure or widen stops and
+    size down after a regime-matched level cross. It is a risk filter, not a direction
+    bet.

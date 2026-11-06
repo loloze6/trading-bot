@@ -1,0 +1,227 @@
+brief: n03_eth_hourly_stretch_reversion_1h.md
+ideas:
+  - id: vwap24_stretch_fade
+    belief: When ETH closes far from its rolling 24h volume-weighted price, measured against how far it usually strays, the move overshoots and price drifts back toward the VWAP within half a day by more than cost.
+    claim:
+      when: hourly bars whose close deviates from the rolling 24h VWAP by more than 2.5 standard deviations of that deviation over the last 30 days, one event per 12 bars
+      then: the 12-bar forward return moves back toward the VWAP, net of the 0.15% round trip
+      compared_to: zero after cost (net_return)
+      measure: net_return
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.002
+      code: |
+        tp = (df.high + df.low + df.close) / 3
+        vwap = (tp * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+        dev = df.close / vwap - 1
+        z = dev / dev.rolling(720).std()
+        a = spaced(z.abs() > 2.5, 12)
+        b = ~a
+        signal = -np.sign(dev)
+    why_no_lookahead: The VWAP, the deviation and its 720-bar std use only bars up to and including the current close.
+    how_it_trades: At the close of a stretched bar, fade toward the 24h VWAP and hold 12 hours.
+
+  - id: range_edge_inside_fade
+    belief: A close pressed against the edge of the prior 24h range without breaking it shows a failed push, so price rotates back toward the range middle. The brief's already_tried note says closes beyond the range continue; this idea keeps only the inside case.
+    claim:
+      when: bars whose close sits inside the prior 24h high-low range but in its top or bottom 15%, one event per 8 bars
+      then: the 8-bar forward return points back toward the range midpoint
+      compared_to: all other bars, with the same toward-the-midpoint signal
+      measure: mean_diff
+      horizon_bars: 8
+      direction: positive
+      min_effect: 0.002
+      code: |
+        hi = df.high.shift(1).rolling(24).max()
+        lo = df.low.shift(1).rolling(24).min()
+        pos = (df.close - lo) / (hi - lo)
+        edge = ((pos > 0.85) & (pos <= 1.0)) | ((pos < 0.15) & (pos >= 0.0))
+        a = spaced(edge, 8)
+        b = ~a
+        signal = -np.sign(pos - 0.5)
+    why_no_lookahead: The range comes from the 24 bars before the current one (shift(1)), and the current close is known at that bar's close.
+    how_it_trades: Fade a close near the range edge toward the 24h range midpoint and hold 8 hours.
+
+  - id: slow_ema_zscore_rank
+    belief: The further ETH sits from its 3-day exponential mean in units of recent hourly volatility, the more negative the next 12 hours return in the direction of that distance.
+    claim:
+      when: all bars where the stretch is defined
+      then: the 12-bar forward return is negatively rank-correlated with the volatility-scaled distance from the 72h EMA
+      compared_to: not used (rank_corr)
+      measure: rank_corr
+      horizon_bars: 12
+      direction: negative
+      min_effect: -0.05
+      code: |
+        ema = df.close.ewm(span=72, adjust=False).mean()
+        sig = ret.rolling(168).std()
+        feature = (df.close / ema - 1) / sig
+        a = feature.notna()
+        b = ~a
+    why_no_lookahead: The EMA and the 168-bar std are recursive or trailing and use only closes up to the current bar.
+    how_it_trades: Size a position against the EMA stretch, proportional to its z-score, held 12 hours.
+
+  - id: gradual_grind_stretch_fade
+    belief: A VWAP stretch built by many small bars, with no shock bar, is an exhausting grind by impatient flow rather than news, and it reverts. This differs from the large-bar fades already tried on BTC.
+    claim:
+      when: bars more than 2 deviation-stds from the 24h VWAP where none of the last 12 bars had an absolute return above 2 times the 168h hourly std, one event per 12 bars
+      then: the 12-bar forward return moves back toward the VWAP
+      compared_to: all other bars, with the same toward-the-VWAP signal
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.003
+      code: |
+        tp = (df.high + df.low + df.close) / 3
+        vwap = (tp * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+        dev = df.close / vwap - 1
+        z = dev / dev.rolling(720).std()
+        sig = ret.rolling(168).std()
+        no_shock = (ret.abs() > 2 * sig).astype(int).rolling(12).sum() == 0
+        a = spaced((z.abs() > 2) & no_shock, 12)
+        b = ~a
+        signal = -np.sign(dev)
+    why_no_lookahead: The VWAP, the deviation std, the hourly std and the shock count are all trailing windows ending at the current bar.
+    how_it_trades: Fade a smooth grind away from the 24h VWAP and hold 12 hours.
+
+  - id: stretch_on_fading_volume_fade
+    belief: A stretch away from VWAP that arrives while volume dries up has no participation behind it, so price slips back more often than not.
+    claim:
+      when: bars more than 2 deviation-stds from the 24h VWAP where the last 6h of volume averages below 0.8 times the 7-day hourly average, one event per 8 bars
+      then: the 8-bar forward return is toward the VWAP more often
+      compared_to: all other bars, with the same toward-the-VWAP signal
+      measure: hit_rate
+      horizon_bars: 8
+      direction: positive
+      min_effect: 0.06
+      code: |
+        tp = (df.high + df.low + df.close) / 3
+        vwap = (tp * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+        dev = df.close / vwap - 1
+        z = dev / dev.rolling(720).std()
+        vr = df.volume.rolling(6).mean() / df.volume.rolling(168).mean()
+        a = spaced((z.abs() > 2) & (vr < 0.8), 8)
+        b = ~a
+        signal = -np.sign(dev)
+    why_no_lookahead: The volume ratio and the stretch use only volumes and prices up to the current close.
+    how_it_trades: Fade a low-volume stretch toward the 24h VWAP and hold 8 hours.
+
+  - id: stretch_on_heavy_volume_continues
+    belief: A stretch away from VWAP carried by heavy volume reflects informed or forced flow that keeps pushing, so price extends further rather than reverting. This contradicts the reversion ideas, and the data decides.
+    claim:
+      when: bars more than 2 deviation-stds from the 24h VWAP where the last 6h of volume averages above 1.5 times the 7-day hourly average, one event per 12 bars
+      then: the 12-bar forward return continues away from the VWAP
+      compared_to: all other bars, with the same away-from-the-VWAP signal
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.003
+      code: |
+        tp = (df.high + df.low + df.close) / 3
+        vwap = (tp * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+        dev = df.close / vwap - 1
+        z = dev / dev.rolling(720).std()
+        vr = df.volume.rolling(6).mean() / df.volume.rolling(168).mean()
+        a = spaced((z.abs() > 2) & (vr > 1.5), 12)
+        b = ~a
+        signal = np.sign(dev)
+    why_no_lookahead: The volume ratio and the stretch are trailing quantities known at the bar's close.
+    how_it_trades: Follow a high-volume stretch away from the VWAP and hold 12 hours.
+
+  - id: asia_hours_stretch_fade
+    belief: Stretches built during thin Asian hours (00-06 UTC), with Europe and the US away, reflect poor liquidity and are corrected once deeper books arrive in the European morning.
+    claim:
+      when: bars closing between 00 and 06 UTC that sit more than 2 deviation-stds from the 24h VWAP, one event per 8 bars
+      then: the 8-bar forward return moves back toward the VWAP
+      compared_to: equally stretched bars closing between 12 and 20 UTC (US/Europe overlap and US session), one event per 8 bars
+      measure: mean_diff
+      horizon_bars: 8
+      direction: positive
+      min_effect: 0.002
+      code: |
+        tp = (df.high + df.low + df.close) / 3
+        vwap = (tp * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+        dev = df.close / vwap - 1
+        z = dev / dev.rolling(720).std()
+        st = z.abs() > 2
+        a = spaced(st & (hour >= 0) & (hour <= 6), 8)
+        b = spaced(st & (hour >= 12) & (hour <= 20), 8)
+        signal = -np.sign(dev)
+    why_no_lookahead: The UTC hour is known at the bar, and the stretch uses trailing windows only.
+    how_it_trades: During Asian hours, fade the VWAP stretch and exit 8 hours later in the European or US session.
+
+  - id: weekend_stretch_fade
+    belief: Weekend ETH trading is thin and retail-driven, so a stretch from the 24h VWAP on Saturday or Sunday overshoots more and reverts by more than cost.
+    claim:
+      when: bars on Saturday or Sunday (UTC) more than 2 deviation-stds from the 24h VWAP, one event per 12 bars
+      then: the 12-bar forward return moves back toward the VWAP, net of the 0.15% round trip
+      compared_to: zero after cost (net_return)
+      measure: net_return
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.002
+      code: |
+        tp = (df.high + df.low + df.close) / 3
+        vwap = (tp * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+        dev = df.close / vwap - 1
+        z = dev / dev.rolling(720).std()
+        a = spaced((z.abs() > 2) & (dow >= 5), 12)
+        b = ~a
+        signal = -np.sign(dev)
+    why_no_lookahead: The weekday is known at the bar, and the stretch is trailing.
+    how_it_trades: On weekends, fade the VWAP stretch and hold 12 hours.
+
+  - id: calm_regime_stretch_fade
+    belief: In a calm, range-bound volatility regime, stretches from VWAP are noise that reverts. In a volatile regime the same stretch belongs to a trend.
+    claim:
+      when: bars more than 2 deviation-stds from the 24h VWAP while 7-day realized hourly volatility is in the bottom third of its last 30 days, one event per 12 bars
+      then: the 12-bar forward return moves back toward the VWAP
+      compared_to: equally stretched bars while 7-day realized volatility is in the top third of its last 30 days, one event per 12 bars
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.003
+      code: |
+        tp = (df.high + df.low + df.close) / 3
+        vwap = (tp * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+        dev = df.close / vwap - 1
+        z = dev / dev.rolling(720).std()
+        rv = ret.rolling(168).std()
+        q = rv.rolling(720).rank(pct=True)
+        st = z.abs() > 2
+        a = spaced(st & (q < 0.33), 12)
+        b = spaced(st & (q > 0.67), 12)
+        signal = -np.sign(dev)
+    why_no_lookahead: The realized volatility and its rolling percentile rank use only past and current bars.
+    how_it_trades: Fade VWAP stretches only when the volatility regime is calm, and hold 12 hours.
+
+  - id: day_anchored_vwap_late_fade
+    belief: Late in the UTC day, a close far from that day's own session VWAP (anchored at 00 UTC) marks a day-end imbalance that reverts as the new day's flow resets positioning.
+    claim:
+      when: bars closing between 16 and 23 UTC whose distance from the UTC-day-anchored VWAP exceeds 2 times its 30-day std, one event per 6 bars
+      then: the 6-bar forward return moves back toward the day VWAP
+      compared_to: all other bars, with the same toward-the-day-VWAP signal
+      measure: mean_diff
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.002
+      code: |
+        tp = (df.high + df.low + df.close) / 3
+        d = df.index.normalize()
+        dvwap = (tp * df.volume).groupby(d).cumsum() / df.volume.groupby(d).cumsum()
+        dev = df.close / dvwap - 1
+        z = dev / dev.rolling(720).std()
+        a = spaced((z.abs() > 2) & (hour >= 16) & (hour <= 23), 6)
+        b = ~a
+        signal = -np.sign(dev)
+    why_no_lookahead: The day-anchored VWAP is a cumulative sum within the UTC day up to the current bar, and its std is trailing.
+    how_it_trades: In the late UTC day, fade the stretch from the day VWAP and hold 6 hours across the rollover.
+
+notes: >
+  Stretch anchors used: the rolling 24h VWAP, the prior 24h range midpoint, the 72h EMA, and a VWAP anchored at 00 UTC.
+  Stretch units: the deviation's own 30-day std, or the 168h hourly return std for the EMA idea.
+  The BTC finding in already_tried is respected. No idea fades a single large bar.
+  The range idea excludes closes beyond the prior 24h range, and gradual_grind_stretch_fade requires no shock bar.
+  The heavy-volume continuation idea deliberately contradicts the fading-volume reversion idea.
+  For the rank_corr idea, min_effect is written as -0.05, meaning a correlation of at most -0.05.
+  Mean-diff thresholds of 0.2-0.3% are set so that an effect that passes also clears the 0.15% round trip.

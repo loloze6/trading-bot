@@ -1,0 +1,659 @@
+brief: n26_session_reversal_hourly_1h.md
+fold: C
+symbols:
+- BTCUSD
+- ETHUSD
+- LTCUSD
+bar_size: 1h
+claims:
+- id: asia_big_move_fades_in_europe
+  belief: A large Asia-session move (00-08 UTC), made on thin liquidity, is partly
+    given back when European liquidity arrives in the 08-14 UTC session.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.004360648166693521
+      n_a: 236
+      n_b: 490
+      windows:
+      - 0.019989489483085827
+      - -0.000528639557642614
+      - 0.006079765164701386
+      - -0.00033280858537408967
+      - 0.0019141414528618264
+      - 0.0013848250604170992
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.002215293474978057
+      n_a: 236
+      n_b: 490
+      windows:
+      - 0.019122060189949913
+      - 0.0022104443504153627
+      - -0.0003874992724519255
+      - -0.00574646879958537
+      - 0.0025717637828351378
+      - -0.004268472994981387
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.0007453298721008255
+      n_a: 228
+      n_b: 497
+      windows:
+      - 0.009874101197294207
+      - -0.0023349452286271465
+      - -0.001509081152989514
+      - -0.006269224238776511
+      - 0.0026449240763230693
+      - -0.005807789692983291
+      verdict: fail
+      why: null
+  code: 'c = df.close
+
+    m = pd.Series(np.asarray(hour) == 8, index=df.index)
+
+    s = c / c.shift(8, freq=''h'').reindex(c.index) - 1
+
+    thr = s.abs()[m].rolling(30, min_periods=20).quantile(0.7).shift(1).reindex(c.index)
+
+    a = m & (s.abs() > thr)
+
+    b = m & (s.abs() <= thr)
+
+    signal = -np.sign(s)
+
+    '
+- id: europe_move_continues_in_us
+  belief: European sessions price information that US participants act on later, so
+    a sizeable Europe move (08-14 UTC) continues through the US session (14-21 UTC).
+  measure: hit_rate
+  horizon_bars: 7
+  direction: positive
+  min_effect: 0.04
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.10238823519387902
+      n_a: 241
+      n_b: 487
+      windows:
+      - 0.08390804597701146
+      - 0.16020671834625327
+      - -0.09234752589182971
+      - 0.17918902802623732
+      - -0.005827505827505908
+      - 0.27934407364787106
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.041279750292625816
+      n_a: 233
+      n_b: 495
+      windows:
+      - -0.05923344947735193
+      - 0.024390243902439046
+      - -0.0146520146520146
+      - 0.20005963029218843
+      - 0.03963414634146345
+      - 0.023946360153256685
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.07055295417477775
+      n_a: 229
+      n_b: 498
+      windows:
+      - 0.03246753246753248
+      - 0.0382205513784461
+      - 0.04040404040404044
+      - 0.08791208791208793
+      - 0.1109756097560976
+      - 0.09389534883720935
+      verdict: pass
+      why: null
+  code: 'c = df.close
+
+    m = pd.Series(np.asarray(hour) == 14, index=df.index)
+
+    s = c / c.shift(6, freq=''h'').reindex(c.index) - 1
+
+    thr = s.abs()[m].rolling(30, min_periods=20).quantile(0.7).shift(1).reindex(c.index)
+
+    a = m & (s.abs() > thr)
+
+    b = m & (s.abs() <= thr)
+
+    signal = np.sign(s)
+
+    '
+- id: us_session_fades_overnight
+  belief: US-session moves (14-21 UTC) are driven by US flows that exit or hedge overnight,
+    so the move partly reverts from 21:00 to the end of Asia (08:00 UTC).
+  measure: net_return
+  horizon_bars: 11
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.002541268334397492
+      n_a: 369
+      n_b: 369
+      windows:
+      - -0.00459159151225166
+      - -0.0018061024102079804
+      - -0.003541228443514785
+      - 0.0010098138500687298
+      - -0.0025898439437111636
+      - -0.003839297315336343
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.00249221338433391
+      n_a: 370
+      n_b: 370
+      windows:
+      - -0.004874858475901266
+      - -0.005070245108991997
+      - -0.00039387668061568884
+      - -0.0021926720598262643
+      - -0.0003611892139381747
+      - -0.002170799635867301
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.0008379525474190923
+      n_a: 360
+      n_b: 360
+      windows:
+      - 0.0009751440195253638
+      - -0.0005932128529286856
+      - 0.002554875806258627
+      - 0.0006041072340712164
+      - -0.0006216426969655729
+      - -0.008446159981134951
+      verdict: fail
+      why: null
+  code: 'c = df.close
+
+    m = pd.Series(np.asarray(hour) == 21, index=df.index)
+
+    s = c / c.shift(7, freq=''h'').reindex(c.index) - 1
+
+    med = s.abs()[m].rolling(30, min_periods=20).median().shift(1).reindex(c.index)
+
+    a = m & (s.abs() > med)
+
+    b = m & ~a
+
+    signal = -np.sign(s)
+
+    '
+- id: asia_size_predicts_europe_size
+  belief: Volatility carries across the session boundary, so an unusually large Asia
+    session is followed by an unusually large Europe session regardless of direction.
+  measure: abs_ratio
+  horizon_bars: 6
+  direction: above
+  min_effect: 1.25
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 1.1597384976824672
+      n_a: 199
+      n_b: 527
+      windows:
+      - 1.2250209252541733
+      - 2.187711171332738
+      - 0.8574090984559113
+      - 1.5411172460509475
+      - 0.7935678627223621
+      - 1.0181245181442353
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 1.08310328010055
+      n_a: 204
+      n_b: 522
+      windows:
+      - 1.2983262348780813
+      - 1.0629945800467784
+      - 0.9093170359497074
+      - 1.2865146610873563
+      - 0.7090178240127679
+      - 1.1630639446035642
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 1.3283055812315598
+      n_a: 193
+      n_b: 532
+      windows:
+      - 1.9320458474194926
+      - 1.196135715321271
+      - 1.0161210720753113
+      - 1.380669831348145
+      - 1.091636041045601
+      - 1.3349581477396533
+      verdict: pass
+      why: null
+  code: 'c = df.close
+
+    m = pd.Series(np.asarray(hour) == 8, index=df.index)
+
+    s = c / c.shift(8, freq=''h'').reindex(c.index) - 1
+
+    thr = s.abs()[m].rolling(30, min_periods=20).quantile(0.75).shift(1).reindex(c.index)
+
+    a = m & (s.abs() > thr)
+
+    b = m & (s.abs() <= thr)
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: asia_return_rank_corr_europe
+  belief: Across all days, the Asia-session return scaled by its recent volatility
+    is negatively ranked against the following Europe-session return, so session moves
+    overshoot in proportion to their size.
+  measure: rank_corr
+  horizon_bars: 6
+  direction: negative
+  min_effect: -0.06
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.020205649218770515
+      n_a: 726
+      n_b: 726
+      windows:
+      - -0.04330950561225254
+      - -0.012692443683683552
+      - 0.06776462968531595
+      - 0.05817639886194281
+      - 0.052927589294860564
+      - 0.008416468123494406
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.03206768368859325
+      n_a: 726
+      n_b: 726
+      windows:
+      - -0.012917921743170135
+      - -0.09579308772358824
+      - 0.1420423566110746
+      - 0.05991735537190081
+      - 0.13008019932522857
+      - 0.003512644528965273
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.04053279610275014
+      n_a: 725
+      n_b: 725
+      windows:
+      - -0.0043759085255286306
+      - -0.045641323043279794
+      - 0.08122701332690065
+      - 0.06670266459949042
+      - 0.1417185192038887
+      - 0.02283053720660496
+      verdict: fail
+      why: null
+  code: 'c = df.close
+
+    m = pd.Series(np.asarray(hour) == 8, index=df.index)
+
+    s = c / c.shift(8, freq=''h'').reindex(c.index) - 1
+
+    vol = s[m].rolling(30, min_periods=20).std().shift(1).reindex(c.index)
+
+    feature = s / vol
+
+    a = m & feature.notna()
+
+    b = ~a
+
+    signal = -np.sign(s)
+
+    '
+- id: europe_volume_confirms_continuation
+  belief: A Europe move made on heavy volume reflects informed flow and continues
+    into the US session, while the same move on light volume is noise.
+  measure: mean_diff
+  horizon_bars: 7
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0025439272084137408
+      n_a: 367
+      n_b: 361
+      windows:
+      - 0.007984305496523883
+      - 0.0061335235467065785
+      - -0.0027671489047968777
+      - 0.0056715669452195895
+      - 0.0014884482675361368
+      - -0.0031783728638885875
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.0038798533584425135
+      n_a: 382
+      n_b: 346
+      windows:
+      - -0.0023333535616058896
+      - 0.014079603678522616
+      - -0.0003162327847739847
+      - 0.012190932385050179
+      - -0.002676530777925771
+      - -0.00033064261950924547
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.0038793176755671987
+      n_a: 374
+      n_b: 353
+      windows:
+      - 0.004008727239726688
+      - 0.009494483069723517
+      - 0.002532149771995505
+      - 0.009725374886091015
+      - -0.0021018356407683392
+      - -0.0011918412900534
+      verdict: fail
+      why: null
+  code: 'c = df.close
+
+    m = pd.Series(np.asarray(hour) == 14, index=df.index)
+
+    s = c / c.shift(6, freq=''h'').reindex(c.index) - 1
+
+    v = df.volume.rolling(''6h'').sum()
+
+    med = v[m].rolling(20, min_periods=15).median().shift(1).reindex(c.index)
+
+    a = m & (v > med)
+
+    b = m & (v <= med)
+
+    signal = np.sign(s)
+
+    '
+- id: europe_close_at_extreme_continues
+  belief: A Europe session that closes at its own high or low shows pressure still
+    unfinished at the handoff, which the US session carries further.
+  measure: hit_rate
+  horizon_bars: 7
+  direction: positive
+  min_effect: 0.04
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.03307159145800337
+      n_a: 157
+      n_b: 567
+      windows:
+      - -0.18505747126436783
+      - 0.06730769230769229
+      - -0.09954407294832823
+      - 0.18068535825545168
+      - 0.05414438502673802
+      - 0.2147783251231527
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.00034885552879748705
+      n_a: 157
+      n_b: 566
+      windows:
+      - -0.19565217391304346
+      - -0.125
+      - 0.15509259259259256
+      - 0.27282728272827284
+      - -0.0867275280898876
+      - 0.0009146341463414642
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.09182316769154059
+      n_a: 176
+      n_b: 547
+      windows:
+      - -0.11911764705882355
+      - -0.1966666666666667
+      - -0.11959183673469387
+      - -0.028083028083028094
+      - -0.24301075268817202
+      - 0.08102409638554214
+      verdict: fail
+      why: null
+  code: 'c = df.close
+
+    m = pd.Series(np.asarray(hour) == 14, index=df.index)
+
+    o = c.shift(6, freq=''h'').reindex(c.index)
+
+    s = c / o - 1
+
+    hi = df.high.rolling(''6h'').max()
+
+    lo = df.low.rolling(''6h'').min()
+
+    pos = (c - lo) / (hi - lo)
+
+    ext = ((pos >= 0.85) & (s > 0)) | ((pos <= 0.15) & (s < 0))
+
+    a = m & ext
+
+    b = m & (pos > 0.15) & (pos < 0.85)
+
+    signal = np.sign(s)
+
+    '
+- id: two_session_agreement_trends
+  belief: When Asia and Europe move the same way, a day-level flow is under way and
+    the US session extends it; when they disagree, there is no edge.
+  measure: mean_diff
+  horizon_bars: 7
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0011822811675975056
+      n_a: 370
+      n_b: 358
+      windows:
+      - -0.0006215858794383905
+      - 0.00405064390984801
+      - 0.0014300010701914796
+      - 0.009774922988355946
+      - 0.0008561425032802303
+      - -0.008396557667318921
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.0011227989779575265
+      n_a: 383
+      n_b: 345
+      windows:
+      - -0.0007433659489817657
+      - 0.001057156336315323
+      - 0.0018574452314576812
+      - 0.0014944430302256447
+      - 2.074572994073716e-05
+      - 3.268716159095502e-05
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.003467733330407774
+      n_a: 373
+      n_b: 346
+      windows:
+      - 0.003039747068708438
+      - 0.0020772016787550564
+      - 0.010780370372203512
+      - 0.010312480353790869
+      - -0.0015853126861634518
+      - -0.002450571446899181
+      verdict: fail
+      why: null
+  code: 'c = df.close
+
+    m = pd.Series(np.asarray(hour) == 14, index=df.index)
+
+    eu = c / c.shift(6, freq=''h'').reindex(c.index) - 1
+
+    c8 = c.shift(6, freq=''h'').reindex(c.index)
+
+    c0 = c.shift(14, freq=''h'').reindex(c.index)
+
+    asia = c8 / c0 - 1
+
+    a = m & (np.sign(asia) == np.sign(eu)) & (eu != 0)
+
+    b = m & (np.sign(asia) != np.sign(eu)) & (eu != 0) & (asia != 0)
+
+    signal = np.sign(eu)
+
+    '
+- id: monday_asia_fades_in_europe
+  belief: The Monday Asia session reprices two days of weekend news on thin books
+    and overshoots, so Europe on Monday fades it more than on other weekdays.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.002665891990164938
+      n_a: 104
+      n_b: 414
+      windows:
+      - 0.008826454556214725
+      - -0.00989441603634007
+      - -0.004842374986058319
+      - 0.0023213435329544015
+      - -0.008016340512574206
+      - -0.004724177369321078
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.0008865809839004456
+      n_a: 104
+      n_b: 414
+      windows:
+      - 0.0053821219108670815
+      - -0.011961244113258624
+      - 0.008897880179524423
+      - 0.008481063437486093
+      - -0.002949453317615628
+      - -0.002328159482017136
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.0029757270995137333
+      n_a: 104
+      n_b: 414
+      windows:
+      - -0.0097428059473053
+      - -0.012507746093071063
+      - 0.004652784069757538
+      - 0.00438914472514364
+      - -0.007650132176661112
+      - 0.0028255293830243104
+      verdict: fail
+      why: null
+  code: 'c = df.close
+
+    h = np.asarray(hour); d = np.asarray(dow)
+
+    m = pd.Series(h == 8, index=df.index)
+
+    s = c / c.shift(8, freq=''h'').reindex(c.index) - 1
+
+    a = m & pd.Series(d == 0, index=df.index)
+
+    b = m & pd.Series((d >= 1) & (d <= 4), index=df.index)
+
+    signal = -np.sign(s)
+
+    '
+- id: europe_return_ranks_us_return
+  belief: The Europe-session return, scaled by its recent volatility, is positively
+    ranked against the following US-session return on every day, because sessions
+    continue rather than reverse in proportion to their strength.
+  measure: rank_corr
+  horizon_bars: 7
+  direction: positive
+  min_effect: 0.06
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.07592887128268452
+      n_a: 728
+      n_b: 728
+      windows:
+      - 0.02398507395585128
+      - 0.023286553147336107
+      - 0.000612658162541435
+      - 0.19070586641376502
+      - 0.07523932575730038
+      - 0.12887103223226837
+      verdict: pass
+      why: null
+    ETHUSD:
+      effect: 0.053269591707617074
+      n_a: 728
+      n_b: 728
+      windows:
+      - -0.08174107209758874
+      - 0.01983669342180483
+      - -0.02099160335865654
+      - 0.3195908413494105
+      - 0.128381705169172
+      - -0.029562368600946718
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.02544312559796644
+      n_a: 727
+      n_b: 727
+      windows:
+      - -0.059501865755518586
+      - 0.06809518852829907
+      - -0.12649133894829165
+      - 0.1372525869852073
+      - 0.01748391552469921
+      - 0.10075324708826147
+      verdict: fail
+      why: null
+  code: 'c = df.close
+
+    m = pd.Series(np.asarray(hour) == 14, index=df.index)
+
+    s = c / c.shift(6, freq=''h'').reindex(c.index) - 1
+
+    vol = s[m].rolling(30, min_periods=20).std().shift(1).reindex(c.index)
+
+    feature = s / vol
+
+    a = m & feature.notna()
+
+    b = ~a
+
+    signal = np.sign(s)
+
+    '
+profit: 'none: no return claim passed'

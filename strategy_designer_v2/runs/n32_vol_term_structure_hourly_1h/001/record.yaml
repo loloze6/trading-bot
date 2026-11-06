@@ -1,0 +1,555 @@
+brief: n32_vol_term_structure_hourly_1h.md
+fold: A
+symbols:
+- BTCUSD
+- ETHUSD
+bar_size: 1h
+claims:
+- id: expansion_persists_in_size
+  belief: Volatility clusters on hourly crypto bars, so a 24h-over-168h volatility
+    expansion means larger absolute moves over the next day than when the term structure
+    is flat or inverted, which makes the ratio usable as a gate for other rules.
+  measure: abs_ratio
+  horizon_bars: 24
+  direction: above
+  min_effect: 1.4
+  verdict: pass
+  by_symbol:
+    BTCUSD:
+      effect: 1.597231950556447
+      n_a: 76
+      n_b: 137
+      windows:
+      - 2.0254670930422924
+      - 1.1672508080237833
+      - 2.9508674606855965
+      - 1.7180529836760734
+      - 1.9931692031153831
+      - 1.273019714012526
+      verdict: pass
+      why: null
+    ETHUSD:
+      effect: 1.4767506211580665
+      n_a: 54
+      n_b: 142
+      windows:
+      - 2.300542842409874
+      - 1.0791601813097569
+      - 1.3562668463901855
+      - 1.1231779842984673
+      - 2.470488541190443
+      - 1.3740343283924217
+      verdict: pass
+      why: null
+  code: 'rv24 = ret.rolling(24).std()
+
+    rv168 = ret.rolling(168).std()
+
+    r = rv24 / rv168
+
+    a = spaced(r > 1.5, 24)
+
+    b = spaced(r < 1.0, 24)
+
+    '
+- id: expansion_momentum_24_168
+  belief: When short vol runs above long vol, new information is being absorbed and
+    the 24h move continues, while in a quiet term structure the same move is noise.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.005831393075577886
+      n_a: 96
+      n_b: 178
+      windows:
+      - 0.006582129188927543
+      - 0.04028540072397043
+      - 0.008657582389110036
+      - -0.0013828311917515451
+      - -0.0041107895255966306
+      - -0.010096139169835582
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.003154537678500269
+      n_a: 95
+      n_b: 192
+      windows:
+      - 0.009050836577532612
+      - 0.023438521930355023
+      - 0.0031687891451484566
+      - -0.012144788355074392
+      - 0.002569703763024095
+      - -0.0026654867024040354
+      verdict: fail
+      why: null
+  code: 'rv24 = ret.rolling(24).std()
+
+    rv168 = ret.rolling(168).std()
+
+    r = rv24 / rv168
+
+    pc24 = df.close.pct_change(24)
+
+    a = spaced(r > 1.3, 24)
+
+    b = spaced(r < 0.8, 24)
+
+    signal = np.sign(pc24)
+
+    '
+- id: compression_reversal_6_72
+  belief: When 6h vol is far below 72h vol the market is asleep and small drifts are
+    liquidity noise that reverts, rather than information.
+  measure: hit_rate
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.03
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.06941067781775745
+      n_a: 728
+      n_b: 339
+      windows:
+      - -0.13611111111111118
+      - -0.10253296321998617
+      - -0.052484151555359015
+      - -0.15873015873015872
+      - -0.029789419619928093
+      - 0.09489633173843703
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.010451505016722429
+      n_a: 715
+      n_b: 368
+      windows:
+      - -0.0239816610827015
+      - 0.0974481658692185
+      - -0.021074380165289286
+      - 0.06349206349206349
+      - -0.15181102362204724
+      - -0.0037878787878787845
+      verdict: fail
+      why: null
+  code: 'r6 = ret.rolling(6).std() / ret.rolling(72).std()
+
+    pc6 = df.close.pct_change(6)
+
+    a = spaced(r6 < 0.6, 6)
+
+    b = spaced(r6 >= 0.6, 6)
+
+    signal = -np.sign(pc6)
+
+    '
+- id: shock_reversal_6_72
+  belief: A sudden spike where 6h vol is more than 2.5 times 72h vol is usually a
+    liquidation cascade or stop run, and part of it retraces over the next half day
+    by enough to pay the fee.
+  measure: net_return
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.002602055381506052
+      n_a: 59
+      n_b: 59
+      windows:
+      - -0.00815151225239784
+      - 0.004527164644596725
+      - -0.002504459198439078
+      - -0.0034907346264965063
+      - -0.0012717295463104904
+      - -0.005955921072659675
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.0099782629940268
+      n_a: 43
+      n_b: 43
+      windows:
+      - 0.0045465803000284705
+      - -0.021841452790019478
+      - -0.0163483449123622
+      - 0.004357832138912042
+      - -0.006760020038734896
+      - -0.018335304926505203
+      verdict: fail
+      why: null
+  code: 'r6 = ret.rolling(6).std() / ret.rolling(72).std()
+
+    pc6 = df.close.pct_change(6)
+
+    a = spaced(r6 > 2.5, 12)
+
+    b = ~a
+
+    signal = -np.sign(pc6)
+
+    '
+- id: compression_breakout_24_168
+  belief: A large bar that breaks a compressed term structure (24h vol well below
+    168h vol) starts a new move, because positioning built up during the quiet period
+    is forced to adjust.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.005667496967821858
+      n_a: 56
+      n_b: 56
+      windows:
+      - -0.009730463379717984
+      - 0.019582782235261102
+      - 0.005839761920585537
+      - 0.022095667757218954
+      - -0.0006539396864731656
+      - -0.006378606501118654
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.004337628994701807
+      n_a: 48
+      n_b: 48
+      windows:
+      - 0.021730681286672226
+      - 0.027777797830777422
+      - -0.006630088750108912
+      - 0.015833777751211274
+      - -0.004926830154558691
+      - -0.0045073856762503995
+      verdict: fail
+      why: null
+  code: 'rv24 = ret.rolling(24).std()
+
+    rv168 = ret.rolling(168).std()
+
+    r = rv24 / rv168
+
+    brk = (r.shift(1) < 0.6) & (ret.abs() > 2.5 * rv168.shift(1))
+
+    a = spaced(brk, 24)
+
+    b = ~a
+
+    signal = np.sign(ret)
+
+    '
+- id: expansion_selloff_bounce
+  belief: Crypto vol expansions are mostly sell-offs, and buying while 24h vol is
+    far above 168h vol after a down day earns a fear premium as forced sellers clear.
+  measure: mean_diff
+  horizon_bars: 48
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0065639396903198095
+      n_a: 46
+      n_b: 17473
+      windows:
+      - -0.015028903684607653
+      - -0.012498623573413647
+      - -0.014981090697246778
+      - -0.0043891076820588085
+      - 0.0024456571561841745
+      - 0.001459966140193076
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.004306735457184393
+      n_a: 35
+      n_b: 17484
+      windows:
+      - -0.01458179425205871
+      - -0.015756080845849847
+      - -0.007811198031089449
+      - 0.038449506700121094
+      - -0.0008768524645343854
+      - 0.0002531778059318814
+      verdict: fail
+      why: null
+  code: 'rv24 = ret.rolling(24).std()
+
+    rv168 = ret.rolling(168).std()
+
+    r = rv24 / rv168
+
+    pc24 = df.close.pct_change(24)
+
+    a = spaced((r > 1.5) & (pc24 < 0), 24)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: steep_term_structure_bearish_drift
+  belief: Rising short vol relative to long vol signals de-leveraging that keeps going,
+    so the log 24h/168h vol ratio is negatively ranked with the next day's return.
+    This contradicts expansion_selloff_bounce on purpose.
+  measure: rank_corr
+  horizon_bars: 24
+  direction: negative
+  min_effect: 0.04
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'rv24 = ret.rolling(24).std()
+
+    rv168 = ret.rolling(168).std()
+
+    r = rv24 / rv168
+
+    a = spaced(r.notna() & (r > 0), 24)
+
+    feature = np.log(r)
+
+    '
+- id: range_expansion_without_close_expansion_chop
+  belief: When intrabar ranges widen on the 24h/168h Parkinson ratio but close-to-close
+    vol does not, the market is churning without direction, and the last 6h move reverts.
+  measure: hit_rate
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.03
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.75
+      n_a: 8
+      n_b: 2
+      windows:
+      - -1.0
+      - null
+      - 0.0
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.5
+      n_a: 6
+      n_b: 1
+      windows:
+      - null
+      - null
+      - -0.33333333333333337
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'rv24 = ret.rolling(24).std()
+
+    rv168 = ret.rolling(168).std()
+
+    r = rv24 / rv168
+
+    pk = np.log(df.high / df.low) ** 2
+
+    pr = np.sqrt(pk.rolling(24).mean()) / np.sqrt(pk.rolling(168).mean())
+
+    chop = (pr > 1.3) & (r < 1.0)
+
+    pc6 = df.close.pct_change(6)
+
+    a = spaced(chop, 6)
+
+    b = spaced(r.notna() & pr.notna() & ~chop, 6)
+
+    signal = -np.sign(pc6)
+
+    '
+- id: volume_confirmed_expansion_momentum
+  belief: A vol expansion backed by a volume expansion reflects real participation
+    and trends, while an expansion on thin volume is a liquidity air pocket that does
+    not.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0040747265472510005
+      n_a: 75
+      n_b: 27
+      windows:
+      - -0.017660622792819415
+      - 0.009542523853465833
+      - -0.0059353362563032835
+      - 0.006467167699952592
+      - 0.009433546474227414
+      - 0.002208399130336984
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.013388478683763754
+      n_a: 75
+      n_b: 27
+      windows:
+      - -0.025511731340593667
+      - -0.025053230696938936
+      - -0.04422421697400786
+      - 0.010505875764027506
+      - -0.004464009604030927
+      - 0.008050151542229317
+      verdict: fail
+      why: null
+  code: 'rv24 = ret.rolling(24).std()
+
+    rv168 = ret.rolling(168).std()
+
+    r = rv24 / rv168
+
+    vr = df.volume.rolling(24).mean() / df.volume.rolling(168).mean()
+
+    pc24 = df.close.pct_change(24)
+
+    exp_ = r > 1.3
+
+    a = spaced(exp_ & (vr > 1.5), 24)
+
+    b = spaced(exp_ & (vr < 1.1), 24)
+
+    signal = np.sign(pc24)
+
+    '
+- id: weekend_compression_is_false_calm
+  belief: A low 24h/168h vol ratio at the end of Sunday reflects the weekend liquidity
+    lull rather than true calm, so the following Monday moves more than a day after
+    an equally quiet weekday.
+  measure: abs_ratio
+  horizon_bars: 24
+  direction: above
+  min_effect: 1.2
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 1.0059975866064674
+      n_a: 79
+      n_b: 148
+      windows:
+      - 0.9015625926692136
+      - 1.09897081424962
+      - 1.122825260796778
+      - 0.6567981344329434
+      - 0.767333135845885
+      - 1.972409631779237
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.9373022718621268
+      n_a: 68
+      n_b: 136
+      windows:
+      - 1.0685875692527607
+      - 1.187587127474915
+      - 0.9638224541212678
+      - 0.4783099368755739
+      - 0.7308195963084146
+      - 0.9372915128268169
+      verdict: fail
+      why: null
+  code: 'rv24 = ret.rolling(24).std()
+
+    rv168 = ret.rolling(168).std()
+
+    r = rv24 / rv168
+
+    quiet = r < 0.8
+
+    a = (dow == 6) & (hour == 23) & quiet
+
+    b = (dow <= 4) & (hour == 23) & quiet
+
+    '
+- id: slow_term_structure_turn_72_720
+  belief: When 72h vol crosses back above 720h vol after a month-scale lull, a new
+    regime begins, and the 72h direction at the turn persists over the next three
+    days.
+  measure: net_return
+  horizon_bars: 72
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0065620937088572365
+      n_a: 73
+      n_b: 73
+      windows:
+      - 0.011764759100191608
+      - 0.043546023132885636
+      - -0.020506413192278604
+      - 0.0025339062033279364
+      - -0.001566318839162018
+      - 0.0037009544164682286
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.012541128814391652
+      n_a: 64
+      n_b: 64
+      windows:
+      - 0.030534528852093366
+      - 0.04412309198524507
+      - 0.033117316508334646
+      - 0.012708583710570676
+      - -0.011033922159052103
+      - -0.008691099338450628
+      verdict: fail
+      why: null
+  code: 'r = ret.rolling(72).std() / ret.rolling(720).std()
+
+    cross = (r > 1.0) & (r.shift(1) <= 1.0)
+
+    pc72 = df.close.pct_change(72)
+
+    a = spaced(cross, 72)
+
+    b = ~a
+
+    signal = np.sign(pc72)
+
+    '
+profit: 'none: no return claim passed'

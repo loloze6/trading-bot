@@ -1,0 +1,33 @@
+run: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001
+observations:
+  - "low_vol_regime_momentum held in the judge: 20-day momentum taken only when 20-day vol sits below its 1-year median returned 0.0387 net over 10 bars against 0.01 asked, positive in 5 of 6 windows. Two of those windows were nearly flat (-0.0006 in W1, 0.0011 in W6)."
+  - "The profit step for low_vol_regime_momentum is an engine artifact, not evidence against the claim: 0 trades, 0.0 exposure and 0.0 net in all 6 windows."
+  - "high_vol_regime_short_reversal nearly held: its whole-fold mean_diff of 0.0069 beat the 0.005 asked, but only 2 of 6 windows were positive (W3 0.074 and W6 0.043 carried it)."
+  - "vol_scaled_momentum_strength gave a rank_corr of 0.209 against 0.05 asked, but only 3 of 6 windows were positive; W5 at 0.341 and W6 at 0.176 drive the fold, and W3 is -0.140."
+  - "upside_semivariance_share showed the same pattern: whole-fold 0.184 but 4 of 6 windows positive, with W3 at -0.261 and W1 at -0.140, so trend-strength features agree only in the late windows."
+  - "uptrend_vol_spike_exit pointed the right way: in uptrends, high-vol bars trailed calm bars by 0.077 over 10 bars, and 3 of the 4 computable windows agreed. It failed because two windows had no bars."
+  - "The event-style claims had too few bars to judge: drawdown_vol_contraction_long n_a=16, compression_breakout_direction n_a=11, low_volume_shock_fade n_a=4. Each had at least one null window."
+  - "Expansion-continuation and close-vs-range efficiency both came out negative (-0.0093 and -0.0048), with window swings of ±0.10 or more, so there is no usable sign in them."
+  - "Across the run, calm volatility combined with momentum is the only state that worked consistently. High or expanding volatility either hurt forward returns (uptrend spike gap 0.077) or gave unstable signs."
+next_claim:
+  id: falling_vol_momentum_vs_rising
+  belief: "BTC momentum pays more while realized volatility is falling than while it is rising, because a contracting vol state means fewer forced exits interrupting the trend."
+  claim:
+    when: "bars where 20-day realized vol is below its value 10 bars earlier"
+    then: "the 10-bar forward return in the direction of 20-day momentum is larger"
+    compared_to: "bars where 20-day realized vol is at or above its value 10 bars earlier"
+    measure: mean_diff
+    horizon_bars: 10
+    direction: positive
+    min_effect: 0.01
+    code: |
+      vol20 = ret.rolling(20).std()
+      mom = df.close.pct_change(20)
+      ok = mom.notna() & vol20.shift(10).notna()
+      falling = vol20 < vol20.shift(10)
+      a = falling & ok
+      b = (~falling) & ok
+      signal = np.sign(mom).replace(0, 1).fillna(1)
+  why_no_lookahead: "Vol, its 10-bar-earlier value and the 20-bar momentum all use closes at or before the bar."
+  how_it_trades: "Hold the 20-day momentum direction only while 20-day vol is below its level 10 days ago; go flat when vol turns up."
+why: "The one claim that held (low_vol_regime_momentum) never compared against the other vol state, and expansion hurt in the uptrend test (0.077 gap). This tests whether the vol trend, a state not yet tried, adds timing value beyond plain momentum."

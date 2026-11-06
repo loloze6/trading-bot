@@ -1,0 +1,30 @@
+brief: real_01b_daily_breadth_ltc.md
+source: analyst round 1
+ideas:
+- id: narrow_range_expansion
+  belief: Daily volatility on these coins reverts to its local norm within days, so
+    an unusually narrow-range day (a coiled, compressed market) is followed by larger
+    moves than a normal-range day in the same context.
+  claim:
+    when: days whose high-low range is below 0.6 times the median range of the prior
+      30 days, at most one per 5 days
+    then: the absolute 5-day forward return is larger
+    compared_to: days whose range is between 0.8 and 1.25 times the same prior 30-day
+      median (normal days in the same local regime)
+    measure: abs_ratio
+    horizon_bars: 5
+    direction: above
+    min_effect: 1.15
+    code: 'rng = (df.high - df.low) / df.close
+
+      med = rng.rolling(30).median().shift(1)
+
+      a = spaced(rng < 0.6 * med, 5)
+
+      b = (rng >= 0.8 * med) & (rng <= 1.25 * med)
+
+      '
+  why_no_lookahead: The range uses only the bar's own high, low and close, known at
+    its close, and the median is over the prior 30 bars, shifted by one.
+  how_it_trades: After a narrow day, place a breakout entry on either side of that
+    day's range (or size up a trend signal), sized for the expected expansion.

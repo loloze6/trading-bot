@@ -1,0 +1,147 @@
+claim: or_location_with_prior_day
+symbol: ETHUSD
+bar_size: 1h
+fold: C
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 200
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: 0.9732
+  median_window_sharpe: 0.7798499999999999
+  worst_window_drawdown: 0.4988
+  trades: 127
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: -0.2373
+    trades: 33
+    sharpe: -0.8287
+    max_drawdown: 0.4988
+    exposure_pct: 17.6678
+    cost_drag_pct: 11.5052
+    run_dir: strategy_designer_v2/runs/n08_opening_range_breakout_eth_1h/001/engine_r1_or_location_with_prior_day_ETHUSD/results/full_size/20261106T004357Z_52a7cddd
+    seconds: 38
+  - window: W2
+    net_return: 0.0541
+    trades: 17
+    sharpe: 0.567
+    max_drawdown: 0.1722
+    exposure_pct: 9.5628
+    cost_drag_pct: 22.047
+    run_dir: strategy_designer_v2/runs/n08_opening_range_breakout_eth_1h/001/engine_r1_or_location_with_prior_day_ETHUSD/results/full_size/20261106T004430Z_52a7cddd
+    seconds: 33
+  - window: W3
+    net_return: 0.108
+    trades: 20
+    sharpe: 0.9927
+    max_drawdown: 0.2617
+    exposure_pct: 12.8857
+    cost_drag_pct: 14.7102
+    run_dir: strategy_designer_v2/runs/n08_opening_range_breakout_eth_1h/001/engine_r1_or_location_with_prior_day_ETHUSD/results/full_size/20261106T004505Z_52a7cddd
+    seconds: 35
+  - window: W4
+    net_return: 0.7905
+    trades: 21
+    sharpe: 2.2161
+    max_drawdown: 0.1893
+    exposure_pct: 12.3967
+    cost_drag_pct: 2.575
+    run_dir: strategy_designer_v2/runs/n08_opening_range_breakout_eth_1h/001/engine_r1_or_location_with_prior_day_ETHUSD/results/full_size/20261106T004539Z_52a7cddd
+    seconds: 34
+  - window: W5
+    net_return: 0.0344
+    trades: 15
+    sharpe: -0.1695
+    max_drawdown: 0.1683
+    exposure_pct: 8.8859
+    cost_drag_pct: 28.9382
+    run_dir: strategy_designer_v2/runs/n08_opening_range_breakout_eth_1h/001/engine_r1_or_location_with_prior_day_ETHUSD/results/full_size/20261106T004615Z_52a7cddd
+    seconds: 36
+  - window: W6
+    net_return: 0.196
+    trades: 21
+    sharpe: 1.1679
+    max_drawdown: 0.2122
+    exposure_pct: 10.8585
+    cost_drag_pct: 9.5709
+    run_dir: strategy_designer_v2/runs/n08_opening_range_breakout_eth_1h/001/engine_r1_or_location_with_prior_day_ETHUSD/results/full_size/20261106T004651Z_52a7cddd
+    seconds: 36
+  checks:
+    net_positive_in_5_of_6: true
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: 0.3098
+    median_window_sharpe: 0.9019999999999999
+    worst_window_drawdown: 0.064
+    trades: 109
+  windows:
+  - window: W1
+    net_return: 0.0193
+    trades: 25
+    sharpe: 0.5595
+    max_drawdown: 0.064
+    exposure_pct: 17.6678
+    cost_drag_pct: 21.8555
+    run_dir: strategy_designer_v2/runs/n08_opening_range_breakout_eth_1h/001/engine_r1_or_location_with_prior_day_ETHUSD/results/vol_target/20261106T004730Z_4a080ac5
+    seconds: 38
+  - window: W2
+    net_return: 0.0394
+    trades: 15
+    sharpe: 1.2445
+    max_drawdown: 0.0397
+    exposure_pct: 9.5628
+    cost_drag_pct: 10.5782
+    run_dir: strategy_designer_v2/runs/n08_opening_range_breakout_eth_1h/001/engine_r1_or_location_with_prior_day_ETHUSD/results/vol_target/20261106T004804Z_4a080ac5
+    seconds: 34
+  - window: W3
+    net_return: 0.0621
+    trades: 21
+    sharpe: 1.7462
+    max_drawdown: 0.048
+    exposure_pct: 12.8857
+    cost_drag_pct: 8.2312
+    run_dir: strategy_designer_v2/runs/n08_opening_range_breakout_eth_1h/001/engine_r1_or_location_with_prior_day_ETHUSD/results/vol_target/20261106T004839Z_4a080ac5
+    seconds: 35
+  - window: W4
+    net_return: 0.1103
+    trades: 19
+    sharpe: 2.0911
+    max_drawdown: 0.0586
+    exposure_pct: 12.3967
+    cost_drag_pct: 4.4958
+    run_dir: strategy_designer_v2/runs/n08_opening_range_breakout_eth_1h/001/engine_r1_or_location_with_prior_day_ETHUSD/results/vol_target/20261106T004911Z_4a080ac5
+    seconds: 32
+  - window: W5
+    net_return: 0.0252
+    trades: 13
+    sharpe: 0.2041
+    max_drawdown: 0.0298
+    exposure_pct: 8.8859
+    cost_drag_pct: 12.8923
+    run_dir: strategy_designer_v2/runs/n08_opening_range_breakout_eth_1h/001/engine_r1_or_location_with_prior_day_ETHUSD/results/vol_target/20261106T004946Z_4a080ac5
+    seconds: 35
+  - window: W6
+    net_return: 0.0226
+    trades: 16
+    sharpe: 0.3193
+    max_drawdown: 0.0575
+    exposure_pct: 10.8585
+    cost_drag_pct: 14.3443
+    run_dir: strategy_designer_v2/runs/n08_opening_range_breakout_eth_1h/001/engine_r1_or_location_with_prior_day_ETHUSD/results/vol_target/20261106T005023Z_4a080ac5
+    seconds: 37
+  checks:
+    net_positive_in_5_of_6: true
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: true
+  verdict: fail

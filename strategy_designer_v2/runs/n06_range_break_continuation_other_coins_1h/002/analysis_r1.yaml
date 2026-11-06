@@ -1,0 +1,30 @@
+run: n06_range_break_continuation_other_coins_1h / fold A
+observations:
+  - "The BTC 24h-range-break result did not carry over: big_break_24h_continues_alts gave +0.0007 on SOL (3 of 6 windows positive) against the 0.006 asked; AVAX cleared the bar on the whole fold (+0.0116) but was positive in only 3 of 6 windows."
+  - "The only near pass was a weekly level. weekly_range_break_profit netted +0.0080 after cost on SOL (5 of 6 windows, pass) and +0.0102 on AVAX, where it failed only on window consistency (4 of 6, with -0.0007 and -0.0022 in windows 3 and 4)."
+  - "Breaks of the prior UTC day's high or low pointed the right way but too weakly: +0.0022 on SOL (5 of 6 windows) and +0.0026 on AVAX (4 of 6), below the 0.004 asked."
+  - "Volume confirmation split the coins: +0.0117 on SOL (5 of 6, pass) against -0.0019 on AVAX (3 of 6)."
+  - "Reversal ideas found nothing to trade: fading inside-range big bars netted -0.0039 on SOL, and fading rejected 24h pierces netted -0.0024 on SOL and +0.0007 on AVAX."
+  - "Breaks did not expand volatility; they damped it. The abs_ratio of 24h breaks against inside big bars was 0.82 on SOL and 0.76 on AVAX, the opposite of the claim."
+  - "How a break bar looks did not sharpen continuation: a strong close at the extreme came in at -0.0031 on SOL and -0.0020 on AVAX, and break distance in volatility units had rank_corr -0.005 on SOL and -0.020 on AVAX."
+  - "AVAX window 2 is an outlier across claims (+0.067, +0.050 and +0.031 in three of them), so much of AVAX's whole-fold effect comes from one window."
+  - "Across the brief, the longer the reference level, the better the result: 24h-range claims sat near zero, prior-day levels around +0.002 to +0.003, and 7-day levels around +0.008 to +0.010 net."
+next_claim:
+  id: weekly_momentum_daily_hold
+  belief: "On SOL and AVAX, the direction of the past week persists into the next day, because the slow trend-following flow behind the weekly-level result acts on the weekly trend itself, not only at the moment a level breaks."
+  claim:
+    when: "one bar per day, the 00:00 UTC bar, where a 168-bar return is defined"
+    then: "a position in the direction of the past 168-bar return, held 24 bars, earns more than the round-trip cost"
+    compared_to: "zero, after the 0.15% round-trip cost"
+    measure: net_return
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.003
+    code: |
+      r168 = df.close / df.close.shift(168) - 1
+      a = (hour == 0) & r168.notna()
+      b = ~a
+      signal = pd.Series(np.where(r168 >= 0, 1, -1), index=df.index)
+  why_no_lookahead: "r168 uses only the closes at and 168 bars before the bar; the selector uses only the bar's hour."
+  how_it_trades: "Each day at 00:00 UTC, go long if the coin rose over the past 7 days and short if it fell, and close 24 hours later."
+why: "Only the 7-day horizon came near passing on both coins, so this tests whether the weekly trend persists daily without needing a level break. The 0.003 net threshold is below the weekly-break effect, since daily sampling dilutes it, but is well above noise after fees."

@@ -1,0 +1,33 @@
+run: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001
+observations:
+  - Fading every 24h-VWAP stretch beyond 2.5 sigma lost money after cost (net_return -0.00056 against a required +0.002), and the windows split 3 positive to 3 negative (from -0.0167 to +0.0108), so a plain VWAP stretch carries no reversion edge on ETH hourly.
+  - The weekend fade was the most consistent result in the run, but in the wrong direction (net_return -0.0093, all 6 windows negative); that is a raw fade return of about -0.78% per event, so weekend VWAP stretches extended over the next 12 hours.
+  - Heavy-volume stretches nearly held as continuation (mean_diff +0.0045 against a required 0.003), but only 4 of 6 windows were positive (W4 -0.0018, W6 -0.0042), one window short of the rule.
+  - The Asia-hours fade passed the judge (mean_diff +0.0051, 5 of 6 windows positive, W5 -0.0068), but its baseline was US-hours stretches, not all bars, so the edge is relative to what US-hours stretches did.
+  - The Asia-hours fade failed the profit test as a strategy: fold net +27.1% over 100 trades, but the median window Sharpe was 0.33, the worst window drawdown was 25.1%, and W2 (-5.4%) and W3 (-1.0%) lost money.
+  - The day-anchored late-day fade cleared the threshold on the whole fold (+0.0029 against 0.002) but had only 4 of 6 windows positive (W3 -0.0068, W6 -0.0007), so the belief looked right but did not hold steadily.
+  - The gradual-grind fade (+0.0051) and the low-volume fade (hit_rate +0.022 against 0.06) rested on 55 and 52 events, and their windows swung widely (W2 -0.025 and W2 -0.206), which reads as noise rather than structure.
+  - The rank correlation between the 3-day EMA stretch and the next 12 hours was only -0.0034 against a required -0.05, although 4 of 6 windows were negative and W6 reached -0.060, so any linear reversion is too weak to trade.
+  - The calm-regime fade did worse than the volatile-regime fade (mean_diff -0.0071, W2 -0.029), which contradicts the belief that calm-regime stretches are noise that reverts.
+next_claim:
+  id: weekend_stretch_continuation
+  belief: On thin, retail-driven weekends, a close far from the 24h VWAP reflects one-sided flow that liquidity providers do not absorb, so price keeps moving in the stretch direction over the next half day by more than cost.
+  claim:
+    when: Saturday or Sunday hourly bars whose close is more than 2 sigma (720-bar std of the deviation) from the rolling 24h VWAP, one event per 12 bars
+    then: the 12-bar forward return has the same sign as the deviation, and its mean exceeds the round-trip cost by at least 0.3%
+    compared_to: zero after cost (net_return)
+    measure: net_return
+    horizon_bars: 12
+    direction: positive
+    min_effect: 0.003
+    code: |
+      tp = (df.high + df.low + df.close) / 3
+      vwap = (tp * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+      dev = df.close / vwap - 1
+      z = dev / dev.rolling(720).std()
+      a = spaced((z.abs() > 2) & (dow >= 5), 12)
+      b = ~a
+      signal = np.sign(dev)
+  why_no_lookahead: The VWAP, the deviation, its rolling std and the weekday all use only bars at or before the signal bar's close.
+  how_it_trades: On a weekend bar close with |z| > 2, enter in the direction of the deviation from the 24h VWAP and exit 12 bars later.
+why: The weekend fade lost in all 6 windows (about -0.78% raw per event) and heavy-volume stretches leaned toward continuation, so the opposite belief, weekend continuation, is the one with a number behind it. The 0.003 net threshold sits about half below the implied +0.0064 to allow for the small event count (39) and for this pattern having been found on fold B.

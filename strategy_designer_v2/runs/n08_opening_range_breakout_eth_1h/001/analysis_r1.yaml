@@ -1,0 +1,40 @@
+run: strategy_designer_v2/runs/n08_opening_range_breakout_eth_1h/001
+observations:
+  - "Plain continuation after the first close beyond the 00-04 UTC range failed: net_return was -0.17% at 8 bars over 702 events, and 5 of 6 windows were negative (only W4 was positive, at +0.35%)."
+  - "The reverse trade also failed: fading a false break back inside the range netted -0.15% at 6 bars, with windows from -0.54% to +0.09%. Taken alone, the break pays in neither direction after cost."
+  - "Session ranges did no better: the London break of the Asian range netted -0.03%, and the US 13-15 UTC break netted -0.24% with 5 of 6 windows negative after a +0.52% W1, so US breaks lean toward reversal."
+  - "The size claims failed: the first break bar's next-4h abs move was only 1.02x that of inside bars (1.30 asked), above 1.2 only in W4/W5. Days still inside the range at 12 UTC were 1.09x more volatile, not quieter, though n_a was only 39."
+  - "The close location at the end of the opening range held: rank_corr was 0.108 with the next 20 bars, five windows ran from 0.05 to 0.19, and W1 was flat at -0.0002."
+  - "Breaks aligned with the prior UTC day's direction beat counter-trend breaks by 0.24% at 8 bars (0.20% asked). Five of 6 windows were positive, but W2 was -0.44%."
+  - "That validated edge did not pay: at full size the fold lost -42.8% over 320 trades, with a 54% worst drawdown and W1 alone at -44%. Cost drag was 478% of gross in W5, so gross edge per trade sits near the 0.15% cost."
+  - "Vol-targeting cut the worst drawdown to 8.2% and turned the total to +4.0%, but the median window Sharpe stayed at -0.31 and only 3 of 6 windows were positive."
+  - "The volume-confirmed break nearly held: the whole-fold effect was 0.24% against 0.20% asked, but only 4 of 6 windows were positive, swinging from -1.48% to +1.25%."
+  - "Weekend breaks continued better than weekday breaks (mean_diff -0.18%, 4 of 6 windows negative), which is the opposite of the belief."
+next_claim:
+  id: or_location_with_prior_day
+  belief: When the first four UTC hours close near one edge of their range in the same direction as the prior day's move, both the early flow and the running trend agree, and the next 20 hours drift that way by more than the cost.
+  claim:
+    when: the 03-04 UTC bar, when its close sits in the outer 20% of the 00-04 UTC range and the side matches the sign of the prior UTC day's return
+    then: the 20-hour forward return goes the way of the range side, net of the 0.15% round trip
+    compared_to: the cost alone (net_return)
+    measure: net_return
+    horizon_bars: 20
+    direction: positive
+    min_effect: 0.002
+    code: |
+      t = df.index - pd.Timedelta(hours=1)
+      day = pd.Series(t.normalize(), index=df.index)
+      hod = pd.Series(t.hour, index=df.index)
+      inor = hod < 4
+      or_hi = df.high.where(inor).groupby(day).transform('max')
+      or_lo = df.low.where(inor).groupby(day).transform('min')
+      width = or_hi - or_lo
+      loc = (df.close - or_lo) / width - 0.5
+      dc = df.close.groupby(day).last()
+      prev = day.map(dc.pct_change().shift(1))
+      signal = pd.Series(np.sign(loc).replace(0, 1).fillna(1), index=df.index)
+      a = (hod == 3) & (width > 0) & (loc.abs() >= 0.3) & prev.notna() & (np.sign(prev) == signal)
+      b = (hod == 3) & (width > 0) & ~a
+  why_no_lookahead: The range high and low come only from the 00-04 UTC bars, all closed by the 04:00 decision bar, and the prior-day return uses closes from earlier days.
+  how_it_trades: At the 04:00 UTC close, go long (short) if price closed in the top (bottom) fifth of the opening range and yesterday was up (down), then exit 20 hours later; this is one trade per day at most.
+why: The only signals that held were the opening-range close location (rank_corr 0.108 at 20 bars) and prior-day alignment (+0.24%), and break-timed entries lost to cost. This claim combines the two at a single 04:00 entry with a longer 20-hour hold, and sets min_effect at 0.20% net (about 0.35% gross) as the honest test of whether it pays.

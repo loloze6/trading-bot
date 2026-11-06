@@ -1,0 +1,31 @@
+brief: real_01b_daily_breadth_ltc.md
+source: analyst round 1
+ideas:
+- id: vol_regime_premium
+  belief: When a coin's recent realized volatility is high relative to its own yearly
+    norm, risk-bearing capacity is scarce and holders demand a premium, so forward
+    multi-week returns are higher after high-volatility stretches.
+  claim:
+    when: every bar with a 30-day realized volatility and a 250-day median of it
+    then: the 20-day forward return rises with the log ratio of 30-day volatility
+      to its 250-day median
+    compared_to: rank correlation across all such bars (no baseline set)
+    measure: rank_corr
+    horizon_bars: 20
+    direction: positive
+    min_effect: 0.1
+    code: 'vol30 = ret.rolling(30, min_periods=25).std()
+
+      feature = np.log(vol30 / vol30.rolling(250, min_periods=200).median())
+
+      a = feature.notna() & np.isfinite(feature)
+
+      b = ~a
+
+      signal = np.sign(feature).replace(0, 1.0)
+
+      '
+  why_no_lookahead: The feature uses only returns up to and including the bar's close,
+    through trailing rolling windows, with no forward shift.
+  how_it_trades: Hold long when 30-day volatility is above its yearly median and stay
+    flat or short otherwise, rebalancing daily so trades are rare.

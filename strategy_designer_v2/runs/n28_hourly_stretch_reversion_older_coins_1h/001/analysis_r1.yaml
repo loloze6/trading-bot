@@ -1,0 +1,33 @@
+run: n28_hourly_stretch_reversion_older_coins_1h_fold_C
+observations:
+  - "The plain 24h-VWAP fade lost money: net -0.224% on LTC with 5 of 6 windows negative, and +0.0007% on XRP with windows split 2 positive and 4 negative, against a required +0.20%."
+  - "The 48h range-edge fade was negative on both coins (LTC -0.350%, XRP -0.200%), and LTC was negative in 5 of 6 windows, so the range midpoint did not act as a magnet."
+  - "The one-week EMA fade was the worst return claim (LTC -0.689%, XRP -1.615%) on only 55-56 events, with window values ranging from -5.9% to +4.6%."
+  - "Stretch plus a volume burst, traded as continuation, nearly held: it beat the +0.20% hurdle on both coins (LTC +0.224%, XRP +0.453%), but only 4 of 6 windows were positive on each, with windows 1 and 4 negative on both."
+  - "Calm-regime stretches reverted less than high-volatility ones, the opposite of the belief: mean_diff was -0.502% on LTC and -1.031% on XRP, each with 5 of 6 windows negative."
+  - "The wick-exhaustion belief was backwards: fading a stretched bar that closed off its extreme had a lower hit rate than fading one that closed at its extreme (LTC -0.038, XRP -0.066), with 5 of 6 windows negative on both coins."
+  - "Stretch size ranked against reversion: the next-day rank correlation was -0.106 on LTC and -0.095 on XRP, but windows were mixed in sign on both coins (4 negative, 2 positive each)."
+  - "A |z|>3 stretch does precede larger 6h moves on every one of the 12 windows, but the ratio of 1.18 on LTC and 1.345 on XRP fell short of the 1.35 asked."
+  - "No anchor, horizon, hour or volume condition gave a fade that paid on both coins; every sign-consistent effect in this run pointed toward continuation or toward less reversion."
+next_claim:
+  id: high_vol_regime_stretch_continues
+  belief: On LTC and XRP, a stretch from the 24h VWAP that forms while hourly volatility is well above its monthly norm belongs to a trend and keeps going for the next several hours.
+  claim:
+    when: bars where the close is more than 2.5 recent-volatility units from the 24h VWAP and 48h volatility is above 1.5 times its 720h median, one event per 8 bars
+    then: the close 8 bars later is further in the direction of the stretch, by more than cost
+    compared_to: nothing (net return after the 0.15% round-trip cost)
+    measure: net_return
+    horizon_bars: 8
+    direction: positive
+    min_effect: 0.003
+    code: |
+      vol = ret.rolling(48).std()
+      vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+      z = (df.close / vwap - 1) / vol
+      vmed = vol.rolling(720).median()
+      a = spaced((z.abs() > 2.5) & (vol > 1.5 * vmed), 8)
+      b = ~a
+      signal = np.sign(z).fillna(0)
+  why_no_lookahead: The VWAP, the volatility and its 720h median are all trailing windows ending at the bar's close, and no forward shift is used.
+  how_it_trades: At the close of a qualifying bar, enter in the direction of the stretch (long if above VWAP, short if below), hold 8 hours, then exit.
+why: This is not a threshold or window change of an earlier claim. The high-volatility stretches were only the comparison group in the regime claim and were never tested as a stand-alone profit trade. They reverted less on both coins in 5 of 6 windows, and that agrees with the volume-burst continuation and the negative rank correlation. The +0.30% net hurdle is set above the +0.22% to +0.45% that continuation showed, so a pass would not be luck.

@@ -1,0 +1,679 @@
+brief: n38_daily_range_cycles_1d.md
+fold: C
+symbols:
+- BTCUSD
+- ETHUSD
+- LTCUSD
+bar_size: 1d
+claims:
+- id: wide_range_day_reverts
+  belief: A day that prints the widest range in 10 days is a liquidation or stop-run
+    day, and its move partly retraces over the next few days.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.006
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.010857026148170502
+      n_a: 65
+      n_b: 666
+      windows:
+      - -0.010663893437191931
+      - -0.038556814251007994
+      - 0.007977003073799133
+      - 0.0020703217579048847
+      - 0.002098989292499941
+      - -0.033070166419550955
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.01593758513351116
+      n_a: 83
+      n_b: 647
+      windows:
+      - 0.004482746180831453
+      - -0.042317395456608536
+      - -0.014531803527609969
+      - -0.0007291999323988073
+      - 0.0010797937889940176
+      - -0.06529939424532802
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.00997131457944419
+      n_a: 75
+      n_b: 655
+      windows:
+      - 0.008287387525085368
+      - 0.0027973174599607515
+      - -0.007220780248289751
+      - -0.0006651115716804314
+      - -0.04781844383690756
+      - -0.021949805228989854
+      verdict: fail
+      why: null
+  code: 'rng = (df.high - df.low) / df.close.shift(1)
+
+    a = (rng >= rng.rolling(10).max()) & rng.notna()
+
+    a = a.fillna(False)
+
+    b = ~a
+
+    signal = pd.Series(np.where(ret > 0, -1, 1), index=df.index)
+
+    '
+- id: wide_range_close_location_continues
+  belief: A widest-range day that closes at an extreme of its range shows one side
+    in control, and that side keeps pushing for a few days.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.006
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.008421378284638948
+      n_a: 32
+      n_b: 699
+      windows:
+      - -0.03462153926774246
+      - 0.032830940726825686
+      - -0.06703715611553199
+      - -0.0036636837396095898
+      - 0.0023286327180700554
+      - 0.011842876241276402
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.02071768439955034
+      n_a: 37
+      n_b: 693
+      windows:
+      - 0.03227840249510806
+      - 0.002902204926437565
+      - 0.027403912253299897
+      - -0.021483741763462533
+      - 0.057296565092733176
+      - 0.02589765077809917
+      verdict: pass
+      why: null
+    LTCUSD:
+      effect: 0.013253377158308469
+      n_a: 29
+      n_b: 701
+      windows:
+      - 0.0064968356126113725
+      - -0.01662488669418911
+      - 0.01496086887018891
+      - 0.008072660692882549
+      - 0.1333404125682053
+      - -0.004604350083147453
+      verdict: fail
+      why: null
+  code: 'rng = (df.high - df.low) / df.close.shift(1)
+
+    clv = (df.close - df.low) / (df.high - df.low).replace(0, np.nan)
+
+    wide = (rng >= rng.rolling(10).max()) & rng.notna()
+
+    a = (wide & ((clv >= 0.8) | (clv <= 0.2))).fillna(False)
+
+    b = ~a
+
+    signal = pd.Series(np.where(clv >= 0.5, 1, -1), index=df.index)
+
+    '
+- id: expansion_persists_in_size
+  belief: Volatility clusters, so the widest range in 20 days is followed by larger-than-usual
+    moves, whatever their direction.
+  measure: abs_ratio
+  horizon_bars: 5
+  direction: above
+  min_effect: 1.25
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 1.05274762690814
+      n_a: 33
+      n_b: 698
+      windows:
+      - 0.8858469461132535
+      - 1.6977834688894622
+      - 0.9688998044856371
+      - 0.8925385343662924
+      - 0.6475493963771561
+      - 1.6159078497233172
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 1.1076781507053959
+      n_a: 41
+      n_b: 689
+      windows:
+      - 0.6789827155205362
+      - 1.2468034092395586
+      - 1.94019337353718
+      - 0.9879847891981355
+      - 1.1599376991188564
+      - 1.2106909311320597
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.8947495117066057
+      n_a: 38
+      n_b: 692
+      windows:
+      - 0.6953227137083832
+      - 0.7578916615312472
+      - 1.1666125874280653
+      - 0.8491911093916208
+      - 1.1792878932172026
+      - 0.8266714726386097
+      verdict: fail
+      why: null
+  code: 'rng = (df.high - df.low) / df.close.shift(1)
+
+    a = ((rng >= rng.rolling(20).max()) & rng.notna()).fillna(False)
+
+    b = ~a
+
+    signal = pd.Series(np.where(ret > 0, 1, -1), index=df.index)
+
+    '
+- id: contraction_persists_quiet
+  belief: Narrow days cluster, so the narrowest range in 7 days is followed by a quiet
+    next day rather than a burst (the opposite of the failed compression-before-a-move
+    idea).
+  measure: abs_ratio
+  horizon_bars: 1
+  direction: below
+  min_effect: 0.85
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 1.0380689219338315
+      n_a: 117
+      n_b: 614
+      windows:
+      - 1.4117470887030938
+      - 0.4784370268408146
+      - 1.1275791845985426
+      - 1.0889957148619964
+      - 0.7432180378604212
+      - 0.7496230747643337
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 1.034097221730187
+      n_a: 138
+      n_b: 592
+      windows:
+      - 1.073669660565663
+      - 0.6765343595262965
+      - 1.3237570691922418
+      - 1.2410082567096299
+      - 0.8761266274588121
+      - 1.0096369144352983
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.8675385846506266
+      n_a: 121
+      n_b: 609
+      windows:
+      - 1.3776051293072866
+      - 0.6351501385332219
+      - 1.0185556914875014
+      - 0.8488665674031585
+      - 0.521921931129783
+      - 0.6753693781873253
+      verdict: fail
+      why: null
+  code: 'rng = (df.high - df.low) / df.close.shift(1)
+
+    a = ((rng <= rng.rolling(7).min()) & rng.notna()).fillna(False)
+
+    b = ~a
+
+    signal = pd.Series(np.where(ret > 0, 1, -1), index=df.index)
+
+    '
+- id: signed_range_ratio_predicts_drift
+  belief: Range expansion carries information in proportion to its size, signed by
+    where the close sits, so a wide day closing high predicts more upside than a narrow
+    day closing high.
+  measure: rank_corr
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.05
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.004248146227919979
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.043782936903574994
+      - -0.051420754012444614
+      - 0.021920264152403557
+      - -0.14242650047419045
+      - 0.023643435187908308
+      - -0.10388102823386776
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.031995088781210275
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.12968238142714714
+      - 0.012672616903651762
+      - -0.009060891772323328
+      - -0.12015986993632297
+      - -0.006625448993956135
+      - 0.013381744076562925
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.01060751006635275
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.03301523999430281
+      - 0.022546353359482654
+      - 0.021146380157614372
+      - -0.10662511854762224
+      - -0.03434328747839707
+      - -0.04881918200461751
+      verdict: fail
+      why: null
+  code: 'rng = (df.high - df.low) / df.close.shift(1)
+
+    clv = (df.close - df.low) / (df.high - df.low).replace(0, np.nan)
+
+    feature = (rng / rng.rolling(20).mean()) * (2 * clv - 1)
+
+    a = feature.notna()
+
+    b = ~a
+
+    signal = pd.Series(np.where(feature > 0, 1, -1), index=df.index)
+
+    '
+- id: narrow_day_is_trend_pause
+  belief: A narrowest-range day inside an established trend is a rest, not a reversal,
+    and the prior 20-day trend resumes.
+  measure: net_return
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.027196641037078674
+      n_a: 58
+      n_b: 58
+      windows:
+      - 0.0760872032116687
+      - 0.011920668902580913
+      - -0.01173711292501278
+      - 0.025796871296569587
+      - 0.07459368600869977
+      - -0.007313053785963183
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.030099873395769257
+      n_a: 59
+      n_b: 59
+      windows:
+      - 0.055529659521635945
+      - 0.0003753675267708905
+      - 0.031083463532585502
+      - 0.056399044440891125
+      - 0.06649806190137723
+      - -0.03470342673445005
+      verdict: pass
+      why: null
+    LTCUSD:
+      effect: 0.006118174193639496
+      n_a: 53
+      n_b: 53
+      windows:
+      - 0.030820735042067116
+      - 0.03540068982025379
+      - 0.043095990213394
+      - -0.031635909389679626
+      - -0.05523752525666499
+      - 0.009400170594136783
+      verdict: fail
+      why: null
+  code: 'rng = (df.high - df.low) / df.close.shift(1)
+
+    nr = ((rng <= rng.rolling(7).min()) & rng.notna()).fillna(False)
+
+    trend = df.close / df.close.shift(20) - 1
+
+    a = spaced(nr & trend.notna(), 5)
+
+    b = ~a
+
+    signal = pd.Series(np.where(trend > 0, 1, -1), index=df.index)
+
+    '
+- id: wide_down_day_capitulation_long
+  belief: A 20-day widest-range down day that closes near its low marks forced selling,
+    and buyers step in over the following week.
+  measure: net_return
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.07401035617826583
+      n_a: 8
+      n_b: 8
+      windows:
+      - 0.051838553008245525
+      - -0.053019362219817956
+      - -0.029370470039469077
+      - -0.1479222066151506
+      - -0.09095414981266842
+      - -0.12171364491229758
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.10271677932460824
+      n_a: 10
+      n_b: 10
+      windows:
+      - -0.07520666666666659
+      - -0.07632704256784441
+      - 0.03749834274560587
+      - -0.3238773075191355
+      - -0.11963926731689462
+      - -0.1772300547655321
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.023935473403206193
+      n_a: 12
+      n_b: 12
+      windows:
+      - 0.16869230769230775
+      - -0.0946610875312597
+      - 0.03677290243475212
+      - 0.08162883007089249
+      - -0.0019210526315789887
+      - 0.040926098574698366
+      verdict: fail
+      why: null
+  code: 'rng = (df.high - df.low) / df.close.shift(1)
+
+    clv = (df.close - df.low) / (df.high - df.low).replace(0, np.nan)
+
+    wide = (rng >= rng.rolling(20).max()) & rng.notna()
+
+    a = spaced((wide & (ret < 0) & (clv <= 1/3)).fillna(False), 5)
+
+    b = ~a
+
+    signal = pd.Series(1, index=df.index)
+
+    '
+- id: expansion_regime_reverts_move
+  belief: When several recent days are wide (3-day mean range well above its 20-day
+    mean), the multi-day move is overextended and partly retraces.
+  measure: mean_diff
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.008
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.024363010440398222
+      n_a: 54
+      n_b: 677
+      windows:
+      - 0.05817748699529585
+      - -0.07392309904309843
+      - 0.036463777859447793
+      - -0.03111307911443334
+      - -0.0014301494073440738
+      - -0.049115763305957016
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.005401619890363616
+      n_a: 59
+      n_b: 671
+      windows:
+      - 0.09472685406163309
+      - -0.12035504451613185
+      - -0.04750301890730301
+      - 0.020164242545296248
+      - 0.05415411451819172
+      - 0.12822510046806967
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.0172925167439401
+      n_a: 56
+      n_b: 674
+      windows:
+      - 0.03546271806338395
+      - -0.04628518007140084
+      - -0.03968754109104567
+      - -0.02365780810216732
+      - -0.042538360431605506
+      - 0.05092804757749511
+      verdict: fail
+      why: null
+  code: 'rng = (df.high - df.low) / df.close.shift(1)
+
+    ratio = rng.rolling(3).mean() / rng.rolling(20).mean()
+
+    r3 = df.close / df.close.shift(3) - 1
+
+    a = (ratio >= 1.6).fillna(False)
+
+    b = ~a
+
+    signal = pd.Series(np.where(r3 > 0, -1, 1), index=df.index)
+
+    '
+- id: first_wide_after_quiet_continues
+  belief: The first wide day after a long quiet spell (an NR7 within the prior 5 days
+    and now the widest in 10) reveals a fresh order flow imbalance, and its direction
+    holds the next day.
+  measure: hit_rate
+  horizon_bars: 1
+  direction: positive
+  min_effect: 0.06
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.11190303907380605
+      n_a: 40
+      n_b: 691
+      windows:
+      - -0.11607142857142855
+      - 0.19517543859649122
+      - 0.04067796610169494
+      - 0.21177944862155385
+      - 0.14942528735632177
+      - 0.24786324786324782
+      verdict: pass
+      why: null
+    ETHUSD:
+      effect: -0.004705882352941171
+      n_a: 50
+      n_b: 680
+      windows:
+      - 0.04789550072568938
+      - -0.2729885057471264
+      - 0.038461538461538436
+      - -0.08181818181818179
+      - 0.2675438596491228
+      - -0.13675213675213677
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.00041109969167524296
+      n_a: 35
+      n_b: 695
+      windows:
+      - -0.16964285714285715
+      - -0.1577639751552795
+      - 0.1508474576271186
+      - 0.15172413793103445
+      - 0.00877192982456143
+      - 0.20833333333333331
+      verdict: fail
+      why: null
+  code: 'rng = (df.high - df.low) / df.close.shift(1)
+
+    nr7 = ((rng <= rng.rolling(7).min()) & rng.notna()).astype(float)
+
+    recent_nr = nr7.shift(1).rolling(5).max() > 0
+
+    wide = (rng >= rng.rolling(10).max()) & rng.notna()
+
+    a = (wide & recent_nr).fillna(False)
+
+    b = ~a
+
+    signal = pd.Series(np.where(ret > 0, 1, -1), index=df.index)
+
+    '
+- id: contraction_regime_trend_edge
+  belief: The trend-pause result may come from the 20-day trend itself rather than
+    from the narrow days; if contraction matters, the trend should pay more after
+    a multi-day contraction regime than on other bars.
+  measure: mean_diff
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.008
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.005905500829429287
+      n_a: 29
+      n_b: 588
+      windows:
+      - -0.020666430907618376
+      - -0.0371702563789818
+      - -0.03583152048008249
+      - 0.11155191334829767
+      - -0.05516016641383767
+      - -0.04276144283862918
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.0056100434954769515
+      n_a: 30
+      n_b: 578
+      windows:
+      - -0.010504149575410595
+      - 0.000895508268651448
+      - -0.01362254983990921
+      - -0.00806855250386481
+      - -0.07567927675260028
+      - 0.03917131492682588
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.011965955644347695
+      n_a: 26
+      n_b: 580
+      windows:
+      - -0.06682911445760606
+      - -0.11549221279922744
+      - 0.08335173946091994
+      - 0.08180256908175192
+      - 0.002530053692296433
+      - 0.11793490417066059
+      verdict: fail
+      why: null
+  code: 'rng = (df.high - df.low) / df.close.shift(1)
+
+    ratio = rng.rolling(5).mean() / rng.rolling(20).mean()
+
+    trend = df.close / df.close.shift(20) - 1
+
+    valid = (ratio.notna() & trend.notna()).fillna(False)
+
+    contr = (valid & (ratio <= 0.75)).fillna(False)
+
+    a = spaced(contr, 3)
+
+    b = valid & ~contr
+
+    signal = pd.Series(np.where(trend > 0, 1, -1), index=df.index)
+
+    '
+- id: range_regime_size_persists
+  belief: Volatility clusters at the regime level rather than on single extreme days,
+    so a 10-day stretch of wide ranges relative to the last 60 days is followed by
+    bigger 5-day moves than a 10-day stretch of narrow ranges.
+  measure: abs_ratio
+  horizon_bars: 5
+  direction: above
+  min_effect: 1.3
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 1.2362874079076693
+      n_a: 136
+      n_b: 223
+      windows:
+      - 1.3065920992114954
+      - 2.7863774954032094
+      - 0.7273108163086439
+      - 1.3618447824843656
+      - 1.3644621657634717
+      - 1.26209524273543
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 1.1795532684355376
+      n_a: 167
+      n_b: 209
+      windows:
+      - 0.9483181120723204
+      - 1.4973937119382605
+      - 1.0888505333806182
+      - 0.7902304539976288
+      - 1.2575969365211452
+      - 1.4901013191733554
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 1.4959646261423332
+      n_a: 131
+      n_b: 215
+      windows:
+      - 4.486915671654927
+      - 2.1881901143612534
+      - 1.1720559453088546
+      - 1.1660388995732214
+      - 1.682613334590396
+      - 2.104056393048385
+      verdict: pass
+      why: null
+  code: 'rng = (df.high - df.low) / df.close.shift(1)
+
+    reg = rng.rolling(10).mean() / rng.rolling(60).mean()
+
+    a = (reg >= 1.3).fillna(False)
+
+    b = (reg <= 0.8).fillna(False)
+
+    signal = pd.Series(np.where(ret > 0, 1, -1), index=df.index)
+
+    '
+profit: 'none: no return claim passed'

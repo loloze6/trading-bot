@@ -1,0 +1,41 @@
+claim: donchian168_slow_trend_net
+symbol: SOLUSD
+bar_size: 1h
+fold: A
+cost_per_round_trip: 0.0015
+fold_totals:
+  net_return: 4.2092
+  sharpe: 1.49
+  max_drawdown: -0.5148
+  time_in_market: 0.366
+  trades: 89
+windows:
+- window: W1
+  net_return: 0.5642
+  trades: 15
+  max_drawdown: -0.2548
+- window: W2
+  net_return: 0.4326
+  trades: 14
+  max_drawdown: -0.32
+- window: W3
+  net_return: -0.2636
+  trades: 14
+  max_drawdown: -0.5148
+- window: W4
+  net_return: 0.089
+  trades: 16
+  max_drawdown: -0.33
+- window: W5
+  net_return: 0.4422
+  trades: 14
+  max_drawdown: -0.126
+- window: W6
+  net_return: 1.01
+  trades: 14
+  max_drawdown: -0.2554
+checks:
+  net_positive_in_5_of_6: true
+  sharpe_ge_1.0: true
+  max_drawdown_le_20%: false
+verdict: fail

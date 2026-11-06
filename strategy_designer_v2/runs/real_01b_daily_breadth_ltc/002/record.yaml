@@ -1,0 +1,479 @@
+brief: real_01b_daily_breadth_ltc.md
+fold: C
+symbols:
+- BTCUSD
+- LTCUSD
+bar_size: 1d
+claims:
+- id: leverage_effect_vol_asymmetry
+  belief: A sizeable down day forces leveraged longs to cut and pushes margin systems
+    to de-risk, so volatility over the next days is larger after down days than after
+    up days of the same size (the leverage effect).
+  measure: abs_ratio
+  horizon_bars: 5
+  direction: above
+  min_effect: 1.15
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.961412965041408
+      n_a: 87
+      n_b: 105
+      windows:
+      - 0.9186413065635172
+      - 1.1511426117679673
+      - 0.502979524902367
+      - 2.168109527457829
+      - 0.6433908531674499
+      - 1.0689836653580136
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 1.195858500759028
+      n_a: 84
+      n_b: 98
+      windows:
+      - 1.0219485101693842
+      - 1.2961733349242155
+      - 0.9247913805762242
+      - 1.6679463588988008
+      - 0.9695459219520087
+      - 1.5568988414093454
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(1)
+
+    a = (ret < -vol) & vol.notna()
+
+    b = (ret > vol) & vol.notna()
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: attention_volume_overpricing
+  belief: A surge in dollar volume relative to its quarterly norm marks retail attention
+    buying, which overprices the coin, so forward multi-week returns are lower when
+    recent volume is high relative to its norm.
+  measure: rank_corr
+  horizon_bars: 20
+  direction: negative
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.1182045151319005
+      n_a: 731
+      n_b: 731
+      windows:
+      - -0.09823598861032015
+      - 0.14149381569686176
+      - 0.021120584024454735
+      - 0.05378674976290475
+      - 0.17966036725805545
+      - -0.4993550966710091
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.0029971445667298182
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.28587808004557763
+      - 0.2171594172248456
+      - 0.2243360720228038
+      - -0.007485435577834981
+      - 0.13830170411174372
+      - -0.5453367040280662
+      verdict: fail
+      why: null
+  code: 'dv = df.volume * df.close
+
+    feature = np.log(dv.rolling(7).mean() / dv.rolling(90).mean())
+
+    a = feature.notna() & np.isfinite(feature)
+
+    b = ~a
+
+    signal = -np.sign(feature)
+
+    '
+- id: high_anchor_continuation
+  belief: Traders anchor on the long-run high and sell into it too early, so a coin
+    trading within 5% of its 250-day high underreacts and keeps drifting up over the
+    next weeks.
+  measure: mean_diff
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.02
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.2155710995907189
+      n_a: 86
+      n_b: 645
+      windows:
+      - null
+      - null
+      - 0.021047656017956537
+      - null
+      - 0.10572855629530084
+      - null
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.0014099637780015592
+      n_a: 28
+      n_b: 702
+      windows:
+      - null
+      - null
+      - -0.015178734804889056
+      - null
+      - -0.08378885907118641
+      - -0.4679284270896276
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(250).max()
+
+    a = (df.close >= 0.95 * hi) & hi.notna()
+
+    b = (~a) & hi.notna()
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: max_day_lottery_reversal
+  belief: A coin that recently printed one extreme up day attracts lottery-seeking
+    buyers who overpay for that skew, so the larger the past month's biggest daily
+    gain is relative to normal volatility, the lower the next month's return.
+  measure: rank_corr
+  horizon_bars: 20
+  direction: negative
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.21755379103160752
+      n_a: 731
+      n_b: 731
+      windows:
+      - -0.287631085492048
+      - 0.14200270305101098
+      - 0.14256877894003692
+      - 0.19438422977916267
+      - 0.2862227010022438
+      - -0.6538803833305389
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.02049407856386058
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.44272183449651054
+      - 0.6328476873713325
+      - 0.09685803098115593
+      - 0.36173282753014485
+      - 0.29957934181699225
+      - -0.5984251460706042
+      verdict: fail
+      why: null
+  code: 'feature = ret.rolling(30).max() / ret.rolling(90).std()
+
+    a = feature.notna() & np.isfinite(feature)
+
+    b = ~a
+
+    signal = -np.sign(feature - feature.rolling(250, min_periods=60).median())
+
+    '
+- id: calm_regime_momentum
+  belief: In calm markets, moves are driven by slow allocators who keep adding, so
+    the 10-day trend continues; in turbulent markets, forced flows dominate and the
+    trend does not persist.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.015
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.005164645839856312
+      n_a: 347
+      n_b: 384
+      windows:
+      - -0.004452514842699597
+      - -0.004972723274711183
+      - 0.04740458242288927
+      - 0.025722753542668828
+      - -0.05257179332881699
+      - 0.017859217595842074
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.008594692420313427
+      n_a: 374
+      n_b: 356
+      windows:
+      - 0.1053888201797758
+      - 0.012259188418880847
+      - -0.0288353862849013
+      - 0.011111439098051505
+      - -0.018493741055611454
+      - 0.052525167547674265
+      verdict: fail
+      why: null
+  code: 'vol20 = ret.rolling(20).std()
+
+    med = vol20.rolling(250).median()
+
+    r10 = df.close.pct_change(10)
+
+    ok = med.notna() & r10.notna()
+
+    a = ok & (vol20 < med)
+
+    b = ok & (vol20 >= med)
+
+    signal = np.sign(r10).replace(0, 1.0)
+
+    '
+- id: squeeze_spike_fade
+  belief: An outsized up day is mostly a short squeeze (forced buy-to-cover), not
+    new demand, so once the shorts are flushed the next few days give part of it back.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.013564676831653761
+      n_a: 27
+      n_b: 704
+      windows:
+      - -0.06277787239622669
+      - 0.006247806161282586
+      - 0.03422249711300832
+      - 0.022665997774115057
+      - 0.0047091972420284685
+      - 0.025209991229483187
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.009685209841019705
+      n_a: 31
+      n_b: 699
+      windows:
+      - 0.061162338915739
+      - -0.013147356492008027
+      - -0.004403091804354922
+      - 0.02017482127098863
+      - -0.04977985591097461
+      - 0.001394284995202024
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(1)
+
+    a = (ret > 2.0 * vol) & vol.notna()
+
+    b = (~a) & vol.notna()
+
+    signal = pd.Series(-1.0, index=df.index)
+
+    '
+- id: quiet_pullback_in_uptrend
+  belief: In an uptrend, a pullback on drying volume is profit-taking by weak hands,
+    not distribution; the trend's buyers return and price resumes upward within a
+    week.
+  measure: net_return
+  horizon_bars: 7
+  direction: positive
+  min_effect: 0.006
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.037460301318387845
+      n_a: 14
+      n_b: 14
+      windows:
+      - 0.21229286196301483
+      - 0.008601010101010166
+      - -0.029875191226771104
+      - 0.036536793466346806
+      - 0.05723955084611082
+      - 0.02654037596966513
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.019730647156406097
+      n_a: 22
+      n_b: 22
+      windows:
+      - 0.06307029937877039
+      - null
+      - 0.04016567325380458
+      - -0.057054676517376196
+      - 0.0985634521930858
+      - -0.06518231377853217
+      verdict: fail
+      why: null
+  code: 'up = df.close.pct_change(90) > 0
+
+    pull = df.close <= 0.95 * df.high.rolling(10).max()
+
+    dry = df.volume.rolling(3).mean() < 0.9 * df.volume.rolling(30).mean()
+
+    a = spaced(up & pull & dry, 5)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: illiquidity_premium_timeseries
+  belief: When the coin becomes illiquid relative to its own norm (more price move
+    per dollar traded), liquidity providers demand a premium, so forward returns are
+    higher after illiquid stretches.
+  measure: rank_corr
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.08921334638754734
+      n_a: 731
+      n_b: 731
+      windows:
+      - -0.36151816098340156
+      - 0.6070728733300068
+      - 0.28812346029330205
+      - 0.20893510364449255
+      - -0.5245141612776376
+      - 0.810379074176781
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.1363442973734749
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.6777382139296397
+      - 0.4711735140654482
+      - 0.4072886974242561
+      - 0.8218263107979946
+      - -0.2658804246896283
+      - 0.8630160838890251
+      verdict: pass
+      why: null
+  code: 'dv = (df.volume * df.close).replace(0, np.nan)
+
+    illiq = (ret.abs() / dv).rolling(30, min_periods=25).mean()
+
+    feature = np.log(illiq / illiq.rolling(250, min_periods=200).median())
+
+    a = feature.notna() & np.isfinite(feature)
+
+    b = ~a
+
+    signal = np.sign(feature).replace(0, 1.0)
+
+    '
+- id: vol_regime_premium
+  belief: When a coin's recent realized volatility is high relative to its own yearly
+    norm, risk-bearing capacity is scarce and holders demand a premium, so forward
+    multi-week returns are higher after high-volatility stretches.
+  measure: rank_corr
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.1
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0274448157884308
+      n_a: 731
+      n_b: 731
+      windows:
+      - -0.5741857073407876
+      - 0.4961618658321794
+      - 0.030929563658407613
+      - 0.3686289120715349
+      - 0.2782258997227556
+      - -0.4597902774374121
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.005184754868993011
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.2870958552912691
+      - 0.7087115566996341
+      - 0.10014058892572004
+      - -0.07085760737027501
+      - 0.17433357235618147
+      - -0.723317124762998
+      verdict: fail
+      why: null
+  code: 'vol30 = ret.rolling(30, min_periods=25).std()
+
+    feature = np.log(vol30 / vol30.rolling(250, min_periods=200).median())
+
+    a = feature.notna() & np.isfinite(feature)
+
+    b = ~a
+
+    signal = np.sign(feature).replace(0, 1.0)
+
+    '
+- id: down_volume_share_exhaustion
+  belief: When most of the past month's dollar volume traded on down days, forced
+    and impatient sellers have been absorbed, as in the liquidity-premium result,
+    so the next 20 days return more.
+  measure: rank_corr
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.27178541772204784
+      n_a: 731
+      n_b: 731
+      windows:
+      - 0.21654281547329673
+      - 0.27705611970088
+      - 0.0967741935483871
+      - 0.11765343449397098
+      - -0.2759061664590362
+      - -0.5704105454592356
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.10139028375342758
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.5811636519014386
+      - 0.3073977020761943
+      - 0.1734918935651546
+      - -0.24213521203089006
+      - -0.2776575320285109
+      - -0.47059885723130107
+      verdict: fail
+      why: null
+  code: 'dv = (df.volume * df.close).replace(0, np.nan)
+
+    down = dv.where(ret < 0, 0.0)
+
+    feature = down.rolling(30, min_periods=25).sum() / dv.rolling(30, min_periods=25).sum()
+
+    a = feature.notna() & np.isfinite(feature)
+
+    b = ~a
+
+    signal = np.sign(feature - 0.5).replace(0, 1.0)
+
+    '
+profit: 'none: no return claim passed'

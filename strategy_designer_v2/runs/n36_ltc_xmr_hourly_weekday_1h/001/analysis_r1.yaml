@@ -1,0 +1,29 @@
+run: n36_ltc_xmr_hourly_weekday_1h_foldA
+observations:
+  - The 01-03 UTC block was quieter than the rest of the day, not louder, on both coins. Its abs_ratio was 0.914 on LTC and 0.891 on XMR, below 1 in 5 of 6 windows on each.
+  - Funding-settlement hours (00, 08, 16 UTC) moved no more than the hours around them, with abs_ratio 1.007 on LTC and 1.003 on XMR. Only the last window reached 1.10 or more on each coin.
+  - Clock-normalized volume surprises nearly held. A volatility rise followed them on LTC (1.153, above 1 in all 6 windows) and on XMR (1.056, above 1 in 5 of 6), but both were well short of the 1.30 asked.
+  - The Monday-open weekend reversal had the wrong sign on LTC, at -0.0084 with 5 of 6 windows negative. Weekend moves continued rather than unwound.
+  - Going long at Sunday 18 UTC did worse than at weekday 18 UTC on LTC, by -0.0074 over 12 bars and in all 6 windows. On XMR it was -0.0027 with only 4 of 6 windows negative, so the coins disagree on strength.
+  - The Friday 19 UTC de-risk claim had the wrong sign on both coins, at -0.0026 on LTC and -0.0031 on XMR. XMR's first two windows were positive and LTC's windows split 3 to 3.
+  - Hour-of-day drift did not persist over 30 days. The rank_corr was -0.012 on LTC and -0.011 on XMR, and XMR's windows ranged from -0.046 to +0.035.
+  - US-session momentum into Asia lost money after cost, at -0.0013 net on LTC and -0.0070 on XMR, with XMR's last window at -0.031.
+  - The thin-hours shock reversal had no stable sign. Its hit_rate was -0.001 on LTC and -0.069 on XMR, and XMR's windows ranged from -0.434 to +0.25 on only 50 events.
+next_claim:
+  id: weekday_us_open_vol_block
+  belief: On LTC and XMR, hourly volatility is concentrated in the weekday US-open hours (13-16 UTC), the mirror of the quiet Asia block seen in this run.
+  claim:
+    when: weekday bars (Monday to Friday) whose UTC hour is 13, 14, 15 or 16
+    then: the absolute return over the next bar is larger
+    compared_to: all other bars
+    measure: abs_ratio
+    horizon_bars: 1
+    direction: above
+    min_effect: 1.20
+    code: |
+      a = hour.isin([13, 14, 15, 16]) & (dow < 5)
+      b = ~a
+      signal = pd.Series(1.0, index=df.index)
+  why_no_lookahead: The selector uses only the bar's own UTC hour and weekday, which are known at the bar's close.
+  how_it_trades: Not a direction trade. It sets the volatility regime for sizing, stop width and the hours in which to place resting orders.
+why: The only stable clock structure in this run was volatility (a quiet Asia block on both coins, volume-driven volatility on both), while every drift claim failed or reversed. The natural distinct test is whether that volatility sits in the weekday US-open block on these coins.

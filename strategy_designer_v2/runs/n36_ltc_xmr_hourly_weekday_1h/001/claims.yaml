@@ -1,0 +1,166 @@
+brief: n36_ltc_xmr_hourly_weekday_1h.md
+ideas:
+  - id: asia_early_block_vol
+    belief: On LTC and XMR, which have more Asian-venue flow than BTC, the 01-03 UTC hours carry a higher-volatility regime than the rest of the day.
+    claim:
+      when: bars closing at 01, 02 or 03 UTC, any weekday
+      then: the absolute return of the next bar is larger
+      compared_to: all other hourly bars
+      measure: abs_ratio
+      horizon_bars: 1
+      direction: above
+      min_effect: 1.12
+      code: |
+        a = hour.isin([1, 2, 3])
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The selector uses only the UTC clock hour of the bar's own close time.
+    how_it_trades: Widen stops or run a vol-selling or breakout filter only during the 01-04 UTC block.
+
+  - id: funding_hour_vol_spike
+    belief: Perpetual-swap funding settlements at 00, 08 and 16 UTC cause spot repositioning, so the hour after them moves more than the hours around them.
+    claim:
+      when: bars closing at 00, 08 or 16 UTC
+      then: the next bar's absolute return is larger
+      compared_to: bars closing at neighbouring hours (22, 23, 01, 06, 07, 09, 10, 14, 15, 17, 18 UTC)
+      measure: abs_ratio
+      horizon_bars: 1
+      direction: above
+      min_effect: 1.10
+      code: |
+        a = hour.isin([0, 8, 16])
+        b = hour.isin([22, 23, 1, 6, 7, 9, 10, 14, 15, 17, 18])
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The selector uses only the UTC clock hour of the bar's own close time.
+    how_it_trades: Place breakout or straddle-style entries only around the funding hours.
+
+  - id: monday_open_weekend_reversal
+    belief: Weekend moves on thin books in small coins are partly liquidity noise and are unwound once weekday flow returns early Monday UTC.
+    claim:
+      when: the bar closing Monday 00 UTC, betting against the sign of the prior 48-hour (weekend) return
+      then: the 12-bar forward return goes against the weekend move
+      compared_to: bars closing at 00 UTC on Wednesday to Friday, betting against their own prior 48-hour return
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.003
+      code: |
+        r48 = df.close / df.close.shift(48) - 1
+        a = (dow == 0) & (hour == 0) & r48.notna()
+        b = dow.isin([2, 3, 4]) & (hour == 0) & r48.notna()
+        signal = -np.sign(r48).replace(0, 1)
+    why_no_lookahead: The 48-hour return ends at the selected bar's close, and the clock is the bar's own time.
+    how_it_trades: At Monday 00 UTC, take the opposite side of the weekend move and hold 12 hours.
+
+  - id: thin_hours_shock_reversal
+    belief: Large hourly moves in thin hours (03-06 UTC on weekdays, or any weekend hour) are order-book shocks that revert, unlike large moves in liquid hours.
+    claim:
+      when: bars whose absolute return exceeds 3 times the trailing 168-bar standard deviation and that close at 03-06 UTC or on Saturday or Sunday, betting on reversal
+      then: the next 3 bars move against the shock more often
+      compared_to: equally large shock bars in the other hours on weekdays
+      measure: hit_rate
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.06
+      code: |
+        sd = ret.rolling(168).std().shift(1)
+        big = ret.abs() > 3 * sd
+        thin = hour.isin([3, 4, 5, 6]) | (dow >= 5)
+        a = spaced(big & thin, 3)
+        b = spaced(big & ~thin, 3)
+        signal = -np.sign(ret).replace(0, 1)
+    why_no_lookahead: The volatility scale is shifted by one bar, and the shock is the bar's own close-to-close return.
+    how_it_trades: Fade 3-sigma hourly bars that occur in thin hours, and hold 3 hours.
+
+  - id: same_hour_drift_persistence
+    belief: Recurring clock flows (an exchange's daily rebalancing, OTC desk hours) give each UTC hour a persistent drift sign over weeks, on these coins specifically.
+    claim:
+      when: all bars that have a 30-day same-hour history
+      then: the next bar's return rises with the average return of the same UTC hour over the prior 30 days
+      compared_to: not applicable (rank correlation)
+      measure: rank_corr
+      horizon_bars: 1
+      direction: positive
+      min_effect: 0.03
+      code: |
+        feature = sum(ret.shift(24 * k) for k in range(1, 31)) / 30
+        a = feature.notna()
+        b = ~a
+    why_no_lookahead: The feature uses only returns at least 24 bars before the selected bar.
+    how_it_trades: Each hour, go long or short the next hour according to the sign of that hour's trailing 30-day mean return.
+
+  - id: sunday_evening_preweek_drift
+    belief: Sunday evening UTC (before the Asia Monday and CME reopen) sees positioning bids into the new week, which gives a positive drift into Monday morning.
+    claim:
+      when: the bar closing Sunday 18 UTC, long
+      then: the 12-bar forward return (to Monday 06 UTC) is higher
+      compared_to: bars closing at 18 UTC from Monday to Thursday, long
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.003
+      code: |
+        a = (dow == 6) & (hour == 18)
+        b = dow.isin([0, 1, 2, 3]) & (hour == 18)
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The selector uses only the weekday and hour of the bar's own close time.
+    how_it_trades: Buy at Sunday 18 UTC close and sell at Monday 06 UTC.
+
+  - id: us_session_into_asia_momentum
+    belief: A strong US-session move in a small coin is slow to be absorbed and continues through the Asia session, enough to pay the cost.
+    claim:
+      when: the bar closing at 00 UTC, when the 14-24 UTC return exceeds 2 times the trailing hourly standard deviation scaled to 10 hours, in the direction of that move
+      then: the 8-bar forward return, net of the round-trip cost, is positive
+      compared_to: not applicable (net return)
+      measure: net_return
+      horizon_bars: 8
+      direction: positive
+      min_effect: 0.001
+      code: |
+        us = df.close / df.close.shift(10) - 1
+        sd = ret.rolling(240).std().shift(1) * np.sqrt(10)
+        a = (hour == 0) & (us.abs() > 2 * sd)
+        b = ~a
+        signal = np.sign(us).replace(0, 1)
+    why_no_lookahead: The session return ends at the selected bar's close, and the volatility scale is shifted by one bar.
+    how_it_trades: At 00 UTC, enter in the direction of a strong US-session move and exit at 08 UTC.
+
+  - id: clock_normalized_volume_surprise
+    belief: Volume that is unusual for that specific hour of the day signals news or informed flow, and a volatility regime follows over the next hours.
+    claim:
+      when: bars whose volume is more than 3 times the average volume of the same UTC hour over the prior 20 days (one event per 4 bars)
+      then: the absolute 4-bar forward return is larger
+      compared_to: all other bars
+      measure: abs_ratio
+      horizon_bars: 4
+      direction: above
+      min_effect: 1.30
+      code: |
+        vb = sum(df.volume.shift(24 * k) for k in range(1, 21)) / 20
+        a = spaced(df.volume > 3 * vb, 4)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The baseline volume uses only bars at least 24 hours earlier, and the bar's own volume is known at its close.
+    how_it_trades: Turn on a breakout or volatility strategy for 4 hours after a same-hour volume surprise.
+
+  - id: friday_us_afternoon_derisk
+    belief: Traders cut exposure to small, illiquid coins before the weekend, so Friday's late US session drifts down.
+    claim:
+      when: the bar closing Friday 19 UTC, short
+      then: the 6-bar forward return (to Saturday 01 UTC) is lower
+      compared_to: bars closing at 19 UTC from Monday to Thursday, short
+      measure: mean_diff
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.002
+      code: |
+        a = (dow == 4) & (hour == 19)
+        b = dow.isin([0, 1, 2, 3]) & (hour == 19)
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: The selector uses only the weekday and hour of the bar's own close time.
+    how_it_trades: Short at Friday 19 UTC close and cover at Saturday 01 UTC.
+notes: >
+  Ideas avoid the tried Europe-open block, the weekend and US-open volatility claims, and the Friday-long daily claim.
+  friday_us_afternoon_derisk is a short intraday Friday claim, which contradicts the tried Friday-long daily claim on purpose.
+  Clock hours are bar-close hours in UTC.
+  XMR's Kraken liquidity may be thin for the low-count weekly events (Monday 00, Sunday 18, Friday 19). Their minimum-bar count depends on the fold length.

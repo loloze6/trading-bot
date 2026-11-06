@@ -12,11 +12,25 @@ Either one new claim in the exact format of `CLAIM_FORMAT.md` (measure, horizon_
 - Only bars of the brief's symbol and bar size. Same code rules as the ideas step.
 
 ## Output
-A YAML file:
+A YAML file. `next_claim` is either the word `none` or one idea with the nested `claim:` block exactly as below (runs n12 and n15 wrote flat fields and were refused):
 ```yaml
 run: <the try folder>
 observations:
   - <sentence with its number>
-next_claim: <one idea in CLAIM_FORMAT, or none>
+next_claim:
+  id: <short_snake_case>
+  belief: <one sentence>
+  claim:
+    when: <plain words>
+    then: <plain words>
+    compared_to: <plain words>
+    measure: <mean_diff | abs_ratio | rank_corr | hit_rate | net_return>
+    horizon_bars: <integer>
+    direction: <positive | negative | above | below>
+    min_effect: <number>
+    code: |
+      <pandas lines defining a, b and signal or feature>
+  why_no_lookahead: <one line>
+  how_it_trades: <one line>
 why: <one line: why this claim, or why none>
 ```

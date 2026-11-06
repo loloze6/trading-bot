@@ -1,0 +1,140 @@
+brief: n34_hour_of_day_drift_hourly_1h.md
+ideas:
+  - id: benchmark_fix_runup_weekday_19_21
+    belief: On weekdays, US spot ETF creations and fund rebalancing are priced against the CF Benchmarks reference rate fixed around 15:00-16:00 New York time, so buying into that window pushes spot up from 19:00 to 21:00 UTC.
+    claim:
+      when: Weekday bars closing at 19:00 UTC
+      then: The 2-hour return from 19:00 to 21:00 UTC is higher
+      compared_to: All other weekday bars, over the same 2-hour horizon
+      measure: mean_diff
+      horizon_bars: 2
+      direction: positive
+      min_effect: 0.0008
+      code: |
+        a = (hour == 19) & (dow < 5)
+        b = (hour != 19) & (dow < 5)
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The selector uses only the UTC hour and weekday of the bar's own close time.
+    how_it_trades: Long at the 19:00 UTC close on weekdays, exit at the 21:00 UTC close.
+  - id: post_fix_fade_weekday_21_24
+    belief: Flow that is forced into the benchmark-fixing window is temporary, so after the fix the price gives back the move made from 19:00 to 21:00 UTC.
+    claim:
+      when: Weekday bars closing at 21:00 UTC, signed against the 19:00-21:00 UTC return
+      then: The next 3 hours move against the 19:00-21:00 move
+      compared_to: All other bars, with the same fade-the-last-2-hours signal
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.0008
+      code: |
+        r2 = df.close / df.close.shift(2) - 1
+        a = (hour == 21) & (dow < 5)
+        b = ~a
+        signal = -np.sign(r2)
+    why_no_lookahead: The signal uses the close at 21:00 and the close 2 bars earlier; the hour and weekday come from the bar's own timestamp.
+    how_it_trades: At the 21:00 UTC weekday close, take the side opposite to the 19:00-21:00 move and hold until 00:00 UTC.
+  - id: pre_funding_hour_selloff
+    belief: Perpetual swap longs reduce exposure just before the 8-hourly funding settlement at 00:00, 08:00 and 16:00 UTC, and hedgers unwind spot alongside, so spot drifts down in the hour into funding.
+    claim:
+      when: Bars closing at 23:00, 07:00 and 15:00 UTC (all days)
+      then: The next 1-hour return, which ends at the funding timestamp, is lower
+      compared_to: All other bars
+      measure: mean_diff
+      horizon_bars: 1
+      direction: positive
+      min_effect: 0.0004
+      code: |
+        a = hour.isin([23, 7, 15])
+        b = ~a
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: The selector uses only the UTC hour of the bar's own close time.
+    how_it_trades: Short (or stay out of a long) for the single hour before each funding timestamp.
+  - id: daily_open_dca_00_02
+    belief: Scheduled recurring buys from exchange auto-invest and DCA bots cluster at the 00:00 UTC day roll, which produces a positive drift in the first two hours of the UTC day.
+    claim:
+      when: Bars closing at 00:00 UTC (all days)
+      then: The 2-hour return from 00:00 to 02:00 UTC is higher
+      compared_to: All other bars, over the same 2-hour horizon
+      measure: mean_diff
+      horizon_bars: 2
+      direction: positive
+      min_effect: 0.0008
+      code: |
+        a = hour == 0
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The selector uses only the UTC hour of the bar's own close time.
+    how_it_trades: Long at the 00:00 UTC close, exit at the 02:00 UTC close.
+  - id: asia_retail_morning_weekday_01_05
+    belief: Weekday morning retail buying in Korea and Japan, which is unconditional and not a continuation of the prior move, lifts prices from 01:00 to 05:00 UTC.
+    claim:
+      when: Weekday bars closing at 01:00 UTC
+      then: The 4-hour return from 01:00 to 05:00 UTC is higher
+      compared_to: All other weekday bars, over the same 4-hour horizon
+      measure: mean_diff
+      horizon_bars: 4
+      direction: positive
+      min_effect: 0.0010
+      code: |
+        a = (hour == 1) & (dow < 5)
+        b = (hour != 1) & (dow < 5)
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The selector uses only the UTC hour and weekday of the bar's own close time.
+    how_it_trades: Long at the 01:00 UTC weekday close, exit at the 05:00 UTC close.
+  - id: europe_open_distribution_weekday_07_10
+    belief: European desks open their books and de-risk the overnight Asian inventory, which produces a negative drift from 07:00 to 10:00 UTC on weekdays.
+    claim:
+      when: Weekday bars closing at 07:00 UTC
+      then: The 3-hour return from 07:00 to 10:00 UTC is lower
+      compared_to: All other weekday bars, over the same 3-hour horizon
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.0010
+      code: |
+        a = (hour == 7) & (dow < 5)
+        b = (hour != 7) & (dow < 5)
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: The selector uses only the UTC hour and weekday of the bar's own close time.
+    how_it_trades: Short at the 07:00 UTC weekday close, cover at the 10:00 UTC close.
+  - id: cme_reopen_weekend_fade_sun_22_04
+    belief: When CME bitcoin futures reopen on Sunday evening (22:00 or 23:00 UTC), institutional arbitrage pulls spot back toward the Friday CME close, so the move made over the weekend partly reverses in the hours after the reopen.
+    claim:
+      when: Sunday bars closing at 22:00 UTC, signed against the return since Friday's 21:00 UTC close
+      then: The next 6 hours move against the weekend move
+      compared_to: All other bars, with the same fade-the-weekend signal
+      measure: mean_diff
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.0015
+      code: |
+        fri = df.close.where((dow == 4) & (hour == 21)).ffill()
+        wk = df.close / fri - 1
+        a = (dow == 6) & (hour == 22) & wk.notna()
+        b = ~a
+        signal = -np.sign(wk).fillna(0)
+    why_no_lookahead: The Friday 21:00 close is carried forward from past bars only, and the signal uses the current close.
+    how_it_trades: At the Sunday 22:00 UTC close, take the side opposite to the weekend move and hold until 04:00 UTC Monday.
+  - id: us_close_to_asia_open_long_22_02_net
+    belief: The handover from the US close to the Asian open (22:00 to 02:00 UTC) carries a positive drift large enough to pay the cost of trading only that block each weekday.
+    claim:
+      when: Weekday bars closing at 22:00 UTC
+      then: Holding long for 4 hours, until 02:00 UTC, earns a positive return after cost
+      compared_to: Zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 4
+      direction: positive
+      min_effect: 0.0003
+      code: |
+        a = (hour == 22) & (dow < 5)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The selector uses only the UTC hour and weekday of the bar's own close time.
+    how_it_trades: Long at the 22:00 UTC weekday close, flat at the 02:00 UTC close, once per day.
+notes: >
+  Every claim names exact UTC hours. Bars are labelled by their close time, so a bar labelled hour H opens the block that starts at H:00 UTC.
+  Directional block drift is tested with mean_diff, using a hurdle of about 0.08-0.15% per block.
+  The cost question is tested directly by one net_return claim, which needs a gross return of about 0.18% per 4-hour block.
+  Some blocks overlap and may contradict each other: 19-21 run-up vs 21-24 fade, 22-02 long vs 23:00 pre-funding short, 07-10 short vs 07:00 pre-funding short. They are kept on purpose so the data can decide between the mechanisms.
+  US-session underperformance, Asia continuation, weekend volatility and hour persistence are not repeated, as listed under already_tried.
+  The 19:00-21:00 window approximates the 16:00 New York fix across daylight saving time. The 22:00 Sunday anchor covers both the summer and winter CME reopen times.

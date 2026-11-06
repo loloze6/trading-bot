@@ -1,0 +1,570 @@
+brief: n16_day_of_week_other_coins_1d.md
+fold: A
+symbols:
+- SOLUSD
+- ADAUSD
+- XMRUSD
+bar_size: 1d
+claims:
+- id: weekend_hold_long
+  belief: On these coins, prices drift up over the thin-liquidity weekend because
+    retail and on-chain activity dominate while institutional selling pauses.
+  measure: net_return
+  horizon_bars: 2
+  direction: positive
+  min_effect: 0.0025
+  verdict: fail
+  by_symbol:
+    SOLUSD:
+      effect: 0.004012674387650843
+      n_a: 104
+      n_b: 104
+      windows:
+      - -0.011317867826244072
+      - 0.00805583054585227
+      - -0.019141965266141377
+      - 0.0291809299974524
+      - -0.004847496368422849
+      - 0.022425542954410595
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.0008679626572726906
+      n_a: 104
+      n_b: 104
+      windows:
+      - -0.005619572160511418
+      - 0.010146842026044217
+      - -0.006795613518605586
+      - 0.005881900363918457
+      - -0.006190991227305783
+      - 0.007826673147488184
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 0.006051793307914798
+      n_a: 104
+      n_b: 104
+      windows:
+      - -0.0033234457698374277
+      - 0.017054693665525044
+      - -0.007214492304552992
+      - 0.01831793428477133
+      - 0.008925651239228418
+      - 0.003481955409467091
+      verdict: fail
+      why: null
+  code: 'a = dow == 4
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: monday_short
+  belief: Monday brings the return of institutional and TradFi-linked flows, which
+    de-risk weekend gains and push alt coins down on the first weekday.
+  measure: net_return
+  horizon_bars: 1
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    SOLUSD:
+      effect: 0.001775385709890458
+      n_a: 105
+      n_b: 105
+      windows:
+      - 0.0048940520303932065
+      - 0.00881595557986443
+      - -0.0011988031219741027
+      - -0.005907008529659596
+      - 0.014509099374854026
+      - -0.009745526010046225
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.0014955701639441663
+      n_a: 105
+      n_b: 105
+      windows:
+      - -0.006804930412445939
+      - 0.003966879926818151
+      - 0.005991576683290258
+      - 0.004673981885837109
+      - 0.009268305152465734
+      - -0.007901934422773782
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 0.002276050120200875
+      n_a: 105
+      n_b: 105
+      windows:
+      - -0.007636943784854971
+      - 0.012775736750570312
+      - -0.007494836276665534
+      - 0.009261999894165993
+      - 0.0015422870593817576
+      - 0.004073743558455394
+      verdict: fail
+      why: null
+  code: 'a = dow == 6
+
+    b = ~a
+
+    signal = pd.Series(-1.0, index=df.index)
+
+    '
+- id: friday_short_opposite
+  belief: Unlike BTC, ETH and LTC, smaller coins are sold into the weekend as traders
+    cut alt exposure before low-liquidity days, so the Friday bar is weak.
+  measure: net_return
+  horizon_bars: 1
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    SOLUSD:
+      effect: -0.0060694756708837925
+      n_a: 104
+      n_b: 104
+      windows:
+      - 0.017561988092788597
+      - 0.013812466292553588
+      - 0.0044856604725724055
+      - -0.02526933856590921
+      - -0.014078492316116303
+      - -0.03307890973638146
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: -0.0018004026697710303
+      n_a: 104
+      n_b: 104
+      windows:
+      - 0.012282414453916521
+      - 0.013297170950049066
+      - -0.003926623284386043
+      - -0.017023477201603767
+      - -0.00200994077235149
+      - -0.01328456259265073
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.0022056493391522155
+      n_a: 104
+      n_b: 104
+      windows:
+      - 0.0055852390562165614
+      - 0.0004064081909545495
+      - -0.00160165667072854
+      - -0.007576326226454664
+      - -0.003648958779010674
+      - -0.006349230031100245
+      verdict: fail
+      why: null
+  code: 'a = dow == 3
+
+    b = ~a
+
+    signal = pd.Series(-1.0, index=df.index)
+
+    '
+- id: midweek_long
+  belief: Tuesday and Wednesday carry the heaviest US and European risk-on flows,
+    so alt coins rise from Monday's close to Wednesday's close.
+  measure: net_return
+  horizon_bars: 2
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    SOLUSD:
+      effect: 0.00045739795731212325
+      n_a: 104
+      n_b: 104
+      windows:
+      - 0.0195639427700828
+      - -0.026697621176016952
+      - -0.029841001223409953
+      - 0.008266831895675373
+      - -0.0011280452433077156
+      - 0.034270896152257944
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.0019116572537820399
+      n_a: 104
+      n_b: 104
+      windows:
+      - 0.006572399175962619
+      - -0.0020938766155885425
+      - -0.02344556331843487
+      - 0.018581505690730513
+      - -0.006217374485738853
+      - 0.018786651052754986
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.0035974780356399084
+      n_a: 104
+      n_b: 104
+      windows:
+      - 0.008799494071955256
+      - -0.007992125395325615
+      - -0.012195812475678105
+      - -0.0022528786570801085
+      - -0.00896626597645508
+      - 0.001597039942303076
+      verdict: fail
+      why: null
+  code: 'a = dow == 0
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: weekend_move_reverts_monday
+  belief: Weekend moves happen on thin books and are partly mispricing, so Monday's
+    return tends to reverse the Friday-close-to-Sunday-close move more than an ordinary
+    day reverses the prior two days.
+  measure: mean_diff
+  horizon_bars: 1
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    SOLUSD:
+      effect: -0.000748421923480176
+      n_a: 105
+      n_b: 625
+      windows:
+      - 0.031034105001173984
+      - -0.023442481769332352
+      - 0.0027565690957023436
+      - -0.009877579917797244
+      - -0.0002713173692846763
+      - -0.0025027532711006453
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: -0.005487682463531672
+      n_a: 105
+      n_b: 625
+      windows:
+      - -0.002470748243345064
+      - -0.02544235386576799
+      - 0.004526404949089917
+      - -0.0069342653163535824
+      - -7.469576014064536e-05
+      - -0.0017217103841143458
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.00429875925091933
+      n_a: 105
+      n_b: 625
+      windows:
+      - -0.010868843978752634
+      - -0.023911575246975132
+      - -0.00011885361570784878
+      - -0.0038990016994170716
+      - 0.004559717875975495
+      - 0.008576869442636708
+      verdict: fail
+      why: null
+  code: 'r2 = df.close / df.close.shift(2) - 1
+
+    a = dow == 6
+
+    b = ~a
+
+    signal = -np.sign(r2).replace(0, 1.0)
+
+    '
+- id: monday_sets_week_trend
+  belief: When the new week starts, flows follow the prior week's direction, so the
+    trailing 7-day trend persists more strongly over Monday to Friday than from any
+    random start day.
+  measure: mean_diff
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    SOLUSD:
+      effect: -0.00118266760971991
+      n_a: 105
+      n_b: 625
+      windows:
+      - -0.02202982679304836
+      - 0.043000175370423575
+      - 0.04159389702114959
+      - -0.036724121234670455
+      - 0.0037634337076228597
+      - -0.03724428413208131
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.007802032452269764
+      n_a: 105
+      n_b: 625
+      windows:
+      - -0.006138824507921784
+      - 0.025166750408037106
+      - -0.0013543306790705454
+      - 0.004048162976735801
+      - 0.01580424708880179
+      - 0.008056684976776154
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.009181509594455281
+      n_a: 105
+      n_b: 625
+      windows:
+      - -0.027797909863439073
+      - -0.04021350705413543
+      - 0.005735158134787156
+      - 0.011730718655487157
+      - 0.005209592188573305
+      - -0.009982569623776411
+      verdict: fail
+      why: null
+  code: 'r7 = df.close / df.close.shift(7) - 1
+
+    a = dow == 6
+
+    b = ~a
+
+    signal = np.sign(r7).replace(0, 1.0)
+
+    '
+- id: weekend_low_volatility
+  belief: Weekend sessions have less news and fewer participants, so their absolute
+    moves are smaller than weekday moves, even if mean returns do not differ.
+  measure: abs_ratio
+  horizon_bars: 1
+  direction: below
+  min_effect: 0.85
+  verdict: pass
+  by_symbol:
+    SOLUSD:
+      effect: 0.7042296130703007
+      n_a: 209
+      n_b: 521
+      windows:
+      - 0.6753242276381576
+      - 0.652122273236739
+      - 0.6484289336567709
+      - 0.9660893050713301
+      - 0.6853245869526009
+      - 0.6315613374084178
+      verdict: pass
+      why: null
+    ADAUSD:
+      effect: 0.6541696699940751
+      n_a: 209
+      n_b: 521
+      windows:
+      - 0.6159863905198721
+      - 0.6520425405036002
+      - 0.7486850031883064
+      - 0.6785116282584681
+      - 0.6284861438904723
+      - 0.6288431092544384
+      verdict: pass
+      why: null
+    XMRUSD:
+      effect: 0.7864923713635078
+      n_a: 209
+      n_b: 521
+      windows:
+      - 0.8909683824182348
+      - 0.7412015080642634
+      - 0.5911793838467554
+      - 0.7786747751035484
+      - 0.8330593438451838
+      - 0.9595223597735322
+      verdict: pass
+      why: null
+  code: 'a = dow.isin([4, 5])
+
+    b = ~a
+
+    '
+- id: monday_volatility_burst
+  belief: Information and orders pile up over the weekend and are released when the
+    TradFi week opens, so Monday's absolute move is larger than an ordinary day's.
+  measure: abs_ratio
+  horizon_bars: 1
+  direction: above
+  min_effect: 1.15
+  verdict: fail
+  by_symbol:
+    SOLUSD:
+      effect: 1.132083690940288
+      n_a: 105
+      n_b: 625
+      windows:
+      - 1.2072426208695668
+      - 1.3967108920254947
+      - 0.8827522743938852
+      - 0.9452302800289435
+      - 0.9007875089342509
+      - 1.3154797361915358
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 1.1473668164886983
+      n_a: 105
+      n_b: 625
+      windows:
+      - 1.3539558503227693
+      - 1.4194078289595213
+      - 0.6101316046274303
+      - 0.8699012522703913
+      - 0.923477275437813
+      - 1.4788663721441577
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 1.1359132034386088
+      n_a: 105
+      n_b: 625
+      windows:
+      - 1.0318682493002997
+      - 1.4809181160290394
+      - 0.7041636099655135
+      - 0.996291355820662
+      - 0.9398075069974154
+      - 1.4788407815970974
+      verdict: fail
+      why: null
+  code: 'a = dow == 6
+
+    b = ~a
+
+    '
+- id: own_weekday_history
+  belief: Each coin has a weekday pattern of its own that persists, so the past year's
+    average return of the same weekday predicts the next day's return without choosing
+    the day in advance.
+  measure: rank_corr
+  horizon_bars: 1
+  direction: positive
+  min_effect: 0.04
+  verdict: fail
+  by_symbol:
+    SOLUSD:
+      effect: -0.028153677520010224
+      n_a: 564
+      n_b: 564
+      windows:
+      - null
+      - -0.09648246490351751
+      - -0.08369228125667154
+      - -0.1797069240919508
+      - 0.013704195741058415
+      - -0.03314707174981247
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: -0.025700256701345677
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.17365789290922978
+      - 0.006139479691994171
+      - -0.010134789059582778
+      - -0.037877630390999374
+      - 0.0499929060633811
+      - -0.12341179230787025
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.00529713067243021
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.15987221334814913
+      - 0.05065070745895191
+      - -0.14011915894799107
+      - 0.04265573998194318
+      - 0.2253808154157692
+      - 0.0021776413401581513
+      verdict: fail
+      why: null
+  code: 'lags = [ret.shift(7 * k - 1) for k in range(1, 53)]
+
+    feature = pd.concat(lags, axis=1).mean(axis=1, skipna=False)
+
+    a = feature.notna()
+
+    b = ~a
+
+    '
+- id: heavy_friday_volume_weekend
+  belief: A Friday with unusually high volume signals that positioning was done before
+    the weekend, and the thin weekend then continues that day's direction.
+  measure: mean_diff
+  horizon_bars: 2
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    SOLUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'fri = dow == 4
+
+    fri_vol = df.volume.where(fri)
+
+    med = fri_vol.shift(1).rolling(60, min_periods=50).median()
+
+    a = fri & (df.volume > 1.5 * med)
+
+    b = fri & ~a & med.notna()
+
+    signal = np.sign(ret).replace(0, 1.0)
+
+    '
+profit: 'none: no return claim passed'

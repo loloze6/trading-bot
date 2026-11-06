@@ -1,0 +1,48 @@
+claims_file: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/claims_r1.yaml
+fold: C
+bar_size: 1h
+symbols:
+- LTCUSD
+- XRPUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  high_vol_regime_stretch_continues:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: -0.004417693569092612
+        t_stat: -0.92
+        n_a: 93
+        n_b: 93
+        windows:
+        - -0.003467517944976305
+        - -0.005147226260506841
+        - 0.00646940065672676
+        - -0.011851534884345772
+        - -0.002217928283221978
+        - -0.010599610842219234
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: -0.007692365313937176
+        t_stat: -1.56
+        n_a: 110
+        n_b: 110
+        windows:
+        - -0.03496121095240902
+        - 0.006805719875574592
+        - -0.002866128768154014
+        - -0.020938117299680595
+        - -0.00743602945691914
+        - 0.013074121221435461
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

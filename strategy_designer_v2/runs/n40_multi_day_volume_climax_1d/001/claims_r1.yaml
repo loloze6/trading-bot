@@ -1,0 +1,38 @@
+brief: n40_multi_day_volume_climax_1d.md
+source: analyst round 1
+ideas:
+- id: loud_move_continuation_rank
+  belief: Over elevated-volume 3-day stretches, the louder the volume behind a 3-day
+    move, the more that move continues over the next 10 days, because heavy participation
+    carries information rather than exhaustion.
+  claim:
+    when: bars whose trailing 3-day mean volume is above the trailing 30-day median
+      volume (lagged 5 bars)
+    then: the 10-day forward return ranks with the 3-day move's direction times the
+      log of that volume excess
+    compared_to: a zero rank correlation
+    measure: rank_corr
+    horizon_bars: 10
+    direction: positive
+    min_effect: 0.08
+    code: 'base = df.volume.shift(5).rolling(30).median()
+
+      vr3 = (df.volume / base).rolling(3).mean()
+
+      r3 = df.close / df.close.shift(3) - 1
+
+      loud = np.log(vr3)
+
+      feature = np.sign(r3).replace(0, 1) * loud
+
+      a = (vr3 > 1.0) & feature.notna()
+
+      b = ~a
+
+      signal = np.sign(r3).replace(0, 1)
+
+      '
+  why_no_lookahead: The volume base, the 3-day mean volume and the 3-day return use
+    only bars at or before the current close; there is no negative shift.
+  how_it_trades: On days with elevated 3-day volume, go long (or short) in the direction
+    of the 3-day move, sized by the volume excess, and hold for 10 days.

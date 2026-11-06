@@ -1,0 +1,30 @@
+run: n09_long_horizon_reversal_book_1d.md / fold A (try folder name not given in record.yaml)
+observations:
+  - The event-spaced quintile and capitulation rules found almost no events (n_a of 1 to 8 per symbol, e.g. deep_12m_loser_long_book had LTC n_a 1, XMR 4, ZEC 4), so every net_return book failed the 30-bar floor before its effect was even weighed.
+  - Both short-side rules (extreme_12m_winner_short_book, rolled_over_winner_short) had n_a 0 on all three coins, so fold A held no top-quintile 12-month run-up to short.
+  - The hit_rate claims hold only 730 a+b bars per coin (e.g. LTC 339+391), and the regime selectors left 2 to 5 of the 6 windows null, so the 5-of-6 window rule cannot be met by a drawdown-conditional selector on this fold.
+  - drawdown_depth_hit_rate held strongly on XMR (+0.40, windows +0.77 and +0.64) but not on LTC (-0.039) or ZEC (-0.050), even though ZEC's four non-null windows were all positive (+0.79, +0.23, +0.09, +0.52); ZEC sat in a >60% drawdown on 536 of 730 bars, so its comparison set was small and atypical.
+  - quiet_base_after_decline nearly held on XMR (+0.186 net, 5 of 5 non-null windows positive), but only 6 events, and ZEC was -0.043 with windows swinging from -0.55 to +0.30.
+  - turned_loser_vs_falling_knife ran against its belief: still-falling losers beat turned-up losers on XMR (-0.196) and ZEC (-0.131), and LTC's whole-fold +0.031 sat on three negative windows (-0.16, -0.06, -0.13).
+  - stale_high_time_exhaustion gave hit-rate edges far below 0.10 (LTC 0.085, XMR 0.032, ZEC 0.019), with windows flipping sign within each coin (LTC -0.32 then +0.64).
+  - capitulation_volume_in_drawdown had 3, 1 and 6 events and mixed signs (LTC +0.069, XMR -0.078, ZEC -0.089), so a volume surge adds nothing measurable here.
+next_claim:
+  id: yearly_mean_distance_reversal_book
+  belief: Price far from its 365-day mean is pulled back toward it over the next 60 days, so a book that is always in the market, long below the yearly mean and short above it, pays after cost.
+  claim:
+    when: every bar with a 365-day mean available
+    then: the 60-day return taken in the direction back toward the 365-day mean is positive after the round-trip cost
+    compared_to: cost only (net_return); b is the warm-up bars
+    measure: net_return
+    horizon_bars: 60
+    direction: positive
+    min_effect: 0.03
+    code: |
+      m = df.close.rolling(365).mean()
+      z = np.log(df.close / m)
+      a = z.notna()
+      b = ~a
+      signal = pd.Series(np.where(z < 0, 1.0, -1.0), index=df.index)
+  why_no_lookahead: The 365-day mean and the sign use only closes at or before the bar; the forward return is applied by the judge.
+  how_it_trades: Each day, hold long if the close is below its 365-day mean and short if above, and measure each entry over a 60-day hold.
+why: Every regime-gated rule failed on sample size (1 to 8 events) or on empty windows, and the falling-knife result (XMR -0.196, ZEC -0.131) favours buying weakness. An always-on, two-sided reversal book fills all 6 windows with hundreds of bars and tests the money question. The 0.03 threshold sits well above the 0.15% cost and is set high because overlapping 60-day holds make small means easy to get by luck.

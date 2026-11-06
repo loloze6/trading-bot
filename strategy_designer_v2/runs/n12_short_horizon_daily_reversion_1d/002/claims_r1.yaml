@@ -1,0 +1,44 @@
+brief: n12_short_horizon_daily_reversion_1d.md
+source: analyst round 1
+ideas:
+- brief: n12_short_horizon_daily_reversion_1d.md
+  ideas:
+  - id: countertrend_shock_reverts
+    belief: A sharp 3-day move against the prevailing 50-day trend is a temporary
+      liquidity dislocation that the trend's holders lean against, so it reverts over
+      3 days more than a shock in the trend's direction does.
+    claim:
+      when: bars ending a 3-day move larger than 1.25 units of pre-move 30-day volatility
+        (scaled by sqrt 3) whose sign is opposite to the close's position versus its
+        50-day mean measured before the move
+      then: over the next 3 bars price moves against the shock
+      compared_to: shocks of the same size whose sign agrees with the prior 50-day
+        trend
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.008
+      code: 'vol = ret.rolling(30).std().shift(3)
+
+        m3 = df.close.pct_change(3)
+
+        z = m3 / (vol * np.sqrt(3))
+
+        c0 = df.close.shift(3)
+
+        trend = np.sign(c0 / c0.rolling(50).mean() - 1)
+
+        sh = spaced(z.abs() > 1.25, 3)
+
+        a = sh & (np.sign(m3) == -trend)
+
+        b = sh & (np.sign(m3) == trend)
+
+        signal = -np.sign(m3)
+
+        '
+    why_no_lookahead: the volatility, the 50-day mean and the trend sign all use closes
+      from 3 or more bars before the signal bar, and the 3-day move ends at the signal
+      bar's close.
+    how_it_trades: at the close of a counter-trend shock, take the opposite side of
+      the move and exit 3 daily closes later.

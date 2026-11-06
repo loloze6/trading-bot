@@ -1,0 +1,28 @@
+claims_file: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001/claims_r2.yaml
+fold: C
+bar_size: 1d
+symbols:
+- BTCUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  low_vs_high_vol_momentum_contrast:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.005068320982276317
+        n_a: 181
+        n_b: 306
+        windows:
+        - -0.20637560646754935
+        - -0.014401266086835177
+        - 0.35887120951264495
+        - 0.0444705935746767
+        - -0.06309772506741831
+        - -0.17114955535980908
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

@@ -1,0 +1,34 @@
+brief: n02_alt_daily_trend_other_categories_1d.md
+source: analyst round 1
+ideas:
+- id: fade_extreme_yearly_move
+  belief: 'The 12-month exhaustion seen as a rank correlation is strong enough at
+    the extremes to trade: fading the largest 365-day moves on LTC and XMR pays more
+    than cost over the next 60 days.'
+  claim:
+    when: bars where the size of the 365-day log move is in the top 30% of its own
+      trailing two-year history
+    then: the 60-bar forward return goes against the sign of the 365-day move by more
+      than cost
+    compared_to: zero after the 0.15% round-trip cost (net_return)
+    measure: net_return
+    horizon_bars: 60
+    direction: positive
+    min_effect: 0.03
+    code: 'lc = np.log(df.close)
+
+      m365 = lc - lc.shift(365)
+
+      pct = m365.abs().rolling(730, min_periods=365).rank(pct=True)
+
+      a = pct >= 0.7
+
+      b = ~a
+
+      signal = pd.Series(-np.sign(m365).replace(0, 1), index=df.index)
+
+      '
+  why_no_lookahead: m365 and its percentile use only closes at or before the bar,
+    through backward rolling windows.
+  how_it_trades: When the yearly move is extreme for its own history, go against it
+    (short after a large gain, long after a large loss) and hold 60 days.

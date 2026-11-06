@@ -1,0 +1,14 @@
+run: "n06_range_break_continuation_other_coins_1h, fold B (the record does not name the try folder)"
+observations:
+  - "Every claim on both symbols has null in windows 1 to 5 and a number only in window 6, so no claim could reach the required same sign in 5 of 6 windows, whatever its effect."
+  - "SOLUSD data appears to cover only part of fold B: the wick claim's b = ~a holds 2899 bars in total, about four months of hourly bars, and all of them land in window 6."
+  - "AVAXUSD data is almost absent: the wick claim's b = ~a holds only 245 bars, and 7 of the 10 claims have n_a = 0 on AVAX."
+  - "The BTC finding did not repeat on SOL. Big range-break bars minus big inside bars gave -1.39% at 12 bars against a +0.6% threshold, on n_a = 16 and n_b = 11, both under 30."
+  - "Taken alone, big SOL breaks lost -0.36% net of cost over 24 bars (n_a = 15), so they did not pay the 0.15% fee either."
+  - "Fading big inside-range bars on SOL lost -3.74% net over 6 bars on 11 events, while the single AVAX event made +7.07%, which is noise in opposite directions."
+  - "Volume-confirmed SOL breaks beat ordinary-volume breaks by +5.95% at 12 bars, but the comparison group held 1 bar, so the number carries no weight."
+  - "Compression breaks were the only SOL claim with n_a above 30 (31 against 78), and they showed no volatility expansion: abs_ratio 1.03 against a 1.25 threshold."
+  - "The strong-close claim nearly held on SOL with rank_corr 0.082 against 0.10, but only on 16 events."
+  - "The 3x weekly-volatility break filter produced about 15 to 16 SOL events in about 2900 bars, below the 30-bar minimum even before AVAX's missing data."
+next_claim: none
+why: "Windows 1 to 5 hold no SOL or AVAX bars and AVAX has about 245 bars in fold B, so any new claim would fail the 5-of-6 window rule; the data coverage must be fixed before another claim is worth running."

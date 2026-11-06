@@ -1,0 +1,32 @@
+run: real_01b_daily_breadth_ltc, fold B (try folder not named in record.yaml)
+observations:
+  - weekend_move_reversal nearly held on BTC, with a whole-fold effect of 0.0071 above the 0.004 asked, but only 3 of 6 windows were positive; on LTC it was -0.0033.
+  - low_volume_move_reversal showed 0.0168 on BTC on only 20 event bars, below the 30-bar floor, and was -0.0068 on LTC with one empty window, so the low-volume reversal idea has no usable support.
+  - up_streak_fomo_continuation lost money net of cost on both coins (-0.0038 BTC, -0.0067 LTC over 5 bars), so up-streaks did not extend in fold B.
+  - downside_semivariance_premium had a positive rank correlation in all 6 windows on both coins (BTC 0.010 to 0.444, LTC 0.044 to 0.549), yet the pooled fold value was only 0.035 on BTC and -0.068 on LTC. The relation holds within each 4-month block, but shifts in the feature's level between blocks wipe it out when pooled.
+  - trend_efficiency_follow earned 0.0445 net on BTC with 5 of 6 windows positive, but on only 15 bars (under 30); on LTC it was -0.0011 with 3 of 6 windows positive, so the efficiency trend did not carry across coins.
+  - wide_day_volatility_clustering came out opposite to its belief, with ratios of 0.950 BTC and 0.868 LTC (LTC below 1 in 5 of 6 windows), so after wide days the 5-bar net move was smaller, not larger.
+  - weekend_quiet_days also came out opposite, with ratios of 1.036 BTC and 1.077 LTC (4 of 6 windows above 1 on each), so the bars following a Saturday or Sunday close are not quieter.
+  - volume_absorption_expansion passed on LTC at 1.234 with all 6 windows above 1, but failed on BTC at 0.931 with 4 of 6 windows below 1, so the claim failed overall.
+  - narrow_range_expansion gave 0.973 on BTC and 1.046 on LTC against 1.15 asked, so compression did not predict expansion on either coin.
+next_claim:
+  id: relative_downside_share_premium
+  belief: Forward returns are higher when the share of recent variance coming from down moves is high relative to its own recent norm, rather than in absolute terms; the absolute level drifts between regimes and hides the relation.
+  claim:
+    when: every bar with a defined feature
+    then: the 20-bar forward return is higher when the 30-day downside share of variance sits above its own 120-day average
+    compared_to: the same bars ranked by the feature (rank correlation, no baseline set)
+    measure: rank_corr
+    horizon_bars: 20
+    direction: positive
+    min_effect: 0.10
+    code: |
+      dn = (ret.clip(upper=0) ** 2).rolling(30).sum()
+      upv = (ret.clip(lower=0) ** 2).rolling(30).sum()
+      share = dn / (dn + upv)
+      feature = share - share.rolling(120).mean()
+      a = feature.notna()
+      b = ~a
+  why_no_lookahead: The feature uses only trailing 30-bar and 120-bar rolling windows of returns that end at the bar's close; there is no forward shift.
+  how_it_trades: Hold long when the feature is above zero and stay flat otherwise, deciding at each daily close; the slow 20-bar horizon keeps round trips to a few per year.
+why: The semivariance relation was positive in all 12 windows across both coins but failed only on pooling, so removing the regime level with a 120-bar mean (about one window) tests whether that within-block relation is real, at 0.10, a bar set above the pooled values seen so far given the overlapping 20-bar outcomes.

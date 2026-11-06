@@ -1,0 +1,46 @@
+claims_file: strategy_designer_v2/runs/n17_vol_channel_breakout_daily_1d/001/claims_r2.yaml
+fold: B
+bar_size: 1d
+symbols:
+- BTCUSD
+- LTCUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  stretched_channel_reversion_hit:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.04586943614205635
+        n_a: 181
+        n_b: 549
+        windows:
+        - 0.04738372093023252
+        - 0.17748917748917747
+        - 0.22874149659863952
+        - -0.16324284666177546
+        - 0.04201680672268904
+        - -0.03559510567296997
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      LTCUSD:
+        verdict: fail
+        effect: 0.08146956288549212
+        n_a: 165
+        n_b: 565
+        windows:
+        - -0.021055939660590772
+        - 0.3409090909090909
+        - 0.20592948717948717
+        - -0.0748987854251012
+        - -0.14099311344690102
+        - 0.24705882352941172
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

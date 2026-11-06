@@ -1,0 +1,453 @@
+claims_file: strategy_designer_v2/runs/n06_range_break_continuation_other_coins_1h/002/claims.yaml
+fold: A
+bar_size: 1h
+symbols:
+- SOLUSD
+- AVAXUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  big_break_24h_continues_alts:
+    verdict: fail
+    by_symbol:
+      SOLUSD:
+        verdict: fail
+        effect: 0.0006757381045572877
+        n_a: 160
+        n_b: 84
+        windows:
+        - -0.00819439367066652
+        - -0.024386478103094838
+        - 0.02467817818153275
+        - 0.0038588471085565044
+        - -0.0033831643194900517
+        - 0.015443169571389716
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      AVAXUSD:
+        verdict: fail
+        effect: 0.011565902398375965
+        n_a: 141
+        n_b: 81
+        windows:
+        - 0.011684287714294125
+        - 0.06716826365600587
+        - -1.4740342397397393e-06
+        - -0.01144273485968671
+        - 0.0028232800919272237
+        - -0.0022030553425152824
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  inside_big_bar_no_revert:
+    verdict: fail
+    by_symbol:
+      SOLUSD:
+        verdict: fail
+        effect: 0.07283002683932377
+        n_a: 84
+        n_b: 17210
+        windows:
+        - 0.17761299435028244
+        - 0.31328960994131866
+        - -0.013975119172189299
+        - -0.09770427592209768
+        - 0.30086580086580084
+        - -0.32986352070321534
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      AVAXUSD:
+        verdict: fail
+        effect: -0.042846641906530536
+        n_a: 81
+        n_b: 17232
+        windows:
+        - -0.06542998286117557
+        - -0.14738292011019288
+        - 0.0903587555202699
+        - 0.16241737488196406
+        - -0.08368258330470624
+        - -0.2497863247863248
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  inside_big_bar_fade_pays_alts:
+    verdict: fail
+    by_symbol:
+      SOLUSD:
+        verdict: fail
+        effect: -0.0038505773754568327
+        n_a: 90
+        n_b: 90
+        windows:
+        - -0.0011384485349251031
+        - -0.019233276414866187
+        - 0.011413210949405289
+        - -0.005729230528565625
+        - -0.007056210030759489
+        - -0.0017022105398070855
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      AVAXUSD:
+        verdict: fail
+        effect: 0.003427994557000325
+        n_a: 87
+        n_b: 87
+        windows:
+        - 0.0024078422973740246
+        - 0.030820202849818817
+        - -0.0037089233471611148
+        - -0.004516552981968549
+        - 0.001971858034227075
+        - -0.005749657752819912
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  prior_utc_day_level_break:
+    verdict: fail
+    by_symbol:
+      SOLUSD:
+        verdict: fail
+        effect: 0.002195472606880055
+        n_a: 272
+        n_b: 17247
+        windows:
+        - 0.002348498129004311
+        - 0.01243914237742548
+        - 0.00040051186396100304
+        - 0.0057924983492732614
+        - -0.007052896270977265
+        - 0.00030959251119597864
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      AVAXUSD:
+        verdict: fail
+        effect: 0.0026463024537063634
+        n_a: 271
+        n_b: 17245
+        windows:
+        - 0.0006871261656423239
+        - -0.0007390010872058317
+        - 0.006479574846536108
+        - 0.005533173326349284
+        - -0.0007359503745914843
+        - 0.0038278313891616567
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  volume_confirmed_break:
+    verdict: fail
+    by_symbol:
+      SOLUSD:
+        verdict: pass
+        effect: 0.011691723541083571
+        n_a: 283
+        n_b: 46
+        windows:
+        - 0.00868315237549077
+        - 0.013611378326796982
+        - 0.018293094197465207
+        - 0.011361166379788781
+        - 0.026088181346702564
+        - -0.0007463879444147429
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      AVAXUSD:
+        verdict: fail
+        effect: -0.001913181513948993
+        n_a: 264
+        n_b: 56
+        windows:
+        - -0.016143319108281658
+        - 0.017864985591532195
+        - 0.004245490655433122
+        - -0.012282935667173082
+        - -0.02216745534533203
+        - 0.004423984609800513
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  weekly_range_break_profit:
+    verdict: fail
+    by_symbol:
+      SOLUSD:
+        verdict: pass
+        effect: 0.007997854553520293
+        n_a: 142
+        n_b: 142
+        windows:
+        - -0.007596697329555469
+        - 0.0136162351667596
+        - 0.0060215822707139835
+        - 0.015723985285192213
+        - 0.013018907794854314
+        - 0.011900098145868053
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      AVAXUSD:
+        verdict: fail
+        effect: 0.010221023271105072
+        n_a: 133
+        n_b: 133
+        windows:
+        - 0.0036051142038453755
+        - 0.05018341150654217
+        - -0.0007051750538213691
+        - -0.00220300199100174
+        - 0.00417073318095664
+        - 0.01401912996605836
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  us_session_break_beats_asia:
+    verdict: fail
+    by_symbol:
+      SOLUSD:
+        verdict: fail
+        effect: -0.0035000219525021387
+        n_a: 109
+        n_b: 83
+        windows:
+        - -0.019500289795893303
+        - -0.007773301781910685
+        - -0.011443096498821408
+        - 0.0083378799230844
+        - 0.0012124197706332475
+        - 0.009056470342889346
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      AVAXUSD:
+        verdict: fail
+        effect: 0.011002360109014585
+        n_a: 96
+        n_b: 86
+        windows:
+        - 0.0051071918984675205
+        - -0.006327115276275649
+        - 0.005886272853261735
+        - 0.025185214641190376
+        - -0.00400819662938145
+        - 0.0326682965459427
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  squeeze_then_break:
+    verdict: fail
+    by_symbol:
+      SOLUSD:
+        verdict: fail
+        effect: 0.00010890914985458894
+        n_a: 414
+        n_b: 210
+        windows:
+        - -0.0070631051671283095
+        - 0.010433243229535845
+        - -0.0003984604720812583
+        - 0.02005580869466178
+        - -0.019332365695280483
+        - -0.006969737983612558
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      AVAXUSD:
+        verdict: fail
+        effect: 0.0010840556678432586
+        n_a: 447
+        n_b: 214
+        windows:
+        - -0.0013001195155274822
+        - 0.025959705556461272
+        - -0.009642421153493345
+        - 0.013860436932076338
+        - -0.009459698435292884
+        - -0.010029240120142328
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  rejected_break_reverses:
+    verdict: fail
+    by_symbol:
+      SOLUSD:
+        verdict: fail
+        effect: -0.002420209258585317
+        n_a: 482
+        n_b: 482
+        windows:
+        - -0.002137792352165018
+        - -0.0021016845106869068
+        - 0.004723800696582207
+        - -0.00962854040762032
+        - -0.003177902220757387
+        - -0.0029252707822253372
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      AVAXUSD:
+        verdict: fail
+        effect: 0.0007166216405915032
+        n_a: 476
+        n_b: 476
+        windows:
+        - -0.001442321894019441
+        - -0.001355161332659732
+        - 0.0004933275093523806
+        - 0.0038200693458419603
+        - 0.00255653512917038
+        - 0.0006638541046685999
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  strong_close_break_continues:
+    verdict: fail
+    by_symbol:
+      SOLUSD:
+        verdict: fail
+        effect: -0.0030528652672157965
+        n_a: 235
+        n_b: 127
+        windows:
+        - -0.003803628139295042
+        - 0.010471114346946
+        - -0.011369798492032856
+        - -0.007991760685643523
+        - -0.0026627754763326795
+        - -0.006103518440057149
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      AVAXUSD:
+        verdict: fail
+        effect: -0.002000668688162573
+        n_a: 230
+        n_b: 110
+        windows:
+        - -0.010187952481457537
+        - 0.003385298053964491
+        - -0.003563247993049151
+        - 0.004491077331078283
+        - 0.0005148145857355431
+        - -0.004295791272382799
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  break_expands_volatility:
+    verdict: fail
+    by_symbol:
+      SOLUSD:
+        verdict: fail
+        effect: 0.8192826107239463
+        n_a: 160
+        n_b: 84
+        windows:
+        - 1.0538706160789473
+        - 0.6668259189726365
+        - 0.48294754305080223
+        - 0.9312684597087955
+        - 1.2532716094616192
+        - 1.3066735554663627
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      AVAXUSD:
+        verdict: fail
+        effect: 0.7609481455265337
+        n_a: 141
+        n_b: 81
+        windows:
+        - 0.7497310412494439
+        - 0.5598091347879813
+        - 0.8586803923279249
+        - 1.2192880200818443
+        - 0.9652207637430271
+        - 1.0502766712890597
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  break_distance_scales_continuation:
+    verdict: fail
+    by_symbol:
+      SOLUSD:
+        verdict: fail
+        effect: -0.004642723191239909
+        n_a: 506
+        n_b: 506
+        windows:
+        - -0.003557465393962876
+        - 0.15416764941742533
+        - -0.14946638019090558
+        - 0.07473929330768453
+        - -0.2142755897539739
+        - 0.15053998632946003
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      AVAXUSD:
+        verdict: fail
+        effect: -0.02023756274658719
+        n_a: 531
+        n_b: 531
+        windows:
+        - -0.1342092689918777
+        - 0.10771305679084346
+        - -0.039290974121607404
+        - -0.023550648587380884
+        - -0.013526442879807216
+        - -0.01707524685052775
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true

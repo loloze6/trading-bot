@@ -1,0 +1,32 @@
+run: n02_alt_daily_trend_other_categories_1d / fold C (try folder name not given in the files)
+observations:
+  - "long_horizon_exhaustion passed on both coins: the rank correlation of 365-day log momentum with the 60-bar forward return was -0.307 on LTC and -0.116 on XMR, against a threshold of -0.08."
+  - "That reversal was negative in 5 of 6 windows on LTC and 6 of 6 on XMR; window 5 is where it weakened, turning to +0.228 on LTC and its weakest value of -0.253 on XMR."
+  - "trend_linearity_strength had the wrong sign: smoother 60-day trends were followed by reversal, not continuation, at -0.157 on LTC and -0.187 on XMR, negative in 5 of 6 windows on both coins."
+  - "Requiring 20-, 60- and 120-day momentum to agree did not pay: net 20-bar return was 0.0043 on LTC (threshold 0.02) and -0.059 on XMR."
+  - "breakout_volume_confirmation nearly held: the whole-fold effect beat 0.02 on both coins (LTC 0.059, XMR 0.023), but only 3 of 5 LTC windows and 4 of 6 XMR windows were positive, and LTC's comparison set had only 14 bars."
+  - "weekday_breakout_beats_weekend also nearly held: the effect was 0.057 on LTC and 0.058 on XMR against 0.015, but it rested on window 6 (0.178 and 0.196), with only 4 of 6 positive windows on LTC and 3 of 6 on XMR."
+  - "vol_compression_precedes_expansion nearly held on XMR only, at a ratio of 1.116 against 1.15, with 4 of 6 windows above 1; LTC was at 0.974."
+  - "The volume-based ideas split by coin: signed volume flow was +0.131 on LTC and -0.165 on XMR, and the participation gate was +0.051 on LTC and -0.089 on XMR."
+  - "yearly_high_proximity_long and sharp_dip_inside_uptrend fired too rarely to judge (n_a of 20/20 and 20/16 bars, below 30), and both had negative net returns on both coins."
+next_claim:
+  id: fade_extreme_yearly_move
+  belief: "The 12-month exhaustion seen as a rank correlation is strong enough at the extremes to trade: fading the largest 365-day moves on LTC and XMR pays more than cost over the next 60 days."
+  claim:
+    when: "bars where the size of the 365-day log move is in the top 30% of its own trailing two-year history"
+    then: "the 60-bar forward return goes against the sign of the 365-day move by more than cost"
+    compared_to: "zero after the 0.15% round-trip cost (net_return)"
+    measure: net_return
+    horizon_bars: 60
+    direction: positive
+    min_effect: 0.03
+    code: |
+      lc = np.log(df.close)
+      m365 = lc - lc.shift(365)
+      pct = m365.abs().rolling(730, min_periods=365).rank(pct=True)
+      a = pct >= 0.7
+      b = ~a
+      signal = pd.Series(-np.sign(m365).replace(0, 1), index=df.index)
+  why_no_lookahead: "m365 and its percentile use only closes at or before the bar, through backward rolling windows."
+  how_it_trades: "When the yearly move is extreme for its own history, go against it (short after a large gain, long after a large loss) and hold 60 days."
+why: "The only claim that passed (365-day reversal, windows 5/6 and 6/6) is a correlation with no profit answer, and the 20-day reversal in trend_linearity points the same way, so the next step is to test whether the extremes earn 3% net over 60 days on both coins."

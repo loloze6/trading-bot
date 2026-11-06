@@ -1,0 +1,38 @@
+brief: n02_alt_daily_trend_other_categories_1d.md
+source: analyst round 2
+ideas:
+- id: yearly_exhaustion_after_turn
+  belief: The 12-month reversal on LTC and XMR arrives once the 30-day move has already
+    turned against the yearly move, so fading only after that turn beats fading while
+    both still agree.
+  claim:
+    when: bars where the 30-day log move has the opposite sign to the 365-day log
+      move
+    then: a position against the 365-day move earns more over the next 60 bars
+    compared_to: bars where the 30-day and 365-day moves have the same sign, with
+      the same fade position
+    measure: mean_diff
+    horizon_bars: 60
+    direction: positive
+    min_effect: 0.03
+    code: 'lc = np.log(df.close)
+
+      m365 = lc - lc.shift(365)
+
+      m30 = lc - lc.shift(30)
+
+      ok = m365.notna() & m30.notna() & (m365 != 0) & (m30 != 0)
+
+      turn = ok & (np.sign(m30) != np.sign(m365))
+
+      a = turn
+
+      b = ok & ~turn
+
+      signal = pd.Series(-np.sign(m365).replace(0, 1), index=df.index)
+
+      '
+  why_no_lookahead: Both momentum terms use only closes at or before the bar, through
+    shift(30) and shift(365).
+  how_it_trades: Hold a 60-day position against the yearly move only after the 30-day
+    move has turned against it, and stay flat while the two agree.

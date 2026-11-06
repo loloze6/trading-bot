@@ -1,0 +1,147 @@
+claim: breakout_spike_continues_inside_spike_reverts
+symbol: LTCUSD
+bar_size: 1h
+fold: A
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 269
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: -0.2777
+  median_window_sharpe: -0.41615
+  worst_window_drawdown: 0.3174
+  trades: 180
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: 0.1212
+    trades: 29
+    sharpe: 1.2385
+    max_drawdown: 0.1496
+    exposure_pct: 11.25
+    cost_drag_pct: 20.3606
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_LTCUSD/results/full_size/20261106T024515Z_90bab49b
+    seconds: 24
+  - window: W2
+    net_return: -0.0097
+    trades: 30
+    sharpe: 0.2162
+    max_drawdown: 0.2333
+    exposure_pct: 11.7547
+    cost_drag_pct: 152.1458
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_LTCUSD/results/full_size/20261106T024540Z_90bab49b
+    seconds: 25
+  - window: W3
+    net_return: -0.1248
+    trades: 29
+    sharpe: -1.0485
+    max_drawdown: 0.2192
+    exposure_pct: 11.4071
+    cost_drag_pct: 25.3671
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_LTCUSD/results/full_size/20261106T024604Z_90bab49b
+    seconds: 25
+  - window: W4
+    net_return: -0.2545
+    trades: 34
+    sharpe: -3.6843
+    max_drawdown: 0.3174
+    exposure_pct: 13.7847
+    cost_drag_pct: 13.0367
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_LTCUSD/results/full_size/20261106T024628Z_90bab49b
+    seconds: 24
+  - window: W5
+    net_return: 0.1436
+    trades: 32
+    sharpe: 1.6633
+    max_drawdown: 0.0982
+    exposure_pct: 12.8431
+    cost_drag_pct: 19.4306
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_LTCUSD/results/full_size/20261106T024655Z_90bab49b
+    seconds: 28
+  - window: W6
+    net_return: -0.1281
+    trades: 26
+    sharpe: -2.8013
+    max_drawdown: 0.1838
+    exposure_pct: 10.3825
+    cost_drag_pct: 23.68
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_LTCUSD/results/full_size/20261106T024719Z_90bab49b
+    seconds: 24
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: -0.0197
+    median_window_sharpe: 0.16714999999999997
+    worst_window_drawdown: 0.0967
+    trades: 181
+  windows:
+  - window: W1
+    net_return: 0.0286
+    trades: 28
+    sharpe: 1.549
+    max_drawdown: 0.0317
+    exposure_pct: 11.25
+    cost_drag_pct: 20.4899
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_LTCUSD/results/vol_target/20261106T024744Z_046854a5
+    seconds: 24
+  - window: W2
+    net_return: -0.0125
+    trades: 29
+    sharpe: -0.3063
+    max_drawdown: 0.0537
+    exposure_pct: 11.7547
+    cost_drag_pct: 100.7665
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_LTCUSD/results/vol_target/20261106T024808Z_046854a5
+    seconds: 25
+  - window: W3
+    net_return: 0.0172
+    trades: 30
+    sharpe: 0.6406
+    max_drawdown: 0.0296
+    exposure_pct: 11.4071
+    cost_drag_pct: 31.5732
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_LTCUSD/results/vol_target/20261106T024834Z_046854a5
+    seconds: 26
+  - window: W4
+    net_return: -0.0687
+    trades: 34
+    sharpe: -3.34
+    max_drawdown: 0.0967
+    exposure_pct: 13.7847
+    cost_drag_pct: 13.6224
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_LTCUSD/results/vol_target/20261106T024859Z_046854a5
+    seconds: 25
+  - window: W5
+    net_return: 0.0582
+    trades: 32
+    sharpe: 2.3312
+    max_drawdown: 0.0229
+    exposure_pct: 12.8431
+    cost_drag_pct: 14.8216
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_LTCUSD/results/vol_target/20261106T024926Z_046854a5
+    seconds: 26
+  - window: W6
+    net_return: -0.0373
+    trades: 28
+    sharpe: -2.0981
+    max_drawdown: 0.0675
+    exposure_pct: 10.3825
+    cost_drag_pct: 37.3816
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_LTCUSD/results/vol_target/20261106T024950Z_046854a5
+    seconds: 25
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: true
+  verdict: fail

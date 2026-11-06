@@ -1,0 +1,177 @@
+brief: n12_short_horizon_daily_reversion_1d.md
+ideas:
+  - id: vol_scaled_shock_continuation
+    belief: On thin mid-cap coins, news and flow spread out slowly, so a 3-day move larger than 2 units of pre-move volatility keeps going over the next 5 days rather than reversing.
+    claim:
+      when: bars where the 3-day return exceeds 2 units of 3-day volatility, measured on the 30 days before the move (one event per 3 bars)
+      then: the 5-day forward return has the same sign as the move and covers the round-trip cost
+      compared_to: zero after cost (net_return)
+      measure: net_return
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.006
+      code: |
+        vol = ret.rolling(30).std().shift(3)
+        m3 = df.close.pct_change(3)
+        z = m3 / (vol * np.sqrt(3))
+        a = spaced(z.abs() > 2, 3)
+        b = ~a
+        signal = np.sign(m3)
+    why_no_lookahead: The volatility uses returns that end 3 bars before the bar, and the move is the 3-day return up to the bar's close.
+    how_it_trades: Enter in the direction of the shock at the close and exit 5 days later.
+  - id: up_shock_short_fade
+    belief: Sharp rallies on mid-cap coins are short squeezes or pumps with no lasting buyer, so the fade works on the short side even though the long-side rebound after selloffs did not.
+    claim:
+      when: bars where the 3-day return is above +2 units of pre-move 3-day volatility (one event per 3 bars)
+      then: price falls over the next 3 days by more than the round-trip cost
+      compared_to: zero after cost (net_return)
+      measure: net_return
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.005
+      code: |
+        vol = ret.rolling(30).std().shift(3)
+        m3 = df.close.pct_change(3)
+        z = m3 / (vol * np.sqrt(3))
+        a = spaced(z > 2, 3)
+        b = ~a
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: The volatility ends 3 bars before the bar and the 3-day return ends at the bar's close.
+    how_it_trades: Short on margin at the close after an up-shock and cover 3 days later.
+  - id: confirmed_reversal_after_shock
+    belief: A fade entered at the shock's close fights the last of the forced flow, while waiting for one day that closes against the shock enters once that flow is spent, so the reversal that follows is larger.
+    claim:
+      when: the day after a 1.5-unit 3-day shock, when that day closes against the shock's direction
+      then: the next 3 days continue against the shock
+      compared_to: the day after a shock when that day closes in the shock's direction
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.008
+      code: |
+        vol = ret.rolling(30).std().shift(3)
+        m3 = df.close.pct_change(3)
+        z = m3 / (vol * np.sqrt(3))
+        sh1 = (z.abs() > 1.5).shift(1, fill_value=False)
+        d = np.sign(m3.shift(1))
+        a = spaced(sh1 & (np.sign(ret) == -d), 3)
+        b = spaced(sh1 & (np.sign(ret) == d), 3)
+        signal = -d
+    why_no_lookahead: The shock is measured up to the prior bar, and the confirmation is the current bar's own close.
+    how_it_trades: After a shock, wait one day; if that day closes against the shock, fade the shock for 3 days.
+  - id: volume_climax_shock_reverts
+    belief: A shock made on climactic volume, about 2.5 times normal, marks capitulation or blow-off; the marginal seller or buyer is used up, so price reverts after cost.
+    claim:
+      when: bars where the 3-day move is beyond 2 units of pre-move volatility and the volume over those 3 days is more than 2.5 times the 30-day median daily volume before the move
+      then: the next 3 days move against the shock by more than the round-trip cost
+      compared_to: zero after cost (net_return)
+      measure: net_return
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.006
+      code: |
+        vol = ret.rolling(30).std().shift(3)
+        m3 = df.close.pct_change(3)
+        z = m3 / (vol * np.sqrt(3))
+        vmed = df.volume.rolling(30).median().shift(3)
+        vr = df.volume.rolling(3).sum() / (3 * vmed)
+        a = spaced((z.abs() > 2) & (vr > 2.5), 3)
+        b = ~a
+        signal = -np.sign(m3)
+    why_no_lookahead: The baseline volume and volatility end before the move, and the move's volume and return end at the bar's close.
+    how_it_trades: Fade a high-volume shock at the close and hold 3 days.
+  - id: fading_volume_into_shock
+    belief: When volume falls on each day of a sharp move, fewer traders are pushing it, so the move is running out of participation and reverts; when volume rises each day, new flow keeps arriving.
+    claim:
+      when: bars ending a 1.5-unit 3-day shock where daily volume fell on each of the 3 days
+      then: the next 3 days move against the shock
+      compared_to: bars ending a 1.5-unit 3-day shock where daily volume rose on each of the 3 days
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.008
+      code: |
+        vol = ret.rolling(30).std().shift(3)
+        m3 = df.close.pct_change(3)
+        z = m3 / (vol * np.sqrt(3))
+        v = df.volume
+        dec = (v < v.shift(1)) & (v.shift(1) < v.shift(2))
+        inc = (v > v.shift(1)) & (v.shift(1) > v.shift(2))
+        sh = z.abs() > 1.5
+        a = spaced(sh & dec, 3)
+        b = spaced(sh & inc, 3)
+        signal = -np.sign(m3)
+    why_no_lookahead: It uses only the volumes and closes of the bar and the 2 bars before it, and volatility from before the move.
+    how_it_trades: Fade shocks whose volume dwindles during the move; skip the ones on rising volume.
+  - id: post_shock_volume_dryup
+    belief: If volume collapses the day after a shock, the force that drove it has left the market, and the price drifts back as liquidity providers re-center.
+    claim:
+      when: the day after a 1.5-unit 3-day shock, when that day's volume is under half the average volume of the 3 shock days
+      then: the next 3 days move against the shock
+      compared_to: the day after a shock when volume stays at or above half the shock days' average
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.008
+      code: |
+        vol = ret.rolling(30).std().shift(3)
+        m3 = df.close.pct_change(3)
+        z = m3 / (vol * np.sqrt(3))
+        sh1 = (z.abs() > 1.5).shift(1, fill_value=False)
+        v = df.volume
+        dry = v < 0.5 * v.shift(1).rolling(3).mean()
+        a = spaced(sh1 & dry, 3)
+        b = spaced(sh1 & ~dry, 3)
+        signal = -np.sign(m3.shift(1))
+    why_no_lookahead: The shock and the shock days' volume end at the prior bar; the dry-up test uses the current bar's own volume.
+    how_it_trades: One day after a shock, fade it only if volume has dried up, and hold 3 days.
+  - id: inside_day_after_shock_reverts
+    belief: An inside day right after a shock (range within the prior bar's range) shows the move has stalled and two-way trade has returned, which leads into a reversal rather than a continuation.
+    claim:
+      when: the day after a 1.5-unit 3-day shock, when that day's high and low are inside the prior bar's high and low
+      then: the next 3 days move against the shock
+      compared_to: the day after a shock when that day is not an inside day
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.008
+      code: |
+        vol = ret.rolling(30).std().shift(3)
+        m3 = df.close.pct_change(3)
+        z = m3 / (vol * np.sqrt(3))
+        sh1 = (z.abs() > 1.5).shift(1, fill_value=False)
+        inside = (df.high <= df.high.shift(1)) & (df.low >= df.low.shift(1))
+        a = spaced(sh1 & inside, 3)
+        b = spaced(sh1 & ~inside, 3)
+        signal = -np.sign(m3.shift(1))
+    why_no_lookahead: The inside-day test uses the current bar's high and low against the prior bar's, and the shock ends at the prior bar.
+    how_it_trades: Fade a shock when the following day is an inside day, and hold 3 days.
+  - id: whipsaw_regime_shock_reverts
+    belief: When a shock comes shortly after an opposite-sign shock, the coin is in a choppy, liquidity-driven regime where moves are pushed back, while an isolated shock is more likely real news.
+    claim:
+      when: bars ending a 1.5-unit 3-day shock where an opposite-sign 1.5-unit shock ended 4 to 12 bars earlier
+      then: the next 3 days move against the current shock
+      compared_to: bars ending a 1.5-unit shock with no opposite-sign shock 4 to 12 bars earlier
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.008
+      code: |
+        vol = ret.rolling(30).std().shift(3)
+        m3 = df.close.pct_change(3)
+        z = m3 / (vol * np.sqrt(3))
+        up = (z > 1.5).astype(float)
+        dn = (z < -1.5).astype(float)
+        prior_up = up.shift(4).rolling(9).max() > 0
+        prior_dn = dn.shift(4).rolling(9).max() > 0
+        opp = ((z > 1.5) & prior_dn) | ((z < -1.5) & prior_up)
+        sh = z.abs() > 1.5
+        a = spaced(sh & opp, 3)
+        b = spaced(sh & ~opp, 3)
+        signal = -np.sign(m3)
+    why_no_lookahead: The earlier shocks are taken from bars 4 to 12 before the current bar through shift and rolling, and the current shock ends at the bar's close.
+    how_it_trades: Fade a shock only when it reverses a recent opposite shock, and hold 3 days.
+notes: >
+  Size unit throughout: 3-day close-to-close return divided by sqrt(3) times the 30-day daily return standard deviation measured before the move. The 2-unit cutoff is used for whole-sample claims. Conditional splits use 1.5 units so each side keeps at least 30 events per coin.
+  Ten fade variants have already failed, so two ideas test the opposite or a one-sided view: continuation, and a short-only fade of up-shocks. The rest change the entry trigger or the condition: climax volume, volume falling within the move, volume drying up after it, an inside day, a confirmation day, and a whipsaw regime. They stay distinct from the failed light-volume, trend, range, calm-regime, close-location, concentration, weekend, long-only and dose-response tests.
+  Positive direction is used for every claim so that min_effect is a plain magnitude.

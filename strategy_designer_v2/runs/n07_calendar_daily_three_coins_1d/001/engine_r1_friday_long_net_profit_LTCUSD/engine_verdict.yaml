@@ -1,0 +1,147 @@
+claim: friday_long_net_profit
+symbol: LTCUSD
+bar_size: 1d
+fold: B
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 200
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: 1.3058
+  median_window_sharpe: 1.11165
+  worst_window_drawdown: 0.1611
+  trades: 106
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: -0.0578
+    trades: 18
+    sharpe: -0.6635
+    max_drawdown: 0.1611
+    exposure_pct: 13.8211
+    cost_drag_pct: 47.9076
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_LTCUSD/results/full_size/20261106T030906Z_e236a1a5
+    seconds: 3
+  - window: W2
+    net_return: 0.4419
+    trades: 17
+    sharpe: 4.6229
+    max_drawdown: 0.0442
+    exposure_pct: 14.1667
+    cost_drag_pct: 4.7928
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_LTCUSD/results/full_size/20261106T030908Z_e236a1a5
+    seconds: 2
+  - window: W3
+    net_return: 0.0472
+    trades: 17
+    sharpe: 0.8899
+    max_drawdown: 0.08
+    exposure_pct: 13.9344
+    cost_drag_pct: 27.9789
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_LTCUSD/results/full_size/20261106T030911Z_e236a1a5
+    seconds: 3
+  - window: W4
+    net_return: 0.395
+    trades: 18
+    sharpe: 3.5189
+    max_drawdown: 0.0498
+    exposure_pct: 14.6341
+    cost_drag_pct: 5.0029
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_LTCUSD/results/full_size/20261106T030913Z_e236a1a5
+    seconds: 3
+  - window: W5
+    net_return: 0.1823
+    trades: 18
+    sharpe: 1.3334
+    max_drawdown: 0.0979
+    exposure_pct: 14.1667
+    cost_drag_pct: 10.4678
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_LTCUSD/results/full_size/20261106T030916Z_e236a1a5
+    seconds: 2
+  - window: W6
+    net_return: -0.0173
+    trades: 18
+    sharpe: -0.0343
+    max_drawdown: 0.141
+    exposure_pct: 13.9344
+    cost_drag_pct: 9187.3619
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_LTCUSD/results/full_size/20261106T030919Z_e236a1a5
+    seconds: 3
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: true
+    worst_window_drawdown_le_20%: true
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: 0.2242
+    median_window_sharpe: 0.8996500000000001
+    worst_window_drawdown: 0.0445
+    trades: 106
+  windows:
+  - window: W1
+    net_return: -0.0209
+    trades: 18
+    sharpe: -1.0781
+    max_drawdown: 0.0445
+    exposure_pct: 13.8211
+    cost_drag_pct: 25.6756
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_LTCUSD/results/vol_target/20261106T030922Z_625ca49e
+    seconds: 3
+  - window: W2
+    net_return: 0.0642
+    trades: 17
+    sharpe: 4.421
+    max_drawdown: 0.0073
+    exposure_pct: 14.1667
+    cost_drag_pct: 4.6645
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_LTCUSD/results/vol_target/20261106T030924Z_625ca49e
+    seconds: 3
+  - window: W3
+    net_return: 0.012
+    trades: 17
+    sharpe: 0.7175
+    max_drawdown: 0.0247
+    exposure_pct: 13.9344
+    cost_drag_pct: 29.2819
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_LTCUSD/results/vol_target/20261106T030927Z_625ca49e
+    seconds: 3
+  - window: W4
+    net_return: 0.1251
+    trades: 18
+    sharpe: 3.2599
+    max_drawdown: 0.0176
+    exposure_pct: 14.6341
+    cost_drag_pct: 4.6504
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_LTCUSD/results/vol_target/20261106T030930Z_625ca49e
+    seconds: 3
+  - window: W5
+    net_return: 0.0323
+    trades: 18
+    sharpe: 1.0818
+    max_drawdown: 0.0241
+    exposure_pct: 14.1667
+    cost_drag_pct: 9.4545
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_LTCUSD/results/vol_target/20261106T030932Z_625ca49e
+    seconds: 3
+  - window: W6
+    net_return: -0.0004
+    trades: 18
+    sharpe: -0.0133
+    max_drawdown: 0.0234
+    exposure_pct: 13.9344
+    cost_drag_pct: 123.7789
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_LTCUSD/results/vol_target/20261106T030935Z_625ca49e
+    seconds: 3
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: true
+  verdict: fail

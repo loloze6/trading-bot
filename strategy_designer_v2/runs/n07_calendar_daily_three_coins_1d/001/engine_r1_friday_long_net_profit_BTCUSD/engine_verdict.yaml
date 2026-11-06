@@ -1,0 +1,147 @@
+claim: friday_long_net_profit
+symbol: BTCUSD
+bar_size: 1d
+fold: B
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 200
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: 0.3336
+  median_window_sharpe: 0.6943
+  worst_window_drawdown: 0.0845
+  trades: 106
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: 0.022
+    trades: 18
+    sharpe: 0.504
+    max_drawdown: 0.0712
+    exposure_pct: 13.8211
+    cost_drag_pct: 46.7351
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_BTCUSD/results/full_size/20261106T030831Z_e236a1a5
+    seconds: 2
+  - window: W2
+    net_return: 0.0924
+    trades: 17
+    sharpe: 2.752
+    max_drawdown: 0.0159
+    exposure_pct: 14.1667
+    cost_drag_pct: 16.2452
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_BTCUSD/results/full_size/20261106T030834Z_e236a1a5
+    seconds: 3
+  - window: W3
+    net_return: 0.0078
+    trades: 17
+    sharpe: 0.2163
+    max_drawdown: 0.0675
+    exposure_pct: 13.9344
+    cost_drag_pct: 71.2763
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_BTCUSD/results/full_size/20261106T030837Z_e236a1a5
+    seconds: 3
+  - window: W4
+    net_return: 0.0923
+    trades: 18
+    sharpe: 2.3235
+    max_drawdown: 0.0297
+    exposure_pct: 14.6341
+    cost_drag_pct: 16.85
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_BTCUSD/results/full_size/20261106T030840Z_e236a1a5
+    seconds: 3
+  - window: W5
+    net_return: 0.0624
+    trades: 18
+    sharpe: 0.8846
+    max_drawdown: 0.0616
+    exposure_pct: 14.1667
+    cost_drag_pct: 23.804
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_BTCUSD/results/full_size/20261106T030842Z_e236a1a5
+    seconds: 3
+  - window: W6
+    net_return: 0.0214
+    trades: 18
+    sharpe: 0.4237
+    max_drawdown: 0.0845
+    exposure_pct: 13.9344
+    cost_drag_pct: 47.0366
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_BTCUSD/results/full_size/20261106T030845Z_e236a1a5
+    seconds: 3
+  checks:
+    net_positive_in_5_of_6: true
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: true
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: 0.107
+    median_window_sharpe: 0.67145
+    worst_window_drawdown: 0.0268
+    trades: 106
+  windows:
+  - window: W1
+    net_return: 0.0034
+    trades: 18
+    sharpe: 0.2247
+    max_drawdown: 0.023
+    exposure_pct: 13.8211
+    cost_drag_pct: 64.6619
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_BTCUSD/results/vol_target/20261106T030848Z_625ca49e
+    seconds: 3
+  - window: W2
+    net_return: 0.0394
+    trades: 17
+    sharpe: 2.7456
+    max_drawdown: 0.0036
+    exposure_pct: 14.1667
+    cost_drag_pct: 14.178
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_BTCUSD/results/vol_target/20261106T030850Z_625ca49e
+    seconds: 3
+  - window: W3
+    net_return: -0.0096
+    trades: 17
+    sharpe: -0.6335
+    max_drawdown: 0.0264
+    exposure_pct: 13.9344
+    cost_drag_pct: 144.2372
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_BTCUSD/results/vol_target/20261106T030853Z_625ca49e
+    seconds: 3
+  - window: W4
+    net_return: 0.0421
+    trades: 18
+    sharpe: 2.592
+    max_drawdown: 0.0081
+    exposure_pct: 14.6341
+    cost_drag_pct: 14.9099
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_BTCUSD/results/vol_target/20261106T030856Z_625ca49e
+    seconds: 3
+  - window: W5
+    net_return: 0.0187
+    trades: 18
+    sharpe: 0.8421
+    max_drawdown: 0.0191
+    exposure_pct: 14.1667
+    cost_drag_pct: 20.2135
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_BTCUSD/results/vol_target/20261106T030858Z_625ca49e
+    seconds: 3
+  - window: W6
+    net_return: 0.0095
+    trades: 18
+    sharpe: 0.5008
+    max_drawdown: 0.0268
+    exposure_pct: 13.9344
+    cost_drag_pct: 37.06
+    run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_BTCUSD/results/vol_target/20261106T030900Z_625ca49e
+    seconds: 2
+  checks:
+    net_positive_in_5_of_6: true
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: true
+  verdict: fail

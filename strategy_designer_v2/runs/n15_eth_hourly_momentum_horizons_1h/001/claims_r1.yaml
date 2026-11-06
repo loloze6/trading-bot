@@ -1,0 +1,36 @@
+brief: n15_eth_hourly_momentum_horizons_1h.md
+source: analyst round 1
+ideas:
+- brief: n15_eth_hourly_momentum_horizons_1h.md
+  ideas:
+  - id: fade_large_volscaled_24h_move_net
+    belief: Large one-day ETH moves, relative to the past week's hourly volatility,
+      are overshoots that partly revert over the next day by more than the round-trip
+      cost.
+    claim:
+      when: Bars where the 24h return exceeds 1.5 times its vol-scaled size (hourly
+        std over 168 bars times sqrt 24), keeping at most one event per 24 bars.
+      then: Trading against the 24h move and holding 24 bars earns a positive return
+        after the 0.15% cost.
+      compared_to: The cost of zero, measured as net return on the selected bars.
+      measure: net_return
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.002
+      code: 'r24 = df.close / df.close.shift(24) - 1
+
+        vol = ret.rolling(168).std()
+
+        z = r24 / (vol * np.sqrt(24))
+
+        a = spaced((z.abs() > 1.5).fillna(False), 24)
+
+        b = ~a
+
+        signal = -np.sign(z).replace(0, 1).fillna(1)
+
+        '
+    why_no_lookahead: r24 and vol use only closes at or before the bar, and spaced
+      looks only at prior bars.
+    how_it_trades: At the close of a bar with |z| > 1.5, take the side opposite the
+      24h move, hold 24 bars, then exit.

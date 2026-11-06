@@ -1,0 +1,34 @@
+run: n11_daily_gate_hourly_entry_1h / fold A (try folder name not given in the files)
+observations:
+  - "No claim passed on both coins (0 of 11), so there is no profit answer."
+  - "trend_gate_breakout_long nearly held: ETH passed with effect 0.0166 and 5 of 6 windows positive, and BTC beat the 0.004 bar on the whole fold at 0.0086 but had only 4 of 6 windows positive (windows 3 and 4 at -0.0086 and -0.0049)."
+  - "trend_aligned_momentum_hit_rate split by coin: ETH passed at +0.074 hit rate, while BTC was flat at -0.004 with window 5 alone at +0.152."
+  - "Every dip-buy gate failed on both coins: the uptrend gate scored 0.0027 on BTC and 0.0007 on ETH, the near-high gate 0.0030 on BTC and 0.0073 on ETH, and the calming-vol gate -0.0013 on BTC and 0.0030 on ETH."
+  - "The near-high dip gate looked right on ETH (0.0073 on the whole fold, windows 1-4 positive), but windows 5 and 6 flipped to -0.011 and -0.015."
+  - "Low-volatility regimes did not help either entry type: calm-regime reversion scored -0.0009 on BTC and -0.0040 on ETH, and compressed-regime breakouts -0.0008 on BTC and 0.0024 on ETH."
+  - "Trend-aligned two-sided breakouts did not pay the cost (net -0.0041 on BTC, -0.00004 on ETH), so the long-side gate edge does not survive once short breakouts in downtrends are added."
+  - "downtrend_gate_rally_fade beat 0.004 on BTC (0.0049), but window 4 was -0.060 and ETH had only 3 of 6 windows positive."
+  - "Window 3 was negative for nearly every long-biased claim on both coins (for example, -0.022 for BTC uptrend dip and -0.029 for ETH uptrend dip), which points to a single regime that breaks dip and breakout gates alike."
+  - "deep_drawdown_capitulation_long had too few events (BTC n_a 29, below 30; ETH 40) and windows of mixed sign."
+next_claim:
+  id: near_high_gate_breakout_long
+  belief: A two-day high break that happens within a few percent of the three-week high is strength being confirmed and continues, while the same break deep in a drawdown is a relief bounce that fades.
+  claim:
+    when: bars that close above the prior 48-hour high (one event per 24 bars) while the close is within 5% of the 504-hour high
+    then: the 24-bar forward return is higher
+    compared_to: the same breakouts when the close is more than 10% below the 504-hour high
+    measure: mean_diff
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.004
+    code: |
+      hh = df.high.rolling(48).max().shift(1)
+      brk = spaced(df.close > hh, 24)
+      hi = df.high.rolling(504).max()
+      dd = df.close / hi - 1
+      a = brk & (dd > -0.05)
+      b = brk & (dd < -0.10)
+      signal = pd.Series(1.0, index=df.index)
+  why_no_lookahead: The prior high uses shift(1), and the 504-bar high and drawdown use only bars up to the current close.
+  how_it_trades: Buy hourly two-day breakouts only when price is within 5% of its three-week high, and hold for 24 hours.
+why: Breakouts were the only entry where a slow gate separated outcomes (ETH passed, BTC 0.0086 on the whole fold), and drawdown from a high is the slow state not yet tried on breakouts; 0.004 matches the bar the trend gate nearly cleared.

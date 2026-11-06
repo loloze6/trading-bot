@@ -1,0 +1,228 @@
+brief: n32_vol_term_structure_hourly_1h.md
+ideas:
+  - id: expansion_persists_in_size
+    belief: Volatility clusters on hourly crypto bars, so a 24h-over-168h volatility expansion means larger absolute moves over the next day than when the term structure is flat or inverted, which makes the ratio usable as a gate for other rules.
+    claim:
+      when: bars where 24h realised vol is more than 1.5 times 168h realised vol (one event per 24 bars)
+      then: the absolute 24h forward return is larger
+      compared_to: bars where 24h vol is below 168h vol (one event per 24 bars)
+      measure: abs_ratio
+      horizon_bars: 24
+      direction: above
+      min_effect: 1.40
+      code: |
+        rv24 = ret.rolling(24).std()
+        rv168 = ret.rolling(168).std()
+        r = rv24 / rv168
+        a = spaced(r > 1.5, 24)
+        b = spaced(r < 1.0, 24)
+    why_no_lookahead: Both volatility windows are trailing rolling stds ending at the bar's close.
+    how_it_trades: Use it to scale position size or to enable trend and reversal rules only in the expansion regime.
+
+  - id: expansion_momentum_24_168
+    belief: When short vol runs above long vol, new information is being absorbed and the 24h move continues, while in a quiet term structure the same move is noise.
+    claim:
+      when: bars where 24h/168h realised vol ratio exceeds 1.3 (one event per 24 bars)
+      then: the next 24h return has the same sign as the past 24h return
+      compared_to: bars where the 24h/168h ratio is below 0.8 (one event per 24 bars)
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.004
+      code: |
+        rv24 = ret.rolling(24).std()
+        rv168 = ret.rolling(168).std()
+        r = rv24 / rv168
+        pc24 = df.close.pct_change(24)
+        a = spaced(r > 1.3, 24)
+        b = spaced(r < 0.8, 24)
+        signal = np.sign(pc24)
+    why_no_lookahead: The ratio and the 24h return use only closes up to and including the current bar.
+    how_it_trades: Go in the direction of the 24h move when the 24h/168h ratio is above 1.3, hold 24 hours.
+
+  - id: compression_reversal_6_72
+    belief: When 6h vol is far below 72h vol the market is asleep and small drifts are liquidity noise that reverts, rather than information.
+    claim:
+      when: bars where 6h realised vol is below 0.6 times 72h realised vol (one event per 6 bars)
+      then: the next 6h return has the opposite sign of the past 6h return more often
+      compared_to: bars where the 6h/72h ratio is at or above 0.6 (one event per 6 bars)
+      measure: hit_rate
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.03
+      code: |
+        r6 = ret.rolling(6).std() / ret.rolling(72).std()
+        pc6 = df.close.pct_change(6)
+        a = spaced(r6 < 0.6, 6)
+        b = spaced(r6 >= 0.6, 6)
+        signal = -np.sign(pc6)
+    why_no_lookahead: The 6h and 72h stds and the 6h return all end at the current close.
+    how_it_trades: Fade the 6h drift when the 6h/72h vol ratio is below 0.6, hold 6 hours.
+
+  - id: shock_reversal_6_72
+    belief: A sudden spike where 6h vol is more than 2.5 times 72h vol is usually a liquidation cascade or stop run, and part of it retraces over the next half day by enough to pay the fee.
+    claim:
+      when: bars where 6h realised vol exceeds 2.5 times 72h realised vol (one event per 12 bars)
+      then: the next 12h return is opposite to the past 6h move
+      compared_to: zero, net of the 0.15% round trip
+      measure: net_return
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.002
+      code: |
+        r6 = ret.rolling(6).std() / ret.rolling(72).std()
+        pc6 = df.close.pct_change(6)
+        a = spaced(r6 > 2.5, 12)
+        b = ~a
+        signal = -np.sign(pc6)
+    why_no_lookahead: The spike is detected from trailing 6h and 72h stds and the trailing 6h return at the bar's close.
+    how_it_trades: On a 6h/72h vol spike above 2.5, fade the 6h move and exit after 12 hours.
+
+  - id: compression_breakout_24_168
+    belief: A large bar that breaks a compressed term structure (24h vol well below 168h vol) starts a new move, because positioning built up during the quiet period is forced to adjust.
+    claim:
+      when: bars whose absolute return exceeds 2.5 times the prior 168h vol while the prior bar's 24h/168h ratio was below 0.6 (one event per 24 bars)
+      then: the next 24h return follows the breakout bar's direction
+      compared_to: zero, net of the 0.15% round trip
+      measure: net_return
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.003
+      code: |
+        rv24 = ret.rolling(24).std()
+        rv168 = ret.rolling(168).std()
+        r = rv24 / rv168
+        brk = (r.shift(1) < 0.6) & (ret.abs() > 2.5 * rv168.shift(1))
+        a = spaced(brk, 24)
+        b = ~a
+        signal = np.sign(ret)
+    why_no_lookahead: The compression is measured up to the prior bar and the breakout uses the current bar's close-to-close return.
+    how_it_trades: Enter in the breakout bar's direction when it ends a 24h/168h compression, hold 24 hours.
+
+  - id: expansion_selloff_bounce
+    belief: Crypto vol expansions are mostly sell-offs, and buying while 24h vol is far above 168h vol after a down day earns a fear premium as forced sellers clear.
+    claim:
+      when: bars where the 24h/168h vol ratio exceeds 1.5 and the past 24h return is negative (one event per 24 bars)
+      then: the 48h forward return is higher (long only)
+      compared_to: all other bars
+      measure: mean_diff
+      horizon_bars: 48
+      direction: positive
+      min_effect: 0.005
+      code: |
+        rv24 = ret.rolling(24).std()
+        rv168 = ret.rolling(168).std()
+        r = rv24 / rv168
+        pc24 = df.close.pct_change(24)
+        a = spaced((r > 1.5) & (pc24 < 0), 24)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The ratio and the 24h return are trailing values at the current close.
+    how_it_trades: Buy when 24h vol is above 1.5 times 168h vol after a down day, hold 48 hours.
+
+  - id: steep_term_structure_bearish_drift
+    belief: Rising short vol relative to long vol signals de-leveraging that keeps going, so the log 24h/168h vol ratio is negatively ranked with the next day's return. This contradicts expansion_selloff_bounce on purpose.
+    claim:
+      when: all bars with a defined ratio, one sample per 24 bars
+      then: a higher log 24h/168h vol ratio goes with a lower 24h forward return
+      compared_to: not used (rank correlation)
+      measure: rank_corr
+      horizon_bars: 24
+      direction: negative
+      min_effect: 0.04
+      code: |
+        rv24 = ret.rolling(24).std()
+        rv168 = ret.rolling(168).std()
+        r = rv24 / rv168
+        a = spaced(r.notna() & (r > 0), 24)
+        feature = np.log(r)
+    why_no_lookahead: The feature is a ratio of trailing rolling stds ending at the current close.
+    how_it_trades: Reduce or short exposure as the 24h/168h ratio rises and add as it falls, rebalancing daily.
+
+  - id: range_expansion_without_close_expansion_chop
+    belief: When intrabar ranges widen on the 24h/168h Parkinson ratio but close-to-close vol does not, the market is churning without direction, and the last 6h move reverts.
+    claim:
+      when: bars where the 24h/168h Parkinson range vol ratio exceeds 1.3 while the 24h/168h close-to-close vol ratio is below 1.0 (one event per 6 bars)
+      then: the next 6h return is opposite to the past 6h move more often
+      compared_to: all other bars with defined ratios (one event per 6 bars)
+      measure: hit_rate
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.03
+      code: |
+        rv24 = ret.rolling(24).std()
+        rv168 = ret.rolling(168).std()
+        r = rv24 / rv168
+        pk = np.log(df.high / df.low) ** 2
+        pr = np.sqrt(pk.rolling(24).mean()) / np.sqrt(pk.rolling(168).mean())
+        chop = (pr > 1.3) & (r < 1.0)
+        pc6 = df.close.pct_change(6)
+        a = spaced(chop, 6)
+        b = spaced(r.notna() & pr.notna() & ~chop, 6)
+        signal = -np.sign(pc6)
+    why_no_lookahead: High, low and close of bars up to the current one feed trailing windows only.
+    how_it_trades: Fade the 6h move when range vol expands but close vol does not, hold 6 hours.
+
+  - id: volume_confirmed_expansion_momentum
+    belief: A vol expansion backed by a volume expansion reflects real participation and trends, while an expansion on thin volume is a liquidity air pocket that does not.
+    claim:
+      when: bars where the 24h/168h vol ratio exceeds 1.3 and 24h mean volume exceeds 1.5 times 168h mean volume (one event per 24 bars)
+      then: the next 24h return follows the past 24h direction
+      compared_to: bars where the 24h/168h vol ratio exceeds 1.3 but the 24h/168h volume ratio is below 1.1 (one event per 24 bars)
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.004
+      code: |
+        rv24 = ret.rolling(24).std()
+        rv168 = ret.rolling(168).std()
+        r = rv24 / rv168
+        vr = df.volume.rolling(24).mean() / df.volume.rolling(168).mean()
+        pc24 = df.close.pct_change(24)
+        exp_ = r > 1.3
+        a = spaced(exp_ & (vr > 1.5), 24)
+        b = spaced(exp_ & (vr < 1.1), 24)
+        signal = np.sign(pc24)
+    why_no_lookahead: The vol and volume ratios and the 24h return are trailing at the current close.
+    how_it_trades: Follow the 24h move only when both the vol and volume term structures are expanded, hold 24 hours.
+
+  - id: weekend_compression_is_false_calm
+    belief: A low 24h/168h vol ratio at the end of Sunday reflects the weekend liquidity lull rather than true calm, so the following Monday moves more than a day after an equally quiet weekday.
+    claim:
+      when: Sunday 23:00 UTC bars with a 24h/168h vol ratio below 0.8
+      then: the absolute 24h forward return is larger
+      compared_to: Monday-to-Friday 23:00 UTC bars with a 24h/168h vol ratio below 0.8
+      measure: abs_ratio
+      horizon_bars: 24
+      direction: above
+      min_effect: 1.20
+      code: |
+        rv24 = ret.rolling(24).std()
+        rv168 = ret.rolling(168).std()
+        r = rv24 / rv168
+        quiet = r < 0.8
+        a = (dow == 6) & (hour == 23) & quiet
+        b = (dow <= 4) & (hour == 23) & quiet
+    why_no_lookahead: Weekday, hour and the trailing vol ratio are known at the bar's close.
+    how_it_trades: Do not trust weekend compression as a low-vol regime for Monday; size Monday trades as if vol were normal.
+
+  - id: slow_term_structure_turn_72_720
+    belief: When 72h vol crosses back above 720h vol after a month-scale lull, a new regime begins, and the 72h direction at the turn persists over the next three days.
+    claim:
+      when: bars where the 72h/720h vol ratio crosses from below 1.0 to above 1.0 (one event per 72 bars)
+      then: the next 72h return follows the past 72h direction
+      compared_to: zero, net of the 0.15% round trip
+      measure: net_return
+      horizon_bars: 72
+      direction: positive
+      min_effect: 0.004
+      code: |
+        r = ret.rolling(72).std() / ret.rolling(720).std()
+        cross = (r > 1.0) & (r.shift(1) <= 1.0)
+        pc72 = df.close.pct_change(72)
+        a = spaced(cross, 72)
+        b = ~a
+        signal = np.sign(pc72)
+    why_no_lookahead: The cross compares the current trailing ratio with its previous-bar value, and the 72h return ends at the current close.
+    how_it_trades: At an upward 72h/720h vol cross, enter in the 72h direction and hold 72 hours.
+notes: Windows used are 24/168, 6/72 and 72/720. The 24/168 Parkinson range ratio is a different estimator of the same term structure. Two pairs contradict each other on purpose and the data decides. The pair expansion_selloff_bounce and steep_term_structure_bearish_drift is long versus bearish in expansions. The pair expansion_momentum and shock_reversal is continuation versus reversal, and they sit at different ratio levels and horizons. No idea repeats the already-tried daily expansion gate or daily low-vol momentum. The weekend idea may hold few bars per window; it is kept because its mechanism is distinct.

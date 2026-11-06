@@ -1,0 +1,33 @@
+run: n18_payment_coins_hourly_shock_1h/fold_A
+observations:
+  - Shocks (|ret| > 4x 168h median) were followed by higher 6h absolute returns in all 12 windows on both coins, but the whole-fold ratio was 1.31 on XRP and 1.26 on TRX, short of the 1.5 asked. The belief nearly held; the threshold was too high.
+  - Volume surges without a price move barely raised 12h volatility (XRP 1.19, TRX 1.02, with 2 of 6 windows below 1 on each coin), so volume alone carries little of the volatility signal that a price shock does.
+  - Fading thin-volume shocks lost money after costs in all 6 XRP windows (net -0.0042) and in 5 of 6 TRX windows (net -0.00089). XRP's gross 4h move after a thin shock went with the shock, not against it.
+  - Confirmed shocks held up better on XRP than on TRX: on XRP, net +0.0019 over 12h with 5 of 6 windows positive. On TRX, net -0.0028 with 5 of 6 windows negative.
+  - US-hour shocks continued more than Asia-hour shocks on XRP (+0.0026, 5 of 6 windows positive), but not on TRX (-0.0001, windows from -0.0125 to +0.0086).
+  - Splitting shocks by volume gave opposite results on the two coins (XRP -0.0018, TRX +0.0018), so shock direction does not depend on volume in any shared way.
+  - The exhausted-shock reversal passed on TRX (+0.0069, 5 of 6 windows positive, n_a 49) but failed on XRP (-0.0078, driven by one window at -0.057). The sample is small and the result is unstable.
+  - Shock size against the 24h reversal gave TRX -0.164 and XRP -0.055, but the window signs were split (3 of 6 negative on TRX, 3 of 6 on XRP), so the overreaction effect is not stable.
+  - Wick-rejection shocks were too rare to judge (n_a 45 on XRP, 30 on TRX), and their window effects swung between -0.014 and +0.026.
+next_claim:
+  id: volume_backed_shock_more_volatile_after
+  belief: On XRP and TRX, an hourly price shock that comes with a volume surge is followed by more volatility over the next hours than a shock on ordinary volume, because it reflects real flow rather than a thin book.
+  claim:
+    when: shock bars (|ret| > 4x the prior 168h median |ret|) with volume above 3x the prior 168h median volume, one per 6 bars
+    then: the absolute 6h forward return is larger
+    compared_to: shock bars of the same size on volume at or below 3x the median, one per 6 bars
+    measure: abs_ratio
+    horizon_bars: 6
+    direction: above
+    min_effect: 1.15
+    code: |
+      absr = ret.abs()
+      scale = absr.rolling(168).median().shift(1)
+      vmed = df.volume.rolling(168).median().shift(1)
+      shock = absr > 4 * scale
+      a = spaced(shock & (df.volume > 3 * vmed), 6)
+      b = spaced(shock & (df.volume <= 3 * vmed), 6)
+      signal = np.sign(ret)
+  why_no_lookahead: The scales use rolling medians shifted by one bar, and the selectors use only the current bar's close, return and volume.
+  how_it_trades: After a volume-backed shock, widen stops or run a long-volatility position (for example a straddle-style breakout entry) for 6h; after a thin shock, do not.
+why: Volatility after a shock was the only effect that kept its sign in every window on both coins. This claim tests whether volume separates the shocks that cause that volatility, which the direction claims could not show. The 1.15 threshold is set below the observed shock-versus-all ratio of about 1.26–1.31 but well above noise for about 300–400 shocks per group.

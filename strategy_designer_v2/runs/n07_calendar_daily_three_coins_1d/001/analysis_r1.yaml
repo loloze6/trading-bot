@@ -1,0 +1,31 @@
+run: n07_calendar_daily_three_coins_1d / fold B (try folder name not given in the files)
+observations:
+  - "The Friday de-risking belief was wrong in sign but very consistent: Friday returned more than other days by 0.40% (BTC), 0.95% (ETH) and 1.22% (LTC). The measured effect was negative on 6 of 6 windows for LTC and 5 of 6 for BTC and ETH."
+  - "Window 5 is the only window where BTC and ETH show Friday as weaker than other days (+0.15% and +0.19%), so the Friday strength is not uniform across time."
+  - "Monday did not show the reopen inflow: its return ran 0.23% (BTC), 0.28% (ETH) and 0.05% (LTC) below other days, and the windows disagree (window 2 is +1.6% to +2.9%, window 3 is -1.2% to -1.5%)."
+  - "Weekend days closed up less often than weekdays, not more: the hit-rate difference was -4.8 points (BTC), -5.4 (ETH) and -7.9 (LTC). Window 2 alone was -21 to -29 points, and window 3 was positive on all three coins."
+  - "The pre-month-end selling belief was wrong in sign: the 3 days from 5 days before month end rose on average by about 1.2% (BTC), 2.5% (ETH) and 1.4% (LTC). The short lost on 6 of 6 windows for BTC and 5 of 6 for ETH and LTC, but there were only 24 events, below the 30 needed."
+  - "Mid-month payday nearly held: net of cost it returned 0.78%, 1.29% and 0.87%, all above the 0.2% asked. It failed on consistency, with only 4, 5 and 4 positive windows, window 6 at -3.6% to -8.0%, and only 24 events."
+  - "The month-end rebalance reversal had no stable sign: its rank correlation was -0.09, +0.20 and -0.07, and window values swung between -0.8 and +1.0 on 24 points."
+  - "The expiry-week hedge unwind split by coin: BTC -0.32%, ETH -1.32%, LTC +1.54%, with only 21 events and window values in both directions."
+  - "The Q4 claim could not be judged on 2 of the 6 windows (they contain no Q4 days), and overall Q4 ran 0.17% to 0.33% below the rest of the year."
+next_claim:
+  id: friday_long_net_profit
+  belief: "Crypto buyers add exposure on Friday ahead of the weekend (weekly Deribit expiry at 08:00 UTC clears hedges, and retail funds accounts before the weekend), so being long over Friday pays after cost."
+  claim:
+    when: "Thursday daily bars (the bar whose date is Thursday), entering at its close"
+    then: "Friday's close-to-close return is positive enough to pay the round trip"
+    compared_to: "the round-trip cost (net_return); b = all other bars only for the count rule"
+    measure: net_return
+    horizon_bars: 1
+    direction: positive
+    min_effect: 0.002
+    code: |
+      d = df.index - pd.Timedelta(seconds=1)
+      wd = pd.Series(d.dayofweek, index=df.index)
+      a = wd == 3
+      b = ~a
+      signal = pd.Series(1.0, index=df.index)
+  why_no_lookahead: "The weekday comes from the bar's own date, and the position starts at Thursday's close."
+  how_it_trades: "Buy at Thursday's daily close and sell at Friday's daily close, one round trip per week."
+why: "Friday strength showed the same sign in 16 of 18 symbol-windows with 106 events per coin. Testing it as absolute profit after cost (not as relative weakness) asks whether a weekly long trade is tradeable, with min_effect 0.2% net, about 0.35% gross."

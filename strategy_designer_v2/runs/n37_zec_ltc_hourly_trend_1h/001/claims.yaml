@@ -1,0 +1,182 @@
+brief: n37_zec_ltc_hourly_trend_1h.md
+ideas:
+  - id: long_channel_breakout_240h
+    belief: On ZEC and LTC, short channels are mostly noise, but a close outside a 10-day channel marks a real repricing that keeps going for about two days.
+    claim:
+      when: the close is above the prior 240-hour high or below the prior 240-hour low, one event per 48 bars
+      then: the 48-hour forward return follows the breakout direction by more than the round-trip cost
+      compared_to: round-trip cost (net_return)
+      measure: net_return
+      horizon_bars: 48
+      direction: positive
+      min_effect: 0.004
+      code: |
+        hi = df.high.rolling(240).max().shift(1)
+        lo = df.low.rolling(240).min().shift(1)
+        up = df.close > hi
+        dn = df.close < lo
+        a = spaced(up | dn, 48)
+        b = ~a
+        signal = pd.Series(np.where(up, 1, -1), index=df.index)
+    why_no_lookahead: The channel uses highs and lows of the prior 240 bars, shifted by one; the trigger is the current close.
+    how_it_trades: Enter in the breakout direction at the close and exit after 48 hours.
+  - id: tsmom_168h_rank
+    belief: Weekly trend persists on these mid-cap coins because flows from retail and listings arrive slowly, so the past 7-day return predicts the next day.
+    claim:
+      when: one sampled bar per 24 hours
+      then: the 24-hour forward return rises with the trailing 168-hour return
+      compared_to: not used (rank correlation on the sampled bars)
+      measure: rank_corr
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.05
+      code: |
+        feature = df.close / df.close.shift(168) - 1
+        a = spaced(feature.notna(), 24)
+        b = ~a
+    why_no_lookahead: The feature is the close now over the close 168 bars earlier.
+    how_it_trades: Each day, hold long or short the sign of the trailing 7-day return for 24 hours.
+  - id: compression_gated_breakout
+    belief: A breakout out of a quiet period releases stored positioning and trends; a breakout during already high volatility is noise.
+    claim:
+      when: the close breaks the prior 120-hour channel while 120-hour realized volatility is in the lowest 30% of its trailing 2000-bar range, one event per 48 bars
+      then: the 48-hour forward return follows the breakout direction by more than the cost
+      compared_to: round-trip cost (net_return)
+      measure: net_return
+      horizon_bars: 48
+      direction: positive
+      min_effect: 0.005
+      code: |
+        hi = df.high.rolling(120).max().shift(1)
+        lo = df.low.rolling(120).min().shift(1)
+        up = df.close > hi
+        dn = df.close < lo
+        vol = ret.rolling(120).std()
+        pct = vol.rolling(2000).rank(pct=True)
+        a = spaced((up | dn) & (pct < 0.30), 48)
+        b = ~a
+        signal = pd.Series(np.where(up, 1, -1), index=df.index)
+    why_no_lookahead: The channel is shifted by one bar, and the volatility and its percentile use only past and current returns.
+    how_it_trades: Trade a 120-hour breakout only when volatility is compressed, and hold 48 hours.
+  - id: volume_confirmed_breakout
+    belief: On thin coins, breakouts without volume are stop runs that fail, while breakouts on heavy volume carry real order flow.
+    claim:
+      when: a 120-hour channel breakout bar with volume above 3 times the median volume of the prior 168 bars
+      then: the 24-hour forward return in the breakout direction is larger
+      compared_to: 120-hour channel breakouts without that volume
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.004
+      code: |
+        hi = df.high.rolling(120).max().shift(1)
+        lo = df.low.rolling(120).min().shift(1)
+        up = df.close > hi
+        dn = df.close < lo
+        brk = spaced(up | dn, 24)
+        medv = df.volume.rolling(168).median().shift(1)
+        heavy = df.volume > 3 * medv
+        a = brk & heavy
+        b = brk & ~heavy
+        signal = pd.Series(np.where(up, 1, -1), index=df.index)
+    why_no_lookahead: The channel and the median volume come from prior bars; the bar's own volume is known at its close.
+    how_it_trades: Take a breakout only when its bar volume is at least three times normal.
+  - id: us_session_breakout
+    belief: Breakouts during US hours, when liquidity and directional flow on Kraken are highest, persist more than breakouts during Asian night hours.
+    claim:
+      when: 120-hour channel breakouts on bars with UTC hour 13 to 20
+      then: the 24-hour forward return in the breakout direction is larger
+      compared_to: 120-hour channel breakouts at other hours
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.003
+      code: |
+        hi = df.high.rolling(120).max().shift(1)
+        lo = df.low.rolling(120).min().shift(1)
+        up = df.close > hi
+        dn = df.close < lo
+        brk = spaced(up | dn, 24)
+        us = (hour >= 13) & (hour <= 20)
+        a = brk & us
+        b = brk & ~us
+        signal = pd.Series(np.where(up, 1, -1), index=df.index)
+    why_no_lookahead: The channel uses prior bars, and the hour is the bar's own timestamp.
+    how_it_trades: Take breakouts only when they occur in the US session.
+  - id: efficiency_ratio_trend
+    belief: When price has moved in a clean straight line over two days (high efficiency ratio), the move reflects persistent one-sided flow that continues.
+    claim:
+      when: the 48-hour Kaufman efficiency ratio is above 0.4, one event per 24 bars
+      then: the 24-hour forward return follows the sign of the 48-hour move by more than the cost
+      compared_to: round-trip cost (net_return)
+      measure: net_return
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.003
+      code: |
+        chg = df.close - df.close.shift(48)
+        path = df.close.diff().abs().rolling(48).sum()
+        er = chg.abs() / path
+        a = spaced(er > 0.4, 24)
+        b = ~a
+        signal = np.sign(chg)
+    why_no_lookahead: The efficiency ratio uses only the last 48 closes, up to the current one.
+    how_it_trades: When the 48-hour move is efficient, follow its direction for 24 hours.
+  - id: weekend_breakout_fade
+    belief: Weekend breakouts on thin books are liquidity sweeps that revert once weekday participants return, which contradicts the trend ideas for that slice.
+    claim:
+      when: 120-hour channel breakouts on Saturday or Sunday (UTC), one event per 24 bars
+      then: the 24-hour forward return goes against the breakout by more than the cost
+      compared_to: round-trip cost (net_return)
+      measure: net_return
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.003
+      code: |
+        hi = df.high.rolling(120).max().shift(1)
+        lo = df.low.rolling(120).min().shift(1)
+        up = df.close > hi
+        dn = df.close < lo
+        a = spaced((up | dn) & (dow >= 5), 24)
+        b = ~a
+        signal = pd.Series(np.where(up, -1, 1), index=df.index)
+    why_no_lookahead: The channel uses prior bars, and the weekday is the bar's own timestamp.
+    how_it_trades: Fade weekend channel breakouts and exit after 24 hours.
+  - id: breakout_vol_expansion
+    belief: Channel breakouts on these coins start volatility expansions, so a volatility-targeted trend rule gets its edge from larger moves after the signal.
+    claim:
+      when: 168-hour channel breakouts, one event per 24 bars
+      then: the absolute 24-hour forward return is larger
+      compared_to: all other bars
+      measure: abs_ratio
+      horizon_bars: 24
+      direction: above
+      min_effect: 1.30
+      code: |
+        hi = df.high.rolling(168).max().shift(1)
+        lo = df.low.rolling(168).min().shift(1)
+        a = spaced((df.close > hi) | (df.close < lo), 24)
+        b = ~a
+    why_no_lookahead: The channel uses highs and lows of the prior 168 bars, shifted by one.
+    how_it_trades: Size trend entries with a volatility target, knowing that breakouts lead into larger moves.
+  - id: multi_horizon_agreement
+    belief: When daily, weekly and monthly trends all point the same way, trend-followers at every horizon push in one direction and the move continues.
+    claim:
+      when: the signs of the 24-hour, 168-hour and 720-hour returns all agree, one event per 72 bars
+      then: the 72-hour forward return follows that common sign by more than the cost
+      compared_to: round-trip cost (net_return)
+      measure: net_return
+      horizon_bars: 72
+      direction: positive
+      min_effect: 0.005
+      code: |
+        s1 = np.sign(df.close / df.close.shift(24) - 1)
+        s2 = np.sign(df.close / df.close.shift(168) - 1)
+        s3 = np.sign(df.close / df.close.shift(720) - 1)
+        agree = (s1 == s2) & (s2 == s3) & (s1 != 0)
+        a = spaced(agree, 72)
+        b = ~a
+        signal = s1
+    why_no_lookahead: All three returns compare the current close with past closes.
+    how_it_trades: Hold in the common direction for 72 hours whenever the three horizons agree.
+notes: "Both coins must pass. The channel lengths (120h, 168h, 240h) avoid the 72h channel already tried; the channel idea at 240h is a different length by design, chosen to test whether these coins need slower channels. The gates (compression, volume, session, weekend) are separate mechanisms that each act on a breakout. weekend_breakout_fade contradicts the trend ideas on purpose."

@@ -1,0 +1,40 @@
+brief: n08_opening_range_breakout_eth_1h.md
+source: analyst round 2
+ideas:
+- id: prior_day_return_drift
+  belief: The prior UTC day's return carries into the next day on ETH by itself, so
+    the edge in the two passing claims may come from the prior-day trend more than
+    from the opening range.
+  claim:
+    when: the 03 UTC hourly bar (close of the fourth hour of the UTC day), on days
+      with a known prior-day return
+    then: the next 20 hours' return ranks with the prior UTC day's close-to-close
+      return
+    compared_to: none (rank correlation on the when bars)
+    measure: rank_corr
+    horizon_bars: 20
+    direction: positive
+    min_effect: 0.08
+    code: 't = df.index - pd.Timedelta(hours=1)
+
+      day = pd.Series(t.normalize(), index=df.index)
+
+      hod = pd.Series(t.hour, index=df.index)
+
+      dc = df.close.groupby(day).last()
+
+      prev = day.map(dc.pct_change().shift(1))
+
+      a = (hod == 3) & prev.notna()
+
+      b = ~a
+
+      feature = prev
+
+      signal = pd.Series(np.sign(prev).replace(0, 1).fillna(1), index=df.index)
+
+      '
+  why_no_lookahead: prev is the full return of the UTC day before the bar's day, completed
+    at least four hours before the 03 UTC bar closes.
+  how_it_trades: At the 03 UTC close, go long after an up day and short after a down
+    day, then exit 20 hours later.

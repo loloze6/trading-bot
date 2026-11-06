@@ -1,0 +1,37 @@
+brief: n17_vol_channel_breakout_daily_1d.md
+source: analyst round 1
+ideas:
+- id: channel_position_reversion_all_bars
+  belief: On daily BTC and LTC, a close stretched far from its 20-day EMA in ATR units
+    tends to pull back toward the mean over the next week, so the distance from the
+    channel mean is a reversion signal rather than a breakout signal.
+  claim:
+    when: every daily bar where the 20-day EMA and 20-day ATR are defined
+    then: the further the close sits above (below) the EMA in ATR units, the lower
+      (higher) the 5-bar forward return
+    compared_to: the ranking across all such bars (rank correlation, no baseline set)
+    measure: rank_corr
+    horizon_bars: 5
+    direction: positive
+    min_effect: 0.1
+    code: 'tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(),
+      (df.low - df.close.shift(1)).abs()], axis=1).max(axis=1)
+
+      atr = tr.rolling(20).mean()
+
+      mid = df.close.ewm(span=20, adjust=False).mean()
+
+      feature = -(df.close - mid) / atr
+
+      a = atr.notna() & (atr > 0) & (df.index >= df.index[19])
+
+      b = ~a
+
+      signal = np.sign(feature).replace(0, 1.0)
+
+      '
+  why_no_lookahead: The EMA, the ATR and the close all use only bars at or before
+    the current close; the only shift is shift(1) on past closes.
+  how_it_trades: 'Each day, lean against the stretch: short or flat when the close
+    is well above the EMA in ATR units, long when it is well below, and hold for about
+    5 days.'

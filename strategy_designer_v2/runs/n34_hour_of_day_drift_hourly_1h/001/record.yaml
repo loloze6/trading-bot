@@ -1,0 +1,1016 @@
+brief: n34_hour_of_day_drift_hourly_1h.md
+fold: C
+symbols:
+- BTCUSD
+- ETHUSD
+- LTCUSD
+bar_size: 1h
+claims:
+- id: benchmark_fix_runup_weekday_19_21
+  belief: On weekdays, US spot ETF creations and fund rebalancing are priced against
+    the CF Benchmarks reference rate fixed around 15:00-16:00 New York time, so buying
+    into that window pushes spot up from 19:00 to 21:00 UTC.
+  measure: mean_diff
+  horizon_bars: 2
+  direction: positive
+  min_effect: 0.0008
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.00029835902087942774
+      n_a: 520
+      n_b: 11965
+      windows:
+      - 0.0013490205504324555
+      - -0.0011658926463148224
+      - -0.0004868666107705478
+      - 0.0004897577825983757
+      - 0.0013331284416212559
+      - 0.0002862857452217513
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.0007075056166032466
+      n_a: 520
+      n_b: 11966
+      windows:
+      - 0.0025815839083829823
+      - 0.0003813864848530717
+      - 0.0012957554281544487
+      - -0.0010205253890468115
+      - 0.000982488800694786
+      - 7.386638056432573e-05
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.0008434998135773335
+      n_a: 520
+      n_b: 11957
+      windows:
+      - 0.0024283309452740403
+      - -0.00121784668543461
+      - 0.003377520915816334
+      - -0.000363061987046558
+      - 0.000970172264460165
+      - -0.00013517440348810372
+      verdict: fail
+      why: null
+  code: 'a = (hour == 19) & (dow < 5)
+
+    b = (hour != 19) & (dow < 5)
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: post_fix_fade_weekday_21_24
+  belief: Flow that is forced into the benchmark-fixing window is temporary, so after
+    the fix the price gives back the move made from 19:00 to 21:00 UTC.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.0008
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.00028676303145806
+      n_a: 520
+      n_b: 16964
+      windows:
+      - -0.0018675674509484076
+      - 0.0017732324933258908
+      - 0.002004639713917163
+      - -0.0001469237890852996
+      - -0.0015023429804383271
+      - -0.0020139182963488282
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.00038055801098899777
+      n_a: 520
+      n_b: 16964
+      windows:
+      - -0.0013777832108072346
+      - -0.000939598343092037
+      - 0.0031606510698815897
+      - -0.0001295429772451558
+      - -0.0020519074513872327
+      - -0.0010002551189370599
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.00013574364893003375
+      n_a: 520
+      n_b: 16949
+      windows:
+      - 0.0008165879975687402
+      - 0.0012347773018045924
+      - 0.0003373497080063454
+      - 0.00028834811861630386
+      - -0.0013961035969864129
+      - -0.002036860623074106
+      verdict: fail
+      why: null
+  code: 'r2 = df.close / df.close.shift(2) - 1
+
+    a = (hour == 21) & (dow < 5)
+
+    b = ~a
+
+    signal = -np.sign(r2)
+
+    '
+- id: pre_funding_hour_selloff
+  belief: Perpetual swap longs reduce exposure just before the 8-hourly funding settlement
+    at 00:00, 08:00 and 16:00 UTC, and hedgers unwind spot alongside, so spot drifts
+    down in the hour into funding.
+  measure: mean_diff
+  horizon_bars: 1
+  direction: positive
+  min_effect: 0.0004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.00027290886911826573
+      n_a: 2186
+      n_b: 15298
+      windows:
+      - 0.0003677833003877869
+      - 6.869586140855483e-05
+      - 0.00011645905928085447
+      - 1.460526760326908e-05
+      - 6.027969345602643e-05
+      - 0.0010065018563098142
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -6.87762138592686e-05
+      n_a: 2185
+      n_b: 15299
+      windows:
+      - -0.00011902393304427037
+      - -0.0006496544494054783
+      - -0.0001466632059605544
+      - -0.0007332448235296222
+      - -0.00044270876477007197
+      - 0.001662290518381712
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -8.154838246411057e-05
+      n_a: 2182
+      n_b: 15287
+      windows:
+      - -0.000475123586715026
+      - 0.00027302429540925887
+      - -2.7472167591073124e-05
+      - -0.0004752763775753277
+      - -0.0005496668926420717
+      - 0.0007408539196203062
+      verdict: fail
+      why: null
+  code: 'a = hour.isin([23, 7, 15])
+
+    b = ~a
+
+    signal = pd.Series(-1.0, index=df.index)
+
+    '
+- id: daily_open_dca_00_02
+  belief: Scheduled recurring buys from exchange auto-invest and DCA bots cluster
+    at the 00:00 UTC day roll, which produces a positive drift in the first two hours
+    of the UTC day.
+  measure: mean_diff
+  horizon_bars: 2
+  direction: positive
+  min_effect: 0.0008
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0005236541841062268
+      n_a: 727
+      n_b: 16757
+      windows:
+      - -0.001310012725193211
+      - -0.0010469561291871887
+      - -0.00032900504806959095
+      - 0.000914921358251998
+      - -0.0009266917277645794
+      - -0.00045691540546970177
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.0008959392385428614
+      n_a: 727
+      n_b: 16757
+      windows:
+      - 3.3383097389298044e-05
+      - -0.002151638390183625
+      - -0.0005430314193451059
+      - -0.00037195886938007236
+      - -0.001065869189418033
+      - -0.0012413866685814466
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.0007726154821518874
+      n_a: 727
+      n_b: 16742
+      windows:
+      - -0.0003989747407968507
+      - -0.0009925539470546857
+      - -0.00214595225324972
+      - 0.0008978554942848902
+      - -0.0020132776731308553
+      - 4.209444123188392e-05
+      verdict: fail
+      why: null
+  code: 'a = hour == 0
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: asia_retail_morning_weekday_01_05
+  belief: Weekday morning retail buying in Korea and Japan, which is unconditional
+    and not a continuation of the prior move, lifts prices from 01:00 to 05:00 UTC.
+  measure: mean_diff
+  horizon_bars: 4
+  direction: positive
+  min_effect: 0.001
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.001544406733971126
+      n_a: 520
+      n_b: 11965
+      windows:
+      - -0.003057306798317884
+      - 0.0005131832934941035
+      - -0.003959877715773774
+      - 0.001294268360377131
+      - -0.003618356756403751
+      - -0.0003883547489598459
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.001582413057503817
+      n_a: 520
+      n_b: 11966
+      windows:
+      - -0.0003706788926860654
+      - -0.0015768462111842966
+      - -0.002327949640202721
+      - -0.00024125934306502795
+      - -0.005153753245837352
+      - 0.0002773871906277535
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.0019667003856698277
+      n_a: 520
+      n_b: 11957
+      windows:
+      - -0.003723352160377403
+      - -0.00044797166735278645
+      - -0.0037570113000829257
+      - 0.00045582435761863595
+      - -0.005815132055483795
+      - 0.001567870484457491
+      verdict: fail
+      why: null
+  code: 'a = (hour == 1) & (dow < 5)
+
+    b = (hour != 1) & (dow < 5)
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: europe_open_distribution_weekday_07_10
+  belief: European desks open their books and de-risk the overnight Asian inventory,
+    which produces a negative drift from 07:00 to 10:00 UTC on weekdays.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.001
+  verdict: pass
+  by_symbol:
+    BTCUSD:
+      effect: 0.0018008854094017932
+      n_a: 520
+      n_b: 11965
+      windows:
+      - 0.004671182057757998
+      - 0.0012007267226942491
+      - 0.0005974307019357224
+      - 0.0018864878851188294
+      - 0.0011994688949107826
+      - 0.0013633620984350842
+      verdict: pass
+      why: null
+    ETHUSD:
+      effect: 0.0025075715604571166
+      n_a: 520
+      n_b: 11966
+      windows:
+      - 0.006526149196572877
+      - 0.002875620982664622
+      - 0.0005391301902741173
+      - 0.001556234003578363
+      - -0.0007270314063820996
+      - 0.0044781279936475975
+      verdict: pass
+      why: null
+    LTCUSD:
+      effect: 0.0017830424481726664
+      n_a: 519
+      n_b: 11958
+      windows:
+      - 0.0032976445331274183
+      - 0.0035502800323433358
+      - -0.0011751327321725307
+      - 0.0014181601412036689
+      - 0.0005397157669977245
+      - 0.003175469498200582
+      verdict: pass
+      why: null
+  code: 'a = (hour == 7) & (dow < 5)
+
+    b = (hour != 7) & (dow < 5)
+
+    signal = pd.Series(-1.0, index=df.index)
+
+    '
+- id: cme_reopen_weekend_fade_sun_22_04
+  belief: When CME bitcoin futures reopen on Sunday evening (22:00 or 23:00 UTC),
+    institutional arbitrage pulls spot back toward the Friday CME close, so the move
+    made over the weekend partly reverses in the hours after the reopen.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.0015
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.00039471306510445166
+      n_a: 103
+      n_b: 17381
+      windows:
+      - 0.002918784169812994
+      - -5.241617358364627e-05
+      - 0.0027813861627489413
+      - -0.0004344083901215018
+      - -0.0009429170415319896
+      - -0.0017650905894701528
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.0008204785743696869
+      n_a: 103
+      n_b: 17381
+      windows:
+      - 0.0007967524376348954
+      - -0.0017320670605178912
+      - 0.004954400152706881
+      - -0.0005532047794854136
+      - -0.001405217228048809
+      - 0.0031642705562354902
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.002256328150328909
+      n_a: 103
+      n_b: 17366
+      windows:
+      - 0.006747780160997393
+      - -0.0019088293699386855
+      - 0.00302909074298161
+      - 0.003287729230363294
+      - 0.004680728282205715
+      - -0.0018119750631456957
+      verdict: fail
+      why: null
+  code: 'fri = df.close.where((dow == 4) & (hour == 21)).ffill()
+
+    wk = df.close / fri - 1
+
+    a = (dow == 6) & (hour == 22) & wk.notna()
+
+    b = ~a
+
+    signal = -np.sign(wk).fillna(0)
+
+    '
+- id: us_close_to_asia_open_long_22_02_net
+  belief: The handover from the US close to the Asian open (22:00 to 02:00 UTC) carries
+    a positive drift large enough to pay the cost of trading only that block each
+    weekday.
+  measure: net_return
+  horizon_bars: 4
+  direction: positive
+  min_effect: 0.0003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.002375300928781236
+      n_a: 519
+      n_b: 519
+      windows:
+      - -0.0015526824815189435
+      - -0.0032460641327580818
+      - 0.00025514849897878816
+      - -0.0036607869367485013
+      - -0.002353785956395546
+      - -0.003721229981661405
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.0018358763725069337
+      n_a: 519
+      n_b: 519
+      windows:
+      - 0.003257139200282255
+      - -0.003701475751709664
+      - 0.00010439224792321475
+      - -0.003152762282588323
+      - -0.0021664397367245664
+      - -0.005259792068698534
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.0020065731784783235
+      n_a: 519
+      n_b: 519
+      windows:
+      - 0.0005279760240325987
+      - -0.0034561960872046098
+      - -0.004489446403859363
+      - -0.0026294022528405535
+      - 2.775495588738016e-07
+      - -0.001915392406672333
+      verdict: fail
+      why: null
+  code: 'a = (hour == 22) & (dow < 5)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: weekday_asia_europe_morning_short_01_10_net
+  belief: On weekdays the whole 01:00 to 10:00 UTC morning (Asia then the Europe open)
+    carries a negative drift, and holding one short through the full block, with a
+    single round trip, pays the cost that the 3-hour Europe-only short could not.
+  measure: net_return
+  horizon_bars: 9
+  direction: positive
+  min_effect: 0.0005
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0003531994758346347
+      n_a: 520
+      n_b: 520
+      windows:
+      - 0.004058222518144562
+      - 0.0005562695004916181
+      - -0.0006023968491782794
+      - -0.003778809825017531
+      - -0.0003567678736178261
+      - -0.0018987077690231923
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.0009089355954158373
+      n_a: 520
+      n_b: 520
+      windows:
+      - 0.0038511381859667525
+      - 0.007533493041326552
+      - -0.0005296200807501258
+      - -0.00436493314868339
+      - 0.0015827651847172704
+      - -0.002505909569286929
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.0009031485363839914
+      n_a: 520
+      n_b: 520
+      windows:
+      - 0.004930228178486444
+      - 0.005561925469646466
+      - 0.000441755939018408
+      - -0.003014081148361189
+      - 0.0017377517852483963
+      - -0.004154992633364227
+      verdict: fail
+      why: null
+  code: 'a = (hour == 1) & (dow < 5)
+
+    b = ~a
+
+    signal = pd.Series(-1.0, index=df.index)
+
+    '
+- id: weekday_overnight_short_22_05_net
+  belief: On weekdays the hours from the US close through the Asian morning (22:00
+    to 05:00 UTC) carry a negative absolute drift, and one short held through the
+    whole block, with a single round trip, pays the cost.
+  measure: net_return
+  horizon_bars: 7
+  direction: positive
+  min_effect: 0.0005
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.000468326021803894
+      n_a: 519
+      n_b: 519
+      windows:
+      - 0.00012781286251409155
+      - 0.000772351831736458
+      - -0.0007145699372605073
+      - 0.0009440827924994759
+      - 0.0009887394921238367
+      - 0.0006934946925613323
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.0003424467676263704
+      n_a: 519
+      n_b: 519
+      windows:
+      - -0.004417075563749814
+      - 0.0034405895311579965
+      - -0.0010781475066880277
+      - 0.00019627092874647221
+      - 0.002393904972095993
+      - 0.0013954801432167299
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.0007258225627237839
+      n_a: 519
+      n_b: 519
+      windows:
+      - -0.0007668258167290244
+      - 0.0015282624654671959
+      - 0.004651322979604288
+      - -0.0006557861106337836
+      - -0.0002617856578107584
+      - -0.00022722309376730656
+      verdict: fail
+      why: null
+  code: 'a = (hour == 22) & (dow < 5)
+
+    b = ~a
+
+    signal = pd.Series(-1.0, index=df.index)
+
+    '
+profit:
+  europe_open_distribution_weekday_07_10/BTCUSD:
+    claim: europe_open_distribution_weekday_07_10
+    symbol: BTCUSD
+    bar_size: 1h
+    fold: C
+    engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+    min_bars: 200
+    verdict: fail
+    passed_as: null
+    fold_totals: &id001
+      net_return: -0.1434
+      median_window_sharpe: -0.019049999999999984
+      worst_window_drawdown: 0.2438
+      trades: 510
+    full_size:
+      sizing: full size (forecast 10 = 100%)
+      fold_totals: *id001
+      windows:
+      - window: W1
+        net_return: 0.1635
+        trades: 80
+        sharpe: 1.2593
+        max_drawdown: 0.2438
+        exposure_pct: 8.3775
+        cost_drag_pct: 34.0543
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/full_size/20261106T032541Z_0dc8fc41
+        seconds: 27
+      - window: W2
+        net_return: 0.0427
+        trades: 86
+        sharpe: 0.6386
+        max_drawdown: 0.1173
+        exposure_pct: 8.8115
+        cost_drag_pct: 68.7847
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/full_size/20261106T032601Z_0dc8fc41
+        seconds: 20
+      - window: W3
+        net_return: -0.1558
+        trades: 88
+        sharpe: -2.0733
+        max_drawdown: 0.2305
+        exposure_pct: 8.9522
+        cost_drag_pct: 101.1095
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/full_size/20261106T032622Z_0dc8fc41
+        seconds: 22
+      - window: W4
+        net_return: -0.0648
+        trades: 87
+        sharpe: -0.304
+        max_drawdown: 0.1718
+        exposure_pct: 8.9876
+        cost_drag_pct: 482.6712
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/full_size/20261106T032642Z_0dc8fc41
+        seconds: 19
+      - window: W5
+        net_return: -0.1168
+        trades: 88
+        sharpe: -1.7916
+        max_drawdown: 0.2025
+        exposure_pct: 9.0195
+        cost_drag_pct: 234.986
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/full_size/20261106T032703Z_0dc8fc41
+        seconds: 22
+      - window: W6
+        net_return: 0.0126
+        trades: 81
+        sharpe: 0.2659
+        max_drawdown: 0.0942
+        exposure_pct: 8.2457
+        cost_drag_pct: 87.2777
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/full_size/20261106T032726Z_0dc8fc41
+        seconds: 23
+      checks:
+        net_positive_in_5_of_6: false
+        median_window_sharpe_ge_1.0: false
+        worst_window_drawdown_le_20%: false
+      verdict: fail
+    vol_target:
+      sizing:
+        kind: vol_target
+        window: 30
+        target_annual_vol: 0.2
+        max_allocation: 1.0
+      fold_totals:
+        net_return: -0.0455
+        median_window_sharpe: -0.36365000000000003
+        worst_window_drawdown: 0.0853
+        trades: 515
+      windows:
+      - window: W1
+        net_return: 0.0597
+        trades: 79
+        sharpe: 2.0679
+        max_drawdown: 0.0232
+        exposure_pct: 8.3775
+        cost_drag_pct: 22.7339
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/vol_target/20261106T032753Z_86186add
+        seconds: 27
+      - window: W2
+        net_return: 0.0315
+        trades: 88
+        sharpe: 0.9953
+        max_drawdown: 0.0377
+        exposure_pct: 8.8115
+        cost_drag_pct: 61.3472
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/vol_target/20261106T032812Z_86186add
+        seconds: 20
+      - window: W3
+        net_return: -0.0528
+        trades: 89
+        sharpe: -2.7064
+        max_drawdown: 0.0838
+        exposure_pct: 8.9522
+        cost_drag_pct: 103.6573
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/vol_target/20261106T032834Z_86186add
+        seconds: 22
+      - window: W4
+        net_return: -0.0338
+        trades: 88
+        sharpe: -0.9282
+        max_drawdown: 0.0493
+        exposure_pct: 8.9876
+        cost_drag_pct: 5933.0031
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/vol_target/20261106T032855Z_86186add
+        seconds: 20
+      - window: W5
+        net_return: -0.0494
+        trades: 90
+        sharpe: -1.8309
+        max_drawdown: 0.0853
+        exposure_pct: 9.0195
+        cost_drag_pct: 395.8336
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/vol_target/20261106T032917Z_86186add
+        seconds: 22
+      - window: W6
+        net_return: 0.0037
+        trades: 81
+        sharpe: 0.2009
+        max_drawdown: 0.0252
+        exposure_pct: 8.2457
+        cost_drag_pct: 86.9801
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/vol_target/20261106T032940Z_86186add
+        seconds: 23
+      checks:
+        net_positive_in_5_of_6: false
+        median_window_sharpe_ge_1.0: false
+        worst_window_drawdown_le_20%: true
+      verdict: fail
+  europe_open_distribution_weekday_07_10/ETHUSD:
+    claim: europe_open_distribution_weekday_07_10
+    symbol: ETHUSD
+    bar_size: 1h
+    fold: C
+    engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+    min_bars: 200
+    verdict: fail
+    passed_as: null
+    fold_totals: &id002
+      net_return: 0.0008
+      median_window_sharpe: 0.49350000000000005
+      worst_window_drawdown: 0.2901
+      trades: 510
+    full_size:
+      sizing: full size (forecast 10 = 100%)
+      fold_totals: *id002
+      windows:
+      - window: W1
+        net_return: 0.2434
+        trades: 80
+        sharpe: 1.8179
+        max_drawdown: 0.2313
+        exposure_pct: 8.3746
+        cost_drag_pct: 27.3044
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/full_size/20261106T033003Z_0dc8fc41
+        seconds: 23
+      - window: W2
+        net_return: 0.2013
+        trades: 86
+        sharpe: 1.9266
+        max_drawdown: 0.1274
+        exposure_pct: 8.8115
+        cost_drag_pct: 33.4943
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/full_size/20261106T033022Z_0dc8fc41
+        seconds: 19
+      - window: W3
+        net_return: -0.139
+        trades: 88
+        sharpe: -1.7978
+        max_drawdown: 0.1704
+        exposure_pct: 8.9522
+        cost_drag_pct: 138.5669
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/full_size/20261106T033042Z_0dc8fc41
+        seconds: 19
+      - window: W4
+        net_return: -0.163
+        trades: 87
+        sharpe: -0.8309
+        max_drawdown: 0.2116
+        exposure_pct: 8.9876
+        cost_drag_pct: 86.2565
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/full_size/20261106T033100Z_0dc8fc41
+        seconds: 19
+      - window: W5
+        net_return: -0.2351
+        trades: 88
+        sharpe: -2.6341
+        max_drawdown: 0.2901
+        exposure_pct: 9.0226
+        cost_drag_pct: 51.6629
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/full_size/20261106T033122Z_0dc8fc41
+        seconds: 21
+      - window: W6
+        net_return: 0.2155
+        trades: 81
+        sharpe: 1.9162
+        max_drawdown: 0.1127
+        exposure_pct: 8.2457
+        cost_drag_pct: 30.1591
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/full_size/20261106T033144Z_0dc8fc41
+        seconds: 21
+      checks:
+        net_positive_in_5_of_6: false
+        median_window_sharpe_ge_1.0: false
+        worst_window_drawdown_le_20%: false
+      verdict: fail
+    vol_target:
+      sizing:
+        kind: vol_target
+        window: 30
+        target_annual_vol: 0.2
+        max_allocation: 1.0
+      fold_totals:
+        net_return: -0.056
+        median_window_sharpe: -0.6093999999999999
+        worst_window_drawdown: 0.0823
+        trades: 512
+      windows:
+      - window: W1
+        net_return: 0.0758
+        trades: 79
+        sharpe: 3.493
+        max_drawdown: 0.0225
+        exposure_pct: 8.3746
+        cost_drag_pct: 18.1203
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/vol_target/20261106T033208Z_86186add
+        seconds: 24
+      - window: W2
+        net_return: 0.0214
+        trades: 88
+        sharpe: 0.7485
+        max_drawdown: 0.0528
+        exposure_pct: 8.8115
+        cost_drag_pct: 58.0798
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/vol_target/20261106T033226Z_86186add
+        seconds: 19
+      - window: W3
+        net_return: -0.0614
+        trades: 89
+        sharpe: -2.905
+        max_drawdown: 0.0732
+        exposure_pct: 8.9522
+        cost_drag_pct: 65.5412
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/vol_target/20261106T033248Z_86186add
+        seconds: 22
+      - window: W4
+        net_return: -0.0563
+        trades: 87
+        sharpe: -2.0628
+        max_drawdown: 0.0643
+        exposure_pct: 8.9876
+        cost_drag_pct: 65.5976
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/vol_target/20261106T033308Z_86186add
+        seconds: 20
+      - window: W5
+        net_return: -0.0594
+        trades: 88
+        sharpe: -1.9673
+        max_drawdown: 0.0823
+        exposure_pct: 9.0226
+        cost_drag_pct: 82.191
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/vol_target/20261106T033330Z_86186add
+        seconds: 21
+      - window: W6
+        net_return: 0.0312
+        trades: 81
+        sharpe: 1.6904
+        max_drawdown: 0.0289
+        exposure_pct: 8.2457
+        cost_drag_pct: 35.6562
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/vol_target/20261106T033352Z_86186add
+        seconds: 23
+      checks:
+        net_positive_in_5_of_6: false
+        median_window_sharpe_ge_1.0: false
+        worst_window_drawdown_le_20%: true
+      verdict: fail
+  europe_open_distribution_weekday_07_10/LTCUSD:
+    claim: europe_open_distribution_weekday_07_10
+    symbol: LTCUSD
+    bar_size: 1h
+    fold: C
+    engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+    min_bars: 200
+    verdict: fail
+    passed_as: null
+    fold_totals: &id003
+      net_return: -0.485
+      median_window_sharpe: -0.5607
+      worst_window_drawdown: 0.3089
+      trades: 509
+    full_size:
+      sizing: full size (forecast 10 = 100%)
+      fold_totals: *id003
+      windows:
+      - window: W1
+        net_return: -0.0462
+        trades: 80
+        sharpe: 0.0197
+        max_drawdown: 0.281
+        exposure_pct: 8.3924
+        cost_drag_pct: 283.2692
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/full_size/20261106T033416Z_0dc8fc41
+        seconds: 23
+      - window: W2
+        net_return: 0.1764
+        trades: 86
+        sharpe: 1.6963
+        max_drawdown: 0.1263
+        exposure_pct: 8.8205
+        cost_drag_pct: 36.0534
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/full_size/20261106T033439Z_0dc8fc41
+        seconds: 23
+      - window: W3
+        net_return: -0.2836
+        trades: 88
+        sharpe: -3.3538
+        max_drawdown: 0.3089
+        exposure_pct: 8.9522
+        cost_drag_pct: 33.5397
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/full_size/20261106T033500Z_0dc8fc41
+        seconds: 21
+      - window: W4
+        net_return: -0.1882
+        trades: 86
+        sharpe: -1.1411
+        max_drawdown: 0.2184
+        exposure_pct: 8.9027
+        cost_drag_pct: 65.349
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/full_size/20261106T033525Z_0dc8fc41
+        seconds: 25
+      - window: W5
+        net_return: -0.2303
+        trades: 88
+        sharpe: -1.9947
+        max_drawdown: 0.291
+        exposure_pct: 9.0226
+        cost_drag_pct: 53.0168
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/full_size/20261106T033547Z_0dc8fc41
+        seconds: 21
+      - window: W6
+        net_return: 0.0253
+        trades: 81
+        sharpe: 0.3821
+        max_drawdown: 0.1926
+        exposure_pct: 8.2457
+        cost_drag_pct: 76.7779
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/full_size/20261106T033608Z_0dc8fc41
+        seconds: 22
+      checks:
+        net_positive_in_5_of_6: false
+        median_window_sharpe_ge_1.0: false
+        worst_window_drawdown_le_20%: false
+      verdict: fail
+    vol_target:
+      sizing:
+        kind: vol_target
+        window: 30
+        target_annual_vol: 0.2
+        max_allocation: 1.0
+      fold_totals:
+        net_return: -0.1621
+        median_window_sharpe: -0.9894999999999999
+        worst_window_drawdown: 0.117
+        trades: 510
+      windows:
+      - window: W1
+        net_return: 0.0238
+        trades: 79
+        sharpe: 1.1037
+        max_drawdown: 0.0259
+        exposure_pct: 8.3924
+        cost_drag_pct: 37.5517
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/vol_target/20261106T033632Z_86186add
+        seconds: 23
+      - window: W2
+        net_return: 0.016
+        trades: 87
+        sharpe: 0.576
+        max_drawdown: 0.0516
+        exposure_pct: 8.8205
+        cost_drag_pct: 63.0022
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/vol_target/20261106T033655Z_86186add
+        seconds: 23
+      - window: W3
+        net_return: -0.1024
+        trades: 89
+        sharpe: -3.8698
+        max_drawdown: 0.117
+        exposure_pct: 8.9522
+        cost_drag_pct: 23.3852
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/vol_target/20261106T033717Z_86186add
+        seconds: 22
+      - window: W4
+        net_return: -0.0542
+        trades: 86
+        sharpe: -2.0957
+        max_drawdown: 0.0625
+        exposure_pct: 8.9027
+        cost_drag_pct: 59.5768
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/vol_target/20261106T033742Z_86186add
+        seconds: 25
+      - window: W5
+        net_return: -0.0531
+        trades: 88
+        sharpe: -2.1019
+        max_drawdown: 0.0729
+        exposure_pct: 9.0226
+        cost_drag_pct: 73.5416
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/vol_target/20261106T033803Z_86186add
+        seconds: 20
+      - window: W6
+        net_return: 0.0021
+        trades: 81
+        sharpe: 0.1167
+        max_drawdown: 0.0289
+        exposure_pct: 8.2457
+        cost_drag_pct: 89.8273
+        run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/vol_target/20261106T033825Z_86186add
+        seconds: 22
+      checks:
+        net_positive_in_5_of_6: false
+        median_window_sharpe_ge_1.0: false
+        worst_window_drawdown_le_20%: true
+      verdict: fail

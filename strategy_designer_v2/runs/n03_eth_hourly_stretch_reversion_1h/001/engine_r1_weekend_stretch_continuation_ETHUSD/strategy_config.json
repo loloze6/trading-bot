@@ -1,0 +1,38 @@
+{
+  "aux_feeds": [],
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 2,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "weekend_stretch_continuation",
+            "class": "strategies.claim_event.ClaimEventComponent",
+            "params": {
+              "code": "tp = (df.high + df.low + df.close) / 3\nvwap = (tp * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()\ndev = df.close / vwap - 1\nz = dev / dev.rolling(720).std()\na = spaced((z.abs() > 2) & (dow >= 5), 12)\nb = ~a\nsignal = np.sign(dev)\n",
+              "horizon": 12,
+              "scaling_factor": 10.0,
+              "min_bars": 818
+            },
+            "weight": 1.0,
+            "lookback": 918,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    }
+  }
+}

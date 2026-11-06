@@ -1,0 +1,46 @@
+brief: n23_weekday_gated_trend_hourly_1h.md
+source: analyst round 2
+ideas:
+- id: weekday_part_of_gate_on_cross_events
+  belief: Within MA-cross entries already made in non-quiet volatility, the weekday
+    filter adds its own edge, because crosses that fire in the Friday-evening-to-Monday-morning
+    window do not follow through even when volatility is not low.
+  claim:
+    when: 12/72 MA-cross events (one per 24 bars) with 24h vol above its 720-bar lower
+      tercile, made on weekday hours
+    then: the 48-bar forward return in the cross direction is higher
+    compared_to: the same high-vol cross events made inside the weekend window
+    measure: mean_diff
+    horizon_bars: 48
+    direction: positive
+    min_effect: 0.004
+    code: 'wk = ((dow == 4) & (hour >= 21)) | (dow >= 5) | ((dow == 0) & (hour < 8))
+
+      f = df.close.rolling(12).mean()
+
+      s = df.close.rolling(72).mean()
+
+      d = np.sign(f - s)
+
+      cross = (d != d.shift(1)) & d.notna() & d.shift(1).notna() & (d != 0)
+
+      v = ret.rolling(24).std()
+
+      q = v.rolling(720).quantile(0.33)
+
+      ok = q.notna()
+
+      hv = v > q
+
+      signal = d.replace(0, 1).fillna(1)
+
+      a = spaced(cross & hv & ~wk & ok, 24)
+
+      b = spaced(cross & hv & wk & ok, 24)
+
+      '
+  why_no_lookahead: MAs, the vol and its tercile use only bars up to the current close;
+    weekday and hour are known at the bar.
+  how_it_trades: If it holds, keep the weekday filter on top of the vol gate; if not,
+    drop it and trade the vol-gated cross every day, which roughly doubles the trade
+    count.

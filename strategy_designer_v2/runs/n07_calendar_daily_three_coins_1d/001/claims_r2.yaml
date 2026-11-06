@@ -1,0 +1,33 @@
+brief: n07_calendar_daily_three_coins_1d.md
+source: analyst round 2
+ideas:
+- id: friday_long_after_down_week
+  belief: The Friday edge comes from shorts and hedges being closed before the weekend,
+    so it should be larger when Monday to Thursday fell and there are more shorts
+    to cover.
+  claim:
+    when: Thursday bars (the bar before Friday) where the Monday-to-Thursday close-to-close
+      return is negative
+    then: Friday's return, held long, is positive after the 0.15% round-trip cost
+    compared_to: zero after cost (net_return)
+    measure: net_return
+    horizon_bars: 1
+    direction: positive
+    min_effect: 0.005
+    code: 'd = df.index - pd.Timedelta(seconds=1)
+
+      wd = pd.Series(d.dayofweek, index=df.index)
+
+      r4 = df.close / df.close.shift(4) - 1
+
+      a = (wd == 3) & (r4 < 0)
+
+      b = ~a
+
+      signal = pd.Series(1.0, index=df.index)
+
+      '
+  why_no_lookahead: r4 uses closes from the Sunday bar through the Thursday bar, all
+    known at Thursday's close, and the weekday comes from the bar's own date.
+  how_it_trades: At the Thursday daily close, if the week so far is down, buy and
+    hold for one bar, then sell at Friday's close.

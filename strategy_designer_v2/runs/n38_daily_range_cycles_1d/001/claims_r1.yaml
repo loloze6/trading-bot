@@ -1,0 +1,39 @@
+brief: n38_daily_range_cycles_1d.md
+source: analyst round 1
+ideas:
+- id: contraction_regime_trend_edge
+  belief: The trend-pause result may come from the 20-day trend itself rather than
+    from the narrow days; if contraction matters, the trend should pay more after
+    a multi-day contraction regime than on other bars.
+  claim:
+    when: the 5-day mean range is at most 0.75 of the 20-day mean range (a contraction
+      regime), at most one event every 3 bars
+    then: the 5-day forward return follows the sign of the 20-day trend more than
+      it does elsewhere
+    compared_to: all other bars with a defined trend and range ratio, using the same
+      trend signal
+    measure: mean_diff
+    horizon_bars: 5
+    direction: positive
+    min_effect: 0.008
+    code: 'rng = (df.high - df.low) / df.close.shift(1)
+
+      ratio = rng.rolling(5).mean() / rng.rolling(20).mean()
+
+      trend = df.close / df.close.shift(20) - 1
+
+      valid = (ratio.notna() & trend.notna()).fillna(False)
+
+      contr = (valid & (ratio <= 0.75)).fillna(False)
+
+      a = spaced(contr, 3)
+
+      b = valid & ~contr
+
+      signal = pd.Series(np.where(trend > 0, 1, -1), index=df.index)
+
+      '
+  why_no_lookahead: The range ratio and the 20-day trend use only rolling windows
+    over bars up to and including the current close.
+  how_it_trades: At the close of a contraction-regime day, enter in the direction
+    of the 20-day trend and hold 5 days.

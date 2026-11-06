@@ -1,0 +1,33 @@
+run: n05_retail_coins_hourly_flow_1h / fold A
+observations:
+  - "No return claim passed on both coins. The profit step reports 'none: no return claim passed', and every claim's verdict is fail."
+  - "The US-evening bid at 23:00 UTC is absent on both coins: DOGE net 0.00015 and ADA -0.0013 against a 0.002 bar. ADA's windows were negative in 4 of 6."
+  - "Three claims passed on ADA and failed on DOGE with the opposite sign. Monday unwind gave ADA +0.0030 and DOGE -0.0023, with 5/6 DOGE windows negative. Volume breakout gave ADA +0.0057 and DOGE -0.0091, with 5/6 DOGE windows negative."
+  - "Month-start drift passed on ADA at +0.0045. DOGE's +0.0017 rests on one window (+0.0198), and the other five windows are -0.0018, -0.0066, -0.0038, -0.0006 and +0.0034."
+  - "Attention-episode fade nearly held: the sign was positive on both coins (ADA 0.172, DOGE 0.079) and in 4/6 windows on each. ADA cleared the 0.10 bar but missed the 5-of-6 window rule; DOGE was short on size."
+  - "Weekend trend persistence has no stable sign. DOGE windows range from -0.019 to +0.022, ADA from -0.016 to +0.016, and the fold effects are +0.0021 (DOGE) and -0.0022 (ADA)."
+  - "The round-level rejection hit rate alternates sign window to window by about ±0.10 to 0.30, for example DOGE +0.129, -0.196, +0.102, -0.175. This looks like noise on about 100 events, not a level effect."
+  - "Round-level breakout follow-through failed on both coins (DOGE -0.0014, ADA +0.0018 against 0.004). ADA's positive result leans on one window at +0.033."
+  - "The dead-hours burst claim swings from -0.019 to +0.032 across windows on DOGE, and the fold effect is -0.0030 on ADA. There is no sign that bursts in quiet hours carry more direction."
+  - "close_location_pressure was never measured, with n_a = 2 on DOGE and 0 on ADA. Applying spaced() to an always-true condition keeps only the first bar, so the selector, not the market, killed it."
+next_claim:
+  id: volume_blowout_fade_vs_quiet
+  belief: "A 3-day move made on a retail volume blowout is crowd-driven and reverses more than the same-length move made on normal volume, on both DOGE and ADA."
+  claim:
+    when: "Hours where the trailing 24h volume exceeds 2.5x its prior 30-day median of daily volume, at most one per 24 bars"
+    then: "Over the next 72 bars, price moves against the prior 72-bar move more than it does after normal-volume days"
+    compared_to: "Hours where the trailing 24h volume is at or below 1.5x the same median, at most one per 24 bars"
+    measure: mean_diff
+    horizon_bars: 72
+    direction: positive
+    min_effect: 0.01
+    code: |
+      v24 = df.volume.rolling(24).sum()
+      base = v24.shift(24).rolling(720).median()
+      r72 = df.close / df.close.shift(72) - 1
+      a = spaced(v24 > 2.5 * base, 24)
+      b = spaced(v24 <= 1.5 * base, 24)
+      signal = -np.sign(r72).replace(0, 1.0)
+  why_no_lookahead: "Volume sums, the median baseline and r72 use only bars at or before the current close; the baseline is shifted 24 bars."
+  how_it_trades: "On a blowout day, take a position against the 3-day move and hold it for 72 hours. A 1% edge over three days clears the 0.15% round trip."
+why: "The volume-blowout fade was the only belief positive on both coins (ADA 0.17, DOGE 0.08 rank correlation). This claim asks a different question: does the blowout itself drive the reversal, compared with a fade on normal-volume days, rather than how strong the correlation is. The 1% bar is chosen to beat both luck on about 50 events and the cost."

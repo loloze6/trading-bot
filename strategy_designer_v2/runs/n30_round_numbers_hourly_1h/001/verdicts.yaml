@@ -1,0 +1,438 @@
+claims_file: strategy_designer_v2/runs/n30_round_numbers_hourly_1h/001/claims.yaml
+fold: B
+bar_size: 1h
+symbols:
+- BTCUSD
+- ETHUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  round_level_magnet_rank:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: -0.013070220486138888
+        t_stat: -1.73
+        n_a: 17519
+        n_b: 17519
+        windows:
+        - 0.016108902369460446
+        - -0.048841830702466955
+        - -0.003989557856669819
+        - 0.03617018647390141
+        - -0.03522882885202432
+        - -0.016790300796336196
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ETHUSD:
+        verdict: fail
+        effect: 0.000502124094561269
+        t_stat: 0.07
+        n_a: 17519
+        n_b: 17519
+        windows:
+        - 0.011784287244392837
+        - 0.02588584658570872
+        - -0.009761922054358496
+        - -0.03049348450999756
+        - -0.007978771012467136
+        - -0.0029469127511022103
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  round_level_resistance_below:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.00044574957526385256
+        t_stat: 1.5
+        n_a: 3524
+        n_b: 13995
+        windows:
+        - 0.0013649332368801332
+        - 0.0006304032055930487
+        - 0.00014201716260987918
+        - -0.0006170167384752957
+        - 0.0014607017031226506
+        - -0.0004188997442650011
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ETHUSD:
+        verdict: fail
+        effect: 0.00017065132156317224
+        t_stat: 0.37
+        n_a: 2178
+        n_b: 15341
+        windows:
+        - 0.0004453662355743666
+        - 0.003391480091471259
+        - 0.0007857397450487355
+        - 0.0006624038841778783
+        - -0.0011213658792556458
+        - -0.0007924768372842481
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  half_level_cross_continuation:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.0008208004237210166
+        t_stat: 0.46
+        n_a: 238
+        n_b: 238
+        windows:
+        - 0.0019969050777524726
+        - -0.0029860710296356263
+        - 0.009372406055208612
+        - -0.003460600453232212
+        - -0.0024981032903579736
+        - -0.00038659152359058033
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ETHUSD:
+        verdict: fail
+        effect: -0.00042223024786418274
+        t_stat: -0.13
+        n_a: 146
+        n_b: 146
+        windows:
+        - 0.00188368208257109
+        - 0.00991922371801377
+        - 0.02306843631127672
+        - -0.007894887888692574
+        - -0.004656275606072718
+        - -0.00479245615859185
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  fine_level_first_cross_fade:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.04824530080557621
+        t_stat: 0.38
+        n_a: 16
+        n_b: 17503
+        windows:
+        - null
+        - -0.20271682340647862
+        - 0.5160628844839371
+        - 0.27539871055310494
+        - null
+        - null
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      ETHUSD:
+        verdict: fail
+        effect: -0.12266275714636166
+        t_stat: -1.74
+        n_a: 49
+        n_b: 17470
+        windows:
+        - -0.4972881355932203
+        - -0.14758274948121058
+        - -0.048208757187085394
+        - -0.02681602172437203
+        - -0.2045665275846083
+        - null
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+  wick_rejection_at_level:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: -0.00023224680593320532
+        t_stat: -0.84
+        n_a: 3898
+        n_b: 13621
+        windows:
+        - 0.001107987506584497
+        - -0.0006978540817718328
+        - -0.00028383885152606593
+        - -0.0009891422367742184
+        - -0.0008902312346025747
+        - -0.0002272221264766869
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      ETHUSD:
+        verdict: fail
+        effect: -0.0007694971701904094
+        t_stat: -1.79
+        n_a: 2511
+        n_b: 15008
+        windows:
+        - 0.0004408196787054385
+        - 9.51099580349011e-05
+        - -0.0007194445250149075
+        - -8.557053792716774e-06
+        - -0.0032162260944249054
+        - -0.0007654177385469684
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  cross_volatility_burst:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: pass
+        effect: 1.162182381935886
+        t_stat: 2.33
+        n_a: 632
+        n_b: 16887
+        windows:
+        - 1.1176432884282863
+        - 1.1635143805975923
+        - 1.406571289969652
+        - 1.0320918059251463
+        - 0.8958085491059004
+        - 1.3639120618194835
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      ETHUSD:
+        verdict: fail
+        effect: 1.1127192634187917
+        t_stat: 3.47
+        n_a: 621
+        n_b: 16898
+        windows:
+        - 1.0622899831977026
+        - 1.613843487045907
+        - 1.19901133787048
+        - 1.158666771982776
+        - 0.8986097726616823
+        - 1.030730845099479
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+  pinning_low_volatility:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 1.239972768585673
+        t_stat: 5.77
+        n_a: 1832
+        n_b: 11499
+        windows:
+        - 1.0193040079835591
+        - 1.4048354785769868
+        - 1.4221476294585473
+        - 1.2178887272168726
+        - 1.0378080611808598
+        - 1.0720575146893851
+        agreeing_windows: 6 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      ETHUSD:
+        verdict: fail
+        effect: 1.2656157509373376
+        t_stat: 5.64
+        n_a: 1170
+        n_b: 13802
+        windows:
+        - 1.0919914860111777
+        - 1.589522421072173
+        - 1.1057364336031341
+        - 1.1811434403843373
+        - 1.3491123577410715
+        - 1.0342417515097933
+        agreeing_windows: 6 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+  day_open_magnet:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: -0.021196234821667163
+        t_stat: -2.22
+        n_a: 10949
+        n_b: 10949
+        windows:
+        - -0.014012987670317079
+        - -0.06785199163013109
+        - -0.017807918781383176
+        - 0.04560958738284479
+        - -0.06307489040897976
+        - -0.0304730648471162
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      ETHUSD:
+        verdict: fail
+        effect: 0.01835160477403103
+        t_stat: 1.92
+        n_a: 10949
+        n_b: 10949
+        windows:
+        - 0.03066981143000705
+        - -0.016361325848256118
+        - 0.04364710843962897
+        - 0.05744877860385574
+        - -0.0367740142373003
+        - -0.0135917682248385
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  day_open_cross_continuation:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.00021164651776965534
+        t_stat: 0.3
+        n_a: 640
+        n_b: 16879
+        windows:
+        - 0.0007289529188044038
+        - 5.116476838710064e-05
+        - -0.0005382415393769839
+        - 0.0005244029796633852
+        - 0.00045922393988879085
+        - 0.00014110294349833514
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      ETHUSD:
+        verdict: fail
+        effect: -0.0002403945299422689
+        t_stat: -0.28
+        n_a: 606
+        n_b: 16913
+        windows:
+        - 9.897067032469433e-05
+        - -0.0010711342990777086
+        - 0.0005712719124259358
+        - 0.0017287137598879431
+        - -0.003768804092255832
+        - 0.001384958625740615
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  volume_confirmed_level_cross:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.0006070287499799732
+        t_stat: 0.91
+        n_a: 1808
+        n_b: 1470
+        windows:
+        - 3.2780013417111675e-05
+        - -0.00156225605901205
+        - 0.004654776896846613
+        - 0.00047417248949736476
+        - -0.0002182035926469938
+        - -0.0006222439180024455
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ETHUSD:
+        verdict: fail
+        effect: -9.506085117818165e-05
+        t_stat: -0.09
+        n_a: 1267
+        n_b: 1019
+        windows:
+        - 0.000349490908198799
+        - -0.008843340988184775
+        - 0.007114666112605505
+        - -0.00315177519075175
+        - -0.00466158927179572
+        - 0.002951256722737803
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  us_session_level_cross:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.0003188795299735715
+        t_stat: 0.47
+        n_a: 1219
+        n_b: 2848
+        windows:
+        - 0.0016613092085601216
+        - -0.00016109822754649373
+        - 0.0007121330270555017
+        - 0.00043430431632264196
+        - -0.0007559808838065041
+        - 4.624562444000414e-05
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ETHUSD:
+        verdict: fail
+        effect: -0.0006404490463594141
+        t_stat: -0.6
+        n_a: 795
+        n_b: 1948
+        windows:
+        - 0.0019762589135295344
+        - -0.0071012218965216135
+        - 0.002190988333892014
+        - 0.00019979241957627462
+        - -0.006360571858333799
+        - -0.0004617854049014696
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

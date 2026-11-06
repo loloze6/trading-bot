@@ -1,0 +1,48 @@
+claims_file: strategy_designer_v2/runs/n21_candle_patterns_daily_1d/001/claims_r1.yaml
+fold: C
+bar_size: 1d
+symbols:
+- BTCUSD
+- ETHUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  prior_bar_close_break_fade:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.014850750021674302
+        t_stat: 1.38
+        n_a: 58
+        n_b: 58
+        windows:
+        - 0.053973744790233605
+        - 0.013464535438433987
+        - -0.010409094895760338
+        - 0.03809369988020907
+        - -0.03637311537664316
+        - 0.051039961581081095
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ETHUSD:
+        verdict: fail
+        effect: 0.014834128030114484
+        t_stat: 0.98
+        n_a: 53
+        n_b: 53
+        windows:
+        - -0.04410343851423868
+        - 0.008561065066484397
+        - -0.008168647772972283
+        - 0.07627193052228537
+        - 0.01739082075435307
+        - 0.034847853757490097
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

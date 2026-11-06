@@ -1,0 +1,48 @@
+claims_file: strategy_designer_v2/runs/n36_ltc_xmr_hourly_weekday_1h/001/claims_r2.yaml
+fold: A
+bar_size: 1h
+symbols:
+- LTCUSD
+- XMRUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  weekend_quiet_regime:
+    verdict: pass
+    by_symbol:
+      LTCUSD:
+        verdict: pass
+        effect: 0.7921099271430871
+        t_stat: -6.24
+        n_a: 5039
+        n_b: 12480
+        windows:
+        - 0.8626664526466908
+        - 0.7915014321240189
+        - 0.7365844164018486
+        - 0.8052800142052331
+        - 0.7812583561129183
+        - 0.7694492977153107
+        agreeing_windows: 6 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      XMRUSD:
+        verdict: pass
+        effect: 0.8289476798852145
+        t_stat: -6.89
+        n_a: 5039
+        n_b: 12479
+        windows:
+        - 0.8893029524072894
+        - 0.8022277836484273
+        - 0.7801564978981766
+        - 0.8518621786605339
+        - 0.8141448510813242
+        - 0.8076669875862866
+        agreeing_windows: 6 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true

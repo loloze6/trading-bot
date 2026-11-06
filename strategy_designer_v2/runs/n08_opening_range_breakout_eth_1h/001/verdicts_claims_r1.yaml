@@ -1,0 +1,28 @@
+claims_file: strategy_designer_v2/runs/n08_opening_range_breakout_eth_1h/001/claims_r1.yaml
+fold: C
+bar_size: 1h
+symbols:
+- ETHUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  or_location_with_prior_day:
+    verdict: pass
+    by_symbol:
+      ETHUSD:
+        verdict: pass
+        effect: 0.009591229824737056
+        n_a: 106
+        n_b: 106
+        windows:
+        - -0.007102482335027407
+        - 0.006794072541859488
+        - 0.006811271711757185
+        - 0.03336996597860637
+        - 0.004277970432390973
+        - 0.018436955203082153
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true

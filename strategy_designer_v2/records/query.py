@@ -16,8 +16,11 @@ def runs():
                 if not vp.exists():
                     continue
                 v = yaml.safe_load(vp.read_text()); vd = v["ideas"]; verdicts.update(vd)
-                claims += [{"id": i["id"], "round": cp.stem, "measure": i["claim"]["measure"], "verdict": vd[i["id"]]["verdict"]}
-                           for i in yaml.safe_load(cp.read_text())["ideas"]]
+                for n, i in enumerate(yaml.safe_load(cp.read_text())["ideas"]):
+                    i = i if isinstance(i, dict) else {}
+                    iid = i.get("id", f"unnamed_{n}" if i else f"malformed_{n}")
+                    claims.append({"id": iid, "round": cp.stem, "measure": (i.get("claim") or {}).get("measure") if isinstance(i.get("claim"), dict) else None,
+                                   "verdict": vd.get(iid, {}).get("verdict", "?")})
             cost = sum((r.get("cost_usd") or 0) for r in (yaml.safe_load((run_dir / "model_calls.yaml").read_text()) if (run_dir / "model_calls.yaml").exists() else []))
             engine = {p.parent.name: yaml.safe_load(p.read_text()) for p in run_dir.glob("engine_*/engine_verdict.yaml")}
             fold = None
@@ -43,6 +46,8 @@ def main():
         for o in out: print("  ".join(o))
     tot_claims = sum(len(r["claims"]) for r in rows); tot_pass = sum(len(r["passes"]) for r in rows); tot_cost = sum(r["cost_usd"] for r in rows)
     print(f"\nruns {len(rows)}, claims {tot_claims}, pass {tot_pass}, model cost {tot_cost:.2f} USD")
+    tried = yaml.safe_load((HERE / "records" / "claims_tried.yaml").read_text()) if (HERE / "records" / "claims_tried.yaml").exists() else {}
+    print("looks per brief (claims tried; at a 5% noise rate expect one false pass per twenty): " + ", ".join(f"{k.split('.')[0]}={len(v)}" for k, v in tried.items()))
     shelf = yaml.safe_load((HERE / "records" / "shelf.yaml").read_text())["validated"] if (HERE / "records" / "shelf.yaml").exists() else []
     print(f"shelf: {len(shelf)} validated ({sum(1 for s in shelf if s['kind']=='book')} books, {sum(1 for s in shelf if s['kind']=='filter')} filters)")
 

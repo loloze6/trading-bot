@@ -1,0 +1,35 @@
+run: n13_quiet_period_then_move_btc_1h/fold_C
+observations:
+  - "After 24 hours with no large bar (over 2.5x the 168h std), the next 12h absolute move was 0.79x baseline (n_a 206). That passed long_quiet_stays_quiet (asked below 0.85), with 5 of 6 windows below 1 and one window at 1.07."
+  - "The same 0.79x number failed long_quiet_spring_release (asked above 1.15). A long quiet period predicts a smaller move, not a larger one."
+  - "The week's narrowest 12h range led to only 1.08x the next 12h absolute move (asked 1.25). Four windows were above 1 and two were below (0.76, 0.98), so compression gave at most a weak expansion."
+  - "Following the 12h drift out of the week's narrowest range did 0.66% worse than following drift out of wide (above-median) ranges. Four of 6 windows were negative, the worst at -1.79%."
+  - "Fading that same narrow-range drift beat all other bars by only 0.09% (asked 0.2%), with windows split 4 positive and 2 negative from -1.30% to +1.21%."
+  - "post_shock_flag_continues nearly held. Following the last shock's direction 12h after it beat the baseline by 0.23% over 24h (asked 0.3%), with 5 of 6 windows positive."
+  - "Quiet at the 13:00 UTC US open gave 0.90x the next 6h absolute move versus quiet at other hours (asked 1.25). One window was at 1.56 and the other five were below 1."
+  - "Tight range on high volume showed a 1.76x move, but n_a was 5 and three windows were empty. The number cannot be read."
+  - "Direction signals inside quiet ranges split across windows: close location hit rate +0.030 (3/3 windows), wick rank_corr 0.071 (from -0.25 to +0.22), and weekend fade 0.15% (3/3)."
+  - "Drift-following inside compression netted +0.32% after cost on n_a 44, but its windows split 3/3 (from -2.24% to +1.97%), so no return claim passed."
+next_claim:
+  id: long_quiet_drift_reverts
+  belief: "In a quiet regime with no large bar for a day, liquidity is two-sided and range-bound, so the 12h drift is unwound rather than extended, unlike in loud regimes."
+  claim:
+    when: "the first bar reaching 24 or more hours since the last large bar (over 2.5x the 168h std)"
+    then: "the next 12h return goes against the prior 12h drift"
+    compared_to: "bars less than 24h after a large bar, spaced one per 12 bars, with the same fade signal"
+    measure: mean_diff
+    horizon_bars: 12
+    direction: positive
+    min_effect: 0.003
+    code: |
+      r_std = ret.rolling(168).std().shift(1)
+      big = ret.abs() > 2.5 * r_std
+      idx = pd.Series(np.arange(len(df)), index=df.index, dtype=float)
+      since = idx - idx.where(big).ffill()
+      drift = df.close / df.close.shift(12) - 1
+      a = spaced(since >= 24, 12)
+      b = spaced((since < 24) & since.notna(), 12)
+      signal = -np.sign(drift).replace(0, 1)
+  why_no_lookahead: "Large bars use the std shifted by one bar, and the time since the last large bar and the 12h drift use only closes at or before the bar."
+  how_it_trades: "On the first bar of a day-long quiet regime, fade the prior 12h drift and exit 12 bars later."
+why: "Only the shock-defined quiet regime held (0.79x, 5/6 windows), and narrow-range drift continued 0.66% worse than wide-range drift. That makes 'fade drift in quiet, judged against loud' the untested direction claim, and min_effect is set at 0.3%, about half that gap."

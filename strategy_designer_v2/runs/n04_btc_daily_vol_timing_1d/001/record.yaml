@@ -1,0 +1,497 @@
+brief: n04_btc_daily_vol_timing_1d.md
+fold: C
+symbols:
+- BTCUSD
+bar_size: 1d
+claims:
+- id: low_vol_regime_momentum
+  belief: BTC trends persist when realized volatility is calm relative to its own
+    past year, because calm markets carry less forced deleveraging that breaks trends.
+  measure: net_return
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.01
+  verdict: pass
+  by_symbol:
+    BTCUSD:
+      effect: 0.03874892477174613
+      n_a: 291
+      n_b: 291
+      windows:
+      - -0.0006335304472474171
+      - 0.018208310818904023
+      - 0.1387781468005665
+      - 0.06727079283959461
+      - 0.07068576502505801
+      - 0.0011369580772931957
+      verdict: pass
+      why: null
+  code: 'vol20 = ret.rolling(20).std()
+
+    pct = vol20.rolling(365).rank(pct=True)
+
+    mom = df.close.pct_change(20)
+
+    a = (pct < 0.5) & mom.notna()
+
+    b = ~a
+
+    signal = np.sign(mom).replace(0, 1).fillna(1)
+
+    '
+- id: high_vol_regime_short_reversal
+  belief: In high-volatility regimes, BTC's short moves are liquidation overshoots
+    that revert, so the right rule switches from momentum to reversal.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.006888378978763783
+      n_a: 306
+      n_b: 181
+      windows:
+      - -0.04740228026076738
+      - -0.007094430843811411
+      - 0.07446578898367508
+      - -0.0036732476482154866
+      - -0.006132149114400425
+      - 0.042791530374113824
+      verdict: fail
+      why: null
+  code: 'vol20 = ret.rolling(20).std()
+
+    pct = vol20.rolling(365).rank(pct=True)
+
+    a = pct > 0.67
+
+    b = pct < 0.33
+
+    signal = -np.sign(df.close.pct_change(3)).replace(0, 1).fillna(1)
+
+    '
+- id: drawdown_vol_contraction_long
+  belief: After a deep BTC drawdown, a calming of short-term volatility marks the
+    end of capitulation and precedes a rebound.
+  measure: net_return
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.02
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.00973020601983642
+      n_a: 16
+      n_b: 16
+      windows:
+      - -0.037248604200074566
+      - 0.004732313639377855
+      - 0.05912438604233633
+      - 0.15299106219530217
+      - null
+      - -0.054407111578760936
+      verdict: fail
+      why: null
+  code: 'dd = df.close / df.close.rolling(60).max() - 1
+
+    calm = ret.rolling(5).std() < 0.7 * ret.rolling(20).std()
+
+    a = spaced((dd < -0.2) & calm, 5)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: compression_breakout_direction
+  belief: When BTC's range is compressed, the first close outside that range reveals
+    the side that wins the coming expansion.
+  measure: net_return
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.015
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.008620556775457169
+      n_a: 11
+      n_b: 11
+      windows:
+      - 0.0548109608676274
+      - -0.09982131738739924
+      - null
+      - 0.06735467845210986
+      - 0.018828535293668736
+      - -0.29933747830177965
+      verdict: fail
+      why: null
+  code: 'rng = df.high.rolling(20).max() / df.low.rolling(20).min() - 1
+
+    comp = rng.shift(1).rolling(365).rank(pct=True) < 0.25
+
+    up = df.close > df.high.shift(1).rolling(20).max()
+
+    dn = df.close < df.low.shift(1).rolling(20).min()
+
+    a = spaced((up | dn) & comp, 10)
+
+    b = spaced((up | dn) & ~comp, 10)
+
+    signal = pd.Series(np.where(up, 1.0, -1.0), index=df.index)
+
+    '
+- id: upside_vol_expansion_continuation
+  belief: In BTC, a volatility expansion that comes with rising prices reflects short
+    squeezes and FOMO inflows that keep pushing price up.
+  measure: net_return
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.009280501795538843
+      n_a: 34
+      n_b: 34
+      windows:
+      - 0.05392754370532021
+      - -0.12520209540700847
+      - 0.017349305832065454
+      - 0.09111586360823015
+      - 0.011464374776527154
+      - -0.13593729924220002
+      verdict: fail
+      why: null
+  code: 'vr = ret.rolling(5).std() / ret.rolling(60).std()
+
+    a = (vr > 1.5) & (df.close.pct_change(5) > 0)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: vol_scaled_momentum_strength
+  belief: Momentum measured in units of its own volatility predicts BTC's next moves
+    better than raw momentum, which supports sizing by volatility.
+  measure: rank_corr
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.05
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.2091286926565131
+      n_a: 731
+      n_b: 731
+      windows:
+      - -0.045412875894159314
+      - 0.03301489321626721
+      - -0.1399504714243335
+      - -0.020722124373391135
+      - 0.3410173120834311
+      - 0.17612309914743782
+      verdict: fail
+      why: null
+  code: 'feature = df.close.pct_change(20) / (ret.rolling(20).std() * np.sqrt(20))
+
+    a = feature.notna()
+
+    b = ~a
+
+    signal = np.sign(feature).replace(0, 1).fillna(1)
+
+    '
+- id: uptrend_vol_spike_exit
+  belief: Within a BTC uptrend, a spike in volatility signals distribution and a weaker
+    forward return, so longs should exit on expansion.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.07695935059547937
+      n_a: 94
+      n_b: 277
+      windows:
+      - 0.04539511657122175
+      - null
+      - 0.09915230473608369
+      - null
+      - -0.008016900382634778
+      - 0.21691346365120123
+      verdict: fail
+      why: null
+  code: 'upt = df.close > df.close.rolling(100).mean()
+
+    pct = ret.rolling(20).std().rolling(365).rank(pct=True)
+
+    a = upt & (pct > 0.8)
+
+    b = upt & (pct <= 0.8)
+
+    signal = pd.Series(-1.0, index=df.index)
+
+    '
+- id: close_vs_range_vol_efficiency
+  belief: When close-to-close volatility is high relative to intraday high-low range,
+    BTC moves are directional rather than choppy, so momentum works better.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0048110258980364196
+      n_a: 212
+      n_b: 213
+      windows:
+      - 0.04520756264347314
+      - 0.1109296701244876
+      - -0.11480349981553643
+      - -0.0048890065899487405
+      - -0.11138625218870898
+      - 0.04658645906473106
+      verdict: fail
+      why: null
+  code: 'cc = ret.rolling(20).std()
+
+    pk = np.log(df.high / df.low).rolling(20).mean()
+
+    r = (cc / pk).rolling(365).rank(pct=True)
+
+    a = r > 0.67
+
+    b = r < 0.33
+
+    signal = np.sign(df.close.pct_change(10)).replace(0, 1).fillna(1)
+
+    '
+- id: low_volume_shock_fade
+  belief: A large BTC daily move on below-normal volume lacks real participation and
+    tends to revert, while high-volume shocks hold.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.008
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.022389304596419923
+      n_a: 4
+      n_b: 103
+      windows:
+      - -0.1747555804944829
+      - null
+      - 0.022946540910311675
+      - 0.02312989473442085
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'sd = ret.rolling(20).std().shift(1)
+
+    big = ret.abs() > 1.5 * sd
+
+    lowv = df.volume < df.volume.rolling(20).median().shift(1)
+
+    a = big & lowv
+
+    b = big & ~lowv
+
+    signal = -np.sign(ret).replace(0, 1).fillna(1)
+
+    '
+- id: upside_semivariance_share
+  belief: When most of BTC's recent variance comes from up days, buyers are driving
+    volatility and returns continue up; downside-driven variance precedes weakness.
+  measure: rank_corr
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.05
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.1839469110880843
+      n_a: 731
+      n_b: 731
+      windows:
+      - -0.14007917216473365
+      - 0.18610407076838684
+      - -0.26068927267802555
+      - 0.016928600460642186
+      - 0.3735001867021786
+      - 0.2063045749442159
+      verdict: fail
+      why: null
+  code: 'up2 = (ret.clip(lower=0) ** 2).rolling(20).sum()
+
+    tot = (ret ** 2).rolling(20).sum()
+
+    feature = up2 / tot
+
+    a = feature.notna()
+
+    b = ~a
+
+    signal = np.sign(feature - 0.5).replace(0, 1).fillna(1)
+
+    '
+- id: falling_vol_momentum_vs_rising
+  belief: BTC momentum pays more while realized volatility is falling than while it
+    is rising, because a contracting vol state means fewer forced exits interrupting
+    the trend.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.01053197848268905
+      n_a: 393
+      n_b: 338
+      windows:
+      - 0.049538452468400884
+      - -0.08336789512147233
+      - 0.009597744131902012
+      - 0.048168855818377806
+      - 0.025858700128379153
+      - -0.08652632660991236
+      verdict: fail
+      why: null
+  code: 'vol20 = ret.rolling(20).std()
+
+    mom = df.close.pct_change(20)
+
+    ok = mom.notna() & vol20.shift(10).notna()
+
+    falling = vol20 < vol20.shift(10)
+
+    a = falling & ok
+
+    b = (~falling) & ok
+
+    signal = np.sign(mom).replace(0, 1).fillna(1)
+
+    '
+- id: low_vs_high_vol_momentum_contrast
+  belief: BTC 20-day momentum pays more in the bottom third of its past-year volatility
+    than in the top third, so the volatility level, not momentum alone, is what times
+    the trend rule.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.005068320982276317
+      n_a: 181
+      n_b: 306
+      windows:
+      - -0.20637560646754935
+      - -0.014401266086835177
+      - 0.35887120951264495
+      - 0.0444705935746767
+      - -0.06309772506741831
+      - -0.17114955535980908
+      verdict: fail
+      why: null
+  code: 'vol20 = ret.rolling(20).std()
+
+    pct = vol20.rolling(365).rank(pct=True)
+
+    mom = df.close.pct_change(20)
+
+    a = (pct < 0.33) & mom.notna()
+
+    b = (pct > 0.67) & mom.notna()
+
+    signal = np.sign(mom).replace(0, 1).fillna(1)
+
+    '
+profit:
+  low_vol_regime_momentum/BTCUSD:
+    claim: low_vol_regime_momentum
+    symbol: BTCUSD
+    bar_size: 1d
+    fold: C
+    engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+    fold_totals:
+      net_return: 1.718
+      median_window_sharpe: 1.63415
+      worst_window_drawdown: 0.4255
+      trades: 43
+    windows:
+    - window: W1
+      net_return: -0.3973
+      trades: 6
+      sharpe: -2.2733
+      max_drawdown: 0.4255
+      exposure_pct: 40.8333
+      cost_drag_pct: 0.9943
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001/engine_r0_low_vol_regime_momentum_BTCUSD/results/20261106T002801Z_092799eb
+      seconds: 7
+    - window: W2
+      net_return: 0.2988
+      trades: 11
+      sharpe: 1.814
+      max_drawdown: 0.2104
+      exposure_pct: 64.7541
+      cost_drag_pct: 2.4885
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001/engine_r0_low_vol_regime_momentum_BTCUSD/results/20261106T002808Z_092799eb
+      seconds: 7
+    - window: W3
+      net_return: 0.2669
+      trades: 5
+      sharpe: 1.4543
+      max_drawdown: 0.2793
+      exposure_pct: 28.4553
+      cost_drag_pct: 2.2349
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001/engine_r0_low_vol_regime_momentum_BTCUSD/results/20261106T002815Z_092799eb
+      seconds: 7
+    - window: W4
+      net_return: 0.1945
+      trades: 7
+      sharpe: 1.3184
+      max_drawdown: 0.1893
+      exposure_pct: 49.5868
+      cost_drag_pct: 3.5639
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001/engine_r0_low_vol_regime_momentum_BTCUSD/results/20261106T002822Z_092799eb
+      seconds: 7
+    - window: W5
+      net_return: 0.773
+      trades: 8
+      sharpe: 4.0645
+      max_drawdown: 0.0851
+      exposure_pct: 53.2787
+      cost_drag_pct: 1.2257
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001/engine_r0_low_vol_regime_momentum_BTCUSD/results/20261106T002830Z_092799eb
+      seconds: 7
+    - window: W6
+      net_return: 0.2941
+      trades: 6
+      sharpe: 2.1167
+      max_drawdown: 0.1269
+      exposure_pct: 38.2114
+      cost_drag_pct: 2.3492
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001/engine_r0_low_vol_regime_momentum_BTCUSD/results/20261106T002837Z_092799eb
+      seconds: 7
+    checks:
+      net_positive_in_5_of_6: true
+      median_window_sharpe_ge_1.0: true
+      worst_window_drawdown_le_20%: false
+    min_bars: 455
+    verdict: fail

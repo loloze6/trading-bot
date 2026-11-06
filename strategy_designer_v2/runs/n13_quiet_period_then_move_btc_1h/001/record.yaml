@@ -1,0 +1,519 @@
+brief: n13_quiet_period_then_move_btc_1h.md
+fold: C
+symbols:
+- BTCUSD
+bar_size: 1h
+claims:
+- id: long_quiet_spring_release
+  belief: The longer BTC goes without a large hourly bar, the more pending orders
+    and stops build up, so the eventual move is larger than usual.
+  measure: abs_ratio
+  horizon_bars: 12
+  direction: above
+  min_effect: 1.15
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.7940110729398799
+      n_a: 206
+      n_b: 17278
+      windows:
+      - 0.6983738767159289
+      - 0.9321744351803531
+      - 0.6894295407100153
+      - 0.6967014675697685
+      - 1.0657163646410948
+      - 0.8759146192655793
+      verdict: fail
+      why: null
+  code: 'r_std = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 2.5 * r_std
+
+    idx = pd.Series(np.arange(len(df)), index=df.index, dtype=float)
+
+    since = idx - idx.where(big).ffill()
+
+    a = spaced(since == 24, 12)
+
+    b = ~a & since.notna()
+
+    '
+- id: long_quiet_stays_quiet
+  belief: Volatility clusters, so a long run with no large bar means a low-volatility
+    regime that persists and the next move is smaller than usual.
+  measure: abs_ratio
+  horizon_bars: 12
+  direction: below
+  min_effect: 0.85
+  verdict: pass
+  by_symbol:
+    BTCUSD:
+      effect: 0.7940110729398799
+      n_a: 206
+      n_b: 17278
+      windows:
+      - 0.6983738767159289
+      - 0.9321744351803531
+      - 0.6894295407100153
+      - 0.6967014675697685
+      - 1.0657163646410948
+      - 0.8759146192655793
+      verdict: pass
+      why: null
+  code: 'r_std = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 2.5 * r_std
+
+    idx = pd.Series(np.arange(len(df)), index=df.index, dtype=float)
+
+    since = idx - idx.where(big).ffill()
+
+    a = spaced(since == 24, 12)
+
+    b = ~a & since.notna()
+
+    '
+- id: weekly_narrowest_range_expansion
+  belief: The narrowest 12h range of the week marks maximum compression, which tends
+    to be followed by expansion.
+  measure: abs_ratio
+  horizon_bars: 12
+  direction: above
+  min_effect: 1.25
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 1.0786272231282097
+      n_a: 94
+      n_b: 17185
+      windows:
+      - 1.0408883722435756
+      - 1.175664731592042
+      - 1.0973986277833545
+      - 1.1575701471166642
+      - 0.7585573803632315
+      - 0.9816731755480047
+      verdict: fail
+      why: null
+  code: 'rng12 = (df.high.rolling(12).max() - df.low.rolling(12).min()) / df.close
+
+    narrow = rng12 <= rng12.rolling(168).min()
+
+    a = spaced(narrow, 24)
+
+    b = ~narrow & rng12.rolling(168).min().notna()
+
+    '
+- id: quiet_drift_continues
+  belief: Drift inside a compressed range reveals quiet accumulation or distribution,
+    so the next move continues it.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0066096748629143635
+      n_a: 94
+      n_b: 128
+      windows:
+      - 0.0005369092776020407
+      - -0.004589404748574827
+      - -0.017889060385982175
+      - 8.561380268597325e-05
+      - -0.007237072009446658
+      - -0.009118949999922908
+      verdict: fail
+      why: null
+  code: 'rng12 = (df.high.rolling(12).max() - df.low.rolling(12).min()) / df.close
+
+    narrow = rng12 <= rng12.rolling(168).min()
+
+    drift = df.close / df.close.shift(12) - 1
+
+    a = spaced(narrow, 24)
+
+    b = spaced(~narrow & (rng12 > rng12.rolling(168).median()), 24)
+
+    signal = np.sign(drift).replace(0, 1)
+
+    '
+- id: quiet_drift_fakeout_reverts
+  belief: Drift inside a tight range is noise from thin liquidity that runs stops
+    on one side, so the real move goes the other way.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0009068090075164503
+      n_a: 94
+      n_b: 17185
+      windows:
+      - -0.012980769311934327
+      - 0.0029937423044599197
+      - 0.012122087587044706
+      - -0.006299483189870948
+      - 0.006692817862532487
+      - 0.003105375702582516
+      verdict: fail
+      why: null
+  code: 'rng12 = (df.high.rolling(12).max() - df.low.rolling(12).min()) / df.close
+
+    narrow = rng12 <= rng12.rolling(168).min()
+
+    drift = df.close / df.close.shift(12) - 1
+
+    a = spaced(narrow, 24)
+
+    b = ~narrow & rng12.rolling(168).min().notna()
+
+    signal = -np.sign(drift).replace(0, 1)
+
+    '
+- id: close_location_in_compression
+  belief: When price sits at the edge of a compressed range, the side it presses on
+    is the side of the coming release.
+  measure: hit_rate
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.05
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.029643453139299114
+      n_a: 322
+      n_b: 4846
+      windows:
+      - -0.021078682369004953
+      - 0.1446274034414251
+      - -0.03019725177304966
+      - -0.06134969325153372
+      - 0.06172632987621279
+      - 0.07865761689291101
+      verdict: fail
+      why: null
+  code: 'hi12 = df.high.rolling(12).max()
+
+    lo12 = df.low.rolling(12).min()
+
+    rng12 = (hi12 - lo12) / df.close
+
+    quiet = rng12 <= rng12.rolling(168).quantile(0.2)
+
+    loc = (df.close - lo12) / (hi12 - lo12)
+
+    edge = (loc > 0.8) | (loc < 0.2)
+
+    a = spaced(quiet & edge, 12)
+
+    b = ~quiet & edge & rng12.rolling(168).quantile(0.2).notna()
+
+    signal = np.sign(loc - 0.5).replace(0, 1)
+
+    '
+- id: quiet_price_loud_volume_absorption
+  belief: A tight price range on above-normal volume means large orders are being
+    absorbed, which releases a bigger move than a tight range on dry volume.
+  measure: abs_ratio
+  horizon_bars: 12
+  direction: above
+  min_effect: 1.25
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 1.7629843955943223
+      n_a: 5
+      n_b: 93
+      windows:
+      - 1.3599430075720609
+      - null
+      - null
+      - 1.841714277612301
+      - null
+      - 1.376288165376501
+      verdict: fail
+      why: null
+  code: 'rng12 = (df.high.rolling(12).max() - df.low.rolling(12).min()) / df.close
+
+    narrow = rng12 <= rng12.rolling(168).min()
+
+    vol12 = df.volume.rolling(12).sum()
+
+    volr = vol12 / vol12.rolling(168).median().shift(1)
+
+    a = spaced(narrow & (volr > 1.0), 24)
+
+    b = spaced(narrow & (volr <= 1.0), 24)
+
+    '
+- id: asia_quiet_us_open_release
+  belief: A quiet Asian/European morning compresses positioning that the US equity
+    open (about 13:30 UTC) then releases, more than quiet at other hours does.
+  measure: abs_ratio
+  horizon_bars: 6
+  direction: above
+  min_effect: 1.25
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.8990310099480722
+      n_a: 106
+      n_b: 4600
+      windows:
+      - 0.818736023429983
+      - 1.555498978555744
+      - 0.7719201759571639
+      - 0.7016416567589046
+      - 0.9415469390583904
+      - 0.8969338936523725
+      verdict: fail
+      why: null
+  code: 'rng8 = (df.high.rolling(8).max() - df.low.rolling(8).min()) / df.close
+
+    quiet = rng8 <= rng8.rolling(672).quantile(0.25)
+
+    a = quiet & (hour == 13) & (dow < 5)
+
+    b = quiet & (hour != 13)
+
+    '
+- id: quiet_weekend_drift_reverts_monday
+  belief: Drift during a quiet, thin-liquidity weekend is not informed, so it is unwound
+    when full liquidity returns on Monday.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0014781620569574716
+      n_a: 46
+      n_b: 58
+      windows:
+      - -0.005995091173152112
+      - -0.00980429301705938
+      - 0.02047180989784738
+      - -0.020057561946974046
+      - 0.007670567222876761
+      - 0.014121247607244192
+      verdict: fail
+      why: null
+  code: 'rng48 = (df.high.rolling(48).max() - df.low.rolling(48).min()) / df.close
+
+    q = rng48.rolling(168 * 8).quantile(0.3)
+
+    mon = (dow == 0) & (hour == 0)
+
+    a = mon & (rng48 <= q)
+
+    b = mon & (rng48 > q)
+
+    signal = -np.sign(df.close / df.close.shift(48) - 1).replace(0, 1)
+
+    '
+- id: wick_rejection_inside_quiet
+  belief: In a quiet range, repeated rejection wicks on one side show where resting
+    liquidity defends, so price leaves from the opposite side.
+  measure: rank_corr
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.07128114165363449
+      n_a: 350
+      n_b: 350
+      windows:
+      - -0.00011563367252543941
+      - 0.02887361184558434
+      - 0.22082042758933293
+      - -0.24595200322328825
+      - -0.04063348416289593
+      - 0.21107031686487354
+      verdict: fail
+      why: null
+  code: 'hi12 = df.high.rolling(12).max()
+
+    lo12 = df.low.rolling(12).min()
+
+    rng12 = (hi12 - lo12) / df.close
+
+    quiet = rng12 <= rng12.rolling(168).quantile(0.2)
+
+    up = df.high - df[[''open'', ''close'']].max(axis=1)
+
+    dn = df[[''open'', ''close'']].min(axis=1) - df.low
+
+    feature = (dn.rolling(12).sum() - up.rolling(12).sum()) / (hi12 - lo12)
+
+    a = spaced(quiet, 12)
+
+    b = ~a
+
+    '
+- id: post_shock_flag_continues
+  belief: A quiet consolidation right after a large bar is digestion, not reversal,
+    so the move resumes in the shock's direction.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.00227550348821605
+      n_a: 223
+      n_b: 17261
+      windows:
+      - 0.0028772230287700297
+      - 0.006029574328373267
+      - 0.0024940539986922326
+      - 0.006981812239033081
+      - 0.002266179348114513
+      - -0.005081765340671894
+      verdict: fail
+      why: null
+  code: 'r_std = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 2.5 * r_std
+
+    idx = pd.Series(np.arange(len(df)), index=df.index, dtype=float)
+
+    since = idx - idx.where(big).ffill()
+
+    sgn = np.sign(ret.where(big)).ffill()
+
+    a = spaced(since == 12, 24)
+
+    b = ~a & sgn.notna()
+
+    signal = sgn.fillna(1)
+
+    '
+- id: quiet_drift_profit_after_cost
+  belief: When a compressed range carries a clear drift, following that drift pays
+    more than the round-trip fee.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.001
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0032182008280561268
+      n_a: 44
+      n_b: 44
+      windows:
+      - -0.004407427123160055
+      - 0.01096422832201144
+      - -0.02235062773797597
+      - 0.019731273838492873
+      - 0.002850339645674846
+      - -0.0020561205459214233
+      verdict: fail
+      why: null
+  code: 'rng12 = (df.high.rolling(12).max() - df.low.rolling(12).min()) / df.close
+
+    narrow = rng12 <= rng12.rolling(168).min()
+
+    drift = df.close / df.close.shift(12) - 1
+
+    a = spaced(narrow & (drift.abs() >= 0.5 * rng12), 24)
+
+    b = ~a
+
+    signal = np.sign(drift).replace(0, 1)
+
+    '
+- id: long_quiet_drift_reverts
+  belief: In a quiet regime with no large bar for a day, liquidity is two-sided and
+    range-bound, so the 12h drift is unwound rather than extended, unlike in loud
+    regimes.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.003742723706144491
+      n_a: 206
+      n_b: 165
+      windows:
+      - 0.0026190182630365672
+      - 0.002170931627036844
+      - 0.010973296944686543
+      - -0.004501740305496149
+      - -0.000933450506677757
+      - 0.011898758813873254
+      verdict: fail
+      why: null
+  code: 'r_std = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 2.5 * r_std
+
+    idx = pd.Series(np.arange(len(df)), index=df.index, dtype=float)
+
+    since = idx - idx.where(big).ffill()
+
+    drift = df.close / df.close.shift(12) - 1
+
+    a = spaced(since >= 24, 12)
+
+    b = spaced((since < 24) & since.notna(), 12)
+
+    signal = -np.sign(drift).replace(0, 1)
+
+    '
+- id: held_flag_after_shock_pays
+  belief: When a quiet 12h consolidation after a large hourly bar still holds beyond
+    the midpoint of that shock bar, the shock was absorbed rather than rejected, and
+    the move resumes in its direction by more than the fee.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0019033218653686798
+      n_a: 176
+      n_b: 176
+      windows:
+      - 0.013019359812362016
+      - -0.00028130104258123007
+      - -0.003319679754232443
+      - 0.0014320327687207196
+      - 0.0066039851092739455
+      - -0.002732016430734733
+      verdict: fail
+      why: null
+  code: 'r_std = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 2.5 * r_std
+
+    idx = pd.Series(np.arange(len(df)), index=df.index, dtype=float)
+
+    since = idx - idx.where(big).ffill()
+
+    sgn = np.sign(ret.where(big)).ffill()
+
+    mid = ((df.open.where(big) + df.close.where(big)) / 2).ffill()
+
+    held = sgn * (df.close - mid) > 0
+
+    a = spaced((since == 12) & held, 24)
+
+    b = ~a & sgn.notna()
+
+    signal = sgn.fillna(1)
+
+    '
+profit: 'none: no return claim passed'

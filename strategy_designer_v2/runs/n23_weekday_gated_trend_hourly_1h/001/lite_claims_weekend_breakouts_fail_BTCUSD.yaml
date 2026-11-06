@@ -1,0 +1,41 @@
+claim: weekend_breakouts_fail
+symbol: BTCUSD
+bar_size: 1h
+fold: C
+cost_per_round_trip: 0.0015
+fold_totals:
+  net_return: 3.4169
+  sharpe: 1.71
+  max_drawdown: -0.3745
+  time_in_market: 0.207
+  trades: 150
+windows:
+- window: W1
+  net_return: 0.7462
+  trades: 26
+  max_drawdown: -0.1355
+- window: W2
+  net_return: 0.1852
+  trades: 25
+  max_drawdown: -0.1443
+- window: W3
+  net_return: 0.2343
+  trades: 23
+  max_drawdown: -0.1198
+- window: W4
+  net_return: 0.787
+  trades: 22
+  max_drawdown: -0.246
+- window: W5
+  net_return: 0.2368
+  trades: 25
+  max_drawdown: -0.1059
+- window: W6
+  net_return: -0.2177
+  trades: 28
+  max_drawdown: -0.3745
+checks:
+  net_positive_in_5_of_6: true
+  sharpe_ge_1.0: true
+  max_drawdown_le_20%: false
+verdict: fail

@@ -1,0 +1,964 @@
+brief: n23_weekday_gated_trend_hourly_1h.md
+fold: C
+symbols:
+- BTCUSD
+- ETHUSD
+bar_size: 1h
+claims:
+- id: ma_cross_weekday_vs_weekend
+  belief: A 24/168-bar moving-average trend rule earns its edge on weekday hours and
+    gives it back in the quiet weekend window from Friday evening to Monday morning.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0010066274452395086
+      n_a: 11340
+      n_b: 6144
+      windows:
+      - 0.006411979526311515
+      - -0.002794477221516004
+      - -0.003643739221039609
+      - 0.004386048124951456
+      - 0.009111134165070067
+      - -0.007269533147058716
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.0011617500923160051
+      n_a: 11341
+      n_b: 6143
+      windows:
+      - -0.007438180390216138
+      - -0.0031051721294323123
+      - -0.0037563552208529517
+      - 0.005705302146303744
+      - -0.0012500031919727805
+      - 0.0029365644028404954
+      verdict: fail
+      why: null
+  code: 'wk = ((dow == 4) & (hour >= 21)) | (dow >= 5) | ((dow == 0) & (hour < 8))
+
+    f = df.close.rolling(24).mean()
+
+    s = df.close.rolling(168).mean()
+
+    signal = np.sign(f - s).replace(0, 1).fillna(1)
+
+    a = (~wk) & s.notna()
+
+    b = wk & s.notna()
+
+    '
+- id: weekend_breakouts_fail
+  belief: Breakouts of the 72-hour range made in thin weekend trading are mostly false
+    and do not follow through, while weekday breakouts do.
+  measure: hit_rate
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.05
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.2706935123042506
+      n_a: 149
+      n_b: 69
+      windows:
+      - 0.6307692307692307
+      - 0.27428571428571435
+      - 0.20869565217391306
+      - 0.1524064171122994
+      - 0.3066666666666667
+      - 0.17857142857142855
+      verdict: pass
+      why: null
+    ETHUSD:
+      effect: 0.03801703163017034
+      n_a: 137
+      n_b: 72
+      windows:
+      - 0.00454545454545463
+      - -0.036363636363636376
+      - 0.06719367588932806
+      - 0.19047619047619052
+      - 0.0839160839160839
+      - -0.09142857142857141
+      verdict: fail
+      why: null
+  code: 'wk = ((dow == 4) & (hour >= 21)) | (dow >= 5) | ((dow == 0) & (hour < 8))
+
+    hi = df.high.rolling(72).max().shift(1)
+
+    lo = df.low.rolling(72).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    ev = spaced(up | dn, 24)
+
+    signal = pd.Series(np.where(up, 1, -1), index=df.index)
+
+    a = ev & ~wk
+
+    b = ev & wk
+
+    '
+- id: tsmom_low_vol_gate
+  belief: Time-series momentum works when trailing 24h volatility is not in its bottom
+    third, because quiet regimes are mean-reverting chop whatever the weekday.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0008152842065359072
+      n_a: 10998
+      n_b: 6486
+      windows:
+      - -0.00220310306008029
+      - 0.008193086266611603
+      - -0.009023736087392343
+      - 0.0023970397278468484
+      - -0.0001414158222536625
+      - 0.002208931479853596
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.00129283708502327
+      n_a: 11449
+      n_b: 6035
+      windows:
+      - -0.007398141889978553
+      - 0.01117468751322183
+      - -0.007190755249974832
+      - -0.006076772847624617
+      - 0.0018214949711026266
+      - 0.00018414811872170334
+      verdict: fail
+      why: null
+  code: 'm = df.close.pct_change(72)
+
+    signal = np.sign(m).replace(0, 1).fillna(1)
+
+    v = ret.rolling(24).std()
+
+    q = v.rolling(720).quantile(0.33)
+
+    ok = q.notna() & m.notna()
+
+    a = ok & (v > q)
+
+    b = ok & (v <= q)
+
+    '
+- id: vol_expansion_gate
+  belief: What matters is whether volatility is expanding or compressing, not its
+    level; trend rules pay while 24h volatility is rising and bleed while it contracts,
+    as it does into a weekend.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.0015
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.004014004201925213
+      n_a: 8369
+      n_b: 9115
+      windows:
+      - -0.005971946052982239
+      - -0.0026261150892921093
+      - -0.003005229540945893
+      - -0.005301383948383615
+      - 0.002421245998275125
+      - -0.010547234899235022
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.0029543029916142874
+      n_a: 8349
+      n_b: 9135
+      windows:
+      - -0.00428822898773234
+      - -0.005485173849096964
+      - -0.0025995361867136068
+      - -0.005384793940131946
+      - 0.0002648010527524381
+      - -0.000106802755498645
+      verdict: fail
+      why: null
+  code: 'm = df.close.pct_change(168)
+
+    signal = np.sign(m).replace(0, 1).fillna(1)
+
+    v = ret.rolling(24).std()
+
+    ok = v.shift(24).notna() & m.notna()
+
+    a = ok & (v > v.shift(24))
+
+    b = ok & (v <= v.shift(24))
+
+    '
+- id: efficiency_ratio_gate
+  belief: Weekend compression shows as a choppy, inefficient price path; a trend rule
+    pays when the trailing 24-bar efficiency ratio is high and fails when the path
+    is noise.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.0012
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0005433283400543121
+      n_a: 8807
+      n_b: 8677
+      windows:
+      - -0.0019080033191523882
+      - -0.003004426298958879
+      - 0.002950923770410261
+      - 0.001704024177548078
+      - 0.006102640313757728
+      - -0.0026654132261731993
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.000188161063326434
+      n_a: 8672
+      n_b: 8812
+      windows:
+      - 0.0015478101016016708
+      - -0.005435375032033435
+      - -0.0005746680111783355
+      - 0.0031878864206865837
+      - 0.0015884867320509353
+      - -0.0015524857293515667
+      verdict: fail
+      why: null
+  code: 'er = (df.close - df.close.shift(24)).abs() / df.close.diff().abs().rolling(24).sum()
+
+    med = er.rolling(720).median()
+
+    m = df.close.pct_change(48)
+
+    signal = np.sign(m).replace(0, 1).fillna(1)
+
+    ok = med.notna() & m.notna()
+
+    a = ok & (er > med)
+
+    b = ok & (er <= med)
+
+    '
+- id: volume_participation_gate
+  belief: Trends need participation; when trailing 24h volume is below its monthly
+    norm, as on weekends, moves are not carried by real flow and the trend rule loses.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.0015
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0037659745277125256
+      n_a: 8685
+      n_b: 8799
+      windows:
+      - 0.0005423008349847679
+      - 0.009825207572623472
+      - -0.009079979374955662
+      - 0.009894179113220537
+      - 0.009022675337411416
+      - -3.687279996797497e-06
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.0002728573546037791
+      n_a: 8965
+      n_b: 8519
+      windows:
+      - -0.016378265013637885
+      - 0.019540532313243743
+      - 0.0001054149920606054
+      - -0.005600095895117345
+      - 0.00258695190144147
+      - -0.0021755336895856493
+      verdict: fail
+      why: null
+  code: 'vs = df.volume.rolling(24).sum()
+
+    med = vs.rolling(720).median()
+
+    f = df.close.rolling(24).mean()
+
+    s = df.close.rolling(168).mean()
+
+    signal = np.sign(f - s).replace(0, 1).fillna(1)
+
+    ok = med.notna() & s.notna()
+
+    a = ok & (vs > med)
+
+    b = ok & (vs <= med)
+
+    '
+- id: monday_weekend_range_release
+  belief: The weekend compression stores energy; the first Monday break of the weekend's
+    high or low starts a move that follows through more than an ordinary midweek breakout.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.004654927005024228
+      n_a: 52
+      n_b: 128
+      windows:
+      - -0.018406423130738637
+      - 0.028950854634076425
+      - 0.017730159551589762
+      - -0.04019029149809136
+      - -0.016096352244548896
+      - 0.007237504282889133
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.016680484676858686
+      n_a: 43
+      n_b: 122
+      windows:
+      - 0.0190559989915004
+      - -0.022437647523909438
+      - 0.0009514184740740395
+      - -0.05079789495153941
+      - -0.015348569054975149
+      - 0.001216837726440071
+      verdict: fail
+      why: null
+  code: 'wk = ((dow == 4) & (hour >= 21)) | (dow >= 5) | ((dow == 0) & (hour < 8))
+
+    wid = (wk & ~wk.shift(1, fill_value=False)).cumsum()
+
+    whi = df.high.where(wk).groupby(wid).cummax().groupby(wid).ffill()
+
+    wlo = df.low.where(wk).groupby(wid).cummin().groupby(wid).ffill()
+
+    mon = (dow == 0) & (hour >= 8)
+
+    up = df.close > whi
+
+    dn = df.close < wlo
+
+    ev = spaced((up | dn) & mon, 24)
+
+    hi60 = df.high.rolling(60).max().shift(1)
+
+    lo60 = df.low.rolling(60).min().shift(1)
+
+    up60 = df.close > hi60
+
+    dn60 = df.close < lo60
+
+    evb = spaced((up60 | dn60) & dow.isin([1, 2, 3]), 24)
+
+    signal = pd.Series(np.where(ev, np.where(up, 1, -1), np.where(up60, 1, -1)), index=df.index)
+
+    a = ev & (wid > 0)
+
+    b = evb
+
+    '
+- id: gated_cross_pays_net
+  belief: A 12/72 MA-cross entry taken only on weekdays with 24h volatility above
+    its lower tercile is profitable after the 0.15% round trip.
+  measure: net_return
+  horizon_bars: 48
+  direction: positive
+  min_effect: 0.002
+  verdict: pass
+  by_symbol:
+    BTCUSD:
+      effect: 0.005756153535912892
+      n_a: 99
+      n_b: 99
+      windows:
+      - 0.01334059277425392
+      - 0.0191275924868842
+      - 9.760872366109709e-05
+      - 0.005921950766256397
+      - -0.00606883663690139
+      - 0.014609019023615976
+      verdict: pass
+      why: null
+    ETHUSD:
+      effect: 0.00786954561181685
+      n_a: 98
+      n_b: 98
+      windows:
+      - 0.00045889770370742544
+      - 0.02742682924367832
+      - 1.299282365132496e-05
+      - 0.0007249767714373979
+      - 0.015216095426771744
+      - 0.0034152051722881826
+      verdict: pass
+      why: null
+  code: 'wk = ((dow == 4) & (hour >= 21)) | (dow >= 5) | ((dow == 0) & (hour < 8))
+
+    f = df.close.rolling(12).mean()
+
+    s = df.close.rolling(72).mean()
+
+    d = np.sign(f - s)
+
+    cross = (d != d.shift(1)) & d.notna() & d.shift(1).notna() & (d != 0)
+
+    v = ret.rolling(24).std()
+
+    q = v.rolling(720).quantile(0.33)
+
+    gate = (~wk) & (v > q)
+
+    signal = d.replace(0, 1).fillna(1)
+
+    a = spaced(cross & gate, 24)
+
+    b = ~a
+
+    '
+- id: gated_vs_ungated_cross_events
+  belief: The same 12/72 MA-cross entries taken outside the gate (weekend window or
+    bottom-tercile volatility) do clearly worse than those inside it, so the gate
+    is what turns the rule profitable.
+  measure: mean_diff
+  horizon_bars: 48
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.010981547088691932
+      n_a: 99
+      n_b: 136
+      windows:
+      - 0.02287809932811967
+      - 0.023490024513294544
+      - -0.000535849216536626
+      - 0.02087921874330098
+      - -0.007027141689142459
+      - 0.01866612577077871
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.018034360306704973
+      n_a: 98
+      n_b: 123
+      windows:
+      - 0.003406247459325975
+      - 0.06253418140575714
+      - -0.003214243317293129
+      - 0.01653079090754471
+      - 0.012541286477457501
+      - 0.014660632774647162
+      verdict: pass
+      why: null
+  code: 'wk = ((dow == 4) & (hour >= 21)) | (dow >= 5) | ((dow == 0) & (hour < 8))
+
+    f = df.close.rolling(12).mean()
+
+    s = df.close.rolling(72).mean()
+
+    d = np.sign(f - s)
+
+    cross = (d != d.shift(1)) & d.notna() & d.shift(1).notna() & (d != 0)
+
+    v = ret.rolling(24).std()
+
+    q = v.rolling(720).quantile(0.33)
+
+    ok = q.notna()
+
+    gate = (~wk) & (v > q)
+
+    signal = d.replace(0, 1).fillna(1)
+
+    a = spaced(cross & gate & ok, 24)
+
+    b = spaced(cross & ~gate & ok, 24)
+
+    '
+- id: weekday_only_momentum
+  belief: Weekend returns are noise that corrupts the momentum signal; momentum summed
+    over weekday bars only predicts better, most visibly when it disagrees with full
+    momentum.
+  measure: rank_corr
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.05
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.057688021830186995
+      n_a: 1874
+      n_b: 1874
+      windows:
+      - 0.15314574426739214
+      - 0.30956805731142023
+      - -0.05143531662783446
+      - -0.20941139708808554
+      - 0.11391739060131888
+      - 0.01792480680408364
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.006963470597772278
+      n_a: 2086
+      n_b: 2086
+      windows:
+      - -0.03677174330571682
+      - -0.04192189671144048
+      - -0.052588394415001315
+      - 0.010024419009613745
+      - 0.2523747568244055
+      - -0.21686713897611873
+      verdict: fail
+      why: null
+  code: 'wk = ((dow == 4) & (hour >= 21)) | (dow >= 5) | ((dow == 0) & (hour < 8))
+
+    mwd = ret.where(~wk, 0.0).rolling(120).sum()
+
+    mall = ret.rolling(120).sum()
+
+    feature = mwd
+
+    a = (~wk) & mall.notna() & (np.sign(mwd) != np.sign(mall))
+
+    b = ~a
+
+    signal = np.sign(mwd).replace(0, 1).fillna(1)
+
+    '
+- id: cross_in_vol_contraction
+  belief: MA-cross trend entries follow through better when 24h volatility is contracting
+    than when it is expanding, because a cross made in compression starts a move rather
+    than ending a spike.
+  measure: mean_diff
+  horizon_bars: 48
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.00034111809285973505
+      n_a: 138
+      n_b: 116
+      windows:
+      - -0.0019806710168996555
+      - 0.013411907709905045
+      - 0.006679213099301
+      - -0.021307902875971632
+      - 0.014099879288095751
+      - -0.022319735024425587
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.0025987753524605276
+      n_a: 125
+      n_b: 111
+      windows:
+      - 0.028002510509396263
+      - -0.03157122906609614
+      - -0.0014213512891496404
+      - -0.006093595947460339
+      - 0.004829562456283031
+      - 0.02450446914238285
+      verdict: fail
+      why: null
+  code: 'f = df.close.rolling(12).mean()
+
+    s = df.close.rolling(72).mean()
+
+    d = np.sign(f - s)
+
+    cross = (d != d.shift(1)) & d.notna() & d.shift(1).notna() & (d != 0)
+
+    v = ret.rolling(24).std()
+
+    ok = v.shift(24).notna() & s.notna()
+
+    con = v <= v.shift(24)
+
+    signal = d.replace(0, 1).fillna(1)
+
+    a = spaced(cross & ok & con, 24)
+
+    b = spaced(cross & ok & ~con, 24)
+
+    '
+- id: weekday_part_of_gate_on_cross_events
+  belief: Within MA-cross entries already made in non-quiet volatility, the weekday
+    filter adds its own edge, because crosses that fire in the Friday-evening-to-Monday-morning
+    window do not follow through even when volatility is not low.
+  measure: mean_diff
+  horizon_bars: 48
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.031550243398662955
+      n_a: 99
+      n_b: 53
+      windows:
+      - 0.05432806749163453
+      - 0.04339887656752224
+      - 0.028343740140265597
+      - 0.05143894302279685
+      - 0.0068927245316934916
+      - 0.010779535311100406
+      verdict: pass
+      why: null
+    ETHUSD:
+      effect: 0.029694438464562663
+      n_a: 98
+      n_b: 40
+      windows:
+      - -0.0033874317650347294
+      - 0.1166607077606385
+      - 0.016174053099078836
+      - -2.5467213202518078e-05
+      - -0.017611471859190306
+      - 0.03341672307158524
+      verdict: fail
+      why: null
+  code: 'wk = ((dow == 4) & (hour >= 21)) | (dow >= 5) | ((dow == 0) & (hour < 8))
+
+    f = df.close.rolling(12).mean()
+
+    s = df.close.rolling(72).mean()
+
+    d = np.sign(f - s)
+
+    cross = (d != d.shift(1)) & d.notna() & d.shift(1).notna() & (d != 0)
+
+    v = ret.rolling(24).std()
+
+    q = v.rolling(720).quantile(0.33)
+
+    ok = q.notna()
+
+    hv = v > q
+
+    signal = d.replace(0, 1).fillna(1)
+
+    a = spaced(cross & hv & ~wk & ok, 24)
+
+    b = spaced(cross & hv & wk & ok, 24)
+
+    '
+profit:
+  gated_cross_pays_net/BTCUSD:
+    claim: gated_cross_pays_net
+    symbol: BTCUSD
+    bar_size: 1h
+    fold: C
+    engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+    min_bars: 880
+    verdict: pass
+    passed_as: vol_target
+    fold_totals: &id001
+      net_return: 0.0838
+      median_window_sharpe: 1.30625
+      worst_window_drawdown: 0.1433
+      trades: 120
+    full_size:
+      sizing: full size (forecast 10 = 100%)
+      fold_totals:
+        net_return: 0.3002
+        median_window_sharpe: 1.0943
+        worst_window_drawdown: 0.3383
+        trades: 83
+      windows:
+      - window: W1
+        net_return: 0.1246
+        trades: 6
+        sharpe: 1.7956
+        max_drawdown: 0.0697
+        exposure_pct: 8.4836
+        cost_drag_pct: 4.4221
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/full_size/20261106T014741Z_64dd3614
+        seconds: 49
+      - window: W2
+        net_return: 0.2437
+        trades: 13
+        sharpe: 2.2762
+        max_drawdown: 0.1035
+        exposure_pct: 19.6721
+        cost_drag_pct: 5.4246
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/full_size/20261106T014823Z_64dd3614
+        seconds: 42
+      - window: W3
+        net_return: 0.0568
+        trades: 17
+        sharpe: 0.5969
+        max_drawdown: 0.1653
+        exposure_pct: 25.6697
+        cost_drag_pct: 23.7272
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/full_size/20261106T014908Z_64dd3614
+        seconds: 45
+      - window: W4
+        net_return: 0.1188
+        trades: 19
+        sharpe: 1.4383
+        max_drawdown: 0.1457
+        exposure_pct: 30.303
+        cost_drag_pct: 13.8595
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/full_size/20261106T014949Z_64dd3614
+        seconds: 42
+      - window: W5
+        net_return: -0.26
+        trades: 18
+        sharpe: -2.5768
+        max_drawdown: 0.3383
+        exposure_pct: 27.8784
+        cost_drag_pct: 7.0428
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/full_size/20261106T015032Z_64dd3614
+        seconds: 42
+      - window: W6
+        net_return: 0.0625
+        trades: 10
+        sharpe: 0.7503
+        max_drawdown: 0.1443
+        exposure_pct: 14.9304
+        cost_drag_pct: 13.9191
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/full_size/20261106T015115Z_64dd3614
+        seconds: 43
+      checks:
+        net_positive_in_5_of_6: true
+        median_window_sharpe_ge_1.0: true
+        worst_window_drawdown_le_20%: false
+      verdict: fail
+    vol_target:
+      sizing:
+        kind: vol_target
+        window: 30
+        target_annual_vol: 0.2
+        max_allocation: 1.0
+      fold_totals: *id001
+      windows:
+      - window: W1
+        net_return: 0.0343
+        trades: 9
+        sharpe: 2.0175
+        max_drawdown: 0.0154
+        exposure_pct: 8.4836
+        cost_drag_pct: 5.0507
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/vol_target/20261106T015204Z_be4deeb5
+        seconds: 48
+      - window: W2
+        net_return: 0.0844
+        trades: 22
+        sharpe: 1.7593
+        max_drawdown: 0.0326
+        exposure_pct: 19.6721
+        cost_drag_pct: 8.3569
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/vol_target/20261106T015246Z_be4deeb5
+        seconds: 43
+      - window: W3
+        net_return: 0.0542
+        trades: 21
+        sharpe: 1.9359
+        max_drawdown: 0.0377
+        exposure_pct: 25.6697
+        cost_drag_pct: 8.6738
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/vol_target/20261106T015330Z_be4deeb5
+        seconds: 44
+      - window: W4
+        net_return: 0.0056
+        trades: 29
+        sharpe: 0.4166
+        max_drawdown: 0.0781
+        exposure_pct: 30.303
+        cost_drag_pct: 63.2252
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/vol_target/20261106T015413Z_be4deeb5
+        seconds: 42
+      - window: W5
+        net_return: -0.103
+        trades: 28
+        sharpe: -2.4674
+        max_drawdown: 0.1433
+        exposure_pct: 27.8784
+        cost_drag_pct: 9.2626
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/vol_target/20261106T015458Z_be4deeb5
+        seconds: 45
+      - window: W6
+        net_return: 0.0162
+        trades: 11
+        sharpe: 0.8532
+        max_drawdown: 0.0198
+        exposure_pct: 14.9304
+        cost_drag_pct: 11.9521
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/vol_target/20261106T015542Z_be4deeb5
+        seconds: 44
+      checks:
+        net_positive_in_5_of_6: true
+        median_window_sharpe_ge_1.0: true
+        worst_window_drawdown_le_20%: true
+      verdict: pass
+  gated_cross_pays_net/ETHUSD:
+    claim: gated_cross_pays_net
+    symbol: ETHUSD
+    bar_size: 1h
+    fold: C
+    engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+    min_bars: 880
+    verdict: fail
+    passed_as: null
+    fold_totals: &id002
+      net_return: 0.5411
+      median_window_sharpe: 0.55435
+      worst_window_drawdown: 0.3769
+      trades: 84
+    full_size:
+      sizing: full size (forecast 10 = 100%)
+      fold_totals: *id002
+      windows:
+      - window: W1
+        net_return: 0.0086
+        trades: 6
+        sharpe: 0.2145
+        max_drawdown: 0.1469
+        exposure_pct: 8.4806
+        cost_drag_pct: 43.1902
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/full_size/20261106T015629Z_64dd3614
+        seconds: 46
+      - window: W2
+        net_return: 0.3813
+        trades: 17
+        sharpe: 2.685
+        max_drawdown: 0.1066
+        exposure_pct: 24.8634
+        cost_drag_pct: 5.1228
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/full_size/20261106T015711Z_64dd3614
+        seconds: 42
+      - window: W3
+        net_return: 0.0495
+        trades: 16
+        sharpe: 0.7181
+        max_drawdown: 0.1943
+        exposure_pct: 23.9403
+        cost_drag_pct: 23.9523
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/full_size/20261106T015753Z_64dd3614
+        seconds: 42
+      - window: W4
+        net_return: -0.1516
+        trades: 18
+        sharpe: -0.5711
+        max_drawdown: 0.3769
+        exposure_pct: 24.5179
+        cost_drag_pct: 9.6207
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/full_size/20261106T015835Z_64dd3614
+        seconds: 42
+      - window: W5
+        net_return: 0.2098
+        trades: 18
+        sharpe: 1.5916
+        max_drawdown: 0.2039
+        exposure_pct: 24.607
+        cost_drag_pct: 7.5243
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/full_size/20261106T015916Z_64dd3614
+        seconds: 41
+      - window: W6
+        net_return: 0.0269
+        trades: 9
+        sharpe: 0.3906
+        max_drawdown: 0.2466
+        exposure_pct: 13.0302
+        cost_drag_pct: 24.9222
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/full_size/20261106T020000Z_64dd3614
+        seconds: 44
+      checks:
+        net_positive_in_5_of_6: true
+        median_window_sharpe_ge_1.0: false
+        worst_window_drawdown_le_20%: false
+      verdict: fail
+    vol_target:
+      sizing:
+        kind: vol_target
+        window: 30
+        target_annual_vol: 0.2
+        max_allocation: 1.0
+      fold_totals:
+        net_return: 0.018
+        median_window_sharpe: 0.49870000000000003
+        worst_window_drawdown: 0.1506
+        trades: 91
+      windows:
+      - window: W1
+        net_return: 0.0044
+        trades: 5
+        sharpe: 0.338
+        max_drawdown: 0.0202
+        exposure_pct: 8.4806
+        cost_drag_pct: 15.0118
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/vol_target/20261106T020048Z_be4deeb5
+        seconds: 48
+      - window: W2
+        net_return: 0.0483
+        trades: 21
+        sharpe: 1.6382
+        max_drawdown: 0.0531
+        exposure_pct: 24.8634
+        cost_drag_pct: 12.2794
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/vol_target/20261106T020130Z_be4deeb5
+        seconds: 42
+      - window: W3
+        net_return: 0.0368
+        trades: 18
+        sharpe: 1.6076
+        max_drawdown: 0.0391
+        exposure_pct: 23.9403
+        cost_drag_pct: 10.5684
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/vol_target/20261106T020214Z_be4deeb5
+        seconds: 44
+      - window: W4
+        net_return: -0.0898
+        trades: 21
+        sharpe: -1.6441
+        max_drawdown: 0.1506
+        exposure_pct: 24.5179
+        cost_drag_pct: 5.4057
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/vol_target/20261106T020255Z_be4deeb5
+        seconds: 41
+      - window: W5
+        net_return: 0.0216
+        trades: 18
+        sharpe: 0.6594
+        max_drawdown: 0.0734
+        exposure_pct: 24.607
+        cost_drag_pct: 16.1366
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/vol_target/20261106T020338Z_be4deeb5
+        seconds: 43
+      - window: W6
+        net_return: 0.0029
+        trades: 8
+        sharpe: 0.1775
+        max_drawdown: 0.0383
+        exposure_pct: 13.0302
+        cost_drag_pct: 29.5976
+        run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/vol_target/20261106T020422Z_be4deeb5
+        seconds: 44
+      checks:
+        net_positive_in_5_of_6: true
+        median_window_sharpe_ge_1.0: false
+        worst_window_drawdown_le_20%: true
+      verdict: fail

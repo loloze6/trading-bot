@@ -1,0 +1,41 @@
+claim: trend_aligned_momentum_hit_rate
+symbol: ETHUSD
+bar_size: 1h
+fold: A
+cost_per_round_trip: 0.0015
+fold_totals:
+  net_return: 0.3871
+  sharpe: 0.88
+  max_drawdown: -0.2278
+  time_in_market: 0.108
+  trades: 157
+windows:
+- window: W1
+  net_return: 0.0715
+  trades: 25
+  max_drawdown: -0.1269
+- window: W2
+  net_return: 0.205
+  trades: 14
+  max_drawdown: -0.0711
+- window: W3
+  net_return: -0.0136
+  trades: 25
+  max_drawdown: -0.1151
+- window: W4
+  net_return: 0.2336
+  trades: 29
+  max_drawdown: -0.0763
+- window: W5
+  net_return: -0.0416
+  trades: 27
+  max_drawdown: -0.0948
+- window: W6
+  net_return: -0.0788
+  trades: 36
+  max_drawdown: -0.1754
+checks:
+  net_positive_in_5_of_6: false
+  sharpe_ge_1.0: false
+  max_drawdown_le_20%: false
+verdict: fail

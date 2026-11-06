@@ -1,0 +1,248 @@
+claims_file: strategy_designer_v2/runs/n13_quiet_period_then_move_btc_1h/001/claims.yaml
+fold: C
+bar_size: 1h
+symbols:
+- BTCUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  long_quiet_spring_release:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.7940110729398799
+        n_a: 206
+        n_b: 17278
+        windows:
+        - 0.6983738767159289
+        - 0.9321744351803531
+        - 0.6894295407100153
+        - 0.6967014675697685
+        - 1.0657163646410948
+        - 0.8759146192655793
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+  long_quiet_stays_quiet:
+    verdict: pass
+    by_symbol:
+      BTCUSD:
+        verdict: pass
+        effect: 0.7940110729398799
+        n_a: 206
+        n_b: 17278
+        windows:
+        - 0.6983738767159289
+        - 0.9321744351803531
+        - 0.6894295407100153
+        - 0.6967014675697685
+        - 1.0657163646410948
+        - 0.8759146192655793
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+  weekly_narrowest_range_expansion:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 1.0786272231282097
+        n_a: 94
+        n_b: 17185
+        windows:
+        - 1.0408883722435756
+        - 1.175664731592042
+        - 1.0973986277833545
+        - 1.1575701471166642
+        - 0.7585573803632315
+        - 0.9816731755480047
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  quiet_drift_continues:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: -0.0066096748629143635
+        n_a: 94
+        n_b: 128
+        windows:
+        - 0.0005369092776020407
+        - -0.004589404748574827
+        - -0.017889060385982175
+        - 8.561380268597325e-05
+        - -0.007237072009446658
+        - -0.009118949999922908
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  quiet_drift_fakeout_reverts:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.0009068090075164503
+        n_a: 94
+        n_b: 17185
+        windows:
+        - -0.012980769311934327
+        - 0.0029937423044599197
+        - 0.012122087587044706
+        - -0.006299483189870948
+        - 0.006692817862532487
+        - 0.003105375702582516
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  close_location_in_compression:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.029643453139299114
+        n_a: 322
+        n_b: 4846
+        windows:
+        - -0.021078682369004953
+        - 0.1446274034414251
+        - -0.03019725177304966
+        - -0.06134969325153372
+        - 0.06172632987621279
+        - 0.07865761689291101
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  quiet_price_loud_volume_absorption:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 1.7629843955943223
+        n_a: 5
+        n_b: 93
+        windows:
+        - 1.3599430075720609
+        - null
+        - null
+        - 1.841714277612301
+        - null
+        - 1.376288165376501
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+  asia_quiet_us_open_release:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.8990310099480722
+        n_a: 106
+        n_b: 4600
+        windows:
+        - 0.818736023429983
+        - 1.555498978555744
+        - 0.7719201759571639
+        - 0.7016416567589046
+        - 0.9415469390583904
+        - 0.8969338936523725
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+  quiet_weekend_drift_reverts_monday:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.0014781620569574716
+        n_a: 46
+        n_b: 58
+        windows:
+        - -0.005995091173152112
+        - -0.00980429301705938
+        - 0.02047180989784738
+        - -0.020057561946974046
+        - 0.007670567222876761
+        - 0.014121247607244192
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  wick_rejection_inside_quiet:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.07128114165363449
+        n_a: 350
+        n_b: 350
+        windows:
+        - -0.00011563367252543941
+        - 0.02887361184558434
+        - 0.22082042758933293
+        - -0.24595200322328825
+        - -0.04063348416289593
+        - 0.21107031686487354
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  post_shock_flag_continues:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.00227550348821605
+        n_a: 223
+        n_b: 17261
+        windows:
+        - 0.0028772230287700297
+        - 0.006029574328373267
+        - 0.0024940539986922326
+        - 0.006981812239033081
+        - 0.002266179348114513
+        - -0.005081765340671894
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+  quiet_drift_profit_after_cost:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.0032182008280561268
+        n_a: 44
+        n_b: 44
+        windows:
+        - -0.004407427123160055
+        - 0.01096422832201144
+        - -0.02235062773797597
+        - 0.019731273838492873
+        - 0.002850339645674846
+        - -0.0020561205459214233
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

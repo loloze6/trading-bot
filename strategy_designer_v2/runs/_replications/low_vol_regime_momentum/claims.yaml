@@ -1,0 +1,33 @@
+brief: replication of low_vol_regime_momentum from 001
+source: /home/user/trading-bot/strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001/claims.yaml
+ideas:
+- id: low_vol_regime_momentum
+  belief: BTC trends persist when realized volatility is calm relative to its own
+    past year, because calm markets carry less forced deleveraging that breaks trends.
+  claim:
+    when: bars where 20-day realized volatility sits in the lower half of its trailing
+      365-day range
+    then: going in the direction of the 20-day return earns more than cost over the
+      next 10 days
+    compared_to: zero after the 0.15% round-trip cost
+    measure: net_return
+    horizon_bars: 10
+    direction: positive
+    min_effect: 0.01
+    code: 'vol20 = ret.rolling(20).std()
+
+      pct = vol20.rolling(365).rank(pct=True)
+
+      mom = df.close.pct_change(20)
+
+      a = (pct < 0.5) & mom.notna()
+
+      b = ~a
+
+      signal = np.sign(mom).replace(0, 1).fillna(1)
+
+      '
+  why_no_lookahead: The volatility percentile and the 20-day momentum use only closes
+    up to and including the current bar.
+  how_it_trades: Follow the 20-day trend only while volatility is in its low regime,
+    rebalancing every 10 days.

@@ -1,0 +1,41 @@
+claim: squeeze_then_breakout
+symbol: ETHUSD
+bar_size: 1h
+fold: C
+cost_per_round_trip: 0.0015
+fold_totals:
+  net_return: 1.0145
+  sharpe: 1.2
+  max_drawdown: -0.3199
+  time_in_market: 0.187
+  trades: 136
+windows:
+- window: W1
+  net_return: 0.3041
+  trades: 18
+  max_drawdown: -0.1644
+- window: W2
+  net_return: 0.0717
+  trades: 21
+  max_drawdown: -0.1385
+- window: W3
+  net_return: -0.0407
+  trades: 29
+  max_drawdown: -0.2432
+- window: W4
+  net_return: -0.011
+  trades: 18
+  max_drawdown: -0.2151
+- window: W5
+  net_return: 0.0633
+  trades: 22
+  max_drawdown: -0.1855
+- window: W6
+  net_return: 0.4287
+  trades: 28
+  max_drawdown: -0.1359
+checks:
+  net_positive_in_5_of_6: false
+  sharpe_ge_1.0: true
+  max_drawdown_le_20%: false
+verdict: fail

@@ -1,0 +1,147 @@
+claim: donchian_72h_breakout
+symbol: ETHUSD
+bar_size: 1h
+fold: C
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 200
+verdict: pass
+passed_as: vol_target
+fold_totals: &id001
+  net_return: 0.6614
+  median_window_sharpe: 1.5828
+  worst_window_drawdown: 0.0898
+  trades: 213
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals:
+    net_return: 3.0367
+    median_window_sharpe: 1.34135
+    worst_window_drawdown: 0.4493
+    trades: 226
+  windows:
+  - window: W1
+    net_return: 1.0194
+    trades: 38
+    sharpe: 3.5572
+    max_drawdown: 0.2738
+    exposure_pct: 24.5936
+    cost_drag_pct: 4.4178
+    run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/full_size/20261106T010250Z_55924e1e
+    seconds: 27
+  - window: W2
+    net_return: 0.2582
+    trades: 35
+    sharpe: 1.4587
+    max_drawdown: 0.247
+    exposure_pct: 26.2295
+    cost_drag_pct: 13.0024
+    run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/full_size/20261106T010312Z_55924e1e
+    seconds: 22
+  - window: W3
+    net_return: 0.1462
+    trades: 35
+    sharpe: 1.224
+    max_drawdown: 0.2036
+    exposure_pct: 28.4164
+    cost_drag_pct: 20.1372
+    run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/full_size/20261106T010336Z_55924e1e
+    seconds: 24
+  - window: W4
+    net_return: 0.5392
+    trades: 37
+    sharpe: 2.0447
+    max_drawdown: 0.1675
+    exposure_pct: 29.7521
+    cost_drag_pct: 7.1387
+    run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/full_size/20261106T010359Z_55924e1e
+    seconds: 23
+  - window: W5
+    net_return: 0.0107
+    trades: 37
+    sharpe: 0.2806
+    max_drawdown: 0.2349
+    exposure_pct: 30.3486
+    cost_drag_pct: 78.6114
+    run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/full_size/20261106T010422Z_55924e1e
+    seconds: 23
+  - window: W6
+    net_return: -0.109
+    trades: 44
+    sharpe: -0.3584
+    max_drawdown: 0.4493
+    exposure_pct: 30.1323
+    cost_drag_pct: 45.6712
+    run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/full_size/20261106T010447Z_55924e1e
+    seconds: 25
+  checks:
+    net_positive_in_5_of_6: true
+    median_window_sharpe_ge_1.0: true
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: 0.2464
+    trades: 30
+    sharpe: 4.4368
+    max_drawdown: 0.0479
+    exposure_pct: 24.5936
+    cost_drag_pct: 3.2129
+    run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/vol_target/20261106T010514Z_5402231d
+    seconds: 27
+  - window: W2
+    net_return: 0.1243
+    trades: 34
+    sharpe: 2.2209
+    max_drawdown: 0.0382
+    exposure_pct: 26.2295
+    cost_drag_pct: 7.057
+    run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/vol_target/20261106T010537Z_5402231d
+    seconds: 22
+  - window: W3
+    net_return: 0.0258
+    trades: 36
+    sharpe: 0.9447
+    max_drawdown: 0.0595
+    exposure_pct: 28.4164
+    cost_drag_pct: 27.69
+    run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/vol_target/20261106T010600Z_5402231d
+    seconds: 24
+  - window: W4
+    net_return: 0.1474
+    trades: 37
+    sharpe: 2.2735
+    max_drawdown: 0.0503
+    exposure_pct: 29.7521
+    cost_drag_pct: 6.6999
+    run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/vol_target/20261106T010623Z_5402231d
+    seconds: 23
+  - window: W5
+    net_return: -0.0114
+    trades: 39
+    sharpe: -0.2036
+    max_drawdown: 0.0898
+    exposure_pct: 30.3486
+    cost_drag_pct: 29281.0719
+    run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/vol_target/20261106T010647Z_5402231d
+    seconds: 24
+  - window: W6
+    net_return: 0.0189
+    trades: 37
+    sharpe: 0.1691
+    max_drawdown: 0.0816
+    exposure_pct: 30.1323
+    cost_drag_pct: 31.0762
+    run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/vol_target/20261106T010713Z_5402231d
+    seconds: 25
+  checks:
+    net_positive_in_5_of_6: true
+    median_window_sharpe_ge_1.0: true
+    worst_window_drawdown_le_20%: true
+  verdict: pass

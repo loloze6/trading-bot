@@ -42,7 +42,16 @@ def ask(prompt: str, out: pathlib.Path, model: str, log: pathlib.Path) -> bool:
         print(f"ANSWER NEEDED: model not reachable here; prompt at {out}.prompt.md; write the answer to {out}")
         return False
     text, cost = asyncio.run(_call(prompt, model))
-    out.write_text(_strip_fences(text), encoding="utf-8")
+    body = _strip_fences(text)
+    try:
+        yaml.safe_load(body)
+    except yaml.YAMLError as err:   # one re-ask with the parse error: a run revealed a value starting with '|'
+        retry = (prompt + "\n\nYour previous answer was not valid YAML. The parser said:\n" + str(err)[:600]
+                 + "\nRewrite the whole file. Quote any prose value that starts with a symbol such as | > * & ! % @ or a quote. Answer with the YAML only.")
+        text2, cost2 = asyncio.run(_call(retry, model)); cost = (cost or 0) + (cost2 or 0)
+        body = _strip_fences(text2)
+        yaml.safe_load(body)   # a second failure stops the run loudly
+    out.write_text(body, encoding="utf-8")
     rows = yaml.safe_load(log.read_text()) if log.exists() else []
     rows.append({"at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"), "model": model, "out": str(out), "cost_usd": cost})
     log.write_text(yaml.safe_dump(rows, sort_keys=False), encoding="utf-8")

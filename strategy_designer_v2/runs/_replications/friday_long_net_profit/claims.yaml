@@ -1,0 +1,31 @@
+brief: replication of friday_long_net_profit from 001
+source: /home/user/trading-bot/strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/claims.yaml
+ideas:
+- id: friday_long_net_profit
+  belief: Crypto buyers add exposure on Friday ahead of the weekend (weekly Deribit
+    expiry at 08:00 UTC clears hedges, and retail funds accounts before the weekend),
+    so being long over Friday pays after cost.
+  claim:
+    when: Thursday daily bars (the bar whose date is Thursday), entering at its close
+    then: Friday's close-to-close return is positive enough to pay the round trip
+    compared_to: the round-trip cost (net_return); b = all other bars only for the
+      count rule
+    measure: net_return
+    horizon_bars: 1
+    direction: positive
+    min_effect: 0.002
+    code: 'd = df.index - pd.Timedelta(seconds=1)
+
+      wd = pd.Series(d.dayofweek, index=df.index)
+
+      a = wd == 3
+
+      b = ~a
+
+      signal = pd.Series(1.0, index=df.index)
+
+      '
+  why_no_lookahead: The weekday comes from the bar's own date, and the position starts
+    at Thursday's close.
+  how_it_trades: Buy at Thursday's daily close and sell at Friday's daily close, one
+    round trip per week.

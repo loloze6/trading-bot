@@ -1,0 +1,41 @@
+claim: trend_gate_breakout_long
+symbol: ETHUSD
+bar_size: 1h
+fold: A
+cost_per_round_trip: 0.0015
+fold_totals:
+  net_return: 0.9946
+  sharpe: 1.82
+  max_drawdown: -0.106
+  time_in_market: 0.09
+  trades: 66
+windows:
+- window: W1
+  net_return: 0.0743
+  trades: 8
+  max_drawdown: -0.0461
+- window: W2
+  net_return: 0.3227
+  trades: 9
+  max_drawdown: -0.0966
+- window: W3
+  net_return: 0.0716
+  trades: 7
+  max_drawdown: -0.0745
+- window: W4
+  net_return: 0.2564
+  trades: 19
+  max_drawdown: -0.084
+- window: W5
+  net_return: 0.0408
+  trades: 6
+  max_drawdown: -0.0561
+- window: W6
+  net_return: 0.0018
+  trades: 17
+  max_drawdown: -0.106
+checks:
+  net_positive_in_5_of_6: true
+  sharpe_ge_1.0: true
+  max_drawdown_le_20%: true
+verdict: pass

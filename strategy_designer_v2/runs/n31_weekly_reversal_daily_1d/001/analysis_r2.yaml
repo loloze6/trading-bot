@@ -1,0 +1,13 @@
+run: n31_weekly_reversal_daily_1d_foldA
+observations:
+  - "weekly_time_series_momentum and weekly_range_location_reversion were never measured: n_a = 0 on all three coins, because spaced() applied to an always-true notna() series keeps only the first bar."
+  - "Every claim on 1.5 to 2 sigma weeks had too few events: n_a was 11 to 15 at |z| > 2, 5 for capitulation weeks and 7 to 16 for the volume and shock variants. That is below the 30-bar minimum, so they could not pass whatever their effect."
+  - "large_week_reversal nearly held on LTC (effect 0.0268, 4 of 6 windows positive) but went the other way on BTC (effect -0.0245, 4 of 6 windows negative)."
+  - "Two same-direction weeks did not continue: net_return was -0.0028 on BTC, -0.0441 on ETH and -0.0500 on LTC. ETH and LTC were negative in 5 of 6 windows, while BTC was positive in 4 of 6 windows."
+  - "The graded reversal on Mondays (n_a = 104) had the expected negative sign but was weak: rank_corr -0.029 on BTC, -0.007 on ETH and -0.091 on LTC, with window signs split 4 to 2 on each coin."
+  - "Continuation at the calendar-week boundary had no consistent sign: hit_rate -0.003 on BTC, -0.032 on ETH and +0.067 on LTC, with windows ranging from -0.19 to +0.25."
+  - "Next-week volatility after a 2-sigma week was not clearly higher: abs_ratio was 1.08 on BTC, 0.85 on ETH and 1.20 on LTC, all below 1.25, and windows ranged from 0.05 to 1.89."
+  - "Thin-volume fades showed large average hit rates (0.14 on BTC, 0.15 on ETH, 0.28 on LTC) on only 9 events, and windows swung between -0.55 and +0.59, which is noise rather than signal."
+  - "Volume-confirmed continuation split by coin: +0.0215 on BTC against -0.0390 on LTC, with window signs alternating on all three."
+next_claim: none
+why: "No weekly pattern had the same sign on all three coins with at least 30 events. The best lead, reversal after two same-direction weeks, already fails on BTC (gross reversal of about +0.0013, below the 0.15% cost, and BTC's continuation was positive in 4 of 6 windows), and the well-sampled Monday designs show split windows."

@@ -1,0 +1,205 @@
+brief: n05_retail_coins_hourly_flow_1h.md
+ideas:
+  - id: us_evening_retail_bid
+    belief: US retail buys after work, from about 19:00 to 23:00 New York time, and on attention coins this one-sided flow lifts price over the following hours.
+    claim:
+      when: the bar closing at 23:00 UTC, the start of the US evening
+      then: the price rises over the next 5 hours by more than the round-trip cost
+      compared_to: the round-trip cost (net_return)
+      measure: net_return
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.002
+      code: |
+        h = pd.Series(np.asarray(hour), index=df.index)
+        a = h.eq(23)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The condition is the UTC hour of the bar's own close time.
+    how_it_trades: Buy at the 23:00 UTC close, sell 5 hours later.
+
+  - id: weekend_trend_persistence
+    belief: Weekend books are thin and retail-dominated, so a sharp 24h move on Saturday or Sunday keeps going because few arbitrageurs lean against it.
+    claim:
+      when: weekend bars where the trailing 24h move exceeds 4% (one event per 24 bars)
+      then: the next 24h return continues in the direction of the trailing move
+      compared_to: weekday bars with the same 24h move size (one event per 24 bars)
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.005
+      code: |
+        d = pd.Series(np.asarray(dow), index=df.index)
+        r24 = df.close / df.close.shift(24) - 1
+        big = r24.abs() > 0.04
+        a = spaced((d >= 5) & big, 24)
+        b = spaced((d < 5) & big, 24)
+        signal = np.sign(r24).replace(0, 1.0)
+    why_no_lookahead: The trailing 24h return and the weekday come from closes at or before the bar.
+    how_it_trades: On a weekend 4% move, enter in its direction and hold 24 hours.
+
+  - id: monday_weekend_unwind
+    belief: Weekend retail moves are partly undone once weekday desks and market makers return on Monday afternoon UTC.
+    claim:
+      when: the Monday 14:00 UTC bar
+      then: the next 24h return opposes the move since Friday 00:00 UTC (62 bars back), net of cost
+      compared_to: the round-trip cost (net_return)
+      measure: net_return
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.003
+      code: |
+        h = pd.Series(np.asarray(hour), index=df.index)
+        d = pd.Series(np.asarray(dow), index=df.index)
+        wk = df.close / df.close.shift(62) - 1
+        a = (d == 0) & (h == 14)
+        b = ~a
+        signal = -np.sign(wk).replace(0, 1.0)
+    why_no_lookahead: The weekend move uses the close 62 bars back and the current close only.
+    how_it_trades: Every Monday at 14:00 UTC, fade the weekend move for 24 hours.
+
+  - id: round_level_break_follow
+    belief: Retail traders watch round prices (0.10, 0.15, 0.50 dollars), so a close through one triggers breakout and FOMO orders that extend the move.
+    claim:
+      when: bars whose close crosses a multiple of the round step (half a power of ten of the price) against the prior close, one event per 24 bars
+      then: the next 12h return continues in the direction of the cross
+      compared_to: all other bars
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.004
+      code: |
+        step = 0.5 * 10 ** np.floor(np.log10(df.close.shift(1)))
+        now_l = np.floor(df.close / step)
+        prev_l = np.floor(df.close.shift(1) / step)
+        up = now_l > prev_l
+        dn = now_l < prev_l
+        a = spaced(up | dn, 24)
+        b = ~a
+        signal = pd.Series(np.where(up, 1.0, -1.0), index=df.index)
+    why_no_lookahead: The step and both levels use the current and prior closes only.
+    how_it_trades: On a close through a round level, enter in the cross direction for 12 hours.
+
+  - id: round_level_rejection
+    belief: Resting retail sell orders sit just under round prices, so an hour that probes a round level from below and closes well off its high marks a local top.
+    claim:
+      when: bars whose high comes within 0.5% under the next round level without breaking it, and whose close is at least 1% below the high, one event per 12 bars
+      then: the price falls over the next 6 hours more often than usual
+      compared_to: all other bars, also read as a short
+      measure: hit_rate
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.05
+      code: |
+        step = 0.5 * 10 ** np.floor(np.log10(df.close.shift(1)))
+        lvl = (np.floor(df.close.shift(1) / step) + 1) * step
+        probe = (df.high >= lvl * 0.995) & (df.high < lvl)
+        a = spaced(probe & (df.close < df.high * 0.99), 12)
+        b = ~a
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: The level comes from the prior close, and the high and close are the bar's own.
+    how_it_trades: Short after a failed probe of a round level, cover 6 hours later.
+
+  - id: volume_confirmed_range_breakout
+    belief: On retail coins, a break of the 3-day high that comes with a crowd of volume starts a multi-hour attention run, not a one-bar spike.
+    claim:
+      when: bars closing above the prior 72-bar high with volume above 3 times the prior 72-bar median, one event per 24 bars
+      then: the price rises over the next 24 hours by more than the cost
+      compared_to: the round-trip cost (net_return)
+      measure: net_return
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.004
+      code: |
+        vm = df.volume.rolling(72).median().shift(1)
+        hi = df.high.rolling(72).max().shift(1)
+        a = spaced((df.close > hi) & (df.volume > 3 * vm), 24)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The high and the volume median are shifted one bar, compared to the bar's own close and volume.
+    how_it_trades: Buy the high-volume 72h breakout, hold 24 hours.
+
+  - id: dead_hours_burst_informed
+    belief: A volume burst during the Asian and early European hours, when US retail is asleep, is more likely whale or informed flow and should carry direction better than bursts in the US retail hours.
+    claim:
+      when: bars closing 05:00 to 09:00 UTC with volume above 4 times the prior 72-bar median and an absolute return above 1%, one event per 12 bars
+      then: the next 12h return continues in the burst's direction
+      compared_to: the same bursts in bars closing 15:00 to 22:00 UTC
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.004
+      code: |
+        h = pd.Series(np.asarray(hour), index=df.index)
+        vm = df.volume.rolling(72).median().shift(1)
+        burst = (df.volume > 4 * vm) & (ret.abs() > 0.01)
+        a = spaced(h.between(5, 9) & burst, 12)
+        b = spaced(h.between(15, 22) & burst, 12)
+        signal = np.sign(ret).replace(0, 1.0)
+    why_no_lookahead: The burst uses the bar's own volume and return against a median shifted one bar.
+    how_it_trades: Follow off-hours volume bursts for 12 hours.
+
+  - id: attention_episode_fade
+    belief: When daily volume blows out against its monthly norm, retail has piled in, and the move over the past 3 days tends to unwind over the next 3.
+    claim:
+      when: bars where 24h volume exceeds 2.5 times its prior 30-day median, one event per 24 bars
+      then: the larger the past 72h return, the lower the next 72h return
+      compared_to: not used (rank_corr)
+      measure: rank_corr
+      horizon_bars: 72
+      direction: positive
+      min_effect: 0.10
+      code: |
+        v24 = df.volume.rolling(24).sum()
+        base = v24.shift(24).rolling(720).median()
+        a = spaced(v24 > 2.5 * base, 24)
+        b = ~a
+        feature = -(df.close / df.close.shift(72) - 1)
+    why_no_lookahead: The volume sums and the 72h return use bars at or before the close, and the baseline is shifted 24 bars.
+    how_it_trades: In attention episodes, fade the prior 3-day move for 3 days.
+
+  - id: close_location_pressure
+    belief: Retail market orders leave a footprint in where each hour closes within its range; volume-weighted buying pressure over a day predicts the next day's drift.
+    claim:
+      when: one bar per 24 bars, wherever the pressure is defined
+      then: higher 24h volume-weighted close-location pressure goes with a higher next-24h return
+      compared_to: not used (rank_corr)
+      measure: rank_corr
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.06
+      code: |
+        rng = (df.high - df.low).replace(0, np.nan)
+        clv = ((df.close - df.low) - (df.high - df.close)) / rng
+        pressure = (clv * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+        a = spaced(pressure.notna(), 24)
+        b = ~a
+        feature = pressure
+    why_no_lookahead: The pressure uses the high, low, close and volume of the last 24 closed bars.
+    how_it_trades: Go long when daily buying pressure is high and short when it is low, rebalanced daily.
+
+  - id: month_start_inflow
+    belief: Retail pay cycles put fresh money into exchanges in the first days of the month, and on retail coins that inflow shows up as upward drift.
+    claim:
+      when: the 14:00 UTC bar on days 1 to 3 of the month
+      then: the price rises over the next 24 hours by more than the cost
+      compared_to: the round-trip cost (net_return)
+      measure: net_return
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.003
+      code: |
+        h = pd.Series(np.asarray(hour), index=df.index)
+        dom = pd.Series(df.index.day, index=df.index)
+        a = dom.isin([1, 2, 3]) & (h == 14)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The condition is the calendar date and hour of the bar's own close time.
+    how_it_trades: Buy at 14:00 UTC on days 1 to 3 of each month, sell 24 hours later.
+notes: >
+  The brief asks whether volume and calendar patterns that were volatility-only on BTC carry direction on DOGE and ADA.
+  Plain volume-climax reversion, low-volume shock reversion and bare heavy-volume spike continuation were tried on BTC, so they are not restated.
+  Instead the volume ideas add a distinct condition: a confirmed range breakout, the time of day of the burst (informed versus retail hours), and multi-day attention episodes.
+  The weekend and US-evening ideas are framed as return claims with a direction (persistence, the Monday unwind, an evening bid), not as volatility claims.
+  The round-level break and round-level rejection ideas may contradict each other; both are kept and the data decides.
+  Rules that trade daily or weekly use net_return with a margin over the 0.15% round-trip cost.

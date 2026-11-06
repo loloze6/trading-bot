@@ -1,0 +1,14 @@
+run: n32_vol_term_structure_hourly_1h_foldA
+observations:
+  - "A 24h-over-168h vol ratio above 1.5 predicts larger 24h absolute moves than a ratio below 1.0 on both coins (abs_ratio 1.60 on BTC, 1.48 on ETH), and all 6 windows are above 1 on each coin, with the weakest at 1.17 on BTC and 1.08 on ETH."
+  - "Momentum after an expansion nearly held on BTC: the whole-fold effect was 0.0058, above the 0.004 threshold, but windows 4 to 6 were negative (-0.0014, -0.0041, -0.0101). ETH reached only 0.0032."
+  - "The compression reversal (6h vol under 0.6 of 72h vol) ran the wrong way on BTC: its hit rate was -0.069 against baseline, negative in 5 of 6 windows. ETH was mixed at -0.010."
+  - "Fading a 6h-over-72h vol spike above 2.5 lost money after cost on both coins (net -0.0026 on BTC, -0.0100 on ETH), with only 2 of 6 windows positive on each."
+  - "The compression breakout cleared its 0.003 threshold on the whole fold (0.0057 on BTC, 0.0043 on ETH), but the last two windows were negative on both coins. The windows disagree, and the effect fades in the later data."
+  - "The 72h-over-720h vol turn showed the same decay: ETH was positive in its first 4 windows (0.031, 0.044, 0.033, 0.013) and negative in windows 5 and 6, while BTC turned negative in window 3 (-0.021)."
+  - "Buying after a down day during an expansion lost on both coins (mean_diff -0.0066 on BTC, -0.0043 on ETH), with 4 of 6 windows negative on each. Flipping it to a short would still fail the 5-of-6 rule."
+  - "The rank_corr claim on log(24h/168h) produced no measured bars (n_a 0 on both coins), so the steep term structure drift belief remains untested rather than refuted."
+  - "Two claims had too few bars to judge: the Parkinson-range chop claim had n_a of 8 and 6, below the 30-bar minimum, and the Sunday quiet claim gave abs_ratio 1.01 on BTC and 0.94 on ETH, which is no effect."
+  - "Volume confirmation did not rescue expansion momentum: ETH had mean_diff -0.0134, with 3 of 6 windows below -0.025."
+next_claim: none
+why: "The only robust finding is that expansion predicts bigger moves, not their direction. Every directional or cost-paying variant splits its windows, and the momentum results flip sign in the later windows. No distinct claim follows from these numbers that I would expect to pass both coins in 5 of 6 windows. The unmeasured rank_corr claim needs a code fix and a rerun, not a new idea."

@@ -1,0 +1,147 @@
+claim: europe_open_distribution_weekday_07_10
+symbol: BTCUSD
+bar_size: 1h
+fold: C
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 200
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: -0.1434
+  median_window_sharpe: -0.019049999999999984
+  worst_window_drawdown: 0.2438
+  trades: 510
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: 0.1635
+    trades: 80
+    sharpe: 1.2593
+    max_drawdown: 0.2438
+    exposure_pct: 8.3775
+    cost_drag_pct: 34.0543
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/full_size/20261106T032541Z_0dc8fc41
+    seconds: 27
+  - window: W2
+    net_return: 0.0427
+    trades: 86
+    sharpe: 0.6386
+    max_drawdown: 0.1173
+    exposure_pct: 8.8115
+    cost_drag_pct: 68.7847
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/full_size/20261106T032601Z_0dc8fc41
+    seconds: 20
+  - window: W3
+    net_return: -0.1558
+    trades: 88
+    sharpe: -2.0733
+    max_drawdown: 0.2305
+    exposure_pct: 8.9522
+    cost_drag_pct: 101.1095
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/full_size/20261106T032622Z_0dc8fc41
+    seconds: 22
+  - window: W4
+    net_return: -0.0648
+    trades: 87
+    sharpe: -0.304
+    max_drawdown: 0.1718
+    exposure_pct: 8.9876
+    cost_drag_pct: 482.6712
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/full_size/20261106T032642Z_0dc8fc41
+    seconds: 19
+  - window: W5
+    net_return: -0.1168
+    trades: 88
+    sharpe: -1.7916
+    max_drawdown: 0.2025
+    exposure_pct: 9.0195
+    cost_drag_pct: 234.986
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/full_size/20261106T032703Z_0dc8fc41
+    seconds: 22
+  - window: W6
+    net_return: 0.0126
+    trades: 81
+    sharpe: 0.2659
+    max_drawdown: 0.0942
+    exposure_pct: 8.2457
+    cost_drag_pct: 87.2777
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/full_size/20261106T032726Z_0dc8fc41
+    seconds: 23
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: -0.0455
+    median_window_sharpe: -0.36365000000000003
+    worst_window_drawdown: 0.0853
+    trades: 515
+  windows:
+  - window: W1
+    net_return: 0.0597
+    trades: 79
+    sharpe: 2.0679
+    max_drawdown: 0.0232
+    exposure_pct: 8.3775
+    cost_drag_pct: 22.7339
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/vol_target/20261106T032753Z_86186add
+    seconds: 27
+  - window: W2
+    net_return: 0.0315
+    trades: 88
+    sharpe: 0.9953
+    max_drawdown: 0.0377
+    exposure_pct: 8.8115
+    cost_drag_pct: 61.3472
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/vol_target/20261106T032812Z_86186add
+    seconds: 20
+  - window: W3
+    net_return: -0.0528
+    trades: 89
+    sharpe: -2.7064
+    max_drawdown: 0.0838
+    exposure_pct: 8.9522
+    cost_drag_pct: 103.6573
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/vol_target/20261106T032834Z_86186add
+    seconds: 22
+  - window: W4
+    net_return: -0.0338
+    trades: 88
+    sharpe: -0.9282
+    max_drawdown: 0.0493
+    exposure_pct: 8.9876
+    cost_drag_pct: 5933.0031
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/vol_target/20261106T032855Z_86186add
+    seconds: 20
+  - window: W5
+    net_return: -0.0494
+    trades: 90
+    sharpe: -1.8309
+    max_drawdown: 0.0853
+    exposure_pct: 9.0195
+    cost_drag_pct: 395.8336
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/vol_target/20261106T032917Z_86186add
+    seconds: 22
+  - window: W6
+    net_return: 0.0037
+    trades: 81
+    sharpe: 0.2009
+    max_drawdown: 0.0252
+    exposure_pct: 8.2457
+    cost_drag_pct: 86.9801
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_BTCUSD/results/vol_target/20261106T032940Z_86186add
+    seconds: 23
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: true
+  verdict: fail

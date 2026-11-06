@@ -1,0 +1,701 @@
+brief: n17_vol_channel_breakout_daily_1d.md
+fold: B
+symbols:
+- BTCUSD
+- LTCUSD
+bar_size: 1d
+claims:
+- id: keltner_up_break_long_net
+  belief: A daily close crossing above a 20-day EMA plus 2 ATR marks new demand that
+    keeps pushing price for about two weeks, enough to pay the round trip.
+  measure: net_return
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.03652911607759703
+      n_a: 9
+      n_b: 9
+      windows:
+      - 0.11604978201150767
+      - 0.006491841708590797
+      - 0.004678306798297673
+      - 0.18023769568191877
+      - -0.043335564391970616
+      - 0.0507418527867044
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.006822303090782654
+      n_a: 12
+      n_b: 12
+      windows:
+      - -0.2175959675602614
+      - 0.009558272711191309
+      - null
+      - 0.003203936457593094
+      - 0.30240390522206756
+      - -0.1166617231848111
+      verdict: fail
+      why: null
+  code: 'tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low
+    - df.close.shift(1)).abs()], axis=1).max(axis=1)
+
+    atr = tr.rolling(20).mean()
+
+    mid = df.close.ewm(span=20, adjust=False).mean()
+
+    up = mid + 2 * atr
+
+    cross = (df.close > up) & (df.close.shift(1) <= up.shift(1))
+
+    a = spaced(cross, 10)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: keltner_down_break_continuation
+  belief: A close below the lower volatility band starts forced selling and de-risking
+    that keeps going, so returns after a downside break are worse than usual.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.04342614176612478
+      n_a: 9
+      n_b: 721
+      windows:
+      - -0.03361660635339783
+      - null
+      - -0.09043726717293263
+      - null
+      - null
+      - -0.08651050264229901
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.00046896712499133915
+      n_a: 8
+      n_b: 722
+      windows:
+      - -0.04898139285418214
+      - null
+      - -0.0693824119701039
+      - null
+      - null
+      - 0.0023114323113390053
+      verdict: fail
+      why: null
+  code: 'tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low
+    - df.close.shift(1)).abs()], axis=1).max(axis=1)
+
+    atr = tr.rolling(20).mean()
+
+    mid = df.close.ewm(span=20, adjust=False).mean()
+
+    dn = mid - 2 * atr
+
+    cross = (df.close < dn) & (df.close.shift(1) >= dn.shift(1))
+
+    a = spaced(cross, 10)
+
+    b = ~a
+
+    signal = pd.Series(-1.0, index=df.index)
+
+    '
+- id: deep_down_break_capitulation_bounce
+  belief: A close far below the channel (2.5 ATR under the EMA) is a liquidation flush,
+    and price rebounds over the next days as forced sellers run out.
+  measure: net_return
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.008
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0160686150211732
+      n_a: 3
+      n_b: 3
+      windows:
+      - -0.017751221896383174
+      - null
+      - -0.015227311583568213
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.034598282143201174
+      n_a: 6
+      n_b: 6
+      windows:
+      - -0.06390973906190206
+      - null
+      - -0.005286825224500282
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low
+    - df.close.shift(1)).abs()], axis=1).max(axis=1)
+
+    atr = tr.rolling(20).mean()
+
+    mid = df.close.ewm(span=20, adjust=False).mean()
+
+    a = spaced(df.close < mid - 2.5 * atr, 5)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: break_distance_dose_response
+  belief: The further a close sits above the upper band in ATR units, the stronger
+    the demand behind it, so distance outside the band predicts the size of the follow-through.
+  measure: rank_corr
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.1
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.09220867208672086
+      n_a: 81
+      n_b: 81
+      windows:
+      - 0.30952380952380953
+      - 0.7285714285714285
+      - null
+      - 0.03199174406604747
+      - -0.08695652173913043
+      - -0.25357142857142856
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.13814948596832458
+      n_a: 60
+      n_b: 60
+      windows:
+      - null
+      - -0.3181818181818181
+      - null
+      - -0.31666666666666665
+      - -0.3456140350877193
+      - -0.6363636363636362
+      verdict: fail
+      why: null
+  code: 'tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low
+    - df.close.shift(1)).abs()], axis=1).max(axis=1)
+
+    atr = tr.rolling(20).mean()
+
+    mid = df.close.ewm(span=20, adjust=False).mean()
+
+    feature = (df.close - mid) / atr
+
+    a = df.close > mid + 2 * atr
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: break_volatility_expansion
+  belief: A close outside the band, either side, marks a regime change that is followed
+    by larger absolute moves, which is why a trailing exit must be wide.
+  measure: abs_ratio
+  horizon_bars: 5
+  direction: above
+  min_effect: 1.2
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 1.2436977959729376
+      n_a: 22
+      n_b: 708
+      windows:
+      - 0.5550612245979544
+      - 1.42283254109913
+      - 2.8005156970749505
+      - 2.0439795868347033
+      - 0.6698479847370726
+      - 1.2277830850894276
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 1.333985231446295
+      n_a: 26
+      n_b: 704
+      windows:
+      - 1.7481737730437157
+      - 0.904234862056803
+      - 1.1548200141695628
+      - 2.34953468609443
+      - 0.9523017492914047
+      - 1.5510090817893067
+      verdict: fail
+      why: null
+  code: 'tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low
+    - df.close.shift(1)).abs()], axis=1).max(axis=1)
+
+    atr = tr.rolling(20).mean()
+
+    mid = df.close.ewm(span=20, adjust=False).mean()
+
+    outside = (df.close > mid + 2 * atr) | (df.close < mid - 2 * atr)
+
+    cross = outside & ~outside.shift(1, fill_value=False)
+
+    a = spaced(cross, 5)
+
+    b = ~a
+
+    signal = np.sign(df.close - mid).replace(0, 1.0)
+
+    '
+- id: trend_aligned_up_break
+  belief: Upside breaks inside a long uptrend carry real accumulation, while upside
+    breaks below the 100-day mean are short-covering bursts that fade.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.015
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.025626484319204695
+      n_a: 12
+      n_b: 3
+      windows:
+      - -0.2054465206839245
+      - 0.055769768621408256
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.16250869520545821
+      n_a: 21
+      n_b: 1
+      windows:
+      - null
+      - 0.21145610304419685
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low
+    - df.close.shift(1)).abs()], axis=1).max(axis=1)
+
+    atr = tr.rolling(20).mean()
+
+    mid = df.close.ewm(span=20, adjust=False).mean()
+
+    up = mid + 2 * atr
+
+    cross = (df.close > up) & (df.close.shift(1) <= up.shift(1))
+
+    trend = df.close > df.close.rolling(100).mean()
+
+    a = cross & trend
+
+    b = cross & ~trend & df.close.rolling(100).mean().notna()
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: trailing_mid_exit_information
+  belief: After an upside break, a close back under the channel mean signals the breakout
+    has failed, so the trailing exit at the mean removes the bad part of the trade.
+  measure: mean_diff
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.025458395434136714
+      n_a: 121
+      n_b: 19
+      windows:
+      - 0.11122345839970607
+      - -0.021257134704024818
+      - null
+      - null
+      - 0.01961583435468068
+      - -0.01112964871055738
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.00831815717480367
+      n_a: 152
+      n_b: 37
+      windows:
+      - -0.005728210378184287
+      - -0.000919019624999424
+      - null
+      - -0.028064583199686667
+      - -0.01810472238783274
+      - -0.05697926896615622
+      verdict: fail
+      why: null
+  code: 'tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low
+    - df.close.shift(1)).abs()], axis=1).max(axis=1)
+
+    atr = tr.rolling(20).mean()
+
+    mid = df.close.ewm(span=20, adjust=False).mean()
+
+    up = mid + 2 * atr
+
+    cross = (df.close > up) & (df.close.shift(1) <= up.shift(1))
+
+    window = cross.astype(float).rolling(10).max() == 1
+
+    a = window & (df.close > mid)
+
+    b = window & (df.close <= mid)
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: grind_vs_shock_break
+  belief: A break reached by a normal-range bar reflects steady flow that persists,
+    while a break made by one outsized shock bar is news overreaction that tends to
+    fade.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.02676526439163114
+      n_a: 6
+      n_b: 9
+      windows:
+      - -0.19858391239203826
+      - null
+      - null
+      - null
+      - -0.07249015975918999
+      - null
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.059788348130737794
+      n_a: 6
+      n_b: 16
+      windows:
+      - null
+      - 0.06349427285829011
+      - null
+      - null
+      - 0.10372743110573952
+      - null
+      verdict: fail
+      why: null
+  code: 'tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low
+    - df.close.shift(1)).abs()], axis=1).max(axis=1)
+
+    atr = tr.rolling(20).mean()
+
+    mid = df.close.ewm(span=20, adjust=False).mean()
+
+    up = mid + 2 * atr
+
+    cross = (df.close > up) & (df.close.shift(1) <= up.shift(1))
+
+    shock = tr >= 1.5 * atr.shift(1)
+
+    a = cross & ~shock
+
+    b = cross & shock
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: volume_confirmed_break
+  belief: A channel break on heavy volume reflects broad participation and continues,
+    while a break on thin volume is easily reversed.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.07897341704869949
+      n_a: 9
+      n_b: 6
+      windows:
+      - 0.19858391239203826
+      - null
+      - null
+      - 0.17217699416650944
+      - 0.07249015975918999
+      - 0.17853420808659914
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.04144263130968723
+      n_a: 18
+      n_b: 4
+      windows:
+      - null
+      - -0.102164796043965
+      - null
+      - null
+      - 0.3014870191432947
+      - null
+      verdict: fail
+      why: null
+  code: 'tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low
+    - df.close.shift(1)).abs()], axis=1).max(axis=1)
+
+    atr = tr.rolling(20).mean()
+
+    mid = df.close.ewm(span=20, adjust=False).mean()
+
+    up = mid + 2 * atr
+
+    cross = (df.close > up) & (df.close.shift(1) <= up.shift(1))
+
+    heavy = df.volume > 1.5 * df.volume.rolling(20).median().shift(1)
+
+    a = cross & heavy
+
+    b = cross & ~heavy
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: weekday_vs_weekend_break
+  belief: Weekend daily bars trade in thin books without institutional flow, so channel
+    breaks closed on Saturday or Sunday are less reliable than weekday breaks.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.09213173841489382
+      n_a: 13
+      n_b: 2
+      windows:
+      - null
+      - null
+      - null
+      - -0.17217699416650944
+      - null
+      - null
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.04831510317864308
+      n_a: 14
+      n_b: 8
+      windows:
+      - null
+      - 0.0955061558732912
+      - null
+      - -0.3419985681773535
+      - 0.050388085181759544
+      - 0.12518607801030823
+      verdict: fail
+      why: null
+  code: 'tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low
+    - df.close.shift(1)).abs()], axis=1).max(axis=1)
+
+    atr = tr.rolling(20).mean()
+
+    mid = df.close.ewm(span=20, adjust=False).mean()
+
+    up = mid + 2 * atr
+
+    cross = (df.close > up) & (df.close.shift(1) <= up.shift(1))
+
+    a = cross & (dow < 5)
+
+    b = cross & (dow >= 5)
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: slow_wide_channel_long_net
+  belief: A break of a slow, wide channel (SMA50 plus 3 ATR50) marks a multi-week
+    regime shift driven by slow capital, which pays more over a month than a fast
+    channel does.
+  measure: net_return
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.02
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.04376445532484508
+      n_a: 9
+      n_b: 9
+      windows:
+      - -0.18385751295336789
+      - 0.18671984578062498
+      - null
+      - 0.07732420039651983
+      - 0.010320729831480692
+      - -0.040193793262191246
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.05609143226671421
+      n_a: 7
+      n_b: 7
+      windows:
+      - -0.3313040099121424
+      - 0.027203714928572154
+      - null
+      - 0.15728516102731344
+      - -0.07158897817736276
+      - -0.12985065048458927
+      verdict: fail
+      why: null
+  code: 'tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low
+    - df.close.shift(1)).abs()], axis=1).max(axis=1)
+
+    atr = tr.rolling(50).mean()
+
+    mid = df.close.rolling(50).mean()
+
+    up = mid + 3 * atr
+
+    cross = (df.close > up) & (df.close.shift(1) <= up.shift(1))
+
+    a = spaced(cross, 20)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: channel_position_reversion_all_bars
+  belief: On daily BTC and LTC, a close stretched far from its 20-day EMA in ATR units
+    tends to pull back toward the mean over the next week, so the distance from the
+    channel mean is a reversion signal rather than a breakout signal.
+  measure: rank_corr
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.1
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.013229199899531195
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.0507732390914602
+      - 0.061712618931870265
+      - 0.22503725782414308
+      - 0.017154428551160183
+      - 0.14955899715258003
+      - -0.011132736987849487
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.0035396514392572838
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.10609949568559675
+      - 0.2278283214112091
+      - 0.16208062229653594
+      - 0.2381434522965008
+      - 0.07856795610806305
+      - 0.05324481777536919
+      verdict: fail
+      why: null
+  code: 'tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low
+    - df.close.shift(1)).abs()], axis=1).max(axis=1)
+
+    atr = tr.rolling(20).mean()
+
+    mid = df.close.ewm(span=20, adjust=False).mean()
+
+    feature = -(df.close - mid) / atr
+
+    a = atr.notna() & (atr > 0) & (df.index >= df.index[19])
+
+    b = ~a
+
+    signal = np.sign(feature).replace(0, 1.0)
+
+    '
+- id: stretched_channel_reversion_hit
+  belief: On daily BTC and LTC, a close stretched more than 1.5 ATR from its 20-day
+    EMA tends to move back toward the mean over the next week more reliably than an
+    unstretched close, so the edge of the channel fades rather than breaks out.
+  measure: hit_rate
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.07
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.04586943614205635
+      n_a: 181
+      n_b: 549
+      windows:
+      - 0.04738372093023252
+      - 0.17748917748917747
+      - 0.22874149659863952
+      - -0.16324284666177546
+      - 0.04201680672268904
+      - -0.03559510567296997
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.08146956288549212
+      n_a: 165
+      n_b: 565
+      windows:
+      - -0.021055939660590772
+      - 0.3409090909090909
+      - 0.20592948717948717
+      - -0.0748987854251012
+      - -0.14099311344690102
+      - 0.24705882352941172
+      verdict: fail
+      why: null
+  code: 'tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low
+    - df.close.shift(1)).abs()], axis=1).max(axis=1)
+
+    atr = tr.rolling(20).mean()
+
+    mid = df.close.ewm(span=20, adjust=False).mean()
+
+    z = (df.close - mid) / atr
+
+    valid = atr.notna() & (atr > 0) & (df.index >= df.index[19])
+
+    a = valid & (z.abs() > 1.5)
+
+    b = valid & (z.abs() <= 1.5)
+
+    signal = (-np.sign(z)).replace(0, 1.0).fillna(1.0)
+
+    '
+profit: 'none: no return claim passed'

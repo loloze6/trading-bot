@@ -1,0 +1,37 @@
+run: n13_quiet_period_then_move_btc_1h / fold C
+observations:
+  - "long_quiet_stays_quiet passed: after 24 bars with no >2.5-sigma bar, the next 12h absolute move was 0.794x normal (asked below 0.85), below 1 in 5 of 6 windows (only window 5 at 1.066), so quiet persisted rather than released."
+  - "The opposite reading on the same bars, long_quiet_spring_release (above 1.15), failed at that same 0.794; the 'pent-up move' belief is contradicted, not just weak."
+  - "weekly_narrowest_range_expansion reached only 1.079x (asked 1.25), above 1 in 4 windows (1.04 to 1.18) but below in windows 5 and 6 (0.759, 0.982), so the expansion after the week's narrowest 12h range is small and does not hold across windows."
+  - "asia_quiet_us_open_release went the other way at 0.899x, below 1 in 5 of 6 windows; quiet before 13:00 UTC on weekdays is not released at the US open."
+  - "Continuing the drift inside a compressed range did worse than continuing drift in a wide range by 0.66% over 12h (quiet_drift_continues, -0.0066), negative in 4 of 6 windows, the other two near zero (0.0005, 0.00009)."
+  - "Fading that drift did not reliably pay either: quiet_drift_fakeout_reverts was +0.0009 with window values from -1.30% to +1.21%, and long_quiet_drift_reverts cleared the size at 0.00374 but was positive in only 4 of 6 windows (-0.0045 and -0.0009 in windows 4 and 5)."
+  - "post_shock_flag_continues nearly held: continuing in the shock's direction 12 bars after a large bar beat other bars by 0.228% over 24h, positive in 5 of 6 windows, but the bar asked was 0.30%."
+  - "quiet_price_loud_volume_absorption showed 1.76x, but on only 5 a-bars with three empty windows, so it says nothing."
+  - "Return claims based on the range edge or on wicks were mixed: close_location_in_compression had a hit-rate edge of 0.030 (asked 0.05) with 3 of 6 windows positive, and wick_rejection_inside_quiet had a correlation of 0.071 with window values from -0.246 to +0.221."
+  - "quiet_drift_profit_after_cost had a net mean of 0.32% after cost, but on only 44 bars, with 3 of 6 windows negative (as low as -2.24%)."
+next_claim:
+  id: held_flag_after_shock_pays
+  belief: "When a quiet 12h consolidation after a large hourly bar still holds beyond the midpoint of that shock bar, the shock was absorbed rather than rejected, and the move resumes in its direction by more than the fee."
+  claim:
+    when: "exactly 12 bars after a bar whose absolute return exceeded 2.5x the prior week's hourly std, with no new large bar since, and the close still on the shock's side of the shock bar's open-close midpoint; one event per 24 bars"
+    then: "the 24h forward return in the shock's direction, after the 0.15% round trip, is positive"
+    compared_to: "zero after cost (net_return)"
+    measure: net_return
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.002
+    code: |
+      r_std = ret.rolling(168).std().shift(1)
+      big = ret.abs() > 2.5 * r_std
+      idx = pd.Series(np.arange(len(df)), index=df.index, dtype=float)
+      since = idx - idx.where(big).ffill()
+      sgn = np.sign(ret.where(big)).ffill()
+      mid = ((df.open.where(big) + df.close.where(big)) / 2).ffill()
+      held = sgn * (df.close - mid) > 0
+      a = spaced((since == 12) & held, 24)
+      b = ~a & sgn.notna()
+      signal = sgn.fillna(1)
+  why_no_lookahead: "The shock, its sign and its midpoint come from bars at or before the current close, carried forward with ffill; there is no negative shift."
+  how_it_trades: "At the close of the 12th bar after a shock whose consolidation held past the shock midpoint, enter in the shock's direction and exit 24 bars later."
+why: "post_shock_flag_continues was the only return claim with a consistent sign (5 of 6 windows, +0.23%); requiring that the flag did not retrace past the shock midpoint should isolate the absorbed shocks, and 0.2% net (about 0.35% gross) is an effect that is not luck and pays the 0.15% round trip."

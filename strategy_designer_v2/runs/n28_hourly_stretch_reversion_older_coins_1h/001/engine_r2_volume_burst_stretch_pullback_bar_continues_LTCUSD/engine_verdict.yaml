@@ -1,0 +1,147 @@
+claim: volume_burst_stretch_pullback_bar_continues
+symbol: LTCUSD
+bar_size: 1h
+fold: C
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 221
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: 0.7907
+  median_window_sharpe: 1.2563
+  worst_window_drawdown: 0.2722
+  trades: 170
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: -0.1925
+    trades: 25
+    sharpe: -1.6059
+    max_drawdown: 0.2722
+    exposure_pct: 9.7734
+    cost_drag_pct: 12.5605
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/full_size/20261106T022613Z_f1abed77
+    seconds: 29
+  - window: W2
+    net_return: -0.016
+    trades: 33
+    sharpe: -0.1969
+    max_drawdown: 0.2151
+    exposure_pct: 13.1282
+    cost_drag_pct: 198.9731
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/full_size/20261106T022643Z_f1abed77
+    seconds: 30
+  - window: W3
+    net_return: 0.1807
+    trades: 29
+    sharpe: 2.0104
+    max_drawdown: 0.1125
+    exposure_pct: 11.3937
+    cost_drag_pct: 14.9443
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/full_size/20261106T022711Z_f1abed77
+    seconds: 28
+  - window: W4
+    net_return: 0.0562
+    trades: 36
+    sharpe: 0.5537
+    max_drawdown: 0.2194
+    exposure_pct: 14.0787
+    cost_drag_pct: 40.1214
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/full_size/20261106T022744Z_f1abed77
+    seconds: 32
+  - window: W5
+    net_return: 0.4384
+    trades: 25
+    sharpe: 3.0071
+    max_drawdown: 0.1145
+    exposure_pct: 9.8428
+    cost_drag_pct: 6.0483
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/full_size/20261106T022811Z_f1abed77
+    seconds: 28
+  - window: W6
+    net_return: 0.2564
+    trades: 22
+    sharpe: 1.9589
+    max_drawdown: 0.2533
+    exposure_pct: 8.1439
+    cost_drag_pct: 8.3655
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/full_size/20261106T022840Z_f1abed77
+    seconds: 29
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: true
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: 0.0896
+    median_window_sharpe: 0.6875
+    worst_window_drawdown: 0.0564
+    trades: 162
+  windows:
+  - window: W1
+    net_return: -0.0379
+    trades: 23
+    sharpe: -1.8375
+    max_drawdown: 0.0564
+    exposure_pct: 9.7734
+    cost_drag_pct: 11.7342
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/vol_target/20261106T022910Z_1c204fed
+    seconds: 29
+  - window: W2
+    net_return: -0.0065
+    trades: 32
+    sharpe: -0.4701
+    max_drawdown: 0.0388
+    exposure_pct: 13.1282
+    cost_drag_pct: 402.7767
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/vol_target/20261106T022939Z_1c204fed
+    seconds: 30
+  - window: W3
+    net_return: 0.0248
+    trades: 28
+    sharpe: 1.2681
+    max_drawdown: 0.0256
+    exposure_pct: 11.3937
+    cost_drag_pct: 19.3463
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/vol_target/20261106T023007Z_1c204fed
+    seconds: 27
+  - window: W4
+    net_return: 0.0098
+    trades: 35
+    sharpe: 0.3082
+    max_drawdown: 0.0493
+    exposure_pct: 14.0787
+    cost_drag_pct: 45.7095
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/vol_target/20261106T023039Z_1c204fed
+    seconds: 32
+  - window: W5
+    net_return: 0.0765
+    trades: 24
+    sharpe: 2.6818
+    max_drawdown: 0.0359
+    exposure_pct: 9.8428
+    cost_drag_pct: 7.1813
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/vol_target/20261106T023106Z_1c204fed
+    seconds: 27
+  - window: W6
+    net_return: 0.0233
+    trades: 20
+    sharpe: 1.0668
+    max_drawdown: 0.0298
+    exposure_pct: 8.1439
+    cost_drag_pct: 13.6989
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/vol_target/20261106T023134Z_1c204fed
+    seconds: 28
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: true
+  verdict: fail

@@ -1,0 +1,33 @@
+run: n39_daily_typical_price_anchor_1d/fold_B
+observations:
+  - squeeze_then_anchor_break_continues held on ETH (net 0.0301, 5 of 6 windows positive) and LTC (net 0.0347, 5 of 6 positive), but BTC was -0.0027 with windows split 3 to 3, so the brief's all-three rule failed it.
+  - vwap20_stretch_rank_reversion nearly held. On the whole fold the correlation was about zero (BTC 0.008, ETH -0.005, LTC -0.009), yet ETH and LTC were negative in all 6 windows (ETH -0.07 to -0.30) and BTC in 5 of 6 (down to -0.16). Reversion therefore shows inside each window but is lost when the windows are pooled, which points to the z-scale drifting from one window to the next.
+  - vwap10_stretch_precedes_big_moves passed on ETH (ratio 1.30, 5 of 6 windows above 1). BTC had the largest ratio at 1.62 but only 4 of 6 windows above 1 (0.70, 0.997). LTC reached only 1.11, so stretched bars do move more, but not consistently on every coin.
+  - vwap5_stretch_reverts_3d after cost was positive only on BTC (0.0053); it lost on ETH (-0.0162) and LTC (-0.0029), so a fast-anchor reversion does not pay across coins.
+  - vwap20_reclaim_or_loss went the wrong way on BTC (hit-rate -0.126) and ETH (-0.176, 5 of 6 windows negative), while LTC was +0.067 with mixed windows. A first cross of the 20-day anchor tends to fail rather than follow through on the two large coins.
+  - exhausted_stretch_with_rejection_candle lost after cost on all three coins (BTC -0.0162, ETH -0.0069, LTC -0.0021), so an intraday rejection at a 2-sigma stretch does not mark a snap-back.
+  - vwap30_stretch_trends_10d had only 12 to 14 events per coin, below the 30-bar floor. Its large ETH (0.0595) and BTC (0.0298) averages are therefore uninformative.
+  - volume_backed_stretch_continues was positive only on ETH (0.0210), with windows split 4 to 2. BTC (-0.0038) and LTC (-0.0040) were negative, so a volume burst does not separate continuing stretches from the rest.
+  - weekend_stretch_reverts_more split by coin: LTC +0.0211, BTC +0.0026, ETH -0.0147. All three had at least 2 windows of opposite sign.
+next_claim:
+  id: vwap20_stretch_percentile_rank_reversion
+  belief: The close's stretch from the 20-day VWAP reverts relative to its own recent range of stretches, so ranking the stretch within its trailing 120 days removes the regime drift that hid the within-window reversion.
+  claim:
+    when: every daily bar with 120 days of stretch history
+    then: the higher the current stretch ranks among its last 120 values, the lower the 5-day forward return
+    compared_to: the whole range of percentile ranks (correlation, no baseline set)
+    measure: rank_corr
+    horizon_bars: 5
+    direction: negative
+    min_effect: 0.06
+    code: |
+      tp = (df.high + df.low + df.close) / 3
+      vw = (tp * df.volume).rolling(20).sum() / df.volume.rolling(20).sum()
+      sig = ret.rolling(20).std()
+      z = (df.close / vw - 1) / sig
+      feature = z.rolling(120).apply(lambda x: (x <= x[-1]).mean(), raw=True)
+      a = feature.notna()
+      b = ~a
+  why_no_lookahead: The anchor, the volatility and the 120-day percentile use only bars up to and including the current close.
+  how_it_trades: Short the coin when its stretch sits in the top part of its 120-day range and buy it when the stretch sits in the bottom part, holding 5 days.
+why: The 20-day stretch reverted inside 17 of 18 symbol-windows but vanished when the windows were pooled, so re-expressing the stretch against its own trailing distribution is the most direct test of whether that within-window reversion is real on all three coins.

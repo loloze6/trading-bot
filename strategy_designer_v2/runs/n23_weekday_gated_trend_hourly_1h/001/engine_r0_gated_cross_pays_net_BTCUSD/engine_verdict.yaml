@@ -1,0 +1,147 @@
+claim: gated_cross_pays_net
+symbol: BTCUSD
+bar_size: 1h
+fold: C
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 880
+verdict: pass
+passed_as: vol_target
+fold_totals: &id001
+  net_return: 0.0838
+  median_window_sharpe: 1.30625
+  worst_window_drawdown: 0.1433
+  trades: 120
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals:
+    net_return: 0.3002
+    median_window_sharpe: 1.0943
+    worst_window_drawdown: 0.3383
+    trades: 83
+  windows:
+  - window: W1
+    net_return: 0.1246
+    trades: 6
+    sharpe: 1.7956
+    max_drawdown: 0.0697
+    exposure_pct: 8.4836
+    cost_drag_pct: 4.4221
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/full_size/20261106T014741Z_64dd3614
+    seconds: 49
+  - window: W2
+    net_return: 0.2437
+    trades: 13
+    sharpe: 2.2762
+    max_drawdown: 0.1035
+    exposure_pct: 19.6721
+    cost_drag_pct: 5.4246
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/full_size/20261106T014823Z_64dd3614
+    seconds: 42
+  - window: W3
+    net_return: 0.0568
+    trades: 17
+    sharpe: 0.5969
+    max_drawdown: 0.1653
+    exposure_pct: 25.6697
+    cost_drag_pct: 23.7272
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/full_size/20261106T014908Z_64dd3614
+    seconds: 45
+  - window: W4
+    net_return: 0.1188
+    trades: 19
+    sharpe: 1.4383
+    max_drawdown: 0.1457
+    exposure_pct: 30.303
+    cost_drag_pct: 13.8595
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/full_size/20261106T014949Z_64dd3614
+    seconds: 42
+  - window: W5
+    net_return: -0.26
+    trades: 18
+    sharpe: -2.5768
+    max_drawdown: 0.3383
+    exposure_pct: 27.8784
+    cost_drag_pct: 7.0428
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/full_size/20261106T015032Z_64dd3614
+    seconds: 42
+  - window: W6
+    net_return: 0.0625
+    trades: 10
+    sharpe: 0.7503
+    max_drawdown: 0.1443
+    exposure_pct: 14.9304
+    cost_drag_pct: 13.9191
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/full_size/20261106T015115Z_64dd3614
+    seconds: 43
+  checks:
+    net_positive_in_5_of_6: true
+    median_window_sharpe_ge_1.0: true
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: 0.0343
+    trades: 9
+    sharpe: 2.0175
+    max_drawdown: 0.0154
+    exposure_pct: 8.4836
+    cost_drag_pct: 5.0507
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/vol_target/20261106T015204Z_be4deeb5
+    seconds: 48
+  - window: W2
+    net_return: 0.0844
+    trades: 22
+    sharpe: 1.7593
+    max_drawdown: 0.0326
+    exposure_pct: 19.6721
+    cost_drag_pct: 8.3569
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/vol_target/20261106T015246Z_be4deeb5
+    seconds: 43
+  - window: W3
+    net_return: 0.0542
+    trades: 21
+    sharpe: 1.9359
+    max_drawdown: 0.0377
+    exposure_pct: 25.6697
+    cost_drag_pct: 8.6738
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/vol_target/20261106T015330Z_be4deeb5
+    seconds: 44
+  - window: W4
+    net_return: 0.0056
+    trades: 29
+    sharpe: 0.4166
+    max_drawdown: 0.0781
+    exposure_pct: 30.303
+    cost_drag_pct: 63.2252
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/vol_target/20261106T015413Z_be4deeb5
+    seconds: 42
+  - window: W5
+    net_return: -0.103
+    trades: 28
+    sharpe: -2.4674
+    max_drawdown: 0.1433
+    exposure_pct: 27.8784
+    cost_drag_pct: 9.2626
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/vol_target/20261106T015458Z_be4deeb5
+    seconds: 45
+  - window: W6
+    net_return: 0.0162
+    trades: 11
+    sharpe: 0.8532
+    max_drawdown: 0.0198
+    exposure_pct: 14.9304
+    cost_drag_pct: 11.9521
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_BTCUSD/results/vol_target/20261106T015542Z_be4deeb5
+    seconds: 44
+  checks:
+    net_positive_in_5_of_6: true
+    median_window_sharpe_ge_1.0: true
+    worst_window_drawdown_le_20%: true
+  verdict: pass

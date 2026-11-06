@@ -1,0 +1,45 @@
+{
+  "aux_feeds": [],
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 2,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "breakout_spike_continues_inside_spike_reverts",
+            "class": "strategies.claim_event.ClaimEventComponent",
+            "params": {
+              "code": "sd = ret.rolling(168).std().shift(1)\nbig = ret.abs() > 3 * sd\nhi24 = df.high.rolling(24).max().shift(1)\nlo24 = df.low.rolling(24).min().shift(1)\nbrk = (df.close > hi24) | (df.close < lo24)\na = spaced(big & brk, 12)\nb = spaced(big & ~brk & hi24.notna(), 12)\nsignal = np.sign(ret)\n",
+              "horizon": 12,
+              "scaling_factor": 10.0,
+              "min_bars": 269
+            },
+            "weight": 1.0,
+            "lookback": 369,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 30,
+      "target_annual_vol": 0.2,
+      "max_allocation": 1.0,
+      "periods_per_year": 8760
+    }
+  }
+}

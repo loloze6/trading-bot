@@ -1,0 +1,42 @@
+brief: n23_weekday_gated_trend_hourly_1h.md
+source: analyst round 1
+ideas:
+- id: cross_in_vol_contraction
+  belief: MA-cross trend entries follow through better when 24h volatility is contracting
+    than when it is expanding, because a cross made in compression starts a move rather
+    than ending a spike.
+  claim:
+    when: 12/72 MA cross bars where trailing 24h return volatility is at or below
+      its value 24 bars earlier, at most one per 24 bars
+    then: the 48-bar forward return in the cross direction is larger
+    compared_to: 12/72 MA cross bars where trailing 24h volatility is above its value
+      24 bars earlier, at most one per 24 bars
+    measure: mean_diff
+    horizon_bars: 48
+    direction: positive
+    min_effect: 0.004
+    code: 'f = df.close.rolling(12).mean()
+
+      s = df.close.rolling(72).mean()
+
+      d = np.sign(f - s)
+
+      cross = (d != d.shift(1)) & d.notna() & d.shift(1).notna() & (d != 0)
+
+      v = ret.rolling(24).std()
+
+      ok = v.shift(24).notna() & s.notna()
+
+      con = v <= v.shift(24)
+
+      signal = d.replace(0, 1).fillna(1)
+
+      a = spaced(cross & ok & con, 24)
+
+      b = spaced(cross & ok & ~con, 24)
+
+      '
+  why_no_lookahead: The MAs, the 24h volatility and its 24-bar lag all use bars at
+    or before the cross bar's close.
+  how_it_trades: Enter the 12/72 cross only when 24h volatility is not rising versus
+    a day ago, hold for 48 bars.

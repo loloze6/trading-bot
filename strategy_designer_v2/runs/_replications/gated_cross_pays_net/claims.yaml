@@ -1,0 +1,42 @@
+brief: replication of gated_cross_pays_net from 001
+source: /home/user/trading-bot/strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/claims.yaml
+ideas:
+- id: gated_cross_pays_net
+  belief: A 12/72 MA-cross entry taken only on weekdays with 24h volatility above
+    its lower tercile is profitable after the 0.15% round trip.
+  claim:
+    when: 12/72 MA cross events (one per 24 bars) on a weekday outside Fri 21:00 to
+      Mon 08:00 UTC with 24-bar volatility above its trailing 720-bar 33rd percentile
+    then: the 48-bar forward return in the cross direction, net of cost, is positive
+    compared_to: zero after cost
+    measure: net_return
+    horizon_bars: 48
+    direction: positive
+    min_effect: 0.002
+    code: 'wk = ((dow == 4) & (hour >= 21)) | (dow >= 5) | ((dow == 0) & (hour < 8))
+
+      f = df.close.rolling(12).mean()
+
+      s = df.close.rolling(72).mean()
+
+      d = np.sign(f - s)
+
+      cross = (d != d.shift(1)) & d.notna() & d.shift(1).notna() & (d != 0)
+
+      v = ret.rolling(24).std()
+
+      q = v.rolling(720).quantile(0.33)
+
+      gate = (~wk) & (v > q)
+
+      signal = d.replace(0, 1).fillna(1)
+
+      a = spaced(cross & gate, 24)
+
+      b = ~a
+
+      '
+  why_no_lookahead: The cross, the volatility gate and the calendar gate all use data
+    at or before the bar's close.
+  how_it_trades: Enter on 12/72 MA crosses only inside the weekday and volatility
+    gate and hold 48 hours.

@@ -1,0 +1,12 @@
+run: n40_multi_day_volume_climax_1d fold C
+observations:
+  - Every discrete climax definition (three straight days above 1.8x the 30-day median volume) fired on only 0 to 14 bars per coin out of about 730, below the 30-bar minimum, so all ten event claims failed on count before their effect could count.
+  - The only claim with enough bars was loud_move_continuation_rank, with 394 to 416 bars per coin; it passed on ETH (rank_corr 0.137, 5 of 6 windows positive).
+  - That same claim nearly held on BTC, where the whole-fold effect of 0.127 cleared the 0.08 threshold, but 3 of 6 windows were negative (-0.277, -0.021, -0.101), so the sign was not stable.
+  - On LTC the same claim did not hold: the effect was -0.025 and 4 of 6 windows were negative or near zero (-0.153, -0.130, -0.257).
+  - climax_volatility_persistence looked right on ETH only, with abs_ratio 1.53 and 5 of 6 windows above 1; BTC was 1.04 and LTC 0.84, with windows spread from 0.007 to 4.17.
+  - breakout_climax_continuation had large positive effects on all three coins (BTC 0.077, ETH 0.332, LTC 0.110), but on just 3 to 5 events each, and LTC windows split 2 positive and 2 negative.
+  - Both reversal readings failed on sign as well as count: buying_climax_fade was negative on all three coins (ETH -0.122), and capitulation_in_bull_regime returned -0.097 on BTC and -0.175 on ETH net of cost.
+  - climax_exhaustion_day_fade found 0, 1 and 2 events on BTC, ETH and LTC, so a quiet day right after a 3-day climax almost never happens on these daily bars.
+next_claim: none
+why: A multi-day daily volume climax gives under 15 events per coin per fold, too few for the 30-bar rule. The one continuous version, loud-volume continuation, already failed on BTC window stability and on LTC sign, and any further try would be a threshold or window change of a claim already tried.

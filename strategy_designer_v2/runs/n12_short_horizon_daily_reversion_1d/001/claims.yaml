@@ -1,0 +1,223 @@
+brief: n12_short_horizon_daily_reversion_1d.md
+ideas:
+  - id: vol_scaled_3d_shock_fade
+    belief: A 3-day move larger than 2 units of pre-move volatility is an overreaction by thin mid-cap order books and partly reverses over the next 3 days.
+    claim:
+      when: the 3-day return, divided by 30-day daily return std measured before the move times sqrt(3), exceeds 2 in absolute value (one event per 3 bars)
+      then: the next 3-day return goes against the move, enough to pay the cost
+      compared_to: cost only (net_return)
+      measure: net_return
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.005
+      code: |
+        vol = ret.rolling(30).std().shift(3)
+        z3 = (df.close / df.close.shift(3) - 1) / (vol * np.sqrt(3))
+        a = spaced(z3.abs() > 2.0, 3).fillna(False)
+        b = ~a
+        signal = pd.Series(np.where(z3 > 0, -1, 1), index=df.index)
+    why_no_lookahead: The move and the volatility unit use closes up to the bar's close. The volatility window ends before the move starts.
+    how_it_trades: At the close of the shock bar, take the opposite side of the move and exit 3 daily bars later.
+
+  - id: low_volume_shock_reverts_more
+    belief: Sharp moves made on light volume are liquidity gaps, not information, so they revert more than the same moves made on heavy volume.
+    claim:
+      when: there is a 3-day shock of more than 1.5 vol units, and 3-day volume is below its 60-day typical 3-day volume
+      then: the fade of the move earns more over the next 3 days
+      compared_to: 3-day shocks of the same size whose 3-day volume is above 1.5 times typical
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.01
+      code: |
+        vol = ret.rolling(30).std().shift(3)
+        z3 = (df.close / df.close.shift(3) - 1) / (vol * np.sqrt(3))
+        v3 = df.volume.rolling(3).sum()
+        vref = (df.volume.rolling(60).mean() * 3).shift(3)
+        shock = spaced(z3.abs() > 1.5, 3).fillna(False)
+        a = shock & (v3 < vref)
+        b = shock & (v3 > 1.5 * vref)
+        signal = pd.Series(np.where(z3 > 0, -1, 1), index=df.index)
+    why_no_lookahead: Volume and returns are summed over the last 3 bars up to the close. The reference window ends before the move.
+    how_it_trades: Fade 3-day shocks only when volume on the move is light, and hold for 3 days.
+
+  - id: dip_in_uptrend_reverts
+    belief: Shocks against the prevailing 100-day trend are pullbacks that trend followers buy back, so they revert more than shocks in the trend's direction.
+    claim:
+      when: there is a 3-day shock of more than 1.5 vol units that runs against the trend (a down shock while the close 3 bars ago was above the 100-day mean, or an up shock while it was below)
+      then: the fade of the move earns more over the next 5 days
+      compared_to: shocks of the same size that run in the direction of the trend
+      measure: mean_diff
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.01
+      code: |
+        vol = ret.rolling(30).std().shift(3)
+        z3 = (df.close / df.close.shift(3) - 1) / (vol * np.sqrt(3))
+        up_trend = (df.close.shift(3) > df.close.rolling(100).mean().shift(3))
+        shock = spaced(z3.abs() > 1.5, 3).fillna(False)
+        against = ((z3 < 0) & up_trend) | ((z3 > 0) & ~up_trend)
+        a = shock & against
+        b = shock & ~against
+        signal = pd.Series(np.where(z3 > 0, -1, 1), index=df.index)
+    why_no_lookahead: The trend state is measured at the close before the move starts. The shock uses closes up to the current close.
+    how_it_trades: Buy sharp dips in uptrends and sell sharp rallies in downtrends, holding for 5 days.
+
+  - id: inside_range_shock_reverts_new_extreme_does_not
+    belief: A shock that stays inside the recent 20-day range is noise and reverts, while one that sets a new 20-day high or low triggers breakout and stop flows that keep it going.
+    claim:
+      when: there is a 3-day shock of more than 1.5 vol units whose close does not make a new 20-day closing extreme in its direction
+      then: the fade of the move earns more over the next 3 days
+      compared_to: shocks of the same size that close at a new 20-day high (up shocks) or low (down shocks)
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.01
+      code: |
+        vol = ret.rolling(30).std().shift(3)
+        z3 = (df.close / df.close.shift(3) - 1) / (vol * np.sqrt(3))
+        hi20 = df.close.rolling(20).max().shift(1)
+        lo20 = df.close.rolling(20).min().shift(1)
+        new_ext = ((z3 > 0) & (df.close > hi20)) | ((z3 < 0) & (df.close < lo20))
+        shock = spaced(z3.abs() > 1.5, 3).fillna(False)
+        a = shock & ~new_ext
+        b = shock & new_ext
+        signal = pd.Series(np.where(z3 > 0, -1, 1), index=df.index)
+    why_no_lookahead: The 20-day extremes come from prior closes (shift 1) and are compared with the current close.
+    how_it_trades: Fade 3-day shocks only when they stay inside the 20-day range, and hold for 3 days.
+
+  - id: calm_regime_shock_reverts
+    belief: A shock that arrives in a calm regime is an outlier liquidity event that reverts, while in a turbulent regime large moves are the norm and carry on.
+    claim:
+      when: there is a 3-day shock of more than 1.5 vol units while 10-day volatility before the move is below 60-day volatility before the move
+      then: the fade of the move earns more over the next 3 days
+      compared_to: shocks of the same size while 10-day volatility is above 60-day volatility
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.01
+      code: |
+        vol = ret.rolling(30).std().shift(3)
+        z3 = (df.close / df.close.shift(3) - 1) / (vol * np.sqrt(3))
+        calm = ret.rolling(10).std().shift(3) < ret.rolling(60).std().shift(3)
+        shock = spaced(z3.abs() > 1.5, 3).fillna(False)
+        a = shock & calm
+        b = shock & ~calm
+        signal = pd.Series(np.where(z3 > 0, -1, 1), index=df.index)
+    why_no_lookahead: Both volatility windows end before the move starts, and the move uses closes up to the bar's close.
+    how_it_trades: Fade shocks only when the regime before the shock was calm, and hold for 3 days.
+
+  - id: rejection_close_continues_reversal
+    belief: After a sharp 3-day drop, a last bar that closes near its high shows that sellers are exhausted and buyers have stepped in, so the rebound is stronger than when the bar closes on its low.
+    claim:
+      when: there is a 3-day down shock below -1.5 vol units and the last bar closes in the top 40% of its high-low range
+      then: the next 3-day return is higher
+      compared_to: down shocks of the same size whose last bar closes in the bottom 40% of its range
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.01
+      code: |
+        vol = ret.rolling(30).std().shift(3)
+        z3 = (df.close / df.close.shift(3) - 1) / (vol * np.sqrt(3))
+        rng = (df.high - df.low).replace(0, np.nan)
+        loc = (df.close - df.low) / rng
+        down = spaced(z3 < -1.5, 3).fillna(False)
+        a = down & (loc > 0.6)
+        b = down & (loc < 0.4)
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: The close location uses only the current bar's high, low and close, all known at the close.
+    how_it_trades: After a sharp 3-day drop, buy at the close only if the last bar closed near its high, and hold for 3 days.
+
+  - id: concentrated_jump_vs_grind
+    belief: A move made mostly in one day is a single-order or news overshoot that reverts, while a move spread evenly over several days reflects steady flow that does not.
+    claim:
+      when: there is a 3-day shock of more than 1.5 vol units where the largest single-day return in the move's direction is more than 70% of the 3-day log move
+      then: the fade of the move earns more over the next 3 days
+      compared_to: shocks of the same size where no single day is more than 45% of the 3-day log move
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.01
+      code: |
+        vol = ret.rolling(30).std().shift(3)
+        lr = np.log(df.close).diff()
+        m3 = lr.rolling(3).sum()
+        z3 = (df.close / df.close.shift(3) - 1) / (vol * np.sqrt(3))
+        s = np.sign(m3)
+        biggest = (lr * s).rolling(3).max()
+        share = biggest / m3.abs().replace(0, np.nan)
+        shock = spaced(z3.abs() > 1.5, 3).fillna(False)
+        a = shock & (share > 0.7)
+        b = shock & (share < 0.45)
+        signal = pd.Series(np.where(z3 > 0, -1, 1), index=df.index)
+    why_no_lookahead: The share of the move and the move itself use the last 3 daily log returns up to the close.
+    how_it_trades: Fade shocks that came from one large day and leave alone shocks that built up gradually, holding for 3 days.
+
+  - id: weekend_shock_reverts
+    belief: Shocks that end on the weekend happen in thin, retail-dominated trading and revert more once weekday liquidity returns.
+    claim:
+      when: there is a 2-day shock of more than 1.5 vol units whose last bar is a Saturday or Sunday (UTC close time)
+      then: the fade of the move earns more over the next 2 days
+      compared_to: 2-day shocks of the same size whose last bar is a weekday
+      measure: mean_diff
+      horizon_bars: 2
+      direction: positive
+      min_effect: 0.008
+      code: |
+        vol = ret.rolling(30).std().shift(2)
+        z2 = (df.close / df.close.shift(2) - 1) / (vol * np.sqrt(2))
+        shock = spaced(z2.abs() > 1.5, 2).fillna(False)
+        wkend = (dow >= 5)
+        a = shock & wkend
+        b = shock & ~wkend
+        signal = pd.Series(np.where(z2 > 0, -1, 1), index=df.index)
+    why_no_lookahead: The weekday comes from the bar's own close timestamp, and the move uses closes up to that bar.
+    how_it_trades: Fade 2-day shocks that end on the weekend and exit 2 days later, early in the week.
+
+  - id: down_shock_long_only_hit_rate
+    belief: On spot mid-caps, sharp selloffs come from forced or panic selling that is bought back, so the rebound is asymmetric and works as a long-only trade.
+    claim:
+      when: there is a 5-day down move below -2 vol units (one event per 5 bars)
+      then: the next 5-day return is positive more often
+      compared_to: all other bars
+      measure: hit_rate
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.08
+      code: |
+        vol = ret.rolling(30).std().shift(5)
+        z5 = (df.close / df.close.shift(5) - 1) / (vol * np.sqrt(5))
+        a = spaced(z5 < -2.0, 5).fillna(False)
+        b = ~a
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: The 5-day move and its volatility unit, which is measured before the move, use only closes up to the bar's close.
+    how_it_trades: Buy spot at the close after a sharp 5-day drop and hold for 5 days, with no shorts.
+
+  - id: shock_size_dose_response
+    belief: If reversion is real, larger moves in volatility units should revert proportionally more, so among sizeable moves the size of the move ranks the next return inversely.
+    claim:
+      when: bars where the 3-day vol-scaled move exceeds 1 unit in absolute value (one event per 3 bars)
+      then: the minus vol-scaled move ranks the next 3-day return positively
+      compared_to: not used (rank correlation within the event bars)
+      measure: rank_corr
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.10
+      code: |
+        vol = ret.rolling(30).std().shift(3)
+        z3 = (df.close / df.close.shift(3) - 1) / (vol * np.sqrt(3))
+        a = spaced(z3.abs() > 1.0, 3).fillna(False)
+        b = ~a
+        feature = -z3
+    why_no_lookahead: The feature uses closes up to the bar's close and a volatility window that ends before the move.
+    how_it_trades: Size the fade in proportion to how many vol units the 3-day move covered, and hold for 3 days.
+notes: >
+  Size unit for all claims: the k-day simple return divided by (30-day std of daily returns, ending before the move) times sqrt(k).
+  Shock thresholds of 1.5 units are used in the subset comparisons so that each subset keeps at least 30 events per fold on daily data.
+  This 1.5 threshold is part of the claim, not a tuning choice.
+  Down-streak exhaustion and capitulation-volume rebound are avoided because they are already tried.
+  The idea of a one-day concentrated move (concentrated_jump_vs_grind) is different from a streak count.
+  Fades of up moves imply shorting, which may not be available on Kraken spot.
+  The long-only claim (down_shock_long_only_hit_rate) covers the spot-only case.
+  inside_range_shock_reverts_new_extreme_does_not and the trend claim (dip_in_uptrend_reverts) may contradict each other on some bars, and both are kept.

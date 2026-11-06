@@ -1,0 +1,38 @@
+{
+  "aux_feeds": [],
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 2,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "europe_open_distribution_weekday_07_10",
+            "class": "strategies.claim_event.ClaimEventComponent",
+            "params": {
+              "code": "a = (hour == 7) & (dow < 5)\nb = (hour != 7) & (dow < 5)\nsignal = pd.Series(-1.0, index=df.index)\n",
+              "horizon": 3,
+              "scaling_factor": 10.0,
+              "min_bars": 200
+            },
+            "weight": 1.0,
+            "lookback": 300,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    }
+  }
+}

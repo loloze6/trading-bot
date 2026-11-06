@@ -1,0 +1,32 @@
+brief: n35_privacy_coins_hourly_shock_1h.md
+source: analyst round 2
+ideas:
+- id: range_expansion_raises_halfday_volatility
+  belief: On XMR and ZEC, an hour whose high-low range is far above normal starts
+    a volatility cluster that lasts about half a day, whether or not volume backs
+    it.
+  claim:
+    when: an hourly bar whose high-low range relative to close exceeds 3 times its
+      mean over the prior 168 bars, one event per 12 bars
+    then: the absolute 12-bar forward return is larger
+    compared_to: all other bars
+    measure: abs_ratio
+    horizon_bars: 12
+    direction: above
+    min_effect: 1.3
+    code: 'rng = (df.high - df.low) / df.close
+
+      mr = rng.rolling(168).mean().shift(1)
+
+      a = spaced(rng > 3 * mr, 12)
+
+      b = ~a
+
+      signal = np.sign(ret).replace(0, 1)
+
+      '
+  why_no_lookahead: The range and the close are known at the bar's close, and the
+    normal range uses only prior bars via shift(1).
+  how_it_trades: 'As a filter: cut position size or widen stops on XMR/ZEC for 12
+    hours after a range-expansion bar. It is not a directional entry, since direction
+    claims all failed.'

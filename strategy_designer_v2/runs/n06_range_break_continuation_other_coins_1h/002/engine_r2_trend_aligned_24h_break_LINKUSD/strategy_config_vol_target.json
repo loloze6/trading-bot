@@ -1,0 +1,45 @@
+{
+  "aux_feeds": [],
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 2,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "trend_aligned_24h_break",
+            "class": "strategies.claim_event.ClaimEventComponent",
+            "params": {
+              "code": "r168 = df.close / df.close.shift(168) - 1\nhi24 = df.high.rolling(24).max().shift(1)\nlo24 = df.low.rolling(24).min().shift(1)\nup = (df.close > hi24) & (df.close.shift(1) <= hi24.shift(1))\ndn = (df.close < lo24) & (df.close.shift(1) >= lo24.shift(1))\nbrk = (up | dn) & r168.notna()\nwith_trend = (up & (r168 > 0)) | (dn & (r168 < 0))\na = spaced(brk & with_trend, 24)\nb = spaced(brk & ~with_trend, 24)\nsignal = pd.Series(np.where(dn, -1, 1), index=df.index)\n",
+              "horizon": 24,
+              "scaling_factor": 10.0,
+              "min_bars": 272
+            },
+            "weight": 1.0,
+            "lookback": 372,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 30,
+      "target_annual_vol": 0.2,
+      "max_allocation": 1.0,
+      "periods_per_year": 8760
+    }
+  }
+}

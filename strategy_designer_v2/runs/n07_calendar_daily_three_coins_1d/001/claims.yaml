@@ -1,0 +1,177 @@
+brief: n07_calendar_daily_three_coins_1d.md
+ideas:
+  - id: monday_tradfi_reopen_inflow
+    belief: When TradFi reopens on Monday, ETF creations and institutional desks put money to work that was idle over the weekend, so Monday's daily return is higher than other days.
+    claim:
+      when: bars covering Sunday (UTC), so the next bar is Monday
+      then: the next 1-day return is higher
+      compared_to: all other bars
+      measure: mean_diff
+      horizon_bars: 1
+      direction: positive
+      min_effect: 0.003
+      code: |
+        d = df.index - pd.Timedelta(seconds=1)
+        wd = pd.Series(d.dayofweek, index=df.index)
+        a = wd == 6
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The weekday comes from the bar's own timestamp, which is known at its close.
+    how_it_trades: Buy at Sunday's daily close and sell at Monday's daily close.
+  - id: friday_derisk_before_weekend
+    belief: Leveraged and institutional desks cut crypto risk on Friday before the weekend, when TradFi hedges are unavailable, so Friday's return is weaker than other days.
+    claim:
+      when: bars covering Thursday (UTC), so the next bar is Friday
+      then: the next 1-day return is lower
+      compared_to: all other bars
+      measure: mean_diff
+      horizon_bars: 1
+      direction: positive
+      min_effect: 0.003
+      code: |
+        d = df.index - pd.Timedelta(seconds=1)
+        wd = pd.Series(d.dayofweek, index=df.index)
+        a = wd == 3
+        b = ~a
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: The weekday comes from the bar's own timestamp.
+    how_it_trades: Short (or stay flat) from Thursday's close to Friday's close.
+  - id: weekend_thin_drift_up
+    belief: Weekend trading is retail-dominated and thin, and retail buys more than it sells (salary dip-buying, apps), so Saturday and Sunday bars close up more often than weekday bars.
+    claim:
+      when: bars covering Friday or Saturday (UTC), so the next bar is Saturday or Sunday
+      then: the next 1-day return is positive more often
+      compared_to: all other bars
+      measure: hit_rate
+      horizon_bars: 1
+      direction: positive
+      min_effect: 0.03
+      code: |
+        d = df.index - pd.Timedelta(seconds=1)
+        wd = pd.Series(d.dayofweek, index=df.index)
+        a = wd.isin([4, 5])
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The weekday comes from the bar's own timestamp.
+    how_it_trades: Hold long over the Saturday and Sunday daily bars and stay flat on weekdays.
+  - id: weekend_move_reverts_on_monday
+    belief: Moves made on thin weekend liquidity are partly noise, and Monday's institutional flow corrects them, so the weekend move reverts more than an ordinary 2-day move does.
+    claim:
+      when: bars covering Sunday (UTC), with the signal against the Saturday+Sunday return
+      then: the Monday return moves against the weekend move
+      compared_to: all other bars, using the same 2-day reversal signal
+      measure: mean_diff
+      horizon_bars: 1
+      direction: positive
+      min_effect: 0.004
+      code: |
+        d = df.index - pd.Timedelta(seconds=1)
+        wd = pd.Series(d.dayofweek, index=df.index)
+        ret2 = df.close / df.close.shift(2) - 1
+        a = (wd == 6) & ret2.notna() & (ret2 != 0)
+        b = ~a & ret2.notna() & (ret2 != 0)
+        signal = -np.sign(ret2)
+    why_no_lookahead: The 2-day return uses closes up to and including the current bar; the weekday comes from its timestamp.
+    how_it_trades: At Sunday's close, take a position against the weekend move and close it at Monday's close.
+  - id: pre_month_end_redemption_selling
+    belief: Before month end, funds and treasuries raise cash for redemptions, payroll and reporting, which weighs on prices in the week before the turn of the month (the already-tried inflow window comes after this one).
+    claim:
+      when: the bar 5 days before the last day of the month (one per month)
+      then: the next 3-day return is negative, net of cost
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.002
+      code: |
+        d = df.index - pd.Timedelta(seconds=1)
+        day = pd.Series(d.day, index=df.index)
+        dim = pd.Series(d.days_in_month, index=df.index)
+        a = spaced((dim - day) == 5, 20)
+        b = ~a
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: The day of the month and the days in the month come from the bar's own date.
+    how_it_trades: Short from the close 5 days before month end until the close 2 days before month end.
+  - id: month_end_rebalance_reversal
+    belief: Multi-asset and crypto index funds rebalance at month end, selling what rallied over the month and buying what fell, so the month's performance predicts the opposite move across the turn of the month.
+    claim:
+      when: the bar 2 days before the last day of the month
+      then: the next 4-day return is inversely ranked to the prior ~month return
+      compared_to: rank correlation within those bars
+      measure: rank_corr
+      horizon_bars: 4
+      direction: negative
+      min_effect: -0.15
+      code: |
+        d = df.index - pd.Timedelta(seconds=1)
+        day = pd.Series(d.day, index=df.index)
+        dim = pd.Series(d.days_in_month, index=df.index)
+        feature = df.close / df.close.shift(25) - 1
+        a = ((dim - day) == 2) & feature.notna()
+        b = ~a
+        signal = -np.sign(feature)
+    why_no_lookahead: The 25-day return uses closes up to the current bar; the calendar fields come from its date.
+    how_it_trades: Two days before month end, go against the month's move and hold 4 days.
+  - id: mid_month_payday_inflow
+    belief: Semi-monthly salaries paid on the 15th and DCA plans scheduled mid-month bring retail buying around the 15th, separate from the turn-of-month window.
+    claim:
+      when: the bar covering the 14th of the month (one per month)
+      then: the next 3-day return is positive, net of cost
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.002
+      code: |
+        d = df.index - pd.Timedelta(seconds=1)
+        day = pd.Series(d.day, index=df.index)
+        a = spaced(day == 14, 20)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The day of the month comes from the bar's own date.
+    how_it_trades: Buy at the close of the 14th and sell at the close of the 17th.
+  - id: monthly_expiry_hedge_unwind
+    belief: Into the monthly Deribit expiry (last Friday, 08:00 UTC), dealer delta hedging pushes price in the direction of the prior week's move; after expiry those hedges unwind, so the pre-expiry week's move reverts.
+    claim:
+      when: bars covering the last Friday of the month, with the signal against the prior 5-day return
+      then: the next 5-day return moves against the pre-expiry move
+      compared_to: all other bars, using the same 5-day reversal signal
+      measure: mean_diff
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.005
+      code: |
+        d = df.index - pd.Timedelta(seconds=1)
+        day = pd.Series(d.day, index=df.index)
+        wd = pd.Series(d.dayofweek, index=df.index)
+        dim = pd.Series(d.days_in_month, index=df.index)
+        r5 = df.close / df.close.shift(5) - 1
+        a = (wd == 4) & ((day + 7) > dim) & r5.notna() & (r5 != 0)
+        b = ~a & r5.notna() & (r5 != 0)
+        signal = -np.sign(r5)
+    why_no_lookahead: The expiry day is a pure calendar rule and the 5-day return uses closes up to the current bar.
+    how_it_trades: At the close of the last Friday of the month, fade the prior week's move and hold 5 days.
+  - id: q4_seasonal_strength
+    belief: Year-end performance chasing by funds, bonus season inflows and the historical "Uptober to December" pattern make daily returns in October to December higher than in the rest of the year.
+    claim:
+      when: bars in October, November or December
+      then: the next 1-day return is higher
+      compared_to: bars in all other months
+      measure: mean_diff
+      horizon_bars: 1
+      direction: positive
+      min_effect: 0.002
+      code: |
+        d = df.index - pd.Timedelta(seconds=1)
+        month = pd.Series(d.month, index=df.index)
+        a = month.isin([10, 11, 12])
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The month comes from the bar's own date.
+    how_it_trades: Hold long through Q4 and stay flat (or reduce exposure) for the rest of the year.
+notes: >
+  The calendar fields are computed from (index - 1 second), so that a daily bar stamped at its 00:00 UTC close is assigned to the day it covers. If the judge's index is the bar's open time instead, every calendar rule shifts by one day and the code should use the index directly.
+  I did not repeat or re-parametrize the already-tried turn-of-month long (last day + 3). The pre-month-end, rebalance-reversal and mid-month ideas target different days and different flows.
+  The Monday inflow, Friday de-risking and weekend drift ideas may contradict each other; the data decides.
+  Only 9 ideas: quarterly-expiry and December/January ideas give too few events per window (fewer than 30 bars), and volatility-only clock effects were already established on hourly bars.
+  The Q4 idea has no "when" bars in any window that does not contain Q4, so it may fail the 5-of-6 windows rule for structural reasons.

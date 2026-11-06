@@ -1,0 +1,41 @@
+claim: weekend_stretch_continuation
+symbol: ETHUSD
+bar_size: 1h
+fold: B
+cost_per_round_trip: 0.0015
+fold_totals:
+  net_return: 0.2346
+  sharpe: 0.69
+  max_drawdown: -0.0974
+  time_in_market: 0.027
+  trades: 39
+windows:
+- window: W1
+  net_return: 0.007
+  trades: 8
+  max_drawdown: -0.0818
+- window: W2
+  net_return: 0.0277
+  trades: 5
+  max_drawdown: -0.0556
+- window: W3
+  net_return: -0.0122
+  trades: 7
+  max_drawdown: -0.0974
+- window: W4
+  net_return: 0.0344
+  trades: 7
+  max_drawdown: -0.03
+- window: W5
+  net_return: 0.163
+  trades: 8
+  max_drawdown: -0.0703
+- window: W6
+  net_return: 0.0039
+  trades: 4
+  max_drawdown: -0.0485
+checks:
+  net_positive_in_5_of_6: true
+  sharpe_ge_1.0: false
+  max_drawdown_le_20%: true
+verdict: fail

@@ -1,0 +1,35 @@
+brief: n12_short_horizon_daily_reversion_1d.md
+source: analyst round 2
+ideas:
+- id: uptrend_vol_scaled_move_reverts_rank
+  belief: Inside a longer uptrend, short 2-to-5-day swings are noise around trend-following
+    holders, so the size of a 3-day move in volatility units ranks the next 3 days
+    inversely.
+  claim:
+    when: every daily bar whose close is above its 100-day simple mean (uptrend position)
+    then: the more negative the 3-day move in units of pre-move 30-day volatility,
+      the higher the next 3-day return
+    compared_to: not used (rank correlation on the uptrend bars)
+    measure: rank_corr
+    horizon_bars: 3
+    direction: positive
+    min_effect: 0.1
+    code: 'vol = ret.rolling(30).std().shift(3)
+
+      m3 = df.close.pct_change(3)
+
+      z = m3 / (vol * np.sqrt(3))
+
+      sma = df.close.rolling(100).mean()
+
+      a = (df.close > sma) & z.notna() & sma.notna()
+
+      b = ~a
+
+      feature = -z
+
+      '
+  why_no_lookahead: The volatility is shifted 3 bars and the 3-day return and the
+    100-day mean use only closes at or before the bar.
+  how_it_trades: In an uptrend, buy after vol-scaled 3-day dips and hold 3 days, sized
+    by -z; the profit step must still show it beats 0.15% per round trip.

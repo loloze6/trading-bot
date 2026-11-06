@@ -1,0 +1,238 @@
+brief: "n30_round_numbers_hourly_1h.md"
+ideas:
+  - id: round_level_magnet_rank
+    belief: "Resting orders at round prices pull the price toward the nearest round level, so the signed distance from it predicts a move back toward it."
+    claim:
+      when: "all bars with a defined 24 hour volatility"
+      then: "the 6 hour forward return moves against the signed distance of the close from the nearest round level, measured in volatility units"
+      compared_to: "not used by rank_corr"
+      measure: rank_corr
+      horizon_bars: 6
+      direction: negative
+      min_effect: 0.04
+      code: |
+        step = 10.0 ** np.floor(np.log10(df.close)) / 10
+        near = (df.close / step).round() * step
+        vol = df.close * ret.rolling(24).std()
+        feature = (df.close - near) / vol
+        a = feature.notna() & np.isfinite(feature)
+        b = ~a
+        signal = pd.Series(-np.sign(feature).fillna(1).replace(0, 1), index=df.index)
+    why_no_lookahead: "Uses the current close and the 24 bars that end at the current bar only."
+    how_it_trades: "Trade toward the nearest round level when the close sits more than one volatility unit away, and exit after 6 hours."
+
+  - id: round_level_resistance_below
+    belief: "Sell orders stacked at a round level cap the price just below it, and buy orders support the price just above it, so the price is pushed away from the level."
+    claim:
+      when: "the close is within 0.3 volatility units below the nearest round level, or within 0.3 units above it"
+      then: "the 4 hour forward return moves away from the level, down when below and up when above"
+      compared_to: "all other bars"
+      measure: mean_diff
+      horizon_bars: 4
+      direction: positive
+      min_effect: 0.0015
+      code: |
+        step = 10.0 ** np.floor(np.log10(df.close)) / 10
+        near = (df.close / step).round() * step
+        vol = df.close * ret.rolling(24).std()
+        dist = (df.close - near) / vol
+        a = (dist.abs() <= 0.3) & (dist != 0)
+        b = ~a
+        signal = pd.Series(np.where(dist < 0, -1, 1), index=df.index)
+    why_no_lookahead: "The distance uses the current close and past 24 bar volatility only."
+    how_it_trades: "Short just under a round level and buy just over it, holding 4 hours."
+
+  - id: half_level_cross_continuation
+    belief: "Crossing a major round level, the half step of the leading digit, triggers stops and breakout orders, so the move keeps going."
+    claim:
+      when: "the close crosses a major round level such as 5000 for BTC or 500 for ETH, one event per 12 bars"
+      then: "the 12 hour forward return continues in the direction of the cross, net of cost"
+      compared_to: "not used by net_return"
+      measure: net_return
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.001
+      code: |
+        step = 10.0 ** np.floor(np.log10(df.close)) / 2
+        k = np.floor(df.close / step)
+        kp = np.floor(df.close.shift(1) / step)
+        cross = (k != kp) & kp.notna()
+        a = spaced(cross, 12)
+        b = ~a
+        signal = pd.Series(np.where(k < kp, -1, 1), index=df.index)
+    why_no_lookahead: "The cross compares the current close with the prior close only."
+    how_it_trades: "Enter in the cross direction at the close of the crossing bar and hold 12 hours."
+
+  - id: fine_level_first_cross_fade
+    belief: "The first touch of a fine round level in two days is met by the resting orders there, so it is absorbed and the price falls back."
+    claim:
+      when: "the close crosses a fine round level such as 1000 for BTC or 100 for ETH for the first time in 48 bars"
+      then: "the 3 hour forward return goes against the cross direction more often than on other bars"
+      compared_to: "all other bars"
+      measure: hit_rate
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.03
+      code: |
+        step = 10.0 ** np.floor(np.log10(df.close)) / 10
+        k = np.floor(df.close / step)
+        kp = np.floor(df.close.shift(1) / step)
+        cross = (k != kp) & kp.notna()
+        a = spaced(cross, 48)
+        b = ~a
+        signal = pd.Series(np.where(k > kp, -1, 1), index=df.index)
+    why_no_lookahead: "The cross and the spacing use the current and prior closes only."
+    how_it_trades: "Fade the first cross of a fine round level in 48 hours and hold 3 hours."
+
+  - id: wick_rejection_at_level
+    belief: "A bar that pierces a round level intrabar but closes back on the original side shows orders absorbing at that level, and the rejection continues."
+    claim:
+      when: "the high reaches the round level above the prior close but the close stays below it, or the low reaches the level below and the close stays above it"
+      then: "the 4 hour forward return moves away from the rejected level"
+      compared_to: "all other bars"
+      measure: mean_diff
+      horizon_bars: 4
+      direction: positive
+      min_effect: 0.002
+      code: |
+        step = 10.0 ** np.floor(np.log10(df.close)) / 10
+        prev = df.close.shift(1)
+        up_lvl = (np.floor(prev / step) + 1) * step
+        dn_lvl = np.floor(prev / step) * step
+        rej_up = (df.high >= up_lvl) & (df.close < up_lvl)
+        rej_dn = (df.low <= dn_lvl) & (df.close > dn_lvl) & (prev > dn_lvl)
+        a = (rej_up ^ rej_dn) & prev.notna()
+        b = ~a
+        signal = pd.Series(np.where(rej_up, -1, 1), index=df.index)
+    why_no_lookahead: "Uses the prior close and the current bar's high, low and close only."
+    how_it_trades: "Short after an upper level rejection and buy after a lower level rejection, holding 4 hours."
+
+  - id: cross_volatility_burst
+    belief: "Crossing a round level releases clustered stop orders, so the next hours are more volatile than usual."
+    claim:
+      when: "the close crosses a fine round level, one event per 6 bars"
+      then: "the absolute 6 hour forward return is larger"
+      compared_to: "all other bars"
+      measure: abs_ratio
+      horizon_bars: 6
+      direction: above
+      min_effect: 1.15
+      code: |
+        step = 10.0 ** np.floor(np.log10(df.close)) / 10
+        k = np.floor(df.close / step)
+        kp = np.floor(df.close.shift(1) / step)
+        cross = (k != kp) & kp.notna()
+        a = spaced(cross, 6)
+        b = ~a
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: "The cross compares the current and prior closes only."
+    how_it_trades: "Buy volatility, as a straddle or a wide breakout bracket, after a round level cross."
+
+  - id: pinning_low_volatility
+    belief: "When the close sits right on a round level, the dense orders on both sides pin the price and damp the next hours' movement."
+    claim:
+      when: "the close is within 0.15 volatility units of the nearest round level"
+      then: "the absolute 6 hour forward return is smaller"
+      compared_to: "bars whose close is more than 0.5 volatility units from the nearest level"
+      measure: abs_ratio
+      horizon_bars: 6
+      direction: below
+      min_effect: 0.9
+      code: |
+        step = 10.0 ** np.floor(np.log10(df.close)) / 10
+        near = (df.close / step).round() * step
+        vol = df.close * ret.rolling(24).std()
+        dist = ((df.close - near) / vol).abs()
+        a = dist <= 0.15
+        b = dist > 0.5
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: "The distance uses the current close and past 24 bar volatility only."
+    how_it_trades: "Sell short range volatility, or stand aside from breakout trades, while the price is pinned at a level."
+
+  - id: day_open_magnet
+    belief: "The UTC day's open is a reference price that intraday traders anchor on, so the price drifts back toward it."
+    claim:
+      when: "all bars from 06 UTC to 20 UTC"
+      then: "the 4 hour forward return moves against the distance of the close from the UTC day open, in volatility units"
+      compared_to: "not used by rank_corr"
+      measure: rank_corr
+      horizon_bars: 4
+      direction: negative
+      min_effect: 0.04
+      code: |
+        day = df.index.normalize()
+        dopen = df.open.groupby(day).transform('first')
+        vol = df.close * ret.rolling(24).std()
+        feature = (df.close - dopen) / vol
+        a = (hour >= 6) & (hour <= 20) & feature.notna()
+        b = ~a
+        signal = pd.Series(-np.sign(feature).fillna(1).replace(0, 1), index=df.index)
+    why_no_lookahead: "The day open is the open of the day's first bar, known before every later bar of that day closes."
+    how_it_trades: "Trade back toward the UTC day open when the price is stretched from it, and exit after 4 hours."
+
+  - id: day_open_cross_continuation
+    belief: "Reclaiming or losing the day's open flips intraday traders' bias, so a cross of the day open continues."
+    claim:
+      when: "the close crosses the UTC day open after hour 2, one event per 6 bars"
+      then: "the 6 hour forward return continues in the cross direction"
+      compared_to: "all other bars"
+      measure: mean_diff
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.002
+      code: |
+        day = df.index.normalize()
+        dopen = df.open.groupby(day).transform('first')
+        side = np.sign(df.close - dopen)
+        sidep = np.sign(df.close.shift(1) - dopen)
+        cross = (side != sidep) & (side != 0) & (sidep != 0) & (hour >= 2)
+        a = spaced(cross, 6)
+        b = ~a
+        signal = pd.Series(np.where(side < 0, -1, 1), index=df.index)
+    why_no_lookahead: "Uses the day open, the prior close and the current close only, all within the same day."
+    how_it_trades: "Enter in the direction of the day open cross and hold 6 hours."
+
+  - id: volume_confirmed_level_cross
+    belief: "A round level cross on heavy volume means the resting orders were consumed and the move is real, while a light volume cross is a probe."
+    claim:
+      when: "a fine round level cross happens on a bar with volume above 1.5 times the median of the prior 24 bars"
+      then: "the 6 hour forward return continues in the cross direction"
+      compared_to: "fine round level crosses on volume below the prior 24 bar median"
+      measure: mean_diff
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.002
+      code: |
+        step = 10.0 ** np.floor(np.log10(df.close)) / 10
+        k = np.floor(df.close / step)
+        kp = np.floor(df.close.shift(1) / step)
+        cross = (k != kp) & kp.notna()
+        medv = df.volume.shift(1).rolling(24).median()
+        a = cross & (df.volume > 1.5 * medv)
+        b = cross & (df.volume < medv)
+        signal = pd.Series(np.where(k < kp, -1, 1), index=df.index)
+    why_no_lookahead: "The volume median uses the 24 bars before the current one, and the cross uses the current and prior closes."
+    how_it_trades: "Follow round level crosses only when volume confirms them, holding 6 hours."
+
+  - id: us_session_level_cross
+    belief: "Round level crosses during US hours, when larger directional flow trades, carry more information and continue more than crosses in the thin Asian night."
+    claim:
+      when: "a fine round level cross happens between 13 and 21 UTC on a weekday"
+      then: "the 6 hour forward return continues in the cross direction"
+      compared_to: "fine round level crosses at other hours or on weekends"
+      measure: mean_diff
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.0015
+      code: |
+        step = 10.0 ** np.floor(np.log10(df.close)) / 10
+        k = np.floor(df.close / step)
+        kp = np.floor(df.close.shift(1) / step)
+        cross = (k != kp) & kp.notna()
+        us = (hour >= 13) & (hour <= 21) & (dow <= 4)
+        a = cross & us
+        b = cross & ~us
+        signal = pd.Series(np.where(k < kp, -1, 1), index=df.index)
+    why_no_lookahead: "Uses the bar's own UTC time and the current and prior closes only."
+    how_it_trades: "Follow round level crosses only during US weekday hours, holding 6 hours."
+notes: "Round levels come from the price itself. The fine step is one tenth of the leading power of ten, for example 1000 for BTC near 60000 and 100 for ETH near 3000. The major step is half the leading power of ten, for example 5000 and 500. The UTC day open is the open of the first bar of each UTC date. Two pairs of claims contradict on purpose so the data can decide: continuation against fade after a cross, and magnet against push away near a level. Single bar fades on BTC failed before, so the fade claims here are limited to level specific events, either first touches or wick rejections."

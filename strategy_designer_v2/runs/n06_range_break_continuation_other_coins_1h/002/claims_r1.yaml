@@ -1,0 +1,29 @@
+brief: n06_range_break_continuation_other_coins_1h.md
+source: analyst round 1
+ideas:
+- id: weekly_momentum_daily_hold
+  belief: On SOL and AVAX, the direction of the past week persists into the next day,
+    because the slow trend-following flow behind the weekly-level result acts on the
+    weekly trend itself, not only at the moment a level breaks.
+  claim:
+    when: one bar per day, the 00:00 UTC bar, where a 168-bar return is defined
+    then: a position in the direction of the past 168-bar return, held 24 bars, earns
+      more than the round-trip cost
+    compared_to: zero, after the 0.15% round-trip cost
+    measure: net_return
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.003
+    code: 'r168 = df.close / df.close.shift(168) - 1
+
+      a = (hour == 0) & r168.notna()
+
+      b = ~a
+
+      signal = pd.Series(np.where(r168 >= 0, 1, -1), index=df.index)
+
+      '
+  why_no_lookahead: r168 uses only the closes at and 168 bars before the bar; the
+    selector uses only the bar's hour.
+  how_it_trades: Each day at 00:00 UTC, go long if the coin rose over the past 7 days
+    and short if it fell, and close 24 hours later.

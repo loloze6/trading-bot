@@ -1,0 +1,250 @@
+brief: n17_vol_channel_breakout_daily_1d.md
+ideas:
+  - id: keltner_up_break_long_net
+    belief: A daily close crossing above a 20-day EMA plus 2 ATR marks new demand that keeps pushing price for about two weeks, enough to pay the round trip.
+    claim:
+      when: the first close above EMA20 + 2*ATR20 after being at or below it, one event per 10 bars
+      then: the 10-day forward return of a long is positive after cost
+      compared_to: cost only (net_return)
+      measure: net_return
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.01
+      code: |
+        tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low - df.close.shift(1)).abs()], axis=1).max(axis=1)
+        atr = tr.rolling(20).mean()
+        mid = df.close.ewm(span=20, adjust=False).mean()
+        up = mid + 2 * atr
+        cross = (df.close > up) & (df.close.shift(1) <= up.shift(1))
+        a = spaced(cross, 10)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: EMA, ATR and the cross use closes, highs and lows at or before the bar's close.
+    how_it_trades: Buy at the close of the break bar, exit 10 days later.
+
+  - id: keltner_down_break_continuation
+    belief: A close below the lower volatility band starts forced selling and de-risking that keeps going, so returns after a downside break are worse than usual.
+    claim:
+      when: the first close below EMA20 - 2*ATR20 after being at or above it, one event per 10 bars
+      then: the 10-day forward return is lower (short side gains)
+      compared_to: all other bars
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.01
+      code: |
+        tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low - df.close.shift(1)).abs()], axis=1).max(axis=1)
+        atr = tr.rolling(20).mean()
+        mid = df.close.ewm(span=20, adjust=False).mean()
+        dn = mid - 2 * atr
+        cross = (df.close < dn) & (df.close.shift(1) >= dn.shift(1))
+        a = spaced(cross, 10)
+        b = ~a
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: The lower band and the cross use only data at or before the bar's close.
+    how_it_trades: Go flat or short at the close of the downside break, hold 10 days.
+
+  - id: deep_down_break_capitulation_bounce
+    belief: A close far below the channel (2.5 ATR under the EMA) is a liquidation flush, and price rebounds over the next days as forced sellers run out.
+    claim:
+      when: close below EMA20 - 2.5*ATR20, one event per 5 bars
+      then: the 5-day forward return of a long is positive after cost
+      compared_to: cost only (net_return)
+      measure: net_return
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.008
+      code: |
+        tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low - df.close.shift(1)).abs()], axis=1).max(axis=1)
+        atr = tr.rolling(20).mean()
+        mid = df.close.ewm(span=20, adjust=False).mean()
+        a = spaced(df.close < mid - 2.5 * atr, 5)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: Band and condition use only data at or before the bar's close.
+    how_it_trades: Buy the close of a deep break below the band, exit after 5 days.
+
+  - id: break_distance_dose_response
+    belief: The further a close sits above the upper band in ATR units, the stronger the demand behind it, so distance outside the band predicts the size of the follow-through.
+    claim:
+      when: every close above EMA20 + 2*ATR20
+      then: larger distance (close - EMA20)/ATR20 goes with larger 10-day forward return
+      compared_to: across the bars above the band (rank_corr)
+      measure: rank_corr
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.10
+      code: |
+        tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low - df.close.shift(1)).abs()], axis=1).max(axis=1)
+        atr = tr.rolling(20).mean()
+        mid = df.close.ewm(span=20, adjust=False).mean()
+        feature = (df.close - mid) / atr
+        a = df.close > mid + 2 * atr
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The distance uses the bar's own close and past-only EMA and ATR.
+    how_it_trades: Size a breakout long by how far the close sits outside the band.
+
+  - id: break_volatility_expansion
+    belief: A close outside the band, either side, marks a regime change that is followed by larger absolute moves, which is why a trailing exit must be wide.
+    claim:
+      when: the first close outside EMA20 +/- 2*ATR20, either side, one event per 5 bars
+      then: the absolute 5-day forward return is larger
+      compared_to: all other bars
+      measure: abs_ratio
+      horizon_bars: 5
+      direction: above
+      min_effect: 1.20
+      code: |
+        tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low - df.close.shift(1)).abs()], axis=1).max(axis=1)
+        atr = tr.rolling(20).mean()
+        mid = df.close.ewm(span=20, adjust=False).mean()
+        outside = (df.close > mid + 2 * atr) | (df.close < mid - 2 * atr)
+        cross = outside & ~outside.shift(1, fill_value=False)
+        a = spaced(cross, 5)
+        b = ~a
+        signal = np.sign(df.close - mid).replace(0, 1.0)
+    why_no_lookahead: The outside test and its prior-bar value use only data at or before the bar's close.
+    how_it_trades: Widen the trailing stop or cut size after a break, since moves get larger.
+
+  - id: trend_aligned_up_break
+    belief: Upside breaks inside a long uptrend carry real accumulation, while upside breaks below the 100-day mean are short-covering bursts that fade.
+    claim:
+      when: first close above EMA20 + 2*ATR20 while the close is above its 100-day SMA
+      then: the 10-day forward return is higher
+      compared_to: the same upside breaks while the close is at or below its 100-day SMA
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.015
+      code: |
+        tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low - df.close.shift(1)).abs()], axis=1).max(axis=1)
+        atr = tr.rolling(20).mean()
+        mid = df.close.ewm(span=20, adjust=False).mean()
+        up = mid + 2 * atr
+        cross = (df.close > up) & (df.close.shift(1) <= up.shift(1))
+        trend = df.close > df.close.rolling(100).mean()
+        a = cross & trend
+        b = cross & ~trend & df.close.rolling(100).mean().notna()
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The 100-day SMA and the cross use closes at or before the bar's close.
+    how_it_trades: Take upside channel breaks only when the close is above its 100-day mean.
+
+  - id: trailing_mid_exit_information
+    belief: After an upside break, a close back under the channel mean signals the breakout has failed, so the trailing exit at the mean removes the bad part of the trade.
+    claim:
+      when: bars within 10 days after an upside break where the close is still above EMA20
+      then: the 5-day forward return is higher
+      compared_to: bars within 10 days after an upside break where the close has fallen to or below EMA20
+      measure: mean_diff
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.01
+      code: |
+        tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low - df.close.shift(1)).abs()], axis=1).max(axis=1)
+        atr = tr.rolling(20).mean()
+        mid = df.close.ewm(span=20, adjust=False).mean()
+        up = mid + 2 * atr
+        cross = (df.close > up) & (df.close.shift(1) <= up.shift(1))
+        window = cross.astype(float).rolling(10).max() == 1
+        a = window & (df.close > mid)
+        b = window & (df.close <= mid)
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The break window looks back 10 bars and the mean test uses the current close.
+    how_it_trades: Hold a breakout long while the close stays above EMA20, exit on the first close below it.
+
+  - id: grind_vs_shock_break
+    belief: A break reached by a normal-range bar reflects steady flow that persists, while a break made by one outsized shock bar is news overreaction that tends to fade.
+    claim:
+      when: upside break bars whose true range is below 1.5x the prior ATR20
+      then: the 10-day forward return is higher
+      compared_to: upside break bars whose true range is at least 1.5x the prior ATR20
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.01
+      code: |
+        tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low - df.close.shift(1)).abs()], axis=1).max(axis=1)
+        atr = tr.rolling(20).mean()
+        mid = df.close.ewm(span=20, adjust=False).mean()
+        up = mid + 2 * atr
+        cross = (df.close > up) & (df.close.shift(1) <= up.shift(1))
+        shock = tr >= 1.5 * atr.shift(1)
+        a = cross & ~shock
+        b = cross & shock
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The bar's true range is known at its close and the ATR is from prior bars.
+    how_it_trades: Take upside breaks made by normal-range bars, skip shock-bar breaks.
+
+  - id: volume_confirmed_break
+    belief: A channel break on heavy volume reflects broad participation and continues, while a break on thin volume is easily reversed.
+    claim:
+      when: upside break bars with volume above 1.5x the prior 20-day median volume
+      then: the 10-day forward return is higher
+      compared_to: upside break bars without that volume
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.01
+      code: |
+        tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low - df.close.shift(1)).abs()], axis=1).max(axis=1)
+        atr = tr.rolling(20).mean()
+        mid = df.close.ewm(span=20, adjust=False).mean()
+        up = mid + 2 * atr
+        cross = (df.close > up) & (df.close.shift(1) <= up.shift(1))
+        heavy = df.volume > 1.5 * df.volume.rolling(20).median().shift(1)
+        a = cross & heavy
+        b = cross & ~heavy
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The bar's volume is known at its close and the median uses prior bars only.
+    how_it_trades: Take upside breaks only when the break bar's volume confirms.
+
+  - id: weekday_vs_weekend_break
+    belief: Weekend daily bars trade in thin books without institutional flow, so channel breaks closed on Saturday or Sunday are less reliable than weekday breaks.
+    claim:
+      when: upside break bars whose close falls Monday to Friday (UTC)
+      then: the 10-day forward return is higher
+      compared_to: upside break bars whose close falls on Saturday or Sunday (UTC)
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.01
+      code: |
+        tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low - df.close.shift(1)).abs()], axis=1).max(axis=1)
+        atr = tr.rolling(20).mean()
+        mid = df.close.ewm(span=20, adjust=False).mean()
+        up = mid + 2 * atr
+        cross = (df.close > up) & (df.close.shift(1) <= up.shift(1))
+        a = cross & (dow < 5)
+        b = cross & (dow >= 5)
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The weekday is the bar's own timestamp and the break uses past and current data.
+    how_it_trades: Act on weekday breaks only, or wait for a weekday confirmation of a weekend break.
+
+  - id: slow_wide_channel_long_net
+    belief: A break of a slow, wide channel (SMA50 plus 3 ATR50) marks a multi-week regime shift driven by slow capital, which pays more over a month than a fast channel does.
+    claim:
+      when: the first close above SMA50 + 3*ATR50 after being at or below it, one event per 20 bars
+      then: the 20-day forward return of a long is positive after cost
+      compared_to: cost only (net_return)
+      measure: net_return
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.02
+      code: |
+        tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low - df.close.shift(1)).abs()], axis=1).max(axis=1)
+        atr = tr.rolling(50).mean()
+        mid = df.close.rolling(50).mean()
+        up = mid + 3 * atr
+        cross = (df.close > up) & (df.close.shift(1) <= up.shift(1))
+        a = spaced(cross, 20)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The SMA50 and ATR50 band and the cross use data at or before the bar's close.
+    how_it_trades: Buy the close of a slow-channel break, exit after 20 days.
+notes: >
+  ATR is the 20-bar (or 50-bar) mean of true range. A trailing-band exit is path dependent and cannot be written as one fixed-horizon claim. Fixed horizons (5, 10, 20) stand in for it, and trailing_mid_exit_information tests directly whether the EMA20 trailing exit carries information.
+  The fast and slow channels (EMA20 +/- 2 ATR20 and SMA50 + 3 ATR50) cover the brief's request to vary band width, mean and horizon. They rest on different holding-period mechanisms, not just different parameters.
+  Compression-then-breakout is left out because it was already tried on ETH.
+  keltner_down_break_continuation and deep_down_break_capitulation_bounce contradict each other on purpose.
+  The filtered break claims (trend, shock, volume, weekday) split a small set of break events, so on some folds a or b may fall under 30 bars.

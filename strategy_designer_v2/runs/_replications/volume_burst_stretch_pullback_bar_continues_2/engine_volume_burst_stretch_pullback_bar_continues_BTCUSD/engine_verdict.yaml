@@ -1,0 +1,147 @@
+claim: volume_burst_stretch_pullback_bar_continues
+symbol: BTCUSD
+bar_size: 1h
+fold: C
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 221
+verdict: pass
+passed_as: vol_target
+fold_totals: &id001
+  net_return: 0.3668
+  median_window_sharpe: 1.77765
+  worst_window_drawdown: 0.073
+  trades: 205
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals:
+    net_return: 1.3845
+    median_window_sharpe: 1.52095
+    worst_window_drawdown: 0.2435
+    trades: 198
+  windows:
+  - window: W1
+    net_return: 0.2276
+    trades: 22
+    sharpe: 2.301
+    max_drawdown: 0.1334
+    exposure_pct: 8.4836
+    cost_drag_pct: 8.7684
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues_2/engine_volume_burst_stretch_pullback_bar_continues_BTCUSD/results/full_size/20261106T031006Z_f1abed77
+    seconds: 31
+  - window: W2
+    net_return: 0.111
+    trades: 35
+    sharpe: 1.2444
+    max_drawdown: 0.1185
+    exposure_pct: 13.9344
+    cost_drag_pct: 24.5294
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues_2/engine_volume_burst_stretch_pullback_bar_continues_BTCUSD/results/full_size/20261106T031031Z_f1abed77
+    seconds: 25
+  - window: W3
+    net_return: 0.1919
+    trades: 39
+    sharpe: 1.7975
+    max_drawdown: 0.1353
+    exposure_pct: 15.5307
+    cost_drag_pct: 18.2944
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues_2/engine_volume_burst_stretch_pullback_bar_continues_BTCUSD/results/full_size/20261106T031058Z_f1abed77
+    seconds: 28
+  - window: W4
+    net_return: 0.1841
+    trades: 38
+    sharpe: 1.19
+    max_drawdown: 0.2435
+    exposure_pct: 14.876
+    cost_drag_pct: 17.4347
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues_2/engine_volume_burst_stretch_pullback_bar_continues_BTCUSD/results/full_size/20261106T031124Z_f1abed77
+    seconds: 25
+  - window: W5
+    net_return: 0.2704
+    trades: 29
+    sharpe: 3.4746
+    max_drawdown: 0.0601
+    exposure_pct: 11.8893
+    cost_drag_pct: 9.9755
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues_2/engine_volume_burst_stretch_pullback_bar_continues_BTCUSD/results/full_size/20261106T031151Z_f1abed77
+    seconds: 27
+  - window: W6
+    net_return: -0.0249
+    trades: 35
+    sharpe: -0.2945
+    max_drawdown: 0.1572
+    exposure_pct: 13.0981
+    cost_drag_pct: 468.9192
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues_2/engine_volume_burst_stretch_pullback_bar_continues_BTCUSD/results/full_size/20261106T031219Z_f1abed77
+    seconds: 28
+  checks:
+    net_positive_in_5_of_6: true
+    median_window_sharpe_ge_1.0: true
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: 0.0557
+    trades: 20
+    sharpe: 3.0629
+    max_drawdown: 0.0188
+    exposure_pct: 8.4836
+    cost_drag_pct: 7.2742
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues_2/engine_volume_burst_stretch_pullback_bar_continues_BTCUSD/results/vol_target/20261106T031250Z_1c204fed
+    seconds: 32
+  - window: W2
+    net_return: 0.0602
+    trades: 41
+    sharpe: 1.2814
+    max_drawdown: 0.073
+    exposure_pct: 13.9344
+    cost_drag_pct: 22.9135
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues_2/engine_volume_burst_stretch_pullback_bar_continues_BTCUSD/results/vol_target/20261106T031316Z_1c204fed
+    seconds: 26
+  - window: W3
+    net_return: 0.0745
+    trades: 39
+    sharpe: 2.2739
+    max_drawdown: 0.0361
+    exposure_pct: 15.5307
+    cost_drag_pct: 13.4511
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues_2/engine_volume_burst_stretch_pullback_bar_continues_BTCUSD/results/vol_target/20261106T031344Z_1c204fed
+    seconds: 28
+  - window: W4
+    net_return: 0.0349
+    trades: 40
+    sharpe: 0.7585
+    max_drawdown: 0.0616
+    exposure_pct: 14.876
+    cost_drag_pct: 27.9443
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues_2/engine_volume_burst_stretch_pullback_bar_continues_BTCUSD/results/vol_target/20261106T031409Z_1c204fed
+    seconds: 26
+  - window: W5
+    net_return: 0.1017
+    trades: 32
+    sharpe: 3.3606
+    max_drawdown: 0.0313
+    exposure_pct: 11.8893
+    cost_drag_pct: 11.8978
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues_2/engine_volume_burst_stretch_pullback_bar_continues_BTCUSD/results/vol_target/20261106T031437Z_1c204fed
+    seconds: 28
+  - window: W6
+    net_return: -0.0032
+    trades: 33
+    sharpe: -0.2054
+    max_drawdown: 0.0229
+    exposure_pct: 13.0981
+    cost_drag_pct: 166.7672
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues_2/engine_volume_burst_stretch_pullback_bar_continues_BTCUSD/results/vol_target/20261106T031505Z_1c204fed
+    seconds: 28
+  checks:
+    net_positive_in_5_of_6: true
+    median_window_sharpe_ge_1.0: true
+    worst_window_drawdown_le_20%: true
+  verdict: pass

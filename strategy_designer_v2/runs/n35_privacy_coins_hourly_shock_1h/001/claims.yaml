@@ -1,0 +1,203 @@
+brief: n35_privacy_coins_hourly_shock_1h.md
+ideas:
+  - id: volume_backed_shock_continues
+    belief: On thin privacy coins, a large hourly move on heavy volume reflects news or informed flow that is not fully priced in one bar, so the move keeps going for several hours.
+    claim:
+      when: hourly return beyond 3 times the prior week's hourly std, with volume above 3 times the prior week's median volume
+      then: the return over the next 6 hours is in the shock's direction and covers cost
+      compared_to: zero after the 0.15% round trip
+      measure: net_return
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.002
+      code: |
+        sig = ret.rolling(168).std().shift(1)
+        volr = df.volume / df.volume.rolling(168).median().shift(1)
+        a = spaced((ret.abs() > 3 * sig) & (volr > 3), 6)
+        b = ~a
+        signal = np.sign(ret).replace(0, 1)
+    why_no_lookahead: the std and median use bars before the current one, and the shock bar's return and volume are known at its close.
+    how_it_trades: At the shock bar's close, enter in the shock's direction and exit 6 hours later.
+
+  - id: thin_volume_shock_reverts
+    belief: A large hourly move on below-normal volume is a liquidity hole in a thin order book rather than information, so it gives back part of the move.
+    claim:
+      when: hourly return beyond 2.5 times the prior week's std, with volume below the prior week's median
+      then: the next 4 hours move against the shock
+      compared_to: all other bars, using the same reversal signal
+      measure: mean_diff
+      horizon_bars: 4
+      direction: positive
+      min_effect: 0.004
+      code: |
+        sig = ret.rolling(168).std().shift(1)
+        volr = df.volume / df.volume.rolling(168).median().shift(1)
+        a = spaced((ret.abs() > 2.5 * sig) & (volr < 1.0), 4)
+        b = ~a
+        signal = -np.sign(ret).replace(0, 1)
+    why_no_lookahead: the thresholds come from prior bars, and the bar's own return and volume are complete at its close.
+    how_it_trades: Fade the low-volume shock at the close and exit after 4 hours.
+
+  - id: shock_raises_volatility
+    belief: Whatever its direction, a volume-backed shock on XMR or ZEC opens a stretch of higher volatility, as news is digested over several hours.
+    claim:
+      when: hourly return beyond 3 times the prior week's std, with volume above 2 times the prior week's median
+      then: the absolute move over the next 6 hours is larger
+      compared_to: all other bars
+      measure: abs_ratio
+      horizon_bars: 6
+      direction: above
+      min_effect: 1.6
+      code: |
+        sig = ret.rolling(168).std().shift(1)
+        volr = df.volume / df.volume.rolling(168).median().shift(1)
+        a = spaced((ret.abs() > 3 * sig) & (volr > 2), 6)
+        b = ~a
+        signal = np.sign(ret).replace(0, 1)
+    why_no_lookahead: only the current bar and prior rolling statistics are used.
+    how_it_trades: Used as a filter that cuts position size, or lets volatility-breakout entries through, for 6 hours after a shock.
+
+  - id: wick_rejection_reverses_spike
+    belief: A wide-range hourly bar that closes far from its extreme shows that the spike was absorbed by resting liquidity, and price drifts toward the closing side.
+    claim:
+      when: bar range above 3 times the prior week's mean range, with the close in the top or bottom 25% of the bar opposite a long wick
+      then: the next 6 hours move in the direction of the close's position (up after a long lower wick, down after a long upper wick)
+      compared_to: all other bars
+      measure: mean_diff
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.003
+      code: |
+        rng = (df.high - df.low)
+        mr = (rng / df.close).rolling(168).mean().shift(1)
+        pos = (df.close - df.low) / rng.replace(0, np.nan)
+        big = (rng / df.close) > 3 * mr
+        up = big & (pos > 0.75) & ((df[['open','close']].min(axis=1) - df.low) > 0.5 * rng)
+        dn = big & (pos < 0.25) & ((df.high - df[['open','close']].max(axis=1)) > 0.5 * rng)
+        a = spaced(up | dn, 6)
+        b = ~a
+        signal = pd.Series(np.where(up, 1, -1), index=df.index)
+    why_no_lookahead: high, low, open and close of the bar are final at its close, and the mean range uses prior bars.
+    how_it_trades: Enter toward the wick-rejection side at the close and hold for 6 hours.
+
+  - id: multi_hour_overextension_reverts
+    belief: A run of several hours that adds up to an extreme move on a thin coin exhausts the marginal buyers or sellers and partly reverses over the next half day.
+    claim:
+      when: the 6-hour cumulative return exceeds 3 times the prior month's std of 6-hour returns
+      then: the next 12 hours move against the run
+      compared_to: all other bars
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.005
+      code: |
+        r6 = df.close.pct_change(6)
+        s6 = r6.rolling(720).std().shift(6)
+        a = spaced(r6.abs() > 3 * s6, 12)
+        b = ~a
+        signal = -np.sign(r6).replace(0, 1)
+    why_no_lookahead: the 6-hour return ends at the current close, and its std is shifted to stop before the current window.
+    how_it_trades: Fade the 6-hour run at the close and exit 12 hours later.
+
+  - id: compressed_regime_shock_breakout
+    belief: A shock that arrives after a quiet, compressed period marks a regime change (news on a sleeping coin) and trends, unlike shocks inside already noisy periods.
+    claim:
+      when: hourly return beyond 3 times the prior week's std, while the prior 72-hour volatility is in the bottom third of its past 30 days
+      then: the next 12 hours continue in the shock's direction and cover cost
+      compared_to: zero after the 0.15% round trip
+      measure: net_return
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.003
+      code: |
+        sig = ret.rolling(168).std().shift(1)
+        v72 = ret.rolling(72).std().shift(1)
+        q = v72.rolling(720).quantile(0.33)
+        a = spaced((ret.abs() > 3 * sig) & (v72 < q), 12)
+        b = ~a
+        signal = np.sign(ret).replace(0, 1)
+    why_no_lookahead: the regime volatility and its quantile use only bars before the shock bar.
+    how_it_trades: Enter in the shock's direction at the close when the prior regime was quiet, and exit after 12 hours.
+
+  - id: off_hours_shock_reverts_more
+    belief: Shocks during the Asian night and at weekends, when Kraken depth is thinnest, are more often order-book accidents and revert more than shocks during EU/US hours.
+    claim:
+      when: shock bars (return beyond 2.5 times the prior week's std) at UTC hours 0-6 or on Saturday or Sunday
+      then: the next 4 hours move against the shock by more
+      compared_to: shock bars at weekday UTC hours 12-20
+      measure: mean_diff
+      horizon_bars: 4
+      direction: positive
+      min_effect: 0.003
+      code: |
+        sig = ret.rolling(168).std().shift(1)
+        shock = spaced(ret.abs() > 2.5 * sig, 4)
+        off = (hour <= 6) | (dow >= 5)
+        on = (hour >= 12) & (hour <= 20) & (dow < 5)
+        a = shock & off
+        b = shock & on
+        signal = -np.sign(ret).replace(0, 1)
+    why_no_lookahead: hour and weekday are known at the bar, and the std uses prior bars.
+    how_it_trades: Fade off-hours shocks only, exiting after 4 hours.
+
+  - id: shock_volume_intensity_ranks_continuation
+    belief: The heavier the volume behind a shock, the more it continues, so continuation is graded by volume rather than switched on at a threshold.
+    claim:
+      when: shock bars (return beyond 2 times the prior week's std)
+      then: forward 6-hour return rises with the shock's direction times log volume ratio
+      compared_to: across shock bars (rank correlation)
+      measure: rank_corr
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.08
+      code: |
+        sig = ret.rolling(168).std().shift(1)
+        volr = df.volume / df.volume.rolling(168).median().shift(1)
+        a = spaced(ret.abs() > 2 * sig, 6)
+        b = ~a
+        feature = np.sign(ret) * np.log(volr.clip(lower=1e-6))
+    why_no_lookahead: the volume ratio uses a prior-bars median, and the shock's sign is known at the close.
+    how_it_trades: Size the position in the shock's direction by its volume ratio, and fade low-volume shocks.
+
+  - id: confirmed_shock_continues
+    belief: A shock followed by a next hour that extends in the same direction shows the move is being followed rather than faded, and the trend carries on.
+    claim:
+      when: the prior bar was a shock (beyond 3 times the week's std) and the current bar's return has the same sign
+      then: the next 12 hours continue in that direction
+      compared_to: all other bars
+      measure: hit_rate
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.06
+      code: |
+        sig = ret.rolling(168).std().shift(1)
+        shock_prev = (ret.abs() > 3 * sig).shift(1, fill_value=False)
+        same = np.sign(ret) == np.sign(ret.shift(1))
+        a = spaced(shock_prev & same & (ret != 0), 12)
+        b = ~a
+        signal = np.sign(ret.shift(1)).fillna(1).replace(0, 1)
+    why_no_lookahead: uses the prior bar's shock and the current bar's return, both closed.
+    how_it_trades: Enter on the close of the confirming bar in the shock's direction and hold for 12 hours.
+
+  - id: weekly_extreme_break_with_volume
+    belief: A shock that breaks the prior week's high or low on heavy volume clears the stops clustered there and starts a day-long trend on a thin coin.
+    claim:
+      when: close above the prior 168-hour high (or below the low), with hourly volume above 2.5 times the week's median
+      then: the next 24 hours continue in the break's direction and cover cost
+      compared_to: zero after the 0.15% round trip
+      measure: net_return
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.004
+      code: |
+        hi = df.high.rolling(168).max().shift(1)
+        lo = df.low.rolling(168).min().shift(1)
+        volr = df.volume / df.volume.rolling(168).median().shift(1)
+        up = (df.close > hi) & (volr > 2.5)
+        dn = (df.close < lo) & (volr > 2.5)
+        a = spaced(up | dn, 24)
+        b = ~a
+        signal = pd.Series(np.where(up, 1, -1), index=df.index)
+    why_no_lookahead: the prior high, low and median are shifted one bar, and the current close is known.
+    how_it_trades: Enter in the break's direction at the close and exit 24 hours later.
+notes: The ideas cover continuation (1, 6, 8, 9, 10), reversion (2, 5, 7) and volatility only (3), and some deliberately contradict each other. Idea 1 retests the pattern found on XRP, ETH and BTC as a plain volume-backed shock, not the already-tried stretch-plus-pullback setup. Idea 9 tests the opposite of that pullback setup (a confirming bar instead of a pullback). Thresholds were set expecting larger hourly moves on XMR and ZEC than on the large caps.

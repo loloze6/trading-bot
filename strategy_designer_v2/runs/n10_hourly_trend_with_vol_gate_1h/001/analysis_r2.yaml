@@ -1,0 +1,37 @@
+run: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001
+observations:
+  - The 72h Donchian breakout held on both coins: net_return was 0.0036 on BTC and 0.0102 on ETH against a 0.002 bar, and the sign was positive in 5 of 6 windows on each.
+  - The breakout passed profit only at vol_target sizing (BTC +32.0%, worst drawdown 15.9%; ETH +66.1%, worst drawdown 9.0%); full size failed on drawdown (BTC 51.9%, ETH 44.9%).
+  - BTC window 6 was the breakout's one bad window in both the judge (-0.0109) and the engine (-13.6% at vol_target, Sharpe -3.24), so the BTC edge leans on 5 windows.
+  - Plain 24h time-series momentum sampled at midnight lost after cost on both coins (BTC -0.0038, ETH -0.0024), with 4 of 6 windows negative on each, so the hourly edge is in breakouts and not in raw return sign.
+  - The 12/48 EMA cross held 48 bars lost on both coins (BTC -0.0030, ETH -0.0053), so a smoothed trend start pays less than a price-level break.
+  - The breakout aligned with the weekly slope nearly held: the mean_diff was large on both coins (BTC 0.0094, ETH 0.0136), but BTC was positive in only 3 of 6 windows (-0.0089, +0.0013, -0.0013 in W4-W6).
+  - The low-volatility squeeze filter did not improve the breakout: BTC 0.0031 with 3 of 6 windows negative, against 0.0036 for the ungated 72h breakout, so quiet-regime gating adds nothing.
+  - All three gates on 24h momentum split the windows: high volatility, efficiency ratio and volume regime each had whole-fold mean_diff within ±0.0007 on BTC, with windows swinging from about -0.01 to +0.014.
+  - Pullback-within-trend nearly held: net_return was 0.0060 on BTC and 0.0031 on ETH, but W1 and W6 were negative on both coins, which leaves 4 of 6 windows.
+next_claim:
+  id: breakout_volume_confirmed
+  belief: A 72h breakout printed on a bar with heavy volume relative to the past week reflects real participation and carries further over the next day than a breakout on ordinary volume, which more often fails back into the range.
+  claim:
+    when: first 72h high/low close-breakout in 24 bars whose bar volume is more than 2x the prior 168-bar median hourly volume
+    then: the next 24 bars move further in the breakout direction
+    compared_to: the same 72h breakouts on bars with volume at or below 2x the prior 168-bar median
+    measure: mean_diff
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.003
+    code: |
+      hi = df.high.rolling(72).max().shift(1)
+      lo = df.low.rolling(72).min().shift(1)
+      up = df.close > hi
+      dn = df.close < lo
+      ev = spaced(up | dn, 24)
+      vmed = df.volume.rolling(168).median().shift(1)
+      rv = df.volume / vmed
+      ok = ev & vmed.notna()
+      a = ok & (rv > 2.0)
+      b = ok & (rv <= 2.0)
+      signal = pd.Series(np.where(up, 1, -1), index=df.index)
+  why_no_lookahead: The channel and the volume median use only prior bars (shift(1)), and the breakout bar's own volume is known at its close.
+  how_it_trades: Enter in the breakout direction at the close of a high-volume 72h breakout bar, hold 24 bars, and skip breakouts on ordinary volume.
+why: The 72h breakout is the only rule that paid, and its gates on trend slope and low volatility did not hold, so a volume gate on the breakout bar itself is the untried gate. The 0.003 bar is half the gap the slope gate showed on BTC (0.0094), enough to exceed noise and add to the cost-covering base rule.

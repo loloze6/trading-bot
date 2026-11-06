@@ -1,0 +1,577 @@
+brief: n02_alt_daily_trend_other_categories_1d.md
+fold: C
+symbols:
+- LTCUSD
+- XMRUSD
+bar_size: 1d
+claims:
+- id: tsmom_horizon_agreement
+  belief: When short, medium and long time-series momentum on LTC or XMR all point
+    the same way, the trend is broad and keeps going long enough to pay cost.
+  measure: net_return
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.02
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.004319117821387771
+      n_a: 344
+      n_b: 344
+      windows:
+      - -0.2956205207571602
+      - 0.0440694901147273
+      - 0.05570861518101485
+      - -0.1431577706398423
+      - 0.21278070618418393
+      - -0.15121466171870468
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.05935519035193134
+      n_a: 340
+      n_b: 340
+      windows:
+      - -0.361942801955551
+      - 0.1187099018157327
+      - -0.024246099580009933
+      - -0.15495083310358804
+      - 0.0856259323133969
+      - -0.23840215133991577
+      verdict: fail
+      why: null
+  code: 'lc = np.log(df.close)
+
+    m20 = lc - lc.shift(20)
+
+    m60 = lc - lc.shift(60)
+
+    m120 = lc - lc.shift(120)
+
+    up = (m20 > 0) & (m60 > 0) & (m120 > 0)
+
+    dn = (m20 < 0) & (m60 < 0) & (m120 < 0)
+
+    a = up | dn
+
+    b = ~a
+
+    signal = pd.Series(np.where(up, 1, -1), index=df.index)
+
+    '
+- id: breakout_volume_confirmation
+  belief: A 20-day closing high on heavy volume reflects real new demand and continues,
+    while the same breakout on thin volume is noise.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.02
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.059294364716055564
+      n_a: 49
+      n_b: 14
+      windows:
+      - -0.05167731441162179
+      - 0.08287547111491878
+      - 0.003942312340245187
+      - 0.15629695741309121
+      - null
+      - -0.0472546912914569
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 0.022829343845981172
+      n_a: 41
+      n_b: 26
+      windows:
+      - -0.17721014061570545
+      - 0.08993416214283714
+      - 0.008054234478635097
+      - 0.028979616363254947
+      - -0.0765157781530389
+      - 0.09119904125905205
+      verdict: fail
+      why: null
+  code: 'hi = df.close.rolling(20).max().shift(1)
+
+    brk = df.close > hi
+
+    vr = df.volume / df.volume.rolling(50).median().shift(1)
+
+    a = brk & (vr >= 1.5)
+
+    b = brk & (vr < 1.0)
+
+    signal = pd.Series(1, index=df.index)
+
+    '
+- id: vol_compression_precedes_expansion
+  belief: Long quiet stretches in these less-crowded coins end in large directional
+    moves, which is the raw material a trend rule needs.
+  measure: abs_ratio
+  horizon_bars: 20
+  direction: above
+  min_effect: 1.15
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.9742211501862672
+      n_a: 144
+      n_b: 586
+      windows:
+      - 0.9593823353993632
+      - 1.4679812900676803
+      - 0.8617511223992599
+      - 1.3592380357072706
+      - 0.5493834592853051
+      - 1.2424123971289616
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 1.1157908098322014
+      n_a: 118
+      n_b: 612
+      windows:
+      - 1.7984404330718842
+      - 1.5451318147068251
+      - 1.7179568764008475
+      - 0.33319704093861136
+      - 0.7948150782277377
+      - 1.3836137410961198
+      verdict: fail
+      why: null
+  code: 'rv = ret.rolling(20).std()
+
+    pct = rv.rolling(365).rank(pct=True)
+
+    a = pct <= 0.2
+
+    b = ~a
+
+    '
+- id: trend_linearity_strength
+  belief: A trend that climbs or falls in a straight line, with a high R-squared of
+    log price on time, is driven by steady flow and persists more than an erratic
+    move of the same size.
+  measure: rank_corr
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.06
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.15668539004808205
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.5766913545079049
+      - -0.5263712696739485
+      - -0.08454682643071804
+      - -0.523404687711692
+      - 0.2536406924833372
+      - -0.472249809753518
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.18657277753447174
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.35545506338128474
+      - -0.04384692404030124
+      - 0.21402406779223795
+      - -0.609998645170031
+      - -0.6567059126762519
+      - -0.4878758174149696
+      verdict: fail
+      why: null
+  code: 'lc = np.log(df.close)
+
+    t = pd.Series(np.arange(len(df)), index=df.index, dtype=float)
+
+    r = lc.rolling(60).corr(t)
+
+    feature = r * r.abs()
+
+    a = r.notna()
+
+    b = ~a
+
+    '
+- id: participation_regime_gate
+  belief: Momentum works when participation is expanding (new money arriving) and
+    fails in a dull, low-turnover market where moves are chop.
+  measure: mean_diff
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.02
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.051336316935967456
+      n_a: 291
+      n_b: 270
+      windows:
+      - null
+      - -0.20730488211041115
+      - -0.10743806565040045
+      - 0.02206512803876312
+      - 0.3964994985436604
+      - 0.3726000781342728
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.08863861575795898
+      n_a: 334
+      n_b: 197
+      windows:
+      - -0.1759857971892246
+      - -0.13793164772176622
+      - -0.16494410162345655
+      - 0.30538979294683266
+      - -0.18467507819164802
+      - -0.05176139984839899
+      verdict: fail
+      why: null
+  code: 'lc = np.log(df.close)
+
+    vtrend = df.volume.rolling(30).mean() / df.volume.rolling(180).mean()
+
+    a = vtrend > 1.2
+
+    b = vtrend < 0.9
+
+    signal = np.sign(lc - lc.shift(60)).replace(0, 1)
+
+    '
+- id: yearly_high_proximity_long
+  belief: Traders anchor on the yearly high, so price trading near it signals strength
+    that grinds higher as the anchor gives way.
+  measure: net_return
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.02
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.04222728965713406
+      n_a: 20
+      n_b: 20
+      windows:
+      - null
+      - null
+      - -0.12085585600909718
+      - null
+      - 0.15047375344803568
+      - -0.5010974451864525
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.04264541952905168
+      n_a: 20
+      n_b: 20
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - 0.018785883085885947
+      - -0.3907561343470316
+      verdict: fail
+      why: null
+  code: 'yh = df.high.rolling(365).max()
+
+    a = df.close >= 0.95 * yh
+
+    b = ~a
+
+    signal = pd.Series(1, index=df.index)
+
+    '
+- id: weekday_breakout_beats_weekend
+  belief: Weekend breakouts happen on thin, retail-only books and often fade, while
+    weekday breakouts carry institutional and fiat-hours flow.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.015
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.05688867789124847
+      n_a: 58
+      n_b: 27
+      windows:
+      - 0.06697749414664662
+      - -0.023153117042185867
+      - 0.03656469734046457
+      - -0.05772754538589645
+      - 0.08682329540392836
+      - 0.1780132159650037
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 0.0577713728420436
+      n_a: 66
+      n_b: 27
+      windows:
+      - 0.04621482576415009
+      - -0.022671619658343994
+      - -0.041148977800948325
+      - -0.0004422209713160763
+      - 0.03606854875544649
+      - 0.19613566855177092
+      verdict: fail
+      why: null
+  code: 'hi = df.close.rolling(20).max().shift(1)
+
+    brk = df.close > hi
+
+    a = brk & (dow < 5)
+
+    b = brk & (dow >= 5)
+
+    signal = pd.Series(1, index=df.index)
+
+    '
+- id: sharp_dip_inside_uptrend
+  belief: Inside an established uptrend, a sharp short drop is forced selling, not
+    a trend change, and it recovers within days.
+  measure: net_return
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.02
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.01598830864274246
+      n_a: 20
+      n_b: 20
+      windows:
+      - -0.10457681567596465
+      - null
+      - 0.024973051123539192
+      - -0.02747617065191449
+      - 0.1713905770532294
+      - -0.21015216533696573
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.042018048786748745
+      n_a: 16
+      n_b: 16
+      windows:
+      - -0.04894642414123483
+      - null
+      - 0.004610148937090632
+      - -0.10801990572476833
+      - 0.10616658091072823
+      - -0.11357805800948349
+      verdict: fail
+      why: null
+  code: 'lc = np.log(df.close)
+
+    m120 = lc - lc.shift(120)
+
+    m5 = lc - lc.shift(5)
+
+    a = spaced((m120 > 0) & (m5 < -0.10), 5)
+
+    b = (m120 > 0) & ~a
+
+    signal = pd.Series(1, index=df.index)
+
+    '
+- id: long_horizon_exhaustion
+  belief: In these coins, extreme 12-month gains mark bubble tops and extreme 12-month
+    losses mark capitulation, so long-horizon momentum reverses.
+  measure: rank_corr
+  horizon_bars: 60
+  direction: negative
+  min_effect: 0.08
+  verdict: pass
+  by_symbol:
+    LTCUSD:
+      effect: -0.30653771370539334
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.2380786212790201
+      - -0.8744370020586807
+      - -0.8840850756471604
+      - -0.7615702479338842
+      - 0.2277865713218845
+      - -0.7336033328604042
+      verdict: pass
+      why: null
+    XMRUSD:
+      effect: -0.11647087902795668
+      n_a: 729
+      n_b: 729
+      windows:
+      - -0.3679401356370449
+      - -0.725822067867068
+      - -0.8435206562536276
+      - -0.895027774014361
+      - -0.25348207824308294
+      - -0.6587751995975804
+      verdict: pass
+      why: null
+  code: 'lc = np.log(df.close)
+
+    feature = lc - lc.shift(365)
+
+    a = feature.notna()
+
+    b = ~a
+
+    '
+- id: signed_volume_flow
+  belief: Persistent volume on up days over down days shows accumulation that price
+    has not finished pricing in.
+  measure: rank_corr
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.06
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.1313131453345126
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.5840905853866971
+      - -0.2641092323401218
+      - -0.23524138731604136
+      - 0.2603238043625525
+      - 0.26810102405318864
+      - 0.49484722240136203
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.1653827435032473
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.6904785643070789
+      - -0.14239262972496952
+      - -0.1944577007906515
+      - -0.15872510499932255
+      - -0.6211036246658361
+      - -0.05436535063393998
+      verdict: fail
+      why: null
+  code: 'sv = (np.sign(ret) * df.volume).rolling(30).sum()
+
+    feature = sv / df.volume.rolling(30).sum()
+
+    a = feature.notna()
+
+    b = ~a
+
+    '
+- id: fade_extreme_yearly_move
+  belief: 'The 12-month exhaustion seen as a rank correlation is strong enough at
+    the extremes to trade: fading the largest 365-day moves on LTC and XMR pays more
+    than cost over the next 60 days.'
+  measure: net_return
+  horizon_bars: 60
+  direction: positive
+  min_effect: 0.03
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.027271455791295734
+      n_a: 223
+      n_b: 223
+      windows:
+      - 0.2047475014981173
+      - null
+      - null
+      - 0.16378680600089396
+      - -0.8175303969946651
+      - -0.001948877261223414
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.09815458411597032
+      n_a: 197
+      n_b: 197
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - -0.25538092214263175
+      - -0.0035631287178163056
+      verdict: fail
+      why: null
+  code: 'lc = np.log(df.close)
+
+    m365 = lc - lc.shift(365)
+
+    pct = m365.abs().rolling(730, min_periods=365).rank(pct=True)
+
+    a = pct >= 0.7
+
+    b = ~a
+
+    signal = pd.Series(-np.sign(m365).replace(0, 1), index=df.index)
+
+    '
+- id: yearly_exhaustion_after_turn
+  belief: The 12-month reversal on LTC and XMR arrives once the 30-day move has already
+    turned against the yearly move, so fading only after that turn beats fading while
+    both still agree.
+  measure: mean_diff
+  horizon_bars: 60
+  direction: positive
+  min_effect: 0.03
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.08432468683593686
+      n_a: 305
+      n_b: 424
+      windows:
+      - -0.09623915145569042
+      - 0.23117730922495244
+      - -0.27640903143010204
+      - -0.2586690653474249
+      - 1.4859028823500187
+      - -0.2165678436142845
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.0440336647473804
+      n_a: 331
+      n_b: 398
+      windows:
+      - -0.1485690849006304
+      - 0.32709088802336983
+      - 0.015149477094196506
+      - -0.2807666521242371
+      - -0.05964532075709561
+      - -0.28644032995597446
+      verdict: fail
+      why: null
+  code: 'lc = np.log(df.close)
+
+    m365 = lc - lc.shift(365)
+
+    m30 = lc - lc.shift(30)
+
+    ok = m365.notna() & m30.notna() & (m365 != 0) & (m30 != 0)
+
+    turn = ok & (np.sign(m30) != np.sign(m365))
+
+    a = turn
+
+    b = ok & ~turn
+
+    signal = pd.Series(-np.sign(m365).replace(0, 1), index=df.index)
+
+    '
+profit: 'none: no return claim passed'

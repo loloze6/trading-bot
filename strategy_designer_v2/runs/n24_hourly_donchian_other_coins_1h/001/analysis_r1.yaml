@@ -1,0 +1,36 @@
+run: n24_hourly_donchian_other_coins_1h/fold_A
+observations:
+  - "The 72h breakout held 24 bars lost money net of fees on LTC (-0.57%) and XRP (-0.48%), and made +0.34% on SOL with only 4 of 6 windows positive, so the BTC/ETH rule did not carry over."
+  - "The 168h breakout held 72 bars was positive net on all three coins (LTC +0.12%, XRP +0.80%, SOL +2.52%), but only SOL passed (5/6 windows); XRP had 4/6 windows positive and LTC 3/6, so longer channels look closer to working but are not stable."
+  - "Fading the 24h breakout lost net on all three coins (-0.22%, -0.18%, -0.14%), with LTC negative in all 6 windows; short breaks continue slightly but by less than the 0.15% fee."
+  - "Breakout overshoot ranked against the 24-bar return with the wrong sign on LTC (-0.10) and XRP (-0.20, negative in 6 of 6 windows), and with the right sign on SOL (+0.095); the coins split between reversion and continuation."
+  - "Position inside the 72h range was negatively rank-correlated with the next day on LTC (-0.056, 5 of 6 windows negative) and XRP (-0.049), which points to range reversion on those two coins rather than momentum."
+  - "Heavy-volume breakouts beat light ones on all three coins (LTC +2.12%, XRP +0.52%, SOL +1.16%), but the 2x-median gate kept about 80% of events (e.g. LTC 179 of 220), and LTC failed on two empty windows."
+  - "Volatility after a break expanded clearly only on XRP (ratio 1.22, passed); LTC (1.11) and SOL (1.03) barely differed from non-break bars, so volatility targeting gets less help on these coins than assumed."
+  - "Compression-gated breakouts nearly held on LTC (+0.77%, passed), but XRP (+0.19%) and SOL (-0.12%) did not, which is a coin-specific result."
+  - "Weekday-over-weekend hit rate passed on XRP (+9.6%), but on SOL the windows disagreed sharply: +33% and +41% in early windows, then -17% and -11% in late ones."
+next_claim:
+  id: donchian168_heavy_volume_net
+  belief: "On LTC, XRP and SOL, only a weekly channel break carried by clearly unusual volume marks real participation, and that trend pays over three days after fees."
+  claim:
+    when: "the first close beyond the prior 168-hour high or low in 72 bars, on a bar whose volume exceeds 3 times the prior 168-hour median volume"
+    then: "price keeps moving in the break direction over the next 72 hours by more than the round-trip cost"
+    compared_to: "zero after the 0.15% round-trip cost"
+    measure: net_return
+    horizon_bars: 72
+    direction: positive
+    min_effect: 0.006
+    code: |
+      hi = df.high.rolling(168).max().shift(1)
+      lo = df.low.rolling(168).min().shift(1)
+      up = df.close > hi
+      dn = df.close < lo
+      ev = spaced(up | dn, 72)
+      vmed = df.volume.rolling(168).median().shift(1)
+      heavy = df.volume > 3 * vmed
+      a = ev & heavy
+      b = ~a
+      signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+  why_no_lookahead: "The channel bounds and median volume use only prior bars via shift(1), and the trigger bar's own close and volume are known at its close."
+  how_it_trades: "At the close of a heavy-volume weekly break, enter in the break direction and exit 72 bars later."
+why: "The 168h channel was the only rule positive net on all three coins, and volume was the only gate that helped on all three. The 2x gate barely filtered, so a stricter 3x gate on the weekly break is the untested combination that follows from both."

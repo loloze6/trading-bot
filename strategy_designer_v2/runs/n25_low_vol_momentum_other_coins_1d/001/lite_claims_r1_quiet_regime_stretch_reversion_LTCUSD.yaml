@@ -1,0 +1,41 @@
+claim: quiet_regime_stretch_reversion
+symbol: LTCUSD
+bar_size: 1d
+fold: A
+cost_per_round_trip: 0.0015
+fold_totals:
+  net_return: 0.1728
+  sharpe: 0.4
+  max_drawdown: -0.4389
+  time_in_market: 0.288
+  trades: 21
+windows:
+- window: W1
+  net_return: 0.2894
+  trades: 5
+  max_drawdown: -0.0714
+- window: W2
+  net_return: -0.0759
+  trades: 2
+  max_drawdown: -0.168
+- window: W3
+  net_return: -0.0714
+  trades: 3
+  max_drawdown: -0.2278
+- window: W4
+  net_return: -0.0151
+  trades: 5
+  max_drawdown: -0.2779
+- window: W5
+  net_return: -0.1369
+  trades: 2
+  max_drawdown: -0.1638
+- window: W6
+  net_return: 0.2469
+  trades: 4
+  max_drawdown: -0.0589
+checks:
+  net_positive_in_5_of_6: false
+  sharpe_ge_1.0: false
+  max_drawdown_le_20%: false
+verdict: fail

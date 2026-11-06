@@ -1,0 +1,33 @@
+run: n05_retail_coins_hourly_flow_1h / fold A
+observations:
+  - "No claim passed on both coins. Four claims passed on one coin and failed with the opposite sign on the other: monday_weekend_unwind (ADA +0.0030, DOGE -0.0023), volume_confirmed_range_breakout (ADA +0.0057, DOGE -0.0091), month_start_inflow (ADA +0.0045, DOGE +0.0017 but only 2 of 6 windows positive) and volume_blowout_fade_vs_quiet (DOGE +0.0152, ADA -0.0060)."
+  - "After a high-volume 3-day breakout, DOGE fades and ADA continues: the breakout claim scored DOGE -0.0091 with 5 of 6 windows negative and ADA +0.0057 with 5 of 6 positive."
+  - "The volume-blowout fade held on DOGE (+0.0152, 5 of 6 windows) and reversed on ADA (-0.0060, 5 of 6 windows negative), the mirror image of the breakout result."
+  - "attention_episode_fade nearly held on ADA: rank_corr 0.17 above the 0.10 bar, but only 4 of 6 windows were positive. DOGE reached 0.079, with windows ranging from -0.50 to +0.52."
+  - "The US-evening bid at 23:00 UTC is absent: DOGE net +0.00015 and ADA -0.0013 against a 0.002 bar, with 3 of 6 windows positive on DOGE."
+  - "Weekend trend persistence has no stable sign: DOGE +0.0021 and ADA -0.0022 against 0.005, with single windows swinging from -0.019 to +0.022 on DOGE."
+  - "The round-level claims flip sign window to window: DOGE rejection hit_rate -0.076, with windows alternating between about +0.10 and -0.20; DOGE break-follow -0.0014."
+  - "Dead-hours bursts carry no extra direction: DOGE +0.0013 and ADA -0.0030 against a 0.004 bar."
+  - "close_location_pressure was never measured (n_a = 2 on DOGE, 0 on ADA). spaced() on an always-true notna() condition keeps only the first bar, so the belief is still untested."
+next_claim:
+  id: daily_close_location_pressure
+  belief: Retail market orders leave a footprint in where each hour closes within its range, so volume-weighted buying pressure over the past day predicts the next day's drift.
+  claim:
+    when: one bar per day, the 00:00 UTC bar, where 24h of pressure is defined
+    then: the next 24h return rises with the past 24h volume-weighted close-location pressure
+    compared_to: not used (rank_corr)
+    measure: rank_corr
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.08
+    code: |
+      h = pd.Series(np.asarray(hour), index=df.index)
+      rng = (df.high - df.low).replace(0, np.nan)
+      clv = ((df.close - df.low) - (df.high - df.close)) / rng
+      pressure = (clv * df.volume).rolling(24, min_periods=20).sum() / df.volume.rolling(24, min_periods=20).sum()
+      a = h.eq(0) & pressure.notna()
+      b = ~a
+      feature = pressure
+  why_no_lookahead: Pressure uses only the 24 bars ending at the sampled bar's close, and samples are one per day so the 24h forward windows do not overlap.
+  how_it_trades: At 00:00 UTC, go long for 24h when pressure is high and stay flat or short when it is low; one round trip a day at most.
+why: "This is the only belief in the run that has no number (a sampling bug gave n_a of 0 to 2). Every measured volume and time-of-week claim split by coin, so a daily-sampled flow measure is the remaining direct test. min_effect is 0.08 because about 700 daily samples per coin put luck near ±0.04."

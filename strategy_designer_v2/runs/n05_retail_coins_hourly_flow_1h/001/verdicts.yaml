@@ -1,0 +1,379 @@
+claims_file: strategy_designer_v2/runs/n05_retail_coins_hourly_flow_1h/001/claims.yaml
+fold: A
+bar_size: 1h
+symbols:
+- DOGEUSD
+- ADAUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  us_evening_retail_bid:
+    verdict: fail
+    by_symbol:
+      DOGEUSD:
+        verdict: fail
+        effect: 0.00015031118431031308
+        n_a: 730
+        n_b: 730
+        windows:
+        - 0.0004510464208305489
+        - -0.002756566577959718
+        - 0.0036478189153483867
+        - 0.0021880534266558007
+        - -0.0019986540133586496
+        - -0.0005500540335424382
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ADAUSD:
+        verdict: fail
+        effect: -0.001295246623766896
+        n_a: 730
+        n_b: 730
+        windows:
+        - -0.0024944609694083648
+        - -0.001543877228948458
+        - -0.0007983613696139308
+        - 1.7688615115054674e-05
+        - -0.0031525445598160427
+        - 0.00021920175636308396
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  weekend_trend_persistence:
+    verdict: fail
+    by_symbol:
+      DOGEUSD:
+        verdict: fail
+        effect: 0.0020874021725983093
+        n_a: 74
+        n_b: 143
+        windows:
+        - -0.005494520848520788
+        - 0.001196077940067456
+        - 0.022378529728706777
+        - 0.00027135394036729293
+        - -0.019334020090786583
+        - 0.005439337587322488
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ADAUSD:
+        verdict: fail
+        effect: -0.002194421665976895
+        n_a: 74
+        n_b: 141
+        windows:
+        - -0.013960939935963167
+        - -0.015800008796497546
+        - 0.016420722761457975
+        - -0.005833240568130223
+        - 0.0037916865637886944
+        - 0.01306025314764026
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  monday_weekend_unwind:
+    verdict: fail
+    by_symbol:
+      DOGEUSD:
+        verdict: fail
+        effect: -0.0023044055105649274
+        n_a: 104
+        n_b: 104
+        windows:
+        - -0.003368642311751656
+        - -0.010014849267646569
+        - -0.007074677492922508
+        - 0.01223264421869177
+        - -0.0038066978937663014
+        - -0.001252284660683535
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      ADAUSD:
+        verdict: pass
+        effect: 0.0030285495965019986
+        n_a: 104
+        n_b: 104
+        windows:
+        - 0.007951811289434738
+        - 0.0024670419578999305
+        - 0.006100069425582465
+        - 0.003136612770069613
+        - -0.010640520306241819
+        - 0.009993375238816824
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+  round_level_break_follow:
+    verdict: fail
+    by_symbol:
+      DOGEUSD:
+        verdict: fail
+        effect: -0.0014402076528142187
+        n_a: 154
+        n_b: 17365
+        windows:
+        - 0.008482690972824001
+        - -0.002785084822071566
+        - -0.00663588836200367
+        - 0.0038042921703853945
+        - -0.007958180519638309
+        - 0.0025022128391147453
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ADAUSD:
+        verdict: fail
+        effect: 0.0018396316098232477
+        n_a: 128
+        n_b: 17391
+        windows:
+        - 3.845517747821546e-06
+        - 0.0025088188380369453
+        - 0.0018810848092755317
+        - 0.0031984479503543053
+        - 0.03316077095047527
+        - -0.009400799465899442
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+  round_level_rejection:
+    verdict: fail
+    by_symbol:
+      DOGEUSD:
+        verdict: fail
+        effect: -0.07649970481828888
+        n_a: 117
+        n_b: 17402
+        windows:
+        - 0.12886973604993823
+        - -0.1957253273042746
+        - 0.10167575802250728
+        - -0.17471448607493484
+        - 0.09802586793737245
+        - -0.20332187857961054
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ADAUSD:
+        verdict: fail
+        effect: 0.032539853202591895
+        n_a: 80
+        n_b: 17439
+        windows:
+        - -0.13454993653304886
+        - 0.16992120589242887
+        - -0.02945205479452051
+        - 0.3064347826086957
+        - 0.1310492989597467
+        - -0.13751714677640603
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  volume_confirmed_range_breakout:
+    verdict: fail
+    by_symbol:
+      DOGEUSD:
+        verdict: fail
+        effect: -0.009134149300166738
+        n_a: 86
+        n_b: 86
+        windows:
+        - 0.008551905485205541
+        - -0.031801463043735226
+        - -0.004121704513799639
+        - -0.012364855298141122
+        - -0.005039397705818585
+        - -0.005354283958277849
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      ADAUSD:
+        verdict: pass
+        effect: 0.005700538870755341
+        n_a: 91
+        n_b: 91
+        windows:
+        - 0.010615657389020032
+        - 0.003477099717149297
+        - -0.015377769375775441
+        - 0.015353913222327134
+        - 0.0064706341254542055
+        - 0.007895652681575667
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+  dead_hours_burst_informed:
+    verdict: fail
+    by_symbol:
+      DOGEUSD:
+        verdict: fail
+        effect: 0.0012518938570464729
+        n_a: 105
+        n_b: 230
+        windows:
+        - -0.01949728001890187
+        - 0.004533328696869154
+        - 0.03213499379711285
+        - -0.008916501715044996
+        - 0.001830969517843626
+        - -0.004552995840213379
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ADAUSD:
+        verdict: fail
+        effect: -0.002982553656697708
+        n_a: 91
+        n_b: 233
+        windows:
+        - -0.001982360469996122
+        - -0.009918076496838008
+        - -0.004811955340838248
+        - 0.008158003631398156
+        - -0.013677327101208494
+        - 0.006395968001679328
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  attention_episode_fade:
+    verdict: fail
+    by_symbol:
+      DOGEUSD:
+        verdict: fail
+        effect: 0.07887755102040815
+        n_a: 49
+        n_b: 49
+        windows:
+        - 0.02727272727272728
+        - -0.49999999999999994
+        - -0.028571428571428574
+        - 0.15
+        - 0.5166666666666667
+        - 0.09999999999999999
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ADAUSD:
+        verdict: fail
+        effect: 0.17158371040723983
+        n_a: 51
+        n_b: 51
+        windows:
+        - 0.8571428571428573
+        - 0.25
+        - -0.12727272727272726
+        - 0.4285714285714286
+        - -0.07142857142857144
+        - 0.5104895104895105
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  close_location_pressure:
+    verdict: fail
+    by_symbol:
+      DOGEUSD:
+        verdict: fail
+        effect: null
+        n_a: 2
+        n_b: 2
+        windows:
+        - null
+        - null
+        - null
+        - null
+        - null
+        - null
+        agreeing_windows: 0 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      ADAUSD:
+        verdict: fail
+        effect: null
+        n_a: 0
+        n_b: 0
+        windows:
+        - null
+        - null
+        - null
+        - null
+        - null
+        - null
+        agreeing_windows: 0 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+  month_start_inflow:
+    verdict: fail
+    by_symbol:
+      DOGEUSD:
+        verdict: fail
+        effect: 0.0017406554692016218
+        n_a: 72
+        n_b: 72
+        windows:
+        - -0.001790368626132335
+        - -0.0066056324389271535
+        - -0.003808443866179427
+        - 0.019830401040212553
+        - -0.0005534535878988117
+        - 0.0033714302941349025
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ADAUSD:
+        verdict: pass
+        effect: 0.0045127962996637985
+        n_a: 72
+        n_b: 72
+        windows:
+        - -0.005022997639092242
+        - 0.0006164116033500026
+        - 0.012814627618306661
+        - 0.005423944013151957
+        - 0.0015016410824652097
+        - 0.011743151119801206
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true

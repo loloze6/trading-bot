@@ -1,0 +1,34 @@
+run: n26_session_reversal_hourly_1h/fold_C
+observations:
+  - The only within-session-pair edge whose sign held across all three coins on the whole fold is Europe-into-US continuation: europe_move_continues_in_us has hit_rate effects of 0.102 (BTC), 0.041 (ETH) and 0.071 (LTC); only LTC held it in 6 of 6 windows, while BTC and ETH were positive in 4 of 6.
+  - "The Asia fade into Europe nearly held on BTC (+0.44% against 0.30% asked) but missed elsewhere (ETH +0.22%, LTC -0.07%), and its first window carries it on every coin (+2.0%, +1.9%, +0.99%), so the belief rests on one early stretch."
+  - "The US-session fade overnight lost after cost on all three coins (net -0.25% BTC, -0.25% ETH, -0.08% LTC); before cost BTC and ETH are about -0.10%, so US moves slightly continue overnight rather than revert."
+  - "Asia size predicts Europe size only on LTC (ratio 1.33, every window above 1.0); BTC (1.16) and ETH (1.08) fall short, and BTC's windows range from 0.79 to 2.19."
+  - "The Asia-to-Europe rank correlation came out positive, not negative, on all three coins (+0.020, +0.032, +0.041), and windows 3 to 5 are positive on every coin (ETH +0.142, +0.060, +0.130), so sessions lean toward continuation, not overshoot."
+  - "Heavy-volume Europe continuation cleared 0.30% on ETH and LTC (+0.39% each) but windows 5 and 6 are negative on all three coins (e.g. BTC -0.32% in window 6), so the edge faded late in the fold."
+  - "A Europe close at its own extreme did not continue; on LTC it reversed (hit_rate -0.092, 5 of 6 windows negative), against the belief."
+  - "Asia-Europe agreement extending into US had the right sign on ETH in 5 of 6 windows but only +0.11%, far under 0.30%; BTC's last window was -0.84%."
+  - "The Monday Asia fade did not exist: BTC -0.27% and LTC -0.30%, with no coin holding the sign in 5 windows."
+next_claim:
+  id: europe_return_ranks_us_return
+  belief: The Europe-session return, scaled by its recent volatility, is positively ranked against the following US-session return on every day, because sessions continue rather than reverse in proportion to their strength.
+  claim:
+    when: every bar closing at 14:00 UTC (end of the Europe session 08-14 UTC) with 20 or more prior Europe sessions of history
+    then: the US-session return from 14:00 to 21:00 UTC (7 bars) ranks in the same order as the volatility-scaled Europe return
+    compared_to: no baseline bars; Spearman correlation across all such days
+    measure: rank_corr
+    horizon_bars: 7
+    direction: positive
+    min_effect: 0.06
+    code: |
+      c = df.close
+      m = pd.Series(np.asarray(hour) == 14, index=df.index)
+      s = c / c.shift(6, freq='h').reindex(c.index) - 1
+      vol = s[m].rolling(30, min_periods=20).std().shift(1).reindex(c.index)
+      feature = s / vol
+      a = m & feature.notna()
+      b = ~a
+      signal = np.sign(s)
+  why_no_lookahead: The Europe return uses closes from 08:00 to 14:00, and the volatility scale uses only prior sessions' returns, shifted by one session.
+  how_it_trades: At 14:00 UTC take a position in the Europe session's direction, sized by the scaled return, and exit at 21:00 UTC.
+why: All three coins had positive Europe-to-US hit rates, and the session rank correlations leaned positive, so a graded, all-days test of continuation is the cleanest next question; it is not a threshold change of the tried claims, and 0.06 sits about 1.6 standard errors above zero for roughly 725 days.

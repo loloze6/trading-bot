@@ -1,0 +1,36 @@
+brief: n11_daily_gate_hourly_entry_1h.md
+source: analyst round 2
+ideas:
+- id: near_high_gate_breakout_long
+  belief: A two-day high break that happens within a few percent of the three-week
+    high is strength being confirmed and continues, while the same break deep in a
+    drawdown is a relief bounce that fades.
+  claim:
+    when: bars that close above the prior 48-hour high (one event per 24 bars) while
+      the close is within 5% of the 504-hour high
+    then: the 24-bar forward return is higher
+    compared_to: the same breakouts when the close is more than 10% below the 504-hour
+      high
+    measure: mean_diff
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.004
+    code: 'hh = df.high.rolling(48).max().shift(1)
+
+      brk = spaced(df.close > hh, 24)
+
+      hi = df.high.rolling(504).max()
+
+      dd = df.close / hi - 1
+
+      a = brk & (dd > -0.05)
+
+      b = brk & (dd < -0.10)
+
+      signal = pd.Series(1.0, index=df.index)
+
+      '
+  why_no_lookahead: The prior high uses shift(1), and the 504-bar high and drawdown
+    use only bars up to the current close.
+  how_it_trades: Buy hourly two-day breakouts only when price is within 5% of its
+    three-week high, and hold for 24 hours.

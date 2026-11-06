@@ -1,0 +1,77 @@
+claim: weekend_stretch_continuation
+symbol: ETHUSD
+bar_size: 1h
+fold: B
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+fold_totals:
+  net_return: 0.2409
+  median_window_sharpe: 0.50545
+  worst_window_drawdown: 0.0986
+  trades: 39
+windows:
+- window: W1
+  net_return: 0.0136
+  trades: 8
+  sharpe: 0.3282
+  max_drawdown: 0.0733
+  exposure_pct: 3.252
+  cost_drag_pct: 38.7136
+  component_errors: 0
+  run_dir: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001/engine_r1_weekend_stretch_continuation_ETHUSD/results/20261106T002234Z_caf3bd6b
+  seconds: 44
+- window: W2
+  net_return: 0.0271
+  trades: 5
+  sharpe: 0.6827
+  max_drawdown: 0.0559
+  exposure_pct: 2.0833
+  cost_drag_pct: 16.0161
+  component_errors: 0
+  run_dir: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001/engine_r1_weekend_stretch_continuation_ETHUSD/results/20261106T002316Z_caf3bd6b
+  seconds: 42
+- window: W3
+  net_return: -0.0148
+  trades: 7
+  sharpe: -0.3393
+  max_drawdown: 0.0986
+  exposure_pct: 2.8689
+  cost_drag_pct: 77.1917
+  component_errors: 0
+  run_dir: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001/engine_r1_weekend_stretch_continuation_ETHUSD/results/20261106T002401Z_caf3bd6b
+  seconds: 44
+- window: W4
+  net_return: 0.0341
+  trades: 7
+  sharpe: 1.1028
+  max_drawdown: 0.0297
+  exposure_pct: 2.8455
+  cost_drag_pct: 17.9816
+  component_errors: 0
+  run_dir: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001/engine_r1_weekend_stretch_continuation_ETHUSD/results/20261106T002442Z_caf3bd6b
+  seconds: 42
+- window: W5
+  net_return: 0.1623
+  trades: 8
+  sharpe: 1.6553
+  max_drawdown: 0.0717
+  exposure_pct: 3.3345
+  cost_drag_pct: 5.2137
+  component_errors: 0
+  run_dir: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001/engine_r1_weekend_stretch_continuation_ETHUSD/results/20261106T002525Z_caf3bd6b
+  seconds: 43
+- window: W6
+  net_return: 0.0066
+  trades: 4
+  sharpe: 0.2559
+  max_drawdown: 0.0451
+  exposure_pct: 1.6393
+  cost_drag_pct: 40.9112
+  component_errors: 0
+  run_dir: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001/engine_r1_weekend_stretch_continuation_ETHUSD/results/20261106T002610Z_caf3bd6b
+  seconds: 45
+checks:
+  net_positive_in_5_of_6: true
+  median_window_sharpe_ge_1.0: false
+  worst_window_drawdown_le_20%: true
+min_bars: 818
+verdict: fail

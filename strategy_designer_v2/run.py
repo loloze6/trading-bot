@@ -3,6 +3,7 @@ analyst says none or the round budget is spent. Every step writes a file; a step
 so the run resumes from wherever it stopped. Usage: python3 run.py briefs/<brief>.md [--fold A] [--rounds 2]
 The operator decides: the brief, the fold, the budget. The pipeline discovers the rest."""
 import sys, re, argparse, pathlib, datetime as dt, yaml
+import pandas as pd
 
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE / "steps")); sys.path.insert(0, str(HERE / "steps" / "judge")); sys.path.insert(0, str(HERE / "steps" / "engine"))
@@ -36,13 +37,14 @@ def remember(brief_name, ideas, verdicts, run_name):
     doc = yaml.safe_load(f.read_text()) if f.exists() else {}
     rows = doc.setdefault(brief_name, [])
     for i in ideas:
-        rows.append({"id": i["id"], "belief": i["belief"], "measure": i["claim"]["measure"], "verdict": verdicts["ideas"][i["id"]]["verdict"], "run": run_name})
+        cl = i.get("claim") if isinstance(i.get("claim"), dict) else {}
+        rows.append({"id": i.get("id", "?"), "belief": i.get("belief", ""), "measure": cl.get("measure"), "verdict": verdicts["ideas"][i.get("id", "?")]["verdict"], "run": run_name})
     f.write_text(yaml.safe_dump(doc, sort_keys=False, allow_unicode=True), encoding="utf-8")
     shelf = RECORDS / "shelf.yaml"
     sdoc = yaml.safe_load(shelf.read_text()) if shelf.exists() else {"validated": []}
     for i in ideas:
-        if verdicts["ideas"][i["id"]]["verdict"] == "pass":
-            kind = "book" if i["claim"]["measure"] in RETURN_MEASURES else "filter"
+        if verdicts["ideas"][i.get("id", "?")]["verdict"] == "pass":
+            kind = "book" if (i.get("claim") or {}).get("measure") in RETURN_MEASURES else "filter"
             sdoc["validated"].append({"id": i["id"], "brief": brief_name, "run": run_name, "kind": kind, "belief": i["belief"]})
     shelf.write_text(yaml.safe_dump(sdoc, sort_keys=False, allow_unicode=True), encoding="utf-8")
 
@@ -50,11 +52,11 @@ def remember(brief_name, ideas, verdicts, run_name):
 def record_of(brief_name, fold, symbols, bar_size, claims_doc, verdicts, profits, run_dir=None):
     rec = {"brief": brief_name, "fold": fold, "symbols": symbols, "bar_size": bar_size, "claims": [], "profit": profits or "none: no return claim passed"}
     for c in claims_doc["ideas"]:
-        v = verdicts["ideas"][c["id"]]
-        rec["claims"].append({"id": c["id"], "belief": c["belief"], "measure": c["claim"]["measure"], "horizon_bars": c["claim"]["horizon_bars"],
-                              "direction": c["claim"]["direction"], "min_effect": c["claim"]["min_effect"], "verdict": v["verdict"],
+        v = verdicts["ideas"][c.get("id", "?")]; cl = c.get("claim") if isinstance(c.get("claim"), dict) else {}
+        rec["claims"].append({"id": c.get("id", "?"), "belief": c.get("belief", ""), "measure": cl.get("measure"), "horizon_bars": cl.get("horizon_bars"),
+                              "direction": cl.get("direction"), "min_effect": cl.get("min_effect"), "verdict": v["verdict"],
                               "by_symbol": {s: {k: x.get(k) for k in ("effect", "n_a", "n_b", "windows", "verdict", "why")} for s, x in v["by_symbol"].items()},
-                              "code": c["claim"]["code"]})
+                              "code": cl.get("code", "")})
     if run_dir is not None:
         (run_dir / "record.yaml").write_text(yaml.safe_dump(rec, sort_keys=False, allow_unicode=True), encoding="utf-8")
     return rec
@@ -64,9 +66,14 @@ def judge_and_profit(claims_path, fold, bar_size, symbols, run_name, run_dir, la
     vpath = claims_path.parent / ("verdicts.yaml" if claims_path.stem == "claims" else f"verdicts_{claims_path.stem}.yaml")
     verdicts = yaml.safe_load(vpath.read_text()) if vpath.exists() else J.judge_file(claims_path, fold, bar_size, symbols, try_name=run_name)
     claims_doc = yaml.safe_load(claims_path.read_text())
+    for n, c in enumerate(claims_doc["ideas"]):          # the same ids the judge gave a malformed idea
+        if not isinstance(c, dict):
+            claims_doc["ideas"][n] = {"id": f"malformed_{n}"}
+        else:
+            c.setdefault("id", f"unnamed_{n}")
     profits = {}
     for c in claims_doc["ideas"]:
-        if verdicts["ideas"][c["id"]]["verdict"] == "pass" and c["claim"]["measure"] in RETURN_MEASURES:
+        if verdicts["ideas"][c.get("id", "?")]["verdict"] == "pass" and (c.get("claim") or {}).get("measure") in RETURN_MEASURES:
             for s in symbols:   # branch 3 is the engine's backtest, one folder per claim and symbol
                 out_dir = run_dir / f"engine_{label}_{c['id']}_{s}"; done = out_dir / "engine_verdict.yaml"
                 profits[f"{c['id']}/{s}"] = yaml.safe_load(done.read_text()) if done.exists() else \
@@ -84,6 +91,23 @@ def main():
     run_dir.mkdir(exist_ok=True); run_name = f"{brief.stem}/{run_dir.name}"
     log = run_dir / "model_calls.yaml"
     print(f"run {run_name}: fold {args.fold}, {bar_size}, {symbols}")
+    # Coverage before any model call (asked by run n06: a fold whose windows hold no bars of a young coin).
+    windows = J.rf.load_fold_windows(args.fold); short = []
+    for s in symbols:
+        wn = J.window_numbers(J.load_bars(s, bar_size).dropna(subset=["close"]).index, windows)
+        per_bar = {"1h": 24, "1d": 1}[bar_size]
+        first = pd.Timestamp(windows[0]["test"]["start"]); bars_before = int((J.load_bars(s, bar_size).dropna(subset=["close"]).index < first).sum())
+        if bars_before < 600:
+            short.append(f"{s} warm-up: {bars_before} bars before the fold, 600 needed")
+        for i, w in enumerate(windows, start=1):
+            days = (pd.Timestamp(w["test"]["end"]) - pd.Timestamp(w["test"]["start"])).days + 1
+            have = int((wn == i).sum()); need = int(0.8 * days * per_bar)
+            if have < need:
+                short.append(f"{s} W{i}: {have} of about {days * per_bar} bars")
+    if short:
+        (run_dir / "REFUSED").write_text("coverage: " + "; ".join(short))
+        print("REFUSED before any model call: fold " + args.fold + " lacks bars for " + "; ".join(short) + ". Choose a fold the coins cover.")
+        return 2
 
     # 1. ideas
     steps = HERE / "steps"; claims = run_dir / "claims.yaml"

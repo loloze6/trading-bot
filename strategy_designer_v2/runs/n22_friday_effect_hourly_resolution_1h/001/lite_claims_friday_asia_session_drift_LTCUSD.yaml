@@ -1,0 +1,41 @@
+claim: friday_asia_session_drift
+symbol: LTCUSD
+bar_size: 1h
+fold: B
+cost_per_round_trip: 0.0015
+fold_totals:
+  net_return: 0.1
+  sharpe: 0.32
+  max_drawdown: -0.1868
+  time_in_market: 0.048
+  trades: 106
+windows:
+- window: W1
+  net_return: -0.1252
+  trades: 18
+  max_drawdown: -0.1811
+- window: W2
+  net_return: 0.1699
+  trades: 17
+  max_drawdown: -0.0621
+- window: W3
+  net_return: -0.0225
+  trades: 17
+  max_drawdown: -0.0968
+- window: W4
+  net_return: -0.0016
+  trades: 18
+  max_drawdown: -0.0494
+- window: W5
+  net_return: 0.1145
+  trades: 18
+  max_drawdown: -0.1475
+- window: W6
+  net_return: -0.0119
+  trades: 18
+  max_drawdown: -0.1368
+checks:
+  net_positive_in_5_of_6: false
+  sharpe_ge_1.0: false
+  max_drawdown_le_20%: true
+verdict: fail

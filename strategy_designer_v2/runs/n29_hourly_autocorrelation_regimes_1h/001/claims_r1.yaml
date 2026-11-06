@@ -1,0 +1,38 @@
+brief: n29_hourly_autocorrelation_regimes_1h.md
+source: analyst round 1
+ideas:
+- id: lag24_echo_shock_net_after_cost
+  belief: The same-hour echo that ranks next-hour returns on both coins is large enough
+    to pay the round-trip cost when yesterday's same-hour move was a shock and the
+    14-day lag-24 autocorrelation is clearly non-zero.
+  claim:
+    when: bars where the 14-day lag-24 autocorrelation is beyond ±0.05 and the return
+      of the same hour yesterday (the bar 23 bars back, which aligns with the next
+      bar) exceeded 2.5 times the trailing one-week hourly std, at most one per day
+    then: trading the next hour in the direction of sign(ac24) times sign(yesterday's
+      same-hour return) earns more than the 0.15% round trip
+    compared_to: zero after cost
+    measure: net_return
+    horizon_bars: 1
+    direction: positive
+    min_effect: 0.0005
+    code: 'ac24 = ret.rolling(336).corr(ret.shift(24))
+
+      sd = ret.rolling(168).std()
+
+      echo = ret.shift(23)
+
+      a = spaced((ac24.abs() > 0.05) & (echo.abs() > 2.5 * sd), 24)
+
+      a = a & ac24.notna() & sd.notna()
+
+      b = ~a
+
+      signal = np.sign(ac24) * np.sign(echo)
+
+      '
+  why_no_lookahead: ac24, sd and echo use only returns up to the current bar's close
+    (rolling windows and positive shifts), and the bar 23 back is the same UTC hour
+    as the next bar one day earlier.
+  how_it_trades: At the close of a qualifying bar, enter in the direction of signal,
+    hold one hour, then exit.

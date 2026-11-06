@@ -1,0 +1,37 @@
+brief: n39_daily_typical_price_anchor_1d.md
+source: analyst round 2
+ideas:
+- id: vwap20_stretch_change_rank_reversion
+  belief: The 5-day change in the close's stretch from the 20-day VWAP reverts over
+    the next 5 days, because differencing the stretch removes the slow regime drift
+    that cancelled the within-window reversion of its level.
+  claim:
+    when: every daily bar where the 20-day VWAP stretch and its value 5 bars earlier
+      are both defined
+    then: the larger the rise in stretch over the past 5 days, the weaker the next
+      5-day return
+    compared_to: not used (rank correlation over all defined bars)
+    measure: rank_corr
+    horizon_bars: 5
+    direction: negative
+    min_effect: 0.06
+    code: 'tp = (df.high + df.low + df.close) / 3
+
+      vw = (tp * df.volume).rolling(20).sum() / df.volume.rolling(20).sum()
+
+      sig = ret.rolling(20).std()
+
+      z = (df.close / vw - 1) / sig
+
+      feature = z - z.shift(5)
+
+      a = feature.notna()
+
+      b = ~a
+
+      '
+  why_no_lookahead: The feature uses only the VWAP, the volatility and the stretch
+    at or before the bar's close, through rolling windows and shift(5).
+  how_it_trades: Each day, short when the stretch has risen sharply over 5 days and
+    buy when it has fallen sharply, then hold 5 days; trade only the extreme ranks
+    so the move clears the 0.15% round trip.

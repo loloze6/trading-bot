@@ -1,0 +1,64 @@
+claims_file: strategy_designer_v2/runs/n09_long_horizon_reversal_book_1d/001/claims_r1.yaml
+fold: A
+bar_size: 1d
+symbols:
+- LTCUSD
+- XMRUSD
+- ZECUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  yearly_mean_distance_reversal_book:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.029722166135252918
+        n_a: 730
+        n_b: 730
+        windows:
+        - -0.24413031832745993
+        - -0.05931001485598131
+        - 0.2851101168879054
+        - 0.04334340411279953
+        - 0.10835171565263925
+        - 0.04078727480475816
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XMRUSD:
+        verdict: pass
+        effect: 0.058741674190845396
+        n_a: 730
+        n_b: 730
+        windows:
+        - 0.10261818767048765
+        - -0.023699047811738854
+        - 0.06269672413640093
+        - 0.034530267965112445
+        - 0.07491401541287615
+        - 0.10225546002839608
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      ZECUSD:
+        verdict: fail
+        effect: -0.042618125510840536
+        n_a: 730
+        n_b: 730
+        windows:
+        - 0.27842015508696955
+        - -0.17042515582301784
+        - -0.08766112206984975
+        - -0.16527503633082277
+        - -0.07481092623389328
+        - -0.03139304006663498
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true

@@ -1,0 +1,240 @@
+brief: n13_quiet_period_then_move_btc_1h.md
+ideas:
+  - id: long_quiet_spring_release
+    belief: The longer BTC goes without a large hourly bar, the more pending orders and stops build up, so the eventual move is larger than usual.
+    claim:
+      when: the bar at which 24 consecutive hours have passed since the last bar whose absolute return exceeded 2.5x the trailing 168h return std
+      then: the absolute 12h forward return is larger
+      compared_to: all other bars
+      measure: abs_ratio
+      horizon_bars: 12
+      direction: above
+      min_effect: 1.15
+      code: |
+        r_std = ret.rolling(168).std().shift(1)
+        big = ret.abs() > 2.5 * r_std
+        idx = pd.Series(np.arange(len(df)), index=df.index, dtype=float)
+        since = idx - idx.where(big).ffill()
+        a = spaced(since == 24, 12)
+        b = ~a & since.notna()
+    why_no_lookahead: The big-bar threshold uses the std of prior bars, and the count of bars since the last big bar uses only past and current closes.
+    how_it_trades: Buy a straddle-like breakout bracket, or size up a volatility strategy, at the 24th quiet hour.
+  - id: long_quiet_stays_quiet
+    belief: Volatility clusters, so a long run with no large bar means a low-volatility regime that persists and the next move is smaller than usual.
+    claim:
+      when: the bar at which 24 consecutive hours have passed since the last bar with absolute return above 2.5x the trailing 168h std
+      then: the absolute 12h forward return is smaller
+      compared_to: all other bars
+      measure: abs_ratio
+      horizon_bars: 12
+      direction: below
+      min_effect: 0.85
+      code: |
+        r_std = ret.rolling(168).std().shift(1)
+        big = ret.abs() > 2.5 * r_std
+        idx = pd.Series(np.arange(len(df)), index=df.index, dtype=float)
+        since = idx - idx.where(big).ffill()
+        a = spaced(since == 24, 12)
+        b = ~a & since.notna()
+    why_no_lookahead: The threshold uses prior-bar std and the quiet count uses only bars up to the current close.
+    how_it_trades: Fade breakouts or sell volatility (tight mean-reversion bands) after 24 quiet hours.
+  - id: weekly_narrowest_range_expansion
+    belief: The narrowest 12h range of the week marks maximum compression, which tends to be followed by expansion.
+    claim:
+      when: the 12h high-low range (as a fraction of close) is the lowest of the trailing 168 hours, one event per 24 bars
+      then: the absolute 12h forward return is larger
+      compared_to: bars whose 12h range is not the weekly minimum
+      measure: abs_ratio
+      horizon_bars: 12
+      direction: above
+      min_effect: 1.25
+      code: |
+        rng12 = (df.high.rolling(12).max() - df.low.rolling(12).min()) / df.close
+        narrow = rng12 <= rng12.rolling(168).min()
+        a = spaced(narrow, 24)
+        b = ~narrow & rng12.rolling(168).min().notna()
+    why_no_lookahead: The range and its weekly minimum use only highs, lows and closes up to the current bar.
+    how_it_trades: Place a buy-stop and a sell-stop just outside the 12h range when it is the narrowest of the week.
+  - id: quiet_drift_continues
+    belief: Drift inside a compressed range reveals quiet accumulation or distribution, so the next move continues it.
+    claim:
+      when: the 12h range is the weekly narrowest, one event per 24 bars
+      then: the 12h forward return has the same sign as the 12h drift into the bar
+      compared_to: bars with a 12h range above the trailing 168h median, one event per 24 bars, with the same drift-following signal
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.002
+      code: |
+        rng12 = (df.high.rolling(12).max() - df.low.rolling(12).min()) / df.close
+        narrow = rng12 <= rng12.rolling(168).min()
+        drift = df.close / df.close.shift(12) - 1
+        a = spaced(narrow, 24)
+        b = spaced(~narrow & (rng12 > rng12.rolling(168).median()), 24)
+        signal = np.sign(drift).replace(0, 1)
+    why_no_lookahead: The drift is the close now versus the close 12 bars ago, and the range uses bars up to now.
+    how_it_trades: At a weekly-narrow 12h range, go long if the 12h drift is up, short if it is down, and hold 12h.
+  - id: quiet_drift_fakeout_reverts
+    belief: Drift inside a tight range is noise from thin liquidity that runs stops on one side, so the real move goes the other way.
+    claim:
+      when: the 12h range is the weekly narrowest, one event per 24 bars
+      then: the 12h forward return has the opposite sign of the 12h drift into the bar
+      compared_to: all non-narrow bars with the same drift-fading signal
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.002
+      code: |
+        rng12 = (df.high.rolling(12).max() - df.low.rolling(12).min()) / df.close
+        narrow = rng12 <= rng12.rolling(168).min()
+        drift = df.close / df.close.shift(12) - 1
+        a = spaced(narrow, 24)
+        b = ~narrow & rng12.rolling(168).min().notna()
+        signal = -np.sign(drift).replace(0, 1)
+    why_no_lookahead: The drift and range use only closes, highs and lows up to the current bar.
+    how_it_trades: At a weekly-narrow range, fade the 12h drift and hold 12h.
+  - id: close_location_in_compression
+    belief: When price sits at the edge of a compressed range, the side it presses on is the side of the coming release.
+    claim:
+      when: the 12h range is in the bottom 20% of the trailing 168h and the close is in the top or bottom fifth of that 12h range, one event per 12 bars
+      then: the 6h forward return goes toward the edge the close sits on more often
+      compared_to: bars with a non-compressed range and the close at an edge, same signal
+      measure: hit_rate
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.05
+      code: |
+        hi12 = df.high.rolling(12).max()
+        lo12 = df.low.rolling(12).min()
+        rng12 = (hi12 - lo12) / df.close
+        quiet = rng12 <= rng12.rolling(168).quantile(0.2)
+        loc = (df.close - lo12) / (hi12 - lo12)
+        edge = (loc > 0.8) | (loc < 0.2)
+        a = spaced(quiet & edge, 12)
+        b = ~quiet & edge & rng12.rolling(168).quantile(0.2).notna()
+        signal = np.sign(loc - 0.5).replace(0, 1)
+    why_no_lookahead: The range, its quantile and the close location all use bars up to the current close.
+    how_it_trades: Inside a tight range, lean in the direction of the edge the close is pressing, before any break.
+  - id: quiet_price_loud_volume_absorption
+    belief: A tight price range on above-normal volume means large orders are being absorbed, which releases a bigger move than a tight range on dry volume.
+    claim:
+      when: the 12h range is the weekly narrowest and the 12h volume is above the median of 12h volume over the prior 168h, one event per 24 bars
+      then: the absolute 12h forward return is larger
+      compared_to: weekly-narrowest ranges with 12h volume at or below that median, one event per 24 bars
+      measure: abs_ratio
+      horizon_bars: 12
+      direction: above
+      min_effect: 1.25
+      code: |
+        rng12 = (df.high.rolling(12).max() - df.low.rolling(12).min()) / df.close
+        narrow = rng12 <= rng12.rolling(168).min()
+        vol12 = df.volume.rolling(12).sum()
+        volr = vol12 / vol12.rolling(168).median().shift(1)
+        a = spaced(narrow & (volr > 1.0), 24)
+        b = spaced(narrow & (volr <= 1.0), 24)
+    why_no_lookahead: The volume sums and their prior median use only bars up to the current close.
+    how_it_trades: Use breakout brackets only on tight ranges that carry heavy volume; skip the dry ones.
+  - id: asia_quiet_us_open_release
+    belief: A quiet Asian/European morning compresses positioning that the US equity open (about 13:30 UTC) then releases, more than quiet at other hours does.
+    claim:
+      when: weekday bars closing at 13:00 UTC whose prior 8h range is in the bottom 25% of the trailing 4 weeks
+      then: the absolute 6h forward return is larger
+      compared_to: equally quiet 8h ranges ending at other hours
+      measure: abs_ratio
+      horizon_bars: 6
+      direction: above
+      min_effect: 1.25
+      code: |
+        rng8 = (df.high.rolling(8).max() - df.low.rolling(8).min()) / df.close
+        quiet = rng8 <= rng8.rolling(672).quantile(0.25)
+        a = quiet & (hour == 13) & (dow < 5)
+        b = quiet & (hour != 13)
+    why_no_lookahead: The 8h range and its 4-week quantile use only bars up to the 13:00 close; hour and weekday are known at the bar.
+    how_it_trades: After a quiet morning, place breakout brackets at 13:00 UTC on weekdays and exit by 19:00 UTC.
+  - id: quiet_weekend_drift_reverts_monday
+    belief: Drift during a quiet, thin-liquidity weekend is not informed, so it is unwound when full liquidity returns on Monday.
+    claim:
+      when: the Monday 00:00 UTC bar after a weekend whose 48h range is in the bottom 30% of 48h ranges over the trailing 8 weeks
+      then: the 24h forward return has the opposite sign of the 48h weekend drift
+      compared_to: Monday 00:00 UTC bars after non-quiet weekends, same weekend-fading signal
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.003
+      code: |
+        rng48 = (df.high.rolling(48).max() - df.low.rolling(48).min()) / df.close
+        q = rng48.rolling(168 * 8).quantile(0.3)
+        mon = (dow == 0) & (hour == 0)
+        a = mon & (rng48 <= q)
+        b = mon & (rng48 > q)
+        signal = -np.sign(df.close / df.close.shift(48) - 1).replace(0, 1)
+    why_no_lookahead: The weekend range, its quantile and the drift all end at the Monday 00:00 close.
+    how_it_trades: On Monday 00:00 UTC after a quiet weekend, fade the weekend drift and hold 24h.
+  - id: wick_rejection_inside_quiet
+    belief: In a quiet range, repeated rejection wicks on one side show where resting liquidity defends, so price leaves from the opposite side.
+    claim:
+      when: the 12h range is in the bottom 20% of the trailing 168h, one event per 12 bars
+      then: the net lower-minus-upper wick share over the 12h rises with the 12h forward return
+      compared_to: not used (rank_corr)
+      measure: rank_corr
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.08
+      code: |
+        hi12 = df.high.rolling(12).max()
+        lo12 = df.low.rolling(12).min()
+        rng12 = (hi12 - lo12) / df.close
+        quiet = rng12 <= rng12.rolling(168).quantile(0.2)
+        up = df.high - df[['open', 'close']].max(axis=1)
+        dn = df[['open', 'close']].min(axis=1) - df.low
+        feature = (dn.rolling(12).sum() - up.rolling(12).sum()) / (hi12 - lo12)
+        a = spaced(quiet, 12)
+        b = ~a
+    why_no_lookahead: The wicks and the range come from the OHLC of bars up to the current close.
+    how_it_trades: In a tight range, go long when lower wicks dominate and short when upper wicks dominate.
+  - id: post_shock_flag_continues
+    belief: A quiet consolidation right after a large bar is digestion, not reversal, so the move resumes in the shock's direction.
+    claim:
+      when: the bar at which exactly 12 quiet hours have passed since the last large bar (above 2.5x the trailing 168h std)
+      then: the 24h forward return has the sign of that last large bar
+      compared_to: all other bars, using the sign of the most recent large bar
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.003
+      code: |
+        r_std = ret.rolling(168).std().shift(1)
+        big = ret.abs() > 2.5 * r_std
+        idx = pd.Series(np.arange(len(df)), index=df.index, dtype=float)
+        since = idx - idx.where(big).ffill()
+        sgn = np.sign(ret.where(big)).ffill()
+        a = spaced(since == 12, 24)
+        b = ~a & sgn.notna()
+        signal = sgn.fillna(1)
+    why_no_lookahead: The last large bar and its sign come from past bars only, with a threshold from the prior-bar std.
+    how_it_trades: After 12 quiet hours following a shock bar, enter in the shock's direction and hold 24h.
+  - id: quiet_drift_profit_after_cost
+    belief: When a compressed range carries a clear drift, following that drift pays more than the round-trip fee.
+    claim:
+      when: the 12h range is the weekly narrowest and the absolute 12h drift is at least half of that range, one event per 24 bars
+      then: trading in the drift direction for 24h earns more than the cost
+      compared_to: zero after the 0.15% round-trip cost (net_return)
+      measure: net_return
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.001
+      code: |
+        rng12 = (df.high.rolling(12).max() - df.low.rolling(12).min()) / df.close
+        narrow = rng12 <= rng12.rolling(168).min()
+        drift = df.close / df.close.shift(12) - 1
+        a = spaced(narrow & (drift.abs() >= 0.5 * rng12), 24)
+        b = ~a
+        signal = np.sign(drift).replace(0, 1)
+    why_no_lookahead: The drift and range use closes, highs and lows up to the current bar.
+    how_it_trades: Enter in the drift direction at the close of a narrow, drifting range and exit 24h later.
+notes: >
+  Quiet is defined three ways: hours since a large bar (std-scaled), the weekly-minimum 12h range, and a quantile-low range.
+  The volatility claims are deliberately contradictory (1 vs 2), as are the direction claims (4 vs 5); the data decides between them.
+  The quiet-volatility thresholds (1.15 to 1.25) take into account that a prior spike only reached 1.2x.
+  Range-break continuation is already tried, so the direction ideas act before any break (drift, edge location, wicks, shock sign).
+  The weekend claim has about one event per week; on a short fold it may fall near the 30-bar minimum.

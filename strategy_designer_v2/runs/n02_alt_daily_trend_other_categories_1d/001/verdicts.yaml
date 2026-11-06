@@ -1,0 +1,379 @@
+claims_file: strategy_designer_v2/runs/n02_alt_daily_trend_other_categories_1d/001/claims.yaml
+fold: C
+bar_size: 1d
+symbols:
+- LTCUSD
+- XMRUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  tsmom_horizon_agreement:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.004319117821387771
+        n_a: 344
+        n_b: 344
+        windows:
+        - -0.2956205207571602
+        - 0.0440694901147273
+        - 0.05570861518101485
+        - -0.1431577706398423
+        - 0.21278070618418393
+        - -0.15121466171870468
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XMRUSD:
+        verdict: fail
+        effect: -0.05935519035193134
+        n_a: 340
+        n_b: 340
+        windows:
+        - -0.361942801955551
+        - 0.1187099018157327
+        - -0.024246099580009933
+        - -0.15495083310358804
+        - 0.0856259323133969
+        - -0.23840215133991577
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  breakout_volume_confirmation:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.059294364716055564
+        n_a: 49
+        n_b: 14
+        windows:
+        - -0.05167731441162179
+        - 0.08287547111491878
+        - 0.003942312340245187
+        - 0.15629695741309121
+        - null
+        - -0.0472546912914569
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      XMRUSD:
+        verdict: fail
+        effect: 0.022829343845981172
+        n_a: 41
+        n_b: 26
+        windows:
+        - -0.17721014061570545
+        - 0.08993416214283714
+        - 0.008054234478635097
+        - 0.028979616363254947
+        - -0.0765157781530389
+        - 0.09119904125905205
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+  vol_compression_precedes_expansion:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.9742211501862672
+        n_a: 144
+        n_b: 586
+        windows:
+        - 0.9593823353993632
+        - 1.4679812900676803
+        - 0.8617511223992599
+        - 1.3592380357072706
+        - 0.5493834592853051
+        - 1.2424123971289616
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XMRUSD:
+        verdict: fail
+        effect: 1.1157908098322014
+        n_a: 118
+        n_b: 612
+        windows:
+        - 1.7984404330718842
+        - 1.5451318147068251
+        - 1.7179568764008475
+        - 0.33319704093861136
+        - 0.7948150782277377
+        - 1.3836137410961198
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  trend_linearity_strength:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: -0.15668539004808205
+        n_a: 730
+        n_b: 730
+        windows:
+        - -0.5766913545079049
+        - -0.5263712696739485
+        - -0.08454682643071804
+        - -0.523404687711692
+        - 0.2536406924833372
+        - -0.472249809753518
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      XMRUSD:
+        verdict: fail
+        effect: -0.18657277753447174
+        n_a: 730
+        n_b: 730
+        windows:
+        - -0.35545506338128474
+        - -0.04384692404030124
+        - 0.21402406779223795
+        - -0.609998645170031
+        - -0.6567059126762519
+        - -0.4878758174149696
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+  participation_regime_gate:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.051336316935967456
+        n_a: 291
+        n_b: 270
+        windows:
+        - null
+        - -0.20730488211041115
+        - -0.10743806565040045
+        - 0.02206512803876312
+        - 0.3964994985436604
+        - 0.3726000781342728
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XMRUSD:
+        verdict: fail
+        effect: -0.08863861575795898
+        n_a: 334
+        n_b: 197
+        windows:
+        - -0.1759857971892246
+        - -0.13793164772176622
+        - -0.16494410162345655
+        - 0.30538979294683266
+        - -0.18467507819164802
+        - -0.05176139984839899
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+  yearly_high_proximity_long:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: -0.04222728965713406
+        n_a: 20
+        n_b: 20
+        windows:
+        - null
+        - null
+        - -0.12085585600909718
+        - null
+        - 0.15047375344803568
+        - -0.5010974451864525
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      XMRUSD:
+        verdict: fail
+        effect: -0.04264541952905168
+        n_a: 20
+        n_b: 20
+        windows:
+        - null
+        - null
+        - null
+        - null
+        - 0.018785883085885947
+        - -0.3907561343470316
+        agreeing_windows: 1 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+  weekday_breakout_beats_weekend:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.05688867789124847
+        n_a: 58
+        n_b: 27
+        windows:
+        - 0.06697749414664662
+        - -0.023153117042185867
+        - 0.03656469734046457
+        - -0.05772754538589645
+        - 0.08682329540392836
+        - 0.1780132159650037
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      XMRUSD:
+        verdict: fail
+        effect: 0.0577713728420436
+        n_a: 66
+        n_b: 27
+        windows:
+        - 0.04621482576415009
+        - -0.022671619658343994
+        - -0.041148977800948325
+        - -0.0004422209713160763
+        - 0.03606854875544649
+        - 0.19613566855177092
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+  sharp_dip_inside_uptrend:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: -0.01598830864274246
+        n_a: 20
+        n_b: 20
+        windows:
+        - -0.10457681567596465
+        - null
+        - 0.024973051123539192
+        - -0.02747617065191449
+        - 0.1713905770532294
+        - -0.21015216533696573
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      XMRUSD:
+        verdict: fail
+        effect: -0.042018048786748745
+        n_a: 16
+        n_b: 16
+        windows:
+        - -0.04894642414123483
+        - null
+        - 0.004610148937090632
+        - -0.10801990572476833
+        - 0.10616658091072823
+        - -0.11357805800948349
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+  long_horizon_exhaustion:
+    verdict: pass
+    by_symbol:
+      LTCUSD:
+        verdict: pass
+        effect: -0.30653771370539334
+        n_a: 730
+        n_b: 730
+        windows:
+        - -0.2380786212790201
+        - -0.8744370020586807
+        - -0.8840850756471604
+        - -0.7615702479338842
+        - 0.2277865713218845
+        - -0.7336033328604042
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      XMRUSD:
+        verdict: pass
+        effect: -0.11647087902795668
+        n_a: 729
+        n_b: 729
+        windows:
+        - -0.3679401356370449
+        - -0.725822067867068
+        - -0.8435206562536276
+        - -0.895027774014361
+        - -0.25348207824308294
+        - -0.6587751995975804
+        agreeing_windows: 6 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+  signed_volume_flow:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.1313131453345126
+        n_a: 730
+        n_b: 730
+        windows:
+        - -0.5840905853866971
+        - -0.2641092323401218
+        - -0.23524138731604136
+        - 0.2603238043625525
+        - 0.26810102405318864
+        - 0.49484722240136203
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XMRUSD:
+        verdict: fail
+        effect: -0.1653827435032473
+        n_a: 730
+        n_b: 730
+        windows:
+        - -0.6904785643070789
+        - -0.14239262972496952
+        - -0.1944577007906515
+        - -0.15872510499932255
+        - -0.6211036246658361
+        - -0.05436535063393998
+        agreeing_windows: 6 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true

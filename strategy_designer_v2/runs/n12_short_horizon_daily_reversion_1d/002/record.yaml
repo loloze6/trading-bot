@@ -1,0 +1,638 @@
+brief: n12_short_horizon_daily_reversion_1d.md
+fold: A
+symbols:
+- LTCUSD
+- XMRUSD
+- ZECUSD
+bar_size: 1d
+claims:
+- id: vol_scaled_shock_continuation
+  belief: On thin mid-cap coins, news and flow spread out slowly, so a 3-day move
+    larger than 2 units of pre-move volatility keeps going over the next 5 days rather
+    than reversing.
+  measure: net_return
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.006
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.004759012035226351
+      n_a: 23
+      n_b: 23
+      windows:
+      - 0.12527715625847335
+      - 0.010289406503189465
+      - -0.008310293987475207
+      - -0.042095516446440134
+      - -0.007331763681584034
+      - 0.03534546289362556
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.02863555376642928
+      n_a: 24
+      n_b: 24
+      windows:
+      - -0.08230504781201807
+      - 0.047676289737554965
+      - -0.24578733745739173
+      - -0.047581298817424934
+      - 0.015165492098288798
+      - -0.002924196352869315
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: 0.003185362505507086
+      n_a: 27
+      n_b: 27
+      windows:
+      - 0.0263201334621579
+      - -0.050673936972270885
+      - 0.03508826324542663
+      - -0.014628949936030143
+      - 0.01923677352275977
+      - 0.019308785407726348
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(3)
+
+    m3 = df.close.pct_change(3)
+
+    z = m3 / (vol * np.sqrt(3))
+
+    a = spaced(z.abs() > 2, 3)
+
+    b = ~a
+
+    signal = np.sign(m3)
+
+    '
+- id: up_shock_short_fade
+  belief: Sharp rallies on mid-cap coins are short squeezes or pumps with no lasting
+    buyer, so the fade works on the short side even though the long-side rebound after
+    selloffs did not.
+  measure: net_return
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.003534502120217987
+      n_a: 15
+      n_b: 15
+      windows:
+      - null
+      - 0.047914094255917195
+      - -0.010798096185084637
+      - 0.013830213064169448
+      - 0.011078382368459615
+      - -0.03177298104051429
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 0.024531931167765305
+      n_a: 15
+      n_b: 15
+      windows:
+      - 0.05162947217277166
+      - 0.06990437226688179
+      - 0.017815742961747094
+      - 0.0063278207570337825
+      - -0.09048078975453583
+      - 0.008688312941755651
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: 0.004756283587511333
+      n_a: 16
+      n_b: 16
+      windows:
+      - -0.051151764975962764
+      - -0.022292027458636732
+      - null
+      - 0.023790230771897958
+      - 0.05047590591179918
+      - 0.011736957378246789
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(3)
+
+    m3 = df.close.pct_change(3)
+
+    z = m3 / (vol * np.sqrt(3))
+
+    a = spaced(z > 2, 3)
+
+    b = ~a
+
+    signal = pd.Series(-1.0, index=df.index)
+
+    '
+- id: confirmed_reversal_after_shock
+  belief: A fade entered at the shock's close fights the last of the forced flow,
+    while waiting for one day that closes against the shock enters once that flow
+    is spent, so the reversal that follows is larger.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.008
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -3.422335063194069e-05
+      n_a: 37
+      n_b: 29
+      windows:
+      - 0.009557365377916294
+      - 0.119554727269304
+      - 0.04498937703642377
+      - -0.05639521959506173
+      - -0.011934968242814897
+      - -0.02027589876421645
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 0.01047453645537991
+      n_a: 33
+      n_b: 23
+      windows:
+      - 0.028616165438550605
+      - 0.08678069105111594
+      - -0.12016891116919519
+      - -0.023679397333491628
+      - 0.053933402885313265
+      - -0.007106908672909068
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: -0.006394895476770133
+      n_a: 39
+      n_b: 28
+      windows:
+      - 0.13553668951379189
+      - -0.09673540353069257
+      - -0.04201292498575364
+      - -0.022220366968804833
+      - 0.0031008899485252903
+      - 0.0036389954283579445
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(3)
+
+    m3 = df.close.pct_change(3)
+
+    z = m3 / (vol * np.sqrt(3))
+
+    sh1 = (z.abs() > 1.5).shift(1, fill_value=False)
+
+    d = np.sign(m3.shift(1))
+
+    a = spaced(sh1 & (np.sign(ret) == -d), 3)
+
+    b = spaced(sh1 & (np.sign(ret) == d), 3)
+
+    signal = -d
+
+    '
+- id: volume_climax_shock_reverts
+  belief: A shock made on climactic volume, about 2.5 times normal, marks capitulation
+    or blow-off; the marginal seller or buyer is used up, so price reverts after cost.
+  measure: net_return
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.006
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.026016029983351775
+      n_a: 11
+      n_b: 11
+      windows:
+      - -0.04601995121101238
+      - -0.06009115508791485
+      - 0.10547551439492825
+      - 0.1044442047223294
+      - 0.009898368105283793
+      - 0.002844048653344923
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.010213754000289139
+      n_a: 3
+      n_b: 3
+      windows:
+      - 0.01937859678872339
+      - -0.12018708231114111
+      - 0.0701672235215503
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: -0.055320585319191574
+      n_a: 10
+      n_b: 10
+      windows:
+      - -0.057999326143940155
+      - -0.06747447544884272
+      - -0.06612342599192217
+      - -0.02152743484224956
+      - -0.11574295717309885
+      - 0.003701687934558441
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(3)
+
+    m3 = df.close.pct_change(3)
+
+    z = m3 / (vol * np.sqrt(3))
+
+    vmed = df.volume.rolling(30).median().shift(3)
+
+    vr = df.volume.rolling(3).sum() / (3 * vmed)
+
+    a = spaced((z.abs() > 2) & (vr > 2.5), 3)
+
+    b = ~a
+
+    signal = -np.sign(m3)
+
+    '
+- id: fading_volume_into_shock
+  belief: When volume falls on each day of a sharp move, fewer traders are pushing
+    it, so the move is running out of participation and reverts; when volume rises
+    each day, new flow keeps arriving.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.008
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.009258696427309119
+      n_a: 12
+      n_b: 24
+      windows:
+      - -0.030795831526898944
+      - -0.03372387255790146
+      - -0.012373999329796983
+      - 0.01128339090531394
+      - 0.07725803924332836
+      - 0.0023313067533615728
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.01711865057121966
+      n_a: 11
+      n_b: 16
+      windows:
+      - -0.08136464021525984
+      - 0.2521709956927185
+      - -0.08225362003239878
+      - -0.006097871233418428
+      - -0.035794489961422225
+      - -0.03689040106234792
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: 0.04775911413831416
+      n_a: 15
+      n_b: 16
+      windows:
+      - 0.17396664844611415
+      - 0.03785353924535476
+      - 0.11777619524247154
+      - -0.05167940999285187
+      - 0.03142575105131873
+      - -0.010888352332522448
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(3)
+
+    m3 = df.close.pct_change(3)
+
+    z = m3 / (vol * np.sqrt(3))
+
+    v = df.volume
+
+    dec = (v < v.shift(1)) & (v.shift(1) < v.shift(2))
+
+    inc = (v > v.shift(1)) & (v.shift(1) > v.shift(2))
+
+    sh = z.abs() > 1.5
+
+    a = spaced(sh & dec, 3)
+
+    b = spaced(sh & inc, 3)
+
+    signal = -np.sign(m3)
+
+    '
+- id: post_shock_volume_dryup
+  belief: If volume collapses the day after a shock, the force that drove it has left
+    the market, and the price drifts back as liquidity providers re-center.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.008
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.021530626198388705
+      n_a: 14
+      n_b: 40
+      windows:
+      - 0.05573319073006402
+      - 0.038192764052041375
+      - 0.02345351127899307
+      - -0.008732796995943195
+      - 0.018253338859520116
+      - null
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.005442986914294298
+      n_a: 13
+      n_b: 35
+      windows:
+      - -0.014203997322113662
+      - 0.0035305814942241387
+      - -0.06366630126397088
+      - -0.01948029497434431
+      - 0.0209257259782412
+      - null
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: -0.00571488740954919
+      n_a: 23
+      n_b: 36
+      windows:
+      - -0.03553238107025588
+      - 0.07221818522750066
+      - -0.08018760992266491
+      - -0.07071337330135012
+      - 0.005935704694385122
+      - 0.015250391207370644
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(3)
+
+    m3 = df.close.pct_change(3)
+
+    z = m3 / (vol * np.sqrt(3))
+
+    sh1 = (z.abs() > 1.5).shift(1, fill_value=False)
+
+    v = df.volume
+
+    dry = v < 0.5 * v.shift(1).rolling(3).mean()
+
+    a = spaced(sh1 & dry, 3)
+
+    b = spaced(sh1 & ~dry, 3)
+
+    signal = -np.sign(m3.shift(1))
+
+    '
+- id: inside_day_after_shock_reverts
+  belief: An inside day right after a shock (range within the prior bar's range) shows
+    the move has stalled and two-way trade has returned, which leads into a reversal
+    rather than a continuation.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.008
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.022118691289224703
+      n_a: 21
+      n_b: 37
+      windows:
+      - -0.026044075273874145
+      - 0.046578579705183115
+      - 0.11655288293607578
+      - -0.03381056968340278
+      - -0.0009341048845296666
+      - 0.007866580369696138
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.002492476480160972
+      n_a: 23
+      n_b: 34
+      windows:
+      - -0.018409000922380805
+      - 0.09873310992504794
+      - -0.1243694444837898
+      - -0.013629047293081637
+      - 0.026372377904697944
+      - -0.0405722814839877
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: -0.0004465417159930686
+      n_a: 22
+      n_b: 41
+      windows:
+      - -0.05760697938444602
+      - 0.011580992546435482
+      - 0.0128813816734372
+      - 0.009205117030189077
+      - 0.011920842281390143
+      - 0.007156031801462525
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(3)
+
+    m3 = df.close.pct_change(3)
+
+    z = m3 / (vol * np.sqrt(3))
+
+    sh1 = (z.abs() > 1.5).shift(1, fill_value=False)
+
+    inside = (df.high <= df.high.shift(1)) & (df.low >= df.low.shift(1))
+
+    a = spaced(sh1 & inside, 3)
+
+    b = spaced(sh1 & ~inside, 3)
+
+    signal = -np.sign(m3.shift(1))
+
+    '
+- id: whipsaw_regime_shock_reverts
+  belief: When a shock comes shortly after an opposite-sign shock, the coin is in
+    a choppy, liquidity-driven regime where moves are pushed back, while an isolated
+    shock is more likely real news.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.008
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.0036217198024774844
+      n_a: 14
+      n_b: 35
+      windows:
+      - -0.055247003513868874
+      - 0.03345032158648202
+      - 0.11518320804322937
+      - 0.026410675310683203
+      - -0.024909781174116352
+      - -0.030332197083451452
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.014020358113006438
+      n_a: 18
+      n_b: 29
+      windows:
+      - -0.10207964163184377
+      - 0.16603131284304837
+      - -0.0635043278591952
+      - 0.021616671103803407
+      - -0.030725699641072912
+      - 0.019753977696113523
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: 0.03424050106372855
+      n_a: 18
+      n_b: 33
+      windows:
+      - 0.1470272467590226
+      - 0.017677465546878587
+      - 0.16636622844693888
+      - -0.010472065068608039
+      - -0.015005934751206484
+      - -0.015309782182663009
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(3)
+
+    m3 = df.close.pct_change(3)
+
+    z = m3 / (vol * np.sqrt(3))
+
+    up = (z > 1.5).astype(float)
+
+    dn = (z < -1.5).astype(float)
+
+    prior_up = up.shift(4).rolling(9).max() > 0
+
+    prior_dn = dn.shift(4).rolling(9).max() > 0
+
+    opp = ((z > 1.5) & prior_dn) | ((z < -1.5) & prior_up)
+
+    sh = z.abs() > 1.5
+
+    a = spaced(sh & opp, 3)
+
+    b = spaced(sh & ~opp, 3)
+
+    signal = -np.sign(m3)
+
+    '
+- id: unnamed_0
+  belief: ''
+  measure: null
+  horizon_bars: null
+  direction: null
+  min_effect: null
+  verdict: refused
+  by_symbol:
+    LTCUSD:
+      effect: null
+      n_a: null
+      n_b: null
+      windows: null
+      verdict: refused
+      why: idea has no complete claim block (measure, horizon_bars, direction, min_effect,
+        code)
+    XMRUSD:
+      effect: null
+      n_a: null
+      n_b: null
+      windows: null
+      verdict: refused
+      why: idea has no complete claim block (measure, horizon_bars, direction, min_effect,
+        code)
+    ZECUSD:
+      effect: null
+      n_a: null
+      n_b: null
+      windows: null
+      verdict: refused
+      why: idea has no complete claim block (measure, horizon_bars, direction, min_effect,
+        code)
+  code: ''
+- id: uptrend_vol_scaled_move_reverts_rank
+  belief: Inside a longer uptrend, short 2-to-5-day swings are noise around trend-following
+    holders, so the size of a 3-day move in volatility units ranks the next 3 days
+    inversely.
+  measure: rank_corr
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.1
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.05224376205686095
+      n_a: 308
+      n_b: 308
+      windows:
+      - 0.15454545454545454
+      - -0.41818181818181815
+      - 0.16790157211209844
+      - -0.04032540851392103
+      - 0.01951298177713272
+      - 0.08680188941372605
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 0.10187997758987333
+      n_a: 340
+      n_b: 340
+      windows:
+      - -0.040211730555792705
+      - 0.25080645161290327
+      - 0.32930172552814063
+      - 0.01021629818820337
+      - 0.1900432900432901
+      - 0.19826732403870223
+      verdict: pass
+      why: null
+    ZECUSD:
+      effect: 0.0567547459620323
+      n_a: 171
+      n_b: 171
+      windows:
+      - -0.12097669256381798
+      - -0.08571428571428573
+      - null
+      - 0.3417899929527836
+      - null
+      - 0.0765354811619651
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(3)
+
+    m3 = df.close.pct_change(3)
+
+    z = m3 / (vol * np.sqrt(3))
+
+    sma = df.close.rolling(100).mean()
+
+    a = (df.close > sma) & z.notna() & sma.notna()
+
+    b = ~a
+
+    feature = -z
+
+    '
+profit: 'none: no return claim passed'

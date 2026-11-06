@@ -1,0 +1,32 @@
+brief: n31_weekly_reversal_daily_1d.md
+source: analyst round 1
+ideas:
+- id: weekly_z_rank_reversal_monday_sampled
+  belief: The size of last week's move in volatility units is negatively related to
+    next week's return, a graded reversal across all weeks rather than only extreme
+    ones.
+  claim:
+    when: every Monday close (UTC) with a defined 7-day volatility-scaled return
+    then: the 7-day forward return ranks lower the higher the past 7-day volatility-scaled
+      return was
+    compared_to: not used (rank correlation on the Monday bars)
+    measure: rank_corr
+    horizon_bars: 7
+    direction: negative
+    min_effect: -0.1
+    code: 'wk = df.close.pct_change(7)
+
+      sig = ret.rolling(60).std() * np.sqrt(7)
+
+      feature = wk / sig
+
+      a = (dow == 0) & feature.notna()
+
+      b = ~a
+
+      '
+  why_no_lookahead: The 7-day return and the 60-day volatility use only closes at
+    or before the Monday bar, and the weekday is known at the close.
+  how_it_trades: Each Monday close, go long or short in proportion to minus last week's
+    vol-scaled return and hold 7 days; this is worth costing only if the correlation
+    holds on all three coins.

@@ -1,0 +1,793 @@
+brief: n39_daily_typical_price_anchor_1d.md
+fold: B
+symbols:
+- BTCUSD
+- ETHUSD
+- LTCUSD
+bar_size: 1d
+claims:
+- id: vwap5_stretch_reverts_3d
+  belief: A close far from the 5-day volume-weighted typical price is a short-term
+    overreaction away from where the week's money traded, and it pulls back toward
+    that anchor within a few days.
+  measure: net_return
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.005323185455074238
+      n_a: 46
+      n_b: 46
+      windows:
+      - -0.011354472127227243
+      - 0.0033587803325600047
+      - 0.01774561384626594
+      - 0.04162792678186119
+      - -0.018408496658513997
+      - 0.019637574768133846
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.016232960099938135
+      n_a: 45
+      n_b: 45
+      windows:
+      - -0.007818460580238254
+      - 0.001519146314594892
+      - -0.07154905269688314
+      - -0.016071436503933834
+      - -0.048573451158457806
+      - 0.01638563528685434
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.002868386657406338
+      n_a: 51
+      n_b: 51
+      windows:
+      - -0.0070983054299355135
+      - -0.0278206834828534
+      - -0.017205744845783116
+      - 0.016490051155586365
+      - 0.00631629047225239
+      - -0.00029869216499274205
+      verdict: fail
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    vw = (tp * df.volume).rolling(5).sum() / df.volume.rolling(5).sum()
+
+    sig = ret.rolling(20).std()
+
+    z = (df.close / vw - 1) / sig
+
+    a = spaced(z.abs() > 1.5, 3).fillna(False)
+
+    b = ~a
+
+    signal = pd.Series(np.where(z > 0, -1.0, 1.0), index=df.index)
+
+    '
+- id: vwap30_stretch_trends_10d
+  belief: A close far from the 30-day VWAP means a regime shift away from the month's
+    cost basis, and on coins that trend this keeps going instead of reverting.
+  measure: net_return
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.029768364459931494
+      n_a: 12
+      n_b: 12
+      windows:
+      - 0.11604978201150767
+      - -0.005017122734456331
+      - 0.1512710582656902
+      - 0.03810070326047057
+      - -0.07018981850238648
+      - -0.020242629596979922
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.05954982900013648
+      n_a: 14
+      n_b: 14
+      windows:
+      - 0.10846499314465086
+      - 0.09467947885183979
+      - -0.0004116543744844257
+      - 0.0689280033731117
+      - null
+      - 0.01928015947120389
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.03660433263715741
+      n_a: 14
+      n_b: 14
+      windows:
+      - null
+      - -0.27239590990987045
+      - -0.09122938756132287
+      - 0.11922773351041555
+      - -0.0795476589017017
+      - 0.021016996384105063
+      verdict: fail
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    vw = (tp * df.volume).rolling(30).sum() / df.volume.rolling(30).sum()
+
+    sig = ret.rolling(20).std()
+
+    z = (df.close / vw - 1) / sig
+
+    a = spaced(z.abs() > 2.0, 10).fillna(False)
+
+    b = ~a
+
+    signal = pd.Series(np.where(z > 0, 1.0, -1.0), index=df.index)
+
+    '
+- id: vwap20_stretch_rank_reversion
+  belief: The further the close is above (below) the 20-day VWAP in volatility units,
+    the weaker (stronger) the next 5 days, as a smooth relationship rather than only
+    at extremes.
+  measure: rank_corr
+  horizon_bars: 5
+  direction: negative
+  min_effect: 0.06
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0076705943430078125
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.030968257858147063
+      - -0.03798874921869574
+      - -0.12078804841699685
+      - -0.0030181475796778063
+      - -0.1644211403569692
+      - -0.010987340600949701
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.004522808261978348
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.13997626755749315
+      - -0.09503437738731856
+      - -0.15153277531962422
+      - -0.0677535437437928
+      - -0.2988263073824571
+      - -0.08665294212893354
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.00928235212372994
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.0260089512582064
+      - -0.15420515313563443
+      - -0.07979287623793459
+      - -0.21396602649262877
+      - -0.17319952774498226
+      - -0.029406419250481628
+      verdict: fail
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    vw = (tp * df.volume).rolling(20).sum() / df.volume.rolling(20).sum()
+
+    sig = ret.rolling(20).std()
+
+    feature = (df.close / vw - 1) / sig
+
+    a = feature.notna()
+
+    b = ~a
+
+    '
+- id: vwap10_stretch_precedes_big_moves
+  belief: A close far from the 10-day VWAP marks a disequilibrium, so the next days
+    move more in absolute terms than when price sits on its anchor, whatever the direction.
+  measure: abs_ratio
+  horizon_bars: 5
+  direction: above
+  min_effect: 1.2
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 1.624026859998668
+      n_a: 144
+      n_b: 373
+      windows:
+      - 0.7006384891130114
+      - 2.118522033444693
+      - 2.2928606959224678
+      - 2.5567786218025144
+      - 1.4516652928980431
+      - 0.9974896197608779
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 1.2997330180216524
+      n_a: 134
+      n_b: 394
+      windows:
+      - 1.2622060342322747
+      - 1.0358577087953358
+      - 2.154492080708959
+      - 1.5042748463167108
+      - 0.8879934552971426
+      - 1.0749347210206268
+      verdict: pass
+      why: null
+    LTCUSD:
+      effect: 1.1084673113657482
+      n_a: 133
+      n_b: 374
+      windows:
+      - 0.8363870479617567
+      - 0.7629100228253427
+      - 1.7158836270353264
+      - 1.1326362468592406
+      - 1.1078022654148387
+      - 0.9120566532568846
+      verdict: fail
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    vw = (tp * df.volume).rolling(10).sum() / df.volume.rolling(10).sum()
+
+    sig = ret.rolling(20).std()
+
+    z = (df.close / vw - 1) / sig
+
+    a = (z.abs() > 2.0).fillna(False)
+
+    b = (z.abs() < 1.0).fillna(False)
+
+    '
+- id: volume_backed_stretch_continues
+  belief: A stretch from the 10-day VWAP made on a volume burst is new money moving
+    the anchor and continues, while the same stretch on ordinary volume is noise.
+  measure: mean_diff
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.006
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0037954986678788286
+      n_a: 46
+      n_b: 311
+      windows:
+      - -0.01718396690062781
+      - 0.0213891954867816
+      - -0.025223912391701346
+      - -0.031157269864037773
+      - 0.04688922385554799
+      - 0.016963386535886384
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.02100527785331312
+      n_a: 56
+      n_b: 280
+      windows:
+      - 0.06129408705031129
+      - 0.015578509869291988
+      - -0.04046315370756047
+      - 0.07826850700234969
+      - 0.03403945072400087
+      - -0.021962339294366834
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.003996009646826344
+      n_a: 75
+      n_b: 281
+      windows:
+      - 0.013324175468716946
+      - -0.007070336732102728
+      - -0.07488596999625172
+      - 0.04321612142408992
+      - 0.026638088467513282
+      - -0.022825437909746973
+      verdict: fail
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    vw = (tp * df.volume).rolling(10).sum() / df.volume.rolling(10).sum()
+
+    sig = ret.rolling(20).std()
+
+    z = (df.close / vw - 1) / sig
+
+    burst = df.volume > 2 * df.volume.rolling(20).median().shift(1)
+
+    stretched = z.abs() > 1.0
+
+    a = (stretched & burst).fillna(False)
+
+    b = (stretched & ~burst).fillna(False)
+
+    signal = pd.Series(np.where(z > 0, 1.0, -1.0), index=df.index)
+
+    '
+- id: vwap20_reclaim_or_loss
+  belief: A first close back across the 20-day VWAP after a week on the other side
+    shows the month's buyers (or sellers) are back above water, and the price follows
+    through.
+  measure: hit_rate
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.06
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.12644695387447347
+      n_a: 41
+      n_b: 689
+      windows:
+      - 0.16239316239316237
+      - -0.5826086956521739
+      - 0.16617502458210426
+      - -0.2891304347826087
+      - -0.3249051833122629
+      - 0.025862068965517238
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.1760869565217391
+      n_a: 40
+      n_b: 690
+      windows:
+      - -0.10221674876847292
+      - 0.07585335018963335
+      - -0.16645962732919256
+      - -0.4519704433497537
+      - -0.1842105263157895
+      - -0.20977011494252878
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.06684606684606686
+      n_a: 37
+      n_b: 693
+      windows:
+      - 0.21864406779661016
+      - -0.3275862068965517
+      - 0.2011494252873563
+      - -0.011695906432748537
+      - 0.2410714285714286
+      - -0.09572649572649572
+      verdict: fail
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    vw = (tp * df.volume).rolling(20).sum() / df.volume.rolling(20).sum()
+
+    above = (df.close > vw).astype(float)
+
+    prior_above = above.shift(1).rolling(5).sum()
+
+    up = (above == 1) & (prior_above == 0)
+
+    down = (above == 0) & (prior_above == 5) & vw.notna()
+
+    a = spaced(up | down, 5).fillna(False)
+
+    b = ~a
+
+    signal = pd.Series(np.where(down, -1.0, 1.0), index=df.index)
+
+    '
+- id: dip_to_fast_anchor_in_rising_slow_anchor
+  belief: When the 5-day VWAP is above a rising 30-day VWAP, a close that dips under
+    the 5-day anchor but holds the 30-day one is a pullback inside an up-migration
+    of money, and it resumes upward.
+  measure: net_return
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.006
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.006966426229824706
+      n_a: 21
+      n_b: 21
+      windows:
+      - 0.003826885387808622
+      - 0.018923250969715998
+      - 0.0256759289563831
+      - 0.0147450041425512
+      - -0.006378261727220483
+      - -0.031851458246245856
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.0006422047093736479
+      n_a: 30
+      n_b: 30
+      windows:
+      - -0.11098385443281066
+      - -0.026346605953219703
+      - -0.06488220812814777
+      - -0.001800830960904338
+      - 0.08616607673058496
+      - 0.00046864040295846584
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.01259471470339084
+      n_a: 21
+      n_b: 21
+      windows:
+      - -0.10009865711879273
+      - 0.04510627944505193
+      - -0.0901640505824226
+      - -0.008519845994061052
+      - -0.04623712053433867
+      - 0.05192333201796697
+      verdict: fail
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    pv = tp * df.volume
+
+    vw5 = pv.rolling(5).sum() / df.volume.rolling(5).sum()
+
+    vw30 = pv.rolling(30).sum() / df.volume.rolling(30).sum()
+
+    cond = (vw5 > vw30) & (vw30 > vw30.shift(5)) & (df.close < vw5) & (df.close >
+    vw30)
+
+    a = spaced(cond.fillna(False), 5).fillna(False)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: weekend_stretch_reverts_more
+  belief: Stretches from the 5-day VWAP made on thin Saturday or Sunday volume carry
+    less information and revert more than weekday stretches.
+  measure: mean_diff
+  horizon_bars: 2
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0026126956326991517
+      n_a: 55
+      n_b: 168
+      windows:
+      - 0.00308393917341555
+      - 0.006786209121081468
+      - 0.011630288496140225
+      - -0.040993298873965585
+      - 0.039416882377406544
+      - -0.01649218063134755
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.01466787297515146
+      n_a: 49
+      n_b: 177
+      windows:
+      - -0.046502123421800504
+      - 0.02191457827199158
+      - -0.01559346424075071
+      - -0.00856888071084961
+      - -0.022628909276812947
+      - -0.00964184111410138
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.021066186431032037
+      n_a: 51
+      n_b: 168
+      windows:
+      - 0.008968979607779584
+      - 0.06135787569789698
+      - -0.039272572576227606
+      - -0.01862280191578054
+      - 0.06214980166020412
+      - 0.05485955286037278
+      verdict: fail
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    vw = (tp * df.volume).rolling(5).sum() / df.volume.rolling(5).sum()
+
+    sig = ret.rolling(20).std()
+
+    z = (df.close / vw - 1) / sig
+
+    stretched = (z.abs() > 1.0).fillna(False)
+
+    a = stretched & (dow >= 5)
+
+    b = stretched & (dow < 5)
+
+    signal = pd.Series(np.where(z > 0, -1.0, 1.0), index=df.index)
+
+    '
+- id: squeeze_then_anchor_break_continues
+  belief: After a tight 10-day range, a close that breaks well away from the 20-day
+    VWAP starts a new leg, because positions built in the squeeze are forced to follow.
+  measure: net_return
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0026701530706433256
+      n_a: 27
+      n_b: 27
+      windows:
+      - -0.006160084711564288
+      - 0.02000485173769262
+      - -0.0070293864859770055
+      - 0.012154152443873936
+      - 0.003414482414552353
+      - -0.027223413007504138
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.03013400790713442
+      n_a: 31
+      n_b: 31
+      windows:
+      - 0.0570112782436044
+      - 0.0992241850908586
+      - -0.023589362288977584
+      - 0.03383906112966451
+      - 0.044371782745104435
+      - 0.006845826146252168
+      verdict: pass
+      why: null
+    LTCUSD:
+      effect: 0.0347183018278663
+      n_a: 31
+      n_b: 31
+      windows:
+      - 0.062233256368858694
+      - 0.05828572473825041
+      - -0.0794600433202911
+      - 0.0666057392053255
+      - 0.02572839674714276
+      - 0.08936664682650819
+      verdict: pass
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    vw = (tp * df.volume).rolling(20).sum() / df.volume.rolling(20).sum()
+
+    sig = ret.rolling(20).std()
+
+    z = (df.close / vw - 1) / sig
+
+    rng = df.high.rolling(10).max() / df.low.rolling(10).min() - 1
+
+    tight = rng < rng.rolling(90).quantile(0.33)
+
+    cond = tight.shift(1).fillna(False).astype(bool) & (z.abs() > 1.5)
+
+    a = spaced(cond.fillna(False), 5).fillna(False)
+
+    b = ~a
+
+    signal = pd.Series(np.where(z > 0, 1.0, -1.0), index=df.index)
+
+    '
+- id: exhausted_stretch_with_rejection_candle
+  belief: An extreme stretch from the 20-day VWAP that closes near the bar's opposite
+    extreme shows the push was rejected inside the day, and price snaps back toward
+    the anchor.
+  measure: net_return
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.016199152906208353
+      n_a: 25
+      n_b: 25
+      windows:
+      - -0.035463679616205154
+      - 0.03044507538199487
+      - -0.04794957970476843
+      - 0.030965782846890333
+      - 0.00011381486776420344
+      - -0.012585415369108866
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.006927323387285328
+      n_a: 29
+      n_b: 29
+      windows:
+      - 0.01983281548214727
+      - -0.012619886095088219
+      - -0.011231217081820528
+      - -0.008266672053312569
+      - -0.011910557818319246
+      - -0.01763975227988207
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.002085282538732797
+      n_a: 28
+      n_b: 28
+      windows:
+      - -0.02271418520741089
+      - 0.024078085426610624
+      - 0.046987601215543885
+      - -0.14964045293995415
+      - -0.02409854992141446
+      - 0.017505280887546753
+      verdict: fail
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    vw = (tp * df.volume).rolling(20).sum() / df.volume.rolling(20).sum()
+
+    sig = ret.rolling(20).std()
+
+    z = (df.close / vw - 1) / sig
+
+    pos = (df.close - df.low) / (df.high - df.low).replace(0, np.nan)
+
+    short_c = (z > 2.0) & (pos < 0.33)
+
+    long_c = (z < -2.0) & (pos > 0.67)
+
+    a = spaced((short_c | long_c).fillna(False), 3).fillna(False)
+
+    b = ~a
+
+    signal = pd.Series(np.where(z > 0, -1.0, 1.0), index=df.index)
+
+    '
+- id: vwap20_stretch_percentile_rank_reversion
+  belief: The close's stretch from the 20-day VWAP reverts relative to its own recent
+    range of stretches, so ranking the stretch within its trailing 120 days removes
+    the regime drift that hid the within-window reversion.
+  measure: rank_corr
+  horizon_bars: 5
+  direction: negative
+  min_effect: 0.06
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.025060240155627394
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.10643107834683108
+      - -0.08655770059976096
+      - -0.07942620356699905
+      - -0.007133792566396419
+      - -0.18449270031815415
+      - -0.0065110407954574795
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.08627476005163794
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.058702110982638965
+      - -0.055220605223535245
+      - -0.1425311449133694
+      - -0.04863788480504092
+      - -0.26293416580425144
+      - -0.06424171188385697
+      verdict: pass
+      why: null
+    LTCUSD:
+      effect: -0.03856395431893099
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.07096752402036571
+      - -0.10608708093415714
+      - -0.07347135786721021
+      - -0.19154809823848945
+      - -0.11242507106871942
+      - -0.0057710615862425945
+      verdict: fail
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    vw = (tp * df.volume).rolling(20).sum() / df.volume.rolling(20).sum()
+
+    sig = ret.rolling(20).std()
+
+    z = (df.close / vw - 1) / sig
+
+    feature = z.rolling(120).apply(lambda x: (x <= x[-1]).mean(), raw=True)
+
+    a = feature.notna()
+
+    b = ~a
+
+    '
+- id: vwap20_stretch_change_rank_reversion
+  belief: The 5-day change in the close's stretch from the 20-day VWAP reverts over
+    the next 5 days, because differencing the stretch removes the slow regime drift
+    that cancelled the within-window reversion of its level.
+  measure: rank_corr
+  horizon_bars: 5
+  direction: negative
+  min_effect: 0.06
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.026547779094175158
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.2588384001238215
+      - -0.278561011181332
+      - 0.062232958056446845
+      - -0.14261392217306626
+      - 0.1212723105771234
+      - -0.0755235096044227
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.044473517778575174
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.04000980253060067
+      - -0.037398430446558786
+      - 0.02245382838600097
+      - -0.03127136242277282
+      - -0.06237238697131745
+      - -0.14988715257698573
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.045343003263076886
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.1537771987979002
+      - -0.1451489686783804
+      - 0.056139527660010374
+      - 0.01805729321174756
+      - 0.2526772692548093
+      - -0.08400937145802835
+      verdict: fail
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    vw = (tp * df.volume).rolling(20).sum() / df.volume.rolling(20).sum()
+
+    sig = ret.rolling(20).std()
+
+    z = (df.close / vw - 1) / sig
+
+    feature = z - z.shift(5)
+
+    a = feature.notna()
+
+    b = ~a
+
+    '
+profit: 'none: no return claim passed'

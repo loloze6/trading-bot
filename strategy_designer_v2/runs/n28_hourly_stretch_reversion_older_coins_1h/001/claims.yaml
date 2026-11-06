@@ -1,0 +1,225 @@
+brief: n28_hourly_stretch_reversion_older_coins_1h.md
+ideas:
+  - id: vwap24_stretch_fade
+    belief: On LTC and XRP, a close far from the 24h volume-weighted price, in units of recent hourly volatility, is mostly liquidity-driven overshoot that gives back part of the gap within hours.
+    claim:
+      when: close is more than 3 hourly sigmas away from the rolling 24h VWAP, one event per 6 bars
+      then: price moves back toward the VWAP over the next 6 hours by more than the round-trip cost
+      compared_to: zero after cost
+      measure: net_return
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.002
+      code: |
+        vol = ret.rolling(48).std()
+        vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+        z = (df.close / vwap - 1) / vol
+        a = spaced(z.abs() > 3, 6)
+        b = ~a
+        signal = -np.sign(z).fillna(0)
+    why_no_lookahead: VWAP and volatility are trailing rolling windows ending at the bar's close.
+    how_it_trades: Fade the stretch at the close, exit after 6 hours.
+  - id: range48_extreme_fade
+    belief: When price sits at the edge of its 48h high-low range, the range midpoint acts as a magnet on these range-bound older coins.
+    claim:
+      when: close is in the top or bottom 8% of the trailing 48h high-low range and the range is at least 6 hourly sigmas wide, one event per 12 bars
+      then: price moves toward the range midpoint over the next 12 hours by more than cost
+      compared_to: zero after cost
+      measure: net_return
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.002
+      code: |
+        vol = ret.rolling(48).std()
+        hi = df.high.rolling(48).max()
+        lo = df.low.rolling(48).min()
+        pos = (df.close - lo) / (hi - lo)
+        wide = (hi / lo - 1) > 6 * vol
+        a = spaced(((pos > 0.92) | (pos < 0.08)) & wide, 12)
+        b = ~a
+        signal = pd.Series(np.where(pos > 0.5, -1, 1), index=df.index)
+    why_no_lookahead: The high-low range and the position in it use only bars up to and including the current close.
+    how_it_trades: Fade toward the midpoint at the close of an extreme bar, exit after 12 hours.
+  - id: slow_ema168_stretch_fade
+    belief: Large departures from the one-week mean are overextensions that partly unwind over a day on coins with no strong trend narrative.
+    claim:
+      when: close is more than 2.5 daily-scaled sigmas away from the 168h EMA, one event per 24 bars
+      then: price moves back toward the EMA over the next 24 hours by more than cost
+      compared_to: zero after cost
+      measure: net_return
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.003
+      code: |
+        vol = ret.rolling(168).std()
+        ema = df.close.ewm(span=168, adjust=False).mean()
+        z = (df.close / ema - 1) / (vol * np.sqrt(24))
+        a = spaced(z.abs() > 2.5, 24)
+        b = ~a
+        signal = -np.sign(z).fillna(0)
+    why_no_lookahead: The EMA with adjust=False and the rolling volatility are causal and end at the bar's close.
+    how_it_trades: Fade at the close, hold 24 hours.
+  - id: stretch_low_volume_reverts_more
+    belief: A stretch built on thin volume carries no conviction and reverts, while the same stretch on heavy volume reflects real flow and does not.
+    claim:
+      when: VWAP stretch beyond 2.5 sigmas while the last 3 bars' volume is below the 72h median hourly volume
+      then: the fade return over 6 hours is larger
+      compared_to: VWAP stretch beyond 2.5 sigmas while the last 3 bars' volume is above twice the 72h median
+      measure: mean_diff
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.003
+      code: |
+        vol = ret.rolling(48).std()
+        vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+        z = (df.close / vwap - 1) / vol
+        vr = df.volume.rolling(3).mean() / df.volume.rolling(72).median()
+        st = z.abs() > 2.5
+        a = spaced(st & (vr < 1.0), 6)
+        b = spaced(st & (vr > 2.0), 6)
+        signal = -np.sign(z).fillna(0)
+    why_no_lookahead: Volume ratio and stretch use trailing windows ending at the bar's close.
+    how_it_trades: Fade stretches only when the move was made on below-median volume.
+  - id: stretch_volume_spike_continues
+    belief: A stretch away from the anchor accompanied by a volume burst is information or forced flow that keeps going for several hours, the opposite of reversion.
+    claim:
+      when: VWAP stretch beyond 3 sigmas while the last 3 bars' volume is above 2.5 times the 72h median, one event per 12 bars
+      then: price keeps moving in the stretch direction over 12 hours by more than cost
+      compared_to: zero after cost
+      measure: net_return
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.002
+      code: |
+        vol = ret.rolling(48).std()
+        vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+        z = (df.close / vwap - 1) / vol
+        vr = df.volume.rolling(3).mean() / df.volume.rolling(72).median()
+        a = spaced((z.abs() > 3) & (vr > 2.5), 12)
+        b = ~a
+        signal = np.sign(z).fillna(0)
+    why_no_lookahead: Stretch and volume ratio are computed from bars at or before the close.
+    how_it_trades: Follow the stretch direction on a volume burst, exit after 12 hours.
+  - id: fast_stretch_reverts_slow_does_not
+    belief: A stretch that appeared within 3 hours is a liquidity shock that reverts, while a stretch built gradually is a drift that persists.
+    claim:
+      when: VWAP stretch beyond 3 sigmas that was under 1 sigma 3 bars earlier
+      then: the fade return over 6 hours is larger
+      compared_to: VWAP stretch beyond 3 sigmas that was already beyond 2 sigmas 3 bars earlier
+      measure: mean_diff
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.003
+      code: |
+        vol = ret.rolling(48).std()
+        vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+        z = (df.close / vwap - 1) / vol
+        st = z.abs() > 3
+        a = spaced(st & (z.shift(3).abs() < 1), 6)
+        b = spaced(st & (z.shift(3).abs() > 2) & (np.sign(z.shift(3)) == np.sign(z)), 6)
+        signal = -np.sign(z).fillna(0)
+    why_no_lookahead: Uses the current stretch and its value 3 bars earlier via shift(3) only.
+    how_it_trades: Fade only stretches that formed in the last 3 hours.
+  - id: us_hours_stretch_reverts_less
+    belief: Stretches formed during US weekday trading hours are driven by informed, deeper flow and revert less than stretches formed at other hours.
+    claim:
+      when: VWAP stretch beyond 2.5 sigmas on a weekday bar between 13 and 20 UTC
+      then: the fade return over 6 hours is smaller
+      compared_to: VWAP stretch beyond 2.5 sigmas at all other hours and days
+      measure: mean_diff
+      horizon_bars: 6
+      direction: negative
+      min_effect: 0.002
+      code: |
+        vol = ret.rolling(48).std()
+        vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+        z = (df.close / vwap - 1) / vol
+        st = z.abs() > 2.5
+        us = (hour >= 13) & (hour <= 20) & (dow < 5)
+        a = spaced(st & us, 6)
+        b = spaced(st & ~us, 6)
+        signal = -np.sign(z).fillna(0)
+    why_no_lookahead: Hour, weekday and the trailing stretch are known at the bar's close.
+    how_it_trades: Skip fades during US weekday hours, fade at other hours.
+  - id: stretched_bar_wick_exhaustion
+    belief: A stretched bar that closes well off its extreme shows the push was rejected, so reversion is more reliable than on stretched bars that close at their extreme.
+    claim:
+      when: VWAP stretch beyond 2.5 sigmas and the bar closes in the half of its range away from the stretch direction
+      then: the next 4 hours move against the stretch more often
+      compared_to: VWAP stretch beyond 2.5 sigmas where the bar closes in the outer 25% of its range in the stretch direction
+      measure: hit_rate
+      horizon_bars: 4
+      direction: positive
+      min_effect: 0.06
+      code: |
+        vol = ret.rolling(48).std()
+        vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+        z = (df.close / vwap - 1) / vol
+        rng = (df.high - df.low).replace(0, np.nan)
+        cp = (df.close - df.low) / rng
+        cps = pd.Series(np.where(z > 0, cp, 1 - cp), index=df.index)
+        st = z.abs() > 2.5
+        a = spaced(st & (cps < 0.5), 4)
+        b = spaced(st & (cps > 0.75), 4)
+        signal = -np.sign(z).fillna(0)
+    why_no_lookahead: Bar high, low, close and the trailing VWAP stretch are all known at the bar's close.
+    how_it_trades: Fade a stretched bar only when it closes off its extreme, exit after 4 hours.
+  - id: stretch_size_ranks_reversion
+    belief: The further price is from the 72h mean in volatility units, the larger the next day's reversion, a graded relation rather than a threshold.
+    claim:
+      when: bars with a stretch from the 72h mean beyond 1.5 daily-scaled sigmas, one per 24 bars
+      then: the 24-hour forward return rises with the negative of the stretch
+      compared_to: none (rank correlation on those bars)
+      measure: rank_corr
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.10
+      code: |
+        vol = ret.rolling(168).std()
+        m = df.close.rolling(72).mean()
+        z = (df.close / m - 1) / (vol * np.sqrt(24))
+        a = spaced(z.abs() > 1.5, 24)
+        b = ~a
+        feature = -z
+    why_no_lookahead: The rolling mean and volatility end at the bar's close.
+    how_it_trades: Size the fade in proportion to the stretch, hold 24 hours.
+  - id: stretch_predicts_larger_moves
+    belief: A large stretch from the anchor marks a volatility event, so the next hours move more in absolute terms whatever the direction, which sets the cost hurdle for any fade.
+    claim:
+      when: close is more than 3 sigmas from the 24h VWAP
+      then: the absolute 6-hour forward return is larger
+      compared_to: all other bars
+      measure: abs_ratio
+      horizon_bars: 6
+      direction: above
+      min_effect: 1.35
+      code: |
+        vol = ret.rolling(48).std()
+        vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+        z = (df.close / vwap - 1) / vol
+        a = z.abs() > 3
+        b = ~a
+    why_no_lookahead: The stretch uses trailing VWAP and volatility only.
+    how_it_trades: Widen stops and cut size after a stretch; no directional trade by itself.
+  - id: low_vol_regime_stretch_reverts_more
+    belief: In a calm regime a stretch is noise around a stable price and reverts, while in a high-volatility regime the same stretch belongs to a trend.
+    claim:
+      when: VWAP stretch beyond 2.5 sigmas while 48h volatility is below its 30-day median
+      then: the fade return over 8 hours is larger
+      compared_to: VWAP stretch beyond 2.5 sigmas while 48h volatility is above 1.5 times its 30-day median
+      measure: mean_diff
+      horizon_bars: 8
+      direction: positive
+      min_effect: 0.003
+      code: |
+        vol = ret.rolling(48).std()
+        vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+        z = (df.close / vwap - 1) / vol
+        vmed = vol.rolling(720).median()
+        st = z.abs() > 2.5
+        a = spaced(st & (vol < vmed), 8)
+        b = spaced(st & (vol > 1.5 * vmed), 8)
+        signal = -np.sign(z).fillna(0)
+    why_no_lookahead: Volatility, its 30-day median and the stretch are all trailing windows ending at the close.
+    how_it_trades: Fade stretches only in the calm volatility regime, exit after 8 hours.
+notes: Anchors used are the 24h VWAP, the 48h high-low midpoint, the 168h EMA and the 72h mean, with the stretch measured in trailing hourly volatility. stretch_volume_spike_continues deliberately contradicts the fade ideas. The Asia-hours and weekend conditions that were tried on ETH are not repeated; the time view here tests US weekday hours instead. Overlapping holding periods are thinned with spaced.

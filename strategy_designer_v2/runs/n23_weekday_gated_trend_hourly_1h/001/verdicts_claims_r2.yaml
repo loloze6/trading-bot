@@ -1,0 +1,48 @@
+claims_file: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/claims_r2.yaml
+fold: C
+bar_size: 1h
+symbols:
+- BTCUSD
+- ETHUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  weekday_part_of_gate_on_cross_events:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: pass
+        effect: 0.031550243398662955
+        t_stat: 3.04
+        n_a: 99
+        n_b: 53
+        windows:
+        - 0.05432806749163453
+        - 0.04339887656752224
+        - 0.028343740140265597
+        - 0.05143894302279685
+        - 0.0068927245316934916
+        - 0.010779535311100406
+        agreeing_windows: 6 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      ETHUSD:
+        verdict: fail
+        effect: 0.029694438464562663
+        t_stat: 1.82
+        n_a: 98
+        n_b: 40
+        windows:
+        - -0.0033874317650347294
+        - 0.1166607077606385
+        - 0.016174053099078836
+        - -2.5467213202518078e-05
+        - -0.017611471859190306
+        - 0.03341672307158524
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

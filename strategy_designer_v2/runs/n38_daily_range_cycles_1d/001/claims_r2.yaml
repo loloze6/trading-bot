@@ -1,0 +1,32 @@
+brief: n38_daily_range_cycles_1d.md
+source: analyst round 2
+ideas:
+- id: range_regime_size_persists
+  belief: Volatility clusters at the regime level rather than on single extreme days,
+    so a 10-day stretch of wide ranges relative to the last 60 days is followed by
+    bigger 5-day moves than a 10-day stretch of narrow ranges.
+  claim:
+    when: bars where the 10-day mean daily range is at least 1.3 times its 60-day
+      mean (an expansion regime)
+    then: the absolute 5-day forward return is larger
+    compared_to: bars where the 10-day mean daily range is at most 0.8 times its 60-day
+      mean (a contraction regime)
+    measure: abs_ratio
+    horizon_bars: 5
+    direction: above
+    min_effect: 1.3
+    code: 'rng = (df.high - df.low) / df.close.shift(1)
+
+      reg = rng.rolling(10).mean() / rng.rolling(60).mean()
+
+      a = (reg >= 1.3).fillna(False)
+
+      b = (reg <= 0.8).fillna(False)
+
+      signal = pd.Series(np.where(ret > 0, 1, -1), index=df.index)
+
+      '
+  why_no_lookahead: The regime uses only rolling means of high, low and the prior
+    close up to the current bar's close.
+  how_it_trades: Scale position size or stop distance down in expansion regimes and
+    up in contraction regimes, or buy short-dated straddles when the regime is expanding.

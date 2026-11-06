@@ -1,0 +1,37 @@
+brief: n28_hourly_stretch_reversion_older_coins_1h.md
+source: analyst round 1
+ideas:
+- id: high_vol_regime_stretch_continues
+  belief: On LTC and XRP, a stretch from the 24h VWAP that forms while hourly volatility
+    is well above its monthly norm belongs to a trend and keeps going for the next
+    several hours.
+  claim:
+    when: bars where the close is more than 2.5 recent-volatility units from the 24h
+      VWAP and 48h volatility is above 1.5 times its 720h median, one event per 8
+      bars
+    then: the close 8 bars later is further in the direction of the stretch, by more
+      than cost
+    compared_to: nothing (net return after the 0.15% round-trip cost)
+    measure: net_return
+    horizon_bars: 8
+    direction: positive
+    min_effect: 0.003
+    code: 'vol = ret.rolling(48).std()
+
+      vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+      z = (df.close / vwap - 1) / vol
+
+      vmed = vol.rolling(720).median()
+
+      a = spaced((z.abs() > 2.5) & (vol > 1.5 * vmed), 8)
+
+      b = ~a
+
+      signal = np.sign(z).fillna(0)
+
+      '
+  why_no_lookahead: The VWAP, the volatility and its 720h median are all trailing
+    windows ending at the bar's close, and no forward shift is used.
+  how_it_trades: At the close of a qualifying bar, enter in the direction of the stretch
+    (long if above VWAP, short if below), hold 8 hours, then exit.

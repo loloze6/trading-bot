@@ -1,0 +1,30 @@
+run: n35
+observations:
+  - "Volume-backed shock continuation lost money on both coins: net effect -0.0009 on XMR and -0.0062 on ZEC. All 6 ZEC windows were negative, and on ZEC the 6h gross was about -0.0047, so heavy-volume shocks reverted rather than continued."
+  - "The XRP/ETH/BTC volume-burst continuation does not carry over: confirmed-shock continuation had a hit-rate effect of -0.047 on XMR and -0.060 on ZEC, with 4 of 6 windows negative on XMR."
+  - "Shocks clearly raise later volatility but by less than asked: abs_ratio was 1.53 on XMR and 1.49 on ZEC against 1.6, while all 12 windows stayed above 1.0 (lowest 1.03). The belief held; the threshold was too high."
+  - "Thin-volume shock reversion held on ZEC (0.0056, 6/6 windows positive) but not on XMR (-0.0006, windows from -0.0206 to +0.0022, n_a only 40)."
+  - "Wick rejection passed on ZEC (0.0039) and failed on XMR (-0.0005 on only 27 events, first window -0.0187), so the ZEC-only reversal effects rest on small samples."
+  - "Weekly-extreme breaks on heavy volume lost money on XMR at 24h (net -0.0086, all 6 windows negative) and on ZEC (-0.0046, 4/6 windows negative). Breakouts fail on these coins."
+  - "Volume intensity versus shock continuation flipped sign across time: XMR rank_corr went from +0.015 in window 3 to -0.216 and -0.273 in windows 5-6, and ZEC from +0.190 to -0.182 and -0.265, so recent windows reward fading heavy-volume shocks."
+  - "Off-hours shock reversion split by coin: +0.0018 on XMR and -0.0044 on ZEC, with window 2 strongly negative on both (-0.0106 and -0.0146)."
+next_claim:
+  id: quiet_volume_burst_raises_volatility
+  belief: On XMR and ZEC, an hour of very heavy volume with no matching price move signals flow building up, and the following hours are more volatile than usual.
+  claim:
+    when: hours where volume is above 3 times its 168-hour median while the absolute return stays below one 168-hour standard deviation, one event per 6 hours
+    then: the absolute 6-hour forward return is larger
+    compared_to: all other hours
+    measure: abs_ratio
+    horizon_bars: 6
+    direction: above
+    min_effect: 1.2
+    code: |
+      sig = ret.rolling(168).std().shift(1)
+      volr = df.volume / df.volume.rolling(168).median().shift(1)
+      a = spaced((volr > 3) & (ret.abs() < 1 * sig), 6)
+      b = ~a
+      signal = np.sign(ret).replace(0, 1)
+  why_no_lookahead: The volume median and return std use only prior bars (shift(1)), and the bar's own volume and return are known at its close.
+  how_it_trades: Used as a volatility filter, it cuts position size or widens stops on other XMR/ZEC strategies for 6 hours after a quiet volume burst; it is not a direction trade.
+why: "Directional shock claims failed or split by coin, and the only result shared by both coins in every window is volatility expansion after volume. This tests whether volume alone, without a price shock, carries that signal, with an honest 1.2 bar set below the 1.49-1.53 seen after shocks."

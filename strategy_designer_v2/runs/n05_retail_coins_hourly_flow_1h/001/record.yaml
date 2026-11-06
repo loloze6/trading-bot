@@ -1,0 +1,584 @@
+brief: n05_retail_coins_hourly_flow_1h.md
+fold: A
+symbols:
+- DOGEUSD
+- ADAUSD
+bar_size: 1h
+claims:
+- id: us_evening_retail_bid
+  belief: US retail buys after work, from about 19:00 to 23:00 New York time, and
+    on attention coins this one-sided flow lifts price over the following hours.
+  measure: net_return
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    DOGEUSD:
+      effect: 0.00015031118431031308
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.0004510464208305489
+      - -0.002756566577959718
+      - 0.0036478189153483867
+      - 0.0021880534266558007
+      - -0.0019986540133586496
+      - -0.0005500540335424382
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: -0.001295246623766896
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.0024944609694083648
+      - -0.001543877228948458
+      - -0.0007983613696139308
+      - 1.7688615115054674e-05
+      - -0.0031525445598160427
+      - 0.00021920175636308396
+      verdict: fail
+      why: null
+  code: 'h = pd.Series(np.asarray(hour), index=df.index)
+
+    a = h.eq(23)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: weekend_trend_persistence
+  belief: Weekend books are thin and retail-dominated, so a sharp 24h move on Saturday
+    or Sunday keeps going because few arbitrageurs lean against it.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    DOGEUSD:
+      effect: 0.0020874021725983093
+      n_a: 74
+      n_b: 143
+      windows:
+      - -0.005494520848520788
+      - 0.001196077940067456
+      - 0.022378529728706777
+      - 0.00027135394036729293
+      - -0.019334020090786583
+      - 0.005439337587322488
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: -0.002194421665976895
+      n_a: 74
+      n_b: 141
+      windows:
+      - -0.013960939935963167
+      - -0.015800008796497546
+      - 0.016420722761457975
+      - -0.005833240568130223
+      - 0.0037916865637886944
+      - 0.01306025314764026
+      verdict: fail
+      why: null
+  code: 'd = pd.Series(np.asarray(dow), index=df.index)
+
+    r24 = df.close / df.close.shift(24) - 1
+
+    big = r24.abs() > 0.04
+
+    a = spaced((d >= 5) & big, 24)
+
+    b = spaced((d < 5) & big, 24)
+
+    signal = np.sign(r24).replace(0, 1.0)
+
+    '
+- id: monday_weekend_unwind
+  belief: Weekend retail moves are partly undone once weekday desks and market makers
+    return on Monday afternoon UTC.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    DOGEUSD:
+      effect: -0.0023044055105649274
+      n_a: 104
+      n_b: 104
+      windows:
+      - -0.003368642311751656
+      - -0.010014849267646569
+      - -0.007074677492922508
+      - 0.01223264421869177
+      - -0.0038066978937663014
+      - -0.001252284660683535
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.0030285495965019986
+      n_a: 104
+      n_b: 104
+      windows:
+      - 0.007951811289434738
+      - 0.0024670419578999305
+      - 0.006100069425582465
+      - 0.003136612770069613
+      - -0.010640520306241819
+      - 0.009993375238816824
+      verdict: pass
+      why: null
+  code: 'h = pd.Series(np.asarray(hour), index=df.index)
+
+    d = pd.Series(np.asarray(dow), index=df.index)
+
+    wk = df.close / df.close.shift(62) - 1
+
+    a = (d == 0) & (h == 14)
+
+    b = ~a
+
+    signal = -np.sign(wk).replace(0, 1.0)
+
+    '
+- id: round_level_break_follow
+  belief: Retail traders watch round prices (0.10, 0.15, 0.50 dollars), so a close
+    through one triggers breakout and FOMO orders that extend the move.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    DOGEUSD:
+      effect: -0.0014402076528142187
+      n_a: 154
+      n_b: 17365
+      windows:
+      - 0.008482690972824001
+      - -0.002785084822071566
+      - -0.00663588836200367
+      - 0.0038042921703853945
+      - -0.007958180519638309
+      - 0.0025022128391147453
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.0018396316098232477
+      n_a: 128
+      n_b: 17391
+      windows:
+      - 3.845517747821546e-06
+      - 0.0025088188380369453
+      - 0.0018810848092755317
+      - 0.0031984479503543053
+      - 0.03316077095047527
+      - -0.009400799465899442
+      verdict: fail
+      why: null
+  code: 'step = 0.5 * 10 ** np.floor(np.log10(df.close.shift(1)))
+
+    now_l = np.floor(df.close / step)
+
+    prev_l = np.floor(df.close.shift(1) / step)
+
+    up = now_l > prev_l
+
+    dn = now_l < prev_l
+
+    a = spaced(up | dn, 24)
+
+    b = ~a
+
+    signal = pd.Series(np.where(up, 1.0, -1.0), index=df.index)
+
+    '
+- id: round_level_rejection
+  belief: Resting retail sell orders sit just under round prices, so an hour that
+    probes a round level from below and closes well off its high marks a local top.
+  measure: hit_rate
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.05
+  verdict: fail
+  by_symbol:
+    DOGEUSD:
+      effect: -0.07649970481828888
+      n_a: 117
+      n_b: 17402
+      windows:
+      - 0.12886973604993823
+      - -0.1957253273042746
+      - 0.10167575802250728
+      - -0.17471448607493484
+      - 0.09802586793737245
+      - -0.20332187857961054
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.032539853202591895
+      n_a: 80
+      n_b: 17439
+      windows:
+      - -0.13454993653304886
+      - 0.16992120589242887
+      - -0.02945205479452051
+      - 0.3064347826086957
+      - 0.1310492989597467
+      - -0.13751714677640603
+      verdict: fail
+      why: null
+  code: 'step = 0.5 * 10 ** np.floor(np.log10(df.close.shift(1)))
+
+    lvl = (np.floor(df.close.shift(1) / step) + 1) * step
+
+    probe = (df.high >= lvl * 0.995) & (df.high < lvl)
+
+    a = spaced(probe & (df.close < df.high * 0.99), 12)
+
+    b = ~a
+
+    signal = pd.Series(-1.0, index=df.index)
+
+    '
+- id: volume_confirmed_range_breakout
+  belief: On retail coins, a break of the 3-day high that comes with a crowd of volume
+    starts a multi-hour attention run, not a one-bar spike.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    DOGEUSD:
+      effect: -0.009134149300166738
+      n_a: 86
+      n_b: 86
+      windows:
+      - 0.008551905485205541
+      - -0.031801463043735226
+      - -0.004121704513799639
+      - -0.012364855298141122
+      - -0.005039397705818585
+      - -0.005354283958277849
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.005700538870755341
+      n_a: 91
+      n_b: 91
+      windows:
+      - 0.010615657389020032
+      - 0.003477099717149297
+      - -0.015377769375775441
+      - 0.015353913222327134
+      - 0.0064706341254542055
+      - 0.007895652681575667
+      verdict: pass
+      why: null
+  code: 'vm = df.volume.rolling(72).median().shift(1)
+
+    hi = df.high.rolling(72).max().shift(1)
+
+    a = spaced((df.close > hi) & (df.volume > 3 * vm), 24)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: dead_hours_burst_informed
+  belief: A volume burst during the Asian and early European hours, when US retail
+    is asleep, is more likely whale or informed flow and should carry direction better
+    than bursts in the US retail hours.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    DOGEUSD:
+      effect: 0.0012518938570464729
+      n_a: 105
+      n_b: 230
+      windows:
+      - -0.01949728001890187
+      - 0.004533328696869154
+      - 0.03213499379711285
+      - -0.008916501715044996
+      - 0.001830969517843626
+      - -0.004552995840213379
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: -0.002982553656697708
+      n_a: 91
+      n_b: 233
+      windows:
+      - -0.001982360469996122
+      - -0.009918076496838008
+      - -0.004811955340838248
+      - 0.008158003631398156
+      - -0.013677327101208494
+      - 0.006395968001679328
+      verdict: fail
+      why: null
+  code: 'h = pd.Series(np.asarray(hour), index=df.index)
+
+    vm = df.volume.rolling(72).median().shift(1)
+
+    burst = (df.volume > 4 * vm) & (ret.abs() > 0.01)
+
+    a = spaced(h.between(5, 9) & burst, 12)
+
+    b = spaced(h.between(15, 22) & burst, 12)
+
+    signal = np.sign(ret).replace(0, 1.0)
+
+    '
+- id: attention_episode_fade
+  belief: When daily volume blows out against its monthly norm, retail has piled in,
+    and the move over the past 3 days tends to unwind over the next 3.
+  measure: rank_corr
+  horizon_bars: 72
+  direction: positive
+  min_effect: 0.1
+  verdict: fail
+  by_symbol:
+    DOGEUSD:
+      effect: 0.07887755102040815
+      n_a: 49
+      n_b: 49
+      windows:
+      - 0.02727272727272728
+      - -0.49999999999999994
+      - -0.028571428571428574
+      - 0.15
+      - 0.5166666666666667
+      - 0.09999999999999999
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.17158371040723983
+      n_a: 51
+      n_b: 51
+      windows:
+      - 0.8571428571428573
+      - 0.25
+      - -0.12727272727272726
+      - 0.4285714285714286
+      - -0.07142857142857144
+      - 0.5104895104895105
+      verdict: fail
+      why: null
+  code: 'v24 = df.volume.rolling(24).sum()
+
+    base = v24.shift(24).rolling(720).median()
+
+    a = spaced(v24 > 2.5 * base, 24)
+
+    b = ~a
+
+    feature = -(df.close / df.close.shift(72) - 1)
+
+    '
+- id: close_location_pressure
+  belief: Retail market orders leave a footprint in where each hour closes within
+    its range; volume-weighted buying pressure over a day predicts the next day's
+    drift.
+  measure: rank_corr
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.06
+  verdict: fail
+  by_symbol:
+    DOGEUSD:
+      effect: null
+      n_a: 2
+      n_b: 2
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'rng = (df.high - df.low).replace(0, np.nan)
+
+    clv = ((df.close - df.low) - (df.high - df.close)) / rng
+
+    pressure = (clv * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    a = spaced(pressure.notna(), 24)
+
+    b = ~a
+
+    feature = pressure
+
+    '
+- id: month_start_inflow
+  belief: Retail pay cycles put fresh money into exchanges in the first days of the
+    month, and on retail coins that inflow shows up as upward drift.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    DOGEUSD:
+      effect: 0.0017406554692016218
+      n_a: 72
+      n_b: 72
+      windows:
+      - -0.001790368626132335
+      - -0.0066056324389271535
+      - -0.003808443866179427
+      - 0.019830401040212553
+      - -0.0005534535878988117
+      - 0.0033714302941349025
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.0045127962996637985
+      n_a: 72
+      n_b: 72
+      windows:
+      - -0.005022997639092242
+      - 0.0006164116033500026
+      - 0.012814627618306661
+      - 0.005423944013151957
+      - 0.0015016410824652097
+      - 0.011743151119801206
+      verdict: pass
+      why: null
+  code: 'h = pd.Series(np.asarray(hour), index=df.index)
+
+    dom = pd.Series(df.index.day, index=df.index)
+
+    a = dom.isin([1, 2, 3]) & (h == 14)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: volume_blowout_fade_vs_quiet
+  belief: A 3-day move made on a retail volume blowout is crowd-driven and reverses
+    more than the same-length move made on normal volume, on both DOGE and ADA.
+  measure: mean_diff
+  horizon_bars: 72
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    DOGEUSD:
+      effect: 0.01515459680860271
+      n_a: 49
+      n_b: 65
+      windows:
+      - 0.03833541952396507
+      - 0.03875526405077926
+      - 0.004857259810658841
+      - 0.0026758254178441574
+      - 0.028242434502656056
+      - -0.03084260131539201
+      verdict: pass
+      why: null
+    ADAUSD:
+      effect: -0.0059544805550954556
+      n_a: 51
+      n_b: 77
+      windows:
+      - 0.03553583308033591
+      - -0.03151836076217977
+      - -0.015970821072603558
+      - -0.01289759994819031
+      - -0.006576328501414522
+      - -0.006035576867336203
+      verdict: fail
+      why: null
+  code: 'v24 = df.volume.rolling(24).sum()
+
+    base = v24.shift(24).rolling(720).median()
+
+    r72 = df.close / df.close.shift(72) - 1
+
+    a = spaced(v24 > 2.5 * base, 24)
+
+    b = spaced(v24 <= 1.5 * base, 24)
+
+    signal = -np.sign(r72).replace(0, 1.0)
+
+    '
+- id: daily_close_location_pressure
+  belief: Retail market orders leave a footprint in where each hour closes within
+    its range, so volume-weighted buying pressure over the past day predicts the next
+    day's drift.
+  measure: rank_corr
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    DOGEUSD:
+      effect: -0.0766715952523014
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.003583582193207861
+      - -0.17739355870555007
+      - -0.08947495382012484
+      - -0.12050142370997985
+      - -0.09064761192297276
+      - 0.04038384646141543
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: -0.07454074350155072
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.13101604278074866
+      - -0.13604235725064814
+      - -0.10391545860994444
+      - -0.11573025904576704
+      - -0.05937624950019992
+      - -0.12961757445782018
+      verdict: fail
+      why: null
+  code: 'h = pd.Series(np.asarray(hour), index=df.index)
+
+    rng = (df.high - df.low).replace(0, np.nan)
+
+    clv = ((df.close - df.low) - (df.high - df.close)) / rng
+
+    pressure = (clv * df.volume).rolling(24, min_periods=20).sum() / df.volume.rolling(24,
+    min_periods=20).sum()
+
+    a = h.eq(0) & pressure.notna()
+
+    b = ~a
+
+    feature = pressure
+
+    '
+profit: 'none: no return claim passed'

@@ -1,0 +1,183 @@
+brief: n16_day_of_week_other_coins_1d.md
+ideas:
+  - id: weekend_hold_long
+    belief: On these coins, prices drift up over the thin-liquidity weekend because retail and on-chain activity dominate while institutional selling pauses.
+    claim:
+      when: bars whose weekday is Friday (entry at Friday's close)
+      then: a long position held through Saturday and Sunday (2 bars) earns more than the round-trip cost
+      compared_to: zero after cost
+      measure: net_return
+      horizon_bars: 2
+      direction: positive
+      min_effect: 0.0025
+      code: |
+        a = dow == 4
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The selector uses only the weekday of the current bar, which is known at its close.
+    how_it_trades: Buy at Friday's daily close, sell at Sunday's daily close.
+
+  - id: monday_short
+    belief: Monday brings the return of institutional and TradFi-linked flows, which de-risk weekend gains and push alt coins down on the first weekday.
+    claim:
+      when: bars whose weekday is Sunday (entry at Sunday's close)
+      then: a short position over Monday earns more than the round-trip cost
+      compared_to: zero after cost
+      measure: net_return
+      horizon_bars: 1
+      direction: positive
+      min_effect: 0.002
+      code: |
+        a = dow == 6
+        b = ~a
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: The selector uses only the weekday of the current bar.
+    how_it_trades: Short at Sunday's daily close, cover at Monday's daily close.
+
+  - id: friday_short_opposite
+    belief: Unlike BTC, ETH and LTC, smaller coins are sold into the weekend as traders cut alt exposure before low-liquidity days, so the Friday bar is weak.
+    claim:
+      when: bars whose weekday is Thursday (entry at Thursday's close)
+      then: a short position over Friday earns more than the round-trip cost
+      compared_to: zero after cost
+      measure: net_return
+      horizon_bars: 1
+      direction: positive
+      min_effect: 0.002
+      code: |
+        a = dow == 3
+        b = ~a
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: The selector uses only the weekday of the current bar.
+    how_it_trades: Short at Thursday's daily close, cover at Friday's daily close.
+
+  - id: midweek_long
+    belief: Tuesday and Wednesday carry the heaviest US and European risk-on flows, so alt coins rise from Monday's close to Wednesday's close.
+    claim:
+      when: bars whose weekday is Monday (entry at Monday's close)
+      then: a long position held over Tuesday and Wednesday earns more than the round-trip cost
+      compared_to: zero after cost
+      measure: net_return
+      horizon_bars: 2
+      direction: positive
+      min_effect: 0.003
+      code: |
+        a = dow == 0
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The selector uses only the weekday of the current bar.
+    how_it_trades: Buy at Monday's daily close, sell at Wednesday's daily close.
+
+  - id: weekend_move_reverts_monday
+    belief: Weekend moves happen on thin books and are partly mispricing, so Monday's return tends to reverse the Friday-close-to-Sunday-close move more than an ordinary day reverses the prior two days.
+    claim:
+      when: Sunday bars
+      then: the next bar's return goes against the sign of the two-bar (weekend) return
+      compared_to: all other bars, with the same rule applied to their prior two-bar return
+      measure: mean_diff
+      horizon_bars: 1
+      direction: positive
+      min_effect: 0.003
+      code: |
+        r2 = df.close / df.close.shift(2) - 1
+        a = dow == 6
+        b = ~a
+        signal = -np.sign(r2).replace(0, 1.0)
+    why_no_lookahead: The two-bar return uses closes at or before the current bar.
+    how_it_trades: At Sunday's close, fade the weekend move for one day.
+
+  - id: monday_sets_week_trend
+    belief: When the new week starts, flows follow the prior week's direction, so the trailing 7-day trend persists more strongly over Monday to Friday than from any random start day.
+    claim:
+      when: Sunday bars (start of the trading week)
+      then: the next 5 bars move in the direction of the trailing 7-bar return
+      compared_to: all other bars, with the same trend rule
+      measure: mean_diff
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.005
+      code: |
+        r7 = df.close / df.close.shift(7) - 1
+        a = dow == 6
+        b = ~a
+        signal = np.sign(r7).replace(0, 1.0)
+    why_no_lookahead: The 7-bar return uses closes at or before the current bar.
+    how_it_trades: At Sunday's close, take a position in the direction of last week's move and hold to Friday's close.
+
+  - id: weekend_low_volatility
+    belief: Weekend sessions have less news and fewer participants, so their absolute moves are smaller than weekday moves, even if mean returns do not differ.
+    claim:
+      when: Friday and Saturday bars (next bar is Saturday or Sunday)
+      then: the absolute next-bar return is smaller
+      compared_to: all other bars
+      measure: abs_ratio
+      horizon_bars: 1
+      direction: below
+      min_effect: 0.85
+      code: |
+        a = dow.isin([4, 5])
+        b = ~a
+    why_no_lookahead: The selector uses only the weekday of the current bar.
+    how_it_trades: Sell weekend volatility, or shrink position size and widen stops over Saturday and Sunday.
+
+  - id: monday_volatility_burst
+    belief: Information and orders pile up over the weekend and are released when the TradFi week opens, so Monday's absolute move is larger than an ordinary day's.
+    claim:
+      when: Sunday bars (next bar is Monday)
+      then: the absolute next-bar return is larger
+      compared_to: all other bars
+      measure: abs_ratio
+      horizon_bars: 1
+      direction: above
+      min_effect: 1.15
+      code: |
+        a = dow == 6
+        b = ~a
+    why_no_lookahead: The selector uses only the weekday of the current bar.
+    how_it_trades: Buy volatility or straddle-like breakout entries at Sunday's close.
+
+  - id: own_weekday_history
+    belief: Each coin has a weekday pattern of its own that persists, so the past year's average return of the same weekday predicts the next day's return without choosing the day in advance.
+    claim:
+      when: all bars that have a full year of history
+      then: the next bar's return rises with the trailing 52-week mean return of the same weekday
+      compared_to: not used (rank correlation)
+      measure: rank_corr
+      horizon_bars: 1
+      direction: positive
+      min_effect: 0.04
+      code: |
+        lags = [ret.shift(7 * k - 1) for k in range(1, 53)]
+        feature = pd.concat(lags, axis=1).mean(axis=1, skipna=False)
+        a = feature.notna()
+        b = ~a
+    why_no_lookahead: The return of the day after bar t-7k+1 is ret.shift(7k-1) with k>=1, so the shift is at least 6 and every lag is known at bar t's close.
+    how_it_trades: Each day, go long if the same weekday's trailing-year mean return is positive and short if it is negative.
+
+  - id: heavy_friday_volume_weekend
+    belief: A Friday with unusually high volume signals that positioning was done before the weekend, and the thin weekend then continues that day's direction.
+    claim:
+      when: Friday bars whose volume exceeds 1.5 times the median of the prior 8 Fridays
+      then: the next 2 bars move in the direction of Friday's return
+      compared_to: all other Friday bars, with the same rule
+      measure: mean_diff
+      horizon_bars: 2
+      direction: positive
+      min_effect: 0.005
+      code: |
+        fri = dow == 4
+        fri_vol = df.volume.where(fri)
+        med = fri_vol.shift(1).rolling(60, min_periods=50).median()
+        a = fri & (df.volume > 1.5 * med)
+        b = fri & ~a & med.notna()
+        signal = np.sign(ret).replace(0, 1.0)
+    why_no_lookahead: The median uses the volume of past Fridays only, through shift(1), and the current bar's volume and return are known at its close.
+    how_it_trades: On a heavy-volume Friday, follow that day's direction from Friday's close to Sunday's close.
+notes: >
+  The weekday mapping assumes `dow` is the weekday of the calendar day the daily bar covers
+  (Kraken daily bars run 00:00 to 24:00 UTC). If the index is the closing stamp at 00:00 of
+  the next day, every dow value above shifts by one, and the judge should align them before
+  running. "Long held over Friday" is already tried, so it is not repeated. friday_short_opposite
+  tests the opposite on these coins on purpose. The weekend volatility ideas are volatility-only
+  claims; they test the "volatility, not returns" branch of the brief. In heavy_friday_volume_weekend,
+  the 60-bar rolling window over Friday-masked volume holds about 8 past Fridays.

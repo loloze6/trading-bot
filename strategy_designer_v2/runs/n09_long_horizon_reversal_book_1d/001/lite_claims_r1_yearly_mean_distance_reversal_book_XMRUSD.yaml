@@ -1,0 +1,41 @@
+claim: yearly_mean_distance_reversal_book
+symbol: XMRUSD
+bar_size: 1d
+fold: A
+cost_per_round_trip: 0.0015
+fold_totals:
+  net_return: 0.0895
+  sharpe: 0.41
+  max_drawdown: -0.601
+  time_in_market: 0.984
+  trades: 12
+windows:
+- window: W1
+  net_return: 0.0568
+  trades: 2
+  max_drawdown: -0.3707
+- window: W2
+  net_return: -0.2871
+  trades: 2
+  max_drawdown: -0.5207
+- window: W3
+  net_return: 0.0837
+  trades: 2
+  max_drawdown: -0.2599
+- window: W4
+  net_return: 0.1092
+  trades: 2
+  max_drawdown: -0.2384
+- window: W5
+  net_return: 0.056
+  trades: 2
+  max_drawdown: -0.2124
+- window: W6
+  net_return: 0.1393
+  trades: 2
+  max_drawdown: -0.1287
+checks:
+  net_positive_in_5_of_6: true
+  sharpe_ge_1.0: false
+  max_drawdown_le_20%: false
+verdict: fail

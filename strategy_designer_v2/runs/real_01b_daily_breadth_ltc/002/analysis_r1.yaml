@@ -1,0 +1,31 @@
+run: unknown  # the try folder name is not given in the files read; record is brief real_01b_daily_breadth_ltc.md, fold C
+observations:
+  - illiquidity_premium_timeseries held on LTC (rank_corr 0.136, 5 of 6 windows positive), but on BTC it met the 0.08 bar on the whole fold (0.089) and only 4 of 6 windows were positive (-0.36 in window 1, -0.52 in window 5), so it failed overall.
+  - leverage_effect_vol_asymmetry nearly held on LTC (ratio 1.196 above 1.15), but windows 3 and 5 were below 1 (0.92, 0.97); on BTC the ratio was 0.961, so there was no asymmetry at all.
+  - attention_volume_overpricing had the wrong sign on BTC (rank_corr +0.118 where negative was asked) and was flat on LTC (0.003), so high recent volume did not predict lower returns.
+  - max_day_lottery_reversal also had the wrong sign on BTC (+0.218), and on both coins its windows swung from -0.29 to +0.29 (BTC) and from -0.44 to +0.63 (LTC).
+  - Window 6 split the rank_corr claims apart, with attention and max-day strongly negative (BTC -0.50 and -0.65, LTC -0.55 and -0.60) while illiquidity was strongly positive (BTC 0.81, LTC 0.86).
+  - high_anchor_continuation could not be judged: BTC had values in only 2 of 6 windows despite an effect of 0.216, and LTC had only 28 near-high bars (below 30) with an effect of -0.0014.
+  - calm_regime_momentum was below its 0.015 bar on both coins (BTC 0.005, LTC 0.0086), and its windows changed sign on both.
+  - squeeze_spike_fade met its 0.01 bar on BTC (0.0136) with 5 of 6 windows positive, but it reversed on LTC (-0.0097), so the fade is not shared across categories.
+  - quiet_pullback_in_uptrend earned 0.037 net on BTC and 0.020 net on LTC, but it fired only 14 and 22 times, below the 30-bar minimum.
+next_claim:
+  id: vol_regime_premium
+  belief: When a coin's recent realized volatility is high relative to its own yearly norm, risk-bearing capacity is scarce and holders demand a premium, so forward multi-week returns are higher after high-volatility stretches.
+  claim:
+    when: every bar with a 30-day realized volatility and a 250-day median of it
+    then: the 20-day forward return rises with the log ratio of 30-day volatility to its 250-day median
+    compared_to: rank correlation across all such bars (no baseline set)
+    measure: rank_corr
+    horizon_bars: 20
+    direction: positive
+    min_effect: 0.10
+    code: |
+      vol30 = ret.rolling(30, min_periods=25).std()
+      feature = np.log(vol30 / vol30.rolling(250, min_periods=200).median())
+      a = feature.notna() & np.isfinite(feature)
+      b = ~a
+      signal = np.sign(feature).replace(0, 1.0)
+  why_no_lookahead: The feature uses only returns up to and including the bar's close, through trailing rolling windows, with no forward shift.
+  how_it_trades: Hold long when 30-day volatility is above its yearly median and stay flat or short otherwise, rebalancing daily so trades are rare.
+why: The illiquidity measure (|ret| per dollar volume) was the only claim that passed on a coin, while the volume-only claim leaned the opposite way on BTC (+0.118), which suggests the volatility half of illiquidity carries the effect; this claim isolates that half and was not tried as a predictor here.

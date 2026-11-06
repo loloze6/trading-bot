@@ -1,0 +1,196 @@
+brief: n04_btc_daily_vol_timing_1d.md
+ideas:
+  - id: low_vol_regime_momentum
+    belief: BTC trends persist when realized volatility is calm relative to its own past year, because calm markets carry less forced deleveraging that breaks trends.
+    claim:
+      when: bars where 20-day realized volatility sits in the lower half of its trailing 365-day range
+      then: going in the direction of the 20-day return earns more than cost over the next 10 days
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.01
+      code: |
+        vol20 = ret.rolling(20).std()
+        pct = vol20.rolling(365).rank(pct=True)
+        mom = df.close.pct_change(20)
+        a = (pct < 0.5) & mom.notna()
+        b = ~a
+        signal = np.sign(mom).replace(0, 1).fillna(1)
+    why_no_lookahead: The volatility percentile and the 20-day momentum use only closes up to and including the current bar.
+    how_it_trades: Follow the 20-day trend only while volatility is in its low regime, rebalancing every 10 days.
+
+  - id: high_vol_regime_short_reversal
+    belief: In high-volatility regimes, BTC's short moves are liquidation overshoots that revert, so the right rule switches from momentum to reversal.
+    claim:
+      when: bars where 20-day volatility is in the top third of its trailing 365-day range
+      then: fading the 3-day move earns more over the next 3 days
+      compared_to: the same fade on bars in the bottom third of the volatility range
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.005
+      code: |
+        vol20 = ret.rolling(20).std()
+        pct = vol20.rolling(365).rank(pct=True)
+        a = pct > 0.67
+        b = pct < 0.33
+        signal = -np.sign(df.close.pct_change(3)).replace(0, 1).fillna(1)
+    why_no_lookahead: The volatility rank and the 3-day return are computed from closes at or before the bar.
+    how_it_trades: When volatility is high, fade the last 3 days and hold for 3 days.
+
+  - id: drawdown_vol_contraction_long
+    belief: After a deep BTC drawdown, a calming of short-term volatility marks the end of capitulation and precedes a rebound.
+    claim:
+      when: bars with price more than 20% below its 60-day high and 5-day volatility below 70% of 20-day volatility
+      then: a long position gains more than cost over the next 10 days
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.02
+      code: |
+        dd = df.close / df.close.rolling(60).max() - 1
+        calm = ret.rolling(5).std() < 0.7 * ret.rolling(20).std()
+        a = spaced((dd < -0.2) & calm, 5)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The drawdown and both volatility windows end at the current close.
+    how_it_trades: Buy when a 20%+ drawdown coincides with contracting volatility, and hold for 10 days.
+
+  - id: compression_breakout_direction
+    belief: When BTC's range is compressed, the first close outside that range reveals the side that wins the coming expansion.
+    claim:
+      when: closes beyond the prior 20-day high or low, while the prior 20-day range is in the bottom quarter of its trailing year
+      then: trading in the breakout direction earns more than cost over the next 10 days
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.015
+      code: |
+        rng = df.high.rolling(20).max() / df.low.rolling(20).min() - 1
+        comp = rng.shift(1).rolling(365).rank(pct=True) < 0.25
+        up = df.close > df.high.shift(1).rolling(20).max()
+        dn = df.close < df.low.shift(1).rolling(20).min()
+        a = spaced((up | dn) & comp, 10)
+        b = spaced((up | dn) & ~comp, 10)
+        signal = pd.Series(np.where(up, 1.0, -1.0), index=df.index)
+    why_no_lookahead: The compression rank uses the range up to the prior bar, and the breakout compares today's close to prior bars' highs and lows.
+    how_it_trades: After compression, enter on the first 20-day breakout close in its direction and hold for 10 days.
+
+  - id: upside_vol_expansion_continuation
+    belief: In BTC, a volatility expansion that comes with rising prices reflects short squeezes and FOMO inflows that keep pushing price up.
+    claim:
+      when: bars where 5-day volatility exceeds 1.5 times 60-day volatility and the 5-day return is positive
+      then: a long position gains more than cost over the next 5 days
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.01
+      code: |
+        vr = ret.rolling(5).std() / ret.rolling(60).std()
+        a = (vr > 1.5) & (df.close.pct_change(5) > 0)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The volatility ratio and the 5-day return use closes up to the current bar.
+    how_it_trades: Go long when an upside volatility expansion appears, and hold for 5 days.
+
+  - id: vol_scaled_momentum_strength
+    belief: Momentum measured in units of its own volatility predicts BTC's next moves better than raw momentum, which supports sizing by volatility.
+    claim:
+      when: all bars with a defined risk-adjusted momentum
+      then: higher 20-day return per unit of 20-day volatility goes with a higher 10-day forward return
+      compared_to: rank correlation across bars
+      measure: rank_corr
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.05
+      code: |
+        feature = df.close.pct_change(20) / (ret.rolling(20).std() * np.sqrt(20))
+        a = feature.notna()
+        b = ~a
+        signal = np.sign(feature).replace(0, 1).fillna(1)
+    why_no_lookahead: Both the return and the volatility use closes up to the current bar.
+    how_it_trades: Hold a position whose size is proportional to the volatility-scaled 20-day return.
+
+  - id: uptrend_vol_spike_exit
+    belief: Within a BTC uptrend, a spike in volatility signals distribution and a weaker forward return, so longs should exit on expansion.
+    claim:
+      when: bars above the 100-day moving average whose 20-day volatility is in the top fifth of its trailing year
+      then: the 10-day forward return is lower (a short or flat position does better)
+      compared_to: bars above the 100-day moving average with volatility not in the top fifth
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.01
+      code: |
+        upt = df.close > df.close.rolling(100).mean()
+        pct = ret.rolling(20).std().rolling(365).rank(pct=True)
+        a = upt & (pct > 0.8)
+        b = upt & (pct <= 0.8)
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: The moving average and the volatility rank end at the current close.
+    how_it_trades: Stay long while above the 100-day average, and exit when volatility enters its top quintile.
+
+  - id: close_vs_range_vol_efficiency
+    belief: When close-to-close volatility is high relative to intraday high-low range, BTC moves are directional rather than choppy, so momentum works better.
+    claim:
+      when: bars where the ratio of 20-day close-to-close volatility to the mean 20-day log high-low range is in the top third of its trailing year
+      then: following the 10-day return earns more over the next 10 days
+      compared_to: the same rule on bars where that ratio is in the bottom third
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.01
+      code: |
+        cc = ret.rolling(20).std()
+        pk = np.log(df.high / df.low).rolling(20).mean()
+        r = (cc / pk).rolling(365).rank(pct=True)
+        a = r > 0.67
+        b = r < 0.33
+        signal = np.sign(df.close.pct_change(10)).replace(0, 1).fillna(1)
+    why_no_lookahead: The highs, lows and closes used all belong to bars at or before the current one.
+    how_it_trades: Trade 10-day momentum only when the efficiency ratio is high, and stand aside when it is low.
+
+  - id: low_volume_shock_fade
+    belief: A large BTC daily move on below-normal volume lacks real participation and tends to revert, while high-volume shocks hold.
+    claim:
+      when: days with an absolute return above 1.5 times the prior 20-day volatility and volume below the prior 20-day median
+      then: fading the day's move earns more over the next 3 days
+      compared_to: the same fade on equally large moves with volume at or above the median
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.008
+      code: |
+        sd = ret.rolling(20).std().shift(1)
+        big = ret.abs() > 1.5 * sd
+        lowv = df.volume < df.volume.rolling(20).median().shift(1)
+        a = big & lowv
+        b = big & ~lowv
+        signal = -np.sign(ret).replace(0, 1).fillna(1)
+    why_no_lookahead: The volatility and volume baselines use prior bars, and the shock is today's closed bar.
+    how_it_trades: Fade large low-volume daily moves and hold for 3 days.
+
+  - id: upside_semivariance_share
+    belief: When most of BTC's recent variance comes from up days, buyers are driving volatility and returns continue up; downside-driven variance precedes weakness.
+    claim:
+      when: all bars with a defined 20-day semivariance share
+      then: a higher share of variance from positive returns goes with a higher 10-day forward return
+      compared_to: rank correlation across bars
+      measure: rank_corr
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.05
+      code: |
+        up2 = (ret.clip(lower=0) ** 2).rolling(20).sum()
+        tot = (ret ** 2).rolling(20).sum()
+        feature = up2 / tot
+        a = feature.notna()
+        b = ~a
+        signal = np.sign(feature - 0.5).replace(0, 1).fillna(1)
+    why_no_lookahead: Both semivariance sums use returns up to the current close.
+    how_it_trades: Go long when the upside variance share is above one half and short when it is below, rebalancing every 10 days.
+notes: Ten ideas covering volatility level (regime momentum, reversal switch), trend (expansion exit, upside expansion), compression (directional breakout, unlike ETH's abs-ratio test), estimator structure (close-to-close versus range), volume confirmation and semivariance. ETH's expansion gate on a 50-day trend is deliberately inverted here as an exit rule (uptrend_vol_spike_exit). A weekday or weekend volatility idea was left out, because the daily bar's UTC close time makes weekday attribution ambiguous. The long-only claims have higher min_effect to absorb BTC's positive drift.

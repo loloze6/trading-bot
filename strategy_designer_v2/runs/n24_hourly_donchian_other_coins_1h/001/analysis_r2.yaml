@@ -1,0 +1,13 @@
+run: n24_hourly_donchian_other_coins_1h fold A
+observations:
+  - The 72h breakout held 24 bars lost money after fees on LTC (-0.57%) and XRP (-0.48%), and on SOL it made +0.34% but was positive in only 4 of 6 windows, so the BTC/ETH rule did not carry over.
+  - The 168h breakout held 72 bars passed on SOL (+2.52%, 5 of 6 windows positive). It nearly held on XRP, where +0.80% cleared the 0.5% bar but only 4 of 6 windows were positive. It failed on LTC (+0.12%, 3 of 6 windows).
+  - Adding a 3x volume filter to the 168h break raised SOL to +4.00% and XRP to +1.18%, but LTC stayed at +0.08%. XRP still had only 4 of 6 windows positive.
+  - Fading the 24h breakout lost money in all 6 windows on LTC (-0.22% net). That implies a gross continuation of about +0.07% over 6 bars, too small to pay the 0.15% fee in either direction.
+  - Overshoot size was negatively ranked with the next 24 bars on LTC (-0.104) and XRP (-0.202), with all 6 windows negative on both. On SOL it was positive (+0.095), with windows split 3 to 3.
+  - Position inside the 72h range was also negatively ranked with the next 24 bars on LTC (-0.056, 5 of 6 windows negative) and XRP (-0.049), while SOL was positive (+0.022). LTC and XRP act like mean-reverters at this horizon; SOL acts like a trend coin.
+  - Each gate passed on only one coin: compression on LTC (+0.77%), heavy volume on SOL (+1.16%) and weekday on XRP (+9.6 points of hit rate). Heavy-volume breakouts also left only 23 to 41 comparison bars, and two LTC windows were empty.
+  - Breakouts expanded volatility only on XRP (abs_ratio 1.22, all windows above 1). On LTC (1.11) and SOL (1.03) they did not, so the volatility-target mechanism behind the BTC/ETH result is missing on two of the three coins.
+  - Across 12 claims no single rule had the same sign on all three coins. The coins disagree in sign on every continuous measure: overshoot (-0.10, -0.20, +0.10) and channel position (-0.056, -0.049, +0.022).
+next_claim: none
+why: The rule must pass on all three coins, but LTC and XRP consistently show reversion after breaks while SOL shows continuation, so any next claim would only fit one side or be a threshold or window change of a claim already tried (the 168h break). The coins should be split into separate briefs instead.

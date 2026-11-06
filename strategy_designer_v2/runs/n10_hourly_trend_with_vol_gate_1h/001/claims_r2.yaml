@@ -1,0 +1,44 @@
+brief: n10_hourly_trend_with_vol_gate_1h.md
+source: analyst round 2
+ideas:
+- id: breakout_volume_confirmed
+  belief: A 72h breakout printed on a bar with heavy volume relative to the past week
+    reflects real participation and carries further over the next day than a breakout
+    on ordinary volume, which more often fails back into the range.
+  claim:
+    when: first 72h high/low close-breakout in 24 bars whose bar volume is more than
+      2x the prior 168-bar median hourly volume
+    then: the next 24 bars move further in the breakout direction
+    compared_to: the same 72h breakouts on bars with volume at or below 2x the prior
+      168-bar median
+    measure: mean_diff
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.003
+    code: 'hi = df.high.rolling(72).max().shift(1)
+
+      lo = df.low.rolling(72).min().shift(1)
+
+      up = df.close > hi
+
+      dn = df.close < lo
+
+      ev = spaced(up | dn, 24)
+
+      vmed = df.volume.rolling(168).median().shift(1)
+
+      rv = df.volume / vmed
+
+      ok = ev & vmed.notna()
+
+      a = ok & (rv > 2.0)
+
+      b = ok & (rv <= 2.0)
+
+      signal = pd.Series(np.where(up, 1, -1), index=df.index)
+
+      '
+  why_no_lookahead: The channel and the volume median use only prior bars (shift(1)),
+    and the breakout bar's own volume is known at its close.
+  how_it_trades: Enter in the breakout direction at the close of a high-volume 72h
+    breakout bar, hold 24 bars, and skip breakouts on ordinary volume.

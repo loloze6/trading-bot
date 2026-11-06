@@ -1,0 +1,969 @@
+brief: n28_hourly_stretch_reversion_older_coins_1h.md
+fold: C
+symbols:
+- LTCUSD
+- XRPUSD
+bar_size: 1h
+claims:
+- id: vwap24_stretch_fade
+  belief: On LTC and XRP, a close far from the 24h volume-weighted price, in units
+    of recent hourly volatility, is mostly liquidity-driven overshoot that gives back
+    part of the gap within hours.
+  measure: net_return
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.0022436077389313062
+      n_a: 497
+      n_b: 497
+      windows:
+      - -0.0017294409637839626
+      - -0.00833912052042937
+      - -0.0008454177616129586
+      - -0.0025942349564651874
+      - 0.0010505305456534907
+      - -0.0017768423716678634
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: 6.602272442013477e-06
+      n_a: 484
+      n_b: 484
+      windows:
+      - -0.0026652294422813516
+      - -0.003880867643459427
+      - -0.0007524821288401053
+      - 0.005214717170265079
+      - -0.0016129935406703317
+      - 0.00284174840403601
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(48).std()
+
+    vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    z = (df.close / vwap - 1) / vol
+
+    a = spaced(z.abs() > 3, 6)
+
+    b = ~a
+
+    signal = -np.sign(z).fillna(0)
+
+    '
+- id: range48_extreme_fade
+  belief: When price sits at the edge of its 48h high-low range, the range midpoint
+    acts as a magnet on these range-bound older coins.
+  measure: net_return
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.0035000879146695496
+      n_a: 328
+      n_b: 328
+      windows:
+      - -0.0016212293380603422
+      - -0.004763959122900894
+      - -0.004709849321348254
+      - -0.01075436256394875
+      - -0.0028747047200035434
+      - 0.0014035660174390556
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.0020040559415538386
+      n_a: 346
+      n_b: 346
+      windows:
+      - 0.0075562292713028546
+      - -0.014362634948552087
+      - 0.0015009009186844873
+      - 0.009034930504858292
+      - -0.011675844445300796
+      - -0.005456411901113815
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(48).std()
+
+    hi = df.high.rolling(48).max()
+
+    lo = df.low.rolling(48).min()
+
+    pos = (df.close - lo) / (hi - lo)
+
+    wide = (hi / lo - 1) > 6 * vol
+
+    a = spaced(((pos > 0.92) | (pos < 0.08)) & wide, 12)
+
+    b = ~a
+
+    signal = pd.Series(np.where(pos > 0.5, -1, 1), index=df.index)
+
+    '
+- id: slow_ema168_stretch_fade
+  belief: Large departures from the one-week mean are overextensions that partly unwind
+    over a day on coins with no strong trend narrative.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.006888330197493575
+      n_a: 56
+      n_b: 56
+      windows:
+      - -0.025476811859417813
+      - 0.0019766836403347435
+      - -0.004440453156511178
+      - -0.006315391817238433
+      - -0.04420732138216539
+      - 0.0385746091581603
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.01614961887523404
+      n_a: 55
+      n_b: 55
+      windows:
+      - 0.017984202697359508
+      - -0.055566897752726295
+      - -0.008773416122433373
+      - -0.058929600527901416
+      - -0.02764979399263383
+      - 0.046001536105986104
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(168).std()
+
+    ema = df.close.ewm(span=168, adjust=False).mean()
+
+    z = (df.close / ema - 1) / (vol * np.sqrt(24))
+
+    a = spaced(z.abs() > 2.5, 24)
+
+    b = ~a
+
+    signal = -np.sign(z).fillna(0)
+
+    '
+- id: stretch_low_volume_reverts_more
+  belief: A stretch built on thin volume carries no conviction and reverts, while
+    the same stretch on heavy volume reflects real flow and does not.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.001739444367636446
+      n_a: 352
+      n_b: 392
+      windows:
+      - 0.005933517428063862
+      - -0.0006619744459013897
+      - 0.0028194271805282102
+      - 0.003433865031984421
+      - -0.004550282659043813
+      - 0.0036325882105398867
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.0018176999140141815
+      n_a: 298
+      n_b: 424
+      windows:
+      - -0.012248084666051469
+      - 0.007085592322214289
+      - 0.00361022494084666
+      - -0.002782429257756827
+      - 0.0013848049010557835
+      - -0.006860103239625418
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(48).std()
+
+    vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    z = (df.close / vwap - 1) / vol
+
+    vr = df.volume.rolling(3).mean() / df.volume.rolling(72).median()
+
+    st = z.abs() > 2.5
+
+    a = spaced(st & (vr < 1.0), 6)
+
+    b = spaced(st & (vr > 2.0), 6)
+
+    signal = -np.sign(z).fillna(0)
+
+    '
+- id: stretch_volume_spike_continues
+  belief: A stretch away from the anchor accompanied by a volume burst is information
+    or forced flow that keeps going for several hours, the opposite of reversion.
+  measure: net_return
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.0022382470975995106
+      n_a: 234
+      n_b: 234
+      windows:
+      - -0.002524778565218182
+      - 0.0019151779928033206
+      - 0.006211140998358207
+      - -0.003970303524104803
+      - 0.0076175089154303585
+      - 0.0048583784181377345
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: 0.004527866463872371
+      n_a: 244
+      n_b: 244
+      windows:
+      - -0.0002904965564941679
+      - 0.01417724612485704
+      - 0.004224683893918094
+      - -0.006296245279391124
+      - 0.007674903955354423
+      - 0.007633741291995417
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(48).std()
+
+    vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    z = (df.close / vwap - 1) / vol
+
+    vr = df.volume.rolling(3).mean() / df.volume.rolling(72).median()
+
+    a = spaced((z.abs() > 3) & (vr > 2.5), 12)
+
+    b = ~a
+
+    signal = np.sign(z).fillna(0)
+
+    '
+- id: fast_stretch_reverts_slow_does_not
+  belief: A stretch that appeared within 3 hours is a liquidity shock that reverts,
+    while a stretch built gradually is a drift that persists.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.0005828229378258198
+      n_a: 253
+      n_b: 369
+      windows:
+      - -4.693278696468782e-05
+      - 0.00013413495924173222
+      - -0.0008448475122084039
+      - 0.006110587086342153
+      - 0.003957161362495339
+      - -0.006646992569652249
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.0009924505832047386
+      n_a: 241
+      n_b: 347
+      windows:
+      - -0.008405230155310976
+      - 0.012183847035634257
+      - -0.00297190852631519
+      - 0.005219249406388954
+      - -0.003670308241706409
+      - -0.007156503265627545
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(48).std()
+
+    vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    z = (df.close / vwap - 1) / vol
+
+    st = z.abs() > 3
+
+    a = spaced(st & (z.shift(3).abs() < 1), 6)
+
+    b = spaced(st & (z.shift(3).abs() > 2) & (np.sign(z.shift(3)) == np.sign(z)),
+    6)
+
+    signal = -np.sign(z).fillna(0)
+
+    '
+- id: us_hours_stretch_reverts_less
+  belief: Stretches formed during US weekday trading hours are driven by informed,
+    deeper flow and revert less than stretches formed at other hours.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: negative
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.0006908111555153811
+      n_a: 307
+      n_b: 609
+      windows:
+      - 0.0017168035209622976
+      - -0.0015081625980741418
+      - 0.004172712882609516
+      - -0.0056085137541404895
+      - -0.0015633807547732223
+      - -0.0011968134033158492
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.0018144076239509513
+      n_a: 307
+      n_b: 574
+      windows:
+      - 0.006036161041950951
+      - 0.002351737106530251
+      - -0.003285697488038141
+      - -0.003214101630201699
+      - -0.0005474919751994015
+      - -0.011632773042639797
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(48).std()
+
+    vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    z = (df.close / vwap - 1) / vol
+
+    st = z.abs() > 2.5
+
+    us = (hour >= 13) & (hour <= 20) & (dow < 5)
+
+    a = spaced(st & us, 6)
+
+    b = spaced(st & ~us, 6)
+
+    signal = -np.sign(z).fillna(0)
+
+    '
+- id: stretched_bar_wick_exhaustion
+  belief: A stretched bar that closes well off its extreme shows the push was rejected,
+    so reversion is more reliable than on stretched bars that close at their extreme.
+  measure: hit_rate
+  horizon_bars: 4
+  direction: positive
+  min_effect: 0.06
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.03783738799966718
+      n_a: 564
+      n_b: 767
+      windows:
+      - -0.11240816326530612
+      - -0.07628205128205129
+      - -0.04761904761904767
+      - -0.021364317841079505
+      - -0.010823529411764787
+      - 0.016260162601626105
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.06592189285474215
+      n_a: 513
+      n_b: 725
+      windows:
+      - -0.1687192118226601
+      - -0.1263716814159292
+      - -0.06252618349392547
+      - 0.18887330528284246
+      - -0.19743481917577793
+      - -0.045682102628285315
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(48).std()
+
+    vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    z = (df.close / vwap - 1) / vol
+
+    rng = (df.high - df.low).replace(0, np.nan)
+
+    cp = (df.close - df.low) / rng
+
+    cps = pd.Series(np.where(z > 0, cp, 1 - cp), index=df.index)
+
+    st = z.abs() > 2.5
+
+    a = spaced(st & (cps < 0.5), 4)
+
+    b = spaced(st & (cps > 0.75), 4)
+
+    signal = -np.sign(z).fillna(0)
+
+    '
+- id: stretch_size_ranks_reversion
+  belief: The further price is from the 72h mean in volatility units, the larger the
+    next day's reversion, a graded relation rather than a threshold.
+  measure: rank_corr
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.1
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.10602379795554794
+      n_a: 108
+      n_b: 108
+      windows:
+      - 0.05147058823529412
+      - -0.03333333333333333
+      - -0.10701754385964912
+      - -0.2543859649122807
+      - -0.30637254901960786
+      - 0.18137254901960786
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.09526424460747704
+      n_a: 103
+      n_b: 103
+      windows:
+      - -0.3382352941176471
+      - -0.4945054945054946
+      - -0.06470588235294117
+      - -0.3602941176470589
+      - 0.12727272727272726
+      - 0.3622291021671827
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(168).std()
+
+    m = df.close.rolling(72).mean()
+
+    z = (df.close / m - 1) / (vol * np.sqrt(24))
+
+    a = spaced(z.abs() > 1.5, 24)
+
+    b = ~a
+
+    feature = -z
+
+    '
+- id: stretch_predicts_larger_moves
+  belief: A large stretch from the anchor marks a volatility event, so the next hours
+    move more in absolute terms whatever the direction, which sets the cost hurdle
+    for any fade.
+  measure: abs_ratio
+  horizon_bars: 6
+  direction: above
+  min_effect: 1.35
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 1.1778118197567873
+      n_a: 2904
+      n_b: 14565
+      windows:
+      - 1.1472643044950341
+      - 1.2009012696554089
+      - 1.0626112268190127
+      - 1.2706269676832886
+      - 1.251473992757051
+      - 1.064301931576967
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: 1.3453728572978678
+      n_a: 2720
+      n_b: 14757
+      windows:
+      - 1.3045060955298848
+      - 1.469874575414009
+      - 1.1064033993898712
+      - 1.3292587385589867
+      - 1.6534065981156614
+      - 1.0786306335526088
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(48).std()
+
+    vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    z = (df.close / vwap - 1) / vol
+
+    a = z.abs() > 3
+
+    b = ~a
+
+    '
+- id: low_vol_regime_stretch_reverts_more
+  belief: In a calm regime a stretch is noise around a stable price and reverts, while
+    in a high-volatility regime the same stretch belongs to a trend.
+  measure: mean_diff
+  horizon_bars: 8
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.00502345510826907
+      n_a: 305
+      n_b: 93
+      windows:
+      - -0.009497806303746279
+      - -0.008757155819671434
+      - 0.00883722182339822
+      - -0.012195350172473895
+      - -5.800490220308216e-05
+      - -0.009479107004139717
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.010311092946385915
+      n_a: 301
+      n_b: 110
+      windows:
+      - -0.046564308252851655
+      - -2.7747035332379225e-05
+      - -0.0053466923814950865
+      - -0.022771238115480548
+      - -0.001976544190782954
+      - 0.016202848424602036
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(48).std()
+
+    vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    z = (df.close / vwap - 1) / vol
+
+    vmed = vol.rolling(720).median()
+
+    st = z.abs() > 2.5
+
+    a = spaced(st & (vol < vmed), 8)
+
+    b = spaced(st & (vol > 1.5 * vmed), 8)
+
+    signal = -np.sign(z).fillna(0)
+
+    '
+- id: high_vol_regime_stretch_continues
+  belief: On LTC and XRP, a stretch from the 24h VWAP that forms while hourly volatility
+    is well above its monthly norm belongs to a trend and keeps going for the next
+    several hours.
+  measure: net_return
+  horizon_bars: 8
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.004417693569092612
+      n_a: 93
+      n_b: 93
+      windows:
+      - -0.003467517944976305
+      - -0.005147226260506841
+      - 0.00646940065672676
+      - -0.011851534884345772
+      - -0.002217928283221978
+      - -0.010599610842219234
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.007692365313937176
+      n_a: 110
+      n_b: 110
+      windows:
+      - -0.03496121095240902
+      - 0.006805719875574592
+      - -0.002866128768154014
+      - -0.020938117299680595
+      - -0.00743602945691914
+      - 0.013074121221435461
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(48).std()
+
+    vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    z = (df.close / vwap - 1) / vol
+
+    vmed = vol.rolling(720).median()
+
+    a = spaced((z.abs() > 2.5) & (vol > 1.5 * vmed), 8)
+
+    b = ~a
+
+    signal = np.sign(z).fillna(0)
+
+    '
+- id: volume_burst_stretch_pullback_bar_continues
+  belief: On LTC and XRP, a stretch from the 24h VWAP that comes with a volume burst
+    and a bar closing off its extreme is forced flow pausing inside the bar, and it
+    keeps going over the next 12 hours.
+  measure: net_return
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.003
+  verdict: pass
+  by_symbol:
+    LTCUSD:
+      effect: 0.006379625955405071
+      n_a: 164
+      n_b: 164
+      windows:
+      - -0.004724335766132693
+      - 0.00119324147681883
+      - 0.007707313227286641
+      - 0.003914504498972588
+      - 0.017379533450110975
+      - 0.017151266545228052
+      verdict: pass
+      why: null
+    XRPUSD:
+      effect: 0.008748706951935541
+      n_a: 177
+      n_b: 177
+      windows:
+      - 0.00998686050198044
+      - 0.011543366767050811
+      - -0.0006957389281488783
+      - 0.00888652875623761
+      - 0.018716966533278735
+      - 0.004071889327981486
+      verdict: pass
+      why: null
+  code: 'vol = ret.rolling(48).std()
+
+    vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    z = (df.close / vwap - 1) / vol
+
+    vr = df.volume.rolling(3).mean() / df.volume.rolling(72).median()
+
+    rng = (df.high - df.low).replace(0, np.nan)
+
+    cp = (df.close - df.low) / rng
+
+    cps = pd.Series(np.where(z > 0, cp, 1 - cp), index=df.index)
+
+    a = spaced((z.abs() > 3) & (vr > 2.5) & (cps < 0.5), 12)
+
+    b = ~a
+
+    signal = np.sign(z).fillna(0)
+
+    '
+profit:
+  volume_burst_stretch_pullback_bar_continues/LTCUSD:
+    claim: volume_burst_stretch_pullback_bar_continues
+    symbol: LTCUSD
+    bar_size: 1h
+    fold: C
+    engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+    min_bars: 221
+    verdict: fail
+    passed_as: null
+    fold_totals: &id001
+      net_return: 0.7907
+      median_window_sharpe: 1.2563
+      worst_window_drawdown: 0.2722
+      trades: 170
+    full_size:
+      sizing: full size (forecast 10 = 100%)
+      fold_totals: *id001
+      windows:
+      - window: W1
+        net_return: -0.1925
+        trades: 25
+        sharpe: -1.6059
+        max_drawdown: 0.2722
+        exposure_pct: 9.7734
+        cost_drag_pct: 12.5605
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/full_size/20261106T022613Z_f1abed77
+        seconds: 29
+      - window: W2
+        net_return: -0.016
+        trades: 33
+        sharpe: -0.1969
+        max_drawdown: 0.2151
+        exposure_pct: 13.1282
+        cost_drag_pct: 198.9731
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/full_size/20261106T022643Z_f1abed77
+        seconds: 30
+      - window: W3
+        net_return: 0.1807
+        trades: 29
+        sharpe: 2.0104
+        max_drawdown: 0.1125
+        exposure_pct: 11.3937
+        cost_drag_pct: 14.9443
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/full_size/20261106T022711Z_f1abed77
+        seconds: 28
+      - window: W4
+        net_return: 0.0562
+        trades: 36
+        sharpe: 0.5537
+        max_drawdown: 0.2194
+        exposure_pct: 14.0787
+        cost_drag_pct: 40.1214
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/full_size/20261106T022744Z_f1abed77
+        seconds: 32
+      - window: W5
+        net_return: 0.4384
+        trades: 25
+        sharpe: 3.0071
+        max_drawdown: 0.1145
+        exposure_pct: 9.8428
+        cost_drag_pct: 6.0483
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/full_size/20261106T022811Z_f1abed77
+        seconds: 28
+      - window: W6
+        net_return: 0.2564
+        trades: 22
+        sharpe: 1.9589
+        max_drawdown: 0.2533
+        exposure_pct: 8.1439
+        cost_drag_pct: 8.3655
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/full_size/20261106T022840Z_f1abed77
+        seconds: 29
+      checks:
+        net_positive_in_5_of_6: false
+        median_window_sharpe_ge_1.0: true
+        worst_window_drawdown_le_20%: false
+      verdict: fail
+    vol_target:
+      sizing:
+        kind: vol_target
+        window: 30
+        target_annual_vol: 0.2
+        max_allocation: 1.0
+      fold_totals:
+        net_return: 0.0896
+        median_window_sharpe: 0.6875
+        worst_window_drawdown: 0.0564
+        trades: 162
+      windows:
+      - window: W1
+        net_return: -0.0379
+        trades: 23
+        sharpe: -1.8375
+        max_drawdown: 0.0564
+        exposure_pct: 9.7734
+        cost_drag_pct: 11.7342
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/vol_target/20261106T022910Z_1c204fed
+        seconds: 29
+      - window: W2
+        net_return: -0.0065
+        trades: 32
+        sharpe: -0.4701
+        max_drawdown: 0.0388
+        exposure_pct: 13.1282
+        cost_drag_pct: 402.7767
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/vol_target/20261106T022939Z_1c204fed
+        seconds: 30
+      - window: W3
+        net_return: 0.0248
+        trades: 28
+        sharpe: 1.2681
+        max_drawdown: 0.0256
+        exposure_pct: 11.3937
+        cost_drag_pct: 19.3463
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/vol_target/20261106T023007Z_1c204fed
+        seconds: 27
+      - window: W4
+        net_return: 0.0098
+        trades: 35
+        sharpe: 0.3082
+        max_drawdown: 0.0493
+        exposure_pct: 14.0787
+        cost_drag_pct: 45.7095
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/vol_target/20261106T023039Z_1c204fed
+        seconds: 32
+      - window: W5
+        net_return: 0.0765
+        trades: 24
+        sharpe: 2.6818
+        max_drawdown: 0.0359
+        exposure_pct: 9.8428
+        cost_drag_pct: 7.1813
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/vol_target/20261106T023106Z_1c204fed
+        seconds: 27
+      - window: W6
+        net_return: 0.0233
+        trades: 20
+        sharpe: 1.0668
+        max_drawdown: 0.0298
+        exposure_pct: 8.1439
+        cost_drag_pct: 13.6989
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_LTCUSD/results/vol_target/20261106T023134Z_1c204fed
+        seconds: 28
+      checks:
+        net_positive_in_5_of_6: false
+        median_window_sharpe_ge_1.0: false
+        worst_window_drawdown_le_20%: true
+      verdict: fail
+  volume_burst_stretch_pullback_bar_continues/XRPUSD:
+    claim: volume_burst_stretch_pullback_bar_continues
+    symbol: XRPUSD
+    bar_size: 1h
+    fold: C
+    engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+    min_bars: 221
+    verdict: pass
+    passed_as: vol_target
+    fold_totals: &id002
+      net_return: 0.3222
+      median_window_sharpe: 1.79825
+      worst_window_drawdown: 0.0558
+      trades: 177
+    full_size:
+      sizing: full size (forecast 10 = 100%)
+      fold_totals:
+        net_return: 1.2068
+        median_window_sharpe: 0.96945
+        worst_window_drawdown: 0.4969
+        trades: 187
+      windows:
+      - window: W1
+        net_return: -0.1087
+        trades: 27
+        sharpe: -0.1065
+        max_drawdown: 0.4969
+        exposure_pct: 9.7699
+        cost_drag_pct: 18.7769
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/full_size/20261106T023202Z_f1abed77
+        seconds: 28
+      - window: W2
+        net_return: 0.2967
+        trades: 27
+        sharpe: 2.297
+        max_drawdown: 0.1585
+        exposure_pct: 11.0731
+        cost_drag_pct: 10.216
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/full_size/20261106T023230Z_f1abed77
+        seconds: 28
+      - window: W3
+        net_return: -0.049
+        trades: 26
+        sharpe: -0.5526
+        max_drawdown: 0.1499
+        exposure_pct: 10.5799
+        cost_drag_pct: 113.3868
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/full_size/20261106T023255Z_f1abed77
+        seconds: 26
+      - window: W4
+        net_return: 0.1767
+        trades: 34
+        sharpe: 1.3922
+        max_drawdown: 0.3249
+        exposure_pct: 13.2231
+        cost_drag_pct: 18.0765
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/full_size/20261106T023321Z_f1abed77
+        seconds: 25
+      - window: W5
+        net_return: 0.6163
+        trades: 35
+        sharpe: 2.401
+        max_drawdown: 0.2044
+        exposure_pct: 12.7136
+        cost_drag_pct: 5.0331
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/full_size/20261106T023348Z_f1abed77
+        seconds: 27
+      - window: W6
+        net_return: 0.0557
+        trades: 38
+        sharpe: 0.5467
+        max_drawdown: 0.2305
+        exposure_pct: 14.0821
+        cost_drag_pct: 41.3131
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/full_size/20261106T023415Z_f1abed77
+        seconds: 28
+      checks:
+        net_positive_in_5_of_6: false
+        median_window_sharpe_ge_1.0: false
+        worst_window_drawdown_le_20%: false
+      verdict: fail
+    vol_target:
+      sizing:
+        kind: vol_target
+        window: 30
+        target_annual_vol: 0.2
+        max_allocation: 1.0
+      fold_totals: *id002
+      windows:
+      - window: W1
+        net_return: 0.0924
+        trades: 25
+        sharpe: 2.2004
+        max_drawdown: 0.0493
+        exposure_pct: 9.7699
+        cost_drag_pct: 4.6163
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/vol_target/20261106T023444Z_1c204fed
+        seconds: 29
+      - window: W2
+        net_return: 0.0229
+        trades: 27
+        sharpe: 1.3961
+        max_drawdown: 0.0237
+        exposure_pct: 11.0731
+        cost_drag_pct: 18.7822
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/vol_target/20261106T023512Z_1c204fed
+        seconds: 28
+      - window: W3
+        net_return: -0.0243
+        trades: 26
+        sharpe: -1.3419
+        max_drawdown: 0.0455
+        exposure_pct: 10.5799
+        cost_drag_pct: 39.4775
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/vol_target/20261106T023539Z_1c204fed
+        seconds: 27
+      - window: W4
+        net_return: 0.1167
+        trades: 33
+        sharpe: 2.6388
+        max_drawdown: 0.0558
+        exposure_pct: 13.2231
+        cost_drag_pct: 8.0104
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/vol_target/20261106T023605Z_1c204fed
+        seconds: 26
+      - window: W5
+        net_return: 0.0833
+        trades: 31
+        sharpe: 2.4644
+        max_drawdown: 0.0323
+        exposure_pct: 12.7136
+        cost_drag_pct: 8.6329
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/vol_target/20261106T023632Z_1c204fed
+        seconds: 27
+      - window: W6
+        net_return: 0.0025
+        trades: 35
+        sharpe: 0.1205
+        max_drawdown: 0.0542
+        exposure_pct: 14.0821
+        cost_drag_pct: 73.1103
+        run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/vol_target/20261106T023700Z_1c204fed
+        seconds: 28
+      checks:
+        net_positive_in_5_of_6: true
+        median_window_sharpe_ge_1.0: true
+        worst_window_drawdown_le_20%: true
+      verdict: pass

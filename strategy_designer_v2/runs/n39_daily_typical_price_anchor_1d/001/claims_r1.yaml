@@ -1,0 +1,35 @@
+brief: n39_daily_typical_price_anchor_1d.md
+source: analyst round 1
+ideas:
+- id: vwap20_stretch_percentile_rank_reversion
+  belief: The close's stretch from the 20-day VWAP reverts relative to its own recent
+    range of stretches, so ranking the stretch within its trailing 120 days removes
+    the regime drift that hid the within-window reversion.
+  claim:
+    when: every daily bar with 120 days of stretch history
+    then: the higher the current stretch ranks among its last 120 values, the lower
+      the 5-day forward return
+    compared_to: the whole range of percentile ranks (correlation, no baseline set)
+    measure: rank_corr
+    horizon_bars: 5
+    direction: negative
+    min_effect: 0.06
+    code: 'tp = (df.high + df.low + df.close) / 3
+
+      vw = (tp * df.volume).rolling(20).sum() / df.volume.rolling(20).sum()
+
+      sig = ret.rolling(20).std()
+
+      z = (df.close / vw - 1) / sig
+
+      feature = z.rolling(120).apply(lambda x: (x <= x[-1]).mean(), raw=True)
+
+      a = feature.notna()
+
+      b = ~a
+
+      '
+  why_no_lookahead: The anchor, the volatility and the 120-day percentile use only
+    bars up to and including the current close.
+  how_it_trades: Short the coin when its stretch sits in the top part of its 120-day
+    range and buy it when the stretch sits in the bottom part, holding 5 days.

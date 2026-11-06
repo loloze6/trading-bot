@@ -1,0 +1,41 @@
+claim: friday_long_net_profit
+symbol: BTCUSD
+bar_size: 1d
+fold: B
+cost_per_round_trip: 0.0015
+fold_totals:
+  net_return: 0.3329
+  sharpe: 0.97
+  max_drawdown: -0.0845
+  time_in_market: 0.141
+  trades: 103
+windows:
+- window: W1
+  net_return: 0.0228
+  trades: 17
+  max_drawdown: -0.0713
+- window: W2
+  net_return: 0.0917
+  trades: 17
+  max_drawdown: -0.0151
+- window: W3
+  net_return: 0.0063
+  trades: 17
+  max_drawdown: -0.0676
+- window: W4
+  net_return: 0.0916
+  trades: 18
+  max_drawdown: -0.0297
+- window: W5
+  net_return: 0.0632
+  trades: 17
+  max_drawdown: -0.0616
+- window: W6
+  net_return: 0.0222
+  trades: 17
+  max_drawdown: -0.0845
+checks:
+  net_positive_in_5_of_6: true
+  sharpe_ge_1.0: false
+  max_drawdown_le_20%: true
+verdict: fail

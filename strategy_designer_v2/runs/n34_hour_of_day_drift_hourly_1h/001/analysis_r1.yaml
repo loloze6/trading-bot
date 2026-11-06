@@ -1,0 +1,29 @@
+run: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001
+observations:
+  - The weekday Europe-open short over 07:00-10:00 UTC (europe_open_distribution_weekday_07_10) passed the judge on all three coins, with mean_diff 0.0018 on BTC, 0.0025 on ETH and 0.0018 on LTC, and the same sign in 6/6, 5/6 and 5/6 windows.
+  - The same claim failed the engine on every coin. Full-size fold net return was -14.3% on BTC, +0.08% on ETH and -48.5% on LTC, and window W3 and window W5 were negative on all three.
+  - It nearly held. The belief looks right, but mean_diff with signal -1 everywhere counts the positive drift of the other bars (b) in the effect, so the short itself earned less than 0.18%-0.25% before the 0.15% cost. Cost drag ran from 27% to 483% of gross in the full-size windows.
+  - The weekday Asia-morning long over 01:00-05:00 UTC failed in the opposite direction from the one asked. Its effect was -0.0015 on BTC, -0.0016 on ETH and -0.0020 on LTC, negative in 4/6, 5/6 and 4/6 windows, which points to a weekday down-drift in those hours.
+  - The 00:00-02:00 day-open long was also negative on all three coins, at -0.0005 on BTC, -0.0009 on ETH and -0.0008 on LTC, with ETH negative in 5/6 windows.
+  - The 22:00-02:00 weekday long lost after cost on every coin: net -0.24% on BTC, -0.18% on ETH and -0.20% on LTC. That leaves a gross drift of about -0.03% to -0.09%, so there is no long edge around the US close.
+  - The 19:00-21:00 benchmark-fix long had the right sign everywhere (0.0003, 0.0007 and 0.0008) but the windows disagree. LTC was positive in only 3/6 windows and BTC in 4/6.
+  - The pre-funding short was positive in 6/6 BTC windows, but only at 0.00027, below the 0.0004 asked. On ETH (-0.00007) and LTC (-0.00008) it reversed.
+  - The CME-reopen weekend fade reached 0.0023 on LTC, but it rests on only 103 events, and BTC and ETH windows split 3/3 in sign.
+next_claim:
+  id: weekday_asia_europe_morning_short_01_10_net
+  belief: On weekdays the whole 01:00 to 10:00 UTC morning (Asia then the Europe open) carries a negative drift, and holding one short through the full block, with a single round trip, pays the cost that the 3-hour Europe-only short could not.
+  claim:
+    when: weekday bars closing at 01:00 UTC
+    then: the close at 10:00 UTC is below the close at 01:00 UTC by more than the round-trip cost
+    compared_to: zero after the 0.15% round-trip cost
+    measure: net_return
+    horizon_bars: 9
+    direction: positive
+    min_effect: 0.0005
+    code: |
+      a = (hour == 1) & (dow < 5)
+      b = ~a
+      signal = pd.Series(-1.0, index=df.index)
+  why_no_lookahead: The selector uses only the hour and weekday of the bar's own close time, and entry is at that close.
+  how_it_trades: On each weekday, short spot at the 01:00 UTC close and buy back at the 10:00 UTC close, one round trip per day.
+why: Both the 01-05 long and the 07-10 short came out negative-drift on all three coins, and the engine showed that a 3-hour block cannot carry the cost. One 9-hour short over the whole morning tests the absolute drift net of cost (not a drift relative to the other bars), with a single 0.15% charge.

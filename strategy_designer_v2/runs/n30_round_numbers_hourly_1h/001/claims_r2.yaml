@@ -1,0 +1,43 @@
+brief: n30_round_numbers_hourly_1h.md
+source: analyst round 2
+ideas:
+- id: level_proximity_vol_regime_matched
+  belief: Prices sitting close to a round level, measured in price terms rather than
+    volatility units, are followed by larger moves than prices midway between levels,
+    even at the same volatility regime and the same current bar size.
+  claim:
+    when: hourly closes within 5% of the level step of the nearest round level (step
+      = leading power of ten / 10), in a normal volatility regime and with a non-extreme
+      current bar
+    then: the absolute 6-hour forward return is larger
+    compared_to: closes at least 25% of a step away from any level (the midway zone),
+      under the same regime and bar-size filter
+    measure: abs_ratio
+    horizon_bars: 6
+    direction: above
+    min_effect: 1.08
+    code: 'step = 10.0 ** np.floor(np.log10(df.close)) / 10
+
+      near = (df.close / step).round() * step
+
+      d = (df.close - near).abs() / step
+
+      sd = ret.rolling(24).std().shift(1)
+
+      z = ret.abs() / sd
+
+      reg = sd / sd.rolling(720).median()
+
+      band = (z <= 2.5) & (reg >= 0.8) & (reg <= 1.25) & sd.notna() & reg.notna()
+
+      a = (d <= 0.05) & band
+
+      b = (d >= 0.25) & band
+
+      signal = pd.Series(1, index=df.index)
+
+      '
+  why_no_lookahead: The level, distance, current bar return and 24h volatility use
+    closes at or before the bar, and the regime volatility is shifted one bar.
+  how_it_trades: When the close sits near a round level in a normal regime, widen
+    stops or buy volatility for the next 6 hours, and tighten them in the midway zone.

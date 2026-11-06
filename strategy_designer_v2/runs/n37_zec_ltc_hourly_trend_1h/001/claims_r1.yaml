@@ -1,0 +1,31 @@
+brief: n37_zec_ltc_hourly_trend_1h.md
+source: analyst round 1
+ideas:
+- id: vol_scaled_weekly_trend_rank
+  belief: The strength of the past week's trend, measured against its own volatility,
+    predicts the next day's return on both coins, once it is sampled one bar per day
+    so the samples do not overlap.
+  claim:
+    when: one bar per day at 00:00 UTC, once a full week of history exists
+    then: the next 24-bar return has the same rank order as the past 168-bar return
+      divided by that week's volatility
+    compared_to: no relation (zero rank correlation)
+    measure: rank_corr
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.08
+    code: 'r168 = df.close / df.close.shift(168) - 1
+
+      sd = ret.rolling(168).std() * np.sqrt(168)
+
+      feature = (r168 / sd.replace(0, np.nan)).replace([np.inf, -np.inf], np.nan)
+
+      a = feature.notna() & (hour == 0)
+
+      b = ~a
+
+      '
+  why_no_lookahead: The feature uses only closes and returns up to and including the
+    sampled bar, through shift(168) and a trailing 168-bar std, with no forward shift.
+  how_it_trades: Each day at 00:00 UTC, hold long or short in the direction of the
+    volatility-scaled weekly trend for 24 hours, sized by its strength.

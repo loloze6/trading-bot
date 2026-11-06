@@ -1,0 +1,41 @@
+claim: donchian_72h_breakout
+symbol: BTCUSD
+bar_size: 1h
+fold: C
+cost_per_round_trip: 0.0015
+fold_totals:
+  net_return: 0.4725
+  sharpe: 0.62
+  max_drawdown: -0.5314
+  time_in_market: 0.302
+  trades: 219
+windows:
+- window: W1
+  net_return: 0.2091
+  trades: 36
+  max_drawdown: -0.3116
+- window: W2
+  net_return: 0.0003
+  trades: 32
+  max_drawdown: -0.2299
+- window: W3
+  net_return: 0.1881
+  trades: 33
+  max_drawdown: -0.1403
+- window: W4
+  net_return: 0.5521
+  trades: 39
+  max_drawdown: -0.3388
+- window: W5
+  net_return: 0.1626
+  trades: 34
+  max_drawdown: -0.18
+- window: W6
+  net_return: -0.4321
+  trades: 44
+  max_drawdown: -0.5314
+checks:
+  net_positive_in_5_of_6: true
+  sharpe_ge_1.0: false
+  max_drawdown_le_20%: false
+verdict: fail

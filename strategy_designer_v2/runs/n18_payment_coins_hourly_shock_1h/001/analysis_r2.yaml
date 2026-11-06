@@ -1,0 +1,14 @@
+run: n18_payment_coins_hourly_shock_1h/fold_A
+observations:
+  - "Volatility after a shock nearly held: the 6h abs_ratio was 1.31 on XRP and 1.26 on TRX, above 1 in all 12 windows, but short of the 1.5 asked."
+  - "The only pass was volume_backed_shock_more_volatile_after. A shock with volume above 3x its median gave a 6h abs_ratio of 1.18 on XRP and 1.31 on TRX against shocks on ordinary volume, with all 12 windows above 1. TRX window 6 was barely above, at 1.0005."
+  - "Volume did not set the direction. volume_confirmed_shock_continues gave a mean_diff of -0.18% on XRP and +0.18% on TRX, and XRP's windows split 4 negative to 2 positive."
+  - "Fading a thin-volume shock lost after cost on both coins: net_return over 4 bars was -0.42% on XRP and -0.09% on TRX. XRP was negative in all 6 windows even before the 0.15% cost, so its thin shocks continued rather than reverted."
+  - "The two coins disagree on direction after a confirmed shock. Over 12 bars, XRP continued (net +0.19%, 5 of 6 windows positive) and TRX reverted (net -0.28%, 5 of 6 windows negative)."
+  - "Exhaustion reversal passed on TRX (mean_diff +0.69%, 5 of 6 windows positive). It failed on XRP (-0.78% on only 32 events), and one XRP window alone showed -5.7%."
+  - "US-hour shocks continued more than Asian-hour shocks on XRP: +0.26%, with 5 of 6 windows positive, but under the 0.4% asked. On TRX the gap was flat at -0.01%."
+  - "Shock size as a predictor of 24h reversal was weak. rank_corr was -0.16 on TRX and -0.05 on XRP, and both coins split 3 to 3 in sign across windows."
+  - "A volume surge with no price move barely raised later volatility: the 12h abs_ratio was 1.19 on XRP and 1.02 on TRX, and 5 of the 12 windows were below 1."
+  - "Wick-rejection shocks were too rare to judge. There were 45 events on XRP and 30 on TRX, and the windows ranged from -1.4% to +2.6%."
+next_claim: none
+why: "Every directional reading points opposite ways on the two coins (XRP continues, TRX reverts), so no single continuation or reversal claim can pass on both, and the only robust finding is volatility, which does not trade on its own."

@@ -1,0 +1,32 @@
+run: n38_daily_range_cycles_1d_fold_C
+observations:
+  - No claim passed on all three coins, so the profit step answered "none: no return claim passed".
+  - "Fading the 10-day widest-range day was wrong in sign on all three coins: BTC -0.0109, ETH -0.0159, LTC -0.0100 against +0.006 asked. Wide days tended to continue rather than retrace, but only 3 to 4 of 6 windows agreed on that sign."
+  - "Continuation on a widest-range day that closed at an extreme passed on ETH (0.0207, 5 of 6 windows positive). It failed on BTC (-0.0084) and on LTC (0.0133, but 2 negative windows)."
+  - "A single-day range extreme did not predict the size of later moves: after a 20-day widest day the 5-bar abs ratio was BTC 1.05, ETH 1.11, LTC 0.89 against 1.25 asked. After an NR7 day the 1-bar ratio was 1.04, 1.03, 0.87 against below 0.85 asked."
+  - "The windows split widely on size: BTC's expansion ratio ran from 0.65 to 1.70, and its NR7 ratio from 0.48 to 1.41."
+  - "The trend pause after a narrowest-range day nearly held: net_return was BTC 0.027, ETH 0.030, LTC 0.006, all above 0.004. Only ETH kept the sign in 5 of 6 windows."
+  - "The control test suggests the trend-pause gain comes from the 20-day trend itself, not from the narrow days. Trend after a contraction regime minus trend on other bars was BTC -0.0059, ETH -0.0056, LTC +0.0120 against +0.008 asked."
+  - "The capitulation long after a wide down day lost money on BTC (-0.074) and ETH (-0.103) and rested on only 8 to 12 events."
+  - "The first wide day after an NR7 continued on BTC (hit-rate edge 0.112, 5 of 6 windows positive) but showed no edge on ETH (-0.005) or LTC (-0.0004)."
+  - "The size-weighted, close-signed range feature had no rank correlation with the 5-bar return: BTC -0.004, ETH 0.032, LTC -0.011 against 0.05 asked."
+next_claim:
+  id: range_regime_size_persists
+  belief: Volatility clusters at the regime level rather than on single extreme days, so a 10-day stretch of wide ranges relative to the last 60 days is followed by bigger 5-day moves than a 10-day stretch of narrow ranges.
+  claim:
+    when: bars where the 10-day mean daily range is at least 1.3 times its 60-day mean (an expansion regime)
+    then: the absolute 5-day forward return is larger
+    compared_to: bars where the 10-day mean daily range is at most 0.8 times its 60-day mean (a contraction regime)
+    measure: abs_ratio
+    horizon_bars: 5
+    direction: above
+    min_effect: 1.30
+    code: |
+      rng = (df.high - df.low) / df.close.shift(1)
+      reg = rng.rolling(10).mean() / rng.rolling(60).mean()
+      a = (reg >= 1.3).fillna(False)
+      b = (reg <= 0.8).fillna(False)
+      signal = pd.Series(np.where(ret > 0, 1, -1), index=df.index)
+  why_no_lookahead: The regime uses only rolling means of high, low and the prior close up to the current bar's close.
+  how_it_trades: Scale position size or stop distance down in expansion regimes and up in contraction regimes, or buy short-dated straddles when the regime is expanding.
+why: Single-day range extremes failed on size (ratios 0.87 to 1.11) with windows from 0.48 to 1.70, so the next test asks whether a smoother multi-day regime, compared directly against its opposite, carries the clustering that single days did not. Its 1.30 threshold is well above the 1.05 to 1.11 seen.

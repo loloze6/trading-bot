@@ -1,0 +1,25 @@
+brief: n36_ltc_xmr_hourly_weekday_1h.md
+source: analyst round 1
+ideas:
+- id: weekday_us_open_vol_block
+  belief: On LTC and XMR, hourly volatility is concentrated in the weekday US-open
+    hours (13-16 UTC), the mirror of the quiet Asia block seen in this run.
+  claim:
+    when: weekday bars (Monday to Friday) whose UTC hour is 13, 14, 15 or 16
+    then: the absolute return over the next bar is larger
+    compared_to: all other bars
+    measure: abs_ratio
+    horizon_bars: 1
+    direction: above
+    min_effect: 1.2
+    code: 'a = hour.isin([13, 14, 15, 16]) & (dow < 5)
+
+      b = ~a
+
+      signal = pd.Series(1.0, index=df.index)
+
+      '
+  why_no_lookahead: The selector uses only the bar's own UTC hour and weekday, which
+    are known at the bar's close.
+  how_it_trades: Not a direction trade. It sets the volatility regime for sizing,
+    stop width and the hours in which to place resting orders.

@@ -1,0 +1,51 @@
+brief: n08_opening_range_breakout_eth_1h.md
+source: analyst round 1
+ideas:
+- id: or_location_with_prior_day
+  belief: When the first four UTC hours close near one edge of their range in the
+    same direction as the prior day's move, both the early flow and the running trend
+    agree, and the next 20 hours drift that way by more than the cost.
+  claim:
+    when: the 03-04 UTC bar, when its close sits in the outer 20% of the 00-04 UTC
+      range and the side matches the sign of the prior UTC day's return
+    then: the 20-hour forward return goes the way of the range side, net of the 0.15%
+      round trip
+    compared_to: the cost alone (net_return)
+    measure: net_return
+    horizon_bars: 20
+    direction: positive
+    min_effect: 0.002
+    code: 't = df.index - pd.Timedelta(hours=1)
+
+      day = pd.Series(t.normalize(), index=df.index)
+
+      hod = pd.Series(t.hour, index=df.index)
+
+      inor = hod < 4
+
+      or_hi = df.high.where(inor).groupby(day).transform(''max'')
+
+      or_lo = df.low.where(inor).groupby(day).transform(''min'')
+
+      width = or_hi - or_lo
+
+      loc = (df.close - or_lo) / width - 0.5
+
+      dc = df.close.groupby(day).last()
+
+      prev = day.map(dc.pct_change().shift(1))
+
+      signal = pd.Series(np.sign(loc).replace(0, 1).fillna(1), index=df.index)
+
+      a = (hod == 3) & (width > 0) & (loc.abs() >= 0.3) & prev.notna() & (np.sign(prev)
+      == signal)
+
+      b = (hod == 3) & (width > 0) & ~a
+
+      '
+  why_no_lookahead: The range high and low come only from the 00-04 UTC bars, all
+    closed by the 04:00 decision bar, and the prior-day return uses closes from earlier
+    days.
+  how_it_trades: At the 04:00 UTC close, go long (short) if price closed in the top
+    (bottom) fifth of the opening range and yesterday was up (down), then exit 20
+    hours later; this is one trade per day at most.

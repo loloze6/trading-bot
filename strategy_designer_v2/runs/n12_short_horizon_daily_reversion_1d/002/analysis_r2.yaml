@@ -1,0 +1,34 @@
+run: n12_short_horizon_daily_reversion_1d, fold A (try folder not named in record.yaml)
+observations:
+  - No claim passed on all three coins and no claim passed on even one coin, so no return claim reached the profit step.
+  - The event samples were thin: a bars ranged from 11 to 39 per coin, and volume_climax_shock_reverts had only n_a = 3 on XMRUSD, so the event-style claims could hardly separate an effect from luck.
+  - Continuation after a 2-sigma 3-day move did not hold; it was below 0.006 on LTCUSD (0.0048) and ZECUSD (0.0032) and negative on XMRUSD (-0.0286).
+  - The short fade of up-shocks nearly held on XMRUSD (0.0245 net over 3 bars, 5 of 6 windows positive) but missed the 0.005 bar on LTCUSD (0.0035) and ZECUSD (0.0048), and ZECUSD's first two windows were negative.
+  - Climactic-volume shocks behaved in opposite ways by coin; they reverted on LTCUSD (+0.026), while on ZECUSD they kept going (-0.055 for the fade, with 5 of 6 windows negative).
+  - Volume dry-up the day after a shock reverted strongly on LTCUSD (+0.0215, 4 of 5 defined windows positive) but not on XMRUSD (-0.0054) or ZECUSD (-0.0057).
+  - The inside-day condition nearly held on ZECUSD in sign (5 of 6 windows positive) but its whole-fold effect was -0.0004, because window 1 was -0.058.
+  - On XMRUSD one regime dominated almost every claim, with window 2 large positive (0.252, 0.166, 0.099, 0.087) and window 3 large negative (-0.246, -0.124, -0.120).
+  - The ZECUSD whipsaw effect of 0.034 came from windows 1 and 3 (0.147, 0.166), while the last three windows were all negative.
+  - One idea (unnamed_0) was refused for having no complete claim block, so only 8 of 9 ideas were measured.
+next_claim:
+  id: uptrend_vol_scaled_move_reverts_rank
+  belief: Inside a longer uptrend, short 2-to-5-day swings are noise around trend-following holders, so the size of a 3-day move in volatility units ranks the next 3 days inversely.
+  claim:
+    when: every daily bar whose close is above its 100-day simple mean (uptrend position)
+    then: the more negative the 3-day move in units of pre-move 30-day volatility, the higher the next 3-day return
+    compared_to: not used (rank correlation on the uptrend bars)
+    measure: rank_corr
+    horizon_bars: 3
+    direction: positive
+    min_effect: 0.10
+    code: |
+      vol = ret.rolling(30).std().shift(3)
+      m3 = df.close.pct_change(3)
+      z = m3 / (vol * np.sqrt(3))
+      sma = df.close.rolling(100).mean()
+      a = (df.close > sma) & z.notna() & sma.notna()
+      b = ~a
+      feature = -z
+  why_no_lookahead: The volatility is shifted 3 bars and the 3-day return and the 100-day mean use only closes at or before the bar.
+  how_it_trades: In an uptrend, buy after vol-scaled 3-day dips and hold 3 days, sized by -z; the profit step must still show it beats 0.15% per round trip.
+why: Every event claim was starved (11-39 events per coin) and swung by single windows, and trend position was the brief's untried condition, so a continuous rank on a few hundred uptrend bars per coin tests reversion without the thin-sample problem; 0.10 is about two standard errors at that sample size.

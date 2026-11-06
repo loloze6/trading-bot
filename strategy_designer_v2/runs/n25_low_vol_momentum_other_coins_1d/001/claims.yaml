@@ -1,0 +1,208 @@
+brief: n25_low_vol_momentum_other_coins_1d.md
+ideas:
+  - id: low_vol_mom20_transfer
+    belief: The BTC finding generalises. When 20-day volatility is below its trailing-year median, the sign of the 20-day return persists on ETH, LTC and XRP strongly enough to pay fees.
+    claim:
+      when: 20-day close-to-close volatility is below its trailing 365-day median and the 20-day return is non-zero
+      then: the next 10 days' return has the same sign as the 20-day return
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.010
+      code: |
+        vol = ret.rolling(20).std()
+        med = vol.rolling(365, min_periods=250).median()
+        mom = df.close / df.close.shift(20) - 1
+        a = (vol < med) & mom.notna() & (mom != 0)
+        b = ~a
+        signal = pd.Series(np.where(mom > 0, 1, -1), index=df.index)
+    why_no_lookahead: Volatility, its trailing median and the 20-day return use only closes up to and including the bar.
+    how_it_trades: Hold the 20-day momentum direction for 10 days whenever the coin is in its low-volatility half.
+  - id: regime_contrast_low_vs_high
+    belief: The volatility regime itself is what makes momentum work. The same momentum rule earns clearly more in the low-volatility half than in the high-volatility half, which is the control.
+    claim:
+      when: 20-day volatility is below its trailing-year median
+      then: 20-day-momentum-signed 10-day forward return is higher
+      compared_to: bars where 20-day volatility is at or above its trailing-year median
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.010
+      code: |
+        vol = ret.rolling(20).std()
+        med = vol.rolling(365, min_periods=250).median()
+        mom = df.close / df.close.shift(20) - 1
+        ok = med.notna() & mom.notna()
+        a = ok & (vol < med)
+        b = ok & (vol >= med)
+        signal = pd.Series(np.where(mom > 0, 1, -1), index=df.index)
+    why_no_lookahead: The regime split and the momentum sign are both computed from data up to the bar's close.
+    how_it_trades: Switch the momentum rule on only in the low-volatility half and off in the high-volatility half.
+  - id: high_vol_momentum_reverts
+    belief: In the high-volatility regime, 20-day moves are overshoots driven by liquidations and panic, so fading them pays. This contradicts the plain momentum view.
+    claim:
+      when: 20-day volatility is in the top third of its trailing year
+      then: the next 5 days' return is opposite in sign to the 20-day return
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.006
+      code: |
+        vol = ret.rolling(20).std()
+        hi = vol.rolling(365, min_periods=250).quantile(0.667)
+        mom = df.close / df.close.shift(20) - 1
+        a = (vol > hi) & mom.notna() & (mom != 0)
+        b = ~a
+        signal = pd.Series(np.where(mom > 0, -1, 1), index=df.index)
+    why_no_lookahead: The trailing quantile and the 20-day return use only past and current closes.
+    how_it_trades: In high-volatility regimes, take a 5-day position against the 20-day move.
+  - id: low_vol_long_only_asymmetry
+    belief: Low-volatility uptrends in crypto are steady accumulation, while low-volatility downtrends tend to be dull drift that stalls. Only the long leg carries the edge.
+    claim:
+      when: 20-day volatility is below its trailing-year median and the 20-day return is positive
+      then: the next 10 days' return is positive
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.012
+      code: |
+        vol = ret.rolling(20).std()
+        med = vol.rolling(365, min_periods=250).median()
+        mom = df.close / df.close.shift(20) - 1
+        a = (vol < med) & (mom > 0)
+        b = ~a
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: The regime and the uptrend condition use only closes up to the bar.
+    how_it_trades: Go long for 10 days in quiet uptrends and stay flat otherwise.
+  - id: vol_scaled_trend_strength_rank
+    belief: In a quiet regime, a trend's strength measured in units of its own volatility ranks future returns. A large move relative to low noise is information, not noise.
+    claim:
+      when: 30-day volatility is below its trailing-year median
+      then: the 10-day forward return rises with the 30-day return divided by 30-day volatility
+      compared_to: rank correlation across the low-volatility bars
+      measure: rank_corr
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.08
+      code: |
+        vol = ret.rolling(30).std()
+        med = vol.rolling(365, min_periods=250).median()
+        mom = df.close / df.close.shift(30) - 1
+        feature = mom / (vol * np.sqrt(30))
+        a = (vol < med) & feature.notna()
+        b = ~a
+    why_no_lookahead: The return, the volatility and their ratio are trailing quantities at the bar's close.
+    how_it_trades: Size the position in the direction of the trend by its risk-adjusted strength while the coin is in a quiet regime.
+  - id: quiet_breakout_continuation
+    belief: A close at a new 20-day high or low that comes out of a low-volatility base marks real repricing, not noise, and it continues.
+    claim:
+      when: the close is the highest or lowest close of the last 20 days and 20-day volatility (to the prior bar) was below its trailing-year median
+      then: the next 10 days' return continues in the breakout direction
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.012
+      code: |
+        vol = ret.rolling(20).std().shift(1)
+        med = vol.rolling(365, min_periods=250).median()
+        hh = df.close >= df.close.rolling(20).max()
+        ll = df.close <= df.close.rolling(20).min()
+        a = (vol < med) & (hh | ll)
+        b = ~a
+        signal = pd.Series(np.where(hh, 1, -1), index=df.index)
+    why_no_lookahead: The rolling max and min include the current close, and the volatility is lagged one bar, so nothing after the close is used.
+    how_it_trades: Enter in the breakout direction when a quiet coin closes at a 20-day extreme and hold for 10 days.
+  - id: trend_efficiency_in_low_vol
+    belief: What matters is a smooth path, not just a low volatility level. A high efficiency ratio (net move over summed absolute daily moves) in a quiet regime marks orderly trend-following flow that persists.
+    claim:
+      when: 20-day volatility is below its trailing-year median and the 20-day efficiency ratio is above 0.35
+      then: 20-day-momentum-signed 10-day forward return is higher
+      compared_to: low-volatility bars with an efficiency ratio of 0.35 or less
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.008
+      code: |
+        vol = ret.rolling(20).std()
+        med = vol.rolling(365, min_periods=250).median()
+        net = (df.close - df.close.shift(20)).abs()
+        path = df.close.diff().abs().rolling(20).sum()
+        er = net / path
+        low = (vol < med) & er.notna()
+        a = low & (er > 0.35)
+        b = low & (er <= 0.35)
+        mom = df.close / df.close.shift(20) - 1
+        signal = pd.Series(np.where(mom > 0, 1, -1), index=df.index)
+    why_no_lookahead: The efficiency ratio, volatility and momentum use only closes up to the bar.
+    how_it_trades: Run low-volatility momentum only when the trend path is efficient.
+  - id: low_vol_mom_volume_confirmation
+    belief: A quiet trend backed by rising participation (20-day volume above its 60-day mean) reflects real demand or supply and persists better than a quiet trend on fading volume.
+    claim:
+      when: low-volatility regime and 20-day mean volume is above 60-day mean volume
+      then: 20-day-momentum-signed 10-day forward return is higher
+      compared_to: low-volatility regime bars with 20-day mean volume at or below its 60-day mean
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.008
+      code: |
+        vol = ret.rolling(20).std()
+        med = vol.rolling(365, min_periods=250).median()
+        v20 = df.volume.rolling(20).mean()
+        v60 = df.volume.rolling(60).mean()
+        low = (vol < med) & v60.notna()
+        a = low & (v20 > v60)
+        b = low & (v20 <= v60)
+        mom = df.close / df.close.shift(20) - 1
+        signal = pd.Series(np.where(mom > 0, 1, -1), index=df.index)
+    why_no_lookahead: The volume averages, volatility and momentum are all trailing windows ending at the bar.
+    how_it_trades: Filter low-volatility momentum entries to those where volume is expanding.
+  - id: vol_expansion_from_quiet_base
+    belief: The trend pays most just as volatility starts rising from a quiet base, because the new move is starting. Momentum is weaker while volatility is still compressing.
+    claim:
+      when: 20-day volatility is below its trailing-year median and above its own value 5 days earlier
+      then: 20-day-momentum-signed 10-day forward return is higher
+      compared_to: low-volatility bars where 20-day volatility is at or below its value 5 days earlier
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.008
+      code: |
+        vol = ret.rolling(20).std()
+        med = vol.rolling(365, min_periods=250).median()
+        low = (vol < med) & vol.shift(5).notna()
+        a = low & (vol > vol.shift(5))
+        b = low & (vol <= vol.shift(5))
+        mom = df.close / df.close.shift(20) - 1
+        signal = pd.Series(np.where(mom > 0, 1, -1), index=df.index)
+    why_no_lookahead: Current and 5-day-lagged volatility are both computed from past closes only.
+    how_it_trades: Take low-volatility momentum entries only when volatility has begun to expand.
+  - id: range_vol_regime_slow_momentum
+    belief: A slower 60-day trend, gated by a range-based quiet regime (mean high-low range over 30 days below its yearly median), captures the persistent drift of quiet markets rather than short swings.
+    claim:
+      when: the 30-day mean of (high minus low) over close is below its trailing-year median and the 60-day return is non-zero
+      then: the next 20 days' return has the same sign as the 60-day return
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.015
+      code: |
+        rng = ((df.high - df.low) / df.close).rolling(30).mean()
+        med = rng.rolling(365, min_periods=250).median()
+        mom = df.close / df.close.shift(60) - 1
+        a = (rng < med) & mom.notna() & (mom != 0)
+        b = ~a
+        signal = pd.Series(np.where(mom > 0, 1, -1), index=df.index)
+    why_no_lookahead: The high, low and close ranges and the 60-day return are from bars at or before the current close.
+    how_it_trades: Hold the 60-day trend direction for 20 days while the coin's daily ranges are quiet.
+notes: >
+  Idea 1 is the direct transfer of the BTC rule to the three coins. That is the brief's own question; the BTC result in already_tried was on a different symbol, so this is not a repeat.
+  Ideas 2 and 3 are the requested opposite-regime controls. Idea 3 deliberately contradicts the momentum view.
+  The remaining ideas change the mechanism behind the quiet-regime trend: long-side asymmetry, volatility-scaled strength, breakout from a quiet base, path efficiency, volume participation, the onset of volatility expansion, and a slow trend gated by range-based volatility.
+  Overlapping forward windows are left unspaced so that each fold keeps enough bars.
+  The net_return thresholds sit well above the 0.15% cost per hold, so a pass is not luck.

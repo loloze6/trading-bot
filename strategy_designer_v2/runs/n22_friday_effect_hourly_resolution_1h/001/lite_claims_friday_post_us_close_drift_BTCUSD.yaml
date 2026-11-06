@@ -1,0 +1,41 @@
+claim: friday_post_us_close_drift
+symbol: BTCUSD
+bar_size: 1h
+fold: B
+cost_per_round_trip: 0.0015
+fold_totals:
+  net_return: 0.0222
+  sharpe: 0.16
+  max_drawdown: -0.0802
+  time_in_market: 0.018
+  trades: 104
+windows:
+- window: W1
+  net_return: 0.0632
+  trades: 17
+  max_drawdown: -0.0279
+- window: W2
+  net_return: -0.0059
+  trades: 17
+  max_drawdown: -0.0285
+- window: W3
+  net_return: 0.0303
+  trades: 17
+  max_drawdown: -0.0296
+- window: W4
+  net_return: -0.0649
+  trades: 18
+  max_drawdown: -0.0657
+- window: W5
+  net_return: 0.0418
+  trades: 17
+  max_drawdown: -0.0322
+- window: W6
+  net_return: -0.0363
+  trades: 17
+  max_drawdown: -0.0424
+checks:
+  net_positive_in_5_of_6: false
+  sharpe_ge_1.0: false
+  max_drawdown_le_20%: true
+verdict: fail

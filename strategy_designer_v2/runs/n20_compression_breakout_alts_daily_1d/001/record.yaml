@@ -1,0 +1,759 @@
+brief: n20_compression_breakout_alts_daily_1d.md
+fold: A
+symbols:
+- XRPUSD
+- ADAUSD
+- LINKUSD
+bar_size: 1d
+claims:
+- id: range_squeeze_break_continues
+  belief: When an altcoin's 10-day high-low range is narrow against its own past year,
+    a close outside that range starts a move that continues for several days and pays
+    the fee.
+  measure: net_return
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.015
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: 0.01653737297288269
+      n_a: 31
+      n_b: 31
+      windows:
+      - 0.07444807300981264
+      - 0.05742422607643699
+      - -0.01791900198383086
+      - -0.008568283626089978
+      - 0.011190064552472569
+      - -0.0145401124863365
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.02870442266752081
+      n_a: 32
+      n_b: 32
+      windows:
+      - 0.043932497191854415
+      - -0.04918499282182559
+      - 0.007990732966518725
+      - 0.05121282272783373
+      - 0.01063645086244202
+      - 0.1256228249389381
+      verdict: pass
+      why: null
+    LINKUSD:
+      effect: 0.009756718041331838
+      n_a: 33
+      n_b: 33
+      windows:
+      - 0.01809017086847189
+      - -0.027449198127647585
+      - 0.012145172923147098
+      - -0.013851082717854834
+      - 0.0179993361764688
+      - 0.0828080156807039
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(10).max().shift(1)
+
+    lo = df.low.rolling(10).min().shift(1)
+
+    width = (hi - lo) / df.close.shift(1)
+
+    pct = width.rolling(250, min_periods=120).rank(pct=True)
+
+    comp = pct <= 0.30
+
+    brk = (df.close > hi) | (df.close < lo)
+
+    a = spaced(comp & brk, 5)
+
+    b = ~a
+
+    signal = pd.Series(np.where(df.close > hi, 1, -1), index=df.index)
+
+    '
+- id: squeeze_breaks_move_further_than_plain_breaks
+  belief: Breaks that end a quiet period release stored orders and produce larger
+    moves than breaks out of already-wide ranges.
+  measure: abs_ratio
+  horizon_bars: 10
+  direction: above
+  min_effect: 1.2
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: 1.1104552547545714
+      n_a: 35
+      n_b: 16
+      windows:
+      - 1.0891326463148046
+      - 2.0176592029979963
+      - 1.0558945874648014
+      - 2.4068145388262203
+      - 0.7039120557003695
+      - 1.1757566477799943
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 1.1927687683677501
+      n_a: 33
+      n_b: 20
+      windows:
+      - 3.249538178945718
+      - 0.681196788614517
+      - 1.0761273093525123
+      - 2.624048020060007
+      - 0.8026613870198754
+      - 0.9195403359270268
+      verdict: fail
+      why: null
+    LINKUSD:
+      effect: 0.8097923395624147
+      n_a: 38
+      n_b: 16
+      windows:
+      - 1.1558274764831842
+      - 0.44628752417793055
+      - 0.904093742362268
+      - null
+      - 0.9119872207782803
+      - 1.5126197701045125
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(10).max().shift(1)
+
+    lo = df.low.rolling(10).min().shift(1)
+
+    width = (hi - lo) / df.close.shift(1)
+
+    pct = width.rolling(250, min_periods=120).rank(pct=True)
+
+    brk = (df.close > hi) | (df.close < lo)
+
+    a = spaced(brk & (pct <= 0.30), 3)
+
+    b = spaced(brk & (pct > 0.50), 3)
+
+    signal = pd.Series(np.where(df.close > hi, 1, -1), index=df.index)
+
+    '
+- id: squeeze_breaks_trend_better_than_plain_breaks
+  belief: Direction after a break is more persistent when the break ends a compression
+    than when it comes from a wide, noisy range, where breaks are mostly overshoots.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.02
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: 0.0381683189927879
+      n_a: 35
+      n_b: 16
+      windows:
+      - 0.06383714818678664
+      - 0.1116186131304435
+      - 0.020821092256838414
+      - 0.017558598991435064
+      - 0.07279675433791545
+      - -0.02052452202721229
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.00013364731525702944
+      n_a: 33
+      n_b: 20
+      windows:
+      - -0.02023920930539101
+      - -0.01210860198492697
+      - 0.06938911992262307
+      - 0.021535805877677765
+      - -0.10329011282723129
+      - -0.003662908747127408
+      verdict: fail
+      why: null
+    LINKUSD:
+      effect: 0.012656318920299085
+      n_a: 38
+      n_b: 16
+      windows:
+      - 0.043801108817189446
+      - 0.022180620680620468
+      - 0.04866008283834241
+      - null
+      - 0.0695957407632358
+      - 0.01671710495724145
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(10).max().shift(1)
+
+    lo = df.low.rolling(10).min().shift(1)
+
+    width = (hi - lo) / df.close.shift(1)
+
+    pct = width.rolling(250, min_periods=120).rank(pct=True)
+
+    brk = (df.close > hi) | (df.close < lo)
+
+    a = spaced(brk & (pct <= 0.30), 3)
+
+    b = spaced(brk & (pct > 0.50), 3)
+
+    signal = pd.Series(np.where(df.close > hi, 1, -1), index=df.index)
+
+    '
+- id: volume_confirmed_squeeze_break
+  belief: A break out of compression on a volume surge reflects real participation,
+    not a thin-book poke, and continues.
+  measure: net_return
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.02
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: 0.018259487450557256
+      n_a: 20
+      n_b: 20
+      windows:
+      - 0.05947668753512007
+      - 0.08675902621958181
+      - -0.021950219463464232
+      - -0.00568220231361624
+      - -0.004103725421429911
+      - 0.008564561134496386
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.04993710340367975
+      n_a: 15
+      n_b: 15
+      windows:
+      - 0.01680275444092803
+      - -0.012546713056705959
+      - 0.05383651185854057
+      - 0.0401294695296715
+      - 0.04011228877889117
+      - 0.11046953279568714
+      verdict: fail
+      why: null
+    LINKUSD:
+      effect: 0.00995400843839641
+      n_a: 17
+      n_b: 17
+      windows:
+      - 0.008323991145887501
+      - -0.09437366912945527
+      - -0.06774970143404907
+      - 0.0320452099552862
+      - 0.03151015911486209
+      - 0.15875207298862942
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(10).max().shift(1)
+
+    lo = df.low.rolling(10).min().shift(1)
+
+    width = (hi - lo) / df.close.shift(1)
+
+    pct = width.rolling(250, min_periods=120).rank(pct=True)
+
+    brk = (df.close > hi) | (df.close < lo)
+
+    vol_surge = df.volume > 1.8 * df.volume.rolling(20).median().shift(1)
+
+    a = spaced(brk & (pct <= 0.35) & vol_surge, 5)
+
+    b = ~a
+
+    signal = pd.Series(np.where(df.close > hi, 1, -1), index=df.index)
+
+    '
+- id: rejected_squeeze_break_fades
+  belief: A break out of compression that closes in the wrong half of its own bar
+    (a long wick back toward the range) is a stop run that gets rejected, and price
+    moves back the other way.
+  measure: net_return
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: -0.010050820466339124
+      n_a: 32
+      n_b: 32
+      windows:
+      - -0.04285071524297122
+      - 0.014105241980432354
+      - 0.020905023482165035
+      - -0.012139416626950804
+      - -0.0654283490945511
+      - 0.0027860118600842878
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: -0.005403947687091594
+      n_a: 36
+      n_b: 36
+      windows:
+      - -0.031244168789347916
+      - 0.035609003789903636
+      - -0.0036000591230067897
+      - -0.0012502687840643665
+      - -0.023135269847566014
+      - -0.008979511355960552
+      verdict: fail
+      why: null
+    LINKUSD:
+      effect: 0.00030153105061545135
+      n_a: 28
+      n_b: 28
+      windows:
+      - -0.039265317432017
+      - 0.04385160831567908
+      - -0.01579108308631092
+      - 0.027889742288231007
+      - -0.02144197629977493
+      - 0.0379526824185184
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(10).max().shift(1)
+
+    lo = df.low.rolling(10).min().shift(1)
+
+    width = (hi - lo) / df.close.shift(1)
+
+    pct = width.rolling(250, min_periods=120).rank(pct=True)
+
+    comp = pct <= 0.35
+
+    loc = (df.close - df.low) / (df.high - df.low).replace(0, np.nan)
+
+    up_rej = comp & (df.high > hi) & (loc < 0.5)
+
+    dn_rej = comp & (df.low < lo) & (loc > 0.5)
+
+    a = spaced(up_rej | dn_rej, 3)
+
+    b = ~a
+
+    signal = pd.Series(np.where(up_rej, -1, 1), index=df.index)
+
+    '
+- id: range_expansion_day_after_quiet
+  belief: The first wide-range day after a quiet stretch shows where pressure sits
+    through its close location, and the next days follow that side.
+  measure: hit_rate
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: -0.0029161912007100166
+      n_a: 11
+      n_b: 717
+      windows:
+      - 0.0423728813559322
+      - -0.45
+      - -0.4789915966386555
+      - 0.23076923076923073
+      - 0.5163934426229508
+      - 0.5619834710743802
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.00833333333333336
+      n_a: 10
+      n_b: 720
+      windows:
+      - 0.03389830508474578
+      - -0.48360655737704916
+      - 0.18767507002801115
+      - 0.5126050420168067
+      - 0.020661157024793375
+      - -0.5537190082644629
+      verdict: fail
+      why: null
+    LINKUSD:
+      effect: -0.0737534626038781
+      n_a: 8
+      n_b: 722
+      windows:
+      - 0.4789915966386554
+      - -0.47107438016528924
+      - -0.1204481792717087
+      - null
+      - 0.07851239669421489
+      - null
+      verdict: fail
+      why: null
+  code: 'pc = df.close.shift(1)
+
+    tr = pd.concat([df.high, pc], axis=1).max(axis=1) - pd.concat([df.low, pc], axis=1).min(axis=1)
+
+    quiet = tr.rolling(5).mean().shift(1) < 0.7 * tr.rolling(100).mean().shift(1)
+
+    expand = tr > 2.0 * tr.rolling(10).mean().shift(1)
+
+    loc = (df.close - df.low) / (df.high - df.low).replace(0, np.nan)
+
+    extreme = (loc >= 0.8) | (loc <= 0.2)
+
+    a = spaced(quiet & expand & extreme, 5)
+
+    b = ~a
+
+    signal = pd.Series(np.where(loc >= 0.5, 1, -1), index=df.index)
+
+    '
+- id: break_strength_scales_continuation
+  belief: Among squeeze breaks, the further the close lands beyond the old range (scaled
+    by that range), the stronger the follow-through.
+  measure: rank_corr
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.15
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: -0.022285443338074917
+      n_a: 37
+      n_b: 37
+      windows:
+      - 0.1785714285714286
+      - -0.2571428571428572
+      - -0.08571428571428573
+      - -0.3714285714285715
+      - -0.09999999999999999
+      - -0.28571428571428575
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.012032085561497327
+      n_a: 33
+      n_b: 33
+      windows:
+      - 0.2571428571428572
+      - 0.0
+      - 0.18333333333333335
+      - -0.5
+      - -0.4642857142857144
+      - -0.19999999999999998
+      verdict: fail
+      why: null
+    LINKUSD:
+      effect: 0.11519699812382742
+      n_a: 40
+      n_b: 40
+      windows:
+      - -0.18787878787878787
+      - 0.08571428571428573
+      - -0.523809523809524
+      - -0.3142857142857143
+      - 0.8857142857142858
+      - 0.7999999999999999
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(10).max().shift(1)
+
+    lo = df.low.rolling(10).min().shift(1)
+
+    width = (hi - lo) / df.close.shift(1)
+
+    pct = width.rolling(250, min_periods=120).rank(pct=True)
+
+    brk = (df.close > hi) | (df.close < lo)
+
+    a = spaced(brk & (pct <= 0.35), 3)
+
+    b = ~a
+
+    feature = (df.close - (hi + lo) / 2) / (hi - lo)
+
+    signal = pd.Series(np.where(df.close > hi, 1, -1), index=df.index)
+
+    '
+- id: trend_aligned_squeeze_break
+  belief: A compression is often a pause inside a trend, so breaks in the direction
+    of the 100-day trend continue while breaks against it fail.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.02
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: -0.03100371050751545
+      n_a: 18
+      n_b: 19
+      windows:
+      - -0.1290224737648958
+      - 0.1355287226475099
+      - -0.0680462549808915
+      - -0.061146445739050426
+      - 0.08606171044180327
+      - -0.13448659890353093
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: -0.031435122006936066
+      n_a: 17
+      n_b: 16
+      windows:
+      - -0.12249285544460434
+      - -0.16578302513016724
+      - -0.010543879251542173
+      - -0.19436073266195353
+      - 0.017262685570421432
+      - 0.23939429360543518
+      verdict: fail
+      why: null
+    LINKUSD:
+      effect: -0.04593242178504387
+      n_a: 24
+      n_b: 20
+      windows:
+      - 0.08539701047968307
+      - -0.21568417334513018
+      - -0.07925850853593769
+      - -0.06416933625639816
+      - -0.040291837026078074
+      - -0.010143679144197282
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(10).max().shift(1)
+
+    lo = df.low.rolling(10).min().shift(1)
+
+    width = (hi - lo) / df.close.shift(1)
+
+    pct = width.rolling(250, min_periods=120).rank(pct=True)
+
+    comp = pct <= 0.35
+
+    up = comp & (df.close > hi)
+
+    dn = comp & (df.close < lo)
+
+    trend_up = df.close.shift(1) > df.close.rolling(100).mean().shift(1)
+
+    aligned = (up & trend_up) | (dn & ~trend_up)
+
+    against = (up & ~trend_up) | (dn & trend_up)
+
+    a = spaced(aligned, 3)
+
+    b = spaced(against, 3)
+
+    signal = pd.Series(np.where(df.close > hi, 1, -1), index=df.index)
+
+    '
+- id: longer_squeeze_stronger_break
+  belief: The longer a market stays compressed, the more positioning builds up, so
+    the break that ends a long squeeze runs further than one ending a brief lull.
+  measure: rank_corr
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.12
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: 0.23588902924052912
+      n_a: 37
+      n_b: 37
+      windows:
+      - 0.3571428571428572
+      - 0.1765469659009499
+      - 0.6473388749701496
+      - -0.4285714285714286
+      - 0.3
+      - 0.25226248955475655
+      verdict: pass
+      why: null
+    ADAUSD:
+      effect: 0.08577879572801246
+      n_a: 33
+      n_b: 33
+      windows:
+      - -0.028571428571428574
+      - 0.0
+      - 0.22594340036404525
+      - 0.5
+      - 0.1785714285714286
+      - -0.39999999999999997
+      verdict: fail
+      why: null
+    LINKUSD:
+      effect: -0.06552761893105129
+      n_a: 40
+      n_b: 40
+      windows:
+      - 0.0790277206784084
+      - 0.028571428571428574
+      - -0.6428571428571429
+      - -0.48571428571428577
+      - 0.9856107606091623
+      - 0.0
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(10).max().shift(1)
+
+    lo = df.low.rolling(10).min().shift(1)
+
+    width = (hi - lo) / df.close.shift(1)
+
+    pct = width.rolling(250, min_periods=120).rank(pct=True)
+
+    comp = pct <= 0.35
+
+    brk = (df.close > hi) | (df.close < lo)
+
+    a = spaced(comp & brk, 3)
+
+    b = ~a
+
+    dirn = pd.Series(np.where(df.close > hi, 1, -1), index=df.index)
+
+    duration = comp.astype(float).shift(1).rolling(30).sum()
+
+    feature = dirn * duration
+
+    signal = dirn
+
+    '
+- id: downside_squeeze_breaks_run_harder
+  belief: In leveraged altcoin markets, a downside break from a quiet range triggers
+    stop and liquidation cascades, so it follows through more than an upside break.
+  measure: mean_diff
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.015
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: 0.027795960689199498
+      n_a: 20
+      n_b: 17
+      windows:
+      - -0.22565231934524219
+      - 0.09100073448150722
+      - 0.11653920603351833
+      - 0.03199748164252947
+      - -0.015418506034612367
+      - 0.0013284414397121032
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: -0.013744446419263315
+      n_a: 18
+      n_b: 15
+      windows:
+      - -0.03392473578999117
+      - 0.011940633889059249
+      - 0.05359161643791481
+      - -0.17862179445610216
+      - 0.11486221403254634
+      - -0.17761347025207266
+      verdict: fail
+      why: null
+    LINKUSD:
+      effect: -0.014260290642740488
+      n_a: 20
+      n_b: 21
+      windows:
+      - 0.07129896446308638
+      - -0.06262236263825596
+      - 0.007171035933310161
+      - -0.08597076369089382
+      - -0.018652867359587905
+      - -0.16391657530512993
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(10).max().shift(1)
+
+    lo = df.low.rolling(10).min().shift(1)
+
+    width = (hi - lo) / df.close.shift(1)
+
+    pct = width.rolling(250, min_periods=120).rank(pct=True)
+
+    comp = pct <= 0.35
+
+    a = spaced(comp & (df.close < lo), 3)
+
+    b = spaced(comp & (df.close > hi), 3)
+
+    signal = pd.Series(np.where(df.close > hi, 1, -1), index=df.index)
+
+    '
+- id: return_vol_squeeze_starts_trend
+  belief: When close-to-close volatility is unusually low, a new 20-day closing high
+    or low marks the start of a multi-week trend, because volatility regimes mean-revert
+    upward with direction.
+  measure: net_return
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.03
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: -0.011969432681841885
+      n_a: 18
+      n_b: 18
+      windows:
+      - 0.1563154739773271
+      - 0.042124935937646456
+      - -0.024057905520519812
+      - -0.027394588203524084
+      - -0.1485135535069879
+      - -0.03830141729747155
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: -0.013826142382586669
+      n_a: 17
+      n_b: 17
+      windows:
+      - 0.1478679349610241
+      - -0.19645593680756174
+      - -0.032635725956072864
+      - -0.042968439964615524
+      - 0.12941537030661368
+      - -0.15250089297941358
+      verdict: fail
+      why: null
+    LINKUSD:
+      effect: -0.05815625913197319
+      n_a: 13
+      n_b: 13
+      windows:
+      - -0.1429997041983254
+      - -0.172159177198228
+      - 0.020642208677293272
+      - -0.14722845375188304
+      - 0.06761464710624007
+      - null
+      verdict: fail
+      why: null
+  code: 'rv = ret.rolling(20).std().shift(1)
+
+    pct = rv.rolling(365, min_periods=180).rank(pct=True)
+
+    chi = df.close.rolling(20).max().shift(1)
+
+    clo = df.close.rolling(20).min().shift(1)
+
+    brk = (df.close > chi) | (df.close < clo)
+
+    a = spaced((pct <= 0.25) & brk, 10)
+
+    b = ~a
+
+    signal = pd.Series(np.where(df.close > chi, 1, -1), index=df.index)
+
+    '
+profit: 'none: no return claim passed'

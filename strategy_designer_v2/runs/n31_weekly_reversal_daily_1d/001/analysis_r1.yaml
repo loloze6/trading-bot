@@ -1,0 +1,31 @@
+run: n31_weekly_reversal_daily_1d / fold A
+observations:
+  - weekly_time_series_momentum and weekly_range_location_reversion got n_a = 0 on all three coins, so the plain sign question and the range-location question were never measured; both selected bars with spaced(x.notna(), 7), which looks like it keeps only a first True when the condition is always True.
+  - calendar_week_boundary_continuation sampled bars with dow == 0 and got n_a = 104 per coin, so selecting by weekday is a selector that gives a usable sample.
+  - Even so, calendar_week_boundary_continuation did not show continuation, with hit-rate effects of -0.003 (BTC), -0.032 (ETH) and +0.067 (LTC) and window signs split on every coin.
+  - two_week_trend_persistence was negative on all three coins (-0.003 BTC, -0.044 ETH, -0.050 LTC), and 5 of 6 windows were negative on both ETH and LTC, so trading with a confirmed two-week trend lost money.
+  - large_week_reversal split by coin, with effects of -0.024 (BTC), +0.002 (ETH) and +0.027 (LTC), and BTC windows split 3 positive and 3 negative; n_a was only 11 to 15, below the 30-bar floor.
+  - thin_volume_week_fades nearly held, with hit-rate effects of 0.14, 0.15 and 0.28 against a 0.06 threshold, but n_a was 9 per coin and windows swung between about +0.5 and -0.5, which is noise at that sample size.
+  - capitulation_week_bounce had only n_a = 5 per coin, and its effects of +0.008 (BTC), -0.016 (ETH) and +0.028 (LTC) disagree in sign.
+  - big_week_raises_next_week_volatility gave abs ratios of 1.08 (BTC), 0.85 (ETH) and 1.20 (LTC), all below 1.25, so a 2-sigma week did not reliably lead to a bigger next week.
+  - Every claim that used a size filter of 1.25 to 2 sigma had n_a of 21 or fewer per coin, so threshold-based weekly claims on this fold cannot reach the 30-bar minimum.
+next_claim:
+  id: weekly_z_rank_reversal_monday_sampled
+  belief: The size of last week's move in volatility units is negatively related to next week's return, a graded reversal across all weeks rather than only extreme ones.
+  claim:
+    when: every Monday close (UTC) with a defined 7-day volatility-scaled return
+    then: the 7-day forward return ranks lower the higher the past 7-day volatility-scaled return was
+    compared_to: not used (rank correlation on the Monday bars)
+    measure: rank_corr
+    horizon_bars: 7
+    direction: negative
+    min_effect: -0.10
+    code: |
+      wk = df.close.pct_change(7)
+      sig = ret.rolling(60).std() * np.sqrt(7)
+      feature = wk / sig
+      a = (dow == 0) & feature.notna()
+      b = ~a
+  why_no_lookahead: The 7-day return and the 60-day volatility use only closes at or before the Monday bar, and the weekday is known at the close.
+  how_it_trades: Each Monday close, go long or short in proportion to minus last week's vol-scaled return and hold 7 days; this is worth costing only if the correlation holds on all three coins.
+why: Two-week continuation lost on all three coins, and threshold claims never reached 30 bars, so a full-sample graded test of weekly reversal by size, using the selector shown to give 104 bars, is the cleanest next question.

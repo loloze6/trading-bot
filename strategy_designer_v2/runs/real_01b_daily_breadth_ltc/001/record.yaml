@@ -1,0 +1,466 @@
+brief: real_01b_daily_breadth_ltc.md
+fold: B
+symbols:
+- BTCUSD
+- LTCUSD
+bar_size: 1d
+claims:
+- id: weekend_move_reversal
+  belief: Price moves made over the weekend happen on thin, retail-only liquidity
+    without institutional desks, so they are partly undone in the first days of the
+    week once that liquidity returns, more than ordinary two-day moves are.
+  measure: mean_diff
+  horizon_bars: 2
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0070689388361746975
+      n_a: 104
+      n_b: 626
+      windows:
+      - -0.007061258767771156
+      - -0.0012271754242428202
+      - -0.0006672603486128786
+      - 0.02847482177999466
+      - 0.01370775000084198
+      - 0.008298971903176706
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.0033304291514102856
+      n_a: 104
+      n_b: 625
+      windows:
+      - 0.0012360100368057564
+      - -0.022835571048525592
+      - -0.005618774988840955
+      - 0.01719783275536941
+      - -0.012189820406020948
+      - 0.001456378838508559
+      verdict: fail
+      why: null
+  code: 'r2 = df.close.pct_change(2)
+
+    a = (dow == 0) & (r2.abs() > 0)
+
+    b = (dow != 0) & (r2.abs() > 0)
+
+    signal = -np.sign(r2).fillna(0)
+
+    '
+- id: low_volume_move_reversal
+  belief: A large daily move made on below-normal volume reflects a liquidity gap,
+    not new information, so it reverts. The same move on heavy volume reflects real
+    flow and does not revert.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.006
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.016770311905179584
+      n_a: 20
+      n_b: 110
+      windows:
+      - 0.056630436793828266
+      - -0.009789289589560622
+      - 0.0916092046814617
+      - -0.052927850479095324
+      - 0.0053871950604074065
+      - 0.030015657373283437
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.006849469347988532
+      n_a: 20
+      n_b: 114
+      windows:
+      - 0.013037427158628635
+      - null
+      - -0.0008364802889863701
+      - 0.013120905852274264
+      - -0.022973490233555147
+      - -0.04376045458713333
+      verdict: fail
+      why: null
+  code: 'sd = ret.rolling(20).std().shift(1)
+
+    vmed = df.volume.rolling(20).median().shift(1)
+
+    big = ret.abs() > 1.25 * sd
+
+    a = big & (df.volume < vmed)
+
+    b = big & (df.volume >= vmed)
+
+    signal = -np.sign(ret).fillna(0)
+
+    '
+- id: up_streak_fomo_continuation
+  belief: A run of consecutive up closes draws in late momentum and FOMO buyers who
+    keep arriving for several days, so up-streaks extend rather than exhaust.
+  measure: net_return
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0038120439889504426
+      n_a: 33
+      n_b: 33
+      windows:
+      - -0.016735493201114227
+      - 0.05507818528320855
+      - -0.015936452214630168
+      - -0.03441654696759785
+      - 0.012647853299589831
+      - -0.027887979119123274
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.006711260455869171
+      n_a: 35
+      n_b: 35
+      windows:
+      - -0.06309083688454092
+      - 0.022610008416536875
+      - -0.046044290624850215
+      - 0.008162731458505358
+      - 0.05498307687096624
+      - -0.03516143659088608
+      verdict: fail
+      why: null
+  code: 'up = (ret > 0).astype(int)
+
+    streak = up.groupby((up == 0).cumsum()).cumsum()
+
+    a = spaced(streak >= 3, 5)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: downside_semivariance_premium
+  belief: When recent volatility has come mostly from down moves, holders demand a
+    crash-risk premium and forced selling has already been done, so forward returns
+    are higher than when volatility came from up moves.
+  measure: rank_corr
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.03538545572913955
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.43271078665308077
+      - 0.010375720536148342
+      - 0.44430161819569686
+      - 0.05559711599231276
+      - 0.07529689561775121
+      - 0.06352169875851313
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.06770115296205992
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.4191678167442701
+      - 0.5491075769150635
+      - 0.40718588597618804
+      - 0.04407269350324387
+      - 0.4806792138342941
+      - 0.20227611434764936
+      verdict: fail
+      why: null
+  code: 'dn = (ret.clip(upper=0) ** 2).rolling(30).sum()
+
+    upv = (ret.clip(lower=0) ** 2).rolling(30).sum()
+
+    feature = dn / (dn + upv)
+
+    a = feature.notna()
+
+    b = ~a
+
+    '
+- id: trend_efficiency_follow
+  belief: A move that took a smooth, efficient path, rather than its size, reveals
+    one-sided slow flow (an allocator working an order), and that flow keeps pushing
+    in the same direction.
+  measure: net_return
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.008
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.044464912200613334
+      n_a: 15
+      n_b: 15
+      windows:
+      - -0.008752050682025612
+      - 0.08796635751844405
+      - 0.11870312648047587
+      - 0.06417023655407778
+      - 0.02458386977330773
+      - 0.04804531740117546
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.0010635833899502165
+      n_a: 16
+      n_b: 16
+      windows:
+      - 0.05708956579525661
+      - 0.010350925969049983
+      - -0.09004706793680574
+      - 0.10652700675168797
+      - 0.07405346746442854
+      - -0.05095788685056277
+      verdict: fail
+      why: null
+  code: 'move = df.close - df.close.shift(20)
+
+    path = df.close.diff().abs().rolling(20).sum()
+
+    er = move.abs() / path
+
+    a = spaced(er > 0.4, 10)
+
+    b = ~a
+
+    signal = np.sign(move).fillna(0)
+
+    '
+- id: wide_day_volatility_clustering
+  belief: A day with an unusually wide high-low range signals a deleveraging or news
+    cascade that takes days to clear, so the following days carry larger absolute
+    moves.
+  measure: abs_ratio
+  horizon_bars: 5
+  direction: above
+  min_effect: 1.25
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.9497531211185325
+      n_a: 79
+      n_b: 651
+      windows:
+      - 0.6193668870582004
+      - 0.8273477846867805
+      - 0.9403125728317284
+      - 1.4275240515423793
+      - 1.2000086119437583
+      - 0.7533612755904513
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.8676407171736253
+      n_a: 74
+      n_b: 656
+      windows:
+      - 0.8971884197734156
+      - 0.7185842753790054
+      - 1.1077147113918653
+      - 0.8797406642934333
+      - 0.935468287937232
+      - 0.7500562319089042
+      verdict: fail
+      why: null
+  code: 'rng = (df.high - df.low) / df.close
+
+    a = rng > 2 * rng.rolling(30).median().shift(1)
+
+    b = ~a
+
+    '
+- id: weekend_quiet_days
+  belief: Without institutional desks and traditional-market news, Saturday and Sunday
+    trading carries less information and so smaller moves than weekdays.
+  measure: abs_ratio
+  horizon_bars: 1
+  direction: below
+  min_effect: 0.85
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 1.0357524025482012
+      n_a: 207
+      n_b: 523
+      windows:
+      - 0.7888690832415634
+      - 1.3213026694260674
+      - 1.1890208242900175
+      - 1.222794684299156
+      - 1.073201675026776
+      - 0.8413245219729936
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 1.0766302919809114
+      n_a: 207
+      n_b: 523
+      windows:
+      - 0.8903556343827099
+      - 1.0787889629025231
+      - 1.2010617541853594
+      - 1.2827996055577782
+      - 1.1952322628075176
+      - 0.9150996602901982
+      verdict: fail
+      why: null
+  code: 'a = dow.isin([5, 6])
+
+    b = ~a
+
+    '
+- id: volume_absorption_expansion
+  belief: A day of heavy volume with almost no net price change shows two-sided absorption
+    (a large buyer meeting a large seller); when one side finishes, price breaks away
+    and larger moves follow.
+  measure: abs_ratio
+  horizon_bars: 5
+  direction: above
+  min_effect: 1.2
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.9308746443290296
+      n_a: 23
+      n_b: 707
+      windows:
+      - 0.47077124521417213
+      - 0.9568880852466072
+      - 0.7649433648336578
+      - 0.965673394852292
+      - 1.2046398182244717
+      - 1.9902779699412338
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 1.23381556961235
+      n_a: 34
+      n_b: 696
+      windows:
+      - 0.7278878464544467
+      - 1.1894732569436248
+      - 1.916765848340665
+      - 1.8328909319391609
+      - 1.1227917927827789
+      - 1.049509501147079
+      verdict: pass
+      why: null
+  code: 'vrel = df.volume / df.volume.rolling(30).median().shift(1)
+
+    sd = ret.rolling(30).std().shift(1)
+
+    a = (vrel > 1.5) & (ret.abs() < 0.5 * sd)
+
+    b = ~a
+
+    '
+- id: narrow_range_expansion
+  belief: Daily volatility on these coins reverts to its local norm within days, so
+    an unusually narrow-range day (a coiled, compressed market) is followed by larger
+    moves than a normal-range day in the same context.
+  measure: abs_ratio
+  horizon_bars: 5
+  direction: above
+  min_effect: 1.15
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.972806336702914
+      n_a: 40
+      n_b: 236
+      windows:
+      - 0.7397082040613225
+      - 0.8272744862711774
+      - 1.704391670492896
+      - 0.5187573579180178
+      - 1.2859088654544024
+      - 1.0566885824903554
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 1.0456193279257404
+      n_a: 40
+      n_b: 233
+      windows:
+      - 0.9475948431097266
+      - 1.4252757406613563
+      - 1.2932737023089134
+      - 1.2646221310631696
+      - 0.8076861583947851
+      - 1.1100895415108176
+      verdict: fail
+      why: null
+  code: 'rng = (df.high - df.low) / df.close
+
+    med = rng.rolling(30).median().shift(1)
+
+    a = spaced(rng < 0.6 * med, 5)
+
+    b = (rng >= 0.8 * med) & (rng <= 1.25 * med)
+
+    '
+- id: relative_downside_share_premium
+  belief: Forward returns are higher when the share of recent variance coming from
+    down moves is high relative to its own recent norm, rather than in absolute terms;
+    the absolute level drifts between regimes and hides the relation.
+  measure: rank_corr
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.1
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.06571222843712937
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.3688395609498137
+      - 0.2711785540662545
+      - 0.3038024459637632
+      - -0.023642156040809485
+      - 0.19658309604833668
+      - -0.021991203518592562
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.03258948012637106
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.24325108666210934
+      - 0.528411695256615
+      - 0.2116806170093946
+      - -0.04079013555867975
+      - 0.3783804430863254
+      - -0.015177400114334431
+      verdict: fail
+      why: null
+  code: 'dn = (ret.clip(upper=0) ** 2).rolling(30).sum()
+
+    upv = (ret.clip(lower=0) ** 2).rolling(30).sum()
+
+    share = dn / (dn + upv)
+
+    feature = share - share.rolling(120).mean()
+
+    a = feature.notna()
+
+    b = ~a
+
+    '
+profit: 'none: no return claim passed'

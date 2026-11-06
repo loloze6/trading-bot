@@ -1,0 +1,31 @@
+run: "real_01b_daily_breadth_ltc_fold_C"
+observations:
+  - "illiquidity_premium_timeseries passed on LTC (rank_corr 0.136, 5 of 6 windows positive). On BTC the whole-fold 0.089 met the 0.08 bar, but only 4 of 6 windows were positive (windows 1 and 5 at -0.36 and -0.52), so it failed."
+  - "Window 6 split the rank_corr claims: illiquidity was strongly positive (BTC 0.81, LTC 0.86), while attention volume (-0.50, -0.55), max-day lottery (-0.65, -0.60) and vol regime (-0.46, -0.72) were all strongly negative."
+  - "leverage_effect_vol_asymmetry nearly held on LTC (abs_ratio 1.196 against 1.15), but only 4 of 6 windows were above 1 (0.92 and 0.97 fell below). BTC showed no asymmetry at 0.961."
+  - "max_day_lottery_reversal and attention_volume_overpricing had the wrong sign on BTC over the whole fold (rank_corr 0.218 and 0.118 against a negative direction), so on BTC big up days and volume surges preceded higher, not lower, 20-day returns."
+  - "squeeze_spike_fade met its 0.01 bar on BTC (0.0136, 5 of 6 windows positive) but reversed on LTC (-0.0097), so the fade is not shared across the two coins."
+  - "high_anchor_continuation was untestable as asked: BTC had only 2 of 6 windows with bars near the 250-day high, and LTC had 28 such bars, below the 30-bar minimum."
+  - "quiet_pullback_in_uptrend earned 0.037 net on BTC and 0.020 on LTC, but it fired only 14 and 22 times, under the 30-bar minimum."
+  - "calm_regime_momentum fell short on both coins (0.0052 on BTC and 0.0086 on LTC against 0.015), with windows split 3 to 3 on BTC."
+next_claim:
+  id: down_volume_share_exhaustion
+  belief: "When most of the past month's dollar volume traded on down days, forced and impatient sellers have been absorbed, as in the liquidity-premium result, so the next 20 days return more."
+  claim:
+    when: "every bar with a 30-day down-volume share defined"
+    then: "a higher share of the past 30 days' dollar volume traded on down days goes with a higher 20-day forward return"
+    compared_to: "the rank ordering across all bars (rank_corr)"
+    measure: rank_corr
+    horizon_bars: 20
+    direction: positive
+    min_effect: 0.08
+    code: |
+      dv = (df.volume * df.close).replace(0, np.nan)
+      down = dv.where(ret < 0, 0.0)
+      feature = down.rolling(30, min_periods=25).sum() / dv.rolling(30, min_periods=25).sum()
+      a = feature.notna() & np.isfinite(feature)
+      b = ~a
+      signal = np.sign(feature - 0.5).replace(0, 1.0)
+  why_no_lookahead: "The feature uses only volume, close and the return of bars at or before the current close, through trailing 30-bar sums."
+  how_it_trades: "Go long when the 30-day down-volume share is high and flat or short when it is low, rebalanced at most daily; a slow 20-day hold pays the 0.15% cost a few times a year."
+why: "Illiquidity is the only mechanism that held on LTC and was positive in window 6 when the others reversed; this asks whether the payoff comes from who traded (seller pressure absorbed) rather than from volatility or volume level, which both failed."

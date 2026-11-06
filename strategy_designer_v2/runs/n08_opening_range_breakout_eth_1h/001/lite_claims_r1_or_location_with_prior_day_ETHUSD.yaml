@@ -1,0 +1,41 @@
+claim: or_location_with_prior_day
+symbol: ETHUSD
+bar_size: 1h
+fold: C
+cost_per_round_trip: 0.0015
+fold_totals:
+  net_return: 1.3443
+  sharpe: 1.06
+  max_drawdown: -0.5351
+  time_in_market: 0.121
+  trades: 106
+windows:
+- window: W1
+  net_return: -0.2208
+  trades: 25
+  max_drawdown: -0.4966
+- window: W2
+  net_return: 0.0757
+  trades: 14
+  max_drawdown: -0.1676
+- window: W3
+  net_return: 0.1175
+  trades: 19
+  max_drawdown: -0.2519
+- window: W4
+  net_return: 0.8561
+  trades: 18
+  max_drawdown: -0.1827
+- window: W5
+  net_return: 0.0522
+  trades: 13
+  max_drawdown: -0.1612
+- window: W6
+  net_return: 0.2816
+  trades: 17
+  max_drawdown: -0.1936
+checks:
+  net_positive_in_5_of_6: true
+  sharpe_ge_1.0: true
+  max_drawdown_le_20%: false
+verdict: fail

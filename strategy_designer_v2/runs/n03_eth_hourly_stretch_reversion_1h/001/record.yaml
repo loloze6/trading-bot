@@ -1,0 +1,631 @@
+brief: n03_eth_hourly_stretch_reversion_1h.md
+fold: B
+symbols:
+- ETHUSD
+bar_size: 1h
+claims:
+- id: vwap24_stretch_fade
+  belief: When ETH closes far from its rolling 24h volume-weighted price, measured
+    against how far it usually strays, the move overshoots and price drifts back toward
+    the VWAP within half a day by more than cost.
+  measure: net_return
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: -0.0005601349887565816
+      n_a: 102
+      n_b: 102
+      windows:
+      - 0.003900210911246989
+      - -0.01122765806474729
+      - -0.016690712905086526
+      - -0.0012095252966530955
+      - 0.010795678473859226
+      - 0.0025067758814795115
+      verdict: fail
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    vwap = (tp * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    dev = df.close / vwap - 1
+
+    z = dev / dev.rolling(720).std()
+
+    a = spaced(z.abs() > 2.5, 12)
+
+    b = ~a
+
+    signal = -np.sign(dev)
+
+    '
+- id: range_edge_inside_fade
+  belief: A close pressed against the edge of the prior 24h range without breaking
+    it shows a failed push, so price rotates back toward the range middle. The brief's
+    already_tried note says closes beyond the range continue; this idea keeps only
+    the inside case.
+  measure: mean_diff
+  horizon_bars: 8
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: 0.0003081856746495491
+      n_a: 593
+      n_b: 16926
+      windows:
+      - 0.0007173516994606625
+      - -0.00038197221115179186
+      - -0.0012120255592126044
+      - -0.0011889347393631239
+      - 0.0008426848190868953
+      - 0.0031745935667400874
+      verdict: fail
+      why: null
+  code: 'hi = df.high.shift(1).rolling(24).max()
+
+    lo = df.low.shift(1).rolling(24).min()
+
+    pos = (df.close - lo) / (hi - lo)
+
+    edge = ((pos > 0.85) & (pos <= 1.0)) | ((pos < 0.15) & (pos >= 0.0))
+
+    a = spaced(edge, 8)
+
+    b = ~a
+
+    signal = -np.sign(pos - 0.5)
+
+    '
+- id: slow_ema_zscore_rank
+  belief: The further ETH sits from its 3-day exponential mean in units of recent
+    hourly volatility, the more negative the next 12 hours return in the direction
+    of that distance.
+  measure: rank_corr
+  horizon_bars: 12
+  direction: negative
+  min_effect: -0.05
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: -0.003429571485286382
+      n_a: 17519
+      n_b: 17519
+      windows:
+      - 0.0008634976909247613
+      - -0.026498824216409145
+      - -0.04675435463689171
+      - 0.007810552883230491
+      - -0.037787506749530096
+      - -0.059920077640195774
+      verdict: fail
+      why: null
+  code: 'ema = df.close.ewm(span=72, adjust=False).mean()
+
+    sig = ret.rolling(168).std()
+
+    feature = (df.close / ema - 1) / sig
+
+    a = feature.notna()
+
+    b = ~a
+
+    '
+- id: gradual_grind_stretch_fade
+  belief: A VWAP stretch built by many small bars, with no shock bar, is an exhausting
+    grind by impatient flow rather than news, and it reverts. This differs from the
+    large-bar fades already tried on BTC.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: 0.005056028099128823
+      n_a: 55
+      n_b: 17464
+      windows:
+      - 0.018404868325441016
+      - -0.025164005116406207
+      - 0.0030859295337172343
+      - -0.008361313970700867
+      - 0.009772960066191534
+      - 0.009854641903338443
+      verdict: fail
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    vwap = (tp * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    dev = df.close / vwap - 1
+
+    z = dev / dev.rolling(720).std()
+
+    sig = ret.rolling(168).std()
+
+    no_shock = (ret.abs() > 2 * sig).astype(int).rolling(12).sum() == 0
+
+    a = spaced((z.abs() > 2) & no_shock, 12)
+
+    b = ~a
+
+    signal = -np.sign(dev)
+
+    '
+- id: stretch_on_fading_volume_fade
+  belief: A stretch away from VWAP that arrives while volume dries up has no participation
+    behind it, so price slips back more often than not.
+  measure: hit_rate
+  horizon_bars: 8
+  direction: positive
+  min_effect: 0.06
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: 0.021944678096278203
+      n_a: 52
+      n_b: 17467
+      windows:
+      - 0.17481330617786828
+      - -0.20576989920055616
+      - 0.14442162902121836
+      - -0.03569000679809653
+      - 0.050449703108627286
+      - -0.04391186461806962
+      verdict: fail
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    vwap = (tp * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    dev = df.close / vwap - 1
+
+    z = dev / dev.rolling(720).std()
+
+    vr = df.volume.rolling(6).mean() / df.volume.rolling(168).mean()
+
+    a = spaced((z.abs() > 2) & (vr < 0.8), 8)
+
+    b = ~a
+
+    signal = -np.sign(dev)
+
+    '
+- id: stretch_on_heavy_volume_continues
+  belief: A stretch away from VWAP carried by heavy volume reflects informed or forced
+    flow that keeps pushing, so price extends further rather than reverting. This
+    contradicts the reversion ideas, and the data decides.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: 0.0044589886534484886
+      n_a: 117
+      n_b: 17402
+      windows:
+      - 0.006329733544429045
+      - 0.008602486469796663
+      - 0.01010382038042297
+      - -0.0017559401531740551
+      - 0.010838916960453098
+      - -0.004154682328267057
+      verdict: fail
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    vwap = (tp * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    dev = df.close / vwap - 1
+
+    z = dev / dev.rolling(720).std()
+
+    vr = df.volume.rolling(6).mean() / df.volume.rolling(168).mean()
+
+    a = spaced((z.abs() > 2) & (vr > 1.5), 12)
+
+    b = ~a
+
+    signal = np.sign(dev)
+
+    '
+- id: asia_hours_stretch_fade
+  belief: Stretches built during thin Asian hours (00-06 UTC), with Europe and the
+    US away, reflect poor liquidity and are corrected once deeper books arrive in
+    the European morning.
+  measure: mean_diff
+  horizon_bars: 8
+  direction: positive
+  min_effect: 0.002
+  verdict: pass
+  by_symbol:
+    ETHUSD:
+      effect: 0.005149532773483761
+      n_a: 98
+      n_b: 152
+      windows:
+      - 0.009565910753298577
+      - 0.005207558804458001
+      - 0.011603421950056536
+      - 0.006597887577197896
+      - -0.006758135195859511
+      - 0.009262099482056139
+      verdict: pass
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    vwap = (tp * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    dev = df.close / vwap - 1
+
+    z = dev / dev.rolling(720).std()
+
+    st = z.abs() > 2
+
+    a = spaced(st & (hour >= 0) & (hour <= 6), 8)
+
+    b = spaced(st & (hour >= 12) & (hour <= 20), 8)
+
+    signal = -np.sign(dev)
+
+    '
+- id: weekend_stretch_fade
+  belief: Weekend ETH trading is thin and retail-driven, so a stretch from the 24h
+    VWAP on Saturday or Sunday overshoots more and reverts by more than cost.
+  measure: net_return
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: -0.009347792876866054
+      n_a: 39
+      n_b: 39
+      windows:
+      - -0.005248631362743545
+      - -0.009231556805717443
+      - -0.0014425950539100486
+      - -0.008132216146119196
+      - -0.023651460955750464
+      - -0.005045430305258029
+      verdict: fail
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    vwap = (tp * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    dev = df.close / vwap - 1
+
+    z = dev / dev.rolling(720).std()
+
+    a = spaced((z.abs() > 2) & (dow >= 5), 12)
+
+    b = ~a
+
+    signal = -np.sign(dev)
+
+    '
+- id: calm_regime_stretch_fade
+  belief: In a calm, range-bound volatility regime, stretches from VWAP are noise
+    that reverts. In a volatile regime the same stretch belongs to a trend.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: -0.007071343148109169
+      n_a: 42
+      n_b: 89
+      windows:
+      - -0.009693813501344111
+      - -0.029487318906943522
+      - 0.005090524975864915
+      - 0.003460192440912213
+      - 0.0011755783134930805
+      - -0.003731679901587533
+      verdict: fail
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    vwap = (tp * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    dev = df.close / vwap - 1
+
+    z = dev / dev.rolling(720).std()
+
+    rv = ret.rolling(168).std()
+
+    q = rv.rolling(720).rank(pct=True)
+
+    st = z.abs() > 2
+
+    a = spaced(st & (q < 0.33), 12)
+
+    b = spaced(st & (q > 0.67), 12)
+
+    signal = -np.sign(dev)
+
+    '
+- id: day_anchored_vwap_late_fade
+  belief: Late in the UTC day, a close far from that day's own session VWAP (anchored
+    at 00 UTC) marks a day-end imbalance that reverts as the new day's flow resets
+    positioning.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: 0.002920705265611321
+      n_a: 204
+      n_b: 17315
+      windows:
+      - 0.0022189300219361335
+      - 0.00587457837836363
+      - -0.006786921990757216
+      - 0.003680843718315328
+      - 0.010550793886624976
+      - -0.0006887185420418541
+      verdict: fail
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    d = df.index.normalize()
+
+    dvwap = (tp * df.volume).groupby(d).cumsum() / df.volume.groupby(d).cumsum()
+
+    dev = df.close / dvwap - 1
+
+    z = dev / dev.rolling(720).std()
+
+    a = spaced((z.abs() > 2) & (hour >= 16) & (hour <= 23), 6)
+
+    b = ~a
+
+    signal = -np.sign(dev)
+
+    '
+- id: weekend_stretch_continuation
+  belief: On thin, retail-driven weekends, a close far from the 24h VWAP reflects
+    one-sided flow that liquidity providers do not absorb, so price keeps moving in
+    the stretch direction over the next half day by more than cost.
+  measure: net_return
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.003
+  verdict: pass
+  by_symbol:
+    ETHUSD:
+      effect: 0.006347792876866055
+      n_a: 39
+      n_b: 39
+      windows:
+      - 0.0022486313627435458
+      - 0.006231556805717443
+      - -0.0015574049460899515
+      - 0.005132216146119197
+      - 0.02065146095575046
+      - 0.0020454303052580293
+      verdict: pass
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    vwap = (tp * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    dev = df.close / vwap - 1
+
+    z = dev / dev.rolling(720).std()
+
+    a = spaced((z.abs() > 2) & (dow >= 5), 12)
+
+    b = ~a
+
+    signal = np.sign(dev)
+
+    '
+- id: us_hours_weekday_stretch_continuation
+  belief: On weekdays during European-afternoon and US hours, a close far from the
+    24h VWAP reflects deep, informed flow, so price keeps moving in the stretch direction
+    over the next 8 hours by more than cost.
+  measure: net_return
+  horizon_bars: 8
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: -0.0007468931782999163
+      n_a: 111
+      n_b: 111
+      windows:
+      - 0.007983711219906871
+      - -0.0007743565882823883
+      - 0.009189098422380143
+      - 0.0011106046289560967
+      - -0.019834786809435928
+      - -0.0002127243755888895
+      verdict: fail
+      why: null
+  code: 'tp = (df.high + df.low + df.close) / 3
+
+    vwap = (tp * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    dev = df.close / vwap - 1
+
+    z = dev / dev.rolling(720).std()
+
+    a = spaced((z.abs() > 2) & (hour >= 13) & (hour <= 20) & (dow <= 4), 8)
+
+    b = ~a
+
+    signal = np.sign(dev)
+
+    '
+profit:
+  asia_hours_stretch_fade/ETHUSD:
+    claim: asia_hours_stretch_fade
+    symbol: ETHUSD
+    bar_size: 1h
+    fold: B
+    engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+    fold_totals:
+      net_return: 0.2708
+      median_window_sharpe: 0.33204999999999996
+      worst_window_drawdown: 0.251
+      trades: 100
+    windows:
+    - window: W1
+      net_return: 0.0582
+      trades: 12
+      sharpe: 0.0205
+      max_drawdown: 0.1306
+      exposure_pct: 3.252
+      cost_drag_pct: 17.989
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001/engine_r0_asia_hours_stretch_fade_ETHUSD/results/20261106T001725Z_d9dac091
+      seconds: 47
+    - window: W2
+      net_return: -0.0542
+      trades: 15
+      sharpe: -1.1613
+      max_drawdown: 0.0914
+      exposure_pct: 4.1667
+      cost_drag_pct: 35.9203
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001/engine_r0_asia_hours_stretch_fade_ETHUSD/results/20261106T001810Z_d9dac091
+      seconds: 44
+    - window: W3
+      net_return: -0.0104
+      trades: 14
+      sharpe: -0.0755
+      max_drawdown: 0.145
+      exposure_pct: 3.8251
+      cost_drag_pct: 494.2556
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001/engine_r0_asia_hours_stretch_fade_ETHUSD/results/20261106T001856Z_d9dac091
+      seconds: 46
+    - window: W4
+      net_return: 0.0679
+      trades: 17
+      sharpe: 1.388
+      max_drawdown: 0.1039
+      exposure_pct: 4.607
+      cost_drag_pct: 20.3474
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001/engine_r0_asia_hours_stretch_fade_ETHUSD/results/20261106T001942Z_d9dac091
+      seconds: 46
+    - window: W5
+      net_return: 0.0715
+      trades: 25
+      sharpe: 0.6436
+      max_drawdown: 0.251
+      exposure_pct: 6.3911
+      cost_drag_pct: 25.4236
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001/engine_r0_asia_hours_stretch_fade_ETHUSD/results/20261106T002030Z_d9dac091
+      seconds: 48
+    - window: W6
+      net_return: 0.1213
+      trades: 17
+      sharpe: 1.6539
+      max_drawdown: 0.116
+      exposure_pct: 4.6448
+      cost_drag_pct: 13.8133
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001/engine_r0_asia_hours_stretch_fade_ETHUSD/results/20261106T002119Z_d9dac091
+      seconds: 49
+    checks:
+      net_positive_in_5_of_6: false
+      median_window_sharpe_ge_1.0: false
+      worst_window_drawdown_le_20%: false
+    min_bars: 818
+    verdict: fail
+  weekend_stretch_continuation/ETHUSD:
+    claim: weekend_stretch_continuation
+    symbol: ETHUSD
+    bar_size: 1h
+    fold: B
+    engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+    fold_totals:
+      net_return: 0.2409
+      median_window_sharpe: 0.50545
+      worst_window_drawdown: 0.0986
+      trades: 39
+    windows:
+    - window: W1
+      net_return: 0.0136
+      trades: 8
+      sharpe: 0.3282
+      max_drawdown: 0.0733
+      exposure_pct: 3.252
+      cost_drag_pct: 38.7136
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001/engine_r1_weekend_stretch_continuation_ETHUSD/results/20261106T002234Z_caf3bd6b
+      seconds: 44
+    - window: W2
+      net_return: 0.0271
+      trades: 5
+      sharpe: 0.6827
+      max_drawdown: 0.0559
+      exposure_pct: 2.0833
+      cost_drag_pct: 16.0161
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001/engine_r1_weekend_stretch_continuation_ETHUSD/results/20261106T002316Z_caf3bd6b
+      seconds: 42
+    - window: W3
+      net_return: -0.0148
+      trades: 7
+      sharpe: -0.3393
+      max_drawdown: 0.0986
+      exposure_pct: 2.8689
+      cost_drag_pct: 77.1917
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001/engine_r1_weekend_stretch_continuation_ETHUSD/results/20261106T002401Z_caf3bd6b
+      seconds: 44
+    - window: W4
+      net_return: 0.0341
+      trades: 7
+      sharpe: 1.1028
+      max_drawdown: 0.0297
+      exposure_pct: 2.8455
+      cost_drag_pct: 17.9816
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001/engine_r1_weekend_stretch_continuation_ETHUSD/results/20261106T002442Z_caf3bd6b
+      seconds: 42
+    - window: W5
+      net_return: 0.1623
+      trades: 8
+      sharpe: 1.6553
+      max_drawdown: 0.0717
+      exposure_pct: 3.3345
+      cost_drag_pct: 5.2137
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001/engine_r1_weekend_stretch_continuation_ETHUSD/results/20261106T002525Z_caf3bd6b
+      seconds: 43
+    - window: W6
+      net_return: 0.0066
+      trades: 4
+      sharpe: 0.2559
+      max_drawdown: 0.0451
+      exposure_pct: 1.6393
+      cost_drag_pct: 40.9112
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001/engine_r1_weekend_stretch_continuation_ETHUSD/results/20261106T002610Z_caf3bd6b
+      seconds: 45
+    checks:
+      net_positive_in_5_of_6: true
+      median_window_sharpe_ge_1.0: false
+      worst_window_drawdown_le_20%: true
+    min_bars: 818
+    verdict: fail

@@ -71,12 +71,41 @@ def effect(measure, a, b, y, signal, feature, mask):
     raise ValueError(measure)
 
 
+def t_stat(measure, a, b, y, signal, feature, mask):
+    """Information only: the effect divided by its standard error on the whole fold (never a verdict)."""
+    try:
+        A = a & mask; B = (b & mask) if b is not None else None
+        if measure in ("mean_diff", "hit_rate"):
+            ya = (signal * y)[A].dropna(); yb = (signal * y)[B].dropna()
+            if measure == "hit_rate":
+                ya, yb = (ya > 0).astype(float), (yb > 0).astype(float)
+            se = np.sqrt(ya.var(ddof=1) / len(ya) + yb.var(ddof=1) / len(yb))
+            return float((ya.mean() - yb.mean()) / se) if se > 0 else None
+        if measure == "net_return":
+            ya = (signal * y)[A].dropna(); se = ya.std(ddof=1) / np.sqrt(len(ya))
+            return float((ya.mean() - FEE_RT) / se) if se > 0 else None
+        if measure == "rank_corr":
+            d = pd.DataFrame({"f": feature, "y": y})[A].dropna(); n = len(d)
+            r = d["f"].rank().corr(d["y"].rank()) if n > 2 else None
+            return float(r * np.sqrt((n - 2) / max(1e-12, 1 - r * r))) if r is not None and abs(r) < 1 else None
+        if measure == "abs_ratio":
+            ya = np.log(y.abs()[A].dropna() + 1e-12); yb = np.log(y.abs()[B].dropna() + 1e-12)
+            se = np.sqrt(ya.var(ddof=1) / len(ya) + yb.var(ddof=1) / len(yb))
+            return float((ya.mean() - yb.mean()) / se) if se > 0 else None
+    except Exception:  # noqa: BLE001
+        return None
+    return None
+
+
 def centred(measure, v):
     return v - 1.0 if measure == "abs_ratio" else v
 
 
 def judge_claim(idea, df, wn):
-    c = idea["claim"]; m = c["measure"]
+    c = idea.get("claim") if isinstance(idea, dict) else None   # asked by runs n12 and n15: a next claim without a claim block
+    if not isinstance(c, dict) or any(k not in c for k in ("measure", "horizon_bars", "direction", "min_effect", "code")):
+        return {"verdict": "refused", "why": "idea has no complete claim block (measure, horizon_bars, direction, min_effect, code)"}
+    m = c["measure"]
     if m not in MEASURES:
         return {"verdict": "refused", "why": f"unknown measure {m}"}
     if FORBIDDEN.search(c["code"]):
@@ -108,6 +137,7 @@ def judge_claim(idea, df, wn):
     checks = {"meets_min_effect": bool(meets), f"same_sign_in_{AGREE}_of_{N_WIN}": agree >= AGREE,
               f"min_{MIN_BARS}_bars_each": min(na, nb) >= MIN_BARS}
     return {"verdict": "pass" if all(checks.values()) else "fail", "effect": None if np.isnan(total) else float(total),
+            "t_stat": (lambda t: None if t is None or not np.isfinite(t) else round(t, 2))(t_stat(m, a, b, y, signal, feature, wn > 0)),
             "n_a": int(na), "n_b": int(nb), "windows": wins, "agreeing_windows": f"{agree} of {N_WIN}", "checks": checks}
 
 
@@ -122,7 +152,9 @@ def judge_file(claims_path, fold, bar_size, symbols, try_name=None):
     frames = {s: load_bars(s, bar_size) for s in symbols}
     ledger = yaml.safe_load(LEDGER.read_text(encoding="utf-8")) if LEDGER.exists() else {"trials": []}
     stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
-    for idea in doc["ideas"]:
+    for n, idea in enumerate(doc["ideas"]):
+        if not isinstance(idea, dict): idea = {"id": f"malformed_{n}"}
+        idea.setdefault("id", f"unnamed_{n}")
         per = {}
         for s, df in frames.items():
             per[s] = judge_claim(idea, df, window_numbers(df.index, windows))
@@ -131,8 +163,12 @@ def judge_file(claims_path, fold, bar_size, symbols, try_name=None):
         out["ideas"][idea["id"]] = {"verdict": overall, "by_symbol": per}
         ledger["trials"].append({"at": stamp, "try": try_name or claims_path.parent.name, "claim": idea["id"], "symbols": symbols,
                                  "bar_size": bar_size, "fold": fold, "verdict": overall})
-        line = " | ".join(f"{s}: {v['verdict']}" + (f" effect={v['effect']:+.4f} n={v['n_a']}/{v['n_b']} agree={v['agreeing_windows']}"
-                          if v["verdict"] != "refused" else f" ({v['why']})") for s, v in per.items())
+        def _fmt(v):
+            if v["verdict"] == "refused":
+                return f" ({v['why']})"
+            eff = "none" if v["effect"] is None else f"{v['effect']:+.4f}"
+            return f" effect={eff} n={v['n_a']}/{v['n_b']} agree={v['agreeing_windows']}"
+        line = " | ".join(f"{s}: {v['verdict']}" + _fmt(v) for s, v in per.items())
         print(f"{idea['id']}: {overall.upper()}  {line}")
     out_path = claims_path.parent / ("verdicts.yaml" if claims_path.stem == "claims" else f"verdicts_{claims_path.stem}.yaml")
     out_path.write_text(yaml.safe_dump(out, sort_keys=False, allow_unicode=True), encoding="utf-8")

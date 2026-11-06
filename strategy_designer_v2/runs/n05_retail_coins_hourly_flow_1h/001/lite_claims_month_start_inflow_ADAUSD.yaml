@@ -1,0 +1,41 @@
+claim: month_start_inflow
+symbol: ADAUSD
+bar_size: 1h
+fold: A
+cost_per_round_trip: 0.0015
+fold_totals:
+  net_return: 0.4474
+  sharpe: 1.25
+  max_drawdown: -0.0977
+  time_in_market: 0.066
+  trades: 48
+windows:
+- window: W1
+  net_return: -0.003
+  trades: 8
+  max_drawdown: -0.0977
+- window: W2
+  net_return: 0.0392
+  trades: 8
+  max_drawdown: -0.0733
+- window: W3
+  net_return: 0.0899
+  trades: 8
+  max_drawdown: -0.063
+- window: W4
+  net_return: 0.0833
+  trades: 8
+  max_drawdown: -0.0923
+- window: W5
+  net_return: 0.0465
+  trades: 8
+  max_drawdown: -0.0441
+- window: W6
+  net_return: 0.1308
+  trades: 8
+  max_drawdown: -0.0382
+checks:
+  net_positive_in_5_of_6: true
+  sharpe_ge_1.0: true
+  max_drawdown_le_20%: true
+verdict: pass
