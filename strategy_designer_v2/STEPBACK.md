@@ -206,3 +206,10 @@ Five questions, answered in one line each, before each try.
 3. **Fooling ourselves?** Try 09 showed both failure shapes of a strength under standardise: sparse saturates, noisy churns. Written into the format as "dense strength". The test claim's book lost 95% at full size on one window: a result, recorded, not a defect.
 4. **Operator deciding, pipeline discovering?** The operator's two rules drove every change.
 5. **Deviation from v2's rule?** None.
+
+## Pieces 3, 4 and 5 built; the loop runs engine-only (2026-11-06, evening)
+1. **Whose job is this?** Three Sonnet builders, one piece each, reviewed by me. Branch 1 from the engine's outputs, the analyst on the engine's outputs, the runner rewired. The operator's rules drove every line. I wrote the last reading myself because the builder stopped before its test ended.
+2. **Simpler or more complex?** The loop has the shape the operator asked for: one reader of bars, three answers from one run. Fewer files than before the clean-up.
+3. **Fooling ourselves?** All results since the clean-up are on one fold and all books lost; the record says so. The dense-strength rule makes fees the first enemy, which the analyst saw from the book and said.
+4. **Operator deciding, pipeline discovering?** Next and last: the operator's brief once on fold A, then stop.
+5. **Deviation from v2's rule?** None.

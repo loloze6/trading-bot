@@ -1,0 +1,43 @@
+{
+  "aux_feeds": [],
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 2,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "vwap_anchor_stretch_reverts_slow",
+            "class": "strategies.claim_linear.ClaimStrengthComponent",
+            "params": {
+              "code": "sd = ret.rolling(168, min_periods=168).std().shift(1)\npv = (df.close * df.volume).rolling(48, min_periods=48).sum()\nvwap = pv / df.volume.rolling(48, min_periods=48).sum()\nstretch = np.log(df.close / vwap) / (sd * np.sqrt(24))\nevent = pd.Series(True, index=df.index)\nstrength = -stretch.ewm(span=6, min_periods=6).mean()\n",
+              "horizon": 24,
+              "min_bars": 321
+            },
+            "weight": 1.0,
+            "lookback": 921,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 500,
+                  "min_periods": 100,
+                  "target": 10.0,
+                  "cap": 20.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    }
+  }
+}

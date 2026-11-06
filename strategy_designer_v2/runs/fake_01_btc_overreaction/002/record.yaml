@@ -1,0 +1,94 @@
+brief: fake_01_btc_overreaction.md
+fold: A
+symbols:
+- BTCUSD
+bar_size: 1h
+claims:
+- id: signed_flow_pressure_continues
+  belief: Hours of heavy volume moving price one way are informed order flow that
+    is still being worked, so cumulative volume-weighted pressure over the last few
+    hours keeps pushing price the same way.
+  horizon: 6
+  min_effect: 0.025
+  by_symbol:
+    BTCUSD:
+      branch1:
+        fold_correlation: -0.041958626156573385
+        t_stat: -5.5524803015253
+        verdict: fail
+      branch3:
+        net: -0.9772
+        median_window_sharpe: -2.4971
+        worst_drawdown: 0.7755
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/fake_01_btc_overreaction/002/engine_r0_signed_flow_pressure_continues_BTCUSD
+  verdict_branch1: fail
+  verdict_branch3: fail
+- id: wick_pressure_persistence
+  belief: Repeated lower wicks over half a day show resting buyers absorbing sells,
+    and repeated upper wicks show sellers absorbing buys, so the side doing the absorbing
+    wins over the next hours.
+  horizon: 8
+  min_effect: 0.02
+  by_symbol:
+    BTCUSD:
+      branch1:
+        fold_correlation: -0.04686133062600463
+        t_stat: -6.20049004987776
+        verdict: fail
+      branch3:
+        net: -0.9976
+        median_window_sharpe: -4.92085
+        worst_drawdown: 0.8235
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/fake_01_btc_overreaction/002/engine_r0_wick_pressure_persistence_BTCUSD
+  verdict_branch1: fail
+  verdict_branch3: fail
+- id: thin_volume_drift_reverts
+  belief: A multi-hour move made on below-normal volume is price drifting through
+    a thin book without real participation, so it gives back part of the move within
+    half a day.
+  horizon: 12
+  min_effect: 0.02
+  by_symbol:
+    BTCUSD:
+      branch1:
+        fold_correlation: 0.035419195775614656
+        t_stat: 4.68108760915675
+        verdict: pass
+      branch3:
+        net: -0.9981
+        median_window_sharpe: -6.5244
+        worst_drawdown: 0.832
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/fake_01_btc_overreaction/002/engine_r0_thin_volume_drift_reverts_BTCUSD
+  verdict_branch1: pass
+  verdict_branch3: fail
+- id: vwap_anchor_stretch_reverts_slow
+  belief: BTC hourly price that has stretched away from its two-day volume-weighted
+    anchor tends to drift back to it within a day, and that stretch changes slowly
+    enough to hold a position through the reversion.
+  horizon: 24
+  min_effect: 0.025
+  by_symbol:
+    BTCUSD:
+      branch1:
+        fold_correlation: 0.014767598186833694
+        t_stat: 1.9466803180760883
+        verdict: fail
+      branch3:
+        net: -0.9416
+        median_window_sharpe: -1.3146499999999999
+        worst_drawdown: 0.6878
+        passed_as: null
+        verdict: fail
+      why: null
+      folder: runs/fake_01_btc_overreaction/002/engine_r1_vwap_anchor_stretch_reverts_slow_BTCUSD
+  verdict_branch1: fail
+  verdict_branch3: fail

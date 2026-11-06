@@ -133,6 +133,34 @@ fake_01_btc_overreaction.md:
   measure: net_return
   verdict: fail
   run: fake_01_btc_overreaction/001
+- id: signed_flow_pressure_continues
+  belief: Hours of heavy volume moving price one way are informed order flow that
+    is still being worked, so cumulative volume-weighted pressure over the last few
+    hours keeps pushing price the same way.
+  branch1: fail
+  branch3: fail
+  run: fake_01_btc_overreaction/002
+- id: wick_pressure_persistence
+  belief: Repeated lower wicks over half a day show resting buyers absorbing sells,
+    and repeated upper wicks show sellers absorbing buys, so the side doing the absorbing
+    wins over the next hours.
+  branch1: fail
+  branch3: fail
+  run: fake_01_btc_overreaction/002
+- id: thin_volume_drift_reverts
+  belief: A multi-hour move made on below-normal volume is price drifting through
+    a thin book without real participation, so it gives back part of the move within
+    half a day.
+  branch1: pass
+  branch3: fail
+  run: fake_01_btc_overreaction/002
+- id: vwap_anchor_stretch_reverts_slow
+  belief: BTC hourly price that has stretched away from its two-day volume-weighted
+    anchor tends to drift back to it within a day, and that stretch changes slowly
+    enough to hold a position through the reversion.
+  branch1: fail
+  branch3: fail
+  run: fake_01_btc_overreaction/002
 fake_02_eth_vol_regime_trend.md:
 - id: vol_rising_trend_pays
   belief: A moving-average trend signal on ETH earns more when realized volatility

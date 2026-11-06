@@ -1,0 +1,157 @@
+brief: fake_01_btc_overreaction.md
+ideas:
+  - id: signed_flow_pressure_continues
+    belief: Hours of heavy volume moving price one way are informed order flow that is still being worked, so cumulative volume-weighted pressure over the last few hours keeps pushing price the same way.
+    claim:
+      when: every bar, graded by the volume-weighted sum of the last six hourly returns in volatility units
+      then: price continues in the direction of the accumulated signed flow over the next six hours
+      compared_to: bars with weak or opposite accumulated signed flow
+      horizon_bars: 6
+      min_effect: 0.025
+      code: |
+        sd = ret.rolling(168, min_periods=168).std().shift(1)
+        vr = df.volume / df.volume.rolling(168, min_periods=168).median().shift(1)
+        flow = (ret / sd * vr.clip(upper=5)).rolling(6, min_periods=6).sum()
+        event = pd.Series(True, index=df.index)
+        strength = flow / np.sqrt(6)
+    why_no_lookahead: Returns and volumes are summed over the current and five prior bars, and their scales come from shifted trailing windows.
+    how_it_trades: Hold a graded position in the sign of recent volume-weighted flow, resized every hour.
+  - id: wick_pressure_persistence
+    belief: Repeated lower wicks over half a day show resting buyers absorbing sells, and repeated upper wicks show sellers absorbing buys, so the side doing the absorbing wins over the next hours.
+    claim:
+      when: every bar, graded by the 12-hour sum of lower-wick minus upper-wick length in units of average range
+      then: price moves up after net lower-wick dominance and down after net upper-wick dominance over the next eight hours
+      compared_to: bars with balanced or opposite wick pressure
+      horizon_bars: 8
+      min_effect: 0.02
+      code: |
+        atr = (df.high - df.low).rolling(168, min_periods=168).mean().shift(1)
+        upper = df.high - df[['open', 'close']].max(axis=1)
+        lower = df[['open', 'close']].min(axis=1) - df.low
+        event = pd.Series(True, index=df.index)
+        strength = ((lower - upper) / atr).rolling(12, min_periods=12).sum()
+    why_no_lookahead: Wicks use each bar's own completed OHLC, and the range scale comes from a shifted trailing mean.
+    how_it_trades: Hold a graded long under net lower-wick pressure and a graded short under net upper-wick pressure.
+  - id: thin_volume_drift_reverts
+    belief: A multi-hour move made on below-normal volume is price drifting through a thin book without real participation, so it gives back part of the move within half a day.
+    claim:
+      when: every bar, graded by the six-hour return in volatility units and damped as six-hour volume rises above normal
+      then: price moves against the six-hour move over the next twelve hours, more so when volume was thin
+      compared_to: bars whose six-hour move came on normal or heavy volume
+      horizon_bars: 12
+      min_effect: 0.02
+      code: |
+        sd = ret.rolling(168, min_periods=168).std().shift(1)
+        z6 = df.close.pct_change(6) / (sd * np.sqrt(6))
+        base = df.volume.rolling(168, min_periods=168).median().shift(1)
+        vr6 = df.volume.rolling(6, min_periods=6).sum() / (6 * base)
+        event = pd.Series(True, index=df.index)
+        strength = -z6 * np.exp(-vr6)
+    why_no_lookahead: The six-hour return and volume end at the current close, and the baselines are shifted trailing windows.
+    how_it_trades: Fade the six-hour move with size that grows as the volume behind it shrinks.
+  - id: multi_day_range_extension_continues
+    belief: A close beyond the prior three-day high or low, whatever the size of the bar, puts price into a zone with no recent supply or demand and triggers resting stops, so it keeps extending.
+    claim:
+      when: bars closing outside the prior 72-hour high/low range, graded by the distance beyond the range in volatility units
+      then: price continues away from the range over the next twelve hours
+      compared_to: breakout bars with smaller extensions, ranked by the size of the extension
+      horizon_bars: 12
+      min_effect: 0.03
+      code: |
+        sd = ret.rolling(168, min_periods=168).std().shift(1)
+        hi = df.high.rolling(72, min_periods=72).max().shift(1)
+        lo = df.low.rolling(72, min_periods=72).min().shift(1)
+        up = (df.close / hi - 1).clip(lower=0)
+        dn = (df.close / lo - 1).clip(upper=0)
+        ext = (up + dn) / sd
+        event = ext.fillna(0) != 0
+        strength = ext.fillna(0)
+    why_no_lookahead: The range is built from the 72 bars before the current one, and the current close is known at its close.
+    how_it_trades: Hold in the breakout direction, sized by how far the close sits beyond the three-day range, and stay flat inside it.
+  - id: hour_of_day_seasonality
+    belief: BTC has a recurring intraday return pattern tied to regional sessions (Asia open, Europe open, US open and close), and the recent average return of the coming hours predicts the next hours.
+    claim:
+      when: every bar, graded by the trailing 60-day average normalized return of the next six UTC hours of the day
+      then: the next six hours' return has the sign of the hours' recent seasonal average
+      compared_to: bars whose upcoming hours have a weak or opposite seasonal average
+      horizon_bars: 6
+      min_effect: 0.02
+      code: |
+        sd = ret.rolling(168, min_periods=168).std().shift(1)
+        z = ret / sd
+        hm = z.groupby(hour).transform(lambda s: s.rolling(60, min_periods=30).mean())
+        event = pd.Series(True, index=df.index)
+        strength = hm.shift(23) + hm.shift(22) + hm.shift(21) + hm.shift(20) + hm.shift(19) + hm.shift(18)
+    why_no_lookahead: The average for each upcoming hour is read from the same hour one day earlier (shift 18 to 23), so it only uses past bars.
+    how_it_trades: Tilt the position to the seasonal sign of the coming six hours, resized hourly.
+  - id: autocorrelation_regime_switch
+    belief: BTC alternates between trending and mean-reverting regimes at the hourly scale, so the last week's lag-one autocorrelation tells whether to follow or fade the last few hours.
+    claim:
+      when: every bar, graded by the trailing one-week lag-one autocorrelation of hourly returns times the three-hour return in volatility units
+      then: the next three hours follow the recent move when autocorrelation is positive and reverse it when negative
+      compared_to: bars where the regime-signed recent move is small or opposite
+      horizon_bars: 3
+      min_effect: 0.02
+      code: |
+        sd = ret.rolling(168, min_periods=168).std().shift(1)
+        z = ret / sd
+        ac = z.rolling(168, min_periods=168).corr(z.shift(1))
+        z3 = df.close.pct_change(3) / (sd * np.sqrt(3))
+        event = pd.Series(True, index=df.index)
+        strength = ac * z3
+    why_no_lookahead: The autocorrelation uses returns up to the current bar paired with their prior bars, and z3 ends at the current close.
+    how_it_trades: Follow or fade the last three hours depending on the sign and size of the recent autocorrelation.
+  - id: trend_with_volatility_expansion_continues
+    belief: A one-day move that comes with rising realized volatility is a repricing that is still underway, not noise, so it continues, and more so the stronger the expansion.
+    claim:
+      when: every bar, graded by the 24-hour return in volatility units times the ratio of 24-hour to one-week realized volatility
+      then: price continues in the direction of the 24-hour move over the next twelve hours
+      compared_to: bars with the same move made in a compressed-volatility regime, or with smaller moves
+      horizon_bars: 12
+      min_effect: 0.02
+      code: |
+        sd = ret.rolling(168, min_periods=168).std().shift(1)
+        rv24 = ret.rolling(24, min_periods=24).std()
+        z24 = df.close.pct_change(24) / (sd * np.sqrt(24))
+        event = pd.Series(True, index=df.index)
+        strength = z24 * (rv24 / sd).clip(upper=4)
+    why_no_lookahead: The 24-hour return and volatility end at the current close, and the weekly volatility is shifted.
+    how_it_trades: Hold with the one-day trend, sized up when volatility is expanding.
+  - id: pullback_within_weekly_trend_reverts
+    belief: A short dip inside a one-week uptrend (or a short rally inside a downtrend) is temporary liquidity demand against the dominant flow, and it is absorbed within half a day.
+    claim:
+      when: bars where the six-hour move runs against the one-week trend, graded by the product of trend strength and pullback size
+      then: price resumes the weekly trend direction over the next twelve hours
+      compared_to: bars with smaller counter-trend pullbacks or weak trends, which carry zero strength
+      horizon_bars: 12
+      min_effect: 0.025
+      code: |
+        sd = ret.rolling(168, min_periods=168).std().shift(1)
+        trend = df.close.pct_change(168) / (sd * np.sqrt(168))
+        z6 = df.close.pct_change(6) / (sd * np.sqrt(6))
+        s = trend.clip(lower=0) * (-z6).clip(lower=0) + trend.clip(upper=0) * z6.clip(lower=0)
+        event = s.fillna(0) != 0
+        strength = s.fillna(0)
+    why_no_lookahead: Both the weekly and six-hour returns end at the current close, and the scale is a shifted trailing volatility.
+    how_it_trades: Buy dips in weekly uptrends and sell rallies in weekly downtrends, sized by trend times pullback.
+  - id: negative_skew_premium
+    belief: After a stretch of crash-like hourly returns (negative realized skew), liquidity providers demand a premium and price drifts up, while positive skew (squeeze-like spikes) is followed by giveback.
+    claim:
+      when: every bar, graded by the negative of the trailing 72-hour skewness of hourly returns
+      then: the next 24 hours' return is higher after negatively skewed periods and lower after positively skewed periods
+      compared_to: bars after periods with symmetric or opposite skew
+      horizon_bars: 24
+      min_effect: 0.02
+      code: |
+        sk = ret.rolling(72, min_periods=72).skew()
+        event = pd.Series(True, index=df.index)
+        strength = -sk
+    why_no_lookahead: The skewness is computed over the 72 bars ending at the current close.
+    how_it_trades: Lean long after crash-skewed days and short after squeeze-skewed days, graded by the skew.
+notes: >
+  All the big-bar fade variants failed, and the two that passed were continuation effects
+  (heavy volume, range breakout). These ideas therefore move to dense indicators that are
+  not tied to single spikes: flow, wick absorption, thin-volume drift, range extension
+  without a big-bar trigger, seasonality, regime-adaptive autocorrelation, volatility-confirmed
+  trend, trend pullbacks and skew. Some of these contradict each other (flow continuation versus
+  thin-drift fade); keep both and let the data decide.
