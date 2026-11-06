@@ -104,6 +104,9 @@ def backtest_claim(claims_path, cid, fold, bar_size, symbol, out_dir=None, max_w
            "min_bars": min_bars_of(idea["claim"]["code"]), "verdict": verdict, "passed_as": ("vol_target" if best is sized else "full_size") if verdict == "pass" else None,
            "fold_totals": best["fold_totals"], "full_size": full, "vol_target": sized}
     (out_dir / "engine_verdict.yaml").write_text(yaml.safe_dump(out, sort_keys=False))
+    if full["verdict"] != "refused":   # branch 1 from the same folder (lazy import: the judge does not import this step)
+        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "judge")); import judge
+        judge.judge_engine_run(out_dir, claims_path, cid)
     ledger = yaml.safe_load(LEDGER.read_text()); ledger["trials"].append(
         {"at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"), "try": "engine", "claim": cid, "symbols": [symbol],
          "bar_size": bar_size, "fold": fold, "verdict": f"engine:{verdict}", "windows": len(windows), "sizes": len(verdicts)})
