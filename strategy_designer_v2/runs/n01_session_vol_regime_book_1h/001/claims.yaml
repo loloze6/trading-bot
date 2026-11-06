@@ -1,0 +1,199 @@
+brief: n01_session_vol_regime_book_1h.md
+ideas:
+  - id: volume_surprise_fade
+    belief: A large hourly move printed on 3x volume is forced flow, such as liquidations or stop cascades, that overshoots. It reverts more than an equally large move on normal volume, so the volume gate turns a weak reversal into a tradable one.
+    claim:
+      when: weekday bars with an absolute return above 2 trailing hourly std and volume above 3x the trailing 168-bar median
+      then: price moves against that bar's direction over the next 3 bars
+      compared_to: weekday bars with the same large return but without the volume surprise (same rule, no gate)
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.003
+      code: |
+        volmed = df.volume.rolling(168).median().shift(1)
+        sd = ret.rolling(168).std().shift(1)
+        vs = df.volume > 3 * volmed
+        wk = dow < 5
+        rule = wk & (ret.abs() > 2 * sd)
+        a = spaced(rule & vs, 3)
+        b = spaced(rule & ~vs, 3)
+        signal = -np.sign(ret)
+    why_no_lookahead: The median volume and std use only prior bars (shift 1); the bar's own return and volume are known at its close.
+    how_it_trades: At the close of the spike bar, enter against its direction and exit after 3 hours; stay flat on weekends.
+
+  - id: volume_surprise_initiative_close
+    belief: A volume-surprise bar that closes near its extreme in the direction of its body shows initiative buying or selling that was not absorbed. It continues, while the same bar shape on normal volume is noise.
+    claim:
+      when: weekday bars with volume above 3x median, an absolute return above 1 std, and a close in the outer 20% of the range on the side of the move
+      then: price continues in the bar's direction over the next 4 bars
+      compared_to: weekday bars with the same shape and size but without the volume surprise
+      measure: mean_diff
+      horizon_bars: 4
+      direction: positive
+      min_effect: 0.003
+      code: |
+        volmed = df.volume.rolling(168).median().shift(1)
+        sd = ret.rolling(168).std().shift(1)
+        vs = df.volume > 3 * volmed
+        rng = (df.high - df.low).replace(0, np.nan)
+        clv = (2 * df.close - df.high - df.low) / rng
+        rule = (dow < 5) & (ret.abs() > sd) & (clv.abs() > 0.6) & (np.sign(clv) == np.sign(ret))
+        a = spaced(rule & vs, 4)
+        b = spaced(rule & ~vs, 4)
+        signal = np.sign(ret)
+    why_no_lookahead: The close location, return and volume come from the bar itself at its close; the baselines are shifted rolling stats.
+    how_it_trades: At the close of the bar, enter in its direction and exit after 4 hours; trade weekdays only.
+
+  - id: us_open_fades_europe_extension
+    belief: The European morning builds a directional extension on thin crypto liquidity. The arrival of US liquidity at the open absorbs and partly reverses it, a reversion that ordinary hours do not show.
+    claim:
+      when: weekday bars closing at 13 UTC where the prior 6-bar return exceeds 1.5 scaled std in absolute value
+      then: price moves against the 6-bar move over the next 3 bars
+      compared_to: weekday bars at hours outside 13 to 16 with the same 6-bar extension (same rule, no session gate)
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.003
+      code: |
+        sd = ret.rolling(168).std().shift(1)
+        r6 = df.close / df.close.shift(6) - 1
+        ext = (dow < 5) & (r6.abs() > 1.5 * sd * np.sqrt(6))
+        a = ext & (hour == 13)
+        b = spaced(ext & ~hour.isin([13, 14, 15, 16]), 6)
+        signal = -np.sign(r6)
+    why_no_lookahead: The 6-bar return ends at the bar's close and the std is shifted; the hour comes from the bar's own timestamp.
+    how_it_trades: At the 13 UTC close on weekdays, fade the prior 6-hour move if it is extended and exit 3 hours later.
+
+  - id: us_open_range_break
+    belief: A break of the trailing 24-hour range during the US open hours is carried by real new participants and holds. The same break in quiet hours is mostly a stop run that fails.
+    claim:
+      when: weekday bars at hours 13 to 14 UTC whose close is above the prior 24-bar high or below the prior 24-bar low
+      then: price continues in the break direction over the next 4 bars
+      compared_to: weekday range breaks at hours outside 13 to 16 UTC
+      measure: mean_diff
+      horizon_bars: 4
+      direction: positive
+      min_effect: 0.003
+      code: |
+        hi24 = df.high.rolling(24).max().shift(1)
+        lo24 = df.low.rolling(24).min().shift(1)
+        up = df.close > hi24
+        dn = df.close < lo24
+        rule = (dow < 5) & (up | dn)
+        a = spaced(rule & hour.isin([13, 14]), 4)
+        b = spaced(rule & ~hour.isin([13, 14, 15, 16]), 4)
+        signal = pd.Series(np.where(up, 1.0, -1.0), index=df.index)
+    why_no_lookahead: The 24-bar high and low are shifted by one bar and compared to the current close.
+    how_it_trades: Enter in the break direction at the close of a US-open breakout bar and exit after 4 hours.
+
+  - id: gated_liquidity_sweep_reversal
+    belief: In a high-activity bar, a wick through the 24-hour high or low that closes back inside the range is a sweep of resting stops followed by rejection. Price then travels toward the other side, more reliably than for sweeps in dead hours.
+    claim:
+      when: weekday bars in an open gate (US open hours 13 to 14 or volume above 3x median) whose high pierces the prior 24-bar high but whose close is back below it (or the mirror case at the low)
+      then: price moves away from the swept side over the next 4 bars
+      compared_to: the same sweep pattern on weekday bars with the gate closed
+      measure: mean_diff
+      horizon_bars: 4
+      direction: positive
+      min_effect: 0.003
+      code: |
+        volmed = df.volume.rolling(168).median().shift(1)
+        vs = df.volume > 3 * volmed
+        gate = hour.isin([13, 14]) | vs
+        hi24 = df.high.rolling(24).max().shift(1)
+        lo24 = df.low.rolling(24).min().shift(1)
+        su = (df.high > hi24) & (df.close < hi24)
+        sdn = (df.low < lo24) & (df.close > lo24)
+        rule = (dow < 5) & (su ^ sdn)
+        a = spaced(rule & gate, 4)
+        b = spaced(rule & ~gate, 4)
+        signal = pd.Series(np.where(su, -1.0, 1.0), index=df.index)
+    why_no_lookahead: The levels are prior-bar rolling extremes (shift 1); the bar's high, low, close and volume are known at its close.
+    how_it_trades: At the close of the sweep bar, trade away from the swept extreme and exit after 4 hours; flat on weekends.
+
+  - id: gated_signed_volume_flow
+    belief: When the gate is open, signed volume over the last 3 hours reflects informed flow. It predicts the next hours' direction because the price impact of large orders is absorbed slowly.
+    claim:
+      when: weekday bars in an open gate (hours 13 to 14 UTC or volume above 3x median)
+      then: the forward 3-bar return rises with the trailing 3-bar sum of sign(return) times volume over median volume
+      compared_to: rank correlation within gated bars (no baseline set)
+      measure: rank_corr
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.06
+      code: |
+        volmed = df.volume.rolling(168).median().shift(1)
+        vs = df.volume > 3 * volmed
+        a = (dow < 5) & (hour.isin([13, 14]) | vs)
+        b = ~a
+        feature = (np.sign(ret) * df.volume / volmed).rolling(3).sum()
+    why_no_lookahead: The feature sums the current and two prior bars, normalized by a volume median shifted by one bar.
+    how_it_trades: On gated bars, go long when the 3-hour signed volume is strongly positive and short when it is strongly negative, holding 3 hours.
+
+  - id: day_trend_through_us_open
+    belief: US participants arriving at the open trade in the direction of the day's established trend, such as fund rebalancing and trend models executing in US hours. So the trailing 24-hour vol-scaled return predicts the next 6 hours on open-hour bars, even though the open bar's own move does not.
+    claim:
+      when: weekday bars closing at 13 or 14 UTC
+      then: the forward 6-bar return rises with the trailing 24-bar return scaled by hourly vol
+      compared_to: rank correlation within the gated bars
+      measure: rank_corr
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.06
+      code: |
+        sd = ret.rolling(168).std().shift(1)
+        a = (dow < 5) & hour.isin([13, 14])
+        b = ~a
+        feature = (df.close / df.close.shift(24) - 1) / (sd * np.sqrt(24))
+    why_no_lookahead: The 24-bar return ends at the bar's close and the vol scale is shifted by one bar.
+    how_it_trades: At the US-open bars, take the side of the 24-hour trend in proportion to its z-score and hold 6 hours.
+
+  - id: us_open_hour_overshoot_fade
+    belief: The opening burst of US flow overshoots, which is why continuation from the open hour failed. A large two-hour move ending at 14 UTC partly retraces over the following hours, and the retrace pays after fees.
+    claim:
+      when: weekday bars closing at 14 UTC where the 2-bar return exceeds 1.5 scaled std in absolute value
+      then: the fade of that 2-bar move, held 4 bars, earns more than the 0.15% round trip
+      compared_to: cost (net_return, no baseline set)
+      measure: net_return
+      horizon_bars: 4
+      direction: positive
+      min_effect: 0.001
+      code: |
+        sd = ret.rolling(168).std().shift(1)
+        r2 = df.close / df.close.shift(2) - 1
+        a = (dow < 5) & (hour == 14) & (r2.abs() > 1.5 * sd * np.sqrt(2))
+        b = ~a
+        signal = -np.sign(r2)
+    why_no_lookahead: The 2-bar return ends at the bar's close and the std is shifted; the hour comes from the timestamp.
+    how_it_trades: At 14 UTC on weekdays, after a large open move, enter against it and exit at 18 UTC.
+
+  - id: compression_release_on_volume
+    belief: A volume surprise that arrives after a compressed 24-hour range marks the release of stored positioning. Its direction persists for hours, more than a volume spike in an already volatile tape, which tends to be exhaustion.
+    claim:
+      when: weekday volume-surprise bars (volume above 3x median) where the prior 24-bar range, as a share of price, is below 0.7x its trailing 720-bar median
+      then: price continues in the spike bar's direction over the next 6 bars
+      compared_to: weekday volume-surprise bars without prior compression
+      measure: mean_diff
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.004
+      code: |
+        volmed = df.volume.rolling(168).median().shift(1)
+        vs = (df.volume > 3 * volmed) & (dow < 5)
+        rng24 = (df.high.rolling(24).max() - df.low.rolling(24).min()).shift(1) / df.close.shift(1)
+        comp = rng24 < 0.7 * rng24.rolling(720).median()
+        a = spaced(vs & comp, 6)
+        b = spaced(vs & ~comp, 6)
+        signal = np.sign(ret)
+    why_no_lookahead: The range and its median are computed on bars up to the prior bar; the spike bar's volume and return are known at its close.
+    how_it_trades: On a volume spike out of a tight range, enter in the spike's direction and hold 6 hours; flat on weekends.
+
+notes: >
+  Every idea is gated on the validated filters: the weekday US open hours 13 to 14 UTC, a volume surprise above 3x the 168-bar median, or both. All are flat on weekends.
+  Where possible, the baseline is the same direction rule with the gate closed, so the claim tests whether the gate adds value.
+  Two pairs contradict each other on purpose and the data decides between them:
+  - volume_surprise_fade (forced flow overshoots) against volume_surprise_initiative_close and compression_release_on_volume (informed flow continues).
+  - us_open_range_break (the break holds) against gated_liquidity_sweep_reversal (the failed break reverts).
+  us_open_hour_overshoot_fade tests the reverse of the failed open-hour continuation, at a shorter horizon and net of cost.
+  Hour labels assume the index is the bar close time, as stated in the format.

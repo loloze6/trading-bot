@@ -1,0 +1,34 @@
+run: n01_session_vol_regime_book_1h_foldB
+observations:
+  - us_open_range_break nearly held on BTC. Its whole-fold effect of 0.0044 cleared the 0.003 bar, but it failed because only 4 of 6 windows were positive (windows 5 and 6 were -0.0024 and -0.0008). On ETH it reached only 0.0021, with 3 of 6 windows positive.
+  - The US-open continuation rules were strongly positive in the middle windows and lost after them. Range break was 0.0141 and 0.0100 on BTC and 0.0129 and 0.0102 on ETH in windows 3 and 4, and day_trend_through_us_open was 0.146 and 0.224 in window 4. Both turned negative in window 5: -0.0024 and -0.136 on BTC, -0.0041 and -0.034 on ETH.
+  - The fade rules at the US open were the mirror image. us_open_fades_europe_extension lost in windows 2 to 4 on both symbols (BTC -0.0068, -0.0085, -0.0117; ETH -0.0086, -0.0079, -0.0146) and was positive in window 5 (BTC 0.0057, ETH 0.0021).
+  - us_open_hour_overshoot_fade lost after cost, at -0.0044 net on BTC and -0.0024 on ETH. Its worst windows were again 2 to 4 (BTC -0.0140, -0.0130, -0.0091), and ETH turned to +0.0201 in window 5.
+  - The 3x volume gate added no reversal edge. volume_surprise_fade scored -0.0017 on BTC and +0.0006 on ETH against the same move on normal volume, and the window signs were mixed on both symbols.
+  - volume_surprise_initiative_close was positive in the first four windows on BTC (0.0019 to 0.0042), but window 5 broke it on both symbols (BTC -0.0054, ETH -0.0120).
+  - gated_signed_volume_flow ran the opposite way to the belief on ETH. Its rank correlation was -0.052, negative in 5 of 6 windows and as low as -0.205. On BTC it was +0.017 with mixed signs, so the two symbols disagree.
+  - compression_release_on_volume was flat on BTC (0.00004) and only 0.0024 on ETH with 4 of 6 windows positive, below its 0.004 bar.
+  - The common pattern in the windows is that a direction rule at the US open has the right sign in one regime (windows 2 to 4 for continuation) and the wrong sign in another (windows 5 to 6). That is why no fixed-sign rule reaches 5 of 6 windows.
+next_claim:
+  id: us_open_regime_switched_extension
+  belief: The direction of the US-open follow-through on a large 6-hour move depends on the trailing regime. It continues when the past week has been trending and reverts when the past week has been choppy, which explains why fixed continuation and fixed fade rules each won in different windows.
+  claim:
+    when: weekday bars at 13 or 14 UTC whose 6-hour move exceeds 1.5 trailing sigma, one event per 4 bars
+    then: the 4-bar forward return goes in the move's direction if the trailing 168-bar efficiency ratio is above its 30-day median, and against it otherwise, and this pays after the 0.15% round trip
+    compared_to: zero after cost (net_return)
+    measure: net_return
+    horizon_bars: 4
+    direction: positive
+    min_effect: 0.0015
+    code: |
+      sd = ret.rolling(168).std().shift(1)
+      r6 = df.close / df.close.shift(6) - 1
+      er = (df.close / df.close.shift(168) - 1).abs() / ret.abs().rolling(168).sum()
+      trend = er > er.rolling(720).median().shift(1)
+      ext = (dow < 5) & hour.isin([13, 14]) & (r6.abs() > 1.5 * sd * np.sqrt(6))
+      a = spaced(ext, 4)
+      b = ~a
+      signal = pd.Series(np.sign(r6) * np.where(trend, 1.0, -1.0), index=df.index)
+  why_no_lookahead: The 6-hour move, sigma and efficiency ratio use only closes at or before the bar, and the regime median is shifted by one bar.
+  how_it_trades: At the 13 or 14 UTC close after a large 6-hour move, go with the move in a trending week or against it in a choppy week, hold 4 hours, and stay flat otherwise.
+why: Every US-open direction rule flipped sign between windows 2 to 4 and windows 5 to 6, so the next test is whether a past-only trend/chop regime can choose the sign. The 0.0015 net bar requires about 0.3% gross per trade, roughly a third of the 0.010 to 0.014 per-window effects seen when the sign was right.

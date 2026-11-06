@@ -494,3 +494,76 @@ real_01_daily_breadth_fold_a.md:
   measure: rank_corr
   verdict: fail
   run: real_01_daily_breadth_fold_a/001
+n01_session_vol_regime_book_1h.md:
+- id: volume_surprise_fade
+  belief: A large hourly move printed on 3x volume is forced flow, such as liquidations
+    or stop cascades, that overshoots. It reverts more than an equally large move
+    on normal volume, so the volume gate turns a weak reversal into a tradable one.
+  measure: mean_diff
+  verdict: fail
+  run: n01_session_vol_regime_book_1h/001
+- id: volume_surprise_initiative_close
+  belief: A volume-surprise bar that closes near its extreme in the direction of its
+    body shows initiative buying or selling that was not absorbed. It continues, while
+    the same bar shape on normal volume is noise.
+  measure: mean_diff
+  verdict: fail
+  run: n01_session_vol_regime_book_1h/001
+- id: us_open_fades_europe_extension
+  belief: The European morning builds a directional extension on thin crypto liquidity.
+    The arrival of US liquidity at the open absorbs and partly reverses it, a reversion
+    that ordinary hours do not show.
+  measure: mean_diff
+  verdict: fail
+  run: n01_session_vol_regime_book_1h/001
+- id: us_open_range_break
+  belief: A break of the trailing 24-hour range during the US open hours is carried
+    by real new participants and holds. The same break in quiet hours is mostly a
+    stop run that fails.
+  measure: mean_diff
+  verdict: fail
+  run: n01_session_vol_regime_book_1h/001
+- id: gated_liquidity_sweep_reversal
+  belief: In a high-activity bar, a wick through the 24-hour high or low that closes
+    back inside the range is a sweep of resting stops followed by rejection. Price
+    then travels toward the other side, more reliably than for sweeps in dead hours.
+  measure: mean_diff
+  verdict: fail
+  run: n01_session_vol_regime_book_1h/001
+- id: gated_signed_volume_flow
+  belief: When the gate is open, signed volume over the last 3 hours reflects informed
+    flow. It predicts the next hours' direction because the price impact of large
+    orders is absorbed slowly.
+  measure: rank_corr
+  verdict: fail
+  run: n01_session_vol_regime_book_1h/001
+- id: day_trend_through_us_open
+  belief: US participants arriving at the open trade in the direction of the day's
+    established trend, such as fund rebalancing and trend models executing in US hours.
+    So the trailing 24-hour vol-scaled return predicts the next 6 hours on open-hour
+    bars, even though the open bar's own move does not.
+  measure: rank_corr
+  verdict: fail
+  run: n01_session_vol_regime_book_1h/001
+- id: us_open_hour_overshoot_fade
+  belief: The opening burst of US flow overshoots, which is why continuation from
+    the open hour failed. A large two-hour move ending at 14 UTC partly retraces over
+    the following hours, and the retrace pays after fees.
+  measure: net_return
+  verdict: fail
+  run: n01_session_vol_regime_book_1h/001
+- id: compression_release_on_volume
+  belief: A volume surprise that arrives after a compressed 24-hour range marks the
+    release of stored positioning. Its direction persists for hours, more than a volume
+    spike in an already volatile tape, which tends to be exhaustion.
+  measure: mean_diff
+  verdict: fail
+  run: n01_session_vol_regime_book_1h/001
+- id: us_open_regime_switched_extension
+  belief: The direction of the US-open follow-through on a large 6-hour move depends
+    on the trailing regime. It continues when the past week has been trending and
+    reverts when the past week has been choppy, which explains why fixed continuation
+    and fixed fade rules each won in different windows.
+  measure: net_return
+  verdict: fail
+  run: n01_session_vol_regime_book_1h/001
