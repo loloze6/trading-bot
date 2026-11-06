@@ -45,3 +45,10 @@ Five questions, answered in one line each, before each try.
 3. **Building what a run asked?** The run asked for nothing. The near miss is recorded, not acted on.
 4. **Operator deciding, pipeline discovering?** The operator's brief, the operator's fold; the pipeline found nothing and said so. The next brief or fold is the operator's.
 5. **Deviation from v2's rule?** None.
+
+## Before the night runs (2026-11-06)
+1. **Whose job is this?** The operator delegated briefs, runs and new indicators for the night, with no holdout spend. I write briefs and run; the pipeline judges; I report numbers. No reading of results as a trader.
+2. **Simpler or more complex?** Nothing built unless a run asks and the run is named. A cap of 15 USD for the night.
+3. **Fooling ourselves?** Each brief on one fold, looks counted per brief, the seal untouched, the engine untouched (claims run through the one component). No second-fold "confirmation" of the BTC candidate: the operator rejected that mechanism and the holdout is theirs.
+4. **Operator deciding, pipeline discovering?** The operator decided the night's scope. The morning file lists what the pipeline found and what it asked for.
+5. **Deviation from v2's rule?** None planned.
