@@ -22,3 +22,6 @@ One measurable statement: on these bars (a condition you can compute from the da
 
 ## How to work
 Read the brief as a trader would, including the prose. List what the brief implies before you write claims. Then write the claims. Then reread each claim and strike any that is not computable from the data or whose pass condition does not test the belief.
+
+
+Dense strength: the strength must be meaningful on every bar (an indicator, not a trigger); a strength that is 0 on most bars saturates, one that is noise churns. See CLAIM_FORMAT.md.

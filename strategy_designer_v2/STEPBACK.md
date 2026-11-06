@@ -199,3 +199,10 @@ Five questions, answered in one line each, before each try.
 3. **Why did it drift?** The first page carried v1's scars but not v1's two deepest rules. I treated speed as a virtue inside a night and built a cheap reader, then a cheap profit check, then replication on top of both. Every shortcut became a file. The fix is the page, not the code: a rule that is not written is not a rule.
 4. **Fooling ourselves?** Every result so far is void and says so in the shelf and in the morning file. No holdout was touched, so nothing is lost that cannot be re-run.
 5. **What next, and only when the operator says.** Linear claim format and component; branch 1 from the engine's per-window bars; one run of the operator's brief on fold A; stop.
+
+## Pieces 1 and 2 built (2026-11-06, morning)
+1. **Whose job is this?** The operator ruled linear forecasts and the engine as the only reader; a Sonnet builder built the format and the component; I reviewed. One engine change beyond adding a component: three lines so a component's debug fields reach the per-bar output, opt-in. Said to the operator.
+2. **Simpler or more complex?** One component, one format; the judge and the quick checks are gone. Simpler than before the clean-up.
+3. **Fooling ourselves?** Try 09 showed both failure shapes of a strength under standardise: sparse saturates, noisy churns. Written into the format as "dense strength". The test claim's book lost 95% at full size on one window: a result, recorded, not a defect.
+4. **Operator deciding, pipeline discovering?** The operator's two rules drove every change.
+5. **Deviation from v2's rule?** None.

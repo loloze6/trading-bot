@@ -18,6 +18,9 @@ ideas:
 notes: <optional>
 ```
 
+## Dense strength (the consequence of linear forecasts, found in try 09)
+The engine grades `strength` against its own recent magnitude on every bar. Two shapes fail: a strength that is 0 on most bars saturates at the cap on its few events (an on-off book by another route), and a strength that is raw noise on every bar (a bar's return, for instance) churns and loses. A good strength is dense and meaningful on every bar: a stretch from an anchor in volatility units, a trend slope, a volume ratio times the sign of the move, a distance beyond a range that is 0 inside and grows outside. Think of it as the component's indicator, not as a trigger. `event` is where branch 1 measures it, nothing more.
+
 ## The code block
 Python with pandas, a few lines. Names already defined:
 - `df`: the bars, columns `open high low close volume`, index = bar close time (UTC, naive), one symbol.
