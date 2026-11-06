@@ -1,0 +1,50 @@
+{
+  "aux_feeds": [],
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 2,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "range_break_strength",
+            "class": "strategies.claim_linear.ClaimStrengthComponent",
+            "params": {
+              "code": "sd = ret.rolling(168, min_periods=168).std().shift(1)\nhi = df.high.rolling(24).max().shift(1)\nlo = df.low.rolling(24).min().shift(1)\nbig = ret.abs() >= 3 * sd\nbeyond = (df.close > hi) | (df.close < lo)\nevent = spaced(big & beyond, 12)\nstrength = ret / sd\n",
+              "horizon": 12,
+              "min_bars": 269
+            },
+            "weight": 1.0,
+            "lookback": 869,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 500,
+                  "min_periods": 100,
+                  "target": 10.0,
+                  "cap": 20.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 30,
+      "target_annual_vol": 0.2,
+      "max_allocation": 1.0,
+      "periods_per_year": 8760
+    }
+  }
+}

@@ -24,6 +24,7 @@ def min_bars_of(code: str) -> int:
 
 
 SIZING = {"kind": "vol_target", "window": 30, "target_annual_vol": 0.20, "max_allocation": 1.0}   # fixed before any result
+STD = {"window": 500, "min_periods": 100, "target": 10.0, "cap": 20.0}   # standardise first, fixed before any result
 PERIODS = {"1h": 24 * 365, "1d": 365}
 
 
@@ -39,9 +40,10 @@ def _config_of(idea: dict, mb: int) -> dict:
     c = idea["claim"]
     return {"aux_feeds": [], "regime_detector": {"mode": "threshold_rules", "components": [], "rules": [], "default_regime": "unknown"},
             "strategies": {"warmup": 2, "regimes": {"unknown": {"components": [
-                {"id": idea["id"], "class": "strategies.claim_event.ClaimEventComponent",
-                 "params": {"code": c["code"], "horizon": int(c["horizon_bars"]), "scaling_factor": 10.0, "min_bars": mb},
-                 "weight": 1.0, "lookback": mb + 100, "transforms": [{"op": "identity"}]}]},
+                {"id": idea["id"], "class": "strategies.claim_linear.ClaimStrengthComponent",
+                 "params": {"code": c["code"], "horizon": int(c["horizon_bars"]), "min_bars": mb},
+                 "weight": 1.0, "lookback": mb + STD["window"] + 100,   # linear: the engine grades the strength, target 10, cap 20
+                 "transforms": [{"op": "standardise", "params": dict(STD)}]}]},
                 "trending": None, "mean_reversion": None, "chop": None}}}
 
 
