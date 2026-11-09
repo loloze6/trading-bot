@@ -1,0 +1,13 @@
+---
+idea: 001-03_rsi-high-extreme-continuation
+brief: 001_rsi-extremes-predict-next-move
+data-instruments: BTC, ETH, BNB
+data-bar: 1d
+data-period: fold A
+---
+Forecast: Take the 14-bar Wilder RSI of the coin's daily closes through RSIPullbackComponent (period 14, not long-only), whose raw value is (50 − RSI) × 0.4. Standardise it: divide it by the mean absolute value of its 60 previous readings (at least 20), times 10, capped at ±20. Then: - Negate it, so it is positive when RSI is above 50. - Clip it at a minimum of 0, so it is zero whenever RSI is at or below 50. The idea concerns only high readings and upward continuation. - Apply signed_power with exponent 2 and pivot 10. This is a graded dead zone: RSI just above 50 gives a near-zero position, and RSI far above its usual distance from 50 gives a large one. Forecast = 10 × (s/10)², where s = max(0, standardised (RSI − 50) distance). Examples: s = 5 gives 2.5, s = 10 gives 10, s ≥ 14.1 gives the 20 cap. The position is always long or flat, with no regime gating.
+Config: 001-03_rsi-high-extreme-continuation_config.json
+Confirm: The horizon is 5 bars. Split each coin-window's active period into non-overlapping 5-bar blocks, so each forward return is counted once. Take the blocks that start on a bar with forecast ≥ 10 (high RSI). Pooled over all 18 coin-windows, their mean 5-bar forward return must exceed the mean 5-bar forward return of all blocks in the same coin-windows (the hold baseline) by at least +1.0 percentage point, with at least 30 such high-RSI blocks. The supporting check requires this excess to be positive for at least 2 of the 3 coins.
+Reject: The pooled excess forward return after high-RSI blocks is ≤ 0 over at least 30 such blocks, meaning no continuation or a reversal. The same result holds if the excess is positive pooled but negative for 2 or more of the 3 coins.
+Inconclusive: Any of the following: - The pooled excess lies between 0 and +1.0 percentage point. - There are fewer than 30 high-RSI blocks after warm-up. About 36 bars of each 122-bar window are lost to warm-up.
+Deviation: The config differs from the idea as written in three ways: - Event versus state: "after RSI reaches a high extreme" becomes "while RSI is above 50, sized by how far above 50 it is relative to its own recent typical distance". There is no fixed 70 threshold; the extreme is defined against the past 60 readings. - Graded position: mildly high readings carry small positions instead of none. - Neutral baseline: the comparison with "neutral readings" is made against all blocks, which equals holding the coin, rather than against RSI-near-50 blocks only.

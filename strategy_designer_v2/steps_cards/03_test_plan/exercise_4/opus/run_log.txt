@@ -1,0 +1,21 @@
+=== 001-01_rsi-high-extreme-reversal
+plan: exercise_4/opus/plans/001-01_rsi-high-extreme-reversal.md
+cost: 0.2781 USD, attempts: 1
+=== 001-03_rsi-high-extreme-continuation
+plan: exercise_4/opus/plans/001-03_rsi-high-extreme-continuation.md
+cost: 0.2690 USD, attempts: 1
+=== 002-01_sma-upcross-upward-drift
+plan: exercise_4/opus/plans/002-01_sma-upcross-upward-drift.md
+cost: 0.2657 USD, attempts: 1
+=== 002-05_sma-up-regime-positive-drift
+plan: exercise_4/opus/plans/002-05_sma-up-regime-positive-drift.md
+cost: 0.2584 USD, attempts: 1
+=== 003-01_low-volume-up-move-reverts
+plan: exercise_4/opus/plans/003-01_low-volume-up-move-reverts.md
+cost: 0.2773 USD, attempts: 1
+=== 004-01_btc-up-move-alts-follow
+untestable: The idea forecasts altcoin returns from bitcoin's earlier move, so it needs another coin's prices. The config sees only one symbol's bars, and the only coin in the test is BTC/USDT, so there is no altcoin to trade. On BTC alone the config could only test bitcoin following its own past moves (self-momentum), which is not the lead-lag idea.
+cost: 0.2225 USD, attempts: 1
+=== 005-01_bearish-rsi-divergence-reversal
+untestable: The idea compares RSI now with RSI at the previous price high, a lower high in RSI against the last peak. No catalogue component or transform can give a lagged or peak-tracked RSI value: rules see only the latest raw value, and `standardise` must be the only history op. Any composition, such as "price near the top of its Donchian range while RSI is lowish", measures how slowly the climb went, not a divergence from the prior peak. So it cannot separate divergent new highs from non-divergent ones, which is the comparison the brief's falsification needs.
+cost: 0.2561 USD, attempts: 1

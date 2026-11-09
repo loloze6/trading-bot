@@ -1,0 +1,13 @@
+---
+idea: 001-03_rsi-high-extreme-continuation
+brief: 001_rsi-extremes-predict-next-move
+data-instruments: BTC, ETH, BNB
+data-bar: 1d
+data-period: fold A
+---
+Forecast: Use the 14-bar Wilder RSI on each coin's daily closes, through RSIPullbackComponent (period 14). Its raw value is (50 − RSI) × 0.4. The forecast is built in five steps: 1. Divide the raw value by the mean absolute value of its previous 60 values, times 10, capped at ±20 (standardise, window 60, min_periods 20). 2. Flip the sign, so the value is positive when RSI is above 50. 3. Clip at 0, so the forecast is zero whenever RSI is at or below 50. 4. Apply signed_power (exponent 2, pivot 10). A reading of about average strength stays at 10, moderate readings are damped smoothly towards 0, and readings above the recent average are amplified. The forecast is therefore: - zero at neutral or low RSI; - long only, and never negative; - continuous, growing with the square of how far RSI sits above 50 relative to its recent scale. The largest positions come at the highest RSI readings, with a combined clip at +20 (200 percent long).
+Config: 001-03_rsi-high-extreme-continuation_config.json
+Confirm: Use a 5-bar horizon and the recorded raw indicator. A high extreme is RSI ≥ 70 (raw ≤ −8); a neutral reading is RSI 40–60 (raw between −4 and +4). Count non-overlapping 5-bar windows only: one sample per 5-bar block, with at least 30 extreme samples pooled. The idea is confirmed if the pooled mean 5-bar forward close-to-close return after extreme bars exceeds the mean after neutral bars with t ≥ 2. The difference must also be positive on at least 2 of the 3 coins. Supporting check: the strategy's pre-cost return beats holding the coin scaled by the strategy's average exposure.
+Reject: The idea is rejected if the pooled difference (extreme minus neutral) in 5-bar forward returns is zero or negative, or is negative on at least 2 of the 3 coins. A difference at t ≤ −2 would further point to reversal rather than continuation.
+Inconclusive: The result is inconclusive in three cases: - the difference is positive but t < 2; - fewer than 30 non-overlapping extreme samples are available; - the pooled difference is positive but only 1 of the 3 coins agrees. The result is also inconclusive if the main measure confirms but the supporting check fails.
+Deviation: "After RSI reaches a high extreme" becomes "while RSI is above 50, with position size growing steeply with how high it is". This changes four things: - Moderately high readings also hold small positions. - The holding time follows how long RSI stays high, not a fixed number of bars after the extreme. - The extreme threshold of 70 is used only in the criterion, not in the config. - Behaviour after low extremes is not tested.

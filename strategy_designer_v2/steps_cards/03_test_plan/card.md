@@ -95,9 +95,10 @@ Exercises 1 and 2: opus and sonnet, one call per idea. Exercise 2 added three pr
 
 Exercise 3: the plan in two calls (plan in words, then config), opus then opus or sonnet. It is more honest about what cannot be built, but the config differs from the plan in 5 of 5 cases, so the criterion no longer matches the test. It also costs more with opus. One call is kept (`exercise_3/reading.md`).
 
+Exercise 4 (opus): six changes from the second review of exercise 2: the exact forecast first, the data's windows, what the record holds, one main measure, the evidence as a number, and a code check on names. All held. The divergence idea is now untestable, and the criteria fit the data. Telling the model the window size made it shorten the moving averages; one line on warm-up fixed it (`exercise_4/reading.md`).
+
 ## Open, from exercises 1 and 2
-- **Forced ideas.** Both models express the divergence idea (005-01) with an approximation instead of "untestable", in both exercises, with a declared deviation. Operator to rule: accept a declared approximation, or require "untestable".
-- **The bar of evidence** differs from plan to plan (t <= -2, one standard error, p < 0.05, "clearly"). Operator to rule: leave it to each plan, or ask in one sentence for a number and for overlapping returns counted once.
+- **Forced ideas** and **the bar of evidence**: addressed in exercise 4 (changes A and E).
 - **For step 2:** 002-01 (after the cross) and 002-05 (from cross to cross) become the same test in this vessel.
 
 The other sections of the template (quality criteria, who judges, done when) come once these are ruled.

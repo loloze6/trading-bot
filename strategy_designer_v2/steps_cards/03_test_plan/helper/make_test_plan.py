@@ -12,11 +12,15 @@ below. The model is told the coins and bar size; it does not choose them.
 The model sees only the system prompt and the request: no tools, no files, no web, no repository, an empty
 working folder. This script reads no market data and runs no backtest.
 """
-import argparse, json, os, re, subprocess, sys, tempfile
+import argparse, datetime, json, os, re, subprocess, sys, tempfile
 from pathlib import Path
+
+import yaml
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_DATA = {"instruments": "BTC/USDT", "bar": "1d", "period": "fold A"}
+FOLDS = HERE.parents[3] / "strategy-research" / "config" / "folds.yaml"
+BARS_PER_DAY = {"1d": 1, "4h": 6, "1h": 24}
 ATTEMPTS, MAX_FIELD_WORDS = 3, 300   # 300 words: a guard against a runaway answer, not a length rule
 DROP_ENV = {"CLAUDE_ADDITIONAL_DIRECTORIES", "CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD", "CLAUDE_EFFORT",
             "CLAUDE_CODE_USER_EMAIL", "CLAUDE_CODE_REMOTE_SESSION_ID", "CLAUDE_CODE_SESSION_ID"}
@@ -34,6 +38,38 @@ def call(model, system, request):
     if d.get("is_error"):
         sys.exit(f"model call failed: {d.get('result')}")
     return d["result"], d["total_cost_usd"]
+
+
+def windows(period, bar):
+    """'N separate windows of about M bars each' for a fold id; no date is returned or printed."""
+    m = re.fullmatch(r"fold ([A-Z])", period.strip())
+    if not m or bar not in BARS_PER_DAY:
+        return f"period {period}"
+    fold = yaml.safe_load(FOLDS.read_text())["folds"][m.group(1)]
+    days = [(datetime.date.fromisoformat(str(w["end"])) - datetime.date.fromisoformat(str(w["start"]))).days + 1 for w in fold]
+    return (f"{len(days)} separate windows of about {round(sum(days) / len(days)) * BARS_PER_DAY[bar]} bars each, per coin; "
+            "the bars a config needs for its warm-up are loaded before each window, so every bar of the window is tested")
+
+
+def catalogue_params():
+    """Class name to its accepted params, read from the catalogue rows."""
+    cat = (HERE / "reference" / "component_catalogue.md").read_text()
+    rows = cat[cat.index("### Regime measures"):]
+    return {n: set(re.findall(r"`(\w+)` \(", p)) for n, p in re.findall(r"^\| `(\w+)` \| ([^|]*) \|", rows, re.M)}
+
+
+def check_names(config):
+    """Refuse a class or a param the catalogue does not list: the engine would ignore it silently."""
+    known = catalogue_params()
+    comps = config["regime_detector"].get("components", []) + [
+        c for v in config["strategies"].get("regimes", {}).values() if v for c in v.get("components", [])]
+    for c in comps:
+        cls = str(c.get("class", "")).split(".")[-1]
+        if cls not in known:
+            raise ValueError(f"class {cls} is not in the catalogue")
+        bad = set(c.get("params", {})) - known[cls]
+        if bad:
+            raise ValueError(f"{cls} has params the catalogue does not list (the engine would ignore them): {sorted(bad)}")
 
 
 def header(text):
@@ -62,8 +98,9 @@ def parse(text):
     for key in ("regime_detector", "strategies"):
         if key not in config:
             raise ValueError(f"the config has no {key} key")
+    check_names(config)
     fields = dict((k, " ".join(v.split())) for k, v in
-                  re.findall(r"^(confirm|reject|inconclusive|deviation):\s*(.*?)(?=^(?:confirm|reject|inconclusive|deviation):|\Z)", text, re.M | re.S))
+                  re.findall(r"^(forecast|confirm|reject|inconclusive|deviation):\s*(.*?)(?=^(?:forecast|config|confirm|reject|inconclusive|deviation):|\Z)", text, re.M | re.S))
     for k in ("confirm", "reject"):
         if not fields.get(k):
             raise ValueError(f"the {k}: line is missing")
@@ -71,7 +108,7 @@ def parse(text):
         if len(v.split()) > MAX_FIELD_WORDS:
             raise ValueError(f"the {k} field has {len(v.split())} words; write one or two sentences")
     return ("plan", config, fields["confirm"], fields["reject"], fields.get("inconclusive", "not given"),
-            fields.get("deviation", "not given"))
+            fields.get("deviation", "not given"), fields.get("forecast", "not given"))
 
 
 def write_atomic(path, text):
@@ -98,7 +135,8 @@ def main():
 
     ref = HERE / "reference"
     system = (HERE / "system_prompt.md").read_text()
-    request = (f"[DATA THE TEST RUNS ON]\ncoins: {data['instruments']}\nbar size: {data['bar']}\n\n"
+    request = (f"[DATA THE TEST RUNS ON]\ncoins: {data['instruments']}\nbar size: {data['bar']}\n"
+               f"windows: {windows(data['period'], data['bar'])}\n\n"
                f"[IDEA]\n{idea_text}\n[BRIEF]\n{brief_text}\n"
                f"[STRATEGY CONFIG GUIDE]\n{(ref / 'strategy_config_guide.md').read_text()}\n"
                f"[COMPONENT CATALOGUE]\n{(ref / 'component_catalogue.md').read_text()}\n"
@@ -124,9 +162,9 @@ def main():
         write_atomic(args.plans_dir / f"{idea_id}.md", head + f"Untestable: {result[1]}\n")
         print(f"untestable: {result[1]}")
     else:
-        _, config, confirm, reject, inconclusive, deviation = result
+        _, config, confirm, reject, inconclusive, deviation, forecast = result
         write_atomic(args.plans_dir / f"{idea_id}_config.json", json.dumps(config, indent=2) + "\n")
-        write_atomic(args.plans_dir / f"{idea_id}.md", head + f"Config: {idea_id}_config.json\n"
+        write_atomic(args.plans_dir / f"{idea_id}.md", head + f"Forecast: {forecast}\nConfig: {idea_id}_config.json\n"
                      f"Confirm: {confirm}\nReject: {reject}\nInconclusive: {inconclusive}\nDeviation: {deviation}\n")
         print(f"plan: {args.plans_dir / (idea_id + '.md')}")
     print(f"cost: {cost:.4f} USD, attempts: {attempt}")
