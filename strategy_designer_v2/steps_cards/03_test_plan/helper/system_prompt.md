@@ -35,7 +35,8 @@ a regime also makes the position jump: do not use one there. If the brief's head
 only, the forecast never goes below zero.
 The config sees one coin at a time and nothing outside the catalogue. If the idea needs another
 coin, data or an indicator the catalogue does not have, or if the config cannot come close to the
-forecast you wrote, do not force it: say it is untestable and why.
+forecast you wrote, do not force it: say it is untestable and why. A config is not close if it
+drops the comparison or the condition the idea is about.
 
 Your criterion. Ask: if this idea is true, where would it show in the forecast, in its
 changes, or in the portfolio's value, and what would we see there if it is false? State the

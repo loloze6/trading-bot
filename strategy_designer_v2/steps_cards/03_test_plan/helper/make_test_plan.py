@@ -134,12 +134,14 @@ def main():
     data = {k: fields.get(k, DEFAULT_DATA[k]) for k in DEFAULT_DATA}
 
     ref = HERE / "reference"
-    system = (HERE / "system_prompt.md").read_text()
+    # The two references go in the system prompt: they are the same in every call, so from the second idea on
+    # they come from the model's cache (exercise 8 probe: 0.26 USD for the first idea, about 0.07 after).
+    system = ((HERE / "system_prompt.md").read_text()
+              + f"\n\n[STRATEGY CONFIG GUIDE]\n{(ref / 'strategy_config_guide.md').read_text()}"
+              + f"\n[COMPONENT CATALOGUE]\n{(ref / 'component_catalogue.md').read_text()}")
     request = (f"[DATA THE TEST RUNS ON]\ncoins: {data['instruments']}\nbar size: {data['bar']}\n"
                f"windows: {windows(data['period'], data['bar'])}\n\n"
                f"[IDEA]\n{idea_text}\n[BRIEF]\n{brief_text}\n"
-               f"[STRATEGY CONFIG GUIDE]\n{(ref / 'strategy_config_guide.md').read_text()}\n"
-               f"[COMPONENT CATALOGUE]\n{(ref / 'component_catalogue.md').read_text()}\n"
                f"Write the test plan for this idea.")
 
     cost, refusal = 0.0, ""

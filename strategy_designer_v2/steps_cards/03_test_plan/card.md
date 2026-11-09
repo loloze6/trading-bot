@@ -1,4 +1,4 @@
-# Step card 3: Test plan (draft 1, 2026-11-09)
+# Step card 3: Test plan (2026-11-09)
 
 ## Business objective, one question
 How will we know whether this idea is real?
@@ -69,7 +69,7 @@ credited to the idea.
 The plan's header holds the idea, its brief and the data. Its body holds `Forecast` (in plain words), the config's file name, `Confirm`, `Reject`, `Inconclusive` and `Deviation`, or `Untestable` with the reason.
 
 ## The AI
-**Closed book**, as in steps 1 and 2: one call per idea. The idea, its brief, the data and the two trimmed references are pasted in. The references are trimmed copies of the originals in `strategy-research/docs/`: everything that does not help write a config was removed (pipeline stages, decision numbers, the block manifest, the block combiner, the campaign sizing block), and three passages were aligned with this card (regimes only when the idea is a condition; `standardise` sets the scale, never `vol_target`). They must be refreshed by hand when the originals change.
+**Closed book**, as in steps 1 and 2: one call per idea. The two trimmed references are in the system prompt; the idea, its brief and the data are in the request. The references are trimmed copies of the originals in `strategy-research/docs/`: everything that does not help write a config was removed (pipeline stages, decision numbers, the block manifest, the block combiner, the campaign sizing block), and three passages were aligned with this card (regimes only when the idea is a condition; `standardise` sets the scale, never `vol_target`). They must be refreshed by hand when the originals change.
 
 **Checks in code** (`make_test_plan.py`). It refuses only a major deviation:
 - no readable config and no untestable line;
@@ -80,7 +80,9 @@ The plan's header holds the idea, its brief and the data. Its body holds `Foreca
 
 Up to three attempts. The script also tells the model the data's windows (from the fold, no dates), and that warm-up bars are loaded before each window.
 
-**Model.** Opus. In exercises 1 and 2, sonnet twice changed the idea's side and wrote "clearly" where a number was needed. **Cost.** About 0.26 USD per idea; the references are most of it.
+**Model.** Opus. In exercises 1 and 2, sonnet twice changed the idea's side and wrote "clearly" where a number was needed.
+
+**Cost.** The references are most of the input. They sit in the system prompt, so from the second idea of a batch they come from the model's cache. Exercise 8's probe: 0.26 USD for the first idea, about 0.07 for each one after. This is not yet confirmed on a full batch.
 
 **Prompt**: `helper/system_prompt.md`.
 
@@ -108,6 +110,8 @@ Exercise 5 (opus): exercise 4 plus one line on settings (the single most common 
 
 Exercise 6 (opus): exercise 5 unchanged. Six plans stable; the divergence idea was forced again, with a constant inside a regime (`exercise_6/reading.md`).
 
+Exercises 7 and 8 (opus): one line added: "a config is not close if it drops the comparison or the condition the idea is about". No fault in either (`exercise_8/reading.md`).
+
 ## Quality criteria on the test plan
 - Untestable when the idea needs another coin, other data, or an indicator the catalogue lacks, or when the config cannot come close to the forecast the idea needs. Never forced.
 - The `Forecast` line says, in plain words, what the config computes.
@@ -121,7 +125,7 @@ Exercise 6 (opus): exercise 5 unchanged. Six plans stable; the divergence idea w
 The operator: "if this test confirms, would I believe the idea; if it rejects, would I drop it?". Code checks the shape and the names. Each exercise has a one-page reading against the criteria.
 
 ## Done when
-On two exercises in a row, on the fixed inputs, every plan meets every criterion. Status: exercise 5 has no fault; exercise 6 has one plan with two faults (005-01 forced). Not met.
+On two exercises in a row, on the fixed inputs, every plan meets every criterion. Status: met by exercises 7 and 8.
 
 ## Open
 - **For step 2:** 002-01 (after the cross) and 002-05 (from cross to cross) become the same forecast in this vessel; only their horizon and measure differ.
