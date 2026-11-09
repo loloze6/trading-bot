@@ -1,0 +1,5 @@
+001_rsi-extremes-predict-next-move: Do RSI extremes predict reversal, continuation or nothing in later price moves of BTC, ETH and BNB? [instruments: BTC, ETH, BNB]
+002_moving-average-cross-trend-persistence: Price or short-average crossing a long moving average marks a new trend that persists, because late participants extend moves. [source: TradingView, list of SMA strategy scripts, featured "SMAcross-mvr" (SMAcross-mvrNew v2) by vmedaram1, Dec 30, 2025]
+003_thin-volume-moves-revert: Big moves on thin volume revert as liquidity returns; big moves on heavy volume persist as slower participants follow. []
+004_bitcoin-leads-altcoins-lagged-response: Altcoins react to bitcoin moves with a delay, longer for thin coins, because market-wide news is priced first in the most liquid coin. []
+005_rsi-divergence-predicts-reversal: Does price-RSI divergence at new highs or lows warn of reversal in BTC, ETH and BNB, or carry no information? [instruments: BTC, ETH, BNB]

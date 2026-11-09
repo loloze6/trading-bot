@@ -1,0 +1,8 @@
+---
+source: TradingView, SMAcross-mvr (vmedaram1), entry mode B, with the strategy list on the same page
+---
+When price closes back across its own long moving average, the move tends to go on in that direction. The cross does not tend to fade back through the average. The source presents this as a "trend-continuation pullback entry" but gives no reason. The reason here is mine. Traders who missed the trend wait for a pullback and buy the reclaim. Holders who left during the pullback come back. The long average is widely watched, so many act at the same point. The theory is wrong if, after such crosses, price drifts no more in the cross direction than at any other time. It is also wrong if price returns across the average no less often than chance would predict.
+
+short-name: price-reclaims-long-average-continuation
+index-line: When price crosses its long moving average, it keeps drifting that way rather than falling back through it. [source: TradingView SMAcross-mvr mode B]
+other-theories: moving-average cross shows trend persistence (already indexed) | a long-average trend filter makes cross signals more reliable | an oversold pullback inside an uptrend reverts toward the fast average | price stretched far from its long average snaps back | an ignite, pullback and confirmation three-bar pattern continues the move | fast momentum crossing over slow momentum within a trend persists

@@ -1,0 +1,6 @@
+---
+instruments: BTC, ETH, BNB
+---
+When RSI, a momentum gauge built from the ratio of recent average gains to recent average losses, reaches an extreme reading for BTC, ETH or BNB, the price has usually moved far and fast in one direction over a short stretch. That move is often driven by urgent market orders that consume the resting bids or asks, pushing price past the level where other participants are willing to trade. Passive liquidity providers and slower value buyers or sellers then tend to trade against the excess, so price partly retraces over the following bars. The reason is order-book depth: when the book is thin relative to urgent flow, prices overshoot and revert. This reasoning comes from market microstructure in general and has not been checked for these three coins. The theory is wrong if, relative to each coin's unconditional behaviour, bars after RSI extremes show continuation at least as often as reversal, or if any reversal disappears once volume is accounted for. Momentum persistence, where trend followers keep an extreme running, is the main rival and could also be what the data shows.
+
+short-name: rsi-extremes-mean-reversion

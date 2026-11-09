@@ -1,0 +1,6 @@
+---
+source: TradingView, "SMAcross-mvrNew (v2)" Pine script by vmedaram1
+---
+When a fast simple average of recent prices (10 bars) crosses above a slow one (50 bars), price tends to keep moving in the same direction for some time, and a downward cross tends to be followed by further falls. The reason, which comes from my own general knowledge and not from the source (the source only calls the method a classic moving-average crossover): the fast average responds to new prices sooner than the slow one, so a cross means recent prices have moved decisively away from the older average. Slow-reacting participants, such as funds that rebalance on trend signals or traders who add to winning positions, take their positions over several bars, so the move carries on after the cross. A variant of the same idea uses the price itself crossing the slow average, without the fast average. The theory is wrong if price after crosses shows no more continuation than price after arbitrary bars, or if reversals after crosses are as common as continuations.
+
+short-name: sma-crossover-trend-persistence

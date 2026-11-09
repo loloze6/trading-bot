@@ -1,0 +1,5 @@
+---
+---
+After a sharp, high-volume drop in a coin's price, the following bars tend to give back part of the drop, because the selling that caused it was partly forced rather than informed. Liquidations on leveraged positions, margin calls and stop orders push sellers to trade at any price, so they take liquidity from a thin order book and move the price past what the coin is worth. Patient buyers who provide liquidity then absorb that supply and are paid for it through a partial price recovery. The theory would be wrong if, after drops of this kind, later bars show no tendency to recover, or if they continue lower as often and as far as after equally large drops on ordinary volume. The reason is mine, not from a source; I do not know how much of the selling in spot crypto is forced.
+
+short-name: high-volume-drop-partial-rebound

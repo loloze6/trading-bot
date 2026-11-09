@@ -1,0 +1,6 @@
+---
+instruments: BTC, ETH, BNB
+---
+After a coin's recent price moves have pushed the Relative Strength Index (a bounded measure of how much of recent price change was upward versus downward) to an extreme, the following price moves differ from what they would be at other times. The question is which way: extreme highs could be followed by pullbacks, because the rise drew in late buyers and profit-taking or liquidation of leveraged longs follows, and extreme lows could be followed by rebounds, because forced sellers are exhausted. Or extremes could be followed by continuation, because in trending crypto markets strong moves attract momentum buyers and sellers who are slow to react. I do not know which effect dominates, and it may differ by coin. The theory is wrong if future returns after extreme readings are no different from returns after non-extreme readings, in either direction, once volatility and the prevailing trend are accounted for, or if any difference is not shared by BTC, ETH and BNB.
+
+short-name: rsi-extremes-predict-returns
