@@ -14,7 +14,7 @@ Read this before designing any card. Step 1 (`01_brief/`) is the worked example.
 - Closed book: one model call, no tools, no files, no web, no repository, empty working folder, no settings. Anything it needs (an index, a source) is pasted into the call.
 - Review the prompt critically before any test: does the helper have all it needs, and nothing about the pipeline?
 - Prefer a mechanical fix to model judgment (step 1: the brief index stops repeats).
-- Limits are instructions in the prompt. Code checks only shape and runaway answers. Do not add refusals, logs or limits the operator did not ask for.
+- Limits are instructions in the prompt. Code refuses only a major deviation from what is expected: an answer it cannot read, or a runaway answer. A minor deviation (a name too long, stray markup, a missing optional line) is fixed by code, never refused: a refusal costs a call and can lose a good answer (step 2, exercises 1 and 2: two briefs lost to six-word names). Do not add refusals, logs or limits the operator did not ask for.
 
 ## The tests
 - The operator sets the matrix (models by inputs). Each call reports its result and its cost.

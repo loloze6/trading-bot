@@ -1,0 +1,5 @@
+001_rsi-predicts-major-coins: Question: do RSI extremes predict reversal, continuation, or nothing in BTC, ETH and BNB price moves? [instruments: BTC, ETH, BNB]
+002_moving-average-cross-trend-persistence: A short price average crossing a long one marks a trend shift that persists, because information spreads slowly and traders chase visible moves. [source: TradingView strategy listing under the SMA tag, centred on "SMAcross-mvr" by vmedaram1]
+003_volume-separates-reversal-from-continuation: Sharp moves on thin volume partly reverse as liquidity providers are paid; sharp moves on heavy volume persist as information spreads. []
+004_large-coins-lead-small-coins: Moves in the largest liquid coins carry into thin small coins with a delay, because price discovery and market making in thin books are slow. []
+005_rsi-divergence-predicts-reversal: Question: does price-RSI divergence, a new extreme on weaker momentum, predict reversal in BTC, ETH and BNB, or carry no information? [instruments: BTC, ETH, BNB]

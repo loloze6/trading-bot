@@ -14,7 +14,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 KEYS = {"venue", "instruments", "bar", "period", "side", "source"}
-MAX_THEORY_WORDS, MAX_INDEX_WORDS, ATTEMPTS = 900, 25, 3
+MAX_THEORY_WORDS, MAX_INDEX_WORDS, ATTEMPTS = 900, 100, 3   # guards against a runaway answer, not length rules
 DROP_ENV = {"CLAUDE_ADDITIONAL_DIRECTORIES", "CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD", "CLAUDE_EFFORT",
             "CLAUDE_CODE_USER_EMAIL", "CLAUDE_CODE_REMOTE_SESSION_ID", "CLAUDE_CODE_SESSION_ID"}
 
@@ -33,8 +33,17 @@ def call(model, system, request):
     return d["result"], d["total_cost_usd"]
 
 
+def slug(text, max_words=8):
+    """A file-safe name: lowercase words joined by hyphens, at most max_words words."""
+    words = re.sub(r"[^a-z0-9]+", " ", text.lower()).split()
+    return "-".join(words[:max_words]) or "brief"
+
+
 def parse(text, with_source):
-    """Split the answer into header lines, theory, short-name, index summary, other theories. Raise on bad shape."""
+    """Split the answer into header lines, theory, short-name, index summary, other theories.
+    Refuse only a major deviation: no header, a header key outside the list, no theory, a runaway answer.
+    Minor ones are fixed here: markup is stripped, the name is made file-safe, a missing index line
+    falls back to the theory's first words, a missing other-theories line is recorded as not given."""
     m = re.match(r"\s*---\n(.*?)---\n(.*)", text, re.S)
     if not m:
         raise ValueError("the answer does not start with the --- header")
@@ -42,23 +51,20 @@ def parse(text, with_source):
     for l in header:
         if l.split(":", 1)[0].strip() not in KEYS:
             raise ValueError(f"header line outside the list: {l}")
-    rest = m.group(2)
-    body = rest.split("\nshort-name:")[0].strip()
+    rest = re.sub(r"\*\*|__", "", m.group(2))
+    rest = re.sub(r"^#+\s*", "", rest, flags=re.M)
+    body = re.split(r"^(?:short-name|index-line|other-theories):", rest, flags=re.M)[0].strip()
     fields = dict(re.findall(r"^(short-name|index-line|other-theories):\s*(.*)$", rest, re.M))
     words = len(body.split())
     if not body or words > MAX_THEORY_WORDS:
         raise ValueError(f"the theory has {words} words; the limit is {MAX_THEORY_WORDS}")
-    if re.search(r"^#|\*\*", body, re.M):
-        raise ValueError("the theory has headings or bold; it must be plain prose")
-    if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+){2,4}", fields.get("short-name", "")):
-        raise ValueError("short-name must be three to five lowercase words joined by hyphens")
-    summary = fields.get("index-line", "").split("[")[0].strip()
-    if not summary or len(summary.split()) > MAX_INDEX_WORDS:
-        raise ValueError(f"index-line summary must have 1 to {MAX_INDEX_WORDS} words")
-    if with_source and "other-theories" not in fields:
-        raise ValueError("with a source, other-theories is required")
+    summary = fields.get("index-line", "").split("[")[0].strip() or " ".join(body.split()[:25])
+    if len(summary.split()) > MAX_INDEX_WORDS:
+        raise ValueError(f"the index-line has {len(summary.split())} words; write one or two short sentences")
+    short = slug(fields.get("short-name") or summary)
+    others = fields.get("other-theories", "not given") if with_source else None
     bracket = "[" + ", ".join(header) + "]"
-    return header, body, fields["short-name"], summary, bracket, fields.get("other-theories")
+    return header, body, short, summary, bracket, others
 
 
 def write_atomic(path, text):

@@ -1,0 +1,7 @@
+---
+---
+Price moves in the largest, most liquid coins carry into smaller, thinly traded coins with a delay. A move in the leaders is followed, over the next bars, by a move in the same direction in the laggards, beyond what the laggards had already shown at the same time.
+
+The reason is slow and costly price discovery in thin markets. News that moves the whole crypto market reaches the leaders first, where most informed traders, market makers and arbitrage desks trade, and where deep books absorb size cheaply. In smaller coins fewer traders watch the screen, quotes are wider, and market makers update cautiously because they fear trading against better-informed flow. Moving many thin order books at once is expensive, so no one gets paid enough to close the gap at once. The laggard price drifts toward the level the leaders imply as slower participants notice and act. This reason is a standard explanation for lead-lag effects between large and small assets. It is my own reasoning, not taken from a source.
+
+The theory is wrong if past moves in the leaders do not help predict later moves in the smaller coins once the smaller coins' own past moves are known. It is also wrong if the relation runs the other way, with smaller coins leading, or if the follow-through in laggards is reversed rather than continued. It fails as well if any delay is so short that it never appears beyond the bar in which the leaders moved.

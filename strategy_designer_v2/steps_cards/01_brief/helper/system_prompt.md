@@ -6,7 +6,7 @@ The theory must be:
 - one theory, not a list;
 - a mechanism in words: what the market does and why. Not a formula, and not a trading rule. Do not say when to enter, hold or exit, and name no parameter value;
 - given with its reason: why the market would behave this way (who is forced to trade, who is slow, who pays whom). If you do not know a reason, say so. Do not invent one;
-- possible to prove wrong: say what market behaviour would show it wrong. Do not say how to test it;
+- possible to prove wrong: say what market behaviour would show it wrong. Do not say how to test it: no condition on the check, such as what to control for or account for, or which coins it must hold for;
 - free of results: no returns, win rates, prices, performance figures, or what happened in a given year, whether from a source or from memory. State why the market would behave this way, not how well it did.
 
 If the request is a question, keep it a question, and give the reasons the answer could go each way.

@@ -21,7 +21,7 @@ By hand, or by the helper: an AI that knows trading and nothing of the pipeline,
   briefs/
     INDEX.md           one line per brief
     NNN_short-name.md  one file per brief
-  exercise_1 ... 5/    the comparison exercises that shaped the helper
+  exercise_1 ... 6/    the comparison exercises that shaped the helper
 ```
 
 ## The artifact
@@ -75,7 +75,7 @@ smaller and less traded coins take on part of that move only later... (prose, at
 - One theory, not a list.
 - A theory, not a formula or a trading rule: no entry, hold or exit, no parameter value.
 - Says why, or says it does not know.
-- Can be wrong: some market behaviour would refute it; it does not say how to test it.
+- Can be wrong: some market behaviour would refute it; it does not say how to test it (no condition on the check, such as what to control for, or which coins it must hold for).
 - No workflow words; no header key outside the list; no header value taken from a code setting.
 - Cites no result, price or event, from a source or from memory.
 - Faithful to its request: a question stays a question.
@@ -88,7 +88,7 @@ smaller and less traded coins take on part of that move only later... (prose, at
 
 **Model.** Opus. Exercise 1 compared haiku, sonnet and opus; exercise 2 compared sonnet and opus twice each. Haiku broke rules of meaning; sonnet kept two faults the prompt forbids; opus met them all and was stable.
 
-**Checks in code** (`make_brief.py`): the header shape and keys, at most 900 words (a guard against a runaway answer, not a length rule), no headings or bold, the short-name, an index line of at most 25 words, `other-theories` with a source. A refused answer is sent back with the reason, up to three attempts.
+**Checks in code** (`make_brief.py`). Code refuses only a major deviation: no `---` header, a header key outside the list, no theory, a theory over 900 words or an index line over 100 (guards against a runaway answer, not length rules). A refused answer is sent back with the reason, up to three attempts. Minor deviations are fixed, not refused: bold and headings are stripped, the short-name is made file-safe (at most eight words), a missing index line falls back to the theory's first words, a missing `other-theories` line is recorded as not given.
 
 **Cost.** 0.02 to 0.05 USD per brief from a theme or no theme; about 0.12 per call with a long source. A retry doubles it.
 
@@ -101,10 +101,7 @@ smaller and less traded coins take on part of that move only later... (prose, at
 The operator: "would I research this theory?" and, with a source, "is this what the source says?". Code checks the shape. Each exercise has a one-page reading against the criteria.
 
 ## Done when
-On two exercises in a row, on the three inputs, the helper's brief meets every criterion and would be kept with wording changes only. Status: exercise 5 meets it, with small faults listed in `exercise_5/reading.md`. The prompt changed after exercise 4 (the word limit, plain prose), so strictly one exercise counts, not two.
-
-## Open, from exercise 5
-- A refused answer's text is not kept. Proposed: keep it in the log. Untested.
+On two exercises in a row, on the three inputs, the helper's brief meets every criterion and would be kept with wording changes only. Status: exercise 6 (the prompt with the test-condition rule) meets it except on one brief: 004 still holds a check ("once the smaller coins' own past moves are known"). Step 2 enforces the same rule on ideas, so the condition stops there. See `exercise_6/reading.md`.
 
 ## What this step does not do
 It does not write ideas, judge whether a theory is promising, check that the engine can test it, or set anything about how it is tested.
