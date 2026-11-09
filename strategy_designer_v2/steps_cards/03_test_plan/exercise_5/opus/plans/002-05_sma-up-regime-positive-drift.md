@@ -1,0 +1,13 @@
+---
+idea: 002-05_sma-up-regime-positive-drift
+brief: 002_moving-average-cross-trend-persistence
+data-instruments: BTC/USDT
+data-bar: 1d
+data-period: fold A
+---
+Forecast: Take the 50-day simple moving average and the 200-day simple moving average of the daily close, with the current close included in both. The raw signal is their percent spread, (SMA50 − SMA200) / SMA200 × 100. It is positive from an upward cross until the next downward cross, and negative otherwise. The spread is divided by the mean absolute value of its own previous 200 values and multiplied by 10, capped at 20. That makes it about 10 on a typical stretch and larger when the short average is further above the long one. It is then clipped at 0. The forecast is therefore positive and grows with the spread for the whole stretch from an up-cross to the next down-cross. It is exactly 0 while SMA50 is below SMA200 and never negative. The position is long, sized by how far the short average sits above the long one, and flat outside the up-cross stretches.
+Config: 002-05_sma-up-regime-positive-drift_config.json
+Confirm: The horizon is 1 bar: the next day's close-to-close BTC log return, so each return is counted once. Pool all six windows. The main measure is the mean next-day return on bars where the forecast is > 0 minus the mean next-day return on all bars, which is the buy-and-hold baseline. The idea is confirmed if this difference is > 0 with a t-statistic ≥ 2.0 and there are at least 60 in-stretch bars. The supporting check is that the share of up days inside the stretches exceeds the share over all bars.
+Reject: The idea is rejected if the pooled difference is ≤ 0, or if it is negative with a t-statistic ≤ −2.0, which would mean the stretches after up-crosses underperform or reverse. It is also rejected if the in-stretch up-day share is no higher than the all-bar share.
+Inconclusive: These results neither confirm nor reject the idea: a positive difference with a t-statistic between 0 and 2.0, or fewer than 60 in-stretch bars across the six windows. With 50/200 averages on 122-bar windows, some windows may contain no up-cross stretch at all.
+Deviation: The idea is about the stretch between crosses, which is a binary state. The config instead sizes the long position by the size of the SMA50–SMA200 spread rather than holding a constant position throughout the stretch. The main measure still judges the stretch as a whole, so the sizing affects the portfolio's value but not the criterion. The down-cross stretches are left flat rather than shorted, because the idea as stated concerns only the up-cross stretches.

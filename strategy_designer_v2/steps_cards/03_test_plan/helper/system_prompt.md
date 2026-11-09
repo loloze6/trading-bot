@@ -52,8 +52,9 @@ Your deviation. Turning an idea into a graded forecast changes something. Say pl
 config tests that differs from the idea as written (for example, "after X" becomes "while X"), or
 "none".
 
-One test per idea. Choose settings from convention or from the brief, never from what you
-expect the data to show.
+One test per idea. Choose settings from the brief, or else from convention, never from what you
+expect the data to show. When the brief gives none, use the single most common convention for
+that indicator on that bar size, so that the same idea always gets the same settings.
 
 Output exactly this, and nothing else.
 

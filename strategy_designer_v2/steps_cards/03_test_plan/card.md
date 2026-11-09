@@ -66,14 +66,21 @@ credited to the idea.
     NNN-KK_short-name_config.json   its config
   exercise_k/                  the comparison exercises
 ```
-The plan's header holds the idea, its brief and the data; its body the config's file name, `Confirm`, `Reject` and `Deviation`, or `Untestable` with the reason.
+The plan's header holds the idea, its brief and the data. Its body holds `Forecast` (in plain words), the config's file name, `Confirm`, `Reject`, `Inconclusive` and `Deviation`, or `Untestable` with the reason.
 
 ## The AI
 **Closed book**, as in steps 1 and 2: one call per idea. The idea, its brief, the data and the two trimmed references are pasted in. The references are trimmed copies of the originals in `strategy-research/docs/`: everything that does not help write a config was removed (pipeline stages, decision numbers, the block manifest, the block combiner, the campaign sizing block), and three passages were aligned with this card (regimes only when the idea is a condition; `standardise` sets the scale, never `vol_target`). They must be refreshed by hand when the originals change.
 
-**Checks in code** (`make_test_plan.py`): refuses only a major deviation (no readable config and no untestable line, a config without `regime_detector` or `strategies`, a missing confirm or reject, a field over 300 words). Up to three attempts.
+**Checks in code** (`make_test_plan.py`). It refuses only a major deviation:
+- no readable config and no untestable line;
+- a config without `regime_detector` or `strategies`;
+- a class or param the catalogue does not list (the engine would ignore it silently);
+- a missing confirm or reject;
+- a field over 300 words.
 
-**Model.** Opus recommended (exercise 2: same side as the idea in 5 of 6, stable configs, a stated bar of evidence); not ruled yet. **Cost.** About 0.25 USD per idea with opus, 0.12 with sonnet: the references are most of it.
+Up to three attempts. The script also tells the model the data's windows (from the fold, no dates), and that warm-up bars are loaded before each window.
+
+**Model.** Opus. In exercises 1 and 2, sonnet twice changed the idea's side and wrote "clearly" where a number was needed. **Cost.** About 0.26 USD per idea; the references are most of it.
 
 **Prompt**: `helper/system_prompt.md`.
 
@@ -97,8 +104,23 @@ Exercise 3: the plan in two calls (plan in words, then config), opus then opus o
 
 Exercise 4 (opus): six changes from the second review of exercise 2: the exact forecast first, the data's windows, what the record holds, one main measure, the evidence as a number, and a code check on names. All held. The divergence idea is now untestable, and the criteria fit the data. Telling the model the window size made it shorten the moving averages; one line on warm-up fixed it (`exercise_4/reading.md`).
 
-## Open, from exercises 1 and 2
-- **Forced ideas** and **the bar of evidence**: addressed in exercise 4 (changes A and E).
-- **For step 2:** 002-01 (after the cross) and 002-05 (from cross to cross) become the same test in this vessel.
+Exercise 5 (opus): exercise 4 plus one line on settings (the single most common convention). No fault (`exercise_5/reading.md`).
 
-The other sections of the template (quality criteria, who judges, done when) come once these are ruled.
+## Quality criteria on the test plan
+- Untestable when the idea needs another coin, other data, or an indicator the catalogue lacks, or when the config cannot come close to the forecast the idea needs. Never forced.
+- The `Forecast` line says, in plain words, what the config computes.
+- The config follows the hard rules: `standardise` first, every strategy component graded, a regime only when the idea is a condition, no constant inside a regime, long only when the brief says so.
+- The same side as the idea; settings from the brief, else the single most common convention.
+- One horizon in bars; one main measure and at most one supporting check; the evidence as a number; overlapping returns counted once; minimum counts that the data's windows can give.
+- Confirm, reject and inconclusive cover every result.
+- The deviation states every difference between the config and the idea.
+
+## Who judges the output
+The operator: "if this test confirms, would I believe the idea; if it rejects, would I drop it?". Code checks the shape and the names. Each exercise has a one-page reading against the criteria.
+
+## Done when
+On two exercises in a row, on the fixed inputs, every plan meets every criterion. Status: exercise 5 is the first with no fault.
+
+## Open
+- **For step 2:** 002-01 (after the cross) and 002-05 (from cross to cross) become the same forecast in this vessel; only their horizon and measure differ.
+- **The default data** (BTC/USDT, 1d, fold A) gives about 36 independent 20-bar samples. Ideas about rare or slow situations will often come out inconclusive. The fold and the bar size are the operator's to set.

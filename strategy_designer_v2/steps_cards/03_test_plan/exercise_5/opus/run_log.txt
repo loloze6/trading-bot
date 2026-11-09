@@ -1,0 +1,21 @@
+=== 001-01_rsi-high-extreme-reversal
+plan: exercise_5/opus/plans/001-01_rsi-high-extreme-reversal.md
+cost: 0.2765 USD, attempts: 1
+=== 001-03_rsi-high-extreme-continuation
+plan: exercise_5/opus/plans/001-03_rsi-high-extreme-continuation.md
+cost: 0.2630 USD, attempts: 1
+=== 002-01_sma-upcross-upward-drift
+plan: exercise_5/opus/plans/002-01_sma-upcross-upward-drift.md
+cost: 0.2629 USD, attempts: 1
+=== 002-05_sma-up-regime-positive-drift
+plan: exercise_5/opus/plans/002-05_sma-up-regime-positive-drift.md
+cost: 0.2577 USD, attempts: 1
+=== 003-01_low-volume-up-move-reverts
+plan: exercise_5/opus/plans/003-01_low-volume-up-move-reverts.md
+cost: 0.2724 USD, attempts: 1
+=== 004-01_btc-up-move-alts-follow
+untestable: The idea forecasts altcoin returns from bitcoin's earlier move, but the test runs only on BTC/USDT, and each config sees only one coin's bars, so it cannot trade an altcoin on a bitcoin signal. No catalogue component reads another coin's prices: the guide names "another coin's prices" as a genuine gap.
+cost: 0.2212 USD, attempts: 1
+=== 005-01_bearish-rsi-divergence-reversal
+untestable: The idea needs RSI at the previous price high, compared with RSI at the current new high. No catalogue component finds swing highs or stores an indicator's value at an earlier peak, and `standardise` only compares against the average of past values, not the last peak. The nearest proxies do not measure divergence. A "price at the top of its range" regime with a graded RSI component can only size by RSI's absolute level, and an offset to centre it would put a constant inside a regime, which is not allowed. An ungated "range position minus RSI" spread measures range versus short-term momentum on every bar, which is a different idea.
+cost: 0.2446 USD, attempts: 1
