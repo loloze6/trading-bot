@@ -1,47 +1,22 @@
 # Step card 1: Brief (2026-11-09)
 
-## Objective, one question
+## Business objective, one question
 Which trading theory should the pipeline research?
 
-## Words used on this card
-- **A theory**: a claim or a question about how a market behaves and, where known, why.
-- **The context**: optional limits on where the theory applies.
-- **Workflow words**: anything about how the pipeline works rather than what to research: thresholds, step names, config settings, fees, budgets.
+## Input
+The operator's request: nothing (a theory of the helper's choice), a theme in the operator's words, or a source the operator pastes. Or no request at all: the operator writes the brief by hand.
 
-## How a brief is made
-By hand, or by the helper: an AI that knows trading and nothing of the pipeline, writing from its own knowledge, from a theme, or from a source the operator gives. Writing the file, or running the helper, is the operator's decision. Nothing else is needed.
+## Output
+One brief: one theory, with its optional context.
 
-## The folder
-```
-01_brief/
-  card.md              this card
-  helper/
-    system_prompt.md   the helper's instructions
-    make_brief.py      one closed-book call; checks the answer; saves the brief; adds its index line
-  briefs/
-    INDEX.md           one line per brief
-    NNN_short-name.md  one file per brief
-  exercise_1 ... 6/    the comparison exercises that shaped the helper
-```
+## What a brief is
+**A brief is one theory about how a market behaves, as a claim or a question, with its reason where known and what would prove it wrong, and optional limits on where it applies.**
 
-## The artifact
-Modelled on a pre-registered hypothesis (short, written before the data, never rewritten) and a decision record (one numbered plain-text file per decision).
+- The theory is the only mandatory part. The context (venue, coins, bar, period, side) is optional.
+- A brief says what to research, never how: no workflow words (thresholds, step names, config settings, fees, budgets).
+- A question stays a question.
 
-**Format**: one Markdown file. A header holds the context as `key: value` lines; the body is the theory in plain prose. The header keys are a closed list, which keeps workflow words out.
-
-**Naming**: `NNN_short-name.md`. `NNN` is a running number; `short-name` is three to five words of the theory. The file name is the brief's id. A brief is never edited once the pipeline has read it; a reworded theory is a new number, so one number never names two theories.
-
-**Index**: `briefs/INDEX.md`, one line per brief: `NNN_short-name: one or two short sentences [header lines]`. The helper writes the line; `make_brief.py` adds it. A brief written by hand needs its line written by hand.
-
-**Example** (`briefs/004_bitcoin-leads-altcoins-lagged-response.md`, from exercise 5):
-```
----
----
-Large coins lead small coins over short horizons. When bitcoin makes a sharp move,
-smaller and less traded coins take on part of that move only later... (prose, at most 250 words)
-```
-
-## Hand-over: the fields
+## The fields of a brief
 1. **Theory** (body, mandatory): one claim or one question, its reason if it has one, what would prove it wrong; the helper is told at most 250 words.
    - For: states what to research.
    - Used by: step 2.
@@ -66,10 +41,53 @@ smaller and less traded coins take on part of that move only later... (prose, at
    - For: lets anyone check the theory against what it rests on.
    - Used by: the operator, and step 2 if it needs the original.
    - Without it: a theory said to come from a source cannot be checked against it.
-7. **The index line** (in `INDEX.md`)
+7. **Index line** (in `INDEX.md`)
    - For: the list of theories already written, read before each new one.
    - Used by: the helper, for its next brief.
    - Without it: the helper writes its most typical theory again (exercise 2: four no-theme calls, one theory).
+
+The header keys are a closed list, which keeps workflow words out.
+
+## Storage and naming
+Modelled on a pre-registered hypothesis (short, written before the data, never rewritten) and a decision record (one numbered plain-text file per decision).
+
+```
+01_brief/
+  card.md                this card
+  helper/
+    system_prompt.md     the helper's instructions
+    make_brief.py        one closed-book call; refuses only a major deviation; saves the brief; adds its index line
+  briefs/
+    INDEX.md             one line per brief
+    NNN_short-name.md    one file per brief
+  exercise_1 ... 6/      the comparison exercises
+```
+
+- **One file per brief**: a header of `key: value` lines, then the theory in plain prose.
+- **Naming**: `NNN` is a running number; `short-name` is three to five words of the theory. The file name is the brief's id.
+- **Never edited** once the pipeline has read it. A reworded theory gets a new number, so one number never names two theories.
+- **Index line format**: `NNN_short-name: one or two short sentences [header lines]`. The helper writes the line; `make_brief.py` adds it. A brief written by hand needs its line written by hand.
+
+**Example** (`briefs/004_bitcoin-leads-altcoins-lagged-response.md`, from exercise 5):
+```
+---
+---
+Large coins lead small coins over short horizons. When bitcoin makes a sharp move,
+smaller and less traded coins take on part of that move only later... (prose, at most 250 words)
+```
+
+## The AI
+**What it does.** It writes one brief from its own knowledge, from a theme, or from a source. It knows trading and nothing of the pipeline. One request, one call. Running it is the operator's act.
+
+**Closed book.** One model call: no tools, no files, no web, no repository, an empty working folder, no settings. The index and the source are pasted into the call. One note cannot be removed in this cloud environment: an account note with the operator's email. It says nothing of trading or the pipeline.
+
+**Checks in code** (`make_brief.py`). Code refuses only a major deviation: no `---` header, a header key outside the list, no theory, a theory over 900 words or an index line over 100 (guards against a runaway answer, not length rules). A refused answer is sent back with the reason, up to three attempts. Minor deviations are fixed, not refused: bold and headings are stripped, the short-name is made file-safe (at most eight words), a missing index line falls back to the theory's first words, a missing `other-theories` line is recorded as not given.
+
+**Model.** Opus. Haiku broke rules of meaning; sonnet kept two faults the prompt forbids; opus met them all and was stable.
+
+**Cost.** 0.02 to 0.05 USD per brief from a theme or no theme; about 0.12 per call with a long source. A retry doubles it.
+
+**Prompt**: `helper/system_prompt.md`.
 
 ## Quality criteria on the brief
 - One theory, not a list.
@@ -83,25 +101,26 @@ smaller and less traded coins take on part of that move only later... (prose, at
 - Not the same as a brief in the index (same claim, same reason, same market). A close one is allowed.
 - Plain prose, about 250 words at most.
 
-## The helper
-**Closed book.** One model call: no tools, no files, no web, no repository, an empty working folder, no settings. The index and the source are pasted into the call. One note cannot be removed in this cloud environment: an account note with the operator's email. It says nothing of trading or the pipeline.
-
-**Model.** Opus. Exercise 1 compared haiku, sonnet and opus; exercise 2 compared sonnet and opus twice each. Haiku broke rules of meaning; sonnet kept two faults the prompt forbids; opus met them all and was stable.
-
-**Checks in code** (`make_brief.py`). Code refuses only a major deviation: no `---` header, a header key outside the list, no theory, a theory over 900 words or an index line over 100 (guards against a runaway answer, not length rules). A refused answer is sent back with the reason, up to three attempts. Minor deviations are fixed, not refused: bold and headings are stripped, the short-name is made file-safe (at most eight words), a missing index line falls back to the theory's first words, a missing `other-theories` line is recorded as not given.
-
-**Cost.** 0.02 to 0.05 USD per brief from a theme or no theme; about 0.12 per call with a long source. A retry doubles it.
-
 ## Fixed inputs for the iterations
 1. No theme.
 2. A theme in the operator's words: whether RSI indicators predict the price behaviour of BTC, ETH and BNB.
 3. A source: a TradingView strategy listing page, pasted by the operator.
 
+## Variants compared
+- Exercise 1: haiku, sonnet and opus on the three inputs.
+- Exercise 2: sonnet and opus, twice each.
+- Exercises 3 to 6: opus, as the prompt and the index were built.
+
 ## Who judges the output
 The operator: "would I research this theory?" and, with a source, "is this what the source says?". Code checks the shape. Each exercise has a one-page reading against the criteria.
 
 ## Done when
-On two exercises in a row, on the three inputs, the helper's brief meets every criterion and would be kept with wording changes only. Status: exercise 6 (the prompt with the test-condition rule) meets it except on one brief: 004 still holds a check ("once the smaller coins' own past moves are known"). Step 2 enforces the same rule on ideas, so the condition stops there. See `exercise_6/reading.md`.
+On two exercises in a row, on the three inputs, the helper's brief meets every criterion and would be kept with wording changes only.
+
+Status: exercise 6 meets it except on one brief: 004 still holds a check ("once the smaller coins' own past moves are known"). Step 2 enforces the same rule on ideas, so the condition stops there. See `exercise_6/reading.md`. The code checks were relaxed after exercise 6 (they refuse less); no model run has used them yet.
+
+## Open, from step 3
+- One coin at a time. The strategy config sees one coin's bars only, never another coin (step 3, reading of the design guide). A brief about several coins at once (step 2's brief 004: bitcoin leads altcoins) cannot be tested. To add: a rule that a brief is about one coin at a time. Wording to be set with the operator.
 
 ## What this step does not do
 It does not write ideas, judge whether a theory is promising, check that the engine can test it, or set anything about how it is tested.

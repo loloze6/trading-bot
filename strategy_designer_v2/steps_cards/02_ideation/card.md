@@ -120,8 +120,8 @@ The five briefs from step 1, exercise 5, run in this order on one index, then `0
 
 Not covered: a brief with `venue`, `bar`, `period` or `side` in its header (the copy is mechanical, so code covers it), and a brief that gives no idea.
 
-## Variants to compare
-Opus and sonnet. Each model runs the six calls in order on its own index, starting empty: twelve calls.
+## Variants compared
+Exercises 1 to 3: opus and sonnet, each model running the six calls in order on its own index, starting empty. Opus chosen (see The AI).
 
 ## Who judges the output
 The operator: "would I see this if my theory were true, and would I act on the answer?" and "do these ideas cover my theory?". Code checks the shape. Each exercise has a one-page reading against the criteria and the counts below.
@@ -137,6 +137,9 @@ No number of ideas is enforced. A quota would push the model to pad or to cut. T
 - the ideas that hold a test condition.
 
 If a count shows a fault, the prompt changes first. A limit in code comes only if the model runs away, as in step 1.
+
+## Open, from step 3
+- One coin at a time. The strategy config sees one coin's bars only, never another coin (step 3, reading of the design guide). A brief or idea about several coins at once (step 2's brief 004: bitcoin leads altcoins) cannot be tested. To add: a rule that a brief or idea is about one coin at a time. Wording to be set with the operator.
 
 ## What this step does not do
 It does not say how to trade an idea, set a pass mark, or confirm or reject an idea.

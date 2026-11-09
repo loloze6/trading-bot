@@ -3,6 +3,22 @@
 Read this before designing any card. Step 1 (`01_brief/`) is the worked example.
 
 ## The card
+Every card has these sections, in this order (step 1 and step 2 are the worked examples):
+1. Business objective, one question
+2. Input
+3. Output
+4. What a <output> is: the business definition, set before any field
+5. The fields of a <output>: three lines each
+6. Storage and naming: the folder tree, the format, the naming, the index, an example
+7. The AI: what it does, closed book, checks in code, model, cost, prompt file
+8. Quality criteria
+9. Fixed inputs for the iterations
+10. Variants compared
+11. Who judges the output
+12. Done when, with its status
+13. To observe in the tests (when needed)
+14. What this step does not do
+
 - One business objective, one question. Every field and criterion traces to it.
 - Stay on the objective. Do not anticipate later steps. No engineering, gate or field without a reason written on the card.
 - No extra approvals: the operator's act (writing, running) is the decision. No "confirmed" fields.
