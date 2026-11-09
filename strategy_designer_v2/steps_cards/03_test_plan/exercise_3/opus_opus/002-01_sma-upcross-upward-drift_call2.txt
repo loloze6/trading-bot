@@ -1,0 +1,8 @@
+config:
+{"regime_detector": {"mode": "threshold_rules", "components": [], "rules": [], "default_regime": "unknown"}, "strategies": {"min_allocation_change": 0.05, "regimes": {"unknown": {"components": [{"id": "sma_gap", "class": "strategies.strategy_components.EMASpreadComponent", "params": {"fast_period": 50, "slow_period": 200, "average": "sma"}, "weight": 1.0, "transforms": [{"op": "standardise", "params": {"window": 200, "min_periods": 50, "target": 5, "cap": 10}}, {"op": "clip", "params": {"min": 0.0}}]}]}, "trending": null, "mean_reversion": null, "chop": null}}}
+differs:
+- **Normalisation.** The SMA50/SMA200 gap is divided by its own mean absolute value over the previous 200 bars. The plan divides by the 200-day standard deviation of daily log returns × √50, and the catalogue has no component or op for that.
+  - The 0-to-1 mapping is the same shape: target 5 and cap 10 give a forecast of 0–10, so 0–100% of the portfolio.
+  - Full exposure is reached at twice the gap's typical recent size, instead of at 2 volatility units.
+- **Timing.** The spread uses SMAs that include the current close, and the engine fills at that close. The position therefore starts on the cross bar's close, not on the bar after the cross.
+- **Small moves.** Changes in target allocation smaller than 5% are not traded. I set `min_allocation_change` to 0.05 instead of the default 0.2 to keep sizing close to the plan near crosses.

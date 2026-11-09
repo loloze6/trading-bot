@@ -1,0 +1,16 @@
+forecast: Compute the 14-day Wilder relative strength index on each coin's daily close. The forecast is zero whenever the index is at or below 70, the conventional overbought line. Above 70 the forecast is long and grows in a straight line with the excess: (index − 70) / 30. It reaches full size at an index of 100. The forecast never goes short, because the idea only concerns high extremes. Each coin is run separately with the same settings.
+
+confirm: Use a horizon of 10 bars, with bars from all three coins pooled. Compare the 10-bar forward return of the price after bars where the forecast is above zero with the forward return after neutral bars (index between 40 and 60). The idea is confirmed if all four of the following hold:
+- The forecast-weighted mean of the 10-bar forward return after active bars is above the mean after neutral bars.
+- That difference is significant, with a t-statistic above 2 using standard errors corrected for the 10-bar overlap (Newey-West, 9 lags).
+- The same difference is positive in at least 2 of the 3 coins.
+- Within active bars, the forward return grows with forecast size. This means a positive rank correlation between forecast and 10-bar forward return, and the top third of forecasts beating the bottom third.
+
+reject: The idea is rejected if, pooled, the forecast-weighted mean of the 10-bar forward return after active bars is at or below the mean after neutral bars. It is also rejected if it falls significantly below that mean, which would point to reversal, with a t-statistic below −2.
+
+inconclusive: The result is inconclusive in any of these cases:
+- The pooled difference is positive but the t-statistic is between 0 and 2.
+- The difference is positive pooled but holds in only one coin.
+- Active bars beat neutral bars, but forward returns do not grow with forecast size.
+
+deviation: The idea is a condition ("after the index reaches a high extreme"). The forecast instead sizes the position by how far the index sits above 70, so it also tests a dose-response that the idea does not state. The comparison benchmark is neutral readings (index 40–60) rather than simply holding the coin. Low extremes are left out of the test.

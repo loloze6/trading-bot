@@ -1,0 +1,45 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "sma_gap",
+            "class": "strategies.strategy_components.EMASpreadComponent",
+            "params": {
+              "fast_period": 50,
+              "slow_period": 200,
+              "average": "sma"
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 200,
+                  "min_periods": 50
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0.0,
+                  "max": 10.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    }
+  }
+}

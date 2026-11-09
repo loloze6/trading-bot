@@ -1,0 +1,10 @@
+config:
+{"regime_detector":{"mode":"threshold_rules","components":[{"id":"vol_gate","class":"strategies.strategy_components.BuyAndHoldStrategy","params":{}}],"vetoes":[{"id":"vol_gate","transforms":[{"op":"volume_filter","params":{"period":20}}],"rules":[{"op":"lt","value":5.0}],"consecutive_bars":1,"result":"mean_reversion"}],"rules":[],"default_regime":"unknown"},"strategies":{"regimes":{"mean_reversion":{"components":[{"id":"rise_3","class":"strategies.strategy_components.PriceEvolutionComponent","params":{"period":3},"weight":1.0,"transforms":[{"op":"standardise","params":{"window":60,"min_periods":20,"target":3}},{"op":"clip","params":{"min":0.0}},{"op":"signed_power","params":{"exponent":2}},{"op":"clip","params":{"max":10.0}},{"op":"negate"}]}]},"trending":null,"chop":null,"unknown":null}}}
+differs: The plan grades thinness, but here it is an on/off gate. The catalogue has no graded volume component. The regime is active only when the current bar's volume is below its 20-bar mean. The plan instead uses the mean of the 3 bars against the median of the prior 20, and scales the short by −ln(ratio)/ln 2. As a result, the short does not grow as volume gets thinner, and it switches to flat when volume returns to its average instead of fading.
+
+Move strength is measured differently. The plan divides the 3-bar log return by the std of the prior 20 daily log returns ×√3. Here the 3-bar percent return is divided by the mean absolute value of the previous 60 3-bar returns. The `standardise` target of 3 and `signed_power` with exponent 2 approximate the plan's mapping, assuming roughly normal returns and full thinness:
+- z≈1 gives about −1.4 instead of 0;
+- z≈2 gives about −5.6 instead of −5;
+- z≈3 and above gives −10 (full short).
+
+The plan's hard dead zone, max(z−1, 0), becomes this smooth one, so small rises still carry a small short (it stays below the 2-point minimum rebalance). Rises below 0 give no position, so the config is short-only as the plan requires.

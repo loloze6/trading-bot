@@ -1,0 +1,70 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "rsi_gate",
+        "class": "strategies.strategy_components.RSIPullbackComponent",
+        "params": {
+          "period": 14,
+          "scaling_factor": 0.4
+        }
+      }
+    ],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "rsi_gate",
+              "op": "lt",
+              "value": -8.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "rsi_excess",
+            "class": "strategies.strategy_components.RSIPullbackComponent",
+            "params": {
+              "period": 14,
+              "scaling_factor": 0.4
+            },
+            "weight": 1.0,
+            "history_transforms": [
+              {
+                "op": "negate"
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 8.0
+                }
+              }
+            ],
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "mean_reversion": null,
+      "chop": null,
+      "unknown": null
+    }
+  }
+}

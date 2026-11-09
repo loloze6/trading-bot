@@ -93,6 +93,8 @@ Seven ideas from step 2, exercise 3 (opus), with their briefs:
 ## Variants compared
 Exercises 1 and 2: opus and sonnet, one call per idea. Exercise 2 added three prompt lines from exercise 1 (one horizon, an inconclusive line, no constant inside a regime); all three held.
 
+Exercise 3: the plan in two calls (plan in words, then config), opus then opus or sonnet. It is more honest about what cannot be built, but the config differs from the plan in 5 of 5 cases, so the criterion no longer matches the test. It also costs more with opus. One call is kept (`exercise_3/reading.md`).
+
 ## Open, from exercises 1 and 2
 - **Forced ideas.** Both models express the divergence idea (005-01) with an approximation instead of "untestable", in both exercises, with a declared deviation. Operator to rule: accept a declared approximation, or require "untestable".
 - **The bar of evidence** differs from plan to plan (t <= -2, one standard error, p < 0.05, "clearly"). Operator to rule: leave it to each plan, or ask in one sentence for a number and for overlapping returns counted once.

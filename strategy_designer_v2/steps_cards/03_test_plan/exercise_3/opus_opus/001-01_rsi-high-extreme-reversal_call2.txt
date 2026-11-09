@@ -1,0 +1,10 @@
+config:
+{"regime_detector": {"mode": "threshold_rules", "components": [], "rules": [], "default_regime": "unknown"}, "strategies": {"regimes": {"unknown": {"components": [{"id": "rsi_overbought", "class": "strategies.strategy_components.RSIPullbackComponent", "params": {"period": 14}, "weight": 1.0, "transforms": [{"op": "standardise", "params": {"window": 60, "min_periods": 20}}, {"op": "clip", "params": {"max": 0.0}}, {"op": "signed_power", "params": {"exponent": 3, "pivot": 20}}]}]}, "trending": null, "mean_reversion": null, "chop": null}}}
+differs: The plan's −(RSI − 70)/30 needs an offset of 70 RSI points. The engine can only add an offset with a constant component, which is not allowed. So the short begins at RSI 50, not 70.
+
+- **Short starts at 50.** The config takes the 14-day Wilder RSI as (50 − RSI) and puts it on the scale of its own past 60 values (standardise). It keeps only the short side (clip at 0), so it is never positive. It then damps small readings with a cubic soft dead zone (signed_power, exponent 3, pivot 20).
+- **Rough sizes.** With a typical |RSI − 50| of about 10–12, the forecast is about −2 or smaller in size (less than about 20% short) up to RSI ≈ 60. It is about −6 near RSI 65 and about −15 at RSI 70. It reaches the −20 cap (200% short) from roughly RSI 72 upward.
+- **Opposite of the plan near 70.** The plan's short is zero at 70 and reaches −1 (forecast −10) only at RSI 100. This config is already near full size at 70 and flat-capped above about 72. Its grading falls mostly in the 55–72 band, not across 70–100.
+- **Scale drifts.** The scale depends on each coin's recent RSI dispersion, not a fixed /30.
+- **More nonzero bars.** Bars with RSI between 50 and 70 also carry a small short. The confirm/reject test should still select its bars from the plan's own RSI > 70 rule.
+- **Regime gate not used.** Gating on RSI > 70 would make the position jump from 0 to about −18. Above that, the standardised value is saturated, which is effectively on/off.

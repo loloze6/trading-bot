@@ -1,0 +1,56 @@
+=== 001-01_rsi-high-extreme-reversal opus+opus
+plan and config: opus_opus/001-01_rsi-high-extreme-reversal.md
+cost: call1 0.0439 call2 0.3067 total 0.3506 USD
+=== 001-01_rsi-high-extreme-reversal opus+sonnet
+Traceback (most recent call last):
+  File "/home/user/trading-bot/strategy_designer_v2/steps_cards/03_test_plan/exercise_3/split_helper/run_split.py", line 83, in <module>
+    main()
+    ~~~~^^
+  File "/home/user/trading-bot/strategy_designer_v2/steps_cards/03_test_plan/exercise_3/split_helper/run_split.py", line 70, in main
+    config = json.loads(m.group(1))
+  File "/usr/local/lib/python3.13/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/usr/local/lib/python3.13/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/json/decoder.py", line 361, in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ~~~~~~~~~~~~~~^^^^^^^^
+json.decoder.JSONDecodeError: Expecting ',' delimiter: line 1 column 445 (char 444)
+=== 001-03_rsi-high-extreme-continuation opus+opus
+plan and config: opus_opus/001-03_rsi-high-extreme-continuation.md
+cost: call1 0.0360 call2 0.3202 total 0.3562 USD
+=== 001-03_rsi-high-extreme-continuation opus+sonnet
+plan and config: opus_sonnet/001-03_rsi-high-extreme-continuation.md
+cost: call1 0.0000 call2 0.1269 total 0.1269 USD
+=== 002-01_sma-upcross-upward-drift opus+opus
+plan and config: opus_opus/002-01_sma-upcross-upward-drift.md
+cost: call1 0.0540 call2 0.2578 total 0.3118 USD
+=== 002-01_sma-upcross-upward-drift opus+sonnet
+plan and config: opus_sonnet/002-01_sma-upcross-upward-drift.md
+cost: call1 0.0000 call2 0.1253 total 0.1253 USD
+=== 002-05_sma-up-regime-positive-drift opus+opus
+plan and config: opus_opus/002-05_sma-up-regime-positive-drift.md
+cost: call1 0.0476 call2 0.2582 total 0.3057 USD
+=== 002-05_sma-up-regime-positive-drift opus+sonnet
+plan and config: opus_sonnet/002-05_sma-up-regime-positive-drift.md
+cost: call1 0.0000 call2 0.1294 total 0.1294 USD
+=== 003-01_low-volume-up-move-reverts opus+opus
+plan and config: opus_opus/003-01_low-volume-up-move-reverts.md
+cost: call1 0.0467 call2 0.2883 total 0.3350 USD
+=== 003-01_low-volume-up-move-reverts opus+sonnet
+untestable at call 2: The forecast depends on thinness, the 3-bar mean volume against the 20-bar median daily volume. No catalogue component outputs a graded volume measure
+cost: call1 0.0000 call2 0.1250 total 0.1250 USD
+=== 004-01_btc-up-move-alts-follow opus+opus
+untestable at call 1: The idea says altcoins drift up after a sharp bitcoin move, so the position must be held in an altcoin while the signal comes from bitcoin's bars. A f
+cost: call1 0.0153 call2 0.0000 total 0.0153 USD
+=== 004-01_btc-up-move-alts-follow opus+sonnet
+untestable at call 1: The idea says altcoins drift up after a sharp bitcoin move, so the position must be held in an altcoin while the signal comes from bitcoin's bars. A f
+cost: call1 0.0000 call2 0.0000 total 0.0000 USD
+=== 005-01_bearish-rsi-divergence-reversal opus+opus
+untestable at call 2: The forecast needs the RSI value at the bar where the 10-bar closing high occurred, compared with the RSI at the bar of the earlier 60-to-11-bar closi
+cost: call1 0.0546 call2 0.2430 total 0.2976 USD
+=== 005-01_bearish-rsi-divergence-reversal opus+sonnet
+untestable at call 2: The catalogue has no component that stores the RSI at a specific past price high, so it cannot compare the RSI at H1's bar with the RSI at H0's bar. I
+cost: call1 0.0000 call2 0.1255 total 0.1255 USD
