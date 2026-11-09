@@ -28,7 +28,7 @@ Output exactly this, and nothing else:
 ---
 <stated header lines only>
 ---
-<the theory, plain prose with no headings or bold, at most 200 words>
+<the theory, plain prose with no headings or bold, at most 250 words>
 
 short-name: <three to five lowercase words joined by hyphens>
 index-line: <the theory in one or two short sentences, at most 25 words> [<the stated header lines, or nothing>]

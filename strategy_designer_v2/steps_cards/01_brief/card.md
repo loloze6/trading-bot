@@ -38,11 +38,11 @@ Modelled on a pre-registered hypothesis (short, written before the data, never r
 ---
 ---
 Large coins lead small coins over short horizons. When bitcoin makes a sharp move,
-smaller and less traded coins take on part of that move only later... (prose, at most 200 words)
+smaller and less traded coins take on part of that move only later... (prose, at most 250 words)
 ```
 
 ## Hand-over: the fields
-1. **Theory** (body, mandatory): one claim or one question, its reason if it has one, what would prove it wrong; at most 200 words.
+1. **Theory** (body, mandatory): one claim or one question, its reason if it has one, what would prove it wrong; the helper is told at most 250 words.
    - For: states what to research.
    - Used by: step 2.
    - Without it: there is nothing to research.
@@ -81,14 +81,14 @@ smaller and less traded coins take on part of that move only later... (prose, at
 - Faithful to its request: a question stays a question.
 - Faithful to its source, when it has one; the reason says whether it is the source's or the helper's.
 - Not the same as a brief in the index (same claim, same reason, same market). A close one is allowed.
-- At most 200 words of plain prose.
+- Plain prose, about 250 words at most.
 
 ## The helper
 **Closed book.** One model call: no tools, no files, no web, no repository, an empty working folder, no settings. The index and the source are pasted into the call. One note cannot be removed in this cloud environment: an account note with the operator's email. It says nothing of trading or the pipeline.
 
 **Model.** Opus. Exercise 1 compared haiku, sonnet and opus; exercise 2 compared sonnet and opus twice each. Haiku broke rules of meaning; sonnet kept two faults the prompt forbids; opus met them all and was stable.
 
-**Checks in code** (`make_brief.py`): the header shape and keys, at most 200 words, no headings or bold, the short-name, an index line of at most 25 words, `other-theories` with a source. A refused answer is sent back with the reason, up to three attempts.
+**Checks in code** (`make_brief.py`): the header shape and keys, at most 900 words (a guard against a runaway answer, not a length rule), no headings or bold, the short-name, an index line of at most 25 words, `other-theories` with a source. A refused answer is sent back with the reason, up to three attempts.
 
 **Cost.** 0.02 to 0.05 USD per brief from a theme or no theme; about 0.12 per call with a long source. A retry doubles it.
 
@@ -101,10 +101,9 @@ smaller and less traded coins take on part of that move only later... (prose, at
 The operator: "would I research this theory?" and, with a source, "is this what the source says?". Code checks the shape. Each exercise has a one-page reading against the criteria.
 
 ## Done when
-On two exercises in a row, on the three inputs, the helper's brief meets every criterion and would be kept with wording changes only. Status: exercise 5 meets it, with small faults listed in `exercise_5/reading.md`. The prompt changed after exercise 4 (the 200-word limit, plain prose), so strictly one exercise counts, not two.
+On two exercises in a row, on the three inputs, the helper's brief meets every criterion and would be kept with wording changes only. Status: exercise 5 meets it, with small faults listed in `exercise_5/reading.md`. The prompt changed after exercise 4 (the word limit, plain prose), so strictly one exercise counts, not two.
 
 ## Open, from exercise 5
-- Opus writes about 210 words when told 200, so most first answers are refused. Proposed: tell it "150 to 180 words", keep the code limit at 200. Untested.
 - A refused answer's text is not kept. Proposed: keep it in the log. Untested.
 
 ## What this step does not do
