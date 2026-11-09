@@ -13,6 +13,7 @@ One test plan per idea, or "untestable", with the reason.
 **A test plan is the one way we will check an idea against the market data, fixed before we look: what we measure, against what, on which data, and which result would confirm the idea and which would reject it.**
 
 - One test per idea.
+- A regime (an on/off condition around a graded component) is used only when the idea itself is a condition. Otherwise the config uses graded tools only, so the position never jumps from none to some.
 - The vessel is the strategy config: the test plan is expressed as a config the engine runs. The config's hard rules apply: every forecast is graded (no on/off), and `standardise` is the first transform of every component.
 - An idea the config cannot express is "untestable", with the reason. That is a result, not a failure.
 
@@ -26,8 +27,9 @@ One test plan per idea, or "untestable", with the reason.
 1. **The idea**, its brief and the brief's header, copied by the script: what is being tested.
 2. **The config**: the test itself, written in the engine's language.
 3. **The criterion**: the result that confirms the idea, and the result that rejects it.
-4. **The deviation**: what the config tests that differs from the idea (for example, "after X" becomes "while X, fading"), or "none".
-- **Or "untestable"**, with the reason, in place of 2 to 4.
+4. **The data**: the coin and the bar size, from the idea's header when it sets them; otherwise, to start simple, BTC/USDT, 1d bars, fold A. Written by the script, not chosen by the model; the model is told them, because the config's settings depend on the bar size. The config has no key for coins, bar size or periods: they belong to the run.
+5. **The deviation**: what the config tests that differs from the idea (for example, "after X" becomes "while X, fading"), or "none".
+- **Or "untestable"**, with the reason, in place of 2, 3 and 5.
 
 Each part gets its three lines (for, used by, without it) when the fields are written.
 
@@ -51,4 +53,44 @@ before costs, and against simply holding the coin, so that the market's own rise
 credited to the idea.
 ```
 
-The other sections of the template (storage, the rest of the AI, criteria, tests) come next.
+## Storage and naming
+```
+03_test_plan/
+  card.md                      this card
+  helper/
+    system_prompt.md           the helper's instructions
+    make_test_plan.py          one closed-book call; refuses only a major deviation; saves the plan and its config
+    reference/                 trimmed copies of the strategy config guide and the component catalogue, pasted into each call
+  plans/
+    NNN-KK_short-name.md       one test plan per idea, named after the idea
+    NNN-KK_short-name_config.json   its config
+  exercise_k/                  the comparison exercises
+```
+The plan's header holds the idea, its brief and the data; its body the config's file name, `Confirm`, `Reject` and `Deviation`, or `Untestable` with the reason.
+
+## The AI
+**Closed book**, as in steps 1 and 2: one call per idea. The idea, its brief, the data and the two trimmed references are pasted in. The references are trimmed copies of the originals in `strategy-research/docs/`: everything that does not help write a config was removed (pipeline stages, decision numbers, the block manifest, the block combiner, the campaign sizing block), and three passages were aligned with this card (regimes only when the idea is a condition; `standardise` sets the scale, never `vol_target`). They must be refreshed by hand when the originals change.
+
+**Checks in code** (`make_test_plan.py`): refuses only a major deviation (no readable config and no untestable line, a config without `regime_detector` or `strategies`, a missing confirm or reject, a field over 300 words). Up to three attempts.
+
+**Model.** Not chosen yet. **Cost.** About 0.25 USD per idea with opus, 0.12 with sonnet: the references are most of it.
+
+**Prompt**: `helper/system_prompt.md`.
+
+## Fixed inputs for the iterations
+Seven ideas from step 2, exercise 3 (opus), with their briefs:
+
+| Idea | Case |
+|---|---|
+| `001-01` RSI high, then reversal | testable; a rare extreme; a short side |
+| `001-03` RSI high, then continuation | testable; the same situation, the other answer |
+| `002-01` up-cross, then drift | testable; a steady relation; no coins in the header, so the default data |
+| `002-05` cross-to-cross span | testable; a state |
+| `003-01` low-volume up move reverts | a condition: a regime is allowed |
+| `004-01` altcoins follow bitcoin | untestable: another coin |
+| `005-01` bearish RSI divergence | no divergence component in the catalogue |
+
+## Variants compared
+Exercise 1: opus and sonnet, one call per idea.
+
+The other sections of the template (quality criteria, who judges, done when) come once exercise 2 has run.

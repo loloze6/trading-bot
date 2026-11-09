@@ -1,0 +1,67 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "range_pos",
+        "class": "strategies.strategy_components.DonchianBreakoutComponent",
+        "params": {
+          "period": 20
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "mean_reversion",
+        "any_of": [
+          [
+            {
+              "id": "range_pos",
+              "op": "gte",
+              "value": 18
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "rsi_weak",
+            "class": "strategies.strategy_components.RSIPullbackComponent",
+            "params": {
+              "period": 14
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              },
+              {
+                "op": "negate"
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "max": 0.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "unknown": null,
+      "trending": null,
+      "chop": null
+    }
+  }
+}
