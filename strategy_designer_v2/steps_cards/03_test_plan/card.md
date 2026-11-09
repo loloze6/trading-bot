@@ -106,6 +106,8 @@ Exercise 4 (opus): six changes from the second review of exercise 2: the exact f
 
 Exercise 5 (opus): exercise 4 plus one line on settings (the single most common convention). No fault (`exercise_5/reading.md`).
 
+Exercise 6 (opus): exercise 5 unchanged. Six plans stable; the divergence idea was forced again, with a constant inside a regime (`exercise_6/reading.md`).
+
 ## Quality criteria on the test plan
 - Untestable when the idea needs another coin, other data, or an indicator the catalogue lacks, or when the config cannot come close to the forecast the idea needs. Never forced.
 - The `Forecast` line says, in plain words, what the config computes.
@@ -119,7 +121,7 @@ Exercise 5 (opus): exercise 4 plus one line on settings (the single most common 
 The operator: "if this test confirms, would I believe the idea; if it rejects, would I drop it?". Code checks the shape and the names. Each exercise has a one-page reading against the criteria.
 
 ## Done when
-On two exercises in a row, on the fixed inputs, every plan meets every criterion. Status: exercise 5 is the first with no fault.
+On two exercises in a row, on the fixed inputs, every plan meets every criterion. Status: exercise 5 has no fault; exercise 6 has one plan with two faults (005-01 forced). Not met.
 
 ## Open
 - **For step 2:** 002-01 (after the cross) and 002-05 (from cross to cross) become the same forecast in this vessel; only their horizon and measure differ.

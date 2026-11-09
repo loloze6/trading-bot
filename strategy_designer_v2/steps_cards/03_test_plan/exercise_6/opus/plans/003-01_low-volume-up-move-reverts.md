@@ -1,0 +1,13 @@
+---
+idea: 003-01_low-volume-up-move-reverts
+brief: 003_thin-volume-moves-revert
+data-instruments: BTC/USDT
+data-bar: 1d
+data-period: fold A
+---
+Forecast: The forecast is active only on a day that closes higher than the day before on volume below its 20-day average volume (the average includes that day). This condition comes from the regime detector, using VolumeExpansionHedgeComponent(vol_period 20) as a measure only, and its raw value must be below 0. On every other day the forecast is 0. On an active day the forecast is short and sized by how sharp the rise was. Take that day's 1-bar percent change (PriceEvolutionComponent, period 1) and standardise it against the mean absolute 1-day change of the 60 days before it, so a typical daily move gives 10 and the cap is 20. Pass it through signed_power with exponent 2 and pivot 10: a move half the typical size gives 2.5, a typical move gives 10, and a move 1.5 times typical gives 22.5. Then negate it and clip it at a maximum of 0. The forecast therefore runs from about 0 for a tiny rise down to −20 (200% short) for a rise of about 1.4 times the typical daily move or more. Small rises are damped smoothly towards flat. The position lasts one bar unless the next day is again a low-volume up day.
+Config: 003-01_low-volume-up-move-reverts_config.json
+Confirm: The horizon is 1 bar, so the events do not overlap; there are roughly 150–250 of them over the 6 windows. Main measure: on bars with a non-zero position, the position-weighted mean of the next bar's close-to-close return, minus the coin's unconditional mean daily return over the same windows. The idea is confirmed if this excess, measured before costs, is positive with a t-statistic of at least 2. Supporting check: the excess is positive in at least 4 of the 6 windows.
+Reject: The idea is rejected if the position-weighted excess next-bar result is zero or negative. That means the day after a thin-volume rise is no weaker than an average day, or it is stronger.
+Inconclusive: The excess is positive but its t-statistic is below 2. Or the excess is positive with t ≥ 2 but positive in fewer than 4 of the 6 windows. Or fewer than 60 active bars traded across all windows.
+Deviation: The idea gives no horizon for "followed by falling back", so the config tests a fall on the next single day only. "Unusually low volume" becomes volume below its 20-day average, a binary regime gate whose level is not graded. "Sharp" is graded by the size of the 1-day rise relative to the last 60 days' typical daily move, through a smooth dead zone, and is not a threshold. A rise that builds over several days is not covered. The brief's comparison with high-volume moves is not part of this idea and is not tested.
