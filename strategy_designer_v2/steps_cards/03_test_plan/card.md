@@ -73,7 +73,7 @@ The plan's header holds the idea, its brief and the data; its body the config's 
 
 **Checks in code** (`make_test_plan.py`): refuses only a major deviation (no readable config and no untestable line, a config without `regime_detector` or `strategies`, a missing confirm or reject, a field over 300 words). Up to three attempts.
 
-**Model.** Not chosen yet. **Cost.** About 0.25 USD per idea with opus, 0.12 with sonnet: the references are most of it.
+**Model.** Opus recommended (exercise 2: same side as the idea in 5 of 6, stable configs, a stated bar of evidence); not ruled yet. **Cost.** About 0.25 USD per idea with opus, 0.12 with sonnet: the references are most of it.
 
 **Prompt**: `helper/system_prompt.md`.
 
@@ -91,6 +91,11 @@ Seven ideas from step 2, exercise 3 (opus), with their briefs:
 | `005-01` bearish RSI divergence | no divergence component in the catalogue |
 
 ## Variants compared
-Exercise 1: opus and sonnet, one call per idea.
+Exercises 1 and 2: opus and sonnet, one call per idea. Exercise 2 added three prompt lines from exercise 1 (one horizon, an inconclusive line, no constant inside a regime); all three held.
 
-The other sections of the template (quality criteria, who judges, done when) come once exercise 2 has run.
+## Open, from exercises 1 and 2
+- **Forced ideas.** Both models express the divergence idea (005-01) with an approximation instead of "untestable", in both exercises, with a declared deviation. Operator to rule: accept a declared approximation, or require "untestable".
+- **The bar of evidence** differs from plan to plan (t <= -2, one standard error, p < 0.05, "clearly"). Operator to rule: leave it to each plan, or ask in one sentence for a number and for overlapping returns counted once.
+- **For step 2:** 002-01 (after the cross) and 002-05 (from cross to cross) become the same test in this vessel.
+
+The other sections of the template (quality criteria, who judges, done when) come once these are ruled.

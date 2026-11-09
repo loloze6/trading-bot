@@ -24,7 +24,8 @@ guide and using only components from the catalogue. Two rules have no exception:
   jumps between fixed levels;
 - standardise is the first transform of every component.
 Use a regime only when the idea itself is a condition ("when volume is low, ..."); otherwise use
-graded tools only, so the position never jumps from none to some. If the brief's header says long
+graded tools only, so the position never jumps from none to some. A constant (buy-and-hold) inside
+a regime also makes the position jump: do not use one there. If the brief's header says long
 only, the forecast never goes below zero.
 The config sees one coin at a time and nothing outside the catalogue. If the idea needs another
 coin, data or an indicator the catalogue does not have, do not force it: say it is untestable
@@ -33,7 +34,8 @@ and why.
 Your criterion. Ask: if this idea is true, where would it show in the forecast, in its
 changes, or in the portfolio's value, and what would we see there if it is false? State the
 one result that would confirm the idea and the result that would reject it, in terms that can
-be measured on that record. Fit it to the
+be measured on that record. Name one horizon, in bars, and keep to it. If some results would
+neither confirm nor reject the idea, say which in an inconclusive line. Fit it to the
 idea: an idea about rare extreme situations shows in what follows the largest positions; an
 idea about a steady relation shows in gains that grow with the size of the position. Judge
 before costs, and against simply holding the coin, so that the market's own rise is not
@@ -54,6 +56,7 @@ config:
 <the strategy config, as one JSON object>
 confirm: <the result that would confirm the idea, one or two sentences>
 reject: <the result that would reject it, one or two sentences>
+inconclusive: <the results that neither confirm nor reject, or "none">
 deviation: <what the config tests that differs from the idea, or "none">
 
 If it cannot:

@@ -45,7 +45,7 @@ def header(text):
 
 
 def parse(text):
-    """Return ("untestable", reason) or ("plan", config, confirm, reject, deviation).
+    """Return ("untestable", reason) or ("plan", config, confirm, reject, inconclusive, deviation).
     Refuse only a major deviation: no untestable line and no readable config, a config without its two
     top-level keys, a missing confirm or reject, or a runaway field. Markup and code fences are stripped."""
     text = re.sub(r"```(?:json)?", "", text).replace("**", "")
@@ -63,14 +63,15 @@ def parse(text):
         if key not in config:
             raise ValueError(f"the config has no {key} key")
     fields = dict((k, " ".join(v.split())) for k, v in
-                  re.findall(r"^(confirm|reject|deviation):\s*(.*?)(?=^(?:confirm|reject|deviation):|\Z)", text, re.M | re.S))
+                  re.findall(r"^(confirm|reject|inconclusive|deviation):\s*(.*?)(?=^(?:confirm|reject|inconclusive|deviation):|\Z)", text, re.M | re.S))
     for k in ("confirm", "reject"):
         if not fields.get(k):
             raise ValueError(f"the {k}: line is missing")
     for k, v in fields.items():
         if len(v.split()) > MAX_FIELD_WORDS:
             raise ValueError(f"the {k} field has {len(v.split())} words; write one or two sentences")
-    return ("plan", config, fields["confirm"], fields["reject"], fields.get("deviation", "not given"))
+    return ("plan", config, fields["confirm"], fields["reject"], fields.get("inconclusive", "not given"),
+            fields.get("deviation", "not given"))
 
 
 def write_atomic(path, text):
@@ -123,10 +124,10 @@ def main():
         write_atomic(args.plans_dir / f"{idea_id}.md", head + f"Untestable: {result[1]}\n")
         print(f"untestable: {result[1]}")
     else:
-        _, config, confirm, reject, deviation = result
+        _, config, confirm, reject, inconclusive, deviation = result
         write_atomic(args.plans_dir / f"{idea_id}_config.json", json.dumps(config, indent=2) + "\n")
         write_atomic(args.plans_dir / f"{idea_id}.md", head + f"Config: {idea_id}_config.json\n"
-                     f"Confirm: {confirm}\nReject: {reject}\nDeviation: {deviation}\n")
+                     f"Confirm: {confirm}\nReject: {reject}\nInconclusive: {inconclusive}\nDeviation: {deviation}\n")
         print(f"plan: {args.plans_dir / (idea_id + '.md')}")
     print(f"cost: {cost:.4f} USD, attempts: {attempt}")
 
