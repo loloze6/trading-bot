@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean forward 24-bar log return when forecast > 0 minus window mean over all bars, pooled",
+    "value": 0.000196106487943456,
+    "statistic": {
+      "name": "t of the mean of excess over non-overlapping blocks",
+      "value": -0.43539334996871243
+    },
+    "threshold": "excess > 0 with t >= 2 to confirm; excess < 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "share of positive fwd 24-bar returns when forecast > 0 minus share over all bars",
+    "value": -0.01253977245584914,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping 24-bar blocks with forecast above 0": 377
+  },
+  "decided_by": "The main measure and the supporting check disagree in sign, so the result is inconclusive.",
+  "reading": "The measure's value is the pooled mean excess over all forecast>0 bars (each demeaned by its own window's mean over all bars), its t is the ordinary one-sample t of that excess on greedy non-overlapping blocks that each start at the next forecast>0 bar after the previous block ends within a window, and the hit-rate shares are pooled across windows."
+}

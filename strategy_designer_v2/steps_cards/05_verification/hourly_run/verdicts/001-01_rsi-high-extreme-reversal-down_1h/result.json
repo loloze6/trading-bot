@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean fwd 12-bar log return after top-decile |forecast| minus drift",
+    "value": -0.001432631131269509,
+    "statistic": {
+      "name": "t of the mean on non-overlapping 12-bar blocks",
+      "value": -1.230792003975105
+    },
+    "threshold": "confirm: pooled excess < 0 with t <= -2 and negative in >= 2 coins; reject: pooled excess > 0 with t >= +2; needs >= 30 non-overlapping extreme episodes per coin and >= 100 pooled"
+  },
+  "supporting_check": {
+    "name": "excess return falls across |forecast| quintiles (top minus neutral)",
+    "value": 0.00045439766391252494,
+    "passed": false
+  },
+  "counts": {
+    "pooled non-overlapping extreme episodes": 390,
+    "coins with negative excess": 2,
+    "non-overlapping extreme episodes BTCUSD": 187,
+    "non-overlapping extreme episodes ETHUSD": 203
+  },
+  "decided_by": "Pooled t lies between -2 and +2.",
+  "reading": "Top decile is |forecast| >= its 90th percentile over all pooled bars (nonzero only), the drift is the mean forward 12-bar log return of all bars of the same coin and window, extreme episodes are extreme bars on the 0,12,24,... grid of each window, the supporting check uses all bars with zero-forecast bars as group 0 and needs a strictly falling mean plus a negative top-quintile excess in at least 2 coins, and with only the coins present the rule 'at least 2 of 3 coins' is applied as at least 2 coins."
+}

@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "24-bar forward return, top-decile forecast minus zero-forecast bars (%)",
+    "value": -0.12771335427274827,
+    "statistic": {
+      "name": "Welch t (non-overlapping)",
+      "value": -0.43989736631105064
+    },
+    "threshold": "confirm: positive with t >= 2; reject: negative with t <= -2, or |t| < 2 with >= 150 cases and |estimate| <= 0.1% per 24 bars"
+  },
+  "supporting_check": {
+    "name": "coins with return per unit avg exposure minus buy-and-hold > 0 (need >= 2)",
+    "value": 0,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping top-decile cases": 222,
+    "non-overlapping neutral cases": 724,
+    "coins": 2,
+    "coins with positive excess": 0
+  },
+  "decided_by": "|t| < 2 but the estimate lies outside the +/-0.1% near-zero bound, which the plan calls inconclusive.",
+  "reading": "The top decile is forecast >= the 90th percentile of all pooled bars' forecasts (and > 0), returns are sampled on the 0,24,48,... grid of each window with Welch t, the supporting check sums per-bar gains and per-bar coin returns over each coin's pooled windows with exposure as mean |allocation|, and with only 2 coins present 'at least 2 of the 3 coins' is applied literally as at least 2 coins."
+}
