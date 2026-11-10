@@ -7,8 +7,8 @@ data-period: fold A
 outcome: untestable
 ---
 Fidelity:
-- Situation: an earlier bitcoin return -> replaced: a config sees only one coin, so this cannot be paired with any other coin's later return.
-- Comparison: BTC leading alts versus alts leading BTC -> replaced: this needs altcoin bars, which the config never sees.
-- Outcome: later altcoin returns in the same direction -> replaced: the run trades only BTC/USDT, so altcoin returns are not in the record.
-- Verdict transfer: no: no single-coin BTC forecast can measure a lead-lag between two coins.
-Reason: The idea relates bitcoin's past returns to later altcoin returns, and the reverse, so it needs two coins' bars at once. The config sees only one symbol's bars and feeds, and the run here covers only BTC/USDT.
+- Situation: bitcoin's past returns -> replaced: the config sees only one coin's bars, so it cannot pair bitcoin's moves with an altcoin's.
+- Comparison: bitcoin leading altcoins vs altcoins leading bitcoin -> replaced: no second coin's returns exist in the config, so neither direction of the lead can be measured.
+- Outcome: later altcoin returns in bitcoin's direction -> replaced: the only coin under test is BTC/USDT; altcoin prices are not in its bars or feeds.
+- Verdict transfer: no: a single-coin forecast on BTC cannot measure a lead from one coin to another, so no result on it bears on the idea.
+Reason: The idea is a lead-lag relation between two coins: bitcoin's earlier returns compared with later altcoin returns, and the reverse. The config sees only one symbol's own bars and feeds, and the guide states that another coin's prices are data it cannot use.

@@ -1,82 +1,125 @@
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 
 def measure(bars):
-    act_all, base_all, act_fc = [], [], []
-    window_excess = {}
+    move_col = "debug_info.components.drop.last_history_value"
+
+    # ---------- 1. Situation check ----------
+    n_active_checked = 0
+    n_agree = 0
     for coin, wins in bars.items():
         for w, df in wins.items():
-            d = df.sort_values("timestamp").reset_index(drop=True)
-            close = pd.to_numeric(d["close"], errors="coerce")
-            fc = pd.to_numeric(d["forecast"], errors="coerce")
-            r = close.shift(-1) / close - 1.0  # next-bar return, inside this window only
-            # horizon 1 bar: grid positions 0,1,2,... -> every bar with a next bar
-            base_mask = r.notna()
-            act_mask = base_mask & fc.notna() & (fc < 0)
-            b = r[base_mask].to_numpy(dtype=float)
-            a = r[act_mask].to_numpy(dtype=float)
-            base_all.extend(b.tolist())
-            act_all.extend(a.tolist())
-            act_fc.extend(fc[act_mask].to_numpy(dtype=float).tolist())
-            if len(a) > 0 and len(b) > 0:
-                window_excess[f"{coin}:{w}"] = float(a.mean() - b.mean())
+            df = df.reset_index(drop=True)
+            fc = pd.to_numeric(df["forecast"], errors="coerce")
+            if move_col in df.columns:
+                move = pd.to_numeric(df[move_col], errors="coerce")
+            else:
+                move = df["close"].astype(float).pct_change()
+            vol = pd.to_numeric(df["volume"], errors="coerce")
+            vol_mean = vol.rolling(20, min_periods=20).mean()
+            active = fc.notna() & (fc != 0)
+            computable = move.notna() & vol_mean.notna() & vol.notna()
+            mask = active & computable
+            situation = (vol >= vol_mean) & (move < 0)
+            agree = situation & (fc < 0)
+            n_active_checked += int(mask.sum())
+            n_agree += int((agree & mask).sum())
 
-    act = np.array(act_all, dtype=float)
-    base = np.array(base_all, dtype=float)
-    fcs = np.array(act_fc, dtype=float)
-    n_act = int(len(act))
-    n_base = int(len(base))
+    agreement = (n_agree / n_active_checked) if n_active_checked > 0 else None
+    passed = agreement is not None and agreement >= 0.9
 
-    excess = None
-    t = None
-    if n_act >= 1 and n_base >= 1:
-        excess = float(act.mean() - base.mean())
-    if n_act >= 2 and n_base >= 2:
-        tt = stats.ttest_ind(act, base, equal_var=False).statistic
-        t = float(tt) if np.isfinite(tt) else None
+    threshold_words = ("confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2; "
+                       "otherwise, or fewer than 40 active bars, inconclusive")
+    main_name = "mean demeaned per-bar gain of (forecast/10) x next-bar return"
 
-    neg_windows = int(sum(1 for v in window_excess.values() if v < 0))
+    if not passed:
+        return {
+            "status": "mismatch",
+            "situation_check": {"agreement": None if agreement is None else float(agreement),
+                                "passed": False},
+            "main_measure": {"name": main_name, "value": None, "statistic": None,
+                             "threshold": threshold_words},
+            "supporting_check": None,
+            "counts": {"active bars checked": int(n_active_checked)},
+            "decided_by": ("Fewer than 90% of active bars are high-volume down days (1-day change < 0 "
+                           "with volume at or above its 20-bar mean) held short, so the config does not "
+                           "do what the plan's Fidelity describes."),
+            "reading": ("The 20-bar mean volume includes the current bar and is computed within each "
+                        "window, so the first 19 bars of each window are left out of the check."),
+        }
 
-    slope = None
-    passed = None
-    if n_act >= 3 and np.ptp(fcs) > 0:
-        slope = float(stats.linregress(fcs, act).slope)
-        passed = bool(slope > 0)
+    # ---------- 2. Criterion ----------
+    gains = []
+    fcs = []
+    for coin, wins in bars.items():
+        for w, df in wins.items():
+            df = df.reset_index(drop=True)
+            close = pd.to_numeric(df["close"], errors="coerce").astype(float)
+            fc = pd.to_numeric(df["forecast"], errors="coerce")
+            nxt = close.shift(-1) / close - 1.0
+            window_mean = nxt.dropna().mean()
+            ok = fc.notna() & (fc != 0) & nxt.notna()
+            g = (fc[ok] / 10.0) * (nxt[ok] - window_mean)
+            gains.extend(g.tolist())
+            fcs.extend(fc[ok].tolist())
 
-    if n_act < 60 or excess is None:
+    gains = np.asarray(gains, dtype=float)
+    fcs = np.asarray(fcs, dtype=float)
+    n = len(gains)
+
+    mean = float(gains.mean()) if n > 0 else None
+    if n > 1:
+        sd = gains.std(ddof=1)
+        t = float(mean / (sd / np.sqrt(n))) if sd > 0 else None
+    else:
+        t = None
+
+    # Supporting check
+    sup_value = None
+    sup_passed = None
+    if n >= 2:
+        order = np.argsort(fcs, kind="mergesort")  # most negative (larger short) first
+        half = n // 2
+        larger = gains[order[:half]]
+        smaller = gains[order[n - half:]]
+        if len(larger) > 0 and len(smaller) > 0:
+            sup_value = float(larger.mean() - smaller.mean())
+            sup_passed = bool(sup_value > 0)
+
+    if n < 40 or t is None:
         status = "inconclusive"
-        decided = "Fewer than 60 active bars across the windows, so the result is inconclusive."
-    elif excess >= 0:
-        status = "rejected"
-        decided = "The excess return is zero or positive with at least 60 active bars, so the idea is rejected."
-    elif t is not None and t <= -2 and neg_windows >= 4:
+        decided = "Fewer than 40 active bars pooled across windows (or no t-statistic), so the result is inconclusive."
+    elif mean > 0 and t >= 2:
         status = "confirmed"
-        decided = "The excess return is negative with t <= -2 over at least 60 active bars and negative in at least 4 of the 6 windows."
+        decided = "The mean demeaned per-bar gain is above 0 with t >= 2, so the plan confirms."
+    elif mean < 0 and t <= -2:
+        status = "rejected"
+        decided = "The mean demeaned per-bar gain is below 0 with t <= -2, so the plan rejects."
     else:
         status = "inconclusive"
-        decided = "The excess return is negative but t is between -2 and 0 or it is negative in fewer than 4 windows, so the result is inconclusive."
+        decided = "The t-statistic lies between -2 and 2, so the result is neither confirmed nor rejected."
 
     return {
         "status": status,
+        "situation_check": {"agreement": float(agreement), "passed": True},
         "main_measure": {
-            "name": "mean next-bar return after active bars minus mean next-bar return over all bars",
-            "value": excess,
-            "statistic": {"name": "Welch t", "value": t} if t is not None else None,
-            "threshold": "excess negative with t <= -2 over at least 60 active bars and negative in at least 4 of 6 windows",
+            "name": main_name,
+            "value": mean,
+            "statistic": None if t is None else {"name": "t of the mean", "value": t},
+            "threshold": threshold_words,
         },
         "supporting_check": {
-            "name": "slope of next-bar return on signed forecast across active bars (should be positive)",
-            "value": slope,
-            "passed": passed,
+            "name": "mean gain larger-short half minus smaller-short half",
+            "value": sup_value,
+            "passed": sup_passed,
         },
-        "counts": {
-            "active bars": n_act,
-            "all bars": n_base,
-            "windows with negative excess": neg_windows,
-            "windows with active bars": int(len(window_excess)),
-        },
+        "counts": {"active bars pooled across windows": int(n)},
         "decided_by": decided,
-        "reading": "Active bars are bars with a negative forecast; every bar with a next close in its window is used (horizon 1, so no overlap) and the Welch t compares active against all-bar next returns; a window counts as negative when its active-minus-all mean is below zero, and windows with no active bars do not count; the supporting slope regresses next-bar return on the signed forecast, so a larger short followed by a larger fall gives a positive slope, and it does not change the status.",
+        "reading": ("The position is forecast/10 as the plan states, and the window's mean daily return is "
+                    "the mean of all next-bar close-to-close returns in that window. The 20-bar mean volume "
+                    "includes the current bar and is computed within each window. For the supporting check, "
+                    "active bars are sorted by forecast; the floor(n/2) most negative bars form the larger-short "
+                    "half and the floor(n/2) least negative bars form the smaller-short half, and the middle bar "
+                    "is dropped when n is odd."),
     }

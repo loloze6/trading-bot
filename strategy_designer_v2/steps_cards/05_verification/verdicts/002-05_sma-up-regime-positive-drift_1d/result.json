@@ -1,24 +1,28 @@
 {
   "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
   "main_measure": {
-    "name": "in-stretch minus all-bar mean next-bar return (before costs)",
-    "value": 0.0008650530865054267,
+    "name": "in-stretch minus out-of-stretch mean next-bar return",
+    "value": 0.0014430839507602047,
     "statistic": {
-      "name": "Welch t (in-stretch minus all bars)",
-      "value": 0.49516162785129425
+      "name": "Welch t",
+      "value": 0.6989190030347062
     },
-    "threshold": "confirm if the difference is > 0 with t >= 2.0; reject if the difference is <= 0 (or t <= -2.0); otherwise inconclusive"
+    "threshold": "confirm if difference > 0 with Welch t >= 2; reject if difference < 0 with t <= -2; |t| < 2 inconclusive; needs >=100 in-stretch bars, >=100 out-of-stretch bars, >=3 distinct up-cross stretches"
   },
   "supporting_check": {
-    "name": "in-stretch up-day share minus all-bar up-day share",
-    "value": -0.0006572680510573137,
+    "name": "share of up next-bars in-stretch minus out-of-stretch",
+    "value": -0.00109645638010486,
     "passed": false
   },
   "counts": {
     "in-stretch bars": 290,
-    "distinct up-cross stretches": 5,
-    "all bars": 724
+    "out-of-stretch bars": 434,
+    "distinct up-cross stretches": 5
   },
-  "decided_by": "Inconclusive: the in-stretch mean exceeds the all-bar mean but the t-statistic lies between -2.0 and 2.0.",
-  "reading": "In-stretch means forecast > 0. With a 1-bar horizon every bar is on the non-overlapping grid. The 'all bars' group includes the in-stretch bars, and the two groups are compared with Welch t. A distinct up-cross stretch is a maximal run of consecutive forecast > 0 bars within one window, including a run already under way at the window's start. An up day is a next-bar return > 0. A difference at or below 0 rejects even when t lies between -2 and 2, because the plan's reject rule says so explicitly."
+  "decided_by": "The Welch t has |t| < 2, which the plan rules inconclusive.",
+  "reading": "In-stretch and out-of-stretch bars are those with forecast > 0 and forecast = 0 that have a next bar in the same window. A distinct up-cross stretch is each maximal run of raw SMA spread > 0 within a window, including a run already under way at the window's first bar."
 }

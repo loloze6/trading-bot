@@ -1,23 +1,27 @@
 {
   "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9827586206896551,
+    "passed": true
+  },
   "main_measure": {
-    "name": "mean next-bar share of move, thin minus heavy",
-    "value": -59.408004509828885,
+    "name": "heavy-minus-thin |forecast|-weighted mean next-bar return",
+    "value": -0.0006635650609715525,
     "statistic": {
-      "name": "Welch t (thin minus heavy)",
-      "value": -0.9936739169470536
+      "name": "Welch t",
+      "value": -0.151697209379135
     },
-    "threshold": "thin mean share below heavy mean share with Welch t of at least 2.0 in magnitude, and thin mean share below 0"
+    "threshold": "Confirm if difference > 0 and t >= 2; reject if difference < 0 and t <= -2; else inconclusive; inconclusive if fewer than 30 up bars in either group"
   },
   "supporting_check": {
-    "name": "strategy minus holding BTC on active bars, min of heavy-only and thin-only parts",
-    "value": -0.13148609395121608,
+    "name": "thin weighted mean next-bar return minus unconditional mean daily return (< 0)",
+    "value": 0.0010492632046988817,
     "passed": false
   },
   "counts": {
-    "thin cases": 145,
-    "heavy cases": 120
+    "heavy up bars": 151,
+    "thin up bars": 194
   },
-  "decided_by": "Thin is below heavy but the Welch t-stat magnitude is under 2.0, so the result is inconclusive.",
-  "reading": "Heavy and thin cases are the bars labelled trending and mean_reversion. The move is the bar's own close-to-close return inside its window, and only moves above 0 are kept. The t-stat compares thin minus heavy, so a value of -2.0 or lower counts as at least 2.0. The case where thin is significantly below heavy but not below 0 matches no rule and is treated as inconclusive. The supporting check sums the strategy's gain minus BTC's return over active bars (allocation not 0), split by regime, and is reported but does not enter the decision."
+  "decided_by": "Inconclusive: t lies between -2 and 2.",
+  "reading": "Volume's 20-bar mean is a within-window rolling mean including the current bar (min_periods=1, since warm-up bars are absent); heavy and thin groups are the forecast-bearing up bars with long and short forecast respectively; the Welch t uses |forecast|-weighted means and weighted variances with Kish effective sample sizes; the unconditional mean is the plain mean of all next-bar returns pooled over the windows."
 }

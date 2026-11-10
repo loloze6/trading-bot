@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean next-bar return minus coin mean, on bars with forecast < 0",
+    "value": -0.0010034878473360765,
+    "statistic": {
+      "name": "t of weighted mean (sandwich SE)",
+      "value": -0.5334512567434825
+    },
+    "threshold": "confirm if negative with t <= -2; reject if positive with t >= +2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "binomial z, share of down next bars, active minus all",
+    "value": -0.01831913947093589,
+    "passed": false
+  },
+  "counts": {
+    "active bars": 434,
+    "down-cross stretches": 5
+  },
+  "decided_by": "Inconclusive: t lies strictly between -2 and +2.",
+  "reading": "Coin mean is the mean next-bar return pooled over all bars of all windows; the weighted t uses SE = sqrt(sum w^2 (x-m)^2)/sum w * sqrt(n/(n-1)); a stretch is a run of raw SMA spread < 0 inside a window containing at least one forecast < 0 bar; a down bar is a negative next-bar return, and the supporting check passes at z >= 2."
+}

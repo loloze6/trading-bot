@@ -8,16 +8,16 @@ outcome: plan
 fit: adapted
 ---
 Fidelity:
-- Situation: RSI reaches a low extreme -> adapted: the RSI threshold is made graded (depth of RSI below 50, squared to stress extremes), and "after X" becomes "while X".
-- Comparison: returns after low extremes vs after neutral readings -> kept: the criterion compares forward returns after extreme bars with those after neutral bars.
-- Outcome: price keeps falling over the next bars -> kept: a short position that pays when price falls.
-- Verdict transfer: yes: the test measures whether bars with low-extreme RSI are followed by lower returns than neutral bars, which is the idea's claim.
-Forecast: RSI(14) on daily closes. The component outputs (50 - RSI) x 0.4 when RSI is below 50, and 0 otherwise. Its value is standardised against its own past 60 values, negated so the position is short, then raised to the power 2 (sign kept, pivot 10). The forecast is 0 whenever RSI is 50 or above. It is negative when RSI is below 50: small near 50 and growing quadratically as RSI falls toward a low extreme, so the largest shorts come at the deepest oversold readings. It is never positive.
+- Situation: RSI at a low extreme -> adapted: the extreme threshold is made graded, so the short grows smoothly as RSI(14) falls below 50.
+- Comparison: falls after extreme readings versus after neutral readings -> adapted: neutral RSI gives a position near zero, and the test compares outcomes by position size.
+- Outcome: price keeps falling over the following bars -> kept: the short gains if price falls.
+- Verdict transfer: yes: a short that grows with how low RSI is pays only if declines continue more after low readings than after neutral ones.
+Forecast: RSIPullbackComponent, period 14, long_only true, outputs (50 − RSI) when RSI is below 50 and 0 otherwise. It is standardised against its own past 60 values (min 20), then negated, so it is short-only. A signed_power with exponent 2 and pivot 10 then mutes readings near 50 and amplifies deep oversold ones. The forecast is 0 whenever RSI ≥ 50. It is negative when RSI < 50, and the short grows roughly with the square of how far RSI sits below 50, relative to its usual depth. It is never positive.
 Config: 001-04_rsi-low-extreme-continuation_1d_config.json
 Criterion:
 - Horizon: 5 bars
-- Main measure: The coin's 5-bar forward return after extreme bars (raw component >= 8, i.e. RSI <= 30) minus its 5-bar forward return after neutral bars (RSI between 40 and 60, recomputed from the recorded closes). Pooled over coins and windows, using non-overlapping 5-bar returns. Both groups share the same market drift, so the coin's own rise is not credited to the idea.
-- Supporting check: Per coin, the strategy's cumulative return before costs minus the return of holding a short position of the same average size on every bar, using the same per-window drift.
-- Confirm: Pooled extreme-minus-neutral 5-bar return is below 0 with t <= -2 on the non-overlapping cases, and is negative in at least 2 of the 3 coins.
-- Reject: Pooled extreme-minus-neutral 5-bar return is >= 0, or it is positive with t >= 2 (reversal instead of continuation).
-- Inconclusive: A negative difference with t between -2 and 0, or coins that disagree in sign. Fewer than 30 non-overlapping extreme cases pooled, or fewer than 8 for any coin, is inconclusive whatever the sign.
+- Main measure: Take non-overlapping 5-bar blocks, pooled over the 3 coins and 6 windows. Compare the coin's forward 5-bar return after bars in the top quintile of |forecast| (deep oversold) with the same return after neutral bars (forecast 0 or in the smallest quintile, RSI near 50). The measure is the difference in mean forward return, before costs; this differencing removes the coin's own drift, which is what holding the coin earns.
+- Supporting check: The same difference has the same sign in at least 2 of the 3 coins.
+- Confirm: The forward return after extremes minus that after neutral readings is negative with t ≤ −2.
+- Reject: The difference is positive with t ≥ +2, meaning reversal rather than continuation.
+- Inconclusive: Any t between −2 and +2, or fewer than 30 non-overlapping extreme cases in total.

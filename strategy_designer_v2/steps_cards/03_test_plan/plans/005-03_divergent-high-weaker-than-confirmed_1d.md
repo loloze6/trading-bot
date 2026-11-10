@@ -7,8 +7,8 @@ data-period: fold A
 outcome: missing-components
 ---
 Fidelity:
-- Situation: close makes a new price high -> kept: a regime rule on DonchianBreakoutComponent at +sf (close is the highest of the window).
-- Comparison: the RSI high is lower than the RSI high at the prior price high -> replaced: no catalogue component compares RSI with its own earlier high.
-- Outcome: weaker (lower) returns after divergent highs than after confirmed highs -> kept: a graded position, short as the RSI shortfall grows.
-- Verdict transfer: no: any catalogue stand-in, such as the RSI level, measures a different quantity from RSI against its own prior peak.
-Reason: All the idea needs is in the coin's own closes. The new-high gate fits a regime rule on DonchianBreakoutComponent, but no component measures how far RSI falls short of its own prior high. RSIPullbackComponent (RSI level), MomentumDivergenceComponent (agreement between two horizons) and price-range or EMA-distance measures, alone or combined, compare RSI with 50 or price with price, never RSI with its earlier peak.
+- Situation: a new price high whose RSI high is lower than RSI's prior high -> replaced: no component measures RSI against its own recent high.
+- Comparison: returns after confirmed new highs (RSI also at a new high) -> kept: a new-high regime with a signed divergence measure would split the two groups.
+- Outcome: weaker, reversal-leaning returns after divergent highs -> adapted: graded short exposure within new-high bars, in the regime "while X".
+- Verdict transfer: no: without RSI's distance from its own prior high, the divergence itself is not measured.
+Reason: The new-high condition can be built as a regime rule on `DonchianBreakoutComponent`'s raw value. No component measures how far the current RSI is below its own highest value over the same lookback. `RSIPullbackComponent` gives only the RSI level. `percentile` on its history cannot sit next to `standardise` in `strategies`, and its window differs from the price window. Using the RSI level instead would test overbought RSI, not divergence, and the brief excludes that question.

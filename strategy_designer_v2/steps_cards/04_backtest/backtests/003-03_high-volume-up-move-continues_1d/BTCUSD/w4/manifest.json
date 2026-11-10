@@ -1,21 +1,21 @@
 {
-  "run_id": "20261110T131420Z_b4fe8801",
-  "created_utc": "2026-11-10T13:14:20.412050+00:00",
+  "run_id": "20261110T223934Z_b9f4cdf6",
+  "created_utc": "2026-11-10T22:39:34.036624+00:00",
   "config": {
     "regime_detector": {
       "mode": "threshold_rules",
       "components": [
         {
-          "id": "move",
-          "class": "strategies.strategy_components.PriceEvolutionComponent",
+          "id": "vol",
+          "class": "strategies.strategy_components.VolatilityFromStdDevComponent",
           "params": {
-            "period": 1
+            "vol_period": 20
           }
         }
       ],
       "vetoes": [
         {
-          "id": "move",
+          "id": "vol",
           "transforms": [
             {
               "op": "volume_filter",
@@ -42,7 +42,7 @@
         "trending": {
           "components": [
             {
-              "id": "up_move",
+              "id": "move",
               "class": "strategies.strategy_components.PriceEvolutionComponent",
               "params": {
                 "period": 1
@@ -61,20 +61,14 @@
                   "params": {
                     "min": 0.0
                   }
-                },
-                {
-                  "op": "signed_power",
-                  "params": {
-                    "exponent": 2
-                  }
                 }
               ]
             }
           ]
         },
+        "unknown": null,
         "mean_reversion": null,
-        "chop": null,
-        "unknown": null
+        "chop": null
       }
     },
     "gap_rule": {
@@ -97,7 +91,7 @@
       }
     }
   },
-  "config_sha256": "b4fe8801f58037a844c4177e8a00fa0b2c921fe1ea37a97b4ad04eb254d68d09",
+  "config_sha256": "b9f4cdf65a3d7341cbf920125eeec600811d11121b54e21913b434df064be905",
   "data": {
     "symbols": [
       "BTCUSD"
@@ -108,7 +102,7 @@
     "bar_count": 168,
     "data_sha256": "33800e2bd0f89b3cefaeea8abc9be6030bef814965df2195d79b55fe97cb7fc4"
   },
-  "git_sha": "cbfda28b9f211c47b5692d8bb278105be17c6326-dirty",
+  "git_sha": "a904a95059060e3850505007818aadef08019b01-dirty",
   "engine": {
     "lookback": 61,
     "warmup": 24

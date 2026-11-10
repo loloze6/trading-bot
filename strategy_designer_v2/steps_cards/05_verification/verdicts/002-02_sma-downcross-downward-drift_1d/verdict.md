@@ -2,14 +2,15 @@
 plan: 002-02_sma-downcross-downward-drift_1d
 idea: 002-02_sma-downcross-downward-drift
 fit: adapted
-status: rejected
+status: inconclusive
 ---
+Situation check: 1 of the active bars match the plan's situation and side
 Evidence:
-- Main measure: mean 10-bar forward return on short bars minus mean over all bars (non-overlapping blocks): 0.466185; Welch t: 0.235475 (threshold: at most -1.0% per 10 bars with t-stat of -2 or lower to confirm; 0 or above rejects)
-- Supporting check: falling share on short blocks minus falling share on all blocks (points): 3.15271, passed: False
-- Counts: non-overlapping 10-bar short blocks: 29, non-overlapping 10-bar blocks (all bars): 70, distinct downward crosses: 2
-- Decided by: Rejected: the conditional-minus-unconditional difference is 0 or above, or the falling share on short bars is not above the unconditional share.
-- Reading: Blocks are the bars at positions 0,10,20,... of each window with a full 10-bar forward return inside the window, short blocks are those whose bar has forecast < 0, the t-stat is Welch's t between short blocks and all blocks, the main measure is reported in percent, and a downward cross is counted each time the component's raw spread goes from >= 0 to < 0 within a window.
+- Main measure: excess forward 20-bar return while short (vs all-bar window mean), non-overlapping blocks: 0.0102576; t of the mean excess across short blocks: 0.318951 (threshold: confirm if excess < 0 with t <= -2 and slope not positive; reject if excess > 0 with t >= +2; otherwise inconclusive; inconclusive if fewer than 6 short blocks (120 short bars))
+- Supporting check: slope of forward 20-bar return on |forecast| within short bars (should be <= 0); share of short blocks with negative excess: -0.00459134, passed: True
+- Counts: short_blocks: 20, short_bars: 437
+- Decided by: Inconclusive: t lies between -2 and +2.
+- Reading: Each short block's excess is its forward 20-bar return (grid bars 0, 20, 40, ... of each window with forecast < 0) minus the mean forward 20-bar return over all bars of its own window, tested by the ordinary t of the mean. The minimum counts require both 6 short blocks and 120 short bars. The slope regresses forward 20-bar return on |forecast| over all short bars.
 Plan: `steps_cards/03_test_plan/plans/002-02_sma-downcross-downward-drift_1d.md`
 Record: `steps_cards/04_backtest/backtests/002-02_sma-downcross-downward-drift_1d`
 Measure: `measure.py`

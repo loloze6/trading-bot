@@ -8,16 +8,16 @@ outcome: plan
 fit: adapted
 ---
 Fidelity:
-- Situation: RSI reaches a high extreme -> adapted: the extreme becomes graded, with the short sized by how far the 14-bar RSI sits above 50 and damped near 50.
-- Comparison: after extreme readings versus after neutral readings -> kept: the criterion compares returns after the largest positions with returns after neutral bars and with the coin's own drift.
-- Outcome: price falls back over the following bars -> adapted: "after X" becomes "while X", the holding period is dropped, and the short is held while RSI stays high.
-- Verdict transfer: yes: a graded short on high RSI wins exactly when high readings come before falls, and loses or breaks even when they do not.
-Forecast: The forecast comes from the 14-bar Wilder RSI on daily closes, taken as 50 − RSI. It is standardised against its own past 60 values, so a typical reading is 10. It is then clipped at 0 from above, so only readings above 50 count and the forecast is never long. A signed_power with exponent 2 and pivot 10 damps readings near 50 and amplifies extreme ones. The forecast is 0 when RSI is 50 or below. It grows more negative, meaning a larger short, the higher RSI rises, reaching a cap of −20 at the most extreme readings. There is no regime: it is active on every bar.
+- Situation: RSI at a high extreme -> adapted: the threshold becomes graded, so the short size grows as RSI(14) rises above 50 and is damped near 50; "after" becomes "while".
+- Comparison: extreme readings versus neutral readings -> kept: neutral RSI gives a near-zero position, and the outcome is judged against holding the coin.
+- Outcome: price falls back over the following bars -> kept: the short gains only if price falls after high readings.
+- Verdict transfer: yes: the forecast is short exactly while RSI is high, largest at extremes, so its forward returns confirm or reject the reversal claim directly.
+Forecast: RSIPullbackComponent (period 14, the daily convention) outputs 50 − RSI, which is negative when RSI is above 50. It is standardised over its past 60 values and clipped at a maximum of 0, so the forecast is short only, never long. A signed_power with exponent 2 and pivot 10 damps readings near 50 towards 0 and amplifies high-extreme readings. The forecast is zero when RSI is at or below 50, slightly negative for mildly high RSI, and down to the −20 cap at the highest RSI.
 Config: 001-01_rsi-high-extreme-reversal_1d_config.json
 Criterion:
 - Horizon: 5 bars
-- Main measure: The coin's 5-bar forward return after "extreme" bars, defined as bars with a forecast of −10 or below. From this, subtract the coin's mean 5-bar forward return in the same window (its own drift). Pool across coins and windows, using non-overlapping 5-bar blocks only.
-- Supporting check: The rank correlation between the forecast size (|forecast|) and the next 5-bar coin return, over bars with forecast < 0. It should be negative.
-- Confirm: The pooled excess forward return after extreme bars is negative with t ≤ −2, and it is negative in at least 2 of the 3 coins.
-- Reject: The pooled excess forward return after extreme bars is ≥ 0, or it is negative in fewer than 2 coins with t > −1.
-- Inconclusive: A negative pooled excess return with −2 < t ≤ −1, or a significant pooled result with the coins split. The test needs at least 30 non-overlapping extreme blocks pooled and at least 8 per coin; with fewer, the result is inconclusive.
+- Main measure: Take the bars where the forecast is −10 or lower (the high-extreme readings). Measure the coin's forward 5-bar return after them, minus the mean forward 5-bar return over all bars of the same coin and window (the holding baseline). Pool across coins and windows, and use non-overlapping 5-bar blocks so no return is counted twice.
+- Supporting check: The sign of that excess return in each of the 3 coins separately.
+- Confirm: The pooled excess forward return is negative with t ≤ −2, and it is negative in at least 2 of the 3 coins.
+- Reject: The pooled excess forward return is positive with t ≥ +2 (continuation, not reversal).
+- Inconclusive: Any t strictly between −2 and +2, or fewer than 30 non-overlapping extreme cases pooled; the minimum is 30 cases.

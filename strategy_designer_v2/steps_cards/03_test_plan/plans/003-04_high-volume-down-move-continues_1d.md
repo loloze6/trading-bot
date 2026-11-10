@@ -8,16 +8,16 @@ outcome: plan
 fit: adapted
 ---
 Fidelity:
-- Situation: a sharp one-day drop on heavy volume -> adapted: a down close-to-close day while volume is at or above its 20-day mean opens a regime, and the short is sized by how big the drop is.
-- Comparison: volume against its usual level -> adapted: "unusually high" becomes volume at or above its 20-bar mean, the only volume cut the catalogue allows (a veto with `volume_filter`).
-- Outcome: price keeps falling after the drop -> adapted: "after X" becomes "while X", so the short is held only for the bar after each qualifying day.
-- Verdict transfer: yes: the test shorts exactly the heavy-volume down days, sized by the drop, and is judged on whether the next bar falls more than usual.
-Forecast: One indicator: the one-day price change (`PriceEvolutionComponent`, period 1), standardised against its own last 60 values (window 60, min_periods 20). A veto turns on the active regime only on bars that are both down days and at or above their 20-day mean volume. On those bars the forecast is the standardised move. It is always negative, so the position is a short. An average-size drop gives about -10 (100% short), and a sharper drop gives a larger short, up to -20. On every other bar the forecast is 0 (flat).
+- Situation: a sharp down move on unusually high volume -> adapted: a down day with volume at or above its 20-day mean opens the regime, and the size of the drop grades the position instead of a "sharp" cutoff.
+- Comparison: volume judged against its usual level -> adapted: "unusually high" becomes "at or above the 20-bar mean volume", the only volume test the config has (`volume_filter`).
+- Outcome: price keeps falling afterwards -> adapted: the position lasts only while the situation holds, so the test measures the next 1-day bar.
+- Verdict transfer: yes: a short sized by the drop and held into the next day profits if and only if high-volume drops tend to continue.
+Forecast: On each daily bar, the detector takes the 1-day percent change of the close. It keeps that change only if the bar's volume is at or above its 20-bar average, and otherwise sets it to 0. If the kept value is below 0, the bar is a high-volume down day and goes to the `trending` regime; every other bar is flat. In `trending`, the forecast is the same 1-day change, standardised against the 60 previous daily changes (target 10, cap 20), then clipped at a maximum of 0. A typical-sized down day gives about -10 (100% short). A drop twice as large as usual gives about -20 (200% short). A tiny drop gives a near-zero short. The forecast is never positive. The position is held into the next bar and closes as soon as a bar is not a high-volume down day.
 Config: 003-04_high-volume-down-move-continues_1d_config.json
 Criterion:
 - Horizon: 1 bar
-- Main measure: Mean next-bar return after active bars (heavy-volume down days) minus the mean next-bar return over all bars in the same windows (the hold-the-coin baseline), before costs. Each bar counts once, so returns do not overlap.
-- Supporting check: Across active bars, the regression slope of next-bar return on forecast size should be positive: a larger short should be followed by a larger fall.
-- Confirm: The excess return is negative with t ≤ -2 over at least 60 active bars, and negative in at least 4 of the 6 windows.
-- Reject: The excess return is zero or positive (heavy-volume drops are followed by rebounds or no extra fall), with at least 60 active bars.
-- Inconclusive: A negative excess return with t between -2 and 0, or a negative one in fewer than 4 windows; any result with fewer than 60 active bars across the 6 windows.
+- Main measure: On every bar with a non-zero forecast, take the position (forecast / 10) times the next bar's close-to-close return of BTC. Subtract from that return the window's mean daily return, so buy-and-hold drift is not credited. Pool these per-bar products across the 6 windows; they do not overlap at a 1-bar horizon. Report their mean and t-statistic.
+- Supporting check: Split active bars into the larger-short half and the smaller-short half by forecast. The larger-short half should show a higher mean demeaned per-bar gain.
+- Confirm: The mean demeaned per-bar gain is above 0 with t ≥ 2, meaning BTC falls further than its drift on the day after high-volume down days.
+- Reject: The mean demeaned per-bar gain is below 0 with t ≤ -2, meaning the day after high-volume down days rises relative to drift.
+- Inconclusive: A t-statistic between -2 and 2, or fewer than 40 active bars pooled across windows, neither confirms nor rejects.

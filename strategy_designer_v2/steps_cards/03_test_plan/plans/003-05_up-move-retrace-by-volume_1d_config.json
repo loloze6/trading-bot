@@ -15,9 +15,6 @@
         "id": "move",
         "transforms": [
           {
-            "op": "percentile"
-          },
-          {
             "op": "volume_filter",
             "params": {
               "period": 20
@@ -26,8 +23,8 @@
         ],
         "rules": [
           {
-            "op": "gte",
-            "value": 0.9
+            "op": "gt",
+            "value": 0.0
           }
         ],
         "consecutive_bars": 1,
@@ -37,13 +34,13 @@
         "id": "move",
         "transforms": [
           {
-            "op": "percentile"
+            "op": "identity"
           }
         ],
         "rules": [
           {
-            "op": "gte",
-            "value": 0.9
+            "op": "gt",
+            "value": 0.0
           }
         ],
         "consecutive_bars": 1,
@@ -58,7 +55,7 @@
       "trending": {
         "components": [
           {
-            "id": "heavy_move",
+            "id": "heavy_up",
             "class": "strategies.strategy_components.PriceEvolutionComponent",
             "params": {
               "period": 1
@@ -71,6 +68,12 @@
                   "window": 60,
                   "min_periods": 20
                 }
+              },
+              {
+                "op": "signed_power",
+                "params": {
+                  "exponent": 2
+                }
               }
             ]
           }
@@ -79,7 +82,7 @@
       "mean_reversion": {
         "components": [
           {
-            "id": "thin_move",
+            "id": "thin_up",
             "class": "strategies.strategy_components.PriceEvolutionComponent",
             "params": {
               "period": 1
@@ -91,6 +94,12 @@
                 "params": {
                   "window": 60,
                   "min_periods": 20
+                }
+              },
+              {
+                "op": "signed_power",
+                "params": {
+                  "exponent": 2
                 }
               },
               {

@@ -7,8 +7,8 @@ data-period: fold A
 outcome: untestable
 ---
 Fidelity:
-- Situation: an altcoin rises less than bitcoin's sharp up move implies in the same bar -> replaced: the run's only coin is BTC/USDT, so there is no altcoin, and a config cannot read another coin's bars.
-- Comparison: the altcoin's move against the move the bitcoin move implies -> replaced: this needs bitcoin's and the altcoin's returns side by side, and a config sees only one symbol.
-- Outcome: the altcoin rises over the following bars, closing the shortfall -> replaced: the only price traded is BTC, not the lagging altcoin.
-- Verdict transfer: no: a BTC-only forecast cannot measure an altcoin's shortfall against bitcoin, so its result says nothing about the idea.
-Reason: The idea needs two coins at once: bitcoin's move as the driver and an altcoin's return measured against it. A config sees only its own symbol's bars and feeds (the guide lists "another coin's prices" as data the config cannot hold), and the run's only coin is BTC/USDT.
+- Situation: an altcoin rises less than bitcoin's sharp up move in the same bar -> replaced: the config sees only the coin's own bars, and the test coin is BTC itself, so no bitcoin move exists in an altcoin's data.
+- Comparison: the altcoin's move against the move bitcoin's rise implies -> replaced: this needs another coin's prices, which no component or feed carries.
+- Outcome: the altcoin rises later and closes the gap -> adapted: it would be the coin's forward return while a gap is open, but the only coin here is BTC.
+- Verdict transfer: no: a config on BTC alone cannot measure an altcoin's shortfall against BTC, so no result would confirm or reject the idea.
+Reason: The idea's situation and comparison are the gap between an altcoin's return and bitcoin's return in the same bar. That needs a second coin's prices, and the guide says a component sees only its own symbol's bars and feed columns. The run is also on BTC/USDT only, so the altcoin whose lag is the subject is not tested at all.

@@ -8,16 +8,16 @@ outcome: plan
 fit: adapted
 ---
 Fidelity:
-- Situation: a sharp up move on unusually low volume -> adapted: an up daily bar with volume below its 20-bar average is an on/off regime condition, and the size of the move grades the position.
-- Comparison: volume judged against its usual level -> adapted: "unusually low" becomes "below the 20-bar mean volume, current bar included".
-- Outcome: price falls back, giving up part of the rise -> adapted: "after X" becomes "while X", so the short is held over the next bar and no holding period is kept.
-- Verdict transfer: yes: a next-day giveback after thin up days, sized by the move, is the idea's claim on daily bars.
-Forecast: The regime detector reads VolumeExpansionHedgeComponent (vol_period 20). It is below 0 only on an up bar whose volume is below its 20-bar average. A veto sends exactly those bars to `mean_reversion`, and every other bar is `unknown`, which is flat. In `mean_reversion` the forecast is the one-bar percent move (PriceEvolutionComponent, period 1), standardised over its last 60 values, negated, and clipped at 0 from above. The result is short only. Its size grows with how large today's rise is against recent absolute daily moves: an average move gives about -10, and the cap is -20. It is zero on every other bar.
+- Situation: a sharp up move on unusually low volume -> adapted: low volume becomes an on/off regime (bar volume below its 20-bar mean), and the up-move size is graded.
+- Comparison: volume against its usual level -> adapted: "unusually low" becomes "below the 20-bar mean", the only volume cut the config allows.
+- Outcome: price falls back, giving up part of the rise -> adapted: the short is held while the situation lasts and measured on the next bar, so no holding period.
+- Verdict transfer: yes: a confirm or reject of next-bar returns after low-volume up days, graded by the size of the move, answers the idea directly.
+Forecast: The forecast is active only on bars whose volume is below its 20-bar mean. The regime comes from a veto: volume_filter applied to a constant reads 0 there. On those bars the forecast takes the current 1-day percent move, standardises it over its past 60 values and negates it. It then keeps only the short side, so it is negative after an up day and zero after a down day. Last, signed_power with exponent 2 grows the short faster for sharp moves and damps small ones. It is 0 on normal or high-volume bars and on down days. It is never positive.
 Config: 003-01_low-volume-up-move-reverts_1d_config.json
 Criterion:
 - Horizon: 1 bar
-- Main measure: The coin's next-bar return after each thin-volume up bar, weighted by the position. It is taken minus the coin's unconditional mean next-bar return in the same window, so the market's drift is not credited to the idea. All 6 windows are pooled, and each case is counted once (1-bar horizon, no overlap).
-- Supporting check: Split the cases into thirds by |position|. The largest third should show a larger mean next-bar drop, measured against the unconditional mean, than the smallest third.
-- Confirm: The drift-adjusted, position-weighted next-bar return of the short is above 0 with a t-stat of at least 2.0. The largest third also reverts more than the smallest third.
-- Reject: The drift-adjusted next-bar return after thin up bars is at or above the coin's unconditional mean, meaning the short earns 0 or less after the drift adjustment, with a t-stat of 0 or below.
-- Inconclusive: A positive drift-adjusted result with a t-stat between 0 and 2, or a confirmed mean without the size ordering. Fewer than 60 qualifying bars across all windows is also inconclusive.
+- Main measure: On bars where the forecast is non-zero, regress the coin's next-bar return, minus its mean daily return in the same window, on the forecast. Pool all 6 windows and compute the t-stat of the slope. A positive slope means larger shorts are followed by larger excess falls.
+- Supporting check: The mean excess next-bar return after the most negative quartile of forecasts (the sharpest thin-volume up days) is below zero.
+- Confirm: The slope is positive with t >= 2.0. This is the same as a positive mean of strategy return in excess of the forecast-weighted hold.
+- Reject: The slope is negative with t <= -2.0, meaning thin-volume up days are followed by continued rises that grow with the move's size.
+- Inconclusive: A t between -2.0 and 2.0 is inconclusive. Fewer than 40 active bars (non-zero forecast) pooled across windows, or fewer than 10 in the top quartile, is also inconclusive whatever the t.

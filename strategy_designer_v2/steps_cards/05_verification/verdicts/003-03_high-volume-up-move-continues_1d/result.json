@@ -1,22 +1,26 @@
 {
-  "status": "rejected",
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
   "main_measure": {
-    "name": "position-weighted mean next-bar excess return on active bars",
-    "value": -0.0006940359799422018,
+    "name": "forecast-weighted mean next-bar excess return over buy-and-hold drift",
+    "value": 0.0004569979124719729,
     "statistic": {
-      "name": "t of the weighted mean",
-      "value": -0.24881115822977048
+      "name": "t of the forecast-weighted mean",
+      "value": 0.16544968787761188
     },
-    "threshold": "above 0 with t >= 2 to confirm; <= 0 rejects"
+    "threshold": "above 0 with t >= 2 confirms; below 0 with t <= -2 rejects; otherwise inconclusive"
   },
   "supporting_check": {
-    "name": "top-third minus bottom-third positions, mean next-bar return",
-    "value": -0.0005460627148548202,
-    "passed": false
+    "name": "top-fifth minus bottom-fifth mean next-bar excess return (top fifth must be > 0)",
+    "value": 0.013066020339773865,
+    "passed": true
   },
   "counts": {
     "active bars": 151
   },
-  "decided_by": "The position-weighted mean next-bar excess return is <= 0, which meets the reject rule.",
-  "reading": "Position is postRebalance_current_allocation; excess is each active bar's next-bar return minus the mean next-bar return of all bars in its own window; the t of the weighted mean uses the weighted standard error sqrt(sum w^2 (x-m)^2)/sum w times sqrt(n/(n-1)); the thirds are the n//3 largest and n//3 smallest positions among pooled active bars (ties broken by order), compared on unweighted raw next-bar returns with Welch t."
+  "decided_by": "The t-statistic lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Volume regime taken as volume >= the rolling 20-bar mean of volume including the current bar, computed inside each window so the first 19 rows of each window (no full 20-bar history) are left out of the situation check; the up move is the raw 'move' component > 0; the drift is the mean next-bar return over all bars of all windows; the t-statistic is the weighted mean divided by its forecast-weighted (sandwich) standard error; the top/bottom fifths are the floor(n/5) active bars with the highest/lowest forecast."
 }

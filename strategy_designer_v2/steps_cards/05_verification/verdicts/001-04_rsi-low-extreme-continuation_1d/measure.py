@@ -6,126 +6,134 @@ from scipy import stats
 def measure(bars):
     H = 5
     RAW = "debug_info.components.rsi_low.last_history_value"
-    ALLOC = "postRebalance_current_allocation"
 
-    def wilder_rsi(close, period=14):
-        delta = close.diff()
-        gain = delta.clip(lower=0)
-        loss = (-delta).clip(lower=0)
-        ag = gain.ewm(alpha=1.0 / period, min_periods=period, adjust=False).mean()
-        al = loss.ewm(alpha=1.0 / period, min_periods=period, adjust=False).mean()
-        rs = ag / al
-        rsi = 100 - 100 / (1 + rs)
-        rsi = rsi.where(al != 0, 100.0)
-        rsi = rsi.where(ag.notna() & al.notna())
-        return rsi
-
-    ext_all, neu_all = [], []
-    per_coin = {}
-    support = {}
-
-    for coin in sorted(bars.keys()):
-        ext_c, neu_c = [], []
-        strat_rets, coin_rets, allocs = [], [], []
-        for w in sorted(bars[coin].keys()):
-            df = bars[coin][w].reset_index(drop=True)
-            if df is None or len(df) == 0:
+    # ---------- 1. Situation check: RSI(14) < 50 (raw value > 0), expected side short ----------
+    n_active = 0
+    n_agree = 0
+    for coin, wins in bars.items():
+        for w, df in wins.items():
+            if "forecast" not in df.columns or RAW not in df.columns:
                 continue
-            close = df["close"].astype(float)
-            n = len(df)
-            fwd = close.shift(-H) / close - 1
-            rsi = wilder_rsi(close)
-            raw = df[RAW].astype(float) if RAW in df.columns else pd.Series(np.nan, index=df.index)
-            for i in range(0, n, H):
-                r = fwd.iloc[i]
-                if pd.isna(r):
-                    continue
-                rv = raw.iloc[i]
-                if pd.notna(rv) and rv >= 8:
-                    ext_c.append(float(r))
-                ri = rsi.iloc[i]
-                if pd.notna(ri) and 40 <= ri <= 60:
-                    neu_c.append(float(r))
-            # supporting-check data
-            r1 = close.shift(-1) / close - 1
-            a = df[ALLOC].astype(float) if ALLOC in df.columns else pd.Series(np.nan, index=df.index)
-            m = r1.notna() & a.notna()
-            strat_rets.extend((a[m] * r1[m]).tolist())
-            coin_rets.extend(r1[m].tolist())
-            allocs.extend(a[m].tolist())
-        ext_all.extend(ext_c)
-        neu_all.extend(neu_c)
-        diff_c = (np.mean(ext_c) - np.mean(neu_c)) if (len(ext_c) > 0 and len(neu_c) > 0) else None
-        per_coin[coin] = {"n_extreme": len(ext_c), "n_neutral": len(neu_c), "diff": diff_c}
-        if len(strat_rets) > 0:
-            avg = float(np.mean(allocs))
-            strat_cum = float(np.prod(1 + np.array(strat_rets)) - 1)
-            bench_cum = float(np.prod(1 + avg * np.array(coin_rets)) - 1)
-            support[coin] = strat_cum - bench_cum
-        else:
-            support[coin] = None
+            d = df[["forecast", RAW]].dropna()
+            act = d["forecast"] != 0
+            n_active += int(act.sum())
+            # raw = (50 - RSI) * 0.4 -> RSI < 50 iff raw > 0
+            situation = d[RAW] > 0
+            n_agree += int((act & situation & (d["forecast"] < 0)).sum())
+    agreement = float(n_agree / n_active) if n_active > 0 else 0.0
+    passed = bool(n_active > 0 and agreement >= 0.9)
 
-    n_ext = len(ext_all)
-    n_neu = len(neu_all)
-    if n_ext > 0 and n_neu > 0:
-        diff = float(np.mean(ext_all) - np.mean(neu_all))
+    main_name = "mean forward 5-bar return after top-quintile |forecast| minus after neutral bars"
+    threshold = "confirm if difference < 0 with Welch t <= -2; reject if difference > 0 with t >= +2"
+
+    if not passed:
+        return {
+            "status": "mismatch",
+            "situation_check": {"agreement": agreement, "passed": False},
+            "main_measure": {"name": main_name, "value": None, "statistic": None, "threshold": threshold},
+            "supporting_check": None,
+            "counts": {"active bars": int(n_active)},
+            "decided_by": "Fewer than 90% of active bars are short bars with RSI(14) below 50, so the config does not "
+                          "implement the plan's graded short on low RSI.",
+            "reading": "none",
+        }
+
+    # ---------- 2. Non-overlapping 5-bar grid, forward returns within each window ----------
+    rows = []
+    for coin, wins in bars.items():
+        for w, df in wins.items():
+            if "forecast" not in df.columns or "close" not in df.columns:
+                continue
+            close = df["close"].to_numpy(dtype=float)
+            fc = df["forecast"].to_numpy(dtype=float)
+            n = len(df)
+            for i in range(0, n, H):
+                if i + H >= n:
+                    break
+                c0, c1, f = close[i], close[i + H], fc[i]
+                if not (np.isfinite(c0) and np.isfinite(c1) and np.isfinite(f)) or c0 == 0:
+                    continue
+                rows.append((coin, f, c1 / c0 - 1.0))
+    grid = pd.DataFrame(rows, columns=["coin", "forecast", "ret"])
+
+    absf = grid["forecast"].abs() if len(grid) else pd.Series(dtype=float)
+    active_abs = absf[absf > 0]
+    if len(active_abs) > 0:
+        q80 = float(np.quantile(active_abs, 0.8))
+        q20 = float(np.quantile(active_abs, 0.2))
+        ext_mask = (absf > 0) & (absf >= q80)
+        neu_mask = (absf == 0) | ((absf > 0) & (absf <= q20) & ~ext_mask)
     else:
-        diff = None
+        ext_mask = pd.Series(False, index=grid.index)
+        neu_mask = absf == 0 if len(grid) else pd.Series(dtype=bool)
+
+    ext = grid.loc[ext_mask, "ret"].to_numpy() if len(grid) else np.array([])
+    neu = grid.loc[neu_mask, "ret"].to_numpy() if len(grid) else np.array([])
+    n_ext, n_neu = len(ext), len(neu)
+
+    diff = None
     t = None
     if n_ext >= 2 and n_neu >= 2:
-        tt = stats.ttest_ind(ext_all, neu_all, equal_var=False).statistic
-        if np.isfinite(tt):
-            t = float(tt)
+        diff = float(ext.mean() - neu.mean())
+        tt = stats.ttest_ind(ext, neu, equal_var=False).statistic
+        t = float(tt) if np.isfinite(tt) else None
+    elif n_ext >= 1 and n_neu >= 1:
+        diff = float(ext.mean() - neu.mean())
 
-    n_coins = len(per_coin)
-    neg_coins = sum(1 for c in per_coin.values() if c["diff"] is not None and c["diff"] < 0)
-    pos_coins = sum(1 for c in per_coin.values() if c["diff"] is not None and c["diff"] >= 0)
-    min_coin_ext = min([c["n_extreme"] for c in per_coin.values()]) if per_coin else 0
+    # ---------- Supporting check: same sign in at least 2 of the 3 coins ----------
+    coin_diffs = {}
+    if len(grid):
+        for coin in grid["coin"].unique():
+            m = grid["coin"] == coin
+            e = grid.loc[m & ext_mask, "ret"]
+            nn = grid.loc[m & neu_mask, "ret"]
+            if len(e) > 0 and len(nn) > 0:
+                coin_diffs[coin] = float(e.mean() - nn.mean())
+    sup_passed = None
+    n_same = None
+    if diff is not None and diff != 0:
+        n_same = int(sum(1 for v in coin_diffs.values() if np.sign(v) == np.sign(diff)))
+        sup_passed = bool(n_same >= 2)
 
-    if n_ext < 30 or min_coin_ext < 8 or diff is None:
+    # ---------- Decision ----------
+    if n_ext < 30:
         status = "inconclusive"
-        decided = "Fewer than 30 non-overlapping extreme cases pooled, or fewer than 8 for some coin, is inconclusive whatever the sign."
-    elif diff >= 0:
-        status = "rejected"
-        decided = "Pooled extreme-minus-neutral 5-bar return is >= 0 (reject)."
-    elif t is not None and t <= -2 and neg_coins >= 2:
+        decided = f"Fewer than 30 non-overlapping extreme cases in total ({n_ext}), so the result is inconclusive."
+    elif t is None or diff is None:
+        status = "inconclusive"
+        decided = "The Welch t could not be computed, so the result is inconclusive."
+    elif diff < 0 and t <= -2:
         status = "confirmed"
-        decided = "Pooled extreme-minus-neutral 5-bar return is below 0 with t <= -2 and negative in at least 2 coins (confirm)."
+        decided = "The forward return after extremes minus after neutral readings is negative with t <= -2."
+    elif diff > 0 and t >= 2:
+        status = "rejected"
+        decided = "The difference is positive with t >= +2, meaning reversal rather than continuation."
     else:
         status = "inconclusive"
-        if pos_coins > 0 and neg_coins > 0:
-            decided = "Coins disagree in sign of the extreme-minus-neutral difference (inconclusive)."
-        else:
-            decided = "Negative pooled difference with t between -2 and 0, or not negative in at least 2 coins (inconclusive)."
-
-    sup_vals = [v for v in support.values() if v is not None]
-    sup_value = float(np.mean(sup_vals)) if sup_vals else None
-    sup_passed = (all(v > 0 for v in sup_vals) if sup_vals else None)
-
-    counts = {"pooled non-overlapping extreme cases": n_ext,
-              "pooled non-overlapping neutral cases": n_neu,
-              "coins": n_coins,
-              "coins with negative difference": neg_coins}
-    for coin, c in per_coin.items():
-        counts["extreme cases " + coin] = c["n_extreme"]
+        decided = "The t-statistic lies between -2 and +2, so the result is inconclusive."
 
     return {
         "status": status,
+        "situation_check": {"agreement": agreement, "passed": True},
         "main_measure": {
-            "name": "pooled 5-bar forward return, extreme (raw>=8) minus neutral (RSI 40-60) bars",
+            "name": main_name,
             "value": diff,
-            "statistic": ({"name": "Welch t", "value": t} if t is not None else None),
-            "threshold": "below 0 with t <= -2 and negative in at least 2 of the coins confirms; >= 0 rejects",
+            "statistic": {"name": "Welch t", "value": t} if t is not None else None,
+            "threshold": threshold,
         },
         "supporting_check": {
-            "name": "mean over coins of strategy cumulative return minus same-average-size constant position",
-            "value": sup_value,
+            "name": "coins with the same sign of the difference (need >= 2)",
+            "value": n_same,
             "passed": sup_passed,
         },
-        "counts": counts,
+        "counts": {
+            "non-overlapping extreme cases": int(n_ext),
+            "non-overlapping neutral cases": int(n_neu),
+            "coins": int(len(coin_diffs)),
+        },
         "decided_by": decided,
-        "reading": ("Neutral RSI is Wilder RSI(14) recomputed from each window's closes only (first bars without RSI left out), "
-                    "extremes use the recorded raw component >= 8, both on the 0,5,10,... grid per window; with only 2 coins present "
-                    "'at least 2 of the 3 coins' requires both coins negative; the supporting check compounds per-bar gains over all "
-                    "windows against a constant position equal to the coin's mean allocation and passes if positive for every coin."),
+        "reading": "Quintiles of |forecast| are taken over the pooled non-zero-forecast bars on the 5-bar grid "
+                   "(top = at or above the 80th percentile, neutral = forecast 0 or at or below the 20th percentile), "
+                   "and the supporting check requires at least 2 coins with the pooled sign among the coins "
+                   "present (both of the 2 here). It is reported but does not gate the plan's confirm/reject rule.",
     }

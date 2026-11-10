@@ -7,8 +7,8 @@ data-period: fold A
 outcome: untestable
 ---
 Fidelity:
-- Situation: a sharp bitcoin up move -> kept: the BTC/USDT bars hold bitcoin's own return.
-- Comparison: the altcoin's later move against bitcoin's earlier move -> replaced: the config cannot read a second coin's bars.
-- Outcome: smaller altcoins drift up over the following bars -> replaced: only BTC's own next return can be traded on BTC/USDT.
-- Verdict transfer: no: a test that trades BTC on BTC's own past move measures bitcoin momentum, not altcoins lagging bitcoin.
-Reason: The idea needs bitcoin's move as the signal and an altcoin's later return as the outcome. A config sees only one coin's bars and feeds, and the guide says another coin's prices cannot be expressed. The test also runs only on BTC/USDT, so no altcoin is traded.
+- Situation: a sharp bitcoin up move -> kept: bitcoin's recent return is in BTC/USDT's own bars.
+- Comparison: the altcoin's response against the bitcoin move -> replaced: the config sees only one coin's bars, so it cannot compare one coin's move with another's.
+- Outcome: smaller altcoins drift up over the following bars -> replaced: the only tradable price is bitcoin's, not an altcoin's.
+- Verdict transfer: no: a test on BTC/USDT alone can only show bitcoin following its own move, which says nothing about altcoins catching up.
+Reason: The situation is measured on bitcoin, but the outcome is an altcoin's later return. A config sees only its own symbol's bars and cannot read another coin's prices, so it cannot link one coin's move to another's. The run also covers only BTC/USDT, so no altcoin is ever traded.

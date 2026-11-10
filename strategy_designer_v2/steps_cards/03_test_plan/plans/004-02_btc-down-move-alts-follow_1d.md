@@ -7,8 +7,8 @@ data-period: fold A
 outcome: untestable
 ---
 Fidelity:
-- Situation: a sharp bitcoin down move -> kept: the move is in BTC/USDT's own bars, which is the coin the test runs on.
-- Comparison: none -> kept
-- Outcome: altcoins keep falling over the following bars -> replaced: a config sees only one coin's bars, so on BTC/USDT it could only measure bitcoin's own next return.
-- Verdict transfer: no: bitcoin's own drift after its drops says nothing about whether altcoins catch up later.
-Reason: The idea links one coin's move (bitcoin) to another coin's later returns (altcoins), but each config sees only one coin's own bars and feeds. The test also runs on BTC/USDT alone, so no altcoin outcome can be observed, and a config cannot read bitcoin's bars while trading an altcoin.
+- Situation: a sharp bitcoin down move -> kept: the BTC/USDT bars can measure it, for example with a short PriceEvolutionComponent.
+- Comparison: altcoins against the move bitcoin already made -> replaced: a config sees only one coin, so it cannot set altcoin prices against bitcoin's.
+- Outcome: smaller altcoins keep falling over the next bars -> replaced: the only coin in the test is BTC/USDT, so the config can trade only bitcoin's own next move, not the altcoins'.
+- Verdict transfer: no: whether bitcoin itself keeps falling after a sharp drop says nothing about whether altcoins lag bitcoin.
+Reason: The signal comes from bitcoin and the outcome happens in other coins, but a config sees only one coin's bars and trades only that coin. The test runs on BTC/USDT alone, so no altcoin price is available at all.

@@ -8,16 +8,16 @@ outcome: plan
 fit: adapted
 ---
 Fidelity:
-- Situation: short SMA above long SMA, from the up-cross to the next down-cross -> adapted: the on/off state is made graded as the positive SMA50 minus SMA200 spread, and is zero below.
-- Comparison: random stretches of the same length -> kept: a random stretch's expected return equals the all-bar average, which buy-and-hold over the same window gives.
-- Outcome: price rises more often and further while in the stretch -> kept: measured as daily coin returns on in-stretch bars.
-- Verdict transfer: yes: the position is non-zero exactly on in-stretch bars, so their returns against all bars confirm or reject the idea directly.
-Forecast: The forecast uses the 50-day and 200-day simple moving averages of the close (the usual golden-cross setting on daily bars). It takes their percent spread, (SMA50 - SMA200) / SMA200, and standardises it against its own past 200 values (target 10, cap 20). Negative values are clipped to 0. The forecast is positive only while the 50-day average is above the 200-day, and grows with how far apart the two averages are. It is zero from the down-cross until the next up-cross. It is never short.
+- Situation: the stretch between an upward SMA cross and the next downward cross -> adapted: "short above long" (on/off) made graded by the spread's size, zero outside the stretch.
+- Comparison: random stretches of the same length -> kept: in-stretch bars against all bars of the same coin and window (holding the coin).
+- Outcome: price rises more often and further during the stretch -> kept: next-bar returns of in-stretch bars against the rest.
+- Verdict transfer: yes: the forecast is positive on exactly the cross-to-cross bars and the measure compares those bars' returns with holding the coin.
+Forecast: The spread of the 50-day SMA over the 200-day SMA, in percent of the 200-day SMA. It is standardised against its own past 200 values (target 10, cap 20), then clipped at 0. The forecast is positive only while the 50-day SMA is above the 200-day SMA, which is the stretch from an upward cross to the next downward cross. It grows as the short average pulls further above the long one. It is zero at the cross itself and on every bar after a downward cross. It is never short.
 Config: 002-05_sma-up-regime-positive-drift_1d_config.json
 Criterion:
 - Horizon: 1 bar
-- Main measure: Take the coin's next-bar return on bars where the forecast is above 0 (in-stretch), pooled over the 6 windows. Compare it with the next-bar return on all bars of the same windows, which is buy-and-hold. Judge before costs.
-- Supporting check: Compare the share of up days on in-stretch bars with the share of up days on all bars.
-- Confirm: The in-stretch mean daily return exceeds the all-bar mean, with a one-sided t-statistic of at least 2.0 on non-overlapping daily returns. The in-stretch up-day share also exceeds the all-bar share.
-- Reject: The in-stretch mean daily return is at or below the all-bar mean, which means there is no persistence. A t-statistic of -2.0 or lower on the difference means moves reverse after up-crosses, and this also rejects the idea.
-- Inconclusive: A t-statistic between -2.0 and 2.0 is inconclusive. So are fewer than 100 in-stretch bars, or fewer than 3 distinct up-cross stretches across the windows.
+- Main measure: Mean next-bar close-to-close return on in-stretch bars (forecast > 0) minus the mean next-bar return on out-of-stretch bars (forecast = 0). Pooled over the 6 windows with a Welch t-stat; each daily return is counted once.
+- Supporting check: Share of up next-bars in-stretch minus share out-of-stretch, which tests "more often".
+- Confirm: The in-stretch minus out-of-stretch mean next-bar return is positive with t >= 2.
+- Reject: The difference is negative with t <= -2, which means moves after up crosses reverse.
+- Inconclusive: Any |t| < 2 is inconclusive. The test also needs at least 100 in-stretch bars, 100 out-of-stretch bars and at least 3 distinct up-cross stretches across the windows. With fewer, the result is inconclusive whatever the t.

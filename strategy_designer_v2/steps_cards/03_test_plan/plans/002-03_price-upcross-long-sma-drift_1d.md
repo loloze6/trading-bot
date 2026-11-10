@@ -8,16 +8,16 @@ outcome: plan
 fit: adapted
 ---
 Fidelity:
-- Situation: close crosses above the long average from below -> adapted: "after the cross" made "while above", graded by the percent distance above the SMA200.
-- Comparison: random points -> adapted: judged against simply holding BTC over the same bars.
-- Outcome: price keeps rising more often and further over the following bars -> kept: forward return measured on the long side.
-- Verdict transfer: yes: bars above the SMA200 are the bars that follow up-crosses, so persistence after the cross must show as an edge there, and no edge or a reversal there rejects it.
-Forecast: The forecast is the percent distance of the daily close above its 200-day simple moving average. It is standardised over the 200 prior values, so a typical distance gives about 10, capped at 20. It is clipped at 0, so the forecast is zero whenever the close is at or below the SMA200. It is positive and grows the further the close sits above the average. Long only, because the idea concerns up-crosses.
+- Situation: price has just closed above its long average after being below it -> adapted: "after the cross" becomes "while the close is above its 200-day SMA", graded by percent distance.
+- Comparison: versus random points -> adapted: versus holding the coin over the same bars, which equals the average of random points.
+- Outcome: price keeps rising over the following bars -> kept: forward return of the coin, long side.
+- Verdict transfer: yes: forward gains that grow with the distance above the 200-day SMA, beyond the coin's own drift, confirm persistence after an up-cross, and their absence or reversal rejects it.
+Forecast: The forecast is the percent distance of the daily close from its 200-day simple average. It is standardised against its own last 200 values (target 10, cap 20), then clipped at 0. It is positive and grows the further the close sits above the average. It is zero while the close is at or below the average. It is never short.
 Config: 002-03_price-upcross-long-sma-drift_1d_config.json
 Criterion:
-- Horizon: 20 bars
-- Main measure: The mean 20-bar forward BTC return on bars with forecast > 0, minus the mean 20-bar forward return over all bars. Both are pooled over the 6 windows and taken on non-overlapping 20-bar blocks.
-- Supporting check: For each up-cross (forecast goes from 0 to > 0), the share of 20-bar forward returns that are positive, against the unconditional share of positive 20-bar returns.
-- Confirm: The in-position minus all-bars difference is above 0 with t ≥ 2 across the non-overlapping blocks, and the share of up-crosses followed by a positive 20-bar return exceeds the unconditional share.
-- Reject: The difference is ≤ 0, or the 20-bar forward returns after up-crosses are on average negative (reversal).
-- Inconclusive: A positive difference with t < 2, or main measure and supporting check disagreeing. The test needs at least 15 non-overlapping in-position blocks and at least 8 up-crosses; with fewer, it neither confirms nor rejects.
+- Horizon: 10 bars
+- Main measure: Slope (with intercept) of the coin's next-10-bar log return on the forecast at the start of each block. Blocks are non-overlapping, pooled over all 6 windows, and costs are ignored. The intercept absorbs the coin's average drift, so the slope is the gain beyond holding the coin.
+- Supporting check: Share of positive 10-bar returns in blocks with forecast > 0, against the share over all blocks.
+- Confirm: Slope t-stat ≥ 2, with the supporting share higher in forecast > 0 blocks than in all blocks.
+- Reject: Slope t-stat ≤ -2, meaning moves above the average reverse.
+- Inconclusive: A t-stat between -2 and 2. It is also inconclusive if fewer than 50 non-overlapping blocks exist in total, or fewer than 20 of them start with forecast > 0.

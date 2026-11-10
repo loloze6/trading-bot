@@ -3,24 +3,25 @@
     "mode": "threshold_rules",
     "components": [
       {
-        "id": "thin_up",
-        "class": "strategies.strategy_components.VolumeExpansionHedgeComponent",
-        "params": {
-          "vol_period": 20
-        }
+        "id": "const",
+        "class": "strategies.strategy_components.BuyAndHoldStrategy",
+        "params": {}
       }
     ],
     "vetoes": [
       {
-        "id": "thin_up",
+        "id": "const",
         "transforms": [
           {
-            "op": "identity"
+            "op": "volume_filter",
+            "params": {
+              "period": 20
+            }
           }
         ],
         "rules": [
           {
-            "op": "lt",
+            "op": "lte",
             "value": 0.0
           }
         ],
@@ -58,14 +59,20 @@
                 "params": {
                   "max": 0.0
                 }
+              },
+              {
+                "op": "signed_power",
+                "params": {
+                  "exponent": 2
+                }
               }
             ]
           }
         ]
       },
-      "unknown": null,
       "trending": null,
-      "chop": null
+      "chop": null,
+      "unknown": null
     }
   }
 }

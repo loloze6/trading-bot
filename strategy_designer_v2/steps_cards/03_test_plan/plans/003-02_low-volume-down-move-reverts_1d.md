@@ -8,16 +8,16 @@ outcome: plan
 fit: adapted
 ---
 Fidelity:
-- Situation: sharp one-day drop on unusually low volume -> adapted: the drop's size is graded, and "low volume" is an on/off regime gate (the day's volume below its 20-day mean, the only volume test the catalogue offers).
-- Comparison: the day's volume against its usual level -> kept: compared with the 20-bar mean volume via `volume_filter` in a veto.
-- Outcome: price rebounds upward, recovering part of the drop -> adapted: measured as the next bar's return while the position is held; the multi-day holding period is dropped.
-- Verdict transfer: yes: a long sized by the drop, held only after low-volume down days, gains if and only if such drops are followed by rebounds.
-Forecast: A veto sends a bar to `mean_reversion` only when that day's volume is below its 20-day mean. Every other bar is flat. In `mean_reversion` the forecast comes from the one-day percent change (`PriceEvolutionComponent`, period 1). It is standardised against its last 60 values, negated so a drop is positive, clipped at 0 so only drops count, then passed through `signed_power` with exponent 2 so sharp drops weigh much more than small ones. The forecast is zero on up days and on normal- or high-volume days. On low-volume down days it is positive and grows with the square of the drop's size relative to recent daily moves, capped at 20.
+- Situation: a sharp one-day drop on unusually low volume -> adapted: low volume becomes an on/off regime (volume below its 20-day mean), and drop size is graded.
+- Comparison: volume against its usual level -> adapted: "unusually low" becomes "below the 20-bar volume mean", the only volume test the config can express.
+- Outcome: price rebounds upward after the drop -> adapted: the hold is dropped; the long lasts only while the low-volume, down-move reading persists, and it is judged on the next bar.
+- Verdict transfer: yes: a next-bar rebound that grows with the size of a thin-volume drop confirms the idea, and its reliable absence or reverse rejects it.
+Forecast: The forecast is zero on any bar where volume is at or above its 20-day mean. On a bar where volume is below that mean, it reads the current bar's 1-day percent change. That change is standardised against its own past 60 values and negated, so a drop gives a positive value. It is clipped at 0, so up days give 0 and the strategy is long only. A signed power with exponent 2 then damps small drops smoothly and amplifies sharp ones. The long position is therefore larger the sharper the thin-volume drop, and never short.
 Config: 003-02_low-volume-down-move-reverts_1d_config.json
 Criterion:
 - Horizon: 1 bar
-- Main measure: The excess return of active bars, before costs. Take the forecast-weighted mean of the next bar's return on bars with forecast > 0, pooled over all 6 windows. Subtract BTC's mean daily return over all bars of the same windows.
-- Supporting check: Split active bars at the median forecast. The mean next-bar return of the top half should exceed that of the bottom half, meaning gains grow with the size of the drop.
-- Confirm: The excess is positive with a t-statistic of at least 2.0, and the top half beats the bottom half.
-- Reject: The excess is at or below 0, or the top-half mean next-bar return is negative.
-- Inconclusive: An excess that is positive but has a t-statistic below 2.0, or a positive excess where the top half does not beat the bottom half. Also inconclusive when there are fewer than 60 active bars across the 6 windows (each bar counted once, since the horizon is 1 bar).
+- Main measure: Use the active bars (forecast > 0), pooled over all 6 windows. Regress the coin's next-bar return, minus its mean daily return in that window, on the forecast, and report the t-statistic of the slope. Each bar is counted once, so there is no overlap.
+- Supporting check: Take the top quartile of active forecasts. Their mean next-bar return, minus the window's mean daily return, should be positive.
+- Confirm: The slope t-statistic is 2 or more and the supporting check is positive.
+- Reject: The slope t-statistic is -2 or less, meaning sharper thin-volume drops are followed by further relative decline.
+- Inconclusive: A t-statistic between -2 and 2 is inconclusive. Fewer than 60 active bars in total is also inconclusive, whatever the t-statistic.

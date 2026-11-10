@@ -7,8 +7,8 @@ data-period: fold A
 outcome: untestable
 ---
 Fidelity:
-- Situation: a sharp bitcoin move -> replaced: the config sees only one coin's bars, so the altcoin's own bars cannot hold bitcoin's move.
-- Comparison: low-volume vs high-volume altcoins' follow-through -> replaced: it needs several altcoins ranked by volume, and the config runs on one coin at a time.
-- Outcome: altcoin follow-through in bitcoin's direction -> replaced: the test runs on BTC/USDT only, so there is no altcoin price to measure.
-- Verdict transfer: no: no config built from one coin's bars can measure the lead from bitcoin to altcoins or how it changes with altcoin volume.
-Reason: The idea needs bitcoin's past returns and the forward returns of several altcoins, ranked against each other by volume. The config sees only its own symbol's bars and feeds, and the run covers BTC/USDT alone. The guide says another coin's prices are data a config cannot read.
+- Situation: a sharp bitcoin move seen from an altcoin -> replaced: an altcoin config cannot see bitcoin's bars, and the test runs only on BTC/USDT.
+- Comparison: low-volume altcoins against high-volume altcoins -> replaced: this needs several coins' results ranked by volume, but the config runs on one coin at a time.
+- Outcome: the altcoin follows through in bitcoin's direction over the next bars -> replaced: the test coin is bitcoin itself, so there is no altcoin response to measure.
+- Verdict transfer: no: any single-coin BTC test measures bitcoin's own autocorrelation, not altcoins lagging bitcoin.
+Reason: The idea needs bitcoin's returns as the signal for a different coin, and a comparison across altcoins grouped by volume. A config sees only its own coin's bars and cannot read another coin's prices, so the guide puts this outside what a config can express. The test universe is also only BTC/USDT.

@@ -8,16 +8,16 @@ outcome: plan
 fit: adapted
 ---
 Fidelity:
-- Situation: price closed below its long average after being above it -> adapted: "after the cross" becomes "while below", graded by the percent distance below the 200-day SMA.
-- Comparison: falls more than after random points -> kept: forward returns on short bars are compared with forward returns on all bars of the same windows.
-- Outcome: price keeps falling over the following bars -> kept: a short position gains when price falls.
-- Verdict transfer: yes: the graded short-while-below forecast holds exactly the bets the idea predicts will pay, and none it does not.
-Forecast: The forecast uses one indicator, the percent distance of the close from its 200-day simple moving average. It is standardised over its past 200 values, with a target of 10 and a cap of 20. It is then clipped at a maximum of 0, so it is short only. The forecast is zero while the close is at or above the 200-day SMA. It turns negative as soon as the close drops below the average, starting near 0 at the cross. The short grows smoothly as the close sinks further below the average, up to -20 (a 200% short). It is never positive.
+- Situation: close crosses below the long average after being above it -> adapted: "after the cross" made "while below", graded by the percent distance under the 200-day SMA (zero at the cross, growing as the close sits further below).
+- Comparison: versus random points -> kept: forward returns on short bars are compared with forward returns over all tested bars.
+- Outcome: price keeps falling, more often and further -> kept: forward 10-bar return, downward, plus the hit rate of declines.
+- Verdict transfer: yes: the short-only position exists exactly while the close is below its long average after crossing it, so its forward returns against all bars answer the idea both ways.
+Forecast: The 200-day SMA distance, (close - SMA200) / SMA200 x 100, divided by its own mean absolute value over the prior 200 bars, times 10 and capped at ±20. It is then clipped at a maximum of 0, so it is short only. It is zero while the close is at or above the SMA. It turns negative as soon as the close drops below the SMA and grows more negative the further the close falls below it, down to -20 (200 percent short).
 Config: 002-04_price-downcross-long-sma-drift_1d_config.json
 Criterion:
-- Horizon: 20 bars
-- Main measure: The mean 20-bar forward BTC return on bars where the forecast is below 0, minus the mean 20-bar forward return over all bars of the same windows. Bars are sampled every 20 bars so that overlapping returns are counted once, and results are pooled over the 6 windows, before costs.
-- Supporting check: Hit rate: the share of short bars followed by a negative 20-bar return, compared with the share of all bars followed by a negative 20-bar return.
-- Confirm: The difference is at most -2 percentage points with a t-stat at or below -2. The hit rate on short bars also exceeds the unconditional share by at least 10 points.
-- Reject: The difference is 0 or positive, meaning price falls no further after short bars than after random bars. Rejection also follows if the hit rate is not above the unconditional share, or if mean forward returns after the largest-tertile shorts are positive, which would indicate reversal.
-- Inconclusive: Any result between the confirm and reject lines is inconclusive. So is any run with fewer than 15 non-overlapping short cases pooled across windows, whatever the numbers show.
+- Horizon: 10 bars
+- Main measure: On bars with forecast < 0, take the forward 10-bar BTC log return minus the mean forward 10-bar return over all tested bars (buy-and-hold baseline). Regress this excess return on the forecast before costs, using non-overlapping 10-bar blocks only so overlapping returns count once. A positive slope means that deeper short positions are followed by larger excess falls.
+- Supporting check: Compare two shares on non-overlapping blocks: the share of short-bar blocks with a negative forward 10-bar return, and the same share over all blocks.
+- Confirm: Slope t-statistic ≥ +2 and mean excess forward return on short bars below 0, with the supporting share of declines higher than on all bars.
+- Reject: Slope t-statistic ≤ -2, meaning price rebounds after the close goes below the average, more strongly the deeper it is below.
+- Inconclusive: Any t-statistic between -2 and +2 is inconclusive. So is a run with fewer than 15 non-overlapping 10-bar blocks with forecast < 0 across the 6 windows, whatever the t-statistic.

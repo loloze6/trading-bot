@@ -7,8 +7,8 @@ data-period: fold A
 outcome: missing-components
 ---
 Fidelity:
-- Situation: price makes a new high -> adapted: a regime rule fires on bars where the close is the highest close of its recent window (`DonchianBreakoutComponent` raw value at +sf).
-- Comparison: RSI at this high is below RSI at the previous price high -> replaced: no catalogue component reads RSI at the previous swing high, and RSI level or price-range position are different quantities.
-- Outcome: price falls back and retraces part of the run-up -> adapted: a graded short held while the divergence lasts, with the holding period dropped.
-- Verdict transfer: no: without the RSI-at-previous-high comparison, the test would judge new highs with low RSI, not divergence.
-Reason: The divergence needs RSI at the current high compared with RSI at the previous price high, all computable from the coin's own closes and placeable as a graded component inside a "new high" regime. No catalogue component, alone or combined, reads RSI's value at a prior swing high or RSI's position against its own recent peak.
+- Situation: price makes a new high -> kept: `DonchianBreakoutComponent` grades how close the close is to its recent high.
+- Comparison: current RSI lower than the RSI at the previous price high -> replaced: no component stores the RSI at the prior swing high, and current RSI against 50 is a different quantity.
+- Outcome: price falls back after the high, retracing part of the run-up -> kept: a short position graded by divergence strength, judged on the following bars.
+- Verdict transfer: no: without the RSI at the prior peak, the test would measure overbought momentum at highs, not divergence.
+Reason: The idea compares today's RSI with the RSI recorded at the previous price high. Every input for that is in the coin's own closes, but no catalogue component or transform gives a rolling maximum or a value taken at a past swing high. Combining Donchian with `RSIPullbackComponent`, by weighted mean or by a score_product regime, only compares current RSI with 50, so the comparison would be replaced.

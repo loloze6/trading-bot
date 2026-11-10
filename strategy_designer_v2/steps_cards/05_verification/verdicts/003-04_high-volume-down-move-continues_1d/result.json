@@ -1,25 +1,26 @@
 {
-  "status": "rejected",
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
   "main_measure": {
-    "name": "mean next-bar return after active bars minus mean next-bar return over all bars",
-    "value": 0.0002124998192192147,
+    "name": "mean demeaned per-bar gain of (forecast/10) x next-bar return",
+    "value": -0.0011899910536009692,
     "statistic": {
-      "name": "Welch t",
-      "value": 0.06624065054905467
+      "name": "t of the mean",
+      "value": -0.24152761808909456
     },
-    "threshold": "excess negative with t <= -2 over at least 60 active bars and negative in at least 4 of 6 windows"
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2; otherwise, or fewer than 40 active bars, inconclusive"
   },
   "supporting_check": {
-    "name": "slope of next-bar return on signed forecast across active bars (should be positive)",
-    "value": -0.00015054593117626191,
+    "name": "mean gain larger-short half minus smaller-short half",
+    "value": -0.007548352618859238,
     "passed": false
   },
   "counts": {
-    "active bars": 148,
-    "all bars": 724,
-    "windows with negative excess": 3,
-    "windows with active bars": 6
+    "active bars pooled across windows": 148
   },
-  "decided_by": "The excess return is zero or positive with at least 60 active bars, so the idea is rejected.",
-  "reading": "Active bars are bars with a negative forecast; every bar with a next close in its window is used (horizon 1, so no overlap) and the Welch t compares active against all-bar next returns; a window counts as negative when its active-minus-all mean is below zero, and windows with no active bars do not count; the supporting slope regresses next-bar return on the signed forecast, so a larger short followed by a larger fall gives a positive slope, and it does not change the status."
+  "decided_by": "The t-statistic lies between -2 and 2, so the result is neither confirmed nor rejected.",
+  "reading": "The position is forecast/10 as the plan states, and the window's mean daily return is the mean of all next-bar close-to-close returns in that window. The 20-bar mean volume includes the current bar and is computed within each window. For the supporting check, active bars are sorted by forecast; the floor(n/2) most negative bars form the larger-short half and the floor(n/2) least negative bars form the smaller-short half, and the middle bar is dropped when n is odd."
 }

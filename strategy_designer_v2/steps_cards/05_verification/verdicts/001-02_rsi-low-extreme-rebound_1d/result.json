@@ -1,28 +1,29 @@
 {
   "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
   "main_measure": {
-    "name": "forward 5-bar return, top-quintile forecast minus zero-forecast bars",
-    "value": -0.0014746197271659576,
+    "name": "pooled mean 5-bar excess return (vs coin's window hold average) after top-quintile forecasts",
+    "value": 0.003885006374079284,
     "statistic": {
-      "name": "Welch t",
-      "value": -0.1391967566638901
+      "name": "t of the mean",
+      "value": 0.4968556161527449
     },
-    "threshold": "excess above 0 with t >= 2 and positive in at least 2 of the 3 coins"
+    "threshold": "t >= 2 with supporting check to confirm; t <= -2 to reject"
   },
   "supporting_check": {
-    "name": "Spearman rank correlation of forecast vs forward 5-bar return on positive-forecast bars",
-    "value": -0.05628730666035194,
+    "name": "coins (of 3) with top-quintile minus neutral excess > 0, need >= 2",
+    "value": 1,
     "passed": false
   },
   "counts": {
     "pooled non-overlapping top-quintile cases": 77,
     "top-quintile cases BTCUSD": 36,
     "top-quintile cases ETHUSD": 41,
-    "neutral (forecast 0) cases": 129,
-    "coins with positive excess return": 1,
-    "coins with non-positive excess return": 1,
-    "coins in record": 2
+    "coins with positive top-minus-neutral excess": 1
   },
-  "decided_by": "Inconclusive: positive excess return with t below 2, or coins disagree beyond the confirm/reject rules.",
-  "reading": "The top quintile is cut at the 80th percentile of all positive forecasts pooled across coins and windows, the supporting check uses the same non-overlapping grid, and with only 2 coins in the record the 'at least 2 of the 3 coins' rules are applied to the coins present."
+  "decided_by": "Inconclusive: t is between -2 and 2.",
+  "reading": "The top quintile is defined per coin as forecasts at or above the 80th percentile of that coin's non-zero forecasts pooled over its windows, the hold baseline is the mean 5-bar return on the same window's non-overlapping grid, and the '2 of 3 coins' rule is applied literally as at least 2 positive coins among those present."
 }

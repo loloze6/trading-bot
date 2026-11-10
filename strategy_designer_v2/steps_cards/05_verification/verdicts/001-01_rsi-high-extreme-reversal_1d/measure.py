@@ -1,116 +1,112 @@
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 
 def measure(bars):
     H = 5
-    EXTREME = -10.0
-    MIN_POOLED = 30
-    MIN_PER_COIN = 8
-    MIN_NEG_COINS = 2
+    RAW = "debug_info.components.rsi_high.last_history_value"
 
-    pooled_excess = []
-    per_coin_excess = {}
-    sup_size, sup_ret = [], []
+    # ---------- 1. Situation check: short only while RSI(14) > 50 ----------
+    n_active = 0
+    n_agree = 0
+    for coin, wins in bars.items():
+        for w, df in wins.items():
+            d = df[["forecast", RAW]].dropna()
+            active = d["forecast"] != 0
+            raw = d.loc[active, RAW]
+            fc = d.loc[active, "forecast"]
+            # RSI = 50 - raw/0.4 ; RSI > 50  <=>  raw < 0
+            rsi = 50.0 - raw / 0.4
+            ok = (rsi > 50.0) & (fc < 0)
+            n_active += int(active.sum())
+            n_agree += int(ok.sum())
+    agreement = float(n_agree / n_active) if n_active > 0 else 0.0
+    passed = bool(n_active > 0 and agreement >= 0.9)
 
-    for coin in sorted(bars.keys()):
+    if not passed:
+        return {
+            "status": "mismatch",
+            "situation_check": {"agreement": agreement, "passed": False},
+            "main_measure": None,
+            "supporting_check": None,
+            "counts": {"active bars": int(n_active)},
+            "decided_by": ("The plan's situation is a short position only while RSI(14) is above 50, "
+                           "but fewer than 90% of the active forecast bars are short bars with RSI above 50."),
+            "reading": "none",
+        }
+
+    # ---------- 2. Criterion ----------
+    pooled = []
+    per_coin = {}
+    for coin, wins in bars.items():
         coin_vals = []
-        for window in sorted(bars[coin].keys()):
-            df = bars[coin][window]
-            if df is None or len(df) == 0:
-                continue
+        for w, df in wins.items():
             df = df.reset_index(drop=True)
-            close = pd.to_numeric(df["close"], errors="coerce")
-            fc = pd.to_numeric(df["forecast"], errors="coerce")
-            fwd = close.shift(-H) / close - 1.0  # inside this window only
-
-            # Supporting check: all bars with forecast < 0 and a valid 5-bar forward return
-            m = (fc < 0) & fwd.notna() & fc.notna()
-            sup_size.extend(np.abs(fc[m]).tolist())
-            sup_ret.extend(fwd[m].tolist())
-
-            # Non-overlapping grid: positions 0, H, 2H, ... from the window's first row
-            grid = np.arange(0, len(df), H)
-            g_fwd = fwd.iloc[grid]
-            g_fc = fc.iloc[grid]
-            valid = g_fwd.notna()
-            if valid.sum() == 0:
+            close = df["close"].astype(float)
+            fwd = close.shift(-H) / close - 1.0  # within this window only
+            baseline = fwd.dropna().mean()  # holding baseline: all bars of coin/window
+            if not np.isfinite(baseline):
                 continue
-            drift = float(g_fwd[valid].mean())
-            ext = valid & g_fc.notna() & (g_fc <= EXTREME)
-            ex = (g_fwd[ext] - drift).tolist()
+            grid = np.arange(0, len(df), H)
+            sub = pd.DataFrame({"forecast": df["forecast"].iloc[grid].values,
+                                "fwd": fwd.iloc[grid].values}).dropna()
+            ext = sub[sub["forecast"] <= -10]
+            ex = (ext["fwd"] - baseline).tolist()
             coin_vals.extend(ex)
-        per_coin_excess[coin] = coin_vals
-        pooled_excess.extend(coin_vals)
+            pooled.extend(ex)
+        per_coin[coin] = coin_vals
 
-    n_pooled = len(pooled_excess)
-    per_coin_n = {c: len(v) for c, v in per_coin_excess.items()}
-    per_coin_mean = {c: (float(np.mean(v)) if len(v) > 0 else None) for c, v in per_coin_excess.items()}
-    n_neg = sum(1 for c, mu in per_coin_mean.items() if mu is not None and mu < 0)
+    pooled = np.asarray(pooled, dtype=float)
+    n = int(len(pooled))
+    mean_ex = float(pooled.mean()) if n > 0 else None
+    if n > 1:
+        sd = pooled.std(ddof=1)
+        t = float(mean_ex / (sd / np.sqrt(n))) if sd > 0 else None
+    else:
+        t = None
 
-    mean_ex = float(np.mean(pooled_excess)) if n_pooled > 0 else None
-    t_stat = None
-    if n_pooled >= 2:
-        sd = float(np.std(pooled_excess, ddof=1))
-        if sd > 0:
-            t_stat = float(mean_ex / (sd / np.sqrt(n_pooled)))
+    coin_means = {c: (float(np.mean(v)) if len(v) > 0 else None) for c, v in per_coin.items()}
+    n_neg_coins = int(sum(1 for m in coin_means.values() if m is not None and m < 0))
+    support_passed = n_neg_coins >= 2
 
-    # Supporting check
-    rho = None
-    passed = None
-    if len(sup_size) >= 3 and np.nanstd(sup_size) > 0 and np.nanstd(sup_ret) > 0:
-        r = stats.spearmanr(sup_size, sup_ret).correlation
-        if r is not None and np.isfinite(r):
-            rho = float(r)
-            passed = bool(rho < 0)
-
-    enough = (n_pooled >= MIN_POOLED) and len(per_coin_n) > 0 and all(
-        n >= MIN_PER_COIN for n in per_coin_n.values())
-
-    if not enough or mean_ex is None or t_stat is None:
+    if n < 30 or t is None:
         status = "inconclusive"
-        decided_by = ("Fewer than 30 pooled non-overlapping extreme blocks or fewer than 8 in a coin "
-                      "(or no usable t), so the result is inconclusive.")
-    elif mean_ex < 0 and t_stat <= -2 and n_neg >= MIN_NEG_COINS:
+        decided_by = "Fewer than 30 non-overlapping extreme cases pooled (or no t computable), so the plan calls it inconclusive."
+    elif mean_ex < 0 and t <= -2 and support_passed:
         status = "confirmed"
-        decided_by = ("Pooled excess forward return after extreme bars is negative with t <= -2 and "
-                      "negative in at least 2 coins.")
-    elif mean_ex >= 0:
+        decided_by = "The pooled excess forward 5-bar return is negative with t <= -2 and negative in at least 2 coins, meeting the confirm rule."
+    elif mean_ex > 0 and t >= 2:
         status = "rejected"
-        decided_by = "Pooled excess forward return after extreme bars is >= 0."
-    elif n_neg < MIN_NEG_COINS and t_stat > -1:
-        status = "rejected"
-        decided_by = "Excess return is negative in fewer than 2 coins with t > -1."
+        decided_by = "The pooled excess forward 5-bar return is positive with t >= +2 (continuation), meeting the reject rule."
+    elif -2 < t < 2:
+        status = "inconclusive"
+        decided_by = "The pooled t lies strictly between -2 and +2, meeting the inconclusive rule."
     else:
         status = "inconclusive"
-        if t_stat <= -2:
-            decided_by = "Significant negative pooled result but the coins are split (fewer than 2 negative)."
-        else:
-            decided_by = "Negative pooled excess return with -2 < t <= -1 (or split coins without t > -1)."
-
-    counts = {"pooled non-overlapping extreme blocks": int(n_pooled),
-              "coins with negative excess return": int(n_neg)}
-    for c, n in per_coin_n.items():
-        counts[f"extreme blocks {c}"] = int(n)
+        decided_by = ("The pooled t is <= -2 but fewer than 2 coins show a negative excess return, so the confirm rule "
+                      "is not met and neither is the reject rule; the result is left inconclusive.")
 
     return {
         "status": status,
+        "situation_check": {"agreement": agreement, "passed": True},
         "main_measure": {
-            "name": "pooled excess 5-bar forward return after extreme bars (forecast <= -10) minus own window drift",
+            "name": "pooled excess forward 5-bar return after forecast <= -10 (vs holding baseline)",
             "value": mean_ex,
-            "statistic": ({"name": "t of the mean", "value": t_stat} if t_stat is not None else None),
-            "threshold": "confirm if negative with t <= -2 and negative in >= 2 of the coins; reject if >= 0 or negative in < 2 coins with t > -1",
+            "statistic": ({"name": "t of the mean", "value": t} if t is not None else None),
+            "threshold": "confirm if negative with t <= -2; reject if positive with t >= +2; at least 30 cases",
         },
         "supporting_check": {
-            "name": "Spearman rank correlation of |forecast| vs next 5-bar return, bars with forecast < 0 (should be negative)",
-            "value": rho,
-            "passed": passed,
+            "name": "number of coins with negative mean excess return",
+            "value": n_neg_coins,
+            "passed": bool(support_passed),
         },
-        "counts": counts,
+        "counts": {
+            "non-overlapping extreme cases pooled": n,
+            "coins": int(len(per_coin)),
+            "coins with negative excess": n_neg_coins,
+        },
         "decided_by": decided_by,
-        "reading": ("Extreme blocks are grid bars at positions 0,5,10,... of each window with forecast <= -10, drift is the mean "
-                    "5-bar forward return over that same grid in the window, t is the ordinary t of the pooled excess mean, the "
-                    "'2 of 3 coins' rule and the 8-per-coin minimum are applied to the coins present in the record (BTCUSD, ETHUSD), "
-                    "and the supporting rank correlation uses all bars with forecast < 0 (not only the grid)."),
+        "reading": ("The holding baseline is the mean forward 5-bar return over all bars of each coin and window (not only grid bars), "
+                    "extreme cases are grid bars at positions 0,5,10,... with forecast <= -10, and 'at least 2 of the 3 coins' is applied "
+                    "literally as at least 2 coins negative, which with only BTC and ETH in the record means both."),
     }

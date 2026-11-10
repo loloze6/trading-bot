@@ -1,25 +1,27 @@
 {
   "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
   "main_measure": {
-    "name": "mean 10-bar forward return in long blocks minus mean over all blocks",
-    "value": 0.004661847936267742,
+    "name": "OLS slope of forward 10-bar excess return (vs window mean 10-bar return) on forecast",
+    "value": -0.0017824836083562248,
     "statistic": {
-      "name": "Welch t (long blocks vs all blocks)",
-      "value": 0.23547545475992646
+      "name": "OLS slope t",
+      "value": -0.9301434149989546
     },
-    "threshold": "excess > 0 with t >= 2 to confirm; excess <= 0 rejects (t <= -2 means reversal)"
+    "threshold": "confirm if slope > 0 with t >= 2; reject if slope < 0 with t <= -2; else inconclusive"
   },
   "supporting_check": {
-    "name": "hit rate of long blocks minus hit rate of all blocks (long 0.4827586206896552, all 0.5142857142857142; slope of return on forecast: -0.00027366833536417406)",
-    "value": -0.03152709359605904,
+    "name": "share of positive excess returns, forecast > 0 minus forecast = 0",
+    "value": -0.25483599663582845,
     "passed": false
   },
   "counts": {
-    "non-overlapping 10-bar long blocks": 29,
-    "non-overlapping 10-bar blocks (all)": 70,
-    "windows containing long blocks": 4,
-    "windows with positive excess": 0
+    "non-overlapping samples": 70,
+    "samples with forecast > 0": 29
   },
-  "decided_by": "Inconclusive: excess > 0 but t between 0 and 2.",
-  "reading": "Blocks start at rows 0, 10, 20, ... of each window with returns kept inside the window; long means forecast > 0 at the block start; the t is Welch's long-blocks vs all-blocks; per-window excess is the window's long mean minus its all-block mean; 'carried by a single window' means the pooled excess drops to <= 0 when any one window is removed; the forecast-slope view is reported but does not enter the decision since the confirm rule omits it."
+  "decided_by": "Inconclusive: the slope's t lies between -2 and 2.",
+  "reading": "Samples are the bars at positions 0, 10, 20, ... of each window with a full 10-bar forward return inside the window, the holding drift is the mean of those same non-overlapping 10-bar returns in that window, the slope's t is the ordinary OLS slope / standard error, and the supporting check passes when the forecast > 0 share exceeds the forecast = 0 share."
 }

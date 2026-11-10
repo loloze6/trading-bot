@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of forward 10-bar excess return (minus window mean 10-bar return) on forecast",
+    "value": -0.0015682850481472275,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.8166735536420211
+    },
+    "threshold": "confirm if slope > 0 with t >= 2; reject if slope < 0 with t <= -2; else inconclusive; inconclusive if < 40 samples or < 15 with forecast > 0"
+  },
+  "supporting_check": {
+    "name": "share of positive 10-bar excess returns, forecast > 0 minus forecast = 0",
+    "value": -0.22035323801513879,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping samples": 70,
+    "samples with forecast > 0": 29
+  },
+  "decided_by": "Inconclusive: the slope's t lies between -2 and 2.",
+  "reading": "The holding drift is each window's mean forward 10-bar return over all its bars with a valid return, the excess returns are taken on the non-overlapping grid of positions 0, 10, 20, ... of each window, the t is the OLS slope t (with intercept) on the pooled samples, and the supporting check passes when the positive share with forecast > 0 exceeds the share with forecast = 0."
+}

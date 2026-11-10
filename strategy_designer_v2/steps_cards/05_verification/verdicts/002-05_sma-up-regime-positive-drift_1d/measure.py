@@ -4,102 +4,134 @@ from scipy import stats
 
 
 def measure(bars):
-    in_rets = []
-    all_rets = []
-    n_stretches = 0
+    COMP = "debug_info.components.sma_cross_spread.last_history_value"
 
-    for coin, windows in bars.items():
-        for w, df in windows.items():
+    # ---------- 1) Situation check ----------
+    # The situation is the stretch where SMA50 > SMA200 (raw spread > 0), and the expected side is long.
+    n_active = 0
+    n_agree = 0
+    for coin, wins in bars.items():
+        for w, df in wins.items():
+            if df is None or len(df) == 0:
+                continue
+            if "forecast" not in df.columns or COMP not in df.columns:
+                continue
+            sub = df[["forecast", COMP]].dropna()
+            f = sub["forecast"].astype(float).values
+            s = sub[COMP].astype(float).values
+            active = f != 0
+            n_active += int(active.sum())
+            n_agree += int((active & (s > 0) & (f > 0)).sum())
+
+    agreement = (n_agree / n_active) if n_active > 0 else None
+    passed = bool(agreement is not None and agreement >= 0.9)
+
+    main_name = "in-stretch minus out-of-stretch mean next-bar return"
+    threshold_txt = ("confirm if difference > 0 with Welch t >= 2; reject if difference < 0 "
+                     "with t <= -2; |t| < 2 inconclusive; needs >=100 in-stretch bars, "
+                     ">=100 out-of-stretch bars, >=3 distinct up-cross stretches")
+
+    if not passed:
+        if agreement is None:
+            why = ("The forecast is never non-zero, so no active bar can be checked "
+                   "against the plan's SMA50-above-SMA200 long situation.")
+        else:
+            why = (f"Only {agreement:.1%} of active bars are long bars with SMA50 above SMA200, "
+                   "below the 90% needed: the forecast is not positive only inside the cross-to-cross stretch.")
+        return {
+            "status": "mismatch",
+            "situation_check": {"agreement": None if agreement is None else float(agreement),
+                                "passed": False},
+            "main_measure": {"name": main_name, "value": None, "statistic": None,
+                             "threshold": threshold_txt},
+            "supporting_check": None,
+            "counts": {"in-stretch bars": None, "out-of-stretch bars": None,
+                       "distinct up-cross stretches": None},
+            "decided_by": why,
+            "reading": "none",
+        }
+
+    # ---------- 2) Criterion ----------
+    in_rets, out_rets = [], []
+    n_stretches = 0
+    for coin, wins in bars.items():
+        for w, df in wins.items():
             if df is None or len(df) == 0:
                 continue
             df = df.reset_index(drop=True)
-            close = pd.to_numeric(df["close"], errors="coerce")
-            fc = pd.to_numeric(df["forecast"], errors="coerce")
-            # next-bar return inside the window only
-            ret = close.shift(-1) / close - 1.0
+            close = df["close"].astype(float)
+            nxt = close.shift(-1) / close - 1.0  # within this window only
+            fc = df["forecast"].astype(float)
+            ok = nxt.notna() & fc.notna() & np.isfinite(nxt)
+            in_mask = ok & (fc > 0)
+            out_mask = ok & (fc == 0)
+            in_rets.extend(nxt[in_mask].tolist())
+            out_rets.extend(nxt[out_mask].tolist())
 
-            # distinct up-cross stretches: maximal runs of consecutive bars with forecast > 0 in this window
-            pos = (fc > 0).fillna(False).to_numpy()
-            if len(pos) > 0:
-                starts = pos & ~np.concatenate([[False], pos[:-1]])
-                n_stretches += int(starts.sum())
+            # Distinct up-cross stretches: maximal runs of raw spread > 0 within each window.
+            s = df[COMP].astype(float)
+            pos = (s > 0) & s.notna()
+            arr = pos.values.astype(int)
+            starts = int(((arr[1:] == 1) & (arr[:-1] == 0)).sum()) + (1 if len(arr) and arr[0] == 1 else 0)
+            n_stretches += starts
 
-            # horizon 1 bar: non-overlapping grid is every bar (positions 0, 1, 2, ...)
-            valid_all = ret.notna() & fc.notna()
-            all_rets.append(ret[valid_all].to_numpy())
-            valid_in = valid_all & (fc > 0)
-            in_rets.append(ret[valid_in].to_numpy())
+    in_rets = np.array(in_rets, dtype=float)
+    out_rets = np.array(out_rets, dtype=float)
+    n_in, n_out = len(in_rets), len(out_rets)
 
-    in_r = np.concatenate(in_rets) if in_rets else np.array([])
-    all_r = np.concatenate(all_rets) if all_rets else np.array([])
-    n_in = int(len(in_r))
-    n_all = int(len(all_r))
+    diff = None
+    t = None
+    if n_in >= 2 and n_out >= 2:
+        diff = float(in_rets.mean() - out_rets.mean())
+        tt = stats.ttest_ind(in_rets, out_rets, equal_var=False)
+        t = float(tt.statistic) if np.isfinite(tt.statistic) else None
+    elif n_in >= 1 and n_out >= 1:
+        diff = float(in_rets.mean() - out_rets.mean())
 
-    mean_in = float(np.mean(in_r)) if n_in > 0 else None
-    mean_all = float(np.mean(all_r)) if n_all > 0 else None
-    diff = (mean_in - mean_all) if (mean_in is not None and mean_all is not None) else None
+    sup_val = None
+    if n_in > 0 and n_out > 0:
+        sup_val = float((in_rets > 0).mean() - (out_rets > 0).mean())
+    sup_passed = None if sup_val is None else bool(sup_val > 0)
 
-    t_val = None
-    if n_in >= 2 and n_all >= 2:
-        t, _ = stats.ttest_ind(in_r, all_r, equal_var=False)
-        if np.isfinite(t):
-            t_val = float(t)
-
-    up_in = float(np.mean(in_r > 0)) if n_in > 0 else None
-    up_all = float(np.mean(all_r > 0)) if n_all > 0 else None
-    up_diff = (up_in - up_all) if (up_in is not None and up_all is not None) else None
-    sup_passed = (bool(up_diff > 0) if up_diff is not None else None)
-
-    if n_in < 100 or n_stretches < 3 or diff is None or t_val is None:
+    enough = n_in >= 100 and n_out >= 100 and n_stretches >= 3
+    if not enough:
         status = "inconclusive"
-        decided_by = ("Inconclusive: fewer than 100 in-stretch bars or fewer than 3 distinct up-cross stretches "
-                      "across the windows (or the t-statistic could not be computed).")
-    elif diff <= 0:
-        status = "rejected"
-        if t_val <= -2.0:
-            decided_by = ("Reject: the in-stretch mean daily return is below the all-bar mean with a t-statistic "
-                          "of -2.0 or lower, so moves reverse after up-crosses.")
-        else:
-            decided_by = ("Reject: the in-stretch mean daily return is at or below the all-bar mean, "
-                          "so there is no persistence.")
-    elif t_val >= 2.0 and sup_passed:
+        decided = (f"The minimum counts are not met ({n_in} in-stretch bars, {n_out} out-of-stretch bars, "
+                   f"{n_stretches} up-cross stretches; needed 100, 100 and 3), so the result is inconclusive whatever the t.")
+    elif t is None or diff is None:
+        status = "inconclusive"
+        decided = "The Welch t could not be computed, so |t| >= 2 is not shown and the result is inconclusive."
+    elif diff > 0 and t >= 2:
         status = "confirmed"
-        decided_by = ("Confirm: the in-stretch mean daily return exceeds the all-bar mean with a one-sided "
-                      "t-statistic of at least 2.0, and the in-stretch up-day share exceeds the all-bar share.")
-    elif t_val >= 2.0:
-        status = "inconclusive"
-        decided_by = ("Inconclusive: the t-statistic is at least 2.0 but the in-stretch up-day share does not "
-                      "exceed the all-bar share, so the confirm rule is not fully met.")
+        decided = "The in-stretch minus out-of-stretch mean next-bar return is positive with Welch t >= 2."
+    elif diff < 0 and t <= -2:
+        status = "rejected"
+        decided = "The in-stretch minus out-of-stretch mean next-bar return is negative with Welch t <= -2."
     else:
         status = "inconclusive"
-        decided_by = ("Inconclusive: the in-stretch mean exceeds the all-bar mean but the t-statistic lies "
-                      "between -2.0 and 2.0.")
+        decided = "The Welch t has |t| < 2, which the plan rules inconclusive."
 
     return {
         "status": status,
+        "situation_check": {"agreement": float(agreement), "passed": True},
         "main_measure": {
-            "name": "in-stretch minus all-bar mean next-bar return (before costs)",
-            "value": float(diff) if diff is not None else None,
-            "statistic": ({"name": "Welch t (in-stretch minus all bars)", "value": t_val}
-                          if t_val is not None else None),
-            "threshold": ("confirm if the difference is > 0 with t >= 2.0; reject if the difference is <= 0 "
-                          "(or t <= -2.0); otherwise inconclusive"),
+            "name": main_name,
+            "value": diff,
+            "statistic": None if t is None else {"name": "Welch t", "value": t},
+            "threshold": threshold_txt,
         },
         "supporting_check": {
-            "name": "in-stretch up-day share minus all-bar up-day share",
-            "value": float(up_diff) if up_diff is not None else None,
+            "name": "share of up next-bars in-stretch minus out-of-stretch",
+            "value": sup_val,
             "passed": sup_passed,
         },
         "counts": {
-            "in-stretch bars": n_in,
+            "in-stretch bars": int(n_in),
+            "out-of-stretch bars": int(n_out),
             "distinct up-cross stretches": int(n_stretches),
-            "all bars": n_all,
         },
-        "decided_by": decided_by,
-        "reading": ("In-stretch means forecast > 0. With a 1-bar horizon every bar is on the non-overlapping grid. "
-                    "The 'all bars' group includes the in-stretch bars, and the two groups are compared with "
-                    "Welch t. A distinct up-cross stretch is a maximal run of consecutive forecast > 0 bars "
-                    "within one window, including a run already under way at the window's start. An up day is a "
-                    "next-bar return > 0. A difference at or below 0 rejects even when t lies between -2 and 2, "
-                    "because the plan's reject rule says so explicitly."),
+        "decided_by": decided,
+        "reading": ("In-stretch and out-of-stretch bars are those with forecast > 0 and forecast = 0 that have "
+                    "a next bar in the same window. A distinct up-cross stretch is each maximal run of raw "
+                    "SMA spread > 0 within a window, including a run already under way at the window's first bar."),
     }

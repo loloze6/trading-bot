@@ -1,6 +1,6 @@
 {
-  "run_id": "20261110T131522Z_2777a85d",
-  "created_utc": "2026-11-10T13:15:22.036382+00:00",
+  "run_id": "20261110T224013Z_d0ed3166",
+  "created_utc": "2026-11-10T22:40:13.032400+00:00",
   "config": {
     "regime_detector": {
       "mode": "threshold_rules",
@@ -18,9 +18,6 @@
           "id": "move",
           "transforms": [
             {
-              "op": "percentile"
-            },
-            {
               "op": "volume_filter",
               "params": {
                 "period": 20
@@ -29,8 +26,8 @@
           ],
           "rules": [
             {
-              "op": "gte",
-              "value": 0.9
+              "op": "gt",
+              "value": 0.0
             }
           ],
           "consecutive_bars": 1,
@@ -40,13 +37,13 @@
           "id": "move",
           "transforms": [
             {
-              "op": "percentile"
+              "op": "identity"
             }
           ],
           "rules": [
             {
-              "op": "gte",
-              "value": 0.9
+              "op": "gt",
+              "value": 0.0
             }
           ],
           "consecutive_bars": 1,
@@ -61,7 +58,7 @@
         "trending": {
           "components": [
             {
-              "id": "heavy_move",
+              "id": "heavy_up",
               "class": "strategies.strategy_components.PriceEvolutionComponent",
               "params": {
                 "period": 1
@@ -74,6 +71,12 @@
                     "window": 60,
                     "min_periods": 20
                   }
+                },
+                {
+                  "op": "signed_power",
+                  "params": {
+                    "exponent": 2
+                  }
                 }
               ]
             }
@@ -82,7 +85,7 @@
         "mean_reversion": {
           "components": [
             {
-              "id": "thin_move",
+              "id": "thin_up",
               "class": "strategies.strategy_components.PriceEvolutionComponent",
               "params": {
                 "period": 1
@@ -94,6 +97,12 @@
                   "params": {
                     "window": 60,
                     "min_periods": 20
+                  }
+                },
+                {
+                  "op": "signed_power",
+                  "params": {
+                    "exponent": 2
                   }
                 },
                 {
@@ -127,7 +136,7 @@
       }
     }
   },
-  "config_sha256": "2777a85d471f9eee92ab9b9192ce616dfaf97655bb4f2e646dfe61b40f431b36",
+  "config_sha256": "d0ed3166e817e9f138824be031108883d7059fd0468f59c2ffa1af2a260014dd",
   "data": {
     "symbols": [
       "BTCUSD"
@@ -138,7 +147,7 @@
     "bar_count": 171,
     "data_sha256": "fbe1a7f7e9be067e0b01d34d56de2e6da5c445fc6ad648e628d1496505cc9308"
   },
-  "git_sha": "cbfda28b9f211c47b5692d8bb278105be17c6326-dirty",
+  "git_sha": "a904a95059060e3850505007818aadef08019b01-dirty",
   "engine": {
     "lookback": 61,
     "warmup": 24

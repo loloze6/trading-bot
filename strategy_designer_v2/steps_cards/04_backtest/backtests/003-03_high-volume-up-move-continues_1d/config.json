@@ -3,16 +3,16 @@
     "mode": "threshold_rules",
     "components": [
       {
-        "id": "move",
-        "class": "strategies.strategy_components.PriceEvolutionComponent",
+        "id": "vol",
+        "class": "strategies.strategy_components.VolatilityFromStdDevComponent",
         "params": {
-          "period": 1
+          "vol_period": 20
         }
       }
     ],
     "vetoes": [
       {
-        "id": "move",
+        "id": "vol",
         "transforms": [
           {
             "op": "volume_filter",
@@ -39,7 +39,7 @@
       "trending": {
         "components": [
           {
-            "id": "up_move",
+            "id": "move",
             "class": "strategies.strategy_components.PriceEvolutionComponent",
             "params": {
               "period": 1
@@ -58,20 +58,14 @@
                 "params": {
                   "min": 0.0
                 }
-              },
-              {
-                "op": "signed_power",
-                "params": {
-                  "exponent": 2
-                }
               }
             ]
           }
         ]
       },
+      "unknown": null,
       "mean_reversion": null,
-      "chop": null,
-      "unknown": null
+      "chop": null
     }
   }
 }

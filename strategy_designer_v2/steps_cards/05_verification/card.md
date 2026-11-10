@@ -109,22 +109,24 @@ Aligned with the other steps.
 - **The same plan gives the same status on a rerun.** A difference shows a criterion read two ways, which is a fault of the plan.
 
 ## Fixed inputs for the iterations
-The 16 daily plans of `03_test_plan/plans/` whose outcome is `plan` (15 with a backtest record; `003-02`, refused by the engine, has none), and the 13 refusals, which must give "no verdict".
+The 15 daily plans of `03_test_plan/plans/` whose outcome is `plan` (13 with a backtest record; `003-01` and `003-02`, refused by the engine, have none), and the 14 refusals, which must give "no verdict". Until exercise 7, the plans written before the symmetric criteria.
 
 ## Variants compared
 - **Exercises 1 and 2:** the same helper, run twice. 14 of 15 statuses agree; the plans' open details explain the rest.
 - **Exercises 3 and 4:** conventions for open details, and a clearer result format (value and statistic separate, named counts). 13 of 15 identical numbers; one status still flips.
 - **Exercises 5 and 6:** two more conventions (weighted mean, counts only). 15 of 15 statuses agree.
+- **Exercise 7:** the situation check. It flags two real config faults (002-02 at 0 %, 003-05 at 19 %); every correct plan scores 100 %.
+- **Exercise 8 and `verdicts/`:** the rewritten plans, run twice. 13 of 13 statuses agree (all inconclusive); every situation check passes.
 
 ## Who judges the output
 The operator: "does this verdict apply my plan's rule, and would I accept it?". Code checks the shape of the result. Each exercise has a one-page reading: the functions are read against their plans, and the two runs are compared.
 
 ## Done when
-On two exercises in a row, every verdict meets every criterion, and the two runs give the same status for every plan. Status: met by exercises 5 and 6: the same status for all 15 plans (`exercise_6/reading.md`).
+On two exercises in a row, every verdict meets every criterion, and the two runs give the same status for every plan. Status: met by exercise 8 and the production run, with the situation check: the same status for all 13 plans (`exercise_8/reading.md`).
 
 ## Open
 - **A coin without data** (BNB, for the RSI ideas): the function takes the plan's rule literally on the coins present and says so in "reading". Parked with the quality of the backtest output.
-- **An ambiguous criterion** is a fault of the plan. The conventions cover the common open details. The lasting fix is in step 3: a plan should state how its non-overlapping samples are drawn and which test it uses. Proposed, not made.
+- **An ambiguous criterion** is a fault of the plan. In exercise 8, four plans gave different numbers between runs (the baseline of an excess return, the neutral group, the standard error); no status changed. The conventions cover the common open details. The lasting fix is in step 3: a plan should state how its non-overlapping samples are drawn and which test it uses. Proposed, not made.
 
 ## What this step does not do
 It does not change a criterion, judge costs or profitability, or rerun a backtest.

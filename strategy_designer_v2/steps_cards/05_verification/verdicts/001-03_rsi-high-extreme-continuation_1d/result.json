@@ -1,25 +1,30 @@
 {
-  "status": "rejected",
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
   "main_measure": {
-    "name": "mean 5-bar forward return, extreme minus neutral bars, pooled",
-    "value": -0.0007005980644819161,
+    "name": "extreme minus neutral forward 5-bar return, pooled, before costs",
+    "value": -0.0071795471739449016,
     "statistic": {
       "name": "Welch t",
-      "value": -0.05569658268715827
+      "value": -0.5602341908123324
     },
-    "threshold": "positive with t >= 2 confirms (with >= 2 of 3 coins positive and positive pooled support); t <= 0 rejects"
+    "threshold": "positive with t >= 2 and positive in at least 2 of 3 coins to confirm; negative with t <= -2 to reject"
   },
   "supporting_check": {
-    "name": "strategy return minus exposure-scaled buy-and-hold, summed over coins",
-    "value": 0.4677280517162469,
-    "passed": true
+    "name": "strategy minus buy-and-hold return on non-zero-forecast bars, coins positive",
+    "value": 1.0,
+    "passed": false
   },
   "counts": {
     "non-overlapping extreme cases": 42,
-    "neutral cases": 180,
+    "neutral cases": 149,
     "coins with positive difference": 1,
-    "coins": 2
+    "coins with negative difference": 1,
+    "coins in record": 2
   },
-  "decided_by": "Rejected: the pooled extreme-minus-neutral difference is zero or negative (t = -0.06 <= 0).",
-  "reading": "Extreme bars are those whose forecast is at or above the 80th percentile of all non-zero forecasts pooled over every bar of every coin and window, and neutral bars are those whose forecast is below 1, both taken on the 0,5,10,... grid of each window. With only the coins present in the record, the rule 'positive in at least 2 of the 3 coins' is applied as at least 2 positive coins. The supporting excess is computed per coin as the sum of per-bar gains (allocation x next-bar return) minus the mean allocation times the sum of the coin's per-bar returns, all inside each window, and these per-coin excesses are summed to give the pooled value."
+  "decided_by": "Inconclusive: t lies between -2 and 2.",
+  "reading": "Extreme bars are grid bars whose forecast is at or above the 80th percentile of all positive forecasts pooled over coins and windows, neutral bars are grid bars with |component value| <= 4, 'at least 2 of the 3 coins' is applied as at least 2 of the coins present (the same count of 2 negative coins is required for a rejection to be supported in more than one coin), and the supporting check sums per-bar strategy and coin returns over each coin's non-zero-forecast bars."
 }

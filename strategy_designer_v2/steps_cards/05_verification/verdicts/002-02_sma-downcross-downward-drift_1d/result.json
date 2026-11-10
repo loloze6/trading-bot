@@ -1,24 +1,28 @@
 {
-  "status": "rejected",
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
   "main_measure": {
-    "name": "mean 10-bar forward return on short bars minus mean over all bars (non-overlapping blocks)",
-    "value": 0.46618479362677423,
+    "name": "excess forward 20-bar return while short (vs all-bar window mean), non-overlapping blocks",
+    "value": 0.010257592557259975,
     "statistic": {
-      "name": "Welch t",
-      "value": 0.23547545475992646
+      "name": "t of the mean excess across short blocks",
+      "value": 0.318951062520062
     },
-    "threshold": "at most -1.0% per 10 bars with t-stat of -2 or lower to confirm; 0 or above rejects"
+    "threshold": "confirm if excess < 0 with t <= -2 and slope not positive; reject if excess > 0 with t >= +2; otherwise inconclusive; inconclusive if fewer than 6 short blocks (120 short bars)"
   },
   "supporting_check": {
-    "name": "falling share on short blocks minus falling share on all blocks (points)",
-    "value": 3.1527093596059155,
-    "passed": false
+    "name": "slope of forward 20-bar return on |forecast| within short bars (should be <= 0); share of short blocks with negative excess",
+    "value": -0.004591337189494648,
+    "passed": true,
+    "share_negative_excess_blocks": 0.5
   },
   "counts": {
-    "non-overlapping 10-bar short blocks": 29,
-    "non-overlapping 10-bar blocks (all bars)": 70,
-    "distinct downward crosses": 2
+    "short_blocks": 20,
+    "short_bars": 437
   },
-  "decided_by": "Rejected: the conditional-minus-unconditional difference is 0 or above, or the falling share on short bars is not above the unconditional share.",
-  "reading": "Blocks are the bars at positions 0,10,20,... of each window with a full 10-bar forward return inside the window, short blocks are those whose bar has forecast < 0, the t-stat is Welch's t between short blocks and all blocks, the main measure is reported in percent, and a downward cross is counted each time the component's raw spread goes from >= 0 to < 0 within a window."
+  "decided_by": "Inconclusive: t lies between -2 and +2.",
+  "reading": "Each short block's excess is its forward 20-bar return (grid bars 0, 20, 40, ... of each window with forecast < 0) minus the mean forward 20-bar return over all bars of its own window, tested by the ordinary t of the mean. The minimum counts require both 6 short blocks and 120 short bars. The slope regresses forward 20-bar return on |forecast| over all short bars."
 }

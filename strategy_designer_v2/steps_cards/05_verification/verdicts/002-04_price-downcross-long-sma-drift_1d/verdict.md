@@ -2,14 +2,15 @@
 plan: 002-04_price-downcross-long-sma-drift_1d
 idea: 002-04_price-downcross-long-sma-drift
 fit: adapted
-status: rejected
+status: inconclusive
 ---
+Situation check: 1 of the active bars match the plan's situation and side
 Evidence:
-- Main measure: mean 20-bar forward return on short bars minus mean over all bars (pp): -1.75117; Welch t: -0.391872 (threshold: confirm if at most -2 percentage points with t-stat at or below -2; reject if 0 or positive)
-- Supporting check: short-bar hit rate minus unconditional share of negative 20-bar returns (pp): -0.560224, passed: False
-- Counts: non-overlapping short cases: 21, non-overlapping all-bar cases: 34, largest-tertile short cases: 7
-- Decided by: The hit rate on short bars is not above the unconditional share of negative 20-bar returns.
-- Reading: Short bars are grid bars (positions 0, 20, 40, ... of each window with a full 20-bar forward return inside the window) whose forecast is below 0, the all-bars group is every such grid bar including the short ones, and the largest-tertile shorts are the pooled short cases whose forecast is at or below the 1/3 quantile of the short forecasts (the most negative third).
+- Main measure: OLS slope of forward 10-bar excess log return on forecast, short-bar blocks: -0.000745799; OLS slope t: -0.241659 (threshold: confirm if slope t >= +2 with mean excess on short blocks < 0 and decline share higher than on all blocks; reject if slope t <= -2; otherwise inconclusive; inconclusive if fewer than 15 non-overlapping short blocks)
+- Supporting check: share of negative 10-bar returns, short blocks minus all blocks: 0.00265781, passed: True
+- Counts: non-overlapping 10-bar blocks with forecast < 0: 43, non-overlapping 10-bar blocks, all bars: 70
+- Decided by: Slope t-statistic -0.24 lies between -2 and +2: inconclusive.
+- Reading: Blocks start at rows 0, 10, 20, ... of each window with the forecast read at the block's first bar, the buy-and-hold baseline is the mean forward 10-bar log return over all blocks on that same grid, and the component's raw column is found by its last_history_value name since the record calls it below_sma200 rather than below_ma.
 Plan: `steps_cards/03_test_plan/plans/002-04_price-downcross-long-sma-drift_1d.md`
 Record: `steps_cards/04_backtest/backtests/002-04_price-downcross-long-sma-drift_1d`
 Measure: `measure.py`

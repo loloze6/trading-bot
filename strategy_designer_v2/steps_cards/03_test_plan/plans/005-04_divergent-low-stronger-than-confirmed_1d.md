@@ -7,8 +7,8 @@ data-period: fold A
 outcome: missing-components
 ---
 Fidelity:
-- Situation: price closes at a new N-bar low -> kept: a regime rule on `DonchianBreakoutComponent` at the bottom of its range.
-- Comparison: RSI at this low above RSI's own prior low (divergent) versus at a new RSI low (confirming) -> replaced: the catalogue has only the RSI level, not RSI's position against its own recent lows.
-- Outcome: returns after divergent lows beat returns after confirming lows, upward -> adapted: "after the low" becomes "while the low holds", with no fixed holding period.
-- Verdict transfer: no: an RSI level is not the same as RSI failing to make a new low, so neither result would carry over to the idea.
-Reason: Detecting the divergence needs to know whether RSI made a new low over the same window in which price made one. No component measures where RSI sits inside its own recent range. Combining `RSIPullbackComponent` with `DonchianBreakoutComponent` through weights or `standardise` only rescales the RSI level and cannot recover its range position. Everything needed comes from the coin's own closes, and the config could hold the test: a regime for "close at its N-bar low", plus a graded forecast that is the RSI range position minus the price range position.
+- Situation: price closes at a new N-bar low -> adapted: graded as the close's position in its 14-bar close range (`DonchianBreakoutComponent`), near -sf at a new low.
+- Comparison: RSI at this low is above its prior low, versus RSI also at a new low -> replaced: no component gives where RSI sits relative to its own recent low; RSI level alone is a different quantity.
+- Outcome: price rises more after divergent lows than after confirming lows -> adapted: "after the low" becomes "while price sits at its low", with no holding period.
+- Verdict transfer: no: without RSI's own recent low, the test cannot separate divergent lows from confirming lows, which is the idea's comparison.
+Reason: The config could hold the idea from one coin's closes alone. The forecast would be RSI's position in its own recent range minus price's position in its own range, gated to new price lows. No catalogue component gives RSI's position in its own range. `percentile` on the RSI history is a second history op, which V15 refuses next to `standardise`, and in the detector it only gives an on/off gate. RSI level (`RSIPullbackComponent`) measures oversold depth, not whether RSI made a higher low.

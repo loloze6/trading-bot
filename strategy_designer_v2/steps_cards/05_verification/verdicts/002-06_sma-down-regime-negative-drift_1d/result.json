@@ -1,23 +1,27 @@
 {
   "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
   "main_measure": {
-    "name": "in-state mean next-bar return minus all-bars mean",
-    "value": -0.000578030864254778,
+    "name": "|forecast|-weighted mean of next-bar return minus coin mean, short bars",
+    "value": -0.0010034878473360765,
     "statistic": {
-      "name": "stretch-clustered t",
-      "value": -0.312945769609508
+      "name": "t of weighted mean",
+      "value": -0.538965584033823
     },
-    "threshold": "difference <= -0.10% per day (-0.001) with stretch-clustered t <= -2"
+    "threshold": "t <= -2 with negative mean confirms; t >= +2 with positive mean rejects"
   },
   "supporting_check": {
-    "name": "down-bar share in stretches minus share over all bars",
-    "value": -0.00043918832904754623,
+    "name": "down-bar share on active vs all bars (binomial z)",
+    "value": -0.01831913947093589,
     "passed": false
   },
   "counts": {
-    "distinct down-cross stretches": 5,
-    "in-state bars pooled": 434
+    "active bars": 434,
+    "down-cross stretches": 5
   },
-  "decided_by": "Inconclusive: the difference is negative but t > -2, or smaller than 0.10% per day, or the down-bar share in stretches is not higher than over all bars. (Info: strategy equity end 0.9423561551789104, holding over in-state bars end 0.6993358720075438.)",
-  "reading": "In-state bars are bars with forecast < 0 and a next-bar return in the same window, stretches are contiguous runs of such bars per window (a run open at a window edge counts as a stretch), t is the difference divided by the cluster-robust (CR1) SE of the in-state mean over stretches treating the all-bars mean as fixed, and only the down-share comparison enters the confirm rule while the equity checks are reported for information."
+  "decided_by": "Inconclusive: t lies strictly between -2 and +2.",
+  "reading": "Coin mean taken over all tested bars of all windows; t of the weighted mean uses the weighted variance with Kish effective n; a down-cross stretch is a run of bars with negative raw SMA spread containing an active bar; the supporting check passes when z >= 2."
 }

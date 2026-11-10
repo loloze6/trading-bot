@@ -3,125 +3,153 @@ import pandas as pd
 
 
 def measure(bars):
-    FC = "forecast"
-    POS = "postRebalance_current_allocation"
+    def comp_col(df):
+        pref = "debug_info.components.sma_spread.last_history_value"
+        if pref in df.columns:
+            return pref
+        cands = [c for c in df.columns
+                 if c.startswith("debug_info.components.") and c.endswith(".last_history_value")]
+        return cands[0] if cands else None
 
-    in_rets, all_rets, cluster_ids = [], [], []
-    strat_gains, hold_in = [], []
+    # ---------- 1. Situation check ----------
+    n_active = 0
+    n_agree = 0
+    for coin, wins in bars.items():
+        for w, df in wins.items():
+            col = comp_col(df)
+            f = pd.to_numeric(df["forecast"], errors="coerce")
+            raw = pd.to_numeric(df[col], errors="coerce") if col is not None else pd.Series(np.nan, index=df.index)
+            act = f.notna() & (f != 0)
+            n_active += int(act.sum())
+            # situation: 50-SMA below 200-SMA (raw spread < 0), expected side short (forecast < 0)
+            n_agree += int((act & (raw < 0) & (f < 0)).sum())
+    agreement = float(n_agree / n_active) if n_active > 0 else 0.0
+    passed = bool(n_active > 0 and agreement >= 0.9)
+
+    if not passed:
+        return {
+            "status": "mismatch",
+            "situation_check": {"agreement": agreement, "passed": False},
+            "main_measure": {"name": "|forecast|-weighted mean of next-bar return minus coin mean, short bars",
+                             "value": None, "statistic": None,
+                             "threshold": "t <= -2 confirms, t >= +2 rejects"},
+            "supporting_check": None,
+            "counts": {"active bars": n_active},
+            "decided_by": ("The plan's situation is the 50-day SMA below the 200-day SMA with a short position, "
+                           "but fewer than 90% of the bars with a nonzero forecast are short bars on which the raw "
+                           "SMA spread is negative (the forecast is the spread standardised against its own past "
+                           "values and clipped at 0, so it goes short whenever the spread is below its recent mean, "
+                           "not only when the 50-day SMA is under the 200-day SMA)."),
+            "reading": ("Situation taken as raw component value (50-SMA minus 200-SMA as % of 200-SMA) < 0, "
+                        "with forecast < 0 as the expected short side."),
+        }
+
+    # ---------- 2. Criterion ----------
+    all_rets = []
+    act_rets, act_w = [], []
     n_stretches = 0
-    cid = 0
+    for coin, wins in bars.items():
+        coin_all = []
+        coin_act = []
+        for w, df in wins.items():
+            df = df.reset_index(drop=True)
+            close = pd.to_numeric(df["close"], errors="coerce").values
+            f = pd.to_numeric(df["forecast"], errors="coerce").values
+            col = comp_col(df)
+            raw = pd.to_numeric(df[col], errors="coerce").values if col is not None else np.full(len(df), np.nan)
+            nxt = np.full(len(df), np.nan)
+            if len(df) > 1:
+                nxt[:-1] = close[1:] / close[:-1] - 1.0
+            ok = np.isfinite(nxt)
+            coin_all.extend(nxt[ok].tolist())
+            a = ok & np.isfinite(f) & (f < 0)
+            coin_act.append((nxt[a], np.abs(f[a])))
+            # separate down-cross stretches: runs of raw spread < 0 that contain at least one active bar
+            below = np.isfinite(raw) & (raw < 0)
+            i = 0
+            n = len(df)
+            while i < n:
+                if below[i]:
+                    j = i
+                    while j < n and below[j]:
+                        j += 1
+                    if np.any(a[i:j]):
+                        n_stretches += 1
+                    i = j
+                else:
+                    i += 1
+        mu = float(np.mean(coin_all)) if len(coin_all) else np.nan
+        all_rets.extend(coin_all)
+        for r, wt in coin_act:
+            act_rets.extend((r - mu).tolist())
+            act_w.extend(wt.tolist())
 
-    for coin in bars:
-        for window in bars[coin]:
-            df = bars[coin][window]
-            if df is None or len(df) == 0:
-                continue
-            df = df.sort_values("timestamp").reset_index(drop=True)
-            close = df["close"].astype(float)
-            ret = close.shift(-1) / close - 1.0
-            fc = df[FC].astype(float)
+    x = np.asarray(act_rets, float)
+    wts = np.asarray(act_w, float)
+    n_act = int(len(x))
 
-            # all bars of the window with a valid next-bar return
-            valid_all = ret.notna()
-            all_rets.extend(ret[valid_all].tolist())
+    value, tstat = None, None
+    if n_act >= 2 and wts.sum() > 0:
+        m = float(np.sum(wts * x) / np.sum(wts))
+        var = float(np.sum(wts * (x - m) ** 2) / np.sum(wts))
+        n_eff = float(wts.sum() ** 2 / np.sum(wts ** 2))
+        if n_eff > 1:
+            var *= n_eff / (n_eff - 1.0)
+        se = np.sqrt(var / n_eff) if n_eff > 0 else np.nan
+        value = m
+        tstat = float(m / se) if (np.isfinite(se) and se > 0) else None
 
-            # strategy gain before costs, over all bars
-            if POS in df.columns:
-                pos = df[POS].astype(float)
-                g = pos * ret
-                strat_gains.extend(g[g.notna()].tolist())
+    # supporting check: share of down bars on active bars vs all bars (binomial z)
+    allr = np.asarray(all_rets, float)
+    raw_act = x  # sign of excess differs from sign of return; recompute down share on raw returns
+    # rebuild raw active returns
+    act_raw = []
+    for coin, wins in bars.items():
+        for w, df in wins.items():
+            df = df.reset_index(drop=True)
+            close = pd.to_numeric(df["close"], errors="coerce").values
+            f = pd.to_numeric(df["forecast"], errors="coerce").values
+            nxt = np.full(len(df), np.nan)
+            if len(df) > 1:
+                nxt[:-1] = close[1:] / close[:-1] - 1.0
+            a = np.isfinite(nxt) & np.isfinite(f) & (f < 0)
+            act_raw.extend(nxt[a].tolist())
+    act_raw = np.asarray(act_raw, float)
+    z = None
+    sup_passed = None
+    if len(allr) > 0 and len(act_raw) > 0:
+        p0 = float(np.mean(allr < 0))
+        pa = float(np.mean(act_raw < 0))
+        if 0 < p0 < 1:
+            z = float((pa - p0) / np.sqrt(p0 * (1 - p0) / len(act_raw)))
+            sup_passed = bool(z >= 2.0)
 
-            # stretches: contiguous runs of forecast < 0 inside this window
-            prev_in = False
-            cur_cluster = None
-            for i in range(len(df)):
-                f = fc.iloc[i]
-                is_in = (not pd.isna(f)) and f < 0
-                if is_in and not prev_in:
-                    cid += 1
-                    n_stretches += 1
-                    cur_cluster = cid
-                if is_in and not pd.isna(ret.iloc[i]):
-                    in_rets.append(float(ret.iloc[i]))
-                    cluster_ids.append(cur_cluster)
-                    hold_in.append(float(ret.iloc[i]))
-                prev_in = is_in
-
-    in_rets = np.asarray(in_rets, dtype=float)
-    all_rets = np.asarray(all_rets, dtype=float)
-    cluster_ids = np.asarray(cluster_ids)
-    n_in = int(len(in_rets))
-    n_clusters_used = int(len(np.unique(cluster_ids))) if n_in else 0
-
-    diff = None
-    t_stat = None
-    down_in = down_all = down_diff = None
-    passed = None
-
-    if n_in > 0 and len(all_rets) > 0:
-        mean_in = float(in_rets.mean())
-        mean_all = float(all_rets.mean())
-        diff = mean_in - mean_all
-
-        # stretch-clustered SE of the in-state mean (CR1 small-sample factor G/(G-1))
-        G = n_clusters_used
-        if G >= 2:
-            resid = in_rets - mean_in
-            sums = pd.Series(resid).groupby(cluster_ids).sum().values
-            var = (G / (G - 1)) * np.sum(sums ** 2) / (n_in ** 2)
-            se = float(np.sqrt(var))
-            if se > 0:
-                t_stat = diff / se
-
-        down_in = float(np.mean(in_rets < 0))
-        down_all = float(np.mean(all_rets < 0))
-        down_diff = down_in - down_all
-        passed = bool(down_in > down_all)
-
-    # informational equity checks
-    strat_end = float(np.prod(1.0 + np.asarray(strat_gains))) if strat_gains else None
-    hold_end = float(np.prod(1.0 + np.asarray(hold_in))) if hold_in else None
-
-    counts = {
-        "distinct down-cross stretches": int(n_stretches),
-        "in-state bars pooled": n_in,
-    }
-
-    if n_stretches < 3 or n_in < 60 or diff is None:
+    if n_act < 100 or n_stretches < 2 or tstat is None:
         status = "inconclusive"
-        decided = ("Inconclusive: fewer than 3 distinct down-cross stretches or fewer than 60 "
-                   "in-state bars pooled across the windows.")
-    elif diff >= 0:
-        status = "rejected"
-        decided = "Reject: in-state mean next-bar return is at or above the all-bars mean."
-    elif diff <= -0.001 and t_stat is not None and t_stat <= -2 and passed:
+        decided_by = ("Inconclusive: fewer than 100 active bars or fewer than 2 separate down-cross stretches "
+                      "across the 6 windows (or no t-statistic could be computed).")
+    elif value < 0 and tstat <= -2:
         status = "confirmed"
-        decided = ("Confirm: in-state mean is at least 0.10% per day below the all-bars mean with "
-                   "stretch-clustered t <= -2, and the down-bar share in stretches exceeds the all-bars share.")
+        decided_by = "Confirm: the weighted excess return is negative with t <= -2, so the short gains beyond the coin's drift."
+    elif value > 0 and tstat >= 2:
+        status = "rejected"
+        decided_by = "Reject: the weighted excess return is positive with t >= +2, so prices rise more than usual in down-cross stretches."
     else:
         status = "inconclusive"
-        decided = ("Inconclusive: the difference is negative but t > -2, or smaller than 0.10% per day, "
-                   "or the down-bar share in stretches is not higher than over all bars.")
-    decided += (f" (Info: strategy equity end {strat_end}, holding over in-state bars end {hold_end}.)")
+        decided_by = "Inconclusive: t lies strictly between -2 and +2."
 
     return {
         "status": status,
-        "main_measure": {
-            "name": "in-state mean next-bar return minus all-bars mean",
-            "value": None if diff is None else float(diff),
-            "statistic": None if t_stat is None else {"name": "stretch-clustered t", "value": float(t_stat)},
-            "threshold": "difference <= -0.10% per day (-0.001) with stretch-clustered t <= -2",
-        },
-        "supporting_check": {
-            "name": "down-bar share in stretches minus share over all bars",
-            "value": None if down_diff is None else float(down_diff),
-            "passed": passed,
-        },
-        "counts": counts,
-        "decided_by": decided,
-        "reading": ("In-state bars are bars with forecast < 0 and a next-bar return in the same window, "
-                    "stretches are contiguous runs of such bars per window (a run open at a window edge counts "
-                    "as a stretch), t is the difference divided by the cluster-robust (CR1) SE of the in-state "
-                    "mean over stretches treating the all-bars mean as fixed, and only the down-share comparison "
-                    "enters the confirm rule while the equity checks are reported for information."),
+        "situation_check": {"agreement": agreement, "passed": True},
+        "main_measure": {"name": "|forecast|-weighted mean of next-bar return minus coin mean, short bars",
+                         "value": value,
+                         "statistic": ({"name": "t of weighted mean", "value": tstat} if tstat is not None else None),
+                         "threshold": "t <= -2 with negative mean confirms; t >= +2 with positive mean rejects"},
+        "supporting_check": {"name": "down-bar share on active vs all bars (binomial z)",
+                             "value": z, "passed": sup_passed},
+        "counts": {"active bars": n_act, "down-cross stretches": int(n_stretches)},
+        "decided_by": decided_by,
+        "reading": ("Coin mean taken over all tested bars of all windows; t of the weighted mean uses the weighted "
+                    "variance with Kish effective n; a down-cross stretch is a run of bars with negative raw SMA "
+                    "spread containing an active bar; the supporting check passes when z >= 2."),
     }

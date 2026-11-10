@@ -5,132 +5,147 @@ from scipy import stats
 
 def measure(bars):
     H = 5
-    MIN_N = 30
+    VAL = "debug_info.components.rsi_high.last_history_value"
+    SCALE = 0.4
 
-    # Top-20% cut-off of the non-zero forecast values, pooled over every bar in the record
-    all_fc = []
+    # ---------- 1. Situation check: RSI above 50 (graded long), expected side long ----------
+    n_active = 0
+    n_agree = 0
     for coin, wins in bars.items():
         for w, df in wins.items():
-            fc = pd.to_numeric(df["forecast"], errors="coerce").dropna()
-            all_fc.append(fc[fc != 0].values)
-    nz = np.concatenate(all_fc) if all_fc else np.array([])
-    thr = float(np.quantile(nz, 0.8)) if len(nz) > 0 else np.nan
+            f = pd.to_numeric(df["forecast"], errors="coerce")
+            v = pd.to_numeric(df[VAL], errors="coerce")
+            ok = f.notna() & v.notna()
+            active = ok & (f != 0)
+            rsi = 50.0 - v / SCALE
+            agree = active & (rsi > 50.0) & (f > 0)
+            n_active += int(active.sum())
+            n_agree += int(agree.sum())
+    agreement = float(n_agree / n_active) if n_active > 0 else 0.0
+    passed = bool(n_active > 0 and agreement >= 0.90)
+
+    if not passed:
+        return {
+            "status": "mismatch",
+            "situation_check": {"agreement": agreement, "passed": False},
+            "main_measure": {"name": "extreme minus neutral forward 5-bar return", "value": None,
+                             "statistic": None,
+                             "threshold": "positive with Welch t >= 2 to confirm; negative with t <= -2 to reject"},
+            "supporting_check": None,
+            "counts": {"active bars": int(n_active)},
+            "decided_by": ("The plan's situation is a long position only while RSI(14) is above 50, but fewer than 90% "
+                           "of the bars with a non-zero forecast have RSI above 50 with a positive forecast "
+                           "(the config standardises the RSI value against its own 60-bar history, so the long "
+                           "side follows RSI relative to its recent mean rather than RSI above 50)."),
+            "reading": "Situation taken as RSI = 50 - value/0.4 strictly above 50 with forecast > 0.",
+        }
+
+    # ---------- 2. Extreme threshold: top 20% of positive forecasts, pooled ----------
+    pos = []
+    for coin, wins in bars.items():
+        for w, df in wins.items():
+            f = pd.to_numeric(df["forecast"], errors="coerce")
+            pos.append(f[f > 0].dropna().values)
+    pos = np.concatenate(pos) if pos else np.array([])
+    q80 = float(np.quantile(pos, 0.80)) if len(pos) > 0 else np.inf
 
     ext_all, neu_all = [], []
     per_coin = {}
-    support_total = 0.0
-    support_any = False
-    support_per_coin = {}
-
+    sup_vals = {}
     for coin, wins in bars.items():
         ext_c, neu_c = [], []
-        strat_sum = 0.0
-        coin_ret_sum = 0.0
-        alloc_vals = []
-        has_support = False
+        strat_sum, hold_sum = 0.0, 0.0
+        n_sup = 0
         for w, df in wins.items():
             df = df.reset_index(drop=True)
-            close = pd.to_numeric(df["close"], errors="coerce").values
-            fc = pd.to_numeric(df["forecast"], errors="coerce").values
-            alloc = pd.to_numeric(df["postRebalance_current_allocation"], errors="coerce").values
+            c = pd.to_numeric(df["close"], errors="coerce").values
+            f = pd.to_numeric(df["forecast"], errors="coerce").values
+            v = pd.to_numeric(df[VAL], errors="coerce").values
+            a = pd.to_numeric(df["postRebalance_current_allocation"], errors="coerce").values
             n = len(df)
-
-            # Non-overlapping 5-bar grid: positions 0, 5, 10, ... with t+5 inside the window
-            for t in range(0, n - H, H):
-                c0, c1, f = close[t], close[t + H], fc[t]
-                if np.isnan(c0) or np.isnan(c1) or np.isnan(f) or c0 == 0:
+            # non-overlapping grid
+            for i in range(0, n - H, H):
+                if not (np.isfinite(c[i]) and np.isfinite(c[i + H]) and c[i] != 0):
                     continue
-                r = c1 / c0 - 1.0
-                if not np.isnan(thr) and f != 0 and f >= thr:
+                r = c[i + H] / c[i] - 1.0
+                if np.isfinite(f[i]) and f[i] > 0 and f[i] >= q80:
                     ext_c.append(r)
-                elif f < 1:
+                if np.isfinite(v[i]) and abs(v[i]) <= 4.0:
                     neu_c.append(r)
-
-            # Supporting check: per-bar gains before costs, inside this window only
-            for t in range(n - 1):
-                a, c0, c1 = alloc[t], close[t], close[t + 1]
-                if np.isnan(a) or np.isnan(c0) or np.isnan(c1) or c0 == 0:
+            # supporting check: bars with non-zero forecast
+            for i in range(n - 1):
+                if not (np.isfinite(f[i]) and f[i] != 0):
                     continue
-                r1 = c1 / c0 - 1.0
-                strat_sum += a * r1
-                coin_ret_sum += r1
-                alloc_vals.append(a)
-                has_support = True
-
+                if not (np.isfinite(c[i]) and np.isfinite(c[i + 1]) and np.isfinite(a[i]) and c[i] != 0):
+                    continue
+                r1 = c[i + 1] / c[i] - 1.0
+                strat_sum += a[i] * r1
+                hold_sum += r1
+                n_sup += 1
         ext_all += ext_c
         neu_all += neu_c
         d = (np.mean(ext_c) - np.mean(neu_c)) if (len(ext_c) > 0 and len(neu_c) > 0) else None
-        per_coin[coin] = {"diff": d, "n_extreme": len(ext_c), "n_neutral": len(neu_c)}
-
-        if has_support:
-            avg_exp = float(np.mean(alloc_vals))
-            excess = strat_sum - avg_exp * coin_ret_sum
-            support_per_coin[coin] = excess
-            support_total += excess
-            support_any = True
+        per_coin[coin] = None if d is None else float(d)
+        sup_vals[coin] = float(strat_sum - hold_sum) if n_sup > 0 else None
 
     n_ext, n_neu = len(ext_all), len(neu_all)
-    diff, tval = None, None
-    if n_ext > 0 and n_neu > 0:
-        diff = float(np.mean(ext_all) - np.mean(neu_all))
     if n_ext >= 2 and n_neu >= 2:
-        tt = stats.ttest_ind(ext_all, neu_all, equal_var=False)
-        tval = float(tt.statistic) if np.isfinite(tt.statistic) else None
+        diff = float(np.mean(ext_all) - np.mean(neu_all))
+        t = float(stats.ttest_ind(ext_all, neu_all, equal_var=False).statistic)
+    else:
+        diff = float(np.mean(ext_all) - np.mean(neu_all)) if (n_ext and n_neu) else None
+        t = None
 
-    coins_positive = sum(1 for v in per_coin.values() if v["diff"] is not None and v["diff"] > 0)
-    support_val = float(support_total) if support_any else None
-    support_pass = (support_val > 0) if support_val is not None else None
+    coins_pos = sum(1 for d in per_coin.values() if d is not None and d > 0)
+    coins_neg = sum(1 for d in per_coin.values() if d is not None and d < 0)
+    sup_pos = sum(1 for s in sup_vals.values() if s is not None and s > 0)
+    sup_passed = bool(sup_pos >= 2)
 
-    if n_ext < MIN_N or n_neu < MIN_N or tval is None:
+    enough = n_ext >= 30 and n_neu >= 30
+    if not enough:
         status = "inconclusive"
-        decided = (f"Inconclusive: fewer than 30 non-overlapping extreme cases ({n_ext}) "
-                   f"or neutral cases ({n_neu}) pooled, or no t-statistic could be computed.")
-    elif tval <= -2:
-        status = "rejected"
-        decided = f"Rejected: the pooled t ({tval:.2f}) is -2 or below, pointing to reversal."
-    elif tval <= 0:
-        status = "rejected"
-        decided = f"Rejected: the pooled extreme-minus-neutral difference is zero or negative (t = {tval:.2f} <= 0)."
-    elif tval >= 2 and coins_positive >= 2 and support_pass:
+        decided = "Inconclusive: fewer than 30 non-overlapping extreme cases or fewer than 30 neutral cases in the pool."
+    elif t is None or diff is None or not np.isfinite(t):
+        status = "inconclusive"
+        decided = "Inconclusive: the t-statistic cannot be computed."
+    elif diff > 0 and t >= 2 and coins_pos >= 2:
         status = "confirmed"
-        decided = (f"Confirmed: the difference is positive with t = {tval:.2f} >= 2, positive in "
-                   f"{coins_positive} coins (>= 2), and the pooled supporting excess is positive.")
-    elif tval >= 2:
+        decided = "Confirm: the extreme-minus-neutral difference is positive with t >= 2 and positive in at least 2 coins."
+    elif diff < 0 and t <= -2 and coins_neg >= 2:
+        status = "rejected"
+        decided = "Reject: the difference is negative with t <= -2, high RSI followed by weaker moves than neutral bars."
+    elif -2 < t < 2:
         status = "inconclusive"
-        decided = (f"Inconclusive: t = {tval:.2f} >= 2 but the remaining confirm conditions fail "
-                   f"(coins positive = {coins_positive}, supporting excess positive = {support_pass}), "
-                   f"and the reject rule (t <= 0) is not met.")
+        decided = "Inconclusive: t lies between -2 and 2."
     else:
         status = "inconclusive"
-        decided = f"Inconclusive: t = {tval:.2f} lies between 0 and 2."
+        decided = "Inconclusive: the result is supported in only one coin."
 
     return {
         "status": status,
+        "situation_check": {"agreement": agreement, "passed": passed},
         "main_measure": {
-            "name": "mean 5-bar forward return, extreme minus neutral bars, pooled",
+            "name": "extreme minus neutral forward 5-bar return, pooled, before costs",
             "value": diff,
-            "statistic": {"name": "Welch t", "value": tval} if tval is not None else None,
-            "threshold": "positive with t >= 2 confirms (with >= 2 of 3 coins positive and positive pooled support); t <= 0 rejects",
+            "statistic": None if t is None else {"name": "Welch t", "value": t},
+            "threshold": "positive with t >= 2 and positive in at least 2 of 3 coins to confirm; negative with t <= -2 to reject",
         },
         "supporting_check": {
-            "name": "strategy return minus exposure-scaled buy-and-hold, summed over coins",
-            "value": support_val,
-            "passed": support_pass,
+            "name": "strategy minus buy-and-hold return on non-zero-forecast bars, coins positive",
+            "value": float(sup_pos),
+            "passed": sup_passed,
         },
         "counts": {
             "non-overlapping extreme cases": int(n_ext),
             "neutral cases": int(n_neu),
-            "coins with positive difference": int(coins_positive),
-            "coins": int(len(per_coin)),
+            "coins with positive difference": int(coins_pos),
+            "coins with negative difference": int(coins_neg),
+            "coins in record": int(len(per_coin)),
         },
         "decided_by": decided,
-        "reading": (
-            "Extreme bars are those whose forecast is at or above the 80th percentile of all non-zero forecasts "
-            "pooled over every bar of every coin and window, and neutral bars are those whose forecast is below 1, "
-            "both taken on the 0,5,10,... grid of each window. With only the coins present in the record, the rule "
-            "'positive in at least 2 of the 3 coins' is applied as at least 2 positive coins. The supporting excess "
-            "is computed per coin as the sum of per-bar gains (allocation x next-bar return) minus the mean allocation "
-            "times the sum of the coin's per-bar returns, all inside each window, and these per-coin excesses are "
-            "summed to give the pooled value."
-        ),
+        "reading": ("Extreme bars are grid bars whose forecast is at or above the 80th percentile of all positive "
+                    "forecasts pooled over coins and windows, neutral bars are grid bars with |component value| <= 4, "
+                    "'at least 2 of the 3 coins' is applied as at least 2 of the coins present (the same count "
+                    "of 2 negative coins is required for a rejection to be supported in more than one coin), and the "
+                    "supporting check sums per-bar strategy and coin returns over each coin's non-zero-forecast bars."),
     }

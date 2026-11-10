@@ -8,16 +8,16 @@ outcome: plan
 fit: adapted
 ---
 Fidelity:
-- Situation: a sharp one-day up move on BTC daily bars -> adapted: the daily return ranks in the top decile of its own history, read as a regime condition.
-- Comparison: moves on low volume against moves of similar size on high volume -> adapted: "unusually" low or high becomes the bar's volume below, or at or above, its 20-bar mean, used as a regime split.
-- Outcome: thin moves give back more of the rise, and heavy moves hold more -> adapted: "afterwards" becomes the next bar while the situation holds, measured as the next return as a share of the move.
-- Verdict transfer: yes: both groups face the same size filter and the same one-bar outcome, so if thin moves revert more than heavy ones, that is exactly the idea.
-Forecast: On each bar, the detector checks whether the one-bar return ranks at or above the 0.90 percentile of its history. - Heavy case: the move is sharp and the bar's volume is at or above its 20-bar mean. The regime is trending. The forecast is long, equal to the standardised one-bar return: positive and graded with the move's size, capped at 20. - Thin case: the move is sharp and the volume is below its 20-bar mean. The regime is mean_reversion. The forecast is the same standardised one-bar return, negated: short and graded with the move's size. - No sharp up move: the forecast is 0. Each position is held for the next bar only, so the record shows what follows each kind of move.
+- Situation: a sharp upward move on low or on high volume -> adapted: the move is the one-bar rise, graded by its size; low versus high is the bar's volume against its 20-bar mean, set as a regime condition.
+- Comparison: thin moves against heavy moves of similar size -> adapted: both groups are sized by the same graded move size and compared per unit of position.
+- Outcome: thin moves give back more of the rise, heavy moves hold -> adapted: the holding period is dropped, so the outcome is the next bar's return after each up bar.
+- Verdict transfer: yes: the test compares returns after thin and heavy up moves of matched size, which is the theory's own pass/fail condition.
+Forecast: The forecast uses one indicator, the one-bar percent change of the close (PriceEvolution, period 1), standardised over 60/20. It then goes through signed_power with exponent 2, so small moves are damped and sharp moves dominate. The regime detector decides which way the forecast points: - On an up bar whose volume is at or above its 20-bar mean ("heavy"), the regime is trending and the forecast is long, growing with the move's size. - On an up bar with volume below that mean ("thin"), the regime is mean_reversion and the same quantity is negated, so the forecast is short, growing with the move's size. - On down or flat bars the forecast is zero.
 Config: 003-05_up-move-retrace-by-volume_1d_config.json
 Criterion:
 - Horizon: 1 bar
-- Main measure: For each sharp-move bar, the next bar's close-to-close return divided by that move's return (the share kept or given back). Compare the mean in thin cases with the mean in heavy cases, pooled over all 6 windows; each case counts once.
-- Supporting check: The strategy's portfolio return on active bars, before costs, against holding BTC over the same bars. It should be positive in both the heavy-only and thin-only parts of the record.
-- Confirm: The thin mean share is below the heavy mean share, with a Welch t-stat of at least 2.0. The thin mean share is also below 0, meaning part of the rise is given back.
-- Reject: The thin mean share is at or above the heavy mean share. Or the thin mean share is at or above 0 while heavy moves revert more.
-- Inconclusive: Thin is below heavy but the t-stat is under 2.0. Also inconclusive if there are fewer than 15 thin cases or fewer than 15 heavy cases in total across the 6 windows.
+- Main measure: Each up bar is weighted by the absolute value of its forecast, and its next-bar coin return is recorded. The measure is the weighted mean of those returns after heavy up bars minus the same mean after thin up bars, with a Welch t-test pooled over the 6 windows. Taking the difference cancels the coin's own drift, which plays the role of the buy-and-hold benchmark.
+- Supporting check: The weighted mean next-bar return after thin up bars, minus the coin's unconditional mean daily return over the same windows, should be negative.
+- Confirm: The heavy-minus-thin difference is positive with t ≥ 2. Returns are 1-bar and do not overlap, so each bar counts once.
+- Reject: The heavy-minus-thin difference is negative with t ≤ -2, meaning thin moves hold better than heavy ones.
+- Inconclusive: Any t between -2 and 2, including a difference of either sign. The test is also inconclusive if fewer than 30 forecast-bearing up bars fall in either group across all windows.
