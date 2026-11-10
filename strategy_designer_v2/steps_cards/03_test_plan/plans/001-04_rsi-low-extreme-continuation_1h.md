@@ -4,10 +4,20 @@ brief: 001_rsi-extremes-predict-next-move
 data-instruments: BTC, ETH, BNB
 data-bar: 1h
 data-period: fold A
+outcome: plan
+fit: adapted
 ---
-Forecast: Short-only RSI continuation. Take the 14-bar Wilder RSI of the 1h closes. When RSI is below 50, the forecast is negative and proportional to (50 − RSI). That value is divided by the mean absolute value of its previous 60 stored values, times 10, and capped at −20. It is zero whenever RSI is 50 or above. The deeper the RSI sits below 50, the larger the short, so the biggest shorts come at the lowest readings. The forecast is never positive.
+Fidelity:
+- Situation: RSI at a low extreme -> adapted: graded depth of RSI(14) below 50, and "after" becomes "while"; squaring keeps mild readings near zero.
+- Comparison: falls after neutral readings -> adapted: neutral RSI gives a near-zero position, so the comparison is between forward returns after large and near-zero positions.
+- Outcome: price keeps falling over the following bars -> kept: a short position gains when price falls.
+- Verdict transfer: yes: the short side grows with RSI depth and stays flat near neutral, so the test's result is the idea's result.
+Forecast: RSI(14) pullback with long_only on gives (50 - RSI) when RSI is below 50 and 0 otherwise. It is standardised against its own past 60 values, so a typical reading is 10, capped at 20. A signed power with exponent 2 and pivot 10 shrinks mild readings toward 0 and enlarges deep ones. The result is negated, so the forecast is zero when RSI is 50 or above and increasingly negative (a larger short) the further RSI sits below 50. It is never positive. The combined forecast is clipped at -20.
 Config: 001-04_rsi-low-extreme-continuation_1h_config.json
-Confirm: The test uses one horizon, 24 bars, sampled on non-overlapping blocks of 24 bars. Each 24-bar forward return of the coin is taken minus that coin-window's mean 24-bar return, so that holding the coin is the baseline. Two groups are compared: - extreme bars: the 10% of bars with the most negative forecast (lowest RSI); - neutral bars: bars where the recorded RSI is between 40 and 60. The idea is confirmed if the mean excess return of the extreme group, minus that of the neutral group, is negative with t ≤ −2 pooled over all coins and windows, and is negative in at least 2 of the 3 coins. Supporting check: the pre-cost portfolio return is positive in at least 11 of the 18 coin-windows.
-Reject: The idea is rejected if the pooled extreme-minus-neutral difference in 24-bar excess return is zero or positive. If that difference is positive with t ≥ 2, the result is evidence of reversal, the opposite of the idea.
-Inconclusive: The difference is negative but with t between −2 and 0. Or it is negative pooled but negative in fewer than 2 of the 3 coins. Or the main measure confirms but the supporting check fails (fewer than 11 of 18 coin-windows positive).
-Deviation: The idea says "after RSI reaches a low extreme". The config tests "while RSI is below 50, sized by how far below". The short starts at any reading under 50, not only at extremes, and its size is measured against the last 60 bars rather than a fixed RSI level. High readings get no long position, because the idea is only about the downside. The comparison of extreme against neutral readings is made in the criterion, not in the forecast.
+Criterion:
+- Horizon: 12 bars
+- Main measure: The coin's 12-bar forward return after extreme bars (forecast <= -10) minus its 12-bar forward return after neutral bars (|forecast| < 1, RSI near or above 50), measured before costs. Overlapping returns are counted once by keeping only bars at least 12 bars apart.
+- Supporting check: The strategy's before-cost return in each window, compared with holding the coin over the same window, adjusted for the strategy's average short exposure. It should be positive in most windows.
+- Confirm: The difference is negative with t <= -2 on the non-overlapping samples in at least 2 of the 3 coins, and none of the coins has a positive difference with t >= 2.
+- Reject: The difference is >= 0, or its t is above -1, in at least 2 of the 3 coins. A significantly positive difference (reversal) also rejects the idea.
+- Inconclusive: Any result between those, or any coin with fewer than 30 non-overlapping extreme cases or fewer than 30 neutral cases across its 6 windows. Such a coin does not count toward either verdict.

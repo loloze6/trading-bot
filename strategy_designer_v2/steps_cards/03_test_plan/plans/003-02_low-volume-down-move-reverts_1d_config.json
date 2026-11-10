@@ -3,20 +3,15 @@
     "mode": "threshold_rules",
     "components": [
       {
-        "id": "move",
-        "class": "strategies.strategy_components.PriceEvolutionComponent",
-        "params": {
-          "period": 1
-        }
+        "id": "volgate",
+        "class": "strategies.strategy_components.BuyAndHoldStrategy",
+        "params": {}
       }
     ],
     "vetoes": [
       {
-        "id": "move",
+        "id": "volgate",
         "transforms": [
-          {
-            "op": "identity"
-          },
           {
             "op": "volume_filter",
             "params": {
@@ -26,9 +21,8 @@
         ],
         "rules": [
           {
-            "op": "between",
-            "low": -1e-12,
-            "high": 1e-12
+            "op": "lt",
+            "value": 5.0
           }
         ],
         "consecutive_bars": 1,
@@ -76,9 +70,9 @@
           }
         ]
       },
-      "unknown": null,
       "trending": null,
-      "chop": null
+      "chop": null,
+      "unknown": null
     }
   }
 }

@@ -4,10 +4,20 @@ brief: 001_rsi-extremes-predict-next-move
 data-instruments: BTC, ETH, BNB
 data-bar: 1d
 data-period: fold A
+outcome: plan
+fit: adapted
 ---
-Forecast: The 14-bar Wilder RSI on daily closes, read as (50 - RSI). Only the high side counts, so the forecast is short only and zero whenever RSI is at or below 50. - Scaling: standardise the reading against the mean absolute value of its previous 60 bars, so a typical reading is about 10. - Short side only: clip the result at a maximum of 0. - Emphasising extremes: apply a signed square around pivot 10. Moderate readings (RSI just above 50) are damped smoothly towards 0, and extreme readings (RSI in the 70s and 80s) are amplified. - Size and sign: the short position grows continuously with how far RSI is above 50, and is largest at the highest RSI readings. The forecast is never positive.
+Fidelity:
+- Situation: RSI reaches a high extreme -> adapted: the extreme becomes graded, with the short sized by how far the 14-bar RSI sits above 50 and damped near 50.
+- Comparison: after extreme readings versus after neutral readings -> kept: the criterion compares returns after the largest positions with returns after neutral bars and with the coin's own drift.
+- Outcome: price falls back over the following bars -> adapted: "after X" becomes "while X", the holding period is dropped, and the short is held while RSI stays high.
+- Verdict transfer: yes: a graded short on high RSI wins exactly when high readings come before falls, and loses or breaks even when they do not.
+Forecast: The forecast comes from the 14-bar Wilder RSI on daily closes, taken as 50 − RSI. It is standardised against its own past 60 values, so a typical reading is 10. It is then clipped at 0 from above, so only readings above 50 count and the forecast is never long. A signed_power with exponent 2 and pivot 10 damps readings near 50 and amplifies extreme ones. The forecast is 0 when RSI is 50 or below. It grows more negative, meaning a larger short, the higher RSI rises, reaching a cap of −20 at the most extreme readings. There is no regime: it is active on every bar.
 Config: 001-01_rsi-high-extreme-reversal_1d_config.json
-Confirm: The test uses a 5-bar horizon. Take the bars in the top decile of short size (largest |forecast|), pooled over the 3 coins and 18 windows, sampled so that no two 5-bar forward returns overlap. On those bars, the coin's forward 5-bar close-to-close return, minus the coin's unconditional mean 5-bar return over the same windows, averages -1.0% or lower with a t-statistic of -2 or lower, before costs. Supporting check: the excess has the same negative sign on at least 2 of the 3 coins.
-Reject: The same pooled, non-overlapping mean excess 5-bar return after top-decile short bars is 0 or higher (no reversal, or continuation).
-Inconclusive: A pooled mean excess between -1.0% and 0. A mean of -1.0% or lower with a t-statistic between -2 and 0. A negative pooled excess that is negative on only 1 of the 3 coins.
-Deviation: "After RSI reaches a high extreme" becomes "while RSI is above 50, sized up sharply as it rises". There is no fixed extreme threshold such as 70, and the position exists only while RSI stays elevated, not for a set number of bars after the extreme.
+Criterion:
+- Horizon: 5 bars
+- Main measure: The coin's 5-bar forward return after "extreme" bars, defined as bars with a forecast of −10 or below. From this, subtract the coin's mean 5-bar forward return in the same window (its own drift). Pool across coins and windows, using non-overlapping 5-bar blocks only.
+- Supporting check: The rank correlation between the forecast size (|forecast|) and the next 5-bar coin return, over bars with forecast < 0. It should be negative.
+- Confirm: The pooled excess forward return after extreme bars is negative with t ≤ −2, and it is negative in at least 2 of the 3 coins.
+- Reject: The pooled excess forward return after extreme bars is ≥ 0, or it is negative in fewer than 2 coins with t > −1.
+- Inconclusive: A negative pooled excess return with −2 < t ≤ −1, or a significant pooled result with the coins split. The test needs at least 30 non-overlapping extreme blocks pooled and at least 8 per coin; with fewer, the result is inconclusive.

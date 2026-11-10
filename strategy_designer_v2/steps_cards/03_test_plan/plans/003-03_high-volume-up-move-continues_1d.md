@@ -4,10 +4,20 @@ brief: 003_thin-volume-moves-revert
 data-instruments: BTC/USDT
 data-bar: 1d
 data-period: fold A
+outcome: plan
+fit: adapted
 ---
-Forecast: Active only on a bar whose close is above the previous close and whose volume is at or above its 20-bar average volume (the 20 bars include the current one). On such a bar the forecast is that day's one-bar percent return divided by the mean absolute one-bar return of the 60 bars before it, times 10, capped at 20, and never below 0. A day whose move is as large as the recent average day is +10 (100% long). A move twice that size or more is +20, and a small move is near 0. On every other bar (down days, or up days on below-average volume) the forecast is 0 (flat). Each position therefore covers the one bar that follows the high-volume up day.
+Fidelity:
+- Situation: sharp up move on unusually high volume -> adapted: "unusually high" becomes a regime veto (the bar's volume at or above its 20-day mean); "sharp" becomes graded by the size of the one-day rise.
+- Comparison: unusually high volume against normal volume -> adapted: the bar's volume is compared on/off with its 20-day mean, because no graded volume-ratio component exists.
+- Outcome: price keeps rising after the move -> adapted: "after X" becomes "while X", so the long is held through the next bar only and the holding period is dropped.
+- Verdict transfer: yes: the test measures whether sharp up days on above-average volume lead to rises beyond holding, sized by the sharpness of the move, which is the idea's claim.
+Forecast: Each day the regime checks the one-day move. If the close rose and the day's volume is at or above its 20-day mean, the bar is "trending". Otherwise it is flat, with forecast 0. In the trending regime the forecast is the one-day percent rise: - it is standardised against its own last 60 values (target 10, cap 20); - it is clipped at 0, so it is long only; - it is passed through signed_power with exponent 2, so ordinary rises give small longs and sharp rises give large ones (5 becomes 2.5, 10 stays 10, 15 becomes 22.5, and the total is clipped at 20). The forecast is never negative. It is zero on down days and on low-volume days.
 Config: 003-03_high-volume-up-move-continues_1d_config.json
-Confirm: Horizon 1 bar, before costs. Take every bar with a positive forecast, pooled over the 6 windows; each next-bar return is used once, with no overlap. The position-weighted mean next-bar return on those bars must exceed BTC's unconditional mean daily return over the same windows, with a t-statistic of at least 2 and at least 30 such bars. Supporting check: the correlation between forecast size and next-bar return is positive.
-Reject: The position-weighted mean next-bar return on those bars is at or below BTC's unconditional mean daily return. A t-statistic of -2 or lower (high-volume up moves revert) is a strong rejection.
-Inconclusive: The excess is positive but the t-statistic is below 2, or fewer than 30 qualifying bars exist across the windows.
-Deviation: Several things change from the idea as written: - "Unusually high volume" becomes volume at or above its 20-bar average, which is a binary regime gate, not a measure of how unusual the volume is. - "Sharp" is graded by the move's size relative to recent daily moves, not required as a threshold. - "Followed by further rise" is tested over only the one bar after the move, because the position closes as soon as the next bar fails the condition. - Only upward moves are tested, so the brief's comparison with low-volume moves of similar size is not made here.
+Criterion:
+- Horizon: 1 bar
+- Main measure: Take the coin's next-bar return on every active bar (forecast > 0), weighted by the position. Compare it with the coin's mean daily return over all bars of the same windows. Each bar counts once, so returns do not overlap.
+- Supporting check: On active bars, the next-bar return is higher in the top third of positions (the sharpest high-volume rises) than in the bottom third.
+- Confirm: Pooled over the 6 windows, the position-weighted mean next-bar excess return is above 0 with t ≥ 2, and the supporting check has the same sign.
+- Reject: The position-weighted mean next-bar excess return is ≤ 0. Or the top third of positions has a lower next-bar return than the bottom third, with t ≤ -2.
+- Inconclusive: A positive excess return with t < 2, or a positive main measure whose supporting check has the opposite sign. At least 60 active bars are needed in total; fewer makes the test inconclusive.

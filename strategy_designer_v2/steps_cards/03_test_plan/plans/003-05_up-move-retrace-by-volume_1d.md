@@ -4,10 +4,20 @@ brief: 003_thin-volume-moves-revert
 data-instruments: BTC/USDT
 data-bar: 1d
 data-period: fold A
+outcome: plan
+fit: adapted
 ---
-Forecast: Every bar has two parts. The move is the 1-day close-to-close return (PriceEvolutionComponent, period 1), standardised over its past 60 values (min 20), with the down side set to 0 (clip min 0), and passed through signed_power with exponent 2 and pivot 10, so sharp up days count more and small ones are damped smoothly towards 0. The volume condition compares the bar's volume with its 20-bar mean. - On a low-volume bar (volume below the 20-bar mean), the forecast is minus that graded up-move value: a short that grows with the size of the thin rise. - On a high-volume bar (volume at or above the mean), the forecast is plus the same value: a long that grows with the size of the heavy rise. - On a down day or a flat day, the forecast is 0. - The position is held for the next bar only. It changes with the next bar's move and volume.
+Fidelity:
+- Situation: a sharp one-day up move on BTC daily bars -> adapted: the daily return ranks in the top decile of its own history, read as a regime condition.
+- Comparison: moves on low volume against moves of similar size on high volume -> adapted: "unusually" low or high becomes the bar's volume below, or at or above, its 20-bar mean, used as a regime split.
+- Outcome: thin moves give back more of the rise, and heavy moves hold more -> adapted: "afterwards" becomes the next bar while the situation holds, measured as the next return as a share of the move.
+- Verdict transfer: yes: both groups face the same size filter and the same one-bar outcome, so if thin moves revert more than heavy ones, that is exactly the idea.
+Forecast: On each bar, the detector checks whether the one-bar return ranks at or above the 0.90 percentile of its history. - Heavy case: the move is sharp and the bar's volume is at or above its 20-bar mean. The regime is trending. The forecast is long, equal to the standardised one-bar return: positive and graded with the move's size, capped at 20. - Thin case: the move is sharp and the volume is below its 20-bar mean. The regime is mean_reversion. The forecast is the same standardised one-bar return, negated: short and graded with the move's size. - No sharp up move: the forecast is 0. Each position is held for the next bar only, so the record shows what follows each kind of move.
 Config: 003-05_up-move-retrace-by-volume_1d_config.json
-Confirm: The horizon is 1 bar. Take every up-move bar with a non-zero forecast, pooled over all 6 windows; each daily return is counted once because the holds do not overlap. For each such bar, take the next bar's return minus the coin's mean daily return in that window, and weight it by the size of the up-move value |forecast|. The confirming result is that the weighted mean on high-volume bars exceeds the weighted mean on low-volume bars, with a two-sample t-statistic of at least 2.0. Supporting check: the config's portfolio return before costs is positive in at least 4 of the 6 windows.
-Reject: The weighted mean excess next-bar return after low-volume up moves is equal to or higher than after high-volume up moves (difference ≤ 0). The idea is also rejected if the difference is positive but has t ≤ 1.0 while each group holds at least 60 bars.
-Inconclusive: A positive difference with t between 1.0 and 2.0. Also any result where either volume group has fewer than 60 up-move bars across the 6 windows.
-Deviation: - "Afterwards" is fixed at the next daily bar, not a longer giving-back period. - A "sharp move" is a single day's rise, graded by size (squared) rather than selected by a threshold. - "Unusually low or high volume" becomes a binary split at the 20-bar mean volume. - The idea is a relative claim, but the config bets in opposite directions in the two groups. Its PnL therefore also reflects absolute reversion and continuation; the criterion judges only the difference between the groups.
+Criterion:
+- Horizon: 1 bar
+- Main measure: For each sharp-move bar, the next bar's close-to-close return divided by that move's return (the share kept or given back). Compare the mean in thin cases with the mean in heavy cases, pooled over all 6 windows; each case counts once.
+- Supporting check: The strategy's portfolio return on active bars, before costs, against holding BTC over the same bars. It should be positive in both the heavy-only and thin-only parts of the record.
+- Confirm: The thin mean share is below the heavy mean share, with a Welch t-stat of at least 2.0. The thin mean share is also below 0, meaning part of the rise is given back.
+- Reject: The thin mean share is at or above the heavy mean share. Or the thin mean share is at or above 0 while heavy moves revert more.
+- Inconclusive: Thin is below heavy but the t-stat is under 2.0. Also inconclusive if there are fewer than 15 thin cases or fewer than 15 heavy cases in total across the 6 windows.

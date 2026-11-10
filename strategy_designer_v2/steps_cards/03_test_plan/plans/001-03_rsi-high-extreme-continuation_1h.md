@@ -4,10 +4,20 @@ brief: 001_rsi-extremes-predict-next-move
 data-instruments: BTC, ETH, BNB
 data-bar: 1h
 data-period: fold A
+outcome: plan
+fit: adapted
 ---
-Forecast: Take the 14-bar Wilder RSI of the hourly close and measure how far it sits above 50 (RSI − 50; the component outputs 50 − RSI, which is then sign-flipped). Divide that distance by its mean absolute value over the previous 60 bars and multiply by 10, capping the result at ±20. Drop the negative side, so the forecast is 0 whenever RSI is at or below 50. Then apply signed_power with exponent 2 and pivot 10. This shrinks moderate readings smoothly toward 0 and enlarges high ones, so the long position grows with the square of how high RSI is. Readings near neutral give almost no position, and the largest positions come at the highest RSI readings. The forecast is never negative, and the combined forecast is clipped at +20.
+Fidelity:
+- Situation: RSI at a high extreme -> adapted: the threshold becomes a graded RSI excess above 50, with extremes amplified by signed_power.
+- Comparison: rise after extreme versus after neutral readings -> kept: neutral RSI gives a forecast near 0, and the criterion contrasts the largest positions with those bars.
+- Outcome: price keeps rising over the following bars -> adapted: "after X" becomes "while X", and the fixed holding period is dropped.
+- Verdict transfer: yes: the forecast is long in proportion to RSI strength above 50 and zero at or below it, so forward returns after its largest values versus near-zero values test exactly the idea's claim.
+Forecast: Use the 14-bar Wilder RSI from RSIPullbackComponent, which outputs (50 − RSI) × sf. Standardise it over its past 60 values, then negate it so that RSI above 50 is positive. Apply signed_power with exponent 2 (pivot 10), so mild readings near 50 stay near 0 and extreme high readings grow quadratically. Finally, clip at 0 so the forecast is long-only: zero whenever RSI ≤ 50, and larger the further RSI sits above its usual range, up to the cap of 20.
 Config: 001-03_rsi-high-extreme-continuation_1h_config.json
-Confirm: Horizon is 24 bars. Take the bars in the top decile of the recorded forecast, per coin and window, and keep only non-overlapping events at least 24 bars apart. Their mean forward 24-bar log return must exceed the mean forward 24-bar return after neutral bars (raw RSI component value between −2 and +2, i.e. RSI 45–55, also thinned to be 24 bars apart). The difference must be positive with a pooled t-statistic ≥ 2 across the 3 coins × 6 windows, and positive in at least 2 of the 3 coins. Supporting check, before costs: the strategy's return per unit of average exposure beats the coin's buy-and-hold return over the same windows.
-Reject: The pooled difference is at or below zero, meaning returns after the highest RSI readings are no higher than after neutral readings. A t-statistic ≤ −2 additionally points to reversal, not continuation.
-Inconclusive: The difference is positive but the t-statistic is below 2. Also inconclusive: a t-statistic ≥ 2 where fewer than 2 of the 3 coins show a positive difference.
-Deviation: "After RSI reaches a high extreme" is tested as "while RSI is above 50", with position size growing with the square of the distance; there is no fixed extreme threshold such as 70. "Extreme" is measured relative to the RSI's own last 60 hourly readings, not on the absolute RSI scale. Only the upward side is tested; no short is taken at low readings. The comparison with neutral readings is made in the criterion, not in the forecast.
+Criterion:
+- Horizon: 24 bars
+- Main measure: The coin's forward 24-bar close-to-close return after "extreme" bars minus the same return after "neutral" bars. - Extreme bars are those where the forecast is in its top decile of nonzero values. - Neutral bars are those where the forecast is below 1 and RSI is between 40 and 60. - Both returns are taken net of the coin's unconditional mean 24-bar return in the same window, so the market's own drift is not credited. - Samples are thinned to non-overlapping 24-bar blocks, one case per block.
+- Supporting check: The portfolio's gross return per unit of average exposure exceeds buy-and-hold's return times the same average exposure, in at least 2 of the 3 coins.
+- Confirm: The pooled extreme-minus-neutral difference is positive with t ≥ 2 on non-overlapping cases, and it is positive in at least 2 of 3 coins and in at least 4 of the 6 windows.
+- Reject: The pooled difference is ≤ 0, or it is negative in at least 2 of 3 coins. A difference with t ≤ −2 additionally points to reversal.
+- Inconclusive: A positive pooled difference with t < 2, or a positive pooled difference that is not confirmed by coins and windows. Any coin with fewer than 30 non-overlapping extreme cases, or fewer than 100 pooled, is inconclusive.

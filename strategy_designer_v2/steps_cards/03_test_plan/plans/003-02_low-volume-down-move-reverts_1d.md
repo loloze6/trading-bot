@@ -4,10 +4,20 @@ brief: 003_thin-volume-moves-revert
 data-instruments: BTC/USDT
 data-bar: 1d
 data-period: fold A
+outcome: plan
+fit: adapted
 ---
-Forecast: The forecast is active only on a bar whose daily volume is below its 20-bar average, including the current bar. That condition is set in the regime detector: a veto on the 1-bar price change, filtered by `volume_filter` with period 20, puts the bar in `mean_reversion` when the filtered value is 0. On every other bar the forecast is 0 (flat). On an active bar, take the 1-bar close-to-close return (`PriceEvolutionComponent`, period 1). Standardise it against the mean absolute daily return of the 60 bars before it (window 60, min_periods 20), so an average-sized day reads 10. Negate it, so a drop is positive. Clip it at a minimum of 0, so it is long only, after drops only. Then apply `signed_power` with exponent 2 and pivot 10, so that small drops are damped towards 0 and sharp drops are amplified. The result: on a low-volume down day, the long position grows smoothly with the size of the drop. A drop of average size gives +10 (100 percent long). A drop half that size gives +2.5. A drop of 1.4 times average or more reaches the 20 cap. Up days and normal or high-volume days give 0.
+Fidelity:
+- Situation: sharp one-day drop on unusually low volume -> adapted: the drop's size is graded, and "low volume" is an on/off regime gate (the day's volume below its 20-day mean, the only volume test the catalogue offers).
+- Comparison: the day's volume against its usual level -> kept: compared with the 20-bar mean volume via `volume_filter` in a veto.
+- Outcome: price rebounds upward, recovering part of the drop -> adapted: measured as the next bar's return while the position is held; the multi-day holding period is dropped.
+- Verdict transfer: yes: a long sized by the drop, held only after low-volume down days, gains if and only if such drops are followed by rebounds.
+Forecast: A veto sends a bar to `mean_reversion` only when that day's volume is below its 20-day mean. Every other bar is flat. In `mean_reversion` the forecast comes from the one-day percent change (`PriceEvolutionComponent`, period 1). It is standardised against its last 60 values, negated so a drop is positive, clipped at 0 so only drops count, then passed through `signed_power` with exponent 2 so sharp drops weigh much more than small ones. The forecast is zero on up days and on normal- or high-volume days. On low-volume down days it is positive and grows with the square of the drop's size relative to recent daily moves, capped at 20.
 Config: 003-02_low-volume-down-move-reverts_1d_config.json
-Confirm: Horizon is 1 bar, the day after the signal. Daily returns do not overlap, so each active bar counts once. Main measure, pooled over all 6 windows and before costs: the mean next-day coin return on active bars (forecast > 0), weighted by forecast, minus the coin's mean daily return over all bars. The idea is confirmed if this excess is positive with a t-statistic of at least 2.0 and is positive in at least 4 of the 6 windows. Supporting check: active bars in the top third by forecast must have a higher mean next-day return than those in the bottom third.
-Reject: The idea is rejected if the pooled forecast-weighted excess next-day return is zero or negative, or if it is positive in 2 or fewer of the 6 windows.
-Inconclusive: A positive pooled excess with a t-statistic below 2.0, or a result that is positive in exactly 3 of 6 windows. Also inconclusive if there are fewer than 40 active bars in total.
-Deviation: Four changes from the idea as written. First, "unusually low volume" becomes "volume below its 20-bar mean", which is about half of all days, because the catalogue has no graded volume measure and the volume test is only above or below the mean. Second, "a sharp downward move" becomes the current day's return, graded by its size relative to recent daily moves, rather than a multi-day drop. Third, "followed by a rebound" is held only while the low-volume down-day condition lasts, so it is tested over the next 1 bar rather than over a longer recovery. Fourth, the brief's contrast with high-volume moves is not tested here.
+Criterion:
+- Horizon: 1 bar
+- Main measure: The excess return of active bars, before costs. Take the forecast-weighted mean of the next bar's return on bars with forecast > 0, pooled over all 6 windows. Subtract BTC's mean daily return over all bars of the same windows.
+- Supporting check: Split active bars at the median forecast. The mean next-bar return of the top half should exceed that of the bottom half, meaning gains grow with the size of the drop.
+- Confirm: The excess is positive with a t-statistic of at least 2.0, and the top half beats the bottom half.
+- Reject: The excess is at or below 0, or the top-half mean next-bar return is negative.
+- Inconclusive: An excess that is positive but has a t-statistic below 2.0, or a positive excess where the top half does not beat the bottom half. Also inconclusive when there are fewer than 60 active bars across the 6 windows (each bar counted once, since the horizon is 1 bar).

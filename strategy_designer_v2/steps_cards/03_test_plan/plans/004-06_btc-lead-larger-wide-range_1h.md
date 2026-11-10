@@ -4,5 +4,11 @@ brief: 004_bitcoin-leads-altcoins-lagged-response
 data-instruments: BTC/USDT
 data-bar: 1h
 data-period: fold A
+outcome: untestable
 ---
-Untestable: The idea needs bitcoin's returns as the signal and altcoins (sorted by their bar ranges) as the coins traded, but the config sees one coin at a time with no other coin's prices, and the test runs only on BTC/USDT, so there are no altcoins to compare. Dropping the cross-coin lead and the wide-versus-narrow range comparison would remove what the idea is about.
+Fidelity:
+- Situation: a sharp bitcoin move, seen from an altcoin's bars -> replaced: a config sees only its own coin, so on another coin it cannot read bitcoin's move.
+- Comparison: altcoins with wide ranges against altcoins with narrow ranges -> replaced: this is a comparison across coins, and the config runs on each coin separately.
+- Outcome: the altcoin follows bitcoin's direction over the next bars -> replaced: the test runs on BTC/USDT only, so no altcoin's return is measured.
+- Verdict transfer: no: a test on bitcoin's own bars cannot confirm or reject a lagged link between bitcoin and altcoins.
+Reason: The idea's situation is bitcoin's move, and its outcome is a different coin's later return, ranked across coins by bar range. The config sees only one symbol's bars and feeds, has no cross-coin comparison, and the run covers only BTC/USDT.

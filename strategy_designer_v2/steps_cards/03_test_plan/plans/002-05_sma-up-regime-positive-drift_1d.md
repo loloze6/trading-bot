@@ -4,10 +4,20 @@ brief: 002_moving-average-cross-trend-persistence
 data-instruments: BTC/USDT
 data-bar: 1d
 data-period: fold A
+outcome: plan
+fit: adapted
 ---
-Forecast: Long only, and graded by the size of the gap between the two averages. The indicator is the percent spread of the 50-day simple moving average over the 200-day simple moving average, (SMA50 − SMA200) / SMA200 × 100, with both averages including the current close. These are the most common short and long averages for a daily cross, since the brief gives none. The spread is standardised against the mean absolute value of its own previous 200 daily values, so that a typical spread gives a forecast of 10, capped at 20. Negative values are then clipped to 0. The forecast is positive on every bar of a stretch that began with an upward cross of SMA50 over SMA200 and has not yet ended with a downward cross. It grows as SMA50 pulls further above SMA200. It is exactly 0 from the downward cross until the next upward cross.
+Fidelity:
+- Situation: short SMA above long SMA, from the up-cross to the next down-cross -> adapted: the on/off state is made graded as the positive SMA50 minus SMA200 spread, and is zero below.
+- Comparison: random stretches of the same length -> kept: a random stretch's expected return equals the all-bar average, which buy-and-hold over the same window gives.
+- Outcome: price rises more often and further while in the stretch -> kept: measured as daily coin returns on in-stretch bars.
+- Verdict transfer: yes: the position is non-zero exactly on in-stretch bars, so their returns against all bars confirm or reject the idea directly.
+Forecast: The forecast uses the 50-day and 200-day simple moving averages of the close (the usual golden-cross setting on daily bars). It takes their percent spread, (SMA50 - SMA200) / SMA200, and standardises it against its own past 200 values (target 10, cap 20). Negative values are clipped to 0. The forecast is positive only while the 50-day average is above the 200-day, and grows with how far apart the two averages are. It is zero from the down-cross until the next up-cross. It is never short.
 Config: 002-05_sma-up-regime-positive-drift_1d_config.json
-Confirm: Pool the 6 windows. Use a horizon of 1 bar, so each daily close-to-close return is counted once. The mean next-day BTC return on bars with forecast > 0 (inside an up-cross stretch) must exceed the mean next-day return on bars with forecast = 0 by a Welch t-statistic of at least 2.0, with at least 100 bars on each side. As a supporting check, the share of up days inside the stretches must also exceed the share outside them. Before costs, this means the stretches beat simply holding the coin through the same windows.
-Reject: Pooled over the 6 windows, the mean next-day return inside up-cross stretches is equal to or below the mean outside them. Rejection includes the case where in-stretch days are worse, which is the lag-and-exhaustion outcome the brief names.
-Inconclusive: The in-stretch mean is higher but the t-statistic is below 2.0. Or fewer than 100 bars fall on either side, which is likely if most windows sit entirely on one side of the 200-day average. Or the up-day share and the mean return point in opposite directions.
-Deviation: The idea compares up-cross stretches with "random stretches of the same length". The test instead compares the stretches with all other bars of the same windows (the bars between a downward and an upward cross), measured day by day. The position is also not a fixed full long during a stretch: it is scaled by how far SMA50 sits above SMA200. The main measure ignores this sizing, because it only uses the sign of the forecast. The short side the brief mentions (downward crosses starting downtrends) is not tested; it is held flat.
+Criterion:
+- Horizon: 1 bar
+- Main measure: Take the coin's next-bar return on bars where the forecast is above 0 (in-stretch), pooled over the 6 windows. Compare it with the next-bar return on all bars of the same windows, which is buy-and-hold. Judge before costs.
+- Supporting check: Compare the share of up days on in-stretch bars with the share of up days on all bars.
+- Confirm: The in-stretch mean daily return exceeds the all-bar mean, with a one-sided t-statistic of at least 2.0 on non-overlapping daily returns. The in-stretch up-day share also exceeds the all-bar share.
+- Reject: The in-stretch mean daily return is at or below the all-bar mean, which means there is no persistence. A t-statistic of -2.0 or lower on the difference means moves reverse after up-crosses, and this also rejects the idea.
+- Inconclusive: A t-statistic between -2.0 and 2.0 is inconclusive. So are fewer than 100 in-stretch bars, or fewer than 3 distinct up-cross stretches across the windows.

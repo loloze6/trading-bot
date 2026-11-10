@@ -10,11 +10,11 @@
       "unknown": {
         "components": [
           {
-            "id": "rsi_cont",
+            "id": "rsi_low",
             "class": "strategies.strategy_components.RSIPullbackComponent",
             "params": {
               "period": 14,
-              "long_only": false
+              "long_only": true
             },
             "weight": 1.0,
             "transforms": [
@@ -32,12 +32,6 @@
                 "op": "signed_power",
                 "params": {
                   "exponent": 2
-                }
-              },
-              {
-                "op": "clip",
-                "params": {
-                  "max": 0.0
                 }
               }
             ]

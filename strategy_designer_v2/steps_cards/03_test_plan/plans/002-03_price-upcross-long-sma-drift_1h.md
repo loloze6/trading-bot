@@ -4,10 +4,20 @@ brief: 002_moving-average-cross-trend-persistence
 data-instruments: BTC/USDT
 data-bar: 1h
 data-period: fold A
+outcome: plan
+fit: adapted
 ---
-Forecast: The forecast is the percent distance of the 1h close from its 200-bar simple moving average, (close − SMA200) / SMA200 × 100, where the average includes the current close. This distance is put on the forecast scale by dividing it by the mean absolute value of its previous 200 values and multiplying by 10, capped at ±20. It is then clipped at 0, because the idea is only about crossing up. The forecast is zero while the close is at or below SMA200. It turns positive on the bar the close crosses above SMA200, starting near 0 at the cross. It grows smoothly as the close moves further above the average, reaching about +10 at a typical distance and at most +20. It never goes negative.
+Fidelity:
+- Situation: price has just closed above its long average after being below it -> adapted: "after the up-cross" becomes "while above", graded by the percent distance of the close above its 200-bar SMA.
+- Comparison: random points -> kept: forward returns on active bars are compared with forward returns on all bars, which is what holding the coin earns.
+- Outcome: price keeps rising, more often and further -> kept: the forward return of BTC over the next bars while the position is long.
+- Verdict transfer: yes: an up-cross puts the close above the SMA, so an uptrend that persists after the cross shows as excess returns while the close is above the average, and a reversal after the cross shows as a deficit.
+Forecast: The percent distance of the close from its 200-bar SMA, which includes the current close. It is standardised against its own past 200 values (target 10, cap 20) and clipped at 0. The forecast is 0 while the close is at or below the SMA and turns positive as soon as the close crosses above it. It grows smoothly as the close moves further above the average, relative to how far it usually sits, up to a cap of 20. It is never negative, because the idea is about up-crosses only.
 Config: 002-03_price-upcross-long-sma-drift_1h_config.json
-Confirm: The horizon is 24 bars. The bars are sampled every 24 bars so that forward returns do not overlap (about 120 per window, about 730 in total). On bars where the forecast is above 0, the mean forward 24-bar log return exceeds the mean forward 24-bar return over all sampled bars, which stands for holding the coin. The excess must be positive with a t-statistic of at least 2.0 on the pooled samples, and positive in at least 4 of the 6 windows. Supporting check: the strategy's return before costs exceeds the return of holding the coin at the strategy's average allocation in at least 4 of the 6 windows.
-Reject: The pooled excess forward 24-bar return on forecast > 0 bars is zero or negative, or positive in 2 or fewer of the 6 windows. A negative excess with t ≤ −2.0 also rejects the idea, and indicates reversal after up-crosses, meaning the cross marks exhaustion rather than the start of a trend.
-Inconclusive: The pooled excess is positive but with t between 0 and 2.0. Or the pooled excess has t ≥ 2.0 but is positive in only 3 of the 6 windows. Or the main measure confirms but the supporting check fails, so the gain comes only from market exposure.
-Deviation: "After a cross from below" becomes "while the close is above SMA200". The position is held for the whole time price stays above the average, not only in the bars just after the cross. Its size grows with the distance above the average, not with how recent the cross is. The idea does not state the length of the long average, so the conventional 200 bars is used.
+Criterion:
+- Horizon: 24 bars
+- Main measure: The 24-bar forward return of BTC on bars where the forecast is above 0, minus the 24-bar forward return over all bars of the same window (holding the coin). Bars are sampled every 24th bar so that overlapping returns count once. Results are pooled across the 6 windows.
+- Supporting check: Take the bars where the forecast first turns from 0 to above 0 (the fresh up-crosses). Their 24-bar forward return minus the all-bar mean should be positive, and they should be up more often than all bars are.
+- Confirm: The pooled excess mean is above 0 with t ≥ 2, it is positive in at least 4 of the 6 windows, and the supporting check is also positive.
+- Reject: The pooled excess mean is ≤ 0. A pooled excess with t ≤ -2, which means moves reverse after crosses, rejects strongly.
+- Inconclusive: A pooled excess that is positive but with t < 2, or positive in fewer than 4 windows, or a supporting check that disagrees with the main measure. The test needs at least 150 non-overlapping active samples pooled and at least 30 fresh up-crosses. With fewer, the test is inconclusive.

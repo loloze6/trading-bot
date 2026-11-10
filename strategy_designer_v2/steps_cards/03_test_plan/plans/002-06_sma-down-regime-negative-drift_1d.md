@@ -4,10 +4,20 @@ brief: 002_moving-average-cross-trend-persistence
 data-instruments: BTC/USDT
 data-bar: 1d
 data-period: fold A
+outcome: plan
+fit: adapted
 ---
-Forecast: The 50-day simple moving average minus the 200-day simple moving average, as a percent of the 200-day average. The 50/200 setting is the most common convention for a daily SMA cross. The forecast is standardised against its own last 200 values and then cut at zero from above, so it is short only. It is negative while the 50-day SMA is below the 200-day SMA, which is the stretch from a downward cross to the next upward cross. Its size grows with how far the short average sits below the long one. It is zero on every bar where the short average is at or above the long one.
+Fidelity:
+- Situation: short SMA below long SMA, from the downward cross until the next upward cross -> adapted: the "below" state is made graded, using the signed SMA50/SMA200 spread kept only when negative.
+- Comparison: random stretches of the same length -> kept: the mean return of in-state bars is compared with the mean of all bars of the same coin and window, which is the expected return of random stretches.
+- Outcome: price falls more often and further until the opposite cross -> kept: the short is held on every bar of the stretch, and exits exactly when the spread turns positive.
+- Verdict transfer: yes: the forecast is short exactly over the down-cross stretches and flat elsewhere, so results transfer both ways.
+Forecast: The forecast is the SMA(50) minus SMA(200) spread in percent of SMA(200). It is standardised against its own last 200 values and clipped at 0 from above. It is negative only while the 50-day SMA is below the 200-day SMA, which is the stretch between a downward and an upward cross. It is zero on every other bar. The short grows as the short average sits further below the long one, up to the cap of -20.
 Config: 002-06_sma-down-regime-negative-drift_1d_config.json
-Confirm: The horizon is 1 bar: the close-to-close return of the bar after each forecast. Pool all six windows. Take the 1-bar returns on bars where the forecast is negative and subtract the mean 1-bar return of all bars, which is the coin simply held. This difference must be below zero with a t-statistic of -2 or lower, measured before costs. Supporting check: on the strategy's short bars, the portfolio's value must rise in total, and the share of those bars that close lower must be above 50%.
-Reject: The idea is rejected if the mean 1-bar return on negative-forecast bars is at or above the all-bar mean. It is also rejected if the short positions lose in total before costs, which would mean prices after the downward cross reverse or drift like random stretches.
-Inconclusive: The test is inconclusive if fewer than 30 negative-forecast bars exist across all windows. It is also inconclusive if the difference is negative but its t-statistic lies between -2 and 0.
-Deviation: The idea treats every bar of the stretch alike, from the downward cross until the next upward cross. The config instead sizes the short by how far the 50-day SMA sits below the 200-day SMA, so bars just after the cross carry a small position. The long side after an upward cross is left out, because this idea concerns only the downward stretch.
+Criterion:
+- Horizon: 1 bar
+- Main measure: The mean next-bar close-to-close return of BTC on bars where the forecast is below 0, minus the mean next-bar return over all bars of the same windows. Windows are pooled, and the standard error is computed over whole stretches, so each stretch counts once.
+- Supporting check: The share of down bars inside the stretches compared with the share of down bars over all bars. The strategy's equity curve, before costs, should end above flat and beat holding the coin over the in-state bars.
+- Confirm: Pooled in-state mean return is at least 0.10% per day below the all-bars mean, with stretch-clustered t ≤ -2. The share of down bars inside the stretches is higher than over all bars.
+- Reject: In-state mean return is at or above the all-bars mean. This means price did not fall faster during down-cross stretches, or it reversed upward.
+- Inconclusive: The difference is negative but t > -2 or it is smaller than 0.10% per day. The test also cannot conclude with fewer than 3 distinct down-cross stretches or fewer than 60 in-state bars pooled across the 6 windows.

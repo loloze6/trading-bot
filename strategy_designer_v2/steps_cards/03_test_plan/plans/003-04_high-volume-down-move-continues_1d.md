@@ -4,10 +4,20 @@ brief: 003_thin-volume-moves-revert
 data-instruments: BTC/USDT
 data-bar: 1d
 data-period: fold A
+outcome: plan
+fit: adapted
 ---
-Forecast: Active only on a day whose close-to-close return is negative and whose volume is at or above its 20-day average volume; on every other day the forecast is 0 (flat). On an active day the forecast is short and sized by how sharp the drop is. The size is the day's percent return divided by the mean absolute daily return of the previous 60 days, times 10, capped at -20, with the long side clipped away. A drop of typical size gives about -10 (100% short). A drop twice the typical size gives the -20 cap. A tiny drop gives a near-zero position. The position is re-decided at each daily close, so it is held for one day and continues only if the next day is again a heavy-volume down day.
+Fidelity:
+- Situation: a sharp one-day drop on heavy volume -> adapted: a down close-to-close day while volume is at or above its 20-day mean opens a regime, and the short is sized by how big the drop is.
+- Comparison: volume against its usual level -> adapted: "unusually high" becomes volume at or above its 20-bar mean, the only volume cut the catalogue allows (a veto with `volume_filter`).
+- Outcome: price keeps falling after the drop -> adapted: "after X" becomes "while X", so the short is held only for the bar after each qualifying day.
+- Verdict transfer: yes: the test shorts exactly the heavy-volume down days, sized by the drop, and is judged on whether the next bar falls more than usual.
+Forecast: One indicator: the one-day price change (`PriceEvolutionComponent`, period 1), standardised against its own last 60 values (window 60, min_periods 20). A veto turns on the active regime only on bars that are both down days and at or above their 20-day mean volume. On those bars the forecast is the standardised move. It is always negative, so the position is a short. An average-size drop gives about -10 (100% short), and a sharper drop gives a larger short, up to -20. On every other bar the forecast is 0 (flat).
 Config: 003-04_high-volume-down-move-continues_1d_config.json
-Confirm: The horizon is 1 bar (the next day). Pool all active days across the 6 windows; returns at this horizon do not overlap. For each active day, take position size times the next day's return minus that window's mean daily return, which removes the coin's own drift as buy-and-hold would earn it. This position-weighted, drift-adjusted short gain must be positive with a t-statistic of at least 2.0, and positive in at least 4 of the 6 windows. Supporting check: on down days with below-average volume, read from the recorded move value and price, the same drift-adjusted next-day short gain is lower than on the heavy-volume down days.
-Reject: The pooled drift-adjusted short gain is zero or negative, meaning heavy-volume down days are on average followed by a rebound relative to drift. Or the next-day short gain after heavy-volume down days is no larger than after low-volume down days of similar size.
-Inconclusive: The pooled gain is positive but its t-statistic is below 2.0, or it is positive in fewer than 4 of 6 windows. Also inconclusive: fewer than 60 active days in total.
-Deviation: "Unusually high volume" becomes "volume at or above its 20-day average", a binary condition with no multiple. "Sharp" is not a threshold: every heavy-volume down day is active, with the short sized by the drop relative to typical daily moves. "Followed by further falling" is tested only over the next single day, and the position continues only while new heavy-volume down days occur. Only the downward half of the brief is tested.
+Criterion:
+- Horizon: 1 bar
+- Main measure: Mean next-bar return after active bars (heavy-volume down days) minus the mean next-bar return over all bars in the same windows (the hold-the-coin baseline), before costs. Each bar counts once, so returns do not overlap.
+- Supporting check: Across active bars, the regression slope of next-bar return on forecast size should be positive: a larger short should be followed by a larger fall.
+- Confirm: The excess return is negative with t ≤ -2 over at least 60 active bars, and negative in at least 4 of the 6 windows.
+- Reject: The excess return is zero or positive (heavy-volume drops are followed by rebounds or no extra fall), with at least 60 active bars.
+- Inconclusive: A negative excess return with t between -2 and 0, or a negative one in fewer than 4 windows; any result with fewer than 60 active bars across the 6 windows.

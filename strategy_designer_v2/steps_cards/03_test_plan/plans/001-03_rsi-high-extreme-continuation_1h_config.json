@@ -10,7 +10,7 @@
       "unknown": {
         "components": [
           {
-            "id": "rsi_momentum",
+            "id": "rsi_high",
             "class": "strategies.strategy_components.RSIPullbackComponent",
             "params": {
               "period": 14,
@@ -29,16 +29,15 @@
                 "op": "negate"
               },
               {
-                "op": "clip",
+                "op": "signed_power",
                 "params": {
-                  "min": 0.0
+                  "exponent": 2
                 }
               },
               {
-                "op": "signed_power",
+                "op": "clip",
                 "params": {
-                  "exponent": 2,
-                  "pivot": 10
+                  "min": 0.0
                 }
               }
             ]

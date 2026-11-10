@@ -4,5 +4,11 @@ brief: 004_bitcoin-leads-altcoins-lagged-response
 data-instruments: BTC/USDT
 data-bar: 1h
 data-period: fold A
+outcome: untestable
 ---
-Untestable: The idea compares how altcoins, split into low-volume and high-volume groups, respond to an earlier bitcoin move. The config sees only one coin at a time (here BTC/USDT alone) and cannot read bitcoin's returns while trading an altcoin, nor compare follow-through across coins with different volume.
+Fidelity:
+- Situation: a sharp bitcoin move -> replaced: the config sees only the traded coin's own bars, so an altcoin config cannot read bitcoin's move.
+- Comparison: low-volume altcoins against high-volume altcoins -> replaced: it needs several coins compared with each other, and the config runs on one coin.
+- Outcome: the altcoin follows through in bitcoin's direction over the next bars -> replaced: the only coin given is BTC/USDT, so no altcoin outcome can be measured.
+- Verdict transfer: no: no config built from one coin's own bars can show that bitcoin leads altcoins, or that thinly traded altcoins lag more.
+Reason: The idea needs bitcoin's returns as the signal and altcoin returns as the outcome, compared across altcoins by volume. A config sees only one coin's own bars and feeds, and the test runs on BTC/USDT alone.

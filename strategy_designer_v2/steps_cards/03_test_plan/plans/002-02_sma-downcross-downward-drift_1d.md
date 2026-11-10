@@ -4,10 +4,20 @@ brief: 002_moving-average-cross-trend-persistence
 data-instruments: BTC/USDT
 data-bar: 1d
 data-period: fold A
+outcome: plan
+fit: adapted
 ---
-Forecast: The 50-day and 200-day simple moving averages of the close (the usual daily cross pair, since the brief gives no settings). The spread is (SMA50 − SMA200) / SMA200 × 100. It is standardised against its own previous 200 values (target 10, cap 20) and keeps only its negative side. The forecast is zero while SMA50 is at or above SMA200. Once SMA50 is below SMA200 the forecast is negative (short), and it grows in size as SMA50 falls further below SMA200, up to −20.
+Fidelity:
+- Situation: short average has crossed below the long average -> adapted: "after the cross" becomes "while SMA50 is below SMA200", sized by the gap between them.
+- Comparison: price after random points -> kept: forward returns on short bars are compared with the coin's unconditional forward returns over the same windows.
+- Outcome: price keeps falling, more often and further -> kept: the forward 10-bar return and the share of falling outcomes on short-position bars.
+- Verdict transfer: yes: "while below the long average" is the allowed adaptation of "after a downward cross", so a short that pays more than random points confirms the idea and one that does not rejects it.
+Forecast: The forecast uses one indicator, the spread (SMA50 − SMA200) / SMA200 on daily closes, which is the usual 50/200 convention because the brief gives no lengths. The spread is standardised against its own past 200 values (min_periods 50) and then negated. It is clipped at a maximum of 0, so the forecast is never long. It is zero while SMA50 is at or above SMA200. Once SMA50 falls below SMA200 the forecast turns negative, a short. The short grows smoothly as the 50-day average sinks further under the 200-day one, and reaches −20 at the cap.
 Config: 002-02_sma-downcross-downward-drift_1d_config.json
-Confirm: Horizon 20 bars. Use one 20-bar block every 20 bars, so overlapping returns count once, and keep the blocks that start with the forecast non-zero. In each block, take BTC's 20-bar forward return minus the mean 20-bar return of its window, and multiply it by −forecast/10. The idea is confirmed if: - there are at least 10 such active blocks across the 6 windows; - the mean of this product is positive with a t-statistic of at least 2.0, before costs; - as a supporting check, more than 55% of active blocks have a negative excess forward return.
-Reject: The idea is rejected if there are at least 10 active blocks and the mean product is zero or negative (t-statistic of 0 or below). It is also rejected if 50% or fewer of active blocks have a negative excess forward return. Either result means price does not fall more often or further than at random points, or it reverses after the cross.
-Inconclusive: Fewer than 10 non-overlapping active blocks, which is possible because 50/200 crosses are rare in six 122-day windows. Also inconclusive: a positive mean product with a t-statistic between 0 and 2.0.
-Deviation: "After a downward cross" becomes "while SMA50 is below SMA200". The position is sized by how far below it is, not by how recent the cross is. Bars long after the cross count as much as bars just after it, and the position fades as the spread narrows rather than at a fixed number of bars after the event.
+Criterion:
+- Horizon: 10 bars
+- Main measure: The mean 10-bar forward return of BTC on bars with a forecast below 0, minus the mean 10-bar forward return over all bars, pooled across the 6 windows. Returns are taken from non-overlapping 10-bar blocks, so overlapping returns are counted once. The test is judged before costs.
+- Supporting check: Among short bars, the share of 10-bar blocks with a negative forward return, compared with that share over all bars.
+- Confirm: The idea is confirmed if all of the following hold: - The conditional-minus-unconditional difference is at most −1.0% per 10 bars. - That difference has a t-stat of −2 or lower on the non-overlapping blocks. - The falling share on short bars exceeds the unconditional share by at least 10 points.
+- Reject: The idea is rejected if either of the following holds: - The difference is 0 or above, meaning price does not fall further than after random points or moves after the cross reverse. - The falling share on short bars is not above the unconditional share.
+- Inconclusive: Any difference between −1.0% and 0, or a difference with a |t| below 2, is inconclusive. It is also inconclusive with fewer than 12 non-overlapping 10-bar short blocks, or with fewer than 2 distinct downward crosses across the windows.
