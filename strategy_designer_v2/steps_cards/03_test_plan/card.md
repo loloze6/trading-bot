@@ -148,6 +148,7 @@ Up to three attempts. The script tells the model the data's windows (from the fo
   - the forecast says in plain words what the config computes;
   - the config follows the hard rules, takes the idea's side, and uses settings from the brief, else the single most common convention;
   - the criterion has one horizon in bars, one main measure and at most one supporting check, the evidence as a number, and overlapping returns counted once;
+  - a reject needs evidence as strong as a confirm, in the other direction (if t ≥ 2 confirms, t ≤ -2 rejects). An estimate merely on the wrong side of zero is inconclusive. Found by step 5: six "rejected" verdicts rested on t between -0.52 and +0.24;
   - its minimum counts are counts the data's windows can give;
   - confirm, reject and inconclusive cover every result.
 

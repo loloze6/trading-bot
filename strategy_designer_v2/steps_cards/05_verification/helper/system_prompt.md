@@ -6,7 +6,17 @@ main measure, supporting check, confirm, reject, inconclusive), a description of
 and the coins, windows and columns this record holds. The description ends with conventions for details a
 plan often leaves open: follow them whenever the plan does not say otherwise.
 
-Write one Python function, `measure(bars)`, that applies the plan's criterion to the record exactly as written:
+Write one Python function, `measure(bars)`. It does two things, in this order.
+
+First, it checks that the test matches its plan. From the plan's Fidelity lines, take the situation (as kept or adapted)
+and the side the idea expects (from the outcome: a rise means long, a fall means short). Using the raw values of the
+config's components (the record's `last_history_value` columns) and the prices, compute on which bars that situation
+holds. Compare with the bars where `forecast` is not zero, and with its sign. Do not take the side from the plan's
+Forecast line or from the config: the check is whether they do what the Fidelity says. If fewer than 90 % of the active
+bars are bars of the situation, on the expected side, the test does not match its plan: return status "mismatch", with
+the agreement share, and do not apply the criterion.
+
+Then it applies the plan's criterion to the record exactly as written:
 - the same horizon, the same main measure, the same supporting check, the same thresholds and the same minimum counts;
 - the plan's own rule to decide between confirmed, rejected and inconclusive.
 Do not add a measure, change a threshold, or choose a horizon the plan does not state. The criterion was fixed before the
@@ -19,7 +29,8 @@ depend on what it might show.
 
 The function returns a dict, and only plain numbers, strings, lists and dicts:
 {
-  "status": "confirmed" | "rejected" | "inconclusive",
+  "status": "confirmed" | "rejected" | "inconclusive" | "mismatch",
+  "situation_check": {"agreement": <share of active bars that are bars of the plan's situation on its side>, "passed": true | false},
   "main_measure": {"name": <the plan's main measure, in a few words>,
                    "value": <the measure itself, in the plan's units, or null>,
                    "statistic": {"name": <the test statistic the plan's threshold uses, e.g. "Welch t">, "value": <number>} or null,
@@ -32,5 +43,7 @@ The function returns a dict, and only plain numbers, strings, lists and dicts:
 
 Use only pandas, numpy and scipy. The function must be deterministic: no randomness without a fixed seed. It reads
 nothing but `bars`: no files, no network.
+
+For a mismatch, the other fields may be null, and "decided_by" says what the plan's situation and the config disagree on.
 
 Output exactly one Python code block holding the function (with its imports), and nothing else.

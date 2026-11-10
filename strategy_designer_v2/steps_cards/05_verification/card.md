@@ -9,11 +9,12 @@ Is this idea real?
 One test plan whose outcome is `plan`, and its backtest record. One idea has one plan, so this is one input per idea.
 
 ## Output
-One verdict per plan: **confirmed**, **rejected** or **inconclusive**, with the evidence that decided it.
+One verdict per plan: **confirmed**, **rejected** or **inconclusive**, with the evidence that decided it. Or **mismatch**, when the test does not do what its plan says: no verdict on the idea, and the plan goes back to step 3.
 
 ## What a verdict is
 **A verdict is the plan's own criterion, applied unchanged to the backtest record: the numbers measured, and which of the plan's rules (confirm, reject, inconclusive) they meet.**
 
+- **First, the test must match its plan.** From the plan's Fidelity lines (the situation, and the side the outcome expects) and the record's raw indicator values, the function checks that the config's forecast is active on the bars of that situation, on that side. Below 90 % agreement, the status is "mismatch" and the criterion is not applied. The check reads the Fidelity, not the plan's Forecast line or its config, because those two are what may be wrong. Found by exercise 6's review: the down-cross plan (002-02) went short in up-trends, and nothing in steps 3 to 5 saw it.
 - **The criterion was fixed before the data.** The verdict applies it and never adjusts it: no new measure, no other threshold, no other horizon.
 - **When the criterion leaves a detail open,** the conventions in `record_description.md` apply: how non-overlapping samples are drawn, which t-test, the order of a difference. Otherwise the most literal reading of the plan is taken, chosen from its words alone, and stated.
 - **What it means for a trader** follows from the status and the plan's forecast:
@@ -26,11 +27,15 @@ One verdict per plan: **confirmed**, **rejected** or **inconclusive**, with the 
 
 ## The fields of a verdict
 **In `verdict.md`:**
-1. **status** (header): confirmed, rejected or inconclusive.
+1. **status** (header): confirmed, rejected, inconclusive or mismatch.
    - For: the answer.
    - Used by: the operator, and whatever decides what to do with the idea.
    - Without it: no answer.
-2. **Evidence:**
+2. **Situation check:** the share of active bars that are bars of the plan's situation, on its side.
+   - For: knowing the verdict is about the idea, not about a faulty config.
+   - Used by: the operator, and step 3 when it is a mismatch.
+   - Without it: a wrong config gives a confident, wrong verdict.
+3. **Evidence** (not for a mismatch):
    - the main measure: its value, its test statistic, and the plan's threshold;
    - the supporting check, its value and whether it passed;
    - the counts: every count the plan's minimums refer to, each one named;
@@ -39,19 +44,19 @@ One verdict per plan: **confirmed**, **rejected** or **inconclusive**, with the 
    - For: the status can be checked and challenged.
    - Used by: the operator, and anyone who disputes the status.
    - Without it: a bare word nobody can verify.
-3. **plan, idea and fit** (header, copied by code), and the links to the plan and the record.
+4. **plan, idea and fit** (header, copied by code), and the links to the plan and the record.
    - For: tracing the verdict, and keeping an "adapted" test from being read as the idea word for word.
    - Used by: the operator.
    - Without it: "confirmed" can be read as more than was tested.
 
 **Next to it:**
 
-4. **`measure.py`:** the function that produced the numbers.
+5. **`measure.py`:** the function that produced the numbers.
    - For: auditing them.
    - Used by: the reading of each exercise, and anyone who disputes a number.
    - Without it: the numbers cannot be checked.
-5. **`result.json`:** what the function returned, as it returned it.
-6. **The index line** (`INDEX.md`): `<plan id>: <status> (fit: exact|adapted) [main: <value>; <statistic>; <counts>]`, or `<plan id>: no verdict: <why>` for a plan with no record (untestable, missing-components, or refused by the engine).
+6. **`result.json`:** what the function returned, as it returned it.
+7. **The index line** (`INDEX.md`): `<plan id>: <status> (fit: exact|adapted) [main: <value>; <statistic>; <counts>]`, or `<plan id>: no verdict: <why>` for a plan with no record (untestable, missing-components, or refused by the engine).
 
 ## Storage and naming
 Aligned with the other steps.
@@ -84,6 +89,7 @@ Aligned with the other steps.
 
 **Checks in code** (`make_verdict.py`). It refuses only a major deviation, and sends the error back, up to three attempts:
 - no function `measure(bars)`;
+- no situation check, or a status that does not agree with it (mismatch exactly when the check fails);
 - the function fails on the record;
 - a result that is not a dict;
 - a status that is not one of the three;
@@ -95,6 +101,7 @@ Aligned with the other steps.
 **Prompt**: `helper/system_prompt.md`.
 
 ## Quality criteria on the verdict
+- **The situation check is computed from the Fidelity and the raw indicator values,** and a mismatch stops the verdict.
 - **The function applies the plan's criterion as written:** the same horizon, main measure, supporting check, thresholds and minimum counts. Nothing is added.
 - **The status follows from the numbers and the plan's rules,** and "decided by" names the rule met.
 - **Returns stay inside a window,** and the windows are not joined.

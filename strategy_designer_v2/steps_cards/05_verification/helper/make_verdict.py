@@ -20,7 +20,7 @@ sys.path.insert(0, str(STEP3_HELPER))
 from make_test_plan import call, write_atomic   # noqa: E402  (the same closed-book call as step 3)
 
 ATTEMPTS = 3
-STATUSES = ("confirmed", "rejected", "inconclusive")
+STATUSES = ("confirmed", "rejected", "inconclusive", "mismatch")
 
 RUNNER = r'''
 import glob, json, os, sys
@@ -74,6 +74,16 @@ def check_result(out):
         raise ValueError("measure(bars) did not return a dict")
     if out.get("status") not in STATUSES:
         raise ValueError(f"status must be one of {STATUSES}, got {out.get('status')!r}")
+    sc = out.get("situation_check")
+    if not isinstance(sc, dict) or not isinstance(sc.get("agreement"), (int, float)) or not isinstance(sc.get("passed"), bool):
+        raise ValueError("situation_check must be a dict with a numeric agreement and a true/false passed")
+    if (out["status"] == "mismatch") == sc["passed"]:
+        raise ValueError("the status must be mismatch exactly when the situation check has not passed")
+    if out["status"] == "mismatch":
+        for k in ("decided_by", "reading"):
+            if not isinstance(out.get(k), str) or not out[k].strip():
+                raise ValueError(f"{k} must be a sentence")
+        return
     mm = out.get("main_measure")
     if not isinstance(mm, dict) or "value" not in mm:
         raise ValueError("main_measure must be a dict with a value")
@@ -93,9 +103,19 @@ def fmt(v):
 
 def render(d, plan_id, h, out, plan_path, record):
     """verdict.md, from what the function returned."""
+    chk = out.get("situation_check") or {}
+    if out["status"] == "mismatch":
+        lines = ["---", f"plan: {plan_id}", f"idea: {h.get('idea', '')}", f"fit: {h.get('fit', 'not given')}", "status: mismatch", "---",
+                 f"Situation check: {fmt(chk.get('agreement'))} of the active bars are bars of the plan's situation on its side (90 % needed).",
+                 f"- Decided by: {out['decided_by']}", f"- Reading: {out['reading']}",
+                 f"Plan: `steps_cards/{os.path.relpath(plan_path, HERE.parents[1])}`",
+                 f"Record: `steps_cards/{os.path.relpath(record, HERE.parents[1])}`", "Measure: `measure.py`"]
+        write_atomic(d / "verdict.md", "\n".join(lines) + "\n")
+        return
     mm, sc = out["main_measure"], out.get("supporting_check")
     stat = f"; {mm['statistic'].get('name', 'statistic')}: {fmt(mm['statistic'].get('value'))}" if isinstance(mm.get("statistic"), dict) else ""
     lines = ["---", f"plan: {plan_id}", f"idea: {h.get('idea', '')}", f"fit: {h.get('fit', 'not given')}", f"status: {out['status']}", "---",
+             f"Situation check: {fmt(chk.get('agreement'))} of the active bars match the plan's situation and side",
              "Evidence:",
              f"- Main measure: {mm.get('name', '')}: {fmt(mm.get('value'))}{stat} (threshold: {mm.get('threshold', '')})",
              (f"- Supporting check: {sc.get('name', '')}: {fmt(sc.get('value'))}, passed: {sc.get('passed')}" if isinstance(sc, dict) else "- Supporting check: none"),
@@ -172,7 +192,12 @@ def main():
     write_atomic(d / "measure.py", code)
     write_atomic(d / "result.json", json.dumps(out, indent=2) + "\n")
     render(d, plan_id, h, out, plan_path, record)
-    mm, fit = out["main_measure"], h.get("fit", "not given")
+    fit = h.get("fit", "not given")
+    if out["status"] == "mismatch":
+        index_line(f"{plan_id}: mismatch: the test does not match its plan (agreement {fmt(out['situation_check']['agreement'])}) (fit: {fit})")
+        print(f"{plan_id}: mismatch (agreement {fmt(out['situation_check']['agreement'])}); cost {cost:.4f} USD, attempts {attempt}")
+        return
+    mm = out["main_measure"]
     stat = f"; {mm['statistic'].get('name', 'statistic')} {fmt(mm['statistic'].get('value'))}" if isinstance(mm.get("statistic"), dict) else ""
     counts = ", ".join(f"{k} {fmt(v)}" for k, v in out["counts"].items())
     index_line(f"{plan_id}: {out['status']} (fit: {fit}) [main: {fmt(mm.get('value'))}{stat}; {counts}]")
