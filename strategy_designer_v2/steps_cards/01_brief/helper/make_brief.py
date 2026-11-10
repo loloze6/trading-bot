@@ -4,6 +4,8 @@ saves it as NNN_short-name.md in the briefs folder and adds its line to INDEX.md
   python make_brief.py                          no theme: a theory of the helper's choice
   python make_brief.py --theme "..."            a theme in the operator's words
   python make_brief.py --source page.txt        a source pasted into a text file
+A request that can only be met by a theory about several coins together gets "not researchable", with the reason:
+no brief is written.
 Options: --briefs-dir (default: ../briefs next to this folder), --model (default: the strongest).
 
 The model sees only the system prompt, the index and the request: no tools, no files, no web, no
@@ -98,6 +100,11 @@ def main():
     for attempt in range(1, ATTEMPTS + 1):
         text, c = call(args.model, system, request + refusal)
         cost += c
+        nr = re.search(r"^not-researchable:\s*(.+)", text, re.M | re.S)
+        if nr and not re.match(r"\s*---", text):
+            print(f"not researchable: {' '.join(nr.group(1).split())}")
+            print(f"cost: {cost:.4f} USD, attempts: {attempt}")
+            return
         try:
             header, body, short, summary, bracket, others = parse(text, bool(args.source))
             break

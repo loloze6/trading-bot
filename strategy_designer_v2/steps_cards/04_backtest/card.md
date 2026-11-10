@@ -6,7 +6,7 @@ What did the market data do when this idea's test ran?
 Run one test plan from step 3 through the bot's own backtest, unchanged, and keep the complete record, so the next steps can confirm or reject the idea from it.
 
 ## Input
-One test plan from step 3 that is not untestable: its config and its data (coins, bar size, fold).
+One test plan from step 3 whose outcome is `plan`: its config and its data (coins, bar size, fold). A plan whose outcome is untestable or missing-components is not run, and its index line says so.
 
 ## Output
 One backtest record per plan, or "not run", with the reason.
@@ -65,7 +65,7 @@ Modelled on the engine's own run folders, one folder per plan, named after the p
 **No model call in this step.** It is mechanical: the engine runs the config. This is the one step that is not an AI step: the step order fixes step 4 as the existing engine.
 
 **How it runs** (`helper/run_backtest.py`):
-1. Reads the plan's header.
+1. Reads the plan's header, including its outcome. When the plan's config and data are those of its stored record, the record is kept, not rerun: the plan's other fields (fidelity, forecast in words, criterion) do not change what the engine runs.
 2. Builds the protocol with the pipeline's own fold loader, `strategy-research/tools/research_folds.py`. The loader refuses any window touching the sealed holdout. It adds the pipeline's venue keys, from `tools/venue_resolver.py`. The protocol holds dates, so it is written to a temporary folder only.
 3. Runs `strategy-research/tools/run_protocol.py`, the pipeline's wrapper around the bot's `run_backtest`. The wrapper keeps the warm-up prefetch and the holdout guard.
 4. Runs one call per coin and window, each in its own folder (see "Open").

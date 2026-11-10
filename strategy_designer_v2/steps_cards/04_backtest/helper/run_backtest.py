@@ -2,10 +2,12 @@
 engine's record in the backtests folder.
 
   python run_backtest.py path/to/PLAN.md --python path/to/venv/bin/python
-Options: --out-root (default: ../backtests next to this folder), --force (rerun a plan already in the index).
+Options: --out-root (default: ../backtests next to this folder), --force (rerun even when nothing the engine reads
+has changed).
 
 What it does, in order:
-  1. Reads the plan's header: coins, bar size, fold. An untestable plan is not run; its index line says so.
+  1. Reads the plan's header: coins, bar size, fold, outcome. A plan whose outcome is untestable or missing-components
+     is not run; its index line says so. A plan whose config and data are those of its stored record is not rerun.
   2. Maps each coin to the venue the engine can reach here (Kraken, USD-quoted: BTC -> BTCUSD) and builds the
      protocol the pipeline's backtest wrapper reads: the fold's windows from strategy-research/tools/research_folds.py
      (which refuses any window touching the sealed holdout), the bar size, and the venue keys from
@@ -90,16 +92,26 @@ def main():
     out_root = args.out_root.resolve()
     out_root.mkdir(parents=True, exist_ok=True)
     index_path = out_root / "INDEX.md"
-    if not args.force and index_path.exists() and any(l.startswith(plan_id + ": ran") for l in index_path.read_text().splitlines()):
-        print(f"already run: {plan_id}")
-        return
-    if "\nUntestable:" in text:
-        index_line(index_path, plan_id, f"{plan_id}: not run: the plan is untestable [{bar}, fold {fold}]")
-        print(f"not run (untestable): {plan_id}")
+    dest = out_root / plan_id
+    # The plan's outcome: the header (step 3 with the fidelity rule), or the old "Untestable:" line.
+    outcome = h.get("outcome") or ("untestable" if "\nUntestable:" in text else "plan")
+    if outcome != "plan":
+        if dest.exists():
+            shutil.rmtree(dest)   # a record left from an earlier version of the plan no longer belongs to it
+        index_line(index_path, plan_id, f"{plan_id}: not run: the plan is {outcome} [{bar}, fold {fold}]")
+        print(f"not run ({outcome}): {plan_id}")
         return
     config_path = plan_path.with_name(plan_id + "_config.json")
+    # Rerun only when what the engine reads has changed: the config and the data (coins, bar size, fold).
+    # The plan's other fields (fidelity, forecast in words, criterion) do not change the backtest.
+    data_line = f"- Data: {h['data-instruments']} as "
+    if (not args.force and (dest / "config.json").exists() and (dest / "run.md").exists()
+            and json.loads((dest / "config.json").read_text()) == json.loads(config_path.read_text())
+            and data_line in (dest / "run.md").read_text() and f"; {bar} bars; fold {fold}" in (dest / "run.md").read_text()
+            and index_path.exists() and any(l.startswith(plan_id + ": ran") for l in index_path.read_text().splitlines())):
+        print(f"unchanged, record kept: {plan_id}")
+        return
 
-    dest = out_root / plan_id
     if dest.exists():
         shutil.rmtree(dest)
     dest.mkdir(parents=True)

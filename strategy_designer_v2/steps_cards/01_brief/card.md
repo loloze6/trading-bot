@@ -7,7 +7,7 @@ Which trading theory should the pipeline research?
 The operator's request: nothing (a theory of the helper's choice), a theme in the operator's words, or a source the operator pastes. Or no request at all: the operator writes the brief by hand.
 
 ## Output
-One brief: one theory, with its optional context.
+One brief: one theory, with its optional context. Or "not researchable", with the reason, when the request can only be met by a theory about several coins moving together: no brief is written, and no other theory is put in its place.
 
 ## What a brief is
 **A brief is one theory about how a market behaves, as a claim or a question, with its reason where known and what would prove it wrong, and optional limits on where it applies.**
@@ -91,7 +91,7 @@ smaller and less traded coins take on part of that move only later... (prose, at
 
 ## Quality criteria on the brief
 - One theory, not a list.
-- About one coin at a time: what one coin's own prices and volumes do. It may name several coins if it holds for each separately. A relation between coins cannot be tested: each coin is tested on its own bars only.
+- About one coin at a time: what one coin's own prices and volumes do. It may name several coins if it holds for each separately. A relation between coins cannot be tested: each coin is tested on its own bars only. Such a request gets "not researchable", not a substitute theory. A pair that trades as one instrument (ETH/BTC) is one instrument.
 - A theory, not a formula or a trading rule: no entry, hold or exit, no parameter value.
 - Says why, or says it does not know.
 - Can be wrong: some market behaviour would refute it; it does not say how to test it (no condition on the check, such as what to control for, or which coins it must hold for).
