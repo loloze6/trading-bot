@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 20-bar fwd return in position minus all bars (non-overlapping)",
+    "value": 0.028288114581208747,
+    "statistic": {
+      "name": "Welch t",
+      "value": 0.790345353930534
+    },
+    "threshold": "difference > 0 with Welch t >= 2 across non-overlapping 20-bar blocks"
+  },
+  "supporting_check": {
+    "name": "share of positive 20-bar returns after up-crosses minus unconditional share",
+    "value": 0.4360655737704918,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping in-position blocks": 13,
+    "up-crosses": 2
+  },
+  "decided_by": "Fewer than 15 non-overlapping in-position blocks or fewer than 8 up-crosses, so the test neither confirms nor rejects.",
+  "reading": "Close above SMA200 taken as the raw component value > 0 (column debug_info.components.above_sma200.last_history_value); the all-bars group is every grid bar (positions 0,20,40,... per window) and Welch's t compares it with the in-position grid bars; up-crosses are bars with forecast > 0 whose previous bar in the same window had forecast 0, counted only when their 20-bar forward return exists, and the unconditional share of positive returns uses all bars with a 20-bar forward return."
+}

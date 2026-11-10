@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "in-stretch minus all-bar mean next-bar return (before costs)",
+    "value": 0.0008650530865054267,
+    "statistic": {
+      "name": "Welch t (in-stretch vs all bars)",
+      "value": 0.49516162785129425
+    },
+    "threshold": "confirm: in-stretch mean > all-bar mean with one-sided t >= 2.0 and higher up-day share; reject: in-stretch mean <= all-bar mean or t <= -2.0; inconclusive: -2.0 < t < 2.0, fewer than 100 in-stretch bars or fewer than 3 up-cross stretches"
+  },
+  "supporting_check": {
+    "name": "in-stretch up-day share minus all-bar up-day share",
+    "value": -0.0006572680510573137,
+    "passed": false
+  },
+  "counts": {
+    "in-stretch bars": 290,
+    "all bars": 724,
+    "distinct up-cross stretches": 5
+  },
+  "decided_by": "Inconclusive: the in-stretch mean exceeds the all-bar mean but the t-statistic lies between -2.0 and 2.0.",
+  "reading": "Situation taken as the component's raw spread (last_history_value) above 0 with a positive forecast; in-stretch means forecast > 0, the all-bar group includes the in-stretch bars, an up day is a next-bar return above 0, and distinct up-cross stretches are counted as runs of consecutive forecast > 0 bars within each window (a run open at a window's first row counts as one)."
+}

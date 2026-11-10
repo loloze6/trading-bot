@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "position-weighted mean next-bar excess return",
+    "value": 0.0003130687114665652,
+    "statistic": {
+      "name": "t of the weighted mean",
+      "value": 0.11011454855498304
+    },
+    "threshold": "position-weighted mean next-bar excess return > 0 with t >= 2 to confirm; <= 0 to reject"
+  },
+  "supporting_check": {
+    "name": "next-bar return, top third minus bottom third of positions",
+    "value": -0.0005460627148548202,
+    "passed": false
+  },
+  "counts": {
+    "active bars": 151
+  },
+  "decided_by": "The main measure is positive but the supporting check has the opposite sign, which meets the inconclusive rule.",
+  "reading": "The situation is the up_move raw value > 0 (close-to-close change if missing) with volume >= the rolling 20-bar mean volume including the current bar, and active bars lacking 20 bars of volume history are left out of the agreement; the benchmark is the pooled mean of all next-bar returns over the 6 windows; the t of the position-weighted mean is the ordinary t of position*excess/mean(position); the thirds are the pooled active bars ranked by postRebalance_current_allocation (n//3 each); the supporting check is top minus bottom with Welch t."
+}

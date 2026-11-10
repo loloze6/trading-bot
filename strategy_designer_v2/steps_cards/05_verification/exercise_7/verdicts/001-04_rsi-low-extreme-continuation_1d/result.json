@@ -1,0 +1,30 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled 5-bar forward return after extreme bars (raw >= 8) minus after neutral bars (RSI 40-60)",
+    "value": 0.009270885950944796,
+    "statistic": {
+      "name": "Welch t",
+      "value": 0.45790243190182
+    },
+    "threshold": "confirm if difference < 0 with Welch t <= -2 and negative in at least 2 coins; reject if difference >= 0"
+  },
+  "supporting_check": {
+    "name": "per-coin strategy cumulative return before costs minus same-average-size short hold (mean over coins; passes if positive for every coin)",
+    "value": 0.49206229967004705,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping extreme cases pooled": 14,
+    "non-overlapping neutral cases pooled": 127,
+    "coins with negative difference": 0,
+    "extreme cases BTCUSD": 7,
+    "extreme cases ETHUSD": 7
+  },
+  "decided_by": "Fewer than 30 non-overlapping extreme cases pooled, or fewer than 8 for a coin: inconclusive whatever the sign.",
+  "reading": "Neutral RSI is Wilder RSI(14) recomputed from each window's own closes (first 14 bars of a window have none), the 'at least 2 of the 3 coins' and 'fewer than 8 for any coin' rules are applied to the coins present in the record, and cumulative return is the sum of per-bar position gains across windows."
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "thin minus heavy mean next-bar give-back share of the drop",
+    "value": -3.1406425895964922,
+    "statistic": {
+      "name": "Welch t",
+      "value": -0.4550776707651081
+    },
+    "threshold": "confirm: difference > 0, Welch t >= 2 and thin mean > 0; reject: difference <= 0 with t <= -1; otherwise inconclusive; at least 20 thin and 20 heavy down bars"
+  },
+  "supporting_check": {
+    "name": "terciles of drop size with the same-sign thin-minus-heavy difference (need >= 2 of 3)",
+    "value": 2,
+    "passed": true
+  },
+  "counts": {
+    "thin down bars": 200,
+    "heavy down bars": 124
+  },
+  "decided_by": "Inconclusive: a negative difference with Welch t above -1.",
+  "reading": "Volume class uses the 20-bar mean ending at and including the bar, computed inside each window, so bars without 20 bars of volume history are left out of both the situation check and the groups; drop size is close[t]/close[t-1]-1 inside the window; terciles are pooled qcut terciles of |drop| and a tercile 'has the same sign' when its thin-minus-heavy difference shares the sign of the pooled one; since the Inconclusive rule keeps negative differences with t above -1, a negative difference is rejected only with t <= -1 (a zero difference is rejected), and a positive difference with t >= 2 but a thin mean <= 0 is inconclusive."
+}

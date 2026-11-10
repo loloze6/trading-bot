@@ -173,6 +173,7 @@ From step 2 (exercise 3, opus, and exercise 4 for 003-07), with their briefs:
 - **Exercises 7 to 12:** "not close" lines, then the final helper.
 - **Exercises 13 and 14:** the fidelity rule and the three outcomes, replacing the two lines of exercises 7 to 12, which named single cases. Right outcomes, but long lines.
 - **Exercises 15 and 16:** one line asking for short lines. Fidelity lines about 40 % shorter.
+- **Exercises 17 and 18:** symmetric criteria: a reject needs t ≤ -2 against the idea (or its mirror). 5 of 5 rejects, twice.
 
 Each exercise has its reading.
 
@@ -180,7 +181,7 @@ Each exercise has its reading.
 The operator: "if this test confirms, would I believe the idea; if it rejects, would I drop it?". Code checks the shape, the names and the agreement between fidelity and outcome. Each exercise has a one-page reading against the criteria.
 
 ## Done when
-On two exercises in a row, on the fixed inputs, every plan meets every criterion. Status: met by exercises 15 and 16, with the fidelity rule, the three outcomes and the concise output (`exercise_16/reading.md`).
+On two exercises in a row, on the fixed inputs, every plan meets every criterion. Status: met by exercises 17 and 18, with symmetric criteria (`exercise_18/reading.md`).
 
 ## Open
 - **A pattern the engine refuses.** In step 4, five volume plans could not run: their regime detector is a veto on a constant (`BuyAndHoldStrategy` with `volume_filter`), with the default regime flat. The engine stops at its warm-up check. The cause is under investigation by another agent.
