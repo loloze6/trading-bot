@@ -90,7 +90,7 @@ The seven plans of step 3, exercise 10 (five testable, two untestable), on daily
 Daily against hourly bars, for the same idea (`001-01`). Hourly is about 24 times the bars, in about 6 times the time.
 
 ## Production run
-Every plan of step 3's `plans/` (58 plans: 29 ideas, daily and hourly): 27 plans run, all 210 of their windows; 26 untestable; 5 refused by the engine's warm-up check (see "Open"). See `backtests/REVIEW.md`.
+Every plan of step 3's `plans/`, one per idea, on daily bars: see `backtests/REVIEW.md`. The hourly set run the same night, two plans per idea, is kept in `exercise_hourly_anticipation/` as a record; one idea has one plan.
 
 ## Who judges the output
 The operator: "is this the run of my plan, complete and the same if run again?". Code records what ran and what did not. Each exercise has a one-page reading.

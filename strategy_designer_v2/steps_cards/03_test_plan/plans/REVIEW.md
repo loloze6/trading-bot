@@ -1,6 +1,6 @@
 # Review of the plans in this folder
 
-**What these plans are.** The current helper (the fidelity rule, three outcomes, concise output), run once on all 29 ideas of step 2, exercise 3 (opus): 58 plans, daily (`_1d`) and hourly (`_1h`). The briefs are those of step 1, exercise 5. Cost: 2.89 USD for 58 calls. Log: `run_log_fidelity.txt`.
+**What these plans are.** The current helper (the fidelity rule, three outcomes, concise output), run once on all 29 ideas of step 2, exercise 3 (opus): one plan per idea, on daily bars (`_1d`). The hourly plans written the same night are in `../exercise_hourly_anticipation/`: one idea, one plan. The briefs are those of step 1, exercise 5. Cost: 2.89 USD for 58 calls. Log: `run_log_fidelity.txt`.
 
 **History.** These plans replace those written before the fidelity rule. The earlier runs' logs are `run_log.txt` and `run_log_divergence_rerun.txt`.
 
@@ -8,15 +8,15 @@
 
 | | plan | untestable | missing-components |
 |---|---|---|---|
-| 001 RSI extremes (4 ideas) | 8 | 0 | 0 |
-| 002 moving-average cross (6 ideas) | 12 | 0 | 0 |
-| 003 thin and heavy volume (6 ideas) | 9 | 0 | 3 (hourly: 003-01, 003-04, 003-06) |
-| 004 bitcoin leads altcoins (7 ideas) | 0 | 14: two coins | 0 |
-| 005 RSI divergence (6 ideas) | 0 | 0 | 12: RSI at an earlier high or low |
-| Total | 29 | 14 | 15 |
+| 001 RSI extremes (4 ideas) | 4 | 0 | 0 |
+| 002 moving-average cross (6 ideas) | 6 | 0 | 0 |
+| 003 thin and heavy volume (6 ideas) | 6 | 0 | 0 |
+| 004 bitcoin leads altcoins (7 ideas) | 0 | 7: two coins | 0 |
+| 005 RSI divergence (6 ideas) | 0 | 0 | 6: RSI at an earlier high or low |
+| Total | 16 | 7 | 6 |
 
 - **Every plan's fit is "adapted".** None is exact: every situation is a threshold the config makes graded.
-- **The wish list,** `COMPONENT_WISHLIST.md`, has 15 blocks. Several divergence ideas propose the same kind of component (RSI at the previous swing high or low; RSI's position in its own range). One hourly volume block asks for a graded "relative volume" component.
+- **The wish list,** `COMPONENT_WISHLIST.md`, has 6 blocks (daily plans). Several divergence ideas propose the same kind of component (RSI at the previous swing high or low; RSI's position in its own range).
 
 ## Checks
 

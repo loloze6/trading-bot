@@ -7,7 +7,7 @@ How will we know whether this idea is real?
 One idea from step 2, with its brief.
 
 ## Output
-One test plan per idea and bar size, with one of three outcomes: **plan**, **untestable** or **missing-components**.
+One test plan per idea, with one of three outcomes: **plan**, **untestable** or **missing-components**.
 
 ## What a test plan is
 **A test plan is the one way we will check an idea against the market data, fixed before we look: what we measure, against what, on which data, and which result would confirm the idea and which would reject it.**
@@ -44,7 +44,7 @@ One test plan per idea and bar size, with one of three outcomes: **plan**, **unt
    - For: what is tested, and from which theory.
    - Used by: step 4, step 5, the operator.
    - Without it: a result cannot be traced to its idea.
-2. **data-instruments, data-bar, data-period:** from the idea's header, else the default BTC/USDT, 1d, fold A, or `--bar`. The model is told them; it does not choose them. The config has no key for them.
+2. **data-instruments, data-bar, data-period:** from the idea's header, else the default BTC/USDT, 1d, fold A. One idea has one bar size, decided before the test (`--bar` exists for exercises only). The model is told them; it does not choose them. The config has no key for them.
    - For: where and on what bars the test runs.
    - Used by: step 4.
    - Without it: step 4 picks the data, and the plan's settings (which depend on the bar size) may not fit.
@@ -185,7 +185,6 @@ On two exercises in a row, on the fixed inputs, every plan meets every criterion
 - **A pattern the engine refuses.** In step 4, five volume plans could not run: their regime detector is a veto on a constant (`BuyAndHoldStrategy` with `volume_filter`), with the default regime flat. The engine stops at its warm-up check. The cause is under investigation by another agent.
 - **For step 2:** 002-01 (after the cross) and 002-05 (from cross to cross) become the same forecast in this vessel; only their horizon and measure differ.
 - **The default data** (BTC/USDT, 1d, fold A) gives about 36 independent 20-bar samples. Ideas about rare or slow situations will often come out inconclusive. The fold and the bar size are the operator's to set.
-- **`plans/` holds plans written before the fidelity rule.** They have no fidelity block, and step 4 reads them as before. Rewriting them with the new helper, and step 4 reading the new `outcome` header, are next.
 
 ## What this step does not do
 It does not run the test, judge a result, or build a missing component.
