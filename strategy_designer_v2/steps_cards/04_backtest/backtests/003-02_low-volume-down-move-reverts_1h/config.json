@@ -3,15 +3,18 @@
     "mode": "threshold_rules",
     "components": [
       {
-        "id": "const",
+        "id": "vlow",
         "class": "strategies.strategy_components.BuyAndHoldStrategy",
         "params": {}
       }
     ],
     "vetoes": [
       {
-        "id": "const",
+        "id": "vlow",
         "transforms": [
+          {
+            "op": "identity"
+          },
           {
             "op": "volume_filter",
             "params": {
@@ -22,7 +25,7 @@
         "rules": [
           {
             "op": "lt",
-            "value": 5
+            "value": 1.0
           }
         ],
         "consecutive_bars": 1,
@@ -59,20 +62,14 @@
                 "params": {
                   "min": 0.0
                 }
-              },
-              {
-                "op": "signed_power",
-                "params": {
-                  "exponent": 2
-                }
               }
             ]
           }
         ]
       },
       "trending": null,
-      "unknown": null,
-      "chop": null
+      "chop": null,
+      "unknown": null
     }
   }
 }

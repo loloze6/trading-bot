@@ -3,15 +3,20 @@
     "mode": "threshold_rules",
     "components": [
       {
-        "id": "volgate",
-        "class": "strategies.strategy_components.BuyAndHoldStrategy",
-        "params": {}
+        "id": "move",
+        "class": "strategies.strategy_components.PriceEvolutionComponent",
+        "params": {
+          "period": 1
+        }
       }
     ],
     "vetoes": [
       {
-        "id": "volgate",
+        "id": "move",
         "transforms": [
+          {
+            "op": "percentile"
+          },
           {
             "op": "volume_filter",
             "params": {
@@ -22,22 +27,38 @@
         "rules": [
           {
             "op": "gte",
-            "value": 5.0
+            "value": 0.9
           }
         ],
         "consecutive_bars": 1,
         "result": "trending"
+      },
+      {
+        "id": "move",
+        "transforms": [
+          {
+            "op": "percentile"
+          }
+        ],
+        "rules": [
+          {
+            "op": "gte",
+            "value": 0.9
+          }
+        ],
+        "consecutive_bars": 1,
+        "result": "mean_reversion"
       }
     ],
     "rules": [],
-    "default_regime": "mean_reversion"
+    "default_regime": "unknown"
   },
   "strategies": {
     "regimes": {
       "trending": {
         "components": [
           {
-            "id": "heavy_up",
+            "id": "heavy_move",
             "class": "strategies.strategy_components.PriceEvolutionComponent",
             "params": {
               "period": 1
@@ -49,18 +70,6 @@
                 "params": {
                   "window": 60,
                   "min_periods": 20
-                }
-              },
-              {
-                "op": "clip",
-                "params": {
-                  "min": 0.0
-                }
-              },
-              {
-                "op": "signed_power",
-                "params": {
-                  "exponent": 2
                 }
               }
             ]
@@ -70,7 +79,7 @@
       "mean_reversion": {
         "components": [
           {
-            "id": "thin_up",
+            "id": "thin_move",
             "class": "strategies.strategy_components.PriceEvolutionComponent",
             "params": {
               "period": 1
@@ -85,27 +94,14 @@
                 }
               },
               {
-                "op": "clip",
-                "params": {
-                  "min": 0.0
-                }
-              },
-              {
-                "op": "signed_power",
-                "params": {
-                  "exponent": 2
-                }
-              },
-              {
                 "op": "negate"
               }
             ]
           }
         ]
       },
-      "unknown": null,
-      "chop": null
+      "chop": null,
+      "unknown": null
     }
-  },
-  "aux_feeds": []
+  }
 }

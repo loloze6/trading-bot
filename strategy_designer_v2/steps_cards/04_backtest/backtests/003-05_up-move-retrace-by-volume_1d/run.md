@@ -6,58 +6,14 @@
 - Venue: Kraken spot prices as a proxy for Kraken futures; funding not modelled
 - Engine: strategy-research/tools/run_protocol.py around trading-bot's run_backtest, unchanged; warm-up loaded before each window
 
-- BTCUSD: 0 of 6 windows run.
-- w1 not run: the engine stopped.
+- BTCUSD: 6 of 6 windows run.
 
-```
-  File "/home/user/trading-bot/trading-bot/core/launcher.py", line 1037, in run_backtest
-    assert probe.is_ready(), (
-           ~~~~~~~~~~~~~~^^
-AssertionError: warmup_prefetch: strategy not ready after 48 prefetch bars (<date> to <date>) -- required_bars=24. 2x-required_bars was insufficient for this config; investigate before proceeding.
-```
-
-- w2 not run: the engine stopped.
-
-```
-  File "/home/user/trading-bot/trading-bot/core/launcher.py", line 1037, in run_backtest
-    assert probe.is_ready(), (
-           ~~~~~~~~~~~~~~^^
-AssertionError: warmup_prefetch: strategy not ready after 48 prefetch bars (<date> to <date>) -- required_bars=24. 2x-required_bars was insufficient for this config; investigate before proceeding.
-```
-
-- w3 not run: the engine stopped.
-
-```
-  File "/home/user/trading-bot/trading-bot/core/launcher.py", line 1037, in run_backtest
-    assert probe.is_ready(), (
-           ~~~~~~~~~~~~~~^^
-AssertionError: warmup_prefetch: strategy not ready after 48 prefetch bars (<date> to <date>) -- required_bars=24. 2x-required_bars was insufficient for this config; investigate before proceeding.
-```
-
-- w4 not run: the engine stopped.
-
-```
-  File "/home/user/trading-bot/trading-bot/core/launcher.py", line 1037, in run_backtest
-    assert probe.is_ready(), (
-           ~~~~~~~~~~~~~~^^
-AssertionError: warmup_prefetch: strategy not ready after 48 prefetch bars (<date> to <date>) -- required_bars=24. 2x-required_bars was insufficient for this config; investigate before proceeding.
-```
-
-- w5 not run: the engine stopped.
-
-```
-  File "/home/user/trading-bot/trading-bot/core/launcher.py", line 1037, in run_backtest
-    assert probe.is_ready(), (
-           ~~~~~~~~~~~~~~^^
-AssertionError: warmup_prefetch: strategy not ready after 48 prefetch bars (<date> to <date>) -- required_bars=24. 2x-required_bars was insufficient for this config; investigate before proceeding.
-```
-
-- w6 not run: the engine stopped.
-
-```
-  File "/home/user/trading-bot/trading-bot/core/launcher.py", line 1037, in run_backtest
-    assert probe.is_ready(), (
-           ~~~~~~~~~~~~~~^^
-AssertionError: warmup_prefetch: strategy not ready after 48 prefetch bars (<date> to <date>) -- required_bars=24. 2x-required_bars was insufficient for this config; investigate before proceeding.
-```
+| window | trades | forecast vs next return (all bars) | net return % |
+|---|---|---|---|
+| w1 | 52 | -0.165517 | -41.988 |
+| w2 | 49 | -0.045282 | -23.129 |
+| w3 | 51 | -0.020079 | -11.951 |
+| w4 | 47 | 0.137382 | 39.581 |
+| w5 | 49 | 0.007699 | -7.469 |
+| w6 | 48 | 0.039525 | 11.523 |
 

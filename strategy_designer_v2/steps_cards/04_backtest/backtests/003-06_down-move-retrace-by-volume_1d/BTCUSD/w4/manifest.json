@@ -1,6 +1,6 @@
 {
-  "run_id": "20261110T005219Z_904138c1",
-  "created_utc": "2026-11-10T00:52:19.527675+00:00",
+  "run_id": "20261110T131546Z_6964cd09",
+  "created_utc": "2026-11-10T13:15:46.963583+00:00",
   "config": {
     "regime_detector": {
       "mode": "threshold_rules",
@@ -9,7 +9,8 @@
           "id": "move",
           "class": "strategies.strategy_components.PriceEvolutionComponent",
           "params": {
-            "period": 1
+            "period": 1,
+            "scaling_factor": 1.0
           }
         }
       ],
@@ -54,11 +55,33 @@
       "default_regime": "unknown"
     },
     "strategies": {
+      "min_allocation_change": 0.0,
       "regimes": {
+        "trending": {
+          "components": [
+            {
+              "id": "heavy_drop",
+              "class": "strategies.strategy_components.PriceEvolutionComponent",
+              "params": {
+                "period": 1
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20
+                  }
+                }
+              ]
+            }
+          ]
+        },
         "mean_reversion": {
           "components": [
             {
-              "id": "thin_drop_revert",
+              "id": "thin_drop",
               "class": "strategies.strategy_components.PriceEvolutionComponent",
               "params": {
                 "period": 1
@@ -74,39 +97,6 @@
                 },
                 {
                   "op": "negate"
-                },
-                {
-                  "op": "signed_power",
-                  "params": {
-                    "exponent": 2
-                  }
-                }
-              ]
-            }
-          ]
-        },
-        "trending": {
-          "components": [
-            {
-              "id": "heavy_drop_hold",
-              "class": "strategies.strategy_components.PriceEvolutionComponent",
-              "params": {
-                "period": 1
-              },
-              "weight": 1.0,
-              "transforms": [
-                {
-                  "op": "standardise",
-                  "params": {
-                    "window": 60,
-                    "min_periods": 20
-                  }
-                },
-                {
-                  "op": "signed_power",
-                  "params": {
-                    "exponent": 2
-                  }
                 }
               ]
             }
@@ -136,7 +126,7 @@
       }
     }
   },
-  "config_sha256": "904138c1174582821d5603856ed5dc70ece230e8cb7b467aedbc0602d6068983",
+  "config_sha256": "6964cd09cb234d43e2f59a560340c3664d06b2bb525dd4d2e42f194d54019067",
   "data": {
     "symbols": [
       "BTCUSD"
@@ -147,7 +137,7 @@
     "bar_count": 168,
     "data_sha256": "33800e2bd0f89b3cefaeea8abc9be6030bef814965df2195d79b55fe97cb7fc4"
   },
-  "git_sha": "b2f8bc4fc3d29a6acb4843ebda08f21b53f9e841-dirty",
+  "git_sha": "cbfda28b9f211c47b5692d8bb278105be17c6326-dirty",
   "engine": {
     "lookback": 61,
     "warmup": 24

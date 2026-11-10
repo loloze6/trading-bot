@@ -3,26 +3,25 @@
     "mode": "threshold_rules",
     "components": [
       {
-        "id": "volgate",
-        "class": "strategies.strategy_components.BuyAndHoldStrategy",
-        "params": {}
+        "id": "thin_up",
+        "class": "strategies.strategy_components.VolumeExpansionHedgeComponent",
+        "params": {
+          "vol_period": 20
+        }
       }
     ],
     "vetoes": [
       {
-        "id": "volgate",
+        "id": "thin_up",
         "transforms": [
           {
-            "op": "volume_filter",
-            "params": {
-              "period": 20
-            }
+            "op": "identity"
           }
         ],
         "rules": [
           {
             "op": "lt",
-            "value": 5.0
+            "value": 0.0
           }
         ],
         "consecutive_bars": 1,
@@ -37,7 +36,7 @@
       "mean_reversion": {
         "components": [
           {
-            "id": "upmove",
+            "id": "move",
             "class": "strategies.strategy_components.PriceEvolutionComponent",
             "params": {
               "period": 1
@@ -55,12 +54,6 @@
                 "op": "negate"
               },
               {
-                "op": "signed_power",
-                "params": {
-                  "exponent": 2
-                }
-              },
-              {
                 "op": "clip",
                 "params": {
                   "max": 0.0
@@ -70,8 +63,8 @@
           }
         ]
       },
-      "trending": null,
       "unknown": null,
+      "trending": null,
       "chop": null
     }
   }

@@ -1,15 +1,15 @@
 {
-  "run_id": "20261110T005145Z_a253105c",
-  "created_utc": "2026-11-10T00:51:45.667146+00:00",
+  "run_id": "20261110T131434Z_837d8816",
+  "created_utc": "2026-11-10T13:14:34.516903+00:00",
   "config": {
     "regime_detector": {
       "mode": "threshold_rules",
       "components": [
         {
           "id": "move",
-          "class": "strategies.strategy_components.PriceEvolutionOnPeriodComponent",
+          "class": "strategies.strategy_components.PriceEvolutionComponent",
           "params": {
-            "comparison_period": 1
+            "period": 1
           }
         }
       ],
@@ -17,9 +17,6 @@
         {
           "id": "move",
           "transforms": [
-            {
-              "op": "identity"
-            },
             {
               "op": "volume_filter",
               "params": {
@@ -45,10 +42,10 @@
         "trending": {
           "components": [
             {
-              "id": "down_move",
-              "class": "strategies.strategy_components.PriceEvolutionOnPeriodComponent",
+              "id": "drop",
+              "class": "strategies.strategy_components.PriceEvolutionComponent",
               "params": {
-                "comparison_period": 1
+                "period": 1
               },
               "weight": 1.0,
               "transforms": [
@@ -58,20 +55,14 @@
                     "window": 60,
                     "min_periods": 20
                   }
-                },
-                {
-                  "op": "clip",
-                  "params": {
-                    "max": 0.0
-                  }
                 }
               ]
             }
           ]
         },
+        "unknown": null,
         "mean_reversion": null,
-        "chop": null,
-        "unknown": null
+        "chop": null
       }
     },
     "gap_rule": {
@@ -94,7 +85,7 @@
       }
     }
   },
-  "config_sha256": "a253105cdf7b886e1e2ec0784656408f7b38e8bcfecbee1f9815a211b5a88953",
+  "config_sha256": "837d881629fe183bd167408beb21c99e0ef7926255f2bf663958296d6c5e239e",
   "data": {
     "symbols": [
       "BTCUSD"
@@ -105,7 +96,7 @@
     "bar_count": 168,
     "data_sha256": "084462174aa5c5715cd73d98ad50022699c65d5ca5a5bb9197f7b8a4a615c33c"
   },
-  "git_sha": "b2f8bc4fc3d29a6acb4843ebda08f21b53f9e841-dirty",
+  "git_sha": "cbfda28b9f211c47b5692d8bb278105be17c6326-dirty",
   "engine": {
     "lookback": 61,
     "warmup": 24

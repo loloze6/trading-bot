@@ -4,9 +4,9 @@
     "components": [
       {
         "id": "move",
-        "class": "strategies.strategy_components.PriceEvolutionOnPeriodComponent",
+        "class": "strategies.strategy_components.PriceEvolutionComponent",
         "params": {
-          "comparison_period": 1
+          "period": 1
         }
       }
     ],
@@ -14,9 +14,6 @@
       {
         "id": "move",
         "transforms": [
-          {
-            "op": "identity"
-          },
           {
             "op": "volume_filter",
             "params": {
@@ -42,10 +39,10 @@
       "trending": {
         "components": [
           {
-            "id": "down_move",
-            "class": "strategies.strategy_components.PriceEvolutionOnPeriodComponent",
+            "id": "drop",
+            "class": "strategies.strategy_components.PriceEvolutionComponent",
             "params": {
-              "comparison_period": 1
+              "period": 1
             },
             "weight": 1.0,
             "transforms": [
@@ -55,20 +52,14 @@
                   "window": 60,
                   "min_periods": 20
                 }
-              },
-              {
-                "op": "clip",
-                "params": {
-                  "max": 0.0
-                }
               }
             ]
           }
         ]
       },
+      "unknown": null,
       "mean_reversion": null,
-      "chop": null,
-      "unknown": null
+      "chop": null
     }
   }
 }

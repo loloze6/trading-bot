@@ -10,7 +10,7 @@
       "unknown": {
         "components": [
           {
-            "id": "rsi_low_cont",
+            "id": "rsi_low_continuation",
             "class": "strategies.strategy_components.RSIPullbackComponent",
             "params": {
               "period": 14,
@@ -23,6 +23,12 @@
                 "params": {
                   "window": 60,
                   "min_periods": 20
+                }
+              },
+              {
+                "op": "signed_power",
+                "params": {
+                  "exponent": 2
                 }
               },
               {

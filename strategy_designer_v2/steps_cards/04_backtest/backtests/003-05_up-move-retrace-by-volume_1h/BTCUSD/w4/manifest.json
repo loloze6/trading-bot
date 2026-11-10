@@ -1,25 +1,22 @@
 {
-  "run_id": "20261110T012014Z_65ea8a3b",
-  "created_utc": "2026-11-10T01:20:14.114398+00:00",
+  "run_id": "20261110T133804Z_5b99e52d",
+  "created_utc": "2026-11-10T13:38:04.996979+00:00",
   "config": {
     "regime_detector": {
       "mode": "threshold_rules",
       "components": [
         {
-          "id": "volgate",
-          "class": "strategies.strategy_components.VolatilityFromStdDevComponent",
+          "id": "move",
+          "class": "strategies.strategy_components.PriceEvolutionComponent",
           "params": {
-            "vol_period": 20
+            "period": 1
           }
         }
       ],
       "vetoes": [
         {
-          "id": "volgate",
+          "id": "move",
           "transforms": [
-            {
-              "op": "identity"
-            },
             {
               "op": "volume_filter",
               "params": {
@@ -29,34 +26,13 @@
           ],
           "rules": [
             {
-              "op": "lte",
-              "value": 0.0
+              "op": "between",
+              "low": -1e-12,
+              "high": 1e-12
             }
           ],
           "consecutive_bars": 1,
           "result": "mean_reversion"
-        },
-        {
-          "id": "volgate",
-          "transforms": [
-            {
-              "op": "identity"
-            },
-            {
-              "op": "volume_filter",
-              "params": {
-                "period": 20
-              }
-            }
-          ],
-          "rules": [
-            {
-              "op": "gt",
-              "value": 0.0
-            }
-          ],
-          "consecutive_bars": 1,
-          "result": "trending"
         }
       ],
       "rules": [],
@@ -67,7 +43,7 @@
         "mean_reversion": {
           "components": [
             {
-              "id": "thin_up",
+              "id": "thin_rise",
               "class": "strategies.strategy_components.PriceEvolutionComponent",
               "params": {
                 "period": 1
@@ -100,10 +76,10 @@
             }
           ]
         },
-        "trending": {
+        "unknown": {
           "components": [
             {
-              "id": "heavy_up",
+              "id": "heavy_rise",
               "class": "strategies.strategy_components.PriceEvolutionComponent",
               "params": {
                 "period": 1
@@ -133,8 +109,8 @@
             }
           ]
         },
-        "chop": null,
-        "unknown": null
+        "trending": null,
+        "chop": null
       }
     },
     "gap_rule": {
@@ -157,7 +133,7 @@
       }
     }
   },
-  "config_sha256": "65ea8a3ba2774bf1dffda729391ef2a9a27ea05a4c5ad7a0f14bea7c7bf5e923",
+  "config_sha256": "5b99e52d07a2ecca2014184ec756ac9a3368436e62b510546900a556f5f95b2e",
   "data": {
     "symbols": [
       "BTCUSD"
@@ -168,7 +144,7 @@
     "bar_count": 2928,
     "data_sha256": "ecc4be5fdb7a06eda69c5791cb5bd7f2d529002951e10879088d5692c160b4e3"
   },
-  "git_sha": "3d90ea6c7c650d7d31e857fe29bc709c62269637-dirty",
+  "git_sha": "cbfda28b9f211c47b5692d8bb278105be17c6326-dirty",
   "engine": {
     "lookback": 61,
     "warmup": 24

@@ -1,6 +1,6 @@
 {
-  "run_id": "20261110T010046Z_59992704",
-  "created_utc": "2026-11-10T01:00:46.481947+00:00",
+  "run_id": "20261110T132407Z_67ac9d72",
+  "created_utc": "2026-11-10T13:24:07.732686+00:00",
   "config": {
     "regime_detector": {
       "mode": "threshold_rules",
@@ -13,7 +13,7 @@
         "unknown": {
           "components": [
             {
-              "id": "rsi_momentum",
+              "id": "rsi_high",
               "class": "strategies.strategy_components.RSIPullbackComponent",
               "params": {
                 "period": 14,
@@ -32,16 +32,15 @@
                   "op": "negate"
                 },
                 {
-                  "op": "clip",
+                  "op": "signed_power",
                   "params": {
-                    "min": 0.0
+                    "exponent": 2
                   }
                 },
                 {
-                  "op": "signed_power",
+                  "op": "clip",
                   "params": {
-                    "exponent": 2,
-                    "pivot": 10
+                    "min": 0.0
                   }
                 }
               ]
@@ -73,7 +72,7 @@
       }
     }
   },
-  "config_sha256": "59992704d43b29878acdd7496edb32249502fa59166784d29e0209fb334c46ef",
+  "config_sha256": "67ac9d727b8bd09dbb03bdee717a5ca790b3015001acf9a96ae1e8119426016d",
   "data": {
     "symbols": [
       "BTCUSD"
@@ -84,7 +83,7 @@
     "bar_count": 3023,
     "data_sha256": "1268b97cb1a3008d0a76fbfeec978dd488bc6562e3bb61c31122e9d4e9b8754b"
   },
-  "git_sha": "3d90ea6c7c650d7d31e857fe29bc709c62269637-dirty",
+  "git_sha": "cbfda28b9f211c47b5692d8bb278105be17c6326-dirty",
   "engine": {
     "lookback": 61,
     "warmup": 35

@@ -1,6 +1,6 @@
 {
-  "run_id": "20261110T010528Z_e000a261",
-  "created_utc": "2026-11-10T01:05:28.644495+00:00",
+  "run_id": "20261110T133146Z_61d175f7",
+  "created_utc": "2026-11-10T13:31:46.166025+00:00",
   "config": {
     "regime_detector": {
       "mode": "threshold_rules",
@@ -13,7 +13,7 @@
         "unknown": {
           "components": [
             {
-              "id": "rsi_low_cont",
+              "id": "rsi_low_continuation",
               "class": "strategies.strategy_components.RSIPullbackComponent",
               "params": {
                 "period": 14,
@@ -26,6 +26,12 @@
                   "params": {
                     "window": 60,
                     "min_periods": 20
+                  }
+                },
+                {
+                  "op": "signed_power",
+                  "params": {
+                    "exponent": 2
                   }
                 },
                 {
@@ -60,7 +66,7 @@
       }
     }
   },
-  "config_sha256": "e000a261c61f40631a4a4f20eb51f3b4df6598ce479d8a3f3e8e8bd6c05858a4",
+  "config_sha256": "61d175f71f115b5a8a1d2ae8367dd61a64248f0e33a866d79eb9be3c18dc0af4",
   "data": {
     "symbols": [
       "ETHUSD"
@@ -71,7 +77,7 @@
     "bar_count": 3000,
     "data_sha256": "6b010991b9c59d92a7dc06186056bfc79112289562611bdf2caf7a5474e77e31"
   },
-  "git_sha": "3d90ea6c7c650d7d31e857fe29bc709c62269637-dirty",
+  "git_sha": "cbfda28b9f211c47b5692d8bb278105be17c6326-dirty",
   "engine": {
     "lookback": 61,
     "warmup": 35

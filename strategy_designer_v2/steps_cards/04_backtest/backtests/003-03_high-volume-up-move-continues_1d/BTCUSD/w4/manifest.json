@@ -1,12 +1,12 @@
 {
-  "run_id": "20261110T005138Z_93298cde",
-  "created_utc": "2026-11-10T00:51:38.033155+00:00",
+  "run_id": "20261110T131420Z_b4fe8801",
+  "created_utc": "2026-11-10T13:14:20.412050+00:00",
   "config": {
     "regime_detector": {
       "mode": "threshold_rules",
       "components": [
         {
-          "id": "ret1",
+          "id": "move",
           "class": "strategies.strategy_components.PriceEvolutionComponent",
           "params": {
             "period": 1
@@ -15,7 +15,7 @@
       ],
       "vetoes": [
         {
-          "id": "ret1",
+          "id": "move",
           "transforms": [
             {
               "op": "volume_filter",
@@ -42,7 +42,7 @@
         "trending": {
           "components": [
             {
-              "id": "move",
+              "id": "up_move",
               "class": "strategies.strategy_components.PriceEvolutionComponent",
               "params": {
                 "period": 1
@@ -61,14 +61,20 @@
                   "params": {
                     "min": 0.0
                   }
+                },
+                {
+                  "op": "signed_power",
+                  "params": {
+                    "exponent": 2
+                  }
                 }
               ]
             }
           ]
         },
-        "unknown": null,
         "mean_reversion": null,
-        "chop": null
+        "chop": null,
+        "unknown": null
       }
     },
     "gap_rule": {
@@ -91,7 +97,7 @@
       }
     }
   },
-  "config_sha256": "93298cdef11d99adb16e839851bc368036f8180e79f425f4ba8822db6ca06d66",
+  "config_sha256": "b4fe8801f58037a844c4177e8a00fa0b2c921fe1ea37a97b4ad04eb254d68d09",
   "data": {
     "symbols": [
       "BTCUSD"
@@ -102,7 +108,7 @@
     "bar_count": 168,
     "data_sha256": "33800e2bd0f89b3cefaeea8abc9be6030bef814965df2195d79b55fe97cb7fc4"
   },
-  "git_sha": "b2f8bc4fc3d29a6acb4843ebda08f21b53f9e841-dirty",
+  "git_sha": "cbfda28b9f211c47b5692d8bb278105be17c6326-dirty",
   "engine": {
     "lookback": 61,
     "warmup": 24

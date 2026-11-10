@@ -1,6 +1,6 @@
 {
-  "run_id": "20261110T011740Z_a3a4974a",
-  "created_utc": "2026-11-10T01:17:40.248950+00:00",
+  "run_id": "20261110T133616Z_cbd8f422",
+  "created_utc": "2026-11-10T13:36:17.012300+00:00",
   "config": {
     "regime_detector": {
       "mode": "threshold_rules",
@@ -17,6 +17,9 @@
         {
           "id": "move",
           "transforms": [
+            {
+              "op": "identity"
+            },
             {
               "op": "volume_filter",
               "params": {
@@ -42,7 +45,7 @@
         "trending": {
           "components": [
             {
-              "id": "up_move",
+              "id": "move_size",
               "class": "strategies.strategy_components.PriceEvolutionComponent",
               "params": {
                 "period": 1
@@ -91,7 +94,7 @@
       }
     }
   },
-  "config_sha256": "a3a4974ae087fae6a90de60bdaa4b428d9b9cbfd9feda66cb62260b7b54c11e6",
+  "config_sha256": "cbd8f42259252c790041e288087289ba006da9326146f49962098d6ac7e69697",
   "data": {
     "symbols": [
       "BTCUSD"
@@ -102,7 +105,7 @@
     "bar_count": 2976,
     "data_sha256": "79f799fdbe590c3d47da3ddfae613bdcf007db1112c293cfedde401f7b5b0ac9"
   },
-  "git_sha": "3d90ea6c7c650d7d31e857fe29bc709c62269637-dirty",
+  "git_sha": "cbfda28b9f211c47b5692d8bb278105be17c6326-dirty",
   "engine": {
     "lookback": 61,
     "warmup": 24

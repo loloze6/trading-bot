@@ -3,7 +3,7 @@
     "mode": "threshold_rules",
     "components": [
       {
-        "id": "ret1",
+        "id": "move",
         "class": "strategies.strategy_components.PriceEvolutionComponent",
         "params": {
           "period": 1
@@ -12,7 +12,7 @@
     ],
     "vetoes": [
       {
-        "id": "ret1",
+        "id": "move",
         "transforms": [
           {
             "op": "volume_filter",
@@ -39,7 +39,7 @@
       "trending": {
         "components": [
           {
-            "id": "move",
+            "id": "up_move",
             "class": "strategies.strategy_components.PriceEvolutionComponent",
             "params": {
               "period": 1
@@ -58,14 +58,20 @@
                 "params": {
                   "min": 0.0
                 }
+              },
+              {
+                "op": "signed_power",
+                "params": {
+                  "exponent": 2
+                }
               }
             ]
           }
         ]
       },
-      "unknown": null,
       "mean_reversion": null,
-      "chop": null
+      "chop": null,
+      "unknown": null
     }
   }
 }
