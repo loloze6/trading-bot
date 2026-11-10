@@ -1,0 +1,13 @@
+---
+idea: 003-01_low-volume-up-move-reverts
+brief: 003_thin-volume-moves-revert
+data-instruments: BTC/USDT
+data-bar: 1d
+data-period: fold A
+---
+Forecast: The forecast is non-zero only on a day that closes above the previous close on volume below its 20-day average, where the average includes that day. The regime detector tests this with VolumeExpansionHedgeComponent(vol_period 20) < 0. On such a day the forecast is minus the size of that day's rise. The rise is PriceEvolutionComponent(period 1), the close-to-close percent change. It is standardised against the mean absolute 1-day change of the previous 60 days (target 10, cap 20). It then passes through signed_power with exponent 2 and pivot 10, so a small rise gives a small short and a sharp rise gives a much larger one, and the sign is negated. The forecast is therefore always zero or negative. A rise of the usual daily size gives -10 (a 100% short). Half that size gives -2.5. One and a half times the usual size gives -22.5, clipped to -20. On every other day the forecast is 0 (flat).
+Config: 003-01_low-volume-up-move-reverts_1d_config.json
+Confirm: The horizon is 1 bar: the day after each active day. Pool all active days across the 6 windows; each next-day return is counted once, because the days do not overlap. Take the strategy's per-bar return (forecast/10 × next-day return), before costs, and subtract what buy-and-hold earns at the same exposure, |forecast|/10 × the window's mean daily return. The idea is confirmed if the mean of this excess is above 0 with a t-statistic ≥ 2 over at least 60 active days. Supporting check: the next-day return following the third of active days with the largest |forecast| is lower than the next-day return following the third with the smallest.
+Reject: The mean excess return is ≤ 0. Or the next-day return after thin-volume up days, weighted by forecast size, is at or above the window's mean daily return, with t ≤ 0. Either result shows that the thin-volume rises are not given back.
+Inconclusive: The mean excess is positive but t < 2. Or there are fewer than 60 active days in total. Or the main measure passes but the supporting check goes the wrong way: the sharpest thin rises revert less than the mildest.
+Deviation: "Unusually low volume" becomes "below its 20-day average", a lower bar than the idea's "unusually low". "Sharp" becomes a graded size of the 1-day rise, damped smoothly for small rises, not a threshold. "Followed by falling back" is tested over the next day only, because the position cannot be held after the up day. The brief's comparison with high-volume moves is not tested by this idea's config.

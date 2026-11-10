@@ -1,0 +1,8 @@
+001-01_rsi-high-extreme-reversal_1d: ran: BTCUSD 6/6; ETHUSD 6/6; BNBUSD not run (no historical data on the venue) [1d, fold A]
+001-01_rsi-high-extreme-reversal_1h: ran: BTCUSD 6/6; ETHUSD 6/6; BNBUSD not run (no historical data on the venue) [1h, fold A]
+001-03_rsi-high-extreme-continuation_1d: ran: BTCUSD 6/6; ETHUSD 6/6; BNBUSD not run (no historical data on the venue) [1d, fold A]
+002-01_sma-upcross-upward-drift_1d: ran: BTCUSD 6/6 [1d, fold A]
+002-05_sma-up-regime-positive-drift_1d: ran: BTCUSD 6/6 [1d, fold A]
+003-01_low-volume-up-move-reverts_1d: ran: BTCUSD 6/6 [1d, fold A]
+004-01_btc-up-move-alts-follow_1d: not run: the plan is untestable [1d, fold A]
+005-01_bearish-rsi-divergence-reversal_1d: not run: the plan is untestable [1d, fold A]

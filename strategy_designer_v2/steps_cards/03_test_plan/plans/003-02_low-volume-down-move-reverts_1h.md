@@ -1,0 +1,13 @@
+---
+idea: 003-02_low-volume-down-move-reverts
+brief: 003_thin-volume-moves-revert
+data-instruments: BTC/USDT
+data-bar: 1h
+data-period: fold A
+---
+Forecast: The forecast is active only on bars whose volume is below its 20-bar average; on all other bars it is zero (flat). On an active bar it is long only, and it grows with the size of the current 1h bar's fall. The steps are: 1. Take the one-bar percent change of the close, PriceEvolutionComponent with period 1. 2. Standardise it against its own previous 60 values (min_periods 20, target 10, cap 20). 3. Negate it, so a fall gives a positive value. 4. Clip it at 0, so up bars give 0. 5. Apply signed_power with exponent 2 and pivot 10. Ordinary falls are damped smoothly toward 0 and sharp falls are amplified, which expresses "sharp". A fall of average size gives about +10 (100% long). A fall half that size gives about +2.5. A fall of twice the average size or more gives up to +20 after the final clip. The forecast is never negative.
+Config: 003-02_low-volume-down-move-reverts_1h_config.json
+Confirm: The horizon is 1 bar, so each return is counted once with no overlap. - Main measure: on bars with forecast > 0, take the forecast-weighted mean of the next 1h return, minus the coin's mean 1h return over the same window (before costs). Pooled across the 6 windows it must be positive with t ≥ 2, and positive in at least 4 of the 6 windows. - Supporting check: bars in the top quintile of positive forecasts are followed by a mean next-bar return above the coin's unconditional mean.
+Reject: The idea is rejected if the pooled forecast-weighted excess next-bar return is ≤ 0, with at most 2 of 6 windows positive. It is also rejected if the top-quintile low-volume drops are followed by a mean next-bar return at or below the unconditional mean.
+Inconclusive: Any of these neither confirms nor rejects: - The pooled excess is positive but t < 2. - The pooled excess is positive but only 3 of 6 windows are positive. - The main measure passes while the top-quintile check fails, or the reverse.
+Deviation: - Low volume: "unusually low volume" becomes "this bar's volume below its 20-bar average". This is a binary gate, not a degree of thinness. - The move: "a sharp downward move" is the move of the single current 1h bar, graded by size relative to its recent past, not a multi-bar drop. - The rebound window: "followed by a rebound" is tested only as the next 1h bar. The position is held only while the low-volume, down-bar condition holds at each close, so a recovery spread over several bars is mostly not captured. - Not tested here: the brief's high-volume continuation comparison.

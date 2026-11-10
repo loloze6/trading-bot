@@ -40,8 +40,8 @@ def criterion_markers(text):
     t = text.lower()
     return {
         "horizon": bool(re.search(r"horizon|\b\d+[- ]bar", t)),
-        "number": bool(re.search(r"t(-stat\w*)?\s*(≥|>=|≤|<=|of at least|of|at or (above|below))\s*[-−+]?\d|p\s*[<≤]\s*0\.\d|percentage point|\d+(\.\d+)?\s*%", t)),
-        "no_overlap": bool(re.search(r"overlap|every \d+(st|nd|rd|th)|one (bar|sample) (per|every)|\bapart\b|count(ed|s)? once|1-bar", t)),
+        "number": bool(re.search(r"t(-stat\w*)?\s*(≥|>=|≤|<=|of at least|of|at or (above|below)|below|above)\s*[-−+]?\d|p\s*[<≤]\s*0\.\d|percentage point|\d+(\.\d+)?\s*%", t)),
+        "no_overlap": bool(re.search(r"overlap|every \d+(st|nd|rd|th)|one (bar|sample) (per|every)|\bapart\b|count(ed|s|ing)? (each \S+ (\S+ )?)?once|counted once|1-bar", t)),
         "supporting": "supporting" in t,
         "inconclusive": "\ninconclusive:" in t.replace("**", ""),
         "no_fading": "fading" not in t,

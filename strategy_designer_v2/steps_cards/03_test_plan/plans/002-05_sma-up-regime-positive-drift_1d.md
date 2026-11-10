@@ -1,0 +1,13 @@
+---
+idea: 002-05_sma-up-regime-positive-drift
+brief: 002_moving-average-cross-trend-persistence
+data-instruments: BTC/USDT
+data-bar: 1d
+data-period: fold A
+---
+Forecast: Long only, and graded by the size of the gap between the two averages. The indicator is the percent spread of the 50-day simple moving average over the 200-day simple moving average, (SMA50 − SMA200) / SMA200 × 100, with both averages including the current close. These are the most common short and long averages for a daily cross, since the brief gives none. The spread is standardised against the mean absolute value of its own previous 200 daily values, so that a typical spread gives a forecast of 10, capped at 20. Negative values are then clipped to 0. The forecast is positive on every bar of a stretch that began with an upward cross of SMA50 over SMA200 and has not yet ended with a downward cross. It grows as SMA50 pulls further above SMA200. It is exactly 0 from the downward cross until the next upward cross.
+Config: 002-05_sma-up-regime-positive-drift_1d_config.json
+Confirm: Pool the 6 windows. Use a horizon of 1 bar, so each daily close-to-close return is counted once. The mean next-day BTC return on bars with forecast > 0 (inside an up-cross stretch) must exceed the mean next-day return on bars with forecast = 0 by a Welch t-statistic of at least 2.0, with at least 100 bars on each side. As a supporting check, the share of up days inside the stretches must also exceed the share outside them. Before costs, this means the stretches beat simply holding the coin through the same windows.
+Reject: Pooled over the 6 windows, the mean next-day return inside up-cross stretches is equal to or below the mean outside them. Rejection includes the case where in-stretch days are worse, which is the lag-and-exhaustion outcome the brief names.
+Inconclusive: The in-stretch mean is higher but the t-statistic is below 2.0. Or fewer than 100 bars fall on either side, which is likely if most windows sit entirely on one side of the 200-day average. Or the up-day share and the mean return point in opposite directions.
+Deviation: The idea compares up-cross stretches with "random stretches of the same length". The test instead compares the stretches with all other bars of the same windows (the bars between a downward and an upward cross), measured day by day. The position is also not a fixed full long during a stretch: it is scaled by how far SMA50 sits above SMA200. The main measure ignores this sizing, because it only uses the sign of the forecast. The short side the brief mentions (downward crosses starting downtrends) is not tested; it is held flat.
