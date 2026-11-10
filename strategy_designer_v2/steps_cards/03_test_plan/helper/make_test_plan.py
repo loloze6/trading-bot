@@ -1,8 +1,8 @@
 """Test plan helper, step 3. One closed-book model call reads one idea, its brief and the two reference
-documents (reference/), and writes the idea's test plan: a strategy config, the result that would confirm
-the idea, the result that would reject it, and the deviation; or "untestable", with the reason.
-This script saves the plan as <idea id>_<bar>.md and the config as <idea id>_<bar>_config.json in the plans folder,
-and writes its line in the folder's INDEX.md.
+documents (reference/), and writes the idea's test plan: the fidelity of the test to the idea, then
+either a plan (forecast, config, criterion) or a refusal (untestable or missing-components) with its reason.
+This script saves the plan as <idea id>_<bar>.md (and, for a plan, its config as <idea id>_<bar>_config.json) in the
+plans folder, writes its line in the folder's INDEX.md, and, for missing-components, its block in COMPONENT_WISHLIST.md.
 
   python make_test_plan.py path/to/NNN-KK_idea.md --briefs-dir path/to/briefs
 Options: --plans-dir (default: ../plans next to this folder), --model (default: the strongest),
@@ -82,17 +82,69 @@ def header(text):
     return [l.strip() for l in m.group(1).splitlines() if l.strip()], m.group(2)
 
 
+PARTS = ("situation", "comparison", "outcome")
+OUTCOMES = ("plan", "untestable", "missing-components")
+PLAN_FIELDS = ("forecast", "horizon", "main-measure", "supporting-check", "confirm", "reject", "inconclusive")
+KEYS = PLAN_FIELDS + ("outcome", "reason", "config", "fidelity", "component")
+
+
+def fields_of(text):
+    """Single-line-or-more fields 'key: value', each running to the next known key."""
+    keys = "|".join(re.escape(k) for k in KEYS)
+    return dict((k, " ".join(v.split())) for k, v in
+                re.findall(rf"^({keys}):[ \t]*(.*?)(?=^(?:{keys}):|\Z)", text, re.M | re.S) if k not in ("config", "fidelity", "component"))
+
+
 def parse(text):
-    """Return ("untestable", reason) or ("plan", config, confirm, reject, inconclusive, deviation).
-    Refuse only a major deviation: no untestable line and no readable config, a config without its two
-    top-level keys, a missing confirm or reject, or a runaway field. Markup and code fences are stripped."""
+    """Split the answer into its fidelity, its outcome, and the fields that outcome needs.
+    Refuse only a major deviation: a missing or unreadable field the outcome needs, a fidelity that contradicts the
+    outcome, an unreadable config, a class or param the catalogue does not list, or a runaway field.
+    Markup and code fences are stripped."""
     text = re.sub(r"```(?:json)?", "", text).replace("**", "")
-    u = re.search(r"^untestable:\s*(.+)", text, re.M | re.S)
-    if u and "config:" not in text:
-        return ("untestable", " ".join(u.group(1).split()))
-    m = re.search(r"^config:\s*(\{.*\})\s*^confirm:", text, re.M | re.S)
+    fid = {}
+    for part in PARTS + ("verdict-transfer",):
+        m = re.search(rf"^\s*-\s*{part}:\s*(.+)$", text, re.M | re.I)
+        if not m:
+            raise ValueError(f"the fidelity line '- {part}:' is missing")
+        fid[part] = " ".join(m.group(1).split())
+    status = {}
+    for part in PARTS:
+        what, _, how = fid[part].partition("->")
+        word = (how.strip().split(":")[0].split() or [""])[0].lower().strip(".,")
+        if not how and what.strip().lower().strip('".') == "none":
+            word = "kept"
+        if word not in ("kept", "adapted", "replaced"):
+            raise ValueError(f"the fidelity line for {part} must end with '-> kept', '-> adapted: ...' or '-> replaced: ...'")
+        status[part] = word
+    transfer = fid["verdict-transfer"].split(":")[0].split()[0].lower().strip(".,")
+    if transfer not in ("yes", "no"):
+        raise ValueError("the verdict-transfer line must start with yes or no")
+    f = fields_of(text)
+    outcome = f.get("outcome", "").split()[0].lower().strip(".,") if f.get("outcome") else ""
+    if outcome not in OUTCOMES:
+        raise ValueError("the outcome line must be plan, untestable or missing-components")
+    replaced = "replaced" in status.values()
+    if outcome == "plan" and (replaced or transfer == "no"):
+        raise ValueError("the fidelity has a replaced part or a 'no' verdict transfer, so the outcome cannot be plan")
+    if outcome != "plan" and not replaced and transfer == "yes":
+        raise ValueError("the outcome is a refusal, but the fidelity has no replaced part and a 'yes' verdict transfer")
+    for k, v in f.items():
+        if len(v.split()) > MAX_FIELD_WORDS:
+            raise ValueError(f"the {k} field has {len(v.split())} words; write one or two sentences")
+    result = {"fidelity": fid, "status": status, "transfer": transfer, "outcome": outcome}
+    if outcome != "plan":
+        if not f.get("reason"):
+            raise ValueError("the reason line is missing")
+        result["reason"] = f["reason"]
+        if outcome == "missing-components":
+            comps = [" ".join(c.split()) for c in re.findall(r"^component:\s*(.+)$", text, re.M)]
+            if not comps:
+                raise ValueError("missing-components needs at least one 'component:' line")
+            result["components"] = comps
+        return result
+    m = re.search(r"^config:\s*(\{.*\})\s*^horizon:", text, re.M | re.S)
     if not m:
-        raise ValueError("no config: line followed by one JSON object and a confirm: line")
+        raise ValueError("no config: line followed by one JSON object and a horizon: line")
     try:
         config = json.loads(m.group(1))
     except json.JSONDecodeError as e:
@@ -101,16 +153,12 @@ def parse(text):
         if key not in config:
             raise ValueError(f"the config has no {key} key")
     check_names(config)
-    fields = dict((k, " ".join(v.split())) for k, v in
-                  re.findall(r"^(forecast|confirm|reject|inconclusive|deviation):\s*(.*?)(?=^(?:forecast|config|confirm|reject|inconclusive|deviation):|\Z)", text, re.M | re.S))
-    for k in ("confirm", "reject"):
-        if not fields.get(k):
+    for k in ("forecast", "horizon", "main-measure", "confirm", "reject"):
+        if not f.get(k):
             raise ValueError(f"the {k}: line is missing")
-    for k, v in fields.items():
-        if len(v.split()) > MAX_FIELD_WORDS:
-            raise ValueError(f"the {k} field has {len(v.split())} words; write one or two sentences")
-    return ("plan", config, fields["confirm"], fields["reject"], fields.get("inconclusive", "not given"),
-            fields.get("deviation", "not given"), fields.get("forecast", "not given"))
+    result["config"] = config
+    result.update({k: f.get(k, "not given") for k in PLAN_FIELDS})
+    return result
 
 
 def write_atomic(path, text):
@@ -164,20 +212,36 @@ def main():
         sys.exit(f"no valid answer after {ATTEMPTS} attempts; cost {cost:.4f} USD")
 
     args.plans_dir.mkdir(parents=True, exist_ok=True)
+    out = result["outcome"]
+    fit = ("exact" if all(v == "kept" for v in result["status"].values()) else "adapted") if out == "plan" else None
     head = ("---\n" + f"idea: {idea_id}\n" + f"brief: {fields['brief']}\n"
-            + "".join(f"data-{k}: {v}\n" for k, v in data.items()) + "---\n")
+            + "".join(f"data-{k}: {v}\n" for k, v in data.items()) + f"outcome: {out}\n"
+            + (f"fit: {fit}\n" if fit else "") + "---\n")
+    fid = result["fidelity"]
+    body = ("Fidelity:\n" + "".join(f"- {p.capitalize()}: {fid[p]}\n" for p in PARTS)
+            + f"- Verdict transfer: {fid['verdict-transfer']}\n")
     bracket = f"[{data['instruments']}, {data['bar']}, {data['period']}]"
-    if result[0] == "untestable":
-        write_atomic(args.plans_dir / f"{plan_id}.md", head + f"Untestable: {result[1]}\n")
-        line = f"{plan_id}: untestable: {' '.join(result[1].split()[:20])} {bracket}"
-        print(f"untestable: {result[1]}")
+    stale = args.plans_dir / f"{plan_id}_config.json"
+    if out == "plan":
+        write_atomic(stale, json.dumps(result["config"], indent=2) + "\n")
+        body += (f"Forecast: {result['forecast']}\nConfig: {plan_id}_config.json\nCriterion:\n"
+                 + "".join(f"- {k.replace('-', ' ').capitalize()}: {result[k]}\n" for k in PLAN_FIELDS[1:]))
+        line = f"{plan_id}: plan (fit: {fit}) {bracket}"
+        print(f"plan ({fit}): {args.plans_dir / (plan_id + '.md')}")
     else:
-        _, config, confirm, reject, inconclusive, deviation, forecast = result
-        write_atomic(args.plans_dir / f"{plan_id}_config.json", json.dumps(config, indent=2) + "\n")
-        write_atomic(args.plans_dir / f"{plan_id}.md", head + f"Forecast: {forecast}\nConfig: {plan_id}_config.json\n"
-                     f"Confirm: {confirm}\nReject: {reject}\nInconclusive: {inconclusive}\nDeviation: {deviation}\n")
-        line = f"{plan_id}: plan {bracket}"
-        print(f"plan: {args.plans_dir / (plan_id + '.md')}")
+        if stale.exists():
+            stale.unlink()   # a rerun that refuses leaves no config behind
+        body += f"Reason: {result['reason']}\n"
+        line = f"{plan_id}: {out}: {' '.join(result['reason'].split()[:20])} {bracket}"
+        print(f"{out}: {result['reason']}")
+    write_atomic(args.plans_dir / f"{plan_id}.md", head + body)
+    # The component wish list: one block per plan id; a rerun replaces it, a rerun with another outcome removes it.
+    wish_path = args.plans_dir / "COMPONENT_WISHLIST.md"
+    wish = wish_path.read_text() if wish_path.exists() else "# Component wish list\n\nOne block per idea that needs components the catalogue does not have.\n"
+    wish = re.sub(rf"\n## {re.escape(plan_id)}\n.*?(?=\n## |\Z)", "", wish, flags=re.S).rstrip("\n") + "\n"
+    if out == "missing-components":
+        wish += f"\n## {plan_id}\n" + "".join(f"- Component: {c}\n" for c in result["components"])
+    write_atomic(wish_path, wish)
     # One line per plan; a rerun of the same idea and bar replaces its line.
     index_path = args.plans_dir / "INDEX.md"
     lines = [l for l in (index_path.read_text().splitlines() if index_path.exists() else []) if not l.startswith(plan_id + ":")]

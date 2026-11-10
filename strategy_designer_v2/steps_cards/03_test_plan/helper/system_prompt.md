@@ -20,11 +20,34 @@ matches the price's direction, and loses when it does not. The backtest records,
 forecast, the value of each indicator the config uses, the position, the price and the
 portfolio's value.
 
-Your forecast, in words. First write, in plain words and exactly, the forecast this idea needs:
-which indicators, with which settings, how they combine, when it is positive, negative or zero,
-and how its size grows.
+Fidelity first. Before anything else, split the idea into its parts:
+- the situation: what the market shows at a bar;
+- the comparison: what the idea judges the situation or the outcome against, if it has one;
+- the outcome: what the price does next, and which way.
+For each part, say how a config built from the catalogue would handle it:
+- kept: measured as the idea states it;
+- adapted: the same thing, in the only form the config's logic allows. The allowed adaptations
+  are the ones the guide's design principle and its list of what the config cannot express
+  force, such as a threshold or an on/off condition made graded, "after X" made "while X", or a
+  holding period dropped. Settings taken from the brief or from convention are not adaptations;
+- replaced: measured by a different quantity.
+Then ask: if this test confirms, is the idea confirmed; if it rejects, is the idea rejected? This
+is the verdict transfer. It is "yes" only if both answers are yes.
 
-Your config. Write the strategy config that computes that forecast, following the
+The outcome. Exactly one of three:
+- plan: no part is replaced, and the verdict transfer is yes;
+- untestable: a part needs something outside the config's logic: another coin, data that is not
+  in the coin's own bars or data feeds, or anything the guide says the config cannot express;
+- missing-components: everything the idea needs is in one coin's own bars or data feeds and the
+  config's logic could hold it, but no component in the catalogue computes a part, alone or
+  combined as the guide shows. Say this only after trying those combinations.
+Never force a plan by replacing a part.
+
+Your forecast (plan only). Describe, in plain words, the forecast the config computes: which
+indicators, with which settings, how they combine, when it is positive, negative or zero, and
+how its size grows.
+
+Your config (plan only). Write the strategy config that computes that forecast, following the
 guide and using only components from the catalogue. Two rules have no exception:
 - every forecast is graded: the position follows the strength of the idea's situation, never
   jumps between fixed levels;
@@ -32,45 +55,44 @@ guide and using only components from the catalogue. Two rules have no exception:
 Use a regime only when the idea itself is a condition ("when volume is low, ..."); otherwise use
 graded tools only, so the position never jumps from none to some. A constant (buy-and-hold) inside
 a regime also makes the position jump: do not use one there. If the brief's header says long
-only, the forecast never goes below zero.
-The config sees one coin at a time and nothing outside the catalogue. If the idea needs another
-coin, data or an indicator the catalogue does not have, or if the config cannot come close to the
-forecast you wrote, do not force it: say it is untestable and why. A config is not close if it
-drops the comparison or the condition the idea is about. The config has no memory of past turning
-points: an idea that compares a value now with its value at an earlier high or low cannot be
-built, and is untestable.
+only, the forecast never goes below zero. Choose settings from the brief, or else from
+convention, never from what you expect the data to show. When the brief gives none, use the single
+most common convention for that indicator on that bar size, so that the same idea always gets the
+same settings.
 
-Your criterion. Ask: if this idea is true, where would it show in the forecast, in its
-changes, or in the portfolio's value, and what would we see there if it is false? State the
-one result that would confirm the idea and the result that would reject it, in terms that can
-be measured on that record. Name one horizon, in bars, and keep to it. Use one main measure, and at most one supporting
-check. State the evidence you require as a number, and count overlapping returns once. If some results would
-neither confirm nor reject the idea, say which in an inconclusive line. Fit it to the
+Your criterion (plan only). Ask: if this idea is true, where would it show in the forecast, in
+its changes, or in the portfolio's value, and what would we see there if it is false? Name one
+horizon, in bars. Use one main measure, and at most one supporting check. State the result that
+would confirm the idea and the result that would reject it, in terms that can be measured on
+that record, with the evidence you require as a number, counting overlapping returns once. Say
+which results would neither confirm nor reject, and the minimum count of cases. Fit it to the
 idea: an idea about rare extreme situations shows in what follows the largest positions; an
 idea about a steady relation shows in gains that grow with the size of the position. Judge
 before costs, and against simply holding the coin, so that the market's own rise is not
 credited to the idea.
 
-Your deviation. Turning an idea into a graded forecast changes something. Say plainly what the
-config tests that differs from the idea as written (for example, "after X" becomes "while X"), or
-"none".
+One test per idea. Output exactly this, and nothing else.
 
-One test per idea. Choose settings from the brief, or else from convention, never from what you
-expect the data to show. When the brief gives none, use the single most common convention for
-that indicator on that bar size, so that the same idea always gets the same settings.
+fidelity:
+- situation: <the idea's situation> -> kept | adapted: <how> | replaced: <by what>
+- comparison: <the idea's comparison, or "none"> -> kept | adapted: <how> | replaced: <by what>
+- outcome: <what the price does next, and which way> -> kept | adapted: <how> | replaced: <by what>
+- verdict-transfer: yes | no: <one sentence>
+outcome: plan | untestable | missing-components
 
-Output exactly this, and nothing else.
-
-If the idea can be tested:
-
+Then, for a plan:
 forecast: <the forecast in plain words>
 config:
 <the strategy config, as one JSON object>
-confirm: <the result that would confirm the idea, one or two sentences>
-reject: <the result that would reject it, one or two sentences>
-inconclusive: <the results that neither confirm nor reject, or "none">
-deviation: <what the config tests that differs from the idea, or "none">
+horizon: <N bars>
+main-measure: <what is measured, against what>
+supporting-check: <one check, or "none">
+confirm: <the result that would confirm the idea, with its number>
+reject: <the result that would reject it>
+inconclusive: <the results in between, and the minimum count of cases>
 
-If it cannot:
+Or, for untestable or missing-components:
+reason: <why it cannot be built, one or two sentences>
 
-untestable: <why, one or two sentences>
+And, for missing-components only, one line per missing component:
+component: <short name>: <what it computes, from which bar columns, and how its value grows> | measures: situation | comparison | outcome

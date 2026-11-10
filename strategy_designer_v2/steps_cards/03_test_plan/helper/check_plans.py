@@ -43,7 +43,7 @@ def criterion_markers(text):
         "number": bool(re.search(r"t(-stat\w*)?\s*(≥|>=|≤|<=|of at least|of|at or (above|below)|below|above)\s*[-−+]?\d|p\s*[<≤]\s*0\.\d|percentage point|\d+(\.\d+)?\s*%", t)),
         "no_overlap": bool(re.search(r"overlap|every \d+(st|nd|rd|th)|one (bar|sample) (per|every)|\bapart\b|count(ed|s|ing)? (each \S+ (\S+ )?)?once|counted once|1-bar", t)),
         "supporting": "supporting" in t,
-        "inconclusive": "\ninconclusive:" in t.replace("**", ""),
+        "inconclusive": "inconclusive:" in t.replace("**", ""),
         "no_fading": "fading" not in t,
     }
 
@@ -54,8 +54,13 @@ def main():
             if p.name == "INDEX.md":
                 continue
             text = p.read_text()
-            if "\nUntestable:" in text:
+            if "\nUntestable:" in text:   # plans written before the fidelity rule
                 print(f"{p.name}: untestable")
+                continue
+            m = re.search(r"^outcome:\s*(\S+)", text, re.M)
+            if m and m.group(1) != "plan":
+                ok = "\nFidelity:" in text and "\nReason:" in text
+                print(f"{p.name}: {m.group(1)} ({'fidelity and reason present' if ok else 'MISSING fidelity or reason'})")
                 continue
             cfg_path = p.with_name(p.stem + "_config.json")
             faults = config_faults(json.loads(cfg_path.read_text())) if cfg_path.exists() else ["no config file"]
