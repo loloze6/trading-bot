@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "mean next-bar return / move return, thin minus heavy",
+    "value": -59.408004509828885,
+    "statistic": {
+      "name": "Welch t (thin minus heavy)",
+      "value": -0.9936739169470536
+    },
+    "threshold": "thin mean share below heavy with Welch t of at least 2.0 in magnitude, and thin mean share below 0"
+  },
+  "supporting_check": {
+    "name": "min over heavy-only and thin-only parts of mean active-bar gain before costs minus BTC return",
+    "value": -0.0009527977822551886,
+    "passed": false
+  },
+  "counts": {
+    "thin cases": 145,
+    "heavy cases": 120,
+    "thin mean share": -59.56769360392548,
+    "heavy mean share": -0.15968909409659476,
+    "heavy-only active bars": 138,
+    "thin-only active bars": 169,
+    "heavy-only mean excess": -0.0009527977822551886,
+    "thin-only mean excess": 0.0008822075559350401
+  },
+  "decided_by": "Thin mean share is below heavy but the Welch t-stat is under 2.0, so the result is inconclusive.",
+  "reading": "Bars are classified by the recorded regime label (mean_reversion = thin, trending = heavy). The move is close[t]/close[t-1]-1 within the window, so each window's first row and any non-positive moves are dropped. The Welch t is taken as thin minus heavy and needs to be at or below -2.0. If thin is significantly below heavy but thin is at or above 0, the plan's second reject clause applies. The supporting check compares the per-bar allocation gain minus the BTC return on bars with a non-zero position in each regime."
+}

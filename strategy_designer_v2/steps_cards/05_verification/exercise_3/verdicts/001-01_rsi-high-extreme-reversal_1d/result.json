@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "pooled excess 5-bar forward return after extreme bars (forecast <= -10) minus own-window drift",
+    "value": -0.01189918564545359,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -1.3209929463210048
+    },
+    "threshold": "confirm if negative with t <= -2 and negative in at least 2 coins; reject if >= 0 or negative in fewer than 2 coins with t > -1; at least 30 pooled and 8 per coin blocks"
+  },
+  "supporting_check": {
+    "name": "Spearman rank correlation of |forecast| with next 5-bar return over forecast < 0 bars (should be negative)",
+    "value": -0.0013739727787828834,
+    "passed": true
+  },
+  "counts": {
+    "pooled non-overlapping extreme blocks": 60,
+    "extreme blocks BTCUSD": 32,
+    "extreme blocks ETHUSD": 28,
+    "coins with negative excess return": 2,
+    "coins in record": 2
+  },
+  "decided_by": "The pooled excess return is negative with -2 < t <= -1 (or weak with coins split), which meets the inconclusive rule.",
+  "reading": "Extreme bars are non-overlapping grid bars (positions 0,5,10,... per window with a full 5-bar return inside the window) with forecast <= -10, each coin's drift is the mean 5-bar forward return over that window's grid bars, pooled t is the ordinary t of the mean excess, the supporting Spearman correlation uses the same grid bars with forecast < 0, and the 'at least 2 of 3 coins' rule and per-coin minimum apply to the coins present in the record (BTCUSD, ETHUSD; BNB did not run)."
+}

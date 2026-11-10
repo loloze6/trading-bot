@@ -37,3 +37,5 @@ Conventions, used only when the plan does not say otherwise:
 - A t-statistic the plan does not name: for a difference between two groups, Welch's two-sample t; for one group's mean,
   the ordinary t of the mean (mean / (standard deviation / square root of n)).
 - A difference is "A minus B" in the order the plan names them, so its sign keeps the plan's meaning.
+- A mean "weighted by" X: the weighted mean, sum(value x X) / sum(X).
+- `counts` holds counts only: the numbers of cases, bars, stretches or coins the plan's minimums refer to.

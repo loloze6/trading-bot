@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "mean 20-bar fwd return in position minus all bars",
+    "value": 0.028288114581208747,
+    "statistic": {
+      "name": "Welch t",
+      "value": 0.790345353930534
+    },
+    "threshold": "difference above 0 with t >= 2"
+  },
+  "supporting_check": {
+    "name": "share of positive 20-bar returns after up-crosses minus unconditional share",
+    "value": 0.4360655737704918,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping in-position blocks": 13,
+    "non-overlapping all-bars blocks": 34,
+    "up-crosses": 2,
+    "mean 20-bar return after up-crosses": 0.20385257859389416,
+    "share positive after up-crosses": 1.0,
+    "unconditional share positive": 0.5639344262295082
+  },
+  "decided_by": "Fewer than 15 non-overlapping in-position blocks or fewer than 8 up-crosses, so the test neither confirms nor rejects.",
+  "reading": "Blocks are the bars at positions 0, 20, 40, ... of each window, with in-position meaning forecast > 0 on the block's first bar, compared by Welch t against all grid bars. An up-cross is a bar with forecast > 0 whose previous bar in the same window has forecast <= 0, counted only when it has a full 20-bar forward return. The unconditional share uses every bar with a valid 20-bar forward return."
+}

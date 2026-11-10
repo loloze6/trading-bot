@@ -25,7 +25,7 @@ The function returns a dict, and only plain numbers, strings, lists and dicts:
                    "statistic": {"name": <the test statistic the plan's threshold uses, e.g. "Welch t">, "value": <number>} or null,
                    "threshold": <the plan's threshold, in words>},
   "supporting_check": {"name": <in a few words>, "value": <number or null>, "passed": true | false | null} or null,
-  "counts": {<each count the plan's minimums refer to, named as the plan names it>: <number>, ...},
+  "counts": {<each count the plan's minimums refer to, named as the plan names it>: <number>, ...} (counts only),
   "decided_by": <the plan's confirm, reject or inconclusive rule the numbers meet, in one sentence>,
   "reading": <the literal choices you made, in one sentence, or "none">
 }

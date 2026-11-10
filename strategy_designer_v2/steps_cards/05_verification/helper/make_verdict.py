@@ -91,6 +91,23 @@ def fmt(v):
     return f"{v:.6g}" if isinstance(v, float) else str(v)
 
 
+def render(d, plan_id, h, out, plan_path, record):
+    """verdict.md, from what the function returned."""
+    mm, sc = out["main_measure"], out.get("supporting_check")
+    stat = f"; {mm['statistic'].get('name', 'statistic')}: {fmt(mm['statistic'].get('value'))}" if isinstance(mm.get("statistic"), dict) else ""
+    lines = ["---", f"plan: {plan_id}", f"idea: {h.get('idea', '')}", f"fit: {h.get('fit', 'not given')}", f"status: {out['status']}", "---",
+             "Evidence:",
+             f"- Main measure: {mm.get('name', '')}: {fmt(mm.get('value'))}{stat} (threshold: {mm.get('threshold', '')})",
+             (f"- Supporting check: {sc.get('name', '')}: {fmt(sc.get('value'))}, passed: {sc.get('passed')}" if isinstance(sc, dict) else "- Supporting check: none"),
+             "- Counts: " + ", ".join(f"{k}: {fmt(v)}" for k, v in out["counts"].items()),
+             f"- Decided by: {out['decided_by']}",
+             f"- Reading: {out['reading']}",
+             f"Plan: `steps_cards/{os.path.relpath(plan_path, HERE.parents[1])}`",
+             f"Record: `steps_cards/{os.path.relpath(record, HERE.parents[1])}`",
+             "Measure: `measure.py`"]
+    write_atomic(d / "verdict.md", "\n".join(lines) + "\n")
+
+
 def main():
     a = argparse.ArgumentParser()
     a.add_argument("plan", type=Path)
@@ -154,15 +171,8 @@ def main():
     d.mkdir(parents=True, exist_ok=True)
     write_atomic(d / "measure.py", code)
     write_atomic(d / "result.json", json.dumps(out, indent=2) + "\n")
-    mm, sc = out["main_measure"], out.get("supporting_check")
-    fit = h.get("fit", "not given")
-    write_atomic(d / "verdict.md", "---\n" + f"plan: {plan_id}\nidea: {h.get('idea', '')}\nfit: {fit}\nstatus: {out['status']}\n---\n"
-                 f"Evidence:\n- Main measure: {mm.get('name', '')}: {fmt(mm.get('value'))}"
-                 + (f"; {mm['statistic'].get('name', 'statistic')}: {fmt(mm['statistic'].get('value'))}" if isinstance(mm.get("statistic"), dict) else "")
-                 + f" (threshold: {mm.get('threshold', '')})\n"
-                 + (f"- Supporting check: {sc.get('name', '')}: {fmt(sc.get('value'))}, passed: {sc.get('passed')}\n" if isinstance(sc, dict) else "- Supporting check: none\n")
-                 + "- Counts: " + ", ".join(f"{k}: {fmt(v)}" for k, v in out["counts"].items()) + "\n- Decided by: {out['decided_by']}\n- Reading: {out['reading']}\n"
-                 f"Plan: `steps_cards/{os.path.relpath(plan_path, HERE.parents[1])}`\nRecord: `steps_cards/{os.path.relpath(record, HERE.parents[1])}`\nMeasure: `measure.py`\n")
+    render(d, plan_id, h, out, plan_path, record)
+    mm, fit = out["main_measure"], h.get("fit", "not given")
     stat = f"; {mm['statistic'].get('name', 'statistic')} {fmt(mm['statistic'].get('value'))}" if isinstance(mm.get("statistic"), dict) else ""
     counts = ", ".join(f"{k} {fmt(v)}" for k, v in out["counts"].items())
     index_line(f"{plan_id}: {out['status']} (fit: {fit}) [main: {fmt(mm.get('value'))}{stat}; {counts}]")

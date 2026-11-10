@@ -1,0 +1,26 @@
+{
+  "status": "rejected",
+  "main_measure": {
+    "name": "mean 20-bar forward return on short bars minus on all bars (pp)",
+    "value": -1.751168997884351,
+    "statistic": {
+      "name": "Welch t",
+      "value": -0.39187241344452867
+    },
+    "threshold": "confirm if difference <= -2 percentage points with t <= -2; reject if difference >= 0"
+  },
+  "supporting_check": {
+    "name": "hit rate on short bars minus unconditional share of negative 20-bar returns (pp)",
+    "value": -0.5602240896358524,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping short cases pooled across windows": 21,
+    "non-overlapping all-bar cases pooled across windows": 34,
+    "largest-tertile short cases": 7,
+    "largest-tertile mean forward return": -0.0029637524798007725,
+    "windows": 6
+  },
+  "decided_by": "Reject: the short-bar hit rate is not above the unconditional share.",
+  "reading": "Short bars are grid bars (positions 0, 20, 40, ... of each window) with forecast < 0 compared against all grid bars of the same windows, both groups taking the Welch t, and the 'largest-tertile shorts' are the ceil(n/3) short cases with the most negative forecast; the minimum-count rule is applied before the reject and confirm rules."
+}

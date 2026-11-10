@@ -1,0 +1,25 @@
+{
+  "status": "rejected",
+  "main_measure": {
+    "name": "mean 5-bar forward return, extreme minus neutral bars",
+    "value": -0.0007005980644819161,
+    "statistic": {
+      "name": "Welch t",
+      "value": -0.05569658268715827
+    },
+    "threshold": "positive with t >= 2 confirms; t <= 0 rejects (t <= -2 rejects as reversal); 0 < t < 2 inconclusive"
+  },
+  "supporting_check": {
+    "name": "strategy minus exposure-scaled buy-and-hold, pooled, before costs",
+    "value": 0.4677280517162465,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping extreme cases pooled": 42,
+    "neutral cases": 180,
+    "coins with positive difference": 1,
+    "coins in record": 2
+  },
+  "decided_by": "The pooled extreme-minus-neutral difference is zero or negative (t <= 0), which rejects.",
+  "reading": "The top-20% cut is the 80th percentile of all non-zero forecasts pooled over every bar of all coins and windows (extreme = forecast >= it), neutral = forecast < 1 including zeros, both sampled on the 0,5,10,... grid of each window; 'at least 2 of the 3 coins' is applied literally as at least 2 positive coins among those present; the supporting excess is, per coin, the summed per-bar strategy gain minus that coin's mean allocation times its summed per-bar return, added over coins; t >= 2 with a failing coin or supporting condition is treated as inconclusive."
+}

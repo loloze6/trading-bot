@@ -1,0 +1,33 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "in-state minus all-bars mean next-bar return",
+    "value": -0.000578030864254778,
+    "statistic": {
+      "name": "stretch-clustered t",
+      "value": -0.312945769609508
+    },
+    "threshold": "difference <= -0.10% per day with stretch-clustered t <= -2"
+  },
+  "supporting_check": {
+    "name": "share of down bars in stretches minus share over all bars",
+    "value": -0.00043918832904754623,
+    "passed": false,
+    "details": {
+      "down_share_in_state": 0.5230414746543779,
+      "down_share_all": 0.5234806629834254,
+      "strategy_equity_return_before_costs": -0.05764384482108969,
+      "equity_ends_above_flat": false,
+      "strategy_return_in_state": -0.03783408506289139,
+      "hold_return_in_state": -0.30066412799245584,
+      "beats_holding_in_state": true
+    }
+  },
+  "counts": {
+    "distinct down-cross stretches": 5,
+    "in-state bars pooled": 434,
+    "all bars pooled": 724
+  },
+  "decided_by": "Inconclusive: the difference is negative but t > -2 or it is smaller than 0.10% per day.",
+  "reading": "In-state bars are those with forecast < 0, a stretch is each contiguous run of such bars within one window (a run open at a window's start counts as one stretch), the t uses a cluster-robust standard error of the pooled in-state mean by stretch with the all-bars mean taken as fixed, a down bar is a negative next-bar return, and only the down-bar share enters the confirm rule while the equity checks are reported but not decisive."
+}

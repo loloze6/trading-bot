@@ -1,0 +1,25 @@
+{
+  "status": "rejected",
+  "main_measure": {
+    "name": "mean next-bar return on active bars minus mean next-bar return on all bars",
+    "value": 0.0002124998192192147,
+    "statistic": {
+      "name": "Welch t",
+      "value": 0.06624065054905467
+    },
+    "threshold": "excess < 0 with t <= -2 over at least 60 active bars, negative in at least 4 of 6 windows"
+  },
+  "supporting_check": {
+    "name": "slope of next-bar return on signed forecast across active bars (should be positive)",
+    "value": -0.00015054593117626191,
+    "passed": false
+  },
+  "counts": {
+    "active bars": 148,
+    "all bars": 724,
+    "windows with negative excess": 3,
+    "windows": 6
+  },
+  "decided_by": "The excess return is zero or positive with at least 60 active bars, so the idea is rejected.",
+  "reading": "Active bars are rows with a non-zero, non-missing forecast; the baseline is all bars with a next-bar return in the same windows; the Welch t compares active bars against all bars; per-window excess is active minus all within each window (windows without active bars count as not negative); and the slope regresses next-bar return on the signed forecast so that a positive slope means larger shorts precede larger falls."
+}

@@ -1,0 +1,24 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "mean 20-bar fwd return, forecast>0 minus all bars",
+    "value": 0.028288114581208747,
+    "statistic": {
+      "name": "Welch t",
+      "value": 0.790345353930534
+    },
+    "threshold": "difference > 0 with t >= 2 across non-overlapping 20-bar blocks"
+  },
+  "supporting_check": {
+    "name": "share positive 20-bar returns after up-crosses minus unconditional share",
+    "value": 0.5294117647058824,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping in-position blocks": 13,
+    "up-crosses": 2,
+    "non-overlapping all-bars blocks": 34
+  },
+  "decided_by": "Fewer than 15 non-overlapping in-position blocks or fewer than 8 up-crosses, so the test neither confirms nor rejects.",
+  "reading": "Up-crosses are bars with forecast > 0 whose prior bar in the same window had forecast <= 0, each with its own 20-bar forward return (overlap allowed); the unconditional share of positive returns and the all-bars mean use the same non-overlapping grid (positions 0, 20, 40, ... per window); the t is Welch's between in-position and all-bars blocks; the reversal reject is checked before the confirm rule."
+}
