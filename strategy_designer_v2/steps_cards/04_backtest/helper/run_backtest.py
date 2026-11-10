@@ -31,7 +31,53 @@ REPO = HERE.parents[3]
 SR = REPO / "strategy-research"
 KEEP = ["metrics.json", "manifest.json", "forecast_distribution.csv"]
 KEEP_GZ = ["bars.csv", "trades.json"]   # the large ones, gzipped
+CATALOGUE = HERE.parents[1] / "03_test_plan" / "helper" / "reference" / "component_catalogue.md"
 VENUE = ("kraken", "perp")   # Binance is not reachable from this environment (HTTP 451); Kraken is
+
+
+def _defaults():
+    """Class name -> {param: default value}, from the catalogue rows ("`period` (14)")."""
+    text = CATALOGUE.read_text()
+    rows = text[text.index("### Regime measures"):]
+    out = {}
+    for name, params in re.findall(r"^\| `(\w+)` \| ([^|]*) \|", rows, re.M):
+        d = {}
+        for k, v in re.findall(r"`(\w+)` \(([^)]*)\)", params):
+            v = v.split(",")[0].strip().strip('"')
+            try:
+                d[k] = json.loads(v.lower() if v.lower() in ("true", "false") else v)
+            except ValueError:
+                d[k] = v
+        out[name] = d
+    return out
+
+
+def canonical(config):
+    """What the engine computes, without its labels: component ids replaced by their position, and params written at
+    their catalogue default removed. Two configs equal here give the same backtest."""
+    defaults, cfg = _defaults(), json.loads(json.dumps(config))
+    ren = {}
+    for i, c in enumerate(cfg.get("regime_detector", {}).get("components", [])):
+        ren[c.get("id")] = f"d{i}"
+    def clean(c):
+        cls = str(c.get("class", "")).split(".")[-1]
+        c["params"] = {k: v for k, v in (c.get("params") or {}).items() if defaults.get(cls, {}).get(k, object()) != v}
+    rd = cfg.get("regime_detector", {})
+    for c in rd.get("components", []):
+        clean(c); c["id"] = ren[c.get("id")]
+    for v in rd.get("vetoes", []):
+        v["id"] = ren.get(v.get("id"), v.get("id"))
+    for rule in rd.get("rules", []):
+        for group in rule.get("any_of", []):
+            for cond in group:
+                cond["id"] = ren.get(cond.get("id"), cond.get("id"))
+    for reg in (rd.get("regimes") or {}).values():
+        for e in (reg or {}).get("components", []):
+            e["id"] = ren.get(e.get("id"), e.get("id"))
+    for name, reg in (cfg.get("strategies", {}).get("regimes") or {}).items():
+        for i, c in enumerate((reg or {}).get("components", [])):
+            clean(c); c["id"] = f"{name}{i}"
+    return cfg
 
 
 def plan_header(text):
@@ -102,11 +148,12 @@ def main():
         print(f"not run ({outcome}): {plan_id}")
         return
     config_path = plan_path.with_name(plan_id + "_config.json")
-    # Rerun only when what the engine reads has changed: the config and the data (coins, bar size, fold).
+    # Rerun only when what the engine reads has changed: the config (labels and default-valued params aside) and the
+    # data (coins, bar size, fold).
     # The plan's other fields (fidelity, forecast in words, criterion) do not change the backtest.
     data_line = f"- Data: {h['data-instruments']} as "
     if (not args.force and (dest / "config.json").exists() and (dest / "run.md").exists()
-            and json.loads((dest / "config.json").read_text()) == json.loads(config_path.read_text())
+            and canonical(json.loads((dest / "config.json").read_text())) == canonical(json.loads(config_path.read_text()))
             and data_line in (dest / "run.md").read_text() and f"; {bar} bars; fold {fold}" in (dest / "run.md").read_text()
             and index_path.exists() and any(l.startswith(plan_id + ": ran") for l in index_path.read_text().splitlines())):
         print(f"unchanged, record kept: {plan_id}")
