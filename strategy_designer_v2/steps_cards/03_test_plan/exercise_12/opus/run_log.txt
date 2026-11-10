@@ -1,0 +1,36 @@
+=== 001-01_rsi-high-extreme-reversal
+plan: exercise_12/opus/plans/001-01_rsi-high-extreme-reversal_1d.md
+cost: 0.0433 USD, attempts: 1
+=== 001-03_rsi-high-extreme-continuation
+plan: exercise_12/opus/plans/001-03_rsi-high-extreme-continuation_1d.md
+cost: 0.0529 USD, attempts: 1
+=== 002-01_sma-upcross-upward-drift
+plan: exercise_12/opus/plans/002-01_sma-upcross-upward-drift_1d.md
+cost: 0.0498 USD, attempts: 1
+=== 002-05_sma-up-regime-positive-drift
+plan: exercise_12/opus/plans/002-05_sma-up-regime-positive-drift_1d.md
+cost: 0.0459 USD, attempts: 1
+=== 003-01_low-volume-up-move-reverts
+plan: exercise_12/opus/plans/003-01_low-volume-up-move-reverts_1d.md
+cost: 0.0665 USD, attempts: 1
+=== 004-01_btc-up-move-alts-follow
+untestable: The idea needs bitcoin's past return as the signal and an altcoin's later return as the outcome, but the config sees only one coin's bars at a time and the test runs only on BTC/USDT. No config can read bitcoin's move while trading an altcoin, and a BTC-only run contains no altcoin whose catching-up could be measured.
+cost: 0.0142 USD, attempts: 1
+=== 005-01_bearish-rsi-divergence-reversal
+untestable: The idea compares RSI at the new price high with RSI at the previous price high. That needs the config to remember where the earlier swing high was and what RSI read there, and the config has no memory of past turning points. Every catalogue component reads only its current window, so the "lower high in RSI than at the previous high" comparison, which is the idea itself, cannot be built. A proxy such as "close near the top of its range while RSI is low" would drop that comparison.
+cost: 0.0164 USD, attempts: 1
+=== 005-02_bullish-rsi-divergence-rebound
+untestable: The idea compares RSI at the current price low with RSI at the previous price low, so it needs to remember an earlier turning point and the RSI value there, and the config cannot store either. The closest graded proxy, a close near the bottom of its range while RSI is not deeply oversold, drops the higher-low comparison that the idea is about.
+cost: 0.0158 USD, attempts: 1
+=== 005-03_divergent-high-weaker-than-confirmed
+untestable: The idea compares RSI at a new price high with RSI at the earlier price high, which is a comparison against a past turning point. The config has no memory of past turning points. The catalogue also has no component that measures where RSI sits relative to its own recent high, so the divergence itself cannot be built from it.
+cost: 0.0160 USD, attempts: 1
+=== 005-04_divergent-low-stronger-than-confirmed
+untestable: The idea compares the RSI at today's new price low with the RSI at the previous price low (a higher RSI low against a lower one), and the config keeps no memory of past turning points, so it cannot know the RSI value at the earlier low. The catalogue also has no RSI-range or RSI-low component. A weighted sum of where the close sits in its range and the RSI level would drop that low-to-low comparison, which is what the idea is about.
+cost: 0.0181 USD, attempts: 1
+=== 005-05_bearish-divergence-uptrend-continues
+untestable: The idea requires checking that RSI at today's new price high is lower than RSI was at the previous price high. The config has no memory of past turning points, so it cannot look up RSI's value at an earlier high. Substitutes such as "price near the top of its range while RSI is moderate" drop the very comparison the divergence is defined by.
+cost: 0.0157 USD, attempts: 1
+=== 005-06_bullish-divergence-downtrend-continues
+untestable: A bullish divergence compares RSI at the current price low with RSI at the earlier price low it undercuts. The config keeps no memory of past turning points or of the indicator values at them, so it cannot tell whether RSI's low is higher than before. No catalogue component gives RSI's position within its own past range either. Any config built from these components would drop the RSI-versus-earlier-low comparison that is the idea, and would test only "price near its range low", which is a different idea.
+cost: 0.0186 USD, attempts: 1

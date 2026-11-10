@@ -111,12 +111,14 @@ Exercise 5 (opus): exercise 4 plus one line on settings (the single most common 
 
 Exercise 6 (opus): exercise 5 unchanged. Six plans stable; the divergence idea was forced again, with a constant inside a regime (`exercise_6/reading.md`).
 
+Exercises 11 and 12 (opus): one line added: "the config has no memory of past turning points", after four divergence plans in `plans/` were forced. The seven fixed ideas plus the five other divergence ideas: no fault in either (`exercise_12/reading.md`).
+
 Exercises 9 and 10 (opus): the final helper (references in the system prompt, plan ids with the bar size, the index). No fault in either (`exercise_10/reading.md`).
 
 Exercises 7 and 8 (opus): one line added: "a config is not close if it drops the comparison or the condition the idea is about". No fault in either (`exercise_8/reading.md`).
 
 ## Quality criteria on the test plan
-- Untestable when the idea needs another coin, other data, or an indicator the catalogue lacks, or when the config cannot come close to the forecast the idea needs. Never forced.
+- Untestable when the idea needs another coin, other data, or an indicator the catalogue lacks, or when the config cannot come close to the forecast the idea needs (it drops the comparison or condition the idea is about, or it needs a value at an earlier high or low). Never forced.
 - The `Forecast` line says, in plain words, what the config computes.
 - The config follows the hard rules: `standardise` first, every strategy component graded, a regime only when the idea is a condition, no constant inside a regime, long only when the brief says so.
 - The same side as the idea; settings from the brief, else the single most common convention.
@@ -128,7 +130,7 @@ Exercises 7 and 8 (opus): one line added: "a config is not close if it drops the
 The operator: "if this test confirms, would I believe the idea; if it rejects, would I drop it?". Code checks the shape and the names. Each exercise has a one-page reading against the criteria.
 
 ## Done when
-On two exercises in a row, on the fixed inputs, every plan meets every criterion. Status: met by exercises 7 and 8, and again by exercises 9 and 10 on the final helper.
+On two exercises in a row, on the fixed inputs, every plan meets every criterion. Status: met by exercises 7 and 8, by exercises 9 and 10 on the final helper, and by exercises 11 and 12 after the turning-point line (`exercise_12/reading.md`).
 
 ## Open
 - **For step 2:** 002-01 (after the cross) and 002-05 (from cross to cross) become the same forecast in this vessel; only their horizon and measure differ.
