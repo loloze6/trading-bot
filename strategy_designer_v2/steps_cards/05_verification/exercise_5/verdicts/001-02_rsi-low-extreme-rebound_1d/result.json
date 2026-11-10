@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "Top-quintile minus zero-forecast mean forward 5-bar return (non-overlapping, pooled)",
+    "value": -0.0014746197271659576,
+    "statistic": {
+      "name": "Welch t",
+      "value": -0.1391967566638901
+    },
+    "threshold": "excess > 0 with t >= 2 and positive in at least 2 of the coins to confirm; <= 0 and non-positive in at least 2 coins to reject"
+  },
+  "supporting_check": {
+    "name": "Spearman rank correlation of forecast vs forward 5-bar return on positive-forecast bars",
+    "value": -0.05628730666035194,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping top-quintile cases pooled": 77,
+    "non-overlapping zero-forecast cases pooled": 129,
+    "coins": 2,
+    "coins with positive excess": 1,
+    "coins with non-positive excess": 1,
+    "non-overlapping top-quintile cases BTCUSD": 36,
+    "non-overlapping top-quintile cases ETHUSD": 41
+  },
+  "decided_by": "Inconclusive: coins disagree beyond the confirm/reject rules.",
+  "reading": "The top-quintile cut-off is the 80th percentile of all positive forecasts pooled across coins and windows, both groups and the Spearman check use the bars at positions 0,5,10,... of each window, and since only 2 coins are in the record the 'at least 2 of the 3 coins' rules are applied as at least 2 of the coins present and the per-coin minimum of 8 to each coin present."
+}

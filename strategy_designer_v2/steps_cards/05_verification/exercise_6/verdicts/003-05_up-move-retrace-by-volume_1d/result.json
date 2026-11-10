@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "mean next-bar share of move, thin minus heavy",
+    "value": -59.408004509828885,
+    "statistic": {
+      "name": "Welch t (thin minus heavy)",
+      "value": -0.9936739169470536
+    },
+    "threshold": "thin mean share below heavy mean share with Welch t of at least 2.0 in magnitude, and thin mean share below 0"
+  },
+  "supporting_check": {
+    "name": "strategy minus holding BTC on active bars, min of heavy-only and thin-only parts",
+    "value": -0.13148609395121608,
+    "passed": false
+  },
+  "counts": {
+    "thin cases": 145,
+    "heavy cases": 120
+  },
+  "decided_by": "Thin is below heavy but the Welch t-stat magnitude is under 2.0, so the result is inconclusive.",
+  "reading": "Heavy and thin cases are the bars labelled trending and mean_reversion. The move is the bar's own close-to-close return inside its window, and only moves above 0 are kept. The t-stat compares thin minus heavy, so a value of -2.0 or lower counts as at least 2.0. The case where thin is significantly below heavy but not below 0 matches no rule and is treated as inconclusive. The supporting check sums the strategy's gain minus BTC's return over active bars (allocation not 0), split by regime, and is reported but does not enter the decision."
+}

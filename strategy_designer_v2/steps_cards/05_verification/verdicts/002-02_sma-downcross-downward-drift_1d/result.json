@@ -1,0 +1,24 @@
+{
+  "status": "rejected",
+  "main_measure": {
+    "name": "mean 10-bar forward return on short bars minus mean over all bars (non-overlapping blocks)",
+    "value": 0.46618479362677423,
+    "statistic": {
+      "name": "Welch t",
+      "value": 0.23547545475992646
+    },
+    "threshold": "at most -1.0% per 10 bars with t-stat of -2 or lower to confirm; 0 or above rejects"
+  },
+  "supporting_check": {
+    "name": "falling share on short blocks minus falling share on all blocks (points)",
+    "value": 3.1527093596059155,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping 10-bar short blocks": 29,
+    "non-overlapping 10-bar blocks (all bars)": 70,
+    "distinct downward crosses": 2
+  },
+  "decided_by": "Rejected: the conditional-minus-unconditional difference is 0 or above, or the falling share on short bars is not above the unconditional share.",
+  "reading": "Blocks are the bars at positions 0,10,20,... of each window with a full 10-bar forward return inside the window, short blocks are those whose bar has forecast < 0, the t-stat is Welch's t between short blocks and all blocks, the main measure is reported in percent, and a downward cross is counted each time the component's raw spread goes from >= 0 to < 0 within a window."
+}

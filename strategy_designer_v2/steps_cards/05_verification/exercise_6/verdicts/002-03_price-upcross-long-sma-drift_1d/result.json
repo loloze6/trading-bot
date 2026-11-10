@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "mean 20-bar fwd return in-position minus all bars (non-overlapping)",
+    "value": 0.028288114581208747,
+    "statistic": {
+      "name": "Welch t",
+      "value": 0.790345353930534
+    },
+    "threshold": "difference above 0 with t >= 2 to confirm; difference <= 0 rejects"
+  },
+  "supporting_check": {
+    "name": "up-cross positive 20-bar share minus unconditional share",
+    "value": 0.4360655737704918,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping in-position blocks": 13,
+    "up-crosses": 2
+  },
+  "decided_by": "Fewer than the required minimums (13 in-position non-overlapping blocks vs 15, 2 up-crosses vs 8), so the test neither confirms nor rejects.",
+  "reading": "Pooled all windows of every coin present, used the 0,20,40,... grid per window for both groups with Welch t, counted an up-cross as a bar with forecast > 0 after a bar with forecast <= 0 inside the same window that has a full 20-bar forward return, took the unconditional share over every bar with a valid 20-bar forward return, and applied the minimum counts first, then reject, then confirm."
+}

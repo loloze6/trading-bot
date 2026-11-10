@@ -1,0 +1,24 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "in-stretch minus all-bar mean next-bar return (before costs)",
+    "value": 0.0008650530865054267,
+    "statistic": {
+      "name": "Welch t (in-stretch vs all bars)",
+      "value": 0.49516162785129425
+    },
+    "threshold": "confirm if difference > 0 with one-sided t >= 2.0; reject if difference <= 0 or t <= -2.0; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "in-stretch minus all-bar up-day share",
+    "value": -0.0006572680510573137,
+    "passed": false
+  },
+  "counts": {
+    "in-stretch bars": 290,
+    "all bars": 724,
+    "distinct up-cross stretches": 5
+  },
+  "decided_by": "Inconclusive: the in-stretch mean exceeds the all-bar mean but the t-statistic lies between -2.0 and 2.0.",
+  "reading": "In-stretch bars are rows with forecast > 0, distinct up-cross stretches are contiguous runs of forecast > 0 counted per window (a run already open at a window's start counts), the t is Welch's two-sample t of in-stretch next-bar returns against all-bar next-bar returns on every bar (h=1), an up day is a next-bar return > 0, and a non-positive difference rejects even when t lies between -2.0 and 0."
+}

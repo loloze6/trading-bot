@@ -106,13 +106,14 @@ The 16 daily plans of `03_test_plan/plans/` whose outcome is `plan` (15 with a b
 
 ## Variants compared
 - **Exercises 1 and 2:** the same helper, run twice. 14 of 15 statuses agree; the plans' open details explain the rest.
-- **Exercises 3 and 4:** conventions for open details, and a clearer result format (value and statistic separate, named counts).
+- **Exercises 3 and 4:** conventions for open details, and a clearer result format (value and statistic separate, named counts). 13 of 15 identical numbers; one status still flips.
+- **Exercises 5 and 6:** two more conventions (weighted mean, counts only). 15 of 15 statuses agree.
 
 ## Who judges the output
 The operator: "does this verdict apply my plan's rule, and would I accept it?". Code checks the shape of the result. Each exercise has a one-page reading: the functions are read against their plans, and the two runs are compared.
 
 ## Done when
-On two exercises in a row, every verdict meets every criterion, and the two runs give the same status for every plan. Status: see `exercise_2/reading.md`.
+On two exercises in a row, every verdict meets every criterion, and the two runs give the same status for every plan. Status: met by exercises 5 and 6: the same status for all 15 plans (`exercise_6/reading.md`).
 
 ## Open
 - **A coin without data** (BNB, for the RSI ideas): the function takes the plan's rule literally on the coins present and says so in "reading". Parked with the quality of the backtest output.
