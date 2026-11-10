@@ -101,6 +101,7 @@ Index line: `001-01_rsi-high-extreme-gives-back: after an extreme high RSI, pric
 - What we would see, not how to check it: no condition such as what to control for, or which coins it must hold for. A baseline that gives the idea its meaning ("more often than after random points", "more than after neutral readings") is not a test condition.
 - Faithful: a consequence of the brief, for the brief's reasons, where its header says it applies.
 - Concrete: someone looking at the bars could tell whether it is there.
+- About one coin at a time: what we would see in one coin's own bars. A consequence that needs two coins at once is not an idea here; when no consequence of a brief is about one coin, the helper writes `no-ideas` with the reason.
 - No setting value, no trading rule, no result, no price.
 - Distinct: no two ideas differ only by a setting. A span between two events the brief names (from one cross to the opposite cross) is a situation of its own.
 - Together, the ideas cover the brief's consequences, and every answer of a question brief that has a reason.
@@ -137,9 +138,6 @@ No number of ideas is enforced. A quota would push the model to pad or to cut. T
 - the ideas that hold a test condition.
 
 If a count shows a fault, the prompt changes first. A limit in code comes only if the model runs away, as in step 1.
-
-## Open, from step 3
-- One coin at a time. The strategy config sees one coin's bars only, never another coin (step 3, reading of the design guide). A brief or idea about several coins at once (step 2's brief 004: bitcoin leads altcoins) cannot be tested. To add: a rule that a brief or idea is about one coin at a time. Wording to be set with the operator.
 
 ## What this step does not do
 It does not say how to trade an idea, set a pass mark, or confirm or reject an idea.

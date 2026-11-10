@@ -125,6 +125,9 @@ def main():
     write_atomic(index_path, index + "".join(l + "\n" for l in lines))
     print(f"ideas written: {len(ideas)}")
     print(f"already-indexed: {already}")
+    n = re.search(r"^no-ideas:\s*(.+)$", text, re.M)
+    if n:
+        print(f"no-ideas: {n.group(1).strip()}")
     print(f"cost: {cost:.4f} USD, attempts: {attempt}")
 
 

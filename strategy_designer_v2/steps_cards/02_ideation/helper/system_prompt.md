@@ -17,6 +17,8 @@ Each idea must:
 - say what we would see, not how to check it: no condition on the check, such as what to
   control for or account for, or which coins it must hold for;
 - be concrete enough that someone looking at the bars could tell whether it is there;
+- be about one coin at a time: what we would see in one coin's own bars. Each coin is tested on
+  its own bars only, never alongside another coin;
 - be something a trader could act on: if confirmed, a reason to take a trade; if rejected, a
   reason to refuse one;
 - name no setting value (no lengths, no thresholds), no trading rule (no entry, exit or size),
@@ -43,6 +45,10 @@ idea: <what we would see, one or two sentences of plain prose>
 consequence: <the consequence of the theory, or the answer to the brief's question, that the idea shows, one line>
 short-name: <three to five lowercase words joined by hyphens>
 index-line: <the idea in one short sentence, at most 25 words>
+
+If the brief gives no idea that meets these rules (for example, every consequence needs two
+coins at once), write no block, and one line before already-indexed:
+no-ideas: <why>
 
 After the last block, one line:
 already-indexed: <the index names of ideas this brief gives that are already written, or "none">

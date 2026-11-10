@@ -91,6 +91,7 @@ smaller and less traded coins take on part of that move only later... (prose, at
 
 ## Quality criteria on the brief
 - One theory, not a list.
+- About one coin at a time: what one coin's own prices and volumes do. It may name several coins if it holds for each separately. A relation between coins cannot be tested: each coin is tested on its own bars only.
 - A theory, not a formula or a trading rule: no entry, hold or exit, no parameter value.
 - Says why, or says it does not know.
 - Can be wrong: some market behaviour would refute it; it does not say how to test it (no condition on the check, such as what to control for, or which coins it must hold for).
@@ -118,9 +119,6 @@ The operator: "would I research this theory?" and, with a source, "is this what 
 On two exercises in a row, on the three inputs, the helper's brief meets every criterion and would be kept with wording changes only.
 
 Status: exercise 6 meets it except on one brief: 004 still holds a check ("once the smaller coins' own past moves are known"). Step 2 enforces the same rule on ideas, so the condition stops there. See `exercise_6/reading.md`. The code checks were relaxed after exercise 6 (they refuse less); no model run has used them yet.
-
-## Open, from step 3
-- One coin at a time. The strategy config sees one coin's bars only, never another coin (step 3, reading of the design guide). A brief about several coins at once (step 2's brief 004: bitcoin leads altcoins) cannot be tested. To add: a rule that a brief is about one coin at a time. Wording to be set with the operator.
 
 ## What this step does not do
 It does not write ideas, judge whether a theory is promising, check that the engine can test it, or set anything about how it is tested.
