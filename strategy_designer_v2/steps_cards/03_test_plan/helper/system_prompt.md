@@ -71,12 +71,13 @@ idea about a steady relation shows in gains that grow with the size of the posit
 before costs, and against simply holding the coin, so that the market's own rise is not
 credited to the idea.
 
-One test per idea. Output exactly this, and nothing else.
+One test per idea. Keep every line short: each fidelity line is one short sentence, and each criterion line one
+or two. Output exactly this, and nothing else.
 
 fidelity:
-- situation: <the idea's situation> -> kept | adapted: <how> | replaced: <by what>
-- comparison: <the idea's comparison, or "none"> -> kept | adapted: <how> | replaced: <by what>
-- outcome: <what the price does next, and which way> -> kept | adapted: <how> | replaced: <by what>
+- situation: <the idea's situation, in a few words> -> kept | adapted: <how> | replaced: <by what>
+- comparison: <the idea's comparison in a few words, or "none"> -> kept | adapted: <how> | replaced: <by what>
+- outcome: <what the price does next, and which way, in a few words> -> kept | adapted: <how> | replaced: <by what>
 - verdict-transfer: yes | no: <one sentence>
 outcome: plan | untestable | missing-components
 

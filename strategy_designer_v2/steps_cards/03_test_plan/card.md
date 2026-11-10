@@ -170,7 +170,8 @@ From step 2 (exercise 3, opus, and exercise 4 for 003-07), with their briefs:
 - **Exercise 3:** the plan in two calls (plan in words, then config). The config differed from the plan in 5 of 5 cases, so one call was kept.
 - **Exercises 4 to 6:** the exact forecast first, the data's windows, one main measure, the evidence as a number, the settings rule.
 - **Exercises 7 to 12:** "not close" lines, then the final helper.
-- **Exercises 13 and 14:** the fidelity rule and the three outcomes, replacing the two lines of exercises 7 to 12, which named single cases.
+- **Exercises 13 and 14:** the fidelity rule and the three outcomes, replacing the two lines of exercises 7 to 12, which named single cases. Right outcomes, but long lines.
+- **Exercises 15 and 16:** one line asking for short lines. Fidelity lines about 40 % shorter.
 
 Each exercise has its reading.
 
@@ -178,7 +179,7 @@ Each exercise has its reading.
 The operator: "if this test confirms, would I believe the idea; if it rejects, would I drop it?". Code checks the shape, the names and the agreement between fidelity and outcome. Each exercise has a one-page reading against the criteria.
 
 ## Done when
-On two exercises in a row, on the fixed inputs, every plan meets every criterion. Status: met with the previous prompt (exercises 7 to 12). With the fidelity rule: see `exercise_14/reading.md`.
+On two exercises in a row, on the fixed inputs, every plan meets every criterion. Status: met by exercises 15 and 16, with the fidelity rule, the three outcomes and the concise output (`exercise_16/reading.md`).
 
 ## Open
 - **A pattern the engine refuses.** In step 4, five volume plans could not run: their regime detector is a veto on a constant (`BuyAndHoldStrategy` with `volume_filter`), with the default regime flat. The engine stops at its warm-up check. The cause is under investigation by another agent.

@@ -51,7 +51,7 @@ def criterion_markers(text):
 def main():
     for d in sys.argv[1:]:
         for p in sorted(Path(d).glob("*.md")):
-            if p.name == "INDEX.md":
+            if p.name in ("INDEX.md", "COMPONENT_WISHLIST.md", "REVIEW.md"):
                 continue
             text = p.read_text()
             if "\nUntestable:" in text:   # plans written before the fidelity rule

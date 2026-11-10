@@ -1,0 +1,39 @@
+=== 001-01_rsi-high-extreme-reversal
+plan (adapted): exercise_14/opus/plans/001-01_rsi-high-extreme-reversal_1d.md
+cost: 0.0691 USD, attempts: 1
+=== 001-03_rsi-high-extreme-continuation
+plan (adapted): exercise_14/opus/plans/001-03_rsi-high-extreme-continuation_1d.md
+cost: 0.0599 USD, attempts: 1
+=== 002-01_sma-upcross-upward-drift
+plan (adapted): exercise_14/opus/plans/002-01_sma-upcross-upward-drift_1d.md
+cost: 0.0543 USD, attempts: 1
+=== 002-05_sma-up-regime-positive-drift
+plan (adapted): exercise_14/opus/plans/002-05_sma-up-regime-positive-drift_1d.md
+cost: 0.0730 USD, attempts: 1
+=== 003-01_low-volume-up-move-reverts
+plan (adapted): exercise_14/opus/plans/003-01_low-volume-up-move-reverts_1d.md
+cost: 0.0832 USD, attempts: 1
+=== 003-07_quiet-hours-moves-revert
+untestable: The idea's situation (quiet hours) and its outcome (reversal when the busy hours return) both happen within a single 1d bar, so the data this test runs on does not contain them. The weekend part would also need the day of the week, which no part of the config can read.
+cost: 0.0425 USD, attempts: 1
+=== 004-01_btc-up-move-alts-follow
+untestable: The idea links two coins: the signal is bitcoin's move and the traded price is a smaller altcoin. The config sees only one symbol's own bars and feeds, and has no key for another coin's prices. The run also contains only BTC/USDT, so there is no altcoin to observe drifting.
+cost: 0.0196 USD, attempts: 1
+=== 005-01_bearish-rsi-divergence-reversal
+missing-components: The idea needs the RSI at the current price high compared with the RSI at the previous swing high. That value comes from the coin's own closes and could feed a graded forecast, but no catalogue component computes or remembers the RSI at a prior peak. The nearest compositions (Donchian position minus RSI level) measure a different quantity, and RSI ranked within its own window is blocked by the single-history-op rule.
+cost: 0.0422 USD, attempts: 1
+=== 005-02_bullish-rsi-divergence-rebound
+missing-components: A bullish divergence needs RSI's value on the bar of the previous swing low in price, compared with RSI now. Both come from the coin's own closes and a per-bar forecast could hold the result. But no catalogue component, alone or combined through weights, negation, offsets or history ops, finds the previous price low and reads RSI there. The only compositions available, such as Donchian position combined with RSI level, or RSI against its own history, measure something else.
+cost: 0.0482 USD, attempts: 1
+=== 005-03_divergent-high-weaker-than-confirmed
+missing-components: Everything the idea needs comes from one coin's own closes, and the config's logic could hold it: a regime or graded weight on "price at its range top" times a graded RSI shortfall. No catalogue component measures where the current RSI sits relative to its own recent high, and no composition of the existing components or ops can build that from RSI's history.
+cost: 0.0440 USD, attempts: 1
+=== 005-04_divergent-low-stronger-than-confirmed
+missing-components: The idea needs RSI compared with its own value at the previous price low, which comes from one coin's closes and fits the config's logic. That logic would be a regime on "close at its window low" (Donchian raw at -sf) plus a graded long component sized by how far RSI sits above its window low. No catalogue component gives RSI's position within its own recent range, and no composition of the existing components (RSI level, price range position, the transforms) produces it.
+cost: 0.0427 USD, attempts: 1
+=== 005-05_bearish-divergence-uptrend-continues
+missing-components: Every input to the divergence comes from one coin's closes, and the config could hold it: a regime for "close at a new high" plus a graded long component for "how far RSI sits below its earlier high". But no catalogue component computes RSI relative to its own recent peak, and no composition of the existing components or ops (weights, negate, standardise, clip, regime rules against constants) can produce a rolling maximum of RSI.
+cost: 0.0402 USD, attempts: 1
+=== 005-06_bullish-divergence-downtrend-continues
+missing-components: The divergence uses only the coin's own closes, and the config could hold it as one graded short signal. No catalogue component, alone or combined, measures RSI against its own earlier low, so the "higher RSI low" half of the situation cannot be built. RSI level, the Donchian range position and RSI pullback measure different things.
+cost: 0.0453 USD, attempts: 1
