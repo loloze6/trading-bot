@@ -1,6 +1,6 @@
 # Review of the backtests in this folder
 
-The production run: every plan in `../../03_test_plan/plans/`, daily and hourly bars, fold A, through `../helper/run_backtest.py` (the bot's backtest, unchanged). Log: `../production_run_log.txt`. About 1 hour 20 minutes, no model call. Size: 38 MB, with bars and trades gzipped.
+The production run: every plan in `../../03_test_plan/plans/`, daily and hourly bars, fold A, through `../helper/run_backtest.py` (the bot's backtest, unchanged). Log: `run_log.txt`. About 1 hour 20 minutes, no model call. Size: 38 MB, with bars and trades gzipped.
 
 ## Counts
 

@@ -49,6 +49,8 @@ Modelled on the engine's own run folders, one folder per plan, named after the p
     run_backtest.py            one plan -> the engine, once per coin and window; stores the record; adds the index line
   backtests/
     INDEX.md                   one line per plan
+    REVIEW.md                  the review of a real run
+    run_log.txt                the log of a real run
     <plan id>/                 one record per plan (the plan id carries the bar size)
       run.md
       config.json

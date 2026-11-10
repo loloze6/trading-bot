@@ -43,7 +43,8 @@ Every card has these sections, in this order (step 1 and step 2 are the worked e
 steps_cards/NN_step/
   card.md          the card
   helper/          system_prompt.md and the script that calls the model and saves the output
-  <outputs>/       the step's artifact folder, with INDEX.md when outputs must not repeat
+  <outputs>/       the step's artifact folder: one file (or folder) per output, INDEX.md (one line per output),
+                   and, once a real run has filled it, REVIEW.md (its reading) and run_log*.txt (its logs)
   exercise_k/      inputs, outputs, costs, side_by_side.md, reading.md
 ```
 

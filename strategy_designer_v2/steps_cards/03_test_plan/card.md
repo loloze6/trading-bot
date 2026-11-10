@@ -63,6 +63,8 @@ credited to the idea.
     reference/                 trimmed copies of the strategy config guide and the component catalogue, pasted into each call
   plans/
     INDEX.md                   one line per plan: plan or untestable, and its data
+    REVIEW.md                  the review of a real run
+    run_log*.txt               the logs of real runs
     NNN-KK_short-name_<bar>.md one test plan per idea and bar size
     NNN-KK_short-name_<bar>_config.json   its config
   exercise_k/                  the comparison exercises

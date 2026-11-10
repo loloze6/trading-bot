@@ -1,6 +1,6 @@
 # Review of the plans in this folder
 
-These plans come from the final helper, run once on all 29 ideas of step 2, exercise 3 (opus): 58 plans, daily (`_1d`) and hourly (`_1h`). The briefs are those of step 1, exercise 5. Cost: 3.03 USD for the 58 calls (about 0.05 each, with the references cached), plus 0.23 USD for the divergence rerun. Log: `../plans_run_log.txt`. No refusal.
+These plans come from the final helper, run once on all 29 ideas of step 2, exercise 3 (opus): 58 plans, daily (`_1d`) and hourly (`_1h`). The briefs are those of step 1, exercise 5. Cost: 3.03 USD for the 58 calls (about 0.05 each, with the references cached), plus 0.23 USD for the divergence rerun. Log: `run_log.txt`. No refusal.
 
 ## Counts
 
@@ -32,7 +32,7 @@ Each deviation said the config cannot compare RSI at the two peaks, which is wha
 
 **The fix.** One prompt line: "the config has no memory of past turning points: an idea that compares a value now with its value at an earlier high or low cannot be built, and is untestable". It was tested in exercises 11 and 12: 6 of 6 divergence ideas untestable, twice, and the five testable plans unchanged.
 
-**The rerun.** The 12 divergence plans in this folder were then rerun with the current prompt (log: `../plans_rerun_divergence_log.txt`, 0.23 USD). All 12 are now untestable. The configs the four forced plans left behind were removed. Step 4 did not run any of the four forced plans.
+**The rerun.** The 12 divergence plans in this folder were then rerun with the current prompt (log: `run_log_divergence_rerun.txt`, 0.23 USD). All 12 are now untestable. The configs the four forced plans left behind were removed. Step 4 did not run any of the four forced plans.
 
 ## For step 2
 
