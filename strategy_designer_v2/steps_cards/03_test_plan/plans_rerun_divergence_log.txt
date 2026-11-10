@@ -1,0 +1,36 @@
+=== 005-01_bearish-rsi-divergence-reversal 1d
+untestable: The idea compares RSI at the new price high with RSI at the previous price high. The config has no memory of past turning points, so it cannot recall the earlier high or the RSI value at that high. The catalogue also has no component that measures RSI against its own recent peak, so no graded proxy keeps the divergence comparison the idea is about.
+cost: 0.0162 USD, attempts: 1
+=== 005-01_bearish-rsi-divergence-reversal 1h
+untestable: The idea compares RSI at the new price high with RSI at the previous price high, and the config has no memory of past turning points, so it cannot find the earlier high or read RSI's value there. No catalogue component gives RSI's position within its own recent range, so even a proxy such as "close at the top of its range while RSI is not" cannot be built without dropping the lower-high comparison the idea is about.
+cost: 0.0228 USD, attempts: 1
+=== 005-02_bullish-rsi-divergence-rebound 1d
+untestable: The idea compares RSI at the new price low with RSI at the previous price low. The config keeps no memory of past turning points, and no catalogue component gives RSI's value at an earlier low or its rolling minimum. Without that comparison the config could only test "price near its range low while RSI is not oversold", which drops the divergence the idea is about.
+cost: 0.0177 USD, attempts: 1
+=== 005-02_bullish-rsi-divergence-rebound 1h
+untestable: The idea requires comparing RSI at the current price low with RSI at the previous price low, and the config cannot remember past turning points. No catalogue component tracks the RSI value at an earlier swing low, and none measures where RSI sits within its own recent range. A proxy, such as price near the bottom of its range while RSI is not oversold, would drop the higher-low comparison that defines the divergence.
+cost: 0.0223 USD, attempts: 1
+=== 005-03_divergent-high-weaker-than-confirmed 1d
+untestable: The idea compares the RSI high at a new price high with the RSI high at the earlier price high. That needs memory of past turning points, or a rolling maximum of RSI to test whether RSI is also at a new high. The catalogue has neither: it offers only RSI's current level (`RSIPullbackComponent`) and no range position for RSI. Pairing price's range position with RSI's level would drop the comparison the idea is about.
+cost: 0.0171 USD, attempts: 1
+=== 005-03_divergent-high-weaker-than-confirmed 1h
+untestable: The idea compares RSI at a new price high with RSI at the earlier price high, and the config keeps no memory of past turning points or of an indicator's value at them. No catalogue component measures where RSI sits within its own recent range either. Any proxy, such as price range position against the current RSI level, drops the comparison the idea is about.
+cost: 0.0223 USD, attempts: 1
+=== 005-04_divergent-low-stronger-than-confirmed 1d
+untestable: The idea compares RSI now with RSI at the earlier price low (a higher RSI low versus a new RSI low), and the config has no memory of past turning points. The catalogue also has no component that gives RSI's position within its own recent range, so the config can see that price is at a new low but not whether RSI made a new low too, and dropping that comparison would drop the idea.
+cost: 0.0165 USD, attempts: 1
+=== 005-04_divergent-low-stronger-than-confirmed 1h
+untestable: The idea compares RSI at a new price low with RSI at the earlier price low, and the config keeps no memory of past turning points. The catalogue also has no rolling minimum of RSI to stand in for it. A proxy such as "close near the bottom of its range while RSI is not very low" would drop the comparison with the earlier low, which is what the idea is about.
+cost: 0.0224 USD, attempts: 1
+=== 005-05_bearish-divergence-uptrend-continues 1d
+untestable: The idea needs RSI's level now compared with its level at the earlier price high. The config has no memory of past turning points, so it cannot detect a lower RSI high under a new price high. No catalogue component gives RSI's position within its own range either, so any substitute would drop the very comparison the idea is about.
+cost: 0.0159 USD, attempts: 1
+=== 005-05_bearish-divergence-uptrend-continues 1h
+untestable: The idea needs a comparison between RSI now and RSI at the earlier price high (a lower RSI high at a new price high), and the config has no memory of past turning points. The catalogue also has no component that gives RSI's value at a previous peak or its rolling maximum. A substitute, such as "close at the top of its range while RSI is moderate", would drop that comparison, which is the divergence the idea is about.
+cost: 0.0224 USD, attempts: 1
+=== 005-06_bullish-divergence-downtrend-continues 1d
+untestable: The idea needs RSI's value now compared with its value at the earlier price low, so we can tell whether RSI made a higher low. The config has no memory of past turning points, and the catalogue has no component that tracks RSI's range or past lows. Without that comparison the divergence cannot be built; a config that kept only "price at a new low" would drop the very condition the idea is about.
+cost: 0.0168 USD, attempts: 1
+=== 005-06_bullish-divergence-downtrend-continues 1h
+untestable: The idea needs a bullish divergence, a new price low while RSI sits above the RSI it had at the earlier price low. That means comparing RSI now with its value at a past turning point. The config keeps no memory of past lows, and no catalogue component measures where RSI sits within its own recent range, so it cannot build that comparison.
+cost: 0.0222 USD, attempts: 1

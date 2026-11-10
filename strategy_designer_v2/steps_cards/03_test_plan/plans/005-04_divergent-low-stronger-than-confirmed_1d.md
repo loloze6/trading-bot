@@ -5,4 +5,4 @@ data-instruments: BTC, ETH, BNB
 data-bar: 1d
 data-period: fold A
 ---
-Untestable: The idea compares the RSI at a new price low with the RSI at the earlier low it undercuts, and the catalogue has nothing that tracks an RSI low or RSI's position in its own recent range. `RSIPullbackComponent` gives only the current RSI level, so the higher-low versus new-low comparison the idea is about would be dropped, and the RSI level alone does not separate divergent lows from confirming ones.
+Untestable: The idea compares RSI now with RSI at the earlier price low (a higher RSI low versus a new RSI low), and the config has no memory of past turning points. The catalogue also has no component that gives RSI's position within its own recent range, so the config can see that price is at a new low but not whether RSI made a new low too, and dropping that comparison would drop the idea.

@@ -1,6 +1,6 @@
 # Review of the plans in this folder
 
-These plans come from the final helper, run once on all 29 ideas of step 2, exercise 3 (opus): 58 plans, daily (`_1d`) and hourly (`_1h`). The briefs are those of step 1, exercise 5. Cost: 3.03 USD for the 58 calls (about 0.05 each, with the references cached). Log: `../plans_run_log.txt`. No refusal.
+These plans come from the final helper, run once on all 29 ideas of step 2, exercise 3 (opus): 58 plans, daily (`_1d`) and hourly (`_1h`). The briefs are those of step 1, exercise 5. Cost: 3.03 USD for the 58 calls (about 0.05 each, with the references cached), plus 0.23 USD for the divergence rerun. Log: `../plans_run_log.txt`. No refusal.
 
 ## Counts
 
@@ -10,8 +10,8 @@ These plans come from the final helper, run once on all 29 ideas of step 2, exer
 | 002 moving-average cross (6 ideas) | 12 | 0 |
 | 003 thin and heavy volume (6 ideas) | 12 | 0 |
 | 004 bitcoin leads altcoins (7 ideas) | 0 | 14: all need a second coin |
-| 005 RSI divergence (6 ideas) | 4 | 8 |
-| Total | 36 | 22 |
+| 005 RSI divergence (6 ideas) | 0 | 12 (after the rerun below) |
+| Total | 32 | 26 |
 
 ## Checks
 
@@ -21,15 +21,18 @@ These plans come from the final helper, run once on all 29 ideas of step 2, exer
   - Settings are conventional: RSI 14, SMA 50/200, the 200 average for "price crosses the long average", one-bar moves for the volume ideas.
   - The volume ideas gate on volume in the regime detector (vetoes), as the card allows.
 
-## Forced plans: not sent to step 4
+## Forced plans, then a rerun
 
-Four divergence plans fail the card's criterion "never forced". Each deviation says the config cannot compare RSI at the two peaks, which is what the idea is about:
+In the first run, four divergence plans failed the card's criterion "never forced":
+- `005-01` (daily and hourly);
+- `005-05` (daily);
+- `005-06` (hourly).
 
-- `005-01_bearish-rsi-divergence-reversal_1d` and `_1h`
-- `005-05_bearish-divergence-uptrend-continues_1d`
-- `005-06_bullish-divergence-downtrend-continues_1h`
+Each deviation said the config cannot compare RSI at the two peaks, which is what the idea is about.
 
-Over exercises 7 to 10 the same kind of idea (005-01) was untestable 4 times in 4. On this wider set, 4 of 12 divergence plans were forced. The "not close" line lowers the rate, but does not stop it. A fix to try: name the case in the prompt ("an idea that compares two peaks cannot be built: answer untestable"). It is not made or tested yet. These four plans stay here for the record, and step 4's index marks them "not run".
+**The fix.** One prompt line: "the config has no memory of past turning points: an idea that compares a value now with its value at an earlier high or low cannot be built, and is untestable". It was tested in exercises 11 and 12: 6 of 6 divergence ideas untestable, twice, and the five testable plans unchanged.
+
+**The rerun.** The 12 divergence plans in this folder were then rerun with the current prompt (log: `../plans_rerun_divergence_log.txt`, 0.23 USD). All 12 are now untestable. The configs the four forced plans left behind were removed. Step 4 did not run any of the four forced plans.
 
 ## For step 2
 

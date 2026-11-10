@@ -91,10 +91,11 @@ Daily against hourly bars, for the same idea (`001-01`). Hourly is about 24 time
 The operator: "is this the run of my plan, complete and the same if run again?". Code records what ran and what did not. Each exercise has a one-page reading.
 
 ## Done when
-On two exercises in a row, every criterion holds, and a full rerun of the fixed inputs is identical, bar for bar. Status: see `exercise_2/reading.md`.
+On two exercises in a row, every criterion holds, and a full rerun of the fixed inputs is identical, bar for bar. Status: met by exercises 1 and 2 (`exercise_2/reading.md`).
 
 ## Open
 - **An engine defect, found by this step.** The engine names a run folder after the current second plus the config's hash (`reporting/run_artifact.py`). When two windows of one wrapper call finish within the same second, they share one folder, and the second overwrites the first. Daily windows run in under a second each, so this happens. A rerun check found two windows with the same run id. This helper avoids it by running each window on its own. The research pipeline's own daily runs may be affected; that is for the operator to check.
+- **A config pattern the engine's warm-up check refuses.** On daily bars, two volume plans (`003-01_1d`, `003-05_1d`) gate the strategy with a veto on a constant (`BuyAndHoldStrategy` with `volume_filter`) and leave the default regime flat. The validator accepts this, but the engine stops at its warm-up check: "strategy not ready after 48 prefetch bars". Their record says "not run", with the engine's message. Step 3 could avoid the pattern (the same ideas run when the gate is a rule on `VolumeExpansionHedgeComponent`, or a veto on `PriceEvolutionComponent`).
 - **BNB has no data on the reachable venue.** Ideas from briefs that name BNB run on BTC and ETH only.
 - **The trial ledger.** The repository's rule asks for a row in the trial ledger for every experiment that touches market data. This step writes only under `steps_cards/`, so its record is `backtests/INDEX.md`. Whether these runs also go in the ledger is the operator's call.
 

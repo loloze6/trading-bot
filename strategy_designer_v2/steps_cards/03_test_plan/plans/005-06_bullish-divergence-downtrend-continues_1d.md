@@ -5,4 +5,4 @@ data-instruments: BTC, ETH, BNB
 data-bar: 1d
 data-period: fold A
 ---
-Untestable: The idea depends on comparing two lows: price setting a new low while RSI sits above the RSI reading at the earlier price low. The catalogue has no way to locate the earlier low or recall an RSI value from the past. There is no rolling minimum of RSI, no lagged RSI, and `percentile` cannot run on the RSI history because `standardise` must be the only history op. Any composition, such as the Donchian range position minus the RSI level, compares where price sits in its range with the RSI level now, not with RSI's earlier low. It drops the comparison the idea rests on.
+Untestable: The idea needs RSI's value now compared with its value at the earlier price low, so we can tell whether RSI made a higher low. The config has no memory of past turning points, and the catalogue has no component that tracks RSI's range or past lows. Without that comparison the divergence cannot be built; a config that kept only "price at a new low" would drop the very condition the idea is about.

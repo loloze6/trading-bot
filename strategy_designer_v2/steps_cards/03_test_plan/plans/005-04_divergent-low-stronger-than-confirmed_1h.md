@@ -5,4 +5,4 @@ data-instruments: BTC, ETH, BNB
 data-bar: 1h
 data-period: fold A
 ---
-Untestable: The idea compares the RSI low at a new price low with the RSI low at the previous price low, and nothing in the catalogue can recall that earlier reading: there is no rolling minimum of RSI, no RSI value at the bar of the prior low, and `standardise` compares only against the mean absolute size of past values. A config could gate on "close near its 48-bar low" (Donchian) and size by the current RSI level, but that drops the higher-low versus lower-low comparison, which is the divergence the idea is about.
+Untestable: The idea compares RSI at a new price low with RSI at the earlier price low, and the config keeps no memory of past turning points. The catalogue also has no rolling minimum of RSI to stand in for it. A proxy such as "close near the bottom of its range while RSI is not very low" would drop the comparison with the earlier low, which is what the idea is about.
