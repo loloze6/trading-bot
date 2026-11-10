@@ -68,7 +68,7 @@ Modelled on the engine's own run folders, one folder per plan, named after the p
 3. Runs `strategy-research/tools/run_protocol.py`, the pipeline's wrapper around the bot's `run_backtest`. The wrapper keeps the warm-up prefetch and the holdout guard.
 4. Runs one call per coin and window, each in its own folder (see "Open").
 
-The helper never opens the price data: only the engine reads bars. It needs a Python environment with `trading-bot/requirements.txt` (`--python`).
+The helper never opens the price data: only the engine reads bars. It needs a Python environment with `trading-bot/requirements.txt` (`--python`). `helper/summarise_backtests.py` prints one table of a backtests folder from the engine's `metrics.json` files, for the readings.
 
 **Venue.** Binance is not reachable from this environment (HTTP 451). Kraken is reachable, and the repository holds Kraken caches for BTC and ETH, daily and hourly. So coins run as `BTCUSD` and `ETHUSD`, with the pipeline's Kraken keys: Kraken spot prices, Kraken futures costs, no funding. Costs do not change the verification, which is judged before costs. They will matter for profitability.
 
@@ -87,6 +87,9 @@ The seven plans of step 3, exercise 10 (five testable, two untestable), on daily
 ## Variants compared
 Daily against hourly bars, for the same idea (`001-01`). Hourly is about 24 times the bars, in about 6 times the time.
 
+## Production run
+Every plan of step 3's `plans/` (58 plans: 29 ideas, daily and hourly): 27 plans run, all 210 of their windows; 26 untestable; 5 refused by the engine's warm-up check (see "Open"). See `backtests/REVIEW.md`.
+
 ## Who judges the output
 The operator: "is this the run of my plan, complete and the same if run again?". Code records what ran and what did not. Each exercise has a one-page reading.
 
@@ -95,7 +98,7 @@ On two exercises in a row, every criterion holds, and a full rerun of the fixed 
 
 ## Open
 - **An engine defect, found by this step.** The engine names a run folder after the current second plus the config's hash (`reporting/run_artifact.py`). When two windows of one wrapper call finish within the same second, they share one folder, and the second overwrites the first. Daily windows run in under a second each, so this happens. A rerun check found two windows with the same run id. This helper avoids it by running each window on its own. The research pipeline's own daily runs may be affected; that is for the operator to check.
-- **A config pattern the engine's warm-up check refuses.** On daily bars, two volume plans (`003-01_1d`, `003-05_1d`) gate the strategy with a veto on a constant (`BuyAndHoldStrategy` with `volume_filter`) and leave the default regime flat. The validator accepts this, but the engine stops at its warm-up check: "strategy not ready after 48 prefetch bars". Their record says "not run", with the engine's message. Step 3 could avoid the pattern (the same ideas run when the gate is a rule on `VolumeExpansionHedgeComponent`, or a veto on `PriceEvolutionComponent`).
+- **A config pattern the engine's warm-up check refuses.** Five volume plans (`003-01_1d`, `003-05_1d`, `003-01_1h`, `003-02_1h`, `003-06_1h`) gate the strategy with a veto on a constant (`BuyAndHoldStrategy` with `volume_filter`) and leave the default regime flat. The validator accepts this, but the engine stops at its warm-up check: "strategy not ready after 48 prefetch bars". Their record says "not run", with the engine's message. Step 3 could avoid the pattern (the same ideas run when the gate is a rule on `VolumeExpansionHedgeComponent`, or a veto on `PriceEvolutionComponent`).
 - **BNB has no data on the reachable venue.** Ideas from briefs that name BNB run on BTC and ETH only.
 - **The trial ledger.** The repository's rule asks for a row in the trial ledger for every experiment that touches market data. This step writes only under `steps_cards/`, so its record is `backtests/INDEX.md`. Whether these runs also go in the ledger is the operator's call.
 

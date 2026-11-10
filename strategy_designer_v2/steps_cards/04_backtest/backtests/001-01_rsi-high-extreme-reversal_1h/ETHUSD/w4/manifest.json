@@ -1,0 +1,96 @@
+{
+  "run_id": "20261110T005510Z_cc8b100a",
+  "created_utc": "2026-11-10T00:55:10.664797+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [],
+      "rules": [],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "unknown": {
+          "components": [
+            {
+              "id": "rsi_high",
+              "class": "strategies.strategy_components.RSIPullbackComponent",
+              "params": {
+                "period": 14,
+                "long_only": false
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "max": 0.0
+                  }
+                },
+                {
+                  "op": "signed_power",
+                  "params": {
+                    "exponent": 2,
+                    "pivot": 20
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "mean_reversion": null,
+        "chop": null
+      }
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 3,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 7.5,
+        "BTCUSD": 2.5,
+        "ETHUSD": 4,
+        "AVAXUSD": 7.5,
+        "SOLUSD": 7.5
+      }
+    }
+  },
+  "config_sha256": "cc8b100a02c6597d1dc9d9f4b44958907ba9ee08eeaeac5e000cc3103afa5634",
+  "data": {
+    "symbols": [
+      "ETHUSD"
+    ],
+    "timeframe": "3600s",
+    "start": "2022-12-29 00:00:00",
+    "end": "2023-04-30 23:00:00",
+    "bar_count": 2952,
+    "data_sha256": "c0f25864bc37b7f45dfb53a180ada64ffec2a85fff89c814a6a91a29e377c7fc"
+  },
+  "git_sha": "3765dd8443285cfa7933605a1c18192accbe65e7-dirty",
+  "engine": {
+    "lookback": 61,
+    "warmup": 35
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

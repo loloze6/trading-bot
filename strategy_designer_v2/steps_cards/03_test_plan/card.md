@@ -133,5 +133,6 @@ The operator: "if this test confirms, would I believe the idea; if it rejects, w
 On two exercises in a row, on the fixed inputs, every plan meets every criterion. Status: met by exercises 7 and 8, by exercises 9 and 10 on the final helper, and by exercises 11 and 12 after the turning-point line (`exercise_12/reading.md`).
 
 ## Open
+- **A pattern the engine refuses.** In step 4, five volume plans could not run: their regime detector is a veto on a constant (`BuyAndHoldStrategy` with `volume_filter`), with the default regime flat. The engine stops at its warm-up check. To try: name the pattern in the reference copy ("gate with a rule on `VolumeExpansionHedgeComponent` or a veto on a price component, not on a constant"), then rerun those ideas. Not made yet.
 - **For step 2:** 002-01 (after the cross) and 002-05 (from cross to cross) become the same forecast in this vessel; only their horizon and measure differ.
 - **The default data** (BTC/USDT, 1d, fold A) gives about 36 independent 20-bar samples. Ideas about rare or slow situations will often come out inconclusive. The fold and the bar size are the operator's to set.

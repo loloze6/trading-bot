@@ -1,0 +1,71 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "move",
+        "class": "strategies.strategy_components.PriceEvolutionComponent",
+        "params": {
+          "period": 1
+        }
+      }
+    ],
+    "vetoes": [
+      {
+        "id": "move",
+        "transforms": [
+          {
+            "op": "volume_filter",
+            "params": {
+              "period": 20
+            }
+          }
+        ],
+        "rules": [
+          {
+            "op": "gt",
+            "value": 0.0
+          }
+        ],
+        "consecutive_bars": 1,
+        "result": "trending"
+      }
+    ],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "up_move",
+            "class": "strategies.strategy_components.PriceEvolutionComponent",
+            "params": {
+              "period": 1
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "unknown": null,
+      "mean_reversion": null,
+      "chop": null
+    }
+  }
+}
