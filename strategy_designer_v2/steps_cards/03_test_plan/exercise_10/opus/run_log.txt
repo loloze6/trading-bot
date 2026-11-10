@@ -1,0 +1,21 @@
+=== 001-01_rsi-high-extreme-reversal
+plan: exercise_10/opus/plans/001-01_rsi-high-extreme-reversal_1d.md
+cost: 0.0521 USD, attempts: 1
+=== 001-03_rsi-high-extreme-continuation
+plan: exercise_10/opus/plans/001-03_rsi-high-extreme-continuation_1d.md
+cost: 0.0520 USD, attempts: 1
+=== 002-01_sma-upcross-upward-drift
+plan: exercise_10/opus/plans/002-01_sma-upcross-upward-drift_1d.md
+cost: 0.0482 USD, attempts: 1
+=== 002-05_sma-up-regime-positive-drift
+plan: exercise_10/opus/plans/002-05_sma-up-regime-positive-drift_1d.md
+cost: 0.0490 USD, attempts: 1
+=== 003-01_low-volume-up-move-reverts
+plan: exercise_10/opus/plans/003-01_low-volume-up-move-reverts_1d.md
+cost: 0.0612 USD, attempts: 1
+=== 004-01_btc-up-move-alts-follow
+untestable: The idea needs the bitcoin return as the signal and an altcoin's later return as the outcome, but the config sees one coin at a time and the test runs only on BTC/USDT. No altcoin is traded and no altcoin's bars are available, so the lagged response of altcoins to bitcoin cannot be computed or traded.
+cost: 0.0125 USD, attempts: 1
+=== 005-01_bearish-rsi-divergence-reversal
+untestable: The idea compares RSI at the current price high with RSI at the previous price high. The catalogue has no swing-high detection and no way to read RSI's past peak: `RSIPullbackComponent` gives only the current RSI level, and a percentile of RSI against its own history would need a second history op beside `standardise`, which V15 refuses. Any graded stand-in, such as the Donchian range position minus the RSI level, would drop that two-peak comparison, so it would not test the idea.
+cost: 0.0296 USD, attempts: 1

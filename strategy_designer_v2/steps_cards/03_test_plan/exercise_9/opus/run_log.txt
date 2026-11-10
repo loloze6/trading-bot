@@ -1,0 +1,21 @@
+=== 001-01_rsi-high-extreme-reversal
+plan: exercise_9/opus/plans/001-01_rsi-high-extreme-reversal_1d.md
+cost: 0.0548 USD, attempts: 1
+=== 001-03_rsi-high-extreme-continuation
+plan: exercise_9/opus/plans/001-03_rsi-high-extreme-continuation_1d.md
+cost: 0.0604 USD, attempts: 1
+=== 002-01_sma-upcross-upward-drift
+plan: exercise_9/opus/plans/002-01_sma-upcross-upward-drift_1d.md
+cost: 0.0592 USD, attempts: 1
+=== 002-05_sma-up-regime-positive-drift
+plan: exercise_9/opus/plans/002-05_sma-up-regime-positive-drift_1d.md
+cost: 0.0504 USD, attempts: 1
+=== 003-01_low-volume-up-move-reverts
+plan: exercise_9/opus/plans/003-01_low-volume-up-move-reverts_1d.md
+cost: 0.0785 USD, attempts: 1
+=== 004-01_btc-up-move-alts-follow
+untestable: The idea forecasts altcoin returns from bitcoin's earlier move, but the test runs on BTC/USDT alone and the config sees only one coin's bars, so it cannot read bitcoin's move while trading an altcoin, or an altcoin's response while trading bitcoin. Trading bitcoin's own momentum would drop the cross-coin lead-lag relation that the idea is about.
+cost: 0.0190 USD, attempts: 1
+=== 005-01_bearish-rsi-divergence-reversal
+untestable: The idea compares RSI at the new price high with RSI at the previous price high. The catalogue has no way to find that earlier high or read the RSI value there: there is no swing-high detection, no rolling maximum of RSI, and no lagged value of a component. Any config could only use today's RSI level at a high in the price range. That drops the peak-to-peak comparison that defines a divergence and turns the test into the RSI-level question the brief excludes.
+cost: 0.0385 USD, attempts: 1

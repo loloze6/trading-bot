@@ -1,0 +1,13 @@
+---
+idea: 002-05_sma-up-regime-positive-drift
+brief: 002_moving-average-cross-trend-persistence
+data-instruments: BTC/USDT
+data-bar: 1d
+data-period: fold A
+---
+Forecast: While the 50-day simple moving average of the close is above the 200-day simple moving average (the stretch after an upward cross and before the next downward cross), hold a long position sized by the spread (SMA50 − SMA200) / SMA200 × 100. The spread is put on the scale of its own past by dividing it by its mean absolute value over the previous 200 bars and multiplying by 10, capped at 20, then clipped below at 0. The forecast is zero while SMA50 is at or below SMA200, which is the stretch between a downward cross and the next upward cross. It is positive and grows continuously with the gap between the averages: small just after a cross, larger as the averages separate. It is never negative.
+Config: 002-05_sma-up-regime-positive-drift_1d_config.json
+Confirm: Horizon is 1 bar (next day's close-to-close return), pooled over all 6 windows, with each daily return counted once. The main measure is the mean next-day return on in-stretch bars (forecast > 0) minus the mean next-day return on out-of-stretch bars (forecast = 0). The idea is confirmed if this difference is positive with a Welch t-statistic ≥ 2. The supporting check is that the share of up days is higher in-stretch than out-of-stretch. The strategy's return per unit of exposure must also exceed buy-and-hold's mean daily return, before costs.
+Reject: The idea is rejected if the in-stretch minus out-of-stretch mean next-day return is ≤ 0, with at least 100 in-stretch bars and 30 out-of-stretch bars. It is rejected in its reversal form if that difference is negative with t ≤ −2, meaning the cross marks exhaustion.
+Inconclusive: The test is inconclusive in any of these cases: - the difference is positive but t < 2; - there are fewer than 100 in-stretch or fewer than 30 out-of-stretch bars across the 6 windows; - the windows contain fewer than 2 distinct upward-cross stretches, so the result rests on one trend episode.
+Deviation: The config holds a position sized by the gap between the averages, not a fixed full position from cross to cross. Gains are therefore weighted toward well-separated stretches, and days just after a cross carry little weight. The test is long-only, so the stretches after downward crosses are flat rather than tested short. "Random stretches of the same length" is replaced by a comparison with the out-of-stretch days and with buy-and-hold. The 50/200 periods are a convention, because the source does not give them.

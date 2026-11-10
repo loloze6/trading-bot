@@ -1,10 +1,12 @@
 """Test plan helper, step 3. One closed-book model call reads one idea, its brief and the two reference
 documents (reference/), and writes the idea's test plan: a strategy config, the result that would confirm
 the idea, the result that would reject it, and the deviation; or "untestable", with the reason.
-This script saves the plan as <idea id>.md and the config as <idea id>_config.json in the plans folder.
+This script saves the plan as <idea id>_<bar>.md and the config as <idea id>_<bar>_config.json in the plans folder,
+and writes its line in the folder's INDEX.md.
 
   python make_test_plan.py path/to/NNN-KK_idea.md --briefs-dir path/to/briefs
-Options: --plans-dir (default: ../plans next to this folder), --model (default: the strongest).
+Options: --plans-dir (default: ../plans next to this folder), --model (default: the strongest),
+--bar (a bar size, such as 1h, overriding the idea's header and the default).
 
 The data (coins, bar size, period) is taken from the idea's header when it sets them; otherwise the default
 below. The model is told the coins and bar size; it does not choose them.
@@ -123,6 +125,7 @@ def main():
     a.add_argument("--briefs-dir", type=Path, required=True)
     a.add_argument("--plans-dir", type=Path, default=HERE.parent / "plans")
     a.add_argument("--model", default="claude-opus-5-5")
+    a.add_argument("--bar", default=None, help="bar size to test on (e.g. 1h), overriding the header and the default")
     args = a.parse_args()
 
     idea_text, idea_id = args.idea.read_text(), args.idea.stem
@@ -132,6 +135,9 @@ def main():
     brief_path = args.briefs_dir / f"{fields['brief']}.md"
     brief_text = brief_path.read_text()
     data = {k: fields.get(k, DEFAULT_DATA[k]) for k in DEFAULT_DATA}
+    if args.bar:
+        data["bar"] = args.bar
+    plan_id = f"{idea_id}_{data['bar']}"   # the plan's id: one plan per idea and bar size
 
     ref = HERE / "reference"
     # The two references go in the system prompt: they are the same in every call, so from the second idea on
@@ -160,15 +166,22 @@ def main():
     args.plans_dir.mkdir(parents=True, exist_ok=True)
     head = ("---\n" + f"idea: {idea_id}\n" + f"brief: {fields['brief']}\n"
             + "".join(f"data-{k}: {v}\n" for k, v in data.items()) + "---\n")
+    bracket = f"[{data['instruments']}, {data['bar']}, {data['period']}]"
     if result[0] == "untestable":
-        write_atomic(args.plans_dir / f"{idea_id}.md", head + f"Untestable: {result[1]}\n")
+        write_atomic(args.plans_dir / f"{plan_id}.md", head + f"Untestable: {result[1]}\n")
+        line = f"{plan_id}: untestable: {' '.join(result[1].split()[:20])} {bracket}"
         print(f"untestable: {result[1]}")
     else:
         _, config, confirm, reject, inconclusive, deviation, forecast = result
-        write_atomic(args.plans_dir / f"{idea_id}_config.json", json.dumps(config, indent=2) + "\n")
-        write_atomic(args.plans_dir / f"{idea_id}.md", head + f"Forecast: {forecast}\nConfig: {idea_id}_config.json\n"
+        write_atomic(args.plans_dir / f"{plan_id}_config.json", json.dumps(config, indent=2) + "\n")
+        write_atomic(args.plans_dir / f"{plan_id}.md", head + f"Forecast: {forecast}\nConfig: {plan_id}_config.json\n"
                      f"Confirm: {confirm}\nReject: {reject}\nInconclusive: {inconclusive}\nDeviation: {deviation}\n")
-        print(f"plan: {args.plans_dir / (idea_id + '.md')}")
+        line = f"{plan_id}: plan {bracket}"
+        print(f"plan: {args.plans_dir / (plan_id + '.md')}")
+    # One line per plan; a rerun of the same idea and bar replaces its line.
+    index_path = args.plans_dir / "INDEX.md"
+    lines = [l for l in (index_path.read_text().splitlines() if index_path.exists() else []) if not l.startswith(plan_id + ":")]
+    write_atomic(index_path, "".join(l + "\n" for l in sorted(lines + [line])))
     print(f"cost: {cost:.4f} USD, attempts: {attempt}")
 
 

@@ -1,0 +1,13 @@
+---
+idea: 002-01_sma-upcross-upward-drift
+brief: 002_moving-average-cross-trend-persistence
+data-instruments: BTC/USDT
+data-bar: 1d
+data-period: fold A
+---
+Forecast: The forecast is long-only and graded on the gap between the 50-day and 200-day simple moving averages of the close, the most common daily "golden cross" pair. - Raw value: (SMA50 − SMA200) / SMA200 × 100. - Scaling: the gap is divided by its own mean absolute value over the previous 200 bars and multiplied by 10, capped at 20. - Clip: the result is clipped at 0. - Positive: whenever the 50-day average is above the 200-day average, that is, in the state after an upward cross. It grows with how far the short average has pulled above the long one, up to 20 (200% long). - Zero: while the 50-day average is at or below the 200-day average. This is the state after a downward cross, which the brief says ends the trend. - Never negative.
+Config: 002-01_sma-upcross-upward-drift_1d_config.json
+Confirm: - Horizon: 10 bars, judged before costs. Within each window, sample every 10th bar so that forward returns do not overlap. - Main measure: the mean forward 10-bar BTC return on sampled bars with forecast > 0, minus the mean forward 10-bar return on all sampled bars of the same windows. This removes the coin's own drift, as against simply holding it. - Confirm if: that difference is at least +1.0% per 10 bars over at least 20 active samples, and it is positive in at least 4 of the windows that contain active bars. - Supporting check: the share of positive forward returns is higher on active bars than on all bars.
+Reject: The idea is rejected if the excess forward 10-bar return on active bars is 0 or negative over at least 20 active samples. It is also rejected if the Spearman correlation between forecast size and forward 10-bar return on active bars is below −0.1, which would mean moves after the cross reverse or exhaust.
+Inconclusive: The result is inconclusive in any of these cases: - The excess is between 0 and +1.0%. - The excess is positive in fewer than 4 of the windows that contain active bars. - There are fewer than 20 non-overlapping active samples. This is likely, because 50/200 crosses are rare in 6 windows of about 122 bars.
+Deviation: - "After a cross" becomes "while the short average is above the long one": the position is held for the whole up-state, not only the bars following the cross. - Size follows the gap, not freshness: the largest positions come when the gap is widest, typically well into a trend rather than just after the cross. The test therefore weights mature trends more than fresh crosses. - Downward crosses only end the trend: they set the position to flat and are not traded short.

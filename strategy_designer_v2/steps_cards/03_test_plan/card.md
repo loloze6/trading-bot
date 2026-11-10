@@ -62,8 +62,9 @@ credited to the idea.
     make_test_plan.py          one closed-book call; refuses only a major deviation; saves the plan and its config
     reference/                 trimmed copies of the strategy config guide and the component catalogue, pasted into each call
   plans/
-    NNN-KK_short-name.md       one test plan per idea, named after the idea
-    NNN-KK_short-name_config.json   its config
+    INDEX.md                   one line per plan: plan or untestable, and its data
+    NNN-KK_short-name_<bar>.md one test plan per idea and bar size
+    NNN-KK_short-name_<bar>_config.json   its config
   exercise_k/                  the comparison exercises
 ```
 The plan's header holds the idea, its brief and the data. Its body holds `Forecast` (in plain words), the config's file name, `Confirm`, `Reject`, `Inconclusive` and `Deviation`, or `Untestable` with the reason.
@@ -82,7 +83,7 @@ Up to three attempts. The script also tells the model the data's windows (from t
 
 **Model.** Opus. In exercises 1 and 2, sonnet twice changed the idea's side and wrote "clearly" where a number was needed.
 
-**Cost.** The references are most of the input. They sit in the system prompt, so from the second idea of a batch they come from the model's cache. Exercise 8's probe: 0.26 USD for the first idea, about 0.07 for each one after. This is not yet confirmed on a full batch.
+**Cost.** The references are most of the input. They sit in the system prompt, so they come from the model's cache once one call has been made in the last hour. Exercises 9 and 10: 0.01 to 0.08 USD per idea. A first call with a cold cache costs about 0.26.
 
 **Prompt**: `helper/system_prompt.md`.
 
@@ -110,6 +111,8 @@ Exercise 5 (opus): exercise 4 plus one line on settings (the single most common 
 
 Exercise 6 (opus): exercise 5 unchanged. Six plans stable; the divergence idea was forced again, with a constant inside a regime (`exercise_6/reading.md`).
 
+Exercises 9 and 10 (opus): the final helper (references in the system prompt, plan ids with the bar size, the index). No fault in either (`exercise_10/reading.md`).
+
 Exercises 7 and 8 (opus): one line added: "a config is not close if it drops the comparison or the condition the idea is about". No fault in either (`exercise_8/reading.md`).
 
 ## Quality criteria on the test plan
@@ -125,7 +128,7 @@ Exercises 7 and 8 (opus): one line added: "a config is not close if it drops the
 The operator: "if this test confirms, would I believe the idea; if it rejects, would I drop it?". Code checks the shape and the names. Each exercise has a one-page reading against the criteria.
 
 ## Done when
-On two exercises in a row, on the fixed inputs, every plan meets every criterion. Status: met by exercises 7 and 8.
+On two exercises in a row, on the fixed inputs, every plan meets every criterion. Status: met by exercises 7 and 8, and again by exercises 9 and 10 on the final helper.
 
 ## Open
 - **For step 2:** 002-01 (after the cross) and 002-05 (from cross to cross) become the same forecast in this vessel; only their horizon and measure differ.
