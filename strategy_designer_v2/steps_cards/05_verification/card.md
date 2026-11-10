@@ -1,0 +1,121 @@
+# Step card 5: Verification (2026-11-10)
+
+## Business objective, one question
+Is this idea real?
+
+**Establish, on evidence fixed before the data was seen, whether the market confirms or rejects the idea, and what that result means for a trader's decisions.**
+
+## Input
+One test plan whose outcome is `plan`, and its backtest record. One idea has one plan, so this is one input per idea.
+
+## Output
+One verdict per plan: **confirmed**, **rejected** or **inconclusive**, with the evidence that decided it.
+
+## What a verdict is
+**A verdict is the plan's own criterion, applied unchanged to the backtest record: the numbers measured, and which of the plan's rules (confirm, reject, inconclusive) they meet.**
+
+- **The criterion was fixed before the data.** The verdict applies it and never adjusts it: no new measure, no other threshold, no other horizon.
+- **When the criterion leaves a detail open,** the most literal reading of the plan is taken, chosen from its words alone, and stated.
+- **What it means for a trader** follows from the status and the plan's forecast:
+  - confirmed: the action the forecast describes is supported;
+  - rejected: a reason to refuse it;
+  - inconclusive: no action yet.
+
+  It is not written out again.
+- **The verdict is about the idea's reality, judged before costs.** Whether acting on it is worth it is another question.
+
+## The fields of a verdict
+**In `verdict.md`:**
+1. **status** (header): confirmed, rejected or inconclusive.
+   - For: the answer.
+   - Used by: the operator, and whatever decides what to do with the idea.
+   - Without it: no answer.
+2. **Evidence:**
+   - the main measure, its value and the plan's threshold;
+   - the supporting check, its value and whether it passed;
+   - the number of cases;
+   - the rule the numbers meet ("decided by");
+   - the literal reading taken ("reading").
+   - For: the status can be checked and challenged.
+   - Used by: the operator, and anyone who disputes the status.
+   - Without it: a bare word nobody can verify.
+3. **plan, idea and fit** (header, copied by code), and the links to the plan and the record.
+   - For: tracing the verdict, and keeping an "adapted" test from being read as the idea word for word.
+   - Used by: the operator.
+   - Without it: "confirmed" can be read as more than was tested.
+
+**Next to it:**
+
+4. **`measure.py`:** the function that produced the numbers.
+   - For: auditing them.
+   - Used by: the reading of each exercise, and anyone who disputes a number.
+   - Without it: the numbers cannot be checked.
+5. **`result.json`:** what the function returned, as it returned it.
+6. **The index line** (`INDEX.md`): `<plan id>: <status> (fit: exact|adapted) [main: <value>; cases <n>]`, or `<plan id>: no verdict: <why>` for a plan with no record (untestable, missing-components, or refused by the engine).
+
+## Storage and naming
+Aligned with the other steps.
+
+```
+05_verification/
+  card.md                      this card
+  helper/
+    system_prompt.md           the helper's instructions
+    record_description.md      how a backtest record is given to the function (pasted into each call)
+    make_verdict.py            one closed-book call writes measure(bars); a small runner executes it on the record; saves the verdict
+  verdicts/
+    INDEX.md                   one line per plan
+    REVIEW.md, run_log*.txt    once a real run has filled it
+    <plan id>/                 one folder per verdict: verdict.md, measure.py, result.json
+  exercise_k/                  the exercises
+```
+
+## The AI and the runner
+**The mechanism.** A model call writes a short function from the plan; a small fixed runner executes it on the record. This is the same pattern as steps 3 and 4: in step 3 the model writes a config, and the engine runs it.
+- **Neither pure option works.** A model reading thousands of bars cannot measure reliably. Fixed code covering every criterion would be heavy, and would break on the next new criterion.
+- **The fixed code is small:** it loads the bars, runs the function, and checks what comes back. The per-plan logic is generated, not maintained.
+
+**Closed book.** One call per plan, with no tools and no data. The request holds:
+- the plan and its config;
+- `record_description.md`;
+- the coins, windows, number of bars and columns of this record (names, not values).
+
+**The runner** loads the record into `bars[coin][window]` (pandas DataFrames). It runs the function in a separate process, with the venv's Python, isolated (`-I`), and checks the returned dict.
+
+**Checks in code** (`make_verdict.py`). It refuses only a major deviation, and sends the error back, up to three attempts:
+- no function `measure(bars)`;
+- the function fails on the record;
+- a result that is not a dict;
+- a status that is not one of the three;
+- no main measure value, no case count;
+- no "decided by", no "reading".
+
+**Model.** Opus, as in steps 1 to 3. **Cost.** About 0.08 USD and 20 to 30 seconds per plan.
+
+**Prompt**: `helper/system_prompt.md`.
+
+## Quality criteria on the verdict
+- **The function applies the plan's criterion as written:** the same horizon, main measure, supporting check, thresholds and minimum counts. Nothing is added.
+- **The status follows from the numbers and the plan's rules,** and "decided by" names the rule met.
+- **Returns stay inside a window,** and the windows are not joined.
+- **The "reading" states every open detail,** resolved literally.
+- **The same plan gives the same status on a rerun.** A difference shows a criterion read two ways, which is a fault of the plan.
+
+## Fixed inputs for the iterations
+The 16 daily plans of `03_test_plan/plans/` whose outcome is `plan` (15 with a backtest record; `003-02`, refused by the engine, has none), and the 13 refusals, which must give "no verdict".
+
+## Variants compared
+Exercise 1 and exercise 2: the same helper, run twice, to see whether the generated functions agree.
+
+## Who judges the output
+The operator: "does this verdict apply my plan's rule, and would I accept it?". Code checks the shape of the result. Each exercise has a one-page reading: the functions are read against their plans, and the two runs are compared.
+
+## Done when
+On two exercises in a row, every verdict meets every criterion, and the two runs give the same status for every plan. Status: see `exercise_2/reading.md`.
+
+## Open
+- **A coin without data** (BNB, for the RSI ideas): the function takes the plan's rule literally on the coins present and says so in "reading". Parked with the quality of the backtest output.
+- **An ambiguous criterion** is a fault of the plan. When two runs disagree, the place to prevent it is step 3: "each measure must be defined well enough that two people compute the same number".
+
+## What this step does not do
+It does not change a criterion, judge costs or profitability, or rerun a backtest.
