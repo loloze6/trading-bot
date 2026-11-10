@@ -1,0 +1,15 @@
+---
+plan: 001-02_rsi-low-extreme-rebound_1d
+idea: 001-02_rsi-low-extreme-rebound
+fit: adapted
+status: rejected
+---
+Evidence:
+- Main measure: top-quintile forecast fwd 5-bar return minus forecast-0 fwd 5-bar return: -0.0140356 (threshold: above 0 with t-statistic >= 2 (non-overlapping), positive in >= 2 coins)
+- Supporting check: Spearman rank corr of forecast vs fwd 5-bar return, positive-forecast bars: -0.00482357, passed: False
+- Cases: 102
+- Decided by: Rejected: pooled excess -0.0140 <= 0 and non-positive in 2 coins (need 2).
+- Reading: Top quintile means positive forecasts at or above the 80th percentile of all positive forecasts pooled across coins and windows; non-overlapping samples are chosen greedily in time within each window and group (a bar is kept only if at least 5 bars after the last kept bar of that group); the t-statistic is Welch's two-sample t; the supporting check uses all positive-forecast bars and passes if the correlation is above 0; with only 2 coins in the record the '2 of the 3 coins' rules are kept at 2 coins.
+Plan: `steps_cards/03_test_plan/plans/001-02_rsi-low-extreme-rebound_1d.md`
+Record: `steps_cards/04_backtest/backtests/001-02_rsi-low-extreme-rebound_1d`
+Measure: `measure.py`

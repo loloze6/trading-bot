@@ -15,7 +15,7 @@ One verdict per plan: **confirmed**, **rejected** or **inconclusive**, with the 
 **A verdict is the plan's own criterion, applied unchanged to the backtest record: the numbers measured, and which of the plan's rules (confirm, reject, inconclusive) they meet.**
 
 - **The criterion was fixed before the data.** The verdict applies it and never adjusts it: no new measure, no other threshold, no other horizon.
-- **When the criterion leaves a detail open,** the most literal reading of the plan is taken, chosen from its words alone, and stated.
+- **When the criterion leaves a detail open,** the conventions in `record_description.md` apply: how non-overlapping samples are drawn, which t-test, the order of a difference. Otherwise the most literal reading of the plan is taken, chosen from its words alone, and stated.
 - **What it means for a trader** follows from the status and the plan's forecast:
   - confirmed: the action the forecast describes is supported;
   - rejected: a reason to refuse it;
@@ -31,9 +31,9 @@ One verdict per plan: **confirmed**, **rejected** or **inconclusive**, with the 
    - Used by: the operator, and whatever decides what to do with the idea.
    - Without it: no answer.
 2. **Evidence:**
-   - the main measure, its value and the plan's threshold;
+   - the main measure: its value, its test statistic, and the plan's threshold;
    - the supporting check, its value and whether it passed;
-   - the number of cases;
+   - the counts: every count the plan's minimums refer to, each one named;
    - the rule the numbers meet ("decided by");
    - the literal reading taken ("reading").
    - For: the status can be checked and challenged.
@@ -51,7 +51,7 @@ One verdict per plan: **confirmed**, **rejected** or **inconclusive**, with the 
    - Used by: the reading of each exercise, and anyone who disputes a number.
    - Without it: the numbers cannot be checked.
 5. **`result.json`:** what the function returned, as it returned it.
-6. **The index line** (`INDEX.md`): `<plan id>: <status> (fit: exact|adapted) [main: <value>; cases <n>]`, or `<plan id>: no verdict: <why>` for a plan with no record (untestable, missing-components, or refused by the engine).
+6. **The index line** (`INDEX.md`): `<plan id>: <status> (fit: exact|adapted) [main: <value>; <statistic>; <counts>]`, or `<plan id>: no verdict: <why>` for a plan with no record (untestable, missing-components, or refused by the engine).
 
 ## Storage and naming
 Aligned with the other steps.
@@ -87,7 +87,7 @@ Aligned with the other steps.
 - the function fails on the record;
 - a result that is not a dict;
 - a status that is not one of the three;
-- no main measure value, no case count;
+- no main measure value; a statistic that is not a dict with a value; no named counts;
 - no "decided by", no "reading".
 
 **Model.** Opus, as in steps 1 to 3. **Cost.** About 0.08 USD and 20 to 30 seconds per plan.
@@ -105,7 +105,8 @@ Aligned with the other steps.
 The 16 daily plans of `03_test_plan/plans/` whose outcome is `plan` (15 with a backtest record; `003-02`, refused by the engine, has none), and the 13 refusals, which must give "no verdict".
 
 ## Variants compared
-Exercise 1 and exercise 2: the same helper, run twice, to see whether the generated functions agree.
+- **Exercises 1 and 2:** the same helper, run twice. 14 of 15 statuses agree; the plans' open details explain the rest.
+- **Exercises 3 and 4:** conventions for open details, and a clearer result format (value and statistic separate, named counts).
 
 ## Who judges the output
 The operator: "does this verdict apply my plan's rule, and would I accept it?". Code checks the shape of the result. Each exercise has a one-page reading: the functions are read against their plans, and the two runs are compared.
@@ -115,7 +116,7 @@ On two exercises in a row, every verdict meets every criterion, and the two runs
 
 ## Open
 - **A coin without data** (BNB, for the RSI ideas): the function takes the plan's rule literally on the coins present and says so in "reading". Parked with the quality of the backtest output.
-- **An ambiguous criterion** is a fault of the plan. When two runs disagree, the place to prevent it is step 3: "each measure must be defined well enough that two people compute the same number".
+- **An ambiguous criterion** is a fault of the plan. The conventions cover the common open details. The lasting fix is in step 3: a plan should state how its non-overlapping samples are drawn and which test it uses. Proposed, not made.
 
 ## What this step does not do
 It does not change a criterion, judge costs or profitability, or rerun a backtest.

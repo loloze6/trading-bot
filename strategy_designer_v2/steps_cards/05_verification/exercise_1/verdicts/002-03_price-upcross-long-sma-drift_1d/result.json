@@ -1,0 +1,16 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "mean 20-bar fwd return on forecast>0 blocks minus mean over all blocks",
+    "value": 0.028288114581208747,
+    "threshold": "above 0 with t >= 2 (t = 1.102)"
+  },
+  "supporting_check": {
+    "name": "share of up-crosses with positive 20-bar return vs unconditional share (1.0 vs 0.5639344262295082; mean after cross 0.20385257859389416)",
+    "value": 1.0,
+    "passed": true
+  },
+  "cases": 13,
+  "decided_by": "Fewer than the minimum counts (13 in-position blocks vs 15 needed, 2 up-crosses vs 8 needed), so the test neither confirms nor rejects.",
+  "reading": "Non-overlapping blocks start at each window's first bar every 20 bars, a block is in-position when forecast > 0 at its start bar, t is the difference divided by the standard error of the in-position block returns, an up-cross is forecast <= 0 on the prior bar and > 0 on the bar, and the unconditional share uses the 20-bar forward returns of every bar in the windows."
+}

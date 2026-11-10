@@ -77,8 +77,11 @@ def check_result(out):
     mm = out.get("main_measure")
     if not isinstance(mm, dict) or "value" not in mm:
         raise ValueError("main_measure must be a dict with a value")
-    if not isinstance(out.get("cases"), (int, float)):
-        raise ValueError("cases must be a number")
+    st = mm.get("statistic")
+    if st is not None and not (isinstance(st, dict) and "value" in st):
+        raise ValueError("main_measure.statistic must be null or a dict with a value")
+    if not isinstance(out.get("counts"), dict) or not out["counts"] or not all(isinstance(v, (int, float)) for v in out["counts"].values()):
+        raise ValueError("counts must be a non-empty dict of numbers, one per count the plan's minimums refer to")
     for k in ("decided_by", "reading"):
         if not isinstance(out.get(k), str) or not out[k].strip():
             raise ValueError(f"{k} must be a sentence")
@@ -154,12 +157,16 @@ def main():
     mm, sc = out["main_measure"], out.get("supporting_check")
     fit = h.get("fit", "not given")
     write_atomic(d / "verdict.md", "---\n" + f"plan: {plan_id}\nidea: {h.get('idea', '')}\nfit: {fit}\nstatus: {out['status']}\n---\n"
-                 f"Evidence:\n- Main measure: {mm.get('name', '')}: {fmt(mm.get('value'))} (threshold: {mm.get('threshold', '')})\n"
+                 f"Evidence:\n- Main measure: {mm.get('name', '')}: {fmt(mm.get('value'))}"
+                 + (f"; {mm['statistic'].get('name', 'statistic')}: {fmt(mm['statistic'].get('value'))}" if isinstance(mm.get("statistic"), dict) else "")
+                 + f" (threshold: {mm.get('threshold', '')})\n"
                  + (f"- Supporting check: {sc.get('name', '')}: {fmt(sc.get('value'))}, passed: {sc.get('passed')}\n" if isinstance(sc, dict) else "- Supporting check: none\n")
-                 + f"- Cases: {fmt(out['cases'])}\n- Decided by: {out['decided_by']}\n- Reading: {out['reading']}\n"
+                 + "- Counts: " + ", ".join(f"{k}: {fmt(v)}" for k, v in out["counts"].items()) + "\n- Decided by: {out['decided_by']}\n- Reading: {out['reading']}\n"
                  f"Plan: `steps_cards/{os.path.relpath(plan_path, HERE.parents[1])}`\nRecord: `steps_cards/{os.path.relpath(record, HERE.parents[1])}`\nMeasure: `measure.py`\n")
-    index_line(f"{plan_id}: {out['status']} (fit: {fit}) [main: {fmt(mm.get('value'))}; cases {fmt(out['cases'])}]")
-    print(f"{plan_id}: {out['status']} (main {fmt(mm.get('value'))}, cases {fmt(out['cases'])}); cost {cost:.4f} USD, attempts {attempt}")
+    stat = f"; {mm['statistic'].get('name', 'statistic')} {fmt(mm['statistic'].get('value'))}" if isinstance(mm.get("statistic"), dict) else ""
+    counts = ", ".join(f"{k} {fmt(v)}" for k, v in out["counts"].items())
+    index_line(f"{plan_id}: {out['status']} (fit: {fit}) [main: {fmt(mm.get('value'))}{stat}; {counts}]")
+    print(f"{plan_id}: {out['status']} (main {fmt(mm.get('value'))}{stat}; {counts}); cost {cost:.4f} USD, attempts {attempt}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,16 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "pooled excess 5-bar forward return after extreme bars (forecast <= -10), minus coin-window drift",
+    "value": -0.011942852900325622,
+    "threshold": "negative with t <= -2 to confirm; >= 0 rejects; -2 < t <= -1 is inconclusive"
+  },
+  "supporting_check": {
+    "name": "Spearman rank correlation of |forecast| with next 5-bar return, forecast < 0",
+    "value": 0.037809746534782675,
+    "passed": false
+  },
+  "cases": 60,
+  "decided_by": "The pooled excess return is negative with -2 < t <= -1 (or otherwise between the confirm and reject rules), which meets the inconclusive rule. (t = -1.323130383155041, per-coin mean excess = {'BTCUSD': -0.013672559612544174, 'ETHUSD': -0.00996604522921871}, per-coin blocks = {'BTCUSD': 32, 'ETHUSD': 28})",
+  "reading": "Non-overlapping blocks are a fixed 5-bar grid from each window's first bar, and a block counts as extreme when its start bar has forecast <= -10. Drift is the mean of all valid 5-bar forward returns in that coin-window. t is the one-sample t of the pooled block excess returns. 'At least 2 of the 3 coins' and the 8-per-coin minimum are applied to the coins present in the record. The supporting check uses every bar with forecast < 0 and a valid 5-bar forward return, pooled across coins and windows."
+}

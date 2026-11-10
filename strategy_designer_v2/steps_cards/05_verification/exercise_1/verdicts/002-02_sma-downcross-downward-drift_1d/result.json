@@ -1,0 +1,16 @@
+{
+  "status": "rejected",
+  "main_measure": {
+    "name": "mean 10-bar fwd return on short blocks minus all blocks (pooled, %)",
+    "value": 0.46618479362677423,
+    "threshold": "confirm if <= -1.0% per 10 bars with t <= -2 (Welch, non-overlapping blocks); reject if >= 0; inconclusive in between or |t| < 2"
+  },
+  "supporting_check": {
+    "name": "falling share on short blocks minus unconditional (points, need >= 10)",
+    "value": 3.1527093596059155,
+    "passed": false
+  },
+  "cases": 29,
+  "decided_by": "Rejected: the conditional-minus-unconditional difference is 0 or above, or the falling share on short bars is not above the unconditional share.",
+  "reading": "Non-overlapping 10-bar blocks start at each window's first bar, a block is short when the forecast at its start bar is below 0, the t-stat is Welch's t between short-block and all-block returns, and a downward cross is a forecast move from >= 0 to < 0 inside a window."
+}

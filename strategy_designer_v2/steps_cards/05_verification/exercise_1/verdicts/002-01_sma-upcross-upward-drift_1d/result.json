@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "mean excess 10-bar forward return in long blocks over all-block mean (pooled, before costs)",
+    "value": 0.004661847936267742,
+    "threshold": "> 0 with t >= 2 to confirm; <= 0 rejects"
+  },
+  "supporting_check": {
+    "name": "hit rate in long blocks minus all-block hit rate (second view: slope of return on forecast)",
+    "value": -0.03152709359605904,
+    "passed": false,
+    "hit_rate_long": 0.4827586206896552,
+    "hit_rate_all": 0.5142857142857142,
+    "slope_return_on_forecast": 0.0004018873941285853,
+    "slope_positive": true,
+    "t_stat": 0.295679652303545,
+    "windows_with_long_blocks": 4,
+    "windows_with_positive_excess": 2
+  },
+  "cases": 29,
+  "decided_by": "Inconclusive: excess > 0 but t < 2; hit rate not above unconditional; excess positive in fewer than 4 windows; result carried by a single window.",
+  "reading": "Blocks start every 10 rows from each window's first row, using only blocks whose 10-bar end is inside the window; the random-point baseline is the pooled mean (and hit rate) over all such blocks; the per-window excess is that window's long-block mean minus the pooled baseline; the slope is fitted over all blocks; 'carried by a single window' means the pooled excess turns <= 0 once the window with the largest summed excess is removed; a failed hit-rate test with t >= 2 counts as inconclusive."
+}

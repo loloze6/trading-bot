@@ -1,0 +1,29 @@
+{
+  "status": "rejected",
+  "main_measure": {
+    "name": "mean next-bar return after active bars minus mean next-bar return over all bars",
+    "value": 0.0002124998192192147,
+    "threshold": "negative with t <= -2 over at least 60 active bars and negative in at least 4 of 6 windows to confirm; zero or positive to reject"
+  },
+  "supporting_check": {
+    "name": "slope of next-bar return on forecast across active bars (positive expected)",
+    "value": -0.00015054593117626191,
+    "passed": false
+  },
+  "cases": 148,
+  "decided_by": "Reject: the excess return is zero or positive with at least 60 active bars.",
+  "reading": "Active bars are the bars with a negative forecast. Excess return is pooled across all windows. Its t is (mean of active returns minus the all-bar mean) divided by the standard error of the active returns. A window counts as negative if its own active-minus-all mean is below zero, and a window with no active bars is not negative. The slope regresses the next-bar return on the signed forecast, so a positive slope means larger shorts were followed by larger falls.",
+  "details": {
+    "t_stat": 0.07029769209456377,
+    "negative_windows": 3,
+    "window_excess": {
+      "BTCUSD:w1": -0.0012679076574439842,
+      "BTCUSD:w2": 0.0012643024421881183,
+      "BTCUSD:w3": -0.0006893277292256274,
+      "BTCUSD:w4": 0.00197969932107193,
+      "BTCUSD:w5": -8.865654029366652e-05,
+      "BTCUSD:w6": 0.0021499793771284515
+    },
+    "all_bars": 724
+  }
+}

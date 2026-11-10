@@ -1,0 +1,21 @@
+{
+  "status": "rejected",
+  "main_measure": {
+    "name": "mean 20-bar fwd return on short bars minus mean over all bars (pp), sampled every 20 bars",
+    "value": -1.751168997884351,
+    "threshold": "confirm at or below -2 pp with t-stat <= -2; reject at 0 or above"
+  },
+  "supporting_check": {
+    "name": "hit rate short bars minus unconditional negative share (pp)",
+    "value": -0.5602240896358524,
+    "passed": false
+  },
+  "cases": 21,
+  "decided_by": "Reject: the short-bar hit rate is not above the unconditional share.",
+  "reading": "Sampled bars at offsets 0, 20, 40, ... within each window (return to t+20 inside the window), used all sampled bars as the unconditional set and sampled bars with forecast < 0 as short cases; t-stat is the one-sample t of short-bar returns against the unconditional mean (difference / (std of short returns / sqrt(n))); differences are in percentage points; largest-tertile shorts are the short cases with forecast at or below the 1/3 quantile of their forecasts.",
+  "details": {
+    "t_stat": -0.4721885016722447,
+    "n_all_sampled": 34,
+    "largest_tertile_short_mean_return": -0.0029637524798007725
+  }
+}

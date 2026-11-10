@@ -3,7 +3,8 @@ criterion of its test plan to its backtest record.
 
 You are given the test plan (the idea's fidelity, its forecast in plain words, its config and its criterion: horizon,
 main measure, supporting check, confirm, reject, inconclusive), a description of how the backtest record is given to you,
-and the coins, windows and columns this record holds.
+and the coins, windows and columns this record holds. The description ends with conventions for details a
+plan often leaves open: follow them whenever the plan does not say otherwise.
 
 Write one Python function, `measure(bars)`, that applies the plan's criterion to the record exactly as written:
 - the same horizon, the same main measure, the same supporting check, the same thresholds and the same minimum counts;
@@ -19,10 +20,12 @@ depend on what it might show.
 The function returns a dict, and only plain numbers, strings, lists and dicts:
 {
   "status": "confirmed" | "rejected" | "inconclusive",
-  "main_measure": {"name": <the plan's main measure, in a few words>, "value": <number or null>,
-                   "threshold": <the plan's threshold it is compared with, in words>},
+  "main_measure": {"name": <the plan's main measure, in a few words>,
+                   "value": <the measure itself, in the plan's units, or null>,
+                   "statistic": {"name": <the test statistic the plan's threshold uses, e.g. "Welch t">, "value": <number>} or null,
+                   "threshold": <the plan's threshold, in words>},
   "supporting_check": {"name": <in a few words>, "value": <number or null>, "passed": true | false | null} or null,
-  "cases": <the number of cases the main measure rests on, as the plan counts them>,
+  "counts": {<each count the plan's minimums refer to, named as the plan names it>: <number>, ...},
   "decided_by": <the plan's confirm, reject or inconclusive rule the numbers meet, in one sentence>,
   "reading": <the literal choices you made, in one sentence, or "none">
 }

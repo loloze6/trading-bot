@@ -1,0 +1,23 @@
+{
+  "status": "rejected",
+  "main_measure": {
+    "name": "mean 20-bar forward return on short bars minus on all bars (pp)",
+    "value": -1.751168997884351,
+    "threshold": "confirm at or below -2 percentage points with t-stat at or below -2; reject at 0 or above"
+  },
+  "supporting_check": {
+    "name": "short-bar negative-return hit rate minus unconditional share (pp)",
+    "value": -0.5602240896358524,
+    "passed": false
+  },
+  "cases": 21,
+  "decided_by": "Reject: the short-bar hit rate is not above the unconditional share.",
+  "reading": "Bars are sampled at every 20th row from each window's first row (only where the return fits in the window). The t-stat is the one-sample t of short-bar returns against the pooled all-bar mean. The largest-tertile shorts are the sampled short bars with forecast at or below the 1/3 quantile of short forecasts. Any reject condition takes precedence over confirm.",
+  "details": {
+    "t_stat": -0.4721885016722447,
+    "hit_rate_short": 0.5238095238095238,
+    "hit_rate_all": 0.5294117647058824,
+    "largest_tertile_short_mean_return": -0.0029637524798007725,
+    "n_all_cases": 34
+  }
+}

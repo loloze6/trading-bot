@@ -30,3 +30,10 @@ Rules for measuring:
 - The gain of the position before costs on bar t is postRebalance_current_allocation[t] x (close[t+1] / close[t] - 1).
 - "Holding the coin" means the coin's own return over the same bars.
 - Rows with a missing value in a column you need are left out of that measure.
+
+Conventions, used only when the plan does not say otherwise:
+- Non-overlapping returns over h bars: the bars at positions 0, h, 2h, ... of each window, counted from the window's first
+  row, in each group the plan compares (one grid per window, the same for every group).
+- A t-statistic the plan does not name: for a difference between two groups, Welch's two-sample t; for one group's mean,
+  the ordinary t of the mean (mean / (standard deviation / square root of n)).
+- A difference is "A minus B" in the order the plan names them, so its sign keeps the plan's meaning.
