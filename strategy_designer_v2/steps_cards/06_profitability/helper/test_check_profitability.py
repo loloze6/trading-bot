@@ -1,5 +1,5 @@
-"""Tests of make_assessment on hand-made records (not market data): the numbers are recomputed here independently,
-and the status follows the rule. Run: python -m pytest test_make_assessment.py -q"""
+"""Tests of check_profitability on hand-made records (not market data): the numbers are recomputed here independently,
+and the status follows the rule. Run: python -m pytest test_check_profitability.py -q"""
 import gzip, json, math
 from pathlib import Path
 
@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 import yaml
 
-import make_assessment as m
+import check_profitability as m
 
 RULE = yaml.safe_load((Path(m.__file__).parent / "rule.yaml").read_text())
 
@@ -44,8 +44,8 @@ def test_a_steady_book_is_worth_acting_on(tmp_path):
     books = {c: [1000 * np.cumprod(1 + 0.002 + rng.normal(0, 0.005, 60)) for _ in range(3)] for c in ("AAA", "BBB")}
     closes = {c: [100 * np.cumprod(1 + rng.normal(0, 0.03, 60)) for _ in range(3)] for c in ("AAA", "BBB")}
     write_record(tmp_path, books, closes)
-    rows, facts = m.assess(tmp_path, RULE)
-    v = {x["bar"]: x["value"] for x in rows}
+    rows, facts = m.check(tmp_path, RULE)
+    v = {x["measure"]: x["value"] for x in rows}
     r, h, s = independent(books, closes)
     assert v["sharpe_min"] == pytest.approx(s(r))
     assert v["sharpe_vs_hold_min"] == pytest.approx(s(r) - s(h))
@@ -60,8 +60,8 @@ def test_a_losing_book_is_not_worth_acting_on(tmp_path):
     books = {c: [1000 * np.cumprod(1 - 0.001 + rng.normal(0, 0.01, 60)) for _ in range(3)] for c in ("AAA",)}
     closes = {c: [100 * np.cumprod(1 + rng.normal(0, 0.03, 60)) for _ in range(3)] for c in ("AAA",)}
     write_record(tmp_path, books, closes)
-    rows, _ = m.assess(tmp_path, RULE)
-    passed = {x["bar"]: x["passed"] for x in rows}
+    rows, _ = m.check(tmp_path, RULE)
+    passed = {x["measure"]: x["passed"] for x in rows}
     assert not passed["sharpe_min"] and not passed["avg_daily_return_min"]
 
 
@@ -72,8 +72,8 @@ def test_one_bad_window_fails_leave_one_out_and_calmar(tmp_path):
     books = {"AAA": [good, bad, up]}
     closes = {"AAA": [up, up, up]}
     write_record(tmp_path, books, closes)
-    rows, facts = m.assess(tmp_path, RULE)
-    v = {x["bar"]: x for x in rows}
+    rows, facts = m.check(tmp_path, RULE)
+    v = {x["measure"]: x for x in rows}
     r, _, s = independent(books, closes)
     curve = np.cumprod(1 + r)
     fall = np.max(1 - curve / np.maximum.accumulate(np.concatenate([[1.0], curve]))[1:])
@@ -88,5 +88,5 @@ def test_too_few_trades_fails_the_frequency_bar(tmp_path):
     books = {"AAA": [1000 * np.cumprod(1 + 0.002 + rng.normal(0, 0.004, 120)) for _ in range(2)]}
     closes = {"AAA": [100 * np.cumprod(1 + rng.normal(0, 0.03, 120)) for _ in range(2)]}
     write_record(tmp_path, books, closes, trades_per_window=0)
-    rows, _ = m.assess(tmp_path, RULE)
-    assert not {x["bar"]: x["passed"] for x in rows}["trade_frequency_min"]
+    rows, _ = m.check(tmp_path, RULE)
+    assert not {x["measure"]: x["passed"] for x in rows}["trade_frequency_min"]

@@ -1,23 +1,21 @@
-"""Profitability helper, branch 3. Reads one backtest record and applies the rule (rule.yaml) to the book the backtest
-traded, after the backtest's own costs. It calculates only: no trade is rebuilt,
-no cost is computed, nothing is measured on the prices beyond holding the coin. No model call.
+"""Step 6: profitability check. Reads one backtest record and applies the rule (rule.yaml) to the book the backtest
+traded, after the backtest's own costs. It calculates only: no trade is rebuilt, no cost is computed, nothing is
+measured on the prices beyond holding the same coins. No model call.
 
-  python make_assessment.py path/to/PLAN.md
-Options: --records-root (default: ../../04_backtest/backtests), --verdicts-dir (default: ../../05_verification/verdicts),
---assessments-dir (default: ../assessments). Every backtest is assessed, whatever branch 1 said; branch 1's verdict is
-copied next to the result, so a profitable book on an idea not shown real is visible as such.
+  python check_profitability.py path/to/04_backtest/backtests/<record>
+Option: --checks-dir (default: ../checks next to this folder).
 
-Definitions (one for every idea):
+Definitions (the same for every backtest):
 - The book of one coin in one window: the backtest's value after each rebalance and its fees
   (`postRebalance_total_value`), read at the last bar of each UTC day. Its daily returns stay inside the window.
-- The idea's book: every coin together, equal weight: on each day of a window, the mean of the daily returns of the
-  coins that have that day. Holding: the same, from the coins' closing prices.
+- The backtest's book: every coin together, equal weight: on each day of a window, the mean of the daily returns of
+  the coins that have that day. Holding: the same, from the coins' closing prices.
 - Sharpe: mean over standard deviation of all the daily returns of all windows, times sqrt(365).
 - Calmar: the annualised return of all the daily returns chained in window order, divided by the deepest fall of
   that chained curve. No fall and a positive return passes.
 - Leave one window out: the Sharpe without the days of one window (the same window number for every coin, so the
   same period); the lowest over all windows.
-- Trade frequency: the backtest's trades, without those closed on a window's last bar (a forced close), divided by
+- Trades per bar: the backtest's trades, without those closed on a window's last bar (a forced close), divided by
   the number of bars, every coin and window together.
 """
 import argparse, gzip, json, math, os, re, sys
@@ -29,7 +27,7 @@ import yaml
 
 HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[1]
-BARS = [  # (rule key, label, comparison)
+MEASURES = [  # (rule key, label, comparison)
     ("sharpe_min", "Sharpe", "above"),
     ("sharpe_vs_hold_min", "Sharpe minus holding's Sharpe", "above"),
     ("avg_daily_return_min", "Mean daily return", "at least"),
@@ -43,11 +41,6 @@ def write_atomic(path, text):
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(text)
     os.replace(tmp, path)
-
-
-def header(text):
-    m = re.match(r"\s*---\n(.*?)---\n", text, re.S)
-    return {k.strip(): v.strip() for k, v in (l.split(":", 1) for l in m.group(1).splitlines() if ":" in l)} if m else {}
 
 
 def sharpe(r):
@@ -86,7 +79,7 @@ def load(record):
     return eq(book), eq(hold), trades, bars, coins
 
 
-def assess(record, rule):
+def check(record, rule):
     book, hold, trades, bars, coins = load(record)
     windows = sorted(book)
     r = np.concatenate([book[w].to_numpy() for w in windows])
@@ -106,9 +99,9 @@ def assess(record, rule):
         "trade_frequency_min": trades / bars if bars else 0.0,
     }
     rows = []
-    for key, label, cmp in BARS:
+    for key, label, cmp in MEASURES:
         ok = v[key] > rule[key] if cmp == "above" else v[key] >= rule[key]
-        rows.append({"bar": key, "label": label, "value": v[key], "threshold": rule[key], "comparison": cmp, "passed": bool(ok)})
+        rows.append({"measure": key, "label": label, "value": v[key], "threshold": rule[key], "comparison": cmp, "passed": bool(ok)})
     facts = {"coins": coins, "windows": len(windows), "days": int(len(r)), "years": round(years, 2), "bars": bars,
              "trades": trades, "holding_sharpe": sharpe(h), "annualised_return": float(ann), "deepest_fall": fall,
              "worst_window_left_out": f"w{min(loo, key=loo.get)}"}
@@ -123,57 +116,49 @@ def fmt(x):
 
 def main():
     a = argparse.ArgumentParser()
-    a.add_argument("plan", type=Path)
-    a.add_argument("--records-root", type=Path, default=STEPS / "04_backtest" / "backtests")
-    a.add_argument("--verdicts-dir", type=Path, default=STEPS / "05_verification" / "verdicts")
-    a.add_argument("--assessments-dir", type=Path, default=HERE.parent / "assessments")
+    a.add_argument("record", type=Path, help="one backtest record folder")
+    a.add_argument("--checks-dir", type=Path, default=HERE.parent / "checks")
     args = a.parse_args()
 
-    plan_path = args.plan.resolve()
-    plan_id = plan_path.stem
-    h = header(plan_path.read_text())
+    record = args.record.resolve()
+    rid = record.name
     rule = yaml.safe_load((HERE / "rule.yaml").read_text())
-    out_dir = args.assessments_dir.resolve()
+    out_dir = args.checks_dir.resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
     index_path = out_dir / "INDEX.md"
 
     def index_line(line):
-        lines = [l for l in (index_path.read_text().splitlines() if index_path.exists() else []) if not l.startswith(plan_id + ":")]
+        lines = [l for l in (index_path.read_text().splitlines() if index_path.exists() else []) if not l.startswith(rid + ":")]
         write_atomic(index_path, "".join(l + "\n" for l in sorted(lines + [line])))
 
-    vfile = args.verdicts_dir.resolve() / plan_id / "result.json"
-    verdict = json.loads(vfile.read_text())["status"] if vfile.exists() else "none"
-    record = args.records_root.resolve() / plan_id
     if not list(record.glob("*/w*/bars.csv.gz")):
-        index_line(f"{plan_id}: not assessed: no backtest record")
-        print(f"{plan_id}: not assessed (no backtest record)")
+        index_line(f"{rid}: not checked: the record holds no window that ran")
+        print(f"{rid}: not checked (no window ran)")
         return
+    data = next((l[len("- Data: "):] for l in (record / "run.md").read_text().splitlines() if l.startswith("- Data: ")), "") \
+        if (record / "run.md").exists() else ""
 
-    rows, facts = assess(record, rule)
-    worth = all(x["passed"] for x in rows)
-    failed = [x["label"] for x in rows if not x["passed"]]
-    decided = "every bar of the rule passed" if worth else "failed: " + "; ".join(failed)
-    status = "profitable enough" if worth else "not profitable enough"
-    d = out_dir / plan_id
+    rows, facts = check(record, rule)
+    ok = all(x["passed"] for x in rows)
+    decided = "every measure passed" if ok else "failed: " + "; ".join(x["label"] for x in rows if not x["passed"])
+    status = "profitable enough" if ok else "not profitable enough"
+    d = out_dir / rid
     d.mkdir(parents=True, exist_ok=True)
-    write_atomic(d / "result.json", json.dumps({"status": status, "verdict": verdict, "bars": rows, "facts": facts,
-                                                "decided_by": decided}, indent=2, default=str) + "\n")
-    lines = ["---", f"plan: {plan_id}", f"idea: {h.get('idea', '')}", f"fit: {h.get('fit', 'not given')}",
-             f"idea verdict (branch 1): {verdict}",
-             f"status: {status}", "---",
-             "The book: the idea traded on its own, as the backtest traded it, after the backtest's own costs.",
-             "", "| Bar | Value | Rule | Passed |", "|---|---|---|---|"]
+    write_atomic(d / "result.json", json.dumps({"status": status, "measures": rows, "facts": facts, "decided_by": decided},
+                                               indent=2, default=str) + "\n")
+    lines = ["---", f"backtest: {rid}", f"data: {data}", f"status: {status}", "---",
+             "| Measure | Value | Rule | Passed |", "|---|---|---|---|"]
     lines += [f"| {x['label']} | {fmt(x['value'])} | {x['comparison']} {fmt(x['threshold'])} | {'yes' if x['passed'] else 'no'} |" for x in rows]
     lines += ["", f"- Decided by: {decided}",
-              f"- Book: {', '.join(facts['coins'])}, equal weight; {facts['windows']} windows, {facts['days']} days "
+              f"- The book: {', '.join(facts['coins'])}, equal weight; {facts['windows']} windows, {facts['days']} days "
               f"({facts['years']} years); {facts['trades']} trades on {facts['bars']} bars",
-              f"- Holding's Sharpe: {fmt(facts['holding_sharpe'])}; annualised return: {fmt(facts['annualised_return'])}; "
+              f"- Holding's Sharpe: {fmt(facts['holding_sharpe'])}; yearly return: {fmt(facts['annualised_return'])}; "
               f"deepest fall: {fmt(facts['deepest_fall'])}; window whose removal lowers the Sharpe most: {facts['worst_window_left_out']}",
               f"Record: `steps_cards/{os.path.relpath(record, STEPS)}`", "Rule: `steps_cards/06_profitability/helper/rule.yaml`"]
-    write_atomic(d / "assessment.md", "\n".join(lines) + "\n")
+    write_atomic(d / "check.md", "\n".join(lines) + "\n")
     summary = "; ".join(f"{x['label']} {fmt(x['value'])}" for x in rows[:2] + rows[4:5])
-    index_line(f"{plan_id}: {status} (idea: {verdict}) [{summary}]")
-    print(f"{plan_id}: {status} ({decided})")
+    index_line(f"{rid}: {status} [{summary}]")
+    print(f"{rid}: {status} ({decided})")
 
 
 if __name__ == "__main__":
