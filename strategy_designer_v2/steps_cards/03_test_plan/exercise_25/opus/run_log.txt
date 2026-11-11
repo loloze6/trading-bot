@@ -1,0 +1,27 @@
+plan (adapted): exercise_25/opus/plans/001-01_rsi-high-extreme-reversal_1d.md
+cost: 0.2716 USD, attempts: 1
+plan (adapted): exercise_25/opus/plans/001-03_rsi-high-extreme-continuation_1d.md
+cost: 0.0550 USD, attempts: 1
+plan (adapted): exercise_25/opus/plans/002-01_sma-upcross-upward-drift_1d.md
+cost: 0.0539 USD, attempts: 1
+plan (adapted): exercise_25/opus/plans/002-05_sma-up-regime-positive-drift_1d.md
+cost: 0.0520 USD, attempts: 1
+plan (adapted): exercise_25/opus/plans/003-01_low-volume-up-move-reverts_1d.md
+cost: 0.0812 USD, attempts: 1
+missing-components: The idea's defining condition is a move made on volume that is low against the coin's own normal level. This is computable from the daily bars' volume column. No graded component or regime measure in the catalogue outputs it, and no combination of the catalogue's components builds it. The only volume component, `VolumeExpansionHedgeComponent`, is on/off, covers up bars only, and is refused. With a relative-volume regime measure, the plan would be: a low-volume regime holding a negated, standardised short-period price change, so the forecast fades the move. The other regimes would be flat.
+cost: 0.0498 USD, attempts: 1
+untestable: The idea needs bitcoin's move as the signal and an altcoin's later return as the outcome. A config reads only one coin's own bars and feeds, so it cannot hold another coin's prices. The run also covers BTC/USDT alone, so there is no altcoin to trade.
+cost: 0.0224 USD, attempts: 1
+missing-components: The idea needs the RSI at the previous price high, compared with the RSI at the current new high. The data is all in the coin's own closes, but no catalogue component keeps a past swing high's RSI or RSI's rolling maximum. Compositions such as Donchian position minus standardised RSIPullback measure RSI level, not a lower RSI high, and would be a replacement.
+cost: 0.0458 USD, attempts: 1
+missing-components: The divergence needs RSI at the current price low compared with RSI at the previous price low. Both come from the coin's own closes, and a graded value fits the config's logic. No catalogue component, alone or combined, measures RSI against its own past lows: Donchian ranks price only, and RSIPullback gives the RSI level only.
+cost: 0.0410 USD, attempts: 1
+missing-components: The new price high can be detected in the coin's own bars, using `DonchianBreakoutComponent` at the top of its range as a regime rule. The divergence itself needs RSI's level relative to its own recent high, and no component computes this. `RSIPullbackComponent` gives only the RSI level. Using `percentile` on its history is refused next to `standardise` (V15), and in the detector it gives only an on/off rule over an unspecified history, not a graded "lower RSI high".
+cost: 0.0591 USD, attempts: 1
+missing-components: The divergence compares RSI at the current price low with RSI at the earlier low, which needs the low of RSI over a window. The catalogue gives RSI only as a level, and `percentile` cannot be combined with `standardise` in a strategy component (V15), so no component or composition measures it. Everything needed is in each coin's own closes, and the config could hold it as a graded signal: price range position (`DonchianBreakoutComponent`) combined with an RSI range position.
+cost: 0.0396 USD, attempts: 1
+missing-components: Everything the divergence needs is in the coin's own closes, and a graded component could be combined with the Donchian position or gated in a score_product regime. But no catalogue component measures RSI against its prior high or its recent range. RSIPullbackComponent gives only the level of 50 minus RSI, and no transform takes a rolling maximum of a component's history.
+cost: 0.0353 USD, attempts: 1
+missing-components: The divergence needs RSI compared with its own recent low, but the catalogue has only the RSI level. The single allowed history op, `standardise`, cannot rank RSI within its own range, and no combination of components gives the RSI's prior low. Everything needed is in each coin's own closes, and a graded product of "price near its range low" and "RSI above its range low" would fit the config's logic once that component exists.
+cost: 0.0319 USD, attempts: 1
+finished

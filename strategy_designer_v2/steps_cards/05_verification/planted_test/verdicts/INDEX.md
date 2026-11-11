@@ -1,0 +1,8 @@
+001-01_rsi-high-extreme-reversal_1d_minus1pct: inconclusive (fit: adapted) [main: 0.00564968; t of the mean 0.585901; non-overlapping extreme cases pooled 60, coins with negative excess 0, coins in record 2]
+001-01_rsi-high-extreme-reversal_1d_none: inconclusive (fit: adapted) [main: -0.0119429; t of the mean -1.32313; non-overlapping extreme cases pooled 60, coins with negative excess 2, coins in record 2, extreme cases BTCUSD 32, extreme cases ETHUSD 28]
+001-01_rsi-high-extreme-reversal_1d_plus0.1pct: inconclusive (fit: adapted) [main: -0.0136589; t of the mean -1.52158; non-overlapping extreme cases pooled 60, coins in record 2, coins with negative excess 2]
+001-01_rsi-high-extreme-reversal_1d_plus1pct: confirmed (fit: adapted) [main: -0.028758; t of the mean -3.33043; non-overlapping extreme cases pooled 60, coins with negative excess 2, coins present 2]
+002-05_sma-up-regime-positive-drift_1d_minus1pct: rejected (fit: adapted) [main: -0.00855692; Welch t -4.14431; in-stretch bars 290, out-of-stretch bars 434, distinct up-cross stretches 5]
+002-05_sma-up-regime-positive-drift_1d_none: inconclusive (fit: adapted) [main: 0.00144308; Welch t 0.698919; in-stretch bars 290, out-of-stretch bars 434, distinct up-cross stretches 5]
+002-05_sma-up-regime-positive-drift_1d_plus0.1pct: inconclusive (fit: adapted) [main: 0.00244308; Welch t 1.18324; in-stretch bars 290, out-of-stretch bars 434, distinct up-cross stretches 5]
+002-05_sma-up-regime-positive-drift_1d_plus1pct: confirmed (fit: adapted) [main: 0.0114431; Welch t 5.54215; in-stretch bars 290, out-of-stretch bars 434, distinct up-cross stretches 5]

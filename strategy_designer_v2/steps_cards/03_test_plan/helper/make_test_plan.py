@@ -44,10 +44,11 @@ def call(model, system, request):
 
 def windows(period, bar):
     """'N separate windows of about M bars each' for a fold id; no date is returned or printed."""
-    m = re.fullmatch(r"fold ([A-Z])", period.strip())
+    m = re.fullmatch(r"folds? ([A-Z](?:, [A-Z])*)", period.strip())   # "fold A", or "folds A, B, C, D"
     if not m or bar not in BARS_PER_DAY:
         return f"period {period}"
-    fold = yaml.safe_load(FOLDS.read_text())["folds"][m.group(1)]
+    folds = yaml.safe_load(FOLDS.read_text())["folds"]
+    fold = [w for f in m.group(1).split(", ") for w in folds[f]]
     days = [(datetime.date.fromisoformat(str(w["end"])) - datetime.date.fromisoformat(str(w["start"]))).days + 1 for w in fold]
     return (f"{len(days)} separate windows of about {round(sum(days) / len(days)) * BARS_PER_DAY[bar]} bars each, per coin; "
             "the bars a config needs for its warm-up are loaded before each window, so every bar of the window is tested")

@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "in-stretch minus out-of-stretch mean next-bar return",
+    "value": 0.0024430839507601394,
+    "statistic": {
+      "name": "Welch t",
+      "value": 1.1832421795667967
+    },
+    "threshold": "confirm if positive with Welch t >= 2; reject if negative with t <= -2; else inconclusive (needs >=100 in, >=100 out, >=3 stretches)"
+  },
+  "supporting_check": {
+    "name": "share of up next-bars in-stretch minus out-of-stretch",
+    "value": 0.05062768155092967,
+    "passed": true
+  },
+  "counts": {
+    "in-stretch bars": 290,
+    "out-of-stretch bars": 434,
+    "distinct up-cross stretches": 5
+  },
+  "decided_by": "|t| < 2, so the result is inconclusive.",
+  "reading": "In-stretch bars are forecast > 0 and out-of-stretch bars are forecast = 0, with every bar that has a next close in the same window pooled across windows. Distinct up-cross stretches are maximal runs of forecast > 0 within each window. The supporting check passes when its value is above zero."
+}

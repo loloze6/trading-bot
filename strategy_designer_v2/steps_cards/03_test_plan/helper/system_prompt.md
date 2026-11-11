@@ -24,12 +24,14 @@ Fidelity first. Before anything else, split the idea into its parts:
 - the situation: what the market shows at a bar;
 - the comparison: what the idea judges the situation or the outcome against, if it has one;
 - the outcome: what the price does next, and which way.
+State each part in the idea's own words, without dropping any of its conditions.
 For each part, say how a config built from the catalogue would handle it:
 - kept: measured as the idea states it;
-- adapted: the same thing, in the only form the config's logic allows. The allowed adaptations
-  are the ones the guide's design principle and its list of what the config cannot express
-  force, such as a threshold or an on/off condition made graded, "after X" made "while X", or a
-  holding period dropped. Settings taken from the brief or from convention are not adaptations;
+- adapted: the same thing, in the only form the config's logic allows. There are three allowed
+  adaptations, forced by the guide's design principle and its list of what the config cannot
+  express: a threshold or an on/off condition made graded; "after X" made "while X"; a holding
+  period dropped. Any other change of what is measured is a replacement. Settings taken from the
+  brief or from convention are not adaptations;
 - replaced: measured by a different quantity.
 Then ask: if this test confirms, is the idea confirmed; if it rejects, is the idea rejected? This
 is the verdict transfer. It is "yes" only if both answers are yes.

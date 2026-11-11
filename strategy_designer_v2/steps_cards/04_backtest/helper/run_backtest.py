@@ -98,12 +98,13 @@ def coins(instruments):
     return out
 
 
-def protocol(python, symbol, bar, fold):
-    """The protocol dict, built by the pipeline's own fold loader and venue resolver (run in the venv)."""
+def protocol(python, symbol, bar, folds):
+    """The protocol dict, built by the pipeline's own fold loader and venue resolver (run in the venv). Several folds:
+    their windows one after the other, in the order given."""
     code = (
         "import json, sys; sys.path.insert(0, 'tools'); sys.path.insert(0, '../trading-bot');"
         "import research_folds as rf, venue_resolver as vr;"
-        f"p = {{'symbols': [{symbol!r}], 'timeframe': {bar!r}, 'windows': rf.fold_windows(rf.load_folds(), {fold!r})}};"
+        f"p = {{'symbols': [{symbol!r}], 'timeframe': {bar!r}, 'windows': [w for f in {folds!r} for w in rf.fold_windows(rf.load_folds(), f)]}};"
         f"p.update(vr.resolve({VENUE[0]!r}, {VENUE[1]!r})); print(json.dumps(p))")
     r = subprocess.run([python, "-c", code], cwd=SR, capture_output=True, text=True)
     if r.returncode:
@@ -134,7 +135,10 @@ def main():
     plan_id, text = plan_path.stem, plan_path.read_text()
     h = plan_header(text)
     bar, period = h["data-bar"], h["data-period"]
-    fold = re.fullmatch(r"fold ([A-Z])", period).group(1)
+    m = re.fullmatch(r"folds? ([A-Z](?:, [A-Z])*)", period)   # "fold A", or "folds A, B, C, D"
+    if not m:
+        sys.exit(f"unreadable data-period: {period!r}")
+    folds = m.group(1).split(", ")
     out_root = args.out_root.resolve()
     out_root.mkdir(parents=True, exist_ok=True)
     index_path = out_root / "INDEX.md"
@@ -144,7 +148,7 @@ def main():
     if outcome != "plan":
         if dest.exists():
             shutil.rmtree(dest)   # a record left from an earlier version of the plan no longer belongs to it
-        index_line(index_path, plan_id, f"{plan_id}: not run: the plan is {outcome} [{bar}, fold {fold}]")
+        index_line(index_path, plan_id, f"{plan_id}: not run: the plan is {outcome} [{bar}, {period}]")
         print(f"not run ({outcome}): {plan_id}")
         return
     config_path = plan_path.with_name(plan_id + "_config.json")
@@ -154,7 +158,7 @@ def main():
     data_line = f"- Data: {h['data-instruments']} as "
     if (not args.force and (dest / "config.json").exists() and (dest / "run.md").exists()
             and canonical(json.loads((dest / "config.json").read_text())) == canonical(json.loads(config_path.read_text()))
-            and data_line in (dest / "run.md").read_text() and f"; {bar} bars; fold {fold}" in (dest / "run.md").read_text()
+            and data_line in (dest / "run.md").read_text() and f"; {bar} bars; {period}\n" in (dest / "run.md").read_text()
             and index_path.exists() and any(l.startswith(plan_id + ": ran") for l in index_path.read_text().splitlines())):
         print(f"unchanged, record kept: {plan_id}")
         return
@@ -166,7 +170,7 @@ def main():
     report, summary, proto = [], [], None
     for base in coins(h["data-instruments"]):
         symbol = f"{base}USD"
-        proto = protocol(args.python, symbol, bar, fold)
+        proto = protocol(args.python, symbol, bar, folds)
         windows = proto["windows"]
         cdir = dest / symbol
         rows, failed = [], []
@@ -216,11 +220,11 @@ def main():
     venue = proto["venue"]["label"] if proto else ""
     write_atomic(dest / "run.md", f"# Backtest of {plan_id}\n\n"
                  f"- Plan: `{os.path.relpath(plan_path, dest)}`\n- Config: `config.json` (a copy of the plan's config)\n"
-                 f"- Data: {h['data-instruments']} as {', '.join(f'{b}USD' for b in coins(h['data-instruments']))}; {bar} bars; fold {fold}\n"
+                 f"- Data: {h['data-instruments']} as {', '.join(f'{b}USD' for b in coins(h['data-instruments']))}; {bar} bars; {period}\n"
                  f"- Venue: {venue}\n- Engine: strategy-research/tools/run_protocol.py around trading-bot's run_backtest, unchanged; warm-up loaded before each window\n\n"
                  + "\n".join(report) + "\n")
     ran = any(" not run" not in s for s in summary)
-    index_line(index_path, plan_id, f"{plan_id}: {'ran' if ran else 'not run'}: {'; '.join(summary)} [{bar}, fold {fold}]")
+    index_line(index_path, plan_id, f"{plan_id}: {'ran' if ran else 'not run'}: {'; '.join(summary)} [{bar}, {period}]")
     print(f"{plan_id}: {'; '.join(summary)}")
 
 

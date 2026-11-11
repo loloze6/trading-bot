@@ -1,0 +1,1 @@
+002_moving-average-cross-trend-persistence: Price or short-average crossing a long moving average marks a new trend that persists, because late participants extend moves. [source: TradingView, list of SMA strategy scripts, featured "SMAcross-mvr" (SMAcross-mvrNew v2) by vmedaram1, Dec 30, 2025; instruments: BTC, ETH, LTC, XMR, XRP, ZEC; period: folds A, B, C, D]
