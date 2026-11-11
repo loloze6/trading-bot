@@ -1,0 +1,5 @@
+---
+---
+Large coins lead small coins over short horizons. When bitcoin makes a sharp move, smaller and less traded coins take on part of that move only later, instead of right away. The proposed reason is that information and attention reach the market through the most liquid coin first. Traders who react to market-wide news, such as macro shocks, exchange events or large liquidations, trade bitcoin first because it has the deepest books and the lowest costs. Market makers in thin altcoins then update their quotes with a delay. They are fewer, carry inventory risk, and widen spreads instead of repricing at once. Some arbitrage between coins happens, but costs and limited capital on thin pairs slow it down. So altcoin prices drift toward the level the bitcoin move implies over the following bars. The lag should be larger for coins with lower volume and wider ranges.
+
+The theory is wrong if altcoin returns show no link to bitcoin's earlier returns once their own past returns are accounted for. It is also wrong if the lag is no larger for thinly traded coins than for liquid ones, or if small coins lead bitcoin as often as bitcoin leads them.

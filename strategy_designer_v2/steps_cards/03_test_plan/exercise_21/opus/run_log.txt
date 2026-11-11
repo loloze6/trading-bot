@@ -1,0 +1,27 @@
+plan (adapted): exercise_21/opus/plans/001-01_rsi-high-extreme-reversal_1d.md
+cost: 0.2697 USD, attempts: 1
+plan (adapted): exercise_21/opus/plans/001-03_rsi-high-extreme-continuation_1d.md
+cost: 0.0444 USD, attempts: 1
+plan (adapted): exercise_21/opus/plans/002-01_sma-upcross-upward-drift_1d.md
+cost: 0.0432 USD, attempts: 1
+plan (adapted): exercise_21/opus/plans/002-05_sma-up-regime-positive-drift_1d.md
+cost: 0.0488 USD, attempts: 1
+plan (adapted): exercise_21/opus/plans/003-01_low-volume-up-move-reverts_1d.md
+cost: 0.0678 USD, attempts: 1
+plan (adapted): exercise_21/opus/plans/003-07_quiet-hours-moves-revert_1d.md
+cost: 0.0812 USD, attempts: 1
+untestable: The situation is read on bitcoin, but the outcome is the return of other coins. A config sees only its own symbol's bars, so no config can link bitcoin's move to an altcoin's later return. The run also covers only BTC/USDT.
+cost: 0.0177 USD, attempts: 1
+missing-components: A divergence compares RSI at the current price high with RSI at the previous price high. That needs RSI's position within its own recent range, set against price's position within the same window. No catalogue component, alone or combined, gives RSI's range position or its value at the prior swing high. Weighting Donchian against RSIPullback measures "price high while RSI is low", which is a different quantity.
+cost: 0.0342 USD, attempts: 1
+missing-components: The divergence needs the RSI value at the previous price low, compared with RSI at the new low. That is computable from one coin's closes, and a graded score fits the config's logic, but no catalogue component, alone or combined, locates a prior swing low or returns RSI's reading there. Combining DonchianBreakoutComponent with RSIPullbackComponent only gives the current RSI level, which replaces the comparison.
+cost: 0.0337 USD, attempts: 1
+missing-components: The new price high is available (`DonchianBreakoutComponent` at +sf, usable as a regime rule). No component or allowed composition computes RSI relative to its own rolling high: `standardise` must be the only history op, and there is no rolling-max op. RSI level alone would replace the divergence with an RSI-extreme reading, and the brief rules that out explicitly.
+cost: 0.0444 USD, attempts: 1
+missing-components: The idea needs RSI's position within its own recent range, read at the same time as price's position within its range. No catalogue component outputs that. Rules and vetoes cannot compare one component with its own past minimum in a graded way, and in `strategies` `standardise` must be the only history op, so `percentile` on RSI is not available there. If that component existed, a weighted combination with the negated Donchian position would express the divergence fully.
+cost: 0.0482 USD, attempts: 1
+missing-components: The idea needs RSI compared with its own earlier peak. That uses only the coin's closes and could feed a regime plus a graded component. But the catalogue has only RSI's level (RSIPullbackComponent), and no op takes a rolling max, difference or range of another component's output, so no combination builds it.
+cost: 0.0352 USD, attempts: 1
+missing-components: A bullish divergence compares RSI at the current price low with RSI at the earlier low in the same window. No component outputs RSI's own rolling low or its position in its recent range, and no combination supplies it. Weighted sums cannot form the needed interaction, and `percentile` on RSI ranks it against its whole history, not against the prior swing low.
+cost: 0.0399 USD, attempts: 1
+finished

@@ -1,0 +1,49 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "rsi_high",
+            "class": "strategies.strategy_components.RSIPullbackComponent",
+            "params": {
+              "period": 14
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "max": 0.0
+                }
+              },
+              {
+                "op": "signed_power",
+                "params": {
+                  "exponent": 3,
+                  "pivot": 20
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    }
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "volflag",
+        "class": "strategies.strategy_components.BuyAndHoldStrategy",
+        "params": {}
+      }
+    ],
+    "vetoes": [
+      {
+        "id": "volflag",
+        "transforms": [
+          {
+            "op": "volume_filter",
+            "params": {
+              "period": 20
+            }
+          }
+        ],
+        "rules": [
+          {
+            "op": "lte",
+            "value": 0.5
+          }
+        ],
+        "consecutive_bars": 1,
+        "result": "mean_reversion"
+      }
+    ],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "move",
+            "class": "strategies.strategy_components.PriceEvolutionComponent",
+            "params": {
+              "period": 1
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              },
+              {
+                "op": "negate"
+              },
+              {
+                "op": "signed_power",
+                "params": {
+                  "exponent": 2
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "chop": null,
+      "unknown": null
+    }
+  }
+}

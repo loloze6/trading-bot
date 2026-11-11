@@ -149,6 +149,8 @@ Up to three attempts. The script tells the model the data's windows (from the fo
   - the config follows the hard rules, takes the idea's side, and uses settings from the brief, else the single most common convention;
   - the criterion has one horizon in bars, one main measure and at most one supporting check, the evidence as a number, and overlapping returns counted once;
   - a reject needs evidence as strong as a confirm, in the other direction (if t ≥ 2 confirms, t ≤ -2 rejects). An estimate merely on the wrong side of zero is inconclusive. Found by step 5: six "rejected" verdicts rested on t between -0.52 and +0.24;
+  - a result near zero is never a reject, even when the brief says "no difference" means wrong: it is inconclusive. Found by the runs after symmetric criteria (002-03 daily, 001-02 hourly);
+  - a rare extreme carries a position close to zero away from the extreme (the strongest graded dead zone). Found by the hourly run: the RSI-extreme books held a position on half the bars;
   - its minimum counts are counts the data's windows can give;
   - confirm, reject and inconclusive cover every result.
 
@@ -174,6 +176,8 @@ From step 2 (exercise 3, opus, and exercise 4 for 003-07), with their briefs:
 - **Exercises 13 and 14:** the fidelity rule and the three outcomes, replacing the two lines of exercises 7 to 12, which named single cases. Right outcomes, but long lines.
 - **Exercises 15 and 16:** one line asking for short lines. Fidelity lines about 40 % shorter.
 - **Exercises 17 and 18:** symmetric criteria: a reject needs t ≤ -2 against the idea (or its mirror). 5 of 5 rejects, twice.
+- **Exercises 19 and 20:** extremes held near zero away from the extreme (works); "no difference" rejects as an equivalence test (its band varied between runs: dropped).
+- **Exercises 21 and 22:** a result near zero is never a reject. Both fixes hold twice; 003-07's fidelity drops part of the idea, twice.
 
 Each exercise has its reading.
 
@@ -181,7 +185,7 @@ Each exercise has its reading.
 The operator: "if this test confirms, would I believe the idea; if it rejects, would I drop it?". Code checks the shape, the names and the agreement between fidelity and outcome. Each exercise has a one-page reading against the criteria.
 
 ## Done when
-On two exercises in a row, on the fixed inputs, every plan meets every criterion. Status: met by exercises 17 and 18, with symmetric criteria (`exercise_18/reading.md`).
+On two exercises in a row, on the fixed inputs, every plan meets every criterion. Status: not met by exercises 21 and 22: 003-07's fidelity is not honest in either run (`exercise_21/reading.md`). Last met by exercises 17 and 18, before the two fixes.
 
 ## Open
 - **A pattern the engine refuses.** In step 4, volume plans could not run (five in the first run, 003-01 and 003-02 in the current one): their regime detector is a veto on a constant (`BuyAndHoldStrategy` with `volume_filter`), with the default regime flat. The engine stops at its warm-up check. The cause is under investigation by another agent.

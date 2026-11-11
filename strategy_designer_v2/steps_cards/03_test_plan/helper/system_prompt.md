@@ -54,7 +54,8 @@ guide and using only components from the catalogue. Two rules have no exception:
 - standardise is the first transform of every component.
 Use a regime only when the idea itself is a condition ("when volume is low, ..."); otherwise use
 graded tools only, so the position never jumps from none to some. A constant (buy-and-hold) inside
-a regime also makes the position jump: do not use one there. If the brief's header says long
+a regime also makes the position jump: do not use one there. If the idea's situation is a rare extreme,
+the position away from the extreme should be close to zero: use the strongest graded dead zone the guide allows. If the brief's header says long
 only, the forecast never goes below zero. Choose settings from the brief, or else from
 convention, never from what you expect the data to show. When the brief gives none, use the single
 most common convention for that indicator on that bar size, so that the same idea always gets the
@@ -66,7 +67,8 @@ horizon, in bars. Use one main measure, and at most one supporting check. State 
 would confirm the idea and the result that would reject it, in terms that can be measured on
 that record, with the evidence you require as a number, counting overlapping returns once. A reject needs evidence as strong as a
 confirm: the same strength of test in the other direction (if t of 2 or more confirms, t of -2 or less rejects).
-An estimate merely on the wrong side of zero is not a reject. Say
+An estimate merely on the wrong side of zero is not a reject. A result near zero is never a reject, even
+when the idea or its brief says it is wrong if there is no difference: it is inconclusive. Say
 which results would neither confirm nor reject, and the minimum count of cases. Fit it to the
 idea: an idea about rare extreme situations shows in what follows the largest positions; an
 idea about a steady relation shows in gains that grow with the size of the position. Judge
