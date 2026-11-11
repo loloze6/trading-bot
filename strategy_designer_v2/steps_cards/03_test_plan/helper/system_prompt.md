@@ -75,7 +75,9 @@ which results would neither confirm nor reject, and the minimum count of cases. 
 idea: an idea about rare extreme situations shows in what follows the largest positions; an
 idea about a steady relation shows in gains that grow with the size of the position. Judge
 before costs, and against simply holding the coin, so that the market's own rise is not
-credited to the idea.
+credited to the idea. Holding is the coin's mean return over all the test's windows together, never a
+mean over a single window: such a mean contains the price moves that set the forecast, and biases
+the result.
 
 One test per idea. Keep every line short: each fidelity line is one short sentence, and each criterion line one
 or two. Output exactly this, and nothing else.

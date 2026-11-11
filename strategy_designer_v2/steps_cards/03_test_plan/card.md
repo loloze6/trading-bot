@@ -44,7 +44,7 @@ One test plan per idea, with one of three outcomes: **plan**, **untestable** or 
    - For: what is tested, and from which theory.
    - Used by: step 4, step 5, the operator.
    - Without it: a result cannot be traced to its idea.
-2. **data-instruments, data-bar, data-period:** from the idea's header, else the default BTC/USDT, 1d, fold A. One idea has one bar size, decided before the test (`--bar` exists for exercises only). The model is told them; it does not choose them. The config has no key for them.
+2. **data-instruments, data-bar, data-period:** from the idea's header, else the default: BTC, ETH, LTC, XMR, XRP, ZEC (the cached coins with data in all four folds), 1d, folds A, B, C, D (24 windows). One idea has one bar size, decided before the test (`--bar` exists for exercises only). The model is told them; it does not choose them. The config has no key for them.
    - For: where and on what bars the test runs.
    - Used by: step 4.
    - Without it: step 4 picks the data, and the plan's settings (which depend on the bar size) may not fit.
@@ -150,6 +150,7 @@ Up to three attempts. The script tells the model the data's windows (from the fo
   - the criterion has one horizon in bars, one main measure and at most one supporting check, the evidence as a number, and overlapping returns counted once;
   - a reject needs evidence as strong as a confirm, in the other direction (if t ≥ 2 confirms, t ≤ -2 rejects). An estimate merely on the wrong side of zero is inconclusive. Found by step 5: six "rejected" verdicts rested on t between -0.52 and +0.24;
   - a result near zero is never a reject, even when the brief says "no difference" means wrong: it is inconclusive. Found by the runs after symmetric criteria (002-03 daily, 001-02 hourly);
+  - holding is the coin's mean return over all the test's windows, never over a single window, which shares the bars that set the forecast. Found by the full-data run: a per-window mean gives t = -2.60 on random walks;
   - a rare extreme carries a position close to zero away from the extreme (the strongest graded dead zone). Found by the hourly run: the RSI-extreme books held a position on half the bars;
   - its minimum counts are counts the data's windows can give;
   - confirm, reject and inconclusive cover every result.
@@ -180,6 +181,7 @@ From step 2 (exercise 3, opus, and exercise 4 for 003-07), with their briefs:
 - **Exercises 21 and 22:** a result near zero is never a reject. Both fixes hold twice; 003-07's fidelity drops part of the idea, twice.
 - **Exercises 23 and 24:** each part stated in the idea's own words. The dropped part is now visible, but one plan per run still calls a replacement "adapted".
 - **Exercises 25 and 26:** the prompt's list of adaptations closed, as in this card. Same outcomes twice, every adaptation one of the three.
+- **Exercises 27 and 28:** holding is the coin's mean over all the test's windows; the new default data. Same outcomes twice.
 
 Each exercise has its reading.
 
@@ -187,12 +189,12 @@ Each exercise has its reading.
 The operator: "if this test confirms, would I believe the idea; if it rejects, would I drop it?". Code checks the shape, the names and the agreement between fidelity and outcome. Each exercise has a one-page reading against the criteria.
 
 ## Done when
-On two exercises in a row, on the fixed inputs, every plan meets every criterion. Status: met by exercises 25 and 26 (`exercise_25/reading.md`).
+On two exercises in a row, on the fixed inputs, every plan meets every criterion. Status: met by exercises 27 and 28 (`exercise_27/reading.md`).
 
 ## Open
 - **A pattern the engine refuses.** In step 4, volume plans could not run (five in the first run, 003-01 and 003-02 in the current one): their regime detector is a veto on a constant (`BuyAndHoldStrategy` with `volume_filter`), with the default regime flat. The engine stops at its warm-up check. The cause is under investigation by another agent.
 - **For step 2:** 002-01 (after the cross) and 002-05 (from cross to cross) become the same forecast in this vessel; only their horizon and measure differ.
-- **The default data** (BTC/USDT, 1d, fold A) gives about 36 independent 20-bar samples. Ideas about rare or slow situations will often come out inconclusive. The fold and the bar size are the operator's to set.
+- **The default data** was BTC/USDT, 1d, fold A until exercise 26: 2 years, where t = 2 needs an annual Sharpe of about 1.4. It is now 6 coins and folds A to D (about 8 years).
 
 ## What this step does not do
 It does not run the test, judge a result, or build a missing component.

@@ -1,7 +1,7 @@
 How a backtest record is given to your function.
 
 `bars` is a dict: `bars[coin][window]` is a pandas DataFrame, one row per bar of that window, in time order. The coins are
-venue symbols (for example `BTCUSD`, `ETHUSD`); the windows are `w1` to `w6`, separate periods of the same fold. Only the
+venue symbols (for example `BTCUSD`, `ETHUSD`); the windows are `w1` to `wN`, separate periods (the windows of one fold, or of several folds one after the other). Only the
 coins and windows that ran are present. Warm-up bars are not in the frames: every row is a bar the strategy was ready on.
 
 Columns you may use:

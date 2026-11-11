@@ -20,7 +20,7 @@ from pathlib import Path
 import yaml
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_DATA = {"instruments": "BTC/USDT", "bar": "1d", "period": "fold A"}
+DEFAULT_DATA = {"instruments": "BTC, ETH, LTC, XMR, XRP, ZEC", "bar": "1d", "period": "folds A, B, C, D"}   # the cached coins with data in all four folds
 FOLDS = HERE.parents[3] / "strategy-research" / "config" / "folds.yaml"
 BARS_PER_DAY = {"1d": 1, "4h": 6, "1h": 24}
 ATTEMPTS, MAX_FIELD_WORDS = 3, 300   # 300 words: a guard against a runaway answer, not a length rule
