@@ -1,136 +1,142 @@
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 
 def measure(bars):
-    H = 10
-    LHV = "debug_info.components.above_ma.last_history_value"
+    H = 20
+    RAW = "debug_info.components.above_ma.last_history_value"
+    ALLOC = "postRebalance_current_allocation"
 
-    # ---------- 1. Situation check: close above its 200-day SMA (raw distance > 0), long side ----------
+    # ---------- 1. Situation check ----------
     n_active = 0
     n_agree = 0
     for coin, wins in bars.items():
         for w, df in wins.items():
-            if df is None or len(df) == 0:
+            if "forecast" not in df.columns or RAW not in df.columns:
                 continue
-            f = pd.to_numeric(df["forecast"], errors="coerce")
-            d = pd.to_numeric(df[LHV], errors="coerce") if LHV in df.columns else pd.Series(np.nan, index=df.index)
-            active = f.notna() & (f != 0)
+            sub = df[["forecast", RAW]].dropna()
+            fc = sub["forecast"].astype(float).values
+            raw = sub[RAW].astype(float).values
+            active = fc != 0
             n_active += int(active.sum())
-            agree = active & (f > 0) & d.notna() & (d > 0)
-            n_agree += int(agree.sum())
+            # situation: close above the 200-day SMA (raw distance > 0), long side
+            n_agree += int((active & (raw > 0) & (fc > 0)).sum())
+    agreement = float(n_agree / n_active) if n_active > 0 else 0.0
+    passed = bool(n_active > 0 and agreement >= 0.9)
 
-    agreement = (n_agree / n_active) if n_active > 0 else None
-    passed = True if n_active == 0 else (agreement >= 0.90)
+    main_name = "forecast-weighted 20-bar excess return, block mean over non-overlapping 20-bar blocks"
+    threshold_txt = "confirm if block mean > 0 with t >= 2; reject if block mean < 0 with t <= -2; else inconclusive; inconclusive if fewer than 50 blocks with a non-zero position"
 
     if not passed:
         return {
             "status": "mismatch",
-            "situation_check": {"agreement": float(agreement), "passed": False},
-            "main_measure": {
-                "name": "mean excess forward 10-bar return on positioned blocks vs all blocks",
-                "value": None,
-                "statistic": None,
-                "threshold": "mean > 0 with t >= 2 confirms; mean < 0 with t <= -2 rejects",
-            },
+            "situation_check": {"agreement": agreement, "passed": False},
+            "main_measure": {"name": main_name, "value": None, "statistic": None, "threshold": threshold_txt},
             "supporting_check": None,
-            "counts": {"active_bars": int(n_active), "active_bars_in_situation_long": int(n_agree)},
-            "decided_by": "Fewer than 90% of bars with a non-zero forecast are long bars where the close is above its 200-day SMA (raw component distance > 0), so the forecast does not follow the plan's situation.",
-            "reading": "The situation is taken as the raw last_history_value of above_ma (percent distance from the 200-day SMA) being above 0, with the expected side long.",
+            "counts": {"active bars": int(n_active)},
+            "decided_by": "Fewer than 90% of bars with a non-zero forecast are bars where the close is above its 200-day SMA with a long forecast, so the config does not do what the plan's situation says.",
+            "reading": "none",
         }
 
-    # ---------- 2. Criterion ----------
-    excess_all = []
-    pos_fwd = []
-    pos_fc = []
-    all_fwd = []
-    per_coin = {}
-
+    # ---------- 2. Coin's pooled mean daily return ----------
+    mean_daily = {}
     for coin, wins in bars.items():
-        per_coin.setdefault(coin, 0)
+        rets = []
         for w, df in wins.items():
-            if df is None or len(df) <= H:
-                continue
-            close = pd.to_numeric(df["close"], errors="coerce").to_numpy(dtype=float)
-            fc = pd.to_numeric(df["forecast"], errors="coerce").to_numpy(dtype=float)
-            n = len(df)
-            grid = np.arange(0, n - H, H)
-            if len(grid) == 0:
-                continue
-            fwd = close[grid + H] / close[grid] - 1.0
-            fcg = fc[grid]
-            ok = np.isfinite(fwd)
-            if ok.sum() == 0:
-                continue
-            win_mean = float(np.mean(fwd[ok]))
-            all_fwd.extend(fwd[ok].tolist())
-            posm = ok & np.isfinite(fcg) & (fcg > 0)
-            if posm.sum() > 0:
-                excess_all.extend((fwd[posm] - win_mean).tolist())
-                pos_fwd.extend(fwd[posm].tolist())
-                pos_fc.extend(fcg[posm].tolist())
-                per_coin[coin] += int(posm.sum())
+            c = df["close"].astype(float).reset_index(drop=True)
+            r = (c.shift(-1) / c - 1.0).dropna()
+            rets.append(r.values)
+        allr = np.concatenate(rets) if rets else np.array([])
+        allr = allr[np.isfinite(allr)]
+        mean_daily[coin] = float(allr.mean()) if allr.size else np.nan
 
-    excess_all = np.asarray(excess_all, dtype=float)
-    pos_fwd = np.asarray(pos_fwd, dtype=float)
-    pos_fc = np.asarray(pos_fc, dtype=float)
-    all_fwd = np.asarray(all_fwd, dtype=float)
+    # ---------- 3. Main measure and supporting check ----------
+    block_vals = []
+    n_blocks_nonzero = 0
+    n_blocks_total = 0
+    sup_n = 0
+    sup_beat = 0
+    for coin, wins in bars.items():
+        md = mean_daily[coin]
+        if not np.isfinite(md):
+            continue
+        bench = H * md
+        for w, df in wins.items():
+            d = df.reset_index(drop=True)
+            c = d["close"].astype(float)
+            fwd = c.shift(-H) / c - 1.0
+            alloc = d[ALLOC].astype(float) if ALLOC in d.columns else pd.Series(np.nan, index=d.index)
+            fc = d["forecast"].astype(float)
+            excess = fwd - bench
+            contrib = alloc * excess
+            pos = np.arange(len(d))
+            blk = pos // H
+            valid = contrib.notna().values
+            for b in np.unique(blk):
+                m = (blk == b) & valid
+                if not m.any():
+                    continue
+                n_blocks_total += 1
+                a = alloc.values[m]
+                if np.any(a != 0):
+                    n_blocks_nonzero += 1
+                    block_vals.append(float(contrib.values[m].sum()))
+            # supporting check
+            sm = (fc > 0) & fwd.notna()
+            sup_n += int(sm.sum())
+            sup_beat += int((fwd[sm] > bench).sum())
 
-    n_pos = int(len(excess_all))
-    min_per_coin = int(min(per_coin.values())) if per_coin else 0
+    bv = np.array(block_vals, dtype=float)
+    if bv.size >= 2:
+        mean_b = float(bv.mean())
+        sd = float(bv.std(ddof=1))
+        t = float(mean_b / (sd / np.sqrt(bv.size))) if sd > 0 else (0.0 if mean_b == 0 else float(np.sign(mean_b) * np.inf))
+    elif bv.size == 1:
+        mean_b, t = float(bv[0]), None
+    else:
+        mean_b, t = None, None
 
-    mean_ex = float(np.mean(excess_all)) if n_pos > 0 else None
-    t_val = None
-    if n_pos > 1:
-        sd = float(np.std(excess_all, ddof=1))
-        if sd > 0:
-            t_val = float(mean_ex / (sd / np.sqrt(n_pos)))
+    sup_share = float(sup_beat / sup_n) if sup_n > 0 else None
+    sup_pass = (sup_share > 0.5) if sup_share is not None else None
 
-    hit_diff = None
-    if n_pos > 0 and len(all_fwd) > 0:
-        hit_diff = float(np.mean(pos_fwd > 0) - np.mean(all_fwd > 0))
-
-    slope = None
-    if n_pos > 2 and np.std(pos_fc) > 0:
-        slope = float(stats.linregress(pos_fc, pos_fwd).slope)
-
-    counts = {"positioned_blocks_pooled": n_pos, "positioned_blocks_min_per_coin": min_per_coin}
-    for c, k in per_coin.items():
-        counts["positioned_blocks_" + str(c)] = int(k)
-
-    if n_pos < 100 or min_per_coin < 10:
+    # ---------- 4. Decision ----------
+    if n_blocks_nonzero < 50 or t is None or mean_b is None:
         status = "inconclusive"
-        decided = "Inconclusive: fewer than 100 pooled non-overlapping positioned 10-bar blocks, or fewer than 10 for some coin."
-    elif t_val is None:
-        status = "inconclusive"
-        decided = "Inconclusive: the t-statistic of the mean excess could not be computed."
-    elif mean_ex > 0 and t_val >= 2 and hit_diff is not None and hit_diff > 0:
+        decided = "Inconclusive: fewer than 50 non-overlapping 20-bar blocks with a non-zero position pooled over the coins."
+    elif mean_b > 0 and t >= 2:
         status = "confirmed"
-        decided = "Confirmed: mean excess forward 10-bar return is above 0 with t >= 2 and the hit-rate difference is above 0."
-    elif mean_ex < 0 and t_val <= -2:
+        decided = "Confirm: the block-mean excess return is positive with t >= 2."
+    elif mean_b < 0 and t <= -2:
         status = "rejected"
-        decided = "Rejected: mean excess forward 10-bar return is below 0 with t <= -2."
+        decided = "Reject: the block-mean excess return is negative with t <= -2."
     else:
         status = "inconclusive"
-        decided = "Inconclusive: t is between -2 and 2, or the confirm rule's hit-rate condition is not met."
+        decided = "Inconclusive: t lies between -2 and 2."
+
+    if t is not None and not np.isfinite(t):
+        t_out = float(np.sign(t) * 1e12)
+    else:
+        t_out = t
 
     return {
         "status": status,
-        "situation_check": {"agreement": (float(agreement) if agreement is not None else None), "passed": True},
+        "situation_check": {"agreement": agreement, "passed": True},
         "main_measure": {
-            "name": "mean excess forward 10-bar return on positioned blocks vs window mean",
-            "value": mean_ex,
-            "statistic": ({"name": "t of the mean", "value": t_val} if t_val is not None else None),
-            "threshold": "mean > 0 with t >= 2 (and hit-rate difference > 0) confirms; mean < 0 with t <= -2 rejects",
+            "name": main_name,
+            "value": mean_b,
+            "statistic": {"name": "t of the block mean", "value": t_out} if t_out is not None else None,
+            "threshold": threshold_txt,
         },
         "supporting_check": {
-            "name": "hit rate of positioned blocks minus hit rate of all blocks (slope of forward return on forecast reported in slope_value)",
-            "value": hit_diff,
-            "passed": (None if hit_diff is None else bool(hit_diff > 0)),
-            "slope_value": slope,
+            "name": "share of forecast>0 bars whose next 20-bar return beats 20 x pooled mean daily return, vs 50%",
+            "value": sup_share,
+            "passed": sup_pass,
         },
-        "counts": counts,
+        "counts": {
+            "non-overlapping 20-bar blocks with a non-zero position": int(n_blocks_nonzero),
+            "non-overlapping 20-bar blocks": int(n_blocks_total),
+            "bars with forecast > 0": int(sup_n),
+        },
         "decided_by": decided,
-        "reading": "Blocks are the bars at positions 0, 10, 20, ... of each window, and the coin's window mean (\"all bars\") is taken over that same grid. Positioned means forecast > 0 on the block's first bar. The t is the ordinary t of the pooled mean excess. The per-coin minimum applies to every coin present. The forecast-size slope is reported but not required, because the confirm rule names only the hit-rate difference.",
+        "reading": "Allocation is postRebalance_current_allocation, blocks are rows 0-19, 20-39, ... of each window summed over bars that have a 20-bar forward return, the t-statistic is taken over the blocks holding a non-zero position (the blocks the plan's minimum counts), and the supporting check passes when the share exceeds 50%.",
     }

@@ -2,15 +2,15 @@
 plan: 002-04_price-cross-below-long-sma_1d
 idea: 002-04_price-cross-below-long-sma
 fit: adapted
-status: rejected
+status: inconclusive
 ---
 Situation check: 1 of the active bars match the plan's situation and side
 Evidence:
-- Main measure: OLS slope of excess forward 20-bar return (minus window mean) on forecast, pooled, non-overlapping blocks: -0.00642934; OLS t of slope: -4.28964 (threshold: confirm if slope > 0 with t >= 2 (and supporting share > 50%); reject if slope < 0 with t <= -2; otherwise inconclusive)
-- Supporting check: share of non-overlapping 20-bar periods with forecast < 0 whose forward return is below the coin's window median: 0.458738, passed: False
-- Counts: non-overlapping 20-bar periods with a non-zero forecast: 412, non-overlapping 20-bar periods with forecast below 0: 412, non-overlapping 20-bar periods in the regression: 811
-- Decided by: The slope on the forecast is negative with t <= -2, which meets the reject rule (price rises relative to holding the further it sits below the average).
-- Reading: I used non-overlapping blocks (bars at positions 0, 20, 40, ... of each window, all forecasts including zero) with an ordinary OLS t, and I took the coin's mean and median 20-bar return in a window over every bar of that window with a complete 20-bar forward return; a positive slope with t >= 2 but a share not above 50% is counted as inconclusive.
+- Main measure: mean of allocation x (10-bar return - 10 x coin mean daily return), non-overlapping blocks, pooled: -0.000724788; t of the mean: -0.274762 (threshold: confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2; else inconclusive; needs >= 30 nonzero-position blocks)
+- Supporting check: slope of excess 10-bar return on allocation, nonzero-position blocks: -0.00561058, passed: False
+- Counts: non-overlapping 10-bar blocks with a nonzero position: 930, non-overlapping 10-bar blocks: 1657, active bars: 8748
+- Decided by: The t-statistic lies between -2 and 2, so the result is inconclusive.
+- Reading: The mean and its t are taken over all pooled blocks, zero-position blocks included, because the main measure pools the products across all coins and blocks. Blocks start at positions 0, 10, 20, ... of each window and need the close 10 bars later in the same window. The coin's mean daily return pools the within-window daily returns of all its windows.
 Plan: `steps_cards/03_test_plan/full_data_run/plans/002-04_price-cross-below-long-sma_1d.md`
 Record: `steps_cards/04_backtest/full_data_run/backtests/002-04_price-cross-below-long-sma_1d`
 Measure: `measure.py`

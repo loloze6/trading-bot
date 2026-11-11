@@ -1,5 +1,3 @@
 # Review of the verdicts in this folder
 
-Step 5, unchanged, run twice side by side (here in `verdicts/` and `verdicts_run2/`): 5 rejected, 1 inconclusive, the same in both runs; every situation check passed.
-
-**Do not use these verdicts.** The five rejections come from the plans' reference (the coin's mean over the same window), which is biased against trend ideas: on random walks it gives t = -2.60. Against the coin's mean over all its windows, the t values are +0.09 to +0.61. See `diagnosis/` and `../../FULL_DATA_RUN.md`.
+Step 5, run twice side by side (`verdicts/` and `verdicts_run2/`), on the plans rewritten with the fixed holding reference (the coin's mean over all windows): 6 of 6 inconclusive in both runs, every situation check 1.0, largest |t| 1.25. The earlier verdicts (5 rejected, from the biased per-window reference) are in git at commit `5fb1516`; their diagnosis is in `diagnosis/`. The run: `../../FULL_DATA_RUN.md`.

@@ -1,173 +1,135 @@
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 
 def measure(bars):
     RAW = "debug_info.components.sma_cross_spread.last_history_value"
-    POS = "postRebalance_current_allocation"
+    threshold_words = ("confirm if weighted mean excess short return > 0 with t >= 2; "
+                       "reject if < 0 with t <= -2; otherwise, or with fewer than 300 "
+                       "pooled forecast<0 bars, inconclusive")
+    main_name = "|forecast|-weighted mean excess short 1-bar return vs coin all-window mean"
 
-    def newey_west_t(x, lag=10):
-        x = np.asarray(x, dtype=float)
-        n = len(x)
-        if n < 2:
-            return None
-        m = x.mean()
-        u = x - m
-        s = np.dot(u, u) / n
-        for k in range(1, min(lag, n - 1) + 1):
-            w = 1.0 - k / (lag + 1.0)
-            s += 2.0 * w * np.dot(u[k:], u[:-k]) / n
-        if not np.isfinite(s) or s <= 0:
-            return None
-        return float(m / np.sqrt(s / n))
+    # ---------- 1. Situation check ----------
+    active_total = 0
+    active_ok = 0
+    for coin, wins in bars.items():
+        for w, df in wins.items():
+            if df is None or len(df) == 0:
+                continue
+            fc = pd.to_numeric(df["forecast"], errors="coerce")
+            raw = pd.to_numeric(df[RAW], errors="coerce") if RAW in df.columns else pd.Series(np.nan, index=df.index)
+            active = fc.notna() & (fc != 0)
+            # situation: 50-day SMA below the 200-day SMA -> raw spread < 0; expected side short
+            situ = raw.notna() & (raw < 0)
+            ok = active & situ & (fc < 0)
+            active_total += int(active.sum())
+            active_ok += int(ok.sum())
 
-    # ---------- 1. situation check ----------
-    n_active = 0
-    n_agree = 0
-    for coin in sorted(bars):
-        for win in bars[coin]:
-            df = bars[coin][win]
-            f = pd.to_numeric(df["forecast"], errors="coerce")
-            raw = pd.to_numeric(df[RAW], errors="coerce")
-            ok = f.notna() & raw.notna()
-            active = ok & (f != 0)
-            n_active += int(active.sum())
-            n_agree += int((active & (raw < 0) & (f < 0)).sum())
-    agreement = (n_agree / n_active) if n_active > 0 else 0.0
-    passed = n_active > 0 and agreement >= 0.9
+    agreement = float(active_ok / active_total) if active_total > 0 else 0.0
+    passed = bool(active_total > 0 and agreement >= 0.9)
 
     if not passed:
         return {
             "status": "mismatch",
-            "situation_check": {"agreement": float(agreement), "passed": False},
-            "main_measure": {"name": "mean excess return of position vs coin's window mean return",
-                             "value": None, "statistic": None,
-                             "threshold": "mean > 0 with Newey-West t >= 2 (confirm); mean < 0 with t <= -2 (reject)"},
+            "situation_check": {"agreement": agreement, "passed": False},
+            "main_measure": {"name": main_name, "value": None, "statistic": None,
+                             "threshold": threshold_words},
             "supporting_check": None,
-            "counts": {"active bars": int(n_active)},
-            "decided_by": ("The plan's situation is a short held only while SMA50 is below SMA200 (raw spread < 0), "
-                           "but fewer than 90% of the bars with a non-zero forecast are short bars with a negative spread."),
+            "counts": {"active bars": int(active_total)},
+            "decided_by": ("Fewer than 90% of bars with a non-zero forecast are short bars where the "
+                           "50-day SMA is below the 200-day SMA (raw spread < 0), as the plan's situation requires."),
             "reading": "none",
         }
 
-    # ---------- 2. main measure ----------
-    pooled = []
-    nonzero_pos_bars = 0
-    n_runs = 0
-    spans = []  # (coin, length, return)
-    for coin in sorted(bars):
-        for win in sorted(bars[coin], key=lambda w: int(str(w).lstrip("w")) if str(w).lstrip("w").isdigit() else str(w)):
-            df = bars[coin][win]
+    # ---------- 2. Criterion ----------
+    xs, ws, below = [], [], []
+    for coin, wins in bars.items():
+        coin_rets = []
+        coin_sel = []  # (ret, forecast) on forecast<0 bars
+        for w, df in wins.items():
+            if df is None or len(df) < 2:
+                continue
             close = pd.to_numeric(df["close"], errors="coerce").to_numpy(dtype=float)
-            pos = pd.to_numeric(df[POS], errors="coerce").to_numpy(dtype=float)
-            raw = pd.to_numeric(df[RAW], errors="coerce").to_numpy(dtype=float)
-            n = len(close)
-            if n >= 2:
-                r = close[1:] / close[:-1] - 1.0
-                p = pos[:-1]
-                rv = np.isfinite(r)
-                if rv.any():
-                    mu = r[rv].mean()
-                    ok = rv & np.isfinite(p)
-                    ex = p[ok] * (r[ok] - mu)
-                    pooled.extend(ex.tolist())
-                    nonzero_pos_bars += int(np.sum(p[ok] != 0))
-            # down-cross spans (raw < 0 runs) within this window
-            below = np.isfinite(raw) & (raw < 0)
-            i = 0
-            while i < n:
-                if below[i]:
-                    s = i
-                    while i + 1 < n and below[i + 1]:
-                        i += 1
-                    e = i
-                    n_runs += 1
-                    started = s > 0 and np.isfinite(raw[s - 1]) and raw[s - 1] >= 0
-                    ended = e + 1 < n and np.isfinite(raw[e + 1]) and raw[e + 1] >= 0
-                    if started and ended and np.isfinite(close[s]) and np.isfinite(close[e + 1]):
-                        L = e + 1 - s
-                        spans.append((coin, L, close[e + 1] / close[s] - 1.0))
-                i += 1
-
-    pooled = np.asarray(pooled, dtype=float)
-    mean_ex = float(pooled.mean()) if len(pooled) else None
-    t_nw = newey_west_t(pooled, 10) if len(pooled) else None
-
-    # ---------- 3. supporting check ----------
-    cache = {}
-
-    def median_same_length(coin, L):
-        key = (coin, L)
-        if key in cache:
-            return cache[key]
-        rets = []
-        for win in bars[coin]:
-            c = pd.to_numeric(bars[coin][win]["close"], errors="coerce").to_numpy(dtype=float)
-            if len(c) > L:
-                rr = c[L:] / c[:-L] - 1.0
-                rets.extend(rr[np.isfinite(rr)].tolist())
-        val = float(np.median(rets)) if rets else None
-        cache[key] = val
-        return val
-
-    below_med = 0
-    judged = 0
-    for coin, L, ret in spans:
-        med = median_same_length(coin, L)
-        if med is None:
+            fc = pd.to_numeric(df["forecast"], errors="coerce").to_numpy(dtype=float)
+            ret = np.full(len(close), np.nan)
+            ret[:-1] = close[1:] / close[:-1] - 1.0
+            valid = np.isfinite(ret)
+            coin_rets.append(ret[valid])
+            sel = valid & np.isfinite(fc) & (fc < 0)
+            for r, f in zip(ret[sel], fc[sel]):
+                coin_sel.append((r, f))
+        if not coin_rets:
             continue
-        judged += 1
-        if ret < med:
-            below_med += 1
-    share = (below_med / judged) if judged > 0 else None
-    sup_passed = (share > 0.5) if share is not None else None
+        allr = np.concatenate(coin_rets)
+        if allr.size == 0 or not coin_sel:
+            continue
+        mu = float(np.mean(allr))
+        for r, f in coin_sel:
+            xs.append(-(r - mu))
+            ws.append(abs(f))
+            below.append(1 if r < mu else 0)
 
-    # ---------- 4. decision ----------
-    enough = nonzero_pos_bars >= 500 and n_runs >= 10
-    if not enough:
+    x = np.asarray(xs, dtype=float)
+    wt = np.asarray(ws, dtype=float)
+    n = int(x.size)
+
+    mean = None
+    tval = None
+    if n >= 2 and wt.sum() > 0:
+        W = wt.sum()
+        mean = float(np.sum(wt * x) / W)
+        se = np.sqrt(np.sum(wt ** 2 * (x - mean) ** 2)) / W * np.sqrt(n / (n - 1))
+        tval = float(mean / se) if se > 0 else (float("inf") * np.sign(mean) if mean != 0 else 0.0)
+    elif n == 1:
+        mean = float(x[0])
+
+    # supporting check
+    sup_val = None
+    sup_z = None
+    sup_pass = None
+    if n > 0:
+        k = int(np.sum(below))
+        sup_val = float(k / n)
+        sup_z = float((k - 0.5 * n) / np.sqrt(0.25 * n))
+        sup_pass = bool(sup_z >= 2)
+
+    # decision
+    if n < 300:
         status = "inconclusive"
-        decided = ("Fewer than 500 bars with a non-zero position or fewer than 10 distinct down-cross spans, "
-                   "so the result is inconclusive.")
-    elif mean_ex is None or t_nw is None:
+        decided = "Inconclusive: the pooled count of bars with forecast below 0 is under 300."
+    elif tval is None:
         status = "inconclusive"
-        decided = "The Newey-West t-statistic could not be computed, so the result is inconclusive."
-    elif mean_ex > 0 and t_nw >= 2 and sup_passed is True:
+        decided = "Inconclusive: no t-statistic could be computed."
+    elif mean > 0 and tval >= 2:
         status = "confirmed"
-        decided = "Mean excess return above 0 with t >= 2 and supporting share above 50%: confirmed."
-    elif mean_ex < 0 and t_nw <= -2:
+        decided = "Confirm: the weighted mean excess short return is above 0 with t >= 2."
+    elif mean < 0 and tval <= -2:
         status = "rejected"
-        decided = "Mean excess return below 0 with t <= -2 (reversal after down crosses): rejected."
-    elif mean_ex > 0 and t_nw >= 2:
-        status = "inconclusive"
-        decided = "A confirming t with a supporting share of 50% or less (or none measurable): inconclusive."
+        decided = "Reject: the weighted mean excess short return is below 0 with t <= -2."
     else:
         status = "inconclusive"
-        decided = "The t-statistic lies between -2 and 2: inconclusive."
+        decided = "Inconclusive: the t-statistic lies between -2 and 2."
 
     return {
         "status": status,
-        "situation_check": {"agreement": float(agreement), "passed": True},
+        "situation_check": {"agreement": agreement, "passed": True},
         "main_measure": {
-            "name": "mean excess return: position x (next-bar return - coin's window mean daily return), pooled",
-            "value": mean_ex,
-            "statistic": {"name": "Newey-West t (lag 10)", "value": t_nw} if t_nw is not None else None,
-            "threshold": "confirm: mean > 0 with t >= 2 and supporting share > 50%; reject: mean < 0 with t <= -2",
+            "name": main_name,
+            "value": mean,
+            "statistic": ({"name": "t of weighted mean (heteroskedasticity-robust weighted SE)", "value": tval}
+                          if tval is not None else None),
+            "threshold": threshold_words,
         },
         "supporting_check": {
-            "name": "share of completed down-cross spans returning below the coin's same-length span median",
-            "value": float(share) if share is not None else None,
-            "passed": sup_passed,
+            "name": "share of forecast<0 bars with next return below coin mean (binomial z vs 50%)",
+            "value": sup_val,
+            "passed": sup_pass,
         },
-        "counts": {
-            "bars with a non-zero position": int(nonzero_pos_bars),
-            "distinct down-cross spans": int(n_runs),
-            "completed down-cross spans": int(judged),
-        },
+        "counts": {"pooled bars with forecast below 0": n},
         "decided_by": decided,
-        "reading": ("Excess returns use every bar (zero-position bars add zero) pooled in coin then window order for one "
-                    "Newey-West series, the window mean is the mean of all next-bar returns in that window; a down-cross "
-                    "span is a maximal run of bars with raw spread < 0 inside one window (all runs count toward the 10), "
-                    "a completed span is bounded by non-negative spread on both sides and its return runs from the "
-                    "cross bar's close to the close of the up-cross bar, compared with the median of all same-length "
-                    "close-to-close returns of that coin across its windows."),
+        "reading": ("The situation is a raw spread below 0 with a negative forecast; the coin's mean is the mean of all its "
+                    "within-window next-bar returns over all its windows; the weighted mean's t uses the robust weighted "
+                    "standard error sqrt(sum w^2 (x-m)^2)/sum w with n/(n-1) correction; the supporting check passes when "
+                    "its binomial z is at least 2 (z = %s)." % (None if sup_z is None else round(sup_z, 4))),
     }

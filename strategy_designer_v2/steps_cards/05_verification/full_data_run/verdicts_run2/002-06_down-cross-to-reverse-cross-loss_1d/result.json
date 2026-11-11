@@ -1,28 +1,26 @@
 {
-  "status": "rejected",
+  "status": "inconclusive",
   "situation_check": {
     "agreement": 1.0,
     "passed": true
   },
   "main_measure": {
-    "name": "pooled mean excess return of position x (next-bar return - window mean daily return)",
-    "value": -0.0008897280786421992,
+    "name": "|forecast|-weighted mean excess short 1-bar return vs coin all-window mean",
+    "value": 6.572318858696761e-05,
     "statistic": {
-      "name": "Newey-West t (lag 10)",
-      "value": -3.805395289629506
+      "name": "t of the weighted mean",
+      "value": 0.11659547294673678
     },
-    "threshold": "mean > 0 with t >= 2 to confirm; mean < 0 with t <= -2 to reject"
+    "threshold": "above 0 with t >= 2 confirms; below 0 with t <= -2 rejects; otherwise inconclusive"
   },
   "supporting_check": {
-    "name": "share of completed down-cross spans below the coin's median same-length span return",
-    "value": 0.06666666666666667,
-    "passed": false
+    "name": "share of short bars with next return below coin all-window mean (binomial z vs 50%)",
+    "value": 0.5123624748609961,
+    "passed": true
   },
   "counts": {
-    "bars with a non-zero position": 9754,
-    "distinct down-cross spans": 130,
-    "completed down-cross spans": 15
+    "pooled bars with forecast below 0": 8453
   },
-  "decided_by": "Mean excess return below 0 with t <= -2: rejected (reversal).",
-  "reading": "Excess returns use every bar (zero positions included) with the coin's mean next-bar return in that window, pooled with Newey-West autocovariances taken within each coin-window only; a span is a run of raw spread < 0 inside one window, counted for the minimum whether or not it is completed, and a completed span (cross down and back up both seen) returns close at the up-cross bar over close at its first negative bar, compared with the median of all same-length close-to-close returns of that coin pooled over its windows."
+  "decided_by": "Inconclusive: the t-statistic lies between -2 and 2.",
+  "reading": "The coin's mean is the mean of all within-window next-bar returns pooled over all its windows, every bar with forecast below 0 and a next-bar return counts once, the t of the weighted mean uses the weighted standard error sqrt(sum w^2 (x - m)^2) / sum w with an n/(n-1) correction, and the supporting check counts as passed when the binomial z is at least 2 (it does not enter the decision)."
 }

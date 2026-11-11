@@ -1,28 +1,27 @@
 {
-  "status": "rejected",
+  "status": "inconclusive",
   "situation_check": {
     "agreement": 1.0,
     "passed": true
   },
   "main_measure": {
-    "name": "OLS slope of excess forward 20-bar return (minus coin-window mean 20-bar return) on forecast, pooled, non-overlapping 20-bar blocks",
-    "value": -0.00642933638818021,
+    "name": "mean of allocation x (10-bar return - 10 x coin mean daily return) over non-overlapping 10-bar blocks, before costs",
+    "value": -0.0007247875562299596,
     "statistic": {
-      "name": "OLS t of slope (non-overlapping 20-bar blocks)",
-      "value": -4.289642830526589
+      "name": "t of the mean",
+      "value": -0.2747622862003964
     },
-    "threshold": "confirm if slope > 0 with t >= 2 (and supporting share > 50%); reject if slope < 0 with t <= -2; inconclusive otherwise or if fewer than 30 non-overlapping 20-bar periods with non-zero forecast"
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2; else inconclusive; needs >= 30 nonzero-position blocks"
   },
   "supporting_check": {
-    "name": "share of non-overlapping 20-bar short periods with forward return below coin-window median 20-bar return",
-    "value": 0.4587378640776699,
+    "name": "OLS slope of excess 10-bar return on allocation, nonzero-position blocks",
+    "value": -0.00561058321989854,
     "passed": false
   },
   "counts": {
-    "non-overlapping 20-bar periods with non-zero forecast": 412,
-    "non-overlapping 20-bar periods with forecast below 0": 412,
-    "non-overlapping 20-bar periods in regression": 811
+    "non-overlapping 10-bar blocks with a nonzero position": 930,
+    "non-overlapping 10-bar blocks": 1657
   },
-  "decided_by": "The slope on the forecast is negative with t <= -2: price rises relative to holding the further below the average.",
-  "reading": "The regression uses all bars (including zero forecast) on the 0, 20, 40, ... grid of each window, with the coin's mean and median 20-bar return taken over all overlapping forward returns in that window, and a supporting share not above 50% blocks confirmation."
+  "decided_by": "The t-statistic lies between -2 and 2: inconclusive.",
+  "reading": "Blocks start at rows 0, 10, 20, ... of each window and need a full 10-bar return inside the window; the pooled mean and t use all such blocks (zero-position blocks contribute zero products) as the plan pools across coins and blocks; the coin's mean daily return is the mean of its within-window close-to-close returns over all its windows."
 }

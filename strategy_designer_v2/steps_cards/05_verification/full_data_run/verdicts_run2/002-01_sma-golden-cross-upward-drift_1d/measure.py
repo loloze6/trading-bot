@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 
 def measure(bars):
@@ -7,130 +8,138 @@ def measure(bars):
     RAW = "debug_info.components.sma_cross.last_history_value"
 
     # ---------- 1. Situation check ----------
+    # Situation: 50-day SMA above 200-day SMA (raw spread > 0); expected side: long.
     n_active = 0
     n_agree = 0
     for coin, wins in bars.items():
         for w, df in wins.items():
             if "forecast" not in df.columns or RAW not in df.columns:
                 continue
-            f = pd.to_numeric(df["forecast"], errors="coerce")
-            raw = pd.to_numeric(df[RAW], errors="coerce")
-            ok = f.notna() & raw.notna()
-            active = ok & (f != 0)
+            d = df[["forecast", RAW]].dropna()
+            fc = d["forecast"].astype(float).values
+            raw = d[RAW].astype(float).values
+            active = fc != 0
             n_active += int(active.sum())
-            # situation: 50-day SMA above 200-day SMA (positive spread); expected side: long
-            n_agree += int((active & (raw > 0) & (f > 0)).sum())
-    agreement = float(n_agree / n_active) if n_active > 0 else 0.0
-    passed = bool(n_active > 0 and agreement >= 0.9)
+            n_agree += int((active & (raw > 0) & (fc > 0)).sum())
+
+    agreement = (n_agree / n_active) if n_active > 0 else None
+    passed = agreement is not None and agreement >= 0.9
+
+    main_name = "OLS slope of excess forward 10-bar return on forecast (non-overlapping, pooled)"
+    threshold = ("confirm if slope > 0 with t >= 2; reject if slope < 0 with t <= -2; "
+                 "otherwise inconclusive; inconclusive if fewer than 100 non-overlapping blocks with forecast > 0")
 
     if not passed:
         return {
             "status": "mismatch",
-            "situation_check": {"agreement": agreement, "passed": False},
-            "main_measure": {
-                "name": "forecast-weighted mean 10-bar forward return minus holding",
-                "value": None,
-                "statistic": None,
-                "threshold": "t >= 2 to confirm, t <= -2 to reject",
-            },
+            "situation_check": {"agreement": None if agreement is None else float(agreement), "passed": False},
+            "main_measure": {"name": main_name, "value": None, "statistic": None, "threshold": threshold},
             "supporting_check": None,
-            "counts": {"non-overlapping 10-bar blocks with a positive forecast": 0,
-                       "active bars": int(n_active)},
-            "decided_by": ("The plan's situation (long while the 50-day SMA is above the 200-day SMA) "
-                           "does not cover at least 90% of the bars where the forecast is non-zero, "
-                           "on the long side."),
-            "reading": "Situation taken as raw SMA spread > 0 with a positive forecast; active bars are forecast != 0.",
+            "counts": {"active bars": int(n_active)},
+            "decided_by": ("The plan's situation (50-day SMA above 200-day SMA, long side) holds on fewer than 90% "
+                           "of the bars where the forecast is non-zero, so the config does not trade the plan's situation."),
+            "reading": "Situation taken as raw SMA spread > 0 with forecast > 0 (long).",
         }
 
     # ---------- 2. Criterion ----------
-    ex_vals, wts = [], []
-    pos_hits, pos_n = 0, 0
-    all_hits, all_n = 0, 0
+    # Per coin: all forward 10-bar returns (all bars, all windows) for holding mean and positive share.
+    xs, ys = [], []
+    sup_terms = []
+    n_blocks_pos = 0
+    n_blocks = 0
 
     for coin, wins in bars.items():
+        coin_rets = []
+        per_window = []
         for w, df in wins.items():
             d = df.reset_index(drop=True)
-            close = pd.to_numeric(d["close"], errors="coerce").to_numpy(dtype=float)
-            f = pd.to_numeric(d["forecast"], errors="coerce").to_numpy(dtype=float)
+            close = d["close"].astype(float).values
+            fc = d["forecast"].astype(float).values
             n = len(d)
-            if n <= H:
-                continue
             fwd = np.full(n, np.nan)
-            fwd[: n - H] = close[H:] / close[: n - H] - 1.0
-            grid = np.arange(0, n, H)
-            g_fwd = fwd[grid]
-            g_f = f[grid]
-            valid_all = np.isfinite(g_fwd)
-            if valid_all.sum() == 0:
-                continue
-            hold_mean = float(np.mean(g_fwd[valid_all]))
-            all_hits += int((g_fwd[valid_all] > 0).sum())
-            all_n += int(valid_all.sum())
+            if n > H:
+                fwd[: n - H] = close[H:] / close[: n - H] - 1.0
+            per_window.append((fwd, fc))
+            ok = np.isfinite(fwd)
+            coin_rets.append(fwd[ok])
+        if not coin_rets:
+            continue
+        all_r = np.concatenate(coin_rets) if coin_rets else np.array([])
+        if all_r.size == 0:
+            continue
+        hold_mean = float(np.mean(all_r))
+        share_pos_all = float(np.mean(all_r > 0))
 
-            sel = valid_all & np.isfinite(g_f) & (g_f > 0)
-            if sel.sum() == 0:
-                continue
-            ex_vals.extend(list(g_fwd[sel] - hold_mean))
-            wts.extend(list(g_f[sel]))
-            pos_hits += int((g_fwd[sel] > 0).sum())
-            pos_n += int(sel.sum())
+        for fwd, fc in per_window:
+            n = len(fwd)
+            # supporting: all bars with forecast > 0
+            ok = np.isfinite(fwd) & np.isfinite(fc)
+            m = ok & (fc > 0)
+            if m.any():
+                sup_terms.append((fwd[m] > 0).astype(float) - share_pos_all)
+            # main: non-overlapping grid 0, H, 2H, ...
+            idx = np.arange(0, n, H)
+            for i in idx:
+                if np.isfinite(fwd[i]) and np.isfinite(fc[i]):
+                    xs.append(fc[i])
+                    ys.append(fwd[i] - hold_mean)
+                    n_blocks += 1
+                    if fc[i] > 0:
+                        n_blocks_pos += 1
 
-    ex_vals = np.asarray(ex_vals, dtype=float)
-    wts = np.asarray(wts, dtype=float)
-    n_blocks = int(len(ex_vals))
+    x = np.asarray(xs, dtype=float)
+    y = np.asarray(ys, dtype=float)
 
-    excess = None
+    slope = None
     tstat = None
-    if n_blocks >= 1 and wts.sum() > 0:
-        W = wts.sum()
-        excess = float(np.sum(wts * ex_vals) / W)
-        if n_blocks >= 2:
-            se = float(np.sqrt(np.sum((wts ** 2) * (ex_vals - excess) ** 2)) / W)
-            se *= np.sqrt(n_blocks / (n_blocks - 1))
-            if se > 0:
-                tstat = float(excess / se)
+    if x.size >= 3 and np.var(x) > 0:
+        res = stats.linregress(x, y)
+        slope = float(res.slope)
+        tstat = float(res.slope / res.stderr) if res.stderr and res.stderr > 0 else None
 
-    hit_diff = None
-    if pos_n > 0 and all_n > 0:
-        hit_diff = float(pos_hits / pos_n - all_hits / all_n)
+    if sup_terms:
+        sup_val = float(np.mean(np.concatenate(sup_terms)))
+        sup_passed = bool(sup_val > 0)
+    else:
+        sup_val = None
+        sup_passed = None
 
-    if n_blocks < 30 or excess is None or tstat is None:
+    if n_blocks_pos < 100:
         status = "inconclusive"
-        decided = ("Fewer than 30 non-overlapping 10-bar blocks with a positive forecast "
-                   "(or no computable t), which the plan calls inconclusive.")
-    elif excess > 0 and tstat >= 2 and hit_diff is not None and hit_diff > 0:
+        decided = "Fewer than 100 non-overlapping blocks with forecast > 0, so the result is inconclusive."
+    elif slope is None or tstat is None:
+        status = "inconclusive"
+        decided = "The slope or its t could not be estimated, so the result is inconclusive."
+    elif slope > 0 and tstat >= 2:
         status = "confirmed"
-        decided = "The excess is positive with t >= 2 and the hit-rate difference is positive: confirm."
-    elif excess < 0 and tstat <= -2:
+        decided = "The slope is positive with t >= 2, counting each non-overlapping block once: confirmed."
+    elif slope < 0 and tstat <= -2:
         status = "rejected"
-        decided = "The excess is negative with t <= -2: reject."
+        decided = "The slope is negative with t <= -2: rejected (gains fall as the position grows)."
     else:
         status = "inconclusive"
-        if tstat >= 2:
-            decided = ("t >= 2 but the supporting hit-rate difference is not positive, "
-                       "so the confirm rule is not met and the result is inconclusive.")
-        else:
-            decided = "t lies between -2 and 2, which the plan calls inconclusive."
+        decided = "The slope's t lies between -2 and 2: inconclusive."
 
     return {
         "status": status,
-        "situation_check": {"agreement": agreement, "passed": True},
+        "situation_check": {"agreement": float(agreement), "passed": True},
         "main_measure": {
-            "name": "forecast-weighted mean 10-bar forward return minus holding",
-            "value": excess,
-            "statistic": None if tstat is None else {"name": "t of the forecast-weighted mean excess", "value": tstat},
-            "threshold": "excess > 0 with t >= 2 to confirm; excess < 0 with t <= -2 to reject",
+            "name": main_name,
+            "value": slope,
+            "statistic": None if tstat is None else {"name": "OLS t of slope", "value": tstat},
+            "threshold": threshold,
         },
         "supporting_check": {
-            "name": "hit rate of positive-forecast blocks minus hit rate of all blocks",
-            "value": hit_diff,
-            "passed": None if hit_diff is None else bool(hit_diff > 0),
+            "name": "share of positive fwd 10-bar returns on forecast>0 bars minus coin's share over all bars",
+            "value": sup_val,
+            "passed": sup_passed,
         },
-        "counts": {"non-overlapping 10-bar blocks with a positive forecast": n_blocks,
-                   "non-overlapping 10-bar blocks, all": int(all_n)},
+        "counts": {
+            "non-overlapping blocks with forecast > 0": int(n_blocks_pos),
+            "non-overlapping blocks": int(n_blocks),
+        },
         "decided_by": decided,
-        "reading": ("Blocks are bars at positions 0,10,20,... of each window for both groups, the holding mean "
-                    "and the all-bar hit rate use that same grid per coin and window, and the t is the "
-                    "forecast-weighted mean of per-block excesses over its weighted (sandwich) standard error "
-                    "across the pooled positive-forecast blocks."),
+        "reading": ("The coin's holding mean and positive share use all overlapping 10-bar returns of all its windows, "
+                    "the regression is OLS with intercept on grid bars 0,10,20,... of each window, and the supporting "
+                    "check pools all forecast>0 bars, each compared with its own coin's share."),
     }

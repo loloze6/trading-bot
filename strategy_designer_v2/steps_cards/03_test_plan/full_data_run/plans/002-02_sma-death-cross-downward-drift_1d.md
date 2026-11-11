@@ -8,16 +8,16 @@ outcome: plan
 fit: adapted
 ---
 Fidelity:
-- Situation: the short moving average of the close has crossed below the long one -> adapted: "after the cross" becomes "while the short SMA is below the long SMA", graded by how far below it is.
-- Comparison: falls more often and further than after random bars -> kept: forward returns on short-signal bars are compared with the coin's own returns on all bars.
-- Outcome: price keeps falling over the following bars -> kept: the next-bar returns of the short position, measured against holding the coin.
-- Verdict transfer: yes: the graded spread is the "while below" form of the downward cross, so its forward returns stand or fall with the idea.
-Forecast: The forecast is the percent spread between the 50-day and 200-day simple moving averages of the close. It is standardised against its own past 200 values and then clipped at a maximum of 0, so it only ever goes short. It is zero while the 50-day SMA is above the 200-day SMA. It is negative while the 50-day is below, and the short grows as the spread widens, up to -20. It is never positive.
+- Situation: short moving average has crossed below the long one -> adapted: "after the cross" becomes "while the 50-day SMA is below the 200-day SMA", graded by how far below.
+- Comparison: price after random bars -> kept: compared with the coin's mean return over all bars of all windows (holding).
+- Outcome: price keeps falling, more often and further -> kept: the short position's forward return against holding.
+- Verdict transfer: yes: a short sized by the spread below the long average gains beyond holding only if price keeps falling while the cross holds; it loses if moves reverse.
+Forecast: The forecast uses one indicator, the spread between the 50-bar SMA and the 200-bar SMA of the close, in percent of the 200-bar SMA. These are the conventional daily cross settings. The spread is standardised against its own past 200 values and then clipped at a maximum of 0. The forecast is therefore 0 while the short average is at or above the long average. It is negative (short) while the short average is below the long one, and the short grows smoothly as the short average falls further under the long one, capped at -20. It is never positive.
 Config: 002-02_sma-death-cross-downward-drift_1d_config.json
 Criterion:
-- Horizon: 20 bars
-- Main measure: Split each window into non-overlapping 20-bar blocks, pooled over coins and windows. In each block, take the coin's forward 20-bar log return minus that coin-window's mean 20-bar return, so the market's own drift is removed. Regress this excess return on the forecast at the start of the block. A positive slope means more negative forecasts are followed by lower excess returns.
-- Supporting check: Compare two shares: the share of blocks with a negative excess return when the forecast is below 0, and the same share across all blocks.
-- Confirm: The slope is positive with t >= 2, using non-overlapping blocks with standard errors clustered by coin.
-- Reject: The slope is negative with t <= -2: deeper shorts are followed by rebounds, which reads as exhaustion rather than persistence.
-- Inconclusive: Any t between -2 and 2, including slopes near zero. At least 100 non-overlapping blocks with a forecast below 0 are required; fewer is inconclusive.
+- Horizon: 10 bars
+- Main measure: On bars where the forecast is below 0, take the coin's forward 10-bar return minus holding. Holding is the coin's mean 10-bar return over all windows of that coin together. Weight each case by |forecast| and pool across coins. Use non-overlapping cases only (one bar in 10), and report the t-statistic of the short side's excess gain.
+- Supporting check: Split the short cases into terciles of |forecast|. The excess gain of the short in the top tercile should be larger than in the bottom tercile.
+- Confirm: The short side's weighted mean excess gain is above 0 with t ≥ 2. Price falls further than holding while the short average is below the long one.
+- Reject: The short side's weighted mean excess gain is below 0 with t ≤ -2. Price rises relative to holding after downward crosses, meaning moves reverse.
+- Inconclusive: Any t strictly between -2 and 2 is inconclusive, including results near zero. Fewer than 30 non-overlapping short cases in total is also inconclusive.

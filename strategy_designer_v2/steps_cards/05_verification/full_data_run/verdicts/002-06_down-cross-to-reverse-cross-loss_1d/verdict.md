@@ -2,15 +2,15 @@
 plan: 002-06_down-cross-to-reverse-cross-loss_1d
 idea: 002-06_down-cross-to-reverse-cross-loss
 fit: adapted
-status: rejected
+status: inconclusive
 ---
 Situation check: 1 of the active bars match the plan's situation and side
 Evidence:
-- Main measure: mean excess return: position x (next-bar return - coin's window mean daily return), pooled: -0.000889728; Newey-West t (lag 10): -3.79844 (threshold: confirm: mean > 0 with t >= 2 and supporting share > 50%; reject: mean < 0 with t <= -2)
-- Supporting check: share of completed down-cross spans returning below the coin's same-length span median: 0.0666667, passed: False
-- Counts: bars with a non-zero position: 9754, distinct down-cross spans: 130, completed down-cross spans: 15
-- Decided by: Mean excess return below 0 with t <= -2 (reversal after down crosses): rejected.
-- Reading: Excess returns use every bar (zero-position bars add zero) pooled in coin then window order for one Newey-West series, the window mean is the mean of all next-bar returns in that window; a down-cross span is a maximal run of bars with raw spread < 0 inside one window (all runs count toward the 10), a completed span is bounded by non-negative spread on both sides and its return runs from the cross bar's close to the close of the up-cross bar, compared with the median of all same-length close-to-close returns of that coin across its windows.
+- Main measure: |forecast|-weighted mean excess short 1-bar return vs coin all-window mean: 6.57232e-05; t of weighted mean (heteroskedasticity-robust weighted SE): 0.116595 (threshold: confirm if weighted mean excess short return > 0 with t >= 2; reject if < 0 with t <= -2; otherwise, or with fewer than 300 pooled forecast<0 bars, inconclusive)
+- Supporting check: share of forecast<0 bars with next return below coin mean (binomial z vs 50%): 0.512362, passed: True
+- Counts: pooled bars with forecast below 0: 8453
+- Decided by: Inconclusive: the t-statistic lies between -2 and 2.
+- Reading: The situation is a raw spread below 0 with a negative forecast; the coin's mean is the mean of all its within-window next-bar returns over all its windows; the weighted mean's t uses the robust weighted standard error sqrt(sum w^2 (x-m)^2)/sum w with n/(n-1) correction; the supporting check passes when its binomial z is at least 2 (z = 2.2732).
 Plan: `steps_cards/03_test_plan/full_data_run/plans/002-06_down-cross-to-reverse-cross-loss_1d.md`
 Record: `steps_cards/04_backtest/full_data_run/backtests/002-06_down-cross-to-reverse-cross-loss_1d`
 Measure: `measure.py`

@@ -1,34 +1,28 @@
 {
-  "status": "rejected",
+  "status": "inconclusive",
   "situation_check": {
     "agreement": 1.0,
     "passed": true
   },
   "main_measure": {
-    "name": "mean excess forward 10-bar return on positioned blocks vs window mean",
-    "value": -0.015156555604097318,
+    "name": "forecast-weighted 20-bar excess return, block mean over non-overlapping 20-bar blocks",
+    "value": 0.3397614785427329,
     "statistic": {
-      "name": "t of the mean",
-      "value": -2.6471698760503526
+      "name": "t of the block mean",
+      "value": 1.2489809610237559
     },
-    "threshold": "mean > 0 with t >= 2 (and hit-rate difference > 0) confirms; mean < 0 with t <= -2 rejects"
+    "threshold": "confirm if block mean > 0 with t >= 2; reject if block mean < 0 with t <= -2; else inconclusive; inconclusive if fewer than 50 blocks with a non-zero position"
   },
   "supporting_check": {
-    "name": "hit rate of positioned blocks minus hit rate of all blocks (slope of forward return on forecast reported in slope_value)",
-    "value": -0.008128764481048933,
-    "passed": false,
-    "slope_value": 0.0016667494879542934
+    "name": "share of forecast>0 bars whose next 20-bar return beats 20 x pooled mean daily return, vs 50%",
+    "value": 0.4198126596650582,
+    "passed": false
   },
   "counts": {
-    "positioned_blocks_pooled": 816,
-    "positioned_blocks_min_per_coin": 112,
-    "positioned_blocks_BTCUSD": 157,
-    "positioned_blocks_ETHUSD": 159,
-    "positioned_blocks_LTCUSD": 120,
-    "positioned_blocks_XMRUSD": 146,
-    "positioned_blocks_XRPUSD": 122,
-    "positioned_blocks_ZECUSD": 112
+    "non-overlapping 20-bar blocks with a non-zero position": 499,
+    "non-overlapping 20-bar blocks": 811,
+    "bars with forecast > 0": 7046
   },
-  "decided_by": "Rejected: mean excess forward 10-bar return is below 0 with t <= -2.",
-  "reading": "Blocks are the bars at positions 0, 10, 20, ... of each window, and the coin's window mean (\"all bars\") is taken over that same grid. Positioned means forecast > 0 on the block's first bar. The t is the ordinary t of the pooled mean excess. The per-coin minimum applies to every coin present. The forecast-size slope is reported but not required, because the confirm rule names only the hit-rate difference."
+  "decided_by": "Inconclusive: t lies between -2 and 2.",
+  "reading": "Allocation is postRebalance_current_allocation, blocks are rows 0-19, 20-39, ... of each window summed over bars that have a 20-bar forward return, the t-statistic is taken over the blocks holding a non-zero position (the blocks the plan's minimum counts), and the supporting check passes when the share exceeds 50%."
 }

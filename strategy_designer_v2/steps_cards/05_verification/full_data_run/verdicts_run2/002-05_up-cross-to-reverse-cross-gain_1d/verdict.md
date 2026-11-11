@@ -6,11 +6,11 @@ status: inconclusive
 ---
 Situation check: 1 of the active bars match the plan's situation and side
 Evidence:
-- Main measure: mean 20-bar forward return when forecast > 0 minus mean of all blocks in same coin-windows: -0.0131806; Welch t: -0.645048 (threshold: excess > 0 with t >= 2 confirms; excess < 0 with t <= -2 rejects; otherwise inconclusive)
-- Supporting check: hit rate of 20-bar returns when forecast > 0 minus unconditional hit rate: -0.0412321, passed: False
-- Counts: non-overlapping 20-bar blocks with forecast > 0: 409, non-overlapping 20-bar blocks in the same coin-windows: 610
-- Decided by: The t-statistic lies between -2 and 2, so the result is inconclusive.
-- Reading: Blocks start at positions 0, 20, 40, ... of each window with a full 20-bar return inside it; 'the same coin-windows' is read as the coin-windows holding at least one forecast > 0 block, and the excess is tested with Welch's t between the forecast > 0 blocks and all blocks of those windows.
+- Main measure: mean next-bar return when forecast > 0 minus mean next-bar return over all bars, pooled: -1.57075e-05; Newey-West t (10 lags): -0.0427241 (threshold: excess > 0 with t >= 2 to confirm; excess < 0 with t <= -2 to reject)
+- Supporting check: up-bar share when forecast > 0 minus coin-baseline up share (binomial z): 0.114022, passed: False
+- Counts: distinct up-cross spans: 127, bars with a positive forecast: 8569, all bars: 17022
+- Decided by: The Newey-West t lies between -2 and 2, which the plan calls inconclusive.
+- Reading: Spans are maximal runs of forecast > 0 inside each window; the t-statistic uses a Bartlett Newey-West variance of the influence function of (mean_in - mean_all), with autocovariances taken only within windows; an up bar is a positive next-bar return; the up-share z-test is required for confirmation.
 Plan: `steps_cards/03_test_plan/full_data_run/plans/002-05_up-cross-to-reverse-cross-gain_1d.md`
 Record: `steps_cards/04_backtest/full_data_run/backtests/002-05_up-cross-to-reverse-cross-gain_1d`
 Measure: `measure.py`

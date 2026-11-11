@@ -39,10 +39,25 @@
 4. **A real flaw of the measure: the "holding" reference taken over the same window.** It hid under small samples and shows with large ones. It is a step 3 matter (how a plan states its reference); step 5 applied it faithfully.
 5. **With the flaw removed, trend persistence on these 6 coins over 8 years shows no effect** (t between +0.09 and +0.61). This textbook idea is not real here, at this scale, before costs. So no proven idea yet, for two reasons: the sample before, the measure now; and the ideas tested so far are textbook signals.
 
-**These verdicts must not be used.** They stay in `05_verification/full_data_run/` as the record of the flaw.
+**These verdicts must not be used.** They are kept in git (commit `5fb1516`) as the record of the flaw; the folder now holds the rerun below.
 
 ## Decision set proposed (not approved, nothing built)
 
 1. **Step 3, the reference.** One general line: "Against holding: the coin's mean return over all the test's windows, never a mean taken over the same window: such a mean shares the bars that set the forecast." (Or: compare the bars with a position against the bars without one.) Tested by two exercises, then this run's plans rewritten; steps 4 (no rerun: the configs do not change) and 5 rerun.
 2. **The default data:** all four folds and the coins with full data, so that a realistic edge can show. Steps 3 and 4 already accept several folds: the one change made tonight that you have not approved (a few lines; "fold A" records are untouched). Keep or revert.
 3. **Then new ideas.** With a sound measure and enough data, the briefs worth testing are those with a reason beyond a textbook signal (the two-coin ideas, the wish-list components).
+
+## Rerun with the fixed reference (2026-11-11, approved: "Go")
+
+Step 3 now says: holding is the coin's mean over all the test's windows, never over a single window (exercises 27 and 28). The 6 plans were rewritten; their configs did not change, so step 4 kept every record; step 5 ran twice side by side. Cost: 0.31 (plans) + 0.53 and 0.64 (verdicts) USD.
+
+| Plan | Run 1 | Run 2 |
+|---|---|---|
+| 002-01 after an up-cross | inconclusive, t 0.37 | inconclusive, t 0.41 |
+| 002-02 after a down-cross | inconclusive, t 0.39 | inconclusive, t 0.26 |
+| 002-03 price above its long average | inconclusive, t 1.25 | inconclusive, t 1.25 |
+| 002-04 price below its long average | inconclusive, t -0.27 | inconclusive, t -0.27 |
+| 002-05 up-cross to down-cross | inconclusive, t -0.04 | inconclusive, t -0.04 |
+| 002-06 down-cross to up-cross | inconclusive, t 0.12 | inconclusive, t 0.12 |
+
+The same status in both runs; every situation check 1.0. It matches the diagnosis (t +0.09 to +0.61 against the all-window mean). **On 6 coins over about 8 years, trend persistence after moving-average crosses shows no effect, before costs.** This time the sample was large enough to see a realistic edge (t = 2 needs an annual Sharpe of about 0.7 over 8 years), so the "inconclusive" is informative: if the effect exists here, it is small.

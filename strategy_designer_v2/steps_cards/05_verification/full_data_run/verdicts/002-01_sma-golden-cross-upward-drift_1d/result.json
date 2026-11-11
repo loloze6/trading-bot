@@ -1,27 +1,27 @@
 {
-  "status": "rejected",
+  "status": "inconclusive",
   "situation_check": {
     "agreement": 1.0,
     "passed": true
   },
   "main_measure": {
-    "name": "forecast-weighted mean 10-bar forward return minus mean 10-bar forward return of all bars of the same coin and window",
-    "value": -0.022538747424989816,
+    "name": "OLS slope of excess forward 10-bar return on forecast (non-overlapping, pooled)",
+    "value": 0.00020217125287157067,
     "statistic": {
-      "name": "t of the forecast-weighted mean excess across non-overlapping blocks",
-      "value": -3.285701333682519
+      "name": "OLS slope t",
+      "value": 0.3709763364377277
     },
-    "threshold": "excess > 0 with t >= 2 confirms (with positive hit-rate difference); excess < 0 with t <= -2 rejects; otherwise or fewer than 30 positive-forecast blocks inconclusive"
+    "threshold": "confirm if slope > 0 with t >= 2; reject if slope < 0 with t <= -2; else inconclusive"
   },
   "supporting_check": {
-    "name": "hit rate of positive-forecast bars minus hit rate of all bars (10-bar forward return > 0)",
-    "value": -0.02017156236943507,
+    "name": "share positive fwd 10-bar returns when forecast > 0 minus coin's share positive",
+    "value": -0.02141046191338635,
     "passed": false
   },
   "counts": {
-    "non-overlapping 10-bar blocks with a positive forecast": 832,
-    "non-overlapping 10-bar blocks, all bars": 1657
+    "non-overlapping blocks with forecast > 0": 832,
+    "non-overlapping blocks": 1657
   },
-  "decided_by": "The excess over holding is negative with t <= -2: moves after up-crosses underperform holding.",
-  "reading": "Blocks are the bars at positions 0, 10, 20, ... of each window with a full 10-bar forward return inside it; each positive-forecast block's return is taken minus the mean over all grid blocks of its own coin and window, then forecast-weighted and pooled, with t = weighted mean / weighted standard error; the hit-rate shares use the same grid pooled across coins and windows."
+  "decided_by": "The slope's t lies between -2 and 2: inconclusive.",
+  "reading": "Blocks start at positions 0, 10, 20, ... of each window, the forecast is taken at the block's first bar, the coin's holding mean and positive share use the same non-overlapping grid over all its windows, the slope t is the ordinary OLS t, and the supporting check averages, over blocks with forecast > 0, the positive indicator minus that coin's positive share."
 }

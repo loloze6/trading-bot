@@ -2,15 +2,15 @@
 plan: 002-06_down-cross-to-reverse-cross-loss_1d
 idea: 002-06_down-cross-to-reverse-cross-loss
 fit: adapted
-status: rejected
+status: inconclusive
 ---
 Situation check: 1 of the active bars match the plan's situation and side
 Evidence:
-- Main measure: pooled mean excess return of position x (next-bar return - window mean daily return): -0.000889728; Newey-West t (lag 10): -3.8054 (threshold: mean > 0 with t >= 2 to confirm; mean < 0 with t <= -2 to reject)
-- Supporting check: share of completed down-cross spans below the coin's median same-length span return: 0.0666667, passed: False
-- Counts: bars with a non-zero position: 9754, distinct down-cross spans: 130, completed down-cross spans: 15
-- Decided by: Mean excess return below 0 with t <= -2: rejected (reversal).
-- Reading: Excess returns use every bar (zero positions included) with the coin's mean next-bar return in that window, pooled with Newey-West autocovariances taken within each coin-window only; a span is a run of raw spread < 0 inside one window, counted for the minimum whether or not it is completed, and a completed span (cross down and back up both seen) returns close at the up-cross bar over close at its first negative bar, compared with the median of all same-length close-to-close returns of that coin pooled over its windows.
+- Main measure: |forecast|-weighted mean excess short 1-bar return vs coin all-window mean: 6.57232e-05; t of the weighted mean: 0.116595 (threshold: above 0 with t >= 2 confirms; below 0 with t <= -2 rejects; otherwise inconclusive)
+- Supporting check: share of short bars with next return below coin all-window mean (binomial z vs 50%): 0.512362, passed: True
+- Counts: pooled bars with forecast below 0: 8453
+- Decided by: Inconclusive: the t-statistic lies between -2 and 2.
+- Reading: The coin's mean is the mean of all within-window next-bar returns pooled over all its windows, every bar with forecast below 0 and a next-bar return counts once, the t of the weighted mean uses the weighted standard error sqrt(sum w^2 (x - m)^2) / sum w with an n/(n-1) correction, and the supporting check counts as passed when the binomial z is at least 2 (it does not enter the decision).
 Plan: `steps_cards/03_test_plan/full_data_run/plans/002-06_down-cross-to-reverse-cross-loss_1d.md`
 Record: `steps_cards/04_backtest/full_data_run/backtests/002-06_down-cross-to-reverse-cross-loss_1d`
 Measure: `measure.py`

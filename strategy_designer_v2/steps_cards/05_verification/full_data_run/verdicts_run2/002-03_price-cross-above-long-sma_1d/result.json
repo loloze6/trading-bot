@@ -1,33 +1,28 @@
 {
-  "status": "rejected",
+  "status": "inconclusive",
   "situation_check": {
     "agreement": 1.0,
     "passed": true
   },
   "main_measure": {
-    "name": "mean excess forward 10-bar return on positioned non-overlapping blocks (vs coin's window mean over all bars)",
-    "value": -0.016352243776391887,
+    "name": "forecast-weighted 20-bar excess return per non-overlapping block, before costs",
+    "value": 0.20905176053369148,
     "statistic": {
-      "name": "one-sample t of the mean excess",
-      "value": -2.8550693508285727
+      "name": "t of the block mean",
+      "value": 1.2487111212217896
     },
-    "threshold": "confirm: mean > 0 with t >= 2 and hit-rate difference > 0; reject: mean < 0 with t <= -2; inconclusive otherwise or if < 100 positioned blocks pooled or < 10 per coin"
+    "threshold": "confirm if mean > 0 and t >= 2; reject if mean < 0 and t <= -2; else inconclusive; inconclusive if fewer than 50 blocks with a non-zero position"
   },
   "supporting_check": {
-    "name": "hit-rate difference (positioned blocks minus all blocks); slope of forward return on forecast reported",
-    "value": -0.008128764481048933,
-    "passed": false,
-    "slope_forward_return_on_forecast": 0.0016667494879542934
+    "name": "share of forecast>0 bars whose next 20-bar return beats 20 x pooled mean daily return, vs 50%",
+    "value": 0.4198126596650582,
+    "passed": false
   },
   "counts": {
-    "positioned blocks pooled": 816,
-    "positioned blocks BTCUSD": 157,
-    "positioned blocks ETHUSD": 159,
-    "positioned blocks LTCUSD": 120,
-    "positioned blocks XMRUSD": 146,
-    "positioned blocks XRPUSD": 122,
-    "positioned blocks ZECUSD": 112
+    "non-overlapping 20-bar blocks with a non-zero position": 499,
+    "non-overlapping 20-bar blocks": 811,
+    "bars with forecast > 0": 7046
   },
-  "decided_by": "The mean excess forward return is below 0 with t <= -2.",
-  "reading": "Blocks are the bars at positions 0, 10, 20, ... of each window with forecast > 0; the coin's mean is taken over every bar of the window with a valid forward return; the hit rate across all blocks uses the same grid; the slope is reported but only the hit-rate difference enters the confirm rule, as the plan writes; the per-coin minimum applies to every coin present in the record."
+  "decided_by": "The t-statistic lies between -2 and 2 (or is undefined), which the plan calls inconclusive.",
+  "reading": "Allocation is postRebalance_current_allocation, blocks are bars at positions 0-19, 20-39, ... of each window with bars lacking a 20-bar forward return left out, the t uses all such blocks (zero-position ones included) while the minimum counts blocks holding any non-zero position, and the supporting check passes when the share exceeds 50% over all (overlapping) forecast>0 bars."
 }

@@ -1,128 +1,165 @@
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 
 def measure(bars):
-    H = 20
     RAW = "debug_info.components.sma_cross.last_history_value"
+    NW_LAGS = 10
 
-    # ---------- 1. Situation check ----------
-    # Fidelity: situation = SMA50 above SMA200 (raw spread > 0); outcome = price rises -> long side.
+    # ---------- 1. situation check ----------
     n_active = 0
     n_agree = 0
     for coin, wins in bars.items():
         for w, df in wins.items():
             if "forecast" not in df.columns or RAW not in df.columns:
                 continue
-            d = df[["forecast", RAW]].dropna()
-            fc = d["forecast"].astype(float).values
-            raw = d[RAW].astype(float).values
-            active = fc != 0
-            n_active += int(active.sum())
-            n_agree += int((active & (raw > 0) & (fc > 0)).sum())
+            sub = df[["forecast", RAW]].dropna()
+            act = sub["forecast"] != 0
+            n_active += int(act.sum())
+            # situation: 50-day SMA above 200-day SMA (raw spread > 0), expected side long
+            n_agree += int(((sub[RAW] > 0) & (sub["forecast"] > 0) & act).sum())
     agreement = float(n_agree / n_active) if n_active > 0 else 0.0
     passed = bool(n_active > 0 and agreement >= 0.9)
-
-    main_name = ("Mean 20-bar forward return after forecast > 0 minus mean 20-bar forward "
-                 "return of all bars, non-overlapping blocks, pooled")
-    threshold = "excess > 0 with t >= 2 confirms; excess < 0 with t <= -2 rejects; else inconclusive; fewer than 30 blocks with forecast > 0 is inconclusive"
-
     if not passed:
         return {
             "status": "mismatch",
             "situation_check": {"agreement": agreement, "passed": False},
-            "main_measure": {"name": main_name, "value": None, "statistic": None,
-                             "threshold": threshold},
+            "main_measure": None,
             "supporting_check": None,
             "counts": {"active bars": int(n_active)},
-            "decided_by": ("Fewer than 90% of bars with a nonzero forecast are long bars where the "
-                           "SMA50-minus-SMA200 spread is positive, so the config does not hold the "
-                           "plan's situation (SMA50 above SMA200, long)."),
-            "reading": "Situation taken as the component's raw value (last_history_value) > 0 with forecast > 0.",
+            "decided_by": ("The plan's situation is the 50-day SMA above the 200-day SMA (raw spread > 0) with a long position, "
+                           "but fewer than 90% of the bars with a non-zero forecast are such long bars: the standardised and clipped "
+                           "forecast does not follow the sign of the SMA spread."),
+            "reading": "The situation is read as the component's raw last_history_value (the SMA spread) being above zero, on the long side.",
         }
 
-    # ---------- 2. Criterion ----------
-    cond_rets = []
-    all_rets = []
+    # ---------- 2. build pooled data ----------
+    groups = []  # per coin-window: (coin, returns array, indicator array)
+    n_spans = 0
     for coin, wins in bars.items():
         for w, df in wins.items():
             if "close" not in df.columns or "forecast" not in df.columns:
                 continue
             close = df["close"].astype(float).values
             fc = df["forecast"].astype(float).values
-            n = len(df)
-            for t in range(0, n, H):
-                if t + H >= n:
-                    break
-                c0, c1 = close[t], close[t + H]
-                if not (np.isfinite(c0) and np.isfinite(c1)) or c0 == 0:
-                    continue
-                r = c1 / c0 - 1.0
-                all_rets.append(r)
-                if np.isfinite(fc[t]) and fc[t] > 0:
-                    cond_rets.append(r)
+            if len(close) < 2:
+                continue
+            r = close[1:] / close[:-1] - 1.0
+            f = fc[:-1]
+            ok = np.isfinite(r) & np.isfinite(f)
+            r = r[ok]
+            f = f[ok]
+            if len(r) == 0:
+                continue
+            ind = (f > 0).astype(float)
+            # distinct spans: runs of consecutive positive-forecast bars within the window
+            if len(ind) > 0:
+                starts = (ind[0] == 1) + int(np.sum((ind[1:] == 1) & (ind[:-1] == 0)))
+                n_spans += int(starts)
+            groups.append((coin, r, ind))
 
-    cond = np.array(cond_rets, dtype=float)
-    allr = np.array(all_rets, dtype=float)
-    n_cond = int(len(cond))
-    n_all = int(len(allr))
+    if not groups:
+        return {
+            "status": "inconclusive",
+            "situation_check": {"agreement": agreement, "passed": passed},
+            "main_measure": {"name": "excess mean next-bar return while forecast > 0 vs all bars", "value": None,
+                             "statistic": None, "threshold": "t >= 2 confirms, t <= -2 rejects (Newey-West, 10 lags)"},
+            "supporting_check": None,
+            "counts": {"distinct up-cross spans": 0, "bars with a positive forecast": 0},
+            "decided_by": "No usable bars, so the plan's minimum counts are not met.",
+            "reading": "none",
+        }
+
+    r_all = np.concatenate([g[1] for g in groups])
+    i_all = np.concatenate([g[2] for g in groups])
+    n_pos = int(i_all.sum())
+    N = len(r_all)
 
     excess = None
-    tval = None
-    if n_cond >= 2 and n_all >= 2:
-        excess = float(cond.mean() - allr.mean())
-        t_res = stats.ttest_ind(cond, allr, equal_var=False)
-        tval = float(t_res.statistic) if np.isfinite(t_res.statistic) else None
-    elif n_cond >= 1 and n_all >= 1:
-        excess = float(cond.mean() - allr.mean())
+    t_stat = None
+    if n_pos > 0 and n_pos < N:
+        excess = float(r_all[i_all == 1].mean() - r_all.mean())
+        # regression r = a + b*I ; excess = b*(1-p); t of excess = t of b (p treated as fixed)
+        X = np.column_stack([np.ones(N), i_all])
+        XtX_inv = np.linalg.inv(X.T @ X)
+        beta = XtX_inv @ (X.T @ r_all)
+        u = r_all - X @ beta
+        S = np.zeros((2, 2))
+        pos = 0
+        for coin, r, ind in groups:
+            n = len(r)
+            Xg = X[pos:pos + n]
+            ug = u[pos:pos + n]
+            pos += n
+            sg = Xg * ug[:, None]
+            S += sg.T @ sg
+            for L in range(1, min(NW_LAGS, n - 1) + 1):
+                wgt = 1.0 - L / (NW_LAGS + 1.0)
+                G = sg[L:].T @ sg[:-L]
+                S += wgt * (G + G.T)
+        V = XtX_inv @ S @ XtX_inv
+        se_b = float(np.sqrt(V[1, 1])) if V[1, 1] > 0 else np.nan
+        t_stat = float(beta[1] / se_b) if np.isfinite(se_b) and se_b > 0 else None
 
-    # Supporting check: hit rate
-    sup_val = None
-    sup_pass = None
-    if n_cond >= 1 and n_all >= 1:
-        hit_c = float((cond > 0).mean())
-        hit_a = float((allr > 0).mean())
-        sup_val = float(hit_c - hit_a)
-        sup_pass = bool(hit_c > hit_a)
+    # ---------- supporting check: binomial z with per-coin baselines ----------
+    obs_up = 0.0
+    exp_up = 0.0
+    var_up = 0.0
+    n_act_tot = 0
+    up_all_tot = 0
+    for coin in sorted(set(g[0] for g in groups)):
+        rc = np.concatenate([g[1] for g in groups if g[0] == coin])
+        ic = np.concatenate([g[2] for g in groups if g[0] == coin])
+        pc = float(np.mean(rc > 0))
+        na = int(ic.sum())
+        obs_up += float(np.sum((rc > 0) & (ic == 1)))
+        exp_up += na * pc
+        var_up += na * pc * (1 - pc)
+        n_act_tot += na
+        up_all_tot += int(np.sum(rc > 0))
+    z = float((obs_up - exp_up) / np.sqrt(var_up)) if var_up > 0 else None
+    share_diff = (float(obs_up / n_act_tot - up_all_tot / N) if n_act_tot > 0 else None)
+    z_passed = None if z is None else bool(z >= 2)
 
-    if n_cond < 30:
+    counts = {"distinct up-cross spans": int(n_spans), "bars with a positive forecast": int(n_pos)}
+
+    # ---------- decision ----------
+    if n_spans < 30 or n_pos < 1000:
         status = "inconclusive"
-        decided = "Fewer than 30 non-overlapping 20-bar blocks with forecast > 0, so the result is inconclusive."
-    elif excess is None or tval is None:
+        decided = "Fewer than 30 distinct up-cross spans or fewer than 1000 bars with a positive forecast, which the plan calls inconclusive."
+    elif excess is None or t_stat is None:
         status = "inconclusive"
-        decided = "The t-statistic could not be computed, so the result is inconclusive."
-    elif excess > 0 and tval >= 2:
+        decided = "The excess return or its t-statistic could not be computed, so no verdict is reached."
+    elif excess > 0 and t_stat >= 2 and z is not None and z >= 2:
         status = "confirmed"
-        decided = "The excess 20-bar return is above 0 with t >= 2 over non-overlapping blocks, which confirms."
-    elif excess < 0 and tval <= -2:
+        decided = "The excess mean return is above 0 with t >= 2 and the up-bar share is higher with z >= 2, meeting the confirm rule."
+    elif excess < 0 and t_stat <= -2:
         status = "rejected"
-        decided = "The excess 20-bar return is below 0 with t <= -2, so up-cross spans underperform: rejected."
+        decided = "The excess mean return is below 0 with t <= -2, meeting the reject rule (returns in cross spans below holding)."
+    elif excess > 0 and t_stat >= 2:
+        status = "inconclusive"
+        decided = "The excess mean return is above 0 with t >= 2, but the up-bar share z is below 2, so the confirm rule is not fully met."
     else:
         status = "inconclusive"
-        decided = "The t-statistic lies between -2 and 2, so the result is inconclusive."
+        decided = "The t-statistic lies between -2 and 2, which the plan calls inconclusive."
 
     return {
         "status": status,
-        "situation_check": {"agreement": agreement, "passed": True},
+        "situation_check": {"agreement": agreement, "passed": passed},
         "main_measure": {
-            "name": main_name,
+            "name": "excess mean next-bar return while forecast > 0 vs all bars (pooled)",
             "value": excess,
-            "statistic": ({"name": "Welch t", "value": tval} if tval is not None else None),
-            "threshold": threshold,
+            "statistic": None if t_stat is None else {"name": "Newey-West t (10 lags)", "value": t_stat},
+            "threshold": "excess > 0 with t >= 2 confirms; excess < 0 with t <= -2 rejects",
         },
         "supporting_check": {
-            "name": "Share of positive 20-bar forward returns when forecast > 0 minus unconditional share",
-            "value": sup_val,
-            "passed": sup_pass,
+            "name": "binomial z of up-bar share while forecast > 0 vs per-coin baseline",
+            "value": z,
+            "passed": z_passed,
         },
-        "counts": {
-            "non-overlapping 20-bar blocks with forecast > 0": n_cond,
-            "non-overlapping 20-bar blocks, all bars": n_all,
-        },
+        "counts": counts,
         "decided_by": decided,
-        "reading": ("Situation is last_history_value > 0 with forecast > 0; blocks start at positions 0, 20, 40, ... of each "
-                    "window with the full 20-bar return inside the window; the comparison group is all grid blocks of all "
-                    "coin-windows pooled, tested with Welch t; the supporting check passes when the conditional hit rate "
-                    "exceeds the unconditional one."),
+        "reading": ("The situation is the raw SMA spread above 0 on the long side; the Newey-West t is the t of the slope in a regression of "
+                    "next-bar return on a forecast>0 indicator with lag sums kept within each coin-window; an up bar is a positive next-bar return; "
+                    "a span is a run of consecutive positive-forecast bars within one window; and confirmation requires both t >= 2 and z >= 2."),
     }

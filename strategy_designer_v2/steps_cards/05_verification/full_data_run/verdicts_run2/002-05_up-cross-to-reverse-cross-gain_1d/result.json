@@ -5,23 +5,24 @@
     "passed": true
   },
   "main_measure": {
-    "name": "mean 20-bar forward return when forecast > 0 minus mean of all blocks in same coin-windows",
-    "value": -0.013180582681512155,
+    "name": "mean next-bar return when forecast > 0 minus mean next-bar return over all bars, pooled",
+    "value": -1.5707481751504795e-05,
     "statistic": {
-      "name": "Welch t",
-      "value": -0.645047581267807
+      "name": "Newey-West t (10 lags)",
+      "value": -0.0427241175223789
     },
-    "threshold": "excess > 0 with t >= 2 confirms; excess < 0 with t <= -2 rejects; otherwise inconclusive"
+    "threshold": "excess > 0 with t >= 2 to confirm; excess < 0 with t <= -2 to reject"
   },
   "supporting_check": {
-    "name": "hit rate of 20-bar returns when forecast > 0 minus unconditional hit rate",
-    "value": -0.04123211351156353,
+    "name": "up-bar share when forecast > 0 minus coin-baseline up share (binomial z)",
+    "value": 0.11402224720871527,
     "passed": false
   },
   "counts": {
-    "non-overlapping 20-bar blocks with forecast > 0": 409,
-    "non-overlapping 20-bar blocks in the same coin-windows": 610
+    "distinct up-cross spans": 127,
+    "bars with a positive forecast": 8569,
+    "all bars": 17022
   },
-  "decided_by": "The t-statistic lies between -2 and 2, so the result is inconclusive.",
-  "reading": "Blocks start at positions 0, 20, 40, ... of each window with a full 20-bar return inside it; 'the same coin-windows' is read as the coin-windows holding at least one forecast > 0 block, and the excess is tested with Welch's t between the forecast > 0 blocks and all blocks of those windows."
+  "decided_by": "The Newey-West t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Spans are maximal runs of forecast > 0 inside each window; the t-statistic uses a Bartlett Newey-West variance of the influence function of (mean_in - mean_all), with autocovariances taken only within windows; an up bar is a positive next-bar return; the up-share z-test is required for confirmation."
 }
