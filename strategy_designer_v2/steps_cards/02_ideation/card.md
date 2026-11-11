@@ -63,6 +63,7 @@ Modelled on step 1: a pre-registered hypothesis, one numbered file per record, n
     INDEX.md               one line per idea
     NNN-KK_short-name.md   one file per idea
   exercise_k/              the comparison exercises
+  hourly_run/, full_data_run/   the ideas of a named run
 ```
 
 - **One file per idea**: each idea is confirmed or rejected on its own, so each has its own id.
@@ -123,12 +124,13 @@ Not covered: a brief with `venue`, `bar`, `period` or `side` in its header (the 
 
 ## Variants compared
 Exercises 1 to 3: opus and sonnet, each model running the six calls in order on its own index, starting empty. Opus chosen (see The AI).
+Exercise 4: the one-coin rule and the `no-ideas` answer, on briefs 004 (no ideas: every consequence needs two coins) and 003 (seven one-coin ideas). One run, clean.
 
 ## Who judges the output
 The operator: "would I see this if my theory were true, and would I act on the answer?" and "do these ideas cover my theory?". Code checks the shape. Each exercise has a one-page reading against the criteria and the counts below.
 
 ## Done when
-On two exercises in a row, on the fixed inputs, every idea meets every criterion and the operator would keep the set. Status: met by opus on exercises 2 and 3 (`exercise_3/reading.md`).
+On two exercises in a row, on the fixed inputs, every idea meets every criterion and the operator would keep the set. Status: met by opus on exercises 2 and 3 (`exercise_3/reading.md`); exercise 4 added the one-coin rule, clean on its two briefs.
 
 ## To observe in the tests
 No number of ideas is enforced. A quota would push the model to pad or to cut. The tests count, per brief:

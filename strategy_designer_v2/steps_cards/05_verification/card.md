@@ -23,7 +23,7 @@ One verdict per plan: **confirmed**, **rejected** or **inconclusive**, with the 
   - inconclusive: no action yet.
 
   It is not written out again.
-- **The verdict is about the idea's reality, judged before costs.** Whether acting on it is worth it is another question.
+- **The verdict is about the idea's reality, judged before costs.** Whether the book pays is branch 3's question (`06_profitability`).
 
 ## The fields of a verdict
 **In `verdict.md`:**
@@ -73,6 +73,8 @@ Aligned with the other steps.
     REVIEW.md, run_log*.txt    once a real run has filled it
     <plan id>/                 one folder per verdict: verdict.md, measure.py, result.json
   exercise_k/                  the exercises
+  planted_test/                step 5 on copies of real records with a known gain planted (not market evidence)
+  hourly_run/, full_data_run/  the verdicts of named runs (each with REVIEW.md)
 ```
 
 ## The AI and the runner
@@ -117,6 +119,8 @@ The 15 daily plans of `03_test_plan/plans/` whose outcome is `plan` (13 with a b
 - **Exercises 5 and 6:** two more conventions (weighted mean, counts only). 15 of 15 statuses agree.
 - **Exercise 7:** the situation check. It flags two real config faults (002-02 at 0 %, 003-05 at 19 %); every correct plan scores 100 %.
 - **Exercise 8 and `verdicts/`:** the rewritten plans, run twice. 13 of 13 statuses agree (all inconclusive); every situation check passes.
+- **The planted test:** step 5 confirms (t 5.5) and rejects (t -4.1) a planted gain, in the right direction; a realistic gain on one fold stays inconclusive (`planted_test/reading.md`).
+- **The full-data run:** 5 "rejected" verdicts came from the plans' per-window holding reference, a bias fixed in step 3; rerun, 6 of 6 inconclusive (`../FULL_DATA_RUN.md`).
 
 ## Who judges the output
 The operator: "does this verdict apply my plan's rule, and would I accept it?". Code checks the shape of the result. Each exercise has a one-page reading: the functions are read against their plans, and the two runs are compared.

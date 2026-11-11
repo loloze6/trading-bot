@@ -105,6 +105,7 @@ One test plan per idea, with one of three outcomes: **plan**, **untestable** or 
     NNN-KK_short-name_<bar>.md one test plan per idea and bar size
     NNN-KK_short-name_<bar>_config.json   its config (plans only)
   exercise_k/                  the comparison exercises
+  hourly_run/, full_data_run/, exercise_hourly_anticipation/   the plans of named runs
 ```
 
 ## The AI

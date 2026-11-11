@@ -60,7 +60,8 @@ Modelled on a pre-registered hypothesis (short, written before the data, never r
   briefs/
     INDEX.md             one line per brief
     NNN_short-name.md    one file per brief
-  exercise_1 ... 6/      the comparison exercises
+  exercise_1 ... 8/      the comparison exercises
+  hourly_run/, full_data_run/   the briefs of a named run: copies with header lines the operator set for that run
 ```
 
 - **One file per brief**: a header of `key: value` lines, then the theory in plain prose.
@@ -111,6 +112,7 @@ smaller and less traded coins take on part of that move only later... (prose, at
 - Exercise 1: haiku, sonnet and opus on the three inputs.
 - Exercise 2: sonnet and opus, twice each.
 - Exercises 3 to 6: opus, as the prompt and the index were built.
+- Exercise 7: the one-coin rule (a relation between coins cannot be tested). Exercise 8: `not-researchable` when a request can only be met by such a relation.
 
 ## Who judges the output
 The operator: "would I research this theory?" and, with a source, "is this what the source says?". Code checks the shape. Each exercise has a one-page reading against the criteria.
@@ -118,7 +120,7 @@ The operator: "would I research this theory?" and, with a source, "is this what 
 ## Done when
 On two exercises in a row, on the three inputs, the helper's brief meets every criterion and would be kept with wording changes only.
 
-Status: exercise 6 meets it except on one brief: 004 still holds a check ("once the smaller coins' own past moves are known"). Step 2 enforces the same rule on ideas, so the condition stops there. See `exercise_6/reading.md`. The code checks were relaxed after exercise 6 (they refuse less); no model run has used them yet.
+Status: met by exercises 7 and 8, both clean (`exercise_8/reading.md`); they cover the no-theme and theme inputs and the cases of the one-coin rule. The source input was last run in exercise 6.
 
 ## What this step does not do
 It does not write ideas, judge whether a theory is promising, check that the engine can test it, or set anything about how it is tested.

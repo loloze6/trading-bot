@@ -16,7 +16,7 @@ Every card has these sections, in this order (step 1 and step 2 are the worked e
 10. Variants compared
 11. Who judges the output
 12. Done when, with its status
-13. To observe in the tests (when needed)
+13. To observe in the tests (when needed); Open (when needed): points the step found and the operator has not ruled on
 14. What this step does not do
 
 - One business objective, one question. Every field and criterion traces to it.
@@ -46,6 +46,9 @@ steps_cards/NN_step/
   <outputs>/       the step's artifact folder: one file (or folder) per output, INDEX.md (one line per output),
                    and, once a real run has filled it, REVIEW.md (its reading) and run_log*.txt (its logs)
   exercise_k/      inputs, outputs, costs, side_by_side.md, reading.md
+  <name>_run/      a named run the operator asked for, through several steps: in each step's folder, the step's
+                   outputs for that run, with INDEX.md, REVIEW.md and run_log*.txt; its run brief (purpose,
+                   pre-registered outcomes, review) is steps_cards/<NAME>_RUN.md
 ```
 
 ## How to talk to the operator

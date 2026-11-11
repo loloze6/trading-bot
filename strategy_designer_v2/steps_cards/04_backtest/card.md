@@ -6,7 +6,7 @@ What did the market data do when this idea's test ran?
 Run one test plan from step 3 through the bot's own backtest, unchanged, and keep the complete record, so the next steps can confirm or reject the idea from it.
 
 ## Input
-One test plan from step 3 whose outcome is `plan`: its config and its data (coins, bar size, fold). A plan whose outcome is untestable or missing-components is not run, and its index line says so.
+One test plan from step 3 whose outcome is `plan`: its config and its data (coins, bar size, one fold or several). A plan whose outcome is untestable or missing-components is not run, and its index line says so.
 
 ## Output
 One backtest record per plan, or "not run", with the reason.
@@ -54,11 +54,12 @@ Modelled on the engine's own run folders, one folder per plan, named after the p
     <plan id>/                 one record per plan (the plan id carries the bar size)
       run.md
       config.json
-      <SYMBOL>/wK/             one folder per coin and window, K in the fold's order
+      <SYMBOL>/wK/             one folder per coin and window, K in the folds' order
   exercise_k/                  the exercises
+  hourly_run/, full_data_run/, exercise_hourly_anticipation/   the records of named runs
 ```
 
-- Windows are named `w1` to `wN`, in the fold's order. My files (`run.md`, `INDEX.md`, the card, the readings) name periods by fold id only. The engine's own files carry their timestamps and window dates inside, as the engine wrote them.
+- Windows are named `w1` to `wN`, in the fold's order; with several folds, their windows one after the other (folds A to D: `w1` to `w24`). My files (`run.md`, `INDEX.md`, the card, the readings) name periods by fold id only. The engine's own files carry their timestamps and window dates inside, as the engine wrote them.
 - `tradesxl.xlsx` and `portfolio_states.csv` are not kept: they repeat `trades.json` and `bars.csv`.
 
 ## The engine and the helper
@@ -66,15 +67,15 @@ Modelled on the engine's own run folders, one folder per plan, named after the p
 
 **How it runs** (`helper/run_backtest.py`):
 1. Reads the plan's header, including its outcome. When the plan's config and data are those of its stored record, the record is kept, not rerun: the plan's other fields (fidelity, forecast in words, criterion) do not change what the engine runs.
-2. Builds the protocol with the pipeline's own fold loader, `strategy-research/tools/research_folds.py`. The loader refuses any window touching the sealed holdout. It adds the pipeline's venue keys, from `tools/venue_resolver.py`. The protocol holds dates, so it is written to a temporary folder only.
+2. Builds the protocol with the pipeline's own fold loader, `strategy-research/tools/research_folds.py` (`fold A`, or `folds A, B, C, D`: the windows of each, one after the other). The loader refuses any window touching the sealed holdout. It adds the pipeline's venue keys, from `tools/venue_resolver.py`. The protocol holds dates, so it is written to a temporary folder only.
 3. Runs `strategy-research/tools/run_protocol.py`, the pipeline's wrapper around the bot's `run_backtest`. The wrapper keeps the warm-up prefetch and the holdout guard.
 4. Runs one call per coin and window, each in its own folder (see "Open").
 
 The helper never opens the price data: only the engine reads bars. It needs a Python environment with `trading-bot/requirements.txt` (`--python`). `helper/summarise_backtests.py` prints one table of a backtests folder from the engine's `metrics.json` files, for the readings.
 
-**Venue.** Binance is not reachable from this environment (HTTP 451). Kraken is reachable, and the repository holds Kraken caches for BTC and ETH, daily and hourly. So coins run as `BTCUSD` and `ETHUSD`, with the pipeline's Kraken keys: Kraken spot prices, Kraken futures costs, no funding. Costs do not change the verification, which is judged before costs. They will matter for profitability.
+**Venue.** Binance is not reachable from this environment (HTTP 451). Kraken is reachable, and the repository holds Kraken caches for 19 coins, daily and hourly; six cover all four folds (BTC, ETH, LTC, XMR, XRP, ZEC: step 3's default). Coins run as `<COIN>USD`, with the pipeline's Kraken keys: Kraken spot prices, Kraken futures costs, no funding. Costs do not change the verification, which is judged before costs; branch 3 judges the book after them.
 
-**Time and size.** A daily plan takes 20 to 40 seconds and 0.2 to 0.5 MB per coin. An hourly plan takes about 2 minutes per coin and about 2 MB per coin.
+**Time and size.** On one fold, a daily plan takes 20 to 40 seconds and 0.2 to 0.5 MB per coin; an hourly plan about 2 minutes and 2 MB per coin. On the default data (6 coins, folds A to D), a daily plan runs 144 windows: 6 plans took about 25 minutes, three at a time, and 37 MB.
 
 ## Quality criteria on the record
 - Every window of every coin with data is run. Every coin or window not run is recorded, with the engine's reason.
@@ -90,7 +91,7 @@ The seven plans of step 3, exercise 10 (five testable, two untestable), on daily
 Daily against hourly bars, for the same idea (`001-01`). Hourly is about 24 times the bars, in about 6 times the time.
 
 ## Production run
-Every plan of step 3's `plans/`, one per idea, on daily bars: see `backtests/REVIEW.md`. The hourly set run the same night, two plans per idea, is kept in `exercise_hourly_anticipation/` as a record; one idea has one plan.
+Every plan of step 3's `plans/`, one per idea, on daily bars and fold A: see `backtests/REVIEW.md`. These plans predate step 3's latest rules and default data; refreshing them is the operator's call. Named runs: `hourly_run/`, `full_data_run/`; the hourly set of the first night is kept in `exercise_hourly_anticipation/` as a record.
 
 ## Who judges the output
 The operator: "is this the run of my plan, complete and the same if run again?". Code records what ran and what did not. Each exercise has a one-page reading.
@@ -100,9 +101,10 @@ On two exercises in a row, every criterion holds, and a full rerun of the fixed 
 
 ## Open
 - **An engine defect, found by this step.** The engine names a run folder after the current second plus the config's hash (`reporting/run_artifact.py`). When two windows of one wrapper call finish within the same second, they share one folder, and the second overwrites the first. Daily windows run in under a second each, so this happens. A rerun check found two windows with the same run id. This helper avoids it by running each window on its own. The research pipeline's own daily runs may be affected; that is for the operator to check.
-- **A config pattern the engine's warm-up check refuses.** Five volume plans (`003-01_1d`, `003-05_1d`, `003-01_1h`, `003-02_1h`, `003-06_1h`) gate the strategy with a veto on a constant (`BuyAndHoldStrategy` with `volume_filter`) and leave the default regime flat. The validator accepts this, but the engine stops at its warm-up check: "strategy not ready after 48 prefetch bars". Their record says "not run", with the engine's message. Step 3 could avoid the pattern (the same ideas run when the gate is a rule on `VolumeExpansionHedgeComponent`, or a veto on `PriceEvolutionComponent`).
+- **A config pattern the engine's warm-up check refuses.** Volume plans (five in the first run; `003-01_1d` and `003-02_1d` in the current production) gate the strategy with a veto on a constant (`BuyAndHoldStrategy` with `volume_filter`) and leave the default regime flat. The validator accepts this, but the engine stops at its warm-up check: "strategy not ready after 48 prefetch bars". Their record says "not run", with the engine's message. Step 3 could avoid the pattern (the same ideas run when the gate is a rule on `VolumeExpansionHedgeComponent`, or a veto on `PriceEvolutionComponent`).
 - **BNB has no data on the reachable venue.** Ideas from briefs that name BNB run on BTC and ETH only.
-- **The trial ledger.** The repository's rule asks for a row in the trial ledger for every experiment that touches market data. This step writes only under `steps_cards/`, so its record is `backtests/INDEX.md`. Whether these runs also go in the ledger is the operator's call.
+- **Data gaps before a window.** On the full data, 1 XMR and 2 XRP windows were refused at the warm-up check: fewer daily bars before them than a 200-day average needs. Recorded as "not run".
+- **The trial ledger.** The operator ruled no trial ledger for these runs (2026-11-10); their record is the backtests folders' `INDEX.md`.
 
 ## What this step does not do
 It does not judge a result, compute profitability, or change the engine or the plan.
