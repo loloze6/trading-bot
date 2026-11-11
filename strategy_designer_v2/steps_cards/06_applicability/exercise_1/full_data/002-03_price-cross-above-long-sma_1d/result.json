@@ -1,0 +1,74 @@
+{
+  "status": "not worth acting on",
+  "verdict": "inconclusive",
+  "bars": [
+    {
+      "bar": "sharpe_min",
+      "label": "Sharpe",
+      "value": 0.5050612992825233,
+      "threshold": 0.0,
+      "comparison": "above",
+      "passed": true
+    },
+    {
+      "bar": "sharpe_vs_hold_min",
+      "label": "Sharpe minus holding's Sharpe",
+      "value": -0.06454730374355355,
+      "threshold": 0.0,
+      "comparison": "above",
+      "passed": false
+    },
+    {
+      "bar": "avg_daily_return_min",
+      "label": "Mean daily return",
+      "value": 0.0009084904580305128,
+      "threshold": 0.0005,
+      "comparison": "at least",
+      "passed": true
+    },
+    {
+      "bar": "leave_one_window_out_sharpe_min",
+      "label": "Lowest Sharpe, one window left out",
+      "value": 0.18671604563112185,
+      "threshold": 0.0,
+      "comparison": "above",
+      "passed": true
+    },
+    {
+      "bar": "calmar_min",
+      "label": "Calmar",
+      "value": 0.13989488508791623,
+      "threshold": 0.75,
+      "comparison": "above",
+      "passed": false
+    },
+    {
+      "bar": "trade_frequency_min",
+      "label": "Trades per bar",
+      "value": 0.11052846239002505,
+      "threshold": 0.01,
+      "comparison": "at least",
+      "passed": true
+    }
+  ],
+  "facts": {
+    "coins": [
+      "BTCUSD",
+      "ETHUSD",
+      "LTCUSD",
+      "XMRUSD",
+      "XRPUSD",
+      "ZECUSD"
+    ],
+    "windows": 24,
+    "days": 2898,
+    "years": 7.94,
+    "bars": 17163,
+    "trades": 1897,
+    "holding_sharpe": 0.5696086030260769,
+    "annualised_return": 0.11628118446854807,
+    "deepest_fall": 0.831203974294498,
+    "worst_window_left_out": "w11"
+  },
+  "decided_by": "failed: Sharpe minus holding's Sharpe; Calmar"
+}
