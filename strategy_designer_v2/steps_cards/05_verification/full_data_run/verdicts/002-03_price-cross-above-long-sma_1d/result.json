@@ -1,0 +1,34 @@
+{
+  "status": "rejected",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess forward 10-bar return on positioned blocks vs window mean",
+    "value": -0.015156555604097318,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -2.6471698760503526
+    },
+    "threshold": "mean > 0 with t >= 2 (and hit-rate difference > 0) confirms; mean < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "hit rate of positioned blocks minus hit rate of all blocks (slope of forward return on forecast reported in slope_value)",
+    "value": -0.008128764481048933,
+    "passed": false,
+    "slope_value": 0.0016667494879542934
+  },
+  "counts": {
+    "positioned_blocks_pooled": 816,
+    "positioned_blocks_min_per_coin": 112,
+    "positioned_blocks_BTCUSD": 157,
+    "positioned_blocks_ETHUSD": 159,
+    "positioned_blocks_LTCUSD": 120,
+    "positioned_blocks_XMRUSD": 146,
+    "positioned_blocks_XRPUSD": 122,
+    "positioned_blocks_ZECUSD": 112
+  },
+  "decided_by": "Rejected: mean excess forward 10-bar return is below 0 with t <= -2.",
+  "reading": "Blocks are the bars at positions 0, 10, 20, ... of each window, and the coin's window mean (\"all bars\") is taken over that same grid. Positioned means forecast > 0 on the block's first bar. The t is the ordinary t of the pooled mean excess. The per-coin minimum applies to every coin present. The forecast-size slope is reported but not required, because the confirm rule names only the hit-rate difference."
+}

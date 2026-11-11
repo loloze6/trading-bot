@@ -1,0 +1,129 @@
+{
+  "core": {
+    "net_return_pct": -14.419,
+    "sharpe": -3.433,
+    "max_drawdown_pct": -12.78,
+    "trade_count": 12,
+    "win_rate": 25.0,
+    "avg_trade_net_pnl": -12.018233,
+    "fees_paid": 2.433877,
+    "gross_pnl": -141.784914,
+    "net_pnl": -144.218791,
+    "cost_drag_pct": 1.7166,
+    "forecast_return_corr": 0.105698,
+    "forecast_return_corr_pvalue": 0.276278,
+    "forecast_return_corr_pvalue_block_adjusted": 0.278771,
+    "forecast_return_corr_n_eff": 108,
+    "forecast_return_corr_all_bars": 0.060759,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.512855,
+    "forecast_return_corr_all_bars_n_eff": 119,
+    "gap_skipped_pairs": 0,
+    "gap_skipped_pct": 0.0,
+    "avg_trade_duration_bars": 47.75,
+    "sigma_bar_bps": 442.7251,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 323.361,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 17.479,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "kill_no_ic",
+    "post_backtest_route_rationale": "Active-bar IC=0.1057, p=0.2788 >= 0.1. Signal has no detectable directional content.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": -693.7555,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": -693.7555,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 69.3756,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "kill_no_ic",
+    "post_backtest_route_real_rationale": "Active-bar IC=0.1057, p=0.2788 >= 0.1. Signal has no detectable directional content.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 120,
+      "avg_forecast": -6.505624,
+      "trade_count": 12,
+      "total_net_pnl": -144.218792
+    }
+  },
+  "forecast_bins": {
+    "minus_15_to_minus_10": {
+      "total_forecasts": 12,
+      "profitable_trades": 3,
+      "success_rate_pct": 25.0,
+      "total_net_pnl_usd": -144.2188,
+      "avg_pnl_per_trade_usd": -12.0182
+    }
+  },
+  "dynamic": {
+    "debug_info.components.sma_cross_down.last_history_value": {
+      "unknown": {
+        "mean": -134.586831,
+        "std": 93.912749
+      }
+    },
+    "debug_info.components.sma_cross_down.post_pipeline_value": {
+      "unknown": {
+        "mean": -6.505624,
+        "std": 4.469178
+      }
+    },
+    "debug_info.components.sma_cross_down.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.sma_cross_down.weighted_contribution": {
+      "unknown": {
+        "mean": -6.505624,
+        "std": 4.469178
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": 0.00211703,
+      "forward_return_std": 0.04427251,
+      "n_bars": 119,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -34.9872,
+    "sharpe": -0.2185,
+    "sortino": -0.3083,
+    "exposure_pct": 99.1667,
+    "turnover": 4.867031,
+    "n_bars_total": 120,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 119,
+    "n_downside_days": 57,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 1,
+    "events": [
+      {
+        "symbol": "ETHUSD",
+        "timestamp": "2018-01-13 00:00:00",
+        "previous_timestamp": "2018-01-11 00:00:00",
+        "expected_step_seconds": 86400,
+        "actual_delta_seconds": 172800.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "Mean 20-bar forward return after forecast > 0 minus mean 20-bar forward return of all bars, non-overlapping blocks, pooled",
+    "value": 0.008438600822280238,
+    "statistic": {
+      "name": "Welch t",
+      "value": 0.4413399606140048
+    },
+    "threshold": "excess > 0 with t >= 2 confirms; excess < 0 with t <= -2 rejects; else inconclusive; fewer than 30 blocks with forecast > 0 is inconclusive"
+  },
+  "supporting_check": {
+    "name": "Share of positive 20-bar forward returns when forecast > 0 minus unconditional share",
+    "value": -0.013937334752290476,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping 20-bar blocks with forecast > 0": 409,
+    "non-overlapping 20-bar blocks, all bars": 811
+  },
+  "decided_by": "The t-statistic lies between -2 and 2, so the result is inconclusive.",
+  "reading": "Situation is last_history_value > 0 with forecast > 0; blocks start at positions 0, 20, 40, ... of each window with the full 20-bar return inside the window; the comparison group is all grid blocks of all coin-windows pooled, tested with Welch t; the supporting check passes when the conditional hit rate exceeds the unconditional one."
+}

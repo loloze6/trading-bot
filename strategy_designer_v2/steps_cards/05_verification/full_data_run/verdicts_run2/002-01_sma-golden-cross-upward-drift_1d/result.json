@@ -1,0 +1,27 @@
+{
+  "status": "rejected",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean 10-bar forward return minus holding",
+    "value": -0.022538747424989816,
+    "statistic": {
+      "name": "t of the forecast-weighted mean excess",
+      "value": -3.285701333682519
+    },
+    "threshold": "excess > 0 with t >= 2 to confirm; excess < 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "hit rate of positive-forecast blocks minus hit rate of all blocks",
+    "value": -0.02017156236943507,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping 10-bar blocks with a positive forecast": 832,
+    "non-overlapping 10-bar blocks, all": 1657
+  },
+  "decided_by": "The excess is negative with t <= -2: reject.",
+  "reading": "Blocks are bars at positions 0,10,20,... of each window for both groups, the holding mean and the all-bar hit rate use that same grid per coin and window, and the t is the forecast-weighted mean of per-block excesses over its weighted (sandwich) standard error across the pooled positive-forecast blocks."
+}

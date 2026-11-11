@@ -1,0 +1,33 @@
+{
+  "status": "rejected",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess forward 10-bar return on positioned non-overlapping blocks (vs coin's window mean over all bars)",
+    "value": -0.016352243776391887,
+    "statistic": {
+      "name": "one-sample t of the mean excess",
+      "value": -2.8550693508285727
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and hit-rate difference > 0; reject: mean < 0 with t <= -2; inconclusive otherwise or if < 100 positioned blocks pooled or < 10 per coin"
+  },
+  "supporting_check": {
+    "name": "hit-rate difference (positioned blocks minus all blocks); slope of forward return on forecast reported",
+    "value": -0.008128764481048933,
+    "passed": false,
+    "slope_forward_return_on_forecast": 0.0016667494879542934
+  },
+  "counts": {
+    "positioned blocks pooled": 816,
+    "positioned blocks BTCUSD": 157,
+    "positioned blocks ETHUSD": 159,
+    "positioned blocks LTCUSD": 120,
+    "positioned blocks XMRUSD": 146,
+    "positioned blocks XRPUSD": 122,
+    "positioned blocks ZECUSD": 112
+  },
+  "decided_by": "The mean excess forward return is below 0 with t <= -2.",
+  "reading": "Blocks are the bars at positions 0, 10, 20, ... of each window with forecast > 0; the coin's mean is taken over every bar of the window with a valid forward return; the hit rate across all blocks uses the same grid; the slope is reported but only the hit-rate difference enters the confirm rule, as the plan writes; the per-coin minimum applies to every coin present in the record."
+}

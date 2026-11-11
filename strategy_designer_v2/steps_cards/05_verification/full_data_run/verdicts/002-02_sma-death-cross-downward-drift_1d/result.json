@@ -1,0 +1,27 @@
+{
+  "status": "rejected",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 20-bar excess log return on forecast at block start",
+    "value": -0.0037153613371822157,
+    "statistic": {
+      "name": "t of slope, SE clustered by coin",
+      "value": -4.61661721286324
+    },
+    "threshold": "slope > 0 with clustered t >= 2 confirms; slope < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "share of negative excess blocks when forecast < 0 minus share across all blocks",
+    "value": -0.06254792621356842,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping blocks": 811,
+    "non-overlapping blocks with forecast below 0": 402
+  },
+  "decided_by": "The slope is negative with clustered t <= -2: deeper shorts are followed by rebounds.",
+  "reading": "The situation is the raw component spread (last_history_value) below 0 on the short side; blocks start at positions 0, 20, 40, ... of each window and need close[t+20] inside the window; the coin-window mean is the mean of that coin-window's block log returns; the OLS has an intercept and CR1 standard errors clustered by coin; the supporting check passes when the share for forecast < 0 exceeds the all-block share."
+}

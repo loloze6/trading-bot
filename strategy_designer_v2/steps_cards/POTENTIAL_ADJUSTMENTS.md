@@ -28,3 +28,6 @@ Since then, the refreshed plans give the refusal on one plan only: `003-02_low-v
 - **Step 2: two ideas give the same forecast.** 002-01 (after the cross) and 002-05 (from cross to cross) become the same config in step 3.
 - **The default data** (BTC/USDT, 1d, fold A): small samples, so many verdicts come out inconclusive.
 - **Coins without data on the reachable venue** (BNB): parked with the quality of the backtest output.
+
+- **Step 3: the "holding" reference (found by the full-data run, 2026-11-11).** Every plan compares against the coin's mean over the same window, which shares the bars that set the forecast and biases the result against trend ideas (t = -2.60 on random walks). Proposed rule and the evidence: `FULL_DATA_RUN.md`. Not built.
+- **Steps 3 and 4: several folds.** Added during the investigation ("folds A, B, C, D"); not yet approved. Keep or revert.

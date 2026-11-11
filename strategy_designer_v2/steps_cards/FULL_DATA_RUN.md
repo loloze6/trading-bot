@@ -16,4 +16,33 @@
 
 **A caution fixed now.** Six plans, about four distinct forecasts: a t of 2 on one of them can happen by chance (roughly one chance in five). A confirm will be read with the per-fold results beside it (described, not used to change the verdict).
 
-**Result.** To be written after the run.
+## Review (2026-11-11)
+
+**Runs read:** this run (steps 2 to 5, verdicts twice); the planted test. **PRs merged:** 0. **Blocks in the registry:** none added by this work.
+
+**What came out.** 6 ideas, 6 plans. Backtests: 141 of 144 coin-windows per plan (the engine refused 1 XMR and 2 XRP windows: not enough daily history before them for the 200-day average; a data gap, not a config fault). Verdicts, the same status in both runs: **5 rejected** (t from -2.6 to -4.6), 1 inconclusive (002-05). Every situation check passed. Cost: 0.04 (ideas) + 0.34 (plans) + 0.57 and 0.64 (verdicts) USD; backtests about 25 minutes.
+
+**Formally, outcome A happened: with more data, the chain decides. But the five rejections are not about the market. They are a flaw of the measure.**
+
+**The books first.** Over the 8 years, the long trend books (002-01, 002-03) beat holding on BTC and ETH and lose to it on XMR, XRP, ZEC and LTC; the short books lose almost everywhere (`05_verification/full_data_run/diagnosis/baseline_compare_output.txt`). Nothing there looks like a strong, steady reversal after crosses, which is what five strong rejections would mean.
+
+**The flaw.** Every plan judges the idea "against simply holding the coin", as the step 3 prompt asks, and every plan realises it as the coin's mean return **over the same window**. That mean includes the very price moves that switched the slow trend signal on. When the 50/200 signal is on, the window's mean is high for that reason, so the "excess" is pushed below zero, whatever the market does next.
+- **Proof on random walks** (`diagnosis/random_walk_check.py`), where no effect exists: the same measure gives t = -2.60 on average (-3.56 to -1.80 over 20 simulated datasets). A trend idea is "rejected" out of nothing.
+- **On the record**, against the coin's mean over all its windows instead of the same window: 002-01 goes from t -2.91 to +0.09, 002-03 from -2.86 to +0.61, 002-02 from -3.51 to +0.11. In-position minus flat, raw: +0.08 %, +0.71 %, -0.08 % per 10 bars.
+- **It was always there.** Every plan since the start uses a per-window mean. On fold A the noise hid it (all inconclusive); with 8 years and 6 coins it turned "no effect" into five rejections. It biases against trend-type ideas and towards reversal-type ideas.
+
+## The conclusion of the investigation ("why is no idea ever proven?")
+
+1. **Not a bug of step 5.** The planted test: step 5 confirms (t 5.5) and rejects (t -4.1) planted effects, in the right direction (`05_verification/planted_test/reading.md`).
+2. **Not a threshold too strict.** t of 2 is the usual bar. It is not the cause.
+3. **The sample was too small.** On fold A (2 years, 1 or 2 coins), t = 2 needs an annual Sharpe of about 1.4 before costs; a strong realistic edge (+0.1 %/day) stays inconclusive. For an edge of steady size, t grows with the square root of the years, not with the number of bars: hourly bars could not help.
+4. **A real flaw of the measure: the "holding" reference taken over the same window.** It hid under small samples and shows with large ones. It is a step 3 matter (how a plan states its reference); step 5 applied it faithfully.
+5. **With the flaw removed, trend persistence on these 6 coins over 8 years shows no effect** (t between +0.09 and +0.61). This textbook idea is not real here, at this scale, before costs. So no proven idea yet, for two reasons: the sample before, the measure now; and the ideas tested so far are textbook signals.
+
+**These verdicts must not be used.** They stay in `05_verification/full_data_run/` as the record of the flaw.
+
+## Decision set proposed (not approved, nothing built)
+
+1. **Step 3, the reference.** One general line: "Against holding: the coin's mean return over all the test's windows, never a mean taken over the same window: such a mean shares the bars that set the forecast." (Or: compare the bars with a position against the bars without one.) Tested by two exercises, then this run's plans rewritten; steps 4 (no rerun: the configs do not change) and 5 rerun.
+2. **The default data:** all four folds and the coins with full data, so that a realistic edge can show. Steps 3 and 4 already accept several folds: the one change made tonight that you have not approved (a few lines; "fold A" records are untouched). Keep or revert.
+3. **Then new ideas.** With a sound measure and enough data, the briefs worth testing are those with a reason beyond a textbook signal (the two-coin ideas, the wish-list components).
