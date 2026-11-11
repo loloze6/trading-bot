@@ -1,0 +1,69 @@
+{
+  "status": "not profitable enough",
+  "verdict": "inconclusive",
+  "bars": [
+    {
+      "bar": "sharpe_min",
+      "label": "Sharpe",
+      "value": 0.46106448839837455,
+      "threshold": 0.0,
+      "comparison": "above",
+      "passed": true
+    },
+    {
+      "bar": "sharpe_vs_hold_min",
+      "label": "Sharpe minus holding's Sharpe",
+      "value": 0.28168884795534355,
+      "threshold": 0.0,
+      "comparison": "above",
+      "passed": true
+    },
+    {
+      "bar": "avg_daily_return_min",
+      "label": "Mean daily return",
+      "value": 0.0007918602763332394,
+      "threshold": 0.0005,
+      "comparison": "at least",
+      "passed": true
+    },
+    {
+      "bar": "leave_one_window_out_sharpe_min",
+      "label": "Lowest Sharpe, one window left out",
+      "value": -0.1327992717120669,
+      "threshold": 0.0,
+      "comparison": "above",
+      "passed": false
+    },
+    {
+      "bar": "calmar_min",
+      "label": "Calmar",
+      "value": 0.21424930676540843,
+      "threshold": 0.75,
+      "comparison": "above",
+      "passed": false
+    },
+    {
+      "bar": "trade_frequency_min",
+      "label": "Trades per bar",
+      "value": 0.04126947885153262,
+      "threshold": 0.01,
+      "comparison": "at least",
+      "passed": true
+    }
+  ],
+  "facts": {
+    "coins": [
+      "BTCUSD"
+    ],
+    "windows": 6,
+    "days": 724,
+    "years": 1.98,
+    "bars": 17519,
+    "trades": 723,
+    "holding_sharpe": 0.17937564044303103,
+    "annualised_return": 0.1137996946135178,
+    "deepest_fall": 0.5311554857823759,
+    "worst_window_left_out": "w2"
+  },
+  "decided_by": "failed: Lowest Sharpe, one window left out; Calmar"
+}

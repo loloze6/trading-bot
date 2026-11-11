@@ -1,11 +1,11 @@
-"""Applicability helper, step 6. Reads one idea's step 5 verdict and its backtest record, and applies the rule
-(rule.yaml) to the book the backtest traded, after the backtest's own costs. It calculates only: no trade is rebuilt,
+"""Profitability helper, branch 3. Reads one backtest record and applies the rule (rule.yaml) to the book the backtest
+traded, after the backtest's own costs. It calculates only: no trade is rebuilt,
 no cost is computed, nothing is measured on the prices beyond holding the coin. No model call.
 
   python make_assessment.py path/to/PLAN.md
 Options: --records-root (default: ../../04_backtest/backtests), --verdicts-dir (default: ../../05_verification/verdicts),
---assessments-dir (default: ../assessments), --any-verdict (exercises only: assess an idea whose verdict is not
-"confirmed"; the assessment says so).
+--assessments-dir (default: ../assessments). Every backtest is assessed, whatever branch 1 said; branch 1's verdict is
+copied next to the result, so a profitable book on an idea not shown real is visible as such.
 
 Definitions (one for every idea):
 - The book of one coin in one window: the backtest's value after each rebalance and its fees
@@ -127,7 +127,6 @@ def main():
     a.add_argument("--records-root", type=Path, default=STEPS / "04_backtest" / "backtests")
     a.add_argument("--verdicts-dir", type=Path, default=STEPS / "05_verification" / "verdicts")
     a.add_argument("--assessments-dir", type=Path, default=HERE.parent / "assessments")
-    a.add_argument("--any-verdict", action="store_true", help="exercises only: assess whatever the verdict")
     args = a.parse_args()
 
     plan_path = args.plan.resolve()
@@ -145,10 +144,6 @@ def main():
     vfile = args.verdicts_dir.resolve() / plan_id / "result.json"
     verdict = json.loads(vfile.read_text())["status"] if vfile.exists() else "none"
     record = args.records_root.resolve() / plan_id
-    if verdict != "confirmed" and not args.any_verdict:
-        index_line(f"{plan_id}: not assessed: the verdict is {verdict}")
-        print(f"{plan_id}: not assessed (verdict {verdict})")
-        return
     if not list(record.glob("*/w*/bars.csv.gz")):
         index_line(f"{plan_id}: not assessed: no backtest record")
         print(f"{plan_id}: not assessed (no backtest record)")
@@ -158,15 +153,15 @@ def main():
     worth = all(x["passed"] for x in rows)
     failed = [x["label"] for x in rows if not x["passed"]]
     decided = "every bar of the rule passed" if worth else "failed: " + "; ".join(failed)
-    status = "worth acting on" if worth else "not worth acting on"
+    status = "profitable enough" if worth else "not profitable enough"
     d = out_dir / plan_id
     d.mkdir(parents=True, exist_ok=True)
     write_atomic(d / "result.json", json.dumps({"status": status, "verdict": verdict, "bars": rows, "facts": facts,
                                                 "decided_by": decided}, indent=2, default=str) + "\n")
     lines = ["---", f"plan: {plan_id}", f"idea: {h.get('idea', '')}", f"fit: {h.get('fit', 'not given')}",
-             f"verdict: {verdict}" + ("" if verdict == "confirmed" else " (exercise: assessed although not confirmed)"),
+             f"idea verdict (branch 1): {verdict}",
              f"status: {status}", "---",
-             "Acting on it: trading the idea on its own, as the backtest traded it, after the backtest's own costs.",
+             "The book: the idea traded on its own, as the backtest traded it, after the backtest's own costs.",
              "", "| Bar | Value | Rule | Passed |", "|---|---|---|---|"]
     lines += [f"| {x['label']} | {fmt(x['value'])} | {x['comparison']} {fmt(x['threshold'])} | {'yes' if x['passed'] else 'no'} |" for x in rows]
     lines += ["", f"- Decided by: {decided}",
@@ -174,10 +169,10 @@ def main():
               f"({facts['years']} years); {facts['trades']} trades on {facts['bars']} bars",
               f"- Holding's Sharpe: {fmt(facts['holding_sharpe'])}; annualised return: {fmt(facts['annualised_return'])}; "
               f"deepest fall: {fmt(facts['deepest_fall'])}; window whose removal lowers the Sharpe most: {facts['worst_window_left_out']}",
-              f"Record: `steps_cards/{os.path.relpath(record, STEPS)}`", "Rule: `steps_cards/06_applicability/helper/rule.yaml`"]
+              f"Record: `steps_cards/{os.path.relpath(record, STEPS)}`", "Rule: `steps_cards/06_profitability/helper/rule.yaml`"]
     write_atomic(d / "assessment.md", "\n".join(lines) + "\n")
     summary = "; ".join(f"{x['label']} {fmt(x['value'])}" for x in rows[:2] + rows[4:5])
-    index_line(f"{plan_id}: {status}{'' if verdict == 'confirmed' else ' (exercise, verdict ' + verdict + ')'} [{summary}]")
+    index_line(f"{plan_id}: {status} (idea: {verdict}) [{summary}]")
     print(f"{plan_id}: {status} ({decided})")
 
 
