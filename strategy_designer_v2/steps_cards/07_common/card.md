@@ -84,7 +84,7 @@ One analysis per backtest: findings, then ideas, each idea in step 2's format, o
 - **One call** (the default): the same model explores, writes its findings, then its ideas.
 - **Analyst, then deducer** (`--split`): the analyst explores and writes findings only; a deducer, who does not see the data, writes the ideas from the findings.
 
-**Checks in code.** They refuse only an answer they cannot read, and send it back (three attempts): no findings; an idea without its sentence, consequence or findings; an idea resting on a finding that does not exist; a field over 300 words; neither ideas nor "no-ideas". A function that fails returns its error as the round's result, without any file path. Code also refuses a period named by its months and year ("January to April 2022", "Q1 2022", "2022-03"): periods are named by window or by year. The verdict and check text given to the model carry no path lines.
+**Checks in code.** They refuse only an answer they cannot read, and send it back (three attempts): no findings; an idea without its sentence, consequence or findings; an idea resting on a finding that does not exist; a field over 300 words; neither ideas nor "no-ideas". A function that fails returns its error as the round's result, without any file path. Code also refuses a period named by its months and year (a month name next to a year, a quarter with its year, a year and month written as numbers): periods are named by window or by year. The verdict and check text given to the model carry no path lines.
 
 **Model.** Opus. **Cost.** About 0.3 USD and 1 to 2 minutes per analysis (exercise 1: 17 analyses, 5.38 USD; the split costs about 20 % more).
 

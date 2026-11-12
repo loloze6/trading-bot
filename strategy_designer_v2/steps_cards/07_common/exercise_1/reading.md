@@ -24,7 +24,7 @@
 ## Defects found and fixed during the exercise
 1. **The runner failed on a record without a trades file** (the planted records): it now gives an empty table.
 2. **Error messages showed file paths** to the model ("planted_test", "minus1pct"): paths are now stripped. The plan and check text given to the model no longer carry their path lines either. The planted record's name still reaches the model through the plan id in the verdict's header; for real backtests the id is the idea's name, so this affects only the planted test.
-3. **A period was named by its months and year** ("January to April 2022", from one window grouped by year and month). The instructions now ask for windows or years only, and code refuses a month name next to a year, a "Q1 2022" or a "2022-03". The 7.a analyses were rerun; no date remains.
+3. **A period was named by its months and year** (months with their year, from one window grouped by year and month). The instructions now ask for windows or years only, and code refuses a month name next to a year, a quarter with its year, or a year and month written as numbers. The 7.a analyses were rerun; no date remains.
 4. **Step 5's verdict wrote the situation check as "1 of the active bars"** (meaning 100 %), which the model read as one bar. It now writes a percentage; 111 verdicts were re-rendered.
 
 ## To decide
