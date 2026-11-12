@@ -13,7 +13,5 @@ status: not profitable enough
 | Trades per bar | 0.2191 | at least 0.01 | yes |
 
 - Decided by: failed: Sharpe; Sharpe minus holding's Sharpe; Mean daily return; Lowest Sharpe, one window left out; Calmar
-- The book: BTCUSD, ETHUSD, equal weight; 6 windows, 724 days (1.98 years); 7677 trades on 35038 bars
-- Holding's Sharpe: 0.06572; yearly return: -0.8493; deepest fall: 0.9768; window whose removal lowers the Sharpe most: w6
 Record: `steps_cards/04_backtest/hourly_run/backtests/001-02_rsi-low-extreme-reversal-up_1h`
 Rule: `steps_cards/06_profitability/helper/rule.yaml`

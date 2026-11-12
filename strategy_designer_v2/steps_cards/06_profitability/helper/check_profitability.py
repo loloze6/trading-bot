@@ -144,16 +144,12 @@ def main():
     status = "profitable enough" if ok else "not profitable enough"
     d = out_dir / rid
     d.mkdir(parents=True, exist_ok=True)
-    write_atomic(d / "result.json", json.dumps({"status": status, "measures": rows, "facts": facts, "decided_by": decided},
+    write_atomic(d / "result.json", json.dumps({"status": status, "measures": rows, "decided_by": decided},
                                                indent=2, default=str) + "\n")
     lines = ["---", f"backtest: {rid}", f"data: {data}", f"status: {status}", "---",
              "| Measure | Value | Rule | Passed |", "|---|---|---|---|"]
     lines += [f"| {x['label']} | {fmt(x['value'])} | {x['comparison']} {fmt(x['threshold'])} | {'yes' if x['passed'] else 'no'} |" for x in rows]
     lines += ["", f"- Decided by: {decided}",
-              f"- The book: {', '.join(facts['coins'])}, equal weight; {facts['windows']} windows, {facts['days']} days "
-              f"({facts['years']} years); {facts['trades']} trades on {facts['bars']} bars",
-              f"- Holding's Sharpe: {fmt(facts['holding_sharpe'])}; yearly return: {fmt(facts['annualised_return'])}; "
-              f"deepest fall: {fmt(facts['deepest_fall'])}; window whose removal lowers the Sharpe most: {facts['worst_window_left_out']}",
               f"Record: `steps_cards/{os.path.relpath(record, STEPS)}`", "Rule: `steps_cards/06_profitability/helper/rule.yaml`"]
     write_atomic(d / "check.md", "\n".join(lines) + "\n")
     summary = "; ".join(f"{x['label']} {fmt(x['value'])}" for x in rows[:2] + rows[4:5])

@@ -42,12 +42,8 @@ One profitability check per backtest: **profitable enough** or **not profitable 
    - For: the answer can be challenged.
    - Used by: the operator.
    - Without it: no way to see what failed.
-5. **The book in figures:** coins, windows, days, years, trades and bars; holding's Sharpe, the yearly return, the deepest fall, and the window whose removal lowers the Sharpe most.
-   - For: reading the measures in context.
-   - Used by: the operator.
-   - Without it: the measures have no scale.
 
-**Next to it:** `result.json` (the same numbers, for code), and the **index line** (`INDEX.md`): `<backtest>: profitable enough | not profitable enough [Sharpe; Sharpe minus holding's; Calmar]`, or `<backtest>: not checked: the record holds no window that ran`.
+**Next to it:** `result.json` (the status, the six measures and "decided by", for code), and the **index line** (`INDEX.md`): `<backtest>: profitable enough | not profitable enough [Sharpe; Sharpe minus holding's; Calmar]`, or `<backtest>: not checked: the record holds no window that ran`.
 
 ## The rule (`helper/rule.yaml`)
 **Profitable enough** when all six measures pass; otherwise **not profitable enough**. The values are those of the old pipeline's profit bars, without its deflated Sharpe and its drawdown ceiling.
