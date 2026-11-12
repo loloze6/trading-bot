@@ -4,7 +4,7 @@ idea: 002-05_up-cross-to-reverse-cross-gain
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: excess mean next-bar return while forecast > 0 vs all bars (pooled): -1.57075e-05; Newey-West t (10 lags): -0.0427241 (threshold: excess > 0 with t >= 2 confirms; excess < 0 with t <= -2 rejects)
 - Supporting check: binomial z of up-bar share while forecast > 0 vs per-coin baseline: 0.114022, passed: False

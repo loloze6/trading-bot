@@ -4,7 +4,7 @@ idea: 001-04_rsi-low-extreme-continuation-down
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: mean fwd 24-bar return, most-short decile minus zero-forecast bars: -0.000357322; Newey-West t (24 lags): -0.276843 (threshold: confirm if negative with t <= -2 and negative in at least 2 of 3 coins; reject if positive with t >= +2)
 - Supporting check: HAC slope of demeaned fwd 24-bar return on forecast (must be positive): 1.9859e-05, passed: True

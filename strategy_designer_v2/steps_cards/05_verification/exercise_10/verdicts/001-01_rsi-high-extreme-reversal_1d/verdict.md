@@ -4,7 +4,7 @@ idea: 001-01_rsi-high-extreme-reversal
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: pooled excess forward 5-bar return after forecast <= -10 (minus same coin/window mean forward 5-bar return), non-overlapping: -0.0119429; t of the mean: -1.32313 (threshold: confirm: negative with t <= -2 and negative in at least 2 of the 3 coins; reject: positive with t >= +2; inconclusive otherwise or fewer than 30 pooled cases)
 - Supporting check: sign of excess return per coin (negative in at least 2 coins): 2, passed: True

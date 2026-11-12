@@ -1,0 +1,50 @@
+{
+  "line": "7.c",
+  "backtest": "002-05_sma-up-regime-positive-drift_1d_minus1pct",
+  "step5": "rejected",
+  "step6": "none",
+  "split": true,
+  "explorations": 2,
+  "cost": 0.2903674,
+  "findings": {
+    "F1": "The rejection comes entirely from the close-to-next-open gap, not from intraday movement. On in-stretch bars the next bar opens a mean -0.00999 below the prior close, with t = -680 and 100% of gaps negative. On out-of-stretch bars the mean gap is -0.000007 (t = -0.89). The in-stretch gap quantiles run only from -0.0104 at the 5th percentile to -0.0096 at the 95th, so it behaves like a near-constant -1% shift, which matches the record's \"minus1pct\" label.",
+    "F2": "With the gap removed, the next bar's open-to-close return in-stretch is +0.00113 against -0.00030 out-of-stretch, a difference of +0.00143 with Welch t = 0.69. The up-share is 0.476 in-stretch against 0.475 out. Intraday, the regime neither persists nor reverses.",
+    "F3": "The gap is tied to the bar on which the forecast is positive, not to the bar that follows. Transitions from in-stretch to out-of-stretch (1->0, n=2) still carry a gap of -0.0098. Transitions from out to in (0->1, n=2) carry -0.00002. Bars inside the stretch (1->1, n=288) carry -0.00999.",
+    "F4": "The negative close-to-close drift shows the same size in every window that has in-stretch bars: w1 -0.0176 (n=13), w4 -0.0068, w5 -0.0105, w6 -0.0070. The gap is about -0.0100 in each. Open-to-close in-stretch varies by window: w1 -0.0076, w4 +0.0032, w5 -0.0005, w6 +0.0030.",
+    "F5": "Out-of-stretch next-bar returns are positive in the windows that also contain stretches: w4 +0.0094 with up-share 0.59, and w6 +0.0062 with up-share 0.54. In the windows with no stretch they are negative: w2 -0.0046 and w3 -0.0012. By year, out-of-stretch bars return +0.0076 in 2023 against -0.0022 in 2022.",
+    "F6": "The size of the forecast gives no gradient. In-stretch next-bar means by forecast quartile are -0.0119, -0.0085, -0.0054 and -0.0097, with up-shares between 0.23 and 0.35.",
+    "F7": "Position within the stretch gives no gradient either. Means are -0.0151 for bars 0-5, -0.0082 for 6-20, -0.0059 for 21-60 and -0.0114 beyond 60. The early \"new trend\" bars are no better than late ones.",
+    "F8": "The \"more often\" check fails only because of the gap. The close-to-close up-share is 0.272 in-stretch against 0.477 out, a difference of -0.205. On open-to-close the two shares are equal (0.476 vs 0.475).",
+    "F9": "In-stretch bars are quieter than out-of-stretch bars. The standard deviation of next-bar returns is 0.0235 against 0.0320, and the mean next-bar high-low range in w5/w6 is 0.029-0.033, against 0.035-0.060 in the out-of-stretch windows w2/w3.",
+    "F10": "The coin falls in every window, from -0.18 in w3 to -0.73 in w5, the window that is 100% in-stretch. Yet the book beats it by +0.47 in w4 (+0.249 vs -0.226) and by +0.47 in w6 (+0.260 vs -0.213), and loses only -0.089 in w5 against the coin's -0.729. The book's value and the bar-close series diverge on the gapped bars."
+  },
+  "ideas": [
+    {
+      "idea": "While the 50-day SMA sits above the 200-day SMA, BTC's next daily bar has a smaller high-low range and a smaller spread of returns than bars where the 50-day SMA is below the 200-day SMA.",
+      "consequence": "A trader can take larger positions in the up-regime for the same risk, because the regime marks calmer bars rather than a directional edge.",
+      "name": "up-regime compresses daily volatility",
+      "from": "F9, F2, F4",
+      "refs": [
+        "F9",
+        "F2",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In stretches where the 50-day SMA is below the 200-day SMA but has been above it within the same recent period (a down-cross that interrupts an up-trending phase), BTC's next daily bar closes up more often than in long, unbroken stretches below the 200-day SMA.",
+      "consequence": "A trader can treat a fresh down-cross after a recent up-stretch as a buyable dip rather than as the end of the trend.",
+      "name": "brief down-cross rebounds upward",
+      "from": "F5, F3, F10",
+      "refs": [
+        "F5",
+        "F3",
+        "F10"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "002-05_sma-up-regime-positive-drift.c1_up-regime-compresses-daily-volatility",
+    "002-05_sma-up-regime-positive-drift.c2_brief-down-cross-rebounds-upward"
+  ],
+  "no_ideas": null
+}

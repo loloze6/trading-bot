@@ -4,7 +4,7 @@ idea: 003-03_high-volume-up-move-continues
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: forecast-weighted mean next-bar excess return over buy-and-hold drift: 0.000456998; t of the forecast-weighted mean: 0.16545 (threshold: above 0 with t >= 2 confirms; below 0 with t <= -2 rejects; otherwise inconclusive)
 - Supporting check: top-fifth minus bottom-fifth mean next-bar excess return (top fifth must be > 0): 0.013066, passed: True

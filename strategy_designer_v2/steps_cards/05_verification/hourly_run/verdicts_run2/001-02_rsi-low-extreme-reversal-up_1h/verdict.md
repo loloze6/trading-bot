@@ -4,7 +4,7 @@ idea: 001-02_rsi-low-extreme-reversal-up
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: 24-bar forward return, top-decile forecast minus zero-forecast bars (%): -0.127713; Welch t (non-overlapping): -0.439897 (threshold: confirm: positive with t >= 2; reject: negative with t <= -2, or |t| < 2 with >= 150 cases and |estimate| <= 0.1% per 24 bars)
 - Supporting check: coins with return per unit avg exposure minus buy-and-hold > 0 (need >= 2): 0, passed: False

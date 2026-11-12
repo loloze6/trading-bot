@@ -4,7 +4,7 @@ idea: 001-01_rsi-high-extreme-reversal-down
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: mean forward 12-bar log excess return after top-decile |forecast| bars: -0.00143263; t of the mean on non-overlapping 12-bar blocks: -1.23079 (threshold: confirm: negative with t <= -2 and negative in >= 2 coins; reject: positive with t >= +2; else inconclusive; needs >= 30 episodes per coin and >= 100 pooled)
 - Supporting check: excess return falls steadily from zero-forecast group through |forecast| quintiles (Spearman rho), same sign in >= 2 coins: None, passed: None

@@ -4,7 +4,7 @@ idea: 002-06_short-below-long-sma-drift-down
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: t-stat of slope of next-24-bar excess return on forecast at block start: 0.649601; OLS slope t: 0.649601 (threshold: Confirm if slope t >= 2 with in-zone falling share > 50%; reject if slope t <= -2; at least 60 in-zone blocks)
 - Supporting check: in-zone share of blocks with excess 24-bar return < 0 (binomial vs 50%, two-sided p=0.9589): 0.49734, passed: False

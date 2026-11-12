@@ -4,7 +4,7 @@ idea: 003-01_low-volume-up-move-reverts
 fit: adapted
 status: rejected
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: position-weighted, drift-adjusted next-bar return of the short after thin up bars: -0.00205571; t of the mean: -0.758302 (threshold: above 0 with a t-stat of at least 2.0 (reject: 0 or less with t of 0 or below))
 - Supporting check: largest third minus smallest third of |position|, mean drift-adjusted next-bar drop: 8.08454e-06, passed: True

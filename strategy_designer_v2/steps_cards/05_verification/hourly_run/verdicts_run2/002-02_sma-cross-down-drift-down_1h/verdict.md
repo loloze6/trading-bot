@@ -4,7 +4,7 @@ idea: 002-02_sma-cross-down-drift-down
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: t-stat of mean of (forecast/10 x block forward 24-bar excess return over window mean 24-bar return): 0.00048375; t of the mean: 0.431124 (threshold: t-stat >= 2 confirms, <= -2 rejects, strictly between is inconclusive; fewer than 100 active blocks is inconclusive)
 - Supporting check: share of active blocks with negative 24-bar excess return vs 50%: 0.5, passed: False

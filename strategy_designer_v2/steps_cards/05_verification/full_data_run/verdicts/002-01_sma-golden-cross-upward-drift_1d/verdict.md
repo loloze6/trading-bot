@@ -4,7 +4,7 @@ idea: 002-01_sma-golden-cross-upward-drift
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: OLS slope of excess forward 10-bar return on forecast (non-overlapping, pooled): 0.000202171; OLS slope t: 0.370976 (threshold: confirm if slope > 0 with t >= 2; reject if slope < 0 with t <= -2; else inconclusive)
 - Supporting check: share positive fwd 10-bar returns when forecast > 0 minus coin's share positive: -0.0214105, passed: False

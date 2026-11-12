@@ -4,7 +4,7 @@ idea: 002-01_sma-cross-up-drift-up
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: forward 24-bar log return when forecast > 0 minus window mean over all bars: 0.000196106; one-sample t of mean excess on non-overlapping 24-bar blocks: -0.435393 (threshold: confirm if excess > 0 with t >= 2; reject if excess < 0 with t <= -2)
 - Supporting check: hit rate when forecast > 0 minus hit rate over all bars: -0.0125398, passed: False

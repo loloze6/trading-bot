@@ -4,7 +4,7 @@ idea: 002-06_down-cross-to-reverse-cross-loss
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: |forecast|-weighted mean excess short 1-bar return vs coin all-window mean: 6.57232e-05; t of weighted mean (heteroskedasticity-robust weighted SE): 0.116595 (threshold: confirm if weighted mean excess short return > 0 with t >= 2; reject if < 0 with t <= -2; otherwise, or with fewer than 300 pooled forecast<0 bars, inconclusive)
 - Supporting check: share of forecast<0 bars with next return below coin mean (binomial z vs 50%): 0.512362, passed: True

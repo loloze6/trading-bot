@@ -4,7 +4,7 @@ idea: 002-06_sma-down-regime-negative-drift
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: |forecast|-weighted mean of next-bar return minus coin mean, short bars: -0.00100349; t of weighted mean: -0.538966 (threshold: t <= -2 with negative mean confirms; t >= +2 with positive mean rejects)
 - Supporting check: down-bar share on active vs all bars (binomial z): -0.0183191, passed: False

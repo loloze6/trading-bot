@@ -4,7 +4,7 @@ idea: 002-01_sma-upcross-upward-drift
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: OLS slope of forward 10-bar excess return on forecast: -0.00156829; OLS slope t: -0.816674 (threshold: slope positive with t >= 2 confirms; negative with t <= -2 rejects)
 - Supporting check: share positive excess (forecast > 0) minus share (forecast = 0): -0.220353, passed: False

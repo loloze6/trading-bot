@@ -4,7 +4,7 @@ idea: 003-04_high-volume-down-move-continues
 fit: adapted
 status: rejected
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: Mean next-bar return after active bars minus mean next-bar return over all bars: 0.0002125; Welch t: 0.0662407 (threshold: Confirm: excess < 0 with t <= -2 over >= 60 active bars and negative in >= 4 of 6 windows; reject: excess >= 0 with >= 60 active bars; otherwise inconclusive)
 - Supporting check: OLS slope of next-bar return on signed forecast across active bars (should be > 0): -0.000150546, passed: False

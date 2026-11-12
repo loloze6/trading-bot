@@ -4,7 +4,7 @@ idea: 001-02_rsi-low-extreme-rebound
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: pooled mean 5-bar excess return (vs window hold average) after top-quintile forecast bars: 0.00470992; t of the mean: 0.60183 (threshold: confirm if t >= 2 and supporting check holds; reject if t <= -2; inconclusive otherwise or if < 30 pooled top-quintile cases or < 8 per coin)
 - Supporting check: coins with top-quintile minus neutral excess > 0 (need >= 2): 2, passed: True

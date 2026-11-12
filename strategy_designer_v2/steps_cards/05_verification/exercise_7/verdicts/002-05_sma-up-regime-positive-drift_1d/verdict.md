@@ -4,7 +4,7 @@ idea: 002-05_sma-up-regime-positive-drift
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: in-stretch minus all-bar mean next-bar return (before costs): 0.000865053; Welch t (in-stretch vs all bars): 0.495162 (threshold: confirm: in-stretch mean > all-bar mean with one-sided t >= 2.0 and higher up-day share; reject: in-stretch mean <= all-bar mean or t <= -2.0; inconclusive: -2.0 < t < 2.0, fewer than 100 in-stretch bars or fewer than 3 up-cross stretches)
 - Supporting check: in-stretch up-day share minus all-bar up-day share: -0.000657268, passed: False

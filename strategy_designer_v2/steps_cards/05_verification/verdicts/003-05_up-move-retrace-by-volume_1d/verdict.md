@@ -4,7 +4,7 @@ idea: 003-05_up-move-retrace-by-volume
 fit: adapted
 status: inconclusive
 ---
-Situation check: 0.982759 of the active bars match the plan's situation and side
+Situation check: 98 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: heavy-minus-thin |forecast|-weighted mean next-bar return: -0.000663565; Welch t: -0.151697 (threshold: Confirm if difference > 0 and t >= 2; reject if difference < 0 and t <= -2; else inconclusive; inconclusive if fewer than 30 up bars in either group)
 - Supporting check: thin weighted mean next-bar return minus unconditional mean daily return (< 0): 0.00104926, passed: False

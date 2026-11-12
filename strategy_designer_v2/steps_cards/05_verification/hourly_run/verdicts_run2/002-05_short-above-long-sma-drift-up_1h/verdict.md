@@ -4,7 +4,7 @@ idea: 002-05_short-above-long-sma-drift-up
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: pooled excess 24-bar forward return in zone over all-bar mean: -0.000194076; Welch t: -0.109065 (threshold: positive with t >= 2 and >= 4 of 6 windows positive to confirm; negative with t <= -2 to reject)
 - Supporting check: in-zone minus all-block share of positive 24-bar blocks: -0.0216073, passed: False

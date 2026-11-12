@@ -4,7 +4,7 @@ idea: 002-06_sma-down-regime-negative-drift
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: mean next-bar return on forecast<0 bars minus mean next-bar return on all bars (BTC, pooled windows): -0.0578031; stretch-clustered t: -0.312946 (threshold: in-state mean at least 0.10% per day below the all-bars mean with stretch-clustered t <= -2 (confirm); difference >= 0 (reject))
 - Supporting check: share of down bars in stretches minus share over all bars: -0.000439188, passed: False

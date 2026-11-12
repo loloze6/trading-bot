@@ -4,7 +4,7 @@ idea: 002-03_price-upcross-long-sma-drift
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: OLS slope (with intercept) of next-10-bar log return on forecast at block start: 0.00120966; OLS slope t-stat: 0.64857 (threshold: slope t-stat >= 2 confirms (with supporting share higher), <= -2 rejects, between is inconclusive)
 - Supporting check: share of positive 10-bar returns in forecast > 0 blocks minus share over all blocks: 0.0042328, passed: True

@@ -4,7 +4,7 @@ idea: 002-03_price-cross-above-sma-up
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: OLS slope of forward 24-bar return minus window mean, on forecast: -4.95899e-05; OLS slope t: -0.32363 (threshold: confirm if slope > 0 with t >= 2; reject if slope < 0 with t <= -2; otherwise inconclusive)
 - Supporting check: two-proportion z: share of positive 24-bar returns, forecast > 0 vs all sampled bars: -2.28721, passed: False

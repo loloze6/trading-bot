@@ -4,7 +4,7 @@ idea: 002-04_price-cross-below-long-sma
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: mean of allocation x (10-bar return - 10 x coin mean daily return) over non-overlapping 10-bar blocks, before costs: -0.000724788; t of the mean: -0.274762 (threshold: confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2; else inconclusive; needs >= 30 nonzero-position blocks)
 - Supporting check: OLS slope of excess 10-bar return on allocation, nonzero-position blocks: -0.00561058, passed: False

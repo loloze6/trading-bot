@@ -4,7 +4,7 @@ idea: 003-03_high-volume-up-move-continues
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: forecast-weighted mean next-bar return on active bars minus mean next-bar return over all bars: 0.000456998; t of the forecast-weighted mean: 0.16545 (threshold: confirm if forecast-weighted mean excess next-bar return > 0 with t >= 2; reject if < 0 with t <= -2; otherwise, or with fewer than 60 active bars, inconclusive)
 - Supporting check: top-fifth minus bottom-fifth mean next-bar excess return (top must be > 0 and > bottom): 0.013066, passed: True

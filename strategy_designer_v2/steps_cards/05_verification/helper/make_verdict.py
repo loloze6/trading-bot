@@ -97,6 +97,10 @@ def check_result(out):
             raise ValueError(f"{k} must be a sentence")
 
 
+def pct(v):
+    return f"{100 * v:.0f} %" if isinstance(v, (int, float)) else str(v)
+
+
 def fmt(v):
     return f"{v:.6g}" if isinstance(v, float) else str(v)
 
@@ -106,7 +110,7 @@ def render(d, plan_id, h, out, plan_path, record):
     chk = out.get("situation_check") or {}
     if out["status"] == "mismatch":
         lines = ["---", f"plan: {plan_id}", f"idea: {h.get('idea', '')}", f"fit: {h.get('fit', 'not given')}", "status: mismatch", "---",
-                 f"Situation check: {fmt(chk.get('agreement'))} of the active bars are bars of the plan's situation on its side (90 % needed).",
+                 f"Situation check: {pct(chk.get('agreement'))} of the active bars are bars of the plan's situation on its side (90 % needed).",
                  f"- Decided by: {out['decided_by']}", f"- Reading: {out['reading']}",
                  f"Plan: `steps_cards/{os.path.relpath(plan_path, HERE.parents[1])}`",
                  f"Record: `steps_cards/{os.path.relpath(record, HERE.parents[1])}`", "Measure: `measure.py`"]
@@ -115,7 +119,7 @@ def render(d, plan_id, h, out, plan_path, record):
     mm, sc = out["main_measure"], out.get("supporting_check")
     stat = f"; {mm['statistic'].get('name', 'statistic')}: {fmt(mm['statistic'].get('value'))}" if isinstance(mm.get("statistic"), dict) else ""
     lines = ["---", f"plan: {plan_id}", f"idea: {h.get('idea', '')}", f"fit: {h.get('fit', 'not given')}", f"status: {out['status']}", "---",
-             f"Situation check: {fmt(chk.get('agreement'))} of the active bars match the plan's situation and side",
+             f"Situation check: {pct(chk.get('agreement'))} of the active bars match the plan's situation and side",
              "Evidence:",
              f"- Main measure: {mm.get('name', '')}: {fmt(mm.get('value'))}{stat} (threshold: {mm.get('threshold', '')})",
              (f"- Supporting check: {sc.get('name', '')}: {fmt(sc.get('value'))}, passed: {sc.get('passed')}" if isinstance(sc, dict) else "- Supporting check: none"),

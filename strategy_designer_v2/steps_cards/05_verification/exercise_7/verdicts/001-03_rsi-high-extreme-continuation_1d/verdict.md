@@ -4,7 +4,7 @@ idea: 001-03_rsi-high-extreme-continuation
 fit: adapted
 status: rejected
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: mean 5-bar forward return after extreme minus after neutral bars: -0.000700598; Welch t: -0.0556966 (threshold: t >= 2 confirms (with >= 2 coins positive and positive pooled supporting excess); t <= 0 rejects)
 - Supporting check: strategy return minus exposure-scaled buy-and-hold, pooled: 0.467728, passed: True

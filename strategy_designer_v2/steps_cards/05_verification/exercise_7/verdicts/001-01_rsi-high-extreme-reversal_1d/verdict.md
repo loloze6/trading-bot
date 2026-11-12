@@ -4,7 +4,7 @@ idea: 001-01_rsi-high-extreme-reversal
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: pooled excess 5-bar forward return after extreme bars (forecast <= -10) minus coin's window drift: -0.0118992; t of the mean: -1.32099 (threshold: confirm: pooled excess < 0 with t <= -2 and negative in >= 2 coins; reject: pooled excess >= 0, or negative in < 2 coins with t > -1; min 30 pooled non-overlapping extreme blocks and 8 per coin)
 - Supporting check: Spearman rank correlation of |forecast| with next 5-bar return, bars with forecast < 0: 0.0378097, passed: False

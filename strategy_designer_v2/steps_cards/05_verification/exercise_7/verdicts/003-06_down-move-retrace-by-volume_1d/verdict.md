@@ -4,7 +4,7 @@ idea: 003-06_down-move-retrace-by-volume
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: thin minus heavy mean next-bar give-back share of the drop: -3.14064; Welch t: -0.455078 (threshold: confirm: difference > 0, Welch t >= 2 and thin mean > 0; reject: difference <= 0 with t <= -1; otherwise inconclusive; at least 20 thin and 20 heavy down bars)
 - Supporting check: terciles of drop size with the same-sign thin-minus-heavy difference (need >= 2 of 3): 2, passed: True

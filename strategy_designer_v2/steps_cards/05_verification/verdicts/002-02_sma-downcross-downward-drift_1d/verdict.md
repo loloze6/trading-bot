@@ -4,7 +4,7 @@ idea: 002-02_sma-downcross-downward-drift
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: excess forward 20-bar return while short (vs all-bar window mean), non-overlapping blocks: 0.0102576; t of the mean excess across short blocks: 0.318951 (threshold: confirm if excess < 0 with t <= -2 and slope not positive; reject if excess > 0 with t >= +2; otherwise inconclusive; inconclusive if fewer than 6 short blocks (120 short bars))
 - Supporting check: slope of forward 20-bar return on |forecast| within short bars (should be <= 0); share of short blocks with negative excess: -0.00459134, passed: True

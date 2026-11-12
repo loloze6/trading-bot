@@ -4,7 +4,7 @@ idea: 001-04_rsi-low-extreme-continuation
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: pooled 5-bar forward return after extreme bars (raw >= 8) minus after neutral bars (RSI 40-60): 0.00927089; Welch t: 0.457902 (threshold: confirm if difference < 0 with Welch t <= -2 and negative in at least 2 coins; reject if difference >= 0)
 - Supporting check: per-coin strategy cumulative return before costs minus same-average-size short hold (mean over coins; passes if positive for every coin): 0.492062, passed: True

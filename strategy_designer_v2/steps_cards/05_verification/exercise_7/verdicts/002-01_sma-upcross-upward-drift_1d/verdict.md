@@ -4,7 +4,7 @@ idea: 002-01_sma-upcross-upward-drift
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: mean 10-bar forward return in long blocks minus mean over all blocks: 0.00466185; Welch t (long blocks vs all blocks): 0.235475 (threshold: excess > 0 with t >= 2 confirms; excess <= 0 rejects (t <= -2 = reversal))
 - Supporting check: hit rate of long blocks minus hit rate of all blocks: -0.0315271, passed: False

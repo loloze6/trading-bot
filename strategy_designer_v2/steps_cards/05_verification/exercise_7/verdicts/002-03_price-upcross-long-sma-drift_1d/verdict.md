@@ -4,7 +4,7 @@ idea: 002-03_price-upcross-long-sma-drift
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: mean 20-bar fwd return in position minus all bars (non-overlapping): 0.0282881; Welch t: 0.790345 (threshold: difference > 0 with Welch t >= 2 across non-overlapping 20-bar blocks)
 - Supporting check: share of positive 20-bar returns after up-crosses minus unconditional share: 0.436066, passed: True

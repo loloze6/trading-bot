@@ -4,7 +4,7 @@ idea: 002-05_sma-up-regime-positive-drift
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: mean next-bar return in-stretch minus out-of-stretch: 0.00144308; Welch t: 0.698919 (threshold: confirm if difference > 0 with Welch t >= 2; reject if difference < 0 with t <= -2; else inconclusive; needs >= 100 in, >= 100 out, >= 3 stretches)
 - Supporting check: share of up next-bars in-stretch minus out-of-stretch: -0.00109646, passed: False

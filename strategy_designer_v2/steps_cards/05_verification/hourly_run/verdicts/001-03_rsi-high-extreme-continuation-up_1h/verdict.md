@@ -4,7 +4,7 @@ idea: 001-03_rsi-high-extreme-continuation-up
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: 6-bar return after top-decile forecast bars minus after neutral RSI (45-55) bars: -0.000696049; Welch t: -1.03761 (threshold: difference > 0 with t >= 2 to confirm; difference < 0 with t <= -2 to reject)
 - Supporting check: coins with positive top-decile excess over unconditional 6-bar mean: 0, passed: False

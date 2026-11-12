@@ -4,7 +4,7 @@ idea: 002-04_price-cross-below-sma-down
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: OLS slope of 24-bar excess forward return on forecast, non-overlapping 24-bar blocks pooled: 0.000106768; OLS slope t: 0.655397 (threshold: confirm if slope t >= 2 (with fall share > 50%); reject if slope t <= -2)
 - Supporting check: share of forecast<0 bars followed by negative 24-bar excess return, vs 50%: 0.475903, passed: False

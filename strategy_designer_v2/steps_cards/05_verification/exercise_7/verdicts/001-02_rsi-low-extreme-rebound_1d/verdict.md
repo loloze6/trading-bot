@@ -4,7 +4,7 @@ idea: 001-02_rsi-low-extreme-rebound
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: top-quintile forecast fwd 5-bar return minus flat-bar fwd 5-bar return: -0.00147462; Welch t: -0.139197 (threshold: excess above 0 with t >= 2 and positive in at least 2 of the coins)
 - Supporting check: Spearman rank correlation of forecast vs fwd 5-bar return on positive-forecast bars: -0.0562873, passed: False

@@ -4,7 +4,7 @@ idea: 003-04_high-volume-down-move-continues
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: mean demeaned per-bar gain (forecast/10 x next-bar return minus window mean daily return): -0.00118999; t of the mean: -0.241528 (threshold: confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2; else inconclusive; at least 40 active bars)
 - Supporting check: larger-short half minus smaller-short half mean demeaned gain: -0.00754835, passed: False

@@ -4,7 +4,7 @@ idea: 002-02_sma-death-cross-downward-drift
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: |forecast|-weighted mean excess gain of the short over holding, 10 bars, non-overlapping, pooled: 0.00223806; t of the |forecast|-weighted mean: 0.391989 (threshold: confirm if > 0 with t >= 2; reject if < 0 with t <= -2; else inconclusive; fewer than 30 cases inconclusive)
 - Supporting check: top minus bottom tercile of |forecast|, weighted mean short excess gain: 0.00711283, passed: True

@@ -4,7 +4,7 @@ idea: 002-03_price-cross-above-long-sma
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: forecast-weighted 20-bar excess return, block mean over non-overlapping 20-bar blocks: 0.339761; t of the block mean: 1.24898 (threshold: confirm if block mean > 0 with t >= 2; reject if block mean < 0 with t <= -2; else inconclusive; inconclusive if fewer than 50 blocks with a non-zero position)
 - Supporting check: share of forecast>0 bars whose next 20-bar return beats 20 x pooled mean daily return, vs 50%: 0.419813, passed: False

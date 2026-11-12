@@ -4,7 +4,7 @@ idea: 002-04_price-downcross-long-sma-drift
 fit: adapted
 status: rejected
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: mean 20-bar forward return on short bars minus on all bars (pp): -1.75117; Welch t: -0.391872 (threshold: Confirm if the difference is <= -2 percentage points with Welch t <= -2; reject if the difference is >= 0)
 - Supporting check: short-bar share of negative 20-bar returns minus all-bar share (pp), needs >= 10: -0.560224, passed: False

@@ -4,7 +4,7 @@ idea: 001-01_rsi-high-extreme-reversal
 fit: adapted
 status: confirmed
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: pooled excess forward 5-bar return after forecast <= -10 vs holding baseline: -0.028758; t of the mean: -3.33043 (threshold: confirm if pooled excess < 0 with t <= -2 and negative in >= 2 of 3 coins; reject if pooled excess > 0 with t >= +2; inconclusive otherwise or if < 30 cases)
 - Supporting check: number of coins with negative mean excess forward return (need >= 2): 2, passed: True

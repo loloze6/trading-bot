@@ -4,7 +4,7 @@ idea: 001-04_rsi-low-extreme-continuation
 fit: adapted
 status: inconclusive
 ---
-Situation check: 1 of the active bars match the plan's situation and side
+Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
 - Main measure: mean 5-bar forward return after extremes minus after neutral: -0.00471703; Welch t: -0.47198 (threshold: confirm if negative with Welch t <= -2; reject if positive with t >= +2)
 - Supporting check: same sign in at least 2 of 2 coins: 1, passed: False
