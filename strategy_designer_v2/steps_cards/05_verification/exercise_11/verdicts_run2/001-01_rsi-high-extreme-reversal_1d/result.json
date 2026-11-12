@@ -1,0 +1,28 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled excess forward 5-bar return after forecast <= -10 (minus holding baseline)",
+    "value": -0.0675100848188564,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -1.8416074287729935
+    },
+    "threshold": "confirm: negative with t <= -2 and negative in >= 2 of 3 coins; reject: positive with t >= +2; min 30 non-overlapping cases"
+  },
+  "supporting_check": {
+    "name": "number of coins (of 3) with negative mean excess return",
+    "value": 1,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping extreme cases pooled": 3,
+    "coins with negative excess return": 1,
+    "coins in record": 1
+  },
+  "decided_by": "Only 3 non-overlapping extreme cases pooled, below the plan's minimum of 30.",
+  "reading": "Holding baseline is the mean forward 5-bar return over all bars of the coin's window with a valid forward return (overlapping), extreme cases are the non-overlapping grid bars (positions 0,5,10,... of each window) with forecast <= -10, t is the ordinary t of the pooled mean, and a coin absent from the record or without cases counts as not negative among the plan's 3 coins."
+}

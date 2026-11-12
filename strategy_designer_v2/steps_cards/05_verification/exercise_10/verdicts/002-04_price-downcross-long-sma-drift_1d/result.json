@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess forward 10-bar log return on forecast (short bars, non-overlapping blocks)",
+    "value": -0.000745798735528141,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.24165879290728626
+    },
+    "threshold": "slope t >= +2 (with mean excess < 0 and higher decline share) confirms; slope t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "decline share on short blocks minus decline share on all blocks",
+    "value": 0.0026578073089700838,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping 10-bar blocks with forecast < 0": 43,
+    "non-overlapping 10-bar blocks, all": 70
+  },
+  "decided_by": "Slope t-statistic lies between -2 and +2.",
+  "reading": "The baseline is the mean forward 10-bar log return over every tested bar with a within-window forward return, blocks are rows 0, 10, 20, ... of each window, the slope is OLS of excess log return on the forecast with its ordinary t, and the mean excess in the confirm rule is taken over the short blocks."
+}

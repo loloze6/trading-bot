@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 5-bar forward return after extremes minus after neutral",
+    "value": -0.004717031293703361,
+    "statistic": {
+      "name": "Welch t",
+      "value": -0.471979708823335
+    },
+    "threshold": "confirm if negative with Welch t <= -2; reject if positive with t >= +2"
+  },
+  "supporting_check": {
+    "name": "same sign in at least 2 of 2 coins",
+    "value": 1,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping extreme cases": 77,
+    "non-overlapping neutral cases": 160
+  },
+  "decided_by": "Welch t = -0.47 lies between -2 and +2.",
+  "reading": "Quintiles of |forecast| are cut over the pooled non-overlapping grid bars (positions 0,5,10,... of each window) that have a non-zero forecast and a valid 5-bar forward return, extremes being |forecast| >= the 80th percentile and neutral being forecast 0 or |forecast| <= the 20th percentile; the difference is extremes minus neutral with Welch t; with only the coins present, the supporting check requires the same sign in at least 2 coins of those in the record."
+}

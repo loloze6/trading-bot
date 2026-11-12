@@ -1,0 +1,30 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled excess forward 5-bar return after forecast <= -10 (vs coin-window mean)",
+    "value": -0.011942852900325622,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -1.323130383155041
+    },
+    "threshold": "confirm: excess < 0 with t <= -2 and negative in at least 2 of 3 coins; reject: excess > 0 with t >= +2; minimum 30 non-overlapping extreme cases"
+  },
+  "supporting_check": {
+    "name": "number of coins with negative mean excess return (need >= 2)",
+    "value": 2,
+    "passed": true
+  },
+  "counts": {
+    "pooled non-overlapping extreme cases": 60,
+    "coins with negative excess": 2,
+    "coins in record": 2,
+    "extreme cases BTCUSD": 32,
+    "extreme cases ETHUSD": 28
+  },
+  "decided_by": "t lies strictly between -2 and +2 (inconclusive rule).",
+  "reading": "Extreme cases are grid bars (positions 0,5,10,... per window) with forecast <= -10 and a defined in-window 5-bar forward return, the baseline is the mean forward 5-bar return over all bars of that coin-window that have one, and with BNB absent the 'at least 2 of the 3 coins' rule is applied literally as at least 2 negative coins among those present."
+}

@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean demeaned per-bar gain (forecast/10 x next-bar return minus window mean daily return)",
+    "value": -0.0011899910536009692,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.24152761808909456
+    },
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2; else inconclusive; at least 40 active bars"
+  },
+  "supporting_check": {
+    "name": "larger-short half minus smaller-short half mean demeaned gain",
+    "value": -0.007548352618859238,
+    "passed": false
+  },
+  "counts": {
+    "active bars pooled across windows": 148
+  },
+  "decided_by": "The t-statistic lies between -2 and 2 with at least 40 active bars, so it neither confirms nor rejects.",
+  "reading": "The 20-bar mean volume includes the current bar and is computed inside each window, so active bars in the first 19 rows of a window are left out of the situation check; the window's mean daily return is the mean of all its next-bar close-to-close returns; for the supporting check, active bars are sorted by forecast, and with an odd count the middle bar is dropped."
+}

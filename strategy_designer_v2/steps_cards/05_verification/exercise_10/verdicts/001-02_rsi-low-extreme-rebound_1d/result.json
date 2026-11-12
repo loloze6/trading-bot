@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled mean 5-bar excess return (vs coin's window hold average) after top-quintile forecast bars",
+    "value": 0.003885006374079284,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.4968556161527449
+    },
+    "threshold": "confirm if pooled t >= 2 and the supporting check holds; reject if pooled t <= -2; otherwise inconclusive; at least 30 pooled non-overlapping top-quintile cases and at least 8 per coin"
+  },
+  "supporting_check": {
+    "name": "coins where top-quintile excess minus neutral excess > 0 (need >= 2)",
+    "value": 1.0,
+    "passed": false
+  },
+  "counts": {
+    "pooled top-quintile cases": 77,
+    "top-quintile cases BTCUSD": 36,
+    "top-quintile cases ETHUSD": 41
+  },
+  "decided_by": "Pooled t = 0.50 lies between -2 and 2, the plan's inconclusive rule.",
+  "reading": "The top quintile is the coin's non-zero forecasts at or above their 80th percentile over all its windows; the hold baseline is the mean 5-bar return over the window's non-overlapping grid; the per-coin minimum of 8 and the '2 of 3 coins' rule are applied to the coins present in the record (BTC, ETH), so both must be positive."
+}

@@ -9,7 +9,7 @@ Is this idea real?
 One test plan whose outcome is `plan`, and its backtest record. One idea has one plan, so this is one input per idea.
 
 ## Output
-One verdict per plan: **confirmed**, **rejected** or **inconclusive**, with the evidence that decided it. Or **mismatch**, when the test does not do what its plan says: no verdict on the idea, and the plan goes back to step 3.
+One verdict per plan: **confirmed**, **rejected**, **inconclusive** (enough cases, no clear result) or **not observable** (fewer cases than the plan's minimum: the data could not show the idea), with the evidence that decided it. Or **mismatch**, when the test does not do what its plan says: no verdict on the idea, and the plan goes back to step 3.
 
 ## What a verdict is
 **A verdict is the plan's own criterion, applied unchanged to the backtest record: the numbers measured, and which of the plan's rules (confirm, reject, inconclusive) they meet.**
@@ -27,7 +27,7 @@ One verdict per plan: **confirmed**, **rejected** or **inconclusive**, with the 
 
 ## The fields of a verdict
 **In `verdict.md`:**
-1. **status** (header): confirmed, rejected, inconclusive or mismatch.
+1. **status** (header): confirmed, rejected, inconclusive, not observable or mismatch. A plan's minimum counts are applied first: below one, the status is "not observable", whatever the other numbers.
    - For: the answer.
    - Used by: the operator, and whatever decides what to do with the idea.
    - Without it: no answer.
@@ -94,7 +94,7 @@ Aligned with the other steps.
 - no situation check, or a status that does not agree with it (mismatch exactly when the check fails);
 - the function fails on the record;
 - a result that is not a dict;
-- a status that is not one of the three;
+- a status that is not one of the five;
 - no main measure value; a statistic that is not a dict with a value; no named counts;
 - no "decided by", no "reading".
 
@@ -120,13 +120,14 @@ The 15 daily plans of `03_test_plan/plans/` whose outcome is `plan` (13 with a b
 - **Exercise 7:** the situation check. It flags two real config faults (002-02 at 0 %, 003-05 at 19 %); every correct plan scores 100 %.
 - **Exercise 8 and `verdicts/`:** the rewritten plans, run twice. 13 of 13 statuses agree (all inconclusive); every situation check passes.
 - **The planted test:** step 5 confirms (t 5.5) and rejects (t -4.1) a planted gain, in the right direction; a realistic gain on one fold stays inconclusive (`planted_test/reading.md`).
+- **Exercises 9 to 11:** "not observable" split from "inconclusive" by the plan's minimum counts. 13 of 13 statuses agree on the fixed inputs (all inconclusive: every minimum reached); two records cut to one window give "not observable" twice.
 - **The full-data run:** 5 "rejected" verdicts came from the plans' per-window holding reference, a bias fixed in step 3; rerun, 6 of 6 inconclusive (`../FULL_DATA_RUN.md`).
 
 ## Who judges the output
 The operator: "does this verdict apply my plan's rule, and would I accept it?". Code checks the shape of the result. Each exercise has a one-page reading: the functions are read against their plans, and the two runs are compared.
 
 ## Done when
-On two exercises in a row, every verdict meets every criterion, and the two runs give the same status for every plan. Status: met by exercise 8 and the production run, with the situation check: the same status for all 13 plans (`exercise_8/reading.md`).
+On two exercises in a row, every verdict meets every criterion, and the two runs give the same status for every plan. Status: met by exercises 9 and 10, with "not observable" (`exercise_9/reading.md`): the same status for all 13 plans (`exercise_8/reading.md`).
 
 ## Open
 - **A coin without data** (BNB, for the RSI ideas): the function takes the plan's rule literally on the coins present and says so in "reading". Parked with the quality of the backtest output.

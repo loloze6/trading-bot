@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled mean 5-bar excess return after top-quintile forecasts (vs window hold average)",
+    "value": 0.003885006374079284,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.4968556161527449
+    },
+    "threshold": "confirm if t >= 2 with the supporting check; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "coins where top-quintile excess minus neutral excess > 0 (need >= 2)",
+    "value": 1,
+    "passed": false
+  },
+  "counts": {
+    "pooled non-overlapping top-quintile cases": 77,
+    "BTCUSD top-quintile cases": 36,
+    "ETHUSD top-quintile cases": 41
+  },
+  "decided_by": "The pooled t lies between -2 and 2.",
+  "reading": "Top quintile is the 80th percentile of each coin's non-zero forecasts across all its windows, the hold baseline is the mean non-overlapping 5-bar return of the same window, and with only BTC and ETH in the record the per-coin minimum applies to these two coins and the supporting check needs both of them positive."
+}

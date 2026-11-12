@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean forward 5-bar return after top-quintile |forecast| minus after neutral bars",
+    "value": -0.004717031293703361,
+    "statistic": {
+      "name": "Welch t",
+      "value": -0.471979708823335
+    },
+    "threshold": "confirm if difference < 0 with Welch t <= -2; reject if difference > 0 with t >= +2"
+  },
+  "supporting_check": {
+    "name": "coins whose difference has the pooled sign (need >= 2)",
+    "value": 1.0,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping extreme cases": 77,
+    "non-overlapping neutral cases": 160,
+    "coins": 2
+  },
+  "decided_by": "The Welch t of the difference lies between -2 and +2.",
+  "reading": "Quintiles of |forecast| are taken over the nonzero-forecast grid bars pooled across coins and windows (extreme = at or above the 80th percentile, neutral = forecast 0 or at or below the 20th percentile), the supporting check counts the coins present (2 of the record's coins) whose difference has the pooled sign and is reported without entering the decision since the confirm rule does not name it, and a missing Welch t for lack of neutral cases is treated as not observable."
+}

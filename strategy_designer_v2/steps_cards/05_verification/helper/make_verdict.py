@@ -20,7 +20,7 @@ sys.path.insert(0, str(STEP3_HELPER))
 from make_test_plan import call, write_atomic   # noqa: E402  (the same closed-book call as step 3)
 
 ATTEMPTS = 3
-STATUSES = ("confirmed", "rejected", "inconclusive", "mismatch")
+STATUSES = ("confirmed", "rejected", "inconclusive", "not observable", "mismatch")
 
 RUNNER = r'''
 import glob, json, os, sys

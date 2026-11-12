@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean next-bar excess return over buy-and-hold drift",
+    "value": 0.0004569979124719729,
+    "statistic": {
+      "name": "t of the forecast-weighted mean",
+      "value": 0.1653940201600627
+    },
+    "threshold": "confirm if above 0 with t >= 2; reject if below 0 with t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "top-fifth minus bottom-fifth mean excess return (top must be > 0 and > bottom)",
+    "value": 0.013066020339773865,
+    "passed": true
+  },
+  "counts": {
+    "active bars": 151
+  },
+  "decided_by": "The t-statistic lies between -2 and 2 (or its sign disagrees with the mean), which the plan calls inconclusive.",
+  "reading": "Situation = volume at or above its 20-bar mean (including the current bar, computed inside each window, active bars without 20 bars of volume history left out of the check) and a positive one-bar move from the move component, side long; the excess return is next-bar return minus the mean next-bar return over all bars of all windows pooled; the t-statistic is the ordinary t of the per-bar contributions forecast x excess / mean(forecast) over active bars (whose mean equals the forecast-weighted mean); the 60-bar minimum counts active bars with a next-bar return; top and bottom fifths are the floor(n/5) active bars with the highest and lowest forecast."
+}

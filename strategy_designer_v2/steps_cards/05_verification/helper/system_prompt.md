@@ -18,7 +18,10 @@ the agreement share, and do not apply the criterion.
 
 Then it applies the plan's criterion to the record exactly as written:
 - the same horizon, the same main measure, the same supporting check, the same thresholds and the same minimum counts;
-- the plan's own rule to decide between confirmed, rejected and inconclusive.
+- the plan's own rule to decide between confirmed, rejected and inconclusive;
+- but first the plan's minimum counts: if any minimum count of cases the plan states is not reached, the status is
+  "not observable" (the data could not show the idea), whatever the other numbers. "inconclusive" is kept for results
+  with enough cases that meet neither the confirm nor the reject rule.
 Do not add a measure, change a threshold, or choose a horizon the plan does not state. The criterion was fixed before the
 data was seen; your function only applies it.
 
@@ -29,7 +32,7 @@ depend on what it might show.
 
 The function returns a dict, and only plain numbers, strings, lists and dicts:
 {
-  "status": "confirmed" | "rejected" | "inconclusive" | "mismatch",
+  "status": "confirmed" | "rejected" | "inconclusive" | "not observable" | "mismatch",
   "situation_check": {"agreement": <share of active bars that are bars of the plan's situation on its side>, "passed": true | false},
   "main_measure": {"name": <the plan's main measure, in a few words>,
                    "value": <the measure itself, in the plan's units, or null>,
@@ -37,7 +40,7 @@ The function returns a dict, and only plain numbers, strings, lists and dicts:
                    "threshold": <the plan's threshold, in words>},
   "supporting_check": {"name": <in a few words>, "value": <number or null>, "passed": true | false | null} or null,
   "counts": {<each count the plan's minimums refer to, named as the plan names it>: <number>, ...} (counts only),
-  "decided_by": <the plan's confirm, reject or inconclusive rule the numbers meet, in one sentence>,
+  "decided_by": <the plan's confirm, reject or inconclusive rule the numbers meet, or the minimum count not reached, in one sentence>,
   "reading": <the literal choices you made, in one sentence, or "none">
 }
 

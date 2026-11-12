@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean of next-bar return minus coin mean bar return, on forecast<0 bars",
+    "value": -0.0010034878473360765,
+    "statistic": {
+      "name": "t of weighted mean",
+      "value": -0.5334512567434825
+    },
+    "threshold": "confirm if negative with t <= -2; reject if positive with t >= +2; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "down-bar share on active bars vs all bars (binomial z)",
+    "value": -0.01831913947093589,
+    "passed": false
+  },
+  "counts": {
+    "active bars": 434,
+    "down-cross stretches": 5
+  },
+  "decided_by": "The t-statistic lies strictly between -2 and +2, meeting the inconclusive rule.",
+  "reading": "The coin's mean bar return is the mean next-bar return over all tested bars pooled across the 6 windows; the t of the weighted mean uses the weighted standard error sqrt(n/(n-1)*sum(w^2(x-m)^2))/sum(w); active bars are forecast<0 bars with a valid next return; down-cross stretches are runs of consecutive bars with the raw 50/200 SMA spread below 0 within a window; the raw spread is read from the record's only component column (sma_cross_down) since the config's id sma_spread is absent; the supporting check passes when the binomial z of the down-bar share (active minus all) is above 0."
+}

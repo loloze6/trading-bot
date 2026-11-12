@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "Excess forward 20-bar return of short bars over all bars (non-overlapping 20-bar blocks)",
+    "value": -0.009960562495234459,
+    "statistic": {
+      "name": "Welch t",
+      "value": -0.22267650489100263
+    },
+    "threshold": "confirm if excess < 0 with t <= -2 and the supporting slope is not positive; reject if excess > 0 with t >= +2; otherwise inconclusive; at least 6 short blocks (120 short bars)"
+  },
+  "supporting_check": {
+    "name": "Slope of forward 20-bar return on |forecast| within short blocks (should be <= 0)",
+    "value": -0.007567114728688417,
+    "passed": true,
+    "share_short_blocks_negative_excess": 0.65
+  },
+  "counts": {
+    "non-overlapping 20-bar blocks of short exposure": 20,
+    "short bars across all windows": 437,
+    "all non-overlapping 20-bar blocks": 34
+  },
+  "decided_by": "t lies between -2 and +2, which the plan calls inconclusive.",
+  "reading": "Blocks are the bars at positions 0, 20, 40, ... of each window with a full 20-bar forward return inside the window; a short block is one whose start bar has a negative forecast; the main measure is the Welch t of short-block returns minus all-block returns; the slope uses |forecast| on short blocks; the minimum is not reached if either fewer than 6 short blocks or fewer than 120 short bars."
+}
