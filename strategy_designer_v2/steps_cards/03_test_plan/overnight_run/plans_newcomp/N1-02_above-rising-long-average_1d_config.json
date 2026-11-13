@@ -1,0 +1,67 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "slope",
+        "class": "strategies.strategy_components.MovingAverageSlopeComponent",
+        "params": {
+          "period": 200,
+          "lookback": 20,
+          "average": "sma"
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "slope",
+              "op": "gt",
+              "value": 0.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "dist",
+            "class": "strategies.strategy_components.MovingAverageDistanceComponent",
+            "params": {
+              "period": 200,
+              "average": "sma"
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 200,
+                  "min_periods": 50
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "unknown": null,
+      "mean_reversion": null,
+      "chop": null
+    }
+  }
+}

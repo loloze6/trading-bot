@@ -1,0 +1,57 @@
+{
+  "line": "7.g",
+  "backtest": "N1-08_twenty-day-momentum_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.2860587,
+  "findings": {
+    "F1": "The 20-bar forward return is U-shaped in the forecast rather than rising with it: bars in the bottom fifth of forecasts (the sharpest 20-day falls) are followed by a mean 20-bar excess return of +3.99% (t=2.51, 166 non-overlapping cases), while the three middle fifths are all negative (-1.7%, -2.6%, -2.0%). The slope of excess return on |forecast| has t=2.61 over 827 cases.",
+    "F2": "The bottom-fifth rebound appears in every coin, with means from +3.0% to +6.9% (t 0.71 to 1.35, 24 to 32 cases each). It is concentrated in 2020 (+16.6%, t=2.70, n=16) and 2021 (+19.6%, t=3.13, n=20), and it turns negative in 2018 (-6.3%, t=-1.77, n=30).",
+    "F3": "The top fifth of forecasts (the strongest 20-day rises) is followed by only +2.3% excess (t=0.73, 166 cases). Bars with |forecast|\u226515 earn +3.3% (t=1.24, n=199). Continuation after strong rises is therefore not distinguishable from chance.",
+    "F4": "After a daily close at least 1 standard deviation down (scaled by 20-day volatility), the next day's excess return averages +0.56% (t=4.41, 1835 cases), against -0.07% (t=-1.72, 15545 cases) on all other days.",
+    "F5": "The next-day rebound after a 1-sd down day is positive in all six coins (XMR +0.99%, t=3.57, n=314). It holds both when the 20-day trend is down (+0.52%, t=3.12, n=1200) and when it is up (+0.65%, t=3.31, n=635). It is strongest in 2020 and 2021 (t=3.49 and 3.43) and absent in 2024 (t=-0.44).",
+    "F6": "Daily excess returns differ by weekday. Thursday and Friday are positive (+0.25%, t=2.63; +0.30%, t=3.76; about 2480 days each), while Monday and Wednesday are negative (-0.24%, t=-2.53; -0.30%, t=-2.70). The pooled Thursday-Friday excess is positive in 7 of 8 years and in all 6 coins (LTC t=3.35).",
+    "F7": "The book's gains come only from its long side. Longs average +4.61% net per trade (4507 trades, 40% winners), while shorts average -0.76% (4864 trades, 34% winners). Shorts lose in 5 of 6 coins, and ZEC longs alone contribute +10611 of summed percent."
+  },
+  "ideas": [
+    {
+      "idea": "After a coin has fallen sharply over 20 days, its price rises over the next 20 days by more than its usual 20-day move, so deep 20-day losses mark rebounds rather than continuing downtrends.",
+      "consequence": "A trader should refuse to short a coin after a steep 20-day decline, and should treat that decline as a long setup instead.",
+      "name": "twenty-day selloff rebound",
+      "from": "F1, F2, F3, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F7"
+      ]
+    },
+    {
+      "idea": "After a daily close that falls at least one standard deviation of the coin's recent daily returns, the coin rises on the next day by more than on an average day.",
+      "consequence": "A trader can buy at the close of a large down day for a one-day hold, or avoid selling into it.",
+      "name": "next-day rebound after drops",
+      "from": "F4, F5",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "A coin's daily return is higher on Thursday and Friday than on the other weekdays.",
+      "consequence": "A trader can time long entries to hold through Thursday and Friday, and avoid adding exposure into Monday and Wednesday.",
+      "name": "Thursday-Friday daily strength",
+      "from": "F6",
+      "refs": [
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "N1-08_twenty-day-momentum.g1_twenty-day-selloff-rebound",
+    "N1-08_twenty-day-momentum.g2_next-day-rebound-after-drops",
+    "N1-08_twenty-day-momentum.g3_thursday-friday-daily-strength"
+  ],
+  "no_ideas": null
+}

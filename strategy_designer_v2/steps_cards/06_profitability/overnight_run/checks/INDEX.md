@@ -1,4 +1,8 @@
 N1-01_trend-with-rising-month_1d: not profitable enough [Sharpe 0.6948; Sharpe minus holding's Sharpe 0.146; Calmar 0.4979]
+N1-02_above-rising-long-average_1d: not profitable enough [Sharpe 0.5424; Sharpe minus holding's Sharpe -0.02724; Calmar 0.182]
+N1-03_mature-trend-carries-drift_1d: not profitable enough [Sharpe 0.417; Sharpe minus holding's Sharpe -0.1549; Calmar 0.07985]
 N1-04_rebound-after-large-drop_1d: not profitable enough [Sharpe 0.7826; Sharpe minus holding's Sharpe 0.2319; Calmar 0.7479]
 N1-06_deep-below-average-rebound_1d: not profitable enough [Sharpe 0.5531; Sharpe minus holding's Sharpe -0.01648; Calmar 0.233]
+N1-07_fresh-death-cross-rebound_1d: not profitable enough [Sharpe 0.5131; Sharpe minus holding's Sharpe -0.05264; Calmar 0.3041]
 N1-08_twenty-day-momentum_1d: not profitable enough [Sharpe 0.3208; Sharpe minus holding's Sharpe -0.2334; Calmar -0.08518]
+N1-09_below-falling-long-average_1d: not profitable enough [Sharpe -0.2553; Sharpe minus holding's Sharpe -0.821; Calmar -0.2846]

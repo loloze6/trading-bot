@@ -1,0 +1,46 @@
+{
+  "line": "7.b",
+  "backtest": "N1-01_trend-with-rising-month_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "split": false,
+  "explorations": 3,
+  "cost": 0.4597485,
+  "findings": {
+    "F1": "The positive mean is carried by a few outliers. Over the 251 non-overlapping active 20-bar cases, the mean excess return is +0.015 (t 0.63), but the median is \u22120.038 and only 43.4% of cases are positive. The skew is 7.3, the 5 best cases sum to 8.37 against a total of 3.77, and the 5%-trimmed mean is \u22120.015.",
+    "F2": "Measured against the six-coin average 20-bar return at the same moment, active cases show no edge: mean +0.0003, t 0.01, n 251, hit 47%. The active coin's forward return has a correlation of 0.54 with that market average, so the market's own moves account for much of what the test measured.",
+    "F3": "The effect sits in BTC only. BTC's active cases have a mean 20-bar log excess of +0.039 (t 1.86, n 50, hit 56%), and their median beats the market average (+0.015, hit 62%). XMR (\u22120.025, t \u22120.92, n 41), XRP (\u22120.047, t \u22120.86, n 36, hit 28%) and LTC (\u22120.014) are negative. ZEC's +0.13 arithmetic mean rests on a median of \u22120.023.",
+    "F4": "When BTC itself is not in the trending state, altcoins in the trending state lag their own average by \u22120.110 in 20-bar log excess (t \u22123.09, n 57, hit 37%). When BTC is also trending, the figure is +0.0005 (t 0.02, n 144).",
+    "F5": "Larger forecasts do not lift the typical case. The top forecast tercile has a mean of +0.051 but a median of \u22120.039 and a hit rate of 34.5% (n 84), against a 50% hit rate in the low tercile. Terciles of 200-day distance and of 20-bar momentum show no ordering either (t between \u22120.8 and 0.9).",
+    "F6": "Regime age matters slightly. Cases 1\u201310 bars into the trending regime average \u22120.014 (t \u22120.76, n 147), while those 11\u201340 bars in average +0.033 (t 1.10, n 94).",
+    "F7": "The effect varies strongly by year. The 2018 active cases average \u22120.176 (t \u22122.72, n 10) and 2022 averages \u22120.099 (n 6), while 2021 averages +0.046 (n 45) and 2024 +0.027 (n 46). No year reaches t 2 on the positive side."
+  },
+  "ideas": [
+    {
+      "idea": "On BTC, when the daily close is above its 200-day average and above its close of 20 bars earlier, BTC's return over the next 20 bars exceeds its own average 20-bar return.",
+      "consequence": "A trader would take the trend-following long on BTC only and refuse it on the altcoins, where it shows nothing or a lag.",
+      "name": "BTC trend above rising average",
+      "from": "F3, F2, F1",
+      "refs": [
+        "F3",
+        "F2",
+        "F1"
+      ]
+    },
+    {
+      "idea": "When a coin has been in the trending state (close above its 200-day average and above its close of 20 bars earlier) for 11 to 40 consecutive bars, its next 20-bar return exceeds its own average 20-bar return.",
+      "consequence": "A trader would wait for the trend state to have lasted about two weeks before buying, rather than entering on its first bars.",
+      "name": "established trend keeps rising",
+      "from": "F6, F1",
+      "refs": [
+        "F6",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "N1-01_trend-with-rising-month.b1_btc-trend-above-rising-average",
+    "N1-01_trend-with-rising-month.b2_established-trend-keeps-rising"
+  ],
+  "no_ideas": null
+}

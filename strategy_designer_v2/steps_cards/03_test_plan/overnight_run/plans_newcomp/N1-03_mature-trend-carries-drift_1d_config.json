@@ -1,0 +1,43 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "age",
+            "class": "strategies.strategy_components.MovingAverageAgeComponent",
+            "params": {
+              "period": 200,
+              "max_bars": 120
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 320,
+                  "min_periods": 80
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    }
+  }
+}

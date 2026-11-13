@@ -1810,3 +1810,80 @@ class MovingAverageAgeComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return self.period + self.max_bars
+
+
+class WeekdayReturnComponent(SubStrategyComponent):
+    """
+    (Overnight test component, not yet approved.) The past excess return of the coming bar's weekday, on every bar:
+
+        raw_value = mean(r_i on bars stamped with the coming bar's weekday) - mean(all r_i)   (in percent)
+
+    r_i = close_i / close_{i-1} - 1 over the last `lookback_bars` returns, each grouped by the weekday of the bar it
+    ends on (its `timestamp`, UTC). The coming bar's weekday is the weekday of timestamp[t] plus one bar's spacing, so
+    it is known at bar t's close: no lookahead. Graded and signed: positive when the coming weekday has paid more than
+    an average bar. No scaling_factor: the config's transforms scale it.
+    """
+
+    def __init__(self, name="WeekdayReturn", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.lookback_bars = int(self.parameters.get("lookback_bars", 182))
+        if self.lookback_bars < 14:
+            raise ValueError("WeekdayReturnComponent: lookback_bars must be >= 14")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        tail = data.iloc[-(self.lookback_bars + 1):]
+        ts = pd.to_datetime(tail["timestamp"], utc=True)
+        r = tail["close"].astype(float).pct_change().iloc[1:]
+        wd = ts.iloc[1:].dt.weekday
+        step = ts.iloc[-1] - ts.iloc[-2]
+        coming = (ts.iloc[-1] + step).weekday()
+        same = r[wd.to_numpy() == coming]
+        if len(same) == 0 or r.isna().all():
+            return
+        self._raw_value = float((same.mean() - r.mean()) * 100.0)
+        self.confidence = 1.0
+        self.debug_info = {'coming_weekday': int(coming), 'cases': int(len(same))}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.lookback_bars + 1
+
+
+class WeekdayComponent(SubStrategyComponent):
+    """
+    (Overnight test component, not yet approved.) The coming bar's weekday, as a regime measure, on every bar:
+
+        raw_value = weekday of (timestamp[t] + one bar's spacing), UTC: 0 Monday ... 6 Sunday
+
+    Known at bar t's close: no lookahead. For a regime rule (for example "eq 5": the coming bar is stamped Saturday);
+    not a bet in itself.
+    """
+
+    def __init__(self, name="Weekday", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        ts = pd.to_datetime(data["timestamp"].iloc[-2:], utc=True)
+        self._raw_value = float((ts.iloc[-1] + (ts.iloc[-1] - ts.iloc[-2])).weekday())
+        self.confidence = 1.0
+        self.debug_info = {'coming_weekday': int(self._raw_value)}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return 2
