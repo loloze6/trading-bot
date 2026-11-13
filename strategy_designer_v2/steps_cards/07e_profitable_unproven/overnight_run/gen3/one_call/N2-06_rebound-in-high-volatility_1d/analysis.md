@@ -1,0 +1,24 @@
+---
+line: 7.e profitable but not proven
+backtest: N2-06_rebound-in-high-volatility_1d
+idea tested: N2-06_rebound-in-high-volatility
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.3174 USD
+---
+## Findings
+- **F1:** Most of the book's gain is not the coin's own rise: the mean daily book P&L is 0.00171, while the drift part (mean position 0.221 × coin mean daily return 0.00119) is only 0.00026, about 15 %; the book's beta to the coin is 0.31 (corr 0.44); and in 2018 the coins fell 0.35 %/day while the book still made +0.24 %/day.
+- **F2:** The gain comes from a minority of large-position bars rather than steady exposure: bars with position > 0.5 (2,269 of 17,380) sum to 28.6 of P&L, bars with position ≤ 0.1 sum to about 0, the top 1 % of bars give 123 % of the total, and the book still makes 15.7 with the 20 best bars removed.
+- **F3:** The book earns in the high-volatility state: P&L is 23.9 in "trending" (volp ≥ 0.5, 8,219 bars) against 5.9 in "unknown" (9,161 bars).
+- **F4:** After a drop of at least 1.5 of the 60-day sd, the next day's rebound is larger in high-volatility bars than in quiet ones, but it is not more frequent: the vol-normalised next return is +0.31 sd (t = 4.75, n = 402) in high volatility against +0.03 sd (t = 0.37, n = 397) in quiet bars, while the up share is 65 % against 60 %, which matches the verdict's z = 0.10 on frequency.
+- **F5:** The high-volatility rebound is strongest when the coin is already falling: drops with price below its 50-day average return +1.76 % next day (66.7 % up, t = 3.93, n = 255), and drops with negative 20-day momentum return +1.84 % (t = 4.13, n = 244); the same quiet below-50-day drops return +0.03 % (t = 0.11, n = 319), and high-volatility below-50-day big-position bars carry 14.4 of the 28.6 big-position P&L.
+- **F6:** The high-volatility drop rebound is not one coin or one period: its mean next return is positive in all six coins (+0.9 % to +2.8 %, n = 56 to 72 each) and in all eight years, though it is weak in 2022 (t = 0.57, n = 34) and 2025 (t = 0.38, n = 45); 20 of 24 windows end positive.
+- **F7:** Counted per trade, the book does not profit: 3,871 one-day trades win 49 %, average −0.46 % gross and −0.56 % net, with 0.87 % commission. The profit comes from position size growing with the drop's size (cubic forecast), so a few large rebounds outweigh many small losers.
+
+## Ideas
+- `N2-06_rebound-in-high-volatility.e1_capitulation-rebound-in-volatile-downtrends` (from F3, F4, F5, F6): In a coin whose 20-day volatility sits in the upper half of its 100-day history and whose price is below its 50-day average, a one-day fall larger than about 1.5 of its recent daily sd is followed by a next-day rise that is large relative to that sd.
+- `N2-06_rebound-in-high-volatility.e2_rebound-size-scales-with-drop` (from F2, F4, F7): In a coin in a high-volatility state, the size of the next day's rise grows with the size of the day's fall (in units of its 60-day sd), while the chance of an up day barely changes.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

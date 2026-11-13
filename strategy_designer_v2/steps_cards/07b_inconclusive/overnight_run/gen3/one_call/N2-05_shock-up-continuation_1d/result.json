@@ -1,0 +1,60 @@
+{
+  "line": "7.b",
+  "backtest": "N2-05_shock-up-continuation_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.3064759,
+  "findings": {
+    "F1": "The 601 independent big-up-day events have a mean 5-bar excess return of +0.88% (t 1.67), but the median is \u22120.22%, the hit rate is 48.9%, the skew is 2.4 and the 5%-trimmed mean is only +0.34%, so a few large winners lift the mean while the typical event goes nowhere.",
+    "F2": "Much of the drift is the market's own move: the other five coins rise +1.05% over the same 5 bars (t 2.92, n 601), and the coin's 5-bar return correlates 0.59 with theirs. Measured relative to that basket, the excess is +0.42% (t 0.99).",
+    "F3": "The effect changes sign across years. Events gain in 2021 (+2.97%, t 2.08, n 74) and 2024 (+3.35%, t 2.72, n 77) and lose in 2022 (\u22124.60%, t \u22122.82, n 67) and 2018 (\u22120.49%, hit 34%, n 62), so a pooled t near 1.7 averages opposing regimes.",
+    "F4": "The effect sits in coins that were already rising. Events in the top tercile of the prior 20-day return gain +2.97% over 5 bars (t 2.35, n 163). The low and mid terciles gain +0.08% (t 0.11) and \u22120.35% (t \u22120.49).",
+    "F5": "Measured from the bar after the event (bars t+1 to t+5), top-tercile prior-20-day events gain +2.68% (t 2.61, n 163, hit 58.9%). The next-bar excess over all events is \u22120.20% (t \u22120.88), so any continuation starts after the first day.",
+    "F6": "Big up days that close above the prior 20-day closing high gain +1.82% over 5 bars (t 2.01, n 245), against \u22120.02% (t \u22120.04, n 242) for those that do not. Similarly, events above the 50-bar average gain +1.27% (t 1.91, n 299), against +0.03% (t 0.04, n 157) below it.",
+    "F7": "The effect is not stronger for bigger shocks: the z-score quartiles give +1.37%, +1.22%, \u22120.17% and +1.20% with no ordering. It also varies by coin, from ZEC +3.14% (t 1.75, n 98) to XMR \u22121.33% (t \u22121.33, n 90)."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin closes up by an outsized amount (about 2\u03c3 of its recent daily moves) while its close is already well above where it was 20 days earlier, it keeps rising over the next five days, beginning from the day after the shock.",
+      "consequence": "A trader would take a long after a shock-up day only when the coin is already in a 20-day uptrend, and refuse the same shock in flat or falling coins.",
+      "name": "shock-up inside existing uptrend",
+      "from": "F4, F5, F1, F3",
+      "refs": [
+        "F4",
+        "F5",
+        "F1",
+        "F3"
+      ]
+    },
+    {
+      "idea": "When a coin's outsized up day closes above its highest close of the prior 20 days, the coin keeps rising over the following five days.",
+      "consequence": "A trader would buy shock-up days that set a new 20-day closing high and skip those that stay inside the recent range.",
+      "name": "shock-up new-high breakout continuation",
+      "from": "F6, F1, F7",
+      "refs": [
+        "F6",
+        "F1",
+        "F7"
+      ]
+    },
+    {
+      "idea": "After an outsized up day in a coin trading above its 50-day average, the coin rises from the next day's close to five days after the shock, more than its usual daily drift.",
+      "consequence": "A trader would enter the day after the shock, not on the shock close, and only in coins above their 50-day average.",
+      "name": "delayed drift above trend",
+      "from": "F5, F6, F2",
+      "refs": [
+        "F5",
+        "F6",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "N2-05_shock-up-continuation.b1_shock-up-inside-existing-uptrend",
+    "N2-05_shock-up-continuation.b2_shock-up-new-high-breakout-continuation",
+    "N2-05_shock-up-continuation.b3_delayed-drift-above-trend"
+  ],
+  "no_ideas": null
+}

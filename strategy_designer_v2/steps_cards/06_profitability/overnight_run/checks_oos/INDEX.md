@@ -1,1 +1,4 @@
 N1-04_rebound-after-large-drop_1d_oos: not profitable enough [Sharpe -0.2578; Sharpe minus holding's Sharpe -0.5942; Calmar -0.3459]
+N2-01_weekday-of-coming-bar_1d_oos: not profitable enough [Sharpe -0.5128; Sharpe minus holding's Sharpe -0.8814; Calmar -0.2068]
+N2-04_slow-and-fast-momentum_1d_oos: profitable enough [Sharpe 1.008; Sharpe minus holding's Sharpe 0.6713; Calmar 1.148]
+N2-06_rebound-in-high-volatility_1d_oos: not profitable enough [Sharpe -0.0299; Sharpe minus holding's Sharpe -0.3663; Calmar -0.246]

@@ -1,0 +1,57 @@
+{
+  "line": "7.b",
+  "backtest": "N2-02_capitulation-rebound_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.2944876,
+  "findings": {
+    "F1": "The pooled result rests on a few large winners. After forecast \u2265 10, the mean 10-bar excess is +0.021 (t 0.90, 69 non-overlapping cases), but the median is \u22120.016 and only 48% of cases are positive. Dropping the 5% largest absolute moves brings the mean to \u22120.0005 (t \u22120.03, 65 cases), and XRP alone averages +0.119 with a median of \u22120.019 (11 cases).",
+    "F2": "When the coin was still falling into the signal, the rebound is concentrated there. Top-forecast bars with a negative 3-day return average +0.043 excess (median +0.006, 55% positive, t 1.27, 42 cases). Those with a positive 3-day return average \u22120.014 (37% positive, t \u22120.51, 27 cases). The 5-day split gives the same picture: +0.036 (t 1.26, 50 cases) against \u22120.019 (19 cases).",
+    "F3": "The same split holds in the deepest fifth of in-regime distance below the 200-day SMA, and it shows up in both directions. A negative 3-day return gives +0.028 excess (t 1.32, 76 cases). A positive 3-day return, meaning the bounce has already started, gives \u22120.034 (35% positive, t \u22122.38, 83 cases).",
+    "F4": "The market's own moves drown the effect. Top-forecast 10-bar returns correlate 0.80 with the cross-coin mean return over the same 10 bars. Subtracting that mean cuts the standard deviation from 0.19 to 0.12 and raises the t from 0.90 to 1.40 (mean +0.021, 64 cases).",
+    "F5": "One period dominates the cases and drags the result down. 2022 holds 32 of the 69 top-forecast cases (28 of them in window w2), averaging \u22120.019 excess with 38% positive (t \u22120.76). Most other years are positive, for example 2024 at +0.105 (t 2.03, 6 cases) and 2020 at +0.059 (4 cases).",
+    "F6": "Depth alone does not sort outcomes inside the high-volatility regime. All five quintiles of distance from the 200-day SMA have mean excess between \u22120.009 and 0.000, with |t| \u2264 0.53 and 159 cases each."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's daily close is far below its 200-day average in a high-volatility stretch and it has still fallen over the last three days, it rises more than its usual drift over the next ten days.",
+      "consequence": "Buy capitulation only while the coin is still falling into the signal, not after it has already started to bounce.",
+      "name": "still-falling deep capitulation rebound",
+      "from": "F2, F3, F1",
+      "refs": [
+        "F2",
+        "F3",
+        "F1"
+      ]
+    },
+    {
+      "idea": "When a coin's daily close is far below its 200-day average in a high-volatility stretch but it has risen over the last three days, it falls back below its usual drift over the next ten days.",
+      "consequence": "Refuse long entries on deep-discount coins whose short bounce has already begun, because that bounce tends to fade.",
+      "name": "early bounce fades below trend",
+      "from": "F3, F2",
+      "refs": [
+        "F3",
+        "F2"
+      ]
+    },
+    {
+      "idea": "When a coin's daily close is far below its 200-day average in a high-volatility stretch and it fell over the last three days, it outperforms the average of the other coins over the next ten days.",
+      "consequence": "Hold the deep-discount coin against the rest of the market rather than outright, to remove the market's swing that hides the rebound.",
+      "name": "capitulated coin beats market",
+      "from": "F4, F2",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC together as a cross-coin average; bar: 1d; period: folds A, B, C, D",
+      "refs": [
+        "F4",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "N2-02_capitulation-rebound.b1_still-falling-deep-capitulation-rebound",
+    "N2-02_capitulation-rebound.b2_early-bounce-fades-below-trend",
+    "N2-02_capitulation-rebound.b3_capitulated-coin-beats-market"
+  ],
+  "no_ideas": null
+}

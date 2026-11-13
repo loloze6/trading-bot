@@ -1,0 +1,108 @@
+{
+  "run_id": "20261113T012107Z_cc7a47f1",
+  "created_utc": "2026-11-13T01:21:07.562435+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "wd",
+          "class": "strategies.strategy_components.WeekdayComponent",
+          "params": {}
+        }
+      ],
+      "rules": [
+        {
+          "regime": "mean_reversion",
+          "any_of": [
+            [
+              {
+                "id": "wd",
+                "op": "between",
+                "low": 4.5,
+                "high": 5.5
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "mean_reversion": {
+          "components": [
+            {
+              "id": "sat_excess",
+              "class": "strategies.strategy_components.WeekdayReturnComponent",
+              "params": {
+                "lookback_bars": 182
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 182,
+                    "min_periods": 45
+                  }
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "min": 0.0
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "chop": null,
+        "unknown": null
+      }
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 3,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 7.5,
+        "BTCUSD": 2.5,
+        "ETHUSD": 4,
+        "AVAXUSD": 7.5,
+        "SOLUSD": 7.5
+      }
+    }
+  },
+  "config_sha256": "cc7a47f16892953dad5fc66edc27c92a4613c93d030a061cb87f836258246815",
+  "data": {
+    "symbols": [
+      "TRXUSD"
+    ],
+    "timeframe": "86400s",
+    "start": "2020-10-02 00:00:00",
+    "end": "2022-04-30 00:00:00",
+    "bar_count": 576,
+    "data_sha256": "69de04e87c5cd60deaddf6a780ea65ef7137d4adf504f0fa22e284a32c4588c5"
+  },
+  "git_sha": "0b3a18521f5d5d3f46eb350ebfef3e75ebb722b9",
+  "engine": {
+    "lookback": 183,
+    "warmup": 183
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

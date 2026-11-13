@@ -1,0 +1,157 @@
+{
+  "run_id": "20261113T012011Z_0ccb5b11",
+  "created_utc": "2026-11-13T01:20:11.266153+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "volp",
+          "class": "strategies.strategy_components.VolatilityPercentileRegimeComponent",
+          "params": {
+            "vol_period": 20,
+            "lookback_period": 100,
+            "smooth_period": 5
+          }
+        }
+      ],
+      "rules": [
+        {
+          "regime": "trending",
+          "any_of": [
+            [
+              {
+                "id": "volp",
+                "op": "gte",
+                "value": 0.5
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "trending": {
+          "components": [
+            {
+              "id": "drop",
+              "class": "strategies.strategy_components.PriceEvolutionComponent",
+              "params": {
+                "period": 1
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "negate"
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "min": 0.0
+                  }
+                },
+                {
+                  "op": "signed_power",
+                  "params": {
+                    "exponent": 3,
+                    "pivot": 20
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "unknown": {
+          "components": [
+            {
+              "id": "drop",
+              "class": "strategies.strategy_components.PriceEvolutionComponent",
+              "params": {
+                "period": 1
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "negate"
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "min": 0.0
+                  }
+                },
+                {
+                  "op": "signed_power",
+                  "params": {
+                    "exponent": 3,
+                    "pivot": 20
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "mean_reversion": null,
+        "chop": null
+      }
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 3,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 7.5,
+        "BTCUSD": 2.5,
+        "ETHUSD": 4,
+        "AVAXUSD": 7.5,
+        "SOLUSD": 7.5
+      }
+    }
+  },
+  "config_sha256": "0ccb5b11545f9975bf7e4de953b464c4de18cdc3c444874cedf8cbe0c16a29ef",
+  "data": {
+    "symbols": [
+      "TRXUSD"
+    ],
+    "timeframe": "86400s",
+    "start": "2023-09-04 00:00:00",
+    "end": "2024-08-31 00:00:00",
+    "bar_count": 363,
+    "data_sha256": "913eb08e42a771e5847986db3142163e2d67bdcf159700c869ddbf488bb4c4bc"
+  },
+  "git_sha": "0b3a18521f5d5d3f46eb350ebfef3e75ebb722b9",
+  "engine": {
+    "lookback": 61,
+    "warmup": 61
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

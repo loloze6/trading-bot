@@ -1,0 +1,6 @@
+N2-01_weekday-of-coming-bar_1d: 3 ideas (2 explorations)
+N2-02_capitulation-rebound_1d: 3 ideas (2 explorations)
+N2-03_deep-month-loss-rebound_1d: 3 ideas (2 explorations)
+N2-04_slow-and-fast-momentum_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
+N2-05_shock-up-continuation_1d: 2 ideas (2 explorations)
+N2-06_rebound-in-high-volatility_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)

@@ -1,0 +1,62 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "wd",
+        "class": "strategies.strategy_components.WeekdayComponent",
+        "params": {}
+      }
+    ],
+    "rules": [
+      {
+        "regime": "mean_reversion",
+        "any_of": [
+          [
+            {
+              "id": "wd",
+              "op": "between",
+              "low": 4.5,
+              "high": 5.5
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "sat_excess",
+            "class": "strategies.strategy_components.WeekdayReturnComponent",
+            "params": {
+              "lookback_bars": 182
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 182,
+                  "min_periods": 45
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "chop": null,
+      "unknown": null
+    }
+  }
+}

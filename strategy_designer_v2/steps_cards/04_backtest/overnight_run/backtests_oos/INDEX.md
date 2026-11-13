@@ -1,1 +1,4 @@
 N1-04_rebound-after-large-drop_1d_oos: ran: ADAUSD 12/12; AVAXUSD 11/12 (1 not run: the engine stopped); DOGEUSD 12/12; LINKUSD 12/12; SOLUSD 12/12; TRXUSD 12/12; UNIUSD 12/12; AAVEUSD 12/12; INJUSD 12/12 [1d, folds A, D]
+N2-01_weekday-of-coming-bar_1d_oos: ran: ADAUSD 12/12; AVAXUSD 10/12 (2 not run: the engine stopped); DOGEUSD 12/12; LINKUSD 12/12; SOLUSD 11/12 (1 not run: the engine stopped); TRXUSD 12/12; UNIUSD 12/12; AAVEUSD 12/12; INJUSD 11/12 (1 not run: the engine stopped) [1d, folds A, D]
+N2-04_slow-and-fast-momentum_1d_oos: ran: ADAUSD 12/12; AVAXUSD 11/12 (1 not run: the engine stopped); DOGEUSD 12/12; LINKUSD 12/12; SOLUSD 12/12; TRXUSD 12/12; UNIUSD 12/12; AAVEUSD 12/12; INJUSD 12/12 [1d, folds A, D]
+N2-06_rebound-in-high-volatility_1d_oos: ran: ADAUSD 12/12; AVAXUSD 11/12 (1 not run: the engine stopped); DOGEUSD 12/12; LINKUSD 12/12; SOLUSD 12/12; TRXUSD 12/12; UNIUSD 12/12; AAVEUSD 12/12; INJUSD 12/12 [1d, folds A, D]
