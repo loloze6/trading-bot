@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess next-bar return (forecast > 0 bars minus coin holding mean)",
+    "value": 0.0008937768693299017,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.6909451949084722
+    },
+    "threshold": "confirm if mean > 0 with t >= 2.0; reject if mean < 0 with t <= -2.0; else inconclusive; at least 200 forecast > 0 bars"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess next-bar return on forecast size",
+    "value": 0.00014163733284185652,
+    "passed": true
+  },
+  "counts": {
+    "bars with forecast > 0": 1654
+  },
+  "decided_by": "The t-statistic lies between -2.0 and 2.0, which the plan calls inconclusive.",
+  "reading": "Uptrend checked on the recorded regime label 'trending' and the drop as a negative 1-day return (down_day raw value, else close-to-close); the holding mean is each coin's mean next-bar return over all windows present in the record (12 here, not 24); fewer than 200 bars is reported as not observable per the minimum-count rule; the supporting slope passes if positive."
+}

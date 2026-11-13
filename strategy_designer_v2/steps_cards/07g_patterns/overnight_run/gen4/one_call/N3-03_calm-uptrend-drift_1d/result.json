@@ -1,0 +1,75 @@
+{
+  "line": "7.g",
+  "backtest": "N3-03_calm-uptrend-drift_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.3663036,
+  "findings": {
+    "F1": "Among non-overlapping 5-bar long cases, the calm-uptrend drift appears only when the longer trend is also up: long bars with a positive 60-day return show a mean excess of +0.0153 (t 2.38, n 276, hit 55%), against +0.0011 (t 0.28, n 621) when the 60-day return is not positive. In calm bars, closes above the 100-day average with a positive 60-day return give +0.0125 (t 2.07, n 300), while closes above the 100-day average with a negative 60-day return give -0.0344 (t -2.79, n 34).",
+    "F2": "The active-bar edge depends on the year: excess 5-bar returns are +0.0337 in 2020 (t 4.98, n 145) and +0.0293 in 2021 (t 2.51, n 138), but -0.0322 in 2018 (t -2.45, n 74) and -0.0275 in 2022 (t -3.19, n 114). The other years sit near zero (|t| < 0.9).",
+    "F3": "The book's profit comes from trades that last. 534 trades closed within 1.5 days average -2.14% net with 21% winners, and 559 trades of 1.5 to 3.5 days average -1.39%. Trades longer than 7.5 days average +2.93% (n 392) and those longer than 15 days +10.39% (n 291, 72% winners). Entry forecast size barely matters: quartile means are 0.86%, 0.68%, 0.81% and 1.26%.",
+    "F4": "Next-day excess return depends on the weekday (about 2,480 one-day cases each). Thursday is +0.0026 (t 2.77) and Friday +0.0035 (t 4.44); Monday is -0.0024 (t -2.47) and Wednesday -0.0033 (t -2.98). The Thu/Fri minus Mon/Wed gap is positive in 7 of 8 years and in all 6 coins (+0.0034 to +0.0074).",
+    "F5": "A large down day (move at or below -1.5 of 20-day volatility) is followed by a next-day rebound: +0.0044 (t 2.01, n 679, hit 61%). The rebound is concentrated in high-volatility bars below the 100-day average: +0.0133 (t 2.62, n 186, hit 64%). It is near zero in calm bars: -0.0022 (t -0.73, n 227).",
+    "F6": "A large up day (at or above +1.5 of 20-day volatility) with the close below the 100-day average is followed by a next-day excess of -0.0070 (t -2.04, n 224, hit 42%). Above the 100-day average the next day shows +0.0024 (t 0.76, n 396).",
+    "F7": "The book's result rests on its tails. Its top 5% of in-position days sum to +38.8 and its bottom 5% to -31.7, against a total of +10.8 over 6,484 in-position days. The 1% daily quantiles are -13.0% and +15.0%."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose 20-day volatility is low against its last 100 days and whose 20-day return is positive, the next five days drift up when the close is also above its 100-day average and the 60-day return is positive.",
+      "consequence": "Take calm-uptrend longs only when the longer trend agrees, and refuse them when the 60-day return is negative.",
+      "name": "calm drift needs long trend",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "Once a coin's calm-uptrend long has stayed on for more than a week, the move keeps extending, so the days after that point drift up more than the first days after the signal turns on.",
+      "consequence": "Expect the first days of a calm-uptrend long to be lossy, and judge the long by its later days rather than by its entry.",
+      "name": "established calm trends persist",
+      "from": "F3, F7",
+      "refs": [
+        "F3",
+        "F7"
+      ]
+    },
+    {
+      "idea": "A coin's daily close-to-close return is higher on Thursdays and Fridays than on Mondays and Wednesdays.",
+      "consequence": "Prefer entering longs early in the week and refuse new longs ahead of Monday and Wednesday.",
+      "name": "late-week crypto strength",
+      "from": "F4",
+      "refs": [
+        "F4"
+      ]
+    },
+    {
+      "idea": "After a down day of at least 1.5 times its 20-day volatility, in a coin that is volatile against its last 100 days and closes below its 100-day average, the next day's return is positive.",
+      "consequence": "Refuse to sell after a sharp down day in a volatile downtrend, and consider a one-day rebound long instead.",
+      "name": "volatile downtrend shock rebound",
+      "from": "F5",
+      "refs": [
+        "F5"
+      ]
+    },
+    {
+      "idea": "After an up day of at least 1.5 times its 20-day volatility in a coin closing below its 100-day average, the next day's return is negative.",
+      "consequence": "Refuse to chase a sharp up day while the coin is below its 100-day average.",
+      "name": "downtrend rally fades",
+      "from": "F6",
+      "refs": [
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "N3-03_calm-uptrend-drift.g1_calm-drift-needs-long-trend",
+    "N3-03_calm-uptrend-drift.g2_established-calm-trends-persist",
+    "N3-03_calm-uptrend-drift.g3_late-week-crypto-strength",
+    "N3-03_calm-uptrend-drift.g4_volatile-downtrend-shock-rebound",
+    "N3-03_calm-uptrend-drift.g5_downtrend-rally-fades"
+  ],
+  "no_ideas": null
+}

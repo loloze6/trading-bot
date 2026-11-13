@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess next-bar return over holding mean",
+    "value": 0.003156526817573457,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 3.0645293694605296
+    },
+    "threshold": "confirm if mean > 0 with t >= 2.0; reject if mean < 0 with t <= -2.0; else inconclusive; at least 200 forecast > 0 bars"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess next-bar return on forecast size",
+    "value": 0.0003620649655601818,
+    "passed": true
+  },
+  "counts": {
+    "bars with forecast > 0": 2383
+  },
+  "decided_by": "The mean excess next-bar return is positive with t >= 2.0 (confirm rule).",
+  "reading": "The situation is checked as regime == 'trending' and a negative raw 1-day return (down_day component, price return as fallback) with forecast > 0; the holding mean is each coin's mean next-bar return over all bars of all its windows, the 200-bar minimum counts forecast > 0 bars with a valid next-bar return, and the supporting check (positive OLS slope of excess return on forecast) is reported without changing the status."
+}

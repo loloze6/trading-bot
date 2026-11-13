@@ -4,3 +4,7 @@ N2-03_deep-month-loss-rebound_1d: inconclusive (fit: adapted) [main: 0.0333368; 
 N2-04_slow-and-fast-momentum_1d: inconclusive (fit: exact) [main: 0.0183228; t of the mean 0.817797; non-overlapping 20-bar active blocks 269]
 N2-05_shock-up-continuation_1d: inconclusive (fit: adapted) [main: 0.00875825; t of the mean 1.66608; independent events 601]
 N2-06_rebound-in-high-volatility_1d: inconclusive (fit: adapted) [main: 0.00234706; two-proportion z 0.099304; top-decile drop bars, high volatility 992, top-decile drop bars, quiet 749]
+N3-01_strong-volatile-momentum_1d: inconclusive (fit: exact) [main: 0.00968343; t of the mean 1.3753; non-overlapping cases at forecast >= 10 369]
+N3-02_breakout-shock-continues_1d: confirmed (fit: adapted) [main: 0.0107201; t of the mean 2.03078; non-overlapping cases pooled across coins 635, inside-range shock-up days 1619]
+N3-03_calm-uptrend-drift_1d: inconclusive (fit: adapted) [main: 0.00440265; t of the mean on non-overlapping 5-bar blocks 1.49345; non-overlapping 5-bar long cases pooled across coins 897, long bars 4439]
+N3-04_dip-in-uptrend_1d: confirmed (fit: adapted) [main: 0.00315653; t of the mean 3.06453; bars with forecast > 0 2383]

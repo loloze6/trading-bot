@@ -12,3 +12,7 @@ N2-03_deep-month-loss-rebound_1d: not profitable enough [Sharpe 0.3164; Sharpe m
 N2-04_slow-and-fast-momentum_1d: profitable enough [Sharpe 0.8725; Sharpe minus holding's Sharpe 0.3183; Calmar 0.7586]
 N2-05_shock-up-continuation_1d: not profitable enough [Sharpe -0.2449; Sharpe minus holding's Sharpe -0.7991; Calmar -0.1312]
 N2-06_rebound-in-high-volatility_1d: profitable enough [Sharpe 0.9209; Sharpe minus holding's Sharpe 0.3667; Calmar 1.025]
+N3-01_strong-volatile-momentum_1d: not profitable enough [Sharpe 0.6152; Sharpe minus holding's Sharpe 0.061; Calmar 0.4508]
+N3-02_breakout-shock-continues_1d: not profitable enough [Sharpe 0.4153; Sharpe minus holding's Sharpe -0.1388; Calmar 0.1461]
+N3-03_calm-uptrend-drift_1d: not profitable enough [Sharpe 0.6788; Sharpe minus holding's Sharpe 0.1246; Calmar 0.3593]
+N3-04_dip-in-uptrend_1d: not profitable enough [Sharpe 0.7666; Sharpe minus holding's Sharpe 0.2124; Calmar 0.5209]

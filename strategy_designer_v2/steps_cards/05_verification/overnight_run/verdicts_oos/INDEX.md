@@ -2,3 +2,5 @@ N1-04_rebound-after-large-drop_1d_oos: confirmed (fit: adapted) [main: 0.035459;
 N2-01_weekday-of-coming-bar_1d_oos: inconclusive (fit: adapted) [main: -0.000160119; t of the mean -0.187742; active Saturday bars 1046, Saturday bars 1804]
 N2-04_slow-and-fast-momentum_1d_oos: inconclusive (fit: exact) [main: 0.00455682; t of the mean 0.224986; non-overlapping 20-bar active blocks 177]
 N2-06_rebound-in-high-volatility_1d_oos: inconclusive (fit: adapted) [main: 0.0534119; two-proportion z 1.91244; high_volatility_top_decile_drop_bars 671, quiet_top_decile_drop_bars 610]
+N3-02_breakout-shock-continues_1d_oos: inconclusive (fit: adapted) [main: 0.0111353; t of the mean 1.67844; non-overlapping cases pooled across coins 447, inside-range shock-up cases 809]
+N3-04_dip-in-uptrend_1d_oos: inconclusive (fit: adapted) [main: 0.000893777; t of the mean 0.690945; bars with forecast > 0 1654]

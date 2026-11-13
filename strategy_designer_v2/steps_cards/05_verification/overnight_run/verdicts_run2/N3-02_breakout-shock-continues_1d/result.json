@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 5-bar return after shock-up new highs (forecast >= 10)",
+    "value": 0.01009511907596055,
+    "statistic": {
+      "name": "one-sample t",
+      "value": 2.0026159862553112
+    },
+    "threshold": "confirm: positive with t >= 2; reject: negative with t <= -2"
+  },
+  "supporting_check": {
+    "name": "new-high mean excess minus inside-range shock mean excess",
+    "value": 0.007370790764516578,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases pooled across coins": 684,
+    "inside-range cases": 1112
+  },
+  "decided_by": "Mean excess 5-bar return is positive with t >= 2 and exceeds the inside-range shock mean.",
+  "reading": "New high = close >= max of the current and prior 20 closes inside the window (falling back to regime=='trending' on the first 20 bars), up day = raw shock value (else price return) > 0; the coin mean is over all bars' overlapping 5-bar returns pooled across its windows; signals are merged when less than 5 bars after the last kept case, which keeps its return; the inside-range standardised return is 10 x r / rolling mean |r| (60 bars incl. current, min 20, inside the window), with the same merging; t is the ordinary one-sample t of the pooled mean."
+}

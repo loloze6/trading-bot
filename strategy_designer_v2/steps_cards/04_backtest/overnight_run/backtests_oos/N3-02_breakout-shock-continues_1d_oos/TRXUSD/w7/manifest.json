@@ -1,0 +1,117 @@
+{
+  "run_id": "20261113T015209Z_0e560ade",
+  "created_utc": "2026-11-13T01:52:09.384972+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "dc",
+          "class": "strategies.strategy_components.DonchianBreakoutComponent",
+          "params": {
+            "period": 21,
+            "scaling_factor": 20.0
+          }
+        }
+      ],
+      "vetoes": [],
+      "rules": [
+        {
+          "regime": "trending",
+          "any_of": [
+            [
+              {
+                "id": "dc",
+                "op": "gte",
+                "value": 20.0
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "trending": {
+          "components": [
+            {
+              "id": "shock",
+              "class": "strategies.strategy_components.PriceEvolutionComponent",
+              "params": {
+                "period": 1
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "min": 0.0
+                  }
+                },
+                {
+                  "op": "signed_power",
+                  "params": {
+                    "exponent": 3
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "mean_reversion": null,
+        "chop": null,
+        "unknown": null
+      }
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 3,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 7.5,
+        "BTCUSD": 2.5,
+        "ETHUSD": 4,
+        "AVAXUSD": 7.5,
+        "SOLUSD": 7.5
+      }
+    }
+  },
+  "config_sha256": "0e560adeb2c8279079bca4d80ccae115e642a48f76fd6a037227ba7277846f0d",
+  "data": {
+    "symbols": [
+      "TRXUSD"
+    ],
+    "timeframe": "86400s",
+    "start": "2023-11-14 00:00:00",
+    "end": "2024-04-30 00:00:00",
+    "bar_count": 169,
+    "data_sha256": "d4f8626f52ed25729b350dce078f2a5266515e4b8773da84698290ee971d34a6"
+  },
+  "git_sha": "0af2e7fac251c3c9accdd389fd78860a13829e06-dirty",
+  "engine": {
+    "lookback": 61,
+    "warmup": 24
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

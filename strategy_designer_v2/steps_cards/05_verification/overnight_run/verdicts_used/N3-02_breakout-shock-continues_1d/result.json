@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 5-bar forward return after shock-up new highs (forecast >= 10)",
+    "value": 0.010720071205838662,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.030782226078248
+    },
+    "threshold": "mean > 0 with t >= 2 to confirm; mean < 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "mean excess after new-high cases minus after inside-range shock-up days",
+    "value": 0.0064516808562489385,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases pooled across coins": 635,
+    "inside-range shock-up days": 1619
+  },
+  "decided_by": "Mean excess 5-bar return is positive with t >= 2 and exceeds that after inside-range shock-up days.",
+  "reading": "Coin mean is the mean of all overlapping 5-bar forward returns of the coin pooled over its windows; a signal at most 5 bars after the last kept case is merged into it; the standardised return is 10 x r / mean |r| of the last 60 one-day returns (min 20, current bar included, recomputed within each window); inside-range days are not merged; t is the ordinary t of the mean."
+}

@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 5-bar return after forecast >= 10 (vs coin mean)",
+    "value": 0.009683432432828732,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.375304128295523
+    },
+    "threshold": "positive with t >= 2 confirms; negative with t <= -2 rejects; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "slope of excess 5-bar return on forecast, active bars, non-overlapping",
+    "value": 0.00042754863041243285,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases at forecast >= 10": 369
+  },
+  "decided_by": "The t-statistic is between -2 and 2 (inconclusive rule).",
+  "reading": "Situation checked on the 'regime' column (detector components not recorded) plus ret20 > 0 where recorded; cases and the coin's mean 5-bar return both use the non-overlapping grid (positions 0,5,10,... of each window) pooled over all windows; the supporting check is reported but does not change the status."
+}
