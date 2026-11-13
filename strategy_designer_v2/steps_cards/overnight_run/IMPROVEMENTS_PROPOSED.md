@@ -40,7 +40,7 @@ Each item: what is wrong, the evidence from the night, what was tested, and a re
 **B6. Step 7 needs two of the rules steps 3 and 6 already follow.** (log 26, 29, 30)
 - Evidence, the baseline: 7.f compared each event with its own window's mean (the per-window bias step 3 has a rule against). Its strongest finding on N4-01 ("the drift appears only below the 60-day level", t 3.32) reverses with the coin's mean over all windows (t 1.35 below, 2.12 above). Its idea, tested as N6-01: inconclusive (t -0.36). The same pattern shows in 4 to 7 of the night's 187 exploration files.
 - Evidence, the book: 7.f's first finding ("the gain rests on one coin-window") came from summed trade log returns, which one compounding trade dominates; on step 6's book the same removal changes the Sharpe from 0.79 to 0.72.
-- Tested: both as lines in step 7's rules (`common_rules.md`, in testing), 7.f rerun on N4-01: both artefacts gone; its main number agrees with step 5's; its book findings now give beta to holding (0.79) and alpha (t 1.61).
+- Tested: both as lines in step 7's rules (`common_rules.md`, in testing), 7.f rerun on N4-01: both artefacts gone; its main number agrees with step 5's; its book findings now give beta to holding (0.79) and alpha (t 1.61). Rerun of 7.d on N4-01: the same; gen 5's contrary idea does not come back.
 - Recommendation: **apply** both lines.
 
 **B7. An idea's situation must be known at a bar's close.** (log 28)

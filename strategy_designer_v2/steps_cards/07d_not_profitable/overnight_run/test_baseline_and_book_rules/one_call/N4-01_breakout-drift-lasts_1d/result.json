@@ -1,0 +1,60 @@
+{
+  "line": "7.d",
+  "backtest": "N4-01_breakout-drift-lasts_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.337054,
+  "findings": {
+    "F1": "The book fails on its falls, not on its gain or its fees. Its chained maximum drawdown is -82.5% against about 0.62 a year of mean daily return (0.0017/day, sd 0.041, 2,898 book days). It is long-only and moves almost one-for-one with the market: mean +0.0234 on days the coins' average rose (1,551 days) and -0.0233 on days it fell (1,347 days).",
+    "F2": "On the book's worst 5% of days it lost -10.0% while the coins' average lost -7.3%. On those days 89% of coins were held, against 59% on an average day, and only 36% of coins were in a 50-day uptrend. The big falls come from being fully long into a market-wide drop.",
+    "F3": "The losing periods are the bear phases. 2018 summed -1.41 and 2022 -0.55 in book daily returns, against coin-average sums of -1.26 and -0.67. Window w14 summed -1.01 with a -73% drawdown inside it, and w7 and w9 summed -0.51 and -0.56.",
+    "F4": "Gains come from coins in a 50-day uptrend. When a coin was 50-day uptrending, its held days earned 0.00419 a day (t 3.86, n 4,258 coin-days). When it was 50-day downtrending, held days earned 0.00144 (t 0.82, n 1,935). Yet the book was still exposed 38% of the time in downtrends.",
+    "F5": "The breakout's drift is concentrated in uptrends. Over non-overlapping 10-bar periods, new 20-day highs beat the coin's all-window mean by 0.0367 when the coin's 50-day return was positive (t 2.65, n 200), against 0.0192 when it was negative (t 1.22, n 98). The overall figure is 0.0212 (t 2.45, n 446).",
+    "F6": "Fees are not the cause; whipsaw is. There were 3,269 long trades with a median hold of 16 days, and their mean gross was +4.37% against 0.29% commission. The 1,563 trades held 15 days or less all lost: net sums of -403, -1,072, -2,027 and -2,872 across the shorter hold buckets. The 1,705 trades held longer than 15 days carried +20,336.",
+    "F7": "A larger forecast earns more. Next-bar returns were 0.00266 when the forecast was 15-20 (5,047 bars) and 0.00209 when it was 10-15 (2,155 bars). They were -0.00026 at 0-5 (1,319 bars) and 0.00003 at 5-10 (1,734 bars).",
+    "F8": "Calm downtrends are the one losing state in the book's contribution. Coin-days in a 50-day downtrend with the lowest-tercile 20-day volatility contributed -0.376, while uptrend coin-days contributed +1.18, +1.07 and +0.71 across the three volatility terciles."
+  },
+  "ideas": [
+    {
+      "idea": "A new 20-day closing high in a coin whose close is above its close of 50 days earlier is followed by a 10-day return above the coin's average. The drift belongs to breakouts inside an established uptrend.",
+      "consequence": "Take breakout longs only when the coin's 50-day trend is up, and refuse them in 50-day downtrends, where most of the bear-phase drawdown was taken.",
+      "name": "breakout drift needs uptrend",
+      "from": "F4, F5, F3, F1",
+      "refs": [
+        "F4",
+        "F5",
+        "F3",
+        "F1"
+      ]
+    },
+    {
+      "idea": "A coin whose close stays in the top of its 20-day range keeps rising on the following days. The excess return lives in closes pinned at the high, not in closes that drift back into the middle of the range.",
+      "consequence": "Hold only while the close sits at the very top of its range, and let the weak, mid-range readings go flat rather than entering and exiting on them.",
+      "name": "pinned-at-high closes keep rising",
+      "from": "F7, F6",
+      "refs": [
+        "F7",
+        "F6"
+      ]
+    },
+    {
+      "idea": "A new 20-day closing high reached in a calm coin (low 20-day volatility) that is in a 50-day downtrend is followed by a fall back below the high over the next days.",
+      "consequence": "Refuse breakout longs in calm downtrending coins, the one state where the book's contribution was negative.",
+      "name": "calm downtrend breakouts fade",
+      "from": "F8, F2, F4",
+      "refs": [
+        "F8",
+        "F2",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "N4-01_breakout-drift-lasts.d1_breakout-drift-needs-uptrend",
+    "N4-01_breakout-drift-lasts.d2_pinned-at-high-closes-keep-rising",
+    "N4-01_breakout-drift-lasts.d3_calm-downtrend-breakouts-fade"
+  ],
+  "no_ideas": null
+}
