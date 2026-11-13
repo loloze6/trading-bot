@@ -1887,3 +1887,47 @@ class WeekdayComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return 2
+
+
+class BarsSinceHighComponent(SubStrategyComponent):
+    """
+    (Overnight test component, not yet approved.) How recent the last new closing high is, on every bar:
+
+        raw_value = max(0, max_bars - k)
+
+    k is the number of bars since the last bar whose close was the highest of its prior `lookback` closes (k = 0 on
+    that bar). Graded: `max_bars` on the day of a new high, falling by one each bar after it, 0 once the high is older
+    than `max_bars` bars. Lets a config hold a position for a while after an event, which it otherwise cannot. Closes
+    only, no lookahead.
+    """
+
+    def __init__(self, name="BarsSinceHigh", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.lookback = int(self.parameters.get("lookback", 20))
+        self.max_bars = int(self.parameters.get("max_bars", 20))
+        if self.lookback < 2 or self.max_bars < 1:
+            raise ValueError("BarsSinceHighComponent: lookback >= 2 and max_bars >= 1")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        close = data["close"].iloc[-(self.lookback + self.max_bars + 1):].astype(float).to_numpy()
+        n = len(close)
+        for k in range(0, self.max_bars + 1):
+            i = n - 1 - k
+            prior = close[i - self.lookback:i]
+            if len(prior) == self.lookback and close[i] > prior.max():
+                self._raw_value = float(max(0, self.max_bars - k))
+                self.debug_info = {'bars_since_high': k}
+                break
+        self.confidence = 1.0
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.lookback + self.max_bars + 1

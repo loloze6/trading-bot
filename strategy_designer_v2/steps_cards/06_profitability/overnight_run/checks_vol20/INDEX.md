@@ -22,3 +22,4 @@ N1-06_deep-below-average-rebound_1d: not profitable enough [Sharpe 0.5531; Sharp
 N1-07_fresh-death-cross-rebound_1d: not profitable enough [Sharpe 0.5131; Sharpe minus holding's Sharpe -0.05264; Calmar 0.2864]
 N1-08_twenty-day-momentum_1d: not profitable enough [Sharpe 0.3208; Sharpe minus holding's Sharpe -0.2334; Calmar 0.1325]
 N1-09_below-falling-long-average_1d: not profitable enough [Sharpe -0.2553; Sharpe minus holding's Sharpe -0.821; Calmar -0.1144]
+N4-01_breakout-drift-lasts_1d: not profitable enough [Sharpe 0.7897; Sharpe minus holding's Sharpe 0.2355; Calmar 0.4865]

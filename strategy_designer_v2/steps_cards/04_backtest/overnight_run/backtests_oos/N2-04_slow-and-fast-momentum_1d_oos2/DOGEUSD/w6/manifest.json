@@ -1,0 +1,145 @@
+{
+  "run_id": "20261113T015737Z_3ac43bc2",
+  "created_utc": "2026-11-13T01:57:37.731337+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "r60",
+          "class": "strategies.strategy_components.PriceEvolutionComponent",
+          "params": {
+            "period": 60
+          }
+        },
+        {
+          "id": "r20",
+          "class": "strategies.strategy_components.PriceEvolutionComponent",
+          "params": {
+            "period": 20
+          }
+        }
+      ],
+      "vetoes": [],
+      "rules": [
+        {
+          "regime": "trending",
+          "any_of": [
+            [
+              {
+                "id": "r60",
+                "op": "gt",
+                "value": 0.0
+              },
+              {
+                "id": "r20",
+                "op": "gt",
+                "value": 0.0
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "trending": {
+          "components": [
+            {
+              "id": "slow",
+              "class": "strategies.strategy_components.PriceEvolutionComponent",
+              "params": {
+                "period": 60
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 61,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "min": 0.0
+                  }
+                }
+              ]
+            },
+            {
+              "id": "medium",
+              "class": "strategies.strategy_components.PriceEvolutionComponent",
+              "params": {
+                "period": 20
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "min": 0.0
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "unknown": null,
+        "mean_reversion": null,
+        "chop": null
+      }
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 3,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 7.5,
+        "BTCUSD": 2.5,
+        "ETHUSD": 4,
+        "AVAXUSD": 7.5,
+        "SOLUSD": 7.5
+      }
+    }
+  },
+  "config_sha256": "3ac43bc24ed185fb484d4f50275a4ea79aebcb63376d98f8b713fe78a3d036f1",
+  "data": {
+    "symbols": [
+      "DOGEUSD"
+    ],
+    "timeframe": "86400s",
+    "start": "2021-03-23 00:00:00",
+    "end": "2021-12-31 00:00:00",
+    "bar_count": 284,
+    "data_sha256": "e070435977afca9a61e6bd212c38cf7510a342eda06d7b74dc060fc5e67153df"
+  },
+  "git_sha": "0893712cd977181ad8b20087d03b35f9b020c9a4-dirty",
+  "engine": {
+    "lookback": 62,
+    "warmup": 62
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

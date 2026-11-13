@@ -8,3 +8,7 @@ N3-01_strong-volatile-momentum_1d: inconclusive (fit: exact) [main: 0.00968343; 
 N3-02_breakout-shock-continues_1d: confirmed (fit: adapted) [main: 0.0107201; t of the mean 2.03078; non-overlapping cases pooled across coins 635, inside-range shock-up days 1619]
 N3-03_calm-uptrend-drift_1d: inconclusive (fit: adapted) [main: 0.00440265; t of the mean on non-overlapping 5-bar blocks 1.49345; non-overlapping 5-bar long cases pooled across coins 897, long bars 4439]
 N3-04_dip-in-uptrend_1d: confirmed (fit: adapted) [main: 0.00315653; t of the mean 3.06453; bars with forecast > 0 2383]
+N4-01_breakout-drift-lasts_1d: confirmed (fit: adapted) [main: 0.0159453; t of the mean 2.04871; non-overlapping events 559, events with next close below the high 299]
+N4-02_new-high-not-shock_1d: inconclusive (fit: adapted) [main: 1.67879; cluster-robust t (breakout clusters) 1.37665; independent breakout clusters 381, clusters in top half 329, clusters in bottom half 294]
+N4-03_breakouts-pay-in-uptrends_1d: confirmed (fit: adapted) [main: 0.0491488; t of the mean 2.27021; non-overlapping cases (pool) 124, trending cases 87, mean_reversion cases 37]
+N4-04_dip-rebound-spans-days_1d: confirmed (fit: adapted) [main: 0.0071814; t of the mean 2.26171; non-overlapping cases 455]

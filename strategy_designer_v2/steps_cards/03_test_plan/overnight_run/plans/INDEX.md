@@ -17,3 +17,7 @@ N3-01_strong-volatile-momentum_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, Z
 N3-02_breakout-shock-continues_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 N3-03_calm-uptrend-drift_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 N3-04_dip-in-uptrend_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+N4-01_breakout-drift-lasts_1d: untestable: The idea says the rise continues on the days after the new high, even when those days close below it. [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+N4-02_new-high-not-shock_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+N4-03_breakouts-pay-in-uptrends_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+N4-04_dip-rebound-spans-days_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
