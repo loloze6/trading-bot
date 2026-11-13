@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 5-bar excess return after forecast>=10 events",
+    "value": 0.008758253788204653,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.666084561321156
+    },
+    "threshold": "confirm if mean > 0 and t >= 2, reject if mean < 0 and t <= -2, over at least 30 independent events"
+  },
+  "supporting_check": {
+    "name": "mean next-bar excess return after events, expected |t| < 2",
+    "value": -0.001962268967420466,
+    "passed": true
+  },
+  "counts": {
+    "independent events": 601
+  },
+  "decided_by": "With at least 30 independent events, the t of the mean 5-bar excess return lies between -2 and 2.",
+  "reading": "Events merge when within 5 bars (difference <= 5) of the previous counted event in the same window, counted events without a bar t+5 in their window are left out of the measure, the coin's mean daily return is the mean of all within-window one-bar returns, and the supporting check is reported but does not gate the verdict since the confirm rule does not mention it."
+}

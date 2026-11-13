@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "net share of higher next closes, high-vol minus quiet, top-decile forecast bars",
+    "value": 0.0023470579789374862,
+    "statistic": {
+      "name": "two-proportion z",
+      "value": 0.09930400467377437
+    },
+    "threshold": "two-proportion z >= 2 confirms, z <= -2 rejects, between is inconclusive; at least 30 bars per group"
+  },
+  "supporting_check": {
+    "name": "mean next-bar excess return, top-decile high-vol drop bars (t of mean), t=5.315",
+    "value": 0.01111437948278921,
+    "passed": true
+  },
+  "counts": {
+    "top-decile drop bars, high volatility": 992,
+    "top-decile drop bars, quiet": 749
+  },
+  "decided_by": "Inconclusive rule met: z = 0.10 lies between -2 and 2.",
+  "reading": "Situation taken as a negative one-day change (drop component's raw value, else the close-to-close return) with a long forecast; top decile = bars whose forecast is at or above the 90th percentile of all non-missing forecasts pooled over coins and windows and is positive, keeping those with a next close in the same window; high volatility = regime 'trending' (volp >= 0.5) and quiet = regime 'unknown'; each bar's up indicator is netted by its coin's share of higher next closes over all windows, the z numerator is the difference of the net shares with the pooled raw share giving the standard error; the supporting check passes at t >= 2 since the plan states no threshold for it; fewer than 30 bars in a group is reported as not observable."
+}

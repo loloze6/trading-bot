@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess forward 20-bar return after top-decile positive forecasts",
+    "value": 0.03333682769716398,
+    "statistic": {
+      "name": "t of the mean (non-overlapping episodes)",
+      "value": 1.8454242671638128
+    },
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "slope of excess forward 20-bar return on forecast, nonzero-forecast bars",
+    "value": 0.000543474438978285,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping top-decile episodes": 108
+  },
+  "decided_by": "With at least 30 episodes, the t of the mean excess forward return lies between -2 and 2.",
+  "reading": "The situation is a negative raw 20-bar change on the long side; the top decile is forecasts at or above the pooled 90th percentile of all positive forecasts, episodes are top-decile bars at positions 0, 20, 40, ... of each window, the coin's mean is over all its within-window 20-bar returns, and the supporting slope uses all nonzero-forecast bars by OLS."
+}

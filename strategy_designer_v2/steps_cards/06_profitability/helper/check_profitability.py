@@ -79,10 +79,15 @@ def load(record):
     return eq(book), eq(hold), trades, bars, coins
 
 
-def check(record, rule):
+def check(record, rule, target_vol=None):
     book, hold, trades, bars, coins = load(record)
     windows = sorted(book)
     r = np.concatenate([book[w].to_numpy() for w in windows])
+    if target_vol:   # overnight test: one common risk level (the book's daily returns scaled to a yearly volatility)
+        vol = r.std(ddof=1) * math.sqrt(365)
+        if vol > 0:
+            r = r * (target_vol / vol)
+            book = {w: book[w] * (target_vol / vol) for w in windows}
     h = np.concatenate([hold[w].to_numpy() for w in windows])
     curve = np.cumprod(1 + r)
     years = len(r) / 365
@@ -118,6 +123,7 @@ def main():
     a = argparse.ArgumentParser()
     a.add_argument("record", type=Path, help="one backtest record folder")
     a.add_argument("--checks-dir", type=Path, default=HERE.parent / "checks")
+    a.add_argument("--target-vol", type=float, default=None, help="overnight test: scale the book to this yearly volatility first (for example 0.2)")
     args = a.parse_args()
 
     record = args.record.resolve()
@@ -138,7 +144,7 @@ def main():
     data = next((l[len("- Data: "):] for l in (record / "run.md").read_text().splitlines() if l.startswith("- Data: ")), "") \
         if (record / "run.md").exists() else ""
 
-    rows, facts = check(record, rule)
+    rows, facts = check(record, rule, args.target_vol)
     ok = all(x["passed"] for x in rows)
     decided = "every measure passed" if ok else "failed: " + "; ".join(x["label"] for x in rows if not x["passed"])
     status = "profitable enough" if ok else "not profitable enough"

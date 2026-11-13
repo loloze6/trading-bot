@@ -17,3 +17,6 @@ One block per idea that needs components the catalogue does not have.
 
 ## N1-07_fresh-death-cross-rebound_1d
 - Component: SmaCrossRecency: from closes, the number of bars since SMA(50) last crossed below SMA(200) (0 on the cross bar), or a freshness score of max(0, 20 - bars since the cross) that is largest on the cross bar and falls to 0 after 20 bars or once SMA50 is back above SMA200 | measures: situation
+
+## N2-01_weekday-of-coming-bar_1d
+- Component: coming-bar weekday: the UTC weekday (0 to 6) of the current bar's timestamp plus one bar's spacing, read from `timestamp`; a categorical value, used as a regime measure so that a rule can select the bar before Saturday | measures: situation
