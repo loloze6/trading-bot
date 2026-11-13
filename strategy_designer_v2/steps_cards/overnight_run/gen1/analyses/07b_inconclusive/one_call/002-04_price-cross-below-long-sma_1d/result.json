@@ -1,0 +1,47 @@
+{
+  "line": "7.b",
+  "backtest": "002-04_price-cross-below-long-sma_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.2894991,
+  "findings": {
+    "F1": "Across the 930 short blocks the mean excess fall is only 0.07% per 10 bars (t 0.16, hit rate 52.5%), against a block-to-block spread of 14.0%, so any edge is buried in the market's own 10-day moves.",
+    "F2": "The sign of the result flips by year: shorts gained in 2018 (+3.9%, t 2.32, n 134) and 2022 (+2.3%, t 2.48, n 195), but lost in 2020 (\u22124.3%, t \u22122.73, n 88) and 2021 (\u22125.1%, t \u22122.32, n 74), and these cancel in the pooled mean.",
+    "F3": "The windows split the same way, from w9 (+4.0%, t 3.71) and w7 (+5.8%, t 3.35) to w23 (\u22126.7%, t \u22123.12) and w21 (\u22123.6%, t \u22122.75), while no coin stands out (coin means range from \u22120.39% to +0.56%, all |t| < 0.6).",
+    "F4": "Sitting deeper below the average does not help: the deepest forecast bucket (\u221220 to \u221210) gives \u22120.15% (t \u22120.17, n 294), the \u221210 to \u22125 bucket gives +0.64% (t 0.76), and the slope of excess return on allocation has the wrong sign (\u22120.0056).",
+    "F5": "Shorts gained most when the 200-day average itself had fallen more than 5% over the prior 20 bars: +1.6% excess fall (t 1.74, hit 54.8%, n 217), against roughly 0% where the average was flat or rising (\u22120.58% to +0.44%, all |t| < 0.7).",
+    "F6": "Timing since the cross matters but is not steady: the first 10 bars below the average give +1.7% (t 1.34, n 155), bars 10\u201330 give \u22121.95% (t \u22121.94, n 224), and bars 60\u2013120 give +1.7% (t 1.81, n 210).",
+    "F7": "The share of coins below their own averages adds little on its own: with a falling average and broad weakness the shorts gain +0.66% (t 0.95, n 353), and this pocket still swings by year, +4.8% (t 2.95) in 2018 against \u22122.9% in 2020."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's close is below its 200-day average and that average has itself been falling steeply over the past few weeks, the coin keeps falling over the next 10 days by more than its usual drift.",
+      "consequence": "A trader would take shorts below the long average only when the average is already turning down hard, and refuse them when the average is flat or rising.",
+      "name": "steeply falling long average",
+      "from": "F5, F1, F4",
+      "refs": [
+        "F5",
+        "F1",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In the first days after a coin's close crosses below its 200-day average, the coin keeps falling over the next 10 days by more than its usual drift.",
+      "consequence": "A trader would short only fresh crosses below the long average rather than holding a short for the whole time the price stays below it.",
+      "name": "fresh cross below continues",
+      "from": "F6, F2, F3",
+      "refs": [
+        "F6",
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "002-04_price-cross-below-long-sma.b1_steeply-falling-long-average",
+    "002-04_price-cross-below-long-sma.b2_fresh-cross-below-continues"
+  ],
+  "no_ideas": null
+}

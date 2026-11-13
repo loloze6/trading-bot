@@ -1,0 +1,19 @@
+{
+  "line": "7.c",
+  "backtest": "002-05_sma-up-regime-positive-drift_1d_minus1pct",
+  "step5": "rejected",
+  "step6": "none",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.18641020000000003,
+  "findings": {
+    "F1": "The rejection comes from the gap between one bar's close and the next bar's open, not from trading during the bar. On in-stretch bars the next open sits a mean \u22120.9985% below the prior close, with a standard deviation of only 0.025%. 99.66% of the 290 in-stretch bars fall within \u00b10.1% of exactly \u22121%. On out-of-stretch bars the gap is \u22120.0007%, and 99.77% of the 434 bars fall within \u00b10.1% of zero.",
+    "F2": "Without that gap, in-stretch bars do not differ from out-of-stretch bars. The next bar's open-to-close return is +0.113% in-stretch against \u22120.030% out-of-stretch (Welch t 0.69). The share of up bars is 47.6% against 47.5%.",
+    "F3": "The constant \u22121% gap shows up in every window that has in-stretch bars: w1 \u22121.004%, w4 \u22120.996%, w5 \u22121.000% and w6 \u22120.997%. It also shows up at every stretch age, between \u22120.993% and \u22121.003% for ages 0\u201310, 10\u201330, 30\u201360 and 60\u2013120 bars. It does not grow with forecast size either: the mean close-to-close return is \u22121.19%, \u22120.85%, \u22120.54% and \u22120.97% across forecast quartiles. A market effect would vary across these; a fixed offset does not.",
+    "F4": "The close-to-close result (\u22120.856 pp difference, t \u22124.14; 20.5 pp fewer up bars) is fully explained by the \u22121% gap. The rest of the next bar adds \u22120.86 + 1.00 \u2248 +0.14 pp, which is no measurable reversal.",
+    "F5": "The next bar's high-low range is narrower in-stretch, 3.42% of the open against 4.42% out-of-stretch. No test statistic was computed for this, and every window lost money for the coin (from \u221218% to \u221273%), so this cannot be separated from the regime mix."
+  },
+  "ideas": [],
+  "idea_ids": [],
+  "no_ideas": "The rejection rests on a fixed \u22121% close-to-open shift placed on exactly the in-stretch bars. That shift is a property of this data, not of the market: BTC trades around the clock, so a real market has no such gap. Once the shift is removed, the in-stretch bars show neither persistence nor reversal (t 0.69), so no finding supports a market idea in either direction."
+}

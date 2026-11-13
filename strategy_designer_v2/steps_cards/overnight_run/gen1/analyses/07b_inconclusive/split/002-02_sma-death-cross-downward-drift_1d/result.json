@@ -1,0 +1,61 @@
+{
+  "line": "7.b",
+  "backtest": "002-02_sma-death-cross-downward-drift_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "split": true,
+  "explorations": 2,
+  "cost": 0.3432198,
+  "findings": {
+    "F1": "The short side's edge is tiny next to its noise: over 825 non-overlapping short cases the |forecast|-weighted excess gain is 0.0022 per 10 bars, its standard deviation is 0.137 and its t is 0.39. Its hit rate is 0.52 and its median is 0.0061.",
+    "F2": "The market's own move drowns the result. Each case's 10-bar forward return correlates 0.82 with the same-day cross-coin mean return (R\u00b2 0.68). Grouped by BTC's forward direction, the short's excess is +0.086 (t 13.5, hit 0.85) when BTC fell and \u22120.076 (t \u221210.9, hit 0.22) when BTC rose.",
+    "F3": "Measured against the cross-coin market instead of holding, the short's excess is \u22120.0001 (t \u22120.03). No year exceeds |t| 0.70 on that basis (2018 \u22120.001, 2021 \u22120.010, 2024 \u22120.008). Against holding, the years split strongly: 2018 +0.037 (t 1.75), 2019 +0.016 (t 1.87) and 2022 +0.015 (t 1.50) against 2020 \u22120.079 (t \u22124.44) and 2021 \u22120.063 (t \u22122.54). So the yearly signs follow the market's direction, not the cross.",
+    "F4": "Ranked by the raw SMA spread, the shallowest quartile (short average only just below the long one) loses: \u22120.025 (t \u22122.53, hit 0.45, n 206). The deepest quartile gains +0.0087 (t 0.76, hit 0.55). The middle quartiles are mixed (q2 \u22120.004, q3 +0.012).",
+    "F5": "The |forecast| terciles are not monotone: low \u22120.0053 (t \u22120.60), mid +0.0057 (t 0.67), high +0.0018 (t 0.21). The supporting check's top-minus-bottom pass (0.0071) therefore rests on the bottom tercile's loss, not on a strong top tercile.",
+    "F6": "Freshly crossed bars lose and older crosses gain slightly. Bars 0\u201320 after the cross give \u22120.022 (t \u22121.63, hit 0.46, n 227), 21\u201360 bars give +0.0037 (t 0.49) and 61\u2013150 bars give +0.0094 (t 0.86). Against the market, every age bucket is about 0 (|t| < 0.09).",
+    "F7": "For non-BTC coins, the short does better when BTC is also in its death-cross state: +0.0058 (t 0.75, hit 0.55, n 481). With BTC flat it gives \u22120.010 (t \u22120.98, hit 0.45, n 226). Against the market the two buckets are +0.0004 and \u22120.0042.",
+    "F8": "No coin carries the effect. Every coin's |t| is \u2264 0.75 (ZEC +0.0098, BTC +0.0049, ETH +0.0047, XMR \u22120.0064, XRP \u22120.0014). Only 43.8% of 112 coin-windows have a positive mean short excess (mean \u22120.017).",
+    "F9": "Flat (forecast 0) bars have a forward return minus holding of +0.00015 (n 832), against \u22120.0012 on short bars. That is a 0.13-point difference over 10 bars. The 60-day momentum split also does not separate the short cases (down \u22120.0006, t \u22120.06; up +0.0037, t 0.51)."
+  },
+  "ideas": [
+    {
+      "idea": "In the first weeks after a coin's 50-day average crosses below its 200-day average, while the short average is still only just under the long one, the coin's price over the next 10 days rises more than its usual 10-day move.",
+      "consequence": "A trader should refuse to short a fresh, shallow death cross, because that is where moves tend to reverse against the short.",
+      "name": "shallow fresh death-cross reversal",
+      "from": "F4, F6, F5",
+      "refs": [
+        "F4",
+        "F6",
+        "F5"
+      ]
+    },
+    {
+      "idea": "When a coin's 50-day average has sat well below its 200-day average for some time, after a deep and established death cross, the coin's price over the next 10 days falls further than its usual 10-day move.",
+      "consequence": "A trader looking for a short on the death cross should take it only once the cross is deep and established, not at the cross itself.",
+      "name": "deep established death-cross drift",
+      "from": "F4, F6, F5",
+      "refs": [
+        "F4",
+        "F6",
+        "F5"
+      ]
+    },
+    {
+      "idea": "For a coin other than BTC that is in its death-cross state, the coin's price over the next 10 days falls further than its usual 10-day move when BTC's own 50-day average is also below its 200-day average.",
+      "consequence": "A trader should short an altcoin's death cross only when BTC is in its own death cross.",
+      "name": "altcoin death cross with BTC",
+      "from": "F7, F2, F3",
+      "refs": [
+        "F7",
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "002-02_sma-death-cross-downward-drift.b1_shallow-fresh-death-cross-reversal",
+    "002-02_sma-death-cross-downward-drift.b2_deep-established-death-cross-drift",
+    "002-02_sma-death-cross-downward-drift.b3_altcoin-death-cross-with-btc"
+  ],
+  "no_ideas": null
+}

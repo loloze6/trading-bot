@@ -1,0 +1,29 @@
+---
+line: 7.d not profitable
+backtest: 002-02_sma-death-cross-downward-drift_1d
+idea tested: 002-02_sma-death-cross-downward-drift
+step 5: inconclusive
+step 6: not profitable enough
+mode: analyst then deducer
+explorations: 2
+cost: 0.3439 USD
+---
+## Findings
+- **F1:** The book loses before fees, not because of fees: its mean gross return per bar is -0.000496 against a fee drag of only 0.000028, so the mean book return is -0.000524 a bar, and all six coins lose gross (XRP -2.48, XMR -2.07, ZEC -1.79, BTC -0.89, ETH -0.81, LTC -0.40 summed daily returns).
+- **F2:** The coin rises while the book is short: the mean daily coin return on short bars is +0.000777 against +0.001287 on all bars, and the 10-bar forward return in the short state is 0.0128 against 0.0135 overall, so the death-cross state carries almost no downward drift relative to holding.
+- **F3:** A larger forecast loses more in the book: the bottom |forecast| quartile (mean forecast -0.38) earns +0.000074 gross a bar, while the top quartile (mean -15.9) earns -0.002029. At the trade level, small-entry trades average -12.8%, mid-entry trades -13.4% and large-entry trades -7.4%. This is the reverse of the plan's supporting tercile check, which passed at +0.0071.
+- **F4:** The trades are few and long, and their losses dwarf their fees: 1273 trades, all short, held a median of 23 days (mean 36), with a mean gross P/L of -11.2% against a mean commission of 0.20%, a gross win rate of 23.9%, and a median trade of -8.1%. The 10–30 day trades are the worst at -16.1% on average.
+- **F5:** The losses depend on the market regime. The short earned in the bear years 2018 (+2.62 gross, coin -0.0035/day, 76% active) and 2022 (+0.93, coin -0.0018/day, 93% active). It lost heavily in the rising years 2020 (-5.35, coin +0.0042/day), 2024 (-2.96) and 2023 (-1.72).
+- **F6:** The short pays only when the coin is already falling over the current 20 days and loses when it is rising: gross is +0.006132 a bar in the falling-momentum tercile against -0.006930 in the rising tercile. This split is contemporaneous with the bar's own return, so it describes where the losses fall, not a forecast.
+- **F7:** Losses grow with volatility: gross per active bar is +0.000017 in the calm tercile, -0.000879 in the mid tercile and -0.001271 in the volatile tercile.
+- **F8:** Only the youngest part of a short spell pays. The first 10 bars earn +0.000517 a bar (t 0.55). Bars 10–30 of a spell lose -0.001893 (t -2.48), bars 30–60 lose -0.000943, and bars 60–120 lose -0.000481, so the cross's information, if any, fades within about two weeks while the position is kept for months.
+- **F9:** The short loses most when the downtrend looks most extended. It loses -0.001628 a bar while the spread is widening against -0.000289 while it narrows. It loses -0.001626 when price is below its 50-day SMA against -0.000490 when price is above it. Both point to reversal after stretched moves rather than persistence.
+- **F10:** The standardised forecast is not tied to an actual death cross: the shallowest quartile of short bars has a mean raw spread of +36.7 (short average above the long one) with a forecast of -0.63, so some shorts fire merely because the spread is below its own 200-bar mean. That quartile earns about zero gross (-0.000026).
+
+## Ideas
+- `002-02_sma-death-cross-downward-drift.d1_fresh-death-cross-decays` (from F8, F4, F3, F10): After the short moving average crosses below the long one, the coin drifts down mainly in the first two weeks after the cross. The drift is absent at later bars of the same spell.
+- `002-02_sma-death-cross-downward-drift.d2_death-cross-needs-falling-momentum` (from F5, F6, F2): While the short average is below the long one, the coin keeps falling only when its own return over the prior weeks, known at the bar's close, is already negative. This is the case in broad bear phases.
+- `002-02_sma-death-cross-downward-drift.d3_stretched-downtrend-snaps-back` (from F9, F3, F2): When a coin in the death-cross state is stretched far below its averages, it tends to rise over the next days. Stretched here means the gap between the short and long average is widening and the price sits below the short average.
+- `002-02_sma-death-cross-downward-drift.d4_volatile-death-cross-rebounds` (from F7, F5): In the death-cross state, a coin whose recent daily volatility is high tends to rise rather than keep falling. The downward drift appears only, if at all, when volatility is calm.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

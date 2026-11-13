@@ -1,0 +1,25 @@
+---
+line: 7.b inconclusive
+backtest: 002-01_sma-golden-cross-upward-drift_1d
+idea tested: 002-01_sma-golden-cross-upward-drift
+step 5: inconclusive
+step 6: not profitable enough
+mode: analyst then deducer
+explorations: 2
+cost: 0.3432 USD
+---
+## Findings
+- **F1:** The tested effect is near zero and buried in noise: the pooled slope of excess 10-bar return on the forecast is 0.000202 (t 0.37, 1657 blocks); among the 832 active blocks alone it is 0.000341 (t 0.37); and up-spread blocks average only +0.00053 excess against -0.00054 for down-spread blocks (t 0.09 and -0.11).
+- **F2:** The market's own moves dominate each coin's 10-bar return. The equal-weight cross-coin move explains 57% of its variance (R² 0.573). Once that move is removed, the slope falls to -0.000010 (t -0.03), or -0.000111 (t -0.17) on active blocks only.
+- **F3:** Demeaned within each window instead of per coin, the slope turns clearly negative at -0.00163 (t -3.08). Most window slopes are negative, for example w16 at -0.0220 (t -5.73), w18 at -0.0106 (t -3.22) and w1 at -0.0163 (t -2.66), and the 2020 and 2022 slopes are also negative (t -2.22 and -2.42). The flat pooled slope therefore comes from active periods coinciding with strong market periods, not from the forecast ranking returns within a period.
+- **F4:** Within most years, active blocks did worse than flat blocks of the same year:
+- **F5:** There is no monotonic grading by forecast size:
+- **F6:** The trend's age shows a reversal pattern, but it is a market effect:
+- **F7:** Coins split by sign with no coin significant. Active minus flat mean excess is +0.0140 for ETH, +0.0128 for ZEC and +0.0056 for BTC, but -0.0157 for LTC, -0.0087 for XRP and -0.0022 for XMR. Per-coin slopes range from t -0.28 (XRP) to t 0.94 (BTC).
+- **F8:** By raw 50/200 spread among up-spread blocks, the two smallest quintiles earn +0.0054 and +0.0085 excess and the largest quintile -0.0073, all with |t| < 0.71. The share of positive returns while active is 2.1 points below each coin's base rate (-0.0214).
+
+## Ideas
+- `002-01_sma-golden-cross-upward-drift.b1_stretched-spread-underperforms` (from F3, F5, F8): When a coin's 50-day SMA stands far above its 200-day SMA, in the top band of its own recent spread history, the coin's next 10 bars rise less than its typical 10-bar move over the same period. The stretched up-trend gives back ground rather than extending.
+- `002-01_sma-golden-cross-upward-drift.b2_fresh-narrow-cross-drifts` (from F5, F8, F3): When a coin's 50-day SMA has only recently moved above its 200-day SMA and the spread is still small, the coin's next 10 bars rise more than its typical 10-bar move.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

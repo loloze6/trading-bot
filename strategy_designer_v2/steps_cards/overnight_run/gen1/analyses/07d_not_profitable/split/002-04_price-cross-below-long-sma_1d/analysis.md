@@ -1,0 +1,28 @@
+---
+line: 7.d not profitable
+backtest: 002-04_price-cross-below-long-sma_1d
+idea tested: 002-04_price-cross-below-long-sma
+step 5: inconclusive
+step 6: not profitable enough
+mode: analyst then deducer
+explorations: 2
+cost: 0.3221 USD
+---
+## Findings
+- **F1:** The book loses before fees: the mean gross return is -0.000721 per bar (t = -2.72), and fees are only 0.000070 per bar, so the book's -0.000790 per bar comes almost entirely from the short position's direction, not from costs.
+- **F2:** A larger forecast loses more: bars with forecast below -15 (mean allocation -1.79) saw the coin rise +0.447% per day, for a gross -0.0083 per bar and a summed gross of -10.97 out of the total -12.27 on active bars; a unit short there earns -0.0045 per day (t = -3.24), against +0.00085 (t = 0.77) in the -15..-10 bin.
+- **F3:** The deepest distances below the SMA200 rebound: in the two deepest raw-distance quintiles (-72.9 to -34.8 % and -34.8 to -21.3 %) the coin rose +0.177% and +0.211% per day and the book lost -0.0032 and -0.0030 per bar, while the middle quintile (-21.3 to -12.3 %) was flat at +0.00013.
+- **F4:** Across all active bars the coin rose more while the book was short (+0.136% per day) than while it was flat (+0.120% per day), and a unit short over all active bars earns -0.00136 per day (t = -2.97), which is a reversal, not downward persistence.
+- **F5:** The early part of each short loses most: in the first 1-5 bars after the forecast turns negative the coin rose +0.30% per day (gross -0.0032 per bar), in bars 6-60 it rose about +0.16 to +0.18% (gross about -0.0016 to -0.0017), and only after 61-150 bars did it fall (-0.04% per day, gross -0.0003).
+- **F6:** The 2488 short trades win only 23.8% of the time and average -3.89% gross against about 0.1% in fees; every duration bucket up to 30 days loses about -6% gross per trade (333 one-day trades at -6.53%, 640 trades of 11-30 days at -5.94%), and only the 500 trades held over 30 days gain (+4.96%, summed +2482).
+- **F7:** The losses sit in volatile falling markets: active bars with a negative 20-day trend lost -0.0043 per bar when volatile and -0.0018 when mid-volatility, while the calm ones earned +0.00049, and the coin rose +0.25% per day in the volatile ones.
+- **F8:** The short paid only in sustained bear years: gross was +0.00166 per bar in 2018 (coin -0.35% per day, 79% active) and +0.00016 in 2022 (coin -0.18% per day, 93% active), and negative in every other year, worst in 2020 at -0.0030 (coin +0.42% per day).
+- **F9:** Every coin loses before fees, from BTC at -0.00028 per bar to XRP at -0.00132 and XMR at -0.00124, so the loss is not confined to one instrument.
+
+## Ideas
+- `002-04_price-cross-below-long-sma.d1_deep-stretch-below-rebounds` (from F2, F3, F4): When a coin's close sits far below its 200-day average, more than about a fifth of the way down, the coin tends to rise over the following days, a rebound from deep stretch rather than further decline.
+- `002-04_price-cross-below-long-sma.d2_persistence-only-after-weeks` (from F5, F6): In the first days after a coin's close drops below its 200-day average, the coin tends to rise back rather than keep falling. A downward drift shows up only after the close has stayed below the average for more than about two months.
+- `002-04_price-cross-below-long-sma.d3_calm-declines-persist-downward` (from F7, F4): When a coin's close is below its 200-day average while the coin is calm and its 20-day trend is down, the coin keeps drifting lower. When the same situation comes with high volatility, the coin tends to rise.
+- `002-04_price-cross-below-long-sma.d4_shorts-need-sustained-bear` (from F8, F5, F6): Below its 200-day average, a coin keeps falling when the average itself has been sloping down over many months, as in a sustained bear market. It does not keep falling when the dip comes inside a longer rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
