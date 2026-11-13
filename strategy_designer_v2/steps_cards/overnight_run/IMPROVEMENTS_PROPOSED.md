@@ -18,9 +18,7 @@ Each item: what is wrong, the evidence from the night, what was tested, and a re
 - What was found: in N1-04 and N3-04 the deepest falls are crash days hitting every coin at once, with many coins held together. No one-coin idea removes that.
 - Recommendation: **decide** where book sizing belongs: step 6's common risk level (E1), or a step of its own between the backtest and the profitability check. Not built.
 
-**F4. A what-if is a hint, not a result.** (log 39)
-- What was found: 7.d measured a repair by zeroing days of the old book (Calmar 0.69 to 0.90); the new book trading the repair reached 0.665.
-- Recommendation: **apply** as a line in step 7's rules: a what-if on the book may support an idea, and is written as such ("on the old book, ..."); the orchestration never selects on it.
+**F4. A what-if is a hint, not a result.** Not taken (operator, 2026-11-13): a step 7 output is taken as it is, with no label.
 
 **F5. A budget of looks per data set.** (log 43)
 - What was found: about 32 ideas tested on the 6 coins in one night, most of them refinements of the same few; each further repair found and confirmed there is weaker evidence.
