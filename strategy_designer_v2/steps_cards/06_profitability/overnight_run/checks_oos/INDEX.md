@@ -6,3 +6,5 @@ N2-06_rebound-in-high-volatility_1d_oos: not profitable enough [Sharpe -0.0299; 
 N3-02_breakout-shock-continues_1d_oos2: not profitable enough [Sharpe 0.7325; Sharpe minus holding's Sharpe -0.9121; Calmar 0.6079]
 N3-02_breakout-shock-continues_1d_oos: not profitable enough [Sharpe 0.6744; Sharpe minus holding's Sharpe 0.3381; Calmar 0.5536]
 N3-04_dip-in-uptrend_1d_oos: not profitable enough [Sharpe 0.105; Sharpe minus holding's Sharpe -0.2314; Calmar -0.005352]
+N4-01_breakout-drift-lasts_1d_oos2: profitable enough [Sharpe 1.713; Sharpe minus holding's Sharpe 0.2615; Calmar 3.832]
+N4-01_breakout-drift-lasts_1d_oos: not profitable enough [Sharpe 0.5769; Sharpe minus holding's Sharpe 0.2406; Calmar 0.189]

@@ -6,3 +6,5 @@ N2-06_rebound-in-high-volatility_1d_oos: inconclusive (fit: adapted) [main: 0.05
 N3-02_breakout-shock-continues_1d_oos2: confirmed (fit: adapted) [main: 0.0608044; one-sample t of the mean 2.13086; non-overlapping cases pooled across coins 154, inside-range shock-up cases 252]
 N3-02_breakout-shock-continues_1d_oos: inconclusive (fit: adapted) [main: 0.0111353; t of the mean 1.67844; non-overlapping cases pooled across coins 447, inside-range shock-up cases 809]
 N3-04_dip-in-uptrend_1d_oos: inconclusive (fit: adapted) [main: 0.000893777; t of the mean 0.690945; bars with forecast > 0 1654]
+N4-01_breakout-drift-lasts_1d_oos2: inconclusive (fit: adapted) [main: 0.0687245; t of the mean 1.34071; non-overlapping events 105, events with next close below the new high 59]
+N4-01_breakout-drift-lasts_1d_oos: confirmed (fit: adapted) [main: 0.0213517; t of the mean 2.22898; non-overlapping events 384, events with next close below the new high 188]

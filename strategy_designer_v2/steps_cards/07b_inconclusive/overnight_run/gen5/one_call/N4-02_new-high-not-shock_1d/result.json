@@ -1,0 +1,55 @@
+{
+  "line": "7.b",
+  "backtest": "N4-02_new-high-not-shock_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.2810856,
+  "findings": {
+    "F1": "The size of the breakout day barely changes what follows. On the 381 independent breakouts (the first bar of each cluster), the excess 10-day return was +1.34 pp in the bottom half of the forecast (n=151, t=1.15) and +1.94 pp in the top half (n=230, t=1.65), a gap of about 0.6 pp. By forecast quintile the means were 3.42 / \u22120.46 / 2.44 / 1.82 / 1.28 pp, with no ordering.",
+    "F2": "The result is unclear because the effect is tiny next to the noise. The per-breakout standard deviation is 14\u201318 pp against a difference of about 1\u20132 pp. With roughly 380 clusters, the standard error of the gap is near 1.5 pp, so neither the reject rule (|t| \u2265 2) nor the \u00b11 pp equivalence test can be reached.",
+    "F3": "The calendar year drowns the breakout effect, and both halves move together. Excess 10-day returns after breakouts were negative in both halves in 2018 (\u22124.8 / \u22124.2 pp, n=17/24, hit 24%/25%) and in 2022 (\u22122.5 / \u22123.9 pp, n=19/27). They were positive in both halves in 2020 (+7.0 / +5.5 pp, n=22/33, t=2.56/1.94).",
+    "F4": "Breakouts in coins with a mildly positive 60-day return had the strongest follow-through. Where the 60-day return was 0\u201330%, excess returns were +3.8 pp (bottom half, n=24) and +6.6 pp (top half, n=31, t=1.79, hit 61%). Where the 60-day return was negative or not yet available, they were about +1.0 pp in both halves (n=114/172, t\u22480.75). Where it was above 30%, the top half gave +2.9 pp (n=27) and the bottom half \u22120.4 pp (n=13).",
+    "F5": "The positive mean after outsized breakout days comes from a few large winners. The top half's mean was +1.94 pp but its median was \u22121.39 pp, with a hit rate of 49.6% (n=230). The smallest-quintile breakouts had a mean of +3.42 pp, a median of +1.50 pp and a hit rate of 59.7% (n=77, t=2.11).",
+    "F6": "Holding on to breakout runs after their first day showed a mild edge on non-overlapping samples, with large outsized days doing somewhat better. On every 10th positive-forecast bar, the top half gave +3.99 pp (n=98, t=1.75) and the bottom half +1.70 pp (n=97, t=0.89)."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's new 20-day closing high, made while its close is above the close of 60 days earlier but by less than about 30%, is followed by a 10-day rise larger than the coin's average 10-day rise.",
+      "consequence": "A trader would take breakouts that come after a moderate prior advance and skip those that come out of a falling or flat 60-day stretch.",
+      "name": "breakout after moderate prior advance",
+      "from": "F4, F3",
+      "refs": [
+        "F4",
+        "F3"
+      ]
+    },
+    {
+      "idea": "A coin's new 20-day closing high made on a small up day is followed by a rise over the next 10 days more often than after an average day of that coin.",
+      "consequence": "A trader would not require an outsized breakout day before going long; quiet new highs are at least as reliable in how often they work.",
+      "name": "quiet new highs persist",
+      "from": "F1, F5",
+      "refs": [
+        "F1",
+        "F5"
+      ]
+    },
+    {
+      "idea": "When a coin keeps printing new 20-day closing highs within ten days of earlier ones, its 10-day forward rise is larger than its average 10-day rise.",
+      "consequence": "A trader would add to or keep longs in coins already in an established run of new highs, rather than only buying the first break.",
+      "name": "repeated highs extend trend",
+      "from": "F6, F2",
+      "refs": [
+        "F6",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "N4-02_new-high-not-shock.b1_breakout-after-moderate-prior-advance",
+    "N4-02_new-high-not-shock.b2_quiet-new-highs-persist",
+    "N4-02_new-high-not-shock.b3_repeated-highs-extend-trend"
+  ],
+  "no_ideas": null
+}

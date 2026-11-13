@@ -1,0 +1,69 @@
+{
+  "line": "7.d",
+  "backtest": "N4-03_breakouts-pay-in-uptrends_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.35776040000000003,
+  "findings": {
+    "F1": "The short side causes most of the book's loss. The 1330 SHORT trades in the mean_reversion regime average \u22121.58 % before fees, \u22122104 % summed, and short bars run \u22120.00103 a day against +0.00102 for long bars. When the short forecast is at its strongest (\u2264 \u221210), the coin then beats holding by +0.034 over 10 days (t 1.80, 37 non-overlapping cases). In a downtrend, a close near the 20-day high is followed by a rise, not a fall.",
+    "F2": "Long trades pay only when the 60-day trend is up. In the trending regime, forecast-active bars beat holding over 10 days by +0.0276 when the past 60-day return is positive (t 2.19, 253 cases), and by \u22120.0029 when it is negative (t \u22120.25, 288 cases).",
+    "F3": "Every position pays when it points the same way as the past 20-day move. Longs gross +0.0029 a day when the 20-day return is up and \u22120.00082 when it is down. Shorts gross \u22120.00225 a day when it is up and +0.00052 when it is down.",
+    "F4": "Fees are not the cause: the gross sum is 12926 % and the net sum 12560 %, about 0.3 % of commission per trade. The losses come from short holds. The 765 long trades held 2 days or less average \u22123.18 % before fees (\u22122430 % summed). Long trades held 10\u201330 days average +19.0 %, and those held over 30 days +32.0 %.",
+    "F5": "Only the largest forecast earns. Long bars with forecast \u2265 10 beat holding by +0.084 over 10 days (t 2.90, 87 cases). The 2\u201310 bucket earns +0.005 (t 0.39, 225 cases) and the 0\u20132 bucket \u22120.013 (t \u22121.20, 198 cases). Over all trending grid bars, the regime alone earns +0.0023 (t 0.38, 902 cases).",
+    "F6": "The book lags plain holding. Its mean daily return in the trending regime is 0.00097 against the coin's 0.00119, with a mean absolute position of only 0.34 when active. Results vary across windows: 11 of 24 windows have a negative mean book return.",
+    "F7": "Long gains shrink as volatility rises. Long bars gross +0.00153 a day in the calm third of 20-day volatility, +0.00118 in the middle third and +0.00062 in the volatile third. Shorts lose most in the volatile third (\u22120.00111)."
+  },
+  "ideas": [
+    {
+      "idea": "A close at or very near its 20-day high, while the coin is above its 200-day average and its 60-day return is positive, is followed by a 10-day rise larger than the coin's usual 10-day move.",
+      "consequence": "Take the long only at near-high closes inside an established 60-day uptrend, and drop the short side altogether.",
+      "name": "breakouts pay in uptrends",
+      "from": "F1, F2, F3, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "When a coin's close has stayed in the top part of its 20-day close range for several consecutive daily bars, the coin keeps rising over the next 10 days more than it does on average.",
+      "consequence": "Enter a breakout only once it has held for a few bars, rather than on the first new-high close that often reverses within two days.",
+      "name": "persistent highs keep rising",
+      "from": "F4, F5",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "A close near its 20-day high in an uptrend is followed by a larger 10-day rise when the coin's recent 20-day volatility is low than when it is high.",
+      "consequence": "Weight breakout longs toward calm conditions and size them down when daily volatility is elevated.",
+      "name": "calm breakouts drift further",
+      "from": "F7, F2",
+      "refs": [
+        "F7",
+        "F2"
+      ]
+    },
+    {
+      "idea": "Below its 200-day average, a coin whose close reaches the top of its 20-day range then rises over the next 10 days more than its usual 10-day move.",
+      "consequence": "Refuse shorts at range highs in downtrends, and treat such highs as the start of a rebound.",
+      "name": "downtrend highs mark rebounds",
+      "from": "F1, F3",
+      "refs": [
+        "F1",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "N4-03_breakouts-pay-in-uptrends.d1_breakouts-pay-in-uptrends",
+    "N4-03_breakouts-pay-in-uptrends.d2_persistent-highs-keep-rising",
+    "N4-03_breakouts-pay-in-uptrends.d3_calm-breakouts-drift-further",
+    "N4-03_breakouts-pay-in-uptrends.d4_downtrend-highs-mark-rebounds"
+  ],
+  "no_ideas": null
+}
