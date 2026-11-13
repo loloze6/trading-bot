@@ -18,3 +18,5 @@ N5-03_high-in-confirmed-uptrend_1d: confirmed (fit: adapted) [main: 0.0312149; t
 N6-01_breakout-after-longer-decline_1d: inconclusive (fit: adapted) [main: -0.00515649; t of the mean -0.363486; independent cases 99, supporting samples 830]
 N7-01_drift-only-near-high_1d: confirmed (fit: adapted) [main: 0.00922003; t of weighted mean (weighted sandwich SE) 2.61176; non-overlapping active 5-bar blocks 1310, supporting flat blocks 540]
 N7-02_only-large-dips-rebound_1d: inconclusive (fit: adapted) [main: 0.00346006; t of the mean 1.03143; de-overlapped cases (forecast >= 5) 746, forecast >= 5 bars 1191, de-overlapped mild cases (0 < forecast < 2) 935]
+N8-01_near-high-drift-rising-average_1d: confirmed (fit: adapted) [main: 0.00808172; t of the mean (non-overlapping) 2.28928; non-overlapping in-situation cases 1214, in-situation bars 5939, active bars 6141]
+N8-02_near-high-drift-not-overextended_1d: mismatch: the test does not match its plan (agreement 0.390309) (fit: adapted)

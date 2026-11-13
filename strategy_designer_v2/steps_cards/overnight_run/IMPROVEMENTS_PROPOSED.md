@@ -18,6 +18,16 @@ Each item: what is wrong, the evidence from the night, what was tested, and a re
 - What was found: in N1-04 and N3-04 the deepest falls are crash days hitting every coin at once, with many coins held together. No one-coin idea removes that.
 - Recommendation: **decide** where book sizing belongs: step 6's common risk level (E1), or a step of its own between the backtest and the profitability check. Not built.
 
+**F4. A what-if is a hint, not a result.** (log 39)
+- What was found: 7.d measured a repair by zeroing days of the old book (Calmar 0.69 to 0.90); the new book trading the repair reached 0.665.
+- Recommendation: **apply** as a line in step 7's rules: a what-if on the book may support an idea, and is written as such ("on the old book, ..."); the orchestration never selects on it.
+
+**F5. A budget of looks per data set.** (log 43)
+- What was found: about 32 ideas tested on the 6 coins in one night, most of them refinements of the same few; each further repair found and confirmed there is weaker evidence.
+- Recommendation: **decide**: the orchestration counts the ideas tested on a data set, and past a number (to be set), a confirmation there counts only with an unseen-data test. It is the data rule parked earlier, seen from the business side.
+
+**Where N7-01 stands** (log 36, 41, 42): the best book of the night, and the first to pass the agreed rule on data step 7 never saw (2 of 4 data sets; Calmar 0.685 and 0.696 on the other two). What it earns from: the 20-day moving-average trend filter near fresh highs. Its remaining weakness is the bear-market regime (2018, 2022 to 2023), which neither signal repairs (N8-01) nor sizing fixed. The holdout is the operator's decision.
+
 ## A. Trusting a confirmation (the most important)
 
 **A1. Test every confirmation on unseen data.** (log 5, 10, 19)

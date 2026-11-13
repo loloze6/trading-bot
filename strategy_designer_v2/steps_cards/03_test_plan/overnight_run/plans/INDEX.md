@@ -28,3 +28,5 @@ N5-04_clustered-new-highs_1d: missing-components: The idea needs to know whether
 N6-01_breakout-after-longer-decline_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 N7-01_drift-only-near-high_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 N7-02_only-large-dips-rebound_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+N8-01_near-high-drift-rising-average_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+N8-02_near-high-drift-not-overextended_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

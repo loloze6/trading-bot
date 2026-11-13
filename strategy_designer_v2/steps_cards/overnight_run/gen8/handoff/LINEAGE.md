@@ -1,0 +1,2 @@
+- `N8-01_near-high-drift-rising-average` <- `N7-01_drift-only-near-high.d1_near-high-drift-rising-average` (line 7.d not profitable; backtest N7-01_drift-only-near-high_1d)
+- `N8-02_near-high-drift-not-overextended` <- `N7-01_drift-only-near-high.d3_near-high-drift-not-overextended` (line 7.d not profitable; backtest N7-01_drift-only-near-high_1d)

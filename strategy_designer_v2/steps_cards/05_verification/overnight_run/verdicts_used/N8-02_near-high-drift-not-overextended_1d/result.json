@@ -1,0 +1,19 @@
+{
+  "status": "mismatch",
+  "situation_check": {
+    "agreement": 0.39030877761073207,
+    "passed": false
+  },
+  "main_measure": {
+    "name": "OLS slope of next-10-bar excess return on forecast, pooled, non-overlapping",
+    "value": null,
+    "statistic": null,
+    "threshold": "confirm if slope > 0 with t >= 2; reject if slope < 0 with t <= -2; otherwise inconclusive"
+  },
+  "supporting_check": null,
+  "counts": {
+    "non-overlapping 10-bar cases with forecast > 0": null
+  },
+  "decided_by": "Fewer than 90% of bars with a non-zero forecast are long bars where the high is recent, the close is in the upper half of its range and above its 20-day average, and the bar is not vetoed: the config's forecast is active outside the plan's situation.",
+  "reading": "Situation read as a conjunction of the raw readings: recent high (bars-since-high > 0), close in the upper half of the 20-day range (Donchian > 0) and close above the 20-day SMA (distance > 0), on a non-vetoed bar (regime != 'chop'), long side; the coin mean 10-bar return uses all bars of all its windows (overlapping), the slope is OLS of excess return on forecast over the non-overlapping grid (positions 0,10,20,... per window) pooled over coins, vetoed bars are regime == 'chop', and the plan's minimum of 30 cases is treated as a minimum count (not observable when unmet)."
+}

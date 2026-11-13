@@ -17,3 +17,4 @@ Propose: ideas about the market that would remove the cause you found, stated as
 A way of trading can be turned into an idea about the market: a stop that would have saved the book says that after a
 given fall the coin keeps falling; a signal that trades too often says its information lies in its slow part; losses
 in one market state say the effect holds only in another. Each idea from a finding.
+An idea that repairs this book is the tested idea amended: write it in full, as one sentence that keeps the tested idea's own situation in its own words and adds the change ("... , except when ...", "... , only while ..."). A separate claim ("after X the coin falls") would be tested alone, as a book of its own, and cannot repair this one. You may also propose a new idea, marked as such.
