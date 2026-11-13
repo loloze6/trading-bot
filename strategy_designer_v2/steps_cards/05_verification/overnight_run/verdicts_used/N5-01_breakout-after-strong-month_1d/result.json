@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 10-bar forward excess return on forecast (new-high bars)",
+    "value": -0.00014394007783212313,
+    "statistic": {
+      "name": "Newey-West t (lag 9)",
+      "value": -0.12864284009505544
+    },
+    "threshold": "slope > 0 with Newey-West t >= 2 (confirm); slope < 0 with t <= -2 (reject)"
+  },
+  "supporting_check": {
+    "name": "mean 10-bar excess return, top third minus bottom third of forecasts",
+    "value": -0.0013804525097332425,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping new-high events": 559,
+    "new-high bars": 1874
+  },
+  "decided_by": "Slope t-stat between -2 and 2 (inconclusive rule).",
+  "reading": "Situation = close above each of its prior 20 closes in the same window (regime == 'trending' used where fewer than 20 prior closes exist), expected side long; coin mean = mean of all 10-bar forward returns of that coin pooled over windows; Newey-West lag 9 applied to pairs of new-high bars of the same coin-window at most 9 bars apart (Bartlett weights); thirds by forecast quantiles 1/3 and 2/3; non-overlapping events counted greedily per coin-window, an event at least 10 bars after the previous counted one."
+}

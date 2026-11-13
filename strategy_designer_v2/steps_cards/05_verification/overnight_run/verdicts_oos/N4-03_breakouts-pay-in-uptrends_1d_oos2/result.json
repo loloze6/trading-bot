@@ -1,0 +1,28 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled mean of sign(forecast) x (10-bar forward return - coin holding mean) on |forecast|>=10, non-overlapping",
+    "value": 0.1677988395168259,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.2722455213101875
+    },
+    "threshold": "confirm if mean > 0 and t >= 2; reject if mean < 0 and t <= -2; else inconclusive; needs >= 30 cases pooled and >= 10 per regime"
+  },
+  "supporting_check": {
+    "name": "per-regime signed excess return: trending mean=0.208191 t=1.313; mean_reversion mean=-0.024064 t=-0.528; value = smaller t",
+    "value": -0.5282479831215241,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping cases": 23,
+    "trending cases": 19,
+    "mean_reversion cases": 4
+  },
+  "decided_by": "Fewer than 30 non-overlapping cases in the pool.",
+  "reading": "Holding is each coin's mean of all overlapping 10-bar forward returns across its windows. Cases are the window-grid bars 0, 10, 20, ... with |forecast| >= 10 and a full 10-bar return inside the window, split by the recorded regime label. The supporting check passes when both regimes have a positive mean and is not part of the decision."
+}

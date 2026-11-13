@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean forward 10-bar excess return after forecast >= 10",
+    "value": 0.029441583805143317,
+    "statistic": {
+      "name": "t of the mean, non-overlapping samples",
+      "value": 0.7453881766136369
+    },
+    "threshold": "confirm if mean > 0 with t >= 2, reject if mean < 0 with t <= -2, at least 30 non-overlapping cases"
+  },
+  "supporting_check": {
+    "name": "Spearman rank correlation, forecast vs forward 10-bar excess return, trending bars",
+    "value": 0.07095264815265172,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases with forecast >= 10": 179,
+    "bars with forecast >= 10": 1608,
+    "trending bars": 4048
+  },
+  "decided_by": "With at least 30 non-overlapping cases, the t-statistic lies between -2 and 2 (or does not agree with the mean's sign), which the plan calls inconclusive.",
+  "reading": "The situation is checked as regime == 'trending' (the detector's 200-SMA and 60-bar rules) with the raw 20-bar Donchian range position above 0 (upper half of the range) and a positive forecast; the coin's usual move is the mean of all its in-window 10-bar returns over all windows; the main value is the mean excess return over all bars with forecast >= 10, its t is the ordinary t of the mean over the non-overlapping grid bars (positions 0, 10, 20, ... of each window) with forecast >= 10, which are also the counted cases."
+}

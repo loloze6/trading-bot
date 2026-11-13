@@ -20,3 +20,6 @@ One block per idea that needs components the catalogue does not have.
 
 ## N2-01_weekday-of-coming-bar_1d
 - Component: coming-bar weekday: the UTC weekday (0 to 6) of the current bar's timestamp plus one bar's spacing, read from `timestamp`; a categorical value, used as a regime measure so that a rule can select the bar before Saturday | measures: situation
+
+## N5-04_clustered-new-highs_1d
+- Component: NewHighCountComponent: the number of bars among the last `window` (10) whose close was above every one of its prior `lookback` (20) closes, read from closes; it runs 0 to `window` and grows as the run prints more new highs close together (1 at a first break, more in an established run) | measures: situation

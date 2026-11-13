@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess forward 10-bar return on bars with forecast >= 10",
+    "value": 0.0312148517582747,
+    "statistic": {
+      "name": "t of the mean on non-overlapping 10-bar samples",
+      "value": 2.530712097891957
+    },
+    "threshold": "mean > 0 with t >= 2 confirms; mean < 0 with t <= -2 rejects; at least 30 non-overlapping cases"
+  },
+  "supporting_check": {
+    "name": "Spearman correlation of forecast vs forward 10-bar excess return on trending bars",
+    "value": 0.08007301740115985,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases with forecast >= 10": 251
+  },
+  "decided_by": "Confirm rule: mean excess 10-bar return after forecasts >= 10 is above 0 with t >= 2 and at least 30 non-overlapping cases.",
+  "reading": "Situation checked on regime == 'trending' plus near_high raw range position > 0 with a positive forecast; the coin's mean 10-bar return is the mean of all its in-window forward 10-bar returns over all its windows; the mean uses all bars with forecast >= 10 while the t and the case count use the non-overlapping grid (positions 0, 10, 20, ... of each window)."
+}

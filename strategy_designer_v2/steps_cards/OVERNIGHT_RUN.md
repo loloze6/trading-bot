@@ -21,5 +21,15 @@
 ## Where the outputs go
 Each step's outputs in its own folder, under `overnight_run/` (`03_test_plan/overnight_run/plans/`, `04_backtest/overnight_run/backtests/`, and so on; step 7's in each line's folder). The orchestrator's own files (selections, hand-off ideas, the improvements log) in `overnight_run/` next to this brief.
 
-## Result
-To be written in the morning.
+## Result (2026-11-13, about 3 a.m. UTC)
+
+**What ran.** Five generations: 27 ideas handed off from step 7, 25 test plans (2 refused for a missing component), 25 backtests on the default data plus 19 on unseen coins (4,936 coin-windows), about 140 step 7 analyses (exercise 2 included), the mode judgement. About 35 USD of model calls. Every idea and its numbers: `overnight_run/RESULTS.md`. Every selection: `overnight_run/gen*/selection.md`.
+
+**Which pre-registered outcome happened.**
+- **B, mostly:** 8 ideas were confirmed on the default data, and half did not carry over to unseen coins (N2-01, N3-04, N4-03, N5-03), or only weakly (N1-04).
+- **A, for one idea, if the profitability rule is changed:** N4-01 (after a new 20-day closing high, the rise lasts 10 days or more; made tradable by the test component `BarsSinceHighComponent`) is confirmed on the 6 coins (twice, t 2.05) and on 9 unseen coins in 2022 to 2025 (t 2.23), and its book beats holding on Sharpe (+0.24, +0.24, +0.26) and on Calmar in all three data sets. It fails the agreed absolute Calmar bar (0.75) in two of them, which holding these coins never reaches outside the 2018 to 2021 boom. Its falls are as deep as holding's (about 80 %): not a book to trade alone without risk control.
+- **D:** 22 improvements found on the way (`overnight_run/IMPROVEMENTS_PROPOSED.md`, grouped, with recommendations).
+
+**What the night says about the market.** Two families of effects are real here and hold on unseen coins: breakouts whose rise lasts (N3-02, N4-01) and dips bought within an uptrend over two to three days (N4-04, confirmed on unseen coins at t 3.56; its one-day version, N3-04, did not carry over). Short-term reversal (N1-04) and the weekday effect (N2-01) are real on the 6 coins but fade or do not carry over. Most effects are strongest in 2018 to 2021.
+
+**What the night says about the workflow.** It works end to end and can find a real effect; its two weak points are trust and the profitability rule. Trust: step 7's statistics are inflated by its search (findings at t 4 to 5 become t 0 to 1), so only unseen data decides. The rule: an absolute Calmar bar that the market itself fails.

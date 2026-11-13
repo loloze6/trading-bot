@@ -5,7 +5,7 @@ Each item: what is wrong, the evidence from the night, what was tested, and a re
 ## A. Trusting a confirmation (the most important)
 
 **A1. Test every confirmation on unseen data.** (log 5, 10, 19)
-- Evidence: N1-04 (rebound after a large drop) confirmed on the 6 coins (z 7.0, twice), nearly profitable; on 9 unseen coins, barely confirmed (z 2.04) and not profitable at all. N2-01 (the bar after Friday) confirmed (t 2.59), then t -0.19 on unseen coins. N3-04 (a dip in an uptrend) confirmed (t 3.06), then t 0.69. Only N3-02 held.
+- Evidence: of 8 ideas confirmed on the 6 coins, 2 were confirmed again on 9 unseen coins (N4-01, t 2.23; N4-04, t 3.56), 2 kept their effect with fewer cases (N3-02, t 1.68 then 2.13 on a second sample; N1-04, z 2.04 with a third of the effect), and 4 did not carry over (N2-01 t -0.19, N3-04 t 0.69, N4-03 t 0.57, N5-03 t 0.75). Without this check, half the confirmations would have been taken for real.
 - Tested: `oos.py` (the same plan, unchanged, on 9 other coins).
 - Recommendation: **apply**, as a standard step after any confirmation or profitable book, in the orchestration. To settle with it: which unseen data (the parked "data rule").
 
@@ -37,10 +37,11 @@ Each item: what is wrong, the evidence from the night, what was tested, and a re
 
 ## C. What the test vessel can express
 
-**C1. Simple components were missing, and the most recurrent themes could not be tested.** (log 6, 7, 13, 14, 18)
+**C1. Simple components were missing, and the most recurrent themes could not be tested; and the vessel cannot hold a position after an event.** (log 6, 7, 13, 14, 18)
 - Evidence: 5 of 9 generation 1 ideas refused for a missing component; "after an event" ideas untestable (N4-01).
 - Tested (additive classes in `trading-bot/strategies/strategy_components.py`, each checked against pandas, seen by step 3 only with `--reference-dir reference_overnight`): `MovingAverageSlopeComponent`, `MovingAverageAgeComponent`, `WeekdayComponent`, `WeekdayReturnComponent`, `BarsSinceHighComponent`. With them, step 3 wrote faithful plans for every blocked idea; its fidelity rule still refused a plan that tested another claim (the first weekday plan).
-- Recommendation: **decide** which to keep. My view: keep the slope, the age and the recency of a high (general, small, needed by recurring ideas); keep the weekday measure only if calendar ideas stay in scope (the effect did not carry over to unseen coins); drop `WeekdayReturnComponent` (it tests a learned seasonality, not a stated idea).
+- The recency component matters most: with it, the breakout effect (which lasts 10 bars or more) became a tradable idea, N4-01, the night's best result (confirmed on unseen coins; better than holding on every data set). Without it, step 3 rightly called the idea untestable.
+- Recommendation: **decide** which to keep. My view: keep the recency of a high, the slope and the age (general, small, needed by recurring ideas; the recency of a high is the pattern for any "after an event" idea); keep the weekday measure only if calendar ideas stay in scope (the effect did not carry over to unseen coins); drop `WeekdayReturnComponent` (it tests a learned seasonality, not a stated idea).
 
 **C2. The step 7 to step 3 hand-off breaks closed book.** (log 1)
 - Evidence: step 3 pastes the whole idea file; a step 7 idea file holds its "Why", with numbers measured on the data.
@@ -59,3 +60,19 @@ Each item: what is wrong, the evidence from the night, what was tested, and a re
 **E1. Step 6's verdict depends on the position's size.** (log 12)
 - Evidence: N1-04's book at the engine's size: Calmar 0.748 (fails); at half size 0.827 (passes). With a common risk level (`--target-vol 0.2`, tested on 24 books), no verdict changes, but the daily-return bar becomes a hidden Sharpe bar of about 0.9.
 - Recommendation: **decide**: the risk level books are judged at, and whether the magnitude bar is a return or a Sharpe. My view: judge at one common volatility and turn the magnitude bar into a Sharpe bar (size-free), so a book is not passed or failed by its leverage.
+
+**E2. The Calmar bar is absolute, and holding these coins never reaches it outside the 2018 to 2021 boom.** (log 21, 22)
+- Evidence: holding's Calmar is 0.16 (6 coins, 2018 to 2025) and -0.05 (unseen coins, 2022 to 2025). Every book of the night failed 0.75 there, including those well ahead of holding. Volatility-scaled positions did not help (log 20).
+- Tested: `--calmar-vs-hold` (the Calmar bar becomes holding's Calmar; the other five unchanged), on 57 books: 17 pass. With it, N4-01 is profitable on all three data sets, and is the night's one idea that meets outcome A (confirmed, and holding up on unseen coins).
+- Recommendation: **decide**, and not this test option as such: it is too lenient alone (books only +0.06 of Sharpe ahead of holding pass). My view: keep an absolute bar on the Sharpe ahead of holding (for example +0.2), make the Calmar bar relative to holding, and require both on unseen coins. N4-01 would pass; most others would not.
+
+## What I changed tonight for testing (to keep or revert)
+
+| Change | Where | Default changed? |
+|---|---|---|
+| Five components: `MovingAverageSlopeComponent`, `MovingAverageAgeComponent`, `WeekdayComponent`, `WeekdayReturnComponent`, `BarsSinceHighComponent` | `trading-bot/strategies/strategy_components.py` (appended, marked "not yet approved") | No: additive classes; no existing config uses them |
+| A copy of step 3's catalogue with their rows | `03_test_plan/helper/reference_overnight/` | No: used only with `--reference-dir` (new option of `make_test_plan.py`) |
+| A corrected record description for step 5 | `05_verification/helper/record_description_overnight.md` | No: used only with `--record-description` (new option of `make_verdict.py`) |
+| Step 6 options `--target-vol` and `--calmar-vs-hold` | `06_profitability/helper/check_profitability.py` | No: off unless passed; tests still pass |
+| Step 7: non-overlapping samples in its rules; which component columns exist in its data description | `07_common/helper/common_rules.md`, `data_description.md` | Yes, in step 7 (still in testing) |
+| Orchestrator tools: hand-off, unseen-coin copy, mode judge, predictive check, results table | `overnight_run/*.py` | Not steps |

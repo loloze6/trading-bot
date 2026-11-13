@@ -30,7 +30,7 @@ No real idea is confirmed with a profitable book yet. The entry condition is tes
 One call against analyst then deducer, on the fixed inputs (exercise 1).
 
 ## Done when
-On two exercises in a row, on the fixed inputs, every analysis meets the shared quality criteria and keeps to this line's objective, and the operator would test at least one of its ideas. Status: exercise 1 ran (`../07_common/exercise_1/reading.md`); not met yet (one exercise).
+On two exercises in a row, on the fixed inputs, every analysis meets the shared quality criteria and keeps to this line's objective, and the operator would test at least one of its ideas. Status: exercises 1 and 2 ran (`../07_common/exercise_2/reading.md`); used in the overnight run (`overnight_run/` in this folder, `../OVERNIGHT_RUN.md`).
 
 ## What this line does not do
 It does not test its ideas, write a test plan, or look beyond its objective.

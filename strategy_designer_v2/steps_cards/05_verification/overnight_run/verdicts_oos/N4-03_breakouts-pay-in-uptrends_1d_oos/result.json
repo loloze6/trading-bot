@@ -1,0 +1,40 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled mean signed 10-bar excess return over holding, |forecast|>=10",
+    "value": 0.008954445333393284,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.5694345039379548
+    },
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "per-regime mean: trending excess, mean_reversion negative excess",
+    "value": 0.014959149766288368,
+    "passed": false,
+    "trending": {
+      "mean": 0.014959149766288368,
+      "sign": 1.0,
+      "t": 0.8080679001933209,
+      "n": 63
+    },
+    "mean_reversion": {
+      "mean": -0.0025090813112246166,
+      "sign": -1.0,
+      "t": -0.08547283341906076,
+      "n": 33
+    }
+  },
+  "counts": {
+    "non-overlapping cases": 96,
+    "trending cases": 63,
+    "mean_reversion cases": 33
+  },
+  "decided_by": "Inconclusive: the pooled t lies between -2 and 2.",
+  "reading": "Cases are grid bars 0,10,20,... of each window with |forecast|>=10 and a full in-window 10-bar return; holding is the coin's mean of all in-window 10-bar returns (every bar) pooled over its windows; regimes are split on the `regime` column, the situation is a raw Donchian position > 0, and the supporting check passes when both regime means are positive."
+}

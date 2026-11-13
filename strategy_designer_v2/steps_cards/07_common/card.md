@@ -98,7 +98,7 @@ One analysis per backtest: findings, then ideas, each idea in step 2's format, o
 - **No dates** in what it writes.
 
 ## Variants compared
-- **One call against analyst then deducer,** on the same backtests (exercise 1 of each line).
+- **One call against analyst then deducer,** on the same backtests (exercises 1 and 2): one call kept (blind quality 9 of 16, ideas found again on a rerun 59 % against 42 %, fewer values fitted to the data, cheaper; `exercise_2/reading.md`).
 - **To try later:** a fixed query format instead of Python functions, if the functions prove hard to control.
 
 ## Who judges the output

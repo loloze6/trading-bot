@@ -1,0 +1,17 @@
+---
+backtest: N3-03_calm-uptrend-drift_1d
+data: BTC, ETH, LTC, XMR, XRP, ZEC as BTCUSD, ETHUSD, LTCUSD, XMRUSD, XRPUSD, ZECUSD; 1d bars; folds A, B, C, D
+status: profitable enough
+---
+| Measure | Value | Rule | Passed |
+|---|---|---|---|
+| Sharpe | 0.6788 | above 0 | yes |
+| Sharpe minus holding's Sharpe | 0.1246 | above 0 | yes |
+| Mean daily return | 0.0006201 | at least 0.0005 | yes |
+| Lowest Sharpe, one window left out | 0.5276 | above 0 | yes |
+| Calmar | 0.3593 | above 0.16 | yes |
+| Trades per bar | 0.1266 | at least 0.01 | yes |
+
+- Decided by: every measure passed
+Record: `steps_cards/04_backtest/overnight_run/backtests/N3-03_calm-uptrend-drift_1d`
+Rule: `steps_cards/06_profitability/helper/rule.yaml`
