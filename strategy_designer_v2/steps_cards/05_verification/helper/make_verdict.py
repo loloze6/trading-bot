@@ -139,6 +139,8 @@ def main():
     a.add_argument("--records-root", type=Path, default=HERE.parents[1] / "04_backtest" / "backtests")
     a.add_argument("--verdicts-dir", type=Path, default=HERE.parent / "verdicts")
     a.add_argument("--model", default="claude-opus-5-5")
+    a.add_argument("--record-description", type=Path, default=HERE / "record_description.md",
+                   help="overnight test: record_description_overnight.md (says which component columns are recorded)")
     args = a.parse_args()
 
     plan_path = args.plan.resolve()
@@ -162,7 +164,7 @@ def main():
     windows, columns = record_summary(record)
     system = (HERE / "system_prompt.md").read_text()
     request = (f"[TEST PLAN]\n{plan_text}\n[CONFIG]\n{config}\n"
-               f"[THE RECORD]\n{(HERE / 'record_description.md').read_text()}\n"
+               f"[THE RECORD]\n{args.record_description.read_text()}\n"
                f"This record holds:\n{windows}\nColumns: {', '.join(columns)}\n\n"
                f"Write measure(bars) for this plan.")
 

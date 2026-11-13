@@ -20,5 +20,7 @@ You have a limited number of rounds; each round you either explore again or give
 follow what the previous results show.
 
 Findings. A finding is one observation, in one sentence, that states the numbers from your results that support it.
-No number, no finding. Number them F1, F2, ... in the order you would tell them to a colleague, the most important
+No number, no finding. A statistic about returns over h bars counts each h-bar period once: use non-overlapping
+samples (bars 0, h, 2h, ... of each window), never every bar's overlapping forward return, which makes a weak effect
+look strong. Give the number of independent cases next to a t. Number them F1, F2, ... in the order you would tell them to a colleague, the most important
 first.

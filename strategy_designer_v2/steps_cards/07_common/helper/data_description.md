@@ -8,7 +8,9 @@ contiguous: never join them into one series, and never compute a return across t
   `regime` (the regime detector's label); `postRebalance_total_value` (the book's value after the bar's rebalance and
   its fees); `postRebalance_current_allocation` (the position after the rebalance); and, per component of the config,
   `debug_info.components.<id>.last_history_value` (its raw value) and `...post_pipeline_value` (after its
-  transforms).
+  transforms). Only the components of the config's `strategies` are recorded, and only in windows where
+  their regime was active (elsewhere the column is missing, not zero). The regime detector's components are not
+  recorded: its decision is `regime`.
 - `trades`: one row per trade. `side` (LONG or SHORT), `entry_time`, `exit_time`, `entry_price`, `exit_price`,
   `duration_minutes`, `entry_forecast`, `exit_forecast`, `entry_regime`, `profit_loss_percent` (before fees),
   `net_profit_loss_percent` (after fees), `total_commission`. A trade closed on a window's last bar was closed by the

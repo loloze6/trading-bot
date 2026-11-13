@@ -1,0 +1,19 @@
+{
+  "status": "mismatch",
+  "situation_check": {
+    "agreement": 0.0,
+    "passed": false
+  },
+  "main_measure": {
+    "name": "mean forward 20-bar return after forecast > 0 minus coin's mean 20-bar return",
+    "value": null,
+    "statistic": null,
+    "threshold": "confirm if mean excess > 0 with t >= 2; reject if mean excess < 0 with t <= -2; otherwise inconclusive"
+  },
+  "supporting_check": null,
+  "counts": {
+    "active bars": 5401
+  },
+  "decided_by": "Fewer than 90% of active bars are long bars with close at or above its 200-day SMA and a non-negative 20-bar return, as the plan's situation requires.",
+  "reading": "The coin's mean 20-bar return is the mean of every bar's in-window forward 20-bar return across all its windows; cases are bars with forecast > 0 at grid positions 0, 20, 40, ... of each window, pooled across coins; the minimum of 30 such cases is treated as an observability minimum; the supporting slope is an OLS of excess return on forecast over those same cases and passes if positive."
+}

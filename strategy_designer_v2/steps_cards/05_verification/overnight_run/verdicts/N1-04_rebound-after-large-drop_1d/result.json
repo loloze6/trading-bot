@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "share of positive next-bar returns on bars with forecast >= 16 minus all-bar share, pooled over coins",
+    "value": 0.10201875724217846,
+    "statistic": {
+      "name": "two-proportion z (pooled variance)",
+      "value": 7.045693119480545
+    },
+    "threshold": "confirm if hit-rate excess > 0 with z >= 2, reject if excess < 0 with z <= -2, over at least 100 qualifying bars; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean next-bar return on qualifying bars minus mean of all bars (Welch t)",
+    "value": 0.006220859491545125,
+    "t_statistic": 3.703527834532752,
+    "passed": null
+  },
+  "counts": {
+    "qualifying bars": 1280
+  },
+  "decided_by": "Confirm rule met: the hit-rate excess is positive with z >= 2 over at least 100 qualifying bars.",
+  "reading": "Qualifying bars and the baseline (all bars with a next close in the same window) are each pooled over all coins and windows, a positive return is strictly > 0, the baseline includes the qualifying bars, the supporting check has no threshold so its passed is null, and the plan's '<100 bars' case is reported as not observable per the instructions."
+}
