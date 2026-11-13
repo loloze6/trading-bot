@@ -163,6 +163,22 @@ def parse(text):
     return result
 
 
+# Sizing (operator, 2026-11-13; the engine's strategies.sizing block, as in v1's D-176/D-181): the same for every plan,
+# added by code, never by the model. The forecast stays the signal (-20 to +20); the allocation is
+# forecast / 10 x target / the coin's realised volatility, capped at 2: a more volatile coin gets a smaller position,
+# each coin aiming at a 2 % daily move at a forecast of 10.
+DAILY_VOL_TARGET, SIZING_WINDOW, MAX_ALLOCATION = 0.02, 60, 2
+PERIODS_PER_YEAR = {"1d": 365, "4h": 2190, "1h": 8760}
+
+
+def add_sizing(config, bar):
+    config.setdefault("strategies", {})["sizing"] = {
+        "kind": "vol_target", "window": SIZING_WINDOW,
+        "target_annual_vol": round(DAILY_VOL_TARGET * 365 ** 0.5, 6),
+        "periods_per_year": PERIODS_PER_YEAR[bar], "max_allocation": MAX_ALLOCATION}
+    return config
+
+
 def write_atomic(path, text):
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(text)
@@ -229,7 +245,7 @@ def main():
     bracket = f"[{data['instruments']}, {data['bar']}, {data['period']}]"
     stale = args.plans_dir / f"{plan_id}_config.json"
     if out == "plan":
-        write_atomic(stale, json.dumps(result["config"], indent=2) + "\n")
+        write_atomic(stale, json.dumps(add_sizing(result["config"], data["bar"]), indent=2) + "\n")
         body += (f"Forecast: {result['forecast']}\nConfig: {plan_id}_config.json\nCriterion:\n"
                  + "".join(f"- {k.replace('-', ' ').capitalize()}: {result[k]}\n" for k in PLAN_FIELDS[1:]))
         line = f"{plan_id}: plan (fit: {fit}) {bracket}"

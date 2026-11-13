@@ -24,3 +24,6 @@ No number, no finding. A statistic about returns over h bars counts each h-bar p
 samples (bars 0, h, 2h, ... of each window), never every bar's overlapping forward return, which makes a weak effect
 look strong. Give the number of independent cases next to a t. A return compared with the coin's average uses the coin's mean over all the backtest's windows together, never the mean of the event's own window: a window's mean already holds the move being measured. A claim about the book (what it earns, what carries its gain, its falls) is measured on the book's daily returns: each day, the mean over coins of `book_return`, as the profitability check computes it; never on summed trade returns, which one large compounding trade can dominate. Number them F1, F2, ... in the order you would tell them to a colleague, the most important
 first.
+
+Ideas. An idea is either graded (the stronger the situation, the larger the move that follows) or a market condition
+in which an effect holds (a regime). Never a fixed threshold that turns a position on or off.

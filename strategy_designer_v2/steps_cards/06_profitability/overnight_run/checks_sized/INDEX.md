@@ -1,0 +1,6 @@
+N4-01_breakout-drift-lasts_1d_oos_sized: not profitable enough [Sharpe 0.9329; Sharpe minus holding's Sharpe 0.5966; Calmar 0.7327]
+N4-01_breakout-drift-lasts_1d_sized: not profitable enough [Sharpe 0.8274; Sharpe minus holding's Sharpe 0.2732; Calmar 0.528]
+N7-01_drift-only-near-high_1d_oos2_sized: profitable enough [Sharpe 1.733; Sharpe minus holding's Sharpe 0.212; Calmar 2.263]
+N7-01_drift-only-near-high_1d_oos3_sized: not profitable enough [Sharpe 0.7206; Sharpe minus holding's Sharpe 0.2728; Calmar 0.7646]
+N7-01_drift-only-near-high_1d_oos_sized: profitable enough [Sharpe 1.263; Sharpe minus holding's Sharpe 0.9266; Calmar 1.417]
+N7-01_drift-only-near-high_1d_sized: profitable enough [Sharpe 1.052; Sharpe minus holding's Sharpe 0.4979; Calmar 0.8876]
