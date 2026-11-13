@@ -2,6 +2,22 @@
 
 Each item: what is wrong, the evidence from the night, what was tested, and a recommendation. The raw log, in the order things were found, is `IMPROVEMENTS.md`. "Behind an option" means the default behaviour is unchanged.
 
+## F. The business reading (added after the morning report: the most useful)
+
+**F1. 7.d must start from the measure that failed.** (log 33, 35, 36)
+- What was wrong: across the night, every 7.d idea sharpened the gain; the books closest to passing failed only on their falls; no idea asked when the book should not be long. The loop therefore refined signals and never repaired a book.
+- Tested: 7.d's prompt with one change ("start from what failed; an idea that adds gain but leaves the failing measure where it is does not answer; a stop or an exit can be turned into an idea about the market"), on the four books failing only on Calmar. The findings start from the falls; the ideas address them. One of them, N4-01 amended with an exit (N7-01), gave the night's best book: under the agreed rule, profitable on both large unseen samples, Calmar short by 0.05 to 0.07 on the two others, market exposure halved (beta 0.45 against 0.79).
+- Also: a fix must be stated as the tested idea amended, in full (not as a separate negative idea, which is tested alone as a short book; not by reference to the parent, whose definitions are then lost: N7-02).
+- Recommendation: **apply** to 7.d's line prompt (`07d_not_profitable/overnight_run/test_failing_measure/line/helper/line_prompt.md`). The same logic likely holds for the other lines: each should start from what its entry condition says failed.
+
+**F2. Step 5 should test the part of an amended idea that carries its value.** (log 37)
+- What was wrong: N7-01's plan measured the gain half ("the rise appears near the high"); its book earns from the exit half ("below the 20-day average, nothing"). On unseen coins the book pays and the measure is inconclusive.
+- Recommendation: **decide**: for an amended idea, step 3's main measure should test the amendment (the difference between the kept and the removed cases), not the original claim again. My view: yes; it is what "is the idea real?" means for a fix.
+
+**F3. The falls are partly the book's, not the idea's.** (log 34)
+- What was found: in N1-04 and N3-04 the deepest falls are crash days hitting every coin at once, with many coins held together. No one-coin idea removes that.
+- Recommendation: **decide** where book sizing belongs: step 6's common risk level (E1), or a step of its own between the backtest and the profitability check. Not built.
+
 ## A. Trusting a confirmation (the most important)
 
 **A1. Test every confirmation on unseen data.** (log 5, 10, 19)

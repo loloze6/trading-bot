@@ -57,3 +57,7 @@ N5-02_high-below-60-day-fails_1d: not profitable enough [Sharpe -0.5947; Sharpe 
 N5-03_high-in-confirmed-uptrend_1d: profitable enough [Sharpe 0.6575; Sharpe minus holding's Sharpe 0.09843; Calmar 0.3772]
 N5-03_high-in-confirmed-uptrend_1d_oos2: not profitable enough [Sharpe 1.353; Sharpe minus holding's Sharpe -0.2193; Calmar 1.826]
 N5-03_high-in-confirmed-uptrend_1d_oos: profitable enough [Sharpe 0.7037; Sharpe minus holding's Sharpe 0.3352; Calmar 0.4484]
+N7-01_drift-only-near-high_1d: profitable enough [Sharpe 0.9597; Sharpe minus holding's Sharpe 0.4056; Calmar 0.685]
+N7-01_drift-only-near-high_1d_oos2: profitable enough [Sharpe 1.8; Sharpe minus holding's Sharpe 0.281; Calmar 3.666]
+N7-01_drift-only-near-high_1d_oos3: profitable enough [Sharpe 0.7893; Sharpe minus holding's Sharpe 0.3415; Calmar 0.6959]
+N7-01_drift-only-near-high_1d_oos: profitable enough [Sharpe 0.9097; Sharpe minus holding's Sharpe 0.5905; Calmar 0.8017]

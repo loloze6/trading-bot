@@ -1,0 +1,2 @@
+- `N7-01_drift-only-near-high` <- `N4-01_breakout-drift-lasts.d1_drift-only-near-high` (line 7.d not profitable; backtest N4-01_breakout-drift-lasts_1d)
+- `N7-02_only-large-dips-rebound` <- `N4-04_dip-rebound-spans-days.d2_only-large-dips-rebound` (line 7.d not profitable; backtest N4-04_dip-rebound-spans-days_1d)

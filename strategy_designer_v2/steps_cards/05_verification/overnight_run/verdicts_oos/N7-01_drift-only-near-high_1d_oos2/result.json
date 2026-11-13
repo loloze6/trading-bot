@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean 5-bar excess return",
+    "value": 0.03399226163600743,
+    "statistic": {
+      "name": "weighted t of the mean",
+      "value": 1.3942525974310696
+    },
+    "threshold": "confirm if mean > 0 and t >= 2; reject if mean < 0 and t <= -2; else inconclusive; at least 100 active blocks"
+  },
+  "supporting_check": {
+    "name": "mean 5-bar excess return on flat bars, recent high, close below SMA20 (<= 0)",
+    "value": -0.016225353618578863,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping active 5-bar blocks": 273,
+    "supporting flat blocks": 73,
+    "active bars": 1401
+  },
+  "decided_by": "The t-statistic lies strictly between -2 and 2 (or could not be computed).",
+  "reading": "Situation taken as the gate (close above SMA20 and a new 20-day closing high within the last 20 bars, long), nearness to the high being graded not gated; the coin's mean 5-bar return uses every bar's 5-bar return in all its windows; the t of the forecast-weighted mean uses the weighted standard error sqrt(sum w^2 (x-m)^2)/sum w; the supporting check uses excess over the coin's mean on grid flat bars and does not enter the decision rule."
+}

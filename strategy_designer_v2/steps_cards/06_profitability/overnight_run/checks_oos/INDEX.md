@@ -16,3 +16,6 @@ N4-04_dip-rebound-spans-days_1d_oos3: not profitable enough [Sharpe 0.6189; Shar
 N4-04_dip-rebound-spans-days_1d_oos: not profitable enough [Sharpe 0.1191; Sharpe minus holding's Sharpe -0.2173; Calmar 0.001789]
 N5-03_high-in-confirmed-uptrend_1d_oos2: not profitable enough [Sharpe 1.353; Sharpe minus holding's Sharpe -0.2193; Calmar 1.826]
 N5-03_high-in-confirmed-uptrend_1d_oos: not profitable enough [Sharpe 0.7037; Sharpe minus holding's Sharpe 0.3352; Calmar 0.4484]
+N7-01_drift-only-near-high_1d_oos2: profitable enough [Sharpe 1.8; Sharpe minus holding's Sharpe 0.281; Calmar 3.666]
+N7-01_drift-only-near-high_1d_oos3: not profitable enough [Sharpe 0.7893; Sharpe minus holding's Sharpe 0.3415; Calmar 0.6959]
+N7-01_drift-only-near-high_1d_oos: profitable enough [Sharpe 0.9097; Sharpe minus holding's Sharpe 0.5905; Calmar 0.8017]

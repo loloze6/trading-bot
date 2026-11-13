@@ -16,3 +16,6 @@ N4-04_dip-rebound-spans-days_1d_oos3: inconclusive (fit: adapted) [main: 0.01517
 N4-04_dip-rebound-spans-days_1d_oos: confirmed (fit: adapted) [main: 0.014188; t of the mean 3.56324; non-overlapping cases 291, top-decile bars before merging 396]
 N5-03_high-in-confirmed-uptrend_1d_oos2: inconclusive (fit: adapted) [main: 0.0467418; t of the mean (non-overlapping samples) 0.92899; non-overlapping cases with forecast >= 10 49, bars with forecast >= 10 498, trending bars 1323]
 N5-03_high-in-confirmed-uptrend_1d_oos: inconclusive (fit: adapted) [main: 0.0294416; t of the mean, non-overlapping samples 0.745388; non-overlapping cases with forecast >= 10 179, bars with forecast >= 10 1608, trending bars 4048]
+N7-01_drift-only-near-high_1d_oos2: inconclusive (fit: adapted) [main: 0.0339923; weighted t of the mean 1.39425; non-overlapping active 5-bar blocks 273, supporting flat blocks 73, active bars 1401]
+N7-01_drift-only-near-high_1d_oos3: inconclusive (fit: adapted) [main: 0.00136867; t of the mean weighted excess return 0.122837; non-overlapping active 5-bar blocks 155, supporting flat blocks 66]
+N7-01_drift-only-near-high_1d_oos: inconclusive (fit: adapted) [main: 0.00309059; t of weighted mean 0.682945; non-overlapping active 5-bar blocks 902, flat below-SMA20 recent-high blocks 403]

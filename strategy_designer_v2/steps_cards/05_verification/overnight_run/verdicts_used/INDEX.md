@@ -16,3 +16,5 @@ N5-01_breakout-after-strong-month_1d: inconclusive (fit: adapted) [main: -0.0001
 N5-02_high-below-60-day-fails_1d: inconclusive (fit: adapted) [main: 0.0101162; t of the mean 1.26436; non-overlapping cases 195]
 N5-03_high-in-confirmed-uptrend_1d: confirmed (fit: adapted) [main: 0.0312149; t of the mean on non-overlapping 10-bar samples 2.53071; non-overlapping cases with forecast >= 10 251]
 N6-01_breakout-after-longer-decline_1d: inconclusive (fit: adapted) [main: -0.00515649; t of the mean -0.363486; independent cases 99, supporting samples 830]
+N7-01_drift-only-near-high_1d: confirmed (fit: adapted) [main: 0.00922003; t of weighted mean (weighted sandwich SE) 2.61176; non-overlapping active 5-bar blocks 1310, supporting flat blocks 540]
+N7-02_only-large-dips-rebound_1d: inconclusive (fit: adapted) [main: 0.00346006; t of the mean 1.03143; de-overlapped cases (forecast >= 5) 746, forecast >= 5 bars 1191, de-overlapped mild cases (0 < forecast < 2) 935]
