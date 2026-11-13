@@ -23,3 +23,4 @@ N4-04_dip-rebound-spans-days_1d: not profitable enough [Sharpe 0.7698; Sharpe mi
 N5-01_breakout-after-strong-month_1d: not profitable enough [Sharpe 0.6436; Sharpe minus holding's Sharpe 0.08947; Calmar 0.3278]
 N5-02_high-below-60-day-fails_1d: not profitable enough [Sharpe -0.5947; Sharpe minus holding's Sharpe -1.149; Calmar -0.2212]
 N5-03_high-in-confirmed-uptrend_1d: not profitable enough [Sharpe 0.6575; Sharpe minus holding's Sharpe 0.09843; Calmar 0.3772]
+N6-01_breakout-after-longer-decline_1d: not profitable enough [Sharpe 0.385; Sharpe minus holding's Sharpe -0.1692; Calmar 0.1183]

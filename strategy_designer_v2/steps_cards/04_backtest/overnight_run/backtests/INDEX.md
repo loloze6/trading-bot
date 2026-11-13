@@ -23,3 +23,4 @@ N4-04_dip-rebound-spans-days_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; 
 N5-01_breakout-after-strong-month_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 N5-02_high-below-60-day-fails_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 N5-03_high-in-confirmed-uptrend_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 23/24 (1 not run: the engine stopped); XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
+N6-01_breakout-after-longer-decline_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]

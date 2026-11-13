@@ -37,6 +37,16 @@ Each item: what is wrong, the evidence from the night, what was tested, and a re
 - Tested (the second): a code check in step 7 that sends back an idea comparing with or depending on another coin or the market. Rerun of 7.b on N2-02 (which had produced such ideas): the first answer was refused (an idea about "altcoins"); the retry gave two one-coin ideas. It does not refuse an idea about the tested coin itself ("On BTC, when...").
 - Recommendation: **apply** the second (kept in step 7, in testing); **wait** on the first: tonight's tests do not show these values hurting more than the others.
 
+**B6. Step 7 needs two of the rules steps 3 and 6 already follow.** (log 26, 29, 30)
+- Evidence, the baseline: 7.f compared each event with its own window's mean (the per-window bias step 3 has a rule against). Its strongest finding on N4-01 ("the drift appears only below the 60-day level", t 3.32) reverses with the coin's mean over all windows (t 1.35 below, 2.12 above). Its idea, tested as N6-01: inconclusive (t -0.36). The same pattern shows in 4 to 7 of the night's 187 exploration files.
+- Evidence, the book: 7.f's first finding ("the gain rests on one coin-window") came from summed trade log returns, which one compounding trade dominates; on step 6's book the same removal changes the Sharpe from 0.79 to 0.72.
+- Tested: both as lines in step 7's rules (`common_rules.md`, in testing), 7.f rerun on N4-01: both artefacts gone; its main number agrees with step 5's; its book findings now give beta to holding (0.79) and alpha (t 1.61).
+- Recommendation: **apply** both lines.
+
+**B7. An idea's situation must be known at a bar's close.** (log 28)
+- Evidence: 7.f proposed the same idea "on coins other than those whose gain came from one rally window": a selection by the backtest's result.
+- Recommendation: **apply** as a line in step 7's rules (step 2's definition already says it); no code check (it cannot be read reliably by code).
+
 ## C. What the test vessel can express
 
 **C1. Simple components were missing, and the most recurrent themes could not be tested; and the vessel cannot hold a position after an event.** (log 6, 7, 13, 14, 18)
@@ -76,5 +86,5 @@ Each item: what is wrong, the evidence from the night, what was tested, and a re
 | A copy of step 3's catalogue with their rows | `03_test_plan/helper/reference_overnight/` | No: used only with `--reference-dir` (new option of `make_test_plan.py`) |
 | A corrected record description for step 5 | `05_verification/helper/record_description_overnight.md` | No: used only with `--record-description` (new option of `make_verdict.py`) |
 | Step 6 options `--target-vol` and `--calmar-vs-hold` | `06_profitability/helper/check_profitability.py` | No: off unless passed; tests still pass |
-| Step 7: non-overlapping samples in its rules; which component columns exist in its data description; a code check against ideas about another coin | `07_common/helper/common_rules.md`, `data_description.md`, `analyse.py` | Yes, in step 7 (still in testing) |
+| Step 7: non-overlapping samples, the coin's mean over all windows, book claims on the book's daily returns (its rules); which component columns exist (its data description); a code check against ideas about another coin | `07_common/helper/common_rules.md`, `data_description.md`, `analyse.py` | Yes, in step 7 (still in testing) |
 | Orchestrator tools: hand-off, unseen-coin copy, mode judge, predictive check, results table | `overnight_run/*.py` | Not steps |

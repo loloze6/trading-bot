@@ -25,3 +25,4 @@ N5-01_breakout-after-strong-month_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, X
 N5-02_high-below-60-day-fails_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 N5-03_high-in-confirmed-uptrend_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 N5-04_clustered-new-highs_1d: missing-components: The idea needs to know whether the latest new 20-day closing high came within ten bars of earlier ones, which [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+N6-01_breakout-after-longer-decline_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

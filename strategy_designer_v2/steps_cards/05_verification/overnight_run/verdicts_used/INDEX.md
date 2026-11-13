@@ -15,3 +15,4 @@ N4-04_dip-rebound-spans-days_1d: confirmed (fit: adapted) [main: 0.0071814; t of
 N5-01_breakout-after-strong-month_1d: inconclusive (fit: adapted) [main: -0.00014394; Newey-West t (lag 9) -0.128643; non-overlapping new-high events 559, new-high bars 1874]
 N5-02_high-below-60-day-fails_1d: inconclusive (fit: adapted) [main: 0.0101162; t of the mean 1.26436; non-overlapping cases 195]
 N5-03_high-in-confirmed-uptrend_1d: confirmed (fit: adapted) [main: 0.0312149; t of the mean on non-overlapping 10-bar samples 2.53071; non-overlapping cases with forecast >= 10 251]
+N6-01_breakout-after-longer-decline_1d: inconclusive (fit: adapted) [main: -0.00515649; t of the mean -0.363486; independent cases 99, supporting samples 830]

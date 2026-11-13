@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean forward 10-bar excess return after forecast >= 10",
+    "value": -0.005156488105595797,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.3634860132262742
+    },
+    "threshold": "mean > 0 with t >= 2 confirms; mean < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "correlation of forecast with forward 10-bar excess return, trending bars, non-overlapping",
+    "value": 0.026323344375550634,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 99,
+    "supporting samples": 830
+  },
+  "decided_by": "The t lies between -2 and 2, which neither confirms nor rejects.",
+  "reading": "Situation bars are those with regime 'trending' (the detector's close-below-close-60-bars-ago rule) and range_top raw value > 0 (upper half of the 21-close range, the graded 'top of range'), on the long side; the coin's mean 10-bar return is over all its bars with a 10-bar forward return in all windows (overlapping); qualifying bars (forecast >= 10) are chained into one case while each is within 10 bars of the previous qualifying bar in the same window, and each case takes the excess return of its first bar; the t is the ordinary t of the mean; the supporting correlation is Pearson on trending bars at grid positions 0,10,20,... of each window."
+}
