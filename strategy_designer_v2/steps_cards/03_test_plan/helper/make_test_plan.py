@@ -20,6 +20,7 @@ from pathlib import Path
 import yaml
 
 HERE = Path(__file__).resolve().parent
+REF = HERE / "reference"   # set from --reference-dir in main()
 DEFAULT_DATA = {"instruments": "BTC, ETH, LTC, XMR, XRP, ZEC", "bar": "1d", "period": "folds A, B, C, D"}   # the cached coins with data in all four folds
 FOLDS = HERE.parents[3] / "strategy-research" / "config" / "folds.yaml"
 BARS_PER_DAY = {"1d": 1, "4h": 6, "1h": 24}
@@ -56,7 +57,7 @@ def windows(period, bar):
 
 def catalogue_params():
     """Class name to its accepted params, read from the catalogue rows."""
-    cat = (HERE / "reference" / "component_catalogue.md").read_text()
+    cat = (REF / "component_catalogue.md").read_text()
     rows = cat[cat.index("### Regime measures"):]
     return {n: set(re.findall(r"`(\w+)` \(", p)) for n, p in re.findall(r"^\| `(\w+)` \| ([^|]*) \|", rows, re.M)}
 
@@ -175,7 +176,11 @@ def main():
     a.add_argument("--plans-dir", type=Path, default=HERE.parent / "plans")
     a.add_argument("--model", default="claude-opus-5-5")
     a.add_argument("--bar", default=None, help="bar size to test on (e.g. 1h), overriding the header and the default")
+    a.add_argument("--reference-dir", type=Path, default=HERE / "reference",
+                   help="the folder of the two references (overnight test: reference_overnight, with two more components)")
     args = a.parse_args()
+    global REF
+    REF = args.reference_dir.resolve()
 
     idea_text, idea_id = args.idea.read_text(), args.idea.stem
     idea_header, _ = header(idea_text)
@@ -188,7 +193,7 @@ def main():
         data["bar"] = args.bar
     plan_id = f"{idea_id}_{data['bar']}"   # the plan's id: one plan per idea and bar size
 
-    ref = HERE / "reference"
+    ref = REF
     # The two references go in the system prompt: they are the same in every call, so from the second idea on
     # they come from the model's cache (exercise 8 probe: 0.26 USD for the first idea, about 0.07 after).
     system = ((HERE / "system_prompt.md").read_text()

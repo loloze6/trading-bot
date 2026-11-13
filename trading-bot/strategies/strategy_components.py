@@ -1711,3 +1711,102 @@ class WhaleLargeTradeImbalanceComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return self.persistence_bars
+
+
+# --- Overnight test components (strategy_designer_v2, 2026-11-13): additive, not yet approved by the operator. ---
+
+class MovingAverageSlopeComponent(SubStrategyComponent):
+    """
+    Percent change of a moving average over the last `lookback` bars, on every bar:
+
+        raw_value = (MA[t] - MA[t - lookback]) / MA[t - lookback] x 100
+
+    MA is the simple average of `period` closes (average: "sma") or their EMA (average: "ema", span = period,
+    adjust=False). Graded and signed: positive while the average rises, negative while it falls. No lag beyond the
+    average's own: MA[t] includes bar t's close. No scaling_factor: the config's transforms scale it.
+    """
+
+    AVERAGES = ("sma", "ema")
+
+    def __init__(self, name="MovingAverageSlope", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 200))
+        self.lookback = int(self.parameters.get("lookback", 20))
+        self.average = self.parameters.get("average", "sma")
+        if self.average not in self.AVERAGES:
+            raise ValueError(f"MovingAverageSlopeComponent: average must be one of {self.AVERAGES}, got {self.average!r}")
+        if self.period < 2 or self.lookback < 1:
+            raise ValueError("MovingAverageSlopeComponent: period must be >= 2 and lookback >= 1")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        close = data['close']
+        if self.average == "sma":
+            ma_now = float(close.iloc[-self.period:].mean(skipna=False))
+            ma_then = float(close.iloc[-(self.period + self.lookback):-self.lookback].mean(skipna=False))
+        else:
+            ema = close.ewm(span=self.period, adjust=False).mean()
+            ma_now, ma_then = float(ema.iloc[-1]), float(ema.iloc[-1 - self.lookback])
+        self._raw_value = (ma_now - ma_then) / ma_then * 100.0
+        self.confidence = 1.0
+        self.debug_info = {'moving_average': ma_now, 'moving_average_then': ma_then}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period + self.lookback
+
+
+class MovingAverageAgeComponent(SubStrategyComponent):
+    """
+    How long the current side of a moving average has lasted, signed, on every bar:
+
+        raw_value = +n while the close (or the fast average) has been above the slow average for the last n bars,
+                    -n while it has been below it for the last n bars,
+
+    n counting bar t itself and capped at `max_bars`. The slow average is the SMA of `period` closes; with
+    `fast_period` set, the fast SMA of `fast_period` closes is compared with it instead of the close (for example
+    50 and 200: the age of a golden or death cross). Graded and signed. No lag: both averages include bar t's close.
+    """
+
+    def __init__(self, name="MovingAverageAge", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 200))
+        fp = self.parameters.get("fast_period")
+        self.fast_period = int(fp) if fp not in (None, "", 0) else None
+        self.max_bars = int(self.parameters.get("max_bars", 120))
+        if self.period < 2 or self.max_bars < 1 or (self.fast_period is not None and not 1 <= self.fast_period < self.period):
+            raise ValueError("MovingAverageAgeComponent: period >= 2, max_bars >= 1, and 1 <= fast_period < period")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        close = data['close'].iloc[-(self.period + self.max_bars):]
+        slow = close.rolling(self.period).mean().iloc[-self.max_bars:]
+        fast = close.rolling(self.fast_period).mean().iloc[-self.max_bars:] if self.fast_period else close.iloc[-self.max_bars:]
+        above = (fast > slow).to_numpy()
+        side = above[-1]
+        n = 0
+        for v in above[::-1]:
+            if v != side:
+                break
+            n += 1
+        self._raw_value = float(n if side else -n)
+        self.confidence = 1.0
+        self.debug_info = {'bars_on_side': n, 'above': bool(side)}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period + self.max_bars

@@ -1,0 +1,18 @@
+missing-components: The idea's situation is the age of an above-SMA200 episode, which is the number of consecutive bars the close has spent above its 200-day SMA. That count can be computed from the coin's own closes, and the config could use it as a regime rule (age at least 20) or as a graded input. No catalogue component counts bars since a cross or the length of an episode. Combining distance, range-position or trend-fit components does not give it.
+cost: 0.2598 USD, attempts: 1
+missing-components: The idea's situation is a calendar day. The timestamp column is in the coin's own bars, and a graded per-bar forecast could hold this idea. But no catalogue component, alone or combined, turns the timestamp into a weekday reading. The only components that read the timestamp check the UTC hour, which is always 0 on 1d bars. The regime detector cannot read the weekday either.
+cost: 0.2619 USD, attempts: 1
+plan (adapted): 03_test_plan/overnight_run/plans/N1-08_twenty-day-momentum_1d.md
+cost: 0.0480 USD, attempts: 1
+plan (adapted): 03_test_plan/overnight_run/plans/N1-06_deep-below-average-rebound_1d.md
+cost: 0.2721 USD, attempts: 1
+missing-components: The idea needs the change in the 200-bar simple average over several weeks, for example SMA200 today against SMA200 20 bars ago. That is the mean of the last 20 closes against the mean of the closes 200 to 219 bars ago, and no catalogue component or composition compares those. The history ops that could smooth a one-bar slope (`ema`) cannot sit beside `standardise`, so the 200-bar price change cannot be averaged into a weeks-long slope either.
+cost: 0.2772 USD, attempts: 1
+missing-components: The 20-bar change of the 200-day SMA is computable from the coin's own closes. A regime rule (slope > 0) or a graded component could hold it. No catalogue component outputs it, and no combination recovers it. The exact identity mixes SMA20, SMA200 and SMA220 levels linearly, but the catalogue only gives normalised SMA distances or spreads, and `standardise` rescales each component separately, which breaks fixed linear weights.
+cost: 0.2733 USD, attempts: 1
+missing-components: The idea needs to know, on each bar, whether the 50/200 SMA death cross happened in the last 20 bars. Every catalogue component, and every regime rule, sees only current values, never a lagged spread or the time since an event. A death-cross recency measure can be computed from the coin's own closes and fits a regime rule or a graded component, but no catalogue component computes it, alone or combined.
+cost: 0.2762 USD, attempts: 1
+plan (adapted): 03_test_plan/overnight_run/plans/N1-01_trend-with-rising-month_1d.md
+cost: 0.0673 USD, attempts: 1
+plan (adapted): 03_test_plan/overnight_run/plans/N1-04_rebound-after-large-drop_1d.md
+cost: 0.0839 USD, attempts: 1
