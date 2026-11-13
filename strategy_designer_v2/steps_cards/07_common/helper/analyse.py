@@ -139,6 +139,9 @@ def parse_findings(text):
     return {f"F{k}": v.strip() for k, v in f.items()}
 
 
+OTHER_COIN = re.compile(r"\b(other coins?|altcoins?|bitcoin'?s|btc'?s|than (bitcoin|btc|the market)|the market'?s|the average of the)\b", re.I)
+
+
 def parse_ideas(text, findings):
     no_dates(text)
     m = re.search(r"^no-ideas:\s*(.+)$", text, re.M)
@@ -160,6 +163,9 @@ def parse_ideas(text, findings):
         missing = [r for r in refs if r not in findings]
         if missing:
             raise ValueError(f"an idea rests on findings that do not exist: {', '.join(missing)}")
+        if OTHER_COIN.search(g["idea"]):
+            raise ValueError(f"an idea compares with or depends on another coin or the market ('{OTHER_COIN.search(g['idea']).group(0)}'); "
+                             "every idea is about one coin's own bars: rewrite it, or drop it")
         g["refs"] = refs
         ideas.append(g)
     if not ideas and not m:

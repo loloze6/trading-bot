@@ -11,6 +11,7 @@ Each item: what is wrong, the evidence from the night, what was tested, and a re
 
 **A2. Report a confirmation's strength over time.** (log 11, 17)
 - Evidence: every confirmation draws most of its strength from 2018 to 2021; N1-04 +12 points then +3.9 in 2024 to 2025; N3-04 t 3.18, then 0.21, then 0.82. Step 5 pools every period; 7.f (fragility) runs only on profitable books, so a confirmed but unprofitable idea's fading is checked by nobody.
+- Also N4-01, the night's best idea: on the 6 coins its effect is +3.24 % (t 2.53) in 2018 to 2021, -2.06 % (t -2.49) in the 2022 to 2023 bear market, +4.27 % (t 2.03) in 2024 to 2025. Its pooled confirmation hides a regime that reverses it.
 - Recommendation: **apply** in one of two ways: step 5 prints its main measure per fold next to the verdict (information, the verdict unchanged), or the orchestration does. And the unseen-coin test should cover the same years as the discovery where the coins have data, so that coins and years are tested separately (tonight's first unseen test mixed them).
 
 ## B. Step 7's evidence
@@ -33,7 +34,8 @@ Each item: what is wrong, the evidence from the night, what was tested, and a re
 
 **B5. Values found in the data, and ideas comparing coins.** (log 4, 15)
 - Evidence: 17 % of one-call ideas name a value absent from the plan ("past 30 days"); five ideas of generation 3 compare a coin with BTC (the one-coin rule).
-- Recommendation: **apply** the second (a code check that refuses another coin's name in an idea, sent back once); **wait** on the first: tonight's tests do not show these values hurting more than the others.
+- Tested (the second): a code check in step 7 that sends back an idea comparing with or depending on another coin or the market. Rerun of 7.b on N2-02 (which had produced such ideas): the first answer was refused (an idea about "altcoins"); the retry gave two one-coin ideas. It does not refuse an idea about the tested coin itself ("On BTC, when...").
+- Recommendation: **apply** the second (kept in step 7, in testing); **wait** on the first: tonight's tests do not show these values hurting more than the others.
 
 ## C. What the test vessel can express
 
@@ -74,5 +76,5 @@ Each item: what is wrong, the evidence from the night, what was tested, and a re
 | A copy of step 3's catalogue with their rows | `03_test_plan/helper/reference_overnight/` | No: used only with `--reference-dir` (new option of `make_test_plan.py`) |
 | A corrected record description for step 5 | `05_verification/helper/record_description_overnight.md` | No: used only with `--record-description` (new option of `make_verdict.py`) |
 | Step 6 options `--target-vol` and `--calmar-vs-hold` | `06_profitability/helper/check_profitability.py` | No: off unless passed; tests still pass |
-| Step 7: non-overlapping samples in its rules; which component columns exist in its data description | `07_common/helper/common_rules.md`, `data_description.md` | Yes, in step 7 (still in testing) |
+| Step 7: non-overlapping samples in its rules; which component columns exist in its data description; a code check against ideas about another coin | `07_common/helper/common_rules.md`, `data_description.md`, `analyse.py` | Yes, in step 7 (still in testing) |
 | Orchestrator tools: hand-off, unseen-coin copy, mode judge, predictive check, results table | `overnight_run/*.py` | Not steps |

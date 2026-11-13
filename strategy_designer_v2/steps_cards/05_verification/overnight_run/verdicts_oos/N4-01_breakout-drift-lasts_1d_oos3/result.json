@@ -1,0 +1,27 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 10-bar forward return after new-high bars (coin return minus coin's mean 10-bar return)",
+    "value": 0.03305107823422417,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.303735114016987
+    },
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2; otherwise inconclusive; at least 100 non-overlapping events"
+  },
+  "supporting_check": {
+    "name": "mean excess 10-bar return of events whose next close is below the new high",
+    "value": 0.0008418791243003242,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping events": 59,
+    "events with next close below the high": 29
+  },
+  "decided_by": "Only 59 non-overlapping new-high events pooled across coins and windows, fewer than the plan's minimum of 100.",
+  "reading": "New-high bars are those with recorded since_high equal to 20 and a forward 10-bar return inside the window, an event is skipped when it falls fewer than 10 bars after the last counted event in the same window, the new high is that bar's close, the coin's mean is taken over all its overlapping 10-bar returns pooled across windows, the supporting check is reported but does not change the status, and fewer than 100 events gives 'not observable'."
+}
