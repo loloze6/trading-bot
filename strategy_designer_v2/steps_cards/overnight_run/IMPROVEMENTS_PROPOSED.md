@@ -8,19 +8,19 @@
 | New | Step 7: an idea is graded or a regime, never an on/off threshold | **Applied** (`07_common/helper/common_rules.md`) |
 | E1, F3 | Sizing by each coin's volatility, 2 % a day, signal unchanged (±20) | **Applied** in step 3 (code adds it to every config); N7-01 now passes on 3 of 4 data sets |
 | F4 | Label a step 7 what-if | **Not taken** |
-| F5, A1 | Limits per data set; unseen-data test after a confirmation | **Parked** until the steps are final (orchestration) |
-| F2 | For an amended idea, step 5 tests the new part | To decide |
-| E2 | Calmar bar absolute or relative to holding | To decide (less urgent: with sizing, N7-01 passes the absolute bar) |
-| A2 | Step 5 shows its result per period (information only) | To decide |
-| B1, B6 | Step 7 rules: non-overlapping returns; the coin's mean over all windows; book claims on the book's daily returns | In step 7 since the night; to confirm |
-| B5 | Step 7 code check: an idea about another coin or the market is sent back | In step 7 since the night; to confirm |
+| F5, A1 | Limits per data set; unseen-data test after a confirmation | **Parked**: moved to `POTENTIAL_ADJUSTMENTS.md` |
+| F2 | For an amended idea, step 5 tests the new part | Rethought (2026-11-14): no new notion; see the supporting check |
+| E2 | Calmar bar absolute or relative to holding | **Kept** at 0.75 (operator) |
+| A2 | Step 5 shows its result per period (information only) | **Not taken**: no informational field |
+| B1, B6 | Step 7 rules: non-overlapping returns; the coin's mean over all windows; book claims on the book's daily returns | Challenged (2026-11-14): one shared definition of the measures proposed |
+| B5 | Step 7 code check: an idea about another coin or the market is sent back | Challenged: a word list, with false refusals; removal proposed |
 | B3 | One call as step 7's mode | Already the default in the card |
-| B2, B4 | Count of cuts; run twice | My view: drop (B2 is a label; B4 doubles the cost) |
+| B2, B4 | Count of cuts; run twice | B2 **not taken**; B4 open (decide from the validation runs) |
 | B7 | An idea's situation is known at a bar's close | Covered by step 2's definition; to confirm a line in step 7 |
-| C1 | Which test components to keep | To decide |
-| C2 | Step 3 reads only the idea, not step 7's numbers | To decide (step 3 or step 7) |
-| D1 | Step 5's corrected record description as default | To decide |
-| Open | No step looks for regimes directly | To discuss |
+| C1 | Which test components to keep | Reviewed (2026-11-14) against the conventions; see the review |
+| C2 | Step 3 reads only the idea, not step 7's numbers | **Applied**: step 3 reads brief, data lines, Idea, Consequence |
+| D1 | Step 5's corrected record description as default | **Applied**; recording the detector's values **parked** |
+| Open | No step looks for regimes directly | **Approved** as a line; to design |
 
 Each item: what is wrong, the evidence from the night, what was tested, and a recommendation. The raw log, in the order things were found, is `IMPROVEMENTS.md`. "Behind an option" means the default behaviour is unchanged.
 

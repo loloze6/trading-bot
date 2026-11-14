@@ -34,3 +34,13 @@ Since then, the refreshed plans give the refusal on one plan only: `003-02_low-v
 - **Step 2: an idea's time scale (2026-11-12).** Almost every idea is calendar-free but has a time scale: how long its situation takes to form (an indicator's bars) and how long its effect lasts (the horizon). The bar size turns them into real time: "high RSI" (14 bars) is a two-week run on daily bars and a 14-hour run on hourly bars, two different market phenomena. Today the time scale comes from convention and the default bar size, not from the theory. Proposal: each idea states its time scale in plain words ("over days", "within hours"), and the bar size follows from it. Calendar-dependent ideas (hours, weekdays) are few: 003-07, and brief 011 of step 1, exercise 8.
 - **After step 7: on which data its ideas are tested.** An idea step 7 found in some data must be tested on data it did not see. Options discussed (2026-11-12): a time split (step 7 reads 2018 to 2021, its ideas are tested on 2022 to 2025), alternate folds, other coins, a stricter bar. Measured: 6 coins count as about 2 independent coins (books' correlation 0.40 to 0.46), so years, not coins, set what an idea can show. To settle with the orchestration of the steps, not in a step's design.
 
+
+## Parked: unseen-data tests and a limit of ideas per data set (orchestration)
+From the overnight run (2026-11-13), parked by the operator until the steps are final.
+- **What was seen:** of 8 ideas confirmed on the 6 default coins, 4 did not hold on 9 other coins, and step 7's own numbers are inflated by its search. About 32 ideas were tested on the same 6 coins in one night; the more ideas tried on one data set, the more a good result there can be luck.
+- **To discuss:** after a confirmation or a profitable book, test the same plan unchanged on coins step 7 never saw (the overnight tool: `overnight_run/oos.py`); and count the ideas tested on a data set, with a limit past which a result there counts only with an unseen-data test.
+
+## Parked: record the regime detector's values in the backtest
+From the overnight run (2026-11-13; step 5's false "mismatch" on N1-01), parked by the operator.
+- **What was seen:** the engine records the strategies' components, but not the regime detector's components: only its decision (the `regime` column). Step 5 and step 7 must recompute the detector's measures from prices.
+- **To do:** record the detector's value and each of its components' values in the backtest record, for analysis.

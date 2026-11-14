@@ -20,6 +20,10 @@ Columns you may use:
 - `debug_info.components.<id>.last_history_value`: the raw value of the config's component `<id>` on that bar (after its
   history transforms, before its other transforms). For `RSIPullbackComponent` it is (50 - RSI) x scaling_factor, with
   scaling_factor 0.4 unless the config sets it, so RSI = 50 - value / 0.4.
+  Only the components of the config's `strategies` are recorded, under their ids, and only in windows where their
+  regime was active (a window where it never was has no such column). The regime detector's components are not
+  recorded at all: the detector's decision is the `regime` column. When the plan's situation is the detector's rule,
+  check it on `regime`, or recompute the detector's measure from the prices. A missing column is not a value of zero.
 - `debug_info.components.<id>.post_pipeline_value`: the component's value after its transforms.
 
 Do not use: `confidence`, `strategy`, `balances.*`, `postRebalance_balances.*` (known to be wrong), or other `debug_*` columns.

@@ -140,7 +140,7 @@ def main():
     a.add_argument("--verdicts-dir", type=Path, default=HERE.parent / "verdicts")
     a.add_argument("--model", default="claude-opus-5-5")
     a.add_argument("--record-description", type=Path, default=HERE / "record_description.md",
-                   help="overnight test: record_description_overnight.md (says which component columns are recorded)")
+                   help="the description of a record given to the model (default: record_description.md)")
     args = a.parse_args()
 
     plan_path = args.plan.resolve()

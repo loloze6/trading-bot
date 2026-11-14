@@ -84,6 +84,26 @@ def header(text):
     return [l.strip() for l in m.group(1).splitlines() if l.strip()], m.group(2)
 
 
+# What step 3 reads of an idea file (operator, 2026-11-14): the same subset whatever step wrote it (step 2 or step 7).
+# Anything else (a step 7 idea's "Why", with numbers measured on the data; a source line) never reaches the model,
+# so the plan is written closed book.
+IDEA_HEADER_FIELDS = ("brief", "instruments", "bar", "period")
+IDEA_BODY_FIELDS = ("Idea", "Consequence")
+
+
+def idea_for_step3(text):
+    """The idea file reduced to the fields step 3 reads: its brief and data lines, then Idea and Consequence."""
+    head, body = header(text)
+    kept = [l for l in head if l.split(":", 1)[0].strip() in IDEA_HEADER_FIELDS]
+    lines = []
+    for f in IDEA_BODY_FIELDS:
+        m = re.search(rf"^{f}:\s*(.+)$", body, re.M)
+        if not m:
+            sys.exit(f"the idea file has no '{f}:' line")
+        lines.append(f"{f}: {m.group(1).strip()}")
+    return "---\n" + "".join(l + "\n" for l in kept) + "---\n" + "".join(l + "\n" for l in lines)
+
+
 PARTS = ("situation", "comparison", "outcome")
 OUTCOMES = ("plan", "untestable", "missing-components")
 PLAN_FIELDS = ("forecast", "horizon", "main-measure", "supporting-check", "confirm", "reject", "inconclusive")
@@ -217,7 +237,7 @@ def main():
               + f"\n[COMPONENT CATALOGUE]\n{(ref / 'component_catalogue.md').read_text()}")
     request = (f"[DATA THE TEST RUNS ON]\ncoins: {data['instruments']}\nbar size: {data['bar']}\n"
                f"windows: {windows(data['period'], data['bar'])}\n\n"
-               f"[IDEA]\n{idea_text}\n[BRIEF]\n{brief_text}\n"
+               f"[IDEA]\n{idea_for_step3(idea_text)}\n[BRIEF]\n{brief_text}\n"
                f"Write the test plan for this idea.")
 
     cost, refusal = 0.0, ""
