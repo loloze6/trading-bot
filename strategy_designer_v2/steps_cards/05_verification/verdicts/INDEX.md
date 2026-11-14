@@ -5,6 +5,7 @@
 002-01_sma-golden-cross-upward-drift.d1_golden-cross-with-momentum_1d: inconclusive (fit: exact) [main: 0.028029; t of the mean 0.968854; active grid cases 205, top half cases 102, bottom half cases 103]
 002-01_sma-upcross-upward-drift_1d: inconclusive (fit: adapted) [main: -0.00178248; OLS slope t -0.930143; non-overlapping samples 70, samples with forecast > 0 29]
 002-02_sma-downcross-downward-drift_1d: inconclusive (fit: adapted) [main: 0.0102576; t of the mean excess across short blocks 0.318951; short_blocks 20, short_bars 437]
+002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_short-horizon-uptrend-momentum-near-highs_1d: confirmed (fit: adapted) [main: 0.0266263; Welch t 2.19553; top half grid cases 412, bottom half grid cases 413, trending grid cases 825, cases with forecast > 0 595]
 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs_1d: inconclusive (fit: adapted) [main: 0.0195146; t of the mean 0.606872; grid cases with a positive forecast 284, active bars 6128]
 002-03_price-upcross-long-sma-drift_1d: inconclusive (fit: adapted) [main: 0.00120966; OLS slope t-stat 0.64857; non-overlapping blocks 70, blocks starting with forecast > 0 27]
 002-04_price-cross-below-long-sma.d1_shorts-under-falling-average_1d: inconclusive (fit: exact) [main: -0.00296516; ordinary t of the mean -0.371636; active cases 300]
@@ -30,3 +31,6 @@
 005-04_divergent-low-stronger-than-confirmed_1d: no verdict: the plan is missing-components
 005-05_bearish-divergence-uptrend-continues_1d: no verdict: the plan is missing-components
 005-06_bullish-divergence-downtrend-continues_1d: no verdict: the plan is missing-components
+N2-04_slow-and-fast-momentum.e1_short-horizon-dual-momentum-continuation_1d: confirmed (fit: adapted) [main: 0.00822748; t of the mean 2.222; active non-overlapping 5-bar cases 1130, active non-overlapping 20-bar cases 269]
+N2-04_slow-and-fast-momentum_1d: inconclusive (fit: exact) [main: 0.0190129; t of the mean 0.849656; non-overlapping 20-bar active blocks pooled across coins and windows 269]
+N2-06_rebound-in-high-volatility_1d: inconclusive (fit: adapted) [main: 0.00234706; two-proportion z 0.099304; top-decile drop bars high-volatility 992, top-decile drop bars quiet 749]

@@ -5,6 +5,7 @@
 002-01_sma-golden-cross-upward-drift.d1_golden-cross-with-momentum_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 002-01_sma-upcross-upward-drift_1d: plan (fit: adapted) [BTC/USDT, 1d, fold A]
 002-02_sma-downcross-downward-drift_1d: plan (fit: adapted) [BTC/USDT, 1d, fold A]
+002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_short-horizon-uptrend-momentum-near-highs_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 002-03_price-cross-above-long-sma.d1_rising-distance-above-average_1d: missing-components: The idea needs the change in (close - SMA)/SMA over the last few bars, and its sign, from the coin's [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 002-03_price-upcross-long-sma-drift_1d: plan (fit: adapted) [BTC/USDT, 1d, fold A]
@@ -32,3 +33,4 @@
 005-04_divergent-low-stronger-than-confirmed_1d: missing-components: The config could hold the idea from one coin's closes alone. The forecast would be RSI's position in its own [BTC, ETH, BNB, 1d, fold A]
 005-05_bearish-divergence-uptrend-continues_1d: missing-components: A lower RSI high at a new price high needs RSI compared with its own recent maximum. The catalogue has [BTC, ETH, BNB, 1d, fold A]
 005-06_bullish-divergence-downtrend-continues_1d: missing-components: The divergence needs RSI now compared with RSI at the earlier price low, while price sits at a new low. [BTC, ETH, BNB, 1d, fold A]
+N2-04_slow-and-fast-momentum.e1_short-horizon-dual-momentum-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

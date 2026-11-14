@@ -1,0 +1,26 @@
+---
+line: 7.e profitable but not proven
+backtest: 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs_1d
+idea tested: 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.3528 USD
+---
+## Findings
+- **F1:** The plan's own measure, (forecast/10) × the coin's excess return on non-overlapping grid bars with a positive forecast, is positive with t ≥ 2 at shorter horizons: t 2.21 at 1 bar (n 6090), 2.08 at 5 bars (n 1200) and 2.06 at 10 bars (n 598). At the plan's 20 bars it falls to t 0.61 (n 284), so the test measured the effect past the horizon where the book earns it.
+- **F2:** Timing carries more of the book than the market's rise: of the book's mean daily return of 0.000565, the position × coin-mean drift part is 0.000224 and timing is 0.000340, while the mean allocation is only 0.19.
+- **F3:** The effect is graded in forecast strength. Among positive-forecast days, the next-day excess return rises from -0.00175 in the lowest forecast quartile (mean forecast 1.96) to 0.00349 in the top quartile (mean forecast 17.1), with Welch t 2.65 (n 1523 per quartile). At 10 bars the top quartile's excess is 0.041 against 0.0008 in the lowest (t 1.77, n 150).
+- **F4:** On a coin's next day, the return averages 0.00197 when the book was in, against 0.00057 when it was out (n 7693 vs 9687), and the in-minus-out excess on the grid has Welch t 1.82 at 1 bar and 1.94 at 5 bars.
+- **F5:** The gain sits in a fat right tail. Dropping the best 1 % of the book's 2898 days takes the mean daily return from 0.000565 to -0.000003. The top 5 % of the 2888 trades sum to 21477 of the total 26441 P/L points, while the median trade is -0.78 % and 44.7 % of trades win.
+- **F6:** The gain is not carried by one coin. Leaving any coin out keeps the book's mean daily return between 0.000476 and 0.000678. LTC (-0.000005) and XMR (0.000073) earn almost nothing.
+- **F7:** The book earns in rising-market years and loses in falling ones. Its mean daily return is 0.00193 in 2020 and 0.00118 in 2024, against -0.00017 in 2018 and -0.00019 in 2022, years when holding returned -0.0035 and -0.0018 a day.
+- **F8:** Within the forecast, the closeness of the close to its 20-day high carries more than the rise does. At 5 bars, the Spearman correlation with excess return is 0.040 for the transformed near-high part, against 0.034 for the transformed rise and -0.009 for the raw 20-day rise (n 1200).
+
+## Ideas
+- `002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_short-horizon-drift-near-highs` (from F1, F3, F4, F8): When a coin closes above its long moving average, the nearer the close sits to its recent high and the stronger its recent rise, the larger the coin's excess gain over the following days to two weeks. This short-horizon drift has faded by about a month.
+- `002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e2_upside-tail-near-highs` (from F2, F5, F3): When a coin trades above its long moving average with its close near the recent high, its next-day returns are skewed to the upside: rare large up days follow more often than usual, and they carry the gain while the typical day is flat to slightly negative.
+- `002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e3_rising-trend-regime-strengthens-drift` (from F7, F6): The drift that follows a close near its recent high above the long average is larger when the coin's own long average is rising than when it is flat or falling.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
