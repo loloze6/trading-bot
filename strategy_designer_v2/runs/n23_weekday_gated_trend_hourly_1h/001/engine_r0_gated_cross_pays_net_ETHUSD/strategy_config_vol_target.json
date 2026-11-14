@@ -1,0 +1,45 @@
+{
+  "aux_feeds": [],
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 2,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "gated_cross_pays_net",
+            "class": "strategies.claim_event.ClaimEventComponent",
+            "params": {
+              "code": "wk = ((dow == 4) & (hour >= 21)) | (dow >= 5) | ((dow == 0) & (hour < 8))\nf = df.close.rolling(12).mean()\ns = df.close.rolling(72).mean()\nd = np.sign(f - s)\ncross = (d != d.shift(1)) & d.notna() & d.shift(1).notna() & (d != 0)\nv = ret.rolling(24).std()\nq = v.rolling(720).quantile(0.33)\ngate = (~wk) & (v > q)\nsignal = d.replace(0, 1).fillna(1)\na = spaced(cross & gate, 24)\nb = ~a\n",
+              "horizon": 48,
+              "scaling_factor": 10.0,
+              "min_bars": 880
+            },
+            "weight": 1.0,
+            "lookback": 980,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 30,
+      "target_annual_vol": 0.2,
+      "max_allocation": 1.0,
+      "periods_per_year": 8760
+    }
+  }
+}

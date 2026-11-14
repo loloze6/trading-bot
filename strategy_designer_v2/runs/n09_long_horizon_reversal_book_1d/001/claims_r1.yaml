@@ -1,0 +1,31 @@
+brief: n09_long_horizon_reversal_book_1d.md
+source: analyst round 1
+ideas:
+- id: yearly_mean_distance_reversal_book
+  belief: Price far from its 365-day mean is pulled back toward it over the next 60
+    days, so a book that is always in the market, long below the yearly mean and short
+    above it, pays after cost.
+  claim:
+    when: every bar with a 365-day mean available
+    then: the 60-day return taken in the direction back toward the 365-day mean is
+      positive after the round-trip cost
+    compared_to: cost only (net_return); b is the warm-up bars
+    measure: net_return
+    horizon_bars: 60
+    direction: positive
+    min_effect: 0.03
+    code: 'm = df.close.rolling(365).mean()
+
+      z = np.log(df.close / m)
+
+      a = z.notna()
+
+      b = ~a
+
+      signal = pd.Series(np.where(z < 0, 1.0, -1.0), index=df.index)
+
+      '
+  why_no_lookahead: The 365-day mean and the sign use only closes at or before the
+    bar; the forward return is applied by the judge.
+  how_it_trades: Each day, hold long if the close is below its 365-day mean and short
+    if above, and measure each entry over a 60-day hold.

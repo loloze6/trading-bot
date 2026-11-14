@@ -1,0 +1,224 @@
+brief: n06_range_break_continuation_other_coins_1h.md
+ideas:
+  - id: big_break_continues_vs_inside_big
+    belief: On SOL and AVAX, as on BTC, a violent hourly bar that closes outside the prior day's range marks new information and order flow that keeps pushing, while an equally big bar inside the range does not.
+    claim:
+      when: a bar whose absolute return exceeds 3x the prior week's hourly return std and whose close is above the prior 24h high (up) or below the prior 24h low (down), at most one per 12 bars
+      then: price keeps moving in the bar's direction over the next 12 hours
+      compared_to: equally big bars whose close stays inside the prior 24h range, at most one per 12 bars
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.006
+      code: |
+        vol = ret.rolling(168).std().shift(1)
+        big = ret.abs() > 3 * vol
+        hi24 = df.high.rolling(24).max().shift(1)
+        lo24 = df.low.rolling(24).min().shift(1)
+        out = (df.close > hi24) | (df.close < lo24)
+        a = spaced(big & out, 12)
+        b = spaced(big & ~out, 12)
+        signal = pd.Series(np.where(ret >= 0, 1, -1), index=df.index)
+    why_no_lookahead: The volatility and the 24h range are computed on bars before the current one, and the break test uses the current close.
+    how_it_trades: On the close of a qualifying break bar, enter in the bar's direction and hold 12 hours.
+  - id: big_break_pays_after_cost
+    belief: The continuation after a big range-break bar on altcoins is large enough to pay the round-trip fee by itself, not only relative to inside-range bars.
+    claim:
+      when: a big (3x weekly std) bar closing beyond the prior 24h high or low, at most one per 24 bars
+      then: a trade in the bar's direction held 24 hours earns more than the 0.15% cost
+      compared_to: zero after cost
+      measure: net_return
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.003
+      code: |
+        vol = ret.rolling(168).std().shift(1)
+        big = ret.abs() > 3 * vol
+        hi24 = df.high.rolling(24).max().shift(1)
+        lo24 = df.low.rolling(24).min().shift(1)
+        out = (df.close > hi24) | (df.close < lo24)
+        a = spaced(big & out, 24)
+        b = ~a
+        signal = pd.Series(np.where(ret >= 0, 1, -1), index=df.index)
+    why_no_lookahead: Every input is the current bar's close and return, or rolling windows over prior bars.
+    how_it_trades: Buy or sell the break bar's close in its direction, then exit 24 hours later.
+  - id: inside_big_bar_reverts
+    belief: Contrary to BTC, thinner altcoin books overshoot on big bars that fail to leave the daily range, so fading them pays over a few hours.
+    claim:
+      when: a big (3x weekly std) bar whose close stays inside the prior 24h range, at most one per 6 bars
+      then: price retraces against the bar over the next 6 hours, by more than the cost
+      compared_to: zero after cost
+      measure: net_return
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.002
+      code: |
+        vol = ret.rolling(168).std().shift(1)
+        big = ret.abs() > 3 * vol
+        hi24 = df.high.rolling(24).max().shift(1)
+        lo24 = df.low.rolling(24).min().shift(1)
+        inside = (df.close <= hi24) & (df.close >= lo24)
+        a = spaced(big & inside, 6)
+        b = ~a
+        signal = pd.Series(np.where(ret >= 0, -1, 1), index=df.index)
+    why_no_lookahead: The range and the volatility come from prior bars, and the bar's own close decides whether it counts as inside.
+    how_it_trades: Fade the big inside-range bar at its close and exit 6 hours later.
+  - id: volume_confirmed_break
+    belief: A range break carried by unusually heavy volume reflects real participation and continues, while a break on ordinary volume is a thin-book sweep that stalls.
+    claim:
+      when: a big-bar range break (as above) whose volume exceeds 2x the median hourly volume of the prior week
+      then: it continues further in its direction over 12 hours
+      compared_to: big-bar range breaks whose volume is at or below 2x that median
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.005
+      code: |
+        vol = ret.rolling(168).std().shift(1)
+        big = ret.abs() > 3 * vol
+        hi24 = df.high.rolling(24).max().shift(1)
+        lo24 = df.low.rolling(24).min().shift(1)
+        brk = big & ((df.close > hi24) | (df.close < lo24))
+        heavy = df.volume > 2 * df.volume.rolling(168).median().shift(1)
+        a = spaced(brk & heavy, 12)
+        b = spaced(brk & ~heavy, 12)
+        signal = pd.Series(np.where(ret >= 0, 1, -1), index=df.index)
+    why_no_lookahead: The volume median uses only prior bars, and the current bar's volume is known at its close.
+    how_it_trades: Take the break trade only when the break bar's volume is heavy, and hold 12 hours.
+  - id: compression_break_vol_expansion
+    belief: When the prior day's range is unusually narrow, a close outside it releases stored volatility, so the next hours move much more than after breaks of a wide range.
+    claim:
+      when: a close beyond the prior 24h high or low (any bar size) while that 24h range, relative to price, is below 0.6x its median over the prior week, at most one per 12 bars
+      then: the absolute 12-hour forward move is larger
+      compared_to: closes beyond a 24h range that was not compressed, at most one per 12 bars
+      measure: abs_ratio
+      horizon_bars: 12
+      direction: above
+      min_effect: 1.25
+      code: |
+        hi24 = df.high.rolling(24).max().shift(1)
+        lo24 = df.low.rolling(24).min().shift(1)
+        out = (df.close > hi24) | (df.close < lo24)
+        r24 = (hi24 - lo24) / df.close.shift(1)
+        comp = r24 < 0.6 * r24.rolling(168).median()
+        a = spaced(out & comp, 12)
+        b = spaced(out & ~comp, 12)
+        signal = pd.Series(np.where(ret >= 0, 1, -1), index=df.index)
+    why_no_lookahead: The range and its weekly median are built from bars that closed before the current bar, and the break uses the current close.
+    how_it_trades: Buy a straddle-like volatility exposure, or size up the break trade, after a compressed-range break.
+  - id: wick_rejection_reverts
+    belief: A big bar that pokes beyond the prior day's high or low but closes back inside has swept stops and found no follow-through, so price swings back the other way.
+    claim:
+      when: a bar whose high-low range exceeds 2.5x the weekly hourly std, whose high is above the prior 24h high (or whose low is below the prior 24h low), and whose close is back inside that level, at most one per 12 bars
+      then: price moves away from the poked side (down after an upper poke, up after a lower poke) over 12 hours
+      compared_to: all other bars
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.004
+      code: |
+        vol = ret.rolling(168).std().shift(1)
+        wide = (df.high - df.low) / df.close.shift(1) > 2.5 * vol
+        hi24 = df.high.rolling(24).max().shift(1)
+        lo24 = df.low.rolling(24).min().shift(1)
+        up_rej = wide & (df.high > hi24) & (df.close <= hi24)
+        dn_rej = wide & (df.low < lo24) & (df.close >= lo24) & ~up_rej
+        a = spaced(up_rej | dn_rej, 12)
+        b = ~a
+        signal = pd.Series(np.where(up_rej, -1, 1), index=df.index)
+    why_no_lookahead: The current bar's high, low and close are known at its close, and the levels and volatility come from prior bars.
+    how_it_trades: After an upper-wick rejection, sell at the close (buy after a lower one) and hold 12 hours.
+  - id: strong_close_break_strength
+    belief: Among range-break bars, the one that closes at its extreme in the break direction shows no absorption and continues more than one that gives back part of its range.
+    claim:
+      when: big-bar range breaks; feature is the break direction times how close the bar closed to its extreme in that direction (0 to 1)
+      then: the forward 12-hour return rises with the feature
+      compared_to: rank correlation within break bars
+      measure: rank_corr
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.10
+      code: |
+        vol = ret.rolling(168).std().shift(1)
+        big = ret.abs() > 3 * vol
+        hi24 = df.high.rolling(24).max().shift(1)
+        lo24 = df.low.rolling(24).min().shift(1)
+        a = spaced(big & ((df.close > hi24) | (df.close < lo24)), 12)
+        b = ~a
+        clv = (df.close - df.low) / (df.high - df.low).replace(0, np.nan)
+        d = np.where(ret >= 0, 1, -1)
+        feature = pd.Series(np.where(d > 0, clv, -(1 - clv)), index=df.index)
+        signal = pd.Series(d, index=df.index)
+    why_no_lookahead: The close location uses only the current bar's high, low and close.
+    how_it_trades: Take break trades only when the bar closes in its top fifth (bottom fifth for down breaks).
+  - id: break_confirmed_next_bar
+    belief: A break that the next hour extends in the same direction has been accepted by the market and continues, while a break immediately pulled back is a failure.
+    claim:
+      when: the bar right after a big-bar range break, if its return has the same sign as the break bar
+      then: price continues in the break direction over the following 12 hours
+      compared_to: bars right after a big-bar range break whose return goes against the break
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.005
+      code: |
+        vol = ret.rolling(168).std().shift(1)
+        big = ret.abs() > 3 * vol
+        hi24 = df.high.rolling(24).max().shift(1)
+        lo24 = df.low.rolling(24).min().shift(1)
+        brk = big & ((df.close > hi24) | (df.close < lo24))
+        prev = brk.shift(1).fillna(False).astype(bool)
+        dprev = pd.Series(np.where(ret >= 0, 1, -1), index=df.index).shift(1)
+        conf = prev & (ret * dprev > 0)
+        a = conf
+        b = prev & ~conf
+        signal = dprev.fillna(1)
+    why_no_lookahead: The break is tested on the previous bar, and confirmation uses the current bar's close.
+    how_it_trades: Wait one hour after a break and enter in its direction only if that hour extended it, then hold 12 hours.
+  - id: us_session_break_beats_asia
+    belief: Breaks printed during the US session (13-20 UTC), when the deepest flow trades, carry more information and continue more than breaks printed in the thin Asian hours (0-7 UTC).
+    claim:
+      when: big-bar range breaks with bar hour 13-20 UTC
+      then: they continue more in their direction over 12 hours
+      compared_to: big-bar range breaks with bar hour 0-7 UTC
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.005
+      code: |
+        vol = ret.rolling(168).std().shift(1)
+        big = ret.abs() > 3 * vol
+        hi24 = df.high.rolling(24).max().shift(1)
+        lo24 = df.low.rolling(24).min().shift(1)
+        brk = spaced(big & ((df.close > hi24) | (df.close < lo24)), 6)
+        a = brk & (hour >= 13) & (hour <= 20)
+        b = brk & (hour <= 7)
+        signal = pd.Series(np.where(ret >= 0, 1, -1), index=df.index)
+    why_no_lookahead: The hour is the bar's own timestamp, and the other inputs use only current and prior bars.
+    how_it_trades: Trade break continuation only during US hours.
+  - id: weekend_break_weaker
+    belief: Weekend breaks happen in thin books without institutional follow-through, so they continue less than weekday breaks or even give back.
+    claim:
+      when: big-bar range breaks on Saturday or Sunday (UTC)
+      then: continuation in the break direction over 12 hours is smaller
+      compared_to: big-bar range breaks on Monday to Friday
+      measure: mean_diff
+      horizon_bars: 12
+      direction: negative
+      min_effect: 0.005
+      code: |
+        vol = ret.rolling(168).std().shift(1)
+        big = ret.abs() > 3 * vol
+        hi24 = df.high.rolling(24).max().shift(1)
+        lo24 = df.low.rolling(24).min().shift(1)
+        brk = spaced(big & ((df.close > hi24) | (df.close < lo24)), 6)
+        a = brk & (dow >= 5)
+        b = brk & (dow < 5)
+        signal = pd.Series(np.where(ret >= 0, 1, -1), index=df.index)
+    why_no_lookahead: The weekday comes from the bar's timestamp, and the inputs use only current and prior bars.
+    how_it_trades: Skip break trades on weekends, or fade them if the effect is strong enough.
+notes: >
+  The brief asks to replicate the BTC finding on SOL and AVAX, so the first idea keeps the BTC definitions on purpose; already_tried covers BTC only.
+  The others change the mechanism: whether the move pays after cost, a reversion that contradicts BTC, volume, volatility compression, wick rejection, close strength, next-bar confirmation and session.
+  The direct question of whether the inside-range bar fails to revert is tested as its contradiction (inside_big_bar_reverts), because the absence of an effect cannot pass.
+  In the rank_corr idea the feature includes the break direction, so it partly measures continuation itself; read it together with big_break_continues_vs_inside_big.

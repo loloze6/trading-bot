@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean forward 5-bar excess return over the coin mean",
+    "value": 0.0013686718991526388,
+    "statistic": {
+      "name": "t of the mean weighted excess return",
+      "value": 0.12283686666776127
+    },
+    "threshold": "confirm if positive with t >= 2, reject if negative with t <= -2, else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean forward 5-bar excess return on flat bars with recent high but close below SMA20 <= 0",
+    "value": -0.009107381676096237,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping active 5-bar blocks": 155,
+    "supporting flat blocks": 66
+  },
+  "decided_by": "The t-statistic lies strictly between -2 and 2.",
+  "reading": "Situation recomputed from prices (close above its 20-bar SMA and a close at or above the prior 20 closes' max within the last 20 bars, with the recorded recency raw value > 0 used where the window's prices are too short), active bars without a computable SMA left out; the coin mean 5-bar return is taken over all of the coin's bars in all its windows; blocks are the window grid positions 0,5,10,... with an active forecast; the t is the ordinary t of the forecast-weighted excess returns (same sign as the weighted mean); the supporting check uses the same grid and excess over the coin mean and does not enter the decision rule."
+}

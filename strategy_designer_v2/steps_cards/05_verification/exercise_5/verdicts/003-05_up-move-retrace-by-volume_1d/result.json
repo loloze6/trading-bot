@@ -1,0 +1,37 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "mean next-bar share of move, thin minus heavy",
+    "value": -59.408004509828885,
+    "statistic": {
+      "name": "Welch t (thin minus heavy)",
+      "value": -0.9936739169470536
+    },
+    "threshold": "thin mean below heavy mean with Welch t of at least 2.0 (t <= -2.0 for thin minus heavy), and thin mean below 0"
+  },
+  "supporting_check": {
+    "name": "min of mean active-bar strategy return before costs over heavy-only and thin-only parts (vs holding BTC)",
+    "value": -0.0006089755246265695,
+    "passed": false,
+    "details": {
+      "thin_mean_share": -59.56769360392548,
+      "heavy_mean_share": -0.15968909409659476,
+      "heavy_part": {
+        "n": 138,
+        "mean_gain": 0.0009410449474562998,
+        "mean_hold": 0.0018938427297114876
+      },
+      "thin_part": {
+        "n": 169,
+        "mean_gain": -0.0006089755246265695,
+        "mean_hold": -0.0014911830805616096
+      }
+    }
+  },
+  "counts": {
+    "thin cases": 145,
+    "heavy cases": 120
+  },
+  "decided_by": "Inconclusive: thin is below heavy but the Welch t-stat is under 2.0 in magnitude.",
+  "reading": "Sharp-move bars are those labelled mean_reversion (thin) or trending (heavy), with the move as close[t]/close[t-1]-1 inside the window and only positive moves with a next bar in the same window kept. The supporting check passes when the mean active-bar strategy return (allocation != 0) is positive in both the heavy and thin parts, with the BTC hold return reported alongside. Thin significantly below heavy but not below 0 matches no rule literally and is reported as inconclusive."
+}

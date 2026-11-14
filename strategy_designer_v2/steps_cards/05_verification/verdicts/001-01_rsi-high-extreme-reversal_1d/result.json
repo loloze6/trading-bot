@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled excess forward 5-bar return after forecast <= -10 (vs holding baseline)",
+    "value": -0.011942852900325622,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -1.323130383155041
+    },
+    "threshold": "confirm if negative with t <= -2; reject if positive with t >= +2; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "number of coins with negative mean excess return",
+    "value": 2,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping extreme cases pooled": 60,
+    "coins": 2,
+    "coins with negative excess": 2
+  },
+  "decided_by": "The pooled t lies strictly between -2 and +2, meeting the inconclusive rule.",
+  "reading": "The holding baseline is the mean forward 5-bar return over all bars of each coin and window (not only grid bars), extreme cases are grid bars at positions 0,5,10,... with forecast <= -10, and 'at least 2 of the 3 coins' is applied literally as at least 2 coins negative, which with only BTC and ETH in the record means both."
+}

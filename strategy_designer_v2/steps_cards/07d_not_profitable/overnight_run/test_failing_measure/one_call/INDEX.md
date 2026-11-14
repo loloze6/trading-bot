@@ -1,0 +1,5 @@
+N1-04_rebound-after-large-drop_1d: 2 ideas (2 explorations)
+N3-04_dip-in-uptrend_1d: 3 ideas (2 explorations)
+N4-01_breakout-drift-lasts_1d: 3 ideas (2 explorations)
+N4-04_dip-rebound-spans-days_1d: 4 ideas (2 explorations)
+N7-01_drift-only-near-high_1d: 4 ideas (2 explorations)

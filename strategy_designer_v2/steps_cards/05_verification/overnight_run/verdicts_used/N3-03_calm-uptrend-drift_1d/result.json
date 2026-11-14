@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 5-bar forward return on long bars (fwd 5-bar return minus coin's mean 5-bar return), pooled, before costs",
+    "value": 0.004402649502442139,
+    "statistic": {
+      "name": "t of the mean on non-overlapping 5-bar blocks",
+      "value": 1.4934507286084227
+    },
+    "threshold": "confirm if mean > 0 and t >= 2; reject if mean < 0 and t <= -2 (t on non-overlapping 5-bar blocks); otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 5-bar return on forecast across long bars (should be > 0)",
+    "value": 0.00044676889240292397,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping 5-bar long cases pooled across coins": 897,
+    "long bars": 4439
+  },
+  "decided_by": "The result meets neither the confirm nor the reject rule (t between -2 and 2 or sign disagreeing), so it is inconclusive.",
+  "reading": "The coin's mean 5-bar return is taken over all its bars' forward returns in all windows; the mean excess is over all long bars while the t uses only long bars on each window's 0,5,10,... grid; the supporting slope is reported but not part of the decision since the confirm/reject rules do not mention it."
+}

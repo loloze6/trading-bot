@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean of next-bar return minus coin mean, short bars",
+    "value": -0.0010034878473360765,
+    "statistic": {
+      "name": "t of weighted mean",
+      "value": -0.538965584033823
+    },
+    "threshold": "t <= -2 with negative mean confirms; t >= +2 with positive mean rejects"
+  },
+  "supporting_check": {
+    "name": "down-bar share on active vs all bars (binomial z)",
+    "value": -0.01831913947093589,
+    "passed": false
+  },
+  "counts": {
+    "active bars": 434,
+    "down-cross stretches": 5
+  },
+  "decided_by": "Inconclusive: t lies strictly between -2 and +2.",
+  "reading": "Coin mean taken over all tested bars of all windows; t of the weighted mean uses the weighted variance with Kish effective n; a down-cross stretch is a run of bars with negative raw SMA spread containing an active bar; the supporting check passes when z >= 2."
+}

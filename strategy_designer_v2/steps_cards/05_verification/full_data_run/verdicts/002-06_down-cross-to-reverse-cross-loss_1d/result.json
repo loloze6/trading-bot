@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean excess short 1-bar return vs coin all-window mean",
+    "value": 6.572318858696761e-05,
+    "statistic": {
+      "name": "t of weighted mean (heteroskedasticity-robust weighted SE)",
+      "value": 0.11659547294673678
+    },
+    "threshold": "confirm if weighted mean excess short return > 0 with t >= 2; reject if < 0 with t <= -2; otherwise, or with fewer than 300 pooled forecast<0 bars, inconclusive"
+  },
+  "supporting_check": {
+    "name": "share of forecast<0 bars with next return below coin mean (binomial z vs 50%)",
+    "value": 0.5123624748609961,
+    "passed": true
+  },
+  "counts": {
+    "pooled bars with forecast below 0": 8453
+  },
+  "decided_by": "Inconclusive: the t-statistic lies between -2 and 2.",
+  "reading": "The situation is a raw spread below 0 with a negative forecast; the coin's mean is the mean of all its within-window next-bar returns over all its windows; the weighted mean's t uses the robust weighted standard error sqrt(sum w^2 (x-m)^2)/sum w with n/(n-1) correction; the supporting check passes when its binomial z is at least 2 (z = 2.2732)."
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forward 24-bar log return when forecast > 0 minus window mean over all bars",
+    "value": 0.00019610648794345632,
+    "statistic": {
+      "name": "one-sample t of mean excess on non-overlapping 24-bar blocks",
+      "value": -0.43539334996871226
+    },
+    "threshold": "confirm if excess > 0 with t >= 2; reject if excess < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "hit rate when forecast > 0 minus hit rate over all bars",
+    "value": -0.01253977245584914,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping 24-bar blocks with forecast above 0": 377,
+    "bars with forecast above 0": 8283
+  },
+  "decided_by": "Inconclusive: the t-statistic lies between -2 and 2.",
+  "reading": "The main measure's value is the mean, over all pooled bars with forecast > 0, of each bar's forward 24-bar log return minus its window's mean over all bars. Its t is the ordinary one-sample t of the same excess on greedy non-overlapping blocks, each started at the next bar with forecast > 0 and then skipping 24 bars. The hit-rate shares are pooled across windows. A reject also needs a supporting check that is not positive."
+}

@@ -1,0 +1,34 @@
+brief: n04_btc_daily_vol_timing_1d.md
+source: analyst round 1
+ideas:
+- id: falling_vol_momentum_vs_rising
+  belief: BTC momentum pays more while realized volatility is falling than while it
+    is rising, because a contracting vol state means fewer forced exits interrupting
+    the trend.
+  claim:
+    when: bars where 20-day realized vol is below its value 10 bars earlier
+    then: the 10-bar forward return in the direction of 20-day momentum is larger
+    compared_to: bars where 20-day realized vol is at or above its value 10 bars earlier
+    measure: mean_diff
+    horizon_bars: 10
+    direction: positive
+    min_effect: 0.01
+    code: 'vol20 = ret.rolling(20).std()
+
+      mom = df.close.pct_change(20)
+
+      ok = mom.notna() & vol20.shift(10).notna()
+
+      falling = vol20 < vol20.shift(10)
+
+      a = falling & ok
+
+      b = (~falling) & ok
+
+      signal = np.sign(mom).replace(0, 1).fillna(1)
+
+      '
+  why_no_lookahead: Vol, its 10-bar-earlier value and the 20-bar momentum all use
+    closes at or before the bar.
+  how_it_trades: Hold the 20-day momentum direction only while 20-day vol is below
+    its level 10 days ago; go flat when vol turns up.

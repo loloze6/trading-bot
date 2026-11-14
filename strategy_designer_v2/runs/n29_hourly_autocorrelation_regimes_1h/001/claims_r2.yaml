@@ -1,0 +1,38 @@
+brief: n29_hourly_autocorrelation_regimes_1h.md
+source: analyst round 2
+ideas:
+- id: six_hour_block_echo_net
+  belief: The same-hour echo that ranks next-hour returns on both coins also holds
+    for a 6-hour block, where the 6h return that starts now repeats or reverses the
+    same 6h block a day earlier according to the 14-day sign of their correlation,
+    and the block move is large enough to pay the cost.
+  claim:
+    when: bars where the 14-day correlation between each 6h return and the same 6h
+      return 24 hours earlier is clearly non-zero, one event per 6 bars
+    then: trading in the direction of that correlation's sign times yesterday's same
+      6h block return earns more than the round-trip cost over the next 6 hours
+    compared_to: zero after the 0.15% round-trip cost
+    measure: net_return
+    horizon_bars: 6
+    direction: positive
+    min_effect: 0.0005
+    code: 'r6 = df.close.pct_change(6)
+
+      acb = r6.rolling(336).corr(r6.shift(24))
+
+      echo = df.close.shift(18) / df.close.shift(24) - 1
+
+      cond = (acb.abs() > 0.10) & acb.notna() & echo.notna()
+
+      a = spaced(cond, 6)
+
+      b = ~a
+
+      signal = np.sign(acb) * np.sign(echo)
+
+      '
+  why_no_lookahead: The echo block runs from t-24 to t-18, and acb pairs r6 with r6
+    24 bars earlier, both ending at or before bar t. Only the judge's forward return
+    looks past t.
+  how_it_trades: At each event bar, go long or short for 6 hours in the direction
+    of sign(acb) times yesterday's same-block return, then exit.

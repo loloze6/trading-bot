@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "weighted mean next-bar return after heavy up bars minus after thin up bars",
+    "value": -0.0006635650609715525,
+    "statistic": {
+      "name": "weighted Welch t",
+      "value": -0.151697209379135
+    },
+    "threshold": "confirm if difference > 0 with t >= 2; reject if difference < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "weighted mean next-bar return after thin up bars minus unconditional mean daily return",
+    "value": 0.0010492632046988817,
+    "passed": false
+  },
+  "counts": {
+    "heavy forecast-bearing up bars": 151,
+    "thin forecast-bearing up bars": 194
+  },
+  "decided_by": "The t-statistic lies between -2 and 2 (inconclusive rule).",
+  "reading": "Heavy/thin up bars are taken as forecast-bearing bars with a positive one-bar move and a positive/negative forecast (the strategy's own volume classification), the volume check uses a 20-bar rolling mean including the current bar (bars without 20 bars of history left out of the agreement), the Welch t uses weighted means, unbiased weighted variances and effective sizes (sum w)^2/sum w^2, the plan's under-30 rule is reported as not observable, and the unconditional mean is the pooled mean of all next-bar returns inside the windows."
+}

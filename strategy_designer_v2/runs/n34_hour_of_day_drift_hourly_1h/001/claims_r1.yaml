@@ -1,0 +1,27 @@
+brief: n34_hour_of_day_drift_hourly_1h.md
+source: analyst round 1
+ideas:
+- id: weekday_asia_europe_morning_short_01_10_net
+  belief: On weekdays the whole 01:00 to 10:00 UTC morning (Asia then the Europe open)
+    carries a negative drift, and holding one short through the full block, with a
+    single round trip, pays the cost that the 3-hour Europe-only short could not.
+  claim:
+    when: weekday bars closing at 01:00 UTC
+    then: the close at 10:00 UTC is below the close at 01:00 UTC by more than the
+      round-trip cost
+    compared_to: zero after the 0.15% round-trip cost
+    measure: net_return
+    horizon_bars: 9
+    direction: positive
+    min_effect: 0.0005
+    code: 'a = (hour == 1) & (dow < 5)
+
+      b = ~a
+
+      signal = pd.Series(-1.0, index=df.index)
+
+      '
+  why_no_lookahead: The selector uses only the hour and weekday of the bar's own close
+    time, and entry is at that close.
+  how_it_trades: On each weekday, short spot at the 01:00 UTC close and buy back at
+    the 10:00 UTC close, one round trip per day.

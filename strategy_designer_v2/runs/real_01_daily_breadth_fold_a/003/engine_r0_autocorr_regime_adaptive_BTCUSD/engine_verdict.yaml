@@ -1,0 +1,147 @@
+claim: autocorr_regime_adaptive
+symbol: BTCUSD
+bar_size: 1d
+fold: A
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 204
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: -0.8542
+  median_window_sharpe: -1.9487
+  worst_window_drawdown: 0.613
+  trades: 486
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: -0.3202
+    trades: 71
+    sharpe: -2.3872
+    max_drawdown: 0.3578
+    exposure_pct: 96.6667
+    cost_drag_pct: 6.6349
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_BTCUSD/results/full_size/20261106T195236Z_e6b5a623
+    seconds: 3
+  - window: W2
+    net_return: -0.559
+    trades: 86
+    sharpe: -1.857
+    max_drawdown: 0.613
+    exposure_pct: 99.187
+    cost_drag_pct: 5.3462
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_BTCUSD/results/full_size/20261106T195240Z_e6b5a623
+    seconds: 4
+  - window: W3
+    net_return: -0.4616
+    trades: 71
+    sharpe: -2.1631
+    max_drawdown: 0.5482
+    exposure_pct: 97.541
+    cost_drag_pct: 5.2708
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_BTCUSD/results/full_size/20261106T195244Z_e6b5a623
+    seconds: 4
+  - window: W4
+    net_return: 0.2543
+    trades: 75
+    sharpe: 1.2724
+    max_drawdown: 0.1902
+    exposure_pct: 96.6667
+    cost_drag_pct: 13.4131
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_BTCUSD/results/full_size/20261106T195248Z_e6b5a623
+    seconds: 4
+  - window: W5
+    net_return: -0.3436
+    trades: 92
+    sharpe: -2.0404
+    max_drawdown: 0.4211
+    exposure_pct: 99.187
+    cost_drag_pct: 11.0811
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_BTCUSD/results/full_size/20261106T195251Z_e6b5a623
+    seconds: 4
+  - window: W6
+    net_return: 0.0975
+    trades: 91
+    sharpe: 0.7744
+    max_drawdown: 0.3256
+    exposure_pct: 99.1803
+    cost_drag_pct: 32.7717
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_BTCUSD/results/full_size/20261106T195255Z_e6b5a623
+    seconds: 4
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: -0.4533
+    median_window_sharpe: -1.94025
+    worst_window_drawdown: 0.2422
+    trades: 475
+  windows:
+  - window: W1
+    net_return: -0.1149
+    trades: 71
+    sharpe: -2.7496
+    max_drawdown: 0.128
+    exposure_pct: 96.6667
+    cost_drag_pct: 6.4976
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_BTCUSD/results/vol_target/20261106T195258Z_05671c45
+    seconds: 4
+  - window: W2
+    net_return: -0.1875
+    trades: 79
+    sharpe: -2.0055
+    max_drawdown: 0.2213
+    exposure_pct: 99.187
+    cost_drag_pct: 5.801
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_BTCUSD/results/vol_target/20261106T195302Z_05671c45
+    seconds: 4
+  - window: W3
+    net_return: -0.2009
+    trades: 71
+    sharpe: -2.2368
+    max_drawdown: 0.2422
+    exposure_pct: 97.541
+    cost_drag_pct: 5.4582
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_BTCUSD/results/vol_target/20261106T195306Z_05671c45
+    seconds: 4
+  - window: W4
+    net_return: 0.0691
+    trades: 73
+    sharpe: 0.8243
+    max_drawdown: 0.0943
+    exposure_pct: 96.6667
+    cost_drag_pct: 17.0884
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_BTCUSD/results/vol_target/20261106T195310Z_05671c45
+    seconds: 4
+  - window: W5
+    net_return: -0.164
+    trades: 90
+    sharpe: -1.875
+    max_drawdown: 0.2192
+    exposure_pct: 99.187
+    cost_drag_pct: 14.4922
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_BTCUSD/results/vol_target/20261106T195313Z_05671c45
+    seconds: 3
+  - window: W6
+    net_return: 0.0644
+    trades: 91
+    sharpe: 0.8205
+    max_drawdown: 0.1651
+    exposure_pct: 99.1803
+    cost_drag_pct: 24.6704
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_BTCUSD/results/vol_target/20261106T195317Z_05671c45
+    seconds: 4
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail

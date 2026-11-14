@@ -1,0 +1,57 @@
+claim: range_break_strength
+symbol: BTCUSD
+bar_size: 1h
+fold: A
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 269
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: -0.9524
+  median_window_sharpe: -11.5146
+  worst_window_drawdown: 0.9529
+  trades: 2514
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: -0.9524
+    trades: 2514
+    sharpe: -11.5146
+    max_drawdown: 0.9529
+    exposure_pct: 99.8958
+    cost_drag_pct: 106.0276
+    run_dir: strategy_designer_v2/tries/try_09/engine/results/full_size/20261106T185855Z_d178ec39
+    seconds: 29
+  checks:
+    net_positive_in_5_of_1: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: -0.634
+    median_window_sharpe: -12.1669
+    worst_window_drawdown: 0.6363
+    trades: 2514
+  windows:
+  - window: W1
+    net_return: -0.634
+    trades: 2514
+    sharpe: -12.1669
+    max_drawdown: 0.6363
+    exposure_pct: 99.8958
+    cost_drag_pct: 160.5167
+    run_dir: strategy_designer_v2/tries/try_09/engine/results/vol_target/20261106T185926Z_ea7bc35d
+    seconds: 31
+  checks:
+    net_positive_in_5_of_1: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail

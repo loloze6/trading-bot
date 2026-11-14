@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-bar return in-stretch minus out-of-stretch",
+    "value": 0.0014430839507602047,
+    "statistic": {
+      "name": "Welch t",
+      "value": 0.6989190030347062
+    },
+    "threshold": "positive with t >= 2 confirms; negative with t <= -2 rejects; |t| < 2 inconclusive"
+  },
+  "supporting_check": {
+    "name": "share of up next-bars in-stretch minus out-of-stretch",
+    "value": -0.00109645638010486,
+    "passed": false
+  },
+  "counts": {
+    "in-stretch bars": 290,
+    "out-of-stretch bars": 434,
+    "distinct up-cross stretches": 5
+  },
+  "decided_by": "|t| < 2, which the plan calls inconclusive.",
+  "reading": "Distinct up-cross stretches are counted as contiguous runs of positive raw SMA spread within each window, including a run already under way at the window's first bar, and the supporting check passes when the in-stretch up-share exceeds the out-of-stretch one."
+}

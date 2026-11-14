@@ -1,0 +1,48 @@
+claims_file: strategy_designer_v2/runs/real_01b_daily_breadth_ltc/001/claims_r1.yaml
+fold: B
+bar_size: 1d
+symbols:
+- BTCUSD
+- LTCUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  narrow_range_expansion:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.972806336702914
+        t_stat: -0.44
+        n_a: 40
+        n_b: 236
+        windows:
+        - 0.7397082040613225
+        - 0.8272744862711774
+        - 1.704391670492896
+        - 0.5187573579180178
+        - 1.2859088654544024
+        - 1.0566885824903554
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      LTCUSD:
+        verdict: fail
+        effect: 1.0456193279257404
+        t_stat: 0.2
+        n_a: 40
+        n_b: 233
+        windows:
+        - 0.9475948431097266
+        - 1.4252757406613563
+        - 1.2932737023089134
+        - 1.2646221310631696
+        - 0.8076861583947851
+        - 1.1100895415108176
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

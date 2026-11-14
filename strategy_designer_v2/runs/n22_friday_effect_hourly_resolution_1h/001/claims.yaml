@@ -1,0 +1,215 @@
+brief: n22_friday_effect_hourly_resolution_1h.md
+ideas:
+  - id: friday_full_day_vs_other_weekdays
+    belief: The daily Friday effect shows up at hourly resolution as a larger 24-hour return from Friday 00:00 UTC to Saturday 00:00 UTC than the same 24-hour span on Monday to Thursday.
+    claim:
+      when: the hourly bar closing Friday 00:00 UTC
+      then: the 24-bar forward return (Fri 00:00 to Sat 00:00 UTC) is higher
+      compared_to: the bars closing 00:00 UTC on Monday to Thursday
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.004
+      code: |
+        at0 = hour == 0
+        a = at0 & (dow == 4)
+        b = at0 & dow.isin([0, 1, 2, 3])
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The selector uses only the bar's own UTC timestamp, which is known at its close.
+    how_it_trades: Buy at the Friday 00:00 UTC close and sell 24 bars later at the Saturday 00:00 UTC close.
+  - id: friday_asia_session_drift
+    belief: The Friday premium is paid during the Asian session, as Asian participants position for the weekend before Europe opens.
+    claim:
+      when: the bar closing Friday 00:00 UTC
+      then: the 8-bar forward return (Fri 00:00 to 08:00 UTC) is higher
+      compared_to: the bars closing 00:00 UTC on Monday to Thursday
+      measure: mean_diff
+      horizon_bars: 8
+      direction: positive
+      min_effect: 0.002
+      code: |
+        at0 = hour == 0
+        a = at0 & (dow == 4)
+        b = at0 & dow.isin([0, 1, 2, 3])
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: Calendar-only selector evaluated at the bar's own close time.
+    how_it_trades: Long from the Friday 00:00 UTC close to the Friday 08:00 UTC close.
+  - id: friday_europe_morning_drift
+    belief: The Friday premium is concentrated in the European morning, before US equities open, as European desks de-risk shorts ahead of the weekend.
+    claim:
+      when: the bar closing Friday 08:00 UTC
+      then: the 6-bar forward return (Fri 08:00 to 14:00 UTC) is higher
+      compared_to: the bars closing 08:00 UTC on Monday to Thursday
+      measure: mean_diff
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.002
+      code: |
+        at8 = hour == 8
+        a = at8 & (dow == 4)
+        b = at8 & dow.isin([0, 1, 2, 3])
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: Calendar-only selector evaluated at the bar's own close time.
+    how_it_trades: Long from the Friday 08:00 UTC close to the Friday 14:00 UTC close.
+  - id: friday_us_session_drift
+    belief: The Friday premium lives in the US cash session, as US flows (ETF creations, risk-on equity tone into the weekly close) lift crypto.
+    claim:
+      when: the bar closing Friday 14:00 UTC
+      then: the 7-bar forward return (Fri 14:00 to 21:00 UTC) is higher
+      compared_to: the bars closing 14:00 UTC on Monday to Thursday
+      measure: mean_diff
+      horizon_bars: 7
+      direction: positive
+      min_effect: 0.002
+      code: |
+        at14 = hour == 14
+        a = at14 & (dow == 4)
+        b = at14 & dow.isin([0, 1, 2, 3])
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: Calendar-only selector evaluated at the bar's own close time.
+    how_it_trades: Long from the Friday 14:00 UTC close to the Friday 21:00 UTC close.
+  - id: friday_post_us_close_drift
+    belief: The Friday premium arrives after US equities close (21:00 to 24:00 UTC), when thin liquidity and weekend-long positioning push price up.
+    claim:
+      when: the bar closing Friday 21:00 UTC
+      then: the 3-bar forward return (Fri 21:00 to Sat 00:00 UTC) is higher
+      compared_to: the bars closing 21:00 UTC on Monday to Thursday
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.0015
+      code: |
+        at21 = hour == 21
+        a = at21 & (dow == 4)
+        b = at21 & dow.isin([0, 1, 2, 3])
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: Calendar-only selector evaluated at the bar's own close time.
+    how_it_trades: Long from the Friday 21:00 UTC close to the Saturday 00:00 UTC close.
+  - id: thursday_evening_prepositioning
+    belief: Part of the Friday daily return is front-run on Thursday evening, so the late-Thursday window from the US afternoon to the UTC day boundary is stronger than on other weekdays.
+    claim:
+      when: the bar closing Thursday 16:00 UTC
+      then: the 8-bar forward return (Thu 16:00 to Fri 00:00 UTC) is higher
+      compared_to: the bars closing 16:00 UTC on Monday, Tuesday and Wednesday
+      measure: mean_diff
+      horizon_bars: 8
+      direction: positive
+      min_effect: 0.002
+      code: |
+        at16 = hour == 16
+        a = at16 & (dow == 3)
+        b = at16 & dow.isin([0, 1, 2])
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: Calendar-only selector evaluated at the bar's own close time.
+    how_it_trades: Long from the Thursday 16:00 UTC close to the Friday 00:00 UTC close.
+  - id: friday_broad_hourly_drift
+    belief: The Friday effect is a broad drift rather than a few hours, so a larger share of Friday hours (00:00 to 23:00 UTC closes) close up than hours on other days.
+    claim:
+      when: every hourly bar whose close falls on Friday UTC
+      then: the next hour's return is positive more often
+      compared_to: every hourly bar whose close falls on Monday to Thursday UTC
+      measure: hit_rate
+      horizon_bars: 1
+      direction: positive
+      min_effect: 0.02
+      code: |
+        a = dow == 4
+        b = dow.isin([0, 1, 2, 3])
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: Calendar-only selector; the outcome is the next bar's return, which the judge computes itself.
+    how_it_trades: Hold long through every Friday UTC hour; a pass favors a whole-day hold over an hour-picking rule.
+  - id: friday_intraday_momentum
+    belief: On Fridays, return accumulated since 00:00 UTC predicts the next hours, because weekend-positioning flow is persistent within the day.
+    claim:
+      when: hourly bars closing Friday 03:00 to 20:00 UTC
+      then: the next 4-bar return rises with the return since the Friday 00:00 UTC close
+      compared_to: none (rank correlation on the Friday bars)
+      measure: rank_corr
+      horizon_bars: 4
+      direction: positive
+      min_effect: 0.06
+      code: |
+        c0 = df.close.where((dow == 4) & (hour == 0)).ffill()
+        feature = df.close / c0 - 1
+        a = (dow == 4) & hour.between(3, 20)
+        b = ~a
+    why_no_lookahead: The Friday 00:00 UTC close is forward-filled only into later bars, and the current close is known at the bar's close.
+    how_it_trades: On Friday, go long for 4 hours when the day is up since 00:00 UTC and stand aside when it is down.
+  - id: friday_after_down_week_rebound
+    belief: The Friday premium is larger after a falling week, because weekend short-covering is stronger when shorts have built up.
+    claim:
+      when: Friday UTC hourly bars where the 96-bar return into the Friday 00:00 UTC close was negative
+      then: the next hour's return is higher
+      compared_to: Friday UTC hourly bars where that 96-bar return was zero or positive
+      measure: mean_diff
+      horizon_bars: 1
+      direction: positive
+      min_effect: 0.0002
+      code: |
+        r96 = df.close / df.close.shift(96) - 1
+        wk = r96.where((dow == 4) & (hour == 0)).ffill()
+        fri = dow == 4
+        a = fri & (wk < 0)
+        b = fri & (wk >= 0)
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The weekly return is fixed at the Friday 00:00 UTC close from past bars and only forward-filled into later Friday bars.
+    how_it_trades: Hold long through Friday UTC hours only in weeks that were down into Friday 00:00 UTC.
+  - id: friday_high_participation_hours
+    belief: Friday upside is carried by hours with unusually high participation, when real weekend-positioning flow arrives, not by quiet hours.
+    claim:
+      when: Friday UTC bars whose volume exceeds the median volume of the same UTC hour over the prior 20 days
+      then: the 4-bar forward return is higher
+      compared_to: Friday UTC bars at or below that same-hour median volume
+      measure: mean_diff
+      horizon_bars: 4
+      direction: positive
+      min_effect: 0.001
+      code: |
+        med = df.volume.groupby(hour).transform(lambda s: s.shift(1).rolling(20).median())
+        fri = dow == 4
+        a = fri & (df.volume > med)
+        b = fri & (df.volume <= med)
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The same-hour median uses only prior days, shifted one occurrence, and the bar's own volume is known at its close.
+    how_it_trades: On Friday, go long for 4 hours after an hour whose volume is above its same-hour 20-day median.
+  - id: friday_us_session_net_profit
+    belief: Holding only the Friday US-session hours captures enough of the effect to pay the 0.15% round trip on every coin.
+    claim:
+      when: the bar closing Friday 14:00 UTC
+      then: a long held 7 bars to the Friday 21:00 UTC close earns a positive return net of cost
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 7
+      direction: positive
+      min_effect: 0.001
+      code: |
+        a = (dow == 4) & (hour == 14)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: Calendar-only selector evaluated at the bar's own close time.
+    how_it_trades: Buy at the Friday 14:00 UTC close and sell at the Friday 21:00 UTC close, once per week.
+  - id: friday_full_day_net_profit
+    belief: A single Friday 00:00 to 24:00 UTC hold, entered on hourly bars, pays the round-trip cost on all three coins.
+    claim:
+      when: the bar closing Friday 00:00 UTC
+      then: a long held 24 bars to the Saturday 00:00 UTC close earns a positive return net of cost
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.002
+      code: |
+        a = (dow == 4) & (hour == 0)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: Calendar-only selector evaluated at the bar's own close time.
+    how_it_trades: Buy at the Friday 00:00 UTC close and sell at the Saturday 00:00 UTC close, once per week.
+notes: >
+  Bar timestamps are close times, so "the bar closing Fri 14:00 UTC" covers 13:00 to 14:00, which includes the US equity
+  open at 13:30 UTC in northern summer and is one bar before it in winter.
+  The four session windows (00-08, 08-14, 14-21, 21-24 UTC) split the Friday day, and the Thursday-evening idea tests leakage
+  from the day before. Together they locate the effect.
+  Broad drift (hit_rate) and few-hours concentration (the session windows) may contradict each other; both are kept.
+  The two net_return claims answer the cost question. The full-day one restates the daily finding as an hourly-entry rule
+  and is the reference for whether a narrower window beats it.
+  Weekend and Monday ideas are excluded per already_tried.

@@ -1,0 +1,147 @@
+claim: friday_long_net_profit
+symbol: XMRUSD
+bar_size: 1d
+fold: B
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 200
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: 0.6552
+  median_window_sharpe: 0.4175
+  worst_window_drawdown: 0.1408
+  trades: 106
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: 0.026
+    trades: 18
+    sharpe: 0.4759
+    max_drawdown: 0.0745
+    exposure_pct: 13.8211
+    cost_drag_pct: 42.967
+    run_dir: strategy_designer_v2/runs/_replications/friday_long_net_profit/engine_friday_long_net_profit_XMRUSD/results/full_size/20261106T025645Z_e236a1a5
+    seconds: 3
+  - window: W2
+    net_return: 0.0097
+    trades: 17
+    sharpe: 0.2499
+    max_drawdown: 0.0576
+    exposure_pct: 14.1667
+    cost_drag_pct: 66.6168
+    run_dir: strategy_designer_v2/runs/_replications/friday_long_net_profit/engine_friday_long_net_profit_XMRUSD/results/full_size/20261106T025648Z_e236a1a5
+    seconds: 3
+  - window: W3
+    net_return: -0.1036
+    trades: 17
+    sharpe: -2.1942
+    max_drawdown: 0.1408
+    exposure_pct: 13.9344
+    cost_drag_pct: 18.5646
+    run_dir: strategy_designer_v2/runs/_replications/friday_long_net_profit/engine_friday_long_net_profit_XMRUSD/results/full_size/20261106T025650Z_e236a1a5
+    seconds: 3
+  - window: W4
+    net_return: 0.1709
+    trades: 18
+    sharpe: 2.7395
+    max_drawdown: 0.0394
+    exposure_pct: 14.6341
+    cost_drag_pct: 10.4641
+    run_dir: strategy_designer_v2/runs/_replications/friday_long_net_profit/engine_friday_long_net_profit_XMRUSD/results/full_size/20261106T025653Z_e236a1a5
+    seconds: 3
+  - window: W5
+    net_return: 0.4934
+    trades: 18
+    sharpe: 2.8285
+    max_drawdown: 0.0976
+    exposure_pct: 14.1667
+    cost_drag_pct: 4.2211
+    run_dir: strategy_designer_v2/runs/_replications/friday_long_net_profit/engine_friday_long_net_profit_XMRUSD/results/full_size/20261106T025655Z_e236a1a5
+    seconds: 2
+  - window: W6
+    net_return: 0.0193
+    trades: 18
+    sharpe: 0.3591
+    max_drawdown: 0.0882
+    exposure_pct: 13.9344
+    cost_drag_pct: 50.1191
+    run_dir: strategy_designer_v2/runs/_replications/friday_long_net_profit/engine_friday_long_net_profit_XMRUSD/results/full_size/20261106T025658Z_e236a1a5
+    seconds: 3
+  checks:
+    net_positive_in_5_of_6: true
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: true
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: 0.1694
+    median_window_sharpe: 0.45755
+    worst_window_drawdown: 0.0414
+    trades: 106
+  windows:
+  - window: W1
+    net_return: 0.0065
+    trades: 18
+    sharpe: 0.4715
+    max_drawdown: 0.0161
+    exposure_pct: 13.8211
+    cost_drag_pct: 37.1448
+    run_dir: strategy_designer_v2/runs/_replications/friday_long_net_profit/engine_friday_long_net_profit_XMRUSD/results/vol_target/20261106T025700Z_625ca49e
+    seconds: 2
+  - window: W2
+    net_return: 0.0054
+    trades: 17
+    sharpe: 0.4436
+    max_drawdown: 0.0172
+    exposure_pct: 14.1667
+    cost_drag_pct: 45.0653
+    run_dir: strategy_designer_v2/runs/_replications/friday_long_net_profit/engine_friday_long_net_profit_XMRUSD/results/vol_target/20261106T025703Z_625ca49e
+    seconds: 3
+  - window: W3
+    net_return: -0.0296
+    trades: 17
+    sharpe: -2.1216
+    max_drawdown: 0.0414
+    exposure_pct: 13.9344
+    cost_drag_pct: 19.4489
+    run_dir: strategy_designer_v2/runs/_replications/friday_long_net_profit/engine_friday_long_net_profit_XMRUSD/results/vol_target/20261106T025706Z_625ca49e
+    seconds: 3
+  - window: W4
+    net_return: 0.0638
+    trades: 18
+    sharpe: 2.825
+    max_drawdown: 0.015
+    exposure_pct: 14.6341
+    cost_drag_pct: 9.1728
+    run_dir: strategy_designer_v2/runs/_replications/friday_long_net_profit/engine_friday_long_net_profit_XMRUSD/results/vol_target/20261106T025708Z_625ca49e
+    seconds: 3
+  - window: W5
+    net_return: 0.1112
+    trades: 18
+    sharpe: 3.3013
+    max_drawdown: 0.0139
+    exposure_pct: 14.1667
+    cost_drag_pct: 3.4191
+    run_dir: strategy_designer_v2/runs/_replications/friday_long_net_profit/engine_friday_long_net_profit_XMRUSD/results/vol_target/20261106T025710Z_625ca49e
+    seconds: 2
+  - window: W6
+    net_return: 0.0074
+    trades: 18
+    sharpe: 0.4273
+    max_drawdown: 0.0214
+    exposure_pct: 13.9344
+    cost_drag_pct: 38.9922
+    run_dir: strategy_designer_v2/runs/_replications/friday_long_net_profit/engine_friday_long_net_profit_XMRUSD/results/vol_target/20261106T025713Z_625ca49e
+    seconds: 3
+  checks:
+    net_positive_in_5_of_6: true
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: true
+  verdict: fail

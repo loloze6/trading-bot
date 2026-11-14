@@ -1,0 +1,57 @@
+{
+  "line": "7.b",
+  "backtest": "N2-03_deep-month-loss-rebound_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.30395720000000004,
+  "findings": {
+    "F1": "The top-decile rebound is mostly the whole market bouncing, not the coin itself: the mean excess over the coin's own 20-bar mean is +3.3% (median +1.5%, hit 56%, t 1.85, 108 non-overlapping episodes), but against BTC's forward 20-bar return over the same bars it is \u22120.15% (hit 44%, t \u22120.10, 91 episodes), and the coin's forward return correlates 0.72 with BTC's.",
+    "F2": "The effect depends heavily on the period: top-decile excess is +13.7% in 2020 (t 3.5, n 9), +7.9% in 2022 (t 2.25, n 22) and +10.5% in 2023 (t 2.06, n 10), but \u22126.3% in 2018 (t \u22121.22, n 20) and \u22125.3% in 2024 (t \u22121.37, n 11); among windows, 15 of 22 have a positive mean.",
+    "F3": "The rebound is limited to falls that are still running: top-decile bars whose last 5 days were also down give +4.1% (hit 58%, t 1.98, n 88), while those that had already turned up over 5 days give \u22120.1% (t \u22120.05, n 20).",
+    "F4": "The rebound also needs the close to sit near the bottom of its 20-day range: with the close in the lowest quarter of the high-low range it is +5.8% (n 24) and +6.2% (t 1.87, n 35), against +0.1% (t 0.04, n 36) higher in the range; with the close within the lowest third of distance from its 5-day low it is +5.4% (t 2.02, n 32).",
+    "F5": "Raw depth splits the result in two directions: across all non-overlapping bars, 20-day falls deeper than 20% are followed by +3.5% (n 38) and +3.9% (n 65) excess, but falls of 10\u201320% are followed by \u22125.1% (hit 34%, t \u22122.36, n 88).",
+    "F6": "Among positive forecasts, forward excess rises steadily with forecast size: from \u22126.6% in the lowest quintile (hit 32%, t \u22122.94, n 85) to +3.7% in the top quintile (t 1.73, n 85). Small standardised declines therefore keep falling, and only large ones rebound. Because 24% of positive forecasts sit at the +20 cap, the top decile cannot separate the large declines from the extreme ones."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin has fallen more than about 20% over 20 days and is still falling over its last 5 days, closing in the bottom quarter of its 20-day range, it rises over the next 20 days by more than its usual 20-day move.",
+      "consequence": "A trader buying deep monthly falls should buy only while the fall is still running near its low, and refuse falls that have already bounced or are shallower.",
+      "name": "still-falling deep drop rebounds",
+      "from": "F3, F4, F5, F2",
+      "refs": [
+        "F3",
+        "F4",
+        "F5",
+        "F2"
+      ]
+    },
+    {
+      "idea": "When a coin has fallen a moderate 10\u201320% over 20 days, it keeps falling over the next 20 days by more than its usual 20-day move.",
+      "consequence": "A trader should refuse to buy moderate monthly falls, and can treat them as a continuation of the down move rather than a dip to buy.",
+      "name": "moderate drop keeps falling",
+      "from": "F5, F6",
+      "refs": [
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When a coin has fallen deeply over 20 days, its next 20-day return beats its usual move only in the periods when Bitcoin is also rebounding, so the coin's rise follows the market's bounce rather than its own.",
+      "consequence": "A trader should judge a deep-fall long by the market's rebound and expect no gain over simply holding Bitcoin.",
+      "name": "deep-drop rebound follows market",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "N2-03_deep-month-loss-rebound.b1_still-falling-deep-drop-rebounds",
+    "N2-03_deep-month-loss-rebound.b2_moderate-drop-keeps-falling",
+    "N2-03_deep-month-loss-rebound.b3_deep-drop-rebound-follows-market"
+  ],
+  "no_ideas": null
+}

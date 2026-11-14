@@ -1,0 +1,209 @@
+brief: n19_altcoin_daily_momentum_1d.md
+ideas:
+  - id: tsmom_3m_rank
+    belief: On older altcoins, investors absorb news slowly over weeks, so the past 3-month return ranks the next month's return.
+    claim:
+      when: every 11th daily bar with a defined 90-day return
+      then: the 20-day forward return rises with the past 90-day return
+      compared_to: not used (rank correlation on the sampled bars)
+      measure: rank_corr
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.10
+      code: |
+        mom = df.close / df.close.shift(90) - 1
+        feature = mom
+        a = spaced(mom.notna(), 10)
+        b = ~a
+    why_no_lookahead: The 90-day return uses closes at or before the bar.
+    how_it_trades: Size a long or short position in proportion to the rank of the 90-day return, rebalancing about every 10 days.
+
+  - id: tsmom_1m_herding_rank
+    belief: Altcoin retail herding produces short continuation, so the past 1-month return predicts the next 10 days.
+    claim:
+      when: every 6th daily bar with a defined 30-day return
+      then: the 10-day forward return rises with the past 30-day return
+      compared_to: not used
+      measure: rank_corr
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.10
+      code: |
+        mom = df.close / df.close.shift(30) - 1
+        feature = mom
+        a = spaced(mom.notna(), 5)
+        b = ~a
+    why_no_lookahead: The 30-day return uses past closes only.
+    how_it_trades: Go long after a positive 30-day return and short after a negative one, holding 10 days.
+
+  - id: tsmom_6m_bubble_reversal
+    belief: Six-month altcoin run-ups are speculative bubbles that deflate, so a long-horizon return reverses (the opposite of the trend ideas).
+    claim:
+      when: every 21st daily bar with a defined 180-day return
+      then: the 30-day forward return falls as the past 180-day return rises
+      compared_to: not used
+      measure: rank_corr
+      horizon_bars: 30
+      direction: negative
+      min_effect: 0.10
+      code: |
+        mom = df.close / df.close.shift(180) - 1
+        feature = mom
+        a = spaced(mom.notna(), 20)
+        b = ~a
+    why_no_lookahead: The 180-day return uses past closes only.
+    how_it_trades: Cut longs or go short after the largest 6-month gains, and buy after the deepest 6-month losses.
+
+  - id: risk_adjusted_mom_rank
+    belief: A trend that is large relative to its own noise is real, not a lucky jump, so a volatility-scaled 60-day return ranks future returns.
+    claim:
+      when: every 11th daily bar with a defined 60-day t-stat
+      then: the 20-day forward return rises with the sum of 60-day returns divided by their standard deviation
+      compared_to: not used
+      measure: rank_corr
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.10
+      code: |
+        feature = ret.rolling(60).sum() / ret.rolling(60).std()
+        a = spaced(feature.notna(), 10)
+        b = ~a
+    why_no_lookahead: The rolling sum and standard deviation cover bars up to and including the current close.
+    how_it_trades: Take a position whose size and side follow the volatility-scaled momentum score.
+
+  - id: long_only_2m_trend_net
+    belief: Altcoins have positive drift only while in uptrends, so being long only after a positive 2-month return pays after cost.
+    claim:
+      when: bars with a positive 60-day return, at most one every 21 bars
+      then: holding long for 20 days earns a positive return net of cost
+      compared_to: the cost of one round trip
+      measure: net_return
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.02
+      code: |
+        mom = df.close / df.close.shift(60) - 1
+        a = spaced(mom > 0, 20)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The 60-day return is known at the close.
+    how_it_trades: Buy at the close when the 60-day return is positive, hold 20 days, and stay flat otherwise.
+
+  - id: long_short_2m_trend_net
+    belief: Altcoins crash as persistently as they rally, so following the sign of the 2-month return on both sides pays after cost.
+    claim:
+      when: every 21st bar with a defined 60-day return
+      then: a position in the direction of the 60-day return's sign earns a positive 20-day return net of cost
+      compared_to: the cost of one round trip
+      measure: net_return
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.015
+      code: |
+        mom = df.close / df.close.shift(60) - 1
+        a = spaced(mom.notna() & (mom != 0), 20)
+        b = ~a
+        signal = np.sign(mom)
+    why_no_lookahead: The sign comes from closes at or before the bar.
+    how_it_trades: Go long or short on the sign of the 60-day return and rebalance every 20 days.
+
+  - id: momentum_better_in_calm
+    belief: Momentum works in calm regimes and fails in turbulent ones, which is why scaling exposure down in high volatility should help.
+    claim:
+      when: bars where 30-day volatility is below its 1-year median
+      then: the sign of the 90-day return predicts the 20-day forward return better
+      compared_to: bars where 30-day volatility is at or above its 1-year median
+      measure: mean_diff
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.01
+      code: |
+        mom = df.close / df.close.shift(90) - 1
+        vol = ret.rolling(30).std()
+        low = vol < vol.rolling(365).median()
+        ok = mom.notna() & vol.rolling(365).median().notna()
+        a = spaced(ok & low, 10)
+        b = spaced(ok & ~low, 10)
+        signal = np.sign(mom)
+    why_no_lookahead: Volatility, its median and the momentum all use past bars only.
+    how_it_trades: Follow the 90-day trend with full size in calm regimes and reduced or no size in turbulent ones.
+
+  - id: vol_clustering_for_scaling
+    belief: Altcoin volatility clusters at monthly scale, so high trailing volatility forecasts large moves and justifies scaling positions by volatility.
+    claim:
+      when: bars where 30-day volatility is above its 1-year 80th percentile
+      then: the absolute 20-day forward return is larger
+      compared_to: bars at or below that percentile
+      measure: abs_ratio
+      horizon_bars: 20
+      direction: above
+      min_effect: 1.30
+      code: |
+        vol = ret.rolling(30).std()
+        q = vol.rolling(365).quantile(0.8)
+        a = spaced(q.notna() & (vol > q), 10)
+        b = spaced(q.notna() & (vol <= q), 10)
+    why_no_lookahead: The trailing volatility and its rolling quantile use past bars only.
+    how_it_trades: Divide the momentum position size by trailing 30-day volatility.
+
+  - id: volume_confirmed_uptrend
+    belief: An uptrend backed by rising participation reflects new money arriving and lasts longer than one on fading volume.
+    claim:
+      when: bars with a positive 60-day return and 30-day mean volume above 180-day mean volume
+      then: the 20-day forward return is higher
+      compared_to: bars with a positive 60-day return and 30-day mean volume at or below 180-day mean volume
+      measure: mean_diff
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.015
+      code: |
+        mom = df.close / df.close.shift(60) - 1
+        vup = df.volume.rolling(30).mean() > df.volume.rolling(180).mean()
+        ok = (mom > 0) & df.volume.rolling(180).mean().notna()
+        a = spaced(ok & vup, 10)
+        b = spaced(ok & ~vup, 10)
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: Volume averages and the return use bars up to the current close.
+    how_it_trades: Go long on a positive 60-day return only when volume is expanding.
+
+  - id: smooth_trend_frog_in_pan
+    belief: Trends built from many small up days go unnoticed and persist, while trends made of a few jumps get priced at once, so the share of up days ranks future returns.
+    claim:
+      when: every 11th bar with a defined 90-day up-day share
+      then: the 20-day forward return rises with the fraction of positive days over the past 90 days
+      compared_to: not used
+      measure: rank_corr
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.08
+      code: |
+        feature = (ret > 0).astype(float).rolling(90).mean()
+        a = spaced(feature.notna() & ret.notna(), 10)
+        b = ~a
+    why_no_lookahead: The share of up days counts past returns only.
+    how_it_trades: Go long when most of the last 90 days closed up and short when most closed down.
+
+  - id: near_6m_high_anchoring
+    belief: Traders anchor on the recent 6-month high and sell into it, so coins closing near that high underreact and keep rising.
+    claim:
+      when: every 11th bar with a defined 180-day high
+      then: the 20-day forward return rises with the close divided by the 180-day high
+      compared_to: not used
+      measure: rank_corr
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.10
+      code: |
+        feature = df.close / df.high.rolling(180).max()
+        a = spaced(feature.notna(), 10)
+        b = ~a
+    why_no_lookahead: The rolling 180-day high includes only bars up to the current one.
+    how_it_trades: Go long when price is within a few percent of its 6-month high and stay flat otherwise.
+
+notes: >-
+  Trend horizons are counted in calendar days because crypto trades 7 days a week (30 = 1 month, 60 = 2 months, 90 = 3 months, 180 = 6 months).
+  Samples are spaced to limit overlap between forward windows.
+  The 6-month reversal deliberately contradicts the trend ideas.
+  Volatility scaling cannot be expressed as a ±1 signal, so it is tested indirectly: through vol clustering (abs_ratio) and through momentum quality by vol regime (mean_diff).
+  The already-tried 12-month rank and MA/breakout rules on other coins are avoided.
+  The 6-month-high anchoring idea is a continuous ranking, not a breakout trigger.

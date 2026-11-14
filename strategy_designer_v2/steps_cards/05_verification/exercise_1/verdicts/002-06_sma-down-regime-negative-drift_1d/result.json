@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "in-state (forecast<0) mean next-bar return minus all-bars mean, pooled",
+    "value": -0.000578030864254778,
+    "threshold": "<= -0.10% per day with stretch-clustered t <= -2 to confirm; >= 0 to reject"
+  },
+  "supporting_check": {
+    "name": "down-bar share in stretches minus down-bar share over all bars",
+    "value": -0.00043918832904754623,
+    "passed": false,
+    "details": {
+      "t_stat_clustered": -0.312945769609508,
+      "down_share_in_state": 0.5230414746543779,
+      "down_share_all": 0.5234806629834254,
+      "equity_end_multiple_before_costs": 0.9423561551789104,
+      "equity_above_flat": false,
+      "strategy_return_in_state": -0.03783408506289121,
+      "hold_return_in_state": -0.30066412799245623,
+      "beats_hold_in_state": true
+    }
+  },
+  "cases": 5,
+  "decided_by": "Inconclusive: the difference is negative but t > -2, or it is smaller than 0.10% per day, or the down-bar share condition of the confirm rule is not met.",
+  "reading": "A stretch is a run of consecutive bars with forecast < 0 inside one window, cases counts stretches holding at least one in-state bar with a next-bar return, the clustered t treats the all-bars mean as fixed with a G/(G-1) correction, a down bar is a negative next-bar return, and the equity-curve parts of the supporting check are reported but only the down-share condition named in the confirm rule enters the decision."
+}

@@ -1,0 +1,31 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "mean excess 10-bar return of long blocks over all-block mean",
+    "value": 0.004661847936267742,
+    "threshold": "> 0 with t >= 2 to confirm; <= 0 to reject",
+    "t_stat": 0.295679652303545,
+    "baseline_mean_all_blocks": 0.004740286519581286,
+    "n_all_blocks": 70,
+    "windows_with_long_blocks": 4,
+    "windows_positive_excess": 2,
+    "per_window_excess": {
+      "BTCUSD:w1": -0.13046602146018596,
+      "BTCUSD:w4": 0.034611203736133196,
+      "BTCUSD:w5": -0.004163664073779419,
+      "BTCUSD:w6": 0.025476396975569644
+    }
+  },
+  "supporting_check": {
+    "name": "hit rate of long blocks minus unconditional hit rate",
+    "value": -0.03152709359605904,
+    "passed": false,
+    "hit_rate_long": 0.4827586206896552,
+    "hit_rate_all": 0.5142857142857142,
+    "slope_return_on_forecast": -0.00027366833536417406,
+    "slope_positive": false
+  },
+  "cases": 29,
+  "decided_by": "Inconclusive: the excess is > 0 but t = 0.295679652303545 is below 2; the long hit rate is not above the unconditional hit rate; the excess is positive in only 2 windows (needs 4).",
+  "reading": "Blocks are consecutive non-overlapping 10-bar blocks starting at each window's first row, and a block is long when the forecast at its start is > 0. The baseline is the pooled mean over all blocks of all windows, and the per-window excess is that window's long-block mean minus this pooled baseline. The t-stat is a one-sample t on the long-block excess returns. 'Carried by a single window' is read as the excess being positive in only one window; with fewer than 4 windows containing long blocks, confirmation cannot be met."
+}

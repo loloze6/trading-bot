@@ -1,0 +1,29 @@
+run: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001
+observations:
+  - Only europe_open_distribution_weekday_07_10 passed the judge, with effects of 0.0018 (BTC), 0.0025 (ETH) and 0.0018 (LTC) against a min_effect of 0.001.
+  - In the engine, that same Europe-open short lost money at full size on BTC (-14.3%) and LTC (-48.5%), and was flat on ETH (+0.08%); no symbol was net positive in 5 of 6 windows.
+  - The judge and the engine disagree on the Europe-open short. Engine W3, W4 and W5 were negative on all three coins (BTC -15.6%, -6.5%, -11.7%), while the judge's BTC windows 3 to 5 were all positive (0.0006, 0.0019, 0.0012). This points to the relative mean_diff hiding a small absolute edge that the cost eats (BTC W4 cost drag 483%).
+  - The weekday Asia morning long (01:00 to 05:00) was clearly wrong in direction on every coin, at -0.0015 (BTC), -0.0016 (ETH) and -0.0020 (LTC), with ETH negative in 5 of 6 windows.
+  - The US-close-to-Asia long (22:00 to 02:00) lost after cost on every coin (BTC -0.0024, ETH -0.0018, LTC -0.0020), which implies a gross 4-bar drift of about -0.0009 for BTC.
+  - The 00:00 to 02:00 DCA long was also wrong in direction on all three coins (BTC -0.00052, ETH -0.00090, LTC -0.00077), so the late-US to Asia-morning hours lean negative as a block.
+  - The benchmark-fix run-up (19:00 to 21:00) nearly held. The sign was positive on all three coins, but only LTC (0.00084) cleared 0.0008, and BTC reached just 0.0003 with 4 of 6 positive windows.
+  - The pre-funding short was a BTC-only effect: positive in 6 of 6 BTC windows but at 0.00027 (below 0.0004), and negative on ETH (-0.00007) and LTC (-0.00008).
+  - The single-trip 01:00 to 10:00 short failed mainly in window 4, which was negative on all coins (BTC -0.0038, ETH -0.0044, LTC -0.0030), so Asia mornings rallied in that window.
+next_claim:
+  id: weekday_overnight_short_22_05_net
+  belief: On weekdays the hours from the US close through the Asian morning (22:00 to 05:00 UTC) carry a negative absolute drift, and one short held through the whole block, with a single round trip, pays the cost.
+  claim:
+    when: weekday bars closing at 22:00 UTC (Monday to Friday)
+    then: price falls over the next 7 hours, to 05:00 UTC, by more than the round-trip cost
+    compared_to: zero after the 0.15% round-trip cost
+    measure: net_return
+    horizon_bars: 7
+    direction: positive
+    min_effect: 0.0005
+    code: |
+      a = (hour == 22) & (dow < 5)
+      b = ~a
+      signal = pd.Series(-1.0, index=df.index)
+  why_no_lookahead: The selector uses only the clock hour and weekday of the current bar, and the forward return is computed by the judge.
+  how_it_trades: Sell short at the 22:00 UTC close on weekdays and buy back at the 05:00 UTC close, one round trip per day.
+why: Three failed longs (22-02, 00-02, 01-05) all came out negative on every coin, so this tests whether that block's drift is negative in absolute terms and pays cost on its own, the gap that sank the relative-only Europe-open pass in the engine.

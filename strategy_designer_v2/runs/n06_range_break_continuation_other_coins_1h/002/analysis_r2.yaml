@@ -1,0 +1,37 @@
+run: n06_range_break_continuation_other_coins_1h / fold A (try folder not named in record.yaml)
+observations:
+  - The BTC mechanism did not carry over. The 3x-vol 24h break beat inside-range big bars by only +0.07% on SOL against the 0.6% asked, and its windows split 3 of 6.
+  - AVAX's +1.16% on that same claim came mostly from one window. Window 2 was +6.7%, and the sign held in only 3 of 6 windows.
+  - The 7-day range break (net_return, 24 bars) passed on SOL at +0.80% after cost with 5 of 6 windows positive. It failed on AVAX at +1.02% because window 2 (+5.0%) carried it and only 3 of 6 windows were positive.
+  - Weekly momentum held for a day (net_return, 24 bars) nearly held on both coins. SOL passed at +0.33% with 5 of 6 windows. AVAX had 5 of 6 windows positive but reached +0.28% against the 0.30% asked, so the belief looks right and the number asked was slightly too high.
+  - Volume-confirmed breaks split the coins. SOL passed at +1.17% with 5 of 6 windows, while AVAX was -0.19% with 3 of 6.
+  - A first close beyond the prior UTC day's high or low kept its sign in 5 of 6 windows on SOL and 4 of 6 on AVAX. Its size was only +0.22% and +0.26%, under the 0.4% asked.
+  - Fading did not pay on SOL. Fading big inside-range bars returned -0.39% net, and fading rejected 24h-range pierces returned -0.24% net. On AVAX the two were +0.34% and +0.07%, each with 3 of 6 windows positive.
+  - Breaks are followed by less volatility than inside-range big bars, the opposite of the belief. The abs_ratio was 0.82 on SOL and 0.76 on AVAX.
+  - How far a close lands past the 24h range does not scale the follow-through. The rank correlation was -0.005 on SOL and -0.020 on AVAX.
+  - Window 2 is an AVAX outlier across claims (+6.7%, +5.0%, +3.1%). Any AVAX pass that leans on it should be distrusted.
+next_claim:
+  id: trend_aligned_24h_break
+  belief: On SOL and AVAX, a 24h-range break continues only when the slow weekly trend is behind it, because the trend-following flow seen in the weekly results is what carries a break.
+  claim:
+    when: the first close beyond the prior 24h high in a week that is up, or below the prior 24h low in a week that is down (168-bar return sign)
+    then: price keeps moving in the break direction over the next 24 bars
+    compared_to: first closes beyond the prior 24h range that go against the weekly trend
+    measure: mean_diff
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.005
+    code: |
+      r168 = df.close / df.close.shift(168) - 1
+      hi24 = df.high.rolling(24).max().shift(1)
+      lo24 = df.low.rolling(24).min().shift(1)
+      up = (df.close > hi24) & (df.close.shift(1) <= hi24.shift(1))
+      dn = (df.close < lo24) & (df.close.shift(1) >= lo24.shift(1))
+      brk = (up | dn) & r168.notna()
+      with_trend = (up & (r168 > 0)) | (dn & (r168 < 0))
+      a = spaced(brk & with_trend, 24)
+      b = spaced(brk & ~with_trend, 24)
+      signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+  why_no_lookahead: The 168-bar return, the 24h high/low (shifted one bar) and the break test all use closes at or before the signal bar.
+  how_it_trades: Enter in the break direction at the close of a trend-aligned 24h break and exit 24 bars later.
+why: Plain 24h breaks failed on both coins while the weekly level and weekly trend held 5 of 6 windows. This tests whether the weekly trend is what makes a break continue. The 0.5% bar is above the 0.4% where the trend-blind day breaks stalled.

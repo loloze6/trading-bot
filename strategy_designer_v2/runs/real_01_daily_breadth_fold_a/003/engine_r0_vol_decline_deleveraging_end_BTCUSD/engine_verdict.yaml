@@ -1,0 +1,147 @@
+claim: vol_decline_deleveraging_end
+symbol: BTCUSD
+bar_size: 1d
+fold: A
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 200
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: -0.2303
+  median_window_sharpe: 0.1598
+  worst_window_drawdown: 0.4146
+  trades: 266
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: -0.3614
+    trades: 50
+    sharpe: -1.016
+    max_drawdown: 0.4146
+    exposure_pct: 99.1667
+    cost_drag_pct: 3.8927
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_BTCUSD/results/full_size/20261106T195114Z_cbdab34d
+    seconds: 3
+  - window: W2
+    net_return: -0.0125
+    trades: 51
+    sharpe: 0.3637
+    max_drawdown: 0.2629
+    exposure_pct: 99.187
+    cost_drag_pct: 358.0187
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_BTCUSD/results/full_size/20261106T195118Z_cbdab34d
+    seconds: 3
+  - window: W3
+    net_return: 0.2067
+    trades: 34
+    sharpe: 1.0954
+    max_drawdown: 0.2216
+    exposure_pct: 99.1803
+    cost_drag_pct: 7.3668
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_BTCUSD/results/full_size/20261106T195121Z_cbdab34d
+    seconds: 3
+  - window: W4
+    net_return: -0.1025
+    trades: 38
+    sharpe: -0.4566
+    max_drawdown: 0.3589
+    exposure_pct: 99.1667
+    cost_drag_pct: 12.6844
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_BTCUSD/results/full_size/20261106T195125Z_cbdab34d
+    seconds: 3
+  - window: W5
+    net_return: -0.0286
+    trades: 51
+    sharpe: -0.0441
+    max_drawdown: 0.2082
+    exposure_pct: 99.187
+    cost_drag_pct: 82.2981
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_BTCUSD/results/full_size/20261106T195128Z_cbdab34d
+    seconds: 3
+  - window: W6
+    net_return: 0.1601
+    trades: 42
+    sharpe: 1.6182
+    max_drawdown: 0.0935
+    exposure_pct: 99.1803
+    cost_drag_pct: 8.251
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_BTCUSD/results/full_size/20261106T195131Z_cbdab34d
+    seconds: 3
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: -0.0555
+    median_window_sharpe: 0.1372
+    worst_window_drawdown: 0.1768
+    trades: 263
+  windows:
+  - window: W1
+    net_return: -0.16
+    trades: 48
+    sharpe: -1.4931
+    max_drawdown: 0.1768
+    exposure_pct: 99.1667
+    cost_drag_pct: 3.5587
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_BTCUSD/results/vol_target/20261106T195135Z_e18f9424
+    seconds: 3
+  - window: W2
+    net_return: 0.0162
+    trades: 53
+    sharpe: 0.3175
+    max_drawdown: 0.0946
+    exposure_pct: 99.187
+    cost_drag_pct: 23.1059
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_BTCUSD/results/vol_target/20261106T195138Z_e18f9424
+    seconds: 4
+  - window: W3
+    net_return: 0.0631
+    trades: 33
+    sharpe: 0.7161
+    max_drawdown: 0.1003
+    exposure_pct: 99.1803
+    cost_drag_pct: 8.0136
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_BTCUSD/results/vol_target/20261106T195142Z_e18f9424
+    seconds: 4
+  - window: W4
+    net_return: -0.0096
+    trades: 40
+    sharpe: -0.0431
+    max_drawdown: 0.15
+    exposure_pct: 99.1667
+    cost_drag_pct: 102.4469
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_BTCUSD/results/vol_target/20261106T195145Z_e18f9424
+    seconds: 3
+  - window: W5
+    net_return: -0.0503
+    trades: 48
+    sharpe: -0.5835
+    max_drawdown: 0.1463
+    exposure_pct: 99.187
+    cost_drag_pct: 14.3671
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_BTCUSD/results/vol_target/20261106T195148Z_e18f9424
+    seconds: 3
+  - window: W6
+    net_return: 0.1066
+    trades: 41
+    sharpe: 1.9969
+    max_drawdown: 0.0442
+    exposure_pct: 99.1803
+    cost_drag_pct: 6.1662
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_BTCUSD/results/vol_target/20261106T195152Z_e18f9424
+    seconds: 3
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: true
+  verdict: fail

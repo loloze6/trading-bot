@@ -1,0 +1,8 @@
+---
+side: long and short
+source: TradingView, "SMAcross-mvr" (SMAcross-mvrNew v2) by vmedaram1, with the strategy listing page it was pasted from
+---
+When a short-run average of price crosses a longer-run average, or when price itself crosses the longer average, a new trend has started and will tend to continue in the direction of the cross long enough to be captured. The position then stays on that side until the opposite cross shows the trend has turned. The source gives no reason for this beyond calling the cross a sign of trend. The reason here is mine. In crypto, information and attention spread slowly across many small, retail-heavy participants. Late buyers chase rising prices and holders sell as losses grow, so moves that have started tend to feed themselves for a while rather than reverse at once. The theory is wrong if price changes after a cross are no more likely to follow the direction of the cross than changes at random times. It is also wrong if price tends to reverse soon after crosses, so that the whipsaw losses between crosses outweigh the trending stretches.
+
+short-name: moving-average-crossover-trend-persistence
+other-theories: Extreme short-run deviation from the mean (z-score) reverts within the trading session | Short-term oversold dips inside a longer uptrend snap back to the fast average | Price stretched far below a long average tends to recover toward it | An extended, fully ordered trend snaps back sharply when price crosses back through its fastest average | A strong impulse candle followed by a pullback and a confirmation candle signals continuation

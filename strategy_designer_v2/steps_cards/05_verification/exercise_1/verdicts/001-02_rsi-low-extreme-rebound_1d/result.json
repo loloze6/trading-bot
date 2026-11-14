@@ -1,0 +1,16 @@
+{
+  "status": "rejected",
+  "main_measure": {
+    "name": "top-quintile minus zero-forecast forward 5-bar return",
+    "value": -0.014035622844866891,
+    "threshold": "> 0 with t-stat >= 2 (pooled, non-overlapping), positive in >= 2 coins"
+  },
+  "supporting_check": {
+    "name": "Spearman rank correlation of forecast vs forward 5-bar return (forecast > 0)",
+    "value": -0.09889318666777301,
+    "passed": false
+  },
+  "cases": 102,
+  "decided_by": "Pooled excess return is at or below 0 and non-positive in 2 coins (>= 2), so rejected.",
+  "reading": "Top quintile is forecast >= the 80th percentile of all positive forecasts pooled across coins and windows; non-overlap is enforced greedily within each coin-window for each group (top, zero, positive) keeping bars at least 5 bars apart; the t-statistic is Welch's two-sample t of top versus zero samples; with only the coins present in the record, 'at least 2 of the 3 coins' is applied as a count of at least 2 among those coins (so both when two are present); the supporting check passes if the Spearman correlation is above 0 and does not enter the decision."
+}

@@ -1,0 +1,147 @@
+claim: autocorr_regime_adaptive
+symbol: ADAUSD
+bar_size: 1d
+fold: A
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 204
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: -0.9113
+  median_window_sharpe: -0.3499
+  worst_window_drawdown: 0.6566
+  trades: 500
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: -0.3695
+    trades: 67
+    sharpe: -0.8738
+    max_drawdown: 0.441
+    exposure_pct: 99.1667
+    cost_drag_pct: 5.5236
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_ADAUSD/results/full_size/20261106T195321Z_e6b5a623
+    seconds: 3
+  - window: W2
+    net_return: -0.2221
+    trades: 96
+    sharpe: 0.2447
+    max_drawdown: 0.5826
+    exposure_pct: 95.935
+    cost_drag_pct: 18.9486
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_ADAUSD/results/full_size/20261106T195325Z_e6b5a623
+    seconds: 4
+  - window: W3
+    net_return: -0.5994
+    trades: 94
+    sharpe: -2.3167
+    max_drawdown: 0.6566
+    exposure_pct: 99.1803
+    cost_drag_pct: 6.504
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_ADAUSD/results/full_size/20261106T195329Z_e6b5a623
+    seconds: 4
+  - window: W4
+    net_return: -0.5475
+    trades: 79
+    sharpe: -3.1351
+    max_drawdown: 0.5599
+    exposure_pct: 99.1667
+    cost_drag_pct: 4.3076
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_ADAUSD/results/full_size/20261106T195332Z_e6b5a623
+    seconds: 4
+  - window: W5
+    net_return: -0.0438
+    trades: 92
+    sharpe: 0.174
+    max_drawdown: 0.4435
+    exposure_pct: 99.187
+    cost_drag_pct: 18971.05
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_ADAUSD/results/full_size/20261106T195336Z_e6b5a623
+    seconds: 4
+  - window: W6
+    net_return: 0.0436
+    trades: 72
+    sharpe: 0.5997
+    max_drawdown: 0.3873
+    exposure_pct: 99.1803
+    cost_drag_pct: 51.1166
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_ADAUSD/results/full_size/20261106T195340Z_e6b5a623
+    seconds: 4
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: -0.3127
+    median_window_sharpe: -0.30879999999999996
+    worst_window_drawdown: 0.2571
+    trades: 479
+  windows:
+  - window: W1
+    net_return: -0.0379
+    trades: 59
+    sharpe: -0.4582
+    max_drawdown: 0.08
+    exposure_pct: 99.1667
+    cost_drag_pct: 14.7919
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_ADAUSD/results/vol_target/20261106T195343Z_05671c45
+    seconds: 4
+  - window: W2
+    net_return: 0.0067
+    trades: 89
+    sharpe: 0.2039
+    max_drawdown: 0.1275
+    exposure_pct: 95.935
+    cost_drag_pct: 59.6416
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_ADAUSD/results/vol_target/20261106T195347Z_05671c45
+    seconds: 4
+  - window: W3
+    net_return: -0.2255
+    trades: 94
+    sharpe: -2.6717
+    max_drawdown: 0.2571
+    exposure_pct: 99.1803
+    cost_drag_pct: 6.0396
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_ADAUSD/results/vol_target/20261106T195351Z_05671c45
+    seconds: 4
+  - window: W4
+    net_return: -0.1919
+    trades: 76
+    sharpe: -3.1506
+    max_drawdown: 0.2001
+    exposure_pct: 99.1667
+    cost_drag_pct: 4.9589
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_ADAUSD/results/vol_target/20261106T195355Z_05671c45
+    seconds: 4
+  - window: W5
+    net_return: -0.0323
+    trades: 91
+    sharpe: -0.1594
+    max_drawdown: 0.2374
+    exposure_pct: 99.187
+    cost_drag_pct: 121.5517
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_ADAUSD/results/vol_target/20261106T195358Z_05671c45
+    seconds: 4
+  - window: W6
+    net_return: 0.1717
+    trades: 70
+    sharpe: 1.5213
+    max_drawdown: 0.1594
+    exposure_pct: 99.1803
+    cost_drag_pct: 9.509
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_autocorr_regime_adaptive_ADAUSD/results/vol_target/20261106T195402Z_05671c45
+    seconds: 4
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail

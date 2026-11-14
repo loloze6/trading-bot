@@ -1,0 +1,32 @@
+brief: real_01_daily_breadth_fold_a.md
+source: analyst round 2
+ideas:
+- id: trend_with_short_pullback
+  belief: 'The 20-day fade lost exactly where a slow trend persisted (W4, W6 on both
+    coins), so short-term stretches should be faded only as entries in the direction
+    of the slower 60-day trend: pullbacks inside a trend get bought, extensions inside
+    a downtrend get sold.'
+  claim:
+    when: every daily bar
+    then: the next 10 days' return leans with the 60-day return and against the 5-day
+      return, each in units of the prior 60-day daily volatility
+    compared_to: bars where the 5-day move runs in the same direction as the 60-day
+      trend, or where the 60-day trend is flat
+    horizon_bars: 10
+    min_effect: 0.04
+    code: 'sd = ret.rolling(60, min_periods=60).std().shift(1)
+
+      trend = df.close.pct_change(60) / (sd * np.sqrt(60))
+
+      stretch = df.close.pct_change(5) / (sd * np.sqrt(5))
+
+      event = pd.Series(True, index=df.index)
+
+      strength = (trend.clip(-3, 3) - stretch.clip(-3, 3)).fillna(0)
+
+      '
+  why_no_lookahead: pct_change uses only closes at or before the bar, and the volatility
+    is a rolling std of past returns shifted one bar.
+  how_it_trades: The book is graded long when the slow trend is up and the last 5
+    days pulled back, and graded short in the mirror case; the 60-day term changes
+    slowly, which should cut the churn seen in the fade.

@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of allocation x (10-bar return - 10 x coin mean daily return), non-overlapping blocks, pooled",
+    "value": -0.0007247875562299596,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.2747622862003964
+    },
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2; else inconclusive; needs >= 30 nonzero-position blocks"
+  },
+  "supporting_check": {
+    "name": "slope of excess 10-bar return on allocation, nonzero-position blocks",
+    "value": -0.00561058321989854,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping 10-bar blocks with a nonzero position": 930,
+    "non-overlapping 10-bar blocks": 1657,
+    "active bars": 8748
+  },
+  "decided_by": "The t-statistic lies between -2 and 2, so the result is inconclusive.",
+  "reading": "The mean and its t are taken over all pooled blocks, zero-position blocks included, because the main measure pools the products across all coins and blocks. Blocks start at positions 0, 10, 20, ... of each window and need the close 10 bars later in the same window. The coin's mean daily return pools the within-window daily returns of all its windows."
+}

@@ -1,0 +1,32 @@
+run: n39_daily_typical_price_anchor_1d_foldB
+observations:
+  - The 20-day VWAP stretch rank_corr was near zero on the whole fold (BTC 0.008, ETH -0.005, LTC -0.009), yet ETH and LTC were negative in all 6 windows and BTC in 5 of 6 (ETH windows from -0.068 to -0.299); the reversion holds inside windows and disappears when windows are pooled.
+  - Ranking the stretch within its trailing 120 days moved the pooled effect toward reversion (ETH -0.086, which passed; LTC -0.039; BTC -0.025), but window 1 turned positive on BTC (+0.106) and LTC (+0.071), so the level-drift fix was only partial.
+  - The 10-day VWAP stretch above 2 sigma preceded larger 5-day absolute moves on all three coins (ratios 1.62 BTC, 1.30 ETH, 1.11 LTC); only ETH passed, BTC failed the window count (0.70 and 0.997) and LTC fell short of 1.2 with 3 windows below 1. The belief nearly held, but the ratio asked was too high for LTC.
+  - The squeeze-then-anchor-break continuation passed on ETH (+0.030 net over 10d) and LTC (+0.035) but failed on BTC (-0.0027, windows split 3/3), so the breakout is not a three-coin effect.
+  - The extreme-stretch reversion trades lost or failed on at least two coins: the 5-day VWAP fade over 3d gave BTC +0.0053 with 2 negative windows and ETH -0.016, and the rejection-candle fade was negative on all three (BTC -0.016, ETH -0.007, LTC -0.002).
+  - The first close back across the 20-day VWAP went the opposite way to the belief on BTC (hit_rate -0.126) and ETH (-0.176), and LTC alone was positive (+0.067) with 3 negative windows.
+  - The 30-day stretch trend claim had only 12 to 14 event bars per coin, below the 30 required, and LTC was -0.037 against BTC +0.030 and ETH +0.060.
+  - The volume-burst stretch continuation worked only on ETH (+0.021 mean_diff); BTC (-0.004) and LTC (-0.004) were negative, with windows of both signs on every coin.
+next_claim:
+  id: vwap20_stretch_change_rank_reversion
+  belief: The 5-day change in the close's stretch from the 20-day VWAP reverts over the next 5 days, because differencing the stretch removes the slow regime drift that cancelled the within-window reversion of its level.
+  claim:
+    when: every daily bar where the 20-day VWAP stretch and its value 5 bars earlier are both defined
+    then: the larger the rise in stretch over the past 5 days, the weaker the next 5-day return
+    compared_to: not used (rank correlation over all defined bars)
+    measure: rank_corr
+    horizon_bars: 5
+    direction: negative
+    min_effect: 0.06
+    code: |
+      tp = (df.high + df.low + df.close) / 3
+      vw = (tp * df.volume).rolling(20).sum() / df.volume.rolling(20).sum()
+      sig = ret.rolling(20).std()
+      z = (df.close / vw - 1) / sig
+      feature = z - z.shift(5)
+      a = feature.notna()
+      b = ~a
+  why_no_lookahead: The feature uses only the VWAP, the volatility and the stretch at or before the bar's close, through rolling windows and shift(5).
+  how_it_trades: Each day, short when the stretch has risen sharply over 5 days and buy when it has fallen sharply, then hold 5 days; trade only the extreme ranks so the move clears the 0.15% round trip.
+why: The only pattern consistent across coins was within-window reversion of the stretch that pooling erased, and differencing the stretch is the most direct untried way to remove that drift.

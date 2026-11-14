@@ -1,0 +1,13 @@
+run: unknown (try folder not named in record.yaml; brief n21_candle_patterns_daily_1d.md, fold C)
+observations:
+  - "inside_bar_vol_release held on ETH only: abs_ratio 1.131 with all 6 windows above 1.0. It failed on BTC at 0.993, where only 3 of 6 windows were above 1.0."
+  - "inside_bar_close_breakout went the wrong way on both coins: net -1.20% on BTC (5 of 6 windows negative) and -0.93% on ETH (4 of 6 negative). Continuation after the compression release lost money."
+  - "engulfing_after_pullback also went the wrong way on both coins, most clearly on ETH: mean_diff -3.34% with 5 of 6 windows negative. BTC was -0.86% with 4 of 6 windows negative."
+  - "three_bar_reversal passed on BTC with net +3.72% (5 of 6 windows positive, n_a=33). It failed on ETH with net -1.78% and only 3 of 6 windows positive, so the coins disagree."
+  - "prior_bar_close_break_fade nearly held: net +1.49% on BTC and +1.48% on ETH, both above the 0.5% bar. Each coin had only 4 of 6 windows positive, short of the 5 required."
+  - "tweezer_at_range_edge split by coin: net +1.72% on BTC (4 of 6 windows positive) against -4.79% on ETH (5 of 6 negative)."
+  - "staircase_trend_persistence beat its 0.05 hit-rate bar on BTC (0.063) but not on ETH (0.042), and only 4 of 6 windows were positive on each coin."
+  - "failed_range_breakout and outside_bar_fade both had opposite-sign effects across the coins: BTC +0.84% vs ETH -0.53%, and BTC +0.45% vs ETH -1.11%."
+  - "Across the directional claims, fading the bar's direction was positive on both coins in aggregate (close-break fade +1.48%; breakout and engulfing continuation negative). Its window consistency topped out at 4 of 6 on at least one coin each time."
+next_claim: none
+why: "The only signal shared by both coins is fading the day's directional bar, and every way to test it is a sign flip or a subset of prior_bar_close_break_fade, which already failed at 4 of 6 windows on both coins. The only consistent result, ETH inside-bar volatility, failed on BTC and is not a spot return edge after the 0.15% cost."

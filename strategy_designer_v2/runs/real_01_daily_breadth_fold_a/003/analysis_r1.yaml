@@ -1,0 +1,34 @@
+run: real_01_daily_breadth_fold_a
+observations:
+  - book_summary.yaml was not supplied, so every observation below cites judge_verdict.yaml or engine_verdict.yaml fields; best and worst bars, equity deciles, share at the cap and fees against gross cannot be read.
+  - trend_efficiency_follow on BTCUSD has a negative ic_event in all 6 windows (W3 -0.443, W4 -0.282, W5 -0.213, W1 -0.211), yet its fold ic_event is only -0.021, so the within-window reversal is consistent and pooling across windows dilutes it.
+  - trend_efficiency_follow on ADAUSD is negative in 5 of 6 windows (W3 -0.537, W5 -0.233, W1 -0.165), with only W6 at +0.178, while its fold ic_event is +0.036, so pooling flips the sign of what the windows agree on.
+  - The same split between pooled and per-window sign appears in negative_skew_premium on BTCUSD: W2 to W5 run from +0.405 to +0.636, but the fold ic_event is -0.084.
+  - Much of the money on ADA came from one window: ADAUSD W6 full_size net_return is +1.4268 for trend_efficiency, +1.3825 for close_location and +1.2469 for volume_confirmed, three claims with different forecasts.
+  - The deepest drawdowns cluster in BTCUSD W2 and W4. In W2, short_horizon_reversal_3d hit max_drawdown 0.6149 and autocorr_regime_adaptive hit 0.613. In W4, reversal_3d had sharpe -3.5974 and illiquidity_rise_premium had net_return -0.5687.
+  - Turnover costs the most on the 3-day claims: short_horizon_reversal_3d made 559 trades per coin over the fold, about 84% of notional in fees at 0.15% a round trip, against 123 to 144 trades for negative_skew_premium.
+  - On BTCUSD, the size of volume_confirmed_move's forecast tracked the outcome best: fold ic_event 0.166, t_stat 4.35. Its vol_target book is net positive in W2 to W6 with worst_window_drawdown 0.1616. It still fails same-sign, at 4 of 6.
+  - volume_confirmed_move does not carry over to ADA: ADAUSD has 3 of 6 windows same sign, and W3 has ic_event -0.139 and vol_target sharpe -5.575.
+  - close_location_accumulation on BTCUSD shows profit without a stable rank signal: its vol_target book is net positive in 5 of 6 windows (median sharpe 0.985, worst drawdown 0.146), but only 3 of 6 windows share the ic_event sign.
+  - The windows disagree most in W3: BTCUSD volume_confirmed has ic_event +0.463 there while ADAUSD has -0.139, but the trend_efficiency reversal is at its strongest on both coins (-0.443, -0.537).
+  - negative_skew_premium splits by coin: ADAUSD has fold ic_event +0.166 and full_size median sharpe 1.574, while BTCUSD has -0.084 and median sharpe -0.279.
+next_claim:
+  id: efficiency_excess_fade
+  belief: A 20-day move that is more orderly than the coin's own recent norm marks one-sided flow that has run out, so the excess efficiency reverts over the next two weeks.
+  claim:
+    when: every daily bar
+    then: the next 10 days' return leans against the 20-day efficiency ratio's deviation from its prior 120-day mean, in units of its prior 120-day std
+    compared_to: bars whose 20-day efficiency sits at or below its own recent regime level
+    horizon_bars: 10
+    min_effect: 0.05
+    code: |
+      net = df.close.diff(20)
+      path = df.close.diff().abs().rolling(20, min_periods=20).sum()
+      er = net / path.replace(0, np.nan)
+      mu = er.rolling(120, min_periods=120).mean().shift(1)
+      sdv = er.rolling(120, min_periods=120).std().shift(1)
+      event = pd.Series(True, index=df.index)
+      strength = (-(er - mu) / sdv.replace(0, np.nan)).fillna(0)
+  why_no_lookahead: The efficiency ratio uses closes up to the bar's close, and its anchor and scale are rolling stats of prior bars only (shift(1)); there is no negative shift.
+  how_it_trades: Graded short after unusually straight rallies and graded long after unusually straight selloffs, relative to the coin's 120-day regime, held over about 10 days.
+why: The raw efficiency ratio was reversed within 11 of 12 coin-windows, but its level drift across windows masked this in pooled IC; removing the regime level is a new construct aimed at that within-window effect, not a threshold change.

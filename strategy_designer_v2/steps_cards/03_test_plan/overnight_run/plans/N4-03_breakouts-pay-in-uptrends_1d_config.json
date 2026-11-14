@@ -1,0 +1,120 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "ma200",
+        "class": "strategies.strategy_components.MovingAverageDistanceComponent",
+        "params": {
+          "period": 200,
+          "average": "sma"
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "ma200",
+              "op": "gte",
+              "value": 0.0
+            }
+          ]
+        ]
+      },
+      {
+        "regime": "mean_reversion",
+        "any_of": [
+          [
+            {
+              "id": "ma200",
+              "op": "lt",
+              "value": 0.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "high_up",
+            "class": "strategies.strategy_components.DonchianBreakoutComponent",
+            "params": {
+              "period": 20
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0.0
+                }
+              },
+              {
+                "op": "signed_power",
+                "params": {
+                  "exponent": 3,
+                  "pivot": 20
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "high_down",
+            "class": "strategies.strategy_components.DonchianBreakoutComponent",
+            "params": {
+              "period": 20
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0.0
+                }
+              },
+              {
+                "op": "signed_power",
+                "params": {
+                  "exponent": 3,
+                  "pivot": 20
+                }
+              },
+              {
+                "op": "negate"
+              }
+            ]
+          }
+        ]
+      },
+      "chop": null,
+      "unknown": null
+    }
+  }
+}

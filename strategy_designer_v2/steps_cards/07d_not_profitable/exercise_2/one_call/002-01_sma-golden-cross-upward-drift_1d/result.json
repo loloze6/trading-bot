@@ -1,0 +1,66 @@
+{
+  "line": "7.d",
+  "backtest": "002-01_sma-golden-cross-upward-drift_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.34023380000000003,
+  "findings": {
+    "F1": "The book is long-only and earns less than holding (Sharpe 0.376, which is 0.193 below holding's), because the coin keeps rising while the book is flat: next-day coin return is +0.089% on flat bars against +0.157% on active bars, flat bars make up 42% of all bars, and in 2020, 2023 and 2024 flat bars rose more than active bars (+0.71% vs +0.30%, +0.28% vs +0.06%, +0.40% vs +0.18% per day).",
+    "F2": "The drift does not start at the cross. In the first 20 bars after the 50-day SMA rises above the 200-day, the forward 10-bar return is -1.03%; at 20 to 60 bars of age it is +2.97%. In the first 20 bars after a down-cross, while the book is flat, it is +2.09%. Moves right after a cross reverse.",
+    "F3": "A larger forecast does not earn more. Forward 10-bar return by forecast bucket is 1.46% (0-5), 1.67% (5-10), 0.81% (10-15) and 0.49% (15-20), then 2.38% at the cap. Over non-overlapping blocks the slope has t = 0.37.",
+    "F4": "Inside an up-trend, 60-bar momentum separates winners from losers. In the lowest 60-bar-return tercile the forward 10-bar return is -0.55%; in the middle tercile it is +3.72% and in the top tercile +1.49%.",
+    "F5": "Active-bar gains are concentrated in volatile and strongly rising states. Next-day book return is 0.37% in the highest-volatility tercile against 0.07% in the low and middle terciles, and 0.39% in the top 20-day-return tercile against 0.05% to 0.08% in the others.",
+    "F6": "Fees are not the cause; whipsaws are. The 1091 trades have a mean gross gain of +0.87% against about 0.1% commission each. Trades held 40 days or less (635 of them) lose -10.1% gross each, while those held longer than 40 days gain +16.1%. The per-window book drawdown reaches -96% (XRP) and -93% (ZEC), which makes the Calmar ratio 0.001."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's 50-day SMA has stayed above its 200-day SMA for more than about 20 bars, the price keeps rising over the next 10 bars more than it does in the first 20 bars after the up-cross.",
+      "consequence": "A trader would skip the first weeks after a golden cross and take the long only once the trend has lasted about a month.",
+      "name": "mature golden cross drift",
+      "from": "F2, F6",
+      "refs": [
+        "F2",
+        "F6"
+      ]
+    },
+    {
+      "idea": "In the first 20 bars after a coin's 50-day SMA crosses below its 200-day SMA, the price rises over the next 10 bars.",
+      "consequence": "A trader would treat a fresh death cross as an exhausted down-move and stay long, or buy it, instead of exiting.",
+      "name": "fresh death cross rebounds",
+      "from": "F2, F1",
+      "refs": [
+        "F2",
+        "F1"
+      ]
+    },
+    {
+      "idea": "While a coin's 50-day SMA is above its 200-day SMA, the price keeps rising over the next 10 bars when the coin's own 60-day return is not among its weakest, and it falls when the 60-day return is among its weakest.",
+      "consequence": "A trader would refuse longs inside an up-trend whose price has stalled over the last 60 days.",
+      "name": "momentum-confirmed uptrend continuation",
+      "from": "F4, F3",
+      "refs": [
+        "F4",
+        "F3"
+      ]
+    },
+    {
+      "idea": "While a coin's 50-day SMA is above its 200-day SMA, the next-day rise is larger when the coin's recent 20-day volatility and 20-day return are high for that coin.",
+      "consequence": "A trader would size the trend long by how fast and how volatile the rise is, not by the gap between the averages.",
+      "name": "volatile strong uptrend pays",
+      "from": "F5, F3",
+      "refs": [
+        "F5",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "002-01_sma-golden-cross-upward-drift.d1_mature-golden-cross-drift",
+    "002-01_sma-golden-cross-upward-drift.d2_fresh-death-cross-rebounds",
+    "002-01_sma-golden-cross-upward-drift.d3_momentum-confirmed-uptrend-continuation",
+    "002-01_sma-golden-cross-upward-drift.d4_volatile-strong-uptrend-pays"
+  ],
+  "no_ideas": null
+}

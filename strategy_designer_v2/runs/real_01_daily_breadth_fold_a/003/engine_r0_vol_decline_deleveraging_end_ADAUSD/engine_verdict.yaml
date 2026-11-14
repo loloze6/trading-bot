@@ -1,0 +1,147 @@
+claim: vol_decline_deleveraging_end
+symbol: ADAUSD
+bar_size: 1d
+fold: A
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 200
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: -0.2182
+  median_window_sharpe: 0.8028500000000001
+  worst_window_drawdown: 0.567
+  trades: 260
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: 0.0639
+    trades: 43
+    sharpe: 0.6321
+    max_drawdown: 0.3978
+    exposure_pct: 99.1667
+    cost_drag_pct: 19.2045
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_ADAUSD/results/full_size/20261106T195155Z_cbdab34d
+    seconds: 3
+  - window: W2
+    net_return: 0.7306
+    trades: 44
+    sharpe: 1.9357
+    max_drawdown: 0.3757
+    exposure_pct: 99.187
+    cost_drag_pct: 2.5587
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_ADAUSD/results/full_size/20261106T195159Z_cbdab34d
+    seconds: 3
+  - window: W3
+    net_return: -0.5622
+    trades: 38
+    sharpe: -2.3594
+    max_drawdown: 0.567
+    exposure_pct: 96.7213
+    cost_drag_pct: 1.6577
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_ADAUSD/results/full_size/20261106T195202Z_cbdab34d
+    seconds: 3
+  - window: W4
+    net_return: 0.2578
+    trades: 43
+    sharpe: 1.381
+    max_drawdown: 0.2555
+    exposure_pct: 99.1667
+    cost_drag_pct: 5.8251
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_ADAUSD/results/full_size/20261106T195205Z_cbdab34d
+    seconds: 3
+  - window: W5
+    net_return: 0.177
+    trades: 44
+    sharpe: 0.9736
+    max_drawdown: 0.3741
+    exposure_pct: 99.187
+    cost_drag_pct: 8.8824
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_ADAUSD/results/full_size/20261106T195209Z_cbdab34d
+    seconds: 3
+  - window: W6
+    net_return: -0.3449
+    trades: 48
+    sharpe: -1.4676
+    max_drawdown: 0.4192
+    exposure_pct: 99.1803
+    cost_drag_pct: 3.1609
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_ADAUSD/results/full_size/20261106T195212Z_cbdab34d
+    seconds: 3
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: -0.0707
+    median_window_sharpe: 0.4335
+    worst_window_drawdown: 0.2572
+    trades: 242
+  windows:
+  - window: W1
+    net_return: 0.0002
+    trades: 40
+    sharpe: 0.0892
+    max_drawdown: 0.12
+    exposure_pct: 99.1667
+    cost_drag_pct: 101.5981
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_ADAUSD/results/vol_target/20261106T195215Z_e18f9424
+    seconds: 3
+  - window: W2
+    net_return: 0.1659
+    trades: 39
+    sharpe: 2.3692
+    max_drawdown: 0.0677
+    exposure_pct: 99.187
+    cost_drag_pct: 1.3596
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_ADAUSD/results/vol_target/20261106T195219Z_e18f9424
+    seconds: 3
+  - window: W3
+    net_return: -0.2544
+    trades: 36
+    sharpe: -2.6683
+    max_drawdown: 0.2572
+    exposure_pct: 96.7213
+    cost_drag_pct: 1.4867
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_ADAUSD/results/vol_target/20261106T195222Z_e18f9424
+    seconds: 3
+  - window: W4
+    net_return: 0.0973
+    trades: 47
+    sharpe: 1.5153
+    max_drawdown: 0.0797
+    exposure_pct: 99.1667
+    cost_drag_pct: 4.3595
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_ADAUSD/results/vol_target/20261106T195225Z_e18f9424
+    seconds: 3
+  - window: W5
+    net_return: 0.0676
+    trades: 38
+    sharpe: 0.7778
+    max_drawdown: 0.1428
+    exposure_pct: 99.187
+    cost_drag_pct: 7.1142
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_ADAUSD/results/vol_target/20261106T195229Z_e18f9424
+    seconds: 3
+  - window: W6
+    net_return: -0.0876
+    trades: 42
+    sharpe: -1.1641
+    max_drawdown: 0.1578
+    exposure_pct: 99.1803
+    cost_drag_pct: 5.4442
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_vol_decline_deleveraging_end_ADAUSD/results/vol_target/20261106T195232Z_e18f9424
+    seconds: 4
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail

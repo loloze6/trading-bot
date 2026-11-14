@@ -1,0 +1,27 @@
+plan (adapted): exercise_20/opus/plans/001-01_rsi-high-extreme-reversal_1d.md
+cost: 0.2803 USD, attempts: 1
+plan (adapted): exercise_20/opus/plans/001-03_rsi-high-extreme-continuation_1d.md
+cost: 0.0528 USD, attempts: 1
+plan (adapted): exercise_20/opus/plans/002-01_sma-upcross-upward-drift_1d.md
+cost: 0.0541 USD, attempts: 1
+plan (adapted): exercise_20/opus/plans/002-05_sma-up-regime-positive-drift_1d.md
+cost: 0.0573 USD, attempts: 1
+plan (adapted): exercise_20/opus/plans/003-01_low-volume-up-move-reverts_1d.md
+cost: 0.0662 USD, attempts: 1
+untestable: The idea's situation is a move made during a coin's quiet hours, which needs intraday bars; a 1d bar merges quiet and busy hours, so the quiet-hours move is not in the data at this bar size. The weekend case needs a day-of-week condition, and no component or rule reads the calendar; that would need new code.
+cost: 0.0440 USD, attempts: 1
+untestable: The idea pairs a bitcoin move with a later altcoin price move, which needs a second coin's bars. The guide says a component sees only its own symbol's bars and feeds, so the cross-coin link cannot be built.
+cost: 0.0165 USD, attempts: 1
+missing-components: The catalogue can say where the close sits in its range, and it can give RSI against 50. It has no component that compares the current RSI with the RSI at the previous price high. Combining those components only measures "new high while RSI is below 50", which is a different quantity.
+cost: 0.0301 USD, attempts: 1
+missing-components: The divergence compares RSI at the current price low with RSI at the previous price low, so it needs swing-low detection and the RSI value stored at that earlier pivot. Both come from the coin's own closes, but no component or combination of components computes them; the catalogue has only the current RSI level and the current range position.
+cost: 0.0375 USD, attempts: 1
+missing-components: The divergence needs RSI compared with its own recent maximum, which can be computed from the closes alone. The catalogue gives only the RSI level (`RSIPullbackComponent`). No transform or composition turns that level into "RSI below its recent high". `DonchianBreakoutComponent` measures this only for the close, not for RSI.
+cost: 0.0405 USD, attempts: 1
+missing-components: The regime "close at its N-bar low" can be built from `DonchianBreakoutComponent`. No catalogue component, alone or combined, compares the current RSI with its own recent lows. `RSIPullbackComponent` gives only the RSI level, not whether RSI made a new low. A history op such as `percentile` on RSI cannot sit next to `standardise` (V15), and in `history_transforms` it sees a single value.
+cost: 0.0425 USD, attempts: 1
+missing-components: The idea needs RSI to be measured against its own recent high, at the same time as price is at its recent high. Both come from one coin's closes, and a regime plus a graded component could hold the idea. No catalogue component computes RSI's rolling maximum or how far RSI sits below it. The available transforms cannot build it either: the `percentile` in a detector veto ranks against a history of uncontrolled length and cannot grade the shortfall, and `standardise` must be the only history op in a strategy pipeline.
+cost: 0.0629 USD, attempts: 1
+missing-components: The price half is computable: DonchianBreakoutComponent shows the close at its range low. Nothing gives RSI's position relative to its own recent low, and no transform can supply it, because only one history op (`standardise`) is allowed. The data is all in the coin's closes, and a regime rule or score_product could hold "price at its low × RSI above its low", so only the component is missing.
+cost: 0.0407 USD, attempts: 1
+finished

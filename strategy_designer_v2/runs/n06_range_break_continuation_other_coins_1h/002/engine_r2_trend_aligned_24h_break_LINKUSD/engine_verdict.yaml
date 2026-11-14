@@ -1,0 +1,147 @@
+claim: trend_aligned_24h_break
+symbol: LINKUSD
+bar_size: 1h
+fold: A
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 272
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: -0.1544
+  median_window_sharpe: 0.07665
+  worst_window_drawdown: 0.4231
+  trades: 274
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: 0.4919
+    trades: 45
+    sharpe: 2.752
+    max_drawdown: 0.1878
+    exposure_pct: 35.625
+    cost_drag_pct: 9.6691
+    run_dir: strategy_designer_v2/runs/n06_range_break_continuation_other_coins_1h/002/engine_r2_trend_aligned_24h_break_LINKUSD/results/full_size/20261106T020620Z_400a0ee0
+    seconds: 26
+  - window: W2
+    net_return: -0.028
+    trades: 50
+    sharpe: 0.3217
+    max_drawdown: 0.4231
+    exposure_pct: 34.9712
+    cost_drag_pct: 250.7878
+    run_dir: strategy_designer_v2/runs/n06_range_break_continuation_other_coins_1h/002/engine_r2_trend_aligned_24h_break_LINKUSD/results/full_size/20261106T020648Z_400a0ee0
+    seconds: 27
+  - window: W3
+    net_return: -0.1318
+    trades: 42
+    sharpe: -0.6514
+    max_drawdown: 0.19
+    exposure_pct: 33.6066
+    cost_drag_pct: 38.5346
+    run_dir: strategy_designer_v2/runs/n06_range_break_continuation_other_coins_1h/002/engine_r2_trend_aligned_24h_break_LINKUSD/results/full_size/20261106T020714Z_400a0ee0
+    seconds: 27
+  - window: W4
+    net_return: -0.3683
+    trades: 48
+    sharpe: -3.416
+    max_drawdown: 0.4072
+    exposure_pct: 39.1667
+    cost_drag_pct: 11.2951
+    run_dir: strategy_designer_v2/runs/n06_range_break_continuation_other_coins_1h/002/engine_r2_trend_aligned_24h_break_LINKUSD/results/full_size/20261106T020741Z_400a0ee0
+    seconds: 27
+  - window: W5
+    net_return: -0.0651
+    trades: 44
+    sharpe: -0.1684
+    max_drawdown: 0.2084
+    exposure_pct: 34.3951
+    cost_drag_pct: 161.3337
+    run_dir: strategy_designer_v2/runs/n06_range_break_continuation_other_coins_1h/002/engine_r2_trend_aligned_24h_break_LINKUSD/results/full_size/20261106T020808Z_400a0ee0
+    seconds: 27
+  - window: W6
+    net_return: 0.1373
+    trades: 45
+    sharpe: 1.0533
+    max_drawdown: 0.186
+    exposure_pct: 35.8265
+    cost_drag_pct: 26.9695
+    run_dir: strategy_designer_v2/runs/n06_range_break_continuation_other_coins_1h/002/engine_r2_trend_aligned_24h_break_LINKUSD/results/full_size/20261106T020835Z_400a0ee0
+    seconds: 27
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: -0.0379
+    median_window_sharpe: -0.43079999999999996
+    worst_window_drawdown: 0.1405
+    trades: 281
+  windows:
+  - window: W1
+    net_return: 0.1449
+    trades: 44
+    sharpe: 3.14
+    max_drawdown: 0.0388
+    exposure_pct: 35.625
+    cost_drag_pct: 7.5545
+    run_dir: strategy_designer_v2/runs/n06_range_break_continuation_other_coins_1h/002/engine_r2_trend_aligned_24h_break_LINKUSD/results/vol_target/20261106T020902Z_157cefa7
+    seconds: 27
+  - window: W2
+    net_return: -0.0254
+    trades: 43
+    sharpe: -0.4649
+    max_drawdown: 0.081
+    exposure_pct: 34.9712
+    cost_drag_pct: 51.6462
+    run_dir: strategy_designer_v2/runs/n06_range_break_continuation_other_coins_1h/002/engine_r2_trend_aligned_24h_break_LINKUSD/results/vol_target/20261106T020929Z_157cefa7
+    seconds: 28
+  - window: W3
+    net_return: -0.0332
+    trades: 47
+    sharpe: -0.6792
+    max_drawdown: 0.0557
+    exposure_pct: 33.6066
+    cost_drag_pct: 75.7675
+    run_dir: strategy_designer_v2/runs/n06_range_break_continuation_other_coins_1h/002/engine_r2_trend_aligned_24h_break_LINKUSD/results/vol_target/20261106T020957Z_157cefa7
+    seconds: 28
+  - window: W4
+    net_return: -0.1258
+    trades: 50
+    sharpe: -3.1578
+    max_drawdown: 0.1405
+    exposure_pct: 39.1667
+    cost_drag_pct: 13.7126
+    run_dir: strategy_designer_v2/runs/n06_range_break_continuation_other_coins_1h/002/engine_r2_trend_aligned_24h_break_LINKUSD/results/vol_target/20261106T021023Z_157cefa7
+    seconds: 26
+  - window: W5
+    net_return: -0.0313
+    trades: 50
+    sharpe: -0.3967
+    max_drawdown: 0.115
+    exposure_pct: 34.3951
+    cost_drag_pct: 126.6036
+    run_dir: strategy_designer_v2/runs/n06_range_break_continuation_other_coins_1h/002/engine_r2_trend_aligned_24h_break_LINKUSD/results/vol_target/20261106T021052Z_157cefa7
+    seconds: 28
+  - window: W6
+    net_return: 0.0531
+    trades: 47
+    sharpe: 1.3263
+    max_drawdown: 0.0476
+    exposure_pct: 35.8265
+    cost_drag_pct: 21.8213
+    run_dir: strategy_designer_v2/runs/n06_range_break_continuation_other_coins_1h/002/engine_r2_trend_aligned_24h_break_LINKUSD/results/vol_target/20261106T021118Z_157cefa7
+    seconds: 26
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: true
+  verdict: fail

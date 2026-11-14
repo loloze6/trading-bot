@@ -1,0 +1,16 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "pooled 5-bar forward return after extreme (raw>=8) minus after neutral (RSI 40-60) bars",
+    "value": 0.024454572776717177,
+    "threshold": "below 0 with t <= -2 to confirm; >= 0 to reject"
+  },
+  "supporting_check": {
+    "name": "per-coin strategy cumulative return before costs minus same-average-size short hold (min over coins)",
+    "value": -0.008408028086890673,
+    "passed": false
+  },
+  "cases": 23,
+  "decided_by": "Fewer than 30 pooled non-overlapping extreme cases (23) or fewer than 8 for a coin (min 11) is inconclusive whatever the sign.",
+  "reading": "Neutral RSI is recomputed as Wilder RSI(14) on each window's closes (first bars without RSI dropped), extreme bars use the recorded raw component >= 8, non-overlap is enforced per group per window by taking a case then skipping the next 4 bars, the t is Welch's two-sample t, and with only 2 coins in the record 'negative in at least 2 of 3 coins' requires both coins negative; the supporting check compounds per-bar gains within windows, uses the coin's mean signed allocation as the short size, and passes only if the strategy beats it in every coin."
+}

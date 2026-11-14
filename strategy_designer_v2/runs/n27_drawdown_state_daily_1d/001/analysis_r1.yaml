@@ -1,0 +1,33 @@
+run: n27_drawdown_state_daily_1d_foldB
+observations:
+  - The 365-day state left windows 1-3 empty for almost every claim (for example, all six windows were null for stale_deep_drawdown_vol_compression on all three coins), so the long lookback used up half the fold before any window could be scored.
+  - The 60-day state in slow_grind_drawdown_continues filled 4 to 5 windows per coin, against at most 3 for the 365-day claims.
+  - slow_grind_drawdown_continues nearly held. It beat min_effect 0.015 on the whole fold on all three coins (BTC 0.022, ETH 0.099, LTC 0.024), and ETH was positive in all 4 filled windows (0.145, 0.094, 0.005, 0.126).
+  - slow_grind_drawdown_continues still failed on the window rule. BTC's windows alternated in sign (-0.035, 0.086, -0.031, 0.085), and LTC flipped in window 5 (-0.291).
+  - mid_drawdown_short_term_reversal also nearly held. It met 0.006 on the whole fold on all three coins (BTC 0.014, ETH 0.012, LTC 0.022), but BTC's windows went -0.006, 0.080, -0.007, so one window carried the whole effect.
+  - Momentum near the 180-day high did not hold in recent windows. near_high_drift_continues was negative in windows 5 and 6 for both BTC (-0.108, -0.057) and ETH (-0.040, -0.017), even though ETH's whole-fold effect was +0.050.
+  - The momentum-near-high rule split by coin. momentum_rule_pays_near_high_not_in_drawdown gave ETH 0.251, but BTC -0.045 and LTC -0.142.
+  - fresh_high_vs_stale_high_momentum ran against the belief on BTC, with windows of -0.290 and -0.284.
+  - low_volume_approach_to_high_fails was positive on BTC in all 3 filled windows (0.066, 0.106, 0.067), but LTC reversed hard (-0.391) on only 8 vs 9 bars.
+  - The event claims had too few bars to judge: n_a was 2 to 5 per coin for new_year_high_breakout_long and recovery_thrust_from_deep_drawdown.
+next_claim:
+  id: fast_drop_from_60d_high_rebounds
+  belief: A 15-35% drop below the 60-day high that happened within days of that high is a forced-selling flush rather than steady distribution, so it rebounds relative to other bars.
+  claim:
+    when: close is 15-35% below the 60-day high and that high was set 10 or fewer days ago
+    then: the 10-day forward return is higher
+    compared_to: all other bars with a valid 60-day high
+    measure: mean_diff
+    horizon_bars: 10
+    direction: positive
+    min_effect: 0.015
+    code: |
+      hi = df.high.rolling(60).max()
+      dd = df.close / hi - 1
+      ds = df.high.rolling(60).apply(lambda x: len(x) - 1 - np.argmax(x), raw=True)
+      a = (dd <= -0.15) & (dd >= -0.35) & (ds <= 10)
+      b = ~a & hi.notna()
+      signal = pd.Series(1.0, index=df.index)
+  why_no_lookahead: The 60-day high, the drawdown and the days since the high all use only bars at or before the current close.
+  how_it_trades: Go long at the close of a fast-drop bar and hold for 10 days.
+why: The 60-day state was the only one that filled the windows, and the slow-grind continuation nearly held; this tests the untested other half of that contrast (a fast drop), which is not a threshold change of any claim tried so far.

@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "in-stretch minus all-bar mean next-bar return (before costs)",
+    "value": 0.0008650530865054267,
+    "statistic": {
+      "name": "Welch t (in-stretch vs all bars)",
+      "value": 0.49516162785129425
+    },
+    "threshold": "confirm if difference > 0 with one-sided t >= 2.0; reject if difference <= 0 or t <= -2.0"
+  },
+  "supporting_check": {
+    "name": "in-stretch up-day share minus all-bar up-day share",
+    "value": -0.0006572680510573137,
+    "passed": false
+  },
+  "counts": {
+    "in-stretch bars": 290,
+    "all bars": 724,
+    "distinct up-cross stretches": 5,
+    "in-stretch mean": 0.0011363914899525335,
+    "all-bar mean": 0.0002713384034471068,
+    "in-stretch up-day share": 0.47586206896551725,
+    "all-bar up-day share": 0.47651933701657456
+  },
+  "decided_by": "Inconclusive: the in-stretch mean exceeds the all-bar mean but t 0.495 lies between -2.0 and 2.0.",
+  "reading": "In-stretch means forecast > 0. With a 1-bar horizon, every bar with a next close in its window is a non-overlapping return, pooled over all coins and windows. The t is Welch's on in-stretch versus all-bar returns. Distinct up-cross stretches are runs of consecutive forecast > 0 bars inside each window, including a run that starts at a window's first row. Any non-positive mean difference rejects, as the reject rule states, so 'between -2.0 and 2.0' is inconclusive only when the difference is positive."
+}

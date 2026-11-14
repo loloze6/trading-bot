@@ -1,0 +1,87 @@
+## t nonovl ex12 by past12h decile x coin
+coin    BTCUSD  ETHUSD
+p12dec                
+0.0       0.10   -1.31
+1.0       0.38    2.10
+2.0      -0.45   -1.84
+3.0      -0.03    0.26
+4.0      -0.75   -0.08
+5.0      -0.62   -0.82
+6.0      -0.66    0.32
+7.0       0.99    0.78
+8.0       1.80    0.69
+9.0      -1.04    0.43
+
+## p12 top-minus-bottom decile ex12 bp by coin x win
+win       w1    w2    w3    w4    w5    w6
+coin                                      
+BTCUSD   0.4  11.7  32.0  91.3  39.6 -57.2
+ETHUSD  30.6  38.7  80.5  31.1   9.6 -74.5
+
+## ex12 bp by past48h quintile x coin
+coin    BTCUSD  ETHUSD
+p48dec                
+0.0       -6.2    -4.6
+1.0        9.9     4.2
+2.0       -4.8   -12.7
+3.0       -1.7     3.9
+4.0        2.2     6.4
+
+## ex12 bp by rel-vol tercile x past12h group
+p12sgn  down   mid    up
+vq                      
+0.0    -16.9 -10.7   5.4
+1.0     -7.5  -3.1   4.8
+2.0    -11.7  14.8  24.9
+
+## book decomposition bp per bar
+book                -1.880
+gross pos*f1        -0.265
+fee+slip             1.615
+mean |dpos|          0.166
+share bars dpos>0    0.676
+gross when on       -0.393
+
+## by position bucket
+                 n  coin_f1_bp  ex12_bp  gross_bp  fee_bp
+posb                                                     
+<-0.95         250        1.06   -20.78     -0.88    4.61
+-0.95..-0.5   2343        0.22    -3.03     -0.06    3.85
+-0.5..-0.1    5691        0.98    18.03     -0.07    1.63
+-0.1..0       8002       -0.11    -0.48      0.02    0.50
+flat         11410       -1.37    -8.87      0.00    0.35
+
+## t next1h by selected hour x coin
+coin  BTCUSD  ETHUSD
+hour                
+0      -1.39   -1.58
+12     -1.05   -0.98
+16     -1.64   -1.06
+19      1.90    1.45
+20     -0.84   -1.59
+21      1.73    1.41
+
+## next1h bp selected hours by year
+yr    2022  2023
+hour            
+0     -5.7  -2.2
+19     8.6   0.1
+21     0.2   7.4
+
+## around largest book bars
+                  worst1%   best1%
+n                 351.000  351.000
+past12 bp         296.310  354.947
+raw                -7.538   -7.485
+pos                -1.899   -1.894
+coin f1 bp        188.132 -159.535
+next12 ex bp      216.988 -143.626
+rel vol             1.318    1.340
+share hour 12-16    0.288    0.382
+
+## trades by |entry forecast| quartile
+         f   dur_h  gross    win     n
+fq                                    
+0    3.932  19.882 -0.510  0.572  1925
+1    8.503  11.315 -0.483  0.619  1925
+2   17.629   8.926 -0.546  0.603  3850

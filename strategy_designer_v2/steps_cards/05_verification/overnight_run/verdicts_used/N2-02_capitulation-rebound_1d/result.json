@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 10-bar excess forward return after forecast >= 10, pooled, non-overlapping",
+    "value": 0.020618859723136568,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.896930120069815
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; at least 30 non-overlapping cases"
+  },
+  "supporting_check": {
+    "name": "mean excess rises across in-regime forecast buckets [0,5), [5,10), >=10 (value: top minus bottom bucket mean)",
+    "value": 0.027894105429123937,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases with forecast >= 10": 69,
+    "in-regime cases forecast 0 to 5": 683,
+    "in-regime cases forecast 5 to 10": 43,
+    "in-regime cases forecast 10 and above": 69
+  },
+  "decided_by": "The t-statistic lies between -2 and 2 with at least 30 cases, so it neither confirms nor rejects.",
+  "reading": "Cases are the bars at positions 0, 10, 20, ... of each window, and the coin's mean 10-bar return is taken over that same grid pooled across all its windows; the buckets are half-open [0,5), [5,10), >=10 on mean_reversion-regime bars including zero forecasts; and the supporting check passes when the three bucket means strictly increase and does not enter the decision."
+}

@@ -1,0 +1,147 @@
+claim: europe_open_distribution_weekday_07_10
+symbol: ETHUSD
+bar_size: 1h
+fold: C
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 200
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: 0.0008
+  median_window_sharpe: 0.49350000000000005
+  worst_window_drawdown: 0.2901
+  trades: 510
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: 0.2434
+    trades: 80
+    sharpe: 1.8179
+    max_drawdown: 0.2313
+    exposure_pct: 8.3746
+    cost_drag_pct: 27.3044
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/full_size/20261106T033003Z_0dc8fc41
+    seconds: 23
+  - window: W2
+    net_return: 0.2013
+    trades: 86
+    sharpe: 1.9266
+    max_drawdown: 0.1274
+    exposure_pct: 8.8115
+    cost_drag_pct: 33.4943
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/full_size/20261106T033022Z_0dc8fc41
+    seconds: 19
+  - window: W3
+    net_return: -0.139
+    trades: 88
+    sharpe: -1.7978
+    max_drawdown: 0.1704
+    exposure_pct: 8.9522
+    cost_drag_pct: 138.5669
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/full_size/20261106T033042Z_0dc8fc41
+    seconds: 19
+  - window: W4
+    net_return: -0.163
+    trades: 87
+    sharpe: -0.8309
+    max_drawdown: 0.2116
+    exposure_pct: 8.9876
+    cost_drag_pct: 86.2565
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/full_size/20261106T033100Z_0dc8fc41
+    seconds: 19
+  - window: W5
+    net_return: -0.2351
+    trades: 88
+    sharpe: -2.6341
+    max_drawdown: 0.2901
+    exposure_pct: 9.0226
+    cost_drag_pct: 51.6629
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/full_size/20261106T033122Z_0dc8fc41
+    seconds: 21
+  - window: W6
+    net_return: 0.2155
+    trades: 81
+    sharpe: 1.9162
+    max_drawdown: 0.1127
+    exposure_pct: 8.2457
+    cost_drag_pct: 30.1591
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/full_size/20261106T033144Z_0dc8fc41
+    seconds: 21
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: -0.056
+    median_window_sharpe: -0.6093999999999999
+    worst_window_drawdown: 0.0823
+    trades: 512
+  windows:
+  - window: W1
+    net_return: 0.0758
+    trades: 79
+    sharpe: 3.493
+    max_drawdown: 0.0225
+    exposure_pct: 8.3746
+    cost_drag_pct: 18.1203
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/vol_target/20261106T033208Z_86186add
+    seconds: 24
+  - window: W2
+    net_return: 0.0214
+    trades: 88
+    sharpe: 0.7485
+    max_drawdown: 0.0528
+    exposure_pct: 8.8115
+    cost_drag_pct: 58.0798
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/vol_target/20261106T033226Z_86186add
+    seconds: 19
+  - window: W3
+    net_return: -0.0614
+    trades: 89
+    sharpe: -2.905
+    max_drawdown: 0.0732
+    exposure_pct: 8.9522
+    cost_drag_pct: 65.5412
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/vol_target/20261106T033248Z_86186add
+    seconds: 22
+  - window: W4
+    net_return: -0.0563
+    trades: 87
+    sharpe: -2.0628
+    max_drawdown: 0.0643
+    exposure_pct: 8.9876
+    cost_drag_pct: 65.5976
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/vol_target/20261106T033308Z_86186add
+    seconds: 20
+  - window: W5
+    net_return: -0.0594
+    trades: 88
+    sharpe: -1.9673
+    max_drawdown: 0.0823
+    exposure_pct: 9.0226
+    cost_drag_pct: 82.191
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/vol_target/20261106T033330Z_86186add
+    seconds: 21
+  - window: W6
+    net_return: 0.0312
+    trades: 81
+    sharpe: 1.6904
+    max_drawdown: 0.0289
+    exposure_pct: 8.2457
+    cost_drag_pct: 35.6562
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_ETHUSD/results/vol_target/20261106T033352Z_86186add
+    seconds: 23
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: true
+  verdict: fail

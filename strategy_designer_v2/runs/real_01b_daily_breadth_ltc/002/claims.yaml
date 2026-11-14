@@ -1,0 +1,147 @@
+brief: real_01b_daily_breadth_ltc.md
+ideas:
+  - id: leverage_effect_vol_asymmetry
+    belief: A sizeable down day forces leveraged longs to cut and pushes margin systems to de-risk, so volatility over the next days is larger after down days than after up days of the same size (the leverage effect).
+    claim:
+      when: bars whose daily return is below minus one prior 30-day standard deviation
+      then: the absolute 5-day forward return is larger
+      compared_to: bars whose daily return is above plus one prior 30-day standard deviation
+      measure: abs_ratio
+      horizon_bars: 5
+      direction: above
+      min_effect: 1.15
+      code: |
+        vol = ret.rolling(30).std().shift(1)
+        a = (ret < -vol) & vol.notna()
+        b = (ret > vol) & vol.notna()
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The bar's own return and a volatility estimate from the 30 prior bars are both known at the bar's close.
+    how_it_trades: Cut exposure, or widen stops and shrink size, for five days after a one-sigma down day and not after an up day.
+  - id: attention_volume_overpricing
+    belief: A surge in dollar volume relative to its quarterly norm marks retail attention buying, which overprices the coin, so forward multi-week returns are lower when recent volume is high relative to its norm.
+    claim:
+      when: all bars with a defined 7-day over 90-day dollar-volume ratio
+      then: the 20-day forward return is lower when the ratio is higher
+      compared_to: rank relation across bars (no baseline)
+      measure: rank_corr
+      horizon_bars: 20
+      direction: negative
+      min_effect: 0.08
+      code: |
+        dv = df.volume * df.close
+        feature = np.log(dv.rolling(7).mean() / dv.rolling(90).mean())
+        a = feature.notna() & np.isfinite(feature)
+        b = ~a
+        signal = -np.sign(feature)
+    why_no_lookahead: Both volume averages use bars up to and including the current bar's close.
+    how_it_trades: Hold the coin flat or short when 7-day dollar volume runs far above its 90-day mean, and long when it runs far below.
+  - id: high_anchor_continuation
+    belief: Traders anchor on the long-run high and sell into it too early, so a coin trading within 5% of its 250-day high underreacts and keeps drifting up over the next weeks.
+    claim:
+      when: bars whose close is within 5% of the highest high of the last 250 days
+      then: the 20-day forward return is higher (long signal)
+      compared_to: all other bars with a defined 250-day high
+      measure: mean_diff
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.02
+      code: |
+        hi = df.high.rolling(250).max()
+        a = (df.close >= 0.95 * hi) & hi.notna()
+        b = (~a) & hi.notna()
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The 250-day high includes only bars up to the current bar, whose high and close are known at its close.
+    how_it_trades: Go long while the close sits within 5% of the 250-day high, and exit when it drops out of that band.
+  - id: max_day_lottery_reversal
+    belief: A coin that recently printed one extreme up day attracts lottery-seeking buyers who overpay for that skew, so the larger the past month's biggest daily gain is relative to normal volatility, the lower the next month's return.
+    claim:
+      when: all bars with a defined feature
+      then: the 20-day forward return is lower when the past 30 days' largest daily return, scaled by 90-day volatility, is larger
+      compared_to: rank relation across bars (no baseline)
+      measure: rank_corr
+      horizon_bars: 20
+      direction: negative
+      min_effect: 0.08
+      code: |
+        feature = ret.rolling(30).max() / ret.rolling(90).std()
+        a = feature.notna() & np.isfinite(feature)
+        b = ~a
+        signal = -np.sign(feature - feature.rolling(250, min_periods=60).median())
+    why_no_lookahead: The rolling max and std use only returns up to the current bar's close.
+    how_it_trades: Stay flat or short after a month that contains an outsized single up day, and long when the month's largest day is modest.
+  - id: calm_regime_momentum
+    belief: In calm markets, moves are driven by slow allocators who keep adding, so the 10-day trend continues; in turbulent markets, forced flows dominate and the trend does not persist.
+    claim:
+      when: bars whose 20-day volatility is below its 250-day median
+      then: the 10-day forward return follows the sign of the past 10-day return
+      compared_to: bars whose 20-day volatility is at or above its 250-day median
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.015
+      code: |
+        vol20 = ret.rolling(20).std()
+        med = vol20.rolling(250).median()
+        r10 = df.close.pct_change(10)
+        ok = med.notna() & r10.notna()
+        a = ok & (vol20 < med)
+        b = ok & (vol20 >= med)
+        signal = np.sign(r10).replace(0, 1.0)
+    why_no_lookahead: Volatility, its median and the 10-day return all use closes up to and including the current bar.
+    how_it_trades: Follow the 10-day return sign only when realized volatility is below its yearly median, and stand aside otherwise.
+  - id: squeeze_spike_fade
+    belief: An outsized up day is mostly a short squeeze (forced buy-to-cover), not new demand, so once the shorts are flushed the next few days give part of it back.
+    claim:
+      when: bars whose daily return exceeds two prior 30-day standard deviations
+      then: the 3-day forward return is lower (short signal)
+      compared_to: all other bars with defined volatility
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.01
+      code: |
+        vol = ret.rolling(30).std().shift(1)
+        a = (ret > 2.0 * vol) & vol.notna()
+        b = (~a) & vol.notna()
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: The spike uses the bar's own close against a volatility estimate from the 30 prior bars.
+    how_it_trades: Short (or exit longs) at the close of a two-sigma up day, and cover three days later.
+  - id: quiet_pullback_in_uptrend
+    belief: In an uptrend, a pullback on drying volume is profit-taking by weak hands, not distribution; the trend's buyers return and price resumes upward within a week.
+    claim:
+      when: bars where the 90-day return is positive, the close is at least 5% below the 10-day high, and 3-day mean volume is below 90% of the 30-day mean (one event per 5 bars)
+      then: the 7-day forward return is positive net of cost (long signal)
+      compared_to: no baseline (net profit after 0.15% round trip)
+      measure: net_return
+      horizon_bars: 7
+      direction: positive
+      min_effect: 0.006
+      code: |
+        up = df.close.pct_change(90) > 0
+        pull = df.close <= 0.95 * df.high.rolling(10).max()
+        dry = df.volume.rolling(3).mean() < 0.9 * df.volume.rolling(30).mean()
+        a = spaced(up & pull & dry, 5)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The 90-day return, the 10-day high and the volume means use only bars up to the current bar's close.
+    how_it_trades: Buy at the close of a quiet 5% pullback within a positive 90-day trend, and hold seven days.
+  - id: illiquidity_premium_timeseries
+    belief: When the coin becomes illiquid relative to its own norm (more price move per dollar traded), liquidity providers demand a premium, so forward returns are higher after illiquid stretches.
+    claim:
+      when: all bars with a defined feature
+      then: the 20-day forward return is higher when 30-day Amihud illiquidity is high relative to its 250-day median
+      compared_to: rank relation across bars (no baseline)
+      measure: rank_corr
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.08
+      code: |
+        dv = (df.volume * df.close).replace(0, np.nan)
+        illiq = (ret.abs() / dv).rolling(30, min_periods=25).mean()
+        feature = np.log(illiq / illiq.rolling(250, min_periods=200).median())
+        a = feature.notna() & np.isfinite(feature)
+        b = ~a
+        signal = np.sign(feature).replace(0, 1.0)
+    why_no_lookahead: Illiquidity and its median use returns and volume up to the current bar's close.
+    how_it_trades: Go long when illiquidity runs well above its yearly median, and stay flat when the market is unusually liquid.
+notes: Eight ideas, all distinct from the 22 already tried and from the SMA-distance family. The 90-day-return uptrend filter is a momentum sign, not an SMA distance. Two ideas are not about profit (leverage_effect_vol_asymmetry is about volatility); the others are directional. high_anchor_continuation and squeeze_spike_fade may have few `a` bars on LTC in some folds, so the 30-bar minimum could bind. calm_regime_momentum partly contradicts the failed vol_regime_negative_drift and monthly_return_reversal; the data decides.

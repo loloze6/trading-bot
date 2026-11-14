@@ -1,0 +1,29 @@
+claims_file: strategy_designer_v2/runs/n15_eth_hourly_momentum_horizons_1h/001/claims_r2.yaml
+fold: A
+bar_size: 1h
+symbols:
+- ETHUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  rev_24h_volscaled_fade_net:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: fail
+        effect: 0.0015135939441385336
+        t_stat: 0.41
+        n_a: 150
+        n_b: 150
+        windows:
+        - 0.007012930582508951
+        - 0.0028700142574867274
+        - -0.009047255203646002
+        - 0.002042204782368851
+        - -0.0018108754663031814
+        - 0.0051409573827518405
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

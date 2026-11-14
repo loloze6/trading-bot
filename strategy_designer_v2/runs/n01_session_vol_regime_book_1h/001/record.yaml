@@ -1,0 +1,522 @@
+brief: n01_session_vol_regime_book_1h.md
+fold: B
+symbols:
+- BTCUSD
+- ETHUSD
+bar_size: 1h
+claims:
+- id: volume_surprise_fade
+  belief: A large hourly move printed on 3x volume is forced flow, such as liquidations
+    or stop cascades, that overshoots. It reverts more than an equally large move
+    on normal volume, so the volume gate turns a weak reversal into a tradable one.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0016603150588730211
+      n_a: 345
+      n_b: 178
+      windows:
+      - -0.004542245862819366
+      - 0.0028168101327241705
+      - -0.0005523159888759111
+      - -0.0015187036988166666
+      - 0.0011278240611412216
+      - -0.0033025072396724565
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.000610243805478265
+      n_a: 337
+      n_b: 221
+      windows:
+      - 0.0001049975218753803
+      - 0.0022837413743137676
+      - 0.008842075415744397
+      - -0.0022656288718786253
+      - 0.005905721533555026
+      - -0.002693880025962117
+      verdict: fail
+      why: null
+  code: 'volmed = df.volume.rolling(168).median().shift(1)
+
+    sd = ret.rolling(168).std().shift(1)
+
+    vs = df.volume > 3 * volmed
+
+    wk = dow < 5
+
+    rule = wk & (ret.abs() > 2 * sd)
+
+    a = spaced(rule & vs, 3)
+
+    b = spaced(rule & ~vs, 3)
+
+    signal = -np.sign(ret)
+
+    '
+- id: volume_surprise_initiative_close
+  belief: A volume-surprise bar that closes near its extreme in the direction of its
+    body shows initiative buying or selling that was not absorbed. It continues, while
+    the same bar shape on normal volume is noise.
+  measure: mean_diff
+  horizon_bars: 4
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0005213302470883426
+      n_a: 279
+      n_b: 669
+      windows:
+      - 0.0019436121670121666
+      - 0.004220238457741131
+      - 0.0036841513511683983
+      - 0.002278969892536129
+      - -0.0054376662518686525
+      - -0.002121808778069768
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.0007683321270271104
+      n_a: 321
+      n_b: 780
+      windows:
+      - 0.0020353550790031243
+      - 0.0078036806326147205
+      - 0.0032930443560729604
+      - -0.00022108008514497063
+      - -0.012033525296273152
+      - 0.000665199658618234
+      verdict: fail
+      why: null
+  code: 'volmed = df.volume.rolling(168).median().shift(1)
+
+    sd = ret.rolling(168).std().shift(1)
+
+    vs = df.volume > 3 * volmed
+
+    rng = (df.high - df.low).replace(0, np.nan)
+
+    clv = (2 * df.close - df.high - df.low) / rng
+
+    rule = (dow < 5) & (ret.abs() > sd) & (clv.abs() > 0.6) & (np.sign(clv) == np.sign(ret))
+
+    a = spaced(rule & vs, 4)
+
+    b = spaced(rule & ~vs, 4)
+
+    signal = np.sign(ret)
+
+    '
+- id: us_open_fades_europe_extension
+  belief: The European morning builds a directional extension on thin crypto liquidity.
+    The arrival of US liquidity at the open absorbs and partly reverses it, a reversion
+    that ordinary hours do not show.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0019445053810275541
+      n_a: 75
+      n_b: 313
+      windows:
+      - 0.0011749040791227765
+      - -0.006832154377059864
+      - -0.008468515612162924
+      - -0.011671336244448592
+      - 0.005690487200338317
+      - 0.0020507491111480033
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.004442087243710577
+      n_a: 59
+      n_b: 355
+      windows:
+      - 0.0018965379311367179
+      - -0.008637907376138655
+      - -0.007935125271139383
+      - -0.014574051700514951
+      - 0.00210550826503403
+      - -0.001054865265677255
+      verdict: fail
+      why: null
+  code: 'sd = ret.rolling(168).std().shift(1)
+
+    r6 = df.close / df.close.shift(6) - 1
+
+    ext = (dow < 5) & (r6.abs() > 1.5 * sd * np.sqrt(6))
+
+    a = ext & (hour == 13)
+
+    b = spaced(ext & ~hour.isin([13, 14, 15, 16]), 6)
+
+    signal = -np.sign(r6)
+
+    '
+- id: us_open_range_break
+  belief: A break of the trailing 24-hour range during the US open hours is carried
+    by real new participants and holds. The same break in quiet hours is mostly a
+    stop run that fails.
+  measure: mean_diff
+  horizon_bars: 4
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.004392069300697304
+      n_a: 95
+      n_b: 450
+      windows:
+      - 0.0004531305471543439
+      - 0.0052566180733404945
+      - 0.014126963051318149
+      - 0.010046015460944958
+      - -0.0024105486013788965
+      - -0.0008299275849723129
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.002130788060028989
+      n_a: 89
+      n_b: 471
+      windows:
+      - -0.0071745234317514076
+      - -0.005775316998999906
+      - 0.012891317622955888
+      - 0.010243994485385197
+      - -0.004097405805951757
+      - 0.0015748906392993708
+      verdict: fail
+      why: null
+  code: 'hi24 = df.high.rolling(24).max().shift(1)
+
+    lo24 = df.low.rolling(24).min().shift(1)
+
+    up = df.close > hi24
+
+    dn = df.close < lo24
+
+    rule = (dow < 5) & (up | dn)
+
+    a = spaced(rule & hour.isin([13, 14]), 4)
+
+    b = spaced(rule & ~hour.isin([13, 14, 15, 16]), 4)
+
+    signal = pd.Series(np.where(up, 1.0, -1.0), index=df.index)
+
+    '
+- id: gated_liquidity_sweep_reversal
+  belief: In a high-activity bar, a wick through the 24-hour high or low that closes
+    back inside the range is a sweep of resting stops followed by rejection. Price
+    then travels toward the other side, more reliably than for sweeps in dead hours.
+  measure: mean_diff
+  horizon_bars: 4
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0006504046745764717
+      n_a: 318
+      n_b: 376
+      windows:
+      - 0.004921513110140182
+      - -0.0014263727686620712
+      - -0.0012174788067617973
+      - -1.9552307498463912e-05
+      - -0.0020268969691249203
+      - -0.0030495506185773532
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.0009631752225525717
+      n_a: 322
+      n_b: 414
+      windows:
+      - 0.00017060844773969942
+      - -0.00010680429834783521
+      - -0.005241536640905248
+      - 0.001065461313354161
+      - -0.007870891367770598
+      - 0.004308328319536252
+      verdict: fail
+      why: null
+  code: 'volmed = df.volume.rolling(168).median().shift(1)
+
+    vs = df.volume > 3 * volmed
+
+    gate = hour.isin([13, 14]) | vs
+
+    hi24 = df.high.rolling(24).max().shift(1)
+
+    lo24 = df.low.rolling(24).min().shift(1)
+
+    su = (df.high > hi24) & (df.close < hi24)
+
+    sdn = (df.low < lo24) & (df.close > lo24)
+
+    rule = (dow < 5) & (su ^ sdn)
+
+    a = spaced(rule & gate, 4)
+
+    b = spaced(rule & ~gate, 4)
+
+    signal = pd.Series(np.where(su, -1.0, 1.0), index=df.index)
+
+    '
+- id: gated_signed_volume_flow
+  belief: When the gate is open, signed volume over the last 3 hours reflects informed
+    flow. It predicts the next hours' direction because the price impact of large
+    orders is absorbed slowly.
+  measure: rank_corr
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.06
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.017195882485973764
+      n_a: 2316
+      n_b: 2316
+      windows:
+      - -0.02073582544218008
+      - 0.012270846753605376
+      - 0.10608230418570735
+      - -0.014563950960786018
+      - 0.018619677504999942
+      - -0.03320346042186305
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.052269639872488755
+      n_a: 2614
+      n_b: 2614
+      windows:
+      - -0.03817096616371242
+      - -0.08225203148395835
+      - 0.06367359414786472
+      - -0.1049285724148264
+      - -0.20543259256410423
+      - -0.08593197402317636
+      verdict: fail
+      why: null
+  code: 'volmed = df.volume.rolling(168).median().shift(1)
+
+    vs = df.volume > 3 * volmed
+
+    a = (dow < 5) & (hour.isin([13, 14]) | vs)
+
+    b = ~a
+
+    feature = (np.sign(ret) * df.volume / volmed).rolling(3).sum()
+
+    '
+- id: day_trend_through_us_open
+  belief: US participants arriving at the open trade in the direction of the day's
+    established trend, such as fund rebalancing and trend models executing in US hours.
+    So the trailing 24-hour vol-scaled return predicts the next 6 hours on open-hour
+    bars, even though the open bar's own move does not.
+  measure: rank_corr
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.06
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0089848095620277
+      n_a: 1046
+      n_b: 1046
+      windows:
+      - -0.06456551505486054
+      - -0.0372291125717237
+      - 0.0355397363250662
+      - 0.1458298926507019
+      - -0.13580867075606745
+      - 0.0827030596522122
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.04320885565310179
+      n_a: 1046
+      n_b: 1046
+      windows:
+      - -0.05479456427028
+      - -0.06690203125773837
+      - 0.035519234602352
+      - 0.22441755175261255
+      - -0.0338590123648953
+      - 0.04528505392912173
+      verdict: fail
+      why: null
+  code: 'sd = ret.rolling(168).std().shift(1)
+
+    a = (dow < 5) & hour.isin([13, 14])
+
+    b = ~a
+
+    feature = (df.close / df.close.shift(24) - 1) / (sd * np.sqrt(24))
+
+    '
+- id: us_open_hour_overshoot_fade
+  belief: The opening burst of US flow overshoots, which is why continuation from
+    the open hour failed. A large two-hour move ending at 14 UTC partly retraces over
+    the following hours, and the retrace pays after fees.
+  measure: net_return
+  horizon_bars: 4
+  direction: positive
+  min_effect: 0.001
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0043903481089497785
+      n_a: 82
+      n_b: 82
+      windows:
+      - 0.0002705588055634874
+      - -0.014000355277960987
+      - -0.013001801988803973
+      - -0.00909874563131583
+      - 0.0032068212926681353
+      - -0.00026382091202152374
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.002357219001058029
+      n_a: 69
+      n_b: 69
+      windows:
+      - -0.0066822000416914655
+      - -0.0018960557174877422
+      - -0.013146427258506906
+      - -0.009617384203084327
+      - 0.02011695538884203
+      - 0.0006302055238916432
+      verdict: fail
+      why: null
+  code: 'sd = ret.rolling(168).std().shift(1)
+
+    r2 = df.close / df.close.shift(2) - 1
+
+    a = (dow < 5) & (hour == 14) & (r2.abs() > 1.5 * sd * np.sqrt(2))
+
+    b = ~a
+
+    signal = -np.sign(r2)
+
+    '
+- id: compression_release_on_volume
+  belief: A volume surprise that arrives after a compressed 24-hour range marks the
+    release of stored positioning. Its direction persists for hours, more than a volume
+    spike in an already volatile tape, which tends to be exhaustion.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 3.5659925469457964e-05
+      n_a: 175
+      n_b: 458
+      windows:
+      - 0.007233492088250797
+      - -0.0007097002167209298
+      - -0.006063173554827045
+      - 0.005150173981521035
+      - -0.005376658507959706
+      - -0.002189269637158058
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.002419557333131958
+      n_a: 181
+      n_b: 473
+      windows:
+      - 0.003060547963801413
+      - 0.002694733495936679
+      - -0.00037992625527952207
+      - -0.004009214588666556
+      - 0.008047198460227018
+      - 0.009708518919203003
+      verdict: fail
+      why: null
+  code: 'volmed = df.volume.rolling(168).median().shift(1)
+
+    vs = (df.volume > 3 * volmed) & (dow < 5)
+
+    rng24 = (df.high.rolling(24).max() - df.low.rolling(24).min()).shift(1) / df.close.shift(1)
+
+    comp = rng24 < 0.7 * rng24.rolling(720).median()
+
+    a = spaced(vs & comp, 6)
+
+    b = spaced(vs & ~comp, 6)
+
+    signal = np.sign(ret)
+
+    '
+- id: us_open_regime_switched_extension
+  belief: The direction of the US-open follow-through on a large 6-hour move depends
+    on the trailing regime. It continues when the past week has been trending and
+    reverts when the past week has been choppy, which explains why fixed continuation
+    and fixed fade rules each won in different windows.
+  measure: net_return
+  horizon_bars: 4
+  direction: positive
+  min_effect: 0.0015
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.00024837641890977885
+      n_a: 99
+      n_b: 99
+      windows:
+      - -0.002840686818443626
+      - -0.008333761959162361
+      - 0.011198493723944037
+      - -0.004790268036091233
+      - -0.0038832409975364086
+      - 0.0016066121634816161
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.006243590024719635
+      n_a: 90
+      n_b: 90
+      windows:
+      - -0.0017985119779755352
+      - -0.010124010977055583
+      - -0.010280336077686034
+      - -0.006794531324389345
+      - -0.003361736277741019
+      - -0.00452751327875236
+      verdict: fail
+      why: null
+  code: 'sd = ret.rolling(168).std().shift(1)
+
+    r6 = df.close / df.close.shift(6) - 1
+
+    er = (df.close / df.close.shift(168) - 1).abs() / ret.abs().rolling(168).sum()
+
+    trend = er > er.rolling(720).median().shift(1)
+
+    ext = (dow < 5) & hour.isin([13, 14]) & (r6.abs() > 1.5 * sd * np.sqrt(6))
+
+    a = spaced(ext, 4)
+
+    b = ~a
+
+    signal = pd.Series(np.sign(r6) * np.where(trend, 1.0, -1.0), index=df.index)
+
+    '
+profit: 'none: no return claim passed'

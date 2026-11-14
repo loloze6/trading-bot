@@ -1,0 +1,20 @@
+brief: hand conversion of the BTC range-break claim, linear format
+ideas:
+  - id: range_break_strength
+    belief: A big hourly bar that closes beyond the prior 24-hour range continues in its direction, in proportion to its size.
+    claim:
+      when: bars with absolute return at least 3 trailing-volatility units that close beyond the prior 24-hour high or low, one per 12 bars
+      then: the next 12h return has the sign and rank of the bar's size
+      compared_to: the same correlation measure must be at least min_effect; no baseline group
+      horizon_bars: 12
+      min_effect: 0.03
+      code: |
+        sd = ret.rolling(168, min_periods=168).std().shift(1)
+        hi = df.high.rolling(24).max().shift(1)
+        lo = df.low.rolling(24).min().shift(1)
+        big = ret.abs() >= 3 * sd
+        beyond = (df.close > hi) | (df.close < lo)
+        event = spaced(big & beyond, 12)
+        strength = ret / sd
+    why_no_lookahead: sd, hi and lo are shifted one bar; the event and strength use the bar's own close only
+    how_it_trades: go with the break, sized by its strength, for 12 bars

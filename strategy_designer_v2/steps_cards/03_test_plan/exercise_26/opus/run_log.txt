@@ -1,0 +1,27 @@
+plan (adapted): exercise_26/opus/plans/001-01_rsi-high-extreme-reversal_1d.md
+cost: 0.2753 USD, attempts: 1
+plan (adapted): exercise_26/opus/plans/001-03_rsi-high-extreme-continuation_1d.md
+cost: 0.0502 USD, attempts: 1
+plan (adapted): exercise_26/opus/plans/002-01_sma-upcross-upward-drift_1d.md
+cost: 0.0459 USD, attempts: 1
+plan (adapted): exercise_26/opus/plans/002-05_sma-up-regime-positive-drift_1d.md
+cost: 0.0495 USD, attempts: 1
+plan (adapted): exercise_26/opus/plans/003-01_low-volume-up-move-reverts_1d.md
+cost: 0.0752 USD, attempts: 1
+missing-components: The bars hold everything the weekend and low-volume parts need (`timestamp`, `volume`, `close`), and a regime or graded forecast could carry them. No catalogue component measures volume against its average for both directions, combines that with the move, or reads the weekday. The "quiet hours" part also needs intraday bars, which a 1d run does not provide.
+cost: 0.0445 USD, attempts: 1
+untestable: The idea uses bitcoin's move as the signal and an altcoin's later return as the outcome, so it needs two coins at once. The guide says a component sees only its own symbol's bars and feeds, and the test runs only on BTC/USDT, so neither the signal nor the outcome can be measured together.
+cost: 0.0189 USD, attempts: 1
+missing-components: The divergence needs the coin's closes only, and a graded forecast could hold it. No catalogue component, alone or composed by weights, negate, clip or signed_power, gives RSI at the previous price high or the gap between that RSI and the current one. `RSIPullbackComponent` gives only the current RSI level, and the transforms have no lag or difference op.
+cost: 0.0334 USD, attempts: 1
+missing-components: The idea compares RSI now with RSI at the bar of the previous price low. That needs a remembered swing-low bar and the RSI value on it. All of this is in the coin's own closes, but no catalogue component gives RSI at a prior low, RSI's rolling minimum, or RSI's position in its own range. Weighted sums of the RSI, Donchian and price-evolution components only add the two readings; they cannot express "price lower but RSI higher".
+cost: 0.0327 USD, attempts: 1
+missing-components: The idea needs RSI's position relative to its own recent peak, which the coin's closes can supply and a graded weighted mean against `DonchianBreakoutComponent` could hold. No catalogue component outputs that position: `RSIPullbackComponent` gives only 50 - RSI, which is a different quantity.
+cost: 0.0344 USD, attempts: 1
+missing-components: The divergence needs RSI's position against its own recent low, set against price's position against its recent low (DonchianBreakoutComponent covers the price side). No catalogue component computes RSI's position in its own range, and no combination of RSIPullback, Donchian or the others gives it. The data is in the coin's own closes. A graded difference of the two range positions (weights +1 and -1) would fit the config's logic.
+cost: 0.0382 USD, attempts: 1
+missing-components: The divergence needs RSI measured against its own recent peak, while the close sits at its recent peak. That is computable from one coin's closes and could be held as a graded difference. But no component tracks a rolling maximum or range position of RSI, and `standardise` must be the only history op, so `percentile` cannot be run over RSI history either.
+cost: 0.0369 USD, attempts: 1
+missing-components: The divergence compares current RSI with RSI at the previous price low. No catalogue component keeps or returns RSI at an earlier swing low. Combining components does not fix this: RSIPullbackComponent gives only the current RSI, and adding it to DonchianBreakoutComponent in a weighted sum measures "price low while RSI is not low", not "RSI higher than at the prior low". That sum is also non-zero on every bar, not only at new lows. Everything needed is in one coin's closes, so the config's logic could hold such a component.
+cost: 0.0418 USD, attempts: 1
+finished

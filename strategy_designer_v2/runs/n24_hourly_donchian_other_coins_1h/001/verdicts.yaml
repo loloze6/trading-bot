@@ -1,0 +1,637 @@
+claims_file: strategy_designer_v2/runs/n24_hourly_donchian_other_coins_1h/001/claims.yaml
+fold: A
+bar_size: 1h
+symbols:
+- LTCUSD
+- XRPUSD
+- SOLUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  donchian72_follow_through_net:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: -0.005652511563242448
+        t_stat: -1.87
+        n_a: 220
+        n_b: 220
+        windows:
+        - -0.004457519645341294
+        - -0.012839750783663166
+        - -0.008645640556526862
+        - -0.0011246581367817194
+        - 0.0002059952922866294
+        - -0.007473688540497044
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: -0.004844675252014906
+        t_stat: -1.43
+        n_a: 206
+        n_b: 206
+        windows:
+        - 0.010050513904538318
+        - -0.013191454844359015
+        - -0.010815166523471914
+        - -0.011114410219232103
+        - 0.005811351629115525
+        - -0.008167324359999239
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      SOLUSD:
+        verdict: fail
+        effect: 0.0033852759258419392
+        t_stat: 0.92
+        n_a: 217
+        n_b: 217
+        windows:
+        - -0.0016838635869857997
+        - 0.012546439028735026
+        - -0.005734798615328223
+        - 0.005995826625783457
+        - 0.00023721100466059372
+        - 0.0106667529399199
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  donchian168_slow_trend_net:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.0011558884936760981
+        t_stat: 0.13
+        n_a: 74
+        n_b: 74
+        windows:
+        - 0.03788379420227564
+        - -0.0334032877415742
+        - 0.02744328052149151
+        - -0.0027352372872086923
+        - -0.00268848397252543
+        - -0.00755584194100504
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: 0.00796631837717759
+        t_stat: 0.87
+        n_a: 81
+        n_b: 81
+        windows:
+        - 0.04434018836156812
+        - 0.010776713977692629
+        - -0.01180539911707807
+        - 0.0035205946978801874
+        - 0.01285101022517343
+        - -0.00634002418097241
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      SOLUSD:
+        verdict: pass
+        effect: 0.025212293644158522
+        t_stat: 2.22
+        n_a: 89
+        n_b: 89
+        windows:
+        - 0.0288025196965897
+        - 0.033736526139477925
+        - -0.006819232814543464
+        - 0.008168873454286556
+        - 0.03247131864043381
+        - 0.05805302878190328
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+  donchian24_breakout_fade:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: -0.0022170872899531504
+        t_stat: -2.19
+        n_a: 523
+        n_b: 523
+        windows:
+        - -0.003363351736867648
+        - -0.0011972136573877874
+        - -0.002932278679648463
+        - -0.0014925591028298753
+        - -0.003486489302173003
+        - -0.0007937792643286963
+        agreeing_windows: 6 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: -0.0017766039721572797
+        t_stat: -1.61
+        n_a: 510
+        n_b: 510
+        windows:
+        - -0.004004330326691131
+        - -0.0008892552455068011
+        - -0.001475471846018562
+        - -0.0007347549807139614
+        - -0.005706429339631934
+        - 0.0025875321478364623
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      SOLUSD:
+        verdict: fail
+        effect: -0.0013828680144009557
+        t_stat: -1.04
+        n_a: 506
+        n_b: 506
+        windows:
+        - -0.00016969869656889938
+        - -0.005667770108837544
+        - 0.0007820978880650172
+        - -0.005045838360586353
+        - 0.004444760826555946
+        - -0.002838205288420513
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  breakout_after_compression:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: pass
+        effect: 0.007688827346154122
+        t_stat: 1.18
+        n_a: 126
+        n_b: 94
+        windows:
+        - 0.017842851640703896
+        - 0.016579078508939152
+        - 0.006391757878445652
+        - -0.0068193714890139884
+        - 0.011943703848184162
+        - 0.0003216641007394586
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: 0.0018906068029373372
+        t_stat: 0.28
+        n_a: 107
+        n_b: 99
+        windows:
+        - -0.016930758522761172
+        - 0.0019257823861858168
+        - 0.0014941078643332592
+        - 0.004928861200718067
+        - 0.023565641579571587
+        - -0.004547857103531885
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      SOLUSD:
+        verdict: fail
+        effect: -0.0012275037931311185
+        t_stat: -0.16
+        n_a: 121
+        n_b: 96
+        windows:
+        - 0.015916144287223002
+        - 0.0017681131615251318
+        - -0.0014144708389136392
+        - -0.024830459371204608
+        - -0.0017494024446898944
+        - 0.009071600889203769
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  volume_confirmed_breakout:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.021189274265751026
+        t_stat: 2.34
+        n_a: 179
+        n_b: 41
+        windows:
+        - 0.009535936191996547
+        - 0.042238385016193175
+        - 0.014624935301099085
+        - null
+        - null
+        - 0.005341299473038672
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: 0.005168939756985352
+        t_stat: 0.65
+        n_a: 183
+        n_b: 23
+        windows:
+        - -0.002732440726403029
+        - 0.0017389335357442786
+        - 0.004559623185469307
+        - 0.016284595590700644
+        - 0.03345000104266926
+        - -0.02224117862632234
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      SOLUSD:
+        verdict: pass
+        effect: 0.011564261822750777
+        t_stat: 1.39
+        n_a: 177
+        n_b: 40
+        windows:
+        - 0.038612621397932596
+        - -0.01839794267711695
+        - 0.000358271339247122
+        - 0.028347561435466653
+        - 0.00841262810690414
+        - 0.015348205030063778
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+  breakout_session_us_hours:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.006949662997372139
+        t_stat: 1.1
+        n_a: 85
+        n_b: 135
+        windows:
+        - 0.00772521814123389
+        - -0.02149218492285546
+        - 0.04827362586762551
+        - 0.00561526408650184
+        - -0.0007601459008150756
+        - -0.003962183565180571
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: 0.0009535296964712954
+        t_stat: 0.14
+        n_a: 78
+        n_b: 128
+        windows:
+        - -0.004708231080060668
+        - -0.01187413588649028
+        - 0.012022954361844054
+        - -0.002519155299964493
+        - 0.015700214030419993
+        - -0.0011149274262101175
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      SOLUSD:
+        verdict: fail
+        effect: -0.0012844952166774287
+        t_stat: -0.17
+        n_a: 89
+        n_b: 128
+        windows:
+        - 0.007217768494819813
+        - -0.027418159963362398
+        - 0.02336661143097422
+        - -0.02258321023822135
+        - 0.01663601546190198
+        - 0.0006165440186743816
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  weekday_vs_weekend_breakout:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.010025062656641603
+        t_stat: 0.12
+        n_a: 171
+        n_b: 49
+        windows:
+        - 0.044354838709677435
+        - -0.0714285714285714
+        - -0.09999999999999998
+        - 0.0755555555555556
+        - -0.08620689655172414
+        - 0.25
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: pass
+        effect: 0.09611546138492244
+        t_stat: 1.11
+        n_a: 167
+        n_b: 39
+        windows:
+        - 0.033333333333333326
+        - 0.14285714285714285
+        - 0.1830357142857143
+        - 0.11494252873563221
+        - 0.08333333333333331
+        - -0.05357142857142855
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      SOLUSD:
+        verdict: fail
+        effect: 0.10157640478006608
+        t_stat: 1.23
+        n_a: 171
+        n_b: 46
+        windows:
+        - 0.3261648745519713
+        - 0.4065934065934066
+        - 0.1111111111111111
+        - -0.1651785714285714
+        - -0.0357142857142857
+        - -0.11111111111111105
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  breakout_with_monthly_trend:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.0036724701890061004
+        t_stat: 0.62
+        n_a: 142
+        n_b: 78
+        windows:
+        - -0.0008874319693652996
+        - 0.028006543709054567
+        - -0.013927098971472996
+        - 0.004976741259425528
+        - 0.004167943065038059
+        - 0.00091626770903266
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: -0.003335975831920515
+        t_stat: -0.55
+        n_a: 143
+        n_b: 63
+        windows:
+        - -0.008776922446435504
+        - -0.01009092364506231
+        - -0.00019017712036700253
+        - -0.015771827555820957
+        - 0.026361320712880748
+        - -0.016070367399897596
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      SOLUSD:
+        verdict: fail
+        effect: 0.012539669486221471
+        t_stat: 1.73
+        n_a: 151
+        n_b: 66
+        windows:
+        - -0.007590925343173193
+        - 0.041736856022975416
+        - 0.001880292633068399
+        - 0.010935578308818056
+        - -0.0023895756381827893
+        - 0.04033964811350846
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  breakout_overshoot_strength:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: -0.10424482849946186
+        t_stat: -1.55
+        n_a: 220
+        n_b: 220
+        windows:
+        - -0.1257085020242915
+        - -0.03781512605042017
+        - -0.10121457489878542
+        - -0.011764705882352941
+        - -0.10242914979757085
+        - -0.37142857142857144
+        agreeing_windows: 6 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: -0.20176747822226554
+        t_stat: -2.94
+        n_a: 206
+        n_b: 206
+        windows:
+        - -0.08754774637127577
+        - -0.3313725490196079
+        - -0.18603238866396762
+        - -0.3137254901960784
+        - -0.03189149560117301
+        - -0.19879032258064516
+        agreeing_windows: 6 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      SOLUSD:
+        verdict: fail
+        effect: 0.09540838136576521
+        t_stat: 1.41
+        n_a: 217
+        n_b: 217
+        windows:
+        - -0.003939962476547843
+        - 0.23462566844919788
+        - -0.07722007722007723
+        - 0.20506072874493927
+        - -0.018275418275418277
+        - 0.13201871657754014
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  breakout_volatility_expansion:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 1.1071820903080642
+        t_stat: 2.46
+        n_a: 220
+        n_b: 16914
+        windows:
+        - 1.02386844246188
+        - 1.2916254869174062
+        - 1.2801492442255151
+        - 0.8307545223249192
+        - 1.0959279396579875
+        - 0.9735389269346579
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: pass
+        effect: 1.219861076435569
+        t_stat: 3.23
+        n_a: 206
+        n_b: 16957
+        windows:
+        - 1.1819949800710294
+        - 1.1674132953284755
+        - 1.109535644372793
+        - 1.251873238083044
+        - 1.1580513687330658
+        - 1.5662278050792064
+        agreeing_windows: 6 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      SOLUSD:
+        verdict: fail
+        effect: 1.0310989117147886
+        t_stat: 1.0
+        n_a: 217
+        n_b: 16821
+        windows:
+        - 1.0517859623278825
+        - 0.854910733801344
+        - 0.7674409002754764
+        - 1.253875975091012
+        - 1.2383901329290394
+        - 1.0791771101476375
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  channel_position_momentum:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: -0.05605751765978457
+        t_stat: -7.43
+        n_a: 17519
+        n_b: 17519
+        windows:
+        - -0.05973674703820285
+        - -0.051116280330432785
+        - -0.11275629288920234
+        - -0.07943367664879662
+        - 0.05403141959783421
+        - -0.11169927161537038
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: -0.049438275667036596
+        t_stat: -6.54
+        n_a: 17469
+        n_b: 17469
+        windows:
+        - -0.07256896829608005
+        - -0.03895818185388952
+        - -0.0775058723198276
+        - -0.16031936390870072
+        - 0.024058626660908054
+        - 0.04082190609214091
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      SOLUSD:
+        verdict: fail
+        effect: 0.02160028419247359
+        t_stat: 2.86
+        n_a: 17519
+        n_b: 17519
+        windows:
+        - -0.012900024435528408
+        - 0.07037182585228283
+        - -0.01406323495560129
+        - -0.011190089136463787
+        - -0.05899882575500398
+        - 0.04944783969473069
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

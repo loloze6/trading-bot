@@ -628,4 +628,7 @@ class ConfigDrivenStrategyEngine:
                 "weight_normalized":     float(w_norm),
                 "weighted_contribution": float(w_norm * value),
             }
+            comp = self._components[rkey][cid]
+            if getattr(comp, "report_debug", False):   # opt-in: the component's own numeric debug fields reach bars.csv
+                debug[cid].update({k: float(v) for k, v in comp.debug_info.items() if isinstance(v, (bool, int, float))})
         return float(np.clip(ensemble, -20.0, 20.0)), debug

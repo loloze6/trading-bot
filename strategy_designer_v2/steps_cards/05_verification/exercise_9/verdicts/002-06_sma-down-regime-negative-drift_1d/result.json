@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted next-bar return minus coin mean, on short bars",
+    "value": -0.0010034878473360765,
+    "statistic": {
+      "name": "t of weighted mean",
+      "value": -0.5389655840338229
+    },
+    "threshold": "confirm if weighted excess return < 0 with t <= -2; reject if > 0 with t >= +2; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "down-bar share on active vs all bars (binomial z)",
+    "value": -0.01831913947093589,
+    "passed": false
+  },
+  "counts": {
+    "active bars": 434,
+    "down-cross stretches": 5
+  },
+  "decided_by": "The t-statistic lies strictly between -2 and +2 (inconclusive rule).",
+  "reading": "The plan's component id 'sma_spread' is read from whichever 'debug_info.components.*.last_history_value' column the record holds (here 'sma_cross_down'), and the situation is a raw spread below 0 with a negative forecast; the coin's mean bar return is pooled over all bars of all windows; the t of the weighted mean uses the weighted standard deviation over the Kish effective sample size; a down bar is a negative next-bar return; the supporting check passes when z >= 2, since the plan gives no threshold of its own; a separate down-cross stretch is a run, within one window, of consecutive bars with raw spread < 0 that holds at least one active bar; missing a minimum count gives 'not observable', as the instructions require."
+}

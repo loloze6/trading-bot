@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean next-bar return, heavy up bars minus thin up bars",
+    "value": -0.0006635650609715525,
+    "statistic": {
+      "name": "Welch t (weighted)",
+      "value": -0.151697209379135
+    },
+    "threshold": "confirm if difference > 0 and t >= 2; reject if difference < 0 and t <= -2"
+  },
+  "supporting_check": {
+    "name": "thin-up weighted mean next-bar return minus unconditional mean daily return (< 0)",
+    "value": 0.0010492632046988817,
+    "passed": false
+  },
+  "counts": {
+    "heavy forecast-bearing up bars": 151,
+    "thin forecast-bearing up bars": 194
+  },
+  "decided_by": "The t-statistic lies between -2 and 2.",
+  "reading": "Up bar = one-bar move (heavy_up/thin_up last_history_value) > 0; heavy/thin groups are the forecast-bearing up bars with positive/negative forecast; the Welch t uses |forecast|-weighted means and variances with Kish effective sample sizes; the unconditional mean is the plain mean of all next-bar returns in all windows; the plan's 30-bar minimum per group is applied as 'not observable'; in the situation check, active up bars in the first 19 rows of a window (20-bar volume mean not computable) count as on-side."
+}

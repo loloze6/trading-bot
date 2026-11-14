@@ -1,0 +1,34 @@
+run: n25_low_vol_momentum_other_coins_1d/fold_A
+observations:
+  - The direct transfer of the BTC rule (low_vol_mom20_transfer) lost money net of fees on all three coins (ETH -0.43%, LTC -0.16%, XRP -1.08% per 10-day trade, against a 1.0% bar), so the BTC finding does not carry over.
+  - The regime control shows low volatility does not reliably help momentum. Low-minus-high volatility momentum was -1.55% on ETH and -0.56% on XRP. On LTC it was +1.35%, above the 1.0% bar, but only 4 of 6 windows were positive.
+  - Fading momentum in high volatility nearly held on LTC (+0.64% net vs a 0.6% bar) but had only 2 positive of 4 computable windows, and it lost on ETH (-0.56%) and XRP (-0.76%).
+  - The only consistent sign in the run is reversal, not continuation. The vol-scaled 30-day trend strength had a negative rank correlation with the 10-day forward return on all three coins (ETH -0.006, LTC -0.134, XRP -0.139), with 5, 4 and 4 of 6 windows negative.
+  - Quiet-base breakouts nearly held on ETH (+0.92% net vs a 1.2% bar) but failed hard on LTC (-2.88%, 5 of 6 windows negative).
+  - The long-only quiet-uptrend leg lost after fees on ETH (-1.30%) and LTC (-1.23%) and was flat on XRP (+0.19%), so the edge is not in the long side either.
+  - A smooth quiet trend (efficiency ratio > 0.35) did worse than a choppy one on LTC (-3.71%, all 6 windows negative), while XRP showed +2.17%; the coins disagree in sign.
+  - Slower 60-day momentum gated by a range-based quiet regime lost on all three coins over 20 days (ETH -2.74% with 5 of 6 windows negative, LTC -0.59%, XRP -0.16%).
+  - Windows disagree widely within single claims. For example, volume-confirmed quiet momentum on ETH ranged from -14.2% to +26.6% across windows, so whole-fold effects near zero hide regime-by-regime swings.
+next_claim:
+  id: quiet_regime_stretch_reversion
+  belief: In a low-volatility regime on these coins, a price stretched far from its 20-day mean in units of its own volatility tends to come back, which is the reverse of the BTC momentum finding.
+  claim:
+    when: 20-day volatility is below its trailing-year median and the close is more than 0.75 volatility-scaled units away from its 20-day mean
+    then: over the next 10 days, price moves back toward the mean (the bet is against the stretch)
+    compared_to: quiet-regime bars whose stretch is 0.75 units or less, with the same against-the-stretch bet
+    measure: mean_diff
+    horizon_bars: 10
+    direction: positive
+    min_effect: 0.01
+    code: |
+      vol = ret.rolling(20).std()
+      med = vol.rolling(365, min_periods=250).median()
+      sma = df.close.rolling(20).mean()
+      z = (df.close / sma - 1) / (vol * np.sqrt(20))
+      quiet = (vol < med) & z.notna() & med.notna()
+      a = quiet & (z.abs() > 0.75)
+      b = quiet & (z.abs() <= 0.75)
+      signal = pd.Series(np.where(z > 0, -1, 1), index=df.index)
+  why_no_lookahead: The volatility, its median, the 20-day mean and the stretch all use only closes at or before the bar.
+  how_it_trades: In a quiet regime, at the daily close, go short when price is stretched above its 20-day mean and long when stretched below, and exit after 10 days.
+why: Every continuation variant failed, while the one cross-coin regularity (negative vol-scaled trend rank correlation in 13 of 18 windows) points to reversion. This tests it with a different selector, and a 1% edge clears the 0.15% cost with room for noise.

@@ -1,0 +1,370 @@
+brief: fake_01_btc_overreaction.md
+fold: A
+symbol: BTCUSD
+bar_size: 1h
+claims:
+- id: big_bar_fade
+  belief: An hourly BTC bar three or more times its usual size overshoots, and price
+    drifts back over the next half day.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.002
+  effect: -0.0006995958052159148
+  n_a: 416
+  n_b: 17103
+  windows:
+  - -2.107100334434596e-05
+  - -0.0016447720126283418
+  - 0.0007161840378693466
+  - -0.0004782504677739534
+  - 0.0007891374065137561
+  - -0.004235114488859649
+  verdict: fail
+  code: 'absr = ret.abs()
+
+    usual = absr.rolling(168).median().shift(1)
+
+    a = spaced(absr > 3 * usual, 12)
+
+    b = ~a
+
+    signal = -np.sign(ret)
+
+    '
+- id: big_bar_fade_net_of_fees
+  belief: Fading big hourly bars pays more than the round-trip fee the brief names
+    (about 0.2%), not only in gross terms.
+  measure: net_return
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.001
+  effect: -0.001814073682394118
+  n_a: 416
+  n_b: 416
+  windows:
+  - -0.00039366113848763847
+  - -0.003906179492938648
+  - -0.0007531871093484324
+  - -0.0014128861572504816
+  - -0.001527057079361516
+  - -0.0033006174508391044
+  verdict: fail
+  code: 'absr = ret.abs()
+
+    usual = absr.rolling(168).median().shift(1)
+
+    a = spaced(absr > 3 * usual, 12)
+
+    b = ~a
+
+    signal = -np.sign(ret)
+
+    '
+- id: low_volume_spike_reverts
+  belief: A big move made on ordinary volume is a liquidity air pocket, not information,
+    so it reverts more often than a big move made on heavy volume.
+  measure: hit_rate
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.08
+  effect: 0.0164292131947118
+  n_a: 98
+  n_b: 318
+  windows:
+  - 0.0
+  - -0.1436865021770682
+  - 0.1210884353741496
+  - 0.0897959183673469
+  - 0.10793650793650794
+  - -0.001165501165501126
+  verdict: fail
+  code: 'absr = ret.abs()
+
+    usual = absr.rolling(168).median().shift(1)
+
+    big = spaced(absr > 3 * usual, 12)
+
+    vrel = df.volume / df.volume.rolling(168).median().shift(1)
+
+    a = big & (vrel < 1.5)
+
+    b = big & (vrel >= 1.5)
+
+    signal = -np.sign(ret)
+
+    '
+- id: heavy_volume_spike_continues
+  belief: A big bar on extreme volume carries informed flow and keeps going rather
+    than reverting.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.002
+  effect: 0.002352341497218773
+  n_a: 185
+  n_b: 17334
+  windows:
+  - 0.0006089521798744879
+  - 0.009614455959335829
+  - 8.074187799222e-05
+  - 0.0023857444425189247
+  - -0.0005526436199650957
+  - 0.0040932561367258685
+  verdict: pass
+  code: 'absr = ret.abs()
+
+    usual = absr.rolling(168).median().shift(1)
+
+    big = spaced(absr > 3 * usual, 12)
+
+    vrel = df.volume / df.volume.rolling(168).median().shift(1)
+
+    a = big & (vrel >= 3)
+
+    b = ~a
+
+    signal = np.sign(ret)
+
+    '
+- id: counter_trend_spike_reverts
+  belief: A big bar against the prior three-day trend is a shakeout that the trend
+    reclaims, so it reverts more than a big bar with the trend.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.002
+  effect: -0.0006279721201626791
+  n_a: 217
+  n_b: 199
+  windows:
+  - -0.0012768745052329842
+  - -0.0057837405379739665
+  - -0.0052092820031148825
+  - 0.0018690702185268793
+  - 0.001012538859851797
+  - 0.004611376952246207
+  verdict: fail
+  code: 'absr = ret.abs()
+
+    usual = absr.rolling(168).median().shift(1)
+
+    big = spaced(absr > 3 * usual, 12)
+
+    trend = df.close.shift(1) / df.close.shift(73) - 1
+
+    against = np.sign(ret) != np.sign(trend)
+
+    a = big & against
+
+    b = big & ~against
+
+    signal = -np.sign(ret)
+
+    '
+- id: close_at_extreme_reverts
+  belief: A big bar that closes at its extreme shows forced, unabsorbed flow (stops,
+    liquidations) and reverts more than a big bar that already pulled back from its
+    extreme within the hour.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.002
+  effect: -0.0008042744488642963
+  n_a: 218
+  n_b: 198
+  windows:
+  - -0.004071958199972246
+  - 0.001984885380598121
+  - -5.5585136856455887e-05
+  - 0.002826169859988185
+  - -0.001458023084143038
+  - -0.005124463546895176
+  verdict: fail
+  code: 'absr = ret.abs()
+
+    usual = absr.rolling(168).median().shift(1)
+
+    big = spaced(absr > 3 * usual, 12)
+
+    rng = (df.high - df.low).replace(0, np.nan)
+
+    clv = (df.close - df.low) / rng
+
+    at_ext = ((ret > 0) & (clv >= 0.85)) | ((ret < 0) & (clv <= 0.15))
+
+    a = big & at_ext
+
+    b = big & ~at_ext
+
+    signal = -np.sign(ret)
+
+    '
+- id: thin_hours_spike_reverts
+  belief: Big moves in thin hours (weekends and the Asia-early UTC hours) come from
+    shallow books and revert more than big moves in the active US/Europe hours.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.002
+  effect: 0.0002704883048047418
+  n_a: 152
+  n_b: 264
+  windows:
+  - 0.006218704515624812
+  - -0.000936020485642083
+  - -0.004800747969009883
+  - 0.003193909642154582
+  - -0.001886390392251248
+  - -0.0012850470977524946
+  verdict: fail
+  code: 'absr = ret.abs()
+
+    usual = absr.rolling(168).median().shift(1)
+
+    big = spaced(absr > 3 * usual, 12)
+
+    thin = (dow >= 5) | (hour < 6)
+
+    a = big & thin
+
+    b = big & ~thin
+
+    signal = -np.sign(ret)
+
+    '
+- id: overreaction_scales_with_size
+  belief: Among big bars, the bigger the move relative to recent volatility, the bigger
+    the reversion (overreaction is proportional).
+  measure: rank_corr
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.1
+  effect: -0.0408423400297371
+  n_a: 416
+  n_b: 416
+  windows:
+  - 0.021333097282464367
+  - -0.08168249660786975
+  - 0.08887362637362636
+  - -0.16108878333942275
+  - 0.012000657570277823
+  - -0.26705446853516657
+  verdict: fail
+  code: 'absr = ret.abs()
+
+    usual = absr.rolling(168).median().shift(1)
+
+    a = spaced(absr > 3 * usual, 12)
+
+    sigma = ret.rolling(168).std().shift(1)
+
+    feature = -ret / sigma
+
+    '
+- id: multi_bar_cascade_reverts
+  belief: A run of four same-direction hours that adds up to a large move, with no
+    single big candle, is a slow stop cascade that also overshoots and reverts.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.002
+  effect: 0.022061139372966426
+  n_a: 4
+  n_b: 17515
+  windows:
+  - 0.015601791856900832
+  - 0.05046945160489275
+  - null
+  - null
+  - null
+  - 0.010782122311480354
+  verdict: fail
+  code: 'absr = ret.abs()
+
+    usual = absr.rolling(168).median().shift(1)
+
+    sigma = ret.rolling(168).std().shift(1)
+
+    r4 = df.close / df.close.shift(4) - 1
+
+    run = np.sign(ret).rolling(4).sum().abs() == 4
+
+    no_big = (absr > 3 * usual).astype(float).rolling(4).max() == 0
+
+    a = spaced(run & (r4.abs() > 4 * sigma) & no_big, 12)
+
+    b = ~a
+
+    signal = -np.sign(r4)
+
+    '
+- id: spike_raises_next_volatility
+  belief: After a big hourly bar, the following hours stay volatile (volatility clusters),
+    which matters for sizing and stops on any fade.
+  measure: abs_ratio
+  horizon_bars: 6
+  direction: above
+  min_effect: 1.5
+  effect: 1.2036236268412925
+  n_a: 416
+  n_b: 17103
+  windows:
+  - 1.2349850441661248
+  - 1.1315389866037473
+  - 1.3872216469218486
+  - 1.227871986374756
+  - 1.192571816024636
+  - 1.012137494495452
+  verdict: fail
+  code: 'absr = ret.abs()
+
+    usual = absr.rolling(168).median().shift(1)
+
+    a = spaced(absr > 3 * usual, 12)
+
+    b = ~a
+
+    '
+profit:
+  claim: heavy_volume_spike_continues
+  symbol: BTCUSD
+  bar_size: 1h
+  fold: A
+  cost_per_round_trip: 0.0015
+  fold_totals:
+    net_return: 0.1133
+    sharpe: 0.37
+    max_drawdown: -0.1966
+    time_in_market: 0.127
+    trades: 185
+  windows:
+  - window: W1
+    net_return: -0.0525
+    trades: 38
+    max_drawdown: -0.1443
+  - window: W2
+    net_return: 0.2475
+    trades: 30
+    max_drawdown: -0.1149
+  - window: W3
+    net_return: -0.046
+    trades: 29
+    max_drawdown: -0.1114
+  - window: W4
+    net_return: 0.0538
+    trades: 28
+    max_drawdown: -0.0998
+  - window: W5
+    net_return: -0.1063
+    trades: 38
+    max_drawdown: -0.1086
+  - window: W6
+    net_return: 0.0484
+    trades: 21
+    max_drawdown: -0.0431
+  checks:
+    net_positive_in_5_of_6: false
+    sharpe_ge_1.0: false
+    max_drawdown_le_20%: true
+  verdict: fail

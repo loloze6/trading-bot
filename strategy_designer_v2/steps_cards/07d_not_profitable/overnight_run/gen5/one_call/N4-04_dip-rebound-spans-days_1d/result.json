@@ -1,0 +1,56 @@
+{
+  "line": "7.d",
+  "backtest": "N4-04_dip-rebound-spans-days_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.3345522,
+  "findings": {
+    "F1": "The book fails on Calmar (0.54 against the 0.75 needed) because its gain and its drawdowns both sit in the fully sized days: days with a position of 1.5\u20133 (n=703) earn a mean of +1.58% but with a standard deviation of 11.0% and a worst day of \u221237.6%, while days at \u22640.5 (n=1144) earn +0.01%. Window drawdowns grow from about \u22125% to \u221210% in w1\u2013w10 to \u221212% to \u221227% in w11\u2013w24 (worst \u221251% in w12).",
+    "F2": "Before fees the trades lose: 1432 trades, all long, average \u22120.06% gross against a 0.10% fee, so \u22120.16% net. One-bar trades make +1.21% gross (n=1017), but trades held 2\u20132.5 days lose \u22123.85% (n=198) and those held 2.5\u20134.5 days lose \u22126.15% (n=73). A dip that is followed by further dips, which keeps the forecast positive, is where the losses pile up.",
+    "F3": "The forecast's information is real but does not grow with forecast size. Over non-overlapping cases, the forward 3-bar return is +0.49% (t 1.18, n=404) for forecasts 0\u20131, \u22120.09% (t \u22120.15, n=224) for 1\u20135, +2.79% (t 2.30, n=117) for 5\u201310, +1.42% (t 1.41, n=85) for 10\u201319.9 and +1.79% (t 3.04, n=314) at the 20 cap.",
+    "F4": "The rebound disappears in the most volatile state. By coin-wise 20-day volatility tercile, the forward 3-bar return is +0.83% (t 2.11, n=358) when calm, +2.05% (t 4.18, n=357) in the middle and +0.49% (t 0.81, n=361) when wild, with days 2\u20133 at \u22120.03% (t \u22120.06). The wild tercile's active book days have a standard deviation of 9.0% and a worst day of \u221233.5%.",
+    "F5": "The rebound comes after shallow pullbacks, not deep ones. When the close is 3\u20138% below its 20-day high, the 3-bar return is +1.69% (t 3.49, n=411); within 3% of the high it is +0.91% (t 2.32, n=432); 8\u201315% below it is \u22120.26% (t \u22120.38, n=184); more than 15% below it is +0.19% (t 0.12, n=90).",
+    "F6": "The losses are concentrated in two coins: LTC (\u22120.88% net per trade, n=277) and ZEC (\u22120.92%, n=242, worst trade \u221255.8%). BTC, ETH, XMR and XRP are positive net, from +0.08% to +0.56%."
+  },
+  "ideas": [
+    {
+      "idea": "Within a coin's 20- and 60-day uptrend, a sharp one-day drop that leaves the close only a few percent below its 20-day high is followed by a rise over the next three days. A drop that has already taken price far below its 20-day high is followed by no such rise.",
+      "consequence": "A trader takes the dip only while the pullback from the recent high is still shallow, and refuses dips that come after a deep fall.",
+      "name": "shallow pullback dip rebound",
+      "from": "F5, F1, F3",
+      "refs": [
+        "F5",
+        "F1",
+        "F3"
+      ]
+    },
+    {
+      "idea": "In an uptrending coin, a sharp one-day drop is followed by a rise over the next three days when the coin's recent daily volatility is moderate. When recent volatility is in its highest third, the drop is followed by a larger spread of outcomes around a flat mean.",
+      "consequence": "A trader refuses dip entries when the coin's 20-day realised volatility is in its top tercile, which removes the deepest drawdown days.",
+      "name": "dip rebound needs moderate volatility",
+      "from": "F4, F1",
+      "refs": [
+        "F4",
+        "F1"
+      ]
+    },
+    {
+      "idea": "In an uptrending coin, a sharp one-day drop that is followed by a second sharp drop the next day marks a continuing slide, and price keeps falling over the following days.",
+      "consequence": "A trader exits, or does not add, when a dip is followed by another sharp down day instead of averaging into it.",
+      "name": "second dip signals slide",
+      "from": "F2, F1",
+      "refs": [
+        "F2",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "N4-04_dip-rebound-spans-days.d1_shallow-pullback-dip-rebound",
+    "N4-04_dip-rebound-spans-days.d2_dip-rebound-needs-moderate-volatility",
+    "N4-04_dip-rebound-spans-days.d3_second-dip-signals-slide"
+  ],
+  "no_ideas": null
+}

@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean demeaned per-bar gain (forecast/10 x next-bar return minus window mean)",
+    "value": -0.0011899910536009692,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.24152761808909456
+    },
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2; inconclusive otherwise or if fewer than 40 active bars"
+  },
+  "supporting_check": {
+    "name": "larger-short half minus smaller-short half mean demeaned gain",
+    "value": -0.007548352618859238,
+    "passed": false
+  },
+  "counts": {
+    "active bars": 148
+  },
+  "decided_by": "The t-statistic lies between -2 and 2, so the plan calls the result inconclusive.",
+  "reading": "Volume test uses a 20-bar rolling mean that includes the current bar, computed within each window. Bars before 20 bars of history are left out of the situation check. The position is forecast/10 as the plan says. The window mean daily return is the mean of close-to-close changes in that window. Active bars are non-zero-forecast bars with a next bar in the same window. The halves come from a rank split by forecast, most negative first, and the middle bar is dropped when the count is odd."
+}

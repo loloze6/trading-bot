@@ -1,0 +1,43 @@
+brief: n13_quiet_period_then_move_btc_1h.md
+source: analyst round 2
+ideas:
+- id: held_flag_after_shock_pays
+  belief: When a quiet 12h consolidation after a large hourly bar still holds beyond
+    the midpoint of that shock bar, the shock was absorbed rather than rejected, and
+    the move resumes in its direction by more than the fee.
+  claim:
+    when: exactly 12 bars after a bar whose absolute return exceeded 2.5x the prior
+      week's hourly std, with no new large bar since, and the close still on the shock's
+      side of the shock bar's open-close midpoint; one event per 24 bars
+    then: the 24h forward return in the shock's direction, after the 0.15% round trip,
+      is positive
+    compared_to: zero after cost (net_return)
+    measure: net_return
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.002
+    code: 'r_std = ret.rolling(168).std().shift(1)
+
+      big = ret.abs() > 2.5 * r_std
+
+      idx = pd.Series(np.arange(len(df)), index=df.index, dtype=float)
+
+      since = idx - idx.where(big).ffill()
+
+      sgn = np.sign(ret.where(big)).ffill()
+
+      mid = ((df.open.where(big) + df.close.where(big)) / 2).ffill()
+
+      held = sgn * (df.close - mid) > 0
+
+      a = spaced((since == 12) & held, 24)
+
+      b = ~a & sgn.notna()
+
+      signal = sgn.fillna(1)
+
+      '
+  why_no_lookahead: The shock, its sign and its midpoint come from bars at or before
+    the current close, carried forward with ffill; there is no negative shift.
+  how_it_trades: At the close of the 12th bar after a shock whose consolidation held
+    past the shock midpoint, enter in the shock's direction and exit 24 bars later.

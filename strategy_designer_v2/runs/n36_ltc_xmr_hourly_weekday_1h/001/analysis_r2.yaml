@@ -1,0 +1,30 @@
+run: n36_ltc_xmr_hourly_weekday_1h/fold_A
+observations:
+  - The weekday US-open block (13-16 UTC, Mon-Fri) is a real volatility regime on LTC, with abs_ratio 1.294 and all six windows between 1.186 and 1.503, so it passed there.
+  - The same US-open block nearly held on XMR, at abs_ratio 1.190 against the 1.20 asked, with all six windows above 1.11; the belief looks right and the threshold was too high.
+  - The 01-03 UTC Asia block is quieter on these coins, not louder, at abs_ratio 0.914 on LTC and 0.891 on XMR, with 5 of 6 windows below 1 on each.
+  - Funding-settlement hours (00, 08, 16 UTC) move no more than the hours around them, at abs_ratio 1.007 on LTC and 1.003 on XMR.
+  - An hour's volume above 3x its own same-hour average is followed by more movement over 4 bars, at 1.153 on LTC and 1.056 on XMR, but XMR has a window at 0.921, and both fall short of 1.3.
+  - Fading the 48-bar weekend move from Monday 00 UTC lost against the midweek baseline on LTC (-0.0084, 5 of 6 windows negative), so weekend moves continued rather than reverted.
+  - Sunday 18 UTC longs drifted worse than Mon-Thu 18 UTC on LTC in all six windows (-0.0074), but XMR was split 2 positive and 4 negative (-0.0027).
+  - No hour carries a persistent drift sign: the 30-day same-hour mean has rank_corr -0.012 on LTC and -0.011 on XMR with the next hour's return.
+  - Every return claim lost before or after cost: US-to-Asia momentum net_return was -0.0013 on LTC and -0.0070 on XMR, and Friday 19 UTC short was -0.0026 and -0.0031.
+  - The thin-hour shock reversal sample is small (80 and 50 bars) and its windows are erratic, ranging from -0.434 to +0.25 on XMR.
+next_claim:
+  id: weekend_quiet_regime
+  belief: On LTC and XMR, hourly volatility is driven by weekday trading-desk flow (the US-open block is loud, the Asia block is quiet), so weekend hours carry a lower-volatility regime than weekday hours.
+  claim:
+    when: every hourly bar on Saturday or Sunday UTC
+    then: the absolute return of the next bar is smaller
+    compared_to: every hourly bar Monday to Friday UTC
+    measure: abs_ratio
+    horizon_bars: 1
+    direction: below
+    min_effect: 0.85
+    code: |
+      a = dow >= 5
+      b = ~a
+      signal = pd.Series(1.0, index=df.index)
+  why_no_lookahead: The selector uses only the bar's own UTC weekday, which is known at its close.
+  how_it_trades: Cut position size or tighten breakout thresholds on weekends, and keep volatility-seeking entries for weekday US hours. It is a regime filter, not a return bet.
+why: The only effect that held across windows on both coins was a weekday-flow volatility clock, so the next claim tests its weekend side with an honest 15% gap. All return drifts failed and are not worth retrying.

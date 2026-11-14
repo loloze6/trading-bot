@@ -1,0 +1,34 @@
+brief: n21_candle_patterns_daily_1d.md
+source: analyst round 1
+ideas:
+- id: prior_bar_close_break_fade
+  belief: A daily close beyond the prior day's high or low overshoots on both BTC
+    and ETH and is partly given back over the next three days, whether or not the
+    prior day was an inside bar.
+  claim:
+    when: days whose close is above the prior day's high or below the prior day's
+      low, at most one per 3 days
+    then: the 3-day forward return goes against the close's breakout direction by
+      more than the round-trip cost
+    compared_to: zero after the 0.15% round-trip cost
+    measure: net_return
+    horizon_bars: 3
+    direction: positive
+    min_effect: 0.005
+    code: 'h, l, c = df.high, df.low, df.close
+
+      up = (c > h.shift(1)).fillna(False)
+
+      dn = (c < l.shift(1)).fillna(False) & ~up
+
+      a = spaced(up | dn, 3)
+
+      b = ~a
+
+      signal = pd.Series(np.where(up, -1.0, 1.0), index=df.index)
+
+      '
+  why_no_lookahead: Uses only the current close and the prior bar's high and low,
+    both known at the bar's close.
+  how_it_trades: At the daily close, sell after a close above yesterday's high (buy
+    after a close below yesterday's low), and exit 3 daily closes later.

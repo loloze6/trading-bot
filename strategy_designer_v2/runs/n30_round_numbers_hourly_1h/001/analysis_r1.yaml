@@ -1,0 +1,37 @@
+run: n30_round_numbers_hourly_1h_foldB
+observations:
+  - "The magnet idea did not hold on either coin: signed distance to the nearest fine round level gave a rank correlation of -0.013 on BTC and +0.0005 on ETH against a -0.04 bar, and the window signs were mixed on both."
+  - "Direction claims at levels all failed, with whole-fold effects well under 0.001. Resistance-below gave 0.00045 and 0.00017, wick rejection -0.00023 and -0.00077, and day-open cross 0.00021 and -0.00024 on BTC and ETH."
+  - "Half-level cross continuation nearly held on BTC, with a net_return of 0.00082 against 0.001. But only 2 of 6 windows were positive, one window carried it (0.0094), and ETH was negative at -0.00042, so no return claim clears the 0.15% cost."
+  - "The first-cross fade could not be judged on BTC, with only 16 events. On ETH it pointed the wrong way, with a hit-rate edge of -0.123 and all 5 computed windows negative."
+  - "Day-open magnet had the right sign on BTC in 5 of 6 windows but reached only -0.021 against -0.04. ETH was positive at +0.018, so the coins disagree."
+  - "Splitting crosses by volume or by session made window noise larger without adding edge. ETH windows ranged from -0.0088 to +0.0071 (volume) and from -0.0071 to +0.0022 (US session)."
+  - "Cross volatility burst nearly held. BTC passed at 1.162, and ETH had the right side in 5 of 6 windows but reached only 1.113 against 1.15. Window 5 was below 1 on both coins (0.896 and 0.899)."
+  - "Pinning was reversed: closes right on a level were followed by more movement, not less. The ratio was 1.24 on BTC and 1.27 on ETH, with all 12 windows above 1."
+  - "Both volatility results are probably volatility clustering. Distance is measured in units of 24-bar volatility, so high-volatility hours look 'near' a level more often. A fixed price grid is also crossed more often when moves are large."
+next_claim:
+  id: cross_vol_burst_regime_matched
+  belief: "Crossing a fine round level releases clustered stops and adds volatility beyond what the bar's own size and the current volatility regime already imply."
+  claim:
+    when: "Bars whose close crosses a fine round level (a tenth of the leading power of ten), where the bar's absolute return is 1 to 2.5 times the prior 24-bar std and that std is within 0.8 to 1.25 of its 30-day median."
+    then: "The absolute 6-bar forward return is larger."
+    compared_to: "Bars with no level cross that meet the same bar-size and volatility-regime band."
+    measure: abs_ratio
+    horizon_bars: 6
+    direction: above
+    min_effect: 1.10
+    code: |
+      step = 10.0 ** np.floor(np.log10(df.close)) / 10
+      k = np.floor(df.close / step)
+      kp = np.floor(df.close.shift(1) / step)
+      cross = (k != kp) & kp.notna()
+      sd = ret.rolling(24).std().shift(1)
+      z = ret.abs() / sd
+      reg = sd / sd.rolling(720).median()
+      band = (z >= 1.0) & (z <= 2.5) & (reg >= 0.8) & (reg <= 1.25)
+      a = cross & band
+      b = ~cross & band
+      signal = pd.Series(1, index=df.index)
+  why_no_lookahead: "The level, cross, bar size and volatility regime all use closes at or before the bar, and the std is shifted one bar before normalising."
+  how_it_trades: "If the claim holds, buy straddle-like exposure or widen stops and size down after a regime-matched level cross. It is a risk filter, not a direction bet."
+why: "The only result near passing was the volatility burst after a cross (BTC 1.16, ETH 1.11), and the reversed pinning result suggests it may just be volatility clustering, so this claim tests whether the cross adds anything once bar size and regime are held fixed."

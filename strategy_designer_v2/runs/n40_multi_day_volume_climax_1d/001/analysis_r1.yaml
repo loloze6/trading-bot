@@ -1,0 +1,34 @@
+run: n40_multi_day_volume_climax_1d/fold_C
+observations:
+  - No claim reached the judge's 30-bar minimum for a; the 3-day run of volume above 1.8x the trailing median fired only 8 (BTC), 13 (ETH) and 14 (LTC) times in the fold, so every verdict rests on a handful of events.
+  - Breakout continuation was positive on the whole fold on all three coins (BTC 0.077, ETH 0.332, LTC 0.110 against min_effect 0.02), but on 3 to 5 events per coin with windows split in sign on BTC and LTC.
+  - The bear-regime selloff continuation also had positive effects on all three coins (BTC 0.080, ETH 0.259, LTC 0.392), but on only 1 to 2 events, so it carries almost no weight.
+  - The selling-climax rebound nearly held on BTC (0.0156) and LTC (0.0230) against min_effect 0.01, but ETH was -0.0003, and the windows swung from -0.33 to +0.31.
+  - Fading the buying climax failed on all three coins (BTC -0.0005, ETH -0.122, LTC -0.016), which points to continuation rather than reversal after loud up days.
+  - Volatility persistence after a climax held only on ETH (ratio 1.53, above 1 in 5 of 6 windows); BTC was 1.04 and LTC 0.84.
+  - Larger climax moves did not predict larger reversals; the rank correlation of -z3 with the 10-day return was negative on all three coins (BTC -0.19, ETH -0.32, LTC -0.03), consistent with continuation.
+  - Capitulation inside a bull regime lost money on BTC (-0.097) and ETH (-0.175) over 20 days, so buying heavy-volume dips was wrong even above the 200-day average.
+  - The quiet-day-after-climax event almost never occurred (0, 1 and 2 bars), so that idea was never tested.
+next_claim:
+  id: loud_move_continuation_rank
+  belief: Over elevated-volume 3-day stretches, the louder the volume behind a 3-day move, the more that move continues over the next 10 days, because heavy participation carries information rather than exhaustion.
+  claim:
+    when: bars whose trailing 3-day mean volume is above the trailing 30-day median volume (lagged 5 bars)
+    then: the 10-day forward return ranks with the 3-day move's direction times the log of that volume excess
+    compared_to: a zero rank correlation
+    measure: rank_corr
+    horizon_bars: 10
+    direction: positive
+    min_effect: 0.08
+    code: |
+      base = df.volume.shift(5).rolling(30).median()
+      vr3 = (df.volume / base).rolling(3).mean()
+      r3 = df.close / df.close.shift(3) - 1
+      loud = np.log(vr3)
+      feature = np.sign(r3).replace(0, 1) * loud
+      a = (vr3 > 1.0) & feature.notna()
+      b = ~a
+      signal = np.sign(r3).replace(0, 1)
+  why_no_lookahead: The volume base, the 3-day mean volume and the 3-day return use only bars at or before the current close; there is no negative shift.
+  how_it_trades: On days with elevated 3-day volume, go long (or short) in the direction of the 3-day move, sized by the volume excess, and hold for 10 days.
+why: Every event-based claim had too few bars to judge, and the sparse evidence (breakout, bear and fade results, and the negative reversal correlation) leans to continuation, so a continuous volume-weighted continuation feature on hundreds of elevated-volume bars tests that lean with enough data.

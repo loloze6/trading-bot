@@ -1,0 +1,31 @@
+run: n27_drawdown_state_daily_1d fold B (folder name not given in the record)
+observations:
+  - Every claim built on a 180- or 365-day high had null windows 1 to 3 on BTC and ETH (e.g. near_high_drift_continues, momentum_rule_pays_near_high_not_in_drawdown), so it could not meet the 5-of-6 window rule; only the 60-day claims (slow_grind, fast_drop) filled the early windows.
+  - slow_grind_drawdown_continues held on ETH (effect 0.099, all five non-null windows positive, from 0.005 to 0.145) but not on BTC (0.022, windows split 2 positive, 2 negative) or LTC (0.024, window 5 at -0.291).
+  - mid_drawdown_short_term_reversal nearly held, with all three whole-fold effects above the 0.006 bar (BTC 0.0139, ETH 0.0120, LTC 0.0220), but BTC's windows disagreed (-0.0057, 0.080, -0.0069).
+  - stale_deep_drawdown_vol_compression nearly held on ETH (0.833 against a 0.80 bar) and held on LTC (0.629), but BTC went the other way (1.048).
+  - near_high_drift_continues was positive on the whole fold for ETH (0.050) and LTC (0.062), but its late windows were negative (ETH -0.040, -0.017; LTC -0.177), and BTC was -0.032 overall.
+  - low_volume_approach_to_high_fails was positive in all three BTC windows (0.066, 0.106, 0.067) on only 23 bars, while LTC was -0.391 on 8 bars.
+  - The event claims (new_year_high_breakout_long, recovery_thrust_from_deep_drawdown) had n_a of 2 to 5 per symbol, far below the 30-bar floor.
+  - momentum_rule_pays_near_high_not_in_drawdown split by coin: ETH +0.251, BTC -0.045, LTC -0.142.
+  - fast_drop_from_60d_high_rebounds failed on LTC (-0.005), negative in 4 of its 5 non-null windows.
+next_claim:
+  id: dd60_depth_ranks_forward_return
+  belief: Distance below the 60-day high works as a continuous momentum state; the deeper the drawdown, the weaker the next 10 days, as the slow-grind continuation on ETH suggested.
+  claim:
+    when: every bar with a full 60-day high
+    then: the 10-day forward return rises with the close's distance to the 60-day high (closer to the high, higher return)
+    compared_to: rank across all valid bars, no baseline group
+    measure: rank_corr
+    horizon_bars: 10
+    direction: positive
+    min_effect: 0.08
+    code: |
+      hi = df.high.rolling(60).max()
+      feature = df.close / hi - 1
+      a = hi.notna()
+      b = ~a
+      signal = pd.Series(1.0, index=df.index)
+  why_no_lookahead: The 60-day high and the close are both known at the bar's close, with no forward shift.
+  how_it_trades: Size the long exposure by drawdown depth, full near the 60-day high and flat or short deep below it.
+why: The 60-day lookback is the only one that fills all six windows, and a continuous rank with no thresholds tests the state-decides-direction idea on every bar instead of on thin event sets.

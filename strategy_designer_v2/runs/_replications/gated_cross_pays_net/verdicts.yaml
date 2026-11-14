@@ -1,0 +1,48 @@
+claims_file: strategy_designer_v2/runs/_replications/gated_cross_pays_net/claims.yaml
+fold: C
+bar_size: 1h
+symbols:
+- LTCUSD
+- XRPUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  gated_cross_pays_net:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.013667036639684256
+        t_stat: 1.53
+        n_a: 100
+        n_b: 100
+        windows:
+        - 0.013016305683621944
+        - 0.020022330894902005
+        - 0.008681120074757952
+        - -0.007294568383931796
+        - 0.048964514756400894
+        - -0.018950038424743517
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: -0.004016968025450138
+        t_stat: -0.48
+        n_a: 107
+        n_b: 107
+        windows:
+        - -0.015650682661844034
+        - 0.039480117238621854
+        - -0.0002955690047869604
+        - -0.02585825342771501
+        - -0.017008807779826163
+        - 0.001687613803558616
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

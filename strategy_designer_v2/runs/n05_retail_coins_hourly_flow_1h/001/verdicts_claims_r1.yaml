@@ -1,0 +1,46 @@
+claims_file: strategy_designer_v2/runs/n05_retail_coins_hourly_flow_1h/001/claims_r1.yaml
+fold: A
+bar_size: 1h
+symbols:
+- DOGEUSD
+- ADAUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  volume_blowout_fade_vs_quiet:
+    verdict: fail
+    by_symbol:
+      DOGEUSD:
+        verdict: pass
+        effect: 0.01515459680860271
+        n_a: 49
+        n_b: 65
+        windows:
+        - 0.03833541952396507
+        - 0.03875526405077926
+        - 0.004857259810658841
+        - 0.0026758254178441574
+        - 0.028242434502656056
+        - -0.03084260131539201
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      ADAUSD:
+        verdict: fail
+        effect: -0.0059544805550954556
+        n_a: 51
+        n_b: 77
+        windows:
+        - 0.03553583308033591
+        - -0.03151836076217977
+        - -0.015970821072603558
+        - -0.01289759994819031
+        - -0.006576328501414522
+        - -0.006035576867336203
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true

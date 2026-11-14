@@ -1,0 +1,5 @@
+---
+---
+When a coin has a sharp price move on unusually heavy volume, the move tends to keep going over the following bars rather than reverse, because the heavy volume shows that informed or large traders are acting on news, and such traders often spread their orders over time to limit their impact, so part of their demand or supply is still to come. Slower traders, who read the news late or wait for confirmation, add to the move as they arrive. A sharp move on thin volume should behave differently: with no sign of a large participant behind it, it more likely reflects a temporary imbalance in a shallow order book and tends to fade as liquidity providers step back in. The reason is my own reasoning, taken from general market microstructure, not from a source. The theory is wrong if moves on heavy volume continue no more than, or reverse as often as, moves of the same size on normal or light volume, or if large moves on heavy volume tend to reverse, as would happen if heavy volume mostly marks forced liquidations and capitulation rather than informed trading.
+
+short-name: high-volume-moves-continue

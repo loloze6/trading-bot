@@ -1,0 +1,711 @@
+brief: n25_low_vol_momentum_other_coins_1d.md
+fold: A
+symbols:
+- ETHUSD
+- LTCUSD
+- XRPUSD
+bar_size: 1d
+claims:
+- id: low_vol_mom20_transfer
+  belief: The BTC finding generalises. When 20-day volatility is below its trailing-year
+    median, the sign of the 20-day return persists on ETH, LTC and XRP strongly enough
+    to pay fees.
+  measure: net_return
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: -0.0043021157836493195
+      n_a: 489
+      n_b: 489
+      windows:
+      - 0.013454591441829238
+      - 0.13030137006815998
+      - -0.05886134868807483
+      - -0.0019128232262123426
+      - -0.007032659562159309
+      - -0.005868624985754982
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.00157081562020625
+      n_a: 531
+      n_b: 531
+      windows:
+      - -0.014689927855328728
+      - 0.022434992760503262
+      - -0.027411744303224156
+      - 0.019307395557490923
+      - 0.026075931233629897
+      - -0.019227871841283745
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.010788637486275468
+      n_a: 493
+      n_b: 493
+      windows:
+      - -0.006382733323493298
+      - 0.034536569903720185
+      - -0.019904684435747142
+      - -0.016043492157147843
+      - -0.0652147173218886
+      - -0.001122080876288204
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(20).std()
+
+    med = vol.rolling(365, min_periods=250).median()
+
+    mom = df.close / df.close.shift(20) - 1
+
+    a = (vol < med) & mom.notna() & (mom != 0)
+
+    b = ~a
+
+    signal = pd.Series(np.where(mom > 0, 1, -1), index=df.index)
+
+    '
+- id: regime_contrast_low_vs_high
+  belief: The volatility regime itself is what makes momentum work. The same momentum
+    rule earns clearly more in the low-volatility half than in the high-volatility
+    half, which is the control.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: -0.015524473817356095
+      n_a: 489
+      n_b: 241
+      windows:
+      - 0.053308762844818405
+      - 0.09750396137009251
+      - -0.05171618797173909
+      - -0.031387688502334615
+      - null
+      - -0.02018931595702868
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.013534842800440185
+      n_a: 531
+      n_b: 199
+      windows:
+      - 0.056211229395387474
+      - -0.007226605398059811
+      - -0.03504911882996155
+      - 0.06394817958836967
+      - 0.09714117836132014
+      - -0.04562503007838449
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.005595494234414036
+      n_a: 493
+      n_b: 235
+      windows:
+      - 0.03897623018236912
+      - 0.010550122788673764
+      - -0.028842259998667012
+      - -0.04036665330444843
+      - -0.045033928523274425
+      - 0.028628670478692424
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(20).std()
+
+    med = vol.rolling(365, min_periods=250).median()
+
+    mom = df.close / df.close.shift(20) - 1
+
+    ok = med.notna() & mom.notna()
+
+    a = ok & (vol < med)
+
+    b = ok & (vol >= med)
+
+    signal = pd.Series(np.where(mom > 0, 1, -1), index=df.index)
+
+    '
+- id: high_vol_momentum_reverts
+  belief: In the high-volatility regime, 20-day moves are overshoots driven by liquidations
+    and panic, so fading them pays. This contradicts the plain momentum view.
+  measure: net_return
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.006
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: -0.005643291936438477
+      n_a: 144
+      n_b: 144
+      windows:
+      - 0.019094989052436877
+      - -0.011369842579108528
+      - 0.011434554241677653
+      - null
+      - null
+      - -0.013620839348096395
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.006365106540291529
+      n_a: 140
+      n_b: 140
+      windows:
+      - null
+      - -0.006897323402295076
+      - -0.03172700554124248
+      - 0.0316137965471013
+      - 0.04742369514874262
+      - null
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.007568978706417559
+      n_a: 154
+      n_b: 154
+      windows:
+      - -0.04590120423196007
+      - -0.02819527949987657
+      - -0.007644194281343546
+      - -0.04377349753286046
+      - 0.007465262710397607
+      - 0.02000443115390072
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(20).std()
+
+    hi = vol.rolling(365, min_periods=250).quantile(0.667)
+
+    mom = df.close / df.close.shift(20) - 1
+
+    a = (vol > hi) & mom.notna() & (mom != 0)
+
+    b = ~a
+
+    signal = pd.Series(np.where(mom > 0, -1, 1), index=df.index)
+
+    '
+- id: low_vol_long_only_asymmetry
+  belief: Low-volatility uptrends in crypto are steady accumulation, while low-volatility
+    downtrends tend to be dull drift that stalls. Only the long leg carries the edge.
+  measure: net_return
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.012
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: -0.012993563011447992
+      n_a: 228
+      n_b: 228
+      windows:
+      - -0.040850740117248395
+      - -0.0322595036206168
+      - -0.08442640796512885
+      - 0.023086236835035325
+      - -0.02613478897182048
+      - 0.03481528936485172
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.012258806720913224
+      n_a: 239
+      n_b: 239
+      windows:
+      - -0.0616125393293407
+      - -0.0006170805634719101
+      - 0.003563246587153322
+      - 0.015214231204069588
+      - -0.05733530766720286
+      - -0.008456911721967825
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: 0.001883433194825649
+      n_a: 192
+      n_b: 192
+      windows:
+      - -0.028767850079995928
+      - -0.009923833510794542
+      - -0.03536103094372673
+      - 0.015067019713396601
+      - 0.027632450963665706
+      - 0.029033129489157823
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(20).std()
+
+    med = vol.rolling(365, min_periods=250).median()
+
+    mom = df.close / df.close.shift(20) - 1
+
+    a = (vol < med) & (mom > 0)
+
+    b = ~a
+
+    signal = pd.Series(1, index=df.index)
+
+    '
+- id: vol_scaled_trend_strength_rank
+  belief: In a quiet regime, a trend's strength measured in units of its own volatility
+    ranks future returns. A large move relative to low noise is information, not noise.
+  measure: rank_corr
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: -0.005965139863613324
+      n_a: 506
+      n_b: 506
+      windows:
+      - -0.13549337260677466
+      - -0.10701754385964912
+      - -0.24940392447241758
+      - -0.300604208625599
+      - -0.1618900826766068
+      - 0.22362088115512777
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.13411187204185618
+      n_a: 532
+      n_b: 532
+      windows:
+      - -0.39248189497441743
+      - 0.06523141428801806
+      - -0.24227596017069697
+      - 0.04951425386207995
+      - -0.07417634996582366
+      - -0.3834852585101837
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.13877851692951707
+      n_a: 474
+      n_b: 474
+      windows:
+      - -0.20213976499690783
+      - 0.04829772049871961
+      - -0.277000215324987
+      - -0.3255846917080085
+      - -0.3434313055365687
+      - 0.057889670492410214
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std()
+
+    med = vol.rolling(365, min_periods=250).median()
+
+    mom = df.close / df.close.shift(30) - 1
+
+    feature = mom / (vol * np.sqrt(30))
+
+    a = (vol < med) & feature.notna()
+
+    b = ~a
+
+    '
+- id: quiet_breakout_continuation
+  belief: A close at a new 20-day high or low that comes out of a low-volatility base
+    marks real repricing, not noise, and it continues.
+  measure: net_return
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.012
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: 0.009232541797818797
+      n_a: 126
+      n_b: 126
+      windows:
+      - 0.015140059658319384
+      - 0.16810390778315304
+      - -0.07010013862077949
+      - 0.0031032570154237
+      - -0.0067748942016602025
+      - 0.019030067431067763
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.028750604954042715
+      n_a: 123
+      n_b: 123
+      windows:
+      - -0.07009156585804736
+      - 0.0017367897350075911
+      - -0.030113143219828123
+      - -0.005954955983617789
+      - -0.01914011691419886
+      - -0.03998420203411697
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: 0.0011478036137001083
+      n_a: 107
+      n_b: 107
+      windows:
+      - 0.02167020183197925
+      - 0.03898471721925979
+      - 0.01803922989654359
+      - -0.028878649267698637
+      - -0.025221913137198352
+      - -0.004538168256962157
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(20).std().shift(1)
+
+    med = vol.rolling(365, min_periods=250).median()
+
+    hh = df.close >= df.close.rolling(20).max()
+
+    ll = df.close <= df.close.rolling(20).min()
+
+    a = (vol < med) & (hh | ll)
+
+    b = ~a
+
+    signal = pd.Series(np.where(hh, 1, -1), index=df.index)
+
+    '
+- id: trend_efficiency_in_low_vol
+  belief: What matters is a smooth path, not just a low volatility level. A high efficiency
+    ratio (net move over summed absolute daily moves) in a quiet regime marks orderly
+    trend-following flow that persists.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.008
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: 0.003034770388984344
+      n_a: 112
+      n_b: 377
+      windows:
+      - -0.06750173053189483
+      - -0.10763615042387967
+      - -0.06404671334106074
+      - 0.03562480987336286
+      - 0.008740417484875043
+      - 0.08739141021608325
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.037116524923080964
+      n_a: 85
+      n_b: 446
+      windows:
+      - -0.09132399180904636
+      - -0.08352374880795338
+      - -0.09313302763544089
+      - -0.000959419368329606
+      - -0.04701202712565304
+      - -0.00031799695791636523
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: 0.021665169832255644
+      n_a: 81
+      n_b: 412
+      windows:
+      - -0.07758916557983968
+      - 0.029718171098007548
+      - -0.01966561059242662
+      - 0.00456376051699129
+      - 0.18758859410952272
+      - 0.05726169684553342
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(20).std()
+
+    med = vol.rolling(365, min_periods=250).median()
+
+    net = (df.close - df.close.shift(20)).abs()
+
+    path = df.close.diff().abs().rolling(20).sum()
+
+    er = net / path
+
+    low = (vol < med) & er.notna()
+
+    a = low & (er > 0.35)
+
+    b = low & (er <= 0.35)
+
+    mom = df.close / df.close.shift(20) - 1
+
+    signal = pd.Series(np.where(mom > 0, 1, -1), index=df.index)
+
+    '
+- id: low_vol_mom_volume_confirmation
+  belief: A quiet trend backed by rising participation (20-day volume above its 60-day
+    mean) reflects real demand or supply and persists better than a quiet trend on
+    fading volume.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.008
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: 0.0074680690530591134
+      n_a: 148
+      n_b: 341
+      windows:
+      - -0.1421869602131902
+      - 0.26613666486063603
+      - 0.08520096073004738
+      - 0.002134519518768954
+      - 0.001470193069335205
+      - 0.03839909694502946
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.005302836539700338
+      n_a: 175
+      n_b: 356
+      windows:
+      - -0.1218507631125734
+      - 0.11578653024265766
+      - 0.030859329870245474
+      - 0.03723775572241417
+      - -0.07218401133379004
+      - 0.035035958660258985
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.004788005481803099
+      n_a: 107
+      n_b: 386
+      windows:
+      - -0.08977273960968363
+      - 0.014189827490606127
+      - -0.0008618756613029584
+      - -0.03413583933190019
+      - 0.03887496982819237
+      - 0.11286734615750756
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(20).std()
+
+    med = vol.rolling(365, min_periods=250).median()
+
+    v20 = df.volume.rolling(20).mean()
+
+    v60 = df.volume.rolling(60).mean()
+
+    low = (vol < med) & v60.notna()
+
+    a = low & (v20 > v60)
+
+    b = low & (v20 <= v60)
+
+    mom = df.close / df.close.shift(20) - 1
+
+    signal = pd.Series(np.where(mom > 0, 1, -1), index=df.index)
+
+    '
+- id: vol_expansion_from_quiet_base
+  belief: The trend pays most just as volatility starts rising from a quiet base,
+    because the new move is starting. Momentum is weaker while volatility is still
+    compressing.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.008
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: -0.011152304211426316
+      n_a: 219
+      n_b: 270
+      windows:
+      - -0.00048242164571913465
+      - 0.01644981745464183
+      - -0.06465458692416245
+      - 0.017758807886828647
+      - -0.01787536566458143
+      - 8.854150905725396e-05
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.010952016239781148
+      n_a: 238
+      n_b: 293
+      windows:
+      - 0.05942052318667505
+      - -0.007466117025599864
+      - -0.001162078073491387
+      - 0.009695716986336034
+      - 0.0040882906829779984
+      - -0.0022394243364691827
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.014578839029445291
+      n_a: 190
+      n_b: 303
+      windows:
+      - -0.009721091558057575
+      - -0.0068570944698011435
+      - -0.10765195670663302
+      - 0.028025880507831103
+      - -0.056706314228002486
+      - 0.01307452925898453
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(20).std()
+
+    med = vol.rolling(365, min_periods=250).median()
+
+    low = (vol < med) & vol.shift(5).notna()
+
+    a = low & (vol > vol.shift(5))
+
+    b = low & (vol <= vol.shift(5))
+
+    mom = df.close / df.close.shift(20) - 1
+
+    signal = pd.Series(np.where(mom > 0, 1, -1), index=df.index)
+
+    '
+- id: range_vol_regime_slow_momentum
+  belief: A slower 60-day trend, gated by a range-based quiet regime (mean high-low
+    range over 30 days below its yearly median), captures the persistent drift of
+    quiet markets rather than short swings.
+  measure: net_return
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.015
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: -0.027406818899728777
+      n_a: 532
+      n_b: 532
+      windows:
+      - -0.04991161158764667
+      - -0.017014878647729135
+      - -0.08267435743799972
+      - 0.01782409808955001
+      - -0.01707486776942136
+      - -0.018125033795835493
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.005884559422981045
+      n_a: 563
+      n_b: 563
+      windows:
+      - 0.019289329224009298
+      - 0.01981140411986448
+      - -0.005217895165161061
+      - -0.0008569264657765079
+      - -0.030092971442033364
+      - -0.032272878325889376
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.0016092191475526936
+      n_a: 497
+      n_b: 497
+      windows:
+      - -0.012712743333577518
+      - 0.03413457892246513
+      - -0.04805330571793343
+      - -0.01855569868698526
+      - 0.10958495658018895
+      - -0.05452638581558364
+      verdict: fail
+      why: null
+  code: 'rng = ((df.high - df.low) / df.close).rolling(30).mean()
+
+    med = rng.rolling(365, min_periods=250).median()
+
+    mom = df.close / df.close.shift(60) - 1
+
+    a = (rng < med) & mom.notna() & (mom != 0)
+
+    b = ~a
+
+    signal = pd.Series(np.where(mom > 0, 1, -1), index=df.index)
+
+    '
+- id: quiet_regime_stretch_reversion
+  belief: In a low-volatility regime on these coins, a price stretched far from its
+    20-day mean in units of its own volatility tends to come back, which is the reverse
+    of the BTC momentum finding.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: 0.01503998469498339
+      n_a: 83
+      n_b: 406
+      windows:
+      - 0.11667786587240844
+      - -0.036465874136768994
+      - 0.03602050365153146
+      - 0.0018293060665837916
+      - 0.036746921184583135
+      - -0.08415205710387502
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.04285713178853895
+      n_a: 74
+      n_b: 457
+      windows:
+      - 0.06627733082544149
+      - 0.025608347242288304
+      - 0.04730854921263766
+      - 0.04364105133843047
+      - -0.025919496343086837
+      - 0.025971245958627535
+      verdict: pass
+      why: null
+    XRPUSD:
+      effect: -0.04254230338537739
+      n_a: 74
+      n_b: 419
+      windows:
+      - 0.07544226834258703
+      - -0.10722916011334799
+      - 0.02133540567807167
+      - -0.04518537459837188
+      - -0.09125231790077541
+      - -0.09888575175981369
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(20).std()
+
+    med = vol.rolling(365, min_periods=250).median()
+
+    sma = df.close.rolling(20).mean()
+
+    z = (df.close / sma - 1) / (vol * np.sqrt(20))
+
+    quiet = (vol < med) & z.notna() & med.notna()
+
+    a = quiet & (z.abs() > 0.75)
+
+    b = quiet & (z.abs() <= 0.75)
+
+    signal = pd.Series(np.where(z > 0, -1, 1), index=df.index)
+
+    '
+profit: 'none: no return claim passed'

@@ -1,0 +1,171 @@
+brief: n21_candle_patterns_daily_1d.md
+ideas:
+  - id: inside_bar_vol_release
+    belief: A daily inside bar marks a pause in two-sided trading that resolves in a larger than usual move over the next few days, against the usual rule that quiet days are followed by quiet days.
+    claim:
+      when: bars whose high is below the prior bar's high and whose low is above the prior bar's low (inside bars)
+      then: the absolute 3-day forward return is larger
+      compared_to: all other bars
+      measure: abs_ratio
+      horizon_bars: 3
+      direction: above
+      min_effect: 1.10
+      code: |
+        h, l = df.high, df.low
+        inside = (h < h.shift(1)) & (l > l.shift(1))
+        a = inside.fillna(False)
+        b = ~a
+    why_no_lookahead: The pattern uses only the current and prior bar's high and low, all known at the current close.
+    how_it_trades: Buy a straddle-like breakout bracket (stop orders on both sides) after an inside bar and hold up to 3 days.
+  - id: inside_bar_close_breakout
+    belief: When the bar after an inside bar closes beyond the inside bar's range, the release of compression has chosen a direction and continues.
+    claim:
+      when: the prior bar was an inside bar and the current bar closes above the inside bar's high (long) or below its low (short)
+      then: the 3-day forward return in the breakout direction is positive after cost
+      compared_to: nothing (net of cost)
+      measure: net_return
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.004
+      code: |
+        h, l, c = df.high, df.low, df.close
+        inside_prev = (h.shift(1) < h.shift(2)) & (l.shift(1) > l.shift(2))
+        up = (inside_prev & (c > h.shift(1))).fillna(False)
+        dn = (inside_prev & (c < l.shift(1))).fillna(False)
+        a = spaced(up | dn, 2)
+        b = ~a
+        signal = pd.Series(np.where(up, 1.0, -1.0), index=df.index)
+    why_no_lookahead: The inside bar is the prior bar and the breakout is judged on the current close against the prior bar's high and low.
+    how_it_trades: At the close that breaks the inside bar's range, enter in the breakout direction and exit 3 days later.
+  - id: engulfing_after_pullback
+    belief: A real body that engulfs the prior bar's opposite body after a 3-day move against it shows a shift of control that persists for several days, beyond what any up or down day implies.
+    claim:
+      when: a bullish engulfing (up body covering the prior down body) after a 3-day decline, or a bearish engulfing after a 3-day rise
+      then: the 3-day forward return in the engulfing bar's direction is higher
+      compared_to: all other bars, each signed by its own body direction
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.004
+      code: |
+        o, c = df.open, df.close
+        bull = (c > o) & (c.shift(1) < o.shift(1)) & (c >= o.shift(1)) & (o <= c.shift(1)) & (c.shift(1) < c.shift(4))
+        bear = (c < o) & (c.shift(1) > o.shift(1)) & (c <= o.shift(1)) & (o >= c.shift(1)) & (c.shift(1) > c.shift(4))
+        a = (bull | bear).fillna(False)
+        b = ~a
+        signal = pd.Series(np.where(c >= o, 1.0, -1.0), index=df.index)
+    why_no_lookahead: The pattern uses the open and close of the current bar and of the bars 1 to 4 back, all known at the current close.
+    how_it_trades: At the engulfing bar's close, enter in its direction and hold 3 days.
+  - id: three_bar_reversal
+    belief: Two bars of lower closes and lower lows, then a close above the prior bar's high, traps late sellers, and their covering drives a multi-day reversal (mirror for tops).
+    claim:
+      when: after two consecutive lower closes with a lower low, the current bar closes above the prior bar's high (long), or the mirror pattern at tops (short)
+      then: the 5-day forward return in the reversal direction is positive after cost
+      compared_to: nothing (net of cost)
+      measure: net_return
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.005
+      code: |
+        h, l, c = df.high, df.low, df.close
+        down2 = (c.shift(1) < c.shift(2)) & (c.shift(2) < c.shift(3)) & (l.shift(1) < l.shift(2))
+        up2 = (c.shift(1) > c.shift(2)) & (c.shift(2) > c.shift(3)) & (h.shift(1) > h.shift(2))
+        bull = (down2 & (c > h.shift(1))).fillna(False)
+        bear = (up2 & (c < l.shift(1))).fillna(False)
+        a = spaced(bull | bear, 3)
+        b = ~a
+        signal = pd.Series(np.where(bull, 1.0, -1.0), index=df.index)
+    why_no_lookahead: The pattern compares the current close with the highs, lows and closes of the 3 prior bars only.
+    how_it_trades: Enter at the reversal bar's close in the reversal direction and exit 5 days later.
+  - id: failed_range_breakout
+    belief: A day that trades through the 10-day high or low but closes back inside the range shows rejected stop-driven flow and reverses, while breakouts that hold the close do not.
+    claim:
+      when: the high exceeds the prior 10-day high but the close is back below it (short), or the low breaks the prior 10-day low but the close is back above it (long)
+      then: the 5-day forward return in the fade direction is higher
+      compared_to: breakouts of the same 10-day edge that closed beyond it, signed the same way (short at highs, long at lows)
+      measure: mean_diff
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.006
+      code: |
+        h, l, c = df.high, df.low, df.close
+        hi10 = h.shift(1).rolling(10).max()
+        lo10 = l.shift(1).rolling(10).min()
+        brk_hi = h > hi10
+        brk_lo = (l < lo10) & ~brk_hi
+        fail = (brk_hi & (c < hi10)) | (brk_lo & (c > lo10))
+        acc = (brk_hi & (c >= hi10)) | (brk_lo & (c <= lo10))
+        a = fail.fillna(False)
+        b = acc.fillna(False)
+        signal = pd.Series(np.where(brk_hi, -1.0, 1.0), index=df.index)
+    why_no_lookahead: The 10-day range is computed on bars before the current one, and the break and close tests use the current bar only.
+    how_it_trades: On a close back inside the range after a break, fade the break with a stop beyond the day's extreme and hold 5 days.
+  - id: outside_bar_fade
+    belief: An outside bar that runs both the prior high and the prior low is a two-sided liquidation sweep whose closing direction is exhausted and tends to give back.
+    claim:
+      when: bars whose high is above the prior high and whose low is below the prior low (outside bars)
+      then: the 2-day forward return against the outside bar's body direction is higher
+      compared_to: all other bars, each faded against its own body direction
+      measure: mean_diff
+      horizon_bars: 2
+      direction: positive
+      min_effect: 0.004
+      code: |
+        h, l, o, c = df.high, df.low, df.open, df.close
+        outside = (h > h.shift(1)) & (l < l.shift(1))
+        a = outside.fillna(False)
+        b = ~a
+        signal = pd.Series(np.where(c >= o, -1.0, 1.0), index=df.index)
+    why_no_lookahead: The pattern uses the current and prior bar's high and low and the current open and close.
+    how_it_trades: At an outside bar's close, take the side opposite its body and exit 2 days later.
+  - id: staircase_trend_persistence
+    belief: Three bars in a row of higher highs and higher lows (or lower highs and lower lows) reflect orderly one-sided flow that persists more reliably than a plain 3-day move of the same sign.
+    claim:
+      when: three consecutive bars each with a higher high and a higher low than the prior bar (long), or each with a lower high and a lower low (short)
+      then: the 5-day forward return in the staircase direction is positive more often
+      compared_to: all other bars, each signed by its own 3-day close-to-close direction
+      measure: hit_rate
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.05
+      code: |
+        h, l, c = df.high, df.low, df.close
+        hh = ((h > h.shift(1)) & (l > l.shift(1))).astype(int)
+        ll = ((h < h.shift(1)) & (l < l.shift(1))).astype(int)
+        up3 = hh.rolling(3).sum() == 3
+        dn3 = ll.rolling(3).sum() == 3
+        a = spaced(up3 | dn3, 3)
+        b = ~(up3 | dn3)
+        mom = np.where(c >= c.shift(3), 1.0, -1.0)
+        signal = pd.Series(np.where(up3, 1.0, np.where(dn3, -1.0, mom)), index=df.index)
+    why_no_lookahead: The staircase and the 3-day momentum use only the current and the three prior bars' highs, lows and closes.
+    how_it_trades: After a third staircase bar closes, enter in its direction and hold 5 days.
+  - id: tweezer_at_range_edge
+    belief: Two consecutive days whose highs (lows) match at a 10-day extreme, with the second day closing against the test, mark a level that sellers (buyers) defend, and price backs off from it.
+    claim:
+      when: the prior bar set a 10-day high, the current high is within 0.35 of the 14-day average range of it, and the current bar closes red (short), or the mirror at a 10-day low with a green close (long)
+      then: the 5-day forward return away from the level is positive after cost
+      compared_to: nothing (net of cost)
+      measure: net_return
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.005
+      code: |
+        h, l, o, c = df.high, df.low, df.open, df.close
+        avg_rng = (h - l).rolling(14).mean()
+        top = (h.shift(1) >= h.shift(1).rolling(10).max()) & ((h - h.shift(1)).abs() <= 0.35 * avg_rng) & (c < o)
+        bot = (l.shift(1) <= l.shift(1).rolling(10).min()) & ((l - l.shift(1)).abs() <= 0.35 * avg_rng) & (c > o)
+        top = top.fillna(False)
+        bot = bot.fillna(False) & ~top
+        a = spaced(top | bot, 3)
+        b = ~a
+        signal = pd.Series(np.where(top, -1.0, 1.0), index=df.index)
+    why_no_lookahead: The 10-day extreme is judged at the prior bar from past bars, and the match, average range and candle colour use data up to the current close.
+    how_it_trades: At the second bar's close, short a tweezer top or buy a tweezer bottom, with a stop beyond the matched level, and exit after 5 days.
+notes: >
+  Of the brief's four named pattern families, two get two ideas each. Inside bars get a volatility claim and a direction claim. Range-edge rejection gets a failed-breakout claim and a tweezer claim.
+  The already-tried lower-wick and close-location claims are not repeated. The rejection ideas here are defined by where the close sits relative to a 10-day level, or by a matched extreme, not by wick length or close location.
+  Two ideas contradict each other on purpose: engulfing_after_pullback bets on continuation in the body's direction, and outside_bar_fade bets on fading it. The data decides.
+  inside_bar_vol_release runs against the usual pattern that quiet days are followed by quiet days. A ratio above 1.10 is a real test of a compression-then-release effect.
+  Event counts are the main risk. tweezer_at_range_edge and three_bar_reversal may have only about 15 to 35 events per year per coin. Their definitions were loosened (10-day edge, 0.35 range tolerance) to stay countable.
+  Profit claims require at least 0.4 to 0.5% net of the 0.15% cost over 3 to 5 days. That is roughly half a standard error on samples of this size, so they are demanding by design.

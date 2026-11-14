@@ -1,0 +1,196 @@
+brief: n26_session_reversal_hourly_1h.md
+ideas:
+  - id: asia_big_move_fades_in_europe
+    belief: A large Asia-session move (00-08 UTC), made on thin liquidity, is partly given back when European liquidity arrives in the 08-14 UTC session.
+    claim:
+      when: bars closing at 08:00 UTC whose Asia-session return (close 00:00 to close 08:00) is in the top 30% of absolute size versus the prior 30 Asia sessions
+      then: the Europe session (next 6 bars, to 14:00 UTC) moves against the Asia move
+      compared_to: bars closing at 08:00 UTC with a smaller Asia-session move
+      measure: mean_diff
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.003
+      code: |
+        c = df.close
+        m = pd.Series(np.asarray(hour) == 8, index=df.index)
+        s = c / c.shift(8, freq='h').reindex(c.index) - 1
+        thr = s.abs()[m].rolling(30, min_periods=20).quantile(0.7).shift(1).reindex(c.index)
+        a = m & (s.abs() > thr)
+        b = m & (s.abs() <= thr)
+        signal = -np.sign(s)
+    why_no_lookahead: The Asia return ends at the 08:00 bar close, and the threshold uses only prior Asia sessions (shift(1) on the session series).
+    how_it_trades: At 08:00 UTC after a large Asia move, enter against it and exit at 14:00 UTC.
+  - id: europe_move_continues_in_us
+    belief: European sessions price information that US participants act on later, so a sizeable Europe move (08-14 UTC) continues through the US session (14-21 UTC).
+    claim:
+      when: bars closing at 14:00 UTC whose Europe-session return (08:00 to 14:00) is in the top 30% of absolute size versus the prior 30 Europe sessions
+      then: the US session (next 7 bars, to 21:00 UTC) moves in the same direction as the Europe move
+      compared_to: bars closing at 14:00 UTC with a smaller Europe move
+      measure: hit_rate
+      horizon_bars: 7
+      direction: positive
+      min_effect: 0.04
+      code: |
+        c = df.close
+        m = pd.Series(np.asarray(hour) == 14, index=df.index)
+        s = c / c.shift(6, freq='h').reindex(c.index) - 1
+        thr = s.abs()[m].rolling(30, min_periods=20).quantile(0.7).shift(1).reindex(c.index)
+        a = m & (s.abs() > thr)
+        b = m & (s.abs() <= thr)
+        signal = np.sign(s)
+    why_no_lookahead: The Europe return closes at the 14:00 bar, and the size threshold uses only earlier Europe sessions.
+    how_it_trades: At 14:00 UTC after a large Europe move, go with it and exit at 21:00 UTC.
+  - id: us_session_fades_overnight
+    belief: US-session moves (14-21 UTC) are driven by US flows that exit or hedge overnight, so the move partly reverts from 21:00 to the end of Asia (08:00 UTC).
+    claim:
+      when: bars closing at 21:00 UTC whose US-session return (14:00 to 21:00) exceeds 1.0 times the median absolute US-session return of the prior 30 sessions
+      then: the next 11 bars (to 08:00 UTC) move against the US move, by enough to pay cost
+      compared_to: nothing (net of 0.15% round-trip cost)
+      measure: net_return
+      horizon_bars: 11
+      direction: positive
+      min_effect: 0.002
+      code: |
+        c = df.close
+        m = pd.Series(np.asarray(hour) == 21, index=df.index)
+        s = c / c.shift(7, freq='h').reindex(c.index) - 1
+        med = s.abs()[m].rolling(30, min_periods=20).median().shift(1).reindex(c.index)
+        a = m & (s.abs() > med)
+        b = m & ~a
+        signal = -np.sign(s)
+    why_no_lookahead: The US return ends at the 21:00 bar close, and the median uses only prior US sessions.
+    how_it_trades: At 21:00 UTC after an above-median US move, enter against it and exit at 08:00 UTC.
+  - id: asia_size_predicts_europe_size
+    belief: Volatility carries across the session boundary, so an unusually large Asia session is followed by an unusually large Europe session regardless of direction.
+    claim:
+      when: bars closing at 08:00 UTC whose absolute Asia-session return is in the top 25% of the prior 30 Asia sessions
+      then: the absolute 6-bar return to 14:00 UTC is larger
+      compared_to: bars closing at 08:00 UTC with an Asia move outside the top 25%
+      measure: abs_ratio
+      horizon_bars: 6
+      direction: above
+      min_effect: 1.25
+      code: |
+        c = df.close
+        m = pd.Series(np.asarray(hour) == 8, index=df.index)
+        s = c / c.shift(8, freq='h').reindex(c.index) - 1
+        thr = s.abs()[m].rolling(30, min_periods=20).quantile(0.75).shift(1).reindex(c.index)
+        a = m & (s.abs() > thr)
+        b = m & (s.abs() <= thr)
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The session size is known at the 08:00 close, and its threshold uses only earlier sessions.
+    how_it_trades: Size Europe-session positions, or choose breakout over fade, according to the size of the Asia session.
+  - id: asia_return_rank_corr_europe
+    belief: Across all days, the Asia-session return scaled by its recent volatility is negatively ranked against the following Europe-session return, so session moves overshoot in proportion to their size.
+    claim:
+      when: every bar closing at 08:00 UTC
+      then: the 6-bar forward return (to 14:00 UTC) is negatively rank-correlated with the volatility-scaled Asia return
+      compared_to: not used (rank correlation)
+      measure: rank_corr
+      horizon_bars: 6
+      direction: negative
+      min_effect: -0.06
+      code: |
+        c = df.close
+        m = pd.Series(np.asarray(hour) == 8, index=df.index)
+        s = c / c.shift(8, freq='h').reindex(c.index) - 1
+        vol = s[m].rolling(30, min_periods=20).std().shift(1).reindex(c.index)
+        feature = s / vol
+        a = m & feature.notna()
+        b = ~a
+        signal = -np.sign(s)
+    why_no_lookahead: The Asia return and its scale use only closes up to 08:00 and earlier sessions.
+    how_it_trades: At 08:00 UTC, take a Europe-session position against the Asia move, sized by its z-score.
+  - id: europe_volume_confirms_continuation
+    belief: A Europe move made on heavy volume reflects informed flow and continues into the US session, while the same move on light volume is noise.
+    claim:
+      when: bars closing at 14:00 UTC whose Europe-session volume (08-14 UTC) is above the median of the prior 20 Europe sessions
+      then: the US session (next 7 bars) continues the Europe-session direction
+      compared_to: bars closing at 14:00 UTC with Europe-session volume at or below that median
+      measure: mean_diff
+      horizon_bars: 7
+      direction: positive
+      min_effect: 0.003
+      code: |
+        c = df.close
+        m = pd.Series(np.asarray(hour) == 14, index=df.index)
+        s = c / c.shift(6, freq='h').reindex(c.index) - 1
+        v = df.volume.rolling('6h').sum()
+        med = v[m].rolling(20, min_periods=15).median().shift(1).reindex(c.index)
+        a = m & (v > med)
+        b = m & (v <= med)
+        signal = np.sign(s)
+    why_no_lookahead: Session volume is summed over bars ending at 14:00, and the median uses only prior sessions.
+    how_it_trades: At 14:00 UTC, follow the Europe move only when it came on above-median volume, and exit at 21:00 UTC.
+  - id: europe_close_at_extreme_continues
+    belief: A Europe session that closes at its own high or low shows pressure still unfinished at the handoff, which the US session carries further.
+    claim:
+      when: bars closing at 14:00 UTC where the close sits in the top or bottom 15% of the 08-14 UTC session range, in the direction of the session return
+      then: the US session (next 7 bars) continues in that direction
+      compared_to: bars closing at 14:00 UTC whose close is inside the middle of the session range
+      measure: hit_rate
+      horizon_bars: 7
+      direction: positive
+      min_effect: 0.04
+      code: |
+        c = df.close
+        m = pd.Series(np.asarray(hour) == 14, index=df.index)
+        o = c.shift(6, freq='h').reindex(c.index)
+        s = c / o - 1
+        hi = df.high.rolling('6h').max()
+        lo = df.low.rolling('6h').min()
+        pos = (c - lo) / (hi - lo)
+        ext = ((pos >= 0.85) & (s > 0)) | ((pos <= 0.15) & (s < 0))
+        a = m & ext
+        b = m & (pos > 0.15) & (pos < 0.85)
+        signal = np.sign(s)
+    why_no_lookahead: The session high, low and close all come from bars ending at the 14:00 close.
+    how_it_trades: At 14:00 UTC, when Europe closes at its extreme, go with it and exit at 21:00 UTC.
+  - id: two_session_agreement_trends
+    belief: When Asia and Europe move the same way, a day-level flow is under way and the US session extends it; when they disagree, there is no edge.
+    claim:
+      when: bars closing at 14:00 UTC where the Asia-session return (00-08) and the Europe-session return (08-14) have the same sign
+      then: the US session (next 7 bars) moves in that shared direction
+      compared_to: bars closing at 14:00 UTC where the two sessions disagree, signed by the Europe move
+      measure: mean_diff
+      horizon_bars: 7
+      direction: positive
+      min_effect: 0.003
+      code: |
+        c = df.close
+        m = pd.Series(np.asarray(hour) == 14, index=df.index)
+        eu = c / c.shift(6, freq='h').reindex(c.index) - 1
+        c8 = c.shift(6, freq='h').reindex(c.index)
+        c0 = c.shift(14, freq='h').reindex(c.index)
+        asia = c8 / c0 - 1
+        a = m & (np.sign(asia) == np.sign(eu)) & (eu != 0)
+        b = m & (np.sign(asia) != np.sign(eu)) & (eu != 0) & (asia != 0)
+        signal = np.sign(eu)
+    why_no_lookahead: Both session returns use closes at 00:00, 08:00 and 14:00, all at or before the bar's close.
+    how_it_trades: At 14:00 UTC, when Asia and Europe agree, go with them and exit at 21:00 UTC.
+  - id: monday_asia_fades_in_europe
+    belief: The Monday Asia session reprices two days of weekend news on thin books and overshoots, so Europe on Monday fades it more than on other weekdays.
+    claim:
+      when: bars closing at 08:00 UTC on Mondays
+      then: the Europe session (next 6 bars) moves against the Asia-session move
+      compared_to: bars closing at 08:00 UTC on Tuesday to Friday, signed the same way
+      measure: mean_diff
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.003
+      code: |
+        c = df.close
+        h = np.asarray(hour); d = np.asarray(dow)
+        m = pd.Series(h == 8, index=df.index)
+        s = c / c.shift(8, freq='h').reindex(c.index) - 1
+        a = m & pd.Series(d == 0, index=df.index)
+        b = m & pd.Series((d >= 1) & (d <= 4), index=df.index)
+        signal = -np.sign(s)
+    why_no_lookahead: Weekday and the Asia return are known at the 08:00 close.
+    how_it_trades: On Monday at 08:00 UTC, fade the Asia move and exit at 14:00 UTC.
+notes: >
+  Sessions by UTC bar-close hours, with each hourly bar stamped at its close: Asia 00:00-08:00 (8 bars), Europe 08:00-14:00 (6 bars), US 14:00-21:00 (7 bars). Session returns use time-based shifts, so gaps in the bar index do not misalign them.
+  This brief differs from already_tried. That work faded intra-Asia hourly stretches and tested Asia drift and US-open continuation within a session. These ideas use one whole session's return to predict the next whole session.
+  The fade claims (1, 3, 5, 9) contradict the continuation claims (2, 6, 7, 8) on purpose; the data decides.
+  Claim 4 tests size, not sign. It is likely to pass on volatility clustering alone and does not trade by itself.
+  Each session-level event happens about once a day, so a and b counts are small. That is why the thresholds are a top 25-30% split rather than an extreme tail.

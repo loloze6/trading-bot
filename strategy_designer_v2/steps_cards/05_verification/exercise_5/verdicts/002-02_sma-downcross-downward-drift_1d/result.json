@@ -1,0 +1,24 @@
+{
+  "status": "rejected",
+  "main_measure": {
+    "name": "mean 10-bar forward return on short bars minus mean over all bars (%)",
+    "value": 0.46618479362677423,
+    "statistic": {
+      "name": "Welch t",
+      "value": 0.23547545475992646
+    },
+    "threshold": "difference at most -1.0% per 10 bars with t-stat of -2 or lower"
+  },
+  "supporting_check": {
+    "name": "falling share on short blocks minus falling share on all blocks (points)",
+    "value": 3.1527093596059155,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping 10-bar short blocks": 29,
+    "non-overlapping 10-bar blocks, all bars": 70,
+    "distinct downward crosses": 2
+  },
+  "decided_by": "Rejected: the conditional-minus-unconditional 10-bar return difference is 0 or above.",
+  "reading": "Short blocks are grid bars (positions 0,10,20,... per window, return needing t+10 in the same window) with forecast < 0, compared by Welch t against all grid bars pooled over windows; a distinct downward cross is a forecast moving from >= 0 to < 0 inside a window (a window opening already short is not counted); reject rules are checked before confirm after the minimum-count gate."
+}

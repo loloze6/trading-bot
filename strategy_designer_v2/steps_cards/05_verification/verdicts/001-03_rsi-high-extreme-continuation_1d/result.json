@@ -1,0 +1,30 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "extreme minus neutral forward 5-bar return, pooled, before costs",
+    "value": -0.0071795471739449016,
+    "statistic": {
+      "name": "Welch t",
+      "value": -0.5602341908123324
+    },
+    "threshold": "positive with t >= 2 and positive in at least 2 of 3 coins to confirm; negative with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "strategy minus buy-and-hold return on non-zero-forecast bars, coins positive",
+    "value": 1.0,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping extreme cases": 42,
+    "neutral cases": 149,
+    "coins with positive difference": 1,
+    "coins with negative difference": 1,
+    "coins in record": 2
+  },
+  "decided_by": "Inconclusive: t lies between -2 and 2.",
+  "reading": "Extreme bars are grid bars whose forecast is at or above the 80th percentile of all positive forecasts pooled over coins and windows, neutral bars are grid bars with |component value| <= 4, 'at least 2 of the 3 coins' is applied as at least 2 of the coins present (the same count of 2 negative coins is required for a rejection to be supported in more than one coin), and the supporting check sums per-bar strategy and coin returns over each coin's non-zero-forecast bars."
+}

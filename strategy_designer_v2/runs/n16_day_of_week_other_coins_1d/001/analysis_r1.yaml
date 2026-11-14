@@ -1,0 +1,14 @@
+run: n16_day_of_week_other_coins_1d / fold A
+observations:
+  - "Weekend bars are quieter on all three coins: weekend_low_volatility passed with abs_ratio 0.70 (SOL), 0.65 (ADA) and 0.79 (XMR), and all 18 window values were below 1. The highest was SOL's 0.966 in window 4."
+  - "The Monday volatility burst nearly held: abs_ratio was 1.13 (SOL), 1.15 (ADA) and 1.14 (XMR) against a 1.15 threshold. The windows split, though: each coin had 3 of 6 windows above 1 and 3 below (for example ADA went from 1.42 down to 0.61), so this is not a stable effect."
+  - "weekend_hold_long cleared its 0.25% net level on SOL (0.40%) and XMR (0.61%) but not on ADA (0.09%). The window signs alternated: 3 of 6 positive on SOL and ADA, 4 of 6 on XMR."
+  - "monday_short made 0.18%, 0.15% and 0.23% net, so only XMR reached the 0.20% level. No coin had more than 4 of 6 windows positive."
+  - "friday_short_opposite lost on all three coins (-0.61%, -0.18%, -0.22% net). The sign flipped over time: on SOL and ADA the first windows were positive and the last three or four negative, down to -3.3% on SOL in window 6."
+  - "midweek_long had a positive net effect on SOL (0.05%) and ADA (0.19%) but a negative one on XMR (-0.36%). None of the three had a stable window sign."
+  - "weekend_move_reverts_monday came out negative on all three coins (-0.07%, -0.55%, -0.43%). Monday reverses the weekend move less than an ordinary day reverses its prior two days, and ADA showed this in 5 of 6 windows."
+  - "monday_sets_week_trend gave 0.78% on ADA with 5 of 6 windows positive, but -0.12% on SOL and -0.92% on XMR, so the coins disagree."
+  - "own_weekday_history had rank correlations of -0.028, -0.026 and -0.005, the wrong sign for the claim, and window values ranged from -0.18 to +0.23."
+  - "heavy_friday_volume_weekend selected n_a = 0 bars on every coin, so it was never measured. The rolling 60-bar median of a Friday-only series holds about 9 values, which is below min_periods=50, so the median was always missing."
+next_claim: none
+why: "Return effects were tested on every weekday choice, both long and short, and none kept a stable sign across windows on even one coin. The only pass is a volatility ratio, which gives no spot return after the 0.15% cost, and any remaining idea would be a flip or bug-fix of a claim already tried."

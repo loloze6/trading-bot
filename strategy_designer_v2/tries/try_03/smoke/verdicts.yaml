@@ -1,0 +1,50 @@
+claims_file: strategy_designer_v2/tries/try_03/smoke/claims.yaml
+fold: A
+bar_size: 1h
+symbols:
+- BTCUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  large_bar_fade_baseline_ported:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 3.83544649249158e-05
+        t_stat: 0.02
+        n_a: 138
+        n_b: 17381
+        windows:
+        - 0.014070566821214745
+        - -0.01148497382450604
+        - -0.005427581406389703
+        - 0.0059364203852734325
+        - 0.001602891392317169
+        - -0.002860580846966894
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  smoke_rank_corr:
+    verdict: pass
+    by_symbol:
+      BTCUSD:
+        verdict: pass
+        effect: -0.04856937083845436
+        t_stat: -6.44
+        n_a: 17519
+        n_b: 17519
+        windows:
+        - -0.05577560833521512
+        - -0.030402097031266142
+        - -0.08518012112810873
+        - -0.024524294446569703
+        - -0.13960687348589895
+        - -0.04732909729036252
+        agreeing_windows: 6 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true

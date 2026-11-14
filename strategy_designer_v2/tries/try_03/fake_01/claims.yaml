@@ -1,0 +1,215 @@
+brief: fake_01_btc_overreaction.md
+ideas:
+  - id: big_bar_fade
+    belief: An hourly BTC bar three or more times its usual size overshoots, and price drifts back over the next half day.
+    claim:
+      when: bars whose absolute return is at least 3x the median absolute hourly return of the prior week (one event per 12 bars)
+      then: the next 12 bars move against the big bar's direction
+      compared_to: all other bars, with the same fade rule applied
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.002
+      code: |
+        absr = ret.abs()
+        usual = absr.rolling(168).median().shift(1)
+        a = spaced(absr > 3 * usual, 12)
+        b = ~a
+        signal = -np.sign(ret)
+    why_no_lookahead: The size threshold uses the prior 168 bars only (shift(1)); the bar's own return is known at its close.
+    how_it_trades: At the close of a big bar, take the opposite side and exit 12 bars later.
+
+  - id: big_bar_fade_net_of_fees
+    belief: Fading big hourly bars pays more than the round-trip fee the brief names (about 0.2%), not only in gross terms.
+    claim:
+      when: big bars as above (absolute return at least 3x the prior week's median, one event per 12 bars)
+      then: a fade held 6 bars earns, on average, more than the cost
+      compared_to: zero after the 0.15% engine cost (the min_effect adds the brief's extra 0.05% plus margin)
+      measure: net_return
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.001
+      code: |
+        absr = ret.abs()
+        usual = absr.rolling(168).median().shift(1)
+        a = spaced(absr > 3 * usual, 12)
+        b = ~a
+        signal = -np.sign(ret)
+    why_no_lookahead: Same selector as big_bar_fade; only past bars set the threshold.
+    how_it_trades: Fade each big bar at its close, hold 6 hours, flat otherwise.
+
+  - id: low_volume_spike_reverts
+    belief: A big move made on ordinary volume is a liquidity air pocket, not information, so it reverts more often than a big move made on heavy volume.
+    claim:
+      when: big bars whose volume is below 1.5x the prior week's median hourly volume
+      then: the fade is right more often over the next 12 bars
+      compared_to: big bars whose volume is at or above 1.5x the median
+      measure: hit_rate
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.08
+      code: |
+        absr = ret.abs()
+        usual = absr.rolling(168).median().shift(1)
+        big = spaced(absr > 3 * usual, 12)
+        vrel = df.volume / df.volume.rolling(168).median().shift(1)
+        a = big & (vrel < 1.5)
+        b = big & (vrel >= 1.5)
+        signal = -np.sign(ret)
+    why_no_lookahead: The bar's own volume is final at its close; the volume baseline uses prior bars only.
+    how_it_trades: Fade big bars only when their volume is unremarkable.
+
+  - id: heavy_volume_spike_continues
+    belief: A big bar on extreme volume carries informed flow and keeps going rather than reverting.
+    claim:
+      when: big bars whose volume is at least 3x the prior week's median hourly volume
+      then: the next 12 bars continue in the big bar's direction
+      compared_to: all other bars, with the same follow rule applied
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.002
+      code: |
+        absr = ret.abs()
+        usual = absr.rolling(168).median().shift(1)
+        big = spaced(absr > 3 * usual, 12)
+        vrel = df.volume / df.volume.rolling(168).median().shift(1)
+        a = big & (vrel >= 3)
+        b = ~a
+        signal = np.sign(ret)
+    why_no_lookahead: Bar volume and return are known at the close; baselines use prior bars only.
+    how_it_trades: Follow, not fade, big bars on extreme volume, exit after 12 hours.
+
+  - id: counter_trend_spike_reverts
+    belief: A big bar against the prior three-day trend is a shakeout that the trend reclaims, so it reverts more than a big bar with the trend.
+    claim:
+      when: big bars whose direction is opposite to the return of the prior 72 bars
+      then: the next 12 bars move back against the big bar
+      compared_to: big bars in the same direction as the prior 72-bar return
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.002
+      code: |
+        absr = ret.abs()
+        usual = absr.rolling(168).median().shift(1)
+        big = spaced(absr > 3 * usual, 12)
+        trend = df.close.shift(1) / df.close.shift(73) - 1
+        against = np.sign(ret) != np.sign(trend)
+        a = big & against
+        b = big & ~against
+        signal = -np.sign(ret)
+    why_no_lookahead: The trend uses closes from 1 to 73 bars before the bar; the bar's direction is known at its close.
+    how_it_trades: Fade big bars only when they cut against the three-day trend.
+
+  - id: close_at_extreme_reverts
+    belief: A big bar that closes at its extreme shows forced, unabsorbed flow (stops, liquidations) and reverts more than a big bar that already pulled back from its extreme within the hour.
+    claim:
+      when: big bars that close in the outer 15% of their range in the direction of the move
+      then: the next 6 bars move against the big bar
+      compared_to: big bars that close away from their extreme
+      measure: mean_diff
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.002
+      code: |
+        absr = ret.abs()
+        usual = absr.rolling(168).median().shift(1)
+        big = spaced(absr > 3 * usual, 12)
+        rng = (df.high - df.low).replace(0, np.nan)
+        clv = (df.close - df.low) / rng
+        at_ext = ((ret > 0) & (clv >= 0.85)) | ((ret < 0) & (clv <= 0.15))
+        a = big & at_ext
+        b = big & ~at_ext
+        signal = -np.sign(ret)
+    why_no_lookahead: High, low and close of the bar are final at its close.
+    how_it_trades: Fade big bars that close pinned at their high or low, hold 6 hours.
+
+  - id: thin_hours_spike_reverts
+    belief: Big moves in thin hours (weekends and the Asia-early UTC hours) come from shallow books and revert more than big moves in the active US/Europe hours.
+    claim:
+      when: big bars on Saturday or Sunday UTC, or between 00:00 and 05:59 UTC on weekdays
+      then: the next 12 bars move back against the big bar
+      compared_to: big bars at other times
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.002
+      code: |
+        absr = ret.abs()
+        usual = absr.rolling(168).median().shift(1)
+        big = spaced(absr > 3 * usual, 12)
+        thin = (dow >= 5) | (hour < 6)
+        a = big & thin
+        b = big & ~thin
+        signal = -np.sign(ret)
+    why_no_lookahead: Hour and weekday are the bar's own timestamp; the threshold uses prior bars only.
+    how_it_trades: Fade big bars only in thin hours.
+
+  - id: overreaction_scales_with_size
+    belief: Among big bars, the bigger the move relative to recent volatility, the bigger the reversion (overreaction is proportional).
+    claim:
+      when: big bars as above
+      then: the forward 12-bar return rises with the size of the move against it, scaled by recent volatility
+      compared_to: the rank correlation across big bars (no baseline set)
+      measure: rank_corr
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.10
+      code: |
+        absr = ret.abs()
+        usual = absr.rolling(168).median().shift(1)
+        a = spaced(absr > 3 * usual, 12)
+        sigma = ret.rolling(168).std().shift(1)
+        feature = -ret / sigma
+    why_no_lookahead: Volatility uses prior bars only; the bar's return is known at its close.
+    how_it_trades: Size the fade in proportion to how many sigmas the bar moved.
+
+  - id: multi_bar_cascade_reverts
+    belief: A run of four same-direction hours that adds up to a large move, with no single big candle, is a slow stop cascade that also overshoots and reverts.
+    claim:
+      when: four consecutive same-sign bars whose 4-bar return exceeds 4x the prior week's hourly volatility, with no single big bar among them
+      then: the next 12 bars move against the run
+      compared_to: all other bars, with the same fade rule applied
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.002
+      code: |
+        absr = ret.abs()
+        usual = absr.rolling(168).median().shift(1)
+        sigma = ret.rolling(168).std().shift(1)
+        r4 = df.close / df.close.shift(4) - 1
+        run = np.sign(ret).rolling(4).sum().abs() == 4
+        no_big = (absr > 3 * usual).astype(float).rolling(4).max() == 0
+        a = spaced(run & (r4.abs() > 4 * sigma) & no_big, 12)
+        b = ~a
+        signal = -np.sign(r4)
+    why_no_lookahead: The run, its return and the volatility baseline use the bar and earlier bars only.
+    how_it_trades: Fade a four-hour one-way grind at the close of its fourth bar, hold 12 hours.
+
+  - id: spike_raises_next_volatility
+    belief: After a big hourly bar, the following hours stay volatile (volatility clusters), which matters for sizing and stops on any fade.
+    claim:
+      when: big bars as above
+      then: the absolute 6-bar forward return is larger
+      compared_to: all other bars
+      measure: abs_ratio
+      horizon_bars: 6
+      direction: above
+      min_effect: 1.5
+      code: |
+        absr = ret.abs()
+        usual = absr.rolling(168).median().shift(1)
+        a = spaced(absr > 3 * usual, 12)
+        b = ~a
+    why_no_lookahead: Same selector as big_bar_fade; prior bars only.
+    how_it_trades: Widen stops and cut size on fades after big bars, or stand aside when the ratio is high.
+notes: >
+  The brief implies hourly BTC/USD on Kraken, a "big bar" of 3-4x usual size, reversion within a day (all horizons 6-12 bars),
+  conditioning on time of day, volume and trend, and survival of about 0.2% round-trip fees. The engine cost is 0.15%, so
+  big_bar_fade_net_of_fees sets min_effect 0.001 net of 0.15% (0.25% gross), which clears the brief's 0.2% with margin.
+  big_bar_fade and big_bar_fade_net_of_fees share a selector on purpose: one tests that the effect exists, the other that it pays.
+  low_volume_spike_reverts and heavy_volume_spike_continues may contradict each other; both are kept. spike_raises_next_volatility
+  is not a reversion claim but answers the brief's "under what conditions" from the risk side. Cross-asset ideas are left out:
+  the brief names one symbol and two-symbol claims are not computable in this version.

@@ -1,0 +1,37 @@
+brief: n18_payment_coins_hourly_shock_1h.md
+source: analyst round 1
+ideas:
+- id: volume_backed_shock_more_volatile_after
+  belief: On XRP and TRX, an hourly price shock that comes with a volume surge is
+    followed by more volatility over the next hours than a shock on ordinary volume,
+    because it reflects real flow rather than a thin book.
+  claim:
+    when: shock bars (|ret| > 4x the prior 168h median |ret|) with volume above 3x
+      the prior 168h median volume, one per 6 bars
+    then: the absolute 6h forward return is larger
+    compared_to: shock bars of the same size on volume at or below 3x the median,
+      one per 6 bars
+    measure: abs_ratio
+    horizon_bars: 6
+    direction: above
+    min_effect: 1.15
+    code: 'absr = ret.abs()
+
+      scale = absr.rolling(168).median().shift(1)
+
+      vmed = df.volume.rolling(168).median().shift(1)
+
+      shock = absr > 4 * scale
+
+      a = spaced(shock & (df.volume > 3 * vmed), 6)
+
+      b = spaced(shock & (df.volume <= 3 * vmed), 6)
+
+      signal = np.sign(ret)
+
+      '
+  why_no_lookahead: The scales use rolling medians shifted by one bar, and the selectors
+    use only the current bar's close, return and volume.
+  how_it_trades: After a volume-backed shock, widen stops or run a long-volatility
+    position (for example a straddle-style breakout entry) for 6h; after a thin shock,
+    do not.

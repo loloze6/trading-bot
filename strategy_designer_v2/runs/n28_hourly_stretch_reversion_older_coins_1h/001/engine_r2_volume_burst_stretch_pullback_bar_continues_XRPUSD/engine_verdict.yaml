@@ -1,0 +1,147 @@
+claim: volume_burst_stretch_pullback_bar_continues
+symbol: XRPUSD
+bar_size: 1h
+fold: C
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 221
+verdict: pass
+passed_as: vol_target
+fold_totals: &id001
+  net_return: 0.3222
+  median_window_sharpe: 1.79825
+  worst_window_drawdown: 0.0558
+  trades: 177
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals:
+    net_return: 1.2068
+    median_window_sharpe: 0.96945
+    worst_window_drawdown: 0.4969
+    trades: 187
+  windows:
+  - window: W1
+    net_return: -0.1087
+    trades: 27
+    sharpe: -0.1065
+    max_drawdown: 0.4969
+    exposure_pct: 9.7699
+    cost_drag_pct: 18.7769
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/full_size/20261106T023202Z_f1abed77
+    seconds: 28
+  - window: W2
+    net_return: 0.2967
+    trades: 27
+    sharpe: 2.297
+    max_drawdown: 0.1585
+    exposure_pct: 11.0731
+    cost_drag_pct: 10.216
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/full_size/20261106T023230Z_f1abed77
+    seconds: 28
+  - window: W3
+    net_return: -0.049
+    trades: 26
+    sharpe: -0.5526
+    max_drawdown: 0.1499
+    exposure_pct: 10.5799
+    cost_drag_pct: 113.3868
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/full_size/20261106T023255Z_f1abed77
+    seconds: 26
+  - window: W4
+    net_return: 0.1767
+    trades: 34
+    sharpe: 1.3922
+    max_drawdown: 0.3249
+    exposure_pct: 13.2231
+    cost_drag_pct: 18.0765
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/full_size/20261106T023321Z_f1abed77
+    seconds: 25
+  - window: W5
+    net_return: 0.6163
+    trades: 35
+    sharpe: 2.401
+    max_drawdown: 0.2044
+    exposure_pct: 12.7136
+    cost_drag_pct: 5.0331
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/full_size/20261106T023348Z_f1abed77
+    seconds: 27
+  - window: W6
+    net_return: 0.0557
+    trades: 38
+    sharpe: 0.5467
+    max_drawdown: 0.2305
+    exposure_pct: 14.0821
+    cost_drag_pct: 41.3131
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/full_size/20261106T023415Z_f1abed77
+    seconds: 28
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: 0.0924
+    trades: 25
+    sharpe: 2.2004
+    max_drawdown: 0.0493
+    exposure_pct: 9.7699
+    cost_drag_pct: 4.6163
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/vol_target/20261106T023444Z_1c204fed
+    seconds: 29
+  - window: W2
+    net_return: 0.0229
+    trades: 27
+    sharpe: 1.3961
+    max_drawdown: 0.0237
+    exposure_pct: 11.0731
+    cost_drag_pct: 18.7822
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/vol_target/20261106T023512Z_1c204fed
+    seconds: 28
+  - window: W3
+    net_return: -0.0243
+    trades: 26
+    sharpe: -1.3419
+    max_drawdown: 0.0455
+    exposure_pct: 10.5799
+    cost_drag_pct: 39.4775
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/vol_target/20261106T023539Z_1c204fed
+    seconds: 27
+  - window: W4
+    net_return: 0.1167
+    trades: 33
+    sharpe: 2.6388
+    max_drawdown: 0.0558
+    exposure_pct: 13.2231
+    cost_drag_pct: 8.0104
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/vol_target/20261106T023605Z_1c204fed
+    seconds: 26
+  - window: W5
+    net_return: 0.0833
+    trades: 31
+    sharpe: 2.4644
+    max_drawdown: 0.0323
+    exposure_pct: 12.7136
+    cost_drag_pct: 8.6329
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/vol_target/20261106T023632Z_1c204fed
+    seconds: 27
+  - window: W6
+    net_return: 0.0025
+    trades: 35
+    sharpe: 0.1205
+    max_drawdown: 0.0542
+    exposure_pct: 14.0821
+    cost_drag_pct: 73.1103
+    run_dir: strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/engine_r2_volume_burst_stretch_pullback_bar_continues_XRPUSD/results/vol_target/20261106T023700Z_1c204fed
+    seconds: 28
+  checks:
+    net_positive_in_5_of_6: true
+    median_window_sharpe_ge_1.0: true
+    worst_window_drawdown_le_20%: true
+  verdict: pass

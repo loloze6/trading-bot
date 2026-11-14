@@ -1,0 +1,39 @@
+=== 001-01_rsi-high-extreme-reversal
+plan (adapted): exercise_16/opus/plans/001-01_rsi-high-extreme-reversal_1d.md
+cost: 0.0601 USD, attempts: 1
+=== 001-03_rsi-high-extreme-continuation
+plan (adapted): exercise_16/opus/plans/001-03_rsi-high-extreme-continuation_1d.md
+cost: 0.0517 USD, attempts: 1
+=== 002-01_sma-upcross-upward-drift
+plan (adapted): exercise_16/opus/plans/002-01_sma-upcross-upward-drift_1d.md
+cost: 0.0498 USD, attempts: 1
+=== 002-05_sma-up-regime-positive-drift
+plan (adapted): exercise_16/opus/plans/002-05_sma-up-regime-positive-drift_1d.md
+cost: 0.0533 USD, attempts: 1
+=== 003-01_low-volume-up-move-reverts
+plan (adapted): exercise_16/opus/plans/003-01_low-volume-up-move-reverts_1d.md
+cost: 0.0760 USD, attempts: 1
+=== 003-07_quiet-hours-moves-revert
+untestable: The idea's situation is a move in a coin's quiet intraday hours or on a weekend, reversed when busy hours return. On 1d bars the hour of a move is not in the data, and the config has no component or rule that reads the calendar to pick out weekends. Testing it would mean replacing the timing with plain low daily volume, which is a different idea.
+cost: 0.0333 USD, attempts: 1
+=== 004-01_btc-up-move-alts-follow
+untestable: The situation is measured on bitcoin and the outcome on other coins, so the idea needs two coins' prices at once. The config sees only one symbol's own bars and feeds, which the guide lists as something it cannot express ("another coin's prices"), and the run covers BTC/USDT alone.
+cost: 0.0177 USD, attempts: 1
+=== 005-01_bearish-rsi-divergence-reversal
+missing-components: The idea compares today's RSI with RSI at the previous price high. That needs a pivot-anchored memory, which is computable from one coin's closes, but no catalogue component computes it. I tried a weighted sum of DonchianBreakout and negated RSIPullback, and a score_product regime of Donchian times RSI percentile. Both measure RSI against its average or its own history, not against its value at the prior high, so they replace the comparison.
+cost: 0.0351 USD, attempts: 1
+=== 005-02_bullish-rsi-divergence-rebound
+missing-components: The divergence needs the RSI value at the previous price low. That can be computed from the coin's own closes, and a graded value would fit the config's logic. No catalogue component, alone or combined, computes it. `RSIPullbackComponent` gives only the current RSI level, and `DonchianBreakoutComponent` gives only where price sits in its range. Neither gives RSI's own swing lows or the RSI value at the bar of a previous price low.
+cost: 0.0345 USD, attempts: 1
+=== 005-03_divergent-high-weaker-than-confirmed
+missing-components: The bars hold everything the idea needs (closes give both the price high and RSI). The config's logic could hold it: a regime on `DonchianBreakoutComponent` at +sf for the new close high, plus a graded component inside it. But no component measures RSI against its own maximum over the lookback. `RSIPullbackComponent` gives only the RSI level. `percentile` cannot be used: it ranks against the whole stored history, not the divergence window, and as a second history op next to `standardise` V15 refuses it.
+cost: 0.0448 USD, attempts: 1
+=== 005-04_divergent-low-stronger-than-confirmed
+missing-components: The divergence needs RSI measured against its own recent extremes, so that "price at its range low while RSI sits above its range low" can be scored. The config could hold this as a weighted difference (price range position minus RSI range position), but no catalogue component computes where RSI sits in its own recent range. RSIPullbackComponent only compares RSI with 50, which is the RSI-extremes question the brief excludes.
+cost: 0.0376 USD, attempts: 1
+=== 005-05_bearish-divergence-uptrend-continues
+missing-components: The divergence needs price at a new high together with RSI below its own earlier peak. Both come from one coin's closes, and the config could hold them as a regime plus a graded component. No catalogue component gives RSI's prior peak or RSI's position in its own range. Combining `DonchianBreakoutComponent` with `RSIPullbackComponent`, in a weighted sum or a score_product, only compares RSI with 50, not with its earlier high.
+cost: 0.0328 USD, attempts: 1
+=== 005-06_bullish-divergence-downtrend-continues
+missing-components: The divergence compares where price sits in its recent range with where RSI sits in its own recent range. The catalogue gives the price side (`DonchianBreakoutComponent`) but only a raw RSI level (`RSIPullbackComponent`), and no weighted sum of those reproduces "RSI above its own recent minimum". With an RSI range-position component, the forecast would be the standardised Donchian minus the standardised RSI position, clipped at max 0 to keep only the bullish-divergence case. That is a graded short that grows as price sits lower in its range while RSI sits higher in its own.
+cost: 0.0379 USD, attempts: 1

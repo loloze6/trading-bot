@@ -1,0 +1,30 @@
+run: sdv2_mhk__az5
+observations:
+  - The Friday post-US-close window (21:00 UTC close, 3 bars) is the only placement that came close on all three coins. It passed on BTC (0.0024, 5 of 6 windows) and ETH (0.0016, 5 of 6). LTC has the largest effect (0.0046) but failed with only 4 of 6 windows positive (windows 2 and 4 at -0.0012 and -0.0022).
+  - The full-day Friday mean_diff nearly held on BTC, where 0.0043 cleared the 0.004 bar. It still failed on window signs (4 of 6 positive), and ETH reached only 0.0029.
+  - Window 4 is negative for the full-day Friday claim on all three coins (BTC -0.0097, ETH -0.0077, LTC -0.0027), and it is the main reason the daily effect fails at hourly resolution.
+  - The Friday European morning (08:00 close, 6 bars) is negative on all three coins (BTC -0.0008, ETH -0.0011, LTC -0.0016), so the premium does not live there.
+  - Thursday evening from 16:00 (8 bars) is weaker than other weekdays on every coin (about -0.0043 to -0.0049), so the effect is not front-run on Thursday.
+  - The Asian session (00:00 close, 8 bars) passed only on LTC (0.0055, 5 of 6). BTC (0.0014) and ETH (0.0013) fell short.
+  - The Friday effect is not a broad hourly drift: the up-hour hit-rate edge is 0.015 on BTC and 0.003 on ETH, and ETH is negative in windows 4 to 6.
+  - Holding all of Friday clears cost on average (net 0.0038 BTC, 0.0027 ETH, 0.0101 LTC). It is unstable, with only 3 to 4 of 6 windows positive and window 6 negative on all three coins.
+  - Friday intraday momentum has no stable sign: rank_corr is about 0.02 on every coin, and the BTC windows swing from -0.31 to 0.13.
+  - Splitting Fridays by down-week or high-volume hours did not concentrate the effect. Only ETH's down-week split passed (0.0006), and the volume split stayed below 0.001 on all coins.
+next_claim:
+  id: friday_post_us_close_net_profit
+  belief: The part of the Friday premium that is most consistent across coins and windows arrives in the three hours after US equities close, and it is large enough in absolute terms to pay the round trip.
+  claim:
+    when: Friday bars closing at 21:00 UTC
+    then: the 3-bar forward return (to the 24:00 UTC close), held long, is positive after the 0.15% round-trip cost
+    compared_to: cost only (net_return)
+    measure: net_return
+    horizon_bars: 3
+    direction: positive
+    min_effect: 0.0005
+    code: |
+      a = (dow == 4) & (hour == 21)
+      b = ~a
+      signal = pd.Series(1.0, index=df.index)
+  why_no_lookahead: The selector uses only the bar's own weekday and hour; the forward return is computed by the judge.
+  how_it_trades: Buy at the Friday 21:00 UTC close, sell at the Friday 24:00 UTC close, once per week.
+why: Post-US-close is the only Friday window that passed the window-sign rule on two coins with a relative edge of 0.0016 to 0.0046, so the brief's open question is whether that short hold pays the 0.15% cost. A net edge of 0.0005 (0.2% gross) is the smallest amount that would not be luck after cost.

@@ -1,0 +1,978 @@
+brief: n10_hourly_trend_with_vol_gate_1h.md
+fold: C
+symbols:
+- BTCUSD
+- ETHUSD
+bar_size: 1h
+claims:
+- id: tsmom_24h_daily_sampled
+  belief: The sign of the last 24 hours of return persists over the next 24 hours
+    by more than the round-trip cost, because information and flows diffuse slowly
+    into crypto spot prices.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.003787790445646993
+      n_a: 727
+      n_b: 727
+      windows:
+      - -0.007885617829474707
+      - -0.0053836398433681504
+      - 0.0021154003261837813
+      - -0.005026463221351936
+      - 0.001378834352591269
+      - -0.00806976451019185
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.0023794691162561006
+      n_a: 727
+      n_b: 727
+      windows:
+      - -0.002778729979076415
+      - -0.006630678105909877
+      - 5.314897392962145e-05
+      - 0.001140471534418778
+      - -0.001401108380571338
+      - -0.004644157287873327
+      verdict: fail
+      why: null
+  code: 'r24 = df.close.pct_change(24)
+
+    a = (hour == 0) & r24.notna()
+
+    b = ~a
+
+    signal = np.sign(r24).replace(0, 1)
+
+    '
+- id: ema_12_48_cross_hold_48
+  belief: A fast/slow EMA crossover on hourly closes marks the start of a multi-day
+    trend that runs long enough to pay the cost.
+  measure: net_return
+  horizon_bars: 48
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0030446746089378895
+      n_a: 216
+      n_b: 216
+      windows:
+      - -0.0023977439415348795
+      - 0.0002951523075602157
+      - -0.00804155119307146
+      - -0.011382003204687229
+      - 0.0032160511819237206
+      - -0.0007865399964037416
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.005272096798368092
+      n_a: 207
+      n_b: 207
+      windows:
+      - -0.023703642837418503
+      - -0.016980442471878965
+      - -0.0009458925726479173
+      - -0.001737944055043387
+      - 0.009730773077429963
+      - 0.0025259463529429898
+      verdict: fail
+      why: null
+  code: 'f = df.close.ewm(span=12, adjust=False).mean()
+
+    s = df.close.ewm(span=48, adjust=False).mean()
+
+    d = np.sign(f - s)
+
+    cross = (d != d.shift(1)) & d.shift(1).notna() & (d != 0)
+
+    a = spaced(cross, 24)
+
+    b = ~a
+
+    signal = d.replace(0, 1)
+
+    '
+- id: donchian_72h_breakout
+  belief: A close beyond the prior 3-day high or low triggers stop and breakout flows
+    that carry price further over the next day.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.002
+  verdict: pass
+  by_symbol:
+    BTCUSD:
+      effect: 0.0035925825875667582
+      n_a: 218
+      n_b: 218
+      windows:
+      - 0.00820427479695157
+      - 0.000535404223531146
+      - 0.006315531224709646
+      - 0.014565942935234865
+      - 0.005144054770129004
+      - -0.010924681609719638
+      verdict: pass
+      why: null
+    ETHUSD:
+      effect: 0.010195594680393964
+      n_a: 209
+      n_b: 209
+      windows:
+      - 0.03155050038272887
+      - 0.009383875459071404
+      - 0.006255525158802714
+      - 0.015620252425061107
+      - 0.0012251855495016358
+      - 0.0008251526567796463
+      verdict: pass
+      why: null
+  code: 'hi = df.high.rolling(72).max().shift(1)
+
+    lo = df.low.rolling(72).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    a = spaced(up | dn, 24)
+
+    b = ~a
+
+    signal = pd.Series(np.where(up, 1, -1), index=df.index)
+
+    '
+- id: squeeze_then_breakout
+  belief: A breakout that follows a period of unusually low realized volatility releases
+    stored positioning and trends more than an ordinary breakout.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.003075613568261556
+      n_a: 149
+      n_b: 149
+      windows:
+      - 0.023469183629108156
+      - -0.007955436671741622
+      - -0.008994855876006342
+      - 0.011747473562704934
+      - 0.0023930235168756167
+      - 0.0014943483449167258
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.005568268008030657
+      n_a: 137
+      n_b: 137
+      windows:
+      - 0.015302650307019482
+      - 0.0018327180710675226
+      - -0.000447789772105636
+      - 0.0003891001410324343
+      - 0.00330895968393214
+      - 0.013581078636297726
+      verdict: pass
+      why: null
+  code: 'vol = ret.rolling(24).std()
+
+    vrank = vol.rolling(720).rank(pct=True)
+
+    squeeze = vrank.shift(1) < 0.2
+
+    hi = df.high.rolling(24).max().shift(1)
+
+    lo = df.low.rolling(24).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    a = spaced((up | dn) & squeeze, 24)
+
+    b = ~a
+
+    signal = pd.Series(np.where(up, 1, -1), index=df.index)
+
+    '
+- id: tsmom_high_vol_gate
+  belief: Trend persistence is stronger when realized volatility is high, because
+    large moves carry real news and forced flows, while quiet regimes are noise.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0006590753762552963
+      n_a: 387
+      n_b: 340
+      windows:
+      - 0.014160118898194947
+      - -0.010790204978186956
+      - -0.009964726461118028
+      - -0.00046266202103390375
+      - 0.000796630859853363
+      - -0.00161907845953101
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.0006002434412661629
+      n_a: 404
+      n_b: 323
+      windows:
+      - 0.01627745337832832
+      - -0.031890984783970656
+      - 0.0020430273665692886
+      - -0.008690606246090228
+      - 0.007528535218071741
+      - 0.0057648221779922045
+      verdict: fail
+      why: null
+  code: 'r24 = df.close.pct_change(24)
+
+    vol = ret.rolling(168).std()
+
+    high = vol > vol.rolling(2160).median()
+
+    base = (hour == 0) & r24.notna() & vol.rolling(2160).median().notna()
+
+    a = base & high
+
+    b = base & ~high
+
+    signal = np.sign(r24).replace(0, 1)
+
+    '
+- id: efficiency_ratio_gate
+  belief: Trends whose last 24 hours moved in a clean path (high efficiency ratio)
+    persist, while choppy paths with the same net move are whipsaw and revert.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.00044307287454981026
+      n_a: 383
+      n_b: 344
+      windows:
+      - 0.0056907175771668305
+      - -0.0039790572224258774
+      - 0.00663105353363001
+      - -0.00850994786054874
+      - 0.005772940723890684
+      - -0.003986824746462391
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.005275970626759391
+      n_a: 391
+      n_b: 336
+      windows:
+      - 0.019157252980792853
+      - 0.005629796192651462
+      - -0.00743381760385653
+      - -0.021342409113595598
+      - -0.010217886805290698
+      - -0.016511650128356876
+      verdict: fail
+      why: null
+  code: 'r24 = df.close.pct_change(24)
+
+    net = (df.close - df.close.shift(24)).abs()
+
+    path = df.close.diff().abs().rolling(24).sum()
+
+    er = net / path
+
+    med = er.rolling(720).median()
+
+    base = (hour == 0) & r24.notna() & med.notna()
+
+    a = base & (er > med)
+
+    b = base & (er <= med)
+
+    signal = np.sign(r24).replace(0, 1)
+
+    '
+- id: volume_regime_gate
+  belief: A 24h trend made on heavy daily volume reflects broad participation and
+    persists, while one made on thin volume does not.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.00035461158462830227
+      n_a: 357
+      n_b: 370
+      windows:
+      - 0.007056920677169158
+      - 0.005276185176172826
+      - -0.010322770037613707
+      - -0.008170559368592996
+      - 0.00602795419695677
+      - -0.003720588958730565
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.012231131171472679
+      n_a: 380
+      n_b: 347
+      windows:
+      - -0.02624104238570668
+      - -0.0009402060632115548
+      - 0.0016164344839245347
+      - -0.018140459072732158
+      - -0.0055256891726947095
+      - -0.028595632173874477
+      verdict: fail
+      why: null
+  code: 'r24 = df.close.pct_change(24)
+
+    v24 = df.volume.rolling(24).sum()
+
+    med = v24.rolling(720).median()
+
+    base = (hour == 0) & r24.notna() & med.notna()
+
+    a = base & (v24 > med)
+
+    b = base & (v24 <= med)
+
+    signal = np.sign(r24).replace(0, 1)
+
+    '
+- id: weekday_vs_weekend_trend
+  belief: 24h trends formed on weekday liquidity carry information and persist, while
+    trends formed on thin weekend books are noise.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.002525071142329967
+      n_a: 519
+      n_b: 208
+      windows:
+      - 0.009360292269582913
+      - 0.01019578436156795
+      - -0.005650649947159494
+      - -0.008200921895459307
+      - 0.004230929865959965
+      - 0.003619535142904669
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.00021291828749834824
+      n_a: 519
+      n_b: 208
+      windows:
+      - -0.0015954362096704984
+      - 0.01724425584448753
+      - -0.0004763320257933736
+      - -0.0059640747824813165
+      - -0.014473425195636875
+      - 0.0026380754934787975
+      verdict: fail
+      why: null
+  code: 'r24 = df.close.pct_change(24)
+
+    base = (hour == 0) & r24.notna()
+
+    a = base & dow.isin([1, 2, 3, 4, 5])
+
+    b = base & dow.isin([6, 0])
+
+    signal = np.sign(r24).replace(0, 1)
+
+    '
+- id: vol_scaled_weekly_momentum_rank
+  belief: The strength of the 7-day trend, scaled by its volatility, ranks the next
+    day's return, because stronger risk-adjusted trends attract more follow-on flow.
+  measure: rank_corr
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.05
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.020613998980886564
+      n_a: 727
+      n_b: 727
+      windows:
+      - -0.036772466483333884
+      - -0.06475095912048404
+      - 0.14350953833342694
+      - -0.0244953258366075
+      - -0.0896071323536701
+      - 0.048863099388343836
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.042120159445406403
+      n_a: 727
+      n_b: 727
+      windows:
+      - 0.1617017080626253
+      - -0.03200372743464598
+      - 0.06106978696124856
+      - 0.001950955155128031
+      - -0.25182984657376717
+      - 0.12508385075721778
+      verdict: fail
+      why: null
+  code: 'r168 = df.close.pct_change(168)
+
+    sd = ret.rolling(168).std() * np.sqrt(168)
+
+    feature = r168 / sd
+
+    a = (hour == 0) & feature.notna()
+
+    b = ~a
+
+    signal = np.sign(feature).replace(0, 1)
+
+    '
+- id: multi_horizon_alignment
+  belief: When the 1-day, 3-day and 7-day returns all agree in sign, the trend is
+    established across trader horizons and continues by more than the cost.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.0025
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.00022306771585712897
+      n_a: 373
+      n_b: 373
+      windows:
+      - -0.008896181400711842
+      - -0.003284699860841917
+      - 0.009481866353908174
+      - -0.00067215749301799
+      - 0.005823995107726363
+      - -0.003113548664901113
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.0035787669316388955
+      n_a: 361
+      n_b: 361
+      windows:
+      - 0.00655088087028533
+      - 0.005252749485747669
+      - 0.009576680379766576
+      - 0.007644532608490195
+      - -0.005835223271007783
+      - -0.0027165599422539874
+      verdict: fail
+      why: null
+  code: 's24 = np.sign(df.close.pct_change(24))
+
+    s72 = np.sign(df.close.pct_change(72))
+
+    s168 = np.sign(df.close.pct_change(168))
+
+    agree = (s24 == s72) & (s72 == s168) & (s24 != 0)
+
+    a = (hour == 0) & agree
+
+    b = ~a
+
+    signal = s24.replace(0, 1)
+
+    '
+- id: pullback_within_trend
+  belief: Inside an established weekly trend, a sharp 6-hour move against it is a
+    liquidity dip that is bought or sold back into the trend, giving a cheaper trend
+    entry.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.005964169683526983
+      n_a: 130
+      n_b: 130
+      windows:
+      - -0.0005182182129058264
+      - 0.010728266041980539
+      - 0.013587772842032605
+      - 0.010671870005354226
+      - 0.008726609723471545
+      - -0.007150459708753675
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.003112634619659134
+      n_a: 140
+      n_b: 140
+      windows:
+      - -0.0037738308493667785
+      - 0.007969815867492205
+      - 0.0035354039947883167
+      - 0.0143305560653427
+      - 0.0036204934391518046
+      - -0.004488568206074952
+      verdict: fail
+      why: null
+  code: 'ma = df.close.rolling(168).mean()
+
+    upt = (df.close > ma) & (ma > ma.shift(24))
+
+    dnt = (df.close < ma) & (ma < ma.shift(24))
+
+    r6 = df.close.pct_change(6)
+
+    sd6 = ret.rolling(168).std() * np.sqrt(6)
+
+    buy = upt & (r6 < -1.5 * sd6)
+
+    sell = dnt & (r6 > 1.5 * sd6)
+
+    a = spaced(buy | sell, 24)
+
+    b = ~a
+
+    signal = pd.Series(np.where(buy, 1, -1), index=df.index)
+
+    '
+- id: breakout_aligned_with_weekly_trend
+  belief: A 72h breakout in the direction of the rising or falling weekly average
+    carries further over the next day than a breakout against that average, which
+    is more often a failed range break.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.00940710305135095
+      n_a: 127
+      n_b: 91
+      windows:
+      - 0.030229889803698833
+      - 0.007878307424526748
+      - 0.022815616858338758
+      - -0.008859293152450062
+      - 0.0013294936370327583
+      - -0.0013247943381128838
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.013568957115945333
+      n_a: 125
+      n_b: 84
+      windows:
+      - 0.020627635985065163
+      - 0.04043857227993196
+      - 0.002664685466346517
+      - 0.008995977541953169
+      - -0.003465957916408762
+      - 0.013643637578299643
+      verdict: pass
+      why: null
+  code: 'hi = df.high.rolling(72).max().shift(1)
+
+    lo = df.low.rolling(72).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    ev = spaced(up | dn, 24)
+
+    ma = df.close.rolling(168).mean()
+
+    slope = np.sign(ma - ma.shift(24))
+
+    signal = pd.Series(np.where(up, 1, -1), index=df.index)
+
+    ok = ev & slope.notna() & (slope != 0)
+
+    a = ok & (signal == slope)
+
+    b = ok & (signal != slope)
+
+    '
+- id: breakout_volume_confirmed
+  belief: A 72h breakout printed on a bar with heavy volume relative to the past week
+    reflects real participation and carries further over the next day than a breakout
+    on ordinary volume, which more often fails back into the range.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.010804134120823098
+      n_a: 179
+      n_b: 39
+      windows:
+      - 0.029820616429749727
+      - 0.030234461162709135
+      - -0.01685875807245069
+      - -0.047952835418699796
+      - 0.009734568638820721
+      - 0.022066950902289217
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.0034701206919675407
+      n_a: 171
+      n_b: 38
+      windows:
+      - 0.005612974689518109
+      - null
+      - 0.039851816250336805
+      - -0.011689959761397969
+      - -0.017509216370722273
+      - 0.008261538411560762
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(72).max().shift(1)
+
+    lo = df.low.rolling(72).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    ev = spaced(up | dn, 24)
+
+    vmed = df.volume.rolling(168).median().shift(1)
+
+    rv = df.volume / vmed
+
+    ok = ev & vmed.notna()
+
+    a = ok & (rv > 2.0)
+
+    b = ok & (rv <= 2.0)
+
+    signal = pd.Series(np.where(up, 1, -1), index=df.index)
+
+    '
+profit:
+  donchian_72h_breakout/BTCUSD:
+    claim: donchian_72h_breakout
+    symbol: BTCUSD
+    bar_size: 1h
+    fold: C
+    engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+    min_bars: 200
+    verdict: pass
+    passed_as: vol_target
+    fold_totals: &id001
+      net_return: 0.3203
+      median_window_sharpe: 1.1557
+      worst_window_drawdown: 0.1592
+      trades: 241
+    full_size:
+      sizing: full size (forecast 10 = 100%)
+      fold_totals:
+        net_return: 0.4713
+        median_window_sharpe: 1.4117000000000002
+        worst_window_drawdown: 0.5189
+        trades: 228
+      windows:
+      - window: W1
+        net_return: 0.1639
+        trades: 36
+        sharpe: 1.179
+        max_drawdown: 0.291
+        exposure_pct: 28.8441
+        cost_drag_pct: 19.6253
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_BTCUSD/results/full_size/20261106T005752Z_55924e1e
+        seconds: 29
+      - window: W2
+        net_return: -0.0039
+        trades: 33
+        sharpe: 0.1202
+        max_drawdown: 0.2203
+        exposure_pct: 26.2295
+        cost_drag_pct: 117.3639
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_BTCUSD/results/full_size/20261106T005815Z_55924e1e
+        seconds: 22
+      - window: W3
+        net_return: 0.2064
+        trades: 34
+        sharpe: 1.6444
+        max_drawdown: 0.1366
+        exposure_pct: 27.2296
+        cost_drag_pct: 14.7992
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_BTCUSD/results/full_size/20261106T005840Z_55924e1e
+        seconds: 25
+      - window: W4
+        net_return: 0.5449
+        trades: 45
+        sharpe: 1.8633
+        max_drawdown: 0.3235
+        exposure_pct: 32.7479
+        cost_drag_pct: 7.8399
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_BTCUSD/results/full_size/20261106T005902Z_55924e1e
+        seconds: 23
+      - window: W5
+        net_return: 0.1722
+        trades: 34
+        sharpe: 1.7366
+        max_drawdown: 0.1776
+        exposure_pct: 27.8784
+        cost_drag_pct: 16.5217
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_BTCUSD/results/full_size/20261106T005927Z_55924e1e
+        seconds: 24
+      - window: W6
+        net_return: -0.4191
+        trades: 46
+        sharpe: -2.9248
+        max_drawdown: 0.5189
+        exposure_pct: 34.3061
+        cost_drag_pct: 8.5432
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_BTCUSD/results/full_size/20261106T005952Z_55924e1e
+        seconds: 26
+      checks:
+        net_positive_in_5_of_6: false
+        median_window_sharpe_ge_1.0: true
+        worst_window_drawdown_le_20%: false
+      verdict: fail
+    vol_target:
+      sizing:
+        kind: vol_target
+        window: 30
+        target_annual_vol: 0.2
+        max_allocation: 1.0
+      fold_totals: *id001
+      windows:
+      - window: W1
+        net_return: 0.042
+        trades: 35
+        sharpe: 1.2026
+        max_drawdown: 0.064
+        exposure_pct: 28.8441
+        cost_drag_pct: 15.3273
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_BTCUSD/results/vol_target/20261106T010021Z_5402231d
+        seconds: 29
+      - window: W2
+        net_return: 0.0384
+        trades: 42
+        sharpe: 0.6056
+        max_drawdown: 0.0917
+        exposure_pct: 26.2295
+        cost_drag_pct: 30.6785
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_BTCUSD/results/vol_target/20261106T010044Z_5402231d
+        seconds: 23
+      - window: W3
+        net_return: 0.0974
+        trades: 36
+        sharpe: 2.2268
+        max_drawdown: 0.0583
+        exposure_pct: 27.2296
+        cost_drag_pct: 9.7808
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_BTCUSD/results/vol_target/20261106T010109Z_5402231d
+        seconds: 24
+      - window: W4
+        net_return: 0.2238
+        trades: 44
+        sharpe: 2.7509
+        max_drawdown: 0.0614
+        exposure_pct: 32.7479
+        cost_drag_pct: 7.3725
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_BTCUSD/results/vol_target/20261106T010132Z_5402231d
+        seconds: 23
+      - window: W5
+        net_return: 0.0512
+        trades: 41
+        sharpe: 1.1088
+        max_drawdown: 0.0888
+        exposure_pct: 27.8784
+        cost_drag_pct: 24.2455
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_BTCUSD/results/vol_target/20261106T010157Z_5402231d
+        seconds: 25
+      - window: W6
+        net_return: -0.1357
+        trades: 43
+        sharpe: -3.2356
+        max_drawdown: 0.1592
+        exposure_pct: 34.3061
+        cost_drag_pct: 9.3446
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_BTCUSD/results/vol_target/20261106T010222Z_5402231d
+        seconds: 26
+      checks:
+        net_positive_in_5_of_6: true
+        median_window_sharpe_ge_1.0: true
+        worst_window_drawdown_le_20%: true
+      verdict: pass
+  donchian_72h_breakout/ETHUSD:
+    claim: donchian_72h_breakout
+    symbol: ETHUSD
+    bar_size: 1h
+    fold: C
+    engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+    min_bars: 200
+    verdict: pass
+    passed_as: vol_target
+    fold_totals: &id002
+      net_return: 0.6614
+      median_window_sharpe: 1.5828
+      worst_window_drawdown: 0.0898
+      trades: 213
+    full_size:
+      sizing: full size (forecast 10 = 100%)
+      fold_totals:
+        net_return: 3.0367
+        median_window_sharpe: 1.34135
+        worst_window_drawdown: 0.4493
+        trades: 226
+      windows:
+      - window: W1
+        net_return: 1.0194
+        trades: 38
+        sharpe: 3.5572
+        max_drawdown: 0.2738
+        exposure_pct: 24.5936
+        cost_drag_pct: 4.4178
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/full_size/20261106T010250Z_55924e1e
+        seconds: 27
+      - window: W2
+        net_return: 0.2582
+        trades: 35
+        sharpe: 1.4587
+        max_drawdown: 0.247
+        exposure_pct: 26.2295
+        cost_drag_pct: 13.0024
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/full_size/20261106T010312Z_55924e1e
+        seconds: 22
+      - window: W3
+        net_return: 0.1462
+        trades: 35
+        sharpe: 1.224
+        max_drawdown: 0.2036
+        exposure_pct: 28.4164
+        cost_drag_pct: 20.1372
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/full_size/20261106T010336Z_55924e1e
+        seconds: 24
+      - window: W4
+        net_return: 0.5392
+        trades: 37
+        sharpe: 2.0447
+        max_drawdown: 0.1675
+        exposure_pct: 29.7521
+        cost_drag_pct: 7.1387
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/full_size/20261106T010359Z_55924e1e
+        seconds: 23
+      - window: W5
+        net_return: 0.0107
+        trades: 37
+        sharpe: 0.2806
+        max_drawdown: 0.2349
+        exposure_pct: 30.3486
+        cost_drag_pct: 78.6114
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/full_size/20261106T010422Z_55924e1e
+        seconds: 23
+      - window: W6
+        net_return: -0.109
+        trades: 44
+        sharpe: -0.3584
+        max_drawdown: 0.4493
+        exposure_pct: 30.1323
+        cost_drag_pct: 45.6712
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/full_size/20261106T010447Z_55924e1e
+        seconds: 25
+      checks:
+        net_positive_in_5_of_6: true
+        median_window_sharpe_ge_1.0: true
+        worst_window_drawdown_le_20%: false
+      verdict: fail
+    vol_target:
+      sizing:
+        kind: vol_target
+        window: 30
+        target_annual_vol: 0.2
+        max_allocation: 1.0
+      fold_totals: *id002
+      windows:
+      - window: W1
+        net_return: 0.2464
+        trades: 30
+        sharpe: 4.4368
+        max_drawdown: 0.0479
+        exposure_pct: 24.5936
+        cost_drag_pct: 3.2129
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/vol_target/20261106T010514Z_5402231d
+        seconds: 27
+      - window: W2
+        net_return: 0.1243
+        trades: 34
+        sharpe: 2.2209
+        max_drawdown: 0.0382
+        exposure_pct: 26.2295
+        cost_drag_pct: 7.057
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/vol_target/20261106T010537Z_5402231d
+        seconds: 22
+      - window: W3
+        net_return: 0.0258
+        trades: 36
+        sharpe: 0.9447
+        max_drawdown: 0.0595
+        exposure_pct: 28.4164
+        cost_drag_pct: 27.69
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/vol_target/20261106T010600Z_5402231d
+        seconds: 24
+      - window: W4
+        net_return: 0.1474
+        trades: 37
+        sharpe: 2.2735
+        max_drawdown: 0.0503
+        exposure_pct: 29.7521
+        cost_drag_pct: 6.6999
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/vol_target/20261106T010623Z_5402231d
+        seconds: 23
+      - window: W5
+        net_return: -0.0114
+        trades: 39
+        sharpe: -0.2036
+        max_drawdown: 0.0898
+        exposure_pct: 30.3486
+        cost_drag_pct: 29281.0719
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/vol_target/20261106T010647Z_5402231d
+        seconds: 24
+      - window: W6
+        net_return: 0.0189
+        trades: 37
+        sharpe: 0.1691
+        max_drawdown: 0.0816
+        exposure_pct: 30.1323
+        cost_drag_pct: 31.0762
+        run_dir: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/engine_r0_donchian_72h_breakout_ETHUSD/results/vol_target/20261106T010713Z_5402231d
+        seconds: 25
+      checks:
+        net_positive_in_5_of_6: true
+        median_window_sharpe_ge_1.0: true
+        worst_window_drawdown_le_20%: true
+      verdict: pass

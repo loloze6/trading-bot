@@ -1,0 +1,156 @@
+{
+  "run_id": "20261113T035830Z_8e77c44e",
+  "created_utc": "2026-11-13T03:58:31.006344+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "slope",
+          "class": "strategies.strategy_components.MovingAverageSlopeComponent",
+          "params": {
+            "period": 20,
+            "lookback": 5,
+            "average": "sma"
+          }
+        },
+        {
+          "id": "dist",
+          "class": "strategies.strategy_components.MovingAverageDistanceComponent",
+          "params": {
+            "period": 20,
+            "average": "sma"
+          }
+        },
+        {
+          "id": "since_high",
+          "class": "strategies.strategy_components.BarsSinceHighComponent",
+          "params": {
+            "lookback": 20,
+            "max_bars": 20
+          }
+        }
+      ],
+      "vetoes": [],
+      "rules": [
+        {
+          "regime": "trending",
+          "any_of": [
+            [
+              {
+                "id": "slope",
+                "op": "gt",
+                "value": 0.0
+              },
+              {
+                "id": "dist",
+                "op": "gt",
+                "value": 0.0
+              },
+              {
+                "id": "since_high",
+                "op": "gt",
+                "value": 0.0
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "trending": {
+          "components": [
+            {
+              "id": "near_high",
+              "class": "strategies.strategy_components.DonchianBreakoutComponent",
+              "params": {
+                "period": 20
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "min": 0.0
+                  }
+                }
+              ]
+            },
+            {
+              "id": "recency",
+              "class": "strategies.strategy_components.BarsSinceHighComponent",
+              "params": {
+                "lookback": 20,
+                "max_bars": 20
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "mean_reversion": null,
+        "chop": null,
+        "unknown": null
+      }
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 3,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 7.5,
+        "BTCUSD": 2.5,
+        "ETHUSD": 4,
+        "AVAXUSD": 7.5,
+        "SOLUSD": 7.5
+      }
+    }
+  },
+  "config_sha256": "8e77c44eb9f508fab1ed0a1fed7c856fefc69c51880e6deb6e80f5cc752a9553",
+  "data": {
+    "symbols": [
+      "ETHUSD"
+    ],
+    "timeframe": "86400s",
+    "start": "2019-09-01 00:00:00",
+    "end": "2020-04-30 00:00:00",
+    "bar_count": 243,
+    "data_sha256": "447e7fbe46911944789c1eb2d78b6f1a8d9303ab039db76070acf0483ed9bf34"
+  },
+  "git_sha": "28d8259d510f5c957a31d8d301ca49bbfdd4c6a1-dirty",
+  "engine": {
+    "lookback": 61,
+    "warmup": 61
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

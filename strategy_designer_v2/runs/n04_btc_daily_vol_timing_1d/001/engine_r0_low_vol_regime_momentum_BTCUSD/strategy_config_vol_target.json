@@ -1,0 +1,45 @@
+{
+  "aux_feeds": [],
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 2,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "low_vol_regime_momentum",
+            "class": "strategies.claim_event.ClaimEventComponent",
+            "params": {
+              "code": "vol20 = ret.rolling(20).std()\npct = vol20.rolling(365).rank(pct=True)\nmom = df.close.pct_change(20)\na = (pct < 0.5) & mom.notna()\nb = ~a\nsignal = np.sign(mom).replace(0, 1).fillna(1)\n",
+              "horizon": 10,
+              "scaling_factor": 10.0,
+              "min_bars": 455
+            },
+            "weight": 1.0,
+            "lookback": 555,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 30,
+      "target_annual_vol": 0.2,
+      "max_allocation": 1.0,
+      "periods_per_year": 365
+    }
+  }
+}

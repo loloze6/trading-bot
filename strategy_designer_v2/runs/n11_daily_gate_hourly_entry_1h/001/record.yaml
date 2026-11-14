@@ -1,0 +1,614 @@
+brief: n11_daily_gate_hourly_entry_1h.md
+fold: A
+symbols:
+- BTCUSD
+- ETHUSD
+bar_size: 1h
+claims:
+- id: uptrend_gate_dip_buy
+  belief: Hourly dips are bought by trend followers when the 30 day trend is up, so
+    dips pay only in that state and fail when the slow trend is flat or down.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.002702940062559659
+      n_a: 99
+      n_b: 177
+      windows:
+      - -0.012212798454416474
+      - 0.001388082794638687
+      - -0.022318496951734948
+      - 0.008422370268821332
+      - 0.00927886524979559
+      - -0.001465581571078808
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.0006887726129753628
+      n_a: 119
+      n_b: 197
+      windows:
+      - -0.00526748636327719
+      - -0.0004765382266668965
+      - -0.029367523503820252
+      - 0.008638404393813377
+      - -0.003928293316936767
+      - -0.005745053125601875
+      verdict: fail
+      why: null
+  code: 'ma = df.close.rolling(720).mean()
+
+    up = (df.close > ma) & (ma > ma.shift(168))
+
+    dip = spaced(df.close.pct_change(6) < -0.015, 12)
+
+    a = dip & up
+
+    b = dip & ~up & ma.shift(168).notna()
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: trend_gate_breakout_long
+  belief: Hourly breakouts above the prior two day high continue when the two week
+    trend is already up, and fail as false breaks when the slow trend is against them.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.008597351875652262
+      n_a: 67
+      n_b: 74
+      windows:
+      - 0.02346476452143331
+      - 0.015511588556770881
+      - -0.008576922111517808
+      - -0.004907396356524388
+      - 0.004771547696911592
+      - 0.0011653246213657502
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.01660621394565491
+      n_a: 66
+      n_b: 83
+      windows:
+      - 0.019762788123807332
+      - 0.045381481654465004
+      - 0.01094721772181933
+      - 0.013581060300783532
+      - 0.012723289284477636
+      - -0.0027355754452405706
+      verdict: pass
+      why: null
+  code: 'hh = df.high.rolling(48).max().shift(1)
+
+    brk = spaced(df.close > hh, 24)
+
+    ma = df.close.rolling(336).mean()
+
+    up = (df.close > ma) & (ma > ma.shift(72))
+
+    a = brk & up
+
+    b = brk & ~up & ma.shift(72).notna()
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: calm_regime_hourly_reversion
+  belief: When weekly volatility is low against its own 90 day history, large hourly
+    moves are liquidity noise and revert, while in high volatility regimes they do
+    not.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0008783683725424112
+      n_a: 130
+      n_b: 119
+      windows:
+      - 0.003153562400832858
+      - -0.00743617051609448
+      - 0.0031114670897999493
+      - -0.0011707867575357902
+      - 0.0005831281882400452
+      - 0.0017889671495679932
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.004004936960617939
+      n_a: 137
+      n_b: 112
+      windows:
+      - 0.0014691921964079288
+      - -0.0014610748927022044
+      - -0.01064291068261831
+      - -0.007413896912212836
+      - -0.010321359668354162
+      - -0.002607911688967893
+      verdict: fail
+      why: null
+  code: 'rv = ret.rolling(168).std()
+
+    med = rv.rolling(2160).median()
+
+    r3 = df.close.pct_change(3)
+
+    z = r3.abs() / (rv * np.sqrt(3))
+
+    move = spaced(z > 2.5, 6)
+
+    a = move & (rv < med)
+
+    b = move & (rv >= med)
+
+    signal = -np.sign(r3)
+
+    '
+- id: calming_vol_gate_dip_buy
+  belief: Dips bought while weekly volatility is falling below monthly volatility
+    recover because the selling pressure is fading, while dips during expanding volatility
+    keep falling.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0012766226567502217
+      n_a: 156
+      n_b: 120
+      windows:
+      - -0.012362668769564763
+      - 0.02673342723970008
+      - 0.008708562940569896
+      - -0.013480286554954944
+      - -0.015934312885750077
+      - 0.0003817623458373092
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.0029803177900252545
+      n_a: 171
+      n_b: 145
+      windows:
+      - 0.014079376513181245
+      - 0.0018940590182702308
+      - 0.012817923789367143
+      - 0.0004658519213191015
+      - -0.01628688448777812
+      - 0.014648296040209242
+      verdict: fail
+      why: null
+  code: 'v7 = ret.rolling(168).std()
+
+    v30 = ret.rolling(720).std()
+
+    dip = spaced(df.close.pct_change(6) < -0.015, 12)
+
+    a = dip & (v7 < v30)
+
+    b = dip & (v7 >= v30)
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: near_high_gate_dip_buy
+  belief: A dip close to a fresh three week high is a pause in strength and gets bought,
+    while the same dip deep in a drawdown is part of a falling market.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0029654387736637805
+      n_a: 77
+      n_b: 123
+      windows:
+      - -0.01048391882831282
+      - 0.01773833379539077
+      - -0.013813996273813462
+      - 0.007913472837631174
+      - -0.002296125133293676
+      - -0.017094528861932516
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.007269098826024762
+      n_a: 89
+      n_b: 147
+      windows:
+      - 0.003610209150592723
+      - 0.010054705824135755
+      - 0.005869570251308926
+      - 0.008132899842875402
+      - -0.011346730302947066
+      - -0.015269487135858326
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(504).max()
+
+    dd = df.close / hi - 1
+
+    dip = spaced(df.close.pct_change(6) < -0.015, 12)
+
+    a = dip & (dd > -0.05)
+
+    b = dip & (dd < -0.10)
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: deep_drawdown_capitulation_long
+  belief: A fast 24 hour crash on top of a deep monthly drawdown marks forced selling,
+    and the rebound over the next two days pays more than the trading cost.
+  measure: net_return
+  horizon_bars: 48
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0013925797505398617
+      n_a: 29
+      n_b: 29
+      windows:
+      - 0.013563682881362428
+      - -0.025122413964449027
+      - 0.017251464949315898
+      - -0.0204353426155523
+      - null
+      - null
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.0032227869884896665
+      n_a: 40
+      n_b: 40
+      windows:
+      - 0.0037841838684361724
+      - -0.02275627383889355
+      - 0.021786693870432472
+      - 0.0463922865754432
+      - 0.04048239114999935
+      - null
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(720).max()
+
+    dd = df.close / hi - 1
+
+    drop = df.close.pct_change(24) < -0.05
+
+    a = spaced((dd < -0.15) & drop, 48)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: downtrend_gate_rally_fade
+  belief: In a falling 30 day trend, sharp hourly rallies are short covering and get
+    sold into, while the same rallies in other states continue.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.004910415981513967
+      n_a: 104
+      n_b: 156
+      windows:
+      - 0.009021893559606373
+      - 0.009574393407478626
+      - -0.012184457842551219
+      - -0.059872032720166016
+      - 0.0019337892923150602
+      - 0.011482474453333759
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.002748126859913778
+      n_a: 122
+      n_b: 200
+      windows:
+      - 0.004174201053472313
+      - 0.01767139041520685
+      - -0.009934196838694176
+      - -0.03436895627928964
+      - -0.008792881037962875
+      - 0.011735183327178544
+      verdict: fail
+      why: null
+  code: 'ma = df.close.rolling(720).mean()
+
+    down = (df.close < ma) & (ma < ma.shift(168))
+
+    rally = spaced(df.close.pct_change(6) > 0.015, 12)
+
+    a = rally & down
+
+    b = rally & ~down & ma.shift(168).notna()
+
+    signal = pd.Series(-1.0, index=df.index)
+
+    '
+- id: trend_strength_ranks_dip_outcome
+  belief: The stronger the price stands above its 30 day mean, the better an hourly
+    dip recovers, so slow trend strength ranks the payoff of dip entries.
+  measure: rank_corr
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.009353747806110074
+      n_a: 276
+      n_b: 276
+      windows:
+      - -0.31359265734265734
+      - 0.09142788730146062
+      - -0.36599190283400806
+      - 0.1679309281529448
+      - 0.0842911877394636
+      - 0.00040322580645161296
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.035998653744131526
+      n_a: 316
+      n_b: 316
+      windows:
+      - -0.03361013986013986
+      - 0.11290350800454904
+      - -0.12669552669552675
+      - 0.07375643224699827
+      - -0.2641711229946524
+      - -0.40496772075719445
+      verdict: fail
+      why: null
+  code: 'ma = df.close.rolling(720).mean()
+
+    feature = df.close / ma - 1
+
+    dip = spaced(df.close.pct_change(6) < -0.015, 12)
+
+    a = dip & ma.notna()
+
+    b = ~a
+
+    '
+- id: compressed_regime_breakout_follow
+  belief: When weekly volatility is compressed against its 90 day history, a two day
+    range break starts a new move and follows through better than breaks in a normal
+    regime.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0007908009730929505
+      n_a: 90
+      n_b: 154
+      windows:
+      - 0.018715098150545575
+      - -0.005894619724504292
+      - -0.004645322239735953
+      - -0.0019056444458706578
+      - -0.0009647033819607975
+      - -0.0003533368607869427
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.0023519115589342916
+      n_a: 91
+      n_b: 170
+      windows:
+      - 0.016234905310420402
+      - -0.012513759342832859
+      - 0.004211207246790614
+      - 0.012351906187593308
+      - -0.004083212401878916
+      - 0.004748095740593997
+      verdict: fail
+      why: null
+  code: 'hh = df.high.rolling(48).max().shift(1)
+
+    ll = df.low.rolling(48).min().shift(1)
+
+    up = df.close > hh
+
+    dn = df.close < ll
+
+    brk = spaced(up | dn, 24)
+
+    rv = ret.rolling(168).std()
+
+    q = rv.rolling(2160).quantile(0.25)
+
+    a = brk & (rv < q)
+
+    b = brk & (rv >= q)
+
+    signal = pd.Series(np.where(up, 1.0, -1.0), index=df.index)
+
+    '
+- id: trend_aligned_momentum_hit_rate
+  belief: Hourly momentum bursts that agree with the 20 day trend continue more often
+    than bursts that go against it, because the slow flow is behind them.
+  measure: hit_rate
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.04
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.003984537615224493
+      n_a: 177
+      n_b: 95
+      windows:
+      - -0.029239766081871343
+      - 0.035190615835777206
+      - -0.05357142857142855
+      - 0.021739130434782594
+      - 0.15217391304347827
+      - -0.0060606060606061
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.07435768983038715
+      n_a: 157
+      n_b: 89
+      windows:
+      - 0.10096153846153844
+      - 0.3025641025641026
+      - 0.003809523809523818
+      - 0.23411978221415608
+      - -0.08116883116883111
+      - 0.015873015873015872
+      verdict: pass
+      why: null
+  code: 'ma = df.close.rolling(480).mean()
+
+    trend = np.sign(df.close - ma)
+
+    m = df.close.pct_change(12)
+
+    ev = spaced(m.abs() > 0.02, 12) & ma.notna()
+
+    a = ev & (np.sign(m) == trend)
+
+    b = ev & (np.sign(m) == -trend)
+
+    signal = np.sign(m)
+
+    '
+- id: trend_aligned_two_sided_breakout_net
+  belief: Two-day range breaks that agree with a rising or falling two-week trend
+    continue enough to pay the trading cost, on both the long and the short side.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.004088176243658946
+      n_a: 121
+      n_b: 121
+      windows:
+      - -0.0169362658729779
+      - -2.067151977680568e-06
+      - -0.010009649433293182
+      - 0.008465020572769875
+      - -0.009606168243415456
+      - 0.0034393263873273784
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -4.373857088904804e-05
+      n_a: 119
+      n_b: 119
+      windows:
+      - -0.021286785045314255
+      - 0.015633908080845214
+      - -0.005330609829551185
+      - 0.020852444271568564
+      - -3.6124585157744533e-05
+      - -0.0018242511108264832
+      verdict: fail
+      why: null
+  code: 'hh = df.high.rolling(48).max().shift(1)
+
+    ll = df.low.rolling(48).min().shift(1)
+
+    ma = df.close.rolling(336).mean()
+
+    up = (df.close > ma) & (ma > ma.shift(72))
+
+    dn = (df.close < ma) & (ma < ma.shift(72))
+
+    bu = df.close > hh
+
+    bd = df.close < ll
+
+    ev = spaced(bu | bd, 24)
+
+    a = ev & ((bu & up) | (bd & dn))
+
+    b = ~a
+
+    signal = pd.Series(np.where(bu, 1.0, -1.0), index=df.index)
+
+    '
+- id: near_high_gate_breakout_long
+  belief: A two-day high break that happens within a few percent of the three-week
+    high is strength being confirmed and continues, while the same break deep in a
+    drawdown is a relief bounce that fades.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.009039230923629567
+      n_a: 71
+      n_b: 31
+      windows:
+      - 0.03931232080878533
+      - 0.005806845046745228
+      - 0.0005943143116181899
+      - -0.14530741305073308
+      - 0.002437181588921533
+      - null
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.015625413756917603
+      n_a: 67
+      n_b: 45
+      windows:
+      - 0.00976345936418274
+      - 0.04134146022573349
+      - 0.012204386676683616
+      - 0.0037372940393238276
+      - 0.01613294751453022
+      - null
+      verdict: pass
+      why: null
+  code: 'hh = df.high.rolling(48).max().shift(1)
+
+    brk = spaced(df.close > hh, 24)
+
+    hi = df.high.rolling(504).max()
+
+    dd = df.close / hi - 1
+
+    a = brk & (dd > -0.05)
+
+    b = brk & (dd < -0.10)
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+profit: 'none: no return claim passed'

@@ -1,0 +1,552 @@
+brief: n37_zec_ltc_hourly_trend_1h.md
+fold: A
+symbols:
+- ZECUSD
+- LTCUSD
+bar_size: 1h
+claims:
+- id: long_channel_breakout_240h
+  belief: On ZEC and LTC, short channels are mostly noise, but a close outside a 10-day
+    channel marks a real repricing that keeps going for about two days.
+  measure: net_return
+  horizon_bars: 48
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    ZECUSD:
+      effect: 0.008545039366123065
+      n_a: 88
+      n_b: 88
+      windows:
+      - 0.03423347223383004
+      - 0.006452543846807051
+      - 0.012600546514395709
+      - -0.014012470634558223
+      - 0.01576173543690197
+      - 2.0267294865082466e-05
+      verdict: pass
+      why: null
+    LTCUSD:
+      effect: -0.005313015636637447
+      n_a: 80
+      n_b: 80
+      windows:
+      - 0.007518104127320473
+      - -0.019523408627121527
+      - -0.019719628426196605
+      - -0.009310888443760448
+      - 0.02266360809883262
+      - -0.015416365107326847
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(240).max().shift(1)
+
+    lo = df.low.rolling(240).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    a = spaced(up | dn, 48)
+
+    b = ~a
+
+    signal = pd.Series(np.where(up, 1, -1), index=df.index)
+
+    '
+- id: tsmom_168h_rank
+  belief: Weekly trend persists on these mid-cap coins because flows from retail and
+    listings arrive slowly, so the past 7-day return predicts the next day.
+  measure: rank_corr
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.05
+  verdict: fail
+  by_symbol:
+    ZECUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'feature = df.close / df.close.shift(168) - 1
+
+    a = spaced(feature.notna(), 24)
+
+    b = ~a
+
+    '
+- id: compression_gated_breakout
+  belief: A breakout out of a quiet period releases stored positioning and trends;
+    a breakout during already high volatility is noise.
+  measure: net_return
+  horizon_bars: 48
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    ZECUSD:
+      effect: 0.001967487826157927
+      n_a: 56
+      n_b: 56
+      windows:
+      - 0.029341696685981675
+      - -0.0006312389688046247
+      - -0.02221417429868244
+      - 0.004773623080258806
+      - 0.008407422877022055
+      - 0.009213396154686821
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.004167331499420439
+      n_a: 53
+      n_b: 53
+      windows:
+      - -0.0013556000758632582
+      - -0.0374899104420923
+      - -0.009613325207382596
+      - -0.0009196267555924496
+      - 0.012323766186262564
+      - -0.0033843164806394033
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(120).max().shift(1)
+
+    lo = df.low.rolling(120).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    vol = ret.rolling(120).std()
+
+    pct = vol.rolling(2000).rank(pct=True)
+
+    a = spaced((up | dn) & (pct < 0.30), 48)
+
+    b = ~a
+
+    signal = pd.Series(np.where(up, 1, -1), index=df.index)
+
+    '
+- id: volume_confirmed_breakout
+  belief: On thin coins, breakouts without volume are stop runs that fail, while breakouts
+    on heavy volume carry real order flow.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    ZECUSD:
+      effect: 0.004260603951793243
+      n_a: 105
+      n_b: 57
+      windows:
+      - -0.007767064609426285
+      - 0.037110012049330156
+      - -0.0042022024775730995
+      - 0.00481821163643152
+      - -0.014724396692824689
+      - -0.00623446009301387
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.010018340709807585
+      n_a: 116
+      n_b: 50
+      windows:
+      - -0.0007282369186543563
+      - 0.007801224302553281
+      - 0.0033854831886561496
+      - 0.034325560008581835
+      - 0.03957939379291023
+      - -0.008048173979749246
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(120).max().shift(1)
+
+    lo = df.low.rolling(120).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    brk = spaced(up | dn, 24)
+
+    medv = df.volume.rolling(168).median().shift(1)
+
+    heavy = df.volume > 3 * medv
+
+    a = brk & heavy
+
+    b = brk & ~heavy
+
+    signal = pd.Series(np.where(up, 1, -1), index=df.index)
+
+    '
+- id: us_session_breakout
+  belief: Breakouts during US hours, when liquidity and directional flow on Kraken
+    are highest, persist more than breakouts during Asian night hours.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    ZECUSD:
+      effect: 0.0071242392902920205
+      n_a: 54
+      n_b: 108
+      windows:
+      - 0.027304982358773093
+      - 0.0024932280800592926
+      - 0.01642046245872127
+      - 0.013729634817932244
+      - -0.03133996606139374
+      - -0.0022520338107960792
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.013534356992438754
+      n_a: 68
+      n_b: 98
+      windows:
+      - 0.015225796718939408
+      - -0.007466343321620614
+      - 0.08219334362595226
+      - 0.0010003073039099915
+      - -0.005489075084878809
+      - -0.004534221289525033
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(120).max().shift(1)
+
+    lo = df.low.rolling(120).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    brk = spaced(up | dn, 24)
+
+    us = (hour >= 13) & (hour <= 20)
+
+    a = brk & us
+
+    b = brk & ~us
+
+    signal = pd.Series(np.where(up, 1, -1), index=df.index)
+
+    '
+- id: efficiency_ratio_trend
+  belief: When price has moved in a clean straight line over two days (high efficiency
+    ratio), the move reflects persistent one-sided flow that continues.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    ZECUSD:
+      effect: 0.0008614904415541959
+      n_a: 42
+      n_b: 42
+      windows:
+      - 0.01750941372198883
+      - 0.008494490020833266
+      - 0.0014123807067000956
+      - -0.009597963951441725
+      - -0.0059475366852745955
+      - -0.014228023229680363
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.0033928130444774293
+      n_a: 61
+      n_b: 61
+      windows:
+      - -0.010021817016487864
+      - -0.0002234812533800888
+      - -0.025962094607135902
+      - 0.0006096311075183152
+      - 0.014628119946895729
+      - -0.02275669383248763
+      verdict: fail
+      why: null
+  code: 'chg = df.close - df.close.shift(48)
+
+    path = df.close.diff().abs().rolling(48).sum()
+
+    er = chg.abs() / path
+
+    a = spaced(er > 0.4, 24)
+
+    b = ~a
+
+    signal = np.sign(chg)
+
+    '
+- id: weekend_breakout_fade
+  belief: Weekend breakouts on thin books are liquidity sweeps that revert once weekday
+    participants return, which contradicts the trend ideas for that slice.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    ZECUSD:
+      effect: -8.851525654032018e-05
+      n_a: 55
+      n_b: 55
+      windows:
+      - -0.003993793030613157
+      - 0.01682504251748147
+      - -0.008328596367557088
+      - 0.01124521927535317
+      - -0.016746207182178542
+      - -0.0035758878470729103
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.0016764790128424448
+      n_a: 46
+      n_b: 46
+      windows:
+      - 0.006305682046118951
+      - -0.0011615981982458611
+      - -0.013609341766766501
+      - 0.006249699820738365
+      - -0.0069983170971115016
+      - 0.014955568618367216
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(120).max().shift(1)
+
+    lo = df.low.rolling(120).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    a = spaced((up | dn) & (dow >= 5), 24)
+
+    b = ~a
+
+    signal = pd.Series(np.where(up, -1, 1), index=df.index)
+
+    '
+- id: breakout_vol_expansion
+  belief: Channel breakouts on these coins start volatility expansions, so a volatility-targeted
+    trend rule gets its edge from larger moves after the signal.
+  measure: abs_ratio
+  horizon_bars: 24
+  direction: above
+  min_effect: 1.3
+  verdict: fail
+  by_symbol:
+    ZECUSD:
+      effect: 1.140644370236748
+      n_a: 137
+      n_b: 16411
+      windows:
+      - 1.1559753597124913
+      - 1.1674012679398333
+      - 1.1951840731550107
+      - 0.8298899708705892
+      - 1.3406574205197268
+      - 0.9887101293766993
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 1.055045574172334
+      n_a: 130
+      n_b: 17389
+      windows:
+      - 0.9490610809726631
+      - 0.896088706029404
+      - 1.5656523972940946
+      - 0.8516082781970161
+      - 1.0873857723117393
+      - 1.1185946267087419
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(168).max().shift(1)
+
+    lo = df.low.rolling(168).min().shift(1)
+
+    a = spaced((df.close > hi) | (df.close < lo), 24)
+
+    b = ~a
+
+    '
+- id: multi_horizon_agreement
+  belief: When daily, weekly and monthly trends all point the same way, trend-followers
+    at every horizon push in one direction and the move continues.
+  measure: net_return
+  horizon_bars: 72
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    ZECUSD:
+      effect: -0.012036485698500042
+      n_a: 27
+      n_b: 27
+      windows:
+      - 0.0006349429769226546
+      - 0.014115759433728371
+      - 0.0017682628363353747
+      - -0.03261692057483802
+      - -0.0430471042844963
+      - -0.027956807883776285
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.0035554425385300637
+      n_a: 26
+      n_b: 26
+      windows:
+      - 0.008320921669839722
+      - 0.07256206763117935
+      - -0.01038066120212455
+      - -0.032771550323324516
+      - -0.010132640636815828
+      - -0.005846027341006919
+      verdict: fail
+      why: null
+  code: 's1 = np.sign(df.close / df.close.shift(24) - 1)
+
+    s2 = np.sign(df.close / df.close.shift(168) - 1)
+
+    s3 = np.sign(df.close / df.close.shift(720) - 1)
+
+    agree = (s1 == s2) & (s2 == s3) & (s1 != 0)
+
+    a = spaced(agree, 72)
+
+    b = ~a
+
+    signal = s1
+
+    '
+- id: vol_scaled_weekly_trend_rank
+  belief: The strength of the past week's trend, measured against its own volatility,
+    predicts the next day's return on both coins, once it is sampled one bar per day
+    so the samples do not overlap.
+  measure: rank_corr
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    ZECUSD:
+      effect: -0.04453923487967197
+      n_a: 702
+      n_b: 702
+      windows:
+      - 0.06877560941732064
+      - -0.10885323290038824
+      - -0.1958463636968528
+      - -0.075544794188862
+      - -0.08455772113943029
+      - -0.03155431031537226
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.047904480045817724
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.0055837210917424815
+      - -0.09282738517496228
+      - -0.012342170569788613
+      - -0.08920758385999027
+      - -0.1263881544156531
+      - -0.07686512171990707
+      verdict: fail
+      why: null
+  code: 'r168 = df.close / df.close.shift(168) - 1
+
+    sd = ret.rolling(168).std() * np.sqrt(168)
+
+    feature = (r168 / sd.replace(0, np.nan)).replace([np.inf, -np.inf], np.nan)
+
+    a = feature.notna() & (hour == 0)
+
+    b = ~a
+
+    '
+- id: weekly_extreme_fade
+  belief: On ZEC and LTC, a weekly move that is large against its own volatility is
+    over-extended and partly gives back over the next day, enough to pay the round-trip
+    cost.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    ZECUSD:
+      effect: 0.013318953138999683
+      n_a: 46
+      n_b: 46
+      windows:
+      - 0.01657568549203433
+      - 0.034310618828733624
+      - 0.01248650317987038
+      - 0.0034225165625224687
+      - -0.003826996718784946
+      - 0.01667746700939049
+      verdict: pass
+      why: null
+    LTCUSD:
+      effect: -0.005324334544189496
+      n_a: 51
+      n_b: 51
+      windows:
+      - -0.008251196599526629
+      - -0.0482366870084848
+      - 0.002307903378202948
+      - 0.011522198117677936
+      - -0.006028897126714795
+      - 0.007123996825975636
+      verdict: fail
+      why: null
+  code: 'r168 = df.close / df.close.shift(168) - 1
+
+    sd = ret.rolling(168).std() * np.sqrt(168)
+
+    z = (r168 / sd.replace(0, np.nan)).replace([np.inf, -np.inf], np.nan)
+
+    a = spaced(z.abs() > 1.5, 24)
+
+    b = ~a
+
+    signal = pd.Series(-np.sign(z), index=df.index).fillna(0)
+
+    '
+profit: 'none: no return claim passed'

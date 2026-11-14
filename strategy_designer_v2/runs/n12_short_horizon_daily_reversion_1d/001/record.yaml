@@ -1,0 +1,647 @@
+brief: n12_short_horizon_daily_reversion_1d.md
+fold: B
+symbols:
+- LTCUSD
+- XMRUSD
+- ZECUSD
+bar_size: 1d
+claims:
+- id: vol_scaled_3d_shock_fade
+  belief: A 3-day move larger than 2 units of pre-move volatility is an overreaction
+    by thin mid-cap order books and partly reverses over the next 3 days.
+  measure: net_return
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.015776619733917596
+      n_a: 23
+      n_b: 23
+      windows:
+      - -0.03216928584327394
+      - -0.07241653654799185
+      - 0.0005009270976654725
+      - -0.020633100553459665
+      - 0.01300149511975224
+      - -0.026866353714955382
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 0.012622557361407414
+      n_a: 25
+      n_b: 25
+      windows:
+      - -0.019801509745380586
+      - -0.023772279291888965
+      - 0.0070654807755762845
+      - -0.004611946352942041
+      - 0.016841992223348146
+      - 0.05252651118139989
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: 0.0076023617975640116
+      n_a: 23
+      n_b: 23
+      windows:
+      - 0.05507449976663914
+      - -0.03282564431154772
+      - 0.009271770750306331
+      - 0.038874393101359775
+      - -0.0777245541057556
+      - 0.03168531850732544
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(3)
+
+    z3 = (df.close / df.close.shift(3) - 1) / (vol * np.sqrt(3))
+
+    a = spaced(z3.abs() > 2.0, 3).fillna(False)
+
+    b = ~a
+
+    signal = pd.Series(np.where(z3 > 0, -1, 1), index=df.index)
+
+    '
+- id: low_volume_shock_reverts_more
+  belief: Sharp moves made on light volume are liquidity gaps, not information, so
+    they revert more than the same moves made on heavy volume.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.020576686380229896
+      n_a: 16
+      n_b: 12
+      windows:
+      - -0.1559507192056023
+      - null
+      - 0.006464741961105858
+      - 0.0038109858645216307
+      - -0.03102746437370744
+      - -0.01805406056963277
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.0020139273376082525
+      n_a: 14
+      n_b: 11
+      windows:
+      - 0.008860309481853651
+      - 0.02552903573892512
+      - -0.00518852866894326
+      - -0.07964699758617338
+      - -0.04011088304733848
+      - 0.0006201409991323237
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: 0.00835816919553615
+      n_a: 13
+      n_b: 12
+      windows:
+      - 0.03787207373169038
+      - null
+      - -0.059160591067937696
+      - 0.04722002367468878
+      - 0.10387638757409438
+      - 0.0114985717656102
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(3)
+
+    z3 = (df.close / df.close.shift(3) - 1) / (vol * np.sqrt(3))
+
+    v3 = df.volume.rolling(3).sum()
+
+    vref = (df.volume.rolling(60).mean() * 3).shift(3)
+
+    shock = spaced(z3.abs() > 1.5, 3).fillna(False)
+
+    a = shock & (v3 < vref)
+
+    b = shock & (v3 > 1.5 * vref)
+
+    signal = pd.Series(np.where(z3 > 0, -1, 1), index=df.index)
+
+    '
+- id: dip_in_uptrend_reverts
+  belief: Shocks against the prevailing 100-day trend are pullbacks that trend followers
+    buy back, so they revert more than shocks in the trend's direction.
+  measure: mean_diff
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.03362023036814014
+      n_a: 15
+      n_b: 25
+      windows:
+      - 0.17089379269561836
+      - 0.12689064163535696
+      - 0.11242825004704007
+      - -0.22118415668710967
+      - 0.04129042216678981
+      - -0.08445066254329704
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 0.05767345020358048
+      n_a: 19
+      n_b: 19
+      windows:
+      - 0.06790558626522841
+      - 0.08363164839656301
+      - -0.0021934207465261757
+      - -0.01291023598226208
+      - 0.1326072754678937
+      - 0.11061181227938316
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: 0.04563399927290489
+      n_a: 21
+      n_b: 18
+      windows:
+      - -0.008818216934300238
+      - 0.025119939043165784
+      - 0.1344619372416413
+      - 0.10814977220491873
+      - -0.0650089630144843
+      - -0.046037078327245504
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(3)
+
+    z3 = (df.close / df.close.shift(3) - 1) / (vol * np.sqrt(3))
+
+    up_trend = (df.close.shift(3) > df.close.rolling(100).mean().shift(3))
+
+    shock = spaced(z3.abs() > 1.5, 3).fillna(False)
+
+    against = ((z3 < 0) & up_trend) | ((z3 > 0) & ~up_trend)
+
+    a = shock & against
+
+    b = shock & ~against
+
+    signal = pd.Series(np.where(z3 > 0, -1, 1), index=df.index)
+
+    '
+- id: inside_range_shock_reverts_new_extreme_does_not
+  belief: A shock that stays inside the recent 20-day range is noise and reverts,
+    while one that sets a new 20-day high or low triggers breakout and stop flows
+    that keep it going.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.009534678472427092
+      n_a: 13
+      n_b: 27
+      windows:
+      - 0.1314162836654156
+      - 0.036093114316589237
+      - -0.11624678110474874
+      - -0.021310727164944504
+      - 0.04038713702449287
+      - 0.010417924208788908
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 0.011600574977185387
+      n_a: 11
+      n_b: 27
+      windows:
+      - 0.06549777524194351
+      - 0.03754580313785625
+      - -0.10934543735053502
+      - 0.0029039111942693978
+      - null
+      - -0.01603606849329518
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: -0.01617778670472886
+      n_a: 15
+      n_b: 24
+      windows:
+      - -0.08948194922116774
+      - -0.011520644911110212
+      - -0.013129328660631157
+      - 0.007284594129071752
+      - 0.08034514322673744
+      - -0.02187470497044549
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(3)
+
+    z3 = (df.close / df.close.shift(3) - 1) / (vol * np.sqrt(3))
+
+    hi20 = df.close.rolling(20).max().shift(1)
+
+    lo20 = df.close.rolling(20).min().shift(1)
+
+    new_ext = ((z3 > 0) & (df.close > hi20)) | ((z3 < 0) & (df.close < lo20))
+
+    shock = spaced(z3.abs() > 1.5, 3).fillna(False)
+
+    a = shock & ~new_ext
+
+    b = shock & new_ext
+
+    signal = pd.Series(np.where(z3 > 0, -1, 1), index=df.index)
+
+    '
+- id: calm_regime_shock_reverts
+  belief: A shock that arrives in a calm regime is an outlier liquidity event that
+    reverts, while in a turbulent regime large moves are the norm and carry on.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.027669299418473278
+      n_a: 27
+      n_b: 13
+      windows:
+      - -0.07352093934560706
+      - -0.036637522084410845
+      - null
+      - -0.021310727164944504
+      - -0.0018844870440776866
+      - -0.002851096919980617
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.027131584546458296
+      n_a: 25
+      n_b: 13
+      windows:
+      - -0.13780351042110645
+      - -0.017507308902668096
+      - 0.19669556775661035
+      - -0.06544851680867625
+      - -0.08504148752502474
+      - 0.05482688323017097
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: -0.0713496341353978
+      n_a: 26
+      n_b: 13
+      windows:
+      - 0.06976105162926191
+      - 0.011149589075123395
+      - -0.14882597951263066
+      - -0.014532586147159403
+      - -0.22973788651519006
+      - -0.07947406191143634
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(3)
+
+    z3 = (df.close / df.close.shift(3) - 1) / (vol * np.sqrt(3))
+
+    calm = ret.rolling(10).std().shift(3) < ret.rolling(60).std().shift(3)
+
+    shock = spaced(z3.abs() > 1.5, 3).fillna(False)
+
+    a = shock & calm
+
+    b = shock & ~calm
+
+    signal = pd.Series(np.where(z3 > 0, -1, 1), index=df.index)
+
+    '
+- id: rejection_close_continues_reversal
+  belief: After a sharp 3-day drop, a last bar that closes near its high shows that
+    sellers are exhausted and buyers have stepped in, so the rebound is stronger than
+    when the bar closes on its low.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.008804197963707548
+      n_a: 1
+      n_b: 14
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - -0.01257001325563295
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 0.15136331118750931
+      n_a: 1
+      n_b: 14
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - 0.15604161755064339
+      - null
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: 0.014249953355829053
+      n_a: 1
+      n_b: 12
+      windows:
+      - null
+      - 0.030689812090251456
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(3)
+
+    z3 = (df.close / df.close.shift(3) - 1) / (vol * np.sqrt(3))
+
+    rng = (df.high - df.low).replace(0, np.nan)
+
+    loc = (df.close - df.low) / rng
+
+    down = spaced(z3 < -1.5, 3).fillna(False)
+
+    a = down & (loc > 0.6)
+
+    b = down & (loc < 0.4)
+
+    signal = pd.Series(1, index=df.index)
+
+    '
+- id: concentrated_jump_vs_grind
+  belief: A move made mostly in one day is a single-order or news overshoot that reverts,
+    while a move spread evenly over several days reflects steady flow that does not.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.10336263624743236
+      n_a: 15
+      n_b: 2
+      windows:
+      - -0.11227811129614214
+      - null
+      - -0.13226525030943487
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 0.10659879967134742
+      n_a: 19
+      n_b: 2
+      windows:
+      - null
+      - -0.017507308902668096
+      - 0.21012942712499416
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: 0.31071313220136587
+      n_a: 16
+      n_b: 2
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - 0.3911380717863312
+      - null
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(3)
+
+    lr = np.log(df.close).diff()
+
+    m3 = lr.rolling(3).sum()
+
+    z3 = (df.close / df.close.shift(3) - 1) / (vol * np.sqrt(3))
+
+    s = np.sign(m3)
+
+    biggest = (lr * s).rolling(3).max()
+
+    share = biggest / m3.abs().replace(0, np.nan)
+
+    shock = spaced(z3.abs() > 1.5, 3).fillna(False)
+
+    a = shock & (share > 0.7)
+
+    b = shock & (share < 0.45)
+
+    signal = pd.Series(np.where(z3 > 0, -1, 1), index=df.index)
+
+    '
+- id: weekend_shock_reverts
+  belief: Shocks that end on the weekend happen in thin, retail-dominated trading
+    and revert more once weekday liquidity returns.
+  measure: mean_diff
+  horizon_bars: 2
+  direction: positive
+  min_effect: 0.008
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.015504118725470119
+      n_a: 15
+      n_b: 33
+      windows:
+      - -0.04679525594320098
+      - 0.05079020574143445
+      - -0.003994690809039714
+      - -0.006908287542311464
+      - 0.02632388738966962
+      - 0.09027463989186499
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.005444845651246244
+      n_a: 9
+      n_b: 38
+      windows:
+      - -0.09981542573677993
+      - 0.1327418606397428
+      - null
+      - -0.06850117466087126
+      - 0.04883531480193095
+      - 0.010174486564182933
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: 0.042195851293711575
+      n_a: 9
+      n_b: 45
+      windows:
+      - -0.08982504784512912
+      - 0.09414154117694781
+      - 0.016461422381148578
+      - 0.056595062620898764
+      - 0.06963046258159589
+      - 0.0367270837509685
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(2)
+
+    z2 = (df.close / df.close.shift(2) - 1) / (vol * np.sqrt(2))
+
+    shock = spaced(z2.abs() > 1.5, 2).fillna(False)
+
+    wkend = (dow >= 5)
+
+    a = shock & wkend
+
+    b = shock & ~wkend
+
+    signal = pd.Series(np.where(z2 > 0, -1, 1), index=df.index)
+
+    '
+- id: down_shock_long_only_hit_rate
+  belief: On spot mid-caps, sharp selloffs come from forced or panic selling that
+    is bought back, so the rebound is asymmetric and works as a long-only trade.
+  measure: hit_rate
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.07073700849634457
+      n_a: 7
+      n_b: 723
+      windows:
+      - -0.041666666666666685
+      - null
+      - 0.21288515406162462
+      - null
+      - null
+      - 0.49586776859504134
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.015193370165745845
+      n_a: 6
+      n_b: 724
+      windows:
+      - -0.38016528925619836
+      - null
+      - 0.09166666666666667
+      - null
+      - null
+      - 0.575
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: -0.15359926639156352
+      n_a: 3
+      n_b: 727
+      windows:
+      - null
+      - null
+      - -0.4
+      - null
+      - null
+      - 0.5206611570247934
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(5)
+
+    z5 = (df.close / df.close.shift(5) - 1) / (vol * np.sqrt(5))
+
+    a = spaced(z5 < -2.0, 5).fillna(False)
+
+    b = ~a
+
+    signal = pd.Series(1, index=df.index)
+
+    '
+- id: shock_size_dose_response
+  belief: If reversion is real, larger moves in volatility units should revert proportionally
+    more, so among sizeable moves the size of the move ranks the next return inversely.
+  measure: rank_corr
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.1
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.06257293692692416
+      n_a: 60
+      n_b: 60
+      windows:
+      - -0.3545454545454546
+      - 0.023809523809523815
+      - 0.35757575757575755
+      - 0.41666666666666663
+      - 0.6978021978021978
+      - -0.13333333333333333
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 0.07833219412166782
+      n_a: 56
+      n_b: 56
+      windows:
+      - 0.06071428571428571
+      - 0.0
+      - 0.6571428571428573
+      - 0.6071428571428572
+      - -0.11666666666666665
+      - -0.2545454545454546
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: 0.2811406129941091
+      n_a: 52
+      n_b: 52
+      windows:
+      - 0.18881118881118883
+      - -0.07142857142857144
+      - 0.48571428571428577
+      - 0.6503496503496504
+      - 0.0
+      - 0.4047619047619048
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std().shift(3)
+
+    z3 = (df.close / df.close.shift(3) - 1) / (vol * np.sqrt(3))
+
+    a = spaced(z3.abs() > 1.0, 3).fillna(False)
+
+    b = ~a
+
+    feature = -z3
+
+    '
+profit: 'none: no return claim passed'

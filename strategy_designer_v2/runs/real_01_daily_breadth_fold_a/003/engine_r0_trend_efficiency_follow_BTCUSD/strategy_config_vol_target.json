@@ -1,0 +1,50 @@
+{
+  "aux_feeds": [],
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 2,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "trend_efficiency_follow",
+            "class": "strategies.claim_linear.ClaimStrengthComponent",
+            "params": {
+              "code": "net = df.close.diff(20)\npath = df.close.diff().abs().rolling(20, min_periods=20).sum()\nevent = pd.Series(True, index=df.index)\nstrength = (net / path.replace(0, np.nan)).fillna(0)\n",
+              "horizon": 10,
+              "min_bars": 200
+            },
+            "weight": 1.0,
+            "lookback": 800,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 500,
+                  "min_periods": 100,
+                  "target": 10.0,
+                  "cap": 20.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 30,
+      "target_annual_vol": 0.2,
+      "max_allocation": 1.0,
+      "periods_per_year": 365
+    }
+  }
+}

@@ -1,0 +1,13 @@
+run: try_05
+observations:
+  - "The plain fade of big hourly bars did not hold: big_bar_fade measured -0.0007 at 12 bars against the 0.002 asked, and was negative in 4 of 6 windows (W6 -0.0042)."
+  - "Net of the 0.15% cost the fade loses money in every window: big_bar_fade_net_of_fees measured -0.0018 at 6 bars, negative in 6 of 6 windows (-0.0004 to -0.0039)."
+  - "Conditioning the fade did not rescue it: low volume (hit rate +0.016 vs 0.08 asked), counter-trend (-0.0006), close at extreme (-0.0008) and thin hours (+0.0003) all missed by a wide margin, with windows split in sign in each."
+  - "Counter-trend bars split cleanly by time: -0.0013, -0.0058, -0.0052 in W1-W3, then +0.0019, +0.0010, +0.0046 in W4-W6, a regime flip, not a stable effect."
+  - "The data leans toward continuation, not reversion: heavy_volume_spike_continues passed at +0.00235 (just over 0.002) with 5 of 6 windows positive and n_a = 185, and overreaction_scales_with_size came out at -0.04 (W4 -0.16, W6 -0.27), so larger bars revert less."
+  - "The passing continuation edge is thin and uneven: W2 alone gives +0.0096, W3 gives +0.00008, W5 gives -0.0006, so most of the fold effect comes from one window."
+  - "The continuation claim did not pay as a book: fold net +11.3% but Sharpe 0.37, max drawdown -19.7%, and net positive in only 3 of 6 windows (W1 -5.3%, W3 -4.6%, W5 -10.6%)."
+  - "Volatility clustering nearly held: abs_ratio was 1.20 against the 1.5 asked, but above 1 in all 6 windows (1.01 to 1.39). The belief looks right and the threshold asked was wrong, and the claim is not a trade."
+  - "The slow-cascade idea is untestable at this definition: multi_bar_cascade_reverts found only n_a = 4 events, with 3 of 6 windows empty."
+next_claim: none
+why: "Seven variants of the fade all failed and lost money in every window after costs. The only claim that passed (continuation) failed the profit check, and any next claim on it would only change its threshold or horizon, so the brief's question has its answer: no tradable overreaction-reversion on BTC 1h."

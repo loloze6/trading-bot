@@ -1,0 +1,29 @@
+run: sdv2_7hgt9ycn
+observations:
+  - volume_absorption_expansion passed on LTC (abs_ratio 1.234, 5 of 6 windows above 1) but failed on BTC (0.931, 4 of 6 windows below 1), so a quiet-price, heavy-volume day was followed by larger moves on only one coin.
+  - wide_day_volatility_clustering came out reversed on both coins (BTC 0.950, LTC 0.868; LTC 5 of 6 windows below 1). Wide-range days were followed by smaller, not larger, 5-day moves, so daily range spikes faded fast in fold B.
+  - weekend_quiet_days was wrong in direction (BTC 1.036, LTC 1.077, with 4 of 6 windows above 1 on each), so weekend days were not quieter than weekdays in fold B.
+  - trend_efficiency_follow nearly held on BTC (net_return 0.0445, 5 of 6 windows positive) but had only 15 events and was flat on LTC (-0.0011, 3 of 6 windows negative).
+  - downside_semivariance_premium had a positive rank correlation in all 12 windows (0.04 to 0.55) but a pooled value of only 0.035 on BTC and -0.068 on LTC, so the feature ranks within a window but its level drifts between windows.
+  - weekend_move_reversal was positive on BTC as a whole (0.0071) but negative in its first 3 windows, and negative on LTC (-0.0033), so there is no stable Monday reversal.
+  - low_volume_move_reversal had only 20 events on each coin, below the 30 needed, with window signs split 4/2 on BTC and 3/2 on LTC.
+  - up_streak_fomo_continuation lost money after cost on both coins (BTC -0.0038, LTC -0.0067), so 3-day up-streaks did not extend.
+next_claim:
+  id: narrow_range_expansion
+  belief: Daily volatility on these coins reverts to its local norm within days, so an unusually narrow-range day (a coiled, compressed market) is followed by larger moves than a normal-range day in the same context.
+  claim:
+    when: days whose high-low range is below 0.6 times the median range of the prior 30 days, at most one per 5 days
+    then: the absolute 5-day forward return is larger
+    compared_to: days whose range is between 0.8 and 1.25 times the same prior 30-day median (normal days in the same local regime)
+    measure: abs_ratio
+    horizon_bars: 5
+    direction: above
+    min_effect: 1.15
+    code: |
+      rng = (df.high - df.low) / df.close
+      med = rng.rolling(30).median().shift(1)
+      a = spaced(rng < 0.6 * med, 5)
+      b = (rng >= 0.8 * med) & (rng <= 1.25 * med)
+  why_no_lookahead: The range uses only the bar's own high, low and close, known at its close, and the median is over the prior 30 bars, shifted by one.
+  how_it_trades: After a narrow day, place a breakout entry on either side of that day's range (or size up a trend signal), sized for the expected expansion.
+why: Two claims (wide days followed by smaller moves, ratios 0.95 and 0.87; quiet heavy-volume days followed by larger moves on LTC, 1.23) both point to short-horizon volatility mean reversion. The untested side is narrow days, measured against normal days in the same local regime so that low-volatility periods do not bias the ratio.

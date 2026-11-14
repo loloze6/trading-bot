@@ -1,0 +1,36 @@
+brief: fake_03_time_of_week.md
+source: analyst proposal after try_03
+ideas:
+- id: us_open_continuation
+  belief: The weekday US open brings informed flow, so the hours 13-14 UTC move about
+    1.3-1.5x as much as other weekday hours, and the direction set in those two hours
+    carries on through the rest of the US session more than the same 2-bar move does
+    at other weekday hours (return effect, UTC clock).
+  claim:
+    when: weekday bars at hour 14 UTC, after the two US-open hours (13 and 14), using
+      the sign of the 2-bar return ending at that bar
+    then: the next 6 bars continue in the direction of that 2-bar move
+    compared_to: all other weekday bars, using the sign of their own 2-bar return
+    measure: mean_diff
+    horizon_bars: 6
+    direction: positive
+    min_effect: 0.002
+    code: 'h = pd.Series(np.asarray(hour), index=df.index)
+
+      d = pd.Series(np.asarray(dow), index=df.index)
+
+      r2 = df.close.pct_change(2)
+
+      a = (d < 5) & (h == 14) & r2.notna()
+
+      b = (d < 5) & (h != 14) & r2.notna()
+
+      signal = pd.Series(np.sign(r2), index=df.index).replace(0, 1.0).fillna(1.0)
+
+      '
+  why_no_lookahead: The 2-bar return uses the closes of the 14 UTC bar and the two
+    bars before it, and the hour and weekday come from that bar's own close time.
+    The 6-bar forward return is computed only by the judge.
+  how_it_trades: At the 14 UTC close on a weekday, enter in the direction of the 13-14
+    UTC move and exit 6 hours later. The 0.002 bar is above the 0.15% round trip,
+    so a pass leaves something after cost.

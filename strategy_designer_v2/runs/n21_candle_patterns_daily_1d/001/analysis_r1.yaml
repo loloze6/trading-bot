@@ -1,0 +1,32 @@
+run: n21_candle_patterns_daily_1d / fold C
+observations:
+  - "inside_bar_vol_release held on ETH (abs_ratio 1.131, all 6 windows above 1, lowest 1.052) but not on BTC (0.993, windows split 3 above and 3 below 1.0), so the compression-release belief is ETH-only in this fold."
+  - "inside_bar_close_breakout lost on both coins (net -1.20% BTC, -0.93% ETH over 3 bars), and 5 of 6 windows were negative on each coin, so closes beyond an inside bar's range reverted rather than continued."
+  - "engulfing_after_pullback went the wrong way on ETH (mean_diff -3.34%, 5 of 6 windows negative), so the engulfing bar's direction was given back over 3 days; BTC was mixed (-0.86%, 2 of 6 windows positive)."
+  - "three_bar_reversal nearly held on BTC (net +3.72% over 5 bars, 5 of 6 windows positive, n_a 33) but failed on ETH (-1.78%, 3 of 6 windows positive), so the coins disagree when a bar closes beyond the prior bar's extreme after a 2-bar run."
+  - "tweezer_at_range_edge split by coin: BTC net +1.72% with 4 of 6 windows positive, ETH net -4.79% with 5 of 6 windows negative."
+  - "staircase_trend_persistence on BTC met the threshold on the whole fold (hit_rate +0.063 vs 0.05) but was positive in only 4 of 6 windows; ETH reached +0.042 with 4 of 6 windows positive."
+  - "failed_range_breakout on BTC met the number (+0.84% vs 0.6%) but was positive in only 3 of 6 windows; ETH was -0.53%, so the fade is not stable."
+  - "outside_bar_fade on BTC met 0.4% on the whole fold (+0.45%), but the windows swung from -2.09% to +3.45% with 4 of 6 positive; ETH was -1.11%."
+  - "Event counts for multi-bar patterns were small (33 to 79 per coin for the spaced trade claims), so whole-fold effects of 1-4% came with wide window swings."
+next_claim:
+  id: prior_bar_close_break_fade
+  belief: "A daily close beyond the prior day's high or low overshoots on both BTC and ETH and is partly given back over the next three days, whether or not the prior day was an inside bar."
+  claim:
+    when: "days whose close is above the prior day's high or below the prior day's low, at most one per 3 days"
+    then: "the 3-day forward return goes against the close's breakout direction by more than the round-trip cost"
+    compared_to: "zero after the 0.15% round-trip cost"
+    measure: net_return
+    horizon_bars: 3
+    direction: positive
+    min_effect: 0.005
+    code: |
+      h, l, c = df.high, df.low, df.close
+      up = (c > h.shift(1)).fillna(False)
+      dn = (c < l.shift(1)).fillna(False) & ~up
+      a = spaced(up | dn, 3)
+      b = ~a
+      signal = pd.Series(np.where(up, -1.0, 1.0), index=df.index)
+  why_no_lookahead: "Uses only the current close and the prior bar's high and low, both known at the bar's close."
+  how_it_trades: "At the daily close, sell after a close above yesterday's high (buy after a close below yesterday's low), and exit 3 daily closes later."
+why: "The inside-bar close breakout reverted on both coins in 5 of 6 windows (about +0.9% BTC and +0.6% ETH net if faded), and ETH also gave back engulfing and reversal bars; this tests whether the prior-bar close-break fade holds broadly with enough events. The 0.5% net threshold is about 2 standard errors at a few hundred events. BTC's three-bar result (+3.7%) is the known risk to this claim."

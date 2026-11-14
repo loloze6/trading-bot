@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess return close t+1 to close t+3 after top-decile forecasts",
+    "value": 0.015173170767624483,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.6267956121460168
+    },
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2; else inconclusive; at least 30 non-overlapping cases"
+  },
+  "supporting_check": {
+    "name": "mean 3-bar excess return close t to t+3 vs coin mean 3-bar return",
+    "value": 0.023344961804431956,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases": 49,
+    "top-decile bars": 59,
+    "positive forecasts": 315
+  },
+  "decided_by": "The t-statistic lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Top decile is forecast >= the 90th percentile of all pooled positive forecasts (ties included); coin mean 2- and 3-bar returns use every bar of every window of the coin; cases on the same coin and window are chained into one case when within 3 bars of the previous case, and the case value is the mean of its members' excess returns."
+}

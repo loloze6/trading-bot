@@ -1,0 +1,7 @@
+001-01_rsi-high-extreme-reversal_1d: plan [BTC, ETH, BNB, 1d, fold A]
+001-03_rsi-high-extreme-continuation_1d: plan [BTC, ETH, BNB, 1d, fold A]
+002-01_sma-upcross-upward-drift_1d: plan [BTC/USDT, 1d, fold A]
+002-05_sma-up-regime-positive-drift_1d: plan [BTC/USDT, 1d, fold A]
+003-01_low-volume-up-move-reverts_1d: plan [BTC/USDT, 1d, fold A]
+004-01_btc-up-move-alts-follow_1d: untestable: The idea needs the bitcoin return as the signal and an altcoin's later return as the outcome, but the config [BTC/USDT, 1d, fold A]
+005-01_bearish-rsi-divergence-reversal_1d: untestable: The idea compares RSI at the current price high with RSI at the previous price high. The catalogue has no [BTC, ETH, BNB, 1d, fold A]

@@ -1,0 +1,640 @@
+brief: n19_altcoin_daily_momentum_1d.md
+fold: A
+symbols:
+- LINKUSD
+- ADAUSD
+- XRPUSD
+bar_size: 1d
+claims:
+- id: tsmom_3m_rank
+  belief: On older altcoins, investors absorb news slowly over weeks, so the past
+    3-month return ranks the next month's return.
+  measure: rank_corr
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.1
+  verdict: fail
+  by_symbol:
+    LINKUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'mom = df.close / df.close.shift(90) - 1
+
+    feature = mom
+
+    a = spaced(mom.notna(), 10)
+
+    b = ~a
+
+    '
+- id: tsmom_1m_herding_rank
+  belief: Altcoin retail herding produces short continuation, so the past 1-month
+    return predicts the next 10 days.
+  measure: rank_corr
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.1
+  verdict: fail
+  by_symbol:
+    LINKUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'mom = df.close / df.close.shift(30) - 1
+
+    feature = mom
+
+    a = spaced(mom.notna(), 5)
+
+    b = ~a
+
+    '
+- id: tsmom_6m_bubble_reversal
+  belief: Six-month altcoin run-ups are speculative bubbles that deflate, so a long-horizon
+    return reverses (the opposite of the trend ideas).
+  measure: rank_corr
+  horizon_bars: 30
+  direction: negative
+  min_effect: 0.1
+  verdict: fail
+  by_symbol:
+    LINKUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'mom = df.close / df.close.shift(180) - 1
+
+    feature = mom
+
+    a = spaced(mom.notna(), 20)
+
+    b = ~a
+
+    '
+- id: risk_adjusted_mom_rank
+  belief: A trend that is large relative to its own noise is real, not a lucky jump,
+    so a volatility-scaled 60-day return ranks future returns.
+  measure: rank_corr
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.1
+  verdict: fail
+  by_symbol:
+    LINKUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'feature = ret.rolling(60).sum() / ret.rolling(60).std()
+
+    a = spaced(feature.notna(), 10)
+
+    b = ~a
+
+    '
+- id: long_only_2m_trend_net
+  belief: Altcoins have positive drift only while in uptrends, so being long only
+    after a positive 2-month return pays after cost.
+  measure: net_return
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.02
+  verdict: fail
+  by_symbol:
+    LINKUSD:
+      effect: -0.001829667188819971
+      n_a: 5
+      n_b: 5
+      windows:
+      - -0.1109644444864834
+      - 0.18554654287387612
+      - -0.21822536493502437
+      - 0.10451971778992736
+      - 0.029975212813604435
+      - null
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.08718830845296878
+      n_a: 5
+      n_b: 5
+      windows:
+      - -0.14139169675090263
+      - 0.03947149505526465
+      - null
+      - 0.15014945799183593
+      - -0.10233135272147825
+      - 0.4900436386901242
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: 0.06256953793062646
+      n_a: 5
+      n_b: 5
+      windows:
+      - 0.005740773787068278
+      - -0.14556801899913402
+      - null
+      - 0.1827036515630896
+      - null
+      - 0.2642305095150402
+      verdict: fail
+      why: null
+  code: 'mom = df.close / df.close.shift(60) - 1
+
+    a = spaced(mom > 0, 20)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: long_short_2m_trend_net
+  belief: Altcoins crash as persistently as they rally, so following the sign of the
+    2-month return on both sides pays after cost.
+  measure: net_return
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.015
+  verdict: fail
+  by_symbol:
+    LINKUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'mom = df.close / df.close.shift(60) - 1
+
+    a = spaced(mom.notna() & (mom != 0), 20)
+
+    b = ~a
+
+    signal = np.sign(mom)
+
+    '
+- id: momentum_better_in_calm
+  belief: Momentum works in calm regimes and fails in turbulent ones, which is why
+    scaling exposure down in high volatility should help.
+  measure: mean_diff
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    LINKUSD:
+      effect: -0.18978604065416257
+      n_a: 4
+      n_b: 6
+      windows:
+      - null
+      - -0.29254238784042563
+      - 0.11990821366272919
+      - null
+      - 0.0710753558796372
+      - null
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: -0.03279240762437678
+      n_a: 5
+      n_b: 7
+      windows:
+      - 0.026769739887360977
+      - -0.4349087128709064
+      - 0.18803432471838566
+      - 0.010617914014919516
+      - 0.28287774612431704
+      - null
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.09048585711412777
+      n_a: 8
+      n_b: 9
+      windows:
+      - -0.2736796841448308
+      - 0.06292957008896333
+      - -0.21592296811584538
+      - -0.15003089425809912
+      - -0.12955867260487985
+      - 0.15122544339165733
+      verdict: fail
+      why: null
+  code: 'mom = df.close / df.close.shift(90) - 1
+
+    vol = ret.rolling(30).std()
+
+    low = vol < vol.rolling(365).median()
+
+    ok = mom.notna() & vol.rolling(365).median().notna()
+
+    a = spaced(ok & low, 10)
+
+    b = spaced(ok & ~low, 10)
+
+    signal = np.sign(mom)
+
+    '
+- id: vol_clustering_for_scaling
+  belief: Altcoin volatility clusters at monthly scale, so high trailing volatility
+    forecasts large moves and justifies scaling positions by volatility.
+  measure: abs_ratio
+  horizon_bars: 20
+  direction: above
+  min_effect: 1.3
+  verdict: fail
+  by_symbol:
+    LINKUSD:
+      effect: 1.8777190441833995
+      n_a: 4
+      n_b: 6
+      windows:
+      - null
+      - 0.25744656528638526
+      - 0.442009464787527
+      - null
+      - 4.890822859513923
+      - 4.7389495299058915
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 1.46286810212268
+      n_a: 3
+      n_b: 2
+      windows:
+      - null
+      - 1.9855127739010263
+      - null
+      - null
+      - 1.3203153599127075
+      - null
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: 0.7168407187263377
+      n_a: 4
+      n_b: 4
+      windows:
+      - null
+      - null
+      - 0.140022118172627
+      - 2.3855800544530466
+      - 0.7789594359918431
+      - null
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(30).std()
+
+    q = vol.rolling(365).quantile(0.8)
+
+    a = spaced(q.notna() & (vol > q), 10)
+
+    b = spaced(q.notna() & (vol <= q), 10)
+
+    '
+- id: volume_confirmed_uptrend
+  belief: An uptrend backed by rising participation reflects new money arriving and
+    lasts longer than one on fading volume.
+  measure: mean_diff
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.015
+  verdict: fail
+  by_symbol:
+    LINKUSD:
+      effect: -0.03199114143900193
+      n_a: 5
+      n_b: 9
+      windows:
+      - null
+      - null
+      - -0.4536354315065839
+      - 0.03018787407784007
+      - 0.1408239430023469
+      - -0.017110309371869747
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: 0.21508694723005448
+      n_a: 2
+      n_b: 8
+      windows:
+      - null
+      - null
+      - null
+      - 0.05417755593983742
+      - null
+      - -0.2216954437926002
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: 0.06072684893011489
+      n_a: 5
+      n_b: 10
+      windows:
+      - 0.2583949156962356
+      - null
+      - 0.14291500800328827
+      - 0.06419842523948799
+      - -0.5676108103782445
+      - 0.10691361725402204
+      verdict: fail
+      why: null
+  code: 'mom = df.close / df.close.shift(60) - 1
+
+    vup = df.volume.rolling(30).mean() > df.volume.rolling(180).mean()
+
+    ok = (mom > 0) & df.volume.rolling(180).mean().notna()
+
+    a = spaced(ok & vup, 10)
+
+    b = spaced(ok & ~vup, 10)
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: smooth_trend_frog_in_pan
+  belief: Trends built from many small up days go unnoticed and persist, while trends
+    made of a few jumps get priced at once, so the share of up days ranks future returns.
+  measure: rank_corr
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    LINKUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'feature = (ret > 0).astype(float).rolling(90).mean()
+
+    a = spaced(feature.notna() & ret.notna(), 10)
+
+    b = ~a
+
+    '
+- id: near_6m_high_anchoring
+  belief: Traders anchor on the recent 6-month high and sell into it, so coins closing
+    near that high underreact and keep rising.
+  measure: rank_corr
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.1
+  verdict: fail
+  by_symbol:
+    LINKUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ADAUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'feature = df.close / df.high.rolling(180).max()
+
+    a = spaced(feature.notna(), 10)
+
+    b = ~a
+
+    '
+profit: 'none: no return claim passed'

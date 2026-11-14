@@ -1,0 +1,50 @@
+{
+  "aux_feeds": [],
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 2,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "thin_volume_drift_reverts",
+            "class": "strategies.claim_linear.ClaimStrengthComponent",
+            "params": {
+              "code": "sd = ret.rolling(168, min_periods=168).std().shift(1)\nz6 = df.close.pct_change(6) / (sd * np.sqrt(6))\nbase = df.volume.rolling(168, min_periods=168).median().shift(1)\nvr6 = df.volume.rolling(6, min_periods=6).sum() / (6 * base)\nevent = pd.Series(True, index=df.index)\nstrength = -z6 * np.exp(-vr6)\n",
+              "horizon": 12,
+              "min_bars": 400
+            },
+            "weight": 1.0,
+            "lookback": 1000,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 500,
+                  "min_periods": 100,
+                  "target": 10.0,
+                  "cap": 20.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 30,
+      "target_annual_vol": 0.2,
+      "max_allocation": 1.0,
+      "periods_per_year": 8760
+    }
+  }
+}

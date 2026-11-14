@@ -1,0 +1,24 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "in-stretch minus all-bar mean next-bar return (before costs)",
+    "value": 0.0008650530865054267,
+    "statistic": {
+      "name": "Welch t (in-stretch minus all bars)",
+      "value": 0.49516162785129425
+    },
+    "threshold": "confirm if the difference is > 0 with t >= 2.0; reject if the difference is <= 0 (or t <= -2.0); otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "in-stretch up-day share minus all-bar up-day share",
+    "value": -0.0006572680510573137,
+    "passed": false
+  },
+  "counts": {
+    "in-stretch bars": 290,
+    "distinct up-cross stretches": 5,
+    "all bars": 724
+  },
+  "decided_by": "Inconclusive: the in-stretch mean exceeds the all-bar mean but the t-statistic lies between -2.0 and 2.0.",
+  "reading": "In-stretch means forecast > 0. With a 1-bar horizon every bar is on the non-overlapping grid. The 'all bars' group includes the in-stretch bars, and the two groups are compared with Welch t. A distinct up-cross stretch is a maximal run of consecutive forecast > 0 bars within one window, including a run already under way at the window's start. An up day is a next-bar return > 0. A difference at or below 0 rejects even when t lies between -2 and 2, because the plan's reject rule says so explicitly."
+}

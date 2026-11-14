@@ -1,0 +1,41 @@
+brief: n24_hourly_donchian_other_coins_1h.md
+source: analyst round 1
+ideas:
+- id: donchian168_heavy_volume_net
+  belief: On LTC, XRP and SOL, only a weekly channel break carried by clearly unusual
+    volume marks real participation, and that trend pays over three days after fees.
+  claim:
+    when: the first close beyond the prior 168-hour high or low in 72 bars, on a bar
+      whose volume exceeds 3 times the prior 168-hour median volume
+    then: price keeps moving in the break direction over the next 72 hours by more
+      than the round-trip cost
+    compared_to: zero after the 0.15% round-trip cost
+    measure: net_return
+    horizon_bars: 72
+    direction: positive
+    min_effect: 0.006
+    code: 'hi = df.high.rolling(168).max().shift(1)
+
+      lo = df.low.rolling(168).min().shift(1)
+
+      up = df.close > hi
+
+      dn = df.close < lo
+
+      ev = spaced(up | dn, 72)
+
+      vmed = df.volume.rolling(168).median().shift(1)
+
+      heavy = df.volume > 3 * vmed
+
+      a = ev & heavy
+
+      b = ~a
+
+      signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+
+      '
+  why_no_lookahead: The channel bounds and median volume use only prior bars via shift(1),
+    and the trigger bar's own close and volume are known at its close.
+  how_it_trades: At the close of a heavy-volume weekly break, enter in the break direction
+    and exit 72 bars later.

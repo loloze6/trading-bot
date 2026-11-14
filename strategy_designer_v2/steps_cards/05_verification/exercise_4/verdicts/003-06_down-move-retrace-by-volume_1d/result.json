@@ -1,0 +1,23 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "thin-minus-heavy mean next-bar give-back share of the drop",
+    "value": -2.9089878930086153,
+    "statistic": {
+      "name": "Welch t",
+      "value": -0.4806130397544787
+    },
+    "threshold": "difference above 0 with Welch t >= 2 and thin mean share above 0 to confirm; difference at or below 0 with t <= -1 to reject"
+  },
+  "supporting_check": {
+    "name": "terciles of drop size where thin-minus-heavy has the main difference's sign (need >= 2 of 3)",
+    "value": 1.0,
+    "passed": false
+  },
+  "counts": {
+    "thin down bars": 230,
+    "heavy down bars": 146
+  },
+  "decided_by": "A non-positive difference with t above -1, so the test is inconclusive.",
+  "reading": "Thin and heavy down bars are taken from the strategy's own regime label (mean_reversion = thin, trending = heavy) on bars whose in-window close-to-close move is negative (first row of each window dropped as it has no prior close), and since the plan's reject and inconclusive rules overlap for a negative difference, reject is applied only when the difference is at or below 0 with Welch t of -1 or lower, with a positive difference that fails the confirm rule treated as inconclusive."
+}

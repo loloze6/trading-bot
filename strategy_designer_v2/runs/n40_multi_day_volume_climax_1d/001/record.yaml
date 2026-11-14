@@ -1,0 +1,743 @@
+brief: n40_multi_day_volume_climax_1d.md
+fold: C
+symbols:
+- BTCUSD
+- ETHUSD
+- LTCUSD
+bar_size: 1d
+claims:
+- id: selling_climax_rebound
+  belief: Three or more consecutive days of heavy volume during a sharp drop mark
+    forced liquidation, and once sellers are exhausted price rebounds enough over
+    the next two weeks to pay the cost.
+  measure: net_return
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.01
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.015608455540360095
+      n_a: 6
+      n_b: 6
+      windows:
+      - -0.04056523036269866
+      - -0.3256150442477876
+      - 0.19288095238095254
+      - 0.30976263995970715
+      - null
+      - -0.002247354125314237
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.0003059090179603583
+      n_a: 5
+      n_b: 5
+      windows:
+      - 0.1924653908914143
+      - -0.13043696257181742
+      - null
+      - null
+      - -0.043390019088460574
+      - 0.11026900825087932
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.02295423530049004
+      n_a: 4
+      n_b: 4
+      windows:
+      - null
+      - -0.3055249161475803
+      - -0.11503859131168276
+      - null
+      - 0.2561902243306116
+      - null
+      verdict: fail
+      why: null
+  code: 'base = df.volume.shift(5).rolling(30).median()
+
+    vr = df.volume / base
+
+    hot = (vr > 1.8).astype(int)
+
+    run = hot.rolling(3).sum() == 3
+
+    z3 = (df.close / df.close.shift(3) - 1) / (ret.rolling(60).std().shift(3) * np.sqrt(3))
+
+    a = spaced(run & (z3 < -1), 10)
+
+    b = ~a
+
+    signal = pd.Series(1, index=df.index)
+
+    '
+- id: buying_climax_fade
+  belief: Three loud days on a sharp rise reflect a late retail crowd buying the top,
+    and the next two weeks underperform the coin's normal drift.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.015
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.00048424812054768604
+      n_a: 6
+      n_b: 725
+      windows:
+      - -0.29410535027681783
+      - 0.15921711681938153
+      - 0.038190813082772265
+      - 0.0799338483338372
+      - 0.03880338904888926
+      - null
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.1217421643069242
+      n_a: 8
+      n_b: 722
+      windows:
+      - null
+      - 0.03780069797168842
+      - -0.2780006240038309
+      - -0.08699371696668508
+      - -0.14738206186474512
+      - null
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.016015093565815038
+      n_a: 10
+      n_b: 720
+      windows:
+      - null
+      - 0.058703486136750964
+      - 0.05161293186129281
+      - -0.10641011028457018
+      - -0.035034652049590234
+      - 0.1427833313817928
+      verdict: fail
+      why: null
+  code: 'base = df.volume.shift(5).rolling(30).median()
+
+    vr = df.volume / base
+
+    hot = (vr > 1.8).astype(int)
+
+    run = hot.rolling(3).sum() == 3
+
+    z3 = (df.close / df.close.shift(3) - 1) / (ret.rolling(60).std().shift(3) * np.sqrt(3))
+
+    a = spaced(run & (z3 > 1), 10)
+
+    b = ~a
+
+    signal = pd.Series(-1, index=df.index)
+
+    '
+- id: breakout_climax_continuation
+  belief: A multi-day volume surge that carries price to a new 60-day extreme is information
+    arriving rather than exhaustion, and the move continues over the following month.
+  measure: mean_diff
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.02
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.07665461187650888
+      n_a: 3
+      n_b: 728
+      windows:
+      - -0.10623741083674104
+      - 0.32711724158965005
+      - 0.04973910118131776
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.33185606522579897
+      n_a: 5
+      n_b: 725
+      windows:
+      - null
+      - 0.46945708743638287
+      - 0.30877123256848393
+      - 0.10119397338579064
+      - 0.25091160011160624
+      - null
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.10978132789289279
+      n_a: 4
+      n_b: 726
+      windows:
+      - null
+      - 0.33950549385327433
+      - -0.09140088225707345
+      - 0.21675893661472662
+      - -0.21982266763462077
+      - null
+      verdict: fail
+      why: null
+  code: 'base = df.volume.shift(5).rolling(30).median()
+
+    vr = df.volume / base
+
+    hot = (vr > 1.8).astype(int)
+
+    run = hot.rolling(3).sum() == 3
+
+    hi = df.close >= df.close.rolling(60).max()
+
+    lo = df.close <= df.close.rolling(60).min()
+
+    a = spaced(run & (hi | lo), 20)
+
+    b = ~a
+
+    signal = np.sign(df.close - df.close.rolling(60).mean()).replace(0, 1)
+
+    '
+- id: climax_volatility_persistence
+  belief: A crowd that shows up for several days keeps the market unsettled, so absolute
+    moves over the next 10 days are larger than usual, whatever their direction.
+  measure: abs_ratio
+  horizon_bars: 10
+  direction: above
+  min_effect: 1.25
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 1.0369580383436654
+      n_a: 8
+      n_b: 723
+      windows:
+      - 0.48643908809068054
+      - 4.166053917183682
+      - 0.3883814783546669
+      - 2.664003110796499
+      - 0.599366757611169
+      - 0.007421491243739374
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 1.5332631306484705
+      n_a: 13
+      n_b: 717
+      windows:
+      - 1.406462347094126
+      - 1.7158208304596887
+      - 2.4315662543701686
+      - 1.5341251398443154
+      - 1.5166380522201697
+      - 0.7306914184332539
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.8377149938492207
+      n_a: 14
+      n_b: 716
+      windows:
+      - 0.04348052200333591
+      - 0.954618607214296
+      - 0.7710003348767897
+      - 2.171224429971657
+      - 0.8824282503185226
+      - 1.1282489840835959
+      verdict: fail
+      why: null
+  code: 'base = df.volume.shift(5).rolling(30).median()
+
+    vr = df.volume / base
+
+    hot = (vr > 1.8).astype(int)
+
+    run = hot.rolling(3).sum() == 3
+
+    a = spaced(run, 10)
+
+    b = ~a
+
+    signal = pd.Series(1, index=df.index)
+
+    '
+- id: climax_exhaustion_day_fade
+  belief: The turning point is not the loud days but the first quiet day after them;
+    when volume collapses after a 3-day climax the crowd is spent, and the cluster's
+    move reverses more than a generic 3-day reversal would.
+  measure: hit_rate
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: null
+      n_a: 0
+      n_b: 731
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.48010973936899864
+      n_a: 1
+      n_b: 729
+      windows:
+      - -0.4406779661016949
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.008241758241758212
+      n_a: 2
+      n_b: 728
+      windows:
+      - null
+      - -0.5041322314049587
+      - 0.4918032786885246
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'base = df.volume.shift(5).rolling(30).median()
+
+    vr = df.volume / base
+
+    hot = (vr > 1.8).astype(int)
+
+    ended = (hot.shift(1).rolling(3).sum() == 3) & (vr < 1.0)
+
+    r = df.close.shift(1) / df.close.shift(4) - 1
+
+    a = spaced(ended, 10)
+
+    b = ~a
+
+    signal = -np.sign(r).replace(0, 1)
+
+    '
+- id: absorption_effort_no_result
+  belief: Several days of heavy volume with almost no net price change mean large
+    players are absorbing the prior trend's flow, and the prior trend then reverses
+    over the next month (Wyckoff "effort without result").
+  measure: mean_diff
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.02
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.09273999097740046
+      n_a: 3
+      n_b: 728
+      windows:
+      - null
+      - -0.22153102808976116
+      - 0.03632392189556455
+      - 0.40499340289614516
+      - null
+      - null
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.2328559433422704
+      n_a: 3
+      n_b: 727
+      windows:
+      - -0.3657168379512283
+      - -0.23428287492892017
+      - null
+      - -0.21849079894304943
+      - null
+      - null
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.13350184634388373
+      n_a: 8
+      n_b: 722
+      windows:
+      - 0.22213600294224997
+      - -0.3864468565879338
+      - 0.03878970738726072
+      - -0.4053783298469599
+      - -0.10976119850005212
+      - null
+      verdict: fail
+      why: null
+  code: 'base = df.volume.shift(5).rolling(30).median()
+
+    vr = df.volume / base
+
+    hot = (vr > 1.8).astype(int)
+
+    run = hot.rolling(3).sum() == 3
+
+    z3 = (df.close / df.close.shift(3) - 1) / (ret.rolling(60).std().shift(3) * np.sqrt(3))
+
+    prior = df.close.shift(3) / df.close.shift(23) - 1
+
+    a = spaced(run & (z3.abs() < 0.5), 20)
+
+    b = ~a
+
+    signal = -np.sign(prior).replace(0, 1)
+
+    '
+- id: climax_move_size_reverts
+  belief: The more violent the price move during a volume climax, the larger the overshoot
+    and the stronger the subsequent reversal.
+  measure: rank_corr
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.15
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.19047619047619052
+      n_a: 8
+      n_b: 8
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.32417582417582413
+      n_a: 13
+      n_b: 13
+      windows:
+      - 0.5
+      - null
+      - null
+      - null
+      - -0.39999999999999997
+      - null
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.032967032967032975
+      n_a: 14
+      n_b: 14
+      windows:
+      - null
+      - -1.0
+      - -1.0
+      - null
+      - 0.6000000000000001
+      - null
+      verdict: fail
+      why: null
+  code: 'base = df.volume.shift(5).rolling(30).median()
+
+    vr = df.volume / base
+
+    hot = (vr > 1.8).astype(int)
+
+    run = hot.rolling(3).sum() == 3
+
+    z3 = (df.close / df.close.shift(3) - 1) / (ret.rolling(60).std().shift(3) * np.sqrt(3))
+
+    a = spaced(run, 10)
+
+    b = ~a
+
+    feature = -z3
+
+    signal = -np.sign(z3).replace(0, 1)
+
+    '
+- id: capitulation_in_bull_regime
+  belief: A heavy-volume selloff while the coin is still above its 200-day average
+    is a leverage flush inside an intact uptrend, and dip buyers lift price over the
+    next month.
+  measure: net_return
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.02
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.09680749832479542
+      n_a: 3
+      n_b: 3
+      windows:
+      - -0.33173214602161966
+      - null
+      - 0.06030952380952376
+      - null
+      - null
+      - -0.01899987276229037
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.1754039481059135
+      n_a: 4
+      n_b: 4
+      windows:
+      - -0.27542106425969587
+      - null
+      - null
+      - null
+      - -0.1644317783646681
+      - 0.013658114460405825
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.031238450696961267
+      n_a: 4
+      n_b: 4
+      windows:
+      - -0.2878445269112991
+      - null
+      - -0.19829460143399408
+      - null
+      - 0.3055464655665691
+      - null
+      verdict: fail
+      why: null
+  code: 'base = df.volume.shift(5).rolling(30).median()
+
+    vr = df.volume / base
+
+    hot = (vr > 1.8).astype(int)
+
+    run = hot.rolling(3).sum() == 3
+
+    z3 = (df.close / df.close.shift(3) - 1) / (ret.rolling(60).std().shift(3) * np.sqrt(3))
+
+    sma = df.close.rolling(200).mean().shift(3)
+
+    a = spaced(run & (z3 < -0.5) & (df.close.shift(3) > sma), 20)
+
+    b = ~a
+
+    signal = pd.Series(1, index=df.index)
+
+    '
+- id: bear_regime_climax_continuation
+  belief: A heavy-volume selloff below the 200-day average is not capitulation but
+    the start of a new leg down, as holders who are already under water give up, so
+    the decline continues.
+  measure: mean_diff
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.02
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0798518011494021
+      n_a: 2
+      n_b: 729
+      windows:
+      - null
+      - 0.30508778331906705
+      - null
+      - -0.25844793204722327
+      - null
+      - null
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.25913539196442237
+      n_a: 2
+      n_b: 728
+      windows:
+      - null
+      - 0.16912751126469433
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.39161789974979777
+      n_a: 1
+      n_b: 729
+      windows:
+      - null
+      - 0.3124257535409286
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'base = df.volume.shift(5).rolling(30).median()
+
+    vr = df.volume / base
+
+    hot = (vr > 1.8).astype(int)
+
+    run = hot.rolling(3).sum() == 3
+
+    z3 = (df.close / df.close.shift(3) - 1) / (ret.rolling(60).std().shift(3) * np.sqrt(3))
+
+    sma = df.close.rolling(200).mean().shift(3)
+
+    a = spaced(run & (z3 < -0.5) & (df.close.shift(3) < sma), 20)
+
+    b = ~a
+
+    signal = pd.Series(-1, index=df.index)
+
+    '
+- id: climax_close_location_follow
+  belief: Where price closes inside each day's range during a volume climax shows
+    who won the fight; consistent closes near the highs (or lows) across the loud
+    days show the dominant side, and the move follows through over the next week.
+  measure: hit_rate
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.07
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.5089408528198074
+      n_a: 4
+      n_b: 727
+      windows:
+      - null
+      - 0.6198347107438016
+      - 0.4672131147540983
+      - 0.5666666666666667
+      - 0.2644628099173554
+      - null
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.03878116343490301
+      n_a: 8
+      n_b: 722
+      windows:
+      - -0.6694915254237288
+      - -0.475
+      - 0.5327868852459017
+      - 0.45833333333333337
+      - 0.14565826330532206
+      - null
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.06658763090298364
+      n_a: 7
+      n_b: 723
+      windows:
+      - null
+      - -0.5
+      - -0.45901639344262296
+      - 0.5
+      - -0.025000000000000022
+      - 0.5163934426229508
+      verdict: fail
+      why: null
+  code: 'base = df.volume.shift(5).rolling(30).median()
+
+    vr = df.volume / base
+
+    hot = (vr > 1.8).astype(int)
+
+    run = hot.rolling(3).sum() == 3
+
+    rng = (df.high - df.low).replace(0, np.nan)
+
+    clv = ((df.close - df.low) - (df.high - df.close)) / rng
+
+    clv3 = clv.rolling(3).mean()
+
+    a = spaced(run & (clv3.abs() > 0.4), 10)
+
+    b = ~a
+
+    signal = np.sign(clv3).replace(0, 1)
+
+    '
+- id: loud_move_continuation_rank
+  belief: Over elevated-volume 3-day stretches, the louder the volume behind a 3-day
+    move, the more that move continues over the next 10 days, because heavy participation
+    carries information rather than exhaustion.
+  measure: rank_corr
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.12707522686661896
+      n_a: 394
+      n_b: 394
+      windows:
+      - -0.2774475524475524
+      - 0.2514423076923077
+      - -0.0211042688654629
+      - -0.10096575943810362
+      - 0.03885588096114411
+      - 0.3258623975605107
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.1368674191449449
+      n_a: 414
+      n_b: 414
+      windows:
+      - -0.11570008938429989
+      - 0.14545102321158115
+      - 0.12897959183673469
+      - 0.04332616767637288
+      - 0.05319693094629156
+      - 0.09121184088806661
+      verdict: pass
+      why: null
+    LTCUSD:
+      effect: -0.025494229269040748
+      n_a: 416
+      n_b: 416
+      windows:
+      - -0.15319936541512427
+      - 0.0023146460596340304
+      - -0.12951864717334047
+      - 0.03547679941541835
+      - -0.2566906777433093
+      - 0.00613684009910425
+      verdict: fail
+      why: null
+  code: 'base = df.volume.shift(5).rolling(30).median()
+
+    vr3 = (df.volume / base).rolling(3).mean()
+
+    r3 = df.close / df.close.shift(3) - 1
+
+    loud = np.log(vr3)
+
+    feature = np.sign(r3).replace(0, 1) * loud
+
+    a = (vr3 > 1.0) & feature.notna()
+
+    b = ~a
+
+    signal = np.sign(r3).replace(0, 1)
+
+    '
+profit: 'none: no return claim passed'

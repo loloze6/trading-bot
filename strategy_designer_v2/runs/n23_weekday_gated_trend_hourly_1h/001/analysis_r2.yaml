@@ -1,0 +1,39 @@
+run: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001
+observations:
+  - "gated_cross_pays_net held on both coins after cost: 12/72 MA-cross entries taken on weekdays with 24h vol above its lower tercile netted +0.58% (BTC) and +0.79% (ETH) per 48-bar trade, positive in 5/6 windows on BTC (W5 -0.61%) and 6/6 on ETH."
+  - "In the engine, BTC passed only with vol-target sizing (fold +8.4%, median window Sharpe 1.31, worst drawdown 14.3%); at full size, W5 lost 26% with a 33.8% drawdown."
+  - "ETH failed the engine at both sizings because the median window Sharpe was 0.55 at full size and 0.50 with vol target, and W4 lost 15.2% and 9.0%, although the fold total at full size was +54%."
+  - "Nearly held: gated cross entries beat cross entries outside the gate by +1.10% on BTC and +1.80% on ETH at 48 bars, but BTC kept the sign in only 4/6 windows (W3 -0.05%, W5 -0.70%), so the 'gate is what pays' claim failed on BTC."
+  - "Gating at the bar level did nothing: the weekday versus weekend 24/168 cross gave +0.10% on BTC and -0.12% on ETH, both under the 0.2% asked and with windows split 3/3 on each coin."
+  - "The vol-expansion gate went the opposite way: 168-bar momentum did worse while 24h vol was rising, -0.40% (BTC) and -0.30% (ETH), negative in 5/6 windows on each coin."
+  - "That contraction edge did not carry over to cross events: crosses made while vol was contracting gave -0.03% on BTC and +0.26% on ETH, with windows split on both."
+  - "Weekend breakout failure held on BTC only, where weekday 72h breakouts out-hit weekend ones by +27.1 points in 6/6 windows, against +3.8 points with 2 negative windows on ETH."
+  - "The Monday break of the weekend range was the worst idea: -0.47% (BTC) and -1.67% (ETH) against midweek breakouts, on only 52 and 43 events."
+  - "The volume-participation gate looked good on BTC in aggregate (+0.38%) but W3 was -0.91%, and on ETH it was flat (-0.03%) with window swings from -1.6% to +2.0%."
+next_claim:
+  id: weekday_part_of_gate_on_cross_events
+  belief: "Within MA-cross entries already made in non-quiet volatility, the weekday filter adds its own edge, because crosses that fire in the Friday-evening-to-Monday-morning window do not follow through even when volatility is not low."
+  claim:
+    when: "12/72 MA-cross events (one per 24 bars) with 24h vol above its 720-bar lower tercile, made on weekday hours"
+    then: "the 48-bar forward return in the cross direction is higher"
+    compared_to: "the same high-vol cross events made inside the weekend window"
+    measure: mean_diff
+    horizon_bars: 48
+    direction: positive
+    min_effect: 0.004
+    code: |
+      wk = ((dow == 4) & (hour >= 21)) | (dow >= 5) | ((dow == 0) & (hour < 8))
+      f = df.close.rolling(12).mean()
+      s = df.close.rolling(72).mean()
+      d = np.sign(f - s)
+      cross = (d != d.shift(1)) & d.notna() & d.shift(1).notna() & (d != 0)
+      v = ret.rolling(24).std()
+      q = v.rolling(720).quantile(0.33)
+      ok = q.notna()
+      hv = v > q
+      signal = d.replace(0, 1).fillna(1)
+      a = spaced(cross & hv & ~wk & ok, 24)
+      b = spaced(cross & hv & wk & ok, 24)
+  why_no_lookahead: "MAs, the vol and its tercile use only bars up to the current close; weekday and hour are known at the bar."
+  how_it_trades: "If it holds, keep the weekday filter on top of the vol gate; if not, drop it and trade the vol-gated cross every day, which roughly doubles the trade count."
+why: "The gated cross pays, but the gate mixes two conditions, bar-level weekday gating showed nothing (+0.10%/-0.12%), and the BTC gated-vs-outside split held in only 4/6 windows; this isolates whether the weekday part earns its place, with 0.4% asked as at least twice the round-trip cost."

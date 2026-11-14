@@ -1,0 +1,32 @@
+run: real_01_daily_breadth_fold_a  # try folder name not given in the files; brief name used in its place
+observations:
+  - turn_of_month_inflow nearly held. ADA passed with a mean_diff of 0.0037 and 5 of 6 windows positive. BTC kept the right sign in 5 of 6 windows but its whole-fold effect of 0.0015 fell short of the 0.002 asked, so the belief looks right and the threshold was too high for BTC.
+  - deep_drawdown_reversion shows the windows and the whole fold disagreeing. Within windows the rank correlation was negative, as the belief predicts, in 6 of 6 for BTC (down to -0.70) and 5 of 6 for ADA (down to -0.80), but the whole-fold effect was +0.056 on BTC and -0.002 on ADA. A deeper drawdown predicts rebounds relative to its own recent regime, not as an absolute level across regimes.
+  - Short-horizon long reversion after selling failed on both coins. shock_capitulation_rebound returned -2.9% (BTC) and -2.5% (ADA) net over 3 bars, and down_streak_exhaustion returned -1.1% and -0.7%, so the selling continued rather than rebounded.
+  - shock_capitulation_rebound also had too few events: n_a was 11 on BTC and 8 on ADA against the 30 required, with two empty windows on each coin.
+  - channel_breakout_both_sides lost money over 10 bars: -1.45% net on BTC and -1.29% on ADA, with 4 of 6 windows negative on each, so 20-day breakouts did not carry through in 2022-2023.
+  - high_volume_up_day_continuation split by coin. BTC gave +0.99% but was positive in only 2 of 6 windows. ADA gave -4.7% with 5 of 6 windows negative, so on ADA heavy-volume up days reversed.
+  - lower_wick_rejection reached hit_rate effects of 0.091 (BTC) and 0.108 (ADA), above the 0.07 asked. It still failed: n_a was only 15 and 19, and the windows swung between -0.60 and +0.55.
+  - vol_regime_negative_drift had the wrong sign on BTC. Its whole-fold correlation was +0.136 with 4 of 6 windows positive, so high relative volatility was followed by higher, not lower, 10-bar returns.
+  - signed_volume_flow_persistence was negative in 5 of 6 BTC windows (whole fold -0.052), opposite to the persistence belief. ADA was mixed: +0.055 on the whole fold, but 5 of 6 windows negative.
+  - compression_release_follow was the only momentum-style claim with a positive return on one coin: +1.05% on ADA, with only 4 of 6 windows positive. It was -0.84% on BTC.
+next_claim:
+  id: range_position_reversion
+  belief: Within a medium-term trading range, closes near the bottom of the range are followed by higher multi-week returns than closes near the top, because forced sellers push price to the range floor and slower buyers absorb it there, whatever the long-run trend regime.
+  claim:
+    when: every bar with a full 60-day range available
+    then: the lower the close sits within its prior 60-day high-low range, the higher the 20-bar forward return
+    compared_to: not used (rank_corr)
+    measure: rank_corr
+    horizon_bars: 20
+    direction: negative
+    min_effect: 0.10
+    code: |
+      hh = df.high.rolling(60).max()
+      ll = df.low.rolling(60).min()
+      feature = (df.close - ll) / (hh - ll).replace(0, np.nan)
+      a = feature.notna()
+      b = ~a
+  why_no_lookahead: The 60-day high, low and close all come from bars at or before the current bar's close, and no forward shift is used.
+  how_it_trades: Hold a long that is scaled up as the close sits lower in its 60-day range, hold it 20 days, and pay costs only a few times per quarter.
+why: deep_drawdown_reversion was negative inside 11 of 12 windows but positive or flat on the whole fold, which points to reversion relative to the recent range rather than to the one-year high; this claim tests that range-relative version with an honest 0.10 bar, though some of the within-window correlation may be an artifact of overlapping 20-bar returns inside about 120-bar windows.

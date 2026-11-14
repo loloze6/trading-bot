@@ -1,0 +1,33 @@
+run: n15_eth_hourly_momentum_horizons_1h / fold A
+observations:
+  - "The only claim that passed was mom_24h_short_reversal. Its rank correlation between the negated 1-day return and the next 24 bars was 0.054, above the 0.03 bar, with 5 of 6 windows positive (window 2 was -0.037)."
+  - "The 1-day reversal is the strongest in the later windows (0.105, 0.110, 0.122 in windows 3-5), so it did not decay over the fold."
+  - "Plain 168h momentum came out negative (-0.027 against 72 bars ahead), with windows 2-6 all negative and window 5 at -0.235, so the weekly horizon also leaned toward reversal rather than continuation."
+  - "trend_acceleration nearly held in the reverse direction: the effect was -0.029 with 5 of 6 windows negative. This matches the 1-day reversal rather than adding a new effect."
+  - "The 72h vol-scaled momentum reached only 0.019 and its windows split 3 positive and 3 negative (+0.081 down to -0.129), so vol-scaling did not rescue the 3-day horizon."
+  - "The sign-only up-hour share swung from +0.119 to -0.208 across windows (whole fold -0.025), the least stable feature tried."
+  - "mom_168h_volume_confirmed nearly held: its mean_diff of 0.0040 cleared the 0.003 bar, but only 4 of 6 windows were positive (window 1 -0.021, window 3 -0.011)."
+  - "vol_scaled_168h_rule_net nearly held as a rule: net 0.0062 on 56 trades, above 0.003, but the last two windows were negative (-0.016, -0.006), so it got 4 of 6 and failed."
+  - "Regime and asymmetry splits of weekly momentum showed nothing. The calm-regime mean_diff was 0.00015, the downtrend-vs-uptrend mean_diff was -0.00012, and the multi-horizon agreement hit_rate was -0.006."
+  - "No claim was tested on net_return at the one horizon that passed (24 bars), so the profit answer is 'none' because nothing was tested, not because a rule lost money."
+next_claim:
+  id: rev_24h_volscaled_fade_net
+  belief: "A large vol-scaled one-day ETH move partly gives back over the next day by enough to pay the round-trip cost when traded as discrete fades."
+  claim:
+    when: "Bars where the last 24 hours' return is more than 1.5 times its volatility-implied size (168-hour hourly std times sqrt 24), at most one event per 24 bars."
+    then: "Over the next 24 bars price moves against the prior 24-hour move, and the fade earns more than the 0.15% round-trip cost."
+    compared_to: "Zero after cost (net_return)."
+    measure: net_return
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.002
+    code: |
+      r24 = df.close / df.close.shift(24) - 1
+      vol = ret.rolling(168).std()
+      z = r24 / (vol * np.sqrt(24))
+      a = spaced((z.abs() > 1.5).fillna(False), 24)
+      b = ~a
+      signal = -np.sign(z).replace(0, 1).fillna(1)
+  why_no_lookahead: "z uses only closes and returns at or before the bar, and spaced only looks at prior bars."
+  how_it_trades: "At the close of a flagged bar, take the opposite side of the 24h move, hold 24 bars, exit; one trade per 24 bars at most."
+why: "The 1-day reversal is the only effect that passed (rank_corr 0.054, 5/6 windows), but it was never tested against the 0.15% cost. A min_effect of 0.002 net (about 0.35% gross) is a size that would not be luck and that pays the cost."

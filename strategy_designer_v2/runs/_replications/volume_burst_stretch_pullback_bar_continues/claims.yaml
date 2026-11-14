@@ -1,0 +1,43 @@
+brief: replication of volume_burst_stretch_pullback_bar_continues from 001
+source: /home/user/trading-bot/strategy_designer_v2/runs/n28_hourly_stretch_reversion_older_coins_1h/001/claims.yaml
+ideas:
+- id: volume_burst_stretch_pullback_bar_continues
+  belief: On LTC and XRP, a stretch from the 24h VWAP that comes with a volume burst
+    and a bar closing off its extreme is forced flow pausing inside the bar, and it
+    keeps going over the next 12 hours.
+  claim:
+    when: bars with |close/VWAP24 - 1| above 3 times the 48h hourly volatility, 3-bar
+      volume above 2.5 times the 72h median, and the bar closing in the half of its
+      range away from the stretch direction; one event per 12 bars
+    then: price keeps moving in the stretch direction over the next 12 bars by more
+      than the round-trip cost
+    compared_to: the 0.15% round-trip cost
+    measure: net_return
+    horizon_bars: 12
+    direction: positive
+    min_effect: 0.003
+    code: 'vol = ret.rolling(48).std()
+
+      vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+      z = (df.close / vwap - 1) / vol
+
+      vr = df.volume.rolling(3).mean() / df.volume.rolling(72).median()
+
+      rng = (df.high - df.low).replace(0, np.nan)
+
+      cp = (df.close - df.low) / rng
+
+      cps = pd.Series(np.where(z > 0, cp, 1 - cp), index=df.index)
+
+      a = spaced((z.abs() > 3) & (vr > 2.5) & (cps < 0.5), 12)
+
+      b = ~a
+
+      signal = np.sign(z).fillna(0)
+
+      '
+  why_no_lookahead: VWAP, volatility, volume ratio and the bar's close position all
+    use only data up to the current bar's close.
+  how_it_trades: At the close of a qualifying bar, enter in the direction of the stretch
+    and exit 12 bars later.

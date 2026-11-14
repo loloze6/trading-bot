@@ -1,0 +1,162 @@
+brief: n29_hourly_autocorrelation_regimes_1h.md
+ideas:
+  - id: lag1_ac_168h_regime_switch_rule
+    belief: The sign of the trailing one-week lag-1 autocorrelation of hourly returns persists, so following the last hour's move when it is positive and fading it when it is negative earns more than doing so when the autocorrelation is near zero.
+    claim:
+      when: bars where the lag-1 autocorrelation of hourly returns over the last 168 bars is beyond plus or minus 0.05
+      then: the next hour's return goes in the direction of the last hour's move times the sign of that autocorrelation
+      compared_to: bars where the 168-bar lag-1 autocorrelation is within plus or minus 0.05
+      measure: mean_diff
+      horizon_bars: 1
+      direction: positive
+      min_effect: 0.0002
+      code: |
+        ac1 = ret.rolling(168).corr(ret.shift(1))
+        a = ac1.abs() > 0.05
+        b = ac1.abs() <= 0.05
+        signal = np.sign(ac1) * np.sign(ret)
+    why_no_lookahead: The autocorrelation uses returns up to the bar's close, and the rule uses the bar's own closed return.
+    how_it_trades: Each hour, take a position for one hour in the direction of sign(ac1) times sign(last return), only when |ac1| is above 0.05.
+  - id: variance_ratio_14d_daily_rule_after_cost
+    belief: The sum of hourly autocorrelations at lags 1 to 24, read as a 14-day variance ratio of 24h against 1h returns, sets whether the last 24h move continues or reverses over the next 24h by enough to pay the cost.
+    claim:
+      when: bars spaced 24 apart where the 336-bar variance ratio of 24h returns is above 1.15 (momentum) or below 0.85 (reversal)
+      then: the next 24h return follows the last 24h move in the momentum state and goes against it in the reversal state
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.002
+      code: |
+        r24 = df.close.pct_change(24)
+        vr = r24.rolling(336).var() / (24 * ret.rolling(336).var())
+        a = spaced((vr > 1.15) | (vr < 0.85), 24)
+        b = ~a
+        signal = np.sign(vr - 1) * np.sign(r24)
+    why_no_lookahead: The variance ratio and the 24h return use only closes at or before the bar's close.
+    how_it_trades: Once a day, when the variance ratio is outside 0.85 to 1.15, hold for 24h with or against the last 24h move.
+  - id: lag24_same_hour_echo
+    belief: The lag-24 autocorrelation captures an intraday echo, where the return at a given UTC hour repeats or reverses the return at the same hour the previous day, and its 14-day sign tells which.
+    claim:
+      when: all bars with a defined 336-bar lag-24 autocorrelation
+      then: the next hour's return ranks with the return of that same hour one day earlier, times the sign and size of the lag-24 autocorrelation
+      compared_to: no baseline (rank correlation on all bars)
+      measure: rank_corr
+      horizon_bars: 1
+      direction: positive
+      min_effect: 0.02
+      code: |
+        ac24 = ret.rolling(336).corr(ret.shift(24))
+        feature = ac24 * ret.shift(23)
+        a = ac24.notna() & ret.shift(23).notna()
+        b = ~a
+    why_no_lookahead: ret.shift(23) at bar t is the return of the hour ending 23 bars earlier, which is 24 hours before the next bar, and ac24 uses past returns only.
+    how_it_trades: Each hour, take a position for the next hour in the direction of ac24 times yesterday's same-hour return.
+  - id: shock_fade_in_reversal_state
+    belief: In a negative short-lag autocorrelation state, a large hourly move is liquidity-driven overshoot and reverts over the next few hours by more than the cost.
+    claim:
+      when: bars spaced 4 apart where the 72-bar lag-1 autocorrelation is below -0.05 and the absolute hourly return exceeds twice the prior 168-bar hourly standard deviation
+      then: the next 4h return goes against the shock bar's move
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 4
+      direction: positive
+      min_effect: 0.002
+      code: |
+        ac1 = ret.rolling(72).corr(ret.shift(1))
+        sd = ret.rolling(168).std().shift(1)
+        a = spaced((ac1 < -0.05) & (ret.abs() > 2 * sd), 4)
+        b = ~a
+        signal = -np.sign(ret)
+    why_no_lookahead: The autocorrelation, the prior volatility and the shock all use closes at or before the bar's close.
+    how_it_trades: After a two-sigma hour in a negative-autocorrelation state, fade it for 4 hours.
+  - id: shock_follow_in_momentum_state
+    belief: In a positive short-lag autocorrelation state, a large hourly move reflects information diffusing slowly and continues over the next several hours by more than the cost.
+    claim:
+      when: bars spaced 6 apart where the 72-bar lag-1 autocorrelation is above 0.05 and the absolute hourly return exceeds twice the prior 168-bar hourly standard deviation
+      then: the next 6h return continues the shock bar's move
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.002
+      code: |
+        ac1 = ret.rolling(72).corr(ret.shift(1))
+        sd = ret.rolling(168).std().shift(1)
+        a = spaced((ac1 > 0.05) & (ret.abs() > 2 * sd), 6)
+        b = ~a
+        signal = np.sign(ret)
+    why_no_lookahead: The autocorrelation, the prior volatility and the shock all use closes at or before the bar's close.
+    how_it_trades: After a two-sigma hour in a positive-autocorrelation state, follow it for 6 hours.
+  - id: variance_ratio_predicts_move_size
+    belief: If the autocorrelation state is a real and persistent regime, a trending state (variance ratio above 1) produces larger 24h moves next than a mean-reverting state (variance ratio below 1).
+    claim:
+      when: bars where the 336-bar variance ratio of 24h against 1h returns is above 1.2
+      then: the absolute next 24h return is larger
+      compared_to: bars where the same variance ratio is below 0.85
+      measure: abs_ratio
+      horizon_bars: 24
+      direction: above
+      min_effect: 1.15
+      code: |
+        r24 = df.close.pct_change(24)
+        vr = r24.rolling(336).var() / (24 * ret.rolling(336).var())
+        a = vr > 1.2
+        b = vr < 0.85
+    why_no_lookahead: The variance ratio uses only past 1h and 24h returns ending at the bar's close.
+    how_it_trades: Size or pick the trend rule versus the range rule based on the expected 24h move size from the variance ratio.
+  - id: volume_confirmed_momentum_state
+    belief: A positive autocorrelation state pays mainly when participation is rising, because continuation comes from new flow arriving rather than from stale drift.
+    claim:
+      when: bars where the 168-bar lag-1 autocorrelation is positive and the 24-bar mean volume exceeds 1.3 times the 168-bar mean volume
+      then: the next 12h return follows the last 12h move
+      compared_to: bars where the 168-bar lag-1 autocorrelation is positive and the volume ratio is at or below 1.3
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.001
+      code: |
+        ac1 = ret.rolling(168).corr(ret.shift(1))
+        vr = df.volume.rolling(24).mean() / df.volume.rolling(168).mean()
+        a = (ac1 > 0) & (vr > 1.3)
+        b = (ac1 > 0) & (vr <= 1.3)
+        signal = np.sign(df.close.pct_change(12))
+    why_no_lookahead: The autocorrelation, the volume means and the 12h return all end at the bar's close.
+    how_it_trades: In a positive-autocorrelation state with rising volume, hold for 12 hours in the direction of the last 12h move.
+  - id: reversal_state_offhours_liquidity
+    belief: In a negative autocorrelation state, hourly reversal is driven by thin liquidity, so it is more reliable in the low-liquidity Asian hours than in the US-Europe overlap.
+    claim:
+      when: bars where the 168-bar lag-1 autocorrelation is below 0 and the UTC hour is 0 to 7
+      then: the next hour's return has the opposite sign to the bar's return more often
+      compared_to: bars where the 168-bar lag-1 autocorrelation is below 0 and the UTC hour is 13 to 20
+      measure: hit_rate
+      horizon_bars: 1
+      direction: positive
+      min_effect: 0.02
+      code: |
+        ac1 = ret.rolling(168).corr(ret.shift(1))
+        a = (ac1 < 0) & (hour <= 7)
+        b = (ac1 < 0) & (hour >= 13) & (hour <= 20)
+        signal = -np.sign(ret)
+    why_no_lookahead: The autocorrelation uses past returns, and the hour is a property of the bar.
+    how_it_trades: In a negative-autocorrelation state, fade the last hour during 0 to 7 UTC only.
+  - id: short_long_ac_agreement
+    belief: The autocorrelation state is only readable when the 2-day and 14-day lag-1 autocorrelations agree in sign; when they disagree the regime is shifting and the regime rule loses its edge.
+    claim:
+      when: bars where the 48-bar and 336-bar lag-1 autocorrelations have the same sign
+      then: the next 3h return follows the last 3h move times the sign of the 48-bar autocorrelation
+      compared_to: bars where the two autocorrelations have opposite signs
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.0005
+      code: |
+        acs = ret.rolling(48).corr(ret.shift(1))
+        acl = ret.rolling(336).corr(ret.shift(1))
+        a = np.sign(acs) == np.sign(acl)
+        a = a & acs.notna() & acl.notna()
+        b = (np.sign(acs) != np.sign(acl)) & acs.notna() & acl.notna()
+        signal = np.sign(acs) * np.sign(df.close.pct_change(3))
+    why_no_lookahead: Both autocorrelations and the 3h return use closes at or before the bar's close.
+    how_it_trades: Apply the 3h continuation or reversal rule only when the short and long autocorrelations agree in sign.
+notes: Nine ideas. They cover lag 1 and lag 24, windows from 48 to 336 bars, and five angles. Pure regime rules are ideas 1 and 2. Shock-conditioned rules are 4 and 5. Volatility readability is idea 6, volume confirmation is idea 7, time of day is idea 8, and regime stability is idea 9. Ideas 4 and 5 deliberately oppose each other by state. None repeats the already-tried unconditional 24 to 168 bar momentum, the 24h reversal, or the daily 60-day autocorrelation trend filter. Every idea conditions on hourly autocorrelation measured over days. The net_return thresholds sit at 0.2% after the 0.15% cost. The hourly mean_diff thresholds are small because the effect of a 0.05 autocorrelation on roughly 0.6% hourly moves is only about 3 basis points.

@@ -1,0 +1,34 @@
+{
+  "line": "7.g",
+  "backtest": "001-01_rsi-high-extreme-reversal-down_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.32707410000000003,
+  "findings": {
+    "F1": "The short-only book lost in all 12 coin-windows (BTC from -0.12 to -1.12 log, ETH from -0.41 to -0.81). That includes the four windows per coin where the coin itself fell, for example ETH w2 with the coin at -0.57 and the book at -0.60. Twelve of twelve losing would happen by chance with probability below 0.001.",
+    "F2": "The trades lost before fees, not only after them. The mean gross P&L per trade was -0.47% on BTC (3829 trades) and -0.57% on ETH (3871 trades), with win rates of 48% and median holds of 240 minutes. The short entries on unusually high RSI were, on average, followed by further rises over the next few hours.",
+    "F3": "Losses grew with the size of the short. Bars holding a position above 1 lost a mean of -5.2 bp per bar, 7330 bars summing to -3.78 log. Flat bars lost -0.35 bp and bars at 0\u20130.25 lost -0.73 bp. The more extreme the RSI was relative to its own recent values, the more price kept rising in the following hours.",
+    "F4": "Over 12 hours the signal turned weak and changed sign depending on the cut, so the give-back the idea expects is not visible. Overlapping bars with RSI 60\u201370 were followed by +30 bp (n=962, overlap-adjusted t 1.26; BTC +35 bp, ETH +23 bp). The top RSI decile on the non-overlapping grid showed -19 bp excess (t -1.44, n=292).",
+    "F5": "The 14-period hourly RSI never reached the classic extremes. Its 1st\u201399th percentile range was 38.7\u201362.1, and zero bars had RSI above 70 or below 30. The test's \"extremes\" are therefore extremes relative to the RSI's own recent values, not absolute overbought readings."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's hourly RSI sits at its highest level relative to its last 60 values, price keeps rising over the next few hours, roughly the first four, instead of giving the move back.",
+      "consequence": "A trader should refuse to short a coin just because its hourly RSI is unusually high for its recent history, and may lean with the move over the next few hours.",
+      "name": "short-horizon RSI-high continuation",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "001-01_rsi-high-extreme-reversal-down.g1_short-horizon-rsi-high-continuation"
+  ],
+  "no_ideas": null
+}

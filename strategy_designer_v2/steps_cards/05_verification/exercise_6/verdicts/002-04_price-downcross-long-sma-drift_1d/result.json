@@ -1,0 +1,24 @@
+{
+  "status": "rejected",
+  "main_measure": {
+    "name": "mean 20-bar forward return on short bars minus mean over all bars (pp)",
+    "value": -1.751168997884351,
+    "statistic": {
+      "name": "Welch t",
+      "value": -0.39187241344452867
+    },
+    "threshold": "confirm if at most -2 percentage points with t-stat at or below -2; reject if 0 or positive"
+  },
+  "supporting_check": {
+    "name": "short-bar hit rate minus unconditional share of negative 20-bar returns (pp)",
+    "value": -0.5602240896358524,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping short cases": 21,
+    "non-overlapping all-bar cases": 34,
+    "largest-tertile short cases": 7
+  },
+  "decided_by": "The hit rate on short bars is not above the unconditional share of negative 20-bar returns.",
+  "reading": "Short bars are grid bars (positions 0, 20, 40, ... of each window with a full 20-bar forward return inside the window) whose forecast is below 0, the all-bars group is every such grid bar including the short ones, and the largest-tertile shorts are the pooled short cases whose forecast is at or below the 1/3 quantile of the short forecasts (the most negative third)."
+}

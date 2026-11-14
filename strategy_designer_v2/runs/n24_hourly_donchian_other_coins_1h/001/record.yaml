@@ -1,0 +1,800 @@
+brief: n24_hourly_donchian_other_coins_1h.md
+fold: A
+symbols:
+- LTCUSD
+- XRPUSD
+- SOLUSD
+bar_size: 1h
+claims:
+- id: donchian72_follow_through_net
+  belief: On LTC, XRP and SOL hourly bars, a close beyond the prior 72-hour channel
+    starts a move that persists long enough to pay fees, as it did on BTC and ETH.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.005652511563242448
+      n_a: 220
+      n_b: 220
+      windows:
+      - -0.004457519645341294
+      - -0.012839750783663166
+      - -0.008645640556526862
+      - -0.0011246581367817194
+      - 0.0002059952922866294
+      - -0.007473688540497044
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.004844675252014906
+      n_a: 206
+      n_b: 206
+      windows:
+      - 0.010050513904538318
+      - -0.013191454844359015
+      - -0.010815166523471914
+      - -0.011114410219232103
+      - 0.005811351629115525
+      - -0.008167324359999239
+      verdict: fail
+      why: null
+    SOLUSD:
+      effect: 0.0033852759258419392
+      n_a: 217
+      n_b: 217
+      windows:
+      - -0.0016838635869857997
+      - 0.012546439028735026
+      - -0.005734798615328223
+      - 0.005995826625783457
+      - 0.00023721100466059372
+      - 0.0106667529399199
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(72).max().shift(1)
+
+    lo = df.low.rolling(72).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    a = spaced(up | dn, 24)
+
+    b = ~a
+
+    signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+
+    '
+- id: donchian168_slow_trend_net
+  belief: On smaller coins, short channels catch noise, and only a weekly (168-hour)
+    channel break marks a real trend shift that pays over three days.
+  measure: net_return
+  horizon_bars: 72
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.0011558884936760981
+      n_a: 74
+      n_b: 74
+      windows:
+      - 0.03788379420227564
+      - -0.0334032877415742
+      - 0.02744328052149151
+      - -0.0027352372872086923
+      - -0.00268848397252543
+      - -0.00755584194100504
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: 0.00796631837717759
+      n_a: 81
+      n_b: 81
+      windows:
+      - 0.04434018836156812
+      - 0.010776713977692629
+      - -0.01180539911707807
+      - 0.0035205946978801874
+      - 0.01285101022517343
+      - -0.00634002418097241
+      verdict: fail
+      why: null
+    SOLUSD:
+      effect: 0.025212293644158522
+      n_a: 89
+      n_b: 89
+      windows:
+      - 0.0288025196965897
+      - 0.033736526139477925
+      - -0.006819232814543464
+      - 0.008168873454286556
+      - 0.03247131864043381
+      - 0.05805302878190328
+      verdict: pass
+      why: null
+  code: 'hi = df.high.rolling(168).max().shift(1)
+
+    lo = df.low.rolling(168).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    a = spaced(up | dn, 72)
+
+    b = ~a
+
+    signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+
+    '
+- id: donchian24_breakout_fade
+  belief: On thinner altcoin books, a break of the one-day channel is often a stop
+    run that reverses within hours.
+  measure: net_return
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.001
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.0022170872899531504
+      n_a: 523
+      n_b: 523
+      windows:
+      - -0.003363351736867648
+      - -0.0011972136573877874
+      - -0.002932278679648463
+      - -0.0014925591028298753
+      - -0.003486489302173003
+      - -0.0007937792643286963
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.0017766039721572797
+      n_a: 510
+      n_b: 510
+      windows:
+      - -0.004004330326691131
+      - -0.0008892552455068011
+      - -0.001475471846018562
+      - -0.0007347549807139614
+      - -0.005706429339631934
+      - 0.0025875321478364623
+      verdict: fail
+      why: null
+    SOLUSD:
+      effect: -0.0013828680144009557
+      n_a: 506
+      n_b: 506
+      windows:
+      - -0.00016969869656889938
+      - -0.005667770108837544
+      - 0.0007820978880650172
+      - -0.005045838360586353
+      - 0.004444760826555946
+      - -0.002838205288420513
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(24).max().shift(1)
+
+    lo = df.low.rolling(24).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    a = spaced(up | dn, 12)
+
+    b = ~a
+
+    signal = pd.Series(np.where(up, -1, 1), index=df.index)
+
+    '
+- id: breakout_after_compression
+  belief: Breakouts from a narrow channel release stored pressure and follow through
+    more than breakouts from an already wide, volatile channel.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.007688827346154122
+      n_a: 126
+      n_b: 94
+      windows:
+      - 0.017842851640703896
+      - 0.016579078508939152
+      - 0.006391757878445652
+      - -0.0068193714890139884
+      - 0.011943703848184162
+      - 0.0003216641007394586
+      verdict: pass
+      why: null
+    XRPUSD:
+      effect: 0.0018906068029373372
+      n_a: 107
+      n_b: 99
+      windows:
+      - -0.016930758522761172
+      - 0.0019257823861858168
+      - 0.0014941078643332592
+      - 0.004928861200718067
+      - 0.023565641579571587
+      - -0.004547857103531885
+      verdict: fail
+      why: null
+    SOLUSD:
+      effect: -0.0012275037931311185
+      n_a: 121
+      n_b: 96
+      windows:
+      - 0.015916144287223002
+      - 0.0017681131615251318
+      - -0.0014144708389136392
+      - -0.024830459371204608
+      - -0.0017494024446898944
+      - 0.009071600889203769
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(72).max().shift(1)
+
+    lo = df.low.rolling(72).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    ev = spaced(up | dn, 24)
+
+    width = (hi - lo) / df.close
+
+    narrow = width < width.rolling(720).quantile(0.3)
+
+    a = ev & narrow
+
+    b = ev & ~narrow
+
+    signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+
+    '
+- id: volume_confirmed_breakout
+  belief: A breakout on heavy volume reflects real participation and persists, while
+    a low-volume breakout is a drift through thin liquidity that fails.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.021189274265751026
+      n_a: 179
+      n_b: 41
+      windows:
+      - 0.009535936191996547
+      - 0.042238385016193175
+      - 0.014624935301099085
+      - null
+      - null
+      - 0.005341299473038672
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: 0.005168939756985352
+      n_a: 183
+      n_b: 23
+      windows:
+      - -0.002732440726403029
+      - 0.0017389335357442786
+      - 0.004559623185469307
+      - 0.016284595590700644
+      - 0.03345000104266926
+      - -0.02224117862632234
+      verdict: fail
+      why: null
+    SOLUSD:
+      effect: 0.011564261822750777
+      n_a: 177
+      n_b: 40
+      windows:
+      - 0.038612621397932596
+      - -0.01839794267711695
+      - 0.000358271339247122
+      - 0.028347561435466653
+      - 0.00841262810690414
+      - 0.015348205030063778
+      verdict: pass
+      why: null
+  code: 'hi = df.high.rolling(72).max().shift(1)
+
+    lo = df.low.rolling(72).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    ev = spaced(up | dn, 24)
+
+    vmed = df.volume.rolling(72).median().shift(1)
+
+    heavy = df.volume > 2 * vmed
+
+    a = ev & heavy
+
+    b = ev & ~heavy
+
+    signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+
+    '
+- id: breakout_session_us_hours
+  belief: Breakouts during the US/EU overlap, when the most participants trade, are
+    driven by flow and persist more than breakouts in quiet Asian hours.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.006949662997372139
+      n_a: 85
+      n_b: 135
+      windows:
+      - 0.00772521814123389
+      - -0.02149218492285546
+      - 0.04827362586762551
+      - 0.00561526408650184
+      - -0.0007601459008150756
+      - -0.003962183565180571
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: 0.0009535296964712954
+      n_a: 78
+      n_b: 128
+      windows:
+      - -0.004708231080060668
+      - -0.01187413588649028
+      - 0.012022954361844054
+      - -0.002519155299964493
+      - 0.015700214030419993
+      - -0.0011149274262101175
+      verdict: fail
+      why: null
+    SOLUSD:
+      effect: -0.0012844952166774287
+      n_a: 89
+      n_b: 128
+      windows:
+      - 0.007217768494819813
+      - -0.027418159963362398
+      - 0.02336661143097422
+      - -0.02258321023822135
+      - 0.01663601546190198
+      - 0.0006165440186743816
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(72).max().shift(1)
+
+    lo = df.low.rolling(72).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    ev = spaced(up | dn, 24)
+
+    us = (hour >= 13) & (hour <= 20)
+
+    a = ev & us
+
+    b = ev & ~us
+
+    signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+
+    '
+- id: weekday_vs_weekend_breakout
+  belief: Weekend breakouts on thin books are more often false, so weekday breakouts
+    win more often.
+  measure: hit_rate
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.05
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.010025062656641603
+      n_a: 171
+      n_b: 49
+      windows:
+      - 0.044354838709677435
+      - -0.0714285714285714
+      - -0.09999999999999998
+      - 0.0755555555555556
+      - -0.08620689655172414
+      - 0.25
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: 0.09611546138492244
+      n_a: 167
+      n_b: 39
+      windows:
+      - 0.033333333333333326
+      - 0.14285714285714285
+      - 0.1830357142857143
+      - 0.11494252873563221
+      - 0.08333333333333331
+      - -0.05357142857142855
+      verdict: pass
+      why: null
+    SOLUSD:
+      effect: 0.10157640478006608
+      n_a: 171
+      n_b: 46
+      windows:
+      - 0.3261648745519713
+      - 0.4065934065934066
+      - 0.1111111111111111
+      - -0.1651785714285714
+      - -0.0357142857142857
+      - -0.11111111111111105
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(72).max().shift(1)
+
+    lo = df.low.rolling(72).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    ev = spaced(up | dn, 24)
+
+    wk = dow < 5
+
+    a = ev & wk
+
+    b = ev & ~wk
+
+    signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+
+    '
+- id: breakout_with_monthly_trend
+  belief: Breakouts in the direction of the 30-day trend continue, while counter-trend
+    breakouts are corrections that stall.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.0036724701890061004
+      n_a: 142
+      n_b: 78
+      windows:
+      - -0.0008874319693652996
+      - 0.028006543709054567
+      - -0.013927098971472996
+      - 0.004976741259425528
+      - 0.004167943065038059
+      - 0.00091626770903266
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.003335975831920515
+      n_a: 143
+      n_b: 63
+      windows:
+      - -0.008776922446435504
+      - -0.01009092364506231
+      - -0.00019017712036700253
+      - -0.015771827555820957
+      - 0.026361320712880748
+      - -0.016070367399897596
+      verdict: fail
+      why: null
+    SOLUSD:
+      effect: 0.012539669486221471
+      n_a: 151
+      n_b: 66
+      windows:
+      - -0.007590925343173193
+      - 0.041736856022975416
+      - 0.001880292633068399
+      - 0.010935578308818056
+      - -0.0023895756381827893
+      - 0.04033964811350846
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(72).max().shift(1)
+
+    lo = df.low.rolling(72).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    ev = spaced(up | dn, 24)
+
+    sma = df.close.rolling(720).mean()
+
+    aligned = (up & (df.close > sma)) | (dn & (df.close < sma))
+
+    a = ev & aligned
+
+    b = ev & ~aligned
+
+    signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+
+    '
+- id: breakout_overshoot_strength
+  belief: How far the close pushes beyond the channel, scaled by the typical range,
+    measures the urgency of the move, and a larger overshoot predicts a larger continuation.
+  measure: rank_corr
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.10424482849946186
+      n_a: 220
+      n_b: 220
+      windows:
+      - -0.1257085020242915
+      - -0.03781512605042017
+      - -0.10121457489878542
+      - -0.011764705882352941
+      - -0.10242914979757085
+      - -0.37142857142857144
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.20176747822226554
+      n_a: 206
+      n_b: 206
+      windows:
+      - -0.08754774637127577
+      - -0.3313725490196079
+      - -0.18603238866396762
+      - -0.3137254901960784
+      - -0.03189149560117301
+      - -0.19879032258064516
+      verdict: fail
+      why: null
+    SOLUSD:
+      effect: 0.09540838136576521
+      n_a: 217
+      n_b: 217
+      windows:
+      - -0.003939962476547843
+      - 0.23462566844919788
+      - -0.07722007722007723
+      - 0.20506072874493927
+      - -0.018275418275418277
+      - 0.13201871657754014
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(72).max().shift(1)
+
+    lo = df.low.rolling(72).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    a = spaced(up | dn, 24)
+
+    b = ~a
+
+    rng = (df.high - df.low).rolling(72).mean().shift(1)
+
+    feature = pd.Series(np.where(up, (df.close - hi) / rng, np.where(dn, (df.close
+    - lo) / rng, 0.0)), index=df.index)
+
+    signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+
+    '
+- id: breakout_volatility_expansion
+  belief: A channel break starts a high-volatility regime, which is what lets a volatility-targeted
+    breakout make money even when direction is noisy.
+  measure: abs_ratio
+  horizon_bars: 24
+  direction: above
+  min_effect: 1.2
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 1.1071820903080642
+      n_a: 220
+      n_b: 16914
+      windows:
+      - 1.02386844246188
+      - 1.2916254869174062
+      - 1.2801492442255151
+      - 0.8307545223249192
+      - 1.0959279396579875
+      - 0.9735389269346579
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: 1.219861076435569
+      n_a: 206
+      n_b: 16957
+      windows:
+      - 1.1819949800710294
+      - 1.1674132953284755
+      - 1.109535644372793
+      - 1.251873238083044
+      - 1.1580513687330658
+      - 1.5662278050792064
+      verdict: pass
+      why: null
+    SOLUSD:
+      effect: 1.0310989117147886
+      n_a: 217
+      n_b: 16821
+      windows:
+      - 1.0517859623278825
+      - 0.854910733801344
+      - 0.7674409002754764
+      - 1.253875975091012
+      - 1.2383901329290394
+      - 1.0791771101476375
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(72).max().shift(1)
+
+    lo = df.low.rolling(72).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    a = spaced(up | dn, 24)
+
+    b = ~(up | dn)
+
+    signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+
+    '
+- id: channel_position_momentum
+  belief: Without any discrete break, where the close sits inside its 72-hour range
+    carries continuous momentum information about the next day.
+  measure: rank_corr
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.03
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.05605751765978457
+      n_a: 17519
+      n_b: 17519
+      windows:
+      - -0.05973674703820285
+      - -0.051116280330432785
+      - -0.11275629288920234
+      - -0.07943367664879662
+      - 0.05403141959783421
+      - -0.11169927161537038
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: -0.049438275667036596
+      n_a: 17469
+      n_b: 17469
+      windows:
+      - -0.07256896829608005
+      - -0.03895818185388952
+      - -0.0775058723198276
+      - -0.16031936390870072
+      - 0.024058626660908054
+      - 0.04082190609214091
+      verdict: fail
+      why: null
+    SOLUSD:
+      effect: 0.02160028419247359
+      n_a: 17519
+      n_b: 17519
+      windows:
+      - -0.012900024435528408
+      - 0.07037182585228283
+      - -0.01406323495560129
+      - -0.011190089136463787
+      - -0.05899882575500398
+      - 0.04944783969473069
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(72).max().shift(1)
+
+    lo = df.low.rolling(72).min().shift(1)
+
+    feature = (df.close - (hi + lo) / 2) / (hi - lo)
+
+    a = feature.notna()
+
+    b = ~a
+
+    signal = pd.Series(np.where(feature < 0, -1, 1), index=df.index)
+
+    '
+- id: donchian168_heavy_volume_net
+  belief: On LTC, XRP and SOL, only a weekly channel break carried by clearly unusual
+    volume marks real participation, and that trend pays over three days after fees.
+  measure: net_return
+  horizon_bars: 72
+  direction: positive
+  min_effect: 0.006
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.0007592085994613516
+      n_a: 55
+      n_b: 55
+      windows:
+      - 0.05772269626930332
+      - -0.03398631007731574
+      - 0.03408463546211107
+      - -0.0165585857900578
+      - -0.012593421619331415
+      - -0.01657214330062233
+      verdict: fail
+      why: null
+    XRPUSD:
+      effect: 0.01182075539709443
+      n_a: 73
+      n_b: 73
+      windows:
+      - 0.05514051216441034
+      - 0.014000601049550589
+      - -0.010311266574082975
+      - 0.012629010886587282
+      - 0.014510997358401603
+      - -0.00634002418097241
+      verdict: fail
+      why: null
+    SOLUSD:
+      effect: 0.040031982475480093
+      n_a: 58
+      n_b: 58
+      windows:
+      - 0.04356419094593909
+      - 0.06345583928507742
+      - -0.009845329580973004
+      - 0.03731267614886554
+      - 0.04048288252908476
+      - 0.08047599156673979
+      verdict: pass
+      why: null
+  code: 'hi = df.high.rolling(168).max().shift(1)
+
+    lo = df.low.rolling(168).min().shift(1)
+
+    up = df.close > hi
+
+    dn = df.close < lo
+
+    ev = spaced(up | dn, 72)
+
+    vmed = df.volume.rolling(168).median().shift(1)
+
+    heavy = df.volume > 3 * vmed
+
+    a = ev & heavy
+
+    b = ~a
+
+    signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+
+    '
+profit: 'none: no return claim passed'

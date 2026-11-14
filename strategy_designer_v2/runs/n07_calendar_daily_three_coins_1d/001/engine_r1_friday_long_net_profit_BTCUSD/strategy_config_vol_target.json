@@ -1,0 +1,45 @@
+{
+  "aux_feeds": [],
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 2,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "friday_long_net_profit",
+            "class": "strategies.claim_event.ClaimEventComponent",
+            "params": {
+              "code": "d = df.index - pd.Timedelta(seconds=1)\nwd = pd.Series(d.dayofweek, index=df.index)\na = wd == 3\nb = ~a\nsignal = pd.Series(1.0, index=df.index)\n",
+              "horizon": 1,
+              "scaling_factor": 10.0,
+              "min_bars": 200
+            },
+            "weight": 1.0,
+            "lookback": 300,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 30,
+      "target_annual_vol": 0.2,
+      "max_allocation": 1.0,
+      "periods_per_year": 365
+    }
+  }
+}

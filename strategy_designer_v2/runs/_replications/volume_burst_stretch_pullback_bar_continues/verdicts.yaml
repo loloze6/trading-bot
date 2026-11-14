@@ -1,0 +1,48 @@
+claims_file: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues/claims.yaml
+fold: C
+bar_size: 1h
+symbols:
+- ETHUSD
+- ADAUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  volume_burst_stretch_pullback_bar_continues:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: pass
+        effect: 0.005674554369231324
+        t_stat: 1.63
+        n_a: 197
+        n_b: 197
+        windows:
+        - 7.642777472792591e-05
+        - 0.012452988977375507
+        - 0.006392979093213947
+        - 0.015719896498138503
+        - 0.002380821831210698
+        - -0.00992663901043283
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      ADAUSD:
+        verdict: fail
+        effect: 0.006188055981037355
+        t_stat: 1.88
+        n_a: 144
+        n_b: 144
+        windows:
+        - null
+        - 0.019127104106686048
+        - -0.005871063599387662
+        - 0.014487519484560217
+        - 0.00685470467652202
+        - 0.006516233823988912
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

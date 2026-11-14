@@ -1,0 +1,45 @@
+{
+  "line": "7.g",
+  "backtest": "001-01_rsi-high-extreme-reversal-down_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.352807,
+  "findings": {
+    "F1": "The idea's own bet loses before fees. All 7,700 short trades lose on average before fees (BTC \u22120.47%, ETH \u22120.57% per trade). The loss sits in trades held over 8 hours: \u22120.89% for 8\u201316h, \u22122.69% for 16\u201348h, \u22123.00% for over 48h. Trades closed within 2 hours win 82\u201395% of the time. So the runs that keep RSI above 50 for long go on rising instead of giving back.",
+    "F2": "High RSI is followed by more rise, not reversal, and the same holds in both coins. In the decile with the highest RSI (lowest 50\u2212RSI), the next 12 hours beat the coin's drift by +10.4 bp pooled (BTC +8.3, ETH +12.4). The next decile down is \u22129.8 bp, so the step is not smooth. With overlapping 12-hour windows the true t is about 2.6/\u221a12 \u2248 0.8.",
+    "F3": "Low RSI is followed by more fall, in both coins. In the lowest-RSI decile, the next 12 hours trail the drift by \u221224.0 bp pooled (BTC \u221220.3, ETH \u221227.7; t on overlapping bars \u22125.0, about \u22121.4 after correcting for overlap). On non-overlapping bars with RSI 35\u201340, the next 12 hours average \u221241.6 bp (n=61, t \u22121.3).",
+    "F4": "Past 12-hour returns rank the next 12 hours the same way. The top decile of past 12-hour return is followed by +19.3 bp over drift (t 4.15 on overlapping bars, about 1.2 corrected). Deciles 7\u20139 are all positive (+11.0, +9.2, +19.3), while deciles 0\u20132 are all negative (\u22128.2, \u22129.4, \u221212.5). The 24-hour non-overlapping version shows no ordering, so this rests on the 12-hour, overlapping view only.",
+    "F5": "The book bleeds whatever the volatility. When the short is active, the book's next-bar return is \u22122.2 to \u22124.4 bp in every 24-hour volatility quintile, against \u22120.1 to \u22120.4 bp when flat. The high-volatility quintile shows +15.8 bp forward excess on overlapping bars, but only t 1.34 on the grid, and its sign flips across windows and coins (BTC w3 \u221235, ETH w6 \u221233). It is not a stable pattern.",
+    "F6": "Hour-of-day returns line up in both coins but do not stand out from chance. Hours 19 and 21 UTC are positive in both coins (+4.6/+4.1 bp and +3.7/+3.8 bp; pooled t 2.3 and 2.2). Hours 0 and 16 are negative in both (pooled t \u22122.1 and \u22121.8). With 24 hours tested, about one |t|>2 is expected by chance, so I treat this as unconfirmed."
+  },
+  "ideas": [
+    {
+      "idea": "In BTC and ETH on 1h bars, after the coin has made one of its largest 12-hour rises, or RSI(14) sits among its highest readings, the next 12 hours rise more than the coin's usual drift.",
+      "consequence": "A trader should refuse to short hourly strength at high RSI and instead lean with it over the next half-day.",
+      "name": "hourly strength continues upward",
+      "from": "F1, F2, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In BTC and ETH on 1h bars, when RSI(14) sits among its lowest readings, the next 12 hours fall more than the coin's usual drift.",
+      "consequence": "A trader should refuse to buy hourly weakness at low RSI expecting a bounce, and lean short with it instead.",
+      "name": "hourly weakness continues downward",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "001-01_rsi-high-extreme-reversal-down.g1_hourly-strength-continues-upward",
+    "001-01_rsi-high-extreme-reversal-down.g2_hourly-weakness-continues-downward"
+  ],
+  "no_ideas": null
+}

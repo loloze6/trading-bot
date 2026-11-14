@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of forward 10-bar excess log return on forecast, short-bar blocks",
+    "value": -0.000745798735528141,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.24165879290728626
+    },
+    "threshold": "confirm if slope t >= +2 with mean excess on short blocks < 0 and decline share higher than on all blocks; reject if slope t <= -2; otherwise inconclusive; inconclusive if fewer than 15 non-overlapping short blocks"
+  },
+  "supporting_check": {
+    "name": "share of negative 10-bar returns, short blocks minus all blocks",
+    "value": 0.0026578073089700838,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping 10-bar blocks with forecast < 0": 43,
+    "non-overlapping 10-bar blocks, all bars": 70
+  },
+  "decided_by": "Slope t-statistic -0.24 lies between -2 and +2: inconclusive.",
+  "reading": "Blocks start at rows 0, 10, 20, ... of each window with the forecast read at the block's first bar, the buy-and-hold baseline is the mean forward 10-bar log return over all blocks on that same grid, and the component's raw column is found by its last_history_value name since the record calls it below_sma200 rather than below_ma."
+}

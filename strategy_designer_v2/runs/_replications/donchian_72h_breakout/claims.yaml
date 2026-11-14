@@ -1,0 +1,34 @@
+brief: replication of donchian_72h_breakout from 001
+source: /home/user/trading-bot/strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001/claims.yaml
+ideas:
+- id: donchian_72h_breakout
+  belief: A close beyond the prior 3-day high or low triggers stop and breakout flows
+    that carry price further over the next day.
+  claim:
+    when: the close breaks above the prior 72-bar high or below the prior 72-bar low,
+      with one event per 24 bars at most
+    then: the next 24 bars continue in the breakout direction by more than the cost
+    compared_to: the round-trip cost (net_return)
+    measure: net_return
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.002
+    code: 'hi = df.high.rolling(72).max().shift(1)
+
+      lo = df.low.rolling(72).min().shift(1)
+
+      up = df.close > hi
+
+      dn = df.close < lo
+
+      a = spaced(up | dn, 24)
+
+      b = ~a
+
+      signal = pd.Series(np.where(up, 1, -1), index=df.index)
+
+      '
+  why_no_lookahead: The channel is built from the prior 72 bars via shift(1) and compared
+    with the current close.
+  how_it_trades: Buy a close above the 72h high (or sell below the 72h low) and hold
+    24h.

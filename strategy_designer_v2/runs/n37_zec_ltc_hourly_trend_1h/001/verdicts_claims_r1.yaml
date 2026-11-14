@@ -1,0 +1,48 @@
+claims_file: strategy_designer_v2/runs/n37_zec_ltc_hourly_trend_1h/001/claims_r1.yaml
+fold: A
+bar_size: 1h
+symbols:
+- ZECUSD
+- LTCUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  vol_scaled_weekly_trend_rank:
+    verdict: fail
+    by_symbol:
+      ZECUSD:
+        verdict: fail
+        effect: -0.04453923487967197
+        t_stat: -1.18
+        n_a: 702
+        n_b: 702
+        windows:
+        - 0.06877560941732064
+        - -0.10885323290038824
+        - -0.1958463636968528
+        - -0.075544794188862
+        - -0.08455772113943029
+        - -0.03155431031537226
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      LTCUSD:
+        verdict: fail
+        effect: -0.047904480045817724
+        t_stat: -1.29
+        n_a: 730
+        n_b: 730
+        windows:
+        - 0.0055837210917424815
+        - -0.09282738517496228
+        - -0.012342170569788613
+        - -0.08920758385999027
+        - -0.1263881544156531
+        - -0.07686512171990707
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true

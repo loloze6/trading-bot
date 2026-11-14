@@ -1,0 +1,547 @@
+brief: n06_range_break_continuation_other_coins_1h.md
+fold: B
+symbols:
+- SOLUSD
+- AVAXUSD
+bar_size: 1h
+claims:
+- id: big_break_continues_vs_inside_big
+  belief: On SOL and AVAX, as on BTC, a violent hourly bar that closes outside the
+    prior day's range marks new information and order flow that keeps pushing, while
+    an equally big bar inside the range does not.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.006
+  verdict: fail
+  by_symbol:
+    SOLUSD:
+      effect: -0.013864245701144258
+      n_a: 16
+      n_b: 11
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - -0.013864245701144258
+      verdict: fail
+      why: null
+    AVAXUSD:
+      effect: null
+      n_a: 0
+      n_b: 1
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 3 * vol
+
+    hi24 = df.high.rolling(24).max().shift(1)
+
+    lo24 = df.low.rolling(24).min().shift(1)
+
+    out = (df.close > hi24) | (df.close < lo24)
+
+    a = spaced(big & out, 12)
+
+    b = spaced(big & ~out, 12)
+
+    signal = pd.Series(np.where(ret >= 0, 1, -1), index=df.index)
+
+    '
+- id: big_break_pays_after_cost
+  belief: The continuation after a big range-break bar on altcoins is large enough
+    to pay the round-trip fee by itself, not only relative to inside-range bars.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    SOLUSD:
+      effect: -0.003635969500857371
+      n_a: 15
+      n_b: 15
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - -0.003635969500857371
+      verdict: fail
+      why: null
+    AVAXUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 3 * vol
+
+    hi24 = df.high.rolling(24).max().shift(1)
+
+    lo24 = df.low.rolling(24).min().shift(1)
+
+    out = (df.close > hi24) | (df.close < lo24)
+
+    a = spaced(big & out, 24)
+
+    b = ~a
+
+    signal = pd.Series(np.where(ret >= 0, 1, -1), index=df.index)
+
+    '
+- id: inside_big_bar_reverts
+  belief: Contrary to BTC, thinner altcoin books overshoot on big bars that fail to
+    leave the daily range, so fading them pays over a few hours.
+  measure: net_return
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    SOLUSD:
+      effect: -0.03737742682801159
+      n_a: 11
+      n_b: 11
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - -0.03737742682801159
+      verdict: fail
+      why: null
+    AVAXUSD:
+      effect: 0.07069512195121957
+      n_a: 1
+      n_b: 1
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - 0.07069512195121957
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 3 * vol
+
+    hi24 = df.high.rolling(24).max().shift(1)
+
+    lo24 = df.low.rolling(24).min().shift(1)
+
+    inside = (df.close <= hi24) & (df.close >= lo24)
+
+    a = spaced(big & inside, 6)
+
+    b = ~a
+
+    signal = pd.Series(np.where(ret >= 0, -1, 1), index=df.index)
+
+    '
+- id: volume_confirmed_break
+  belief: A range break carried by unusually heavy volume reflects real participation
+    and continues, while a break on ordinary volume is a thin-book sweep that stalls.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    SOLUSD:
+      effect: 0.0594934278323157
+      n_a: 15
+      n_b: 1
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - 0.0594934278323157
+      verdict: fail
+      why: null
+    AVAXUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 3 * vol
+
+    hi24 = df.high.rolling(24).max().shift(1)
+
+    lo24 = df.low.rolling(24).min().shift(1)
+
+    brk = big & ((df.close > hi24) | (df.close < lo24))
+
+    heavy = df.volume > 2 * df.volume.rolling(168).median().shift(1)
+
+    a = spaced(brk & heavy, 12)
+
+    b = spaced(brk & ~heavy, 12)
+
+    signal = pd.Series(np.where(ret >= 0, 1, -1), index=df.index)
+
+    '
+- id: compression_break_vol_expansion
+  belief: When the prior day's range is unusually narrow, a close outside it releases
+    stored volatility, so the next hours move much more than after breaks of a wide
+    range.
+  measure: abs_ratio
+  horizon_bars: 12
+  direction: above
+  min_effect: 1.25
+  verdict: fail
+  by_symbol:
+    SOLUSD:
+      effect: 1.0297983549717415
+      n_a: 31
+      n_b: 78
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - 1.0297983549717415
+      verdict: fail
+      why: null
+    AVAXUSD:
+      effect: null
+      n_a: 0
+      n_b: 9
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'hi24 = df.high.rolling(24).max().shift(1)
+
+    lo24 = df.low.rolling(24).min().shift(1)
+
+    out = (df.close > hi24) | (df.close < lo24)
+
+    r24 = (hi24 - lo24) / df.close.shift(1)
+
+    comp = r24 < 0.6 * r24.rolling(168).median()
+
+    a = spaced(out & comp, 12)
+
+    b = spaced(out & ~comp, 12)
+
+    signal = pd.Series(np.where(ret >= 0, 1, -1), index=df.index)
+
+    '
+- id: wick_rejection_reverts
+  belief: A big bar that pokes beyond the prior day's high or low but closes back
+    inside has swept stops and found no follow-through, so price swings back the other
+    way.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    SOLUSD:
+      effect: -0.0002268588063480412
+      n_a: 29
+      n_b: 2899
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - -0.0002268588063480412
+      verdict: fail
+      why: null
+    AVAXUSD:
+      effect: -0.0321493394391738
+      n_a: 4
+      n_b: 245
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - -0.0321493394391738
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(168).std().shift(1)
+
+    wide = (df.high - df.low) / df.close.shift(1) > 2.5 * vol
+
+    hi24 = df.high.rolling(24).max().shift(1)
+
+    lo24 = df.low.rolling(24).min().shift(1)
+
+    up_rej = wide & (df.high > hi24) & (df.close <= hi24)
+
+    dn_rej = wide & (df.low < lo24) & (df.close >= lo24) & ~up_rej
+
+    a = spaced(up_rej | dn_rej, 12)
+
+    b = ~a
+
+    signal = pd.Series(np.where(up_rej, -1, 1), index=df.index)
+
+    '
+- id: strong_close_break_strength
+  belief: Among range-break bars, the one that closes at its extreme in the break
+    direction shows no absorption and continues more than one that gives back part
+    of its range.
+  measure: rank_corr
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.1
+  verdict: fail
+  by_symbol:
+    SOLUSD:
+      effect: 0.0823529411764706
+      n_a: 16
+      n_b: 16
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - 0.0823529411764706
+      verdict: fail
+      why: null
+    AVAXUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 3 * vol
+
+    hi24 = df.high.rolling(24).max().shift(1)
+
+    lo24 = df.low.rolling(24).min().shift(1)
+
+    a = spaced(big & ((df.close > hi24) | (df.close < lo24)), 12)
+
+    b = ~a
+
+    clv = (df.close - df.low) / (df.high - df.low).replace(0, np.nan)
+
+    d = np.where(ret >= 0, 1, -1)
+
+    feature = pd.Series(np.where(d > 0, clv, -(1 - clv)), index=df.index)
+
+    signal = pd.Series(d, index=df.index)
+
+    '
+- id: break_confirmed_next_bar
+  belief: A break that the next hour extends in the same direction has been accepted
+    by the market and continues, while a break immediately pulled back is a failure.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    SOLUSD:
+      effect: 0.0018958424376620793
+      n_a: 7
+      n_b: 12
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - 0.0018958424376620793
+      verdict: fail
+      why: null
+    AVAXUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 3 * vol
+
+    hi24 = df.high.rolling(24).max().shift(1)
+
+    lo24 = df.low.rolling(24).min().shift(1)
+
+    brk = big & ((df.close > hi24) | (df.close < lo24))
+
+    prev = brk.shift(1).fillna(False).astype(bool)
+
+    dprev = pd.Series(np.where(ret >= 0, 1, -1), index=df.index).shift(1)
+
+    conf = prev & (ret * dprev > 0)
+
+    a = conf
+
+    b = prev & ~conf
+
+    signal = dprev.fillna(1)
+
+    '
+- id: us_session_break_beats_asia
+  belief: Breaks printed during the US session (13-20 UTC), when the deepest flow
+    trades, carry more information and continue more than breaks printed in the thin
+    Asian hours (0-7 UTC).
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    SOLUSD:
+      effect: -0.007596274019407882
+      n_a: 5
+      n_b: 7
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - -0.007596274019407882
+      verdict: fail
+      why: null
+    AVAXUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 3 * vol
+
+    hi24 = df.high.rolling(24).max().shift(1)
+
+    lo24 = df.low.rolling(24).min().shift(1)
+
+    brk = spaced(big & ((df.close > hi24) | (df.close < lo24)), 6)
+
+    a = brk & (hour >= 13) & (hour <= 20)
+
+    b = brk & (hour <= 7)
+
+    signal = pd.Series(np.where(ret >= 0, 1, -1), index=df.index)
+
+    '
+- id: weekend_break_weaker
+  belief: Weekend breaks happen in thin books without institutional follow-through,
+    so they continue less than weekday breaks or even give back.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: negative
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    SOLUSD:
+      effect: 0.020237289017378576
+      n_a: 3
+      n_b: 14
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - 0.020237289017378576
+      verdict: fail
+      why: null
+    AVAXUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'vol = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 3 * vol
+
+    hi24 = df.high.rolling(24).max().shift(1)
+
+    lo24 = df.low.rolling(24).min().shift(1)
+
+    brk = spaced(big & ((df.close > hi24) | (df.close < lo24)), 6)
+
+    a = brk & (dow >= 5)
+
+    b = brk & (dow < 5)
+
+    signal = pd.Series(np.where(ret >= 0, 1, -1), index=df.index)
+
+    '
+profit: 'none: no return claim passed'

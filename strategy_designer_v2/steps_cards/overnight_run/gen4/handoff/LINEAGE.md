@@ -1,0 +1,4 @@
+- `N4-01_breakout-drift-lasts` <- `N3-02_breakout-shock-continues.d1_breakout-drift-outlasts-the-high` (line 7.d not profitable; backtest N3-02_breakout-shock-continues_1d)
+- `N4-02_new-high-not-shock` <- `N3-02_breakout-shock-continues.d2_the-high-not-the-shock` (line 7.d not profitable; backtest N3-02_breakout-shock-continues_1d)
+- `N4-03_breakouts-pay-in-uptrends` <- `N3-02_breakout-shock-continues.d3_breakouts-pay-in-uptrends` (line 7.d not profitable; backtest N3-02_breakout-shock-continues_1d)
+- `N4-04_dip-rebound-spans-days` <- `N3-04_dip-in-uptrend.d1_dip-rebound-spans-days` (line 7.d not profitable; backtest N3-04_dip-in-uptrend_1d)

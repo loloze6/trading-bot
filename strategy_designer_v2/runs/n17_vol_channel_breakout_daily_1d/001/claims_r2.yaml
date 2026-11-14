@@ -1,0 +1,37 @@
+brief: n17_vol_channel_breakout_daily_1d.md
+source: analyst round 2
+ideas:
+- id: stretched_channel_reversion_hit
+  belief: On daily BTC and LTC, a close stretched more than 1.5 ATR from its 20-day
+    EMA tends to move back toward the mean over the next week more reliably than an
+    unstretched close, so the edge of the channel fades rather than breaks out.
+  claim:
+    when: bars whose close is more than 1.5 ATR20 above or below the 20-day EMA
+    then: the 5-bar forward return points back toward the EMA more often
+    compared_to: bars within 1.5 ATR20 of the EMA, with the same toward-the-mean signal
+    measure: hit_rate
+    horizon_bars: 5
+    direction: positive
+    min_effect: 0.07
+    code: 'tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(),
+      (df.low - df.close.shift(1)).abs()], axis=1).max(axis=1)
+
+      atr = tr.rolling(20).mean()
+
+      mid = df.close.ewm(span=20, adjust=False).mean()
+
+      z = (df.close - mid) / atr
+
+      valid = atr.notna() & (atr > 0) & (df.index >= df.index[19])
+
+      a = valid & (z.abs() > 1.5)
+
+      b = valid & (z.abs() <= 1.5)
+
+      signal = (-np.sign(z)).replace(0, 1.0).fillna(1.0)
+
+      '
+  why_no_lookahead: ATR, EMA and z use only bars up to and including the current close;
+    the forward return starts after it.
+  how_it_trades: When a daily close sits more than 1.5 ATR outside the EMA20, take
+    the side toward the mean and hold for 5 days.

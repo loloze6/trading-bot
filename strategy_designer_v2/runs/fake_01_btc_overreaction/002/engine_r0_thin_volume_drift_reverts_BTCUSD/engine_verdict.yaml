@@ -1,0 +1,147 @@
+claim: thin_volume_drift_reverts
+symbol: BTCUSD
+bar_size: 1h
+fold: A
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 400
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: -0.9981
+  median_window_sharpe: -6.5244
+  worst_window_drawdown: 0.832
+  trades: 11706
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: -0.5012
+    trades: 1977
+    sharpe: -3.2704
+    max_drawdown: 0.528
+    exposure_pct: 99.8958
+    cost_drag_pct: 401.2524
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_thin_volume_drift_reverts_BTCUSD/results/full_size/20261106T193057Z_4593032c
+    seconds: 28
+  - window: W2
+    net_return: -0.8115
+    trades: 1928
+    sharpe: -7.3121
+    max_drawdown: 0.832
+    exposure_pct: 99.7967
+    cost_drag_pct: 89.6123
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_thin_volume_drift_reverts_BTCUSD/results/full_size/20261106T193125Z_4593032c
+    seconds: 28
+  - window: W3
+    net_return: -0.5377
+    trades: 1934
+    sharpe: -5.648
+    max_drawdown: 0.5934
+    exposure_pct: 99.9658
+    cost_drag_pct: 617.5236
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_thin_volume_drift_reverts_BTCUSD/results/full_size/20261106T193153Z_4593032c
+    seconds: 28
+  - window: W4
+    net_return: -0.5985
+    trades: 1900
+    sharpe: -5.7367
+    max_drawdown: 0.5992
+    exposure_pct: 99.8264
+    cost_drag_pct: 1216.5186
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_thin_volume_drift_reverts_BTCUSD/results/full_size/20261106T193220Z_4593032c
+    seconds: 27
+  - window: W5
+    net_return: -0.6251
+    trades: 1987
+    sharpe: -8.625
+    max_drawdown: 0.6251
+    exposure_pct: 99.8306
+    cost_drag_pct: 504.8476
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_thin_volume_drift_reverts_BTCUSD/results/full_size/20261106T193249Z_4593032c
+    seconds: 29
+  - window: W6
+    net_return: -0.7098
+    trades: 1980
+    sharpe: -9.0429
+    max_drawdown: 0.7146
+    exposure_pct: 99.7951
+    cost_drag_pct: 249.9704
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_thin_volume_drift_reverts_BTCUSD/results/full_size/20261106T193316Z_4593032c
+    seconds: 27
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: -0.9544
+    median_window_sharpe: -7.5644
+    worst_window_drawdown: 0.5015
+    trades: 11889
+  windows:
+  - window: W1
+    net_return: -0.2297
+    trades: 1969
+    sharpe: -3.3476
+    max_drawdown: 0.2581
+    exposure_pct: 99.8958
+    cost_drag_pct: 395.3023
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_thin_volume_drift_reverts_BTCUSD/results/vol_target/20261106T193341Z_ef496ff2
+    seconds: 26
+  - window: W2
+    net_return: -0.4774
+    trades: 1924
+    sharpe: -7.9652
+    max_drawdown: 0.5015
+    exposure_pct: 99.7967
+    cost_drag_pct: 76.3597
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_thin_volume_drift_reverts_BTCUSD/results/vol_target/20261106T193410Z_ef496ff2
+    seconds: 29
+  - window: W3
+    net_return: -0.3535
+    trades: 1916
+    sharpe: -7.1636
+    max_drawdown: 0.394
+    exposure_pct: 99.9658
+    cost_drag_pct: 3416.8215
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_thin_volume_drift_reverts_BTCUSD/results/vol_target/20261106T193438Z_ef496ff2
+    seconds: 27
+  - window: W4
+    net_return: -0.3884
+    trades: 1895
+    sharpe: -7.1055
+    max_drawdown: 0.3896
+    exposure_pct: 99.8264
+    cost_drag_pct: 426.6165
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_thin_volume_drift_reverts_BTCUSD/results/vol_target/20261106T193505Z_ef496ff2
+    seconds: 27
+  - window: W5
+    net_return: -0.4574
+    trades: 1943
+    sharpe: -8.6352
+    max_drawdown: 0.4573
+    exposure_pct: 99.8306
+    cost_drag_pct: 348.762
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_thin_volume_drift_reverts_BTCUSD/results/vol_target/20261106T193534Z_ef496ff2
+    seconds: 29
+  - window: W6
+    net_return: -0.4724
+    trades: 2242
+    sharpe: -9.2114
+    max_drawdown: 0.4777
+    exposure_pct: 99.7951
+    cost_drag_pct: 278.7242
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_thin_volume_drift_reverts_BTCUSD/results/vol_target/20261106T193602Z_ef496ff2
+    seconds: 29
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail

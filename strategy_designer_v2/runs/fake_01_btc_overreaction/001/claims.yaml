@@ -1,0 +1,203 @@
+brief: fake_01_btc_overreaction.md
+ideas:
+  - id: wick_rejection_follows_close
+    belief: A big-range hourly bar with a small body and a long wick shows a level that was tested and rejected within the hour, and price keeps moving away from the rejected side.
+    claim:
+      when: hourly bars whose high-low range is at least three times the recent average range, whose body is under 30% of the range, one event per 12 bars
+      then: over the next 6 hours price moves away from the longer wick, up after a long lower wick and down after a long upper wick
+      compared_to: all other bars, with the same wick-side signal
+      measure: mean_diff
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.003
+      code: |
+        rng = df.high - df.low
+        bigr = rng > 3 * rng.rolling(168).mean().shift(1)
+        body = (df.close - df.open).abs()
+        upper = df.high - np.maximum(df.open, df.close)
+        lower = np.minimum(df.open, df.close) - df.low
+        a = spaced(bigr & (body < 0.3 * rng), 12)
+        b = ~a
+        signal = pd.Series(np.where(lower > upper, 1, -1), index=df.index)
+    why_no_lookahead: range, body and wicks use only the current bar's OHLC, and the average range uses prior bars only.
+    how_it_trades: After a long-wick spike bar, enter on its close away from the wick and hold 6 hours.
+  - id: breakout_spike_continues_inside_spike_reverts
+    belief: A big bar that closes beyond the prior 24-hour high or low has triggered resting stops and breakout orders and keeps going, while a big bar that stays inside the day's range is noise that reverts.
+    claim:
+      when: big bars (move at least 3 times the 1-week hourly volatility) that close above the prior 24h high or below the prior 24h low, one event per 12 bars
+      then: over the next 12 hours price continues in the direction of the big bar
+      compared_to: big bars that close inside the prior 24h range
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.004
+      code: |
+        sd = ret.rolling(168).std().shift(1)
+        big = ret.abs() > 3 * sd
+        hi24 = df.high.rolling(24).max().shift(1)
+        lo24 = df.low.rolling(24).min().shift(1)
+        brk = (df.close > hi24) | (df.close < lo24)
+        a = spaced(big & brk, 12)
+        b = spaced(big & ~brk & hi24.notna(), 12)
+        signal = np.sign(ret)
+    why_no_lookahead: the 24h high and low are shifted by one bar, and volatility uses prior bars only.
+    how_it_trades: Follow big bars that break the 24h range for 12 hours, and fade big bars that stay inside it.
+  - id: spike_from_quiet_regime_continues
+    belief: A big bar that comes after a quiet day is a new information shock that continues, while a big bar during an already-volatile day is exhaustion that reverts.
+    claim:
+      when: big bars whose prior-24h realized volatility is below 0.7 times the prior-30-day volatility, one event per 12 bars
+      then: over the next 12 hours price continues in the direction of the big bar
+      compared_to: big bars whose prior-24h volatility is above 1.3 times the 30-day volatility
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.004
+      code: |
+        sd = ret.rolling(168).std().shift(1)
+        big = ret.abs() > 3 * sd
+        rv24 = ret.rolling(24).std().shift(1)
+        rv720 = ret.rolling(720).std().shift(1)
+        a = spaced(big & (rv24 < 0.7 * rv720), 12)
+        b = spaced(big & (rv24 > 1.3 * rv720), 12)
+        signal = np.sign(ret)
+    why_no_lookahead: every volatility window is shifted to end at the prior bar, and the big-bar test uses the current close.
+    how_it_trades: Follow spikes that break a quiet regime, and fade spikes that land in an already-hot regime.
+  - id: failed_follow_through_fade
+    belief: The overshoot shows only when the next hour fails to follow through, retracing on collapsing volume, and fading at that point captures the reversion that a blind fade misses.
+    claim:
+      when: bars right after a big bar that move against it on less than half of its volume
+      then: over the next 12 hours price keeps reverting against the original big bar
+      compared_to: bars right after a big bar that move in the same direction as it
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.004
+      code: |
+        sd = ret.rolling(168).std().shift(1)
+        big = ret.abs() > 3 * sd
+        prev_big = big.shift(1, fill_value=False)
+        opp = np.sign(ret) == -np.sign(ret.shift(1))
+        same = np.sign(ret) == np.sign(ret.shift(1))
+        a = spaced(prev_big & opp & (df.volume < 0.5 * df.volume.shift(1)), 12)
+        b = spaced(prev_big & same, 12)
+        signal = -np.sign(ret.shift(1))
+    why_no_lookahead: the setup uses the prior bar (the spike) and the current bar's close and volume, nothing later.
+    how_it_trades: Wait one hour after a spike, fade it only if that hour retraces on light volume, and hold 12 hours.
+  - id: vwap_stretch_reverts
+    belief: Overreaction is about how far price has run from the volume-weighted price of the last day, not about any single candle, and the further it stretches the more it gives back.
+    claim:
+      when: bars whose close sits more than 2 hourly volatilities from the 24h volume-weighted average close, one event per 6 bars
+      then: over the next 12 hours the forward return rises with the size of the stretch, signed toward the VWAP
+      compared_to: none (rank correlation on the stretched bars)
+      measure: rank_corr
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.08
+      code: |
+        vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+        sd = ret.rolling(168).std().shift(1)
+        feature = -(df.close / vwap - 1) / sd
+        a = spaced(feature.abs() > 2, 6)
+        b = ~a
+    why_no_lookahead: the VWAP covers the 24 bars ending at the current close, and volatility uses prior bars only.
+    how_it_trades: Trade toward the 24h VWAP when price is stretched beyond 2 volatilities, sized by the stretch, and hold up to 12 hours.
+  - id: heavy_volume_spike_follow_net
+    belief: The continuation after big bars on extreme volume, which passed as a gross effect, is large enough to pay a round trip of about 0.2% and still leave a profit.
+    claim:
+      when: big bars on volume above 3 times the 1-week median hourly volume, one event per 12 bars
+      then: following the bar's direction for 12 hours earns at least 0.1% net of the 0.15% cost, which covers the brief's 0.2% fee
+      compared_to: nothing (net return on the event bars)
+      measure: net_return
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.001
+      code: |
+        sd = ret.rolling(168).std().shift(1)
+        big = ret.abs() > 3 * sd
+        vmed = df.volume.rolling(168).median().shift(1)
+        a = spaced(big & (df.volume > 3 * vmed), 12)
+        b = ~a
+        signal = np.sign(ret)
+    why_no_lookahead: the volume median and volatility use prior bars only, and the trigger uses the current bar's close and volume.
+    how_it_trades: Buy or sell in the direction of a heavy-volume spike at its close, and exit 12 hours later.
+  - id: down_spike_rebounds
+    belief: Down spikes are forced liquidations of leveraged longs in a market structurally long BTC, so they are bought back, while up spikes do not show the same reversion.
+    claim:
+      when: big down bars, one event per 12 bars
+      then: over the next 12 hours the return is more positive than usual
+      compared_to: all other bars (baseline long drift)
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.004
+      code: |
+        sd = ret.rolling(168).std().shift(1)
+        big = ret.abs() > 3 * sd
+        a = spaced(big & (ret < 0), 12)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: the trigger is the current bar's return against volatility measured on prior bars.
+    how_it_trades: Buy the close of a big down hour and hold 12 hours, with no trade on up spikes.
+  - id: round_number_spike_reverts
+    belief: A big bar that crosses a round 1000-dollar level runs through clustered stops and option strikes at that level and then gets pulled back to it, more than a big bar that crosses no round level.
+    claim:
+      when: big bars whose close is in a different 1000-dollar bucket than the prior close, one event per 12 bars
+      then: over the next 12 hours price reverts against the big bar
+      compared_to: big bars that stay within the same 1000-dollar bucket
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.003
+      code: |
+        sd = ret.rolling(168).std().shift(1)
+        big = ret.abs() > 3 * sd
+        cross = np.floor(df.close / 1000) != np.floor(df.close.shift(1) / 1000)
+        a = spaced(big & cross, 12)
+        b = spaced(big & ~cross, 12)
+        signal = -np.sign(ret)
+    why_no_lookahead: the round-level cross compares the current close with the prior close only.
+    how_it_trades: Fade big hours that cross a round 1000 level, and hold 12 hours.
+  - id: late_day_stretch_reverts_to_day_open
+    belief: When the UTC day has moved unusually far from its open by the evening, intraday participants flatten into the daily close, and price drifts back toward the day's open.
+    claim:
+      when: bars closing at 20:00 UTC where the move since the UTC day open exceeds 2 times hourly volatility scaled to 20 hours
+      then: over the next 4 hours price moves back toward the day open
+      compared_to: bars closing at 20:00 UTC without such a stretch
+      measure: mean_diff
+      horizon_bars: 4
+      direction: positive
+      min_effect: 0.003
+      code: |
+        h = pd.Series(hour, index=df.index)
+        sd = ret.rolling(168).std().shift(1)
+        day_open = df.open.groupby(df.index.floor('D')).transform('first')
+        move = df.close / day_open - 1
+        stretch = move.abs() > 2 * sd * np.sqrt(20)
+        a = (h == 20) & stretch
+        b = (h == 20) & ~stretch & sd.notna()
+        signal = -np.sign(move)
+    why_no_lookahead: the day open is the first bar's open of the current UTC day, already known at 20:00, and volatility uses prior bars.
+    how_it_trades: At 20:00 UTC, fade a stretched daily move toward the day open and exit at 00:00 UTC.
+  - id: second_spike_exhaustion
+    belief: A second big bar in the same direction within six hours of a first one is a climax of capitulation or a short squeeze, and it reverts more than an isolated first spike.
+    claim:
+      when: big bars that follow another big bar in the same direction within the prior 6 hours, one event per 12 bars
+      then: over the next 12 hours price reverts against the second spike
+      compared_to: isolated big bars with no big bar in the prior 6 hours
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.004
+      code: |
+        sd = ret.rolling(168).std().shift(1)
+        big = ret.abs() > 3 * sd
+        up = big & (ret > 0)
+        dn = big & (ret < 0)
+        prior_up = up.astype(int).shift(1).rolling(6).sum() > 0
+        prior_dn = dn.astype(int).shift(1).rolling(6).sum() > 0
+        a = spaced((up & prior_up) | (dn & prior_dn), 12)
+        b = spaced(big & ~(prior_up | prior_dn), 12)
+        signal = -np.sign(ret)
+    why_no_lookahead: the prior-spike flags are shifted by one bar and cover only the 6 bars before the current one.
+    how_it_trades: Fade the second same-direction spike within 6 hours, and hold 12 hours.
+notes: A big bar is defined throughout as an hourly move of at least 3 times the prior one-week hourly volatility, matching the brief's "three or four times the usual size". The plain fade has already failed, so these ideas look for the conditions that separate continuation from reversion. They cover market structure (range breakout, round levels, wick rejection), volatility regime, confirmation one hour after the spike, VWAP stretch, daily time anchoring, direction asymmetry and climax spikes. heavy_volume_spike_follow_net tests whether the one passing idea (heavy_volume_spike_continues) survives fees; it is a tradability test, not a repeat. Its min_effect of 0.001 net of the 0.15% engine cost requires about 0.25% gross, which covers the brief's 0.2% fee. Several ideas contradict each other on purpose (breakout continues vs. round-level reverts, quiet-regime continues vs. second-spike reverts) so the data can decide. Event counts for the rarer conditions (quiet-regime spikes, failed follow-through) may approach the 30-bar minimum on short folds.

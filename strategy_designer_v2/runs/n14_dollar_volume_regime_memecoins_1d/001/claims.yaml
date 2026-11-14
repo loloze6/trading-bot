@@ -1,0 +1,191 @@
+brief: n14_dollar_volume_regime_memecoins_1d.md
+ideas:
+  - id: surge_move_continuation
+    belief: A dollar-volume surge that comes with a decisive daily move marks new attention arriving, and the late crowd keeps pushing price the same way for several days.
+    claim:
+      when: daily bars where dollar volume is above 3x its trailing 30-day median and the bar moved more than 3% (one event per 5 days)
+      then: the next 5 days' return goes in the direction of the surge bar's move
+      compared_to: all other bars, with the same direction rule (sign of the bar's return)
+      measure: mean_diff
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.012
+      code: |
+        dv = df.close * df.volume
+        med30 = dv.rolling(30).median().shift(1)
+        surge = dv > 3 * med30
+        a = spaced(surge & (ret.abs() > 0.03), 5)
+        b = ~a
+        signal = np.sign(ret).fillna(0)
+    why_no_lookahead: The median uses the 30 prior bars and is shifted by 1; the surge and the move use only the current bar's close and volume.
+    how_it_trades: At the close of the surge day, enter in the direction of the day's move and hold 5 days.
+  - id: surge_move_exhaustion
+    belief: On retail coins, a big move on a dollar-volume blowout is the climax of the attention wave, so it overshoots and partly reverts within days. This contradicts surge_move_continuation.
+    claim:
+      when: daily bars where dollar volume is above 3x its trailing 30-day median and the bar moved more than 5% (one event per 3 days)
+      then: the next 3 days' return goes against the surge bar's move
+      compared_to: all other bars, with the same fade rule
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.01
+      code: |
+        dv = df.close * df.volume
+        med30 = dv.rolling(30).median().shift(1)
+        surge = dv > 3 * med30
+        a = spaced(surge & (ret.abs() > 0.05), 3)
+        b = ~a
+        signal = -np.sign(ret).fillna(0)
+    why_no_lookahead: The surge and the move are measured at the bar's close against a median of prior bars only.
+    how_it_trades: At the close of the climax day, fade the day's move and hold 3 days.
+  - id: drought_precedes_expansion
+    belief: When dollar volume dries up, attention is absent and the coin coils, and the eventual return of attention brings larger moves than usual.
+    claim:
+      when: bars where the 5-day mean dollar volume is below half of the 60-day median dollar volume (one event per 5 days)
+      then: the absolute 5-day forward return is larger
+      compared_to: all other bars
+      measure: abs_ratio
+      horizon_bars: 5
+      direction: above
+      min_effect: 1.2
+      code: |
+        dv = df.close * df.volume
+        drought = dv.rolling(5).mean() < 0.5 * dv.rolling(60).median()
+        a = spaced(drought, 5)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: Both rolling windows end at the current bar's close.
+    how_it_trades: In a drought, buy a volatility exposure (straddle-like breakout entry both sides) for the next 5 days.
+  - id: volume_trend_predicts_drift
+    belief: A rising trend in dollar volume (short-term attention above the 2-month norm) precedes positive drift, because attention on retail coins draws net buying.
+    claim:
+      when: all bars with a defined volume-trend value
+      then: a higher ratio of 7-day to 60-day mean dollar volume goes with a higher 10-day forward return
+      compared_to: not applicable (rank correlation across bars)
+      measure: rank_corr
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.08
+      code: |
+        dv = df.close * df.volume
+        feature = np.log(dv.rolling(7).mean() / dv.rolling(60).mean())
+        a = feature.notna()
+        b = ~a
+        signal = np.sign(feature).fillna(0)
+    why_no_lookahead: Both means are trailing windows that end at the bar's close.
+    how_it_trades: Hold long when the volume trend ratio is high and flat otherwise, rebalance daily over 10-day holds.
+  - id: confirmed_breakout_long
+    belief: A close at a new 30-day high on surging dollar volume shows real new demand rather than a thin drift, and it pays after cost on a long position.
+    claim:
+      when: bars that close above the prior 30-day highest close with dollar volume above 2x the trailing 30-day median (one event per 10 days)
+      then: the 5-day forward return of a long position, net of the 0.15% round trip, is positive
+      compared_to: zero after cost
+      measure: net_return
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.01
+      code: |
+        dv = df.close * df.volume
+        med30 = dv.rolling(30).median().shift(1)
+        hi30 = df.close.rolling(30).max().shift(1)
+        a = spaced((df.close > hi30) & (dv > 2 * med30), 10)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The prior high and the volume median both come from bars before the current one, shifted by 1.
+    how_it_trades: Buy at the close of the confirmed breakout day and sell 5 days later.
+  - id: unconfirmed_high_fades
+    belief: A new 20-day high reached while dollar volume is fading has no fresh buyers behind it, so the price drifts back down.
+    claim:
+      when: bars that close at a new 20-day high while the 7-day mean dollar volume is below 0.8x the 30-day mean (one event per 10 days)
+      then: the 10-day forward return is negative
+      compared_to: all other bars
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.015
+      code: |
+        dv = df.close * df.volume
+        hi20 = df.close.rolling(20).max().shift(1)
+        fading = dv.rolling(7).mean() < 0.8 * dv.rolling(30).mean()
+        a = spaced((df.close > hi20) & fading, 10)
+        b = ~a
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: The prior high is shifted by 1 and the volume means are trailing windows that end at the close.
+    how_it_trades: Short (or exit longs) at the close of an unconfirmed new high and hold 10 days.
+  - id: capitulation_bounce
+    belief: A sharp down day on a dollar-volume surge is forced or panic selling by retail holders, and the price bounces over the next few days once that selling is done.
+    claim:
+      when: bars that fall more than 7% with dollar volume above 2.5x the trailing 30-day median (one event per 3 days)
+      then: the 3-day forward return is positive more often
+      compared_to: all other bars (share of positive 3-day forward returns)
+      measure: hit_rate
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.08
+      code: |
+        dv = df.close * df.volume
+        med30 = dv.rolling(30).median().shift(1)
+        a = spaced((ret < -0.07) & (dv > 2.5 * med30), 3)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The drop and the volume use the bar's close, and the median uses prior bars only.
+    how_it_trades: Buy at the close of the capitulation day and hold 3 days.
+  - id: post_pump_attention_fade
+    belief: After a pump-day volume surge, once dollar volume falls back below normal the crowd has left, and the pumped price bleeds lower over the following days.
+    claim:
+      when: bars where an up-day surge (dollar volume above 3x the 30-day median and a gain above 5%) happened in the prior 10 days, and today's dollar volume is back below the 30-day median (one event per 10 days)
+      then: the 10-day forward return is negative
+      compared_to: all other bars
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.02
+      code: |
+        dv = df.close * df.volume
+        med30 = dv.rolling(30).median().shift(1)
+        pump = (dv > 3 * med30) & (ret > 0.05)
+        recent_pump = pump.astype(float).rolling(10).max().shift(1) > 0
+        a = spaced(recent_pump & (dv < med30), 10)
+        b = ~a
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: The pump flag is taken from prior bars (shifted by 1), and today's volume test uses the bar's own close.
+    how_it_trades: Short at the close of the first quiet day after a pump and cover 10 days later.
+  - id: hot_regime_momentum
+    belief: In a high-attention regime (the month's dollar volume well above its half-year level), price trends persist because flows chase, while in cold regimes trends do not persist.
+    claim:
+      when: bars where the 30-day mean dollar volume is above 1.5x the 180-day mean
+      then: the 10-day forward return follows the sign of the trailing 20-day return
+      compared_to: bars outside the hot regime, with the same momentum rule
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.012
+      code: |
+        dv = df.close * df.volume
+        hot = dv.rolling(30).mean() > 1.5 * dv.rolling(180).mean()
+        a = hot & dv.rolling(180).mean().notna()
+        b = ~hot & dv.rolling(180).mean().notna()
+        signal = np.sign(df.close.pct_change(20)).fillna(0)
+    why_no_lookahead: The regime and the 20-day momentum use only trailing windows that end at the close.
+    how_it_trades: In hot regimes only, hold the direction of the 20-day trend, reviewed daily, with 10-day holds.
+  - id: surge_close_location
+    belief: On a surge day, where the bar closes within its range shows which side won the attention fight, and the winners keep control over the next days.
+    claim:
+      when: surge bars (dollar volume above 2.5x the trailing 30-day median) that close in the top or bottom 20% of the day's range (one event per 3 days)
+      then: the 3-day forward return follows the close location (up if the close is near the high, down if near the low) more often
+      compared_to: all other bars, with the same close-location rule
+      measure: hit_rate
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.06
+      code: |
+        dv = df.close * df.volume
+        med30 = dv.rolling(30).median().shift(1)
+        rng = (df.high - df.low).replace(0, np.nan)
+        clv = (df.close - df.low) / rng
+        a = spaced((dv > 2.5 * med30) & ((clv < 0.2) | (clv > 0.8)), 3)
+        b = ~a
+        signal = np.sign(clv - 0.5).fillna(0)
+    why_no_lookahead: The close location uses the bar's own high, low and close; the volume median uses prior bars.
+    how_it_trades: At the close of the surge day, enter toward the side where the bar closed and hold 3 days.
+notes: Every dollar volume is computed as close times volume. Some ideas are deliberately contradictory and both are kept for the data to decide (continuation vs exhaustion after surges; drought vs hot regime as sources of moves). The hourly retail-flow ideas and the BTC daily volume-confirmed trend in already_tried are not repeated. confirmed_breakout_long is a breakout-event claim on a retail coin, measured by net return after cost, not a trend filter. Thresholds on mean_diff are set above the 0.15% round trip by a wide margin, because daily crypto noise is large and the claims have few events.

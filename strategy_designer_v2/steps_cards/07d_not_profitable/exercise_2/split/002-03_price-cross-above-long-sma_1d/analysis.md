@@ -1,0 +1,31 @@
+---
+line: 7.d not profitable
+backtest: 002-03_price-cross-above-long-sma_1d
+idea tested: 002-03_price-cross-above-long-sma
+step 5: inconclusive
+step 6: not profitable enough
+mode: analyst then deducer
+explorations: 2
+cost: 0.3910 USD
+---
+## Findings
+- **F1:** The losses that sink Calmar come from the most leveraged bars: the worst 5% of book days (852 days) held a mean allocation of 1.66, with 89% of them above 1.0 and 48% at the forecast cap of 20, and they summed to -99.0 in daily return units against a book total of +17.4.
+- **F2:** At the forecast cap the book holds about twice its capital (mean allocation 1.96) in the coins' most volatile state, with 20-day volatility of 0.056 against 0.040–0.044 elsewhere and a daily return std of 634 bp against 441–471 bp in the buckets from 0 to 15, so the daily Sharpe of the cap bucket (0.051) is below that of the 10–15 bucket (0.063).
+- **F3:** Being above the 200-day SMA barely separates good from bad bars: active bars earn 13.4 bp a day and 3.2% over 20 bars, against 12.4 bp and 2.6% on flat bars, and only 42.0% of active bars beat the coin's pooled 20-bar mean.
+- **F4:** A larger forecast earns more over 20 bars only roughly: mean forward 20-bar returns are -0.25%, 2.4%, 4.4%, 3.9% and 7.8% across the buckets 0–5, 5–10, 10–15, 15–20 and 20; the 15–20 bucket earns just 2.0 bp a day; and the 0–5 bucket loses 3.6 bp a day on a 0.25 allocation with a 39% 20-bar hit rate.
+- **F5:** The book's gain sits entirely in long holds: 2228 trades, all long, with a 29.7% gross win rate and a median hold of 11 days; every duration class up to 30 days loses on average (-6.1%, -6.4%, -5.7% and -2.3% gross, summing to about -8040%), while the 515 trades held over 30 days make +33.9% each, summing to +17472%.
+- **F6:** Fees are not the cause: the mean gross trade of +4.23% falls only to +4.13% net, and fees take 228 percentage points out of a gross sum of 9433.
+- **F7:** The 331 trades closed by a window's end average +43.9% gross, against -2.7% for all other trades, so the trades the signal itself exits lose money on average.
+- **F8:** Young above-SMA episodes lose: bars 5–20 bars into an episode carry a mean allocation of 0.97 and earn -8.0 bp a day (sum -1.67), while episodes aged 20–60 and 60–150 bars earn +25.3 and +44.9 bp a day.
+- **F9:** The book lags holding when the 20-day trend is falling, earning -3.0, +1.6 and -0.7 bp a day in calm, mid and volatile falling markets against holding's -11.3, +7.7 and +13.7; it beats holding only in volatile rising markets, at 46.8 bp against 35.6.
+- **F10:** By year, the book gives up most of holding's gain in 2023 (-2.0 bp a day against +15.0, while active 61% of bars) and in 2020 (19.4 against 42.3), while it saves in 2018 (-6.9 against -34.8) and 2022 (-3.6 against -18.0).
+- **F11:** By coin, the shortfall against holding is concentrated in XMR (0.3 against 11.1 bp a day) and XRP (8.9 against 18.8), while BTC (17.0 against 11.8) and ETH (14.6 against 13.7) beat holding.
+- **F12:** Per window, the book's worst drawdown (-89.5%) is deeper than holding's (-77.0%), even though its mean drawdown is shallower (-29.2% against -39.0%), and window returns track holding with a correlation of 0.88.
+
+## Ideas
+- `002-03_price-cross-above-long-sma.d1_mature-episodes-carry-the-drift` (from F5, F7, F8): Once a coin's close has stayed above its 200-day SMA for more than about 20 consecutive bars, the coin keeps rising over the next 20 bars by more than its average 20-bar return. In the first 5–20 bars after the close moves above the SMA, the coin does worse than its average.
+- `002-03_price-cross-above-long-sma.d2_thin-margin-above-sma-whipsaws` (from F3, F4, F5): A close that sits only slightly above its 200-day SMA is followed by a 20-bar return below the coin's average 20-bar return, and the close often falls back under the SMA soon after.
+- `002-03_price-cross-above-long-sma.d3_calm-above-sma-pays-more-per-risk` (from F1, F2, F12): While a coin is above its 200-day SMA, its forward 20-bar return per unit of its own 20-day volatility is higher when that volatility is below the coin's usual level than when it is above.
+- `002-03_price-cross-above-long-sma.d4_rising-short-trend-confirms` (from F9, F10): While a coin is above its 200-day SMA and its 20-day trend is rising, it keeps rising over the next 20 bars by more than its average 20-bar return.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

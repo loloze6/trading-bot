@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.999515503875969,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "Top-minus-bottom half of positive forecast: mean excess 10-bar forward return (pp), pooled over coins",
+    "value": 1.6787940536094916,
+    "statistic": {
+      "name": "cluster-robust t (breakout clusters)",
+      "value": 1.376650030533814
+    },
+    "threshold": "Reject if t >= 2 or t <= -2; confirm if |t| < 2 and both one-sided tests against +-1 pp reach t >= 2"
+  },
+  "supporting_check": {
+    "name": "TOST against +-1 pp: min of the two one-sided t",
+    "value": -0.5566268552229733,
+    "passed": false
+  },
+  "counts": {
+    "independent breakout clusters": 381,
+    "clusters in top half": 329,
+    "clusters in bottom half": 294
+  },
+  "decided_by": "Inconclusive: |t| < 2 but the two one-sided tests against +-1 pp do not both reach t >= 2.",
+  "reading": "Halves split at the pooled median of positive forecasts (top: forecast > median, bottom: forecast <= median). The coin's mean 10-bar return is taken over every bar of all its windows. Clusters are runs of positive-forecast bars less than or equal to 10 bars apart in the same window. The t is cluster-robust (CR1) on the top-indicator coefficient, and the per-half counts are the distinct clusters with a bar in that half."
+}

@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess forward 10-bar log return on forecast, short-bar non-overlapping blocks",
+    "value": -0.000745798735528141,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.24165879290728626
+    },
+    "threshold": "slope t >= +2 (with mean excess < 0 and higher decline share) confirms; t <= -2 rejects; otherwise inconclusive",
+    "mean_excess_short": -0.012578929355023456
+  },
+  "supporting_check": {
+    "name": "decline share on short blocks minus decline share on all blocks",
+    "value": 0.0026578073089700838,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping 10-bar blocks with forecast < 0": 43,
+    "non-overlapping 10-bar blocks, all": 70
+  },
+  "decided_by": "Slope t-statistic lies between -2 and +2, which the plan defines as inconclusive.",
+  "reading": "Situation taken as raw SMA200 distance < 0 with forecast < 0; baseline is the mean forward 10-bar log return over every bar with a valid in-window forward return; short blocks are grid bars (positions 0,10,20,... per window) with forecast < 0 and the regression uses forecast as x; the plan's minimum of 15 short blocks is applied as 'not observable'."
+}

@@ -1,0 +1,37 @@
+brief: replication of breakout_spike_continues_inside_spike_reverts from 001
+source: /home/user/trading-bot/strategy_designer_v2/runs/fake_01_btc_overreaction/001/claims.yaml
+ideas:
+- id: breakout_spike_continues_inside_spike_reverts
+  belief: A big bar that closes beyond the prior 24-hour high or low has triggered
+    resting stops and breakout orders and keeps going, while a big bar that stays
+    inside the day's range is noise that reverts.
+  claim:
+    when: big bars (move at least 3 times the 1-week hourly volatility) that close
+      above the prior 24h high or below the prior 24h low, one event per 12 bars
+    then: over the next 12 hours price continues in the direction of the big bar
+    compared_to: big bars that close inside the prior 24h range
+    measure: mean_diff
+    horizon_bars: 12
+    direction: positive
+    min_effect: 0.004
+    code: 'sd = ret.rolling(168).std().shift(1)
+
+      big = ret.abs() > 3 * sd
+
+      hi24 = df.high.rolling(24).max().shift(1)
+
+      lo24 = df.low.rolling(24).min().shift(1)
+
+      brk = (df.close > hi24) | (df.close < lo24)
+
+      a = spaced(big & brk, 12)
+
+      b = spaced(big & ~brk & hi24.notna(), 12)
+
+      signal = np.sign(ret)
+
+      '
+  why_no_lookahead: the 24h high and low are shifted by one bar, and volatility uses
+    prior bars only.
+  how_it_trades: Follow big bars that break the 24h range for 12 hours, and fade big
+    bars that stay inside it.

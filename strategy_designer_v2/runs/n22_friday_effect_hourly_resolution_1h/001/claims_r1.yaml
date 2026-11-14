@@ -1,0 +1,27 @@
+brief: n22_friday_effect_hourly_resolution_1h.md
+source: analyst round 1
+ideas:
+- id: friday_post_us_close_net_profit
+  belief: The part of the Friday premium that is most consistent across coins and
+    windows arrives in the three hours after US equities close, and it is large enough
+    in absolute terms to pay the round trip.
+  claim:
+    when: Friday bars closing at 21:00 UTC
+    then: the 3-bar forward return (to the 24:00 UTC close), held long, is positive
+      after the 0.15% round-trip cost
+    compared_to: cost only (net_return)
+    measure: net_return
+    horizon_bars: 3
+    direction: positive
+    min_effect: 0.0005
+    code: 'a = (dow == 4) & (hour == 21)
+
+      b = ~a
+
+      signal = pd.Series(1.0, index=df.index)
+
+      '
+  why_no_lookahead: The selector uses only the bar's own weekday and hour; the forward
+    return is computed by the judge.
+  how_it_trades: Buy at the Friday 21:00 UTC close, sell at the Friday 24:00 UTC close,
+    once per week.

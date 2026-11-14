@@ -1,0 +1,263 @@
+brief: n20_compression_breakout_alts_daily_1d.md
+ideas:
+  - id: range_squeeze_break_continues
+    belief: When an altcoin's 10-day high-low range is narrow against its own past year, a close outside that range starts a move that continues for several days and pays the fee.
+    claim:
+      when: daily bars whose prior 10-day range width (as a fraction of price) is in the bottom 30% of its trailing 250-day history, and whose close is above the prior 10-day high or below the prior 10-day low, one event per 5 bars
+      then: the 5-day forward return goes in the direction of the break
+      compared_to: zero, after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.015
+      code: |
+        hi = df.high.rolling(10).max().shift(1)
+        lo = df.low.rolling(10).min().shift(1)
+        width = (hi - lo) / df.close.shift(1)
+        pct = width.rolling(250, min_periods=120).rank(pct=True)
+        comp = pct <= 0.30
+        brk = (df.close > hi) | (df.close < lo)
+        a = spaced(comp & brk, 5)
+        b = ~a
+        signal = pd.Series(np.where(df.close > hi, 1, -1), index=df.index)
+    why_no_lookahead: The range and its percentile use bars up to t-1, and the break compares bar t's close with them, all known at t's close.
+    how_it_trades: Enter at the close in the break direction and exit after 5 daily bars.
+
+  - id: squeeze_breaks_move_further_than_plain_breaks
+    belief: Breaks that end a quiet period release stored orders and produce larger moves than breaks out of already-wide ranges.
+    claim:
+      when: closes outside the prior 10-day range when the range width is in the bottom 30% of its 250-day history
+      then: the absolute 10-day forward return is larger
+      compared_to: closes outside the prior 10-day range when the range width is above the median of its 250-day history
+      measure: abs_ratio
+      horizon_bars: 10
+      direction: above
+      min_effect: 1.20
+      code: |
+        hi = df.high.rolling(10).max().shift(1)
+        lo = df.low.rolling(10).min().shift(1)
+        width = (hi - lo) / df.close.shift(1)
+        pct = width.rolling(250, min_periods=120).rank(pct=True)
+        brk = (df.close > hi) | (df.close < lo)
+        a = spaced(brk & (pct <= 0.30), 3)
+        b = spaced(brk & (pct > 0.50), 3)
+        signal = pd.Series(np.where(df.close > hi, 1, -1), index=df.index)
+    why_no_lookahead: Range, percentile and break use only bars up to and including t.
+    how_it_trades: Size up, or trade only, breaks that come out of compression.
+
+  - id: squeeze_breaks_trend_better_than_plain_breaks
+    belief: Direction after a break is more persistent when the break ends a compression than when it comes from a wide, noisy range, where breaks are mostly overshoots.
+    claim:
+      when: compressed-range breaks (prior 10-day width in bottom 30% of 250-day history, close beyond the prior 10-day high or low)
+      then: the 10-day forward return in the break direction is higher
+      compared_to: breaks of the prior 10-day range when the width is above its 250-day median
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.02
+      code: |
+        hi = df.high.rolling(10).max().shift(1)
+        lo = df.low.rolling(10).min().shift(1)
+        width = (hi - lo) / df.close.shift(1)
+        pct = width.rolling(250, min_periods=120).rank(pct=True)
+        brk = (df.close > hi) | (df.close < lo)
+        a = spaced(brk & (pct <= 0.30), 3)
+        b = spaced(brk & (pct > 0.50), 3)
+        signal = pd.Series(np.where(df.close > hi, 1, -1), index=df.index)
+    why_no_lookahead: All inputs are rolling windows ending at t-1 plus bar t's close.
+    how_it_trades: Follow 10-day breaks only after compression and skip breaks from wide ranges.
+
+  - id: volume_confirmed_squeeze_break
+    belief: A break out of compression on a volume surge reflects real participation, not a thin-book poke, and continues.
+    claim:
+      when: compressed-range breaks (10-day width in bottom 35% of 250-day history) where the bar's volume is above 1.8 times the median volume of the prior 20 bars
+      then: the 5-day forward return goes in the break direction
+      compared_to: zero, after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.02
+      code: |
+        hi = df.high.rolling(10).max().shift(1)
+        lo = df.low.rolling(10).min().shift(1)
+        width = (hi - lo) / df.close.shift(1)
+        pct = width.rolling(250, min_periods=120).rank(pct=True)
+        brk = (df.close > hi) | (df.close < lo)
+        vol_surge = df.volume > 1.8 * df.volume.rolling(20).median().shift(1)
+        a = spaced(brk & (pct <= 0.35) & vol_surge, 5)
+        b = ~a
+        signal = pd.Series(np.where(df.close > hi, 1, -1), index=df.index)
+    why_no_lookahead: The volume median uses bars up to t-1 and is compared with bar t's completed volume, and the range uses bars up to t-1.
+    how_it_trades: Enter at the close of a high-volume squeeze break and hold 5 days.
+
+  - id: rejected_squeeze_break_fades
+    belief: A break out of compression that closes in the wrong half of its own bar (a long wick back toward the range) is a stop run that gets rejected, and price moves back the other way.
+    claim:
+      when: compressed-range breaks (10-day width in bottom 35% of 250-day history) where an up break closes in the lower half of the bar's high-low range, or a down break closes in the upper half
+      then: the 3-day forward return goes against the break direction
+      compared_to: zero, after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.01
+      code: |
+        hi = df.high.rolling(10).max().shift(1)
+        lo = df.low.rolling(10).min().shift(1)
+        width = (hi - lo) / df.close.shift(1)
+        pct = width.rolling(250, min_periods=120).rank(pct=True)
+        comp = pct <= 0.35
+        loc = (df.close - df.low) / (df.high - df.low).replace(0, np.nan)
+        up_rej = comp & (df.high > hi) & (loc < 0.5)
+        dn_rej = comp & (df.low < lo) & (loc > 0.5)
+        a = spaced(up_rej | dn_rej, 3)
+        b = ~a
+        signal = pd.Series(np.where(up_rej, -1, 1), index=df.index)
+    why_no_lookahead: The bar's own high, low and close are final at its close, and the range uses bars up to t-1.
+    how_it_trades: Fade a wicked squeeze break at the close and exit after 3 days.
+
+  - id: range_expansion_day_after_quiet
+    belief: The first wide-range day after a quiet stretch shows where pressure sits through its close location, and the next days follow that side.
+    claim:
+      when: bars whose true range exceeds 2 times the prior 10-day mean true range while the prior 5-day mean true range is below 0.7 times the prior 100-day mean, and whose close is in the top or bottom 20% of the bar
+      then: the 5-day forward return goes the same way as the close location (up if near the high, down if near the low) more often
+      compared_to: all other bars, with the same close-location direction rule
+      measure: hit_rate
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.08
+      code: |
+        pc = df.close.shift(1)
+        tr = pd.concat([df.high, pc], axis=1).max(axis=1) - pd.concat([df.low, pc], axis=1).min(axis=1)
+        quiet = tr.rolling(5).mean().shift(1) < 0.7 * tr.rolling(100).mean().shift(1)
+        expand = tr > 2.0 * tr.rolling(10).mean().shift(1)
+        loc = (df.close - df.low) / (df.high - df.low).replace(0, np.nan)
+        extreme = (loc >= 0.8) | (loc <= 0.2)
+        a = spaced(quiet & expand & extreme, 5)
+        b = ~a
+        signal = pd.Series(np.where(loc >= 0.5, 1, -1), index=df.index)
+    why_no_lookahead: True range uses bar t and t-1's close, and the quiet and expansion baselines are shifted by one bar.
+    how_it_trades: Trade in the close-location direction at the close of an expansion day that follows a quiet stretch, and hold 5 days.
+
+  - id: break_strength_scales_continuation
+    belief: Among squeeze breaks, the further the close lands beyond the old range (scaled by that range), the stronger the follow-through.
+    claim:
+      when: compressed-range breaks (10-day width in bottom 35% of 250-day history)
+      then: the signed distance of the close from the range midpoint, in range widths, ranks with the 10-day forward return
+      compared_to: not used (rank correlation on the break bars)
+      measure: rank_corr
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.15
+      code: |
+        hi = df.high.rolling(10).max().shift(1)
+        lo = df.low.rolling(10).min().shift(1)
+        width = (hi - lo) / df.close.shift(1)
+        pct = width.rolling(250, min_periods=120).rank(pct=True)
+        brk = (df.close > hi) | (df.close < lo)
+        a = spaced(brk & (pct <= 0.35), 3)
+        b = ~a
+        feature = (df.close - (hi + lo) / 2) / (hi - lo)
+        signal = pd.Series(np.where(df.close > hi, 1, -1), index=df.index)
+    why_no_lookahead: The feature uses bar t's close and a range built from bars up to t-1.
+    how_it_trades: Scale position size on squeeze breaks by how far the close clears the range.
+
+  - id: trend_aligned_squeeze_break
+    belief: A compression is often a pause inside a trend, so breaks in the direction of the 100-day trend continue while breaks against it fail.
+    claim:
+      when: compressed-range breaks (10-day width in bottom 35% of 250-day history) in the same direction as the close's position relative to its 100-day simple average
+      then: the 10-day forward return in the break direction is higher
+      compared_to: compressed-range breaks against the 100-day average
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.02
+      code: |
+        hi = df.high.rolling(10).max().shift(1)
+        lo = df.low.rolling(10).min().shift(1)
+        width = (hi - lo) / df.close.shift(1)
+        pct = width.rolling(250, min_periods=120).rank(pct=True)
+        comp = pct <= 0.35
+        up = comp & (df.close > hi)
+        dn = comp & (df.close < lo)
+        trend_up = df.close.shift(1) > df.close.rolling(100).mean().shift(1)
+        aligned = (up & trend_up) | (dn & ~trend_up)
+        against = (up & ~trend_up) | (dn & trend_up)
+        a = spaced(aligned, 3)
+        b = spaced(against, 3)
+        signal = pd.Series(np.where(df.close > hi, 1, -1), index=df.index)
+    why_no_lookahead: Trend state uses the t-1 close against a 100-day average ending at t-1, and the break uses bar t's close.
+    how_it_trades: Take squeeze breaks only in the direction of the 100-day trend.
+
+  - id: longer_squeeze_stronger_break
+    belief: The longer a market stays compressed, the more positioning builds up, so the break that ends a long squeeze runs further than one ending a brief lull.
+    claim:
+      when: compressed-range breaks (10-day width in bottom 35% of 250-day history)
+      then: the number of compressed days in the prior 30 bars, signed by break direction, ranks with the 10-day forward return
+      compared_to: not used (rank correlation on the break bars)
+      measure: rank_corr
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.12
+      code: |
+        hi = df.high.rolling(10).max().shift(1)
+        lo = df.low.rolling(10).min().shift(1)
+        width = (hi - lo) / df.close.shift(1)
+        pct = width.rolling(250, min_periods=120).rank(pct=True)
+        comp = pct <= 0.35
+        brk = (df.close > hi) | (df.close < lo)
+        a = spaced(comp & brk, 3)
+        b = ~a
+        dirn = pd.Series(np.where(df.close > hi, 1, -1), index=df.index)
+        duration = comp.astype(float).shift(1).rolling(30).sum()
+        feature = dirn * duration
+        signal = dirn
+    why_no_lookahead: Duration counts compressed states up to t-1, and direction uses bar t's close against a range ending at t-1.
+    how_it_trades: Favor squeeze breaks that follow long compressions and skip those after short lulls.
+
+  - id: downside_squeeze_breaks_run_harder
+    belief: In leveraged altcoin markets, a downside break from a quiet range triggers stop and liquidation cascades, so it follows through more than an upside break.
+    claim:
+      when: compressed-range breaks to the downside (close below the prior 10-day low, width in bottom 35% of 250-day history)
+      then: the 5-day forward return in the break direction (short) is higher
+      compared_to: compressed-range breaks to the upside, measured long
+      measure: mean_diff
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.015
+      code: |
+        hi = df.high.rolling(10).max().shift(1)
+        lo = df.low.rolling(10).min().shift(1)
+        width = (hi - lo) / df.close.shift(1)
+        pct = width.rolling(250, min_periods=120).rank(pct=True)
+        comp = pct <= 0.35
+        a = spaced(comp & (df.close < lo), 3)
+        b = spaced(comp & (df.close > hi), 3)
+        signal = pd.Series(np.where(df.close > hi, 1, -1), index=df.index)
+    why_no_lookahead: The range and its percentile end at t-1, and the break uses bar t's close.
+    how_it_trades: Weight short-side squeeze breaks more heavily than long-side ones.
+
+  - id: return_vol_squeeze_starts_trend
+    belief: When close-to-close volatility is unusually low, a new 20-day closing high or low marks the start of a multi-week trend, because volatility regimes mean-revert upward with direction.
+    claim:
+      when: bars whose prior 20-day realized return volatility is in the bottom 25% of its trailing 365-day history and whose close is above the highest or below the lowest close of the prior 20 bars, one event per 10 bars
+      then: the 20-day forward return goes in the break direction
+      compared_to: zero, after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.03
+      code: |
+        rv = ret.rolling(20).std().shift(1)
+        pct = rv.rolling(365, min_periods=180).rank(pct=True)
+        chi = df.close.rolling(20).max().shift(1)
+        clo = df.close.rolling(20).min().shift(1)
+        brk = (df.close > chi) | (df.close < clo)
+        a = spaced((pct <= 0.25) & brk, 10)
+        b = ~a
+        signal = pd.Series(np.where(df.close > chi, 1, -1), index=df.index)
+    why_no_lookahead: Realized volatility and closing extremes are computed on bars up to t-1, and the break uses bar t's close.
+    how_it_trades: Enter at the close on a closing-price break after a return-volatility squeeze and hold 20 days.
+notes: >
+  The brief is narrow (one mechanism: compression then break), so the ideas vary how compression is defined (high-low range percentile, true-range ratio, close-to-close volatility) and what gives a break credibility (volume, close location, trend alignment, squeeze duration, break strength, side). Two ideas contradict on purpose: rejected_squeeze_break_fades against the continuation claims, and downside_squeeze_breaks_run_harder as an asymmetry test.
+  The already-tried ETH test (compression against all bars, abs_ratio) is not repeated. squeeze_breaks_move_further_than_plain_breaks compares breaks with breaks, not quiet bars with all bars.
+  Compression cutoffs (30-35%) are kept loose and spacing is short so that each coin should still give at least 30 events per fold. Some break-only claims (volume, rejection, trend split) may still fall short of that count on shorter folds.

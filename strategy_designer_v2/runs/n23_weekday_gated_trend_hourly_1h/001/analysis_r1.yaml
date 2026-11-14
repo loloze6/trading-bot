@@ -1,0 +1,37 @@
+run: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001
+observations:
+  - "The plain weekday-versus-weekend gate on a 24/168 MA rule failed on both coins: BTC 0.0010 and ETH -0.0012 against a 0.002 bar, with window signs split 3/3 on each."
+  - "Weekend breakouts nearly held, but only on BTC: weekday-minus-weekend hit rate was 0.27 with 6 of 6 windows positive, while ETH was 0.038 with only 4 of 6 positive."
+  - "Volatility expansion did the reverse of the belief on both coins: mean_diff was -0.0040 on BTC and -0.0030 on ETH, negative in 5 of 6 windows on each, so 168-bar momentum paid more while 24h volatility was contracting."
+  - "The level gates did not separate trend outcomes on either coin: the low-vol tercile gate gave BTC 0.0008 and ETH -0.0013, and the efficiency-ratio gate gave BTC 0.0005 and ETH -0.0002."
+  - "The volume gate looked right on BTC at 0.0038 but held in only 4 of 6 windows, with W6 at -0.000004, and it was flat on ETH at -0.0003."
+  - "The Monday weekend-range release lost on both coins, at -0.0047 on BTC (n_a 52) and -0.0167 on ETH (n_a 43), with windows ranging from -0.05 to +0.03."
+  - "The gated 12/72 cross entries passed net of cost, at 0.0058 on BTC (5 of 6 windows) and 0.0079 on ETH (6 of 6), but three ETH windows were close to zero (0.0005, 0.00001, 0.0007)."
+  - "Gated crosses beat ungated crosses by 0.011 on BTC and 0.018 on ETH, but BTC had only 4 of 6 windows positive, so the gate's own contribution nearly held but was not proven."
+  - "In the engine, BTC passed only as vol_target (net 8.4%, median Sharpe 1.31, worst drawdown 14.3%); full size failed on a 33.8% drawdown in W5 (-26%)."
+  - "ETH failed in the engine under both sizings: vol_target had a median Sharpe of 0.50 with W4 at -9.0%, and full size had a 37.7% drawdown."
+next_claim:
+  id: cross_in_vol_contraction
+  belief: "MA-cross trend entries follow through better when 24h volatility is contracting than when it is expanding, because a cross made in compression starts a move rather than ending a spike."
+  claim:
+    when: "12/72 MA cross bars where trailing 24h return volatility is at or below its value 24 bars earlier, at most one per 24 bars"
+    then: "the 48-bar forward return in the cross direction is larger"
+    compared_to: "12/72 MA cross bars where trailing 24h volatility is above its value 24 bars earlier, at most one per 24 bars"
+    measure: mean_diff
+    horizon_bars: 48
+    direction: positive
+    min_effect: 0.004
+    code: |
+      f = df.close.rolling(12).mean()
+      s = df.close.rolling(72).mean()
+      d = np.sign(f - s)
+      cross = (d != d.shift(1)) & d.notna() & d.shift(1).notna() & (d != 0)
+      v = ret.rolling(24).std()
+      ok = v.shift(24).notna() & s.notna()
+      con = v <= v.shift(24)
+      signal = d.replace(0, 1).fillna(1)
+      a = spaced(cross & ok & con, 24)
+      b = spaced(cross & ok & ~con, 24)
+  why_no_lookahead: "The MAs, the 24h volatility and its 24-bar lag all use bars at or before the cross bar's close."
+  how_it_trades: "Enter the 12/72 cross only when 24h volatility is not rising versus a day ago, hold for 48 bars."
+why: "The only signal with the same sign on both coins in 5 of 6 windows was that trend paid more in contracting volatility (BTC -0.0040, ETH -0.0030); this tests whether that holds for the cross entries that already pay net, and it might fix ETH's weak windows."

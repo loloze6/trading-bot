@@ -1,0 +1,211 @@
+brief: n18_payment_coins_hourly_shock_1h.md
+ideas:
+  - id: shock_vol_clustering_6h
+    belief: On XRP and TRX an hourly price shock is followed by hours of elevated volatility, whatever the direction of the next move.
+    claim:
+      when: bars whose absolute return exceeds 4 times the median absolute hourly return of the prior week, one event per 6 bars
+      then: the absolute 6-hour forward return is larger
+      compared_to: all other bars
+      measure: abs_ratio
+      horizon_bars: 6
+      direction: above
+      min_effect: 1.50
+      code: |
+        absr = ret.abs()
+        scale = absr.rolling(168).median().shift(1)
+        shock = absr > 4 * scale
+        a = spaced(shock, 6)
+        b = ~a
+        signal = np.sign(ret)
+    why_no_lookahead: The shock uses the bar's own close and a median of the prior 168 bars, shifted by one.
+    how_it_trades: After a shock, trade an options-like breakout or widen stops and size down for the next 6 hours.
+  - id: volume_confirmed_shock_continues
+    belief: A price shock backed by a volume surge reflects real news or large flow and keeps going, more than a shock on ordinary volume.
+    claim:
+      when: shock bars (absolute return over 4 times the prior-week median) with volume over 3 times the prior-week median volume
+      then: the 6-hour forward return continues in the shock's direction
+      compared_to: shock bars with volume at or below 3 times the median
+      measure: mean_diff
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.004
+      code: |
+        absr = ret.abs()
+        scale = absr.rolling(168).median().shift(1)
+        vmed = df.volume.rolling(168).median().shift(1)
+        shock = absr > 4 * scale
+        a = spaced(shock & (df.volume > 3 * vmed), 6)
+        b = spaced(shock & (df.volume <= 3 * vmed), 6)
+        signal = np.sign(ret)
+    why_no_lookahead: Return and volume are those of the closed bar; the medians cover prior bars only.
+    how_it_trades: Enter in the shock's direction at the close of a high-volume shock bar and exit 6 hours later.
+  - id: thin_volume_shock_fades
+    belief: A large hourly move on thin volume is a liquidity air pocket in a thin book and retraces within a few hours.
+    claim:
+      when: shock bars whose volume is below 1.5 times the prior-week median volume, one event per 4 bars
+      then: the price moves against the shock over the next 4 hours by more than the round-trip cost
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 4
+      direction: positive
+      min_effect: 0.002
+      code: |
+        absr = ret.abs()
+        scale = absr.rolling(168).median().shift(1)
+        vmed = df.volume.rolling(168).median().shift(1)
+        shock = absr > 4 * scale
+        a = spaced(shock & (df.volume < 1.5 * vmed), 4)
+        b = ~a
+        signal = -np.sign(ret)
+    why_no_lookahead: It uses the closed bar's return and volume against medians of the prior bars.
+    how_it_trades: Fade a low-volume shock at the bar's close and exit after 4 hours.
+  - id: wick_rejection_shock_direction
+    belief: A shock bar with a wide range but a small body, closing near one extreme, shows that one side was rejected, and price drifts toward the closing side.
+    claim:
+      when: bars with a range over 4 times the prior-week median range, a body under 40% of the range, and a close in the top or bottom 30% of the range
+      then: the 6-hour forward return goes in the direction of the close's position within the range
+      compared_to: all other bars
+      measure: mean_diff
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.004
+      code: |
+        rng = df.high - df.low
+        rmed = rng.rolling(168).median().shift(1)
+        pos = (df.close - df.low) / rng.replace(0, np.nan)
+        big = rng > 4 * rmed
+        smallbody = (df.close - df.open).abs() < 0.4 * rng
+        a = spaced(big & smallbody & ((pos > 0.7) | (pos < 0.3)), 6)
+        b = ~a
+        signal = np.sign(pos - 0.5).fillna(0)
+    why_no_lookahead: Range, body and close position come from the closed bar; the median range covers prior bars only.
+    how_it_trades: Go long after a hammer-like shock bar and short after an inverted one; hold 6 hours.
+  - id: volume_surge_without_move_precedes_volatility
+    belief: A large-transfer-style volume surge with no price move signals absorbed flow or pending news, and volatility follows.
+    claim:
+      when: bars with volume over 4 times the prior-week median and an absolute return below the prior-week median absolute return, one event per 12 bars
+      then: the absolute 12-hour forward return is larger
+      compared_to: all other bars
+      measure: abs_ratio
+      horizon_bars: 12
+      direction: above
+      min_effect: 1.30
+      code: |
+        absr = ret.abs()
+        scale = absr.rolling(168).median().shift(1)
+        vmed = df.volume.rolling(168).median().shift(1)
+        a = spaced((df.volume > 4 * vmed) & (absr < scale), 12)
+        b = ~a
+        signal = np.sign(ret)
+    why_no_lookahead: It uses the closed bar's volume and return against medians of the prior bars.
+    how_it_trades: After a quiet volume surge, place a breakout straddle with stop entries on both sides for 12 hours.
+  - id: confirmed_shock_follow_through_12h
+    belief: When the hour after a shock moves the same way, the market has accepted the news and the move extends over the next half day.
+    claim:
+      when: bars that follow a shock bar and close in the same direction as the shock, one event per 12 bars
+      then: the 12-hour forward return goes in the shock's direction by more than the round-trip cost
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.003
+      code: |
+        absr = ret.abs()
+        scale = absr.rolling(168).median().shift(1)
+        shock = absr > 4 * scale
+        prev = shock.shift(1).fillna(False).astype(bool)
+        same = np.sign(ret) == np.sign(ret.shift(1))
+        a = spaced(prev & same, 12)
+        b = ~a
+        signal = np.sign(ret.shift(1)).fillna(0)
+    why_no_lookahead: The shock is the prior bar and the confirmation is the current closed bar; nothing comes from later bars.
+    how_it_trades: Enter in the shock's direction at the close of the confirming bar and hold 12 hours.
+  - id: us_session_shock_continues_more_than_asia
+    belief: Shocks during US hours carry institutional and news flow and continue, while Asian-hour shocks on these Asia-heavy coins are more often local flow that fades.
+    claim:
+      when: shock bars closing between 13:00 and 20:00 UTC on any weekday, one event per 6 bars
+      then: the 6-hour forward return continues in the shock's direction
+      compared_to: shock bars closing between 00:00 and 07:00 UTC
+      measure: mean_diff
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.004
+      code: |
+        absr = ret.abs()
+        scale = absr.rolling(168).median().shift(1)
+        shock = absr > 4 * scale
+        us = (hour >= 13) & (hour <= 20)
+        asia = (hour >= 0) & (hour <= 7)
+        a = spaced(shock & us, 6)
+        b = spaced(shock & asia, 6)
+        signal = np.sign(ret)
+    why_no_lookahead: The bar's UTC hour and closed return are known at its close.
+    how_it_trades: Follow shocks in US hours and skip (or fade) shocks in Asian hours; hold 6 hours.
+  - id: shock_size_overreaction_24h
+    belief: The bigger the hourly shock relative to normal, the more it overshoots, so shock size predicts a reversal over the next day.
+    claim:
+      when: shock bars, one event per 24 bars, with the feature equal to the bar return divided by the prior-week median absolute return
+      then: the 24-hour forward return is negatively rank-correlated with the scaled shock size
+      compared_to: not used (rank correlation within shock bars)
+      measure: rank_corr
+      horizon_bars: 24
+      direction: negative
+      min_effect: 0.10
+      code: |
+        absr = ret.abs()
+        scale = absr.rolling(168).median().shift(1)
+        shock = absr > 4 * scale
+        a = spaced(shock, 24)
+        b = ~a
+        feature = ret / scale
+    why_no_lookahead: The feature is the closed bar's return scaled by a median of the prior bars.
+    how_it_trades: Fade the largest shocks, sized by their scaled magnitude, and hold 24 hours.
+  - id: exhausted_shock_after_extended_move_reverts
+    belief: A shock that arrives at the end of an already extended day-long move in the same direction is capitulation or blow-off and reverts.
+    claim:
+      when: shock bars in the same direction as a prior 24-hour move larger than 2 times the 24-hour volatility estimate, one event per 6 bars
+      then: the 6-hour forward return goes against the shock
+      compared_to: shock bars without that prior extended move
+      measure: mean_diff
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.004
+      code: |
+        absr = ret.abs()
+        scale = absr.rolling(168).median().shift(1)
+        shock = absr > 4 * scale
+        r24 = df.close.shift(1).pct_change(24)
+        sd24 = ret.rolling(168).std().shift(1) * np.sqrt(24)
+        ext = (np.sign(r24) == np.sign(ret)) & (r24.abs() > 2 * sd24)
+        a = spaced(shock & ext, 6)
+        b = spaced(shock & ~ext, 6)
+        signal = -np.sign(ret)
+    why_no_lookahead: The prior 24-hour move ends at the previous close and the volatility estimate uses prior bars only; the shock is the closed bar.
+    how_it_trades: Fade a shock that extends a big day-long move; hold 6 hours.
+  - id: shock_out_of_calm_continues
+    belief: A shock that comes out of a quiet regime is fresh information, such as a news event or a large transfer, and trends, while a shock inside an already volatile regime is noise.
+    claim:
+      when: shock bars where the prior 24-hour realized volatility is below its prior 30-day median, one event per 12 bars
+      then: the 12-hour forward return continues in the shock's direction
+      compared_to: shock bars where the prior 24-hour realized volatility is at or above that median
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.004
+      code: |
+        absr = ret.abs()
+        scale = absr.rolling(168).median().shift(1)
+        shock = absr > 4 * scale
+        rv24 = ret.rolling(24).std().shift(1)
+        calm = rv24 < rv24.rolling(720).median()
+        a = spaced(shock & calm, 12)
+        b = spaced(shock & ~calm, 12)
+        signal = np.sign(ret)
+    why_no_lookahead: The realized volatility is shifted to end at the prior bar, and its median covers past values only.
+    how_it_trades: Follow shocks that break a calm regime; hold 12 hours.
+notes: >
+  Ideas that repeat already_tried are excluded. That covers a plain fade of a large bar, continuation beyond the prior day's range, and weekend and retail volume-burst claims.
+  The shock is a closed-bar absolute return above 4 times the prior-week median absolute return.
+  Ideas 2 and 3 can contradict each other, and so can ideas 8 and 9 against idea 10; the data decides.
+  For the negative rank_corr claim, min_effect is the magnitude: it passes if the correlation is at or below -0.10.
+  The BTC comparison comes from setting these results against the BTC results in already_tried; no claim uses two symbols.

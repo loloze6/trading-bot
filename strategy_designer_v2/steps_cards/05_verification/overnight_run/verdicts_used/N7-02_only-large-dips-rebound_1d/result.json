@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 3-bar forward return after forecast >= 5 bars",
+    "value": 0.0034600553949840763,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.03142629641462
+    },
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2; at least 30 de-overlapped cases"
+  },
+  "supporting_check": {
+    "name": "mean excess 3-bar return on mild down days (0 < forecast < 2), 95% CI includes 0",
+    "value": 0.0015427479665609176,
+    "passed": true
+  },
+  "counts": {
+    "de-overlapped cases (forecast >= 5)": 746,
+    "forecast >= 5 bars": 1191,
+    "de-overlapped mild cases (0 < forecast < 2)": 935
+  },
+  "decided_by": "t is between -2 and 2 (inconclusive rule).",
+  "reading": "The coin's mean 3-bar return is over all bars of all its windows; events within 3 bars of the previous event in the same window are chained into one case valued at its first event; the mild group is de-overlapped the same way, and the supporting check is reported but does not change the plan's t rule."
+}

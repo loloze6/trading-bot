@@ -1,0 +1,34 @@
+run: n17_vol_channel_breakout_daily_1d / fold B
+observations:
+  - "Most break events were too rare to judge: the up-break long had n_a 9 on BTC and 12 on LTC, the capitulation flush 3 and 6, and the grind/shock split 6 and 6, all under the 30-bar floor, so these failed on sample size whatever their sign."
+  - "The plain Keltner up-break long nearly held on BTC: +3.65% net over 10 bars with 5 of 6 windows positive, but n_a was 9. On LTC it made only +0.68%, below the 1% bar, with windows split from -21.8% to +30.2%."
+  - "Volatility expansion after a band break nearly held: the whole-fold ratio was 1.24 on BTC and 1.33 on LTC, above 1.20, but two windows sat under 1 on each coin (BTC 0.56 and 0.67, LTC 0.90 and 0.95), and n_a was 22 and 26."
+  - "Distance above the upper band predicted weaker, not stronger, follow-through on LTC: rank_corr was -0.138, and all 4 defined windows were negative (-0.32 to -0.64)."
+  - "On BTC the same distance gave -0.092 overall, with the windows turning from +0.31 and +0.73 early to -0.09 and -0.25 late."
+  - "After an up-break, the exit at the channel mean worked against LTC: bars still above the mean underperformed bars below it by 0.83% over 5 bars, negative in all 5 defined windows. BTC showed +2.5% with mixed windows."
+  - "Downside breaks did not continue on BTC: the short-side effect was -4.3% over 10 bars, negative in all 3 defined windows, so price did better than usual after closing below the lower band."
+  - "The deep-flush bounce long was still negative on both coins (BTC -1.6%, LTC -3.5% over 5 bars) on 3 and 6 events, so the reversion seen elsewhere did not show at the extreme low tail."
+  - "Volume-confirmed up-breaks beat thin ones on BTC by +7.9%, positive in all 4 defined windows, but n_b was 6. LTC had one window at -10.2%."
+  - "The slow wide channel (SMA50 plus 3 ATR50) split by coin: BTC +4.4% net over 20 bars, LTC -5.6%, with LTC's first window at -33%."
+next_claim:
+  id: channel_position_reversion_all_bars
+  belief: "On daily BTC and LTC, a close stretched far from its 20-day EMA in ATR units tends to pull back toward the mean over the next week, so the distance from the channel mean is a reversion signal rather than a breakout signal."
+  claim:
+    when: "every daily bar where the 20-day EMA and 20-day ATR are defined"
+    then: "the further the close sits above (below) the EMA in ATR units, the lower (higher) the 5-bar forward return"
+    compared_to: "the ranking across all such bars (rank correlation, no baseline set)"
+    measure: rank_corr
+    horizon_bars: 5
+    direction: positive
+    min_effect: 0.10
+    code: |
+      tr = pd.concat([df.high - df.low, (df.high - df.close.shift(1)).abs(), (df.low - df.close.shift(1)).abs()], axis=1).max(axis=1)
+      atr = tr.rolling(20).mean()
+      mid = df.close.ewm(span=20, adjust=False).mean()
+      feature = -(df.close - mid) / atr
+      a = atr.notna() & (atr > 0) & (df.index >= df.index[19])
+      b = ~a
+      signal = np.sign(feature).replace(0, 1.0)
+  why_no_lookahead: "The EMA, the ATR and the close all use only bars at or before the current close; the only shift is shift(1) on past closes."
+  how_it_trades: "Each day, lean against the stretch: short or flat when the close is well above the EMA in ATR units, long when it is well below, and hold for about 5 days."
+why: "The breakout's information looked like reversion, not continuation: LTC's distance-above-band correlation was negative in every defined window, BTC turned negative late, BTC downside breaks were followed by better-than-usual returns, and the mid exit hurt on LTC. Testing this on all ~730 bars avoids the n<30 failures, and |0.10| over 5-bar horizons is about one effective standard error above noise, so it is a real but modest bar."

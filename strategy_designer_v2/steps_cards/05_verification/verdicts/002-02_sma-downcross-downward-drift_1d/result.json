@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "excess forward 20-bar return while short (vs all-bar window mean), non-overlapping blocks",
+    "value": 0.010257592557259975,
+    "statistic": {
+      "name": "t of the mean excess across short blocks",
+      "value": 0.318951062520062
+    },
+    "threshold": "confirm if excess < 0 with t <= -2 and slope not positive; reject if excess > 0 with t >= +2; otherwise inconclusive; inconclusive if fewer than 6 short blocks (120 short bars)"
+  },
+  "supporting_check": {
+    "name": "slope of forward 20-bar return on |forecast| within short bars (should be <= 0); share of short blocks with negative excess",
+    "value": -0.004591337189494648,
+    "passed": true,
+    "share_negative_excess_blocks": 0.5
+  },
+  "counts": {
+    "short_blocks": 20,
+    "short_bars": 437
+  },
+  "decided_by": "Inconclusive: t lies between -2 and +2.",
+  "reading": "Each short block's excess is its forward 20-bar return (grid bars 0, 20, 40, ... of each window with forecast < 0) minus the mean forward 20-bar return over all bars of its own window, tested by the ordinary t of the mean. The minimum counts require both 6 short blocks and 120 short bars. The slope regresses forward 20-bar return on |forecast| over all short bars."
+}

@@ -1,0 +1,38 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled mean signed 10-bar excess return over holding, |forecast| >= 10",
+    "value": 0.049148782788112515,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.270209443439317
+    },
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "per-regime signed excess return (trending mean 0.08430239198435946 t 2.905230821505342; mean_reversion mean -0.033509703700360015 t -1.7500909457178155)",
+    "value": 2.905230821505342,
+    "passed": false,
+    "trending": {
+      "mean": 0.08430239198435946,
+      "sign": 1.0,
+      "t": 2.905230821505342
+    },
+    "mean_reversion": {
+      "mean": -0.033509703700360015,
+      "sign": -1.0,
+      "t": -1.7500909457178155
+    }
+  },
+  "counts": {
+    "non-overlapping cases (pool)": 124,
+    "trending cases": 87,
+    "mean_reversion cases": 37
+  },
+  "decided_by": "Pooled mean signed excess return > 0 with t >= 2 on non-overlapping cases.",
+  "reading": "Situation taken as the recorded Donchian component value > 0 (close in the upper part of its 20-day range) with side from the `regime` label (trending long, mean_reversion short) since the 200-day SMA cannot be rebuilt inside the windows; holding is the coin's mean of all overlapping 10-bar forward returns pooled over its windows; cases are the grid bars 0,10,20,... of each window with |forecast| >= 10; the supporting check passes when both regime sides have a positive mean."
+}

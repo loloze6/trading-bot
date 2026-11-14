@@ -1,0 +1,33 @@
+run: fake_01_btc_overreaction
+observations:
+  - "The money went to fees rather than to wrong calls in W1 and W3, where full_size gross_pnl was +166.6 and +103.9 but fees_paid were 668.6 and 641.8 (cost_drag_pct 401 and 618), turning both into net losses of -50.1% and -53.8%."
+  - "W2, W4, W5 and W6 lost before costs as well, with full_size gross_pnl of -428.0, -45.5, -103.4 and -202.9, so the edge was not even gross-positive in four of six windows."
+  - "The losing side changes by window. Shorts dominate the losses in W4 (short_net -554.2 vs long_net -44.4) and W6 (-512.4 vs -197.7), and longs dominate in W1 (-360.4 vs -141.6) and W5 (-430.5 vs -194.7)."
+  - "The book churns far faster than the 12-bar horizon it was judged on, with avg_hold_bars of 3.71 to 4.04, about 1,900 to 1,990 trades per window and mean_abs_alloc_change of 0.56 to 0.63 per bar in full_size."
+  - "The forecast is spread wide and often pinned. Its 10th and 90th percentiles sit near -17 and +16 in every window, share_at_cap is 0.13 to 0.16, and share_near_zero is only 0.11 to 0.13, so exposure_pct is about 99.8 to 99.97 throughout."
+  - "Forecast size barely tracked outcome, with corr_all_bars_core of 0.029 (W1), -0.013 (W2), 0.031 (W3), 0.024 (W4), 0.026 (W5) and 0.011 (W6), and next-bar sign agreement of only 0.531 to 0.549."
+  - "On the 12-bar event horizon, the sign split behaved as claimed in W1 (strength_positive mean_fwd_ret -0.010% vs strength_negative -0.098%) and W2 (-0.195% vs -0.253%), but inverted in W3 (-0.091% vs -0.022%) and W4 (+0.202% vs +0.315%)."
+  - "The window drift swamps the spread. In W4 and W6 both strength signs were followed by about +0.2% to +0.3% over 12 bars, and in W2 both by about -0.2% to -0.25%; only share_up separates the signs consistently (e.g. W6 0.588 vs 0.496, W5 0.517 vs 0.443)."
+  - "The deepest drawdown was W2 at max_drawdown_pct_core -82.0%, front-loaded in bars 110 to 165 (worst bars 111 at -66.65 and 110 at -40.55, plus 165 at -37.19), with equity deciles falling steadily from 819 to 188."
+  - "Drawdowns elsewhere were grinds rather than shocks. W5 equity deciles fell monotonically from 832 to 375 while its worst single bar was only -24.75, and W6 deciles fell from 873 to 290 with worst bar -35.45."
+  - "Per-trade economics are hopeless at this turnover, with win_rate_pct of 36.5 to 47.9 and avg_net_pct of -0.20% to -0.35% per trade, against the 0.15% round-trip cost."
+  - "Halving size through vol_target did not change the sign. Net returns were still -23.0% (W1) to -47.7% (W2), and W3 gross_pnl was +10.7 against fees of 364.6 (cost_drag_pct 3417)."
+next_claim:
+  id: vwap_anchor_stretch_reverts_slow
+  belief: "BTC hourly price that has stretched away from its two-day volume-weighted anchor tends to drift back to it within a day, and that stretch changes slowly enough to hold a position through the reversion."
+  claim:
+    when: "every bar, graded by the smoothed log distance of the close from its 48-hour volume-weighted average price, in units of daily volatility"
+    then: "price moves back toward the 48-hour VWAP over the next 24 hours, more so the larger the stretch"
+    compared_to: "bars trading near their 48-hour VWAP or stretched the other way"
+    horizon_bars: 24
+    min_effect: 0.025
+    code: |
+      sd = ret.rolling(168, min_periods=168).std().shift(1)
+      pv = (df.close * df.volume).rolling(48, min_periods=48).sum()
+      vwap = pv / df.volume.rolling(48, min_periods=48).sum()
+      stretch = np.log(df.close / vwap) / (sd * np.sqrt(24))
+      event = pd.Series(True, index=df.index)
+      strength = -stretch.ewm(span=6, min_periods=6).mean()
+  why_no_lookahead: "The VWAP, the volatility (shifted one bar) and the EWM smoothing use only bars at or before the current close."
+  how_it_trades: "Hold a graded position against the smoothed stretch from the 48-hour VWAP, sized by its magnitude; the slow anchor and smoothing aim for holds near a day rather than 4 bars."
+why: "The book had a stable positive rank edge (0.035 at 12h, 6 of 6 windows) but was destroyed by about 3.8-bar holds and 0.6 per-bar allocation churn, so the next test is a slower, anchor-based reversion strength whose horizon matches its holding time."

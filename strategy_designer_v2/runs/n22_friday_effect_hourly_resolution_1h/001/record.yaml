@@ -1,0 +1,812 @@
+brief: n22_friday_effect_hourly_resolution_1h.md
+fold: B
+symbols:
+- BTCUSD
+- ETHUSD
+- LTCUSD
+bar_size: 1h
+claims:
+- id: friday_full_day_vs_other_weekdays
+  belief: The daily Friday effect shows up at hourly resolution as a larger 24-hour
+    return from Friday 00:00 UTC to Saturday 00:00 UTC than the same 24-hour span
+    on Monday to Thursday.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.00428912684388209
+      n_a: 106
+      n_b: 417
+      windows:
+      - -0.0006637994189110218
+      - 0.00809506412165937
+      - 0.015854677040734358
+      - -0.009667133063338136
+      - 0.014768101673813606
+      - -0.002389134871720745
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.002889828469899063
+      n_a: 106
+      n_b: 417
+      windows:
+      - 0.003179407225794826
+      - 0.019822680236303045
+      - 0.010347945536166844
+      - -0.007747807347860595
+      - 0.007044163873652058
+      - -0.014872282225349606
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.01230166750788271
+      n_a: 106
+      n_b: 417
+      windows:
+      - 0.010557117816007613
+      - 0.02711919700579138
+      - 0.02049131228033027
+      - -0.0027278666830839182
+      - 0.026027552847015144
+      - -0.006965012094496259
+      verdict: fail
+      why: null
+  code: 'at0 = hour == 0
+
+    a = at0 & (dow == 4)
+
+    b = at0 & dow.isin([0, 1, 2, 3])
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: friday_asia_session_drift
+  belief: The Friday premium is paid during the Asian session, as Asian participants
+    position for the weekend before Europe opens.
+  measure: mean_diff
+  horizon_bars: 8
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0014395638386346579
+      n_a: 106
+      n_b: 417
+      windows:
+      - -0.001670989879673514
+      - 0.0017681941678742365
+      - 0.0014901504420446639
+      - -0.0014017407501332802
+      - 0.0023156435248242245
+      - 0.0058752516866376935
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.0013474867714833192
+      n_a: 106
+      n_b: 417
+      windows:
+      - 0.002195420597877278
+      - 0.007099232480846091
+      - -0.0008700670033001557
+      - -0.00012987348022991147
+      - -7.68522432142482e-05
+      - -0.00026564245081872715
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.005509843719960928
+      n_a: 106
+      n_b: 417
+      windows:
+      - -0.0008899943556659635
+      - 0.016693006225422836
+      - 0.0062926103648714826
+      - 0.0029269777350820186
+      - 0.0075191123800150104
+      - 0.0007386498880800408
+      verdict: pass
+      why: null
+  code: 'at0 = hour == 0
+
+    a = at0 & (dow == 4)
+
+    b = at0 & dow.isin([0, 1, 2, 3])
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: friday_europe_morning_drift
+  belief: The Friday premium is concentrated in the European morning, before US equities
+    open, as European desks de-risk shorts ahead of the weekend.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0008188625015946157
+      n_a: 106
+      n_b: 417
+      windows:
+      - -0.005847161707046925
+      - 0.001415909793959254
+      - -0.0032660951229592514
+      - -0.0028476015792597374
+      - 0.012164847859591254
+      - -0.006529799163373285
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.001130005714649319
+      n_a: 106
+      n_b: 417
+      windows:
+      - -0.0065297817541211094
+      - 0.002187108913971619
+      - -0.003729103047877
+      - 0.00014053408516040964
+      - 0.010294054940336543
+      - -0.009249198628593133
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.0016087163553644393
+      n_a: 106
+      n_b: 417
+      windows:
+      - -0.00539203126520057
+      - -0.0005429875603891882
+      - -0.0027756060691616563
+      - 0.0002185883064876838
+      - 0.008195944042738726
+      - -0.009250026354453432
+      verdict: fail
+      why: null
+  code: 'at8 = hour == 8
+
+    a = at8 & (dow == 4)
+
+    b = at8 & dow.isin([0, 1, 2, 3])
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: friday_us_session_drift
+  belief: The Friday premium lives in the US cash session, as US flows (ETF creations,
+    risk-on equity tone into the weekly close) lift crypto.
+  measure: mean_diff
+  horizon_bars: 7
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0012462057395841216
+      n_a: 106
+      n_b: 417
+      windows:
+      - 0.00024922092758648384
+      - 0.004813856364644037
+      - 0.0117549307281436
+      - -0.002083095805310874
+      - -0.0035639819552881497
+      - -0.003181821840544953
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.0012230759239601429
+      n_a: 106
+      n_b: 417
+      windows:
+      - -0.00187030219910369
+      - 0.00928772722710169
+      - 0.01281563748493043
+      - -0.0025929393334806067
+      - -0.003735201292223379
+      - -0.005881560602455923
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.003643518352736857
+      n_a: 106
+      n_b: 417
+      windows:
+      - 0.0025558006282141773
+      - 0.011517089683094653
+      - 0.012831820715141594
+      - -0.0036163333716316146
+      - 0.0027893026885111383
+      - -0.003554577956272196
+      verdict: fail
+      why: null
+  code: 'at14 = hour == 14
+
+    a = at14 & (dow == 4)
+
+    b = at14 & dow.isin([0, 1, 2, 3])
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: friday_post_us_close_drift
+  belief: The Friday premium arrives after US equities close (21:00 to 24:00 UTC),
+    when thin liquidity and weekend-long positioning push price up.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.0015
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0023804594631937244
+      n_a: 106
+      n_b: 417
+      windows:
+      - 0.006483677995461512
+      - 0.00022435867064563085
+      - 0.005078920271377336
+      - -0.0032387999352591155
+      - 0.004329624290998668
+      - 0.0013905908696441537
+      verdict: pass
+      why: null
+    ETHUSD:
+      effect: 0.0015940563231432443
+      n_a: 106
+      n_b: 417
+      windows:
+      - 0.009412195736538821
+      - 0.001207797804257239
+      - 0.0019084484636914508
+      - -0.005185026787953042
+      - 0.001664122913209503
+      - 0.000515695928682656
+      verdict: pass
+      why: null
+    LTCUSD:
+      effect: 0.004620355509994531
+      n_a: 106
+      n_b: 417
+      windows:
+      - 0.013942704128685783
+      - -0.001212166977162556
+      - 0.0038650255804130937
+      - -0.002238476996859322
+      - 0.008244991869271858
+      - 0.0047594765067265656
+      verdict: fail
+      why: null
+  code: 'at21 = hour == 21
+
+    a = at21 & (dow == 4)
+
+    b = at21 & dow.isin([0, 1, 2, 3])
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: thursday_evening_prepositioning
+  belief: Part of the Friday daily return is front-run on Thursday evening, so the
+    late-Thursday window from the US afternoon to the UTC day boundary is stronger
+    than on other weekdays.
+  measure: mean_diff
+  horizon_bars: 8
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.004300145230683275
+      n_a: 104
+      n_b: 313
+      windows:
+      - -0.007342840188877832
+      - -0.0047152673916174195
+      - 0.002526098326752644
+      - 0.002331446372017896
+      - -0.0192077149819068
+      - 0.0004973744938052376
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.004840430046904674
+      n_a: 104
+      n_b: 313
+      windows:
+      - -0.007591053113133496
+      - -0.0028561204079288575
+      - 0.003255355369287356
+      - 0.006877310455553279
+      - -0.028458446911841587
+      - -0.00044043950595169063
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.004885947777678434
+      n_a: 104
+      n_b: 313
+      windows:
+      - -0.01342578790976812
+      - -0.0020871323692482767
+      - 0.005970706063284562
+      - 0.003985653385394059
+      - -0.025371944164496174
+      - 0.0017486820425718554
+      verdict: fail
+      why: null
+  code: 'at16 = hour == 16
+
+    a = at16 & (dow == 3)
+
+    b = at16 & dow.isin([0, 1, 2])
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: friday_broad_hourly_drift
+  belief: The Friday effect is a broad drift rather than a few hours, so a larger
+    share of Friday hours (00:00 to 23:00 UTC closes) close up than hours on other
+    days.
+  measure: hit_rate
+  horizon_bars: 1
+  direction: positive
+  min_effect: 0.02
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.015120267136664256
+      n_a: 2543
+      n_b: 10008
+      windows:
+      - 0.004727438706311926
+      - 0.022342995169082114
+      - 0.05819327731092433
+      - -0.014190821256038655
+      - 0.00961483781447614
+      - 0.01144179894179892
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.002936384671264225
+      n_a: 2543
+      n_b: 10008
+      windows:
+      - 0.013986697965571171
+      - 0.019394714407502123
+      - 0.04698879551820734
+      - -0.01157407407407407
+      - -0.025229175196760822
+      - -0.026124338624338606
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.013577618273707404
+      n_a: 2543
+      n_b: 10006
+      windows:
+      - 0.041536254564423614
+      - 0.0368002273373117
+      - 0.03598664004017332
+      - -0.026565122524337015
+      - 0.02274407442791504
+      - -0.02738095238095234
+      verdict: fail
+      why: null
+  code: 'a = dow == 4
+
+    b = dow.isin([0, 1, 2, 3])
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: friday_intraday_momentum
+  belief: On Fridays, return accumulated since 00:00 UTC predicts the next hours,
+    because weekend-positioning flow is persistent within the day.
+  measure: rank_corr
+  horizon_bars: 4
+  direction: positive
+  min_effect: 0.06
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.02223046813573573
+      n_a: 1907
+      n_b: 1907
+      windows:
+      - 0.1169917102830229
+      - -0.3109747031756398
+      - 0.1308374500184186
+      - 0.05852382110799331
+      - -0.03230423179008809
+      - -0.02806558880862287
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.02457978197063434
+      n_a: 1907
+      n_b: 1907
+      windows:
+      - 0.10856624668715228
+      - -0.07126655720928313
+      - 0.10504719831838459
+      - 0.0745722723855633
+      - -0.1282454502268744
+      - -0.010374604182653721
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.014197370029082727
+      n_a: 1907
+      n_b: 1907
+      windows:
+      - 0.19560238628577664
+      - -0.09898267590120985
+      - -0.006248303144275067
+      - -0.051719037271484254
+      - -0.2390795969319575
+      - 0.033053040086383184
+      verdict: fail
+      why: null
+  code: 'c0 = df.close.where((dow == 4) & (hour == 0)).ffill()
+
+    feature = df.close / c0 - 1
+
+    a = (dow == 4) & hour.between(3, 20)
+
+    b = ~a
+
+    '
+- id: friday_after_down_week_rebound
+  belief: The Friday premium is larger after a falling week, because weekend short-covering
+    is stronger when shorts have built up.
+  measure: mean_diff
+  horizon_bars: 1
+  direction: positive
+  min_effect: 0.0002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.00016468213027219695
+      n_a: 1248
+      n_b: 1295
+      windows:
+      - -0.0001804849957516325
+      - 0.0003768291742975155
+      - 0.0008954665188232508
+      - 0.00024251819755078923
+      - 0.0007648193125763768
+      - -0.00024856841360758607
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.0006022883567892775
+      n_a: 1127
+      n_b: 1416
+      windows:
+      - 0.0009401868388095439
+      - 6.472572459581072e-05
+      - 0.000864601764882142
+      - 0.00015720866154350876
+      - 0.0016559611630868154
+      - 0.0004064716462833257
+      verdict: pass
+      why: null
+    LTCUSD:
+      effect: 6.214101800560974e-05
+      n_a: 1343
+      n_b: 1200
+      windows:
+      - 0.00047907812127037186
+      - 0.0013489841033100113
+      - 0.0004876453116246967
+      - 0.0005298097042482266
+      - -0.0022587360333966248
+      - -0.0004891424588689392
+      verdict: fail
+      why: null
+  code: 'r96 = df.close / df.close.shift(96) - 1
+
+    wk = r96.where((dow == 4) & (hour == 0)).ffill()
+
+    fri = dow == 4
+
+    a = fri & (wk < 0)
+
+    b = fri & (wk >= 0)
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: friday_high_participation_hours
+  belief: Friday upside is carried by hours with unusually high participation, when
+    real weekend-positioning flow arrives, not by quiet hours.
+  measure: mean_diff
+  horizon_bars: 4
+  direction: positive
+  min_effect: 0.001
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0007559336426002196
+      n_a: 1385
+      n_b: 1158
+      windows:
+      - -0.0013526807421648493
+      - 0.0006516310803147299
+      - 0.003275240865843726
+      - 0.0002483702158876448
+      - 0.0010691813484102124
+      - 0.0011038741222569061
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.00047189209330382475
+      n_a: 1261
+      n_b: 1282
+      windows:
+      - 0.00012325596141663626
+      - 0.0009874829468244088
+      - -0.00173777935073201
+      - -0.0005368464505465644
+      - 0.002016955196334321
+      - 0.004280512613371841
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.0007327838540479518
+      n_a: 1297
+      n_b: 1246
+      windows:
+      - -0.0014644351169512456
+      - 0.003862918831374274
+      - 0.0005484774486780397
+      - 0.000854287247829704
+      - 0.0016036738444212308
+      - 0.0004269119856176581
+      verdict: fail
+      why: null
+  code: 'med = df.volume.groupby(hour).transform(lambda s: s.shift(1).rolling(20).median())
+
+    fri = dow == 4
+
+    a = fri & (df.volume > med)
+
+    b = fri & (df.volume <= med)
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: friday_us_session_net_profit
+  belief: Holding only the Friday US-session hours captures enough of the effect to
+    pay the 0.15% round trip on every coin.
+  measure: net_return
+  horizon_bars: 7
+  direction: positive
+  min_effect: 0.001
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0007574884434158862
+      n_a: 106
+      n_b: 106
+      windows:
+      - -0.0025907702300832364
+      - 0.003273028376113597
+      - 0.010128442412663032
+      - -0.0008328631911567235
+      - -0.0003747181200173058
+      - -0.004397827814693776
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.0009119306211815476
+      n_a: 106
+      n_b: 106
+      windows:
+      - -0.0063936246631315224
+      - 0.006975022373982011
+      - 0.01058167001634433
+      - 0.0002524344239827811
+      - -0.00010999974480568149
+      - -0.004959872504395784
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.002943517965162373
+      n_a: 106
+      n_b: 106
+      windows:
+      - -0.0007101019895041008
+      - 0.011299408175751244
+      - 0.009417678705322076
+      - -0.002768198954704801
+      - 0.005457605053228424
+      - -0.00421139147963257
+      verdict: fail
+      why: null
+  code: 'a = (dow == 4) & (hour == 14)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: friday_full_day_net_profit
+  belief: A single Friday 00:00 to 24:00 UTC hold, entered on hourly bars, pays the
+    round-trip cost on all three coins.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.003844694086293406
+      n_a: 106
+      n_b: 106
+      windows:
+      - -0.0038111622227143247
+      - 0.009001064664794176
+      - 0.00871144556782451
+      - -0.005065783646580575
+      - 0.02005799549812902
+      - -0.005268555229246154
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.002680665482164259
+      n_a: 106
+      n_b: 106
+      windows:
+      - -0.006068129061097837
+      - 0.018346758683659776
+      - 0.0034800543641777455
+      - -0.0018808792035466617
+      - 0.01669758633921998
+      - -0.01357664922478806
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.010055318834282038
+      n_a: 106
+      n_b: 106
+      windows:
+      - 0.0007941434277807693
+      - 0.031476785779607934
+      - 0.008587851451559745
+      - -0.0020939921524618025
+      - 0.029849890234854126
+      - -0.007174210204392788
+      verdict: fail
+      why: null
+  code: 'a = (dow == 4) & (hour == 0)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: friday_post_us_close_net_profit
+  belief: The part of the Friday premium that is most consistent across coins and
+    windows arrives in the three hours after US equities close, and it is large enough
+    in absolute terms to pay the round trip.
+  measure: net_return
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.0005
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.00042418332325093824
+      n_a: 106
+      n_b: 106
+      windows:
+      - 0.0037067089434718484
+      - -0.00033709717189912294
+      - 0.0019198979976406418
+      - -0.0037063142993538187
+      - 0.0024527386883377252
+      - -0.0014500323198449972
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.001210619989717218
+      n_a: 106
+      n_b: 106
+      windows:
+      - 0.00838927512692338
+      - 0.002280877654296035
+      - 0.00021690775340109923
+      - -0.003798154712511417
+      - 0.0009350062934049843
+      - -0.0007559396534184001
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.0031078067969979987
+      n_a: 106
+      n_b: 106
+      windows:
+      - 0.009810703277289194
+      - 0.0013909063413001157
+      - 0.0006979393998614138
+      - -0.0026308505335196587
+      - 0.0074008108694333715
+      - 0.0017480665469105294
+      verdict: pass
+      why: null
+  code: 'a = (dow == 4) & (hour == 21)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: friday_after_weak_thursday_evening
+  belief: The Thursday-evening weakness is pre-weekend selling that is bought back
+    on Friday, so the Friday 24-hour return is larger when Thursday 16:00 to Friday
+    00:00 UTC closed down.
+  measure: mean_diff
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.011936786082509797
+      n_a: 53
+      n_b: 53
+      windows:
+      - 0.01301965562583703
+      - 0.010808931093652104
+      - 0.03271443702783056
+      - -0.004980605795886803
+      - 0.031486978995697266
+      - -0.003431980100678809
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.009013055826404982
+      n_a: 51
+      n_b: 55
+      windows:
+      - 0.014017043001351462
+      - 0.0004561324734251998
+      - 0.019922470466630225
+      - -0.015125679145896354
+      - 0.03759781221255725
+      - 0.0016389791498155944
+      verdict: pass
+      why: null
+    LTCUSD:
+      effect: 0.006390616748664155
+      n_a: 56
+      n_b: 50
+      windows:
+      - 0.00288617443828589
+      - 0.048794143421393016
+      - 0.02270589095798436
+      - -0.02409787731581749
+      - 0.01473815084279689
+      - 0.001070934467982421
+      verdict: pass
+      why: null
+  code: 'r8 = df.close / df.close.shift(8) - 1
+
+    fri0 = (dow == 4) & (hour == 0)
+
+    a = fri0 & (r8 < 0)
+
+    b = fri0 & (r8 >= 0)
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+profit: 'none: no return claim passed'

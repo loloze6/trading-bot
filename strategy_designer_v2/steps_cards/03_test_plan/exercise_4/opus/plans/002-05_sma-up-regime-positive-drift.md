@@ -1,0 +1,13 @@
+---
+idea: 002-05_sma-up-regime-positive-drift
+brief: 002_moving-average-cross-trend-persistence
+data-instruments: BTC/USDT
+data-bar: 1d
+data-period: fold A
+---
+Forecast: The idea needs one indicator, the spread between a 20-day and a 50-day simple moving average of the close: (SMA20 − SMA50) / SMA50 × 100. Each average includes the current close. The spread is put on its own scale: it is divided by the mean absolute value of its previous 60 values and multiplied by 10, capped at ±20. Negative values are then clipped to 0. - Positive: on every bar where SMA20 is above SMA50, which is exactly the stretch from an upward cross to the next downward cross. The forecast grows continuously with how far the short average sits above the long one. - Zero: whenever SMA20 is at or below SMA50, because the idea makes no claim about the stretches after a downward cross. - Never negative.
+Config: 002-05_sma-up-regime-positive-drift_config.json
+Confirm: The horizon is 1 bar. Each daily close-to-close return of BTC is counted once. - Main measure: the mean next-bar return on bars where the forecast is above 0, minus the mean next-bar return on all ready bars of the same window. This "in-stretch excess" must be positive in at least 4 of the 6 windows. Pooled across windows, it must be positive with a Welch t-statistic of 2 or more. - Supporting check: the share of up days inside the stretches must exceed the share of up days on all ready bars, pooled.
+Reject: The idea is rejected if the pooled in-stretch excess is 0 or negative, or if it is positive in 2 or fewer of the 6 windows. It is rejected outright, as a reversal, if the pooled excess is negative with a t-statistic of −2 or lower. That would mean upward crosses mark exhaustion rather than the start of a trend.
+Inconclusive: Any of these neither confirms nor rejects the idea: - the pooled excess is positive but its t-statistic is below 2; - it is positive in exactly 3 of the 6 windows; - the main measure confirms but the up-day share does not.
+Deviation: The position size grows with the gap between the two averages instead of being a fixed long through the whole stretch. This weights the test toward bars where the short average is far above the long one, and early bars after a cross carry little size. The test compares in-stretch bars with all bars of the same window, not with random stretches of matched length. The averages include the current close, and the brief's other variant (price crossing the long average) is not tested. Warmup takes about 71 of each window's ~122 bars if no earlier history is supplied, so only about 50 bars per window may be scored.

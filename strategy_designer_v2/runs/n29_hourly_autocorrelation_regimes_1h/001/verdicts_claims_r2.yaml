@@ -1,0 +1,48 @@
+claims_file: strategy_designer_v2/runs/n29_hourly_autocorrelation_regimes_1h/001/claims_r2.yaml
+fold: B
+bar_size: 1h
+symbols:
+- BTCUSD
+- ETHUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  six_hour_block_echo_net:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: -0.00021169044443693327
+        t_stat: -0.11
+        n_a: 68
+        n_b: 68
+        windows:
+        - 0.002615564138147971
+        - 0.0036016390754482976
+        - -0.0010866443138408594
+        - -0.0011846720234836143
+        - -0.0011997651677093163
+        - -0.0031942883134234174
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ETHUSD:
+        verdict: fail
+        effect: -0.002158513576314469
+        t_stat: -0.79
+        n_a: 86
+        n_b: 86
+        windows:
+        - -0.007314845093750199
+        - -0.00047448748540281777
+        - 0.0005194396245754378
+        - 0.005120892095034153
+        - -0.020134877371275717
+        - 0.005441942641616019
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

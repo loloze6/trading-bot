@@ -1,0 +1,48 @@
+claims_file: strategy_designer_v2/runs/_replications/donchian_72h_breakout/claims.yaml
+fold: C
+bar_size: 1h
+symbols:
+- LTCUSD
+- XRPUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  donchian_72h_breakout:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.00290464529312151
+        t_stat: 0.61
+        n_a: 213
+        n_b: 213
+        windows:
+        - 0.003279430033684799
+        - -0.0019324843240290741
+        - 0.004298529527694788
+        - 0.019498696277741225
+        - 0.006235583107329646
+        - -0.01043499040674361
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: 0.009445825066254103
+        t_stat: 1.59
+        n_a: 196
+        n_b: 196
+        windows:
+        - 0.03911969707757219
+        - 0.011012618531707544
+        - -0.009473420821788786
+        - 0.016738403461146134
+        - 0.027666281600952327
+        - -0.016989014709315294
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

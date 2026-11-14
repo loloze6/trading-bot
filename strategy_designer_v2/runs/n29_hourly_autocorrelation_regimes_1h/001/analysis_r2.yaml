@@ -1,0 +1,33 @@
+run: n29_hourly_autocorrelation_regimes_1h_fold_B
+observations:
+  - The lag-24 same-hour echo was the only claim to pass, with rank_corr 0.0216 on BTC and 0.0215 on ETH; each coin had one window against the sign (BTC window 2 at -0.041, ETH window 2 at -0.0009).
+  - The echo ranks well but does not pay at one bar. Trading it on shocks netted -0.00091 on BTC and -0.0020 on ETH after cost, with 5 of 6 windows negative on BTC and 5 of 6 negative on ETH.
+  - The one-week lag-1 regime switch split the coins. It held on ETH (0.000274, 5 of 6 windows positive) but failed on BTC (-0.000063, 4 of 6 windows negative).
+  - The 14-day variance-ratio 24h rule also split the coins, in the other direction. It netted 0.0033 on BTC with 5 of 6 windows positive and -0.0050 on ETH with 4 of 6 windows negative.
+  - Conditioning large hourly shocks on the lag-1 state lost money both ways. Fading in the reversal state netted -0.00093 on BTC and -0.0025 on ETH; following in the momentum state netted -0.0015 on BTC and -0.0033 on ETH.
+  - The variance-ratio move-size belief came out reversed. Next 24h absolute moves in the trending state (vr > 1.2) were 0.78 times those in the reverting state (vr < 0.85) on both coins, but only 4 of 6 windows per coin sat below 1.
+  - The off-hours reversal idea nearly held in reverse. The Asian-hours hit-rate edge was -0.0147 on BTC and -0.0067 on ETH, with 5 of 6 windows negative on each, but both are below the 0.02 size asked.
+  - Agreement between the 2-day and 14-day lag-1 autocorrelation added nothing. The 3-bar mean_diff was 0.00014 on BTC and -0.00032 on ETH, with windows mixed on both.
+  - Rising volume did not rescue the momentum state. The 12-bar mean_diff was -0.00094 on BTC and 0.00068 on ETH, and per-window values swung from -0.0123 to 0.0071.
+next_claim:
+  id: six_hour_block_echo_net
+  belief: The same-hour echo that ranks next-hour returns on both coins also holds for a 6-hour block, where the 6h return that starts now repeats or reverses the same 6h block a day earlier according to the 14-day sign of their correlation, and the block move is large enough to pay the cost.
+  claim:
+    when: bars where the 14-day correlation between each 6h return and the same 6h return 24 hours earlier is clearly non-zero, one event per 6 bars
+    then: trading in the direction of that correlation's sign times yesterday's same 6h block return earns more than the round-trip cost over the next 6 hours
+    compared_to: zero after the 0.15% round-trip cost
+    measure: net_return
+    horizon_bars: 6
+    direction: positive
+    min_effect: 0.0005
+    code: |
+      r6 = df.close.pct_change(6)
+      acb = r6.rolling(336).corr(r6.shift(24))
+      echo = df.close.shift(18) / df.close.shift(24) - 1
+      cond = (acb.abs() > 0.10) & acb.notna() & echo.notna()
+      a = spaced(cond, 6)
+      b = ~a
+      signal = np.sign(acb) * np.sign(echo)
+  why_no_lookahead: The echo block runs from t-24 to t-18, and acb pairs r6 with r6 24 bars earlier, both ending at or before bar t. Only the judge's forward return looks past t.
+  how_it_trades: At each event bar, go long or short for 6 hours in the direction of sign(acb) times yesterday's same-block return, then exit.
+why: The echo is the only state that passed on both coins, but it cannot pay 0.15% at one bar. Testing it over a 6-hour block is the one distinct way left to see whether it scales to a move larger than the cost.

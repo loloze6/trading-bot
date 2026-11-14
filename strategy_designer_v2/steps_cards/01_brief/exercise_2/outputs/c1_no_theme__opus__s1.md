@@ -1,0 +1,5 @@
+---
+---
+When a coin falls sharply on unusually heavy volume, part of the selling comes from traders who must sell regardless of price: leveraged longs being liquidated, stop orders being triggered in a cascade, and holders capitulating under margin or loss limits. Because this forced flow is driven by position size and price thresholds rather than by new information about the coin's value, it can push the price below the level that discretionary buyers consider fair. Those discretionary buyers and market makers are slow to step in during the cascade, since they face the same uncertainty and widening spreads, so the overshoot is corrected only after the forced selling is exhausted. The theory is that such high-volume sharp declines tend to be followed by a partial rebound, while declines of similar size on ordinary volume, which more likely reflect information, show no such rebound. It would be shown wrong if price after high-volume sharp drops continues lower or drifts no differently than after equally large drops on normal volume.
+
+short-name: forced-selling-overshoot-rebound

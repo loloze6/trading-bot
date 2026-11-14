@@ -1,0 +1,147 @@
+claim: breakout_spike_continues_inside_spike_reverts
+symbol: ETHUSD
+bar_size: 1h
+fold: A
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 269
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: 0.1288
+  median_window_sharpe: 0.19444999999999996
+  worst_window_drawdown: 0.2987
+  trades: 204
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: 0.2636
+    trades: 30
+    sharpe: 2.8224
+    max_drawdown: 0.1263
+    exposure_pct: 11.6667
+    cost_drag_pct: 10.9356
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_ETHUSD/results/full_size/20261106T024015Z_90bab49b
+    seconds: 24
+  - window: W2
+    net_return: -0.0725
+    trades: 34
+    sharpe: -0.2073
+    max_drawdown: 0.2987
+    exposure_pct: 12.9743
+    cost_drag_pct: 76.8568
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_ETHUSD/results/full_size/20261106T024041Z_90bab49b
+    seconds: 25
+  - window: W3
+    net_return: 0.0046
+    trades: 30
+    sharpe: 0.5962
+    max_drawdown: 0.1581
+    exposure_pct: 12.2951
+    cost_drag_pct: 88.2972
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_ETHUSD/results/full_size/20261106T024104Z_90bab49b
+    seconds: 23
+  - window: W4
+    net_return: 0.0786
+    trades: 39
+    sharpe: 1.0614
+    max_drawdown: 0.1643
+    exposure_pct: 16.25
+    cost_drag_pct: 36.0001
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_ETHUSD/results/full_size/20261106T024127Z_90bab49b
+    seconds: 24
+  - window: W5
+    net_return: -0.0293
+    trades: 35
+    sharpe: -0.4503
+    max_drawdown: 0.1014
+    exposure_pct: 14.063
+    cost_drag_pct: 875.1107
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_ETHUSD/results/full_size/20261106T024154Z_90bab49b
+    seconds: 26
+  - window: W6
+    net_return: -0.0843
+    trades: 36
+    sharpe: -1.1767
+    max_drawdown: 0.1434
+    exposure_pct: 14.4809
+    cost_drag_pct: 69.8962
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_ETHUSD/results/full_size/20261106T024218Z_90bab49b
+    seconds: 24
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: 0.1397
+    median_window_sharpe: 0.67495
+    worst_window_drawdown: 0.0598
+    trades: 208
+  windows:
+  - window: W1
+    net_return: 0.0907
+    trades: 29
+    sharpe: 4.7517
+    max_drawdown: 0.0182
+    exposure_pct: 11.6667
+    cost_drag_pct: 8.4334
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_ETHUSD/results/vol_target/20261106T024242Z_046854a5
+    seconds: 25
+  - window: W2
+    net_return: 0.0222
+    trades: 32
+    sharpe: 1.0617
+    max_drawdown: 0.0313
+    exposure_pct: 12.9743
+    cost_drag_pct: 23.8653
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_ETHUSD/results/vol_target/20261106T024307Z_046854a5
+    seconds: 25
+  - window: W3
+    net_return: -0.0035
+    trades: 32
+    sharpe: 0.2882
+    max_drawdown: 0.0499
+    exposure_pct: 12.2951
+    cost_drag_pct: 182.4305
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_ETHUSD/results/vol_target/20261106T024333Z_046854a5
+    seconds: 26
+  - window: W4
+    net_return: 0.0536
+    trades: 40
+    sharpe: 1.9053
+    max_drawdown: 0.0536
+    exposure_pct: 16.25
+    cost_drag_pct: 22.0121
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_ETHUSD/results/vol_target/20261106T024358Z_046854a5
+    seconds: 25
+  - window: W5
+    net_return: -0.0001
+    trades: 37
+    sharpe: 0.071
+    max_drawdown: 0.0512
+    exposure_pct: 14.063
+    cost_drag_pct: 102.8497
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_ETHUSD/results/vol_target/20261106T024425Z_046854a5
+    seconds: 27
+  - window: W6
+    net_return: -0.0263
+    trades: 38
+    sharpe: -0.9994
+    max_drawdown: 0.0598
+    exposure_pct: 14.4809
+    cost_drag_pct: 165.5178
+    run_dir: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/engine_breakout_spike_continues_inside_spike_reverts_ETHUSD/results/vol_target/20261106T024450Z_046854a5
+    seconds: 25
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: true
+  verdict: fail

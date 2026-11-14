@@ -1,0 +1,3783 @@
+fake_01_btc_overreaction.md:
+- id: big_bar_fade
+  belief: An hourly BTC bar three or more times its usual size overshoots, and price
+    drifts back over the next half day.
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_01
+- id: big_bar_fade_net_of_fees
+  belief: Fading big hourly bars pays more than the round-trip fee the brief names
+    (about 0.2%), not only in gross terms.
+  measure: net_return
+  verdict: fail
+  run: try_03/fake_01
+- id: low_volume_spike_reverts
+  belief: A big move made on ordinary volume is a liquidity air pocket, not information,
+    so it reverts more often than a big move made on heavy volume.
+  measure: hit_rate
+  verdict: fail
+  run: try_03/fake_01
+- id: heavy_volume_spike_continues
+  belief: A big bar on extreme volume carries informed flow and keeps going rather
+    than reverting.
+  measure: mean_diff
+  verdict: pass
+  run: try_03/fake_01
+- id: counter_trend_spike_reverts
+  belief: A big bar against the prior three-day trend is a shakeout that the trend
+    reclaims, so it reverts more than a big bar with the trend.
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_01
+- id: close_at_extreme_reverts
+  belief: A big bar that closes at its extreme shows forced, unabsorbed flow (stops,
+    liquidations) and reverts more than a big bar that already pulled back from its
+    extreme within the hour.
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_01
+- id: thin_hours_spike_reverts
+  belief: Big moves in thin hours (weekends and the Asia-early UTC hours) come from
+    shallow books and revert more than big moves in the active US/Europe hours.
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_01
+- id: overreaction_scales_with_size
+  belief: Among big bars, the bigger the move relative to recent volatility, the bigger
+    the reversion (overreaction is proportional).
+  measure: rank_corr
+  verdict: fail
+  run: try_03/fake_01
+- id: multi_bar_cascade_reverts
+  belief: A run of four same-direction hours that adds up to a large move, with no
+    single big candle, is a slow stop cascade that also overshoots and reverts.
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_01
+- id: spike_raises_next_volatility
+  belief: After a big hourly bar, the following hours stay volatile (volatility clusters),
+    which matters for sizing and stops on any fade.
+  measure: abs_ratio
+  verdict: fail
+  run: try_03/fake_01
+- id: wick_rejection_follows_close
+  belief: A big-range hourly bar with a small body and a long wick shows a level that
+    was tested and rejected within the hour, and price keeps moving away from the
+    rejected side.
+  measure: mean_diff
+  verdict: fail
+  run: fake_01_btc_overreaction/001
+- id: breakout_spike_continues_inside_spike_reverts
+  belief: A big bar that closes beyond the prior 24-hour high or low has triggered
+    resting stops and breakout orders and keeps going, while a big bar that stays
+    inside the day's range is noise that reverts.
+  measure: mean_diff
+  verdict: pass
+  run: fake_01_btc_overreaction/001
+- id: spike_from_quiet_regime_continues
+  belief: A big bar that comes after a quiet day is a new information shock that continues,
+    while a big bar during an already-volatile day is exhaustion that reverts.
+  measure: mean_diff
+  verdict: fail
+  run: fake_01_btc_overreaction/001
+- id: failed_follow_through_fade
+  belief: The overshoot shows only when the next hour fails to follow through, retracing
+    on collapsing volume, and fading at that point captures the reversion that a blind
+    fade misses.
+  measure: mean_diff
+  verdict: fail
+  run: fake_01_btc_overreaction/001
+- id: vwap_stretch_reverts
+  belief: Overreaction is about how far price has run from the volume-weighted price
+    of the last day, not about any single candle, and the further it stretches the
+    more it gives back.
+  measure: rank_corr
+  verdict: fail
+  run: fake_01_btc_overreaction/001
+- id: heavy_volume_spike_follow_net
+  belief: The continuation after big bars on extreme volume, which passed as a gross
+    effect, is large enough to pay a round trip of about 0.2% and still leave a profit.
+  measure: net_return
+  verdict: fail
+  run: fake_01_btc_overreaction/001
+- id: down_spike_rebounds
+  belief: Down spikes are forced liquidations of leveraged longs in a market structurally
+    long BTC, so they are bought back, while up spikes do not show the same reversion.
+  measure: mean_diff
+  verdict: fail
+  run: fake_01_btc_overreaction/001
+- id: round_number_spike_reverts
+  belief: A big bar that crosses a round 1000-dollar level runs through clustered
+    stops and option strikes at that level and then gets pulled back to it, more than
+    a big bar that crosses no round level.
+  measure: mean_diff
+  verdict: fail
+  run: fake_01_btc_overreaction/001
+- id: late_day_stretch_reverts_to_day_open
+  belief: When the UTC day has moved unusually far from its open by the evening, intraday
+    participants flatten into the daily close, and price drifts back toward the day's
+    open.
+  measure: mean_diff
+  verdict: fail
+  run: fake_01_btc_overreaction/001
+- id: second_spike_exhaustion
+  belief: A second big bar in the same direction within six hours of a first one is
+    a climax of capitulation or a short squeeze, and it reverts more than an isolated
+    first spike.
+  measure: mean_diff
+  verdict: fail
+  run: fake_01_btc_overreaction/001
+- id: inside_range_spike_fade_net
+  belief: A big hourly bar that closes inside the prior 24-hour range has not broken
+    any level, is noise, and gives back enough within 12 hours to pay the round trip.
+  measure: net_return
+  verdict: fail
+  run: fake_01_btc_overreaction/001
+- id: signed_flow_pressure_continues
+  belief: Hours of heavy volume moving price one way are informed order flow that
+    is still being worked, so cumulative volume-weighted pressure over the last few
+    hours keeps pushing price the same way.
+  branch1: fail
+  branch3: fail
+  run: fake_01_btc_overreaction/002
+- id: wick_pressure_persistence
+  belief: Repeated lower wicks over half a day show resting buyers absorbing sells,
+    and repeated upper wicks show sellers absorbing buys, so the side doing the absorbing
+    wins over the next hours.
+  branch1: fail
+  branch3: fail
+  run: fake_01_btc_overreaction/002
+- id: thin_volume_drift_reverts
+  belief: A multi-hour move made on below-normal volume is price drifting through
+    a thin book without real participation, so it gives back part of the move within
+    half a day.
+  branch1: pass
+  branch3: fail
+  run: fake_01_btc_overreaction/002
+- id: vwap_anchor_stretch_reverts_slow
+  belief: BTC hourly price that has stretched away from its two-day volume-weighted
+    anchor tends to drift back to it within a day, and that stretch changes slowly
+    enough to hold a position through the reversion.
+  branch1: fail
+  branch3: fail
+  run: fake_01_btc_overreaction/002
+fake_02_eth_vol_regime_trend.md:
+- id: vol_rising_trend_pays
+  belief: A moving-average trend signal on ETH earns more when realized volatility
+    is rising than when it is falling, because rising vol marks moves that are being
+    repriced rather than drift.
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_02
+- id: efficiency_ratio_regime
+  belief: Chop can be read from the path itself; when price has travelled efficiently
+    (net move large relative to the sum of daily moves), the 20-day trend keeps going.
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_02
+- id: vol_compression_precedes_move
+  belief: Periods of compressed short-term volatility relative to longer-term volatility
+    are followed by larger moves, so the calm phase is where a trend is born.
+  measure: abs_ratio
+  verdict: fail
+  run: try_03/fake_02
+- id: donchian_breakout_net
+  belief: A close beyond the prior 55-day closing range is a robust trend definition
+    on ETH that pays after cost without any regime filter.
+  measure: net_return
+  verdict: fail
+  run: try_03/fake_02
+- id: vol_scaled_momentum_rank
+  belief: Trend strength measured in units of its own volatility (a trend t-statistic)
+    is what carries forward; a big move in calm conditions means more than the same
+    move in a storm.
+  measure: rank_corr
+  verdict: fail
+  run: try_03/fake_02
+- id: multi_horizon_agreement
+  belief: A trend that is visible on short, medium and long horizons at once is robust
+    to chop; disagreement between horizons marks the flat stretches that eat the gains.
+  measure: hit_rate
+  verdict: fail
+  run: try_03/fake_02
+- id: volume_confirmed_trend
+  belief: Trends backed by rising participation (short-term volume above its longer
+    average) are real repricing and persist; trends on fading volume are drift that
+    chops out.
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_02
+- id: vol_spike_reverts
+  belief: In extreme volatility (the top tenth of the past year) moves are liquidation-driven
+    and revert, so trend loses there; this contradicts vol_rising_trend_pays at the
+    extreme.
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_02
+- id: uptrend_pullback_entry
+  belief: Inside an established uptrend, a sharp pullback is a better entry than an
+    arbitrary uptrend day, because trend followers who entered late are shaken out
+    and the trend resumes.
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_02
+- id: autocorr_regime_trend
+  belief: ETH alternates between regimes where daily returns are positively serially
+    correlated, so trend pays, and negatively correlated, so it chops; the recent
+    sign of return autocorrelation tells which regime holds.
+  measure: mean_diff
+  verdict: fail
+  run: fake_02_eth_vol_regime_trend/001
+- id: close_vol_vs_range_vol
+  belief: When close-to-close volatility is large relative to intraday high-low range
+    volatility, prices are relocating day after day (trend); when ranges are wide
+    but closes go nowhere, it is chop.
+  measure: mean_diff
+  verdict: fail
+  run: fake_02_eth_vol_regime_trend/001
+- id: close_location_trend_conviction
+  belief: In a real trend, buyers or sellers hold control into each day's close, so
+    daily closes sit near the extreme in the trend direction; trends whose closes
+    drift mid-range are weak and stall.
+  measure: mean_diff
+  verdict: fail
+  run: fake_02_eth_vol_regime_trend/001
+- id: young_trend_pays
+  belief: Trend gains on ETH come in the first days after the price crosses its moving
+    average, and mature trends are where the flat stretches that eat the gains live.
+  measure: mean_diff
+  verdict: fail
+  run: fake_02_eth_vol_regime_trend/001
+- id: long_side_asymmetry
+  belief: ETH trends are asymmetric; uptrends persist through reflexive inflows, while
+    downtrends get cut by sharp short-covering bounces, so the trend signal pays on
+    the long side only.
+  measure: mean_diff
+  verdict: fail
+  run: fake_02_eth_vol_regime_trend/001
+- id: stable_vol_trend
+  belief: It is not the level or the direction of volatility but its stability that
+    matters; when vol is steady, flows are orderly and trends persist, while erratic
+    vol marks chop.
+  measure: mean_diff
+  verdict: fail
+  run: fake_02_eth_vol_regime_trend/001
+- id: year_high_anchor
+  belief: Traders anchor on the past-year high; ETH trading close to it underreacts
+    and keeps rising, while price far below it is in a regime where rallies fade.
+  measure: rank_corr
+  verdict: fail
+  run: fake_02_eth_vol_regime_trend/001
+- id: semivariance_asymmetry
+  belief: Before a trend shows in net price, the side that holds the volatility reveals
+    it; when upside variance dominates downside variance while price is still flat,
+    accumulation is under way and a rise follows.
+  measure: rank_corr
+  verdict: fail
+  run: fake_02_eth_vol_regime_trend/001
+- id: whipsaw_count_fade
+  belief: Chop can be recognised by how often price has recently crossed its own moving
+    average; in that regime the right trade is to fade the last move, not follow it.
+  measure: mean_diff
+  verdict: fail
+  run: fake_02_eth_vol_regime_trend/001
+- id: ma_extension_reverts
+  belief: On daily ETH, price stretched far from its 50-day average tends to give
+    back part of the stretch over the next two weeks, which is why mature, orderly
+    trends stall and close to the year high is a poor place to buy.
+  measure: rank_corr
+  verdict: fail
+  run: fake_02_eth_vol_regime_trend/001
+fake_03_time_of_week.md:
+- id: weekend_vol_compression
+  belief: With institutional desks and market makers away, hourly volatility on Saturday
+    and Sunday (UTC clock) is clearly lower than on weekdays.
+  measure: abs_ratio
+  verdict: pass
+  run: try_03/fake_03
+- id: weekend_hourly_reversion
+  belief: Thin weekend books make hourly moves overshoot and partly revert, more often
+    than on weekdays (return effect, UTC clock).
+  measure: hit_rate
+  verdict: fail
+  run: try_03/fake_03
+- id: monday_reverses_weekend
+  belief: Weekend moves are made on thin liquidity by retail flow and are partly undone
+    in the first day after weekday desks return (return effect, UTC clock).
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_03
+- id: us_open_vol
+  belief: The US equity open (13:30 or 14:30 UTC depending on US daylight time) brings
+    ETF, futures and desk flow, so the hours around it are more volatile on weekdays
+    (volatility effect, UTC clock approximating New York).
+  measure: abs_ratio
+  verdict: pass
+  run: try_03/fake_03
+- id: us_open_selloff
+  belief: US-hours flow has been a net seller of crypto at the equity open (hedging,
+    ETF rebalancing), so the first hours after the US open drift down on weekdays
+    but not on weekends (return effect, UTC clock).
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_03
+- id: asian_session_drift
+  belief: Returns accrue disproportionately in the Asian session (00-08 UTC) while
+    US hours give them back, enough that a long-only Asian-session hold pays the fee
+    (return effect, UTC clock).
+  measure: net_return
+  verdict: fail
+  run: try_03/fake_03
+- id: funding_hour_vol
+  belief: Perpetual-swap funding settles at 00, 08 and 16 UTC on the large derivatives
+    venues; positioning before settlement spills into spot, so the hour into each
+    settlement is more volatile (volatility effect, UTC clock).
+  measure: abs_ratio
+  verdict: fail
+  run: try_03/fake_03
+- id: daily_close_reversal
+  belief: Moves into the 00:00 UTC daily candle close are partly painted by traders
+    and bots targeting the daily close, and revert in the next hours (return effect,
+    UTC clock).
+  measure: mean_diff
+  verdict: fail
+  run: try_03/fake_03
+- id: cme_reopen_vol
+  belief: CME bitcoin and ether futures reopen on Sunday evening (22:00 or 23:00 UTC
+    depending on US daylight time); price discovery against the weekend's spot move
+    makes those hours more volatile than the rest of Sunday (volatility effect, UTC
+    clock approximating Chicago).
+  measure: abs_ratio
+  verdict: fail
+  run: try_03/fake_03
+- id: expiry_morning_vol
+  belief: Monthly crypto options expire on the last Friday of the month at 08:00 UTC;
+    hedge unwinds and pinning make the hours around expiry more volatile than the
+    same hours on other Fridays (volatility effect, UTC clock).
+  measure: abs_ratio
+  verdict: fail
+  run: try_03/fake_03
+- id: hour_of_day_persistence
+  belief: 'Intraday return seasonality persists: an hour of the day that has had above-average
+    returns over the past month tends to keep them (return effect, UTC clock).'
+  measure: rank_corr
+  verdict: fail
+  run: try_03/fake_03
+- id: us_open_continuation
+  belief: continuation from the US open hour
+  measure: mean_diff
+  verdict: fail
+  run: try_05/fake_03
+- id: us_session_reverted_in_asia
+  belief: The weekday US-session move (about 13-21 UTC) is pushed by desk and ETF
+    flow that has no follow-through once US desks log off, so the following Asian
+    hours partly undo it, and more than after a weekend 13-21 UTC move (return effect,
+    UTC clock approximating New York).
+  measure: mean_diff
+  verdict: fail
+  run: fake_03_time_of_week/001
+- id: us_session_momentum_next_day
+  belief: Institutional flow is spread over several days, so the direction of yesterday's
+    US session repeats in today's US session on consecutive weekdays (return effect,
+    UTC clock approximating New York).
+  measure: mean_diff
+  verdict: fail
+  run: fake_03_time_of_week/001
+- id: friday_afternoon_derisk
+  belief: Desks and leveraged traders cut crypto exposure into the weekend, so Friday's
+    US afternoon (16-21 UTC) drifts down compared with the same hours on Monday to
+    Thursday (return effect, UTC clock).
+  measure: mean_diff
+  verdict: fail
+  run: fake_03_time_of_week/001
+- id: weekend_hold_drift
+  belief: Retail buyers are the marginal flow on weekends while institutional sellers
+    are away, so prices drift up from Friday evening to Sunday evening more than over
+    a two-day weekday stretch (return effect, UTC clock).
+  measure: mean_diff
+  verdict: fail
+  run: fake_03_time_of_week/001
+- id: turn_of_month_drift
+  belief: Month-end fund rebalancing, salary-day retail buying and recurring purchase
+    plans put net buying into the turn of the month, so the days around it return
+    more than other days (return effect, UTC calendar).
+  measure: mean_diff
+  verdict: fail
+  run: fake_03_time_of_week/001
+- id: europe_open_vol
+  belief: The London and European desk open (07-09 UTC) brings a wave of order flow
+    after the quiet late-Asian hours, so hourly moves just after it are larger than
+    in the 03-06 UTC lull on weekdays (volatility effect, UTC clock approximating
+    London).
+  measure: abs_ratio
+  verdict: fail
+  run: fake_03_time_of_week/001
+- id: nfp_friday_vol
+  belief: US payrolls are released on the first Friday of the month at 12:30 or 13:30
+    UTC, and the macro repricing spills into crypto, so those hours are more volatile
+    than the same hours on other Fridays (volatility effect, UTC clock approximating
+    New York, macro calendar).
+  measure: abs_ratio
+  verdict: fail
+  run: fake_03_time_of_week/001
+- id: seasonal_vol_profile_forecast
+  belief: The intraday volatility profile is stable (sessions are habitual), so an
+    hour that has been volatile on recent days at that time of day will again be volatile,
+    across all hours and not only the US open (volatility effect, UTC clock, data-driven).
+  measure: abs_ratio
+  verdict: fail
+  run: fake_03_time_of_week/001
+- id: volume_surprise_vs_clock
+  belief: Volume far above its usual level for that hour of the day marks unscheduled
+    news or flow that the clock does not explain, and it carries over into a more
+    volatile next hour (volatility effect, volume adjusted for the UTC clock).
+  measure: abs_ratio
+  verdict: pass
+  run: fake_03_time_of_week/001
+- id: volume_surprise_direction_carries
+  belief: A bar whose volume is far above its usual level for that hour carries unscheduled
+    flow that is not finished in one bar, so its direction tends to continue over
+    the next few hours more than the direction of a normal-volume bar (return effect,
+    volume adjusted for the UTC clock).
+  measure: mean_diff
+  verdict: fail
+  run: fake_03_time_of_week/001
+real_01_daily_breadth_fold_a.md:
+- &id001
+  id: channel_breakout_both_sides
+  belief: When a daily close breaks the prior 20-day high or low, slow trend-following
+    flows and stop orders carry price further in the break's direction for about two
+    weeks.
+  measure: net_return
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- &id002
+  id: shock_capitulation_rebound
+  belief: A one-day drop far outside recent volatility is driven by forced sellers
+    (liquidations, margin calls), and price partly rebounds over the next few days
+    once that selling is done.
+  measure: net_return
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- &id003
+  id: down_streak_exhaustion
+  belief: A run of four or more consecutive down closes reflects slow, sequential
+    selling that exhausts itself, after which price drifts back up for a few days.
+  measure: net_return
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- &id004
+  id: compression_release_follow
+  belief: After a stretch of unusually narrow daily ranges, the first close outside
+    the recent range starts a volatility expansion, and that move keeps its direction
+    for several days.
+  measure: net_return
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- &id005
+  id: high_volume_up_day_continuation
+  belief: An up day on more than twice normal volume, closing near its high, marks
+    informed or institutional buying that keeps arriving over the following days.
+  measure: mean_diff
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- &id006
+  id: lower_wick_rejection
+  belief: A wide day with a long lower wick shows that sellers pushed price down intraday
+    but buyers absorbed it, and the next days lean up more often than not.
+  measure: hit_rate
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- &id007
+  id: turn_of_month_inflow
+  belief: Month-end and month-start flows (salaries, DCA purchases, fund rebalancing
+    and new allocations) push crypto prices up around the turn of the month.
+  measure: mean_diff
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- &id008
+  id: vol_regime_negative_drift
+  belief: When realized volatility is high relative to its own one-year norm, deleveraging
+    and risk-off flows dominate, so forward returns are lower.
+  measure: rank_corr
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- &id009
+  id: deep_drawdown_reversion
+  belief: Far below their one-year high, coins are held mostly by long-horizon buyers
+    after forced sellers have left, so deeper drawdowns are followed by higher multi-week
+    returns.
+  measure: rank_corr
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- &id010
+  id: signed_volume_flow_persistence
+  belief: Net buying pressure, measured as volume on up days minus volume on down
+    days over two weeks, persists because slow allocators spread their orders across
+    days.
+  measure: rank_corr
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- &id011
+  id: range_position_reversion
+  belief: Within a medium-term trading range, closes near the bottom of the range
+    are followed by higher multi-week returns than closes near the top, because forced
+    sellers push price to the range floor and slower buyers absorb it there, whatever
+    the long-run trend regime.
+  measure: rank_corr
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- &id012
+  id: monthly_return_reversal
+  belief: A large vol-adjusted move over the past month overshoots because forced
+    and slow flows push price too far, so the next month partly gives it back.
+  measure: rank_corr
+  verdict: fail
+  run: real_01_daily_breadth_fold_a/001
+- id: short_horizon_reversal_3d
+  belief: Daily crypto moves over a few days overshoot because liquidity providers
+    widen out and late chasers pile in, so a vol-scaled 3-day move partly reverses
+    over the next 3 days.
+  branch1: fail
+  branch3: fail
+  run: real_01_daily_breadth_fold_a/003
+- id: trend_efficiency_follow
+  belief: A move made in a straight line, with little back-and-forth, reflects one-sided
+    slow allocation that keeps arriving, while the same net move made through chop
+    does not persist.
+  branch1: fail
+  branch3: fail
+  run: real_01_daily_breadth_fold_a/003
+- id: close_location_accumulation
+  belief: Days that repeatedly close near their highs show buyers absorbing supply
+    into the close (accumulation), and days that close near their lows show distribution,
+    which leads price over the following week.
+  branch1: fail
+  branch3: fail
+  run: real_01_daily_breadth_fold_a/003
+- id: volume_confirmed_move
+  belief: A multi-week move made on rising participation is backed by new money and
+    continues, while the same move on fading volume is a drift without sponsors that
+    gives back.
+  branch1: fail
+  branch3: fail
+  run: real_01_daily_breadth_fold_a/003
+- id: negative_skew_premium
+  belief: Holders demand compensation after a coin has shown crash-like (negatively
+    skewed) daily returns, and they overpay for lottery-like positive skew, so recent
+    skewness predicts lower forward returns.
+  branch1: fail
+  branch3: fail
+  run: real_01_daily_breadth_fold_a/003
+- id: vol_decline_deleveraging_end
+  belief: The end of a deleveraging episode shows up as short-term realized volatility
+    falling below its recent norm, after which risk is re-added and prices drift up,
+    while rising short-term volatility marks deleveraging under way (the vol trend,
+    not its level against a one-year norm).
+  branch1: fail
+  branch3: fail
+  run: real_01_daily_breadth_fold_a/003
+- id: autocorr_regime_adaptive
+  belief: Crypto alternates between trending and mean-reverting regimes that last
+    months, so the sign of recent daily return autocorrelation tells whether to follow
+    or fade the last few days' move.
+  branch1: fail
+  branch3: fail
+  run: real_01_daily_breadth_fold_a/003
+- id: illiquidity_rise_premium
+  belief: When price impact per dollar traded (Amihud illiquidity) rises above its
+    norm, market makers and arbitrage capital have withdrawn, and the holders who
+    remain earn a liquidity premium over the following weeks.
+  branch1: fail
+  branch3: fail
+  run: real_01_daily_breadth_fold_a/003
+- id: efficiency_excess_fade
+  belief: A 20-day move that is more orderly than the coin's own recent norm marks
+    one-sided flow that has run out, so the excess efficiency reverts over the next
+    two weeks.
+  branch1: fail
+  branch3: fail
+  run: real_01_daily_breadth_fold_a/003
+- id: trend_with_short_pullback
+  belief: 'The 20-day fade lost exactly where a slow trend persisted (W4, W6 on both
+    coins), so short-term stretches should be faded only as entries in the direction
+    of the slower 60-day trend: pullbacks inside a trend get bought, extensions inside
+    a downtrend get sold.'
+  branch1: fail
+  branch3: fail
+  run: real_01_daily_breadth_fold_a/003
+n01_session_vol_regime_book_1h.md:
+- id: volume_surprise_fade
+  belief: A large hourly move printed on 3x volume is forced flow, such as liquidations
+    or stop cascades, that overshoots. It reverts more than an equally large move
+    on normal volume, so the volume gate turns a weak reversal into a tradable one.
+  measure: mean_diff
+  verdict: fail
+  run: n01_session_vol_regime_book_1h/001
+- id: volume_surprise_initiative_close
+  belief: A volume-surprise bar that closes near its extreme in the direction of its
+    body shows initiative buying or selling that was not absorbed. It continues, while
+    the same bar shape on normal volume is noise.
+  measure: mean_diff
+  verdict: fail
+  run: n01_session_vol_regime_book_1h/001
+- id: us_open_fades_europe_extension
+  belief: The European morning builds a directional extension on thin crypto liquidity.
+    The arrival of US liquidity at the open absorbs and partly reverses it, a reversion
+    that ordinary hours do not show.
+  measure: mean_diff
+  verdict: fail
+  run: n01_session_vol_regime_book_1h/001
+- id: us_open_range_break
+  belief: A break of the trailing 24-hour range during the US open hours is carried
+    by real new participants and holds. The same break in quiet hours is mostly a
+    stop run that fails.
+  measure: mean_diff
+  verdict: fail
+  run: n01_session_vol_regime_book_1h/001
+- id: gated_liquidity_sweep_reversal
+  belief: In a high-activity bar, a wick through the 24-hour high or low that closes
+    back inside the range is a sweep of resting stops followed by rejection. Price
+    then travels toward the other side, more reliably than for sweeps in dead hours.
+  measure: mean_diff
+  verdict: fail
+  run: n01_session_vol_regime_book_1h/001
+- id: gated_signed_volume_flow
+  belief: When the gate is open, signed volume over the last 3 hours reflects informed
+    flow. It predicts the next hours' direction because the price impact of large
+    orders is absorbed slowly.
+  measure: rank_corr
+  verdict: fail
+  run: n01_session_vol_regime_book_1h/001
+- id: day_trend_through_us_open
+  belief: US participants arriving at the open trade in the direction of the day's
+    established trend, such as fund rebalancing and trend models executing in US hours.
+    So the trailing 24-hour vol-scaled return predicts the next 6 hours on open-hour
+    bars, even though the open bar's own move does not.
+  measure: rank_corr
+  verdict: fail
+  run: n01_session_vol_regime_book_1h/001
+- id: us_open_hour_overshoot_fade
+  belief: The opening burst of US flow overshoots, which is why continuation from
+    the open hour failed. A large two-hour move ending at 14 UTC partly retraces over
+    the following hours, and the retrace pays after fees.
+  measure: net_return
+  verdict: fail
+  run: n01_session_vol_regime_book_1h/001
+- id: compression_release_on_volume
+  belief: A volume surprise that arrives after a compressed 24-hour range marks the
+    release of stored positioning. Its direction persists for hours, more than a volume
+    spike in an already volatile tape, which tends to be exhaustion.
+  measure: mean_diff
+  verdict: fail
+  run: n01_session_vol_regime_book_1h/001
+- id: us_open_regime_switched_extension
+  belief: The direction of the US-open follow-through on a large 6-hour move depends
+    on the trailing regime. It continues when the past week has been trending and
+    reverts when the past week has been choppy, which explains why fixed continuation
+    and fixed fade rules each won in different windows.
+  measure: net_return
+  verdict: fail
+  run: n01_session_vol_regime_book_1h/001
+n02_alt_daily_trend_other_categories_1d.md:
+- id: tsmom_horizon_agreement
+  belief: When short, medium and long time-series momentum on LTC or XMR all point
+    the same way, the trend is broad and keeps going long enough to pay cost.
+  measure: net_return
+  verdict: fail
+  run: n02_alt_daily_trend_other_categories_1d/001
+- id: breakout_volume_confirmation
+  belief: A 20-day closing high on heavy volume reflects real new demand and continues,
+    while the same breakout on thin volume is noise.
+  measure: mean_diff
+  verdict: fail
+  run: n02_alt_daily_trend_other_categories_1d/001
+- id: vol_compression_precedes_expansion
+  belief: Long quiet stretches in these less-crowded coins end in large directional
+    moves, which is the raw material a trend rule needs.
+  measure: abs_ratio
+  verdict: fail
+  run: n02_alt_daily_trend_other_categories_1d/001
+- id: trend_linearity_strength
+  belief: A trend that climbs or falls in a straight line, with a high R-squared of
+    log price on time, is driven by steady flow and persists more than an erratic
+    move of the same size.
+  measure: rank_corr
+  verdict: fail
+  run: n02_alt_daily_trend_other_categories_1d/001
+- id: participation_regime_gate
+  belief: Momentum works when participation is expanding (new money arriving) and
+    fails in a dull, low-turnover market where moves are chop.
+  measure: mean_diff
+  verdict: fail
+  run: n02_alt_daily_trend_other_categories_1d/001
+- id: yearly_high_proximity_long
+  belief: Traders anchor on the yearly high, so price trading near it signals strength
+    that grinds higher as the anchor gives way.
+  measure: net_return
+  verdict: fail
+  run: n02_alt_daily_trend_other_categories_1d/001
+- id: weekday_breakout_beats_weekend
+  belief: Weekend breakouts happen on thin, retail-only books and often fade, while
+    weekday breakouts carry institutional and fiat-hours flow.
+  measure: mean_diff
+  verdict: fail
+  run: n02_alt_daily_trend_other_categories_1d/001
+- id: sharp_dip_inside_uptrend
+  belief: Inside an established uptrend, a sharp short drop is forced selling, not
+    a trend change, and it recovers within days.
+  measure: net_return
+  verdict: fail
+  run: n02_alt_daily_trend_other_categories_1d/001
+- id: long_horizon_exhaustion
+  belief: In these coins, extreme 12-month gains mark bubble tops and extreme 12-month
+    losses mark capitulation, so long-horizon momentum reverses.
+  measure: rank_corr
+  verdict: pass
+  run: n02_alt_daily_trend_other_categories_1d/001
+- id: signed_volume_flow
+  belief: Persistent volume on up days over down days shows accumulation that price
+    has not finished pricing in.
+  measure: rank_corr
+  verdict: fail
+  run: n02_alt_daily_trend_other_categories_1d/001
+- id: fade_extreme_yearly_move
+  belief: 'The 12-month exhaustion seen as a rank correlation is strong enough at
+    the extremes to trade: fading the largest 365-day moves on LTC and XMR pays more
+    than cost over the next 60 days.'
+  measure: net_return
+  verdict: fail
+  run: n02_alt_daily_trend_other_categories_1d/001
+- id: yearly_exhaustion_after_turn
+  belief: The 12-month reversal on LTC and XMR arrives once the 30-day move has already
+    turned against the yearly move, so fading only after that turn beats fading while
+    both still agree.
+  measure: mean_diff
+  verdict: fail
+  run: n02_alt_daily_trend_other_categories_1d/001
+n04_btc_daily_vol_timing_1d.md:
+- id: low_vol_regime_momentum
+  belief: BTC trends persist when realized volatility is calm relative to its own
+    past year, because calm markets carry less forced deleveraging that breaks trends.
+  measure: net_return
+  verdict: pass
+  run: n04_btc_daily_vol_timing_1d/001
+- id: high_vol_regime_short_reversal
+  belief: In high-volatility regimes, BTC's short moves are liquidation overshoots
+    that revert, so the right rule switches from momentum to reversal.
+  measure: mean_diff
+  verdict: fail
+  run: n04_btc_daily_vol_timing_1d/001
+- id: drawdown_vol_contraction_long
+  belief: After a deep BTC drawdown, a calming of short-term volatility marks the
+    end of capitulation and precedes a rebound.
+  measure: net_return
+  verdict: fail
+  run: n04_btc_daily_vol_timing_1d/001
+- id: compression_breakout_direction
+  belief: When BTC's range is compressed, the first close outside that range reveals
+    the side that wins the coming expansion.
+  measure: net_return
+  verdict: fail
+  run: n04_btc_daily_vol_timing_1d/001
+- id: upside_vol_expansion_continuation
+  belief: In BTC, a volatility expansion that comes with rising prices reflects short
+    squeezes and FOMO inflows that keep pushing price up.
+  measure: net_return
+  verdict: fail
+  run: n04_btc_daily_vol_timing_1d/001
+- id: vol_scaled_momentum_strength
+  belief: Momentum measured in units of its own volatility predicts BTC's next moves
+    better than raw momentum, which supports sizing by volatility.
+  measure: rank_corr
+  verdict: fail
+  run: n04_btc_daily_vol_timing_1d/001
+- id: uptrend_vol_spike_exit
+  belief: Within a BTC uptrend, a spike in volatility signals distribution and a weaker
+    forward return, so longs should exit on expansion.
+  measure: mean_diff
+  verdict: fail
+  run: n04_btc_daily_vol_timing_1d/001
+- id: close_vs_range_vol_efficiency
+  belief: When close-to-close volatility is high relative to intraday high-low range,
+    BTC moves are directional rather than choppy, so momentum works better.
+  measure: mean_diff
+  verdict: fail
+  run: n04_btc_daily_vol_timing_1d/001
+- id: low_volume_shock_fade
+  belief: A large BTC daily move on below-normal volume lacks real participation and
+    tends to revert, while high-volume shocks hold.
+  measure: mean_diff
+  verdict: fail
+  run: n04_btc_daily_vol_timing_1d/001
+- id: upside_semivariance_share
+  belief: When most of BTC's recent variance comes from up days, buyers are driving
+    volatility and returns continue up; downside-driven variance precedes weakness.
+  measure: rank_corr
+  verdict: fail
+  run: n04_btc_daily_vol_timing_1d/001
+- id: falling_vol_momentum_vs_rising
+  belief: BTC momentum pays more while realized volatility is falling than while it
+    is rising, because a contracting vol state means fewer forced exits interrupting
+    the trend.
+  measure: mean_diff
+  verdict: fail
+  run: n04_btc_daily_vol_timing_1d/001
+- id: low_vs_high_vol_momentum_contrast
+  belief: BTC 20-day momentum pays more in the bottom third of its past-year volatility
+    than in the top third, so the volatility level, not momentum alone, is what times
+    the trend rule.
+  measure: mean_diff
+  verdict: fail
+  run: n04_btc_daily_vol_timing_1d/001
+n03_eth_hourly_stretch_reversion_1h.md:
+- id: vwap24_stretch_fade
+  belief: When ETH closes far from its rolling 24h volume-weighted price, measured
+    against how far it usually strays, the move overshoots and price drifts back toward
+    the VWAP within half a day by more than cost.
+  measure: net_return
+  verdict: fail
+  run: n03_eth_hourly_stretch_reversion_1h/001
+- id: range_edge_inside_fade
+  belief: A close pressed against the edge of the prior 24h range without breaking
+    it shows a failed push, so price rotates back toward the range middle. The brief's
+    already_tried note says closes beyond the range continue; this idea keeps only
+    the inside case.
+  measure: mean_diff
+  verdict: fail
+  run: n03_eth_hourly_stretch_reversion_1h/001
+- id: slow_ema_zscore_rank
+  belief: The further ETH sits from its 3-day exponential mean in units of recent
+    hourly volatility, the more negative the next 12 hours return in the direction
+    of that distance.
+  measure: rank_corr
+  verdict: fail
+  run: n03_eth_hourly_stretch_reversion_1h/001
+- id: gradual_grind_stretch_fade
+  belief: A VWAP stretch built by many small bars, with no shock bar, is an exhausting
+    grind by impatient flow rather than news, and it reverts. This differs from the
+    large-bar fades already tried on BTC.
+  measure: mean_diff
+  verdict: fail
+  run: n03_eth_hourly_stretch_reversion_1h/001
+- id: stretch_on_fading_volume_fade
+  belief: A stretch away from VWAP that arrives while volume dries up has no participation
+    behind it, so price slips back more often than not.
+  measure: hit_rate
+  verdict: fail
+  run: n03_eth_hourly_stretch_reversion_1h/001
+- id: stretch_on_heavy_volume_continues
+  belief: A stretch away from VWAP carried by heavy volume reflects informed or forced
+    flow that keeps pushing, so price extends further rather than reverting. This
+    contradicts the reversion ideas, and the data decides.
+  measure: mean_diff
+  verdict: fail
+  run: n03_eth_hourly_stretch_reversion_1h/001
+- id: asia_hours_stretch_fade
+  belief: Stretches built during thin Asian hours (00-06 UTC), with Europe and the
+    US away, reflect poor liquidity and are corrected once deeper books arrive in
+    the European morning.
+  measure: mean_diff
+  verdict: pass
+  run: n03_eth_hourly_stretch_reversion_1h/001
+- id: weekend_stretch_fade
+  belief: Weekend ETH trading is thin and retail-driven, so a stretch from the 24h
+    VWAP on Saturday or Sunday overshoots more and reverts by more than cost.
+  measure: net_return
+  verdict: fail
+  run: n03_eth_hourly_stretch_reversion_1h/001
+- id: calm_regime_stretch_fade
+  belief: In a calm, range-bound volatility regime, stretches from VWAP are noise
+    that reverts. In a volatile regime the same stretch belongs to a trend.
+  measure: mean_diff
+  verdict: fail
+  run: n03_eth_hourly_stretch_reversion_1h/001
+- id: day_anchored_vwap_late_fade
+  belief: Late in the UTC day, a close far from that day's own session VWAP (anchored
+    at 00 UTC) marks a day-end imbalance that reverts as the new day's flow resets
+    positioning.
+  measure: mean_diff
+  verdict: fail
+  run: n03_eth_hourly_stretch_reversion_1h/001
+- id: weekend_stretch_continuation
+  belief: On thin, retail-driven weekends, a close far from the 24h VWAP reflects
+    one-sided flow that liquidity providers do not absorb, so price keeps moving in
+    the stretch direction over the next half day by more than cost.
+  measure: net_return
+  verdict: pass
+  run: n03_eth_hourly_stretch_reversion_1h/001
+- id: us_hours_weekday_stretch_continuation
+  belief: On weekdays during European-afternoon and US hours, a close far from the
+    24h VWAP reflects deep, informed flow, so price keeps moving in the stretch direction
+    over the next 8 hours by more than cost.
+  measure: net_return
+  verdict: fail
+  run: n03_eth_hourly_stretch_reversion_1h/001
+n05_retail_coins_hourly_flow_1h.md:
+- id: us_evening_retail_bid
+  belief: US retail buys after work, from about 19:00 to 23:00 New York time, and
+    on attention coins this one-sided flow lifts price over the following hours.
+  measure: net_return
+  verdict: fail
+  run: n05_retail_coins_hourly_flow_1h/001
+- id: weekend_trend_persistence
+  belief: Weekend books are thin and retail-dominated, so a sharp 24h move on Saturday
+    or Sunday keeps going because few arbitrageurs lean against it.
+  measure: mean_diff
+  verdict: fail
+  run: n05_retail_coins_hourly_flow_1h/001
+- id: monday_weekend_unwind
+  belief: Weekend retail moves are partly undone once weekday desks and market makers
+    return on Monday afternoon UTC.
+  measure: net_return
+  verdict: fail
+  run: n05_retail_coins_hourly_flow_1h/001
+- id: round_level_break_follow
+  belief: Retail traders watch round prices (0.10, 0.15, 0.50 dollars), so a close
+    through one triggers breakout and FOMO orders that extend the move.
+  measure: mean_diff
+  verdict: fail
+  run: n05_retail_coins_hourly_flow_1h/001
+- id: round_level_rejection
+  belief: Resting retail sell orders sit just under round prices, so an hour that
+    probes a round level from below and closes well off its high marks a local top.
+  measure: hit_rate
+  verdict: fail
+  run: n05_retail_coins_hourly_flow_1h/001
+- id: volume_confirmed_range_breakout
+  belief: On retail coins, a break of the 3-day high that comes with a crowd of volume
+    starts a multi-hour attention run, not a one-bar spike.
+  measure: net_return
+  verdict: fail
+  run: n05_retail_coins_hourly_flow_1h/001
+- id: dead_hours_burst_informed
+  belief: A volume burst during the Asian and early European hours, when US retail
+    is asleep, is more likely whale or informed flow and should carry direction better
+    than bursts in the US retail hours.
+  measure: mean_diff
+  verdict: fail
+  run: n05_retail_coins_hourly_flow_1h/001
+- id: attention_episode_fade
+  belief: When daily volume blows out against its monthly norm, retail has piled in,
+    and the move over the past 3 days tends to unwind over the next 3.
+  measure: rank_corr
+  verdict: fail
+  run: n05_retail_coins_hourly_flow_1h/001
+- id: close_location_pressure
+  belief: Retail market orders leave a footprint in where each hour closes within
+    its range; volume-weighted buying pressure over a day predicts the next day's
+    drift.
+  measure: rank_corr
+  verdict: fail
+  run: n05_retail_coins_hourly_flow_1h/001
+- id: month_start_inflow
+  belief: Retail pay cycles put fresh money into exchanges in the first days of the
+    month, and on retail coins that inflow shows up as upward drift.
+  measure: net_return
+  verdict: fail
+  run: n05_retail_coins_hourly_flow_1h/001
+- id: volume_blowout_fade_vs_quiet
+  belief: A 3-day move made on a retail volume blowout is crowd-driven and reverses
+    more than the same-length move made on normal volume, on both DOGE and ADA.
+  measure: mean_diff
+  verdict: fail
+  run: n05_retail_coins_hourly_flow_1h/001
+- id: daily_close_location_pressure
+  belief: Retail market orders leave a footprint in where each hour closes within
+    its range, so volume-weighted buying pressure over the past day predicts the next
+    day's drift.
+  measure: rank_corr
+  verdict: fail
+  run: n05_retail_coins_hourly_flow_1h/001
+n06_range_break_continuation_other_coins_1h.md:
+- id: big_break_24h_continues_alts
+  belief: On SOL and AVAX, as on BTC, a big hourly bar that closes beyond the prior
+    24h range triggers stops and breakout flow, so the move continues instead of reverting.
+  measure: mean_diff
+  verdict: fail
+  run: n06_range_break_continuation_other_coins_1h/002
+- id: inside_big_bar_no_revert
+  belief: On alts, a big hourly bar that stays inside the prior day's range is still
+    flow-driven and does not mean-revert; it follows through at least as often as
+    an ordinary bar does.
+  measure: hit_rate
+  verdict: fail
+  run: n06_range_break_continuation_other_coins_1h/002
+- id: inside_big_bar_fade_pays_alts
+  belief: Contradicting the BTC finding, alt liquidity is thin enough that a big bar
+    inside the day's range is an overshoot by one aggressive participant and retraces
+    within a few hours.
+  measure: net_return
+  verdict: fail
+  run: n06_range_break_continuation_other_coins_1h/002
+- id: prior_utc_day_level_break
+  belief: Traders and stop orders cluster at the previous UTC calendar day's high
+    and low, so the first close beyond that fixed level, whatever the bar's size,
+    starts a move.
+  measure: mean_diff
+  verdict: fail
+  run: n06_range_break_continuation_other_coins_1h/002
+- id: volume_confirmed_break
+  belief: A range break backed by unusually heavy volume reflects real participation
+    rather than a thin-book sweep, so it continues more than a low-volume break.
+  measure: mean_diff
+  verdict: fail
+  run: n06_range_break_continuation_other_coins_1h/002
+- id: weekly_range_break_profit
+  belief: A close beyond the prior 7-day high or low is a larger, more watched level
+    on alts and draws trend-following flow for a full day, enough to pay fees.
+  measure: net_return
+  verdict: fail
+  run: n06_range_break_continuation_other_coins_1h/002
+- id: us_session_break_beats_asia
+  belief: Breaks during the US/EU-overlap hours, when alt volume and directional flow
+    are deepest, continue more than breaks during quiet Asian hours, which are more
+    often stop-hunts.
+  measure: mean_diff
+  verdict: fail
+  run: n06_range_break_continuation_other_coins_1h/002
+- id: squeeze_then_break
+  belief: After a day of compressed range relative to the week, orders pile up just
+    outside the range, so the first close outside releases a stronger directional
+    move than a break out of an already wide range.
+  measure: mean_diff
+  verdict: fail
+  run: n06_range_break_continuation_other_coins_1h/002
+- id: rejected_break_reverses
+  belief: When an hourly bar pierces the prior 24h high or low but closes back inside,
+    in its lower half for an upside pierce or its upper half for a downside pierce,
+    the stops were run and absorbed, so price reverses toward the range.
+  measure: net_return
+  verdict: fail
+  run: n06_range_break_continuation_other_coins_1h/002
+- id: strong_close_break_continues
+  belief: A break bar that closes at its extreme shows no absorption by the other
+    side, so it continues more than a break bar that closes back toward its middle.
+  measure: mean_diff
+  verdict: fail
+  run: n06_range_break_continuation_other_coins_1h/002
+- id: break_expands_volatility
+  belief: Leaving the day's range moves alt price into a zone with no recent two-way
+    trade, so the next hours are more volatile than after an equally big bar that
+    stays inside the range.
+  measure: abs_ratio
+  verdict: fail
+  run: n06_range_break_continuation_other_coins_1h/002
+- id: break_distance_scales_continuation
+  belief: The farther a close lands beyond the prior 24h range, measured in units
+    of recent volatility, the more stops it has triggered and the stronger the follow-through.
+  measure: rank_corr
+  verdict: fail
+  run: n06_range_break_continuation_other_coins_1h/002
+- id: weekly_momentum_daily_hold
+  belief: On SOL and AVAX, the direction of the past week persists into the next day,
+    because the slow trend-following flow behind the weekly-level result acts on the
+    weekly trend itself, not only at the moment a level breaks.
+  measure: net_return
+  verdict: fail
+  run: n06_range_break_continuation_other_coins_1h/002
+- id: trend_aligned_24h_break
+  belief: On SOL and AVAX, a 24h-range break continues only when the slow weekly trend
+    is behind it, because the trend-following flow seen in the weekly results is what
+    carries a break.
+  measure: mean_diff
+  verdict: pass
+  run: n06_range_break_continuation_other_coins_1h/002
+n07_calendar_daily_three_coins_1d.md:
+- id: monday_tradfi_reopen_inflow
+  belief: When TradFi reopens on Monday, ETF creations and institutional desks put
+    money to work that was idle over the weekend, so Monday's daily return is higher
+    than other days.
+  measure: mean_diff
+  verdict: fail
+  run: n07_calendar_daily_three_coins_1d/001
+- id: friday_derisk_before_weekend
+  belief: Leveraged and institutional desks cut crypto risk on Friday before the weekend,
+    when TradFi hedges are unavailable, so Friday's return is weaker than other days.
+  measure: mean_diff
+  verdict: fail
+  run: n07_calendar_daily_three_coins_1d/001
+- id: weekend_thin_drift_up
+  belief: Weekend trading is retail-dominated and thin, and retail buys more than
+    it sells (salary dip-buying, apps), so Saturday and Sunday bars close up more
+    often than weekday bars.
+  measure: hit_rate
+  verdict: fail
+  run: n07_calendar_daily_three_coins_1d/001
+- id: weekend_move_reverts_on_monday
+  belief: Moves made on thin weekend liquidity are partly noise, and Monday's institutional
+    flow corrects them, so the weekend move reverts more than an ordinary 2-day move
+    does.
+  measure: mean_diff
+  verdict: fail
+  run: n07_calendar_daily_three_coins_1d/001
+- id: pre_month_end_redemption_selling
+  belief: Before month end, funds and treasuries raise cash for redemptions, payroll
+    and reporting, which weighs on prices in the week before the turn of the month
+    (the already-tried inflow window comes after this one).
+  measure: net_return
+  verdict: fail
+  run: n07_calendar_daily_three_coins_1d/001
+- id: month_end_rebalance_reversal
+  belief: Multi-asset and crypto index funds rebalance at month end, selling what
+    rallied over the month and buying what fell, so the month's performance predicts
+    the opposite move across the turn of the month.
+  measure: rank_corr
+  verdict: fail
+  run: n07_calendar_daily_three_coins_1d/001
+- id: mid_month_payday_inflow
+  belief: Semi-monthly salaries paid on the 15th and DCA plans scheduled mid-month
+    bring retail buying around the 15th, separate from the turn-of-month window.
+  measure: net_return
+  verdict: fail
+  run: n07_calendar_daily_three_coins_1d/001
+- id: monthly_expiry_hedge_unwind
+  belief: Into the monthly Deribit expiry (last Friday, 08:00 UTC), dealer delta hedging
+    pushes price in the direction of the prior week's move; after expiry those hedges
+    unwind, so the pre-expiry week's move reverts.
+  measure: mean_diff
+  verdict: fail
+  run: n07_calendar_daily_three_coins_1d/001
+- id: q4_seasonal_strength
+  belief: Year-end performance chasing by funds, bonus season inflows and the historical
+    "Uptober to December" pattern make daily returns in October to December higher
+    than in the rest of the year.
+  measure: mean_diff
+  verdict: fail
+  run: n07_calendar_daily_three_coins_1d/001
+- id: friday_long_net_profit
+  belief: Crypto buyers add exposure on Friday ahead of the weekend (weekly Deribit
+    expiry at 08:00 UTC clears hedges, and retail funds accounts before the weekend),
+    so being long over Friday pays after cost.
+  measure: net_return
+  verdict: pass
+  run: n07_calendar_daily_three_coins_1d/001
+- id: friday_long_after_down_week
+  belief: The Friday edge comes from shorts and hedges being closed before the weekend,
+    so it should be larger when Monday to Thursday fell and there are more shorts
+    to cover.
+  measure: net_return
+  verdict: fail
+  run: n07_calendar_daily_three_coins_1d/001
+n08_opening_range_breakout_eth_1h.md:
+- id: asia_or_break_continuation
+  belief: A close beyond the 00-04 UTC opening range shows that the day's first directional
+    flow has started, and it keeps going for the next several hours.
+  measure: net_return
+  verdict: fail
+  run: n08_opening_range_breakout_eth_1h/001
+- id: or_false_break_reversal
+  belief: The first wick through the opening range that closes back inside is a stop-run,
+    and price then rotates toward the other side of the range.
+  measure: net_return
+  verdict: fail
+  run: n08_opening_range_breakout_eth_1h/001
+- id: london_takes_asia_range
+  belief: European participants arriving at 07 UTC run the liquidity sitting beyond
+    the Asian-session range, and a close beyond that range sets the direction into
+    the European day.
+  measure: net_return
+  verdict: fail
+  run: n08_opening_range_breakout_eth_1h/001
+- id: us_open_range_break
+  belief: US equity-open and ETF flows from 13 UTC set the direction of the US afternoon,
+    and a break of the first two US hours captures it.
+  measure: net_return
+  verdict: fail
+  run: n08_opening_range_breakout_eth_1h/001
+- id: volume_confirmed_break
+  belief: A range break carried by heavy volume reflects real participation and continues,
+    while a thin-volume break is noise.
+  measure: mean_diff
+  verdict: fail
+  run: n08_opening_range_breakout_eth_1h/001
+- id: break_bar_vol_expansion
+  belief: A break of the opening range releases stored orders and starts a period
+    of larger moves than hours that stay inside the range.
+  measure: abs_ratio
+  verdict: fail
+  run: n08_opening_range_breakout_eth_1h/001
+- id: inside_by_midday_quiet
+  belief: A day that has not broken its opening range by 12 UTC is a balance day,
+    and the afternoon stays quiet.
+  measure: abs_ratio
+  verdict: fail
+  run: n08_opening_range_breakout_eth_1h/001
+- id: or_close_location_drift
+  belief: Where price closes inside the opening range shows who won the first hours,
+    and the rest of the day drifts the same way.
+  measure: rank_corr
+  verdict: pass
+  run: n08_opening_range_breakout_eth_1h/001
+- id: weekday_vs_weekend_break
+  belief: Weekend breaks happen in thin books without institutional follow-through,
+    so weekday breaks continue better.
+  measure: mean_diff
+  verdict: fail
+  run: n08_opening_range_breakout_eth_1h/001
+- id: second_side_break_trap
+  belief: When the first break is reversed and price then breaks the opposite edge,
+    traders caught on the first break are forced out, and the second break runs.
+  measure: net_return
+  verdict: fail
+  run: n08_opening_range_breakout_eth_1h/001
+- id: break_aligned_with_prior_day
+  belief: An opening-range break in the direction of the prior UTC day's move joins
+    a running trend and continues, while a counter-trend break is more often a retracement
+    that fails.
+  measure: mean_diff
+  verdict: pass
+  run: n08_opening_range_breakout_eth_1h/001
+- id: or_location_with_prior_day
+  belief: When the first four UTC hours close near one edge of their range in the
+    same direction as the prior day's move, both the early flow and the running trend
+    agree, and the next 20 hours drift that way by more than the cost.
+  measure: net_return
+  verdict: pass
+  run: n08_opening_range_breakout_eth_1h/001
+- id: prior_day_return_drift
+  belief: The prior UTC day's return carries into the next day on ETH by itself, so
+    the edge in the two passing claims may come from the prior-day trend more than
+    from the opening range.
+  measure: rank_corr
+  verdict: fail
+  run: n08_opening_range_breakout_eth_1h/001
+n09_long_horizon_reversal_book_1d.md:
+- id: deep_12m_loser_long_book
+  belief: Coins whose 12-month log return sits in the bottom fifth of their own recent
+    history are oversold by forced and tired sellers, so a fixed 60-day long entry
+    pays after cost.
+  measure: net_return
+  verdict: fail
+  run: n09_long_horizon_reversal_book_1d/001
+- id: extreme_12m_winner_short_book
+  belief: An extreme 12-month run-up draws in late buyers whose gains are later given
+    back, so a 60-day short after a top-quintile year pays after cost.
+  measure: net_return
+  verdict: fail
+  run: n09_long_horizon_reversal_book_1d/001
+- id: drawdown_depth_hit_rate
+  belief: Depth below the 12-month high is the mechanism, not the return over a fixed
+    window; a drawdown beyond 60% is followed by up moves over 60 days more often
+    than ordinary bars.
+  measure: hit_rate
+  verdict: fail
+  run: n09_long_horizon_reversal_book_1d/001
+- id: capitulation_volume_in_drawdown
+  belief: A deep drawdown that ends in a volume surge marks seller capitulation, so
+    the reversal starts sooner and is larger than in a quiet drawdown.
+  measure: net_return
+  verdict: fail
+  run: n09_long_horizon_reversal_book_1d/001
+- id: turned_loser_vs_falling_knife
+  belief: Among 12-month losers, the reversal pays only once price has turned up;
+    buying the still-falling loser catches the knife.
+  measure: mean_diff
+  verdict: fail
+  run: n09_long_horizon_reversal_book_1d/001
+- id: quiet_base_after_decline
+  belief: When a long decline falls silent (realized volatility compresses), selling
+    pressure is exhausted and accumulation precedes the reversal.
+  measure: net_return
+  verdict: fail
+  run: n09_long_horizon_reversal_book_1d/001
+- id: stale_high_time_exhaustion
+  belief: Time, not depth, exhausts a bear phase; when the 12-month high is more than
+    9 months old and price is far below it, holders who wanted out are gone.
+  measure: hit_rate
+  verdict: fail
+  run: n09_long_horizon_reversal_book_1d/001
+- id: rolled_over_winner_short
+  belief: The short side pays only after an extreme run-up has started to roll over;
+    shorting a still-rising winner fights momentum.
+  measure: net_return
+  verdict: fail
+  run: n09_long_horizon_reversal_book_1d/001
+- id: yearly_mean_distance_reversal_book
+  belief: Price far from its 365-day mean is pulled back toward it over the next 60
+    days, so a book that is always in the market, long below the yearly mean and short
+    above it, pays after cost.
+  measure: net_return
+  verdict: fail
+  run: n09_long_horizon_reversal_book_1d/001
+n10_hourly_trend_with_vol_gate_1h.md:
+- id: tsmom_24h_daily_sampled
+  belief: The sign of the last 24 hours of return persists over the next 24 hours
+    by more than the round-trip cost, because information and flows diffuse slowly
+    into crypto spot prices.
+  measure: net_return
+  verdict: fail
+  run: n10_hourly_trend_with_vol_gate_1h/001
+- id: ema_12_48_cross_hold_48
+  belief: A fast/slow EMA crossover on hourly closes marks the start of a multi-day
+    trend that runs long enough to pay the cost.
+  measure: net_return
+  verdict: fail
+  run: n10_hourly_trend_with_vol_gate_1h/001
+- id: donchian_72h_breakout
+  belief: A close beyond the prior 3-day high or low triggers stop and breakout flows
+    that carry price further over the next day.
+  measure: net_return
+  verdict: pass
+  run: n10_hourly_trend_with_vol_gate_1h/001
+- id: squeeze_then_breakout
+  belief: A breakout that follows a period of unusually low realized volatility releases
+    stored positioning and trends more than an ordinary breakout.
+  measure: net_return
+  verdict: fail
+  run: n10_hourly_trend_with_vol_gate_1h/001
+- id: tsmom_high_vol_gate
+  belief: Trend persistence is stronger when realized volatility is high, because
+    large moves carry real news and forced flows, while quiet regimes are noise.
+  measure: mean_diff
+  verdict: fail
+  run: n10_hourly_trend_with_vol_gate_1h/001
+- id: efficiency_ratio_gate
+  belief: Trends whose last 24 hours moved in a clean path (high efficiency ratio)
+    persist, while choppy paths with the same net move are whipsaw and revert.
+  measure: mean_diff
+  verdict: fail
+  run: n10_hourly_trend_with_vol_gate_1h/001
+- id: volume_regime_gate
+  belief: A 24h trend made on heavy daily volume reflects broad participation and
+    persists, while one made on thin volume does not.
+  measure: mean_diff
+  verdict: fail
+  run: n10_hourly_trend_with_vol_gate_1h/001
+- id: weekday_vs_weekend_trend
+  belief: 24h trends formed on weekday liquidity carry information and persist, while
+    trends formed on thin weekend books are noise.
+  measure: mean_diff
+  verdict: fail
+  run: n10_hourly_trend_with_vol_gate_1h/001
+- id: vol_scaled_weekly_momentum_rank
+  belief: The strength of the 7-day trend, scaled by its volatility, ranks the next
+    day's return, because stronger risk-adjusted trends attract more follow-on flow.
+  measure: rank_corr
+  verdict: fail
+  run: n10_hourly_trend_with_vol_gate_1h/001
+- id: multi_horizon_alignment
+  belief: When the 1-day, 3-day and 7-day returns all agree in sign, the trend is
+    established across trader horizons and continues by more than the cost.
+  measure: net_return
+  verdict: fail
+  run: n10_hourly_trend_with_vol_gate_1h/001
+- id: pullback_within_trend
+  belief: Inside an established weekly trend, a sharp 6-hour move against it is a
+    liquidity dip that is bought or sold back into the trend, giving a cheaper trend
+    entry.
+  measure: net_return
+  verdict: fail
+  run: n10_hourly_trend_with_vol_gate_1h/001
+- id: breakout_aligned_with_weekly_trend
+  belief: A 72h breakout in the direction of the rising or falling weekly average
+    carries further over the next day than a breakout against that average, which
+    is more often a failed range break.
+  measure: mean_diff
+  verdict: fail
+  run: n10_hourly_trend_with_vol_gate_1h/001
+- id: breakout_volume_confirmed
+  belief: A 72h breakout printed on a bar with heavy volume relative to the past week
+    reflects real participation and carries further over the next day than a breakout
+    on ordinary volume, which more often fails back into the range.
+  measure: mean_diff
+  verdict: fail
+  run: n10_hourly_trend_with_vol_gate_1h/001
+n11_daily_gate_hourly_entry_1h.md:
+- id: uptrend_gate_dip_buy
+  belief: Hourly dips are bought by trend followers when the 30 day trend is up, so
+    dips pay only in that state and fail when the slow trend is flat or down.
+  measure: mean_diff
+  verdict: fail
+  run: n11_daily_gate_hourly_entry_1h/001
+- id: trend_gate_breakout_long
+  belief: Hourly breakouts above the prior two day high continue when the two week
+    trend is already up, and fail as false breaks when the slow trend is against them.
+  measure: mean_diff
+  verdict: fail
+  run: n11_daily_gate_hourly_entry_1h/001
+- id: calm_regime_hourly_reversion
+  belief: When weekly volatility is low against its own 90 day history, large hourly
+    moves are liquidity noise and revert, while in high volatility regimes they do
+    not.
+  measure: mean_diff
+  verdict: fail
+  run: n11_daily_gate_hourly_entry_1h/001
+- id: calming_vol_gate_dip_buy
+  belief: Dips bought while weekly volatility is falling below monthly volatility
+    recover because the selling pressure is fading, while dips during expanding volatility
+    keep falling.
+  measure: mean_diff
+  verdict: fail
+  run: n11_daily_gate_hourly_entry_1h/001
+- id: near_high_gate_dip_buy
+  belief: A dip close to a fresh three week high is a pause in strength and gets bought,
+    while the same dip deep in a drawdown is part of a falling market.
+  measure: mean_diff
+  verdict: fail
+  run: n11_daily_gate_hourly_entry_1h/001
+- id: deep_drawdown_capitulation_long
+  belief: A fast 24 hour crash on top of a deep monthly drawdown marks forced selling,
+    and the rebound over the next two days pays more than the trading cost.
+  measure: net_return
+  verdict: fail
+  run: n11_daily_gate_hourly_entry_1h/001
+- id: downtrend_gate_rally_fade
+  belief: In a falling 30 day trend, sharp hourly rallies are short covering and get
+    sold into, while the same rallies in other states continue.
+  measure: mean_diff
+  verdict: fail
+  run: n11_daily_gate_hourly_entry_1h/001
+- id: trend_strength_ranks_dip_outcome
+  belief: The stronger the price stands above its 30 day mean, the better an hourly
+    dip recovers, so slow trend strength ranks the payoff of dip entries.
+  measure: rank_corr
+  verdict: fail
+  run: n11_daily_gate_hourly_entry_1h/001
+- id: compressed_regime_breakout_follow
+  belief: When weekly volatility is compressed against its 90 day history, a two day
+    range break starts a new move and follows through better than breaks in a normal
+    regime.
+  measure: mean_diff
+  verdict: fail
+  run: n11_daily_gate_hourly_entry_1h/001
+- id: trend_aligned_momentum_hit_rate
+  belief: Hourly momentum bursts that agree with the 20 day trend continue more often
+    than bursts that go against it, because the slow flow is behind them.
+  measure: hit_rate
+  verdict: fail
+  run: n11_daily_gate_hourly_entry_1h/001
+- id: trend_aligned_two_sided_breakout_net
+  belief: Two-day range breaks that agree with a rising or falling two-week trend
+    continue enough to pay the trading cost, on both the long and the short side.
+  measure: net_return
+  verdict: fail
+  run: n11_daily_gate_hourly_entry_1h/001
+- id: near_high_gate_breakout_long
+  belief: A two-day high break that happens within a few percent of the three-week
+    high is strength being confirmed and continues, while the same break deep in a
+    drawdown is a relief bounce that fades.
+  measure: mean_diff
+  verdict: fail
+  run: n11_daily_gate_hourly_entry_1h/001
+n12_short_horizon_daily_reversion_1d.md:
+- id: vol_scaled_3d_shock_fade
+  belief: A 3-day move larger than 2 units of pre-move volatility is an overreaction
+    by thin mid-cap order books and partly reverses over the next 3 days.
+  measure: net_return
+  verdict: fail
+  run: n12_short_horizon_daily_reversion_1d/001
+- id: low_volume_shock_reverts_more
+  belief: Sharp moves made on light volume are liquidity gaps, not information, so
+    they revert more than the same moves made on heavy volume.
+  measure: mean_diff
+  verdict: fail
+  run: n12_short_horizon_daily_reversion_1d/001
+- id: dip_in_uptrend_reverts
+  belief: Shocks against the prevailing 100-day trend are pullbacks that trend followers
+    buy back, so they revert more than shocks in the trend's direction.
+  measure: mean_diff
+  verdict: fail
+  run: n12_short_horizon_daily_reversion_1d/001
+- id: inside_range_shock_reverts_new_extreme_does_not
+  belief: A shock that stays inside the recent 20-day range is noise and reverts,
+    while one that sets a new 20-day high or low triggers breakout and stop flows
+    that keep it going.
+  measure: mean_diff
+  verdict: fail
+  run: n12_short_horizon_daily_reversion_1d/001
+- id: calm_regime_shock_reverts
+  belief: A shock that arrives in a calm regime is an outlier liquidity event that
+    reverts, while in a turbulent regime large moves are the norm and carry on.
+  measure: mean_diff
+  verdict: fail
+  run: n12_short_horizon_daily_reversion_1d/001
+- id: rejection_close_continues_reversal
+  belief: After a sharp 3-day drop, a last bar that closes near its high shows that
+    sellers are exhausted and buyers have stepped in, so the rebound is stronger than
+    when the bar closes on its low.
+  measure: mean_diff
+  verdict: fail
+  run: n12_short_horizon_daily_reversion_1d/001
+- id: concentrated_jump_vs_grind
+  belief: A move made mostly in one day is a single-order or news overshoot that reverts,
+    while a move spread evenly over several days reflects steady flow that does not.
+  measure: mean_diff
+  verdict: fail
+  run: n12_short_horizon_daily_reversion_1d/001
+- id: weekend_shock_reverts
+  belief: Shocks that end on the weekend happen in thin, retail-dominated trading
+    and revert more once weekday liquidity returns.
+  measure: mean_diff
+  verdict: fail
+  run: n12_short_horizon_daily_reversion_1d/001
+- id: down_shock_long_only_hit_rate
+  belief: On spot mid-caps, sharp selloffs come from forced or panic selling that
+    is bought back, so the rebound is asymmetric and works as a long-only trade.
+  measure: hit_rate
+  verdict: fail
+  run: n12_short_horizon_daily_reversion_1d/001
+- id: shock_size_dose_response
+  belief: If reversion is real, larger moves in volatility units should revert proportionally
+    more, so among sizeable moves the size of the move ranks the next return inversely.
+  measure: rank_corr
+  verdict: fail
+  run: n12_short_horizon_daily_reversion_1d/001
+- id: vol_scaled_shock_continuation
+  belief: On thin mid-cap coins, news and flow spread out slowly, so a 3-day move
+    larger than 2 units of pre-move volatility keeps going over the next 5 days rather
+    than reversing.
+  measure: net_return
+  verdict: fail
+  run: n12_short_horizon_daily_reversion_1d/002
+- id: up_shock_short_fade
+  belief: Sharp rallies on mid-cap coins are short squeezes or pumps with no lasting
+    buyer, so the fade works on the short side even though the long-side rebound after
+    selloffs did not.
+  measure: net_return
+  verdict: fail
+  run: n12_short_horizon_daily_reversion_1d/002
+- id: confirmed_reversal_after_shock
+  belief: A fade entered at the shock's close fights the last of the forced flow,
+    while waiting for one day that closes against the shock enters once that flow
+    is spent, so the reversal that follows is larger.
+  measure: mean_diff
+  verdict: fail
+  run: n12_short_horizon_daily_reversion_1d/002
+- id: volume_climax_shock_reverts
+  belief: A shock made on climactic volume, about 2.5 times normal, marks capitulation
+    or blow-off; the marginal seller or buyer is used up, so price reverts after cost.
+  measure: net_return
+  verdict: fail
+  run: n12_short_horizon_daily_reversion_1d/002
+- id: fading_volume_into_shock
+  belief: When volume falls on each day of a sharp move, fewer traders are pushing
+    it, so the move is running out of participation and reverts; when volume rises
+    each day, new flow keeps arriving.
+  measure: mean_diff
+  verdict: fail
+  run: n12_short_horizon_daily_reversion_1d/002
+- id: post_shock_volume_dryup
+  belief: If volume collapses the day after a shock, the force that drove it has left
+    the market, and the price drifts back as liquidity providers re-center.
+  measure: mean_diff
+  verdict: fail
+  run: n12_short_horizon_daily_reversion_1d/002
+- id: inside_day_after_shock_reverts
+  belief: An inside day right after a shock (range within the prior bar's range) shows
+    the move has stalled and two-way trade has returned, which leads into a reversal
+    rather than a continuation.
+  measure: mean_diff
+  verdict: fail
+  run: n12_short_horizon_daily_reversion_1d/002
+- id: whipsaw_regime_shock_reverts
+  belief: When a shock comes shortly after an opposite-sign shock, the coin is in
+    a choppy, liquidity-driven regime where moves are pushed back, while an isolated
+    shock is more likely real news.
+  measure: mean_diff
+  verdict: fail
+  run: n12_short_horizon_daily_reversion_1d/002
+- id: unnamed_0
+  belief: ''
+  measure: null
+  verdict: refused
+  run: n12_short_horizon_daily_reversion_1d/002
+- id: uptrend_vol_scaled_move_reverts_rank
+  belief: Inside a longer uptrend, short 2-to-5-day swings are noise around trend-following
+    holders, so the size of a 3-day move in volatility units ranks the next 3 days
+    inversely.
+  measure: rank_corr
+  verdict: fail
+  run: n12_short_horizon_daily_reversion_1d/002
+n13_quiet_period_then_move_btc_1h.md:
+- id: long_quiet_spring_release
+  belief: The longer BTC goes without a large hourly bar, the more pending orders
+    and stops build up, so the eventual move is larger than usual.
+  measure: abs_ratio
+  verdict: fail
+  run: n13_quiet_period_then_move_btc_1h/001
+- id: long_quiet_stays_quiet
+  belief: Volatility clusters, so a long run with no large bar means a low-volatility
+    regime that persists and the next move is smaller than usual.
+  measure: abs_ratio
+  verdict: pass
+  run: n13_quiet_period_then_move_btc_1h/001
+- id: weekly_narrowest_range_expansion
+  belief: The narrowest 12h range of the week marks maximum compression, which tends
+    to be followed by expansion.
+  measure: abs_ratio
+  verdict: fail
+  run: n13_quiet_period_then_move_btc_1h/001
+- id: quiet_drift_continues
+  belief: Drift inside a compressed range reveals quiet accumulation or distribution,
+    so the next move continues it.
+  measure: mean_diff
+  verdict: fail
+  run: n13_quiet_period_then_move_btc_1h/001
+- id: quiet_drift_fakeout_reverts
+  belief: Drift inside a tight range is noise from thin liquidity that runs stops
+    on one side, so the real move goes the other way.
+  measure: mean_diff
+  verdict: fail
+  run: n13_quiet_period_then_move_btc_1h/001
+- id: close_location_in_compression
+  belief: When price sits at the edge of a compressed range, the side it presses on
+    is the side of the coming release.
+  measure: hit_rate
+  verdict: fail
+  run: n13_quiet_period_then_move_btc_1h/001
+- id: quiet_price_loud_volume_absorption
+  belief: A tight price range on above-normal volume means large orders are being
+    absorbed, which releases a bigger move than a tight range on dry volume.
+  measure: abs_ratio
+  verdict: fail
+  run: n13_quiet_period_then_move_btc_1h/001
+- id: asia_quiet_us_open_release
+  belief: A quiet Asian/European morning compresses positioning that the US equity
+    open (about 13:30 UTC) then releases, more than quiet at other hours does.
+  measure: abs_ratio
+  verdict: fail
+  run: n13_quiet_period_then_move_btc_1h/001
+- id: quiet_weekend_drift_reverts_monday
+  belief: Drift during a quiet, thin-liquidity weekend is not informed, so it is unwound
+    when full liquidity returns on Monday.
+  measure: mean_diff
+  verdict: fail
+  run: n13_quiet_period_then_move_btc_1h/001
+- id: wick_rejection_inside_quiet
+  belief: In a quiet range, repeated rejection wicks on one side show where resting
+    liquidity defends, so price leaves from the opposite side.
+  measure: rank_corr
+  verdict: fail
+  run: n13_quiet_period_then_move_btc_1h/001
+- id: post_shock_flag_continues
+  belief: A quiet consolidation right after a large bar is digestion, not reversal,
+    so the move resumes in the shock's direction.
+  measure: mean_diff
+  verdict: fail
+  run: n13_quiet_period_then_move_btc_1h/001
+- id: quiet_drift_profit_after_cost
+  belief: When a compressed range carries a clear drift, following that drift pays
+    more than the round-trip fee.
+  measure: net_return
+  verdict: fail
+  run: n13_quiet_period_then_move_btc_1h/001
+- id: long_quiet_drift_reverts
+  belief: In a quiet regime with no large bar for a day, liquidity is two-sided and
+    range-bound, so the 12h drift is unwound rather than extended, unlike in loud
+    regimes.
+  measure: mean_diff
+  verdict: fail
+  run: n13_quiet_period_then_move_btc_1h/001
+- id: held_flag_after_shock_pays
+  belief: When a quiet 12h consolidation after a large hourly bar still holds beyond
+    the midpoint of that shock bar, the shock was absorbed rather than rejected, and
+    the move resumes in its direction by more than the fee.
+  measure: net_return
+  verdict: fail
+  run: n13_quiet_period_then_move_btc_1h/001
+n15_eth_hourly_momentum_horizons_1h.md:
+- id: mom_168h_plain_rankcorr
+  belief: ETH's past week of return carries slow-moving trend information that keeps
+    paying over the next three days.
+  measure: rank_corr
+  verdict: fail
+  run: n15_eth_hourly_momentum_horizons_1h/001
+- id: mom_24h_short_reversal
+  belief: A one-day ETH move is mostly liquidity-driven overshoot that partly gives
+    back over the next day, unlike the weekly trend.
+  measure: rank_corr
+  verdict: pass
+  run: n15_eth_hourly_momentum_horizons_1h/001
+- id: mom_72h_vol_scaled_rankcorr
+  belief: A 3-day move is a stronger signal when it is large relative to recent hourly
+    volatility, so the risk-adjusted move predicts better than the raw move.
+  measure: rank_corr
+  verdict: fail
+  run: n15_eth_hourly_momentum_horizons_1h/001
+- id: sign_only_up_hour_share
+  belief: Persistent buying shows up as a high share of up hours over the week, whatever
+    their size, and that consistency predicts continuation better than one big candle.
+  measure: rank_corr
+  verdict: fail
+  run: n15_eth_hourly_momentum_horizons_1h/001
+- id: multi_horizon_sign_agreement
+  belief: When the 1-day, 3-day and 7-day trends all point the same way, flows are
+    aligned across trader horizons and the trend is more likely to continue.
+  measure: hit_rate
+  verdict: fail
+  run: n15_eth_hourly_momentum_horizons_1h/001
+- id: mom_168h_works_in_calm_regime
+  belief: Weekly momentum persists in calm markets, where trends come from slow flows,
+    and breaks down in high-volatility regimes, where moves are liquidation noise.
+  measure: mean_diff
+  verdict: fail
+  run: n15_eth_hourly_momentum_horizons_1h/001
+- id: mom_168h_volume_confirmed
+  belief: A weekly trend that comes with rising volume reflects real participation
+    and continues more than a trend on fading volume.
+  measure: mean_diff
+  verdict: fail
+  run: n15_eth_hourly_momentum_horizons_1h/001
+- id: downtrend_persists_more_than_uptrend
+  belief: ETH downtrends persist more than uptrends because deleveraging cascades
+    and risk-off flows are self-reinforcing, while rallies get sold.
+  measure: mean_diff
+  verdict: fail
+  run: n15_eth_hourly_momentum_horizons_1h/001
+- id: trend_acceleration_rankcorr
+  belief: When the last day's move outpaces the weekly pace, a trend is accelerating
+    as new money joins, and it carries on over the next day.
+  measure: rank_corr
+  verdict: fail
+  run: n15_eth_hourly_momentum_horizons_1h/001
+- id: vol_scaled_168h_rule_net
+  belief: A strong vol-scaled weekly trend, traded as discrete non-overlapping 3-day
+    holds, earns more than the 0.15% round-trip cost.
+  measure: net_return
+  verdict: fail
+  run: n15_eth_hourly_momentum_horizons_1h/001
+- id: unnamed_0
+  belief: ''
+  measure: null
+  verdict: refused
+  run: n15_eth_hourly_momentum_horizons_1h/001
+- id: rev_24h_volscaled_fade_net
+  belief: A large vol-scaled one-day ETH move partly gives back over the next day
+    by enough to pay the round-trip cost when traded as discrete fades.
+  measure: net_return
+  verdict: fail
+  run: n15_eth_hourly_momentum_horizons_1h/001
+n14_dollar_volume_regime_memecoins_1d.md:
+- id: surge_move_continuation
+  belief: A dollar-volume surge that comes with a decisive daily move marks new attention
+    arriving, and the late crowd keeps pushing price the same way for several days.
+  measure: mean_diff
+  verdict: fail
+  run: n14_dollar_volume_regime_memecoins_1d/001
+- id: surge_move_exhaustion
+  belief: On retail coins, a big move on a dollar-volume blowout is the climax of
+    the attention wave, so it overshoots and partly reverts within days. This contradicts
+    surge_move_continuation.
+  measure: mean_diff
+  verdict: fail
+  run: n14_dollar_volume_regime_memecoins_1d/001
+- id: drought_precedes_expansion
+  belief: When dollar volume dries up, attention is absent and the coin coils, and
+    the eventual return of attention brings larger moves than usual.
+  measure: abs_ratio
+  verdict: fail
+  run: n14_dollar_volume_regime_memecoins_1d/001
+- id: volume_trend_predicts_drift
+  belief: A rising trend in dollar volume (short-term attention above the 2-month
+    norm) precedes positive drift, because attention on retail coins draws net buying.
+  measure: rank_corr
+  verdict: fail
+  run: n14_dollar_volume_regime_memecoins_1d/001
+- id: confirmed_breakout_long
+  belief: A close at a new 30-day high on surging dollar volume shows real new demand
+    rather than a thin drift, and it pays after cost on a long position.
+  measure: net_return
+  verdict: fail
+  run: n14_dollar_volume_regime_memecoins_1d/001
+- id: unconfirmed_high_fades
+  belief: A new 20-day high reached while dollar volume is fading has no fresh buyers
+    behind it, so the price drifts back down.
+  measure: mean_diff
+  verdict: fail
+  run: n14_dollar_volume_regime_memecoins_1d/001
+- id: capitulation_bounce
+  belief: A sharp down day on a dollar-volume surge is forced or panic selling by
+    retail holders, and the price bounces over the next few days once that selling
+    is done.
+  measure: hit_rate
+  verdict: fail
+  run: n14_dollar_volume_regime_memecoins_1d/001
+- id: post_pump_attention_fade
+  belief: After a pump-day volume surge, once dollar volume falls back below normal
+    the crowd has left, and the pumped price bleeds lower over the following days.
+  measure: mean_diff
+  verdict: fail
+  run: n14_dollar_volume_regime_memecoins_1d/001
+- id: hot_regime_momentum
+  belief: In a high-attention regime (the month's dollar volume well above its half-year
+    level), price trends persist because flows chase, while in cold regimes trends
+    do not persist.
+  measure: mean_diff
+  verdict: fail
+  run: n14_dollar_volume_regime_memecoins_1d/001
+- id: surge_close_location
+  belief: On a surge day, where the bar closes within its range shows which side won
+    the attention fight, and the winners keep control over the next days.
+  measure: hit_rate
+  verdict: fail
+  run: n14_dollar_volume_regime_memecoins_1d/001
+n16_day_of_week_other_coins_1d.md:
+- id: weekend_hold_long
+  belief: On these coins, prices drift up over the thin-liquidity weekend because
+    retail and on-chain activity dominate while institutional selling pauses.
+  measure: net_return
+  verdict: fail
+  run: n16_day_of_week_other_coins_1d/001
+- id: monday_short
+  belief: Monday brings the return of institutional and TradFi-linked flows, which
+    de-risk weekend gains and push alt coins down on the first weekday.
+  measure: net_return
+  verdict: fail
+  run: n16_day_of_week_other_coins_1d/001
+- id: friday_short_opposite
+  belief: Unlike BTC, ETH and LTC, smaller coins are sold into the weekend as traders
+    cut alt exposure before low-liquidity days, so the Friday bar is weak.
+  measure: net_return
+  verdict: fail
+  run: n16_day_of_week_other_coins_1d/001
+- id: midweek_long
+  belief: Tuesday and Wednesday carry the heaviest US and European risk-on flows,
+    so alt coins rise from Monday's close to Wednesday's close.
+  measure: net_return
+  verdict: fail
+  run: n16_day_of_week_other_coins_1d/001
+- id: weekend_move_reverts_monday
+  belief: Weekend moves happen on thin books and are partly mispricing, so Monday's
+    return tends to reverse the Friday-close-to-Sunday-close move more than an ordinary
+    day reverses the prior two days.
+  measure: mean_diff
+  verdict: fail
+  run: n16_day_of_week_other_coins_1d/001
+- id: monday_sets_week_trend
+  belief: When the new week starts, flows follow the prior week's direction, so the
+    trailing 7-day trend persists more strongly over Monday to Friday than from any
+    random start day.
+  measure: mean_diff
+  verdict: fail
+  run: n16_day_of_week_other_coins_1d/001
+- id: weekend_low_volatility
+  belief: Weekend sessions have less news and fewer participants, so their absolute
+    moves are smaller than weekday moves, even if mean returns do not differ.
+  measure: abs_ratio
+  verdict: pass
+  run: n16_day_of_week_other_coins_1d/001
+- id: monday_volatility_burst
+  belief: Information and orders pile up over the weekend and are released when the
+    TradFi week opens, so Monday's absolute move is larger than an ordinary day's.
+  measure: abs_ratio
+  verdict: fail
+  run: n16_day_of_week_other_coins_1d/001
+- id: own_weekday_history
+  belief: Each coin has a weekday pattern of its own that persists, so the past year's
+    average return of the same weekday predicts the next day's return without choosing
+    the day in advance.
+  measure: rank_corr
+  verdict: fail
+  run: n16_day_of_week_other_coins_1d/001
+- id: heavy_friday_volume_weekend
+  belief: A Friday with unusually high volume signals that positioning was done before
+    the weekend, and the thin weekend then continues that day's direction.
+  measure: mean_diff
+  verdict: fail
+  run: n16_day_of_week_other_coins_1d/001
+n17_vol_channel_breakout_daily_1d.md:
+- id: keltner_up_break_long_net
+  belief: A daily close crossing above a 20-day EMA plus 2 ATR marks new demand that
+    keeps pushing price for about two weeks, enough to pay the round trip.
+  measure: net_return
+  verdict: fail
+  run: n17_vol_channel_breakout_daily_1d/001
+- id: keltner_down_break_continuation
+  belief: A close below the lower volatility band starts forced selling and de-risking
+    that keeps going, so returns after a downside break are worse than usual.
+  measure: mean_diff
+  verdict: fail
+  run: n17_vol_channel_breakout_daily_1d/001
+- id: deep_down_break_capitulation_bounce
+  belief: A close far below the channel (2.5 ATR under the EMA) is a liquidation flush,
+    and price rebounds over the next days as forced sellers run out.
+  measure: net_return
+  verdict: fail
+  run: n17_vol_channel_breakout_daily_1d/001
+- id: break_distance_dose_response
+  belief: The further a close sits above the upper band in ATR units, the stronger
+    the demand behind it, so distance outside the band predicts the size of the follow-through.
+  measure: rank_corr
+  verdict: fail
+  run: n17_vol_channel_breakout_daily_1d/001
+- id: break_volatility_expansion
+  belief: A close outside the band, either side, marks a regime change that is followed
+    by larger absolute moves, which is why a trailing exit must be wide.
+  measure: abs_ratio
+  verdict: fail
+  run: n17_vol_channel_breakout_daily_1d/001
+- id: trend_aligned_up_break
+  belief: Upside breaks inside a long uptrend carry real accumulation, while upside
+    breaks below the 100-day mean are short-covering bursts that fade.
+  measure: mean_diff
+  verdict: fail
+  run: n17_vol_channel_breakout_daily_1d/001
+- id: trailing_mid_exit_information
+  belief: After an upside break, a close back under the channel mean signals the breakout
+    has failed, so the trailing exit at the mean removes the bad part of the trade.
+  measure: mean_diff
+  verdict: fail
+  run: n17_vol_channel_breakout_daily_1d/001
+- id: grind_vs_shock_break
+  belief: A break reached by a normal-range bar reflects steady flow that persists,
+    while a break made by one outsized shock bar is news overreaction that tends to
+    fade.
+  measure: mean_diff
+  verdict: fail
+  run: n17_vol_channel_breakout_daily_1d/001
+- id: volume_confirmed_break
+  belief: A channel break on heavy volume reflects broad participation and continues,
+    while a break on thin volume is easily reversed.
+  measure: mean_diff
+  verdict: fail
+  run: n17_vol_channel_breakout_daily_1d/001
+- id: weekday_vs_weekend_break
+  belief: Weekend daily bars trade in thin books without institutional flow, so channel
+    breaks closed on Saturday or Sunday are less reliable than weekday breaks.
+  measure: mean_diff
+  verdict: fail
+  run: n17_vol_channel_breakout_daily_1d/001
+- id: slow_wide_channel_long_net
+  belief: A break of a slow, wide channel (SMA50 plus 3 ATR50) marks a multi-week
+    regime shift driven by slow capital, which pays more over a month than a fast
+    channel does.
+  measure: net_return
+  verdict: fail
+  run: n17_vol_channel_breakout_daily_1d/001
+- id: channel_position_reversion_all_bars
+  belief: On daily BTC and LTC, a close stretched far from its 20-day EMA in ATR units
+    tends to pull back toward the mean over the next week, so the distance from the
+    channel mean is a reversion signal rather than a breakout signal.
+  measure: rank_corr
+  verdict: fail
+  run: n17_vol_channel_breakout_daily_1d/001
+- id: stretched_channel_reversion_hit
+  belief: On daily BTC and LTC, a close stretched more than 1.5 ATR from its 20-day
+    EMA tends to move back toward the mean over the next week more reliably than an
+    unstretched close, so the edge of the channel fades rather than breaks out.
+  measure: hit_rate
+  verdict: fail
+  run: n17_vol_channel_breakout_daily_1d/001
+n18_payment_coins_hourly_shock_1h.md:
+- id: shock_vol_clustering_6h
+  belief: On XRP and TRX an hourly price shock is followed by hours of elevated volatility,
+    whatever the direction of the next move.
+  measure: abs_ratio
+  verdict: fail
+  run: n18_payment_coins_hourly_shock_1h/001
+- id: volume_confirmed_shock_continues
+  belief: A price shock backed by a volume surge reflects real news or large flow
+    and keeps going, more than a shock on ordinary volume.
+  measure: mean_diff
+  verdict: fail
+  run: n18_payment_coins_hourly_shock_1h/001
+- id: thin_volume_shock_fades
+  belief: A large hourly move on thin volume is a liquidity air pocket in a thin book
+    and retraces within a few hours.
+  measure: net_return
+  verdict: fail
+  run: n18_payment_coins_hourly_shock_1h/001
+- id: wick_rejection_shock_direction
+  belief: A shock bar with a wide range but a small body, closing near one extreme,
+    shows that one side was rejected, and price drifts toward the closing side.
+  measure: mean_diff
+  verdict: fail
+  run: n18_payment_coins_hourly_shock_1h/001
+- id: volume_surge_without_move_precedes_volatility
+  belief: A large-transfer-style volume surge with no price move signals absorbed
+    flow or pending news, and volatility follows.
+  measure: abs_ratio
+  verdict: fail
+  run: n18_payment_coins_hourly_shock_1h/001
+- id: confirmed_shock_follow_through_12h
+  belief: When the hour after a shock moves the same way, the market has accepted
+    the news and the move extends over the next half day.
+  measure: net_return
+  verdict: fail
+  run: n18_payment_coins_hourly_shock_1h/001
+- id: us_session_shock_continues_more_than_asia
+  belief: Shocks during US hours carry institutional and news flow and continue, while
+    Asian-hour shocks on these Asia-heavy coins are more often local flow that fades.
+  measure: mean_diff
+  verdict: fail
+  run: n18_payment_coins_hourly_shock_1h/001
+- id: shock_size_overreaction_24h
+  belief: The bigger the hourly shock relative to normal, the more it overshoots,
+    so shock size predicts a reversal over the next day.
+  measure: rank_corr
+  verdict: fail
+  run: n18_payment_coins_hourly_shock_1h/001
+- id: exhausted_shock_after_extended_move_reverts
+  belief: A shock that arrives at the end of an already extended day-long move in
+    the same direction is capitulation or blow-off and reverts.
+  measure: mean_diff
+  verdict: fail
+  run: n18_payment_coins_hourly_shock_1h/001
+- id: shock_out_of_calm_continues
+  belief: A shock that comes out of a quiet regime is fresh information, such as a
+    news event or a large transfer, and trends, while a shock inside an already volatile
+    regime is noise.
+  measure: mean_diff
+  verdict: fail
+  run: n18_payment_coins_hourly_shock_1h/001
+- id: volume_backed_shock_more_volatile_after
+  belief: On XRP and TRX, an hourly price shock that comes with a volume surge is
+    followed by more volatility over the next hours than a shock on ordinary volume,
+    because it reflects real flow rather than a thin book.
+  measure: abs_ratio
+  verdict: pass
+  run: n18_payment_coins_hourly_shock_1h/001
+n19_altcoin_daily_momentum_1d.md:
+- id: tsmom_3m_rank
+  belief: On older altcoins, investors absorb news slowly over weeks, so the past
+    3-month return ranks the next month's return.
+  measure: rank_corr
+  verdict: fail
+  run: n19_altcoin_daily_momentum_1d/001
+- id: tsmom_1m_herding_rank
+  belief: Altcoin retail herding produces short continuation, so the past 1-month
+    return predicts the next 10 days.
+  measure: rank_corr
+  verdict: fail
+  run: n19_altcoin_daily_momentum_1d/001
+- id: tsmom_6m_bubble_reversal
+  belief: Six-month altcoin run-ups are speculative bubbles that deflate, so a long-horizon
+    return reverses (the opposite of the trend ideas).
+  measure: rank_corr
+  verdict: fail
+  run: n19_altcoin_daily_momentum_1d/001
+- id: risk_adjusted_mom_rank
+  belief: A trend that is large relative to its own noise is real, not a lucky jump,
+    so a volatility-scaled 60-day return ranks future returns.
+  measure: rank_corr
+  verdict: fail
+  run: n19_altcoin_daily_momentum_1d/001
+- id: long_only_2m_trend_net
+  belief: Altcoins have positive drift only while in uptrends, so being long only
+    after a positive 2-month return pays after cost.
+  measure: net_return
+  verdict: fail
+  run: n19_altcoin_daily_momentum_1d/001
+- id: long_short_2m_trend_net
+  belief: Altcoins crash as persistently as they rally, so following the sign of the
+    2-month return on both sides pays after cost.
+  measure: net_return
+  verdict: fail
+  run: n19_altcoin_daily_momentum_1d/001
+- id: momentum_better_in_calm
+  belief: Momentum works in calm regimes and fails in turbulent ones, which is why
+    scaling exposure down in high volatility should help.
+  measure: mean_diff
+  verdict: fail
+  run: n19_altcoin_daily_momentum_1d/001
+- id: vol_clustering_for_scaling
+  belief: Altcoin volatility clusters at monthly scale, so high trailing volatility
+    forecasts large moves and justifies scaling positions by volatility.
+  measure: abs_ratio
+  verdict: fail
+  run: n19_altcoin_daily_momentum_1d/001
+- id: volume_confirmed_uptrend
+  belief: An uptrend backed by rising participation reflects new money arriving and
+    lasts longer than one on fading volume.
+  measure: mean_diff
+  verdict: fail
+  run: n19_altcoin_daily_momentum_1d/001
+- id: smooth_trend_frog_in_pan
+  belief: Trends built from many small up days go unnoticed and persist, while trends
+    made of a few jumps get priced at once, so the share of up days ranks future returns.
+  measure: rank_corr
+  verdict: fail
+  run: n19_altcoin_daily_momentum_1d/001
+- id: near_6m_high_anchoring
+  belief: Traders anchor on the recent 6-month high and sell into it, so coins closing
+    near that high underreact and keep rising.
+  measure: rank_corr
+  verdict: fail
+  run: n19_altcoin_daily_momentum_1d/001
+n20_compression_breakout_alts_daily_1d.md:
+- id: range_squeeze_break_continues
+  belief: When an altcoin's 10-day high-low range is narrow against its own past year,
+    a close outside that range starts a move that continues for several days and pays
+    the fee.
+  measure: net_return
+  verdict: fail
+  run: n20_compression_breakout_alts_daily_1d/001
+- id: squeeze_breaks_move_further_than_plain_breaks
+  belief: Breaks that end a quiet period release stored orders and produce larger
+    moves than breaks out of already-wide ranges.
+  measure: abs_ratio
+  verdict: fail
+  run: n20_compression_breakout_alts_daily_1d/001
+- id: squeeze_breaks_trend_better_than_plain_breaks
+  belief: Direction after a break is more persistent when the break ends a compression
+    than when it comes from a wide, noisy range, where breaks are mostly overshoots.
+  measure: mean_diff
+  verdict: fail
+  run: n20_compression_breakout_alts_daily_1d/001
+- id: volume_confirmed_squeeze_break
+  belief: A break out of compression on a volume surge reflects real participation,
+    not a thin-book poke, and continues.
+  measure: net_return
+  verdict: fail
+  run: n20_compression_breakout_alts_daily_1d/001
+- id: rejected_squeeze_break_fades
+  belief: A break out of compression that closes in the wrong half of its own bar
+    (a long wick back toward the range) is a stop run that gets rejected, and price
+    moves back the other way.
+  measure: net_return
+  verdict: fail
+  run: n20_compression_breakout_alts_daily_1d/001
+- id: range_expansion_day_after_quiet
+  belief: The first wide-range day after a quiet stretch shows where pressure sits
+    through its close location, and the next days follow that side.
+  measure: hit_rate
+  verdict: fail
+  run: n20_compression_breakout_alts_daily_1d/001
+- id: break_strength_scales_continuation
+  belief: Among squeeze breaks, the further the close lands beyond the old range (scaled
+    by that range), the stronger the follow-through.
+  measure: rank_corr
+  verdict: fail
+  run: n20_compression_breakout_alts_daily_1d/001
+- id: trend_aligned_squeeze_break
+  belief: A compression is often a pause inside a trend, so breaks in the direction
+    of the 100-day trend continue while breaks against it fail.
+  measure: mean_diff
+  verdict: fail
+  run: n20_compression_breakout_alts_daily_1d/001
+- id: longer_squeeze_stronger_break
+  belief: The longer a market stays compressed, the more positioning builds up, so
+    the break that ends a long squeeze runs further than one ending a brief lull.
+  measure: rank_corr
+  verdict: fail
+  run: n20_compression_breakout_alts_daily_1d/001
+- id: downside_squeeze_breaks_run_harder
+  belief: In leveraged altcoin markets, a downside break from a quiet range triggers
+    stop and liquidation cascades, so it follows through more than an upside break.
+  measure: mean_diff
+  verdict: fail
+  run: n20_compression_breakout_alts_daily_1d/001
+- id: return_vol_squeeze_starts_trend
+  belief: When close-to-close volatility is unusually low, a new 20-day closing high
+    or low marks the start of a multi-week trend, because volatility regimes mean-revert
+    upward with direction.
+  measure: net_return
+  verdict: fail
+  run: n20_compression_breakout_alts_daily_1d/001
+n21_candle_patterns_daily_1d.md:
+- id: inside_bar_vol_release
+  belief: A daily inside bar marks a pause in two-sided trading that resolves in a
+    larger than usual move over the next few days, against the usual rule that quiet
+    days are followed by quiet days.
+  measure: abs_ratio
+  verdict: fail
+  run: n21_candle_patterns_daily_1d/001
+- id: inside_bar_close_breakout
+  belief: When the bar after an inside bar closes beyond the inside bar's range, the
+    release of compression has chosen a direction and continues.
+  measure: net_return
+  verdict: fail
+  run: n21_candle_patterns_daily_1d/001
+- id: engulfing_after_pullback
+  belief: A real body that engulfs the prior bar's opposite body after a 3-day move
+    against it shows a shift of control that persists for several days, beyond what
+    any up or down day implies.
+  measure: mean_diff
+  verdict: fail
+  run: n21_candle_patterns_daily_1d/001
+- id: three_bar_reversal
+  belief: Two bars of lower closes and lower lows, then a close above the prior bar's
+    high, traps late sellers, and their covering drives a multi-day reversal (mirror
+    for tops).
+  measure: net_return
+  verdict: fail
+  run: n21_candle_patterns_daily_1d/001
+- id: failed_range_breakout
+  belief: A day that trades through the 10-day high or low but closes back inside
+    the range shows rejected stop-driven flow and reverses, while breakouts that hold
+    the close do not.
+  measure: mean_diff
+  verdict: fail
+  run: n21_candle_patterns_daily_1d/001
+- id: outside_bar_fade
+  belief: An outside bar that runs both the prior high and the prior low is a two-sided
+    liquidation sweep whose closing direction is exhausted and tends to give back.
+  measure: mean_diff
+  verdict: fail
+  run: n21_candle_patterns_daily_1d/001
+- id: staircase_trend_persistence
+  belief: Three bars in a row of higher highs and higher lows (or lower highs and
+    lower lows) reflect orderly one-sided flow that persists more reliably than a
+    plain 3-day move of the same sign.
+  measure: hit_rate
+  verdict: fail
+  run: n21_candle_patterns_daily_1d/001
+- id: tweezer_at_range_edge
+  belief: Two consecutive days whose highs (lows) match at a 10-day extreme, with
+    the second day closing against the test, mark a level that sellers (buyers) defend,
+    and price backs off from it.
+  measure: net_return
+  verdict: fail
+  run: n21_candle_patterns_daily_1d/001
+- id: prior_bar_close_break_fade
+  belief: A daily close beyond the prior day's high or low overshoots on both BTC
+    and ETH and is partly given back over the next three days, whether or not the
+    prior day was an inside bar.
+  measure: net_return
+  verdict: fail
+  run: n21_candle_patterns_daily_1d/001
+n22_friday_effect_hourly_resolution_1h.md:
+- id: friday_full_day_vs_other_weekdays
+  belief: The daily Friday effect shows up at hourly resolution as a larger 24-hour
+    return from Friday 00:00 UTC to Saturday 00:00 UTC than the same 24-hour span
+    on Monday to Thursday.
+  measure: mean_diff
+  verdict: fail
+  run: n22_friday_effect_hourly_resolution_1h/001
+- id: friday_asia_session_drift
+  belief: The Friday premium is paid during the Asian session, as Asian participants
+    position for the weekend before Europe opens.
+  measure: mean_diff
+  verdict: fail
+  run: n22_friday_effect_hourly_resolution_1h/001
+- id: friday_europe_morning_drift
+  belief: The Friday premium is concentrated in the European morning, before US equities
+    open, as European desks de-risk shorts ahead of the weekend.
+  measure: mean_diff
+  verdict: fail
+  run: n22_friday_effect_hourly_resolution_1h/001
+- id: friday_us_session_drift
+  belief: The Friday premium lives in the US cash session, as US flows (ETF creations,
+    risk-on equity tone into the weekly close) lift crypto.
+  measure: mean_diff
+  verdict: fail
+  run: n22_friday_effect_hourly_resolution_1h/001
+- id: friday_post_us_close_drift
+  belief: The Friday premium arrives after US equities close (21:00 to 24:00 UTC),
+    when thin liquidity and weekend-long positioning push price up.
+  measure: mean_diff
+  verdict: fail
+  run: n22_friday_effect_hourly_resolution_1h/001
+- id: thursday_evening_prepositioning
+  belief: Part of the Friday daily return is front-run on Thursday evening, so the
+    late-Thursday window from the US afternoon to the UTC day boundary is stronger
+    than on other weekdays.
+  measure: mean_diff
+  verdict: fail
+  run: n22_friday_effect_hourly_resolution_1h/001
+- id: friday_broad_hourly_drift
+  belief: The Friday effect is a broad drift rather than a few hours, so a larger
+    share of Friday hours (00:00 to 23:00 UTC closes) close up than hours on other
+    days.
+  measure: hit_rate
+  verdict: fail
+  run: n22_friday_effect_hourly_resolution_1h/001
+- id: friday_intraday_momentum
+  belief: On Fridays, return accumulated since 00:00 UTC predicts the next hours,
+    because weekend-positioning flow is persistent within the day.
+  measure: rank_corr
+  verdict: fail
+  run: n22_friday_effect_hourly_resolution_1h/001
+- id: friday_after_down_week_rebound
+  belief: The Friday premium is larger after a falling week, because weekend short-covering
+    is stronger when shorts have built up.
+  measure: mean_diff
+  verdict: fail
+  run: n22_friday_effect_hourly_resolution_1h/001
+- id: friday_high_participation_hours
+  belief: Friday upside is carried by hours with unusually high participation, when
+    real weekend-positioning flow arrives, not by quiet hours.
+  measure: mean_diff
+  verdict: fail
+  run: n22_friday_effect_hourly_resolution_1h/001
+- id: friday_us_session_net_profit
+  belief: Holding only the Friday US-session hours captures enough of the effect to
+    pay the 0.15% round trip on every coin.
+  measure: net_return
+  verdict: fail
+  run: n22_friday_effect_hourly_resolution_1h/001
+- id: friday_full_day_net_profit
+  belief: A single Friday 00:00 to 24:00 UTC hold, entered on hourly bars, pays the
+    round-trip cost on all three coins.
+  measure: net_return
+  verdict: fail
+  run: n22_friday_effect_hourly_resolution_1h/001
+- id: friday_post_us_close_net_profit
+  belief: The part of the Friday premium that is most consistent across coins and
+    windows arrives in the three hours after US equities close, and it is large enough
+    in absolute terms to pay the round trip.
+  measure: net_return
+  verdict: fail
+  run: n22_friday_effect_hourly_resolution_1h/001
+- id: friday_after_weak_thursday_evening
+  belief: The Thursday-evening weakness is pre-weekend selling that is bought back
+    on Friday, so the Friday 24-hour return is larger when Thursday 16:00 to Friday
+    00:00 UTC closed down.
+  measure: mean_diff
+  verdict: fail
+  run: n22_friday_effect_hourly_resolution_1h/001
+n23_weekday_gated_trend_hourly_1h.md:
+- id: ma_cross_weekday_vs_weekend
+  belief: A 24/168-bar moving-average trend rule earns its edge on weekday hours and
+    gives it back in the quiet weekend window from Friday evening to Monday morning.
+  measure: mean_diff
+  verdict: fail
+  run: n23_weekday_gated_trend_hourly_1h/001
+- id: weekend_breakouts_fail
+  belief: Breakouts of the 72-hour range made in thin weekend trading are mostly false
+    and do not follow through, while weekday breakouts do.
+  measure: hit_rate
+  verdict: fail
+  run: n23_weekday_gated_trend_hourly_1h/001
+- id: tsmom_low_vol_gate
+  belief: Time-series momentum works when trailing 24h volatility is not in its bottom
+    third, because quiet regimes are mean-reverting chop whatever the weekday.
+  measure: mean_diff
+  verdict: fail
+  run: n23_weekday_gated_trend_hourly_1h/001
+- id: vol_expansion_gate
+  belief: What matters is whether volatility is expanding or compressing, not its
+    level; trend rules pay while 24h volatility is rising and bleed while it contracts,
+    as it does into a weekend.
+  measure: mean_diff
+  verdict: fail
+  run: n23_weekday_gated_trend_hourly_1h/001
+- id: efficiency_ratio_gate
+  belief: Weekend compression shows as a choppy, inefficient price path; a trend rule
+    pays when the trailing 24-bar efficiency ratio is high and fails when the path
+    is noise.
+  measure: mean_diff
+  verdict: fail
+  run: n23_weekday_gated_trend_hourly_1h/001
+- id: volume_participation_gate
+  belief: Trends need participation; when trailing 24h volume is below its monthly
+    norm, as on weekends, moves are not carried by real flow and the trend rule loses.
+  measure: mean_diff
+  verdict: fail
+  run: n23_weekday_gated_trend_hourly_1h/001
+- id: monday_weekend_range_release
+  belief: The weekend compression stores energy; the first Monday break of the weekend's
+    high or low starts a move that follows through more than an ordinary midweek breakout.
+  measure: mean_diff
+  verdict: fail
+  run: n23_weekday_gated_trend_hourly_1h/001
+- id: gated_cross_pays_net
+  belief: A 12/72 MA-cross entry taken only on weekdays with 24h volatility above
+    its lower tercile is profitable after the 0.15% round trip.
+  measure: net_return
+  verdict: pass
+  run: n23_weekday_gated_trend_hourly_1h/001
+- id: gated_vs_ungated_cross_events
+  belief: The same 12/72 MA-cross entries taken outside the gate (weekend window or
+    bottom-tercile volatility) do clearly worse than those inside it, so the gate
+    is what turns the rule profitable.
+  measure: mean_diff
+  verdict: fail
+  run: n23_weekday_gated_trend_hourly_1h/001
+- id: weekday_only_momentum
+  belief: Weekend returns are noise that corrupts the momentum signal; momentum summed
+    over weekday bars only predicts better, most visibly when it disagrees with full
+    momentum.
+  measure: rank_corr
+  verdict: fail
+  run: n23_weekday_gated_trend_hourly_1h/001
+- id: cross_in_vol_contraction
+  belief: MA-cross trend entries follow through better when 24h volatility is contracting
+    than when it is expanding, because a cross made in compression starts a move rather
+    than ending a spike.
+  measure: mean_diff
+  verdict: fail
+  run: n23_weekday_gated_trend_hourly_1h/001
+- id: weekday_part_of_gate_on_cross_events
+  belief: Within MA-cross entries already made in non-quiet volatility, the weekday
+    filter adds its own edge, because crosses that fire in the Friday-evening-to-Monday-morning
+    window do not follow through even when volatility is not low.
+  measure: mean_diff
+  verdict: fail
+  run: n23_weekday_gated_trend_hourly_1h/001
+n24_hourly_donchian_other_coins_1h.md:
+- id: donchian72_follow_through_net
+  belief: On LTC, XRP and SOL hourly bars, a close beyond the prior 72-hour channel
+    starts a move that persists long enough to pay fees, as it did on BTC and ETH.
+  measure: net_return
+  verdict: fail
+  run: n24_hourly_donchian_other_coins_1h/001
+- id: donchian168_slow_trend_net
+  belief: On smaller coins, short channels catch noise, and only a weekly (168-hour)
+    channel break marks a real trend shift that pays over three days.
+  measure: net_return
+  verdict: fail
+  run: n24_hourly_donchian_other_coins_1h/001
+- id: donchian24_breakout_fade
+  belief: On thinner altcoin books, a break of the one-day channel is often a stop
+    run that reverses within hours.
+  measure: net_return
+  verdict: fail
+  run: n24_hourly_donchian_other_coins_1h/001
+- id: breakout_after_compression
+  belief: Breakouts from a narrow channel release stored pressure and follow through
+    more than breakouts from an already wide, volatile channel.
+  measure: mean_diff
+  verdict: fail
+  run: n24_hourly_donchian_other_coins_1h/001
+- id: volume_confirmed_breakout
+  belief: A breakout on heavy volume reflects real participation and persists, while
+    a low-volume breakout is a drift through thin liquidity that fails.
+  measure: mean_diff
+  verdict: fail
+  run: n24_hourly_donchian_other_coins_1h/001
+- id: breakout_session_us_hours
+  belief: Breakouts during the US/EU overlap, when the most participants trade, are
+    driven by flow and persist more than breakouts in quiet Asian hours.
+  measure: mean_diff
+  verdict: fail
+  run: n24_hourly_donchian_other_coins_1h/001
+- id: weekday_vs_weekend_breakout
+  belief: Weekend breakouts on thin books are more often false, so weekday breakouts
+    win more often.
+  measure: hit_rate
+  verdict: fail
+  run: n24_hourly_donchian_other_coins_1h/001
+- id: breakout_with_monthly_trend
+  belief: Breakouts in the direction of the 30-day trend continue, while counter-trend
+    breakouts are corrections that stall.
+  measure: mean_diff
+  verdict: fail
+  run: n24_hourly_donchian_other_coins_1h/001
+- id: breakout_overshoot_strength
+  belief: How far the close pushes beyond the channel, scaled by the typical range,
+    measures the urgency of the move, and a larger overshoot predicts a larger continuation.
+  measure: rank_corr
+  verdict: fail
+  run: n24_hourly_donchian_other_coins_1h/001
+- id: breakout_volatility_expansion
+  belief: A channel break starts a high-volatility regime, which is what lets a volatility-targeted
+    breakout make money even when direction is noisy.
+  measure: abs_ratio
+  verdict: fail
+  run: n24_hourly_donchian_other_coins_1h/001
+- id: channel_position_momentum
+  belief: Without any discrete break, where the close sits inside its 72-hour range
+    carries continuous momentum information about the next day.
+  measure: rank_corr
+  verdict: fail
+  run: n24_hourly_donchian_other_coins_1h/001
+- id: donchian168_heavy_volume_net
+  belief: On LTC, XRP and SOL, only a weekly channel break carried by clearly unusual
+    volume marks real participation, and that trend pays over three days after fees.
+  measure: net_return
+  verdict: fail
+  run: n24_hourly_donchian_other_coins_1h/001
+n25_low_vol_momentum_other_coins_1d.md:
+- id: low_vol_mom20_transfer
+  belief: The BTC finding generalises. When 20-day volatility is below its trailing-year
+    median, the sign of the 20-day return persists on ETH, LTC and XRP strongly enough
+    to pay fees.
+  measure: net_return
+  verdict: fail
+  run: n25_low_vol_momentum_other_coins_1d/001
+- id: regime_contrast_low_vs_high
+  belief: The volatility regime itself is what makes momentum work. The same momentum
+    rule earns clearly more in the low-volatility half than in the high-volatility
+    half, which is the control.
+  measure: mean_diff
+  verdict: fail
+  run: n25_low_vol_momentum_other_coins_1d/001
+- id: high_vol_momentum_reverts
+  belief: In the high-volatility regime, 20-day moves are overshoots driven by liquidations
+    and panic, so fading them pays. This contradicts the plain momentum view.
+  measure: net_return
+  verdict: fail
+  run: n25_low_vol_momentum_other_coins_1d/001
+- id: low_vol_long_only_asymmetry
+  belief: Low-volatility uptrends in crypto are steady accumulation, while low-volatility
+    downtrends tend to be dull drift that stalls. Only the long leg carries the edge.
+  measure: net_return
+  verdict: fail
+  run: n25_low_vol_momentum_other_coins_1d/001
+- id: vol_scaled_trend_strength_rank
+  belief: In a quiet regime, a trend's strength measured in units of its own volatility
+    ranks future returns. A large move relative to low noise is information, not noise.
+  measure: rank_corr
+  verdict: fail
+  run: n25_low_vol_momentum_other_coins_1d/001
+- id: quiet_breakout_continuation
+  belief: A close at a new 20-day high or low that comes out of a low-volatility base
+    marks real repricing, not noise, and it continues.
+  measure: net_return
+  verdict: fail
+  run: n25_low_vol_momentum_other_coins_1d/001
+- id: trend_efficiency_in_low_vol
+  belief: What matters is a smooth path, not just a low volatility level. A high efficiency
+    ratio (net move over summed absolute daily moves) in a quiet regime marks orderly
+    trend-following flow that persists.
+  measure: mean_diff
+  verdict: fail
+  run: n25_low_vol_momentum_other_coins_1d/001
+- id: low_vol_mom_volume_confirmation
+  belief: A quiet trend backed by rising participation (20-day volume above its 60-day
+    mean) reflects real demand or supply and persists better than a quiet trend on
+    fading volume.
+  measure: mean_diff
+  verdict: fail
+  run: n25_low_vol_momentum_other_coins_1d/001
+- id: vol_expansion_from_quiet_base
+  belief: The trend pays most just as volatility starts rising from a quiet base,
+    because the new move is starting. Momentum is weaker while volatility is still
+    compressing.
+  measure: mean_diff
+  verdict: fail
+  run: n25_low_vol_momentum_other_coins_1d/001
+- id: range_vol_regime_slow_momentum
+  belief: A slower 60-day trend, gated by a range-based quiet regime (mean high-low
+    range over 30 days below its yearly median), captures the persistent drift of
+    quiet markets rather than short swings.
+  measure: net_return
+  verdict: fail
+  run: n25_low_vol_momentum_other_coins_1d/001
+- id: quiet_regime_stretch_reversion
+  belief: In a low-volatility regime on these coins, a price stretched far from its
+    20-day mean in units of its own volatility tends to come back, which is the reverse
+    of the BTC momentum finding.
+  measure: mean_diff
+  verdict: fail
+  run: n25_low_vol_momentum_other_coins_1d/001
+n26_session_reversal_hourly_1h.md:
+- id: asia_big_move_fades_in_europe
+  belief: A large Asia-session move (00-08 UTC), made on thin liquidity, is partly
+    given back when European liquidity arrives in the 08-14 UTC session.
+  measure: mean_diff
+  verdict: fail
+  run: n26_session_reversal_hourly_1h/001
+- id: europe_move_continues_in_us
+  belief: European sessions price information that US participants act on later, so
+    a sizeable Europe move (08-14 UTC) continues through the US session (14-21 UTC).
+  measure: hit_rate
+  verdict: fail
+  run: n26_session_reversal_hourly_1h/001
+- id: us_session_fades_overnight
+  belief: US-session moves (14-21 UTC) are driven by US flows that exit or hedge overnight,
+    so the move partly reverts from 21:00 to the end of Asia (08:00 UTC).
+  measure: net_return
+  verdict: fail
+  run: n26_session_reversal_hourly_1h/001
+- id: asia_size_predicts_europe_size
+  belief: Volatility carries across the session boundary, so an unusually large Asia
+    session is followed by an unusually large Europe session regardless of direction.
+  measure: abs_ratio
+  verdict: fail
+  run: n26_session_reversal_hourly_1h/001
+- id: asia_return_rank_corr_europe
+  belief: Across all days, the Asia-session return scaled by its recent volatility
+    is negatively ranked against the following Europe-session return, so session moves
+    overshoot in proportion to their size.
+  measure: rank_corr
+  verdict: fail
+  run: n26_session_reversal_hourly_1h/001
+- id: europe_volume_confirms_continuation
+  belief: A Europe move made on heavy volume reflects informed flow and continues
+    into the US session, while the same move on light volume is noise.
+  measure: mean_diff
+  verdict: fail
+  run: n26_session_reversal_hourly_1h/001
+- id: europe_close_at_extreme_continues
+  belief: A Europe session that closes at its own high or low shows pressure still
+    unfinished at the handoff, which the US session carries further.
+  measure: hit_rate
+  verdict: fail
+  run: n26_session_reversal_hourly_1h/001
+- id: two_session_agreement_trends
+  belief: When Asia and Europe move the same way, a day-level flow is under way and
+    the US session extends it; when they disagree, there is no edge.
+  measure: mean_diff
+  verdict: fail
+  run: n26_session_reversal_hourly_1h/001
+- id: monday_asia_fades_in_europe
+  belief: The Monday Asia session reprices two days of weekend news on thin books
+    and overshoots, so Europe on Monday fades it more than on other weekdays.
+  measure: mean_diff
+  verdict: fail
+  run: n26_session_reversal_hourly_1h/001
+- id: europe_return_ranks_us_return
+  belief: The Europe-session return, scaled by its recent volatility, is positively
+    ranked against the following US-session return on every day, because sessions
+    continue rather than reverse in proportion to their strength.
+  measure: rank_corr
+  verdict: fail
+  run: n26_session_reversal_hourly_1h/001
+n27_drawdown_state_daily_1d.md:
+- id: near_high_drift_continues
+  belief: When price sits within a few percent of its 180-day high, trend followers
+    and breakout traders keep buying, so forward returns are higher there than elsewhere.
+  measure: mean_diff
+  verdict: fail
+  run: n27_drawdown_state_daily_1d/001
+- id: new_year_high_breakout_long
+  belief: A close at a new 365-day high draws fresh buyers and short covering, and
+    the move carries far enough to pay fees.
+  measure: net_return
+  verdict: fail
+  run: n27_drawdown_state_daily_1d/001
+- id: fresh_high_vs_stale_high_momentum
+  belief: The time since the last high matters more than the distance from it; a high
+    set recently means an active trend, while a high far in the past means the trend
+    is dead.
+  measure: hit_rate
+  verdict: fail
+  run: n27_drawdown_state_daily_1d/001
+- id: momentum_rule_pays_near_high_not_in_drawdown
+  belief: The same 20-day momentum rule works near the high, where flows trend, and
+    fails in deep drawdowns, where moves are noise and short squeezes; the state decides
+    the rule.
+  measure: hit_rate
+  verdict: fail
+  run: n27_drawdown_state_daily_1d/001
+- id: mid_drawdown_short_term_reversal
+  belief: In a mid drawdown (20-50% below the yearly high), price chops in a range
+    between dip buyers and trapped holders selling, so 3-day moves revert, unlike
+    near the high.
+  measure: mean_diff
+  verdict: fail
+  run: n27_drawdown_state_daily_1d/001
+- id: low_volume_approach_to_high_fails
+  belief: A return to the 180-day high on drying volume shows that buyers are absent,
+    so the test of the high fails more often than one made on rising volume.
+  measure: mean_diff
+  verdict: fail
+  run: n27_drawdown_state_daily_1d/001
+- id: recovery_thrust_from_deep_drawdown
+  belief: A strong rally off the 90-day low while still deep below the yearly high
+    marks the end of a bear phase; underinvested holders chase it, so it keeps going.
+  measure: net_return
+  verdict: fail
+  run: n27_drawdown_state_daily_1d/001
+- id: stale_deep_drawdown_vol_compression
+  belief: Long after the high, deep in a drawdown, attention leaves the coin and moves
+    shrink, so a long position should be sized up there and down near the high.
+  measure: abs_ratio
+  verdict: fail
+  run: n27_drawdown_state_daily_1d/001
+- id: slow_grind_drawdown_continues
+  belief: A slow drawdown with no rebound (the 60-day high is old and price keeps
+    sliding) reflects steady distribution, so the decline continues, unlike a fast
+    drop.
+  measure: mean_diff
+  verdict: fail
+  run: n27_drawdown_state_daily_1d/001
+- id: fast_drop_from_60d_high_rebounds
+  belief: A 15-35% drop below the 60-day high that happened within days of that high
+    is a forced-selling flush rather than steady distribution, so it rebounds relative
+    to other bars.
+  measure: mean_diff
+  verdict: fail
+  run: n27_drawdown_state_daily_1d/001
+- id: dd60_depth_ranks_forward_return
+  belief: Distance below the 60-day high works as a continuous momentum state; the
+    deeper the drawdown, the weaker the next 10 days, as the slow-grind continuation
+    on ETH suggested.
+  measure: rank_corr
+  verdict: fail
+  run: n27_drawdown_state_daily_1d/001
+n28_hourly_stretch_reversion_older_coins_1h.md:
+- id: vwap24_stretch_fade
+  belief: On LTC and XRP, a close far from the 24h volume-weighted price, in units
+    of recent hourly volatility, is mostly liquidity-driven overshoot that gives back
+    part of the gap within hours.
+  measure: net_return
+  verdict: fail
+  run: n28_hourly_stretch_reversion_older_coins_1h/001
+- id: range48_extreme_fade
+  belief: When price sits at the edge of its 48h high-low range, the range midpoint
+    acts as a magnet on these range-bound older coins.
+  measure: net_return
+  verdict: fail
+  run: n28_hourly_stretch_reversion_older_coins_1h/001
+- id: slow_ema168_stretch_fade
+  belief: Large departures from the one-week mean are overextensions that partly unwind
+    over a day on coins with no strong trend narrative.
+  measure: net_return
+  verdict: fail
+  run: n28_hourly_stretch_reversion_older_coins_1h/001
+- id: stretch_low_volume_reverts_more
+  belief: A stretch built on thin volume carries no conviction and reverts, while
+    the same stretch on heavy volume reflects real flow and does not.
+  measure: mean_diff
+  verdict: fail
+  run: n28_hourly_stretch_reversion_older_coins_1h/001
+- id: stretch_volume_spike_continues
+  belief: A stretch away from the anchor accompanied by a volume burst is information
+    or forced flow that keeps going for several hours, the opposite of reversion.
+  measure: net_return
+  verdict: fail
+  run: n28_hourly_stretch_reversion_older_coins_1h/001
+- id: fast_stretch_reverts_slow_does_not
+  belief: A stretch that appeared within 3 hours is a liquidity shock that reverts,
+    while a stretch built gradually is a drift that persists.
+  measure: mean_diff
+  verdict: fail
+  run: n28_hourly_stretch_reversion_older_coins_1h/001
+- id: us_hours_stretch_reverts_less
+  belief: Stretches formed during US weekday trading hours are driven by informed,
+    deeper flow and revert less than stretches formed at other hours.
+  measure: mean_diff
+  verdict: fail
+  run: n28_hourly_stretch_reversion_older_coins_1h/001
+- id: stretched_bar_wick_exhaustion
+  belief: A stretched bar that closes well off its extreme shows the push was rejected,
+    so reversion is more reliable than on stretched bars that close at their extreme.
+  measure: hit_rate
+  verdict: fail
+  run: n28_hourly_stretch_reversion_older_coins_1h/001
+- id: stretch_size_ranks_reversion
+  belief: The further price is from the 72h mean in volatility units, the larger the
+    next day's reversion, a graded relation rather than a threshold.
+  measure: rank_corr
+  verdict: fail
+  run: n28_hourly_stretch_reversion_older_coins_1h/001
+- id: stretch_predicts_larger_moves
+  belief: A large stretch from the anchor marks a volatility event, so the next hours
+    move more in absolute terms whatever the direction, which sets the cost hurdle
+    for any fade.
+  measure: abs_ratio
+  verdict: fail
+  run: n28_hourly_stretch_reversion_older_coins_1h/001
+- id: low_vol_regime_stretch_reverts_more
+  belief: In a calm regime a stretch is noise around a stable price and reverts, while
+    in a high-volatility regime the same stretch belongs to a trend.
+  measure: mean_diff
+  verdict: fail
+  run: n28_hourly_stretch_reversion_older_coins_1h/001
+- id: high_vol_regime_stretch_continues
+  belief: On LTC and XRP, a stretch from the 24h VWAP that forms while hourly volatility
+    is well above its monthly norm belongs to a trend and keeps going for the next
+    several hours.
+  measure: net_return
+  verdict: fail
+  run: n28_hourly_stretch_reversion_older_coins_1h/001
+- id: volume_burst_stretch_pullback_bar_continues
+  belief: On LTC and XRP, a stretch from the 24h VWAP that comes with a volume burst
+    and a bar closing off its extreme is forced flow pausing inside the bar, and it
+    keeps going over the next 12 hours.
+  measure: net_return
+  verdict: pass
+  run: n28_hourly_stretch_reversion_older_coins_1h/001
+n29_hourly_autocorrelation_regimes_1h.md:
+- id: lag1_ac_168h_regime_switch_rule
+  belief: The sign of the trailing one-week lag-1 autocorrelation of hourly returns
+    persists, so following the last hour's move when it is positive and fading it
+    when it is negative earns more than doing so when the autocorrelation is near
+    zero.
+  measure: mean_diff
+  verdict: fail
+  run: n29_hourly_autocorrelation_regimes_1h/001
+- id: variance_ratio_14d_daily_rule_after_cost
+  belief: The sum of hourly autocorrelations at lags 1 to 24, read as a 14-day variance
+    ratio of 24h against 1h returns, sets whether the last 24h move continues or reverses
+    over the next 24h by enough to pay the cost.
+  measure: net_return
+  verdict: fail
+  run: n29_hourly_autocorrelation_regimes_1h/001
+- id: lag24_same_hour_echo
+  belief: The lag-24 autocorrelation captures an intraday echo, where the return at
+    a given UTC hour repeats or reverses the return at the same hour the previous
+    day, and its 14-day sign tells which.
+  measure: rank_corr
+  verdict: pass
+  run: n29_hourly_autocorrelation_regimes_1h/001
+- id: shock_fade_in_reversal_state
+  belief: In a negative short-lag autocorrelation state, a large hourly move is liquidity-driven
+    overshoot and reverts over the next few hours by more than the cost.
+  measure: net_return
+  verdict: fail
+  run: n29_hourly_autocorrelation_regimes_1h/001
+- id: shock_follow_in_momentum_state
+  belief: In a positive short-lag autocorrelation state, a large hourly move reflects
+    information diffusing slowly and continues over the next several hours by more
+    than the cost.
+  measure: net_return
+  verdict: fail
+  run: n29_hourly_autocorrelation_regimes_1h/001
+- id: variance_ratio_predicts_move_size
+  belief: If the autocorrelation state is a real and persistent regime, a trending
+    state (variance ratio above 1) produces larger 24h moves next than a mean-reverting
+    state (variance ratio below 1).
+  measure: abs_ratio
+  verdict: fail
+  run: n29_hourly_autocorrelation_regimes_1h/001
+- id: volume_confirmed_momentum_state
+  belief: A positive autocorrelation state pays mainly when participation is rising,
+    because continuation comes from new flow arriving rather than from stale drift.
+  measure: mean_diff
+  verdict: fail
+  run: n29_hourly_autocorrelation_regimes_1h/001
+- id: reversal_state_offhours_liquidity
+  belief: In a negative autocorrelation state, hourly reversal is driven by thin liquidity,
+    so it is more reliable in the low-liquidity Asian hours than in the US-Europe
+    overlap.
+  measure: hit_rate
+  verdict: fail
+  run: n29_hourly_autocorrelation_regimes_1h/001
+- id: short_long_ac_agreement
+  belief: The autocorrelation state is only readable when the 2-day and 14-day lag-1
+    autocorrelations agree in sign; when they disagree the regime is shifting and
+    the regime rule loses its edge.
+  measure: mean_diff
+  verdict: fail
+  run: n29_hourly_autocorrelation_regimes_1h/001
+- id: lag24_echo_shock_net_after_cost
+  belief: The same-hour echo that ranks next-hour returns on both coins is large enough
+    to pay the round-trip cost when yesterday's same-hour move was a shock and the
+    14-day lag-24 autocorrelation is clearly non-zero.
+  measure: net_return
+  verdict: fail
+  run: n29_hourly_autocorrelation_regimes_1h/001
+- id: six_hour_block_echo_net
+  belief: The same-hour echo that ranks next-hour returns on both coins also holds
+    for a 6-hour block, where the 6h return that starts now repeats or reverses the
+    same 6h block a day earlier according to the 14-day sign of their correlation,
+    and the block move is large enough to pay the cost.
+  measure: net_return
+  verdict: fail
+  run: n29_hourly_autocorrelation_regimes_1h/001
+real_01b_daily_breadth_ltc.md:
+- *id001
+- *id002
+- *id003
+- *id004
+- *id005
+- *id006
+- *id007
+- *id008
+- *id009
+- *id010
+- *id011
+- *id012
+- id: weekend_move_reversal
+  belief: Price moves made over the weekend happen on thin, retail-only liquidity
+    without institutional desks, so they are partly undone in the first days of the
+    week once that liquidity returns, more than ordinary two-day moves are.
+  measure: mean_diff
+  verdict: fail
+  run: real_01b_daily_breadth_ltc/001
+- id: low_volume_move_reversal
+  belief: A large daily move made on below-normal volume reflects a liquidity gap,
+    not new information, so it reverts. The same move on heavy volume reflects real
+    flow and does not revert.
+  measure: mean_diff
+  verdict: fail
+  run: real_01b_daily_breadth_ltc/001
+- id: up_streak_fomo_continuation
+  belief: A run of consecutive up closes draws in late momentum and FOMO buyers who
+    keep arriving for several days, so up-streaks extend rather than exhaust.
+  measure: net_return
+  verdict: fail
+  run: real_01b_daily_breadth_ltc/001
+- id: downside_semivariance_premium
+  belief: When recent volatility has come mostly from down moves, holders demand a
+    crash-risk premium and forced selling has already been done, so forward returns
+    are higher than when volatility came from up moves.
+  measure: rank_corr
+  verdict: fail
+  run: real_01b_daily_breadth_ltc/001
+- id: trend_efficiency_follow
+  belief: A move that took a smooth, efficient path, rather than its size, reveals
+    one-sided slow flow (an allocator working an order), and that flow keeps pushing
+    in the same direction.
+  measure: net_return
+  verdict: fail
+  run: real_01b_daily_breadth_ltc/001
+- id: wide_day_volatility_clustering
+  belief: A day with an unusually wide high-low range signals a deleveraging or news
+    cascade that takes days to clear, so the following days carry larger absolute
+    moves.
+  measure: abs_ratio
+  verdict: fail
+  run: real_01b_daily_breadth_ltc/001
+- id: weekend_quiet_days
+  belief: Without institutional desks and traditional-market news, Saturday and Sunday
+    trading carries less information and so smaller moves than weekdays.
+  measure: abs_ratio
+  verdict: fail
+  run: real_01b_daily_breadth_ltc/001
+- id: volume_absorption_expansion
+  belief: A day of heavy volume with almost no net price change shows two-sided absorption
+    (a large buyer meeting a large seller); when one side finishes, price breaks away
+    and larger moves follow.
+  measure: abs_ratio
+  verdict: fail
+  run: real_01b_daily_breadth_ltc/001
+- id: narrow_range_expansion
+  belief: Daily volatility on these coins reverts to its local norm within days, so
+    an unusually narrow-range day (a coiled, compressed market) is followed by larger
+    moves than a normal-range day in the same context.
+  measure: abs_ratio
+  verdict: fail
+  run: real_01b_daily_breadth_ltc/001
+- id: relative_downside_share_premium
+  belief: Forward returns are higher when the share of recent variance coming from
+    down moves is high relative to its own recent norm, rather than in absolute terms;
+    the absolute level drifts between regimes and hides the relation.
+  measure: rank_corr
+  verdict: fail
+  run: real_01b_daily_breadth_ltc/001
+- id: leverage_effect_vol_asymmetry
+  belief: A sizeable down day forces leveraged longs to cut and pushes margin systems
+    to de-risk, so volatility over the next days is larger after down days than after
+    up days of the same size (the leverage effect).
+  measure: abs_ratio
+  verdict: fail
+  run: real_01b_daily_breadth_ltc/002
+- id: attention_volume_overpricing
+  belief: A surge in dollar volume relative to its quarterly norm marks retail attention
+    buying, which overprices the coin, so forward multi-week returns are lower when
+    recent volume is high relative to its norm.
+  measure: rank_corr
+  verdict: fail
+  run: real_01b_daily_breadth_ltc/002
+- id: high_anchor_continuation
+  belief: Traders anchor on the long-run high and sell into it too early, so a coin
+    trading within 5% of its 250-day high underreacts and keeps drifting up over the
+    next weeks.
+  measure: mean_diff
+  verdict: fail
+  run: real_01b_daily_breadth_ltc/002
+- id: max_day_lottery_reversal
+  belief: A coin that recently printed one extreme up day attracts lottery-seeking
+    buyers who overpay for that skew, so the larger the past month's biggest daily
+    gain is relative to normal volatility, the lower the next month's return.
+  measure: rank_corr
+  verdict: fail
+  run: real_01b_daily_breadth_ltc/002
+- id: calm_regime_momentum
+  belief: In calm markets, moves are driven by slow allocators who keep adding, so
+    the 10-day trend continues; in turbulent markets, forced flows dominate and the
+    trend does not persist.
+  measure: mean_diff
+  verdict: fail
+  run: real_01b_daily_breadth_ltc/002
+- id: squeeze_spike_fade
+  belief: An outsized up day is mostly a short squeeze (forced buy-to-cover), not
+    new demand, so once the shorts are flushed the next few days give part of it back.
+  measure: mean_diff
+  verdict: fail
+  run: real_01b_daily_breadth_ltc/002
+- id: quiet_pullback_in_uptrend
+  belief: In an uptrend, a pullback on drying volume is profit-taking by weak hands,
+    not distribution; the trend's buyers return and price resumes upward within a
+    week.
+  measure: net_return
+  verdict: fail
+  run: real_01b_daily_breadth_ltc/002
+- id: illiquidity_premium_timeseries
+  belief: When the coin becomes illiquid relative to its own norm (more price move
+    per dollar traded), liquidity providers demand a premium, so forward returns are
+    higher after illiquid stretches.
+  measure: rank_corr
+  verdict: fail
+  run: real_01b_daily_breadth_ltc/002
+- id: vol_regime_premium
+  belief: When a coin's recent realized volatility is high relative to its own yearly
+    norm, risk-bearing capacity is scarce and holders demand a premium, so forward
+    multi-week returns are higher after high-volatility stretches.
+  measure: rank_corr
+  verdict: fail
+  run: real_01b_daily_breadth_ltc/002
+- id: down_volume_share_exhaustion
+  belief: When most of the past month's dollar volume traded on down days, forced
+    and impatient sellers have been absorbed, as in the liquidity-premium result,
+    so the next 20 days return more.
+  measure: rank_corr
+  verdict: fail
+  run: real_01b_daily_breadth_ltc/002
+n30_round_numbers_hourly_1h.md:
+- id: round_level_magnet_rank
+  belief: Resting orders at round prices pull the price toward the nearest round level,
+    so the signed distance from it predicts a move back toward it.
+  measure: rank_corr
+  verdict: fail
+  run: n30_round_numbers_hourly_1h/001
+- id: round_level_resistance_below
+  belief: Sell orders stacked at a round level cap the price just below it, and buy
+    orders support the price just above it, so the price is pushed away from the level.
+  measure: mean_diff
+  verdict: fail
+  run: n30_round_numbers_hourly_1h/001
+- id: half_level_cross_continuation
+  belief: Crossing a major round level, the half step of the leading digit, triggers
+    stops and breakout orders, so the move keeps going.
+  measure: net_return
+  verdict: fail
+  run: n30_round_numbers_hourly_1h/001
+- id: fine_level_first_cross_fade
+  belief: The first touch of a fine round level in two days is met by the resting
+    orders there, so it is absorbed and the price falls back.
+  measure: hit_rate
+  verdict: fail
+  run: n30_round_numbers_hourly_1h/001
+- id: wick_rejection_at_level
+  belief: A bar that pierces a round level intrabar but closes back on the original
+    side shows orders absorbing at that level, and the rejection continues.
+  measure: mean_diff
+  verdict: fail
+  run: n30_round_numbers_hourly_1h/001
+- id: cross_volatility_burst
+  belief: Crossing a round level releases clustered stop orders, so the next hours
+    are more volatile than usual.
+  measure: abs_ratio
+  verdict: fail
+  run: n30_round_numbers_hourly_1h/001
+- id: pinning_low_volatility
+  belief: When the close sits right on a round level, the dense orders on both sides
+    pin the price and damp the next hours' movement.
+  measure: abs_ratio
+  verdict: fail
+  run: n30_round_numbers_hourly_1h/001
+- id: day_open_magnet
+  belief: The UTC day's open is a reference price that intraday traders anchor on,
+    so the price drifts back toward it.
+  measure: rank_corr
+  verdict: fail
+  run: n30_round_numbers_hourly_1h/001
+- id: day_open_cross_continuation
+  belief: Reclaiming or losing the day's open flips intraday traders' bias, so a cross
+    of the day open continues.
+  measure: mean_diff
+  verdict: fail
+  run: n30_round_numbers_hourly_1h/001
+- id: volume_confirmed_level_cross
+  belief: A round level cross on heavy volume means the resting orders were consumed
+    and the move is real, while a light volume cross is a probe.
+  measure: mean_diff
+  verdict: fail
+  run: n30_round_numbers_hourly_1h/001
+- id: us_session_level_cross
+  belief: Round level crosses during US hours, when larger directional flow trades,
+    carry more information and continue more than crosses in the thin Asian night.
+  measure: mean_diff
+  verdict: fail
+  run: n30_round_numbers_hourly_1h/001
+- id: cross_vol_burst_regime_matched
+  belief: Crossing a fine round level releases clustered stops and adds volatility
+    beyond what the bar's own size and the current volatility regime already imply.
+  measure: abs_ratio
+  verdict: fail
+  run: n30_round_numbers_hourly_1h/001
+- id: level_proximity_vol_regime_matched
+  belief: Prices sitting close to a round level, measured in price terms rather than
+    volatility units, are followed by larger moves than prices midway between levels,
+    even at the same volatility regime and the same current bar size.
+  measure: abs_ratio
+  verdict: fail
+  run: n30_round_numbers_hourly_1h/001
+n31_weekly_reversal_daily_1d.md:
+- id: weekly_time_series_momentum
+  belief: Crypto weekly returns carry over, so the sign of the past 7 days predicts
+    the sign of the next 7 days well enough to pay the fee.
+  measure: net_return
+  verdict: fail
+  run: n31_weekly_reversal_daily_1d/001
+- id: large_week_reversal
+  belief: Weekly moves larger than 2 weekly sigmas overshoot because of forced flows,
+    and they partly reverse the following week.
+  measure: mean_diff
+  verdict: fail
+  run: n31_weekly_reversal_daily_1d/001
+- id: capitulation_week_bounce
+  belief: Large down weeks come from liquidations and panic selling, so they bounce
+    more reliably than large up weeks reverse.
+  measure: net_return
+  verdict: fail
+  run: n31_weekly_reversal_daily_1d/001
+- id: volume_confirmed_week_continues
+  belief: A large weekly move on heavy volume reflects new information and keeps going
+    the next week.
+  measure: net_return
+  verdict: fail
+  run: n31_weekly_reversal_daily_1d/001
+- id: thin_volume_week_fades
+  belief: A large weekly move on below-normal volume is a liquidity drift, not information,
+    and it fades.
+  measure: hit_rate
+  verdict: fail
+  run: n31_weekly_reversal_daily_1d/001
+- id: shock_week_reverts_drift_week_does_not
+  belief: A big week made mostly in one day is an overreaction to a shock and reverses,
+    while the same size move built gradually does not.
+  measure: mean_diff
+  verdict: fail
+  run: n31_weekly_reversal_daily_1d/001
+- id: two_week_trend_persistence
+  belief: When two consecutive weeks move in the same direction, the trend has been
+    confirmed and continues into the third week.
+  measure: net_return
+  verdict: fail
+  run: n31_weekly_reversal_daily_1d/001
+- id: calendar_week_boundary_continuation
+  belief: Participants plan on calendar weeks, so the return measured at the UTC week
+    boundary predicts the next calendar week better than arbitrary 7-day windows do.
+  measure: hit_rate
+  verdict: fail
+  run: n31_weekly_reversal_daily_1d/001
+- id: weekly_range_location_reversion
+  belief: Where the close sits inside the past week's high-low range shows exhaustion,
+    so closes near the weekly high underperform and closes near the weekly low outperform
+    over the next week.
+  measure: rank_corr
+  verdict: fail
+  run: n31_weekly_reversal_daily_1d/001
+- id: big_week_raises_next_week_volatility
+  belief: Large weekly moves cluster, so the size of next week's move is larger after
+    a 2-sigma week whatever its direction.
+  measure: abs_ratio
+  verdict: fail
+  run: n31_weekly_reversal_daily_1d/001
+- id: low_vol_regime_week_reversal
+  belief: In calm, range-bound regimes weekly moves are noise around a level and reverse,
+    while in high-volatility regimes they trend.
+  measure: mean_diff
+  verdict: fail
+  run: n31_weekly_reversal_daily_1d/001
+- id: weekly_z_rank_reversal_monday_sampled
+  belief: The size of last week's move in volatility units is negatively related to
+    next week's return, a graded reversal across all weeks rather than only extreme
+    ones.
+  measure: rank_corr
+  verdict: fail
+  run: n31_weekly_reversal_daily_1d/001
+n32_vol_term_structure_hourly_1h.md:
+- id: expansion_persists_in_size
+  belief: Volatility clusters on hourly crypto bars, so a 24h-over-168h volatility
+    expansion means larger absolute moves over the next day than when the term structure
+    is flat or inverted, which makes the ratio usable as a gate for other rules.
+  measure: abs_ratio
+  verdict: pass
+  run: n32_vol_term_structure_hourly_1h/001
+- id: expansion_momentum_24_168
+  belief: When short vol runs above long vol, new information is being absorbed and
+    the 24h move continues, while in a quiet term structure the same move is noise.
+  measure: mean_diff
+  verdict: fail
+  run: n32_vol_term_structure_hourly_1h/001
+- id: compression_reversal_6_72
+  belief: When 6h vol is far below 72h vol the market is asleep and small drifts are
+    liquidity noise that reverts, rather than information.
+  measure: hit_rate
+  verdict: fail
+  run: n32_vol_term_structure_hourly_1h/001
+- id: shock_reversal_6_72
+  belief: A sudden spike where 6h vol is more than 2.5 times 72h vol is usually a
+    liquidation cascade or stop run, and part of it retraces over the next half day
+    by enough to pay the fee.
+  measure: net_return
+  verdict: fail
+  run: n32_vol_term_structure_hourly_1h/001
+- id: compression_breakout_24_168
+  belief: A large bar that breaks a compressed term structure (24h vol well below
+    168h vol) starts a new move, because positioning built up during the quiet period
+    is forced to adjust.
+  measure: net_return
+  verdict: fail
+  run: n32_vol_term_structure_hourly_1h/001
+- id: expansion_selloff_bounce
+  belief: Crypto vol expansions are mostly sell-offs, and buying while 24h vol is
+    far above 168h vol after a down day earns a fear premium as forced sellers clear.
+  measure: mean_diff
+  verdict: fail
+  run: n32_vol_term_structure_hourly_1h/001
+- id: steep_term_structure_bearish_drift
+  belief: Rising short vol relative to long vol signals de-leveraging that keeps going,
+    so the log 24h/168h vol ratio is negatively ranked with the next day's return.
+    This contradicts expansion_selloff_bounce on purpose.
+  measure: rank_corr
+  verdict: fail
+  run: n32_vol_term_structure_hourly_1h/001
+- id: range_expansion_without_close_expansion_chop
+  belief: When intrabar ranges widen on the 24h/168h Parkinson ratio but close-to-close
+    vol does not, the market is churning without direction, and the last 6h move reverts.
+  measure: hit_rate
+  verdict: fail
+  run: n32_vol_term_structure_hourly_1h/001
+- id: volume_confirmed_expansion_momentum
+  belief: A vol expansion backed by a volume expansion reflects real participation
+    and trends, while an expansion on thin volume is a liquidity air pocket that does
+    not.
+  measure: mean_diff
+  verdict: fail
+  run: n32_vol_term_structure_hourly_1h/001
+- id: weekend_compression_is_false_calm
+  belief: A low 24h/168h vol ratio at the end of Sunday reflects the weekend liquidity
+    lull rather than true calm, so the following Monday moves more than a day after
+    an equally quiet weekday.
+  measure: abs_ratio
+  verdict: fail
+  run: n32_vol_term_structure_hourly_1h/001
+- id: slow_term_structure_turn_72_720
+  belief: When 72h vol crosses back above 720h vol after a month-scale lull, a new
+    regime begins, and the 72h direction at the turn persists over the next three
+    days.
+  measure: net_return
+  verdict: fail
+  run: n32_vol_term_structure_hourly_1h/001
+n34_hour_of_day_drift_hourly_1h.md:
+- id: benchmark_fix_runup_weekday_19_21
+  belief: On weekdays, US spot ETF creations and fund rebalancing are priced against
+    the CF Benchmarks reference rate fixed around 15:00-16:00 New York time, so buying
+    into that window pushes spot up from 19:00 to 21:00 UTC.
+  measure: mean_diff
+  verdict: fail
+  run: n34_hour_of_day_drift_hourly_1h/001
+- id: post_fix_fade_weekday_21_24
+  belief: Flow that is forced into the benchmark-fixing window is temporary, so after
+    the fix the price gives back the move made from 19:00 to 21:00 UTC.
+  measure: mean_diff
+  verdict: fail
+  run: n34_hour_of_day_drift_hourly_1h/001
+- id: pre_funding_hour_selloff
+  belief: Perpetual swap longs reduce exposure just before the 8-hourly funding settlement
+    at 00:00, 08:00 and 16:00 UTC, and hedgers unwind spot alongside, so spot drifts
+    down in the hour into funding.
+  measure: mean_diff
+  verdict: fail
+  run: n34_hour_of_day_drift_hourly_1h/001
+- id: daily_open_dca_00_02
+  belief: Scheduled recurring buys from exchange auto-invest and DCA bots cluster
+    at the 00:00 UTC day roll, which produces a positive drift in the first two hours
+    of the UTC day.
+  measure: mean_diff
+  verdict: fail
+  run: n34_hour_of_day_drift_hourly_1h/001
+- id: asia_retail_morning_weekday_01_05
+  belief: Weekday morning retail buying in Korea and Japan, which is unconditional
+    and not a continuation of the prior move, lifts prices from 01:00 to 05:00 UTC.
+  measure: mean_diff
+  verdict: fail
+  run: n34_hour_of_day_drift_hourly_1h/001
+- id: europe_open_distribution_weekday_07_10
+  belief: European desks open their books and de-risk the overnight Asian inventory,
+    which produces a negative drift from 07:00 to 10:00 UTC on weekdays.
+  measure: mean_diff
+  verdict: pass
+  run: n34_hour_of_day_drift_hourly_1h/001
+- id: cme_reopen_weekend_fade_sun_22_04
+  belief: When CME bitcoin futures reopen on Sunday evening (22:00 or 23:00 UTC),
+    institutional arbitrage pulls spot back toward the Friday CME close, so the move
+    made over the weekend partly reverses in the hours after the reopen.
+  measure: mean_diff
+  verdict: fail
+  run: n34_hour_of_day_drift_hourly_1h/001
+- id: us_close_to_asia_open_long_22_02_net
+  belief: The handover from the US close to the Asian open (22:00 to 02:00 UTC) carries
+    a positive drift large enough to pay the cost of trading only that block each
+    weekday.
+  measure: net_return
+  verdict: fail
+  run: n34_hour_of_day_drift_hourly_1h/001
+- id: weekday_asia_europe_morning_short_01_10_net
+  belief: On weekdays the whole 01:00 to 10:00 UTC morning (Asia then the Europe open)
+    carries a negative drift, and holding one short through the full block, with a
+    single round trip, pays the cost that the 3-hour Europe-only short could not.
+  measure: net_return
+  verdict: fail
+  run: n34_hour_of_day_drift_hourly_1h/001
+- id: weekday_overnight_short_22_05_net
+  belief: On weekdays the hours from the US close through the Asian morning (22:00
+    to 05:00 UTC) carry a negative absolute drift, and one short held through the
+    whole block, with a single round trip, pays the cost.
+  measure: net_return
+  verdict: fail
+  run: n34_hour_of_day_drift_hourly_1h/001
+n33_volume_price_divergence_daily_1d.md:
+- id: rally_on_fading_volume
+  belief: A 10-day rally made on shrinking volume has no new buyers behind it and
+    gives back gains over the next 10 days.
+  measure: mean_diff
+  verdict: fail
+  run: n33_volume_price_divergence_daily_1d/001
+- id: capitulation_on_rising_volume
+  belief: A 10-day decline on surging volume is forced selling that exhausts itself,
+    so price rebounds over the following 10 days enough to pay costs.
+  measure: net_return
+  verdict: fail
+  run: n33_volume_price_divergence_daily_1d/001
+- id: distribution_on_rising_volume
+  belief: Falling price on rising volume is informed distribution, not exhaustion,
+    and the decline continues over the next 10 days (contradicts capitulation_on_rising_volume).
+  measure: mean_diff
+  verdict: fail
+  run: n33_volume_price_divergence_daily_1d/001
+- id: decline_on_drying_volume
+  belief: A decline on shrinking volume means sellers have stopped supplying coins,
+    so the next 10 days lean upward more often than usual.
+  measure: hit_rate
+  verdict: fail
+  run: n33_volume_price_divergence_daily_1d/001
+- id: volume_signed_trend_score
+  belief: Volume acts as a sign switch on the 20-day trend; rising volume makes the
+    trend continue and falling volume makes it reverse, in proportion to both.
+  measure: rank_corr
+  verdict: fail
+  run: n33_volume_price_divergence_daily_1d/001
+- id: divergence_precedes_big_move
+  belief: When price and volume disagree, the disagreement resolves in a larger than
+    usual move in either direction over the next 10 days.
+  measure: abs_ratio
+  verdict: fail
+  run: n33_volume_price_divergence_daily_1d/001
+- id: obv_price_divergence
+  belief: When the direction-weighted volume flow (OBV) over 20 days points against
+    the 20-day price change, price follows the flow over the next 10 days.
+  measure: mean_diff
+  verdict: fail
+  run: n33_volume_price_divergence_daily_1d/001
+- id: quiet_day_rally_busy_day_selling
+  belief: A 20-day trend earned on low-volume days while high-volume days pushed the
+    other way is fragile, and price follows the high-volume days over the next 10
+    days.
+  measure: mean_diff
+  verdict: fail
+  run: n33_volume_price_divergence_daily_1d/001
+- id: wide_ranges_on_thin_volume
+  belief: Price swings that widen while volume shrinks are thin-market moves without
+    commitment, and the 5-day direction reverses over the next 10 days.
+  measure: hit_rate
+  verdict: fail
+  run: n33_volume_price_divergence_daily_1d/001
+n35_privacy_coins_hourly_shock_1h.md:
+- id: volume_backed_shock_continues
+  belief: On thin privacy coins, a large hourly move on heavy volume reflects news
+    or informed flow that is not fully priced in one bar, so the move keeps going
+    for several hours.
+  measure: net_return
+  verdict: fail
+  run: n35_privacy_coins_hourly_shock_1h/001
+- id: thin_volume_shock_reverts
+  belief: A large hourly move on below-normal volume is a liquidity hole in a thin
+    order book rather than information, so it gives back part of the move.
+  measure: mean_diff
+  verdict: fail
+  run: n35_privacy_coins_hourly_shock_1h/001
+- id: shock_raises_volatility
+  belief: Whatever its direction, a volume-backed shock on XMR or ZEC opens a stretch
+    of higher volatility, as news is digested over several hours.
+  measure: abs_ratio
+  verdict: fail
+  run: n35_privacy_coins_hourly_shock_1h/001
+- id: wick_rejection_reverses_spike
+  belief: A wide-range hourly bar that closes far from its extreme shows that the
+    spike was absorbed by resting liquidity, and price drifts toward the closing side.
+  measure: mean_diff
+  verdict: fail
+  run: n35_privacy_coins_hourly_shock_1h/001
+- id: multi_hour_overextension_reverts
+  belief: A run of several hours that adds up to an extreme move on a thin coin exhausts
+    the marginal buyers or sellers and partly reverses over the next half day.
+  measure: mean_diff
+  verdict: fail
+  run: n35_privacy_coins_hourly_shock_1h/001
+- id: compressed_regime_shock_breakout
+  belief: A shock that arrives after a quiet, compressed period marks a regime change
+    (news on a sleeping coin) and trends, unlike shocks inside already noisy periods.
+  measure: net_return
+  verdict: fail
+  run: n35_privacy_coins_hourly_shock_1h/001
+- id: off_hours_shock_reverts_more
+  belief: Shocks during the Asian night and at weekends, when Kraken depth is thinnest,
+    are more often order-book accidents and revert more than shocks during EU/US hours.
+  measure: mean_diff
+  verdict: fail
+  run: n35_privacy_coins_hourly_shock_1h/001
+- id: shock_volume_intensity_ranks_continuation
+  belief: The heavier the volume behind a shock, the more it continues, so continuation
+    is graded by volume rather than switched on at a threshold.
+  measure: rank_corr
+  verdict: fail
+  run: n35_privacy_coins_hourly_shock_1h/001
+- id: confirmed_shock_continues
+  belief: A shock followed by a next hour that extends in the same direction shows
+    the move is being followed rather than faded, and the trend carries on.
+  measure: hit_rate
+  verdict: fail
+  run: n35_privacy_coins_hourly_shock_1h/001
+- id: weekly_extreme_break_with_volume
+  belief: A shock that breaks the prior week's high or low on heavy volume clears
+    the stops clustered there and starts a day-long trend on a thin coin.
+  measure: net_return
+  verdict: fail
+  run: n35_privacy_coins_hourly_shock_1h/001
+- id: quiet_volume_burst_raises_volatility
+  belief: On XMR and ZEC, an hour of very heavy volume with no matching price move
+    signals flow building up, and the following hours are more volatile than usual.
+  measure: abs_ratio
+  verdict: fail
+  run: n35_privacy_coins_hourly_shock_1h/001
+- id: range_expansion_raises_halfday_volatility
+  belief: On XMR and ZEC, an hour whose high-low range is far above normal starts
+    a volatility cluster that lasts about half a day, whether or not volume backs
+    it.
+  measure: abs_ratio
+  verdict: fail
+  run: n35_privacy_coins_hourly_shock_1h/001
+n36_ltc_xmr_hourly_weekday_1h.md:
+- id: asia_early_block_vol
+  belief: On LTC and XMR, which have more Asian-venue flow than BTC, the 01-03 UTC
+    hours carry a higher-volatility regime than the rest of the day.
+  measure: abs_ratio
+  verdict: fail
+  run: n36_ltc_xmr_hourly_weekday_1h/001
+- id: funding_hour_vol_spike
+  belief: Perpetual-swap funding settlements at 00, 08 and 16 UTC cause spot repositioning,
+    so the hour after them moves more than the hours around them.
+  measure: abs_ratio
+  verdict: fail
+  run: n36_ltc_xmr_hourly_weekday_1h/001
+- id: monday_open_weekend_reversal
+  belief: Weekend moves on thin books in small coins are partly liquidity noise and
+    are unwound once weekday flow returns early Monday UTC.
+  measure: mean_diff
+  verdict: fail
+  run: n36_ltc_xmr_hourly_weekday_1h/001
+- id: thin_hours_shock_reversal
+  belief: Large hourly moves in thin hours (03-06 UTC on weekdays, or any weekend
+    hour) are order-book shocks that revert, unlike large moves in liquid hours.
+  measure: hit_rate
+  verdict: fail
+  run: n36_ltc_xmr_hourly_weekday_1h/001
+- id: same_hour_drift_persistence
+  belief: Recurring clock flows (an exchange's daily rebalancing, OTC desk hours)
+    give each UTC hour a persistent drift sign over weeks, on these coins specifically.
+  measure: rank_corr
+  verdict: fail
+  run: n36_ltc_xmr_hourly_weekday_1h/001
+- id: sunday_evening_preweek_drift
+  belief: Sunday evening UTC (before the Asia Monday and CME reopen) sees positioning
+    bids into the new week, which gives a positive drift into Monday morning.
+  measure: mean_diff
+  verdict: fail
+  run: n36_ltc_xmr_hourly_weekday_1h/001
+- id: us_session_into_asia_momentum
+  belief: A strong US-session move in a small coin is slow to be absorbed and continues
+    through the Asia session, enough to pay the cost.
+  measure: net_return
+  verdict: fail
+  run: n36_ltc_xmr_hourly_weekday_1h/001
+- id: clock_normalized_volume_surprise
+  belief: Volume that is unusual for that specific hour of the day signals news or
+    informed flow, and a volatility regime follows over the next hours.
+  measure: abs_ratio
+  verdict: fail
+  run: n36_ltc_xmr_hourly_weekday_1h/001
+- id: friday_us_afternoon_derisk
+  belief: Traders cut exposure to small, illiquid coins before the weekend, so Friday's
+    late US session drifts down.
+  measure: mean_diff
+  verdict: fail
+  run: n36_ltc_xmr_hourly_weekday_1h/001
+- id: weekday_us_open_vol_block
+  belief: On LTC and XMR, hourly volatility is concentrated in the weekday US-open
+    hours (13-16 UTC), the mirror of the quiet Asia block seen in this run.
+  measure: abs_ratio
+  verdict: fail
+  run: n36_ltc_xmr_hourly_weekday_1h/001
+- id: weekend_quiet_regime
+  belief: On LTC and XMR, hourly volatility is driven by weekday trading-desk flow
+    (the US-open block is loud, the Asia block is quiet), so weekend hours carry a
+    lower-volatility regime than weekday hours.
+  measure: abs_ratio
+  verdict: pass
+  run: n36_ltc_xmr_hourly_weekday_1h/001
+n37_zec_ltc_hourly_trend_1h.md:
+- id: long_channel_breakout_240h
+  belief: On ZEC and LTC, short channels are mostly noise, but a close outside a 10-day
+    channel marks a real repricing that keeps going for about two days.
+  measure: net_return
+  verdict: fail
+  run: n37_zec_ltc_hourly_trend_1h/001
+- id: tsmom_168h_rank
+  belief: Weekly trend persists on these mid-cap coins because flows from retail and
+    listings arrive slowly, so the past 7-day return predicts the next day.
+  measure: rank_corr
+  verdict: fail
+  run: n37_zec_ltc_hourly_trend_1h/001
+- id: compression_gated_breakout
+  belief: A breakout out of a quiet period releases stored positioning and trends;
+    a breakout during already high volatility is noise.
+  measure: net_return
+  verdict: fail
+  run: n37_zec_ltc_hourly_trend_1h/001
+- id: volume_confirmed_breakout
+  belief: On thin coins, breakouts without volume are stop runs that fail, while breakouts
+    on heavy volume carry real order flow.
+  measure: mean_diff
+  verdict: fail
+  run: n37_zec_ltc_hourly_trend_1h/001
+- id: us_session_breakout
+  belief: Breakouts during US hours, when liquidity and directional flow on Kraken
+    are highest, persist more than breakouts during Asian night hours.
+  measure: mean_diff
+  verdict: fail
+  run: n37_zec_ltc_hourly_trend_1h/001
+- id: efficiency_ratio_trend
+  belief: When price has moved in a clean straight line over two days (high efficiency
+    ratio), the move reflects persistent one-sided flow that continues.
+  measure: net_return
+  verdict: fail
+  run: n37_zec_ltc_hourly_trend_1h/001
+- id: weekend_breakout_fade
+  belief: Weekend breakouts on thin books are liquidity sweeps that revert once weekday
+    participants return, which contradicts the trend ideas for that slice.
+  measure: net_return
+  verdict: fail
+  run: n37_zec_ltc_hourly_trend_1h/001
+- id: breakout_vol_expansion
+  belief: Channel breakouts on these coins start volatility expansions, so a volatility-targeted
+    trend rule gets its edge from larger moves after the signal.
+  measure: abs_ratio
+  verdict: fail
+  run: n37_zec_ltc_hourly_trend_1h/001
+- id: multi_horizon_agreement
+  belief: When daily, weekly and monthly trends all point the same way, trend-followers
+    at every horizon push in one direction and the move continues.
+  measure: net_return
+  verdict: fail
+  run: n37_zec_ltc_hourly_trend_1h/001
+- id: vol_scaled_weekly_trend_rank
+  belief: The strength of the past week's trend, measured against its own volatility,
+    predicts the next day's return on both coins, once it is sampled one bar per day
+    so the samples do not overlap.
+  measure: rank_corr
+  verdict: fail
+  run: n37_zec_ltc_hourly_trend_1h/001
+- id: weekly_extreme_fade
+  belief: On ZEC and LTC, a weekly move that is large against its own volatility is
+    over-extended and partly gives back over the next day, enough to pay the round-trip
+    cost.
+  measure: net_return
+  verdict: fail
+  run: n37_zec_ltc_hourly_trend_1h/001
+n38_daily_range_cycles_1d.md:
+- id: wide_range_day_reverts
+  belief: A day that prints the widest range in 10 days is a liquidation or stop-run
+    day, and its move partly retraces over the next few days.
+  measure: mean_diff
+  verdict: fail
+  run: n38_daily_range_cycles_1d/001
+- id: wide_range_close_location_continues
+  belief: A widest-range day that closes at an extreme of its range shows one side
+    in control, and that side keeps pushing for a few days.
+  measure: mean_diff
+  verdict: fail
+  run: n38_daily_range_cycles_1d/001
+- id: expansion_persists_in_size
+  belief: Volatility clusters, so the widest range in 20 days is followed by larger-than-usual
+    moves, whatever their direction.
+  measure: abs_ratio
+  verdict: fail
+  run: n38_daily_range_cycles_1d/001
+- id: contraction_persists_quiet
+  belief: Narrow days cluster, so the narrowest range in 7 days is followed by a quiet
+    next day rather than a burst (the opposite of the failed compression-before-a-move
+    idea).
+  measure: abs_ratio
+  verdict: fail
+  run: n38_daily_range_cycles_1d/001
+- id: signed_range_ratio_predicts_drift
+  belief: Range expansion carries information in proportion to its size, signed by
+    where the close sits, so a wide day closing high predicts more upside than a narrow
+    day closing high.
+  measure: rank_corr
+  verdict: fail
+  run: n38_daily_range_cycles_1d/001
+- id: narrow_day_is_trend_pause
+  belief: A narrowest-range day inside an established trend is a rest, not a reversal,
+    and the prior 20-day trend resumes.
+  measure: net_return
+  verdict: fail
+  run: n38_daily_range_cycles_1d/001
+- id: wide_down_day_capitulation_long
+  belief: A 20-day widest-range down day that closes near its low marks forced selling,
+    and buyers step in over the following week.
+  measure: net_return
+  verdict: fail
+  run: n38_daily_range_cycles_1d/001
+- id: expansion_regime_reverts_move
+  belief: When several recent days are wide (3-day mean range well above its 20-day
+    mean), the multi-day move is overextended and partly retraces.
+  measure: mean_diff
+  verdict: fail
+  run: n38_daily_range_cycles_1d/001
+- id: first_wide_after_quiet_continues
+  belief: The first wide day after a long quiet spell (an NR7 within the prior 5 days
+    and now the widest in 10) reveals a fresh order flow imbalance, and its direction
+    holds the next day.
+  measure: hit_rate
+  verdict: fail
+  run: n38_daily_range_cycles_1d/001
+- id: contraction_regime_trend_edge
+  belief: The trend-pause result may come from the 20-day trend itself rather than
+    from the narrow days; if contraction matters, the trend should pay more after
+    a multi-day contraction regime than on other bars.
+  measure: mean_diff
+  verdict: fail
+  run: n38_daily_range_cycles_1d/001
+- id: range_regime_size_persists
+  belief: Volatility clusters at the regime level rather than on single extreme days,
+    so a 10-day stretch of wide ranges relative to the last 60 days is followed by
+    bigger 5-day moves than a 10-day stretch of narrow ranges.
+  measure: abs_ratio
+  verdict: fail
+  run: n38_daily_range_cycles_1d/001
+n39_daily_typical_price_anchor_1d.md:
+- id: vwap5_stretch_reverts_3d
+  belief: A close far from the 5-day volume-weighted typical price is a short-term
+    overreaction away from where the week's money traded, and it pulls back toward
+    that anchor within a few days.
+  measure: net_return
+  verdict: fail
+  run: n39_daily_typical_price_anchor_1d/001
+- id: vwap30_stretch_trends_10d
+  belief: A close far from the 30-day VWAP means a regime shift away from the month's
+    cost basis, and on coins that trend this keeps going instead of reverting.
+  measure: net_return
+  verdict: fail
+  run: n39_daily_typical_price_anchor_1d/001
+- id: vwap20_stretch_rank_reversion
+  belief: The further the close is above (below) the 20-day VWAP in volatility units,
+    the weaker (stronger) the next 5 days, as a smooth relationship rather than only
+    at extremes.
+  measure: rank_corr
+  verdict: fail
+  run: n39_daily_typical_price_anchor_1d/001
+- id: vwap10_stretch_precedes_big_moves
+  belief: A close far from the 10-day VWAP marks a disequilibrium, so the next days
+    move more in absolute terms than when price sits on its anchor, whatever the direction.
+  measure: abs_ratio
+  verdict: fail
+  run: n39_daily_typical_price_anchor_1d/001
+- id: volume_backed_stretch_continues
+  belief: A stretch from the 10-day VWAP made on a volume burst is new money moving
+    the anchor and continues, while the same stretch on ordinary volume is noise.
+  measure: mean_diff
+  verdict: fail
+  run: n39_daily_typical_price_anchor_1d/001
+- id: vwap20_reclaim_or_loss
+  belief: A first close back across the 20-day VWAP after a week on the other side
+    shows the month's buyers (or sellers) are back above water, and the price follows
+    through.
+  measure: hit_rate
+  verdict: fail
+  run: n39_daily_typical_price_anchor_1d/001
+- id: dip_to_fast_anchor_in_rising_slow_anchor
+  belief: When the 5-day VWAP is above a rising 30-day VWAP, a close that dips under
+    the 5-day anchor but holds the 30-day one is a pullback inside an up-migration
+    of money, and it resumes upward.
+  measure: net_return
+  verdict: fail
+  run: n39_daily_typical_price_anchor_1d/001
+- id: weekend_stretch_reverts_more
+  belief: Stretches from the 5-day VWAP made on thin Saturday or Sunday volume carry
+    less information and revert more than weekday stretches.
+  measure: mean_diff
+  verdict: fail
+  run: n39_daily_typical_price_anchor_1d/001
+- id: squeeze_then_anchor_break_continues
+  belief: After a tight 10-day range, a close that breaks well away from the 20-day
+    VWAP starts a new leg, because positions built in the squeeze are forced to follow.
+  measure: net_return
+  verdict: fail
+  run: n39_daily_typical_price_anchor_1d/001
+- id: exhausted_stretch_with_rejection_candle
+  belief: An extreme stretch from the 20-day VWAP that closes near the bar's opposite
+    extreme shows the push was rejected inside the day, and price snaps back toward
+    the anchor.
+  measure: net_return
+  verdict: fail
+  run: n39_daily_typical_price_anchor_1d/001
+- id: vwap20_stretch_percentile_rank_reversion
+  belief: The close's stretch from the 20-day VWAP reverts relative to its own recent
+    range of stretches, so ranking the stretch within its trailing 120 days removes
+    the regime drift that hid the within-window reversion.
+  measure: rank_corr
+  verdict: fail
+  run: n39_daily_typical_price_anchor_1d/001
+- id: vwap20_stretch_change_rank_reversion
+  belief: The 5-day change in the close's stretch from the 20-day VWAP reverts over
+    the next 5 days, because differencing the stretch removes the slow regime drift
+    that cancelled the within-window reversion of its level.
+  measure: rank_corr
+  verdict: fail
+  run: n39_daily_typical_price_anchor_1d/001
+n40_multi_day_volume_climax_1d.md:
+- id: selling_climax_rebound
+  belief: Three or more consecutive days of heavy volume during a sharp drop mark
+    forced liquidation, and once sellers are exhausted price rebounds enough over
+    the next two weeks to pay the cost.
+  measure: net_return
+  verdict: fail
+  run: n40_multi_day_volume_climax_1d/001
+- id: buying_climax_fade
+  belief: Three loud days on a sharp rise reflect a late retail crowd buying the top,
+    and the next two weeks underperform the coin's normal drift.
+  measure: mean_diff
+  verdict: fail
+  run: n40_multi_day_volume_climax_1d/001
+- id: breakout_climax_continuation
+  belief: A multi-day volume surge that carries price to a new 60-day extreme is information
+    arriving rather than exhaustion, and the move continues over the following month.
+  measure: mean_diff
+  verdict: fail
+  run: n40_multi_day_volume_climax_1d/001
+- id: climax_volatility_persistence
+  belief: A crowd that shows up for several days keeps the market unsettled, so absolute
+    moves over the next 10 days are larger than usual, whatever their direction.
+  measure: abs_ratio
+  verdict: fail
+  run: n40_multi_day_volume_climax_1d/001
+- id: climax_exhaustion_day_fade
+  belief: The turning point is not the loud days but the first quiet day after them;
+    when volume collapses after a 3-day climax the crowd is spent, and the cluster's
+    move reverses more than a generic 3-day reversal would.
+  measure: hit_rate
+  verdict: fail
+  run: n40_multi_day_volume_climax_1d/001
+- id: absorption_effort_no_result
+  belief: Several days of heavy volume with almost no net price change mean large
+    players are absorbing the prior trend's flow, and the prior trend then reverses
+    over the next month (Wyckoff "effort without result").
+  measure: mean_diff
+  verdict: fail
+  run: n40_multi_day_volume_climax_1d/001
+- id: climax_move_size_reverts
+  belief: The more violent the price move during a volume climax, the larger the overshoot
+    and the stronger the subsequent reversal.
+  measure: rank_corr
+  verdict: fail
+  run: n40_multi_day_volume_climax_1d/001
+- id: capitulation_in_bull_regime
+  belief: A heavy-volume selloff while the coin is still above its 200-day average
+    is a leverage flush inside an intact uptrend, and dip buyers lift price over the
+    next month.
+  measure: net_return
+  verdict: fail
+  run: n40_multi_day_volume_climax_1d/001
+- id: bear_regime_climax_continuation
+  belief: A heavy-volume selloff below the 200-day average is not capitulation but
+    the start of a new leg down, as holders who are already under water give up, so
+    the decline continues.
+  measure: mean_diff
+  verdict: fail
+  run: n40_multi_day_volume_climax_1d/001
+- id: climax_close_location_follow
+  belief: Where price closes inside each day's range during a volume climax shows
+    who won the fight; consistent closes near the highs (or lows) across the loud
+    days show the dominant side, and the move follows through over the next week.
+  measure: hit_rate
+  verdict: fail
+  run: n40_multi_day_volume_climax_1d/001
+- id: loud_move_continuation_rank
+  belief: Over elevated-volume 3-day stretches, the louder the volume behind a 3-day
+    move, the more that move continues over the next 10 days, because heavy participation
+    carries information rather than exhaustion.
+  measure: rank_corr
+  verdict: fail
+  run: n40_multi_day_volume_climax_1d/001

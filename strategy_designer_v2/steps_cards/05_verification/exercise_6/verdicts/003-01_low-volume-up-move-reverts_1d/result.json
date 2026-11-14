@@ -1,0 +1,23 @@
+{
+  "status": "rejected",
+  "main_measure": {
+    "name": "drift-adjusted |position|-weighted next-bar short return after thin up bars",
+    "value": -0.0013933602036421227,
+    "statistic": {
+      "name": "t of the mean of |position| x drift-adjusted short return",
+      "value": -0.5175970990482268
+    },
+    "threshold": "above 0 with t-stat >= 2.0 to confirm; at or below 0 with t-stat <= 0 to reject"
+  },
+  "supporting_check": {
+    "name": "mean drift-adjusted next-bar drop, largest third minus smallest third by |position|",
+    "value": 0.0022831228717990217,
+    "passed": true
+  },
+  "counts": {
+    "qualifying bars": 195,
+    "windows": 6
+  },
+  "decided_by": "The short earns 0 or less after the drift adjustment with a t-stat of 0 or below.",
+  "reading": "Qualifying bars are rows labelled regime 'mean_reversion' with a next bar in the same window, weighted by |postRebalance_current_allocation| (zero-position bars included with zero weight); the short's gain is minus (next-bar return minus the window's mean next-bar return over all bars), the t-stat is the ordinary t of the per-case products |position| x that gain, and thirds come from an ascending sort by |position| split with array_split."
+}

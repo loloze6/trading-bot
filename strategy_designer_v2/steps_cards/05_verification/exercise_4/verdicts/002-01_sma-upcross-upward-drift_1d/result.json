@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "mean 10-bar forward return in long blocks minus mean over all blocks",
+    "value": 0.004661847936267742,
+    "statistic": {
+      "name": "Welch t (long blocks vs all blocks)",
+      "value": 0.23547545475992646
+    },
+    "threshold": "excess > 0 with t >= 2 confirms; excess <= 0 rejects (t <= -2 reversal); 0 < t < 2 inconclusive"
+  },
+  "supporting_check": {
+    "name": "hit rate long blocks minus hit rate all blocks",
+    "value": -0.03152709359605904,
+    "passed": false,
+    "hit_rate_long": 0.4827586206896552,
+    "hit_rate_all": 0.5142857142857142,
+    "slope_return_on_forecast": 0.0004018873941285853
+  },
+  "counts": {
+    "non-overlapping 10-bar long blocks": 29,
+    "all non-overlapping 10-bar blocks": 70,
+    "windows containing long blocks": 4,
+    "windows with positive excess": 0
+  },
+  "decided_by": "Inconclusive: positive excess carried by a single window.",
+  "reading": "Blocks start at rows 0,10,20,... of each window with a full 10-bar forward return inside the window, long means forecast > 0 at block start, t is Welch's long-blocks vs all-blocks, each window's excess is its long mean minus its own all-block mean, 'carried by a single window' means dropping some one window makes the pooled excess <= 0, and the slope (over all blocks) is reported only."
+}

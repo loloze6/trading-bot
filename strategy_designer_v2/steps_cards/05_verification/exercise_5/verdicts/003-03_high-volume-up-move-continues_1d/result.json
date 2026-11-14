@@ -1,0 +1,23 @@
+{
+  "status": "rejected",
+  "main_measure": {
+    "name": "position-weighted mean next-bar excess return on active bars",
+    "value": -0.0006940359799422018,
+    "statistic": {
+      "name": "t of the weighted mean",
+      "value": -0.24884028935335342
+    },
+    "threshold": "above 0 with t >= 2 to confirm; <= 0 rejects"
+  },
+  "supporting_check": {
+    "name": "next-bar return, top third minus bottom third of positions",
+    "value": -0.0005460627148548202,
+    "passed": false
+  },
+  "counts": {
+    "active bars": 151,
+    "windows": 6
+  },
+  "decided_by": "Reject: the position-weighted mean next-bar excess return is <= 0.",
+  "reading": "Active bars are forecast > 0 with a next close in the same window, weighted by postRebalance_current_allocation; excess return is the next-bar return minus that window's mean next-bar return over all its bars; the t of the weighted mean is the ordinary t of the values position x excess / mean position (whose mean equals the weighted mean); thirds are the floor(n/3) smallest and largest positions pooled over all windows, compared by Welch t (top minus bottom); the 60-bar minimum is checked before the reject rules."
+}

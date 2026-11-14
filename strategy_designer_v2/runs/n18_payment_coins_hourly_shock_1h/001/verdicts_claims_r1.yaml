@@ -1,0 +1,46 @@
+claims_file: strategy_designer_v2/runs/n18_payment_coins_hourly_shock_1h/001/claims_r1.yaml
+fold: A
+bar_size: 1h
+symbols:
+- XRPUSD
+- TRXUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  volume_backed_shock_more_volatile_after:
+    verdict: pass
+    by_symbol:
+      XRPUSD:
+        verdict: pass
+        effect: 1.1826465182099626
+        n_a: 402
+        n_b: 241
+        windows:
+        - 1.0531738840425429
+        - 1.3538514879437056
+        - 1.030882298935987
+        - 1.018778716351784
+        - 1.9436006727071982
+        - 1.1273200787655469
+        agreeing_windows: 6 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      TRXUSD:
+        verdict: pass
+        effect: 1.3054787008226898
+        n_a: 314
+        n_b: 322
+        windows:
+        - 1.226780522871634
+        - 1.2286716628364152
+        - 1.4219587119708688
+        - 1.1693582420568993
+        - 1.2965651465653272
+        - 1.0004715561283501
+        agreeing_windows: 6 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true

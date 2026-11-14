@@ -1711,3 +1711,179 @@ class WhaleLargeTradeImbalanceComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return self.persistence_bars
+
+
+# --- strategy_designer_v2 components (approved by the operator, 2026-11-14) ---
+
+class MovingAverageSlopeComponent(SubStrategyComponent):
+    """
+    Percent change of a moving average over the last `lookback` bars, on every bar:
+
+        raw_value = (MA[t] - MA[t - lookback]) / MA[t - lookback] x 100
+
+    MA is the simple average of `period` closes (average: "sma") or their EMA (average: "ema", span = period,
+    adjust=False). Graded and signed: positive while the average rises, negative while it falls. No lag beyond the
+    average's own: MA[t] includes bar t's close. No scaling_factor: the config's transforms scale it.
+    """
+
+    AVERAGES = ("sma", "ema")
+
+    def __init__(self, name="MovingAverageSlope", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 200))
+        self.lookback = int(self.parameters.get("lookback", 20))
+        self.average = self.parameters.get("average", "sma")
+        if self.average not in self.AVERAGES:
+            raise ValueError(f"MovingAverageSlopeComponent: average must be one of {self.AVERAGES}, got {self.average!r}")
+        if self.period < 2 or self.lookback < 1:
+            raise ValueError("MovingAverageSlopeComponent: period must be >= 2 and lookback >= 1")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        close = data['close']
+        if self.average == "sma":
+            ma_now = float(close.iloc[-self.period:].mean(skipna=False))
+            ma_then = float(close.iloc[-(self.period + self.lookback):-self.lookback].mean(skipna=False))
+        else:
+            ema = close.ewm(span=self.period, adjust=False).mean()
+            ma_now, ma_then = float(ema.iloc[-1]), float(ema.iloc[-1 - self.lookback])
+        self._raw_value = (ma_now - ma_then) / ma_then * 100.0
+        self.confidence = 1.0
+        self.debug_info = {'moving_average': ma_now, 'moving_average_then': ma_then}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period + self.lookback
+
+
+class MovingAverageAgeComponent(SubStrategyComponent):
+    """
+    How long the current side of a moving average has lasted, signed, on every bar:
+
+        raw_value = +n while the close (or the fast average) has been above the slow average for the last n bars,
+                    -n while it has been below it for the last n bars,
+
+    n counting bar t itself and capped at `max_bars`. The slow average is the SMA of `period` closes; with
+    `fast_period` set, the fast SMA of `fast_period` closes is compared with it instead of the close (for example
+    50 and 200: the age of a golden or death cross). Signed. A regime measure, not a forecast source: it jumps at the
+    cross (from +max_bars to -1). No lag: both averages include bar t's close.
+    """
+
+    def __init__(self, name="MovingAverageAge", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 200))
+        fp = self.parameters.get("fast_period")
+        self.fast_period = int(fp) if fp not in (None, "", 0) else None
+        self.max_bars = int(self.parameters.get("max_bars", 120))
+        if self.period < 2 or self.max_bars < 1 or (self.fast_period is not None and not 1 <= self.fast_period < self.period):
+            raise ValueError("MovingAverageAgeComponent: period >= 2, max_bars >= 1, and 1 <= fast_period < period")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        close = data['close'].iloc[-(self.period + self.max_bars):]
+        slow = close.rolling(self.period).mean().iloc[-self.max_bars:]
+        fast = close.rolling(self.fast_period).mean().iloc[-self.max_bars:] if self.fast_period else close.iloc[-self.max_bars:]
+        above = (fast > slow).to_numpy()
+        side = above[-1]
+        n = 0
+        for v in above[::-1]:
+            if v != side:
+                break
+            n += 1
+        self._raw_value = float(n if side else -n)
+        self.confidence = 1.0
+        self.debug_info = {'bars_on_side': n, 'above': bool(side)}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period + self.max_bars
+
+
+class WeekdayComponent(SubStrategyComponent):
+    """
+    The coming bar's weekday, as a regime measure, on every bar:
+
+        raw_value = weekday of (timestamp[t] + one bar's spacing), UTC: 0 Monday ... 6 Sunday
+
+    Known at bar t's close: no lookahead. For a regime rule (for example "eq 5": the coming bar is stamped Saturday);
+    not a bet in itself.
+    """
+
+    def __init__(self, name="Weekday", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        ts = pd.to_datetime(data["timestamp"].iloc[-2:], utc=True)
+        self._raw_value = float((ts.iloc[-1] + (ts.iloc[-1] - ts.iloc[-2])).weekday())
+        self.confidence = 1.0
+        self.debug_info = {'coming_weekday': int(self._raw_value)}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return 2
+
+
+class BarsSinceHighComponent(SubStrategyComponent):
+    """
+    How recent the last new closing high is, as a regime measure, on every bar:
+
+        raw_value = max(0, max_bars - k)
+
+    k is the number of bars since the last bar whose close was the highest of its prior `lookback` closes (k = 0 on
+    that bar). Graded: `max_bars` on the day of a new high, falling by one each bar after it, 0 once the high is older
+    than `max_bars` bars. For a regime rule ("a new high within the last `max_bars` bars"), not a forecast source:
+    it jumps from 0 to `max_bars` on the day of a new high. Closes only, no lookahead.
+    """
+
+    def __init__(self, name="BarsSinceHigh", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.lookback = int(self.parameters.get("lookback", 20))
+        self.max_bars = int(self.parameters.get("max_bars", 20))
+        if self.lookback < 2 or self.max_bars < 1:
+            raise ValueError("BarsSinceHighComponent: lookback >= 2 and max_bars >= 1")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        close = data["close"].iloc[-(self.lookback + self.max_bars + 1):].astype(float).to_numpy()
+        n = len(close)
+        for k in range(0, self.max_bars + 1):
+            i = n - 1 - k
+            prior = close[i - self.lookback:i]
+            if len(prior) == self.lookback and close[i] > prior.max():
+                self._raw_value = float(max(0, self.max_bars - k))
+                self.debug_info = {'bars_since_high': k}
+                break
+        self.confidence = 1.0
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.lookback + self.max_bars + 1

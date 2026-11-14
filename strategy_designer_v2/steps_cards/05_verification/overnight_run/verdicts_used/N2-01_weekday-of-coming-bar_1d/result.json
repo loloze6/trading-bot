@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of allocation x (next-bar return minus coin all-window mean daily return) over forecast>0 bars",
+    "value": 0.003932340918817349,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.585373397047694
+    },
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2; else inconclusive; at least 300 active Saturday bars pooled"
+  },
+  "supporting_check": {
+    "name": "mean Saturday return minus coin all-window mean daily return (t = 3.7497)",
+    "value": 0.0030559980606220264,
+    "passed": null
+  },
+  "counts": {
+    "active Saturday bars": 1528,
+    "Saturday bars": 2462
+  },
+  "decided_by": "The pooled main-measure mean is positive with t >= 2 (confirm rule).",
+  "reading": "A Saturday bar is the return from a Friday-dated bar's close to the next bar's close, active bars are forecast > 0 bars with a valid next return weighted by postRebalance_current_allocation, the coin mean is the mean of all within-window one-bar returns pooled over its windows, the plan's 'fewer than 300 is inconclusive' minimum is reported as not observable, and the supporting check has no pass rule in the plan so its passed is null."
+}

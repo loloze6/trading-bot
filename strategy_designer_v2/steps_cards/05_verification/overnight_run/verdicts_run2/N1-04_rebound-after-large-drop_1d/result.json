@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "hit rate of next-bar return on bars with forecast >= 16 minus pooled all-bar hit rate",
+    "value": 0.10201875724217846,
+    "statistic": {
+      "name": "two-proportion z (pooled)",
+      "value": 7.045693119480545
+    },
+    "threshold": "confirm if excess > 0 with z >= 2, reject if excess < 0 with z <= -2, over at least 100 qualifying bars"
+  },
+  "supporting_check": {
+    "name": "mean next-bar return on qualifying bars minus pooled all-bar mean daily return (Welch t = 3.704)",
+    "value": 0.006220859491545125,
+    "passed": true
+  },
+  "counts": {
+    "qualifying bars": 1280,
+    "all bars": 17260
+  },
+  "decided_by": "The hit-rate excess is positive with z >= 2 over at least 100 qualifying bars (confirm rule).",
+  "reading": "The baseline hit rate and mean are pooled over every bar with a next-bar return in all windows of all coins, the qualifying bars are pooled over all coins, the two-proportion z uses the pooled-proportion standard error, the supporting difference uses Welch's t and counts as passed when positive (the plan gives it no threshold), and the situation check counts a drop day (negative raw one-day value) with a positive forecast."
+}

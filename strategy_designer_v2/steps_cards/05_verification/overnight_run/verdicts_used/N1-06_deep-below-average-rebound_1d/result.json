@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 10-bar forward return after forecast >= 5 minus the coin's mean 10-bar return",
+    "value": 0.009889477366360732,
+    "statistic": {
+      "name": "ordinary t of the mean (non-overlapping 10-bar blocks)",
+      "value": 0.8832246366825698
+    },
+    "threshold": "confirm if the mean is > 0 with t >= 2; reject if the mean is < 0 with t <= -2; otherwise inconclusive; at least 30 non-overlapping cases are needed"
+  },
+  "supporting_check": {
+    "name": "OLS slope of the 10-bar excess return on the forecast, forecast > 0",
+    "value": 0.0017533060131673982,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping 10-bar cases at forecast >= 5": 201
+  },
+  "decided_by": "-2 < t < 2 for the mean excess 10-bar return after forecast >= 5.",
+  "reading": "Overlap is handled with the non-overlapping grid (positions 0, 10, 20, ... of each window) and the ordinary t of the mean. The coin's holding mean is its mean grid 10-bar return over all its windows. The supporting slope uses the same grid bars with forecast > 0 and is reported but does not enter the decision, since the confirm and reject rules do not name it."
+}

@@ -1,0 +1,200 @@
+brief: n11_daily_gate_hourly_entry_1h.md
+ideas:
+  - id: uptrend_gate_dip_buy
+    belief: "Hourly dips are bought by trend followers when the 30 day trend is up, so dips pay only in that state and fail when the slow trend is flat or down."
+    claim:
+      when: "hourly bars that close a sharp 6 hour drop while the 30 day mean is below price and rising over the past week"
+      then: "price rises over the next 24 hours"
+      compared_to: "the same sharp 6 hour drops when the 30 day trend is not up"
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.004
+      code: |
+        ma = df.close.rolling(720).mean()
+        up = (df.close > ma) & (ma > ma.shift(168))
+        dip = spaced(df.close.pct_change(6) < -0.015, 12)
+        a = dip & up
+        b = dip & ~up & ma.shift(168).notna()
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: "The 30 day mean, its one week change and the 6 hour drop all use closes at or before the bar."
+    how_it_trades: "Buy the hourly dip only when the 30 day trend is up, exit after 24 hours."
+  - id: trend_gate_breakout_long
+    belief: "Hourly breakouts above the prior two day high continue when the two week trend is already up, and fail as false breaks when the slow trend is against them."
+    claim:
+      when: "hourly closes above the prior 48 hour high while the 14 day mean is below price and rising over 3 days"
+      then: "price keeps rising over the next 24 hours"
+      compared_to: "the same 48 hour breakouts when the 14 day trend is not up"
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.004
+      code: |
+        hh = df.high.rolling(48).max().shift(1)
+        brk = spaced(df.close > hh, 24)
+        ma = df.close.rolling(336).mean()
+        up = (df.close > ma) & (ma > ma.shift(72))
+        a = brk & up
+        b = brk & ~up & ma.shift(72).notna()
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: "The prior high is shifted by one bar and the 14 day mean uses past closes only."
+    how_it_trades: "Buy the hourly breakout only in a rising 14 day trend, hold 24 hours."
+  - id: calm_regime_hourly_reversion
+    belief: "When weekly volatility is low against its own 90 day history, large hourly moves are liquidity noise and revert, while in high volatility regimes they do not."
+    claim:
+      when: "3 hour moves larger than 2.5 local sigmas while 7 day realized volatility is below its 90 day median"
+      then: "price moves back against the 3 hour move over the next 6 hours"
+      compared_to: "the same large 3 hour moves when 7 day volatility is at or above its 90 day median"
+      measure: mean_diff
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.002
+      code: |
+        rv = ret.rolling(168).std()
+        med = rv.rolling(2160).median()
+        r3 = df.close.pct_change(3)
+        z = r3.abs() / (rv * np.sqrt(3))
+        move = spaced(z > 2.5, 6)
+        a = move & (rv < med)
+        b = move & (rv >= med)
+        signal = -np.sign(r3)
+    why_no_lookahead: "Realized volatility, its rolling median and the 3 hour move use only returns up to the bar close."
+    how_it_trades: "Fade large hourly moves only in a calm weekly volatility regime, exit after 6 hours."
+  - id: calming_vol_gate_dip_buy
+    belief: "Dips bought while weekly volatility is falling below monthly volatility recover because the selling pressure is fading, while dips during expanding volatility keep falling."
+    claim:
+      when: "sharp 6 hour drops while 7 day realized volatility is below 30 day realized volatility"
+      then: "price rises over the next 24 hours"
+      compared_to: "the same sharp 6 hour drops while 7 day volatility is at or above 30 day volatility"
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.004
+      code: |
+        v7 = ret.rolling(168).std()
+        v30 = ret.rolling(720).std()
+        dip = spaced(df.close.pct_change(6) < -0.015, 12)
+        a = dip & (v7 < v30)
+        b = dip & (v7 >= v30)
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: "Both volatility windows and the 6 hour drop use past returns only."
+    how_it_trades: "Buy hourly dips only when weekly volatility is below monthly volatility, hold 24 hours."
+  - id: near_high_gate_dip_buy
+    belief: "A dip close to a fresh three week high is a pause in strength and gets bought, while the same dip deep in a drawdown is part of a falling market."
+    claim:
+      when: "sharp 6 hour drops while the close is within 5 percent of the 21 day high"
+      then: "price rises over the next 24 hours"
+      compared_to: "the same sharp 6 hour drops while the close is more than 10 percent below the 21 day high"
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.004
+      code: |
+        hi = df.high.rolling(504).max()
+        dd = df.close / hi - 1
+        dip = spaced(df.close.pct_change(6) < -0.015, 12)
+        a = dip & (dd > -0.05)
+        b = dip & (dd < -0.10)
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: "The 21 day high includes the current bar at most and the drop uses past closes."
+    how_it_trades: "Buy hourly dips only within 5 percent of the 21 day high, hold 24 hours."
+  - id: deep_drawdown_capitulation_long
+    belief: "A fast 24 hour crash on top of a deep monthly drawdown marks forced selling, and the rebound over the next two days pays more than the trading cost."
+    claim:
+      when: "bars where the close is more than 15 percent below the 30 day high and the last 24 hours fell more than 5 percent, one event per 48 hours"
+      then: "price rises over the next 48 hours by more than the round trip cost"
+      compared_to: "the round trip cost of 0.15 percent"
+      measure: net_return
+      horizon_bars: 48
+      direction: positive
+      min_effect: 0.005
+      code: |
+        hi = df.high.rolling(720).max()
+        dd = df.close / hi - 1
+        drop = df.close.pct_change(24) < -0.05
+        a = spaced((dd < -0.15) & drop, 48)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: "The 30 day high and the 24 hour drop use only bars at or before the close."
+    how_it_trades: "Buy after a 24 hour crash inside a deep 30 day drawdown, exit after 48 hours."
+  - id: downtrend_gate_rally_fade
+    belief: "In a falling 30 day trend, sharp hourly rallies are short covering and get sold into, while the same rallies in other states continue."
+    claim:
+      when: "sharp 6 hour rallies while the 30 day mean is above price and falling over the past week"
+      then: "price falls over the next 24 hours"
+      compared_to: "the same sharp 6 hour rallies when the 30 day trend is not down"
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.004
+      code: |
+        ma = df.close.rolling(720).mean()
+        down = (df.close < ma) & (ma < ma.shift(168))
+        rally = spaced(df.close.pct_change(6) > 0.015, 12)
+        a = rally & down
+        b = rally & ~down & ma.shift(168).notna()
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: "The 30 day mean, its weekly change and the 6 hour rally use past closes only."
+    how_it_trades: "In a 30 day downtrend, stay out or exit longs after a sharp hourly rally for 24 hours."
+  - id: trend_strength_ranks_dip_outcome
+    belief: "The stronger the price stands above its 30 day mean, the better an hourly dip recovers, so slow trend strength ranks the payoff of dip entries."
+    claim:
+      when: "bars that close a sharp 6 hour drop"
+      then: "the 24 hour forward return rises with the distance of price above its 30 day mean"
+      compared_to: "the ranking across dip bars"
+      measure: rank_corr
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.08
+      code: |
+        ma = df.close.rolling(720).mean()
+        feature = df.close / ma - 1
+        dip = spaced(df.close.pct_change(6) < -0.015, 12)
+        a = dip & ma.notna()
+        b = ~a
+    why_no_lookahead: "The 30 day mean and the 6 hour drop use closes at or before the bar."
+    how_it_trades: "Size or allow dip buys in proportion to the distance above the 30 day mean."
+  - id: compressed_regime_breakout_follow
+    belief: "When weekly volatility is compressed against its 90 day history, a two day range break starts a new move and follows through better than breaks in a normal regime."
+    claim:
+      when: "hourly closes outside the prior 48 hour range while 7 day realized volatility is below its 90 day 25th percentile"
+      then: "price continues in the break direction over the next 24 hours"
+      compared_to: "the same 48 hour range breaks when 7 day volatility is at or above that percentile"
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.003
+      code: |
+        hh = df.high.rolling(48).max().shift(1)
+        ll = df.low.rolling(48).min().shift(1)
+        up = df.close > hh
+        dn = df.close < ll
+        brk = spaced(up | dn, 24)
+        rv = ret.rolling(168).std()
+        q = rv.rolling(2160).quantile(0.25)
+        a = brk & (rv < q)
+        b = brk & (rv >= q)
+        signal = pd.Series(np.where(up, 1.0, -1.0), index=df.index)
+    why_no_lookahead: "The range is shifted by one bar and the volatility percentile uses past returns only."
+    how_it_trades: "Trade 48 hour range breaks in the break direction only after weekly volatility compression, hold 24 hours."
+  - id: trend_aligned_momentum_hit_rate
+    belief: "Hourly momentum bursts that agree with the 20 day trend continue more often than bursts that go against it, because the slow flow is behind them."
+    claim:
+      when: "12 hour moves larger than 2 percent in the same direction as the 20 day trend"
+      then: "the next 12 hours continue in the direction of the move more often"
+      compared_to: "12 hour moves larger than 2 percent against the 20 day trend"
+      measure: hit_rate
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.04
+      code: |
+        ma = df.close.rolling(480).mean()
+        trend = np.sign(df.close - ma)
+        m = df.close.pct_change(12)
+        ev = spaced(m.abs() > 0.02, 12) & ma.notna()
+        a = ev & (np.sign(m) == trend)
+        b = ev & (np.sign(m) == -trend)
+        signal = np.sign(m)
+    why_no_lookahead: "The 20 day mean and the 12 hour move use only closes at or before the bar."
+    how_it_trades: "Follow 12 hour momentum bursts only when they agree with the 20 day trend, hold 12 hours."
+notes: "Ten ideas covering slow trend, slow volatility level and volatility trend, and drawdown from a multi week high as gates, each paired with an hourly entry and measured against the same entry outside the gate where possible. Session and volume gates were already tried and are not reused. Short side claims are for exits or staying flat on spot. Two ideas contradict in spirit (calm regime reversion versus compressed regime breakout follow); the data decides."

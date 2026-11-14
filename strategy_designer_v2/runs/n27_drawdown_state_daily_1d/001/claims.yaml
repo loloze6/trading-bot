@@ -1,0 +1,182 @@
+brief: n27_drawdown_state_daily_1d.md
+ideas:
+  - id: near_high_drift_continues
+    belief: When price sits within a few percent of its 180-day high, trend followers and breakout traders keep buying, so forward returns are higher there than elsewhere.
+    claim:
+      when: daily close within 5% of the highest high of the prior 180 days
+      then: the 10-day forward return is higher (long pays more)
+      compared_to: all other bars with a valid 180-day high
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.015
+      code: |
+        hi = df.high.rolling(180).max()
+        dd = df.close / hi - 1
+        valid = hi.notna()
+        a = valid & (dd >= -0.05)
+        b = valid & ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The rolling max includes highs up to and including the current bar only, and the close is known at the bar's close.
+    how_it_trades: Hold long while the close is within 5% of the 180-day high, flat otherwise.
+
+  - id: new_year_high_breakout_long
+    belief: A close at a new 365-day high draws fresh buyers and short covering, and the move carries far enough to pay fees.
+    claim:
+      when: the close is at or above the prior 365-day high (one event per 20 bars)
+      then: the 20-day forward return is positive and clears the cost
+      compared_to: the round-trip cost (no comparison set)
+      measure: net_return
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.02
+      code: |
+        prior_hi = df.high.rolling(365).max().shift(1)
+        brk = df.close >= prior_hi
+        a = spaced(brk.fillna(False), 20)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The breakout level is the max of the 365 prior bars, shifted by one, compared with the current close.
+    how_it_trades: Buy on a close at a new 365-day high, hold 20 days, then exit.
+
+  - id: fresh_high_vs_stale_high_momentum
+    belief: The time since the last high matters more than the distance from it; a high set recently means an active trend, while a high far in the past means the trend is dead.
+    claim:
+      when: the 365-day high was set within the last 30 bars
+      then: the 10-day forward return is positive more often
+      compared_to: bars whose 365-day high is more than 120 bars old
+      measure: hit_rate
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.06
+      code: |
+        ds = df.high.rolling(365).apply(lambda x: len(x) - 1 - np.argmax(x), raw=True)
+        a = ds <= 30
+        b = ds > 120
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The days-since-high value is computed from the 365 bars ending at the current bar.
+    how_it_trades: Hold long only while the yearly high is less than 30 days old.
+
+  - id: momentum_rule_pays_near_high_not_in_drawdown
+    belief: The same 20-day momentum rule works near the high, where flows trend, and fails in deep drawdowns, where moves are noise and short squeezes; the state decides the rule.
+    claim:
+      when: close within 10% of the 365-day high
+      then: the sign of the past 20-day return predicts the sign of the next 10-day return more often
+      compared_to: bars more than 40% below the 365-day high, using the same rule
+      measure: hit_rate
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.05
+      code: |
+        hi = df.high.rolling(365).max()
+        dd = df.close / hi - 1
+        a = dd >= -0.10
+        b = dd <= -0.40
+        signal = np.sign(df.close / df.close.shift(20) - 1).replace(0, 1.0)
+    why_no_lookahead: Both the drawdown and the 20-day return use closes at or before the current bar.
+    how_it_trades: Apply 20-day time-series momentum only while the close is within 10% of the yearly high; stay flat otherwise.
+
+  - id: mid_drawdown_short_term_reversal
+    belief: In a mid drawdown (20-50% below the yearly high), price chops in a range between dip buyers and trapped holders selling, so 3-day moves revert, unlike near the high.
+    claim:
+      when: close 20% to 50% below the 365-day high
+      then: the next 3-day return goes against the past 3-day move
+      compared_to: bars within 10% of the 365-day high, using the same reversal rule
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.006
+      code: |
+        hi = df.high.rolling(365).max()
+        dd = df.close / hi - 1
+        a = (dd <= -0.20) & (dd >= -0.50)
+        b = dd >= -0.10
+        signal = -np.sign(df.close / df.close.shift(3) - 1).replace(0, 1.0)
+    why_no_lookahead: The drawdown and the 3-day past return use only closes up to the current bar.
+    how_it_trades: In the mid-drawdown state, fade each 3-day move for 3 days; flat in the other states.
+
+  - id: low_volume_approach_to_high_fails
+    belief: A return to the 180-day high on drying volume shows that buyers are absent, so the test of the high fails more often than one made on rising volume.
+    claim:
+      when: close within 3% of the 180-day high while the 10-day mean volume is below the 60-day mean volume
+      then: the 10-day forward return is lower (short side favored)
+      compared_to: bars within 3% of the 180-day high with the 10-day mean volume at or above the 60-day mean volume
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.015
+      code: |
+        hi = df.high.rolling(180).max()
+        near = (df.close / hi - 1) >= -0.03
+        vr = df.volume.rolling(10).mean() / df.volume.rolling(60).mean()
+        a = near & (vr < 1.0)
+        b = near & (vr >= 1.0)
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: The volume means and the rolling high use only bars up to and including the current one.
+    how_it_trades: Near the 180-day high, go long only when volume is expanding; stand aside on a low-volume approach.
+
+  - id: recovery_thrust_from_deep_drawdown
+    belief: A strong rally off the 90-day low while still deep below the yearly high marks the end of a bear phase; underinvested holders chase it, so it keeps going.
+    claim:
+      when: the close is at least 30% above the 90-day low but still more than 35% below the 365-day high (one event per 20 bars)
+      then: the 20-day forward return is positive and clears the cost
+      compared_to: the round-trip cost (no comparison set)
+      measure: net_return
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.02
+      code: |
+        hi = df.high.rolling(365).max()
+        lo = df.low.rolling(90).min()
+        dd = df.close / hi - 1
+        up = df.close / lo - 1
+        cond = (up >= 0.30) & (dd <= -0.35)
+        a = spaced(cond.fillna(False), 20)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The 90-day low, the 365-day high and the close all come from bars at or before the current bar.
+    how_it_trades: Buy the first 30% thrust off the 90-day low inside a deep drawdown, hold 20 days.
+
+  - id: stale_deep_drawdown_vol_compression
+    belief: Long after the high, deep in a drawdown, attention leaves the coin and moves shrink, so a long position should be sized up there and down near the high.
+    claim:
+      when: close more than 50% below the 365-day high and the high is more than 200 bars old
+      then: the absolute 10-day forward return is smaller
+      compared_to: bars within 15% of the 365-day high
+      measure: abs_ratio
+      horizon_bars: 10
+      direction: below
+      min_effect: 0.80
+      code: |
+        hi = df.high.rolling(365).max()
+        dd = df.close / hi - 1
+        ds = df.high.rolling(365).apply(lambda x: len(x) - 1 - np.argmax(x), raw=True)
+        a = (dd <= -0.50) & (ds > 200)
+        b = dd >= -0.15
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The drawdown and the days since the high come from the 365 bars ending at the current bar.
+    how_it_trades: Scale position size inversely to the state's expected volatility, larger in stale deep drawdowns and smaller near highs.
+
+  - id: slow_grind_drawdown_continues
+    belief: A slow drawdown with no rebound (the 60-day high is old and price keeps sliding) reflects steady distribution, so the decline continues, unlike a fast drop.
+    claim:
+      when: close 15% to 35% below the 60-day high, the 60-day high is more than 40 bars old, and the 20-day return is negative
+      then: the 10-day forward return is lower (short side favored)
+      compared_to: all other bars
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.015
+      code: |
+        hi = df.high.rolling(60).max()
+        dd = df.close / hi - 1
+        ds = df.high.rolling(60).apply(lambda x: len(x) - 1 - np.argmax(x), raw=True)
+        r20 = df.close / df.close.shift(20) - 1
+        a = (dd <= -0.15) & (dd >= -0.35) & (ds > 40) & (r20 < 0)
+        b = ~a & hi.notna()
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: The 60-day high, the days since it and the 20-day return use only bars up to the current close.
+    how_it_trades: Stay out of longs, or go short, during a slow grinding drawdown; re-enter when the state ends.
+
+notes: >
+  Nine ideas covering distance from the high (near_high_drift, mid_drawdown_reversal), time since the high (fresh_vs_stale), breakouts (new_year_high), state-conditioned rule choice (momentum near the high vs in drawdown), volume (low-volume approach), recovery structure (thrust off lows), volatility for sizing (stale deep drawdown), and drawdown speed (slow grind). Deep-drawdown reversion by rank correlation, capitulation rebounds, and the 12-month return rank are excluded as already tried. The fast-crash rebound is therefore not proposed. mid_drawdown_reversal fades 3-day moves in both directions in a mid range, not buying deep drawdowns. Some ideas contradict each other on purpose (momentum near the high vs a failed low-volume test; recovery thrust vs slow-grind continuation). The 365-day windows leave LTC and BTC with long samples. ETH has a shorter one, which may thin out the events of the deep-drawdown states in some windows.

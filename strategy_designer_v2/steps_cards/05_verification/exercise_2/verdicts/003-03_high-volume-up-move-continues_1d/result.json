@@ -1,0 +1,18 @@
+{
+  "status": "rejected",
+  "main_measure": {
+    "name": "position-weighted mean next-bar excess return on active bars",
+    "value": -0.0006940359799422018,
+    "threshold": "above 0 with t >= 2 to confirm; <= 0 rejects",
+    "t_stat": -0.24881115822977048
+  },
+  "supporting_check": {
+    "name": "top-third minus bottom-third positions mean next-bar return",
+    "value": -0.0005460627148548202,
+    "passed": false,
+    "t_stat": -0.10012953539467308
+  },
+  "cases": 151,
+  "decided_by": "The position-weighted mean next-bar excess return is <= 0, which meets the reject rule.",
+  "reading": "Active bars are forecast > 0 with the position taken as postRebalance_current_allocation; excess is the next-bar return minus that window's mean next-bar return over all its bars; the weighted mean's t uses a heteroskedasticity-robust weighted standard error pooled over all windows; thirds are n//3 active bars ranked by position, compared on raw next-bar return with a Welch t-test; and the 60-bar minimum is checked before the other rules."
+}

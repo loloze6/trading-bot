@@ -1,0 +1,6 @@
+- `N2-01_weekday-of-coming-bar` <- `N1-06_deep-below-average-rebound.g3_saturday-weekend-upward-drift` (line 7.g patterns; backtest N1-06_deep-below-average-rebound_1d)
+- `N2-02_capitulation-rebound` <- `N1-06_deep-below-average-rebound.d1_volatile-capitulation-short-rebound` (line 7.d not profitable; backtest N1-06_deep-below-average-rebound_1d)
+- `N2-03_deep-month-loss-rebound` <- `N1-08_twenty-day-momentum.g1_twenty-day-selloff-rebound` (line 7.g patterns; backtest N1-08_twenty-day-momentum_1d)
+- `N2-04_slow-and-fast-momentum` <- `N1-08_twenty-day-momentum.d1_long-only-aligned-uptrend-persistence` (line 7.d not profitable; backtest N1-08_twenty-day-momentum_1d)
+- `N2-05_shock-up-continuation` <- `N1-01_trend-with-rising-month.g3_outsized-up-day-week-continuation` (line 7.g patterns; backtest N1-01_trend-with-rising-month_1d)
+- `N2-06_rebound-in-high-volatility` <- `N1-04_rebound-after-large-drop.g2_rebound-needs-high-volatility` (line 7.g patterns; backtest N1-04_rebound-after-large-drop_1d)

@@ -1,0 +1,580 @@
+claims_file: strategy_designer_v2/runs/n25_low_vol_momentum_other_coins_1d/001/claims.yaml
+fold: A
+bar_size: 1d
+symbols:
+- ETHUSD
+- LTCUSD
+- XRPUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  low_vol_mom20_transfer:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: fail
+        effect: -0.0043021157836493195
+        t_stat: -0.85
+        n_a: 489
+        n_b: 489
+        windows:
+        - 0.013454591441829238
+        - 0.13030137006815998
+        - -0.05886134868807483
+        - -0.0019128232262123426
+        - -0.007032659562159309
+        - -0.005868624985754982
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      LTCUSD:
+        verdict: fail
+        effect: -0.00157081562020625
+        t_stat: -0.33
+        n_a: 531
+        n_b: 531
+        windows:
+        - -0.014689927855328728
+        - 0.022434992760503262
+        - -0.027411744303224156
+        - 0.019307395557490923
+        - 0.026075931233629897
+        - -0.019227871841283745
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: -0.010788637486275468
+        t_stat: -1.6
+        n_a: 493
+        n_b: 493
+        windows:
+        - -0.006382733323493298
+        - 0.034536569903720185
+        - -0.019904684435747142
+        - -0.016043492157147843
+        - -0.0652147173218886
+        - -0.001122080876288204
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+  regime_contrast_low_vs_high:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: fail
+        effect: -0.015524473817356095
+        t_stat: -1.74
+        n_a: 489
+        n_b: 241
+        windows:
+        - 0.053308762844818405
+        - 0.09750396137009251
+        - -0.05171618797173909
+        - -0.031387688502334615
+        - null
+        - -0.02018931595702868
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      LTCUSD:
+        verdict: fail
+        effect: 0.013534842800440185
+        t_stat: 1.36
+        n_a: 531
+        n_b: 199
+        windows:
+        - 0.056211229395387474
+        - -0.007226605398059811
+        - -0.03504911882996155
+        - 0.06394817958836967
+        - 0.09714117836132014
+        - -0.04562503007838449
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: -0.005595494234414036
+        t_stat: -0.65
+        n_a: 493
+        n_b: 235
+        windows:
+        - 0.03897623018236912
+        - 0.010550122788673764
+        - -0.028842259998667012
+        - -0.04036665330444843
+        - -0.045033928523274425
+        - 0.028628670478692424
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  high_vol_momentum_reverts:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: fail
+        effect: -0.005643291936438477
+        t_stat: -0.94
+        n_a: 144
+        n_b: 144
+        windows:
+        - 0.019094989052436877
+        - -0.011369842579108528
+        - 0.011434554241677653
+        - null
+        - null
+        - -0.013620839348096395
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      LTCUSD:
+        verdict: fail
+        effect: 0.006365106540291529
+        t_stat: 0.83
+        n_a: 140
+        n_b: 140
+        windows:
+        - null
+        - -0.006897323402295076
+        - -0.03172700554124248
+        - 0.0316137965471013
+        - 0.04742369514874262
+        - null
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: -0.007568978706417559
+        t_stat: -1.29
+        n_a: 154
+        n_b: 154
+        windows:
+        - -0.04590120423196007
+        - -0.02819527949987657
+        - -0.007644194281343546
+        - -0.04377349753286046
+        - 0.007465262710397607
+        - 0.02000443115390072
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  low_vol_long_only_asymmetry:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: fail
+        effect: -0.012993563011447992
+        t_stat: -1.9
+        n_a: 228
+        n_b: 228
+        windows:
+        - -0.040850740117248395
+        - -0.0322595036206168
+        - -0.08442640796512885
+        - 0.023086236835035325
+        - -0.02613478897182048
+        - 0.03481528936485172
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      LTCUSD:
+        verdict: fail
+        effect: -0.012258806720913224
+        t_stat: -2.03
+        n_a: 239
+        n_b: 239
+        windows:
+        - -0.0616125393293407
+        - -0.0006170805634719101
+        - 0.003563246587153322
+        - 0.015214231204069588
+        - -0.05733530766720286
+        - -0.008456911721967825
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: 0.001883433194825649
+        t_stat: 0.25
+        n_a: 192
+        n_b: 192
+        windows:
+        - -0.028767850079995928
+        - -0.009923833510794542
+        - -0.03536103094372673
+        - 0.015067019713396601
+        - 0.027632450963665706
+        - 0.029033129489157823
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  vol_scaled_trend_strength_rank:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: fail
+        effect: -0.005965139863613324
+        t_stat: -0.13
+        n_a: 506
+        n_b: 506
+        windows:
+        - -0.13549337260677466
+        - -0.10701754385964912
+        - -0.24940392447241758
+        - -0.300604208625599
+        - -0.1618900826766068
+        - 0.22362088115512777
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      LTCUSD:
+        verdict: fail
+        effect: -0.13411187204185618
+        t_stat: -3.12
+        n_a: 532
+        n_b: 532
+        windows:
+        - -0.39248189497441743
+        - 0.06523141428801806
+        - -0.24227596017069697
+        - 0.04951425386207995
+        - -0.07417634996582366
+        - -0.3834852585101837
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: -0.13877851692951707
+        t_stat: -3.04
+        n_a: 474
+        n_b: 474
+        windows:
+        - -0.20213976499690783
+        - 0.04829772049871961
+        - -0.277000215324987
+        - -0.3255846917080085
+        - -0.3434313055365687
+        - 0.057889670492410214
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  quiet_breakout_continuation:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: fail
+        effect: 0.009232541797818797
+        t_stat: 0.93
+        n_a: 126
+        n_b: 126
+        windows:
+        - 0.015140059658319384
+        - 0.16810390778315304
+        - -0.07010013862077949
+        - 0.0031032570154237
+        - -0.0067748942016602025
+        - 0.019030067431067763
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      LTCUSD:
+        verdict: fail
+        effect: -0.028750604954042715
+        t_stat: -2.94
+        n_a: 123
+        n_b: 123
+        windows:
+        - -0.07009156585804736
+        - 0.0017367897350075911
+        - -0.030113143219828123
+        - -0.005954955983617789
+        - -0.01914011691419886
+        - -0.03998420203411697
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: 0.0011478036137001083
+        t_stat: 0.1
+        n_a: 107
+        n_b: 107
+        windows:
+        - 0.02167020183197925
+        - 0.03898471721925979
+        - 0.01803922989654359
+        - -0.028878649267698637
+        - -0.025221913137198352
+        - -0.004538168256962157
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  trend_efficiency_in_low_vol:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: fail
+        effect: 0.003034770388984344
+        t_stat: 0.24
+        n_a: 112
+        n_b: 377
+        windows:
+        - -0.06750173053189483
+        - -0.10763615042387967
+        - -0.06404671334106074
+        - 0.03562480987336286
+        - 0.008740417484875043
+        - 0.08739141021608325
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      LTCUSD:
+        verdict: fail
+        effect: -0.037116524923080964
+        t_stat: -3.33
+        n_a: 85
+        n_b: 446
+        windows:
+        - -0.09132399180904636
+        - -0.08352374880795338
+        - -0.09313302763544089
+        - -0.000959419368329606
+        - -0.04701202712565304
+        - -0.00031799695791636523
+        agreeing_windows: 6 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: 0.021665169832255644
+        t_stat: 1.17
+        n_a: 81
+        n_b: 412
+        windows:
+        - -0.07758916557983968
+        - 0.029718171098007548
+        - -0.01966561059242662
+        - 0.00456376051699129
+        - 0.18758859410952272
+        - 0.05726169684553342
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  low_vol_mom_volume_confirmation:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: fail
+        effect: 0.0074680690530591134
+        t_stat: 0.72
+        n_a: 148
+        n_b: 341
+        windows:
+        - -0.1421869602131902
+        - 0.26613666486063603
+        - 0.08520096073004738
+        - 0.002134519518768954
+        - 0.001470193069335205
+        - 0.03839909694502946
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      LTCUSD:
+        verdict: fail
+        effect: -0.005302836539700338
+        t_stat: -0.51
+        n_a: 175
+        n_b: 356
+        windows:
+        - -0.1218507631125734
+        - 0.11578653024265766
+        - 0.030859329870245474
+        - 0.03723775572241417
+        - -0.07218401133379004
+        - 0.035035958660258985
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: -0.004788005481803099
+        t_stat: -0.29
+        n_a: 107
+        n_b: 386
+        windows:
+        - -0.08977273960968363
+        - 0.014189827490606127
+        - -0.0008618756613029584
+        - -0.03413583933190019
+        - 0.03887496982819237
+        - 0.11286734615750756
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  vol_expansion_from_quiet_base:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: fail
+        effect: -0.011152304211426316
+        t_stat: -1.1
+        n_a: 219
+        n_b: 270
+        windows:
+        - -0.00048242164571913465
+        - 0.01644981745464183
+        - -0.06465458692416245
+        - 0.017758807886828647
+        - -0.01787536566458143
+        - 8.854150905725396e-05
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      LTCUSD:
+        verdict: fail
+        effect: 0.010952016239781148
+        t_stat: 1.15
+        n_a: 238
+        n_b: 293
+        windows:
+        - 0.05942052318667505
+        - -0.007466117025599864
+        - -0.001162078073491387
+        - 0.009695716986336034
+        - 0.0040882906829779984
+        - -0.0022394243364691827
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: -0.014578839029445291
+        t_stat: -1.06
+        n_a: 190
+        n_b: 303
+        windows:
+        - -0.009721091558057575
+        - -0.0068570944698011435
+        - -0.10765195670663302
+        - 0.028025880507831103
+        - -0.056706314228002486
+        - 0.01307452925898453
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+  range_vol_regime_slow_momentum:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: fail
+        effect: -0.027406818899728777
+        t_stat: -4.6
+        n_a: 532
+        n_b: 532
+        windows:
+        - -0.04991161158764667
+        - -0.017014878647729135
+        - -0.08267435743799972
+        - 0.01782409808955001
+        - -0.01707486776942136
+        - -0.018125033795835493
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      LTCUSD:
+        verdict: fail
+        effect: -0.005884559422981045
+        t_stat: -0.94
+        n_a: 563
+        n_b: 563
+        windows:
+        - 0.019289329224009298
+        - 0.01981140411986448
+        - -0.005217895165161061
+        - -0.0008569264657765079
+        - -0.030092971442033364
+        - -0.032272878325889376
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: -0.0016092191475526936
+        t_stat: -0.19
+        n_a: 497
+        n_b: 497
+        windows:
+        - -0.012712743333577518
+        - 0.03413457892246513
+        - -0.04805330571793343
+        - -0.01855569868698526
+        - 0.10958495658018895
+        - -0.05452638581558364
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

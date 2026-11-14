@@ -1,0 +1,28 @@
+claims_file: strategy_designer_v2/runs/n13_quiet_period_then_move_btc_1h/001/claims_r2.yaml
+fold: C
+bar_size: 1h
+symbols:
+- BTCUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  held_flag_after_shock_pays:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.0019033218653686798
+        n_a: 176
+        n_b: 176
+        windows:
+        - 0.013019359812362016
+        - -0.00028130104258123007
+        - -0.003319679754232443
+        - 0.0014320327687207196
+        - 0.0066039851092739455
+        - -0.002732016430734733
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

@@ -1,0 +1,134 @@
+brief: "fake_02_eth_vol_regime_trend.md"
+ideas:
+  - id: vol_expansion_trend_pays
+    belief: "Trend signals on ETH pay when realized volatility is rising, because rising volatility marks information arriving and a move getting underway, and lose when volatility is contracting."
+    claim:
+      when: "Bars where the 20-day realized volatility of daily close-to-close log returns is above the 60-day realized volatility (volatility expanding); the trend signal is the sign of the 50-day close-to-close return."
+      then: "The signed next 10-day close-to-close return, i.e. trend signal times the forward 10-day return."
+      compared_to: "Bars where the 20-day realized volatility is at or below the 60-day realized volatility (volatility contracting)."
+      measure: "Mean difference of signed forward 10-day returns between the two groups."
+      pass_if: "Difference > 1.0% per 10 days on the full sample, and the same sign in at least 4 of 5 equal chronological windows."
+    why_no_lookahead: "Both volatility windows and the 50-day return end at the bar's close; only the forward return is in the future."
+    how_it_trades: "Follow the 50-day return sign only while 20-day vol exceeds 60-day vol; flat otherwise."
+
+  - id: calm_level_trend_pays
+    belief: "Trends on ETH are more orderly and persistent when the level of volatility is low relative to its own history, and degrade into whipsaw when volatility is already high."
+    claim:
+      when: "Bars where the 20-day realized volatility is in the bottom half of its own trailing 365-day distribution (percentile rank computed on data up to the bar)."
+      then: "The signed next 10-day close-to-close return using the sign of the 50-day return as the trend signal."
+      compared_to: "Bars where the 20-day realized volatility is in the top half of its trailing 365-day distribution."
+      measure: "Mean difference of signed forward 10-day returns between the two groups."
+      pass_if: "Difference > 1.0% per 10 days on the full sample, and the same sign in at least 4 of 5 equal chronological windows."
+    why_no_lookahead: "The percentile rank uses only the trailing 365 days of realized volatility ending at the bar's close."
+    how_it_trades: "Follow the 50-day return sign when vol is in the lower half of its trailing year; flat otherwise."
+
+  - id: efficiency_ratio_chop_filter
+    belief: "Chop can be recognised directly from how much of the recent path was net movement, and trend signals lose money mainly in high-chop stretches."
+    claim:
+      when: "Bars where the 20-day efficiency ratio (absolute 20-day net close change divided by the sum of absolute daily close changes over the same 20 days) is in the top tercile of its trailing 365-day distribution."
+      then: "The signed next 10-day close-to-close return using the sign of the 50-day return as the trend signal."
+      compared_to: "Bars where the 20-day efficiency ratio is in the bottom tercile of its trailing 365-day distribution."
+      measure: "Mean difference of signed forward 10-day returns between top and bottom tercile bars."
+      pass_if: "Difference > 1.5% per 10 days on the full sample, and the same sign in at least 4 of 5 equal chronological windows."
+    why_no_lookahead: "The efficiency ratio and its tercile thresholds are computed only from closes at or before the bar."
+    how_it_trades: "Follow the 50-day return sign only when the efficiency ratio is in its top tercile; flat otherwise."
+
+  - id: return_autocorrelation_regime
+    belief: "ETH alternates between momentum regimes where daily returns are positively autocorrelated and mean-reverting regimes where they are negatively autocorrelated, and that state persists long enough to be used."
+    claim:
+      when: "Bars where the trailing 60-day lag-1 autocorrelation of daily log returns is above zero."
+      then: "The signed next 10-day close-to-close return using the sign of the 20-day return as the trend signal."
+      compared_to: "Bars where the trailing 60-day lag-1 autocorrelation is at or below zero."
+      measure: "Mean difference of signed forward 10-day returns between the two groups."
+      pass_if: "Difference > 1.0% per 10 days on the full sample, and the same sign in at least 4 of 5 equal chronological windows."
+    why_no_lookahead: "The autocorrelation uses the 60 daily returns ending at the bar's close."
+    how_it_trades: "Follow the 20-day return sign when trailing autocorrelation is positive; flat otherwise."
+
+  - id: compression_breakout_persists
+    belief: "A breakout out of a compressed range starts a real move, while a breakout out of an already wide range is often noise that gives back."
+    claim:
+      when: "Bars where the close exceeds the prior 20-day high (or falls below the prior 20-day low) and the 20-day average true range divided by close, measured at the prior bar, is in the bottom third of its trailing 365-day distribution."
+      then: "The next 20-day close-to-close return signed by the breakout direction."
+      compared_to: "20-day breakout bars where the prior-bar ATR-to-close ratio is in the top third of its trailing 365-day distribution."
+      measure: "Mean difference of signed forward 20-day returns between the two groups of breakout bars."
+      pass_if: "Difference > 2.0% per 20 days on the full sample, at least 30 breakout events in each group, and the same sign in at least 4 of 5 equal chronological windows."
+    why_no_lookahead: "The channel uses the 20 bars before the current one, the ATR is taken at the prior bar, and the breakout is judged on the current close."
+    how_it_trades: "Enter in the breakout direction only when the breakout follows range compression; exit on the opposite 10-day channel."
+
+  - id: breakout_beats_ma_in_chop
+    belief: "Channel breakouts are more robust to chop than moving-average signals, because they stay put in sideways markets instead of flipping on every small cross."
+    claim:
+      when: "Bars in the bottom tercile of the 20-day efficiency ratio (chop regime, trailing 365-day thresholds), holding the position of a 20/10-day Donchian breakout system (long on 20-day high, short on 20-day low, exit on opposite 10-day channel)."
+      then: "The next-day close-to-close return of that position after a 0.5% round-trip cost per position change."
+      compared_to: "The same chop bars holding the position of a 20/50-day simple moving-average crossover (long when 20 above 50, short otherwise) after the same costs."
+      measure: "Difference in net mean daily return between the breakout position and the moving-average position, summed over chop bars."
+      pass_if: "Breakout net cumulative return over chop bars exceeds the moving-average net cumulative return by > 10 percentage points on the full sample, and breakout loses less (or gains more) in chop in at least 4 of 5 equal chronological windows."
+    why_no_lookahead: "Both positions and the chop flag are set from closes at or before the bar, and are held over the next bar's return."
+    how_it_trades: "Use the Donchian breakout as the trend definition instead of the moving-average cross."
+
+  - id: downside_vol_asymmetry
+    belief: "Which side the volatility comes from tells the trend: rising volatility dominated by up days confirms an uptrend, and dominated by down days confirms a downtrend, while symmetric volatility is chop."
+    claim:
+      when: "Bars where the absolute 20-day log difference between upside semi-deviation and downside semi-deviation of daily returns is in the top third of its trailing 365-day distribution; signal is long if upside dominates, short if downside dominates."
+      then: "The signed next 10-day close-to-close return using that asymmetry signal."
+      compared_to: "Bars where the asymmetry is in the bottom third (symmetric volatility), signed by the 50-day return sign."
+      measure: "Mean of signed forward 10-day returns in asymmetric bars minus that in symmetric bars."
+      pass_if: "Difference > 1.0% per 10 days on the full sample, and the asymmetric-bar mean is positive and the difference has the same sign in at least 4 of 5 equal chronological windows."
+    why_no_lookahead: "Semi-deviations use the 20 daily returns ending at the bar's close; thresholds use the trailing 365 days."
+    how_it_trades: "Go long when upside semi-deviation clearly dominates, short when downside dominates, flat when volatility is symmetric."
+
+  - id: post_shock_trend_failure
+    belief: "After an outsized one-day shock, ETH tends to enter a choppy digestion phase, so trend signals taken in the following days lose."
+    claim:
+      when: "Bars within 10 days after a shock day, where a shock day has a high-to-low range greater than 3 times the 20-day average true range measured at the prior bar."
+      then: "The signed next 5-day close-to-close return using the sign of the 50-day return as the trend signal."
+      compared_to: "All other bars (no shock in the prior 10 days)."
+      measure: "Mean difference of signed forward 5-day returns, post-shock minus other bars."
+      pass_if: "Difference < -0.8% per 5 days on the full sample, at least 25 shock days in total, and the same sign in at least 4 of 5 equal chronological windows."
+    why_no_lookahead: "The shock is identified on a completed bar against an ATR ending the bar before it, and only later bars are selected."
+    how_it_trades: "Stand flat for 10 days after a shock day regardless of the trend signal."
+
+  - id: volume_confirmed_trend
+    belief: "Trend moves backed by rising participation continue, while trends on thinning volume are drift that fades into chop."
+    claim:
+      when: "Bars where the 20-day average volume is above the 90-day average volume and the 20-day return has the same sign as the 50-day return."
+      then: "The signed next 10-day close-to-close return using the sign of the 50-day return."
+      compared_to: "Bars where the 20-day and 50-day returns agree in sign but the 20-day average volume is at or below the 90-day average volume."
+      measure: "Mean difference of signed forward 10-day returns between the two groups."
+      pass_if: "Difference > 1.0% per 10 days on the full sample, and the same sign in at least 4 of 5 equal chronological windows."
+    why_no_lookahead: "All volume averages and returns end at the bar's close."
+    how_it_trades: "Follow the trend only when recent volume exceeds its 90-day average; flat otherwise."
+
+  - id: young_trend_pays_old_trend_fades
+    belief: "The payoff of a trend signal is concentrated early in the trend's life, and old trends on ETH are where the long flat or losing stretches happen."
+    claim:
+      when: "Bars where the sign of the 50-day return has held unchanged for 1 to 20 days (young trend)."
+      then: "The signed next 10-day close-to-close return using the sign of the 50-day return."
+      compared_to: "Bars where the sign of the 50-day return has held unchanged for more than 60 days (old trend)."
+      measure: "Mean difference of signed forward 10-day returns, young minus old."
+      pass_if: "Difference > 1.0% per 10 days on the full sample, and the same sign in at least 4 of 5 equal chronological windows."
+    why_no_lookahead: "Trend age is counted from past sign changes of a return that ends at the bar's close."
+    how_it_trades: "Follow the trend signal for its first 60 days and go flat after, until the sign changes again."
+
+  - id: candle_body_ratio_regime
+    belief: "The shape of daily candles reveals the regime: trending stretches have closes far from opens relative to the range, while chop shows long wicks and small bodies."
+    claim:
+      when: "Bars where the 10-day mean of absolute close minus open divided by high minus low (body ratio) is in the top third of its trailing 365-day distribution."
+      then: "The signed next 10-day close-to-close return using the sign of the 20-day return."
+      compared_to: "Bars where the 10-day mean body ratio is in the bottom third of its trailing 365-day distribution."
+      measure: "Mean difference of signed forward 10-day returns between the two groups."
+      pass_if: "Difference > 1.0% per 10 days on the full sample, and the same sign in at least 4 of 5 equal chronological windows."
+    why_no_lookahead: "The body ratio uses only the open, high, low and close of the 10 bars ending at the current bar."
+    how_it_trades: "Follow the 20-day return sign when the body ratio is high; flat when candles are wick-dominated."
+
+  - id: vol_regime_filter_net_profit
+    belief: "A regime filter that turns the trend book off in contracting or high-chop volatility improves net trend-following profit on ETH, not just signal averages."
+    claim:
+      when: "Days when a 50-day return sign trend position is held only if 20-day realized volatility is above 60-day realized volatility or the 20-day efficiency ratio is in its top tercile (trailing 365 days); otherwise flat."
+      then: "The next-day close-to-close return of that position after a 0.5% round-trip cost per position change, compounded over the sample."
+      compared_to: "The same 50-day return sign position held on every day with the same costs."
+      measure: "Difference in annualized net Sharpe ratio, filtered minus unfiltered."
+      pass_if: "Filtered annualized net Sharpe exceeds unfiltered by > 0.3 on the full sample, filtered maximum drawdown is no larger than unfiltered, and filtered Sharpe is higher in at least 4 of 5 equal chronological windows."
+    why_no_lookahead: "The filter and the position are set at the bar's close from past data and earn only the next bar's return."
+    how_it_trades: "Hold the 50-day trend position only while the regime filter is on; flat otherwise."
+notes: "The brief implies three things: the problem is flat stretches and whipsaw rather than missing trends, the regime must be readable from daily ETH bars alone, and the trend definition itself may matter as much as the filter. Cross-asset views were left out because the brief names only ETH/USD bars. Ideas cover volatility direction, volatility level, path efficiency, return autocorrelation, range compression, trend definition, directional volatility, shock aftermath, volume, trend age and candle structure, plus one profit test of a combined filter. Window-length or threshold variants of the same mechanism were folded into one idea each. The combined-filter idea reuses the vol-expansion and efficiency-ratio selectors by design and should be read only after those two. Windows are five equal chronological slices of the available daily history; costs assume 0.5% round trip as a conservative Kraken spot figure."

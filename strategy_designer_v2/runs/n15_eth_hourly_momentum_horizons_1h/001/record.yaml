@@ -1,0 +1,403 @@
+brief: n15_eth_hourly_momentum_horizons_1h.md
+fold: A
+symbols:
+- ETHUSD
+bar_size: 1h
+claims:
+- id: mom_168h_plain_rankcorr
+  belief: ETH's past week of return carries slow-moving trend information that keeps
+    paying over the next three days.
+  measure: rank_corr
+  horizon_bars: 72
+  direction: positive
+  min_effect: 0.03
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: -0.027376386490252477
+      n_a: 17519
+      n_b: 17519
+      windows:
+      - 0.036013188437964784
+      - -0.049237382207122565
+      - -0.015340608052334172
+      - -0.07155450724438665
+      - -0.23533939420343497
+      - -0.13321103323861985
+      verdict: fail
+      why: null
+  code: 'feature = df.close / df.close.shift(168) - 1
+
+    a = feature.notna()
+
+    b = ~a
+
+    signal = np.sign(feature).replace(0, 1)
+
+    '
+- id: mom_24h_short_reversal
+  belief: A one-day ETH move is mostly liquidity-driven overshoot that partly gives
+    back over the next day, unlike the weekly trend.
+  measure: rank_corr
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.03
+  verdict: pass
+  by_symbol:
+    ETHUSD:
+      effect: 0.05449800581834577
+      n_a: 17519
+      n_b: 17519
+      windows:
+      - 0.042329035332557954
+      - -0.0368708021127352
+      - 0.10529712099985711
+      - 0.11028569381471418
+      - 0.12189460793343784
+      - 0.04187551518707029
+      verdict: pass
+      why: null
+  code: 'r24 = df.close / df.close.shift(24) - 1
+
+    feature = -r24
+
+    a = feature.notna()
+
+    b = ~a
+
+    signal = -np.sign(r24).replace(0, 1)
+
+    '
+- id: mom_72h_vol_scaled_rankcorr
+  belief: A 3-day move is a stronger signal when it is large relative to recent hourly
+    volatility, so the risk-adjusted move predicts better than the raw move.
+  measure: rank_corr
+  horizon_bars: 48
+  direction: positive
+  min_effect: 0.03
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: 0.01926587589130252
+      n_a: 17519
+      n_b: 17519
+      windows:
+      - 0.08091840298897285
+      - 0.06964587484478804
+      - -0.046460151042708744
+      - 0.050777374486887676
+      - -0.12878101919800078
+      - -0.06423489505726357
+      verdict: fail
+      why: null
+  code: 'r72 = df.close / df.close.shift(72) - 1
+
+    vol = ret.rolling(168).std()
+
+    feature = r72 / (vol * np.sqrt(72))
+
+    a = feature.notna() & np.isfinite(feature)
+
+    b = ~a
+
+    signal = np.sign(feature).replace(0, 1)
+
+    '
+- id: sign_only_up_hour_share
+  belief: Persistent buying shows up as a high share of up hours over the week, whatever
+    their size, and that consistency predicts continuation better than one big candle.
+  measure: rank_corr
+  horizon_bars: 72
+  direction: positive
+  min_effect: 0.03
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: -0.02527749297685505
+      n_a: 17519
+      n_b: 17519
+      windows:
+      - 0.1191889380589669
+      - -0.20828873375598922
+      - 0.04039796652141792
+      - -0.0748665831606511
+      - -0.15332181308428214
+      - -0.08923331724018145
+      verdict: fail
+      why: null
+  code: 'feature = (ret > 0).astype(float).rolling(168).mean() - 0.5
+
+    a = feature.notna() & ret.rolling(168).count().eq(168)
+
+    b = ~a
+
+    signal = np.sign(feature).replace(0, 1)
+
+    '
+- id: multi_horizon_sign_agreement
+  belief: When the 1-day, 3-day and 7-day trends all point the same way, flows are
+    aligned across trader horizons and the trend is more likely to continue.
+  measure: hit_rate
+  horizon_bars: 72
+  direction: positive
+  min_effect: 0.03
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: -0.006454493508391113
+      n_a: 8555
+      n_b: 8960
+      windows:
+      - -0.037481451743426764
+      - 0.023239921120210727
+      - -0.08101069737670802
+      - 0.024557742182130637
+      - -0.0037764180019443927
+      - 0.0040087864835962606
+      verdict: fail
+      why: null
+  code: 's24 = np.sign(df.close / df.close.shift(24) - 1)
+
+    s72 = np.sign(df.close / df.close.shift(72) - 1)
+
+    s168 = np.sign(df.close / df.close.shift(168) - 1)
+
+    valid = s168.notna() & (s24 != 0) & (s72 != 0) & (s168 != 0)
+
+    a = valid & (s24 == s72) & (s72 == s168)
+
+    b = valid & ~a
+
+    signal = s168.replace(0, 1).fillna(1)
+
+    '
+- id: mom_168h_works_in_calm_regime
+  belief: Weekly momentum persists in calm markets, where trends come from slow flows,
+    and breaks down in high-volatility regimes, where moves are liquidation noise.
+  measure: mean_diff
+  horizon_bars: 72
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: 0.00015070511671840198
+      n_a: 9564
+      n_b: 7955
+      windows:
+      - 0.0224625570300516
+      - -0.017923466670086943
+      - -0.009203720772321719
+      - 0.01382861885476966
+      - 0.0008424719780288029
+      - -0.007941512121021078
+      verdict: fail
+      why: null
+  code: 'r168 = df.close / df.close.shift(168) - 1
+
+    vol = ret.rolling(168).std()
+
+    med = vol.rolling(720).median()
+
+    valid = r168.notna() & med.notna()
+
+    a = valid & (vol < med)
+
+    b = valid & (vol >= med)
+
+    signal = np.sign(r168).replace(0, 1).fillna(1)
+
+    '
+- id: mom_168h_volume_confirmed
+  belief: A weekly trend that comes with rising volume reflects real participation
+    and continues more than a trend on fading volume.
+  measure: mean_diff
+  horizon_bars: 72
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: 0.004016766065266039
+      n_a: 8474
+      n_b: 9045
+      windows:
+      - -0.020591895467341866
+      - 0.037919400830515794
+      - -0.011044823780632268
+      - 0.0011786181090015393
+      - 0.00941229750851394
+      - 0.005279383221666792
+      verdict: fail
+      why: null
+  code: 'r168 = df.close / df.close.shift(168) - 1
+
+    v = df.volume.rolling(168).sum()
+
+    vprev = v.shift(168)
+
+    valid = r168.notna() & vprev.notna()
+
+    a = valid & (v > vprev)
+
+    b = valid & (v <= vprev)
+
+    signal = np.sign(r168).replace(0, 1).fillna(1)
+
+    '
+- id: downtrend_persists_more_than_uptrend
+  belief: ETH downtrends persist more than uptrends because deleveraging cascades
+    and risk-off flows are self-reinforcing, while rallies get sold.
+  measure: mean_diff
+  horizon_bars: 72
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: -0.00012356031390188722
+      n_a: 9004
+      n_b: 8515
+      windows:
+      - 0.006807307261701012
+      - 0.01817217089507688
+      - 0.009056468372372298
+      - -0.025942476053167452
+      - 0.006508140791335045
+      - -0.01889473201367943
+      verdict: fail
+      why: null
+  code: 'r168 = df.close / df.close.shift(168) - 1
+
+    a = r168 < 0
+
+    b = r168 > 0
+
+    signal = np.sign(r168).replace(0, 1).fillna(1)
+
+    '
+- id: trend_acceleration_rankcorr
+  belief: When the last day's move outpaces the weekly pace, a trend is accelerating
+    as new money joins, and it carries on over the next day.
+  measure: rank_corr
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.03
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: -0.02885926178794368
+      n_a: 17519
+      n_b: 17519
+      windows:
+      - -0.03382970695043728
+      - 0.06763231759672361
+      - -0.062216835401013894
+      - -0.11228253423789888
+      - -0.07593942669406191
+      - -0.005400531144999319
+      verdict: fail
+      why: null
+  code: 'r24 = df.close / df.close.shift(24) - 1
+
+    r168 = df.close / df.close.shift(168) - 1
+
+    vol = ret.rolling(168).std()
+
+    feature = (r24 - r168 / 7) / (vol * np.sqrt(24))
+
+    a = feature.notna() & np.isfinite(feature)
+
+    b = ~a
+
+    signal = np.sign(feature).replace(0, 1)
+
+    '
+- id: vol_scaled_168h_rule_net
+  belief: A strong vol-scaled weekly trend, traded as discrete non-overlapping 3-day
+    holds, earns more than the 0.15% round-trip cost.
+  measure: net_return
+  horizon_bars: 72
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: 0.0061841033848259105
+      n_a: 56
+      n_b: 56
+      windows:
+      - 0.009460800067836372
+      - 0.025778199985482163
+      - 0.012943228791124741
+      - 0.012094398085323114
+      - -0.015571192706989022
+      - -0.005500055835371696
+      verdict: fail
+      why: null
+  code: 'r168 = df.close / df.close.shift(168) - 1
+
+    vol = ret.rolling(168).std()
+
+    z = r168 / (vol * np.sqrt(168))
+
+    a = spaced((z.abs() > 1).fillna(False), 72)
+
+    b = ~a
+
+    signal = np.sign(z).replace(0, 1).fillna(1)
+
+    '
+- id: unnamed_0
+  belief: ''
+  measure: null
+  horizon_bars: null
+  direction: null
+  min_effect: null
+  verdict: refused
+  by_symbol:
+    ETHUSD:
+      effect: null
+      n_a: null
+      n_b: null
+      windows: null
+      verdict: refused
+      why: idea has no complete claim block (measure, horizon_bars, direction, min_effect,
+        code)
+  code: ''
+- id: rev_24h_volscaled_fade_net
+  belief: A large vol-scaled one-day ETH move partly gives back over the next day
+    by enough to pay the round-trip cost when traded as discrete fades.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: 0.0015135939441385336
+      n_a: 150
+      n_b: 150
+      windows:
+      - 0.007012930582508951
+      - 0.0028700142574867274
+      - -0.009047255203646002
+      - 0.002042204782368851
+      - -0.0018108754663031814
+      - 0.0051409573827518405
+      verdict: fail
+      why: null
+  code: 'r24 = df.close / df.close.shift(24) - 1
+
+    vol = ret.rolling(168).std()
+
+    z = r24 / (vol * np.sqrt(24))
+
+    a = spaced((z.abs() > 1.5).fillna(False), 24)
+
+    b = ~a
+
+    signal = -np.sign(z).replace(0, 1).fillna(1)
+
+    '
+profit: 'none: no return claim passed'

@@ -1,0 +1,126 @@
+{
+  "core": {
+    "net_return_pct": 1524.104,
+    "sharpe": 2.51,
+    "max_drawdown_pct": -41.871,
+    "trade_count": 52,
+    "win_rate": 55.77,
+    "avg_trade_net_pnl": 292.712881,
+    "fees_paid": 73.631757,
+    "gross_pnl": 15294.701576,
+    "net_pnl": 15221.069819,
+    "cost_drag_pct": 0.4814,
+    "forecast_return_corr": 0.203759,
+    "forecast_return_corr_pvalue": 0.046458,
+    "forecast_return_corr_pvalue_block_adjusted": 0.049416,
+    "forecast_return_corr_n_eff": 96,
+    "forecast_return_corr_all_bars": -0.033288,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.719952,
+    "forecast_return_corr_all_bars_n_eff": 119,
+    "gap_skipped_pairs": 0,
+    "gap_skipped_pct": 0.0,
+    "avg_trade_duration_bars": 14.85,
+    "sigma_bar_bps": 3967.6938,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 3115.4313,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 168.4017,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "proceed_to_interpretation",
+    "post_backtest_route_rationale": "Active-bar IC=0.2038 (p=0.0494, significant). Edge-to-cost ratio=168.4017 >= 2.0. Signal passes both IC and cost gates.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": 20626.3865,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": 20626.3865,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 2062.6386,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "proceed_to_interpretation",
+    "post_backtest_route_real_rationale": "Active-bar IC=0.2038 (p=0.0494, significant). Edge-to-cost ratio=2062.6386 >= 2.0. Signal passes both IC and cost gates.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 120,
+      "avg_forecast": 9.924749,
+      "trade_count": 52,
+      "total_net_pnl": 15221.069817
+    }
+  },
+  "forecast_bins": {
+    "10_to_15": {
+      "total_forecasts": 1,
+      "profitable_trades": 0,
+      "success_rate_pct": 0.0,
+      "total_net_pnl_usd": -43.1273,
+      "avg_pnl_per_trade_usd": -43.1273
+    },
+    "15_to_very_positive": {
+      "total_forecasts": 51,
+      "profitable_trades": 29,
+      "success_rate_pct": 56.86,
+      "total_net_pnl_usd": 15264.1971,
+      "avg_pnl_per_trade_usd": 299.298
+    }
+  },
+  "dynamic": {
+    "debug_info.components.since_high.last_history_value": {
+      "unknown": {
+        "mean": 10.616667,
+        "std": 7.471158
+      }
+    },
+    "debug_info.components.since_high.post_pipeline_value": {
+      "unknown": {
+        "mean": 9.924749,
+        "std": 7.430453
+      }
+    },
+    "debug_info.components.since_high.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.since_high.weighted_contribution": {
+      "unknown": {
+        "mean": 9.924749,
+        "std": 7.430453
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": 0.06569716,
+      "forward_return_std": 0.39676938,
+      "n_bars": 119,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -76.4104,
+    "sharpe": 3.6392,
+    "sortino": 10.1319,
+    "exposure_pct": 99.1667,
+    "turnover": 25.79711,
+    "n_bars_total": 120,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 119,
+    "n_downside_days": 64,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 0,
+    "events": []
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

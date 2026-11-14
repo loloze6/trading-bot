@@ -1,0 +1,67 @@
+{
+  "line": "7.g",
+  "backtest": "002-04_price-cross-below-long-sma_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.33777530000000006,
+  "findings": {
+    "F1": "A daily drop of more than 2 of the coin's 20-day standard deviations that closes in the lowest fifth of its high-low range is followed by a next-day mean return of +1.36% (up 64.7%, t 3.91, n 272). The same drop closing in the upper half is followed by -1.08% (up 40%, n 30, t -1.12). All large drops together give +0.76% the next day (up 61%, t 2.85) against +0.13% for all bars. The up share after these drops is above 0.5 in every year (0.52 to 0.71), but the mean is clearly positive only in 2020 to 2021 (t 3.3 and 2.5).",
+    "F2": "Next-day return falls steadily as the day's own return rises. The coin's bottom daily-return decile is followed by +0.90% (up 60.9%, t 6.0), the second decile by +0.26% (t 2.1), and deciles 4 to 9 by between -0.07% and +0.05% with up shares from 0.445 to 0.49.",
+    "F3": "While the close is below its 200-day SMA, the 10-bar forward return is positive in every distance decile. It is +1.26% to +1.66% (t 3.0 to 4.8) in the three deepest deciles, down to 72.9% below the average. At the strongest forecast (below -10) it is +1.54% (up 54.7%, t 5.45). Only 2018 (-2.6%, t -5.2) and 2022 (-1.0%, t -3.2) are negative years, so the short book sits against a rebound rather than a downtrend.",
+    "F4": "All 2,471 trades were shorts, with a mean net result of -4.0%. Shorts lasting up to 20 days average -6.3% to -6.6% (n 1,764, medians around -5%). Only shorts lasting more than 20 days gain, +1.95% (n 707).",
+    "F5": "While above the SMA200, the top quintile of 5-day returns is followed by a 10-bar return of +3.88% (t 7.6, overlapping) and +3.60% in non-overlapping blocks (t 2.3, n 197). The lower three quintiles give +0.1% to +0.4%. Below the SMA200, the 5-day return gives no such ordering. The effect was negative in 2018 to 2019 (n 8 and 18).",
+    "F6": "The book's worst 5% of days came after a coin down day averaging -2.2% (59% of them down days). Its best 5% came after a flat day (+0.09%). At both tails the short was about equally deep (allocation about -1.5, distance about -37%), which matches F1: shorts held into a fresh drop lose on the rebound.",
+    "F7": "Thursday and Friday next-day returns are +0.34% (t 3.66) and +0.43% (up 55%, t 5.24), against -0.09% and -0.18% for Monday and Wednesday. The Thursday-plus-Friday excess over other days is positive in 7 of 8 years and slightly negative in 2021."
+  },
+  "ideas": [
+    {
+      "idea": "After a daily drop larger than twice the coin's recent daily volatility that closes near the day's low, the coin rises on the next day more often than not.",
+      "consequence": "A trader should refuse new shorts, or take a one-day long, after a high-volatility down day that closes at its low.",
+      "name": "capitulation close next-day bounce",
+      "from": "F1, F2, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When a coin's close sits far below its 200-day simple moving average, its price rises over the following ten days rather than continuing down.",
+      "consequence": "Deep distance below the long average should be read as a place to stop shorting, not to add to shorts.",
+      "name": "deep below-average rebound",
+      "from": "F3, F4, F6",
+      "refs": [
+        "F3",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When a coin's close is above its 200-day average and its 5-day return is among its strongest, the coin keeps rising over the next ten days.",
+      "consequence": "Trend-following entries work better as longs on strong short-term gains above the long average than as shorts below it.",
+      "name": "above-average short-term momentum continuation",
+      "from": "F5",
+      "refs": [
+        "F5"
+      ]
+    },
+    {
+      "idea": "A coin's daily close-to-close return is higher on days that start from a Thursday or Friday close than on other weekdays.",
+      "consequence": "A trader can time long entries toward Thursday and Friday closes and avoid opening shorts there.",
+      "name": "Thursday-Friday upward drift",
+      "from": "F7",
+      "refs": [
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "002-04_price-cross-below-long-sma.g1_capitulation-close-next-day-bounce",
+    "002-04_price-cross-below-long-sma.g2_deep-below-average-rebound",
+    "002-04_price-cross-below-long-sma.g3_above-average-short-term-momentum-continuation",
+    "002-04_price-cross-below-long-sma.g4_thursday-friday-upward-drift"
+  ],
+  "no_ideas": null
+}

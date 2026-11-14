@@ -1,0 +1,147 @@
+claim: wick_pressure_persistence
+symbol: BTCUSD
+bar_size: 1h
+fold: A
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 231
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: -0.9976
+  median_window_sharpe: -4.92085
+  worst_window_drawdown: 0.8235
+  trades: 8534
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: -0.8149
+    trades: 1482
+    sharpe: -6.0409
+    max_drawdown: 0.8235
+    exposure_pct: 99.9653
+    cost_drag_pct: 25.408
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_wick_pressure_persistence_BTCUSD/results/full_size/20261106T192607Z_5fd7fc2a
+    seconds: 23
+  - window: W2
+    net_return: -0.5946
+    trades: 1575
+    sharpe: -2.3311
+    max_drawdown: 0.6105
+    exposure_pct: 99.9322
+    cost_drag_pct: 71.3628
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_wick_pressure_persistence_BTCUSD/results/full_size/20261106T192630Z_5fd7fc2a
+    seconds: 23
+  - window: W3
+    net_return: -0.492
+    trades: 1478
+    sharpe: -2.7509
+    max_drawdown: 0.5193
+    exposure_pct: 99.9658
+    cost_drag_pct: 157.6208
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_wick_pressure_persistence_BTCUSD/results/full_size/20261106T192653Z_5fd7fc2a
+    seconds: 23
+  - window: W4
+    net_return: -0.7896
+    trades: 1402
+    sharpe: -7.8383
+    max_drawdown: 0.8005
+    exposure_pct: 99.9653
+    cost_drag_pct: 32.4724
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_wick_pressure_persistence_BTCUSD/results/full_size/20261106T192715Z_5fd7fc2a
+    seconds: 22
+  - window: W5
+    net_return: -0.5336
+    trades: 1336
+    sharpe: -6.0411
+    max_drawdown: 0.5471
+    exposure_pct: 99.9661
+    cost_drag_pct: 72.0307
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_wick_pressure_persistence_BTCUSD/results/full_size/20261106T192740Z_5fd7fc2a
+    seconds: 25
+  - window: W6
+    net_return: -0.3716
+    trades: 1261
+    sharpe: -3.8008
+    max_drawdown: 0.3845
+    exposure_pct: 99.9658
+    cost_drag_pct: 153.5252
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_wick_pressure_persistence_BTCUSD/results/full_size/20261106T192804Z_5fd7fc2a
+    seconds: 24
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: -0.9128
+    median_window_sharpe: -5.15365
+    worst_window_drawdown: 0.5013
+    trades: 8604
+  windows:
+  - window: W1
+    net_return: -0.4182
+    trades: 1489
+    sharpe: -6.0379
+    max_drawdown: 0.4319
+    exposure_pct: 99.9653
+    cost_drag_pct: 33.6689
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_wick_pressure_persistence_BTCUSD/results/vol_target/20261106T192828Z_98a4351c
+    seconds: 24
+  - window: W2
+    net_return: -0.2504
+    trades: 1585
+    sharpe: -3.1555
+    max_drawdown: 0.2656
+    exposure_pct: 99.9322
+    cost_drag_pct: 89.4801
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_wick_pressure_persistence_BTCUSD/results/vol_target/20261106T192852Z_98a4351c
+    seconds: 24
+  - window: W3
+    net_return: -0.231
+    trades: 1451
+    sharpe: -3.4241
+    max_drawdown: 0.2457
+    exposure_pct: 99.9658
+    cost_drag_pct: 261.6267
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_wick_pressure_persistence_BTCUSD/results/vol_target/20261106T192917Z_98a4351c
+    seconds: 25
+  - window: W4
+    net_return: -0.4917
+    trades: 1459
+    sharpe: -7.8708
+    max_drawdown: 0.5013
+    exposure_pct: 99.9653
+    cost_drag_pct: 35.2337
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_wick_pressure_persistence_BTCUSD/results/vol_target/20261106T192941Z_98a4351c
+    seconds: 24
+  - window: W5
+    net_return: -0.3388
+    trades: 1344
+    sharpe: -6.3584
+    max_drawdown: 0.3665
+    exposure_pct: 99.9661
+    cost_drag_pct: 92.9168
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_wick_pressure_persistence_BTCUSD/results/vol_target/20261106T193005Z_98a4351c
+    seconds: 25
+  - window: W6
+    net_return: -0.2268
+    trades: 1276
+    sharpe: -4.2694
+    max_drawdown: 0.2307
+    exposure_pct: 99.9658
+    cost_drag_pct: 182.9969
+    run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/002/engine_r0_wick_pressure_persistence_BTCUSD/results/vol_target/20261106T193029Z_98a4351c
+    seconds: 24
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail

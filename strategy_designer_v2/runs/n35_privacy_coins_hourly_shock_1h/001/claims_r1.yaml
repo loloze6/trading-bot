@@ -1,0 +1,31 @@
+brief: n35_privacy_coins_hourly_shock_1h.md
+source: analyst round 1
+ideas:
+- id: quiet_volume_burst_raises_volatility
+  belief: On XMR and ZEC, an hour of very heavy volume with no matching price move
+    signals flow building up, and the following hours are more volatile than usual.
+  claim:
+    when: hours where volume is above 3 times its 168-hour median while the absolute
+      return stays below one 168-hour standard deviation, one event per 6 hours
+    then: the absolute 6-hour forward return is larger
+    compared_to: all other hours
+    measure: abs_ratio
+    horizon_bars: 6
+    direction: above
+    min_effect: 1.2
+    code: 'sig = ret.rolling(168).std().shift(1)
+
+      volr = df.volume / df.volume.rolling(168).median().shift(1)
+
+      a = spaced((volr > 3) & (ret.abs() < 1 * sig), 6)
+
+      b = ~a
+
+      signal = np.sign(ret).replace(0, 1)
+
+      '
+  why_no_lookahead: The volume median and return std use only prior bars (shift(1)),
+    and the bar's own volume and return are known at its close.
+  how_it_trades: Used as a volatility filter, it cuts position size or widens stops
+    on other XMR/ZEC strategies for 6 hours after a quiet volume burst; it is not
+    a direction trade.

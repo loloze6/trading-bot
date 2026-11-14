@@ -1,0 +1,38 @@
+{
+  "aux_feeds": [],
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 2,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "volume_burst_stretch_pullback_bar_continues",
+            "class": "strategies.claim_event.ClaimEventComponent",
+            "params": {
+              "code": "vol = ret.rolling(48).std()\nvwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()\nz = (df.close / vwap - 1) / vol\nvr = df.volume.rolling(3).mean() / df.volume.rolling(72).median()\nrng = (df.high - df.low).replace(0, np.nan)\ncp = (df.close - df.low) / rng\ncps = pd.Series(np.where(z > 0, cp, 1 - cp), index=df.index)\na = spaced((z.abs() > 3) & (vr > 2.5) & (cps < 0.5), 12)\nb = ~a\nsignal = np.sign(z).fillna(0)\n",
+              "horizon": 12,
+              "scaling_factor": 10.0,
+              "min_bars": 221
+            },
+            "weight": 1.0,
+            "lookback": 321,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    }
+  }
+}

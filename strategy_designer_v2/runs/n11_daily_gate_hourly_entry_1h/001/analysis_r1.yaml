@@ -1,0 +1,37 @@
+run: sdv2_kgju2upz (brief n11_daily_gate_hourly_entry_1h, fold A)
+observations:
+  - "trend_gate_breakout_long held on ETH (effect 0.0166, 5 of 6 windows positive). It nearly held on BTC: the effect of 0.0086 is twice min_effect 0.004, but windows 3 and 4 are negative (-0.0086, -0.0049), so only 4 of 6 windows are positive."
+  - "trend_aligned_momentum_hit_rate passed on ETH (+0.074, 5 of 6 windows positive) but not on BTC (-0.004), so trend-aligned continuation is clear on ETH and absent from BTC's hit rate."
+  - "The three trend or near-high gated dip buys stayed below min_effect 0.004 on both coins in every case except near_high on ETH (0.0073). Even that case has its last two windows negative (-0.011, -0.015)."
+  - "calm_regime_hourly_reversion came out with the wrong sign: ETH -0.0040 with 5 of 6 windows negative, BTC -0.0009 with mixed windows. On ETH, large moves revert less in calm regimes than in volatile ones."
+  - "Window 3 is negative for most trend-gated long claims: uptrend dip BTC -0.022 and ETH -0.029, breakout BTC -0.0086, momentum hit rate BTC -0.054. This points to one regime that hurt every slow-trend gate at the same time."
+  - "downtrend_gate_rally_fade reached 0.0049 on BTC, above 0.004, but its window 4 is -0.060 on BTC and -0.034 on ETH, so a single period dominates the sign."
+  - "trend_strength_ranks_dip_outcome is noise: whole-fold correlations are 0.009 (BTC) and 0.036 (ETH), while window values swing from -0.40 to +0.17."
+  - "deep_drawdown_capitulation_long had only 29 events on BTC (below the 30 minimum), and ETH's 0.0032 net return missed the 0.005 target."
+  - "compressed_regime_breakout_follow failed on both coins (BTC -0.0008, ETH 0.0024). Compression adds nothing to breaks, whereas the slow trend gate did add something (0.0086 / 0.0166)."
+next_claim:
+  id: trend_aligned_two_sided_breakout_net
+  belief: Two-day range breaks that agree with a rising or falling two-week trend continue enough to pay the trading cost, on both the long and the short side.
+  claim:
+    when: bars that close above the prior 48h high while the 14-day mean is rising and price is above it, or close below the prior 48h low while the 14-day mean is falling and price is below it, at most one event per 24 bars
+    then: price keeps moving in the direction of the break over the next 24 hours by more than the round-trip cost
+    compared_to: zero after cost (net_return)
+    measure: net_return
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.003
+    code: |
+      hh = df.high.rolling(48).max().shift(1)
+      ll = df.low.rolling(48).min().shift(1)
+      ma = df.close.rolling(336).mean()
+      up = (df.close > ma) & (ma > ma.shift(72))
+      dn = (df.close < ma) & (ma < ma.shift(72))
+      bu = df.close > hh
+      bd = df.close < ll
+      ev = spaced(bu | bd, 24)
+      a = ev & ((bu & up) | (bd & dn))
+      b = ~a
+      signal = pd.Series(np.where(bu, 1.0, -1.0), index=df.index)
+  why_no_lookahead: The highs, lows and moving average use only past bars (the range is shifted by 1, the mean is rolling and its slope uses shift(72)), and the break is judged on the bar's own close.
+  how_it_trades: At the close of a trend-aligned break, enter in the direction of the break (long, or short on margin), hold 24 bars, then exit.
+why: The trend gate was the only state that separated outcomes (breakout 0.0086 / 0.0166, momentum hit rate on ETH). The run never tested whether the gated breakout pays the cost by itself, so this claim asks for the profit, adds the mirrored short side, and sets net 0.3% as a margin above luck.

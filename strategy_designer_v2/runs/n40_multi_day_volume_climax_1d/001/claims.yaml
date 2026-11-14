@@ -1,0 +1,224 @@
+brief: n40_multi_day_volume_climax_1d.md
+ideas:
+  - id: selling_climax_rebound
+    belief: Three or more consecutive days of heavy volume during a sharp drop mark forced liquidation, and once sellers are exhausted price rebounds enough over the next two weeks to pay the cost.
+    claim:
+      when: The third straight day with volume above 1.8 times the median of the 30 days before the cluster, and the 3-day return of the cluster is below -1 volatility-scaled standard deviation.
+      then: Close-to-close return over the next 10 days is positive for a long position after the round-trip cost.
+      compared_to: Zero, after cost.
+      measure: net_return
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.01
+      code: |
+        base = df.volume.shift(5).rolling(30).median()
+        vr = df.volume / base
+        hot = (vr > 1.8).astype(int)
+        run = hot.rolling(3).sum() == 3
+        z3 = (df.close / df.close.shift(3) - 1) / (ret.rolling(60).std().shift(3) * np.sqrt(3))
+        a = spaced(run & (z3 < -1), 10)
+        b = ~a
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: The volume base ends 5 bars back, and the cluster return and volatility use closes up to and including the current bar.
+    how_it_trades: Buy at the close of the third climax day and exit 10 days later.
+  - id: buying_climax_fade
+    belief: Three loud days on a sharp rise reflect a late retail crowd buying the top, and the next two weeks underperform the coin's normal drift.
+    claim:
+      when: The third straight day with volume above 1.8 times the pre-cluster 30-day median, and the 3-day cluster return is above +1 volatility-scaled standard deviation.
+      then: The 10-day forward return is lower, so a short or flat signal earns more than it does on other bars.
+      compared_to: All other bars, with the same short signal.
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.015
+      code: |
+        base = df.volume.shift(5).rolling(30).median()
+        vr = df.volume / base
+        hot = (vr > 1.8).astype(int)
+        run = hot.rolling(3).sum() == 3
+        z3 = (df.close / df.close.shift(3) - 1) / (ret.rolling(60).std().shift(3) * np.sqrt(3))
+        a = spaced(run & (z3 > 1), 10)
+        b = ~a
+        signal = pd.Series(-1, index=df.index)
+    why_no_lookahead: All inputs are rolling or shifted windows that end at the current close.
+    how_it_trades: Exit longs, or stay flat, for 10 days after an up-move climax.
+  - id: breakout_climax_continuation
+    belief: A multi-day volume surge that carries price to a new 60-day extreme is information arriving rather than exhaustion, and the move continues over the following month.
+    claim:
+      when: The third straight hot-volume day (volume above 1.8 times the pre-cluster median), with the close at a 60-day high or a 60-day low.
+      then: The 20-day forward return continues in the breakout direction.
+      compared_to: All other bars, signed by the side of the 60-day mean on which price sits.
+      measure: mean_diff
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.02
+      code: |
+        base = df.volume.shift(5).rolling(30).median()
+        vr = df.volume / base
+        hot = (vr > 1.8).astype(int)
+        run = hot.rolling(3).sum() == 3
+        hi = df.close >= df.close.rolling(60).max()
+        lo = df.close <= df.close.rolling(60).min()
+        a = spaced(run & (hi | lo), 20)
+        b = ~a
+        signal = np.sign(df.close - df.close.rolling(60).mean()).replace(0, 1)
+    why_no_lookahead: The 60-day max, min and mean include only closes up to the current bar.
+    how_it_trades: At a climax breakout, go long on highs (or exit on lows) and hold 20 days.
+  - id: climax_volatility_persistence
+    belief: A crowd that shows up for several days keeps the market unsettled, so absolute moves over the next 10 days are larger than usual, whatever their direction.
+    claim:
+      when: The third straight hot-volume day.
+      then: The absolute 10-day forward return is larger.
+      compared_to: All other bars.
+      measure: abs_ratio
+      horizon_bars: 10
+      direction: above
+      min_effect: 1.25
+      code: |
+        base = df.volume.shift(5).rolling(30).median()
+        vr = df.volume / base
+        hot = (vr > 1.8).astype(int)
+        run = hot.rolling(3).sum() == 3
+        a = spaced(run, 10)
+        b = ~a
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: The volume base and the run count use only the current and past bars.
+    how_it_trades: Scale position size down, or widen stops, for 10 days after a volume climax.
+  - id: climax_exhaustion_day_fade
+    belief: The turning point is not the loud days but the first quiet day after them; when volume collapses after a 3-day climax the crowd is spent, and the cluster's move reverses more than a generic 3-day reversal would.
+    claim:
+      when: The three prior days were all hot-volume days and today's volume has dropped below the pre-cluster median.
+      then: Over the next 5 days price moves against the direction of the climax.
+      compared_to: All other bars, with the same signal (minus the sign of the prior 3-day move).
+      measure: hit_rate
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.08
+      code: |
+        base = df.volume.shift(5).rolling(30).median()
+        vr = df.volume / base
+        hot = (vr > 1.8).astype(int)
+        ended = (hot.shift(1).rolling(3).sum() == 3) & (vr < 1.0)
+        r = df.close.shift(1) / df.close.shift(4) - 1
+        a = spaced(ended, 10)
+        b = ~a
+        signal = -np.sign(r).replace(0, 1)
+    why_no_lookahead: The prior-day volume flags, today's volume and the past closes are all known at today's close.
+    how_it_trades: On the first quiet day after a climax, take a position against the climax move for 5 days.
+  - id: absorption_effort_no_result
+    belief: Several days of heavy volume with almost no net price change mean large players are absorbing the prior trend's flow, and the prior trend then reverses over the next month (Wyckoff "effort without result").
+    claim:
+      when: The third straight hot-volume day, where the absolute volatility-scaled 3-day cluster return is below 0.5.
+      then: The 20-day forward return goes against the 20-day trend that preceded the cluster.
+      compared_to: All other bars, with the same anti-trend signal.
+      measure: mean_diff
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.02
+      code: |
+        base = df.volume.shift(5).rolling(30).median()
+        vr = df.volume / base
+        hot = (vr > 1.8).astype(int)
+        run = hot.rolling(3).sum() == 3
+        z3 = (df.close / df.close.shift(3) - 1) / (ret.rolling(60).std().shift(3) * np.sqrt(3))
+        prior = df.close.shift(3) / df.close.shift(23) - 1
+        a = spaced(run & (z3.abs() < 0.5), 20)
+        b = ~a
+        signal = -np.sign(prior).replace(0, 1)
+    why_no_lookahead: The prior trend ends 3 bars back, and the cluster return ends at the current close.
+    how_it_trades: After an absorption cluster, position against the preceding 20-day trend for 20 days.
+  - id: climax_move_size_reverts
+    belief: The more violent the price move during a volume climax, the larger the overshoot and the stronger the subsequent reversal.
+    claim:
+      when: The third straight hot-volume day, with the feature equal to minus the volatility-scaled cluster return.
+      then: The 10-day forward return rises with the feature, so bigger drops are followed by bigger rebounds and bigger rallies by bigger declines.
+      compared_to: Not used (rank correlation on the climax bars).
+      measure: rank_corr
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.15
+      code: |
+        base = df.volume.shift(5).rolling(30).median()
+        vr = df.volume / base
+        hot = (vr > 1.8).astype(int)
+        run = hot.rolling(3).sum() == 3
+        z3 = (df.close / df.close.shift(3) - 1) / (ret.rolling(60).std().shift(3) * np.sqrt(3))
+        a = spaced(run, 10)
+        b = ~a
+        feature = -z3
+        signal = -np.sign(z3).replace(0, 1)
+    why_no_lookahead: The feature is built from closes up to the current bar, and volatility is measured before the cluster.
+    how_it_trades: Size the contrarian position in proportion to how extreme the climax move was.
+  - id: capitulation_in_bull_regime
+    belief: A heavy-volume selloff while the coin is still above its 200-day average is a leverage flush inside an intact uptrend, and dip buyers lift price over the next month.
+    claim:
+      when: The third straight hot-volume day, with the cluster return below -0.5 volatility-scaled standard deviation and the pre-cluster close above the 200-day simple moving average.
+      then: The 20-day forward long return is positive after cost.
+      compared_to: Zero, after cost.
+      measure: net_return
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.02
+      code: |
+        base = df.volume.shift(5).rolling(30).median()
+        vr = df.volume / base
+        hot = (vr > 1.8).astype(int)
+        run = hot.rolling(3).sum() == 3
+        z3 = (df.close / df.close.shift(3) - 1) / (ret.rolling(60).std().shift(3) * np.sqrt(3))
+        sma = df.close.rolling(200).mean().shift(3)
+        a = spaced(run & (z3 < -0.5) & (df.close.shift(3) > sma), 20)
+        b = ~a
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: The moving average and the regime test use closes from 3 or more bars back, and the cluster return ends at the current close.
+    how_it_trades: Buy a down-climax in a bull regime and hold 20 days.
+  - id: bear_regime_climax_continuation
+    belief: A heavy-volume selloff below the 200-day average is not capitulation but the start of a new leg down, as holders who are already under water give up, so the decline continues.
+    claim:
+      when: The third straight hot-volume day, with the cluster return below -0.5 volatility-scaled standard deviation and the pre-cluster close below the 200-day simple moving average.
+      then: The 20-day forward return is lower, so a short or flat signal beats its average.
+      compared_to: All other bars, with the same short signal.
+      measure: mean_diff
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.02
+      code: |
+        base = df.volume.shift(5).rolling(30).median()
+        vr = df.volume / base
+        hot = (vr > 1.8).astype(int)
+        run = hot.rolling(3).sum() == 3
+        z3 = (df.close / df.close.shift(3) - 1) / (ret.rolling(60).std().shift(3) * np.sqrt(3))
+        sma = df.close.rolling(200).mean().shift(3)
+        a = spaced(run & (z3 < -0.5) & (df.close.shift(3) < sma), 20)
+        b = ~a
+        signal = pd.Series(-1, index=df.index)
+    why_no_lookahead: The moving average and the regime test use closes from 3 or more bars back, and the cluster return ends at the current close.
+    how_it_trades: Stay flat for 20 days after a down-climax in a bear regime.
+  - id: climax_close_location_follow
+    belief: Where price closes inside each day's range during a volume climax shows who won the fight; consistent closes near the highs (or lows) across the loud days show the dominant side, and the move follows through over the next week.
+    claim:
+      when: The third straight hot-volume day, where the 3-day mean close-location value ((close - low) - (high - close)) / (high - low) is beyond plus or minus 0.4.
+      then: The 5-day forward return has the same sign as the close-location value.
+      compared_to: All other bars, with the same close-location signal.
+      measure: hit_rate
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.07
+      code: |
+        base = df.volume.shift(5).rolling(30).median()
+        vr = df.volume / base
+        hot = (vr > 1.8).astype(int)
+        run = hot.rolling(3).sum() == 3
+        rng = (df.high - df.low).replace(0, np.nan)
+        clv = ((df.close - df.low) - (df.high - df.close)) / rng
+        clv3 = clv.rolling(3).mean()
+        a = spaced(run & (clv3.abs() > 0.4), 10)
+        b = ~a
+        signal = np.sign(clv3).replace(0, 1)
+    why_no_lookahead: The close-location value uses each bar's own high, low and close, averaged over the current and 2 prior bars.
+    how_it_trades: After a climax, go long (or exit) for 5 days depending on whether the climax days closed near their highs or their lows.
+notes: >
+  The climax is defined once and reused: 3 straight days with volume above 1.8 times the median of the 30 days that end 5 bars before the cluster, so the cluster does not inflate its own baseline. The threshold of 1.8 rather than 2.0, and a cluster length of 3, are chosen so that each coin has at least 30 spaced events; varying the cluster length from 2 to 5 is a parameter, not a new idea.
+  Some ideas deliberately contradict each other (reversal: selling_climax_rebound, buying_climax_fade, climax_exhaustion_day_fade, climax_move_size_reverts; continuation: breakout_climax_continuation, bear_regime_climax_continuation, climax_close_location_follow). The data decides.
+  Short-side claims use mean_diff against the same signal on other bars, so they test underperformance against drift; on Kraken spot they would trade as staying flat rather than shorting.
+  The ideas avoid the already-tried single-bar hourly climax, dollar-volume regimes and price/volume divergence.
+  The regime-split ideas (capitulation_in_bull_regime, bear_regime_climax_continuation) carry the highest risk of falling under 30 events per coin.

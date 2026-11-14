@@ -1,0 +1,33 @@
+brief: n15_eth_hourly_momentum_horizons_1h.md
+source: analyst round 2
+ideas:
+- id: rev_24h_volscaled_fade_net
+  belief: A large vol-scaled one-day ETH move partly gives back over the next day
+    by enough to pay the round-trip cost when traded as discrete fades.
+  claim:
+    when: Bars where the last 24 hours' return is more than 1.5 times its volatility-implied
+      size (168-hour hourly std times sqrt 24), at most one event per 24 bars.
+    then: Over the next 24 bars price moves against the prior 24-hour move, and the
+      fade earns more than the 0.15% round-trip cost.
+    compared_to: Zero after cost (net_return).
+    measure: net_return
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.002
+    code: 'r24 = df.close / df.close.shift(24) - 1
+
+      vol = ret.rolling(168).std()
+
+      z = r24 / (vol * np.sqrt(24))
+
+      a = spaced((z.abs() > 1.5).fillna(False), 24)
+
+      b = ~a
+
+      signal = -np.sign(z).replace(0, 1).fillna(1)
+
+      '
+  why_no_lookahead: z uses only closes and returns at or before the bar, and spaced
+    only looks at prior bars.
+  how_it_trades: At the close of a flagged bar, take the opposite side of the 24h
+    move, hold 24 bars, exit; one trade per 24 bars at most.

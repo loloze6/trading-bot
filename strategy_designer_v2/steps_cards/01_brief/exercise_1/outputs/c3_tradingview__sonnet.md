@@ -1,0 +1,7 @@
+---
+source: TradingView, "SMAcross-mvr" (vmedaram1), a moving-average crossover strategy page
+---
+When a short-term moving average of price crosses above a longer-term one, the coin tends to keep drifting in that direction over the following bars, and the reverse after a cross below. The reason comes from me, not the source: a lasting shift in the balance of buyers and sellers is absorbed slowly, because large holders split their orders over time, information spreads unevenly, and trend followers join late, so a move that has already turned the averages is more likely to continue than to reverse at once. The crossover is a delayed signal that fires after part of the move is done, so it works only if this slow absorption outlasts the lag of the averages. The theory is wrong if returns after crosses are no different from returns after random bars, or if they tend to reverse, as in choppy ranges where crosses are mostly noise and move back through the longer average.
+
+short-name: sma-crossover-trend-persistence
+other-theories: Price crossing the long average (pullback or trend-continuation entry) behaves differently from the two-average cross | A close beyond the short average works as an early exit that beats waiting for the opposite cross

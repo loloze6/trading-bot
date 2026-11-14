@@ -1,0 +1,6 @@
+---
+instruments: BTC, ETH, BNB
+---
+Does the Relative Strength Index (RSI), a bounded summary of recent gains against recent losses, carry information about the direction of BTC, ETH and BNB price moves that the recent returns themselves do not already give? It could point toward reversal: after sharp one-sided moves, leveraged traders are forced out and impatient buyers or sellers push price past where liquidity can absorb it, and price then partly retraces. It could instead point toward continuation: information spreads slowly and traders herd, so a high reading marks a trend still being absorbed rather than an exhaustion. It could also carry nothing, because RSI is only a transform of past prices, is watched by many traders, and any edge would be competed away. The theory is wrong if price moves following extreme RSI readings do not differ from those following ordinary readings, or if the direction of any difference flips between coins and market regimes with no consistent pattern. The reasons here are mine; no source was given.
+
+short-name: rsi-extremes-predict-direction

@@ -1,0 +1,37 @@
+run: sdv2_f5vh42uq
+observations:
+  - All 8 claims failed on fold A and no return claim reached the profit step; every net_return claim also had n_a below 30 on every coin (largest 27 on ZEC, smallest 3 on XMR for volume_climax_shock_reverts), so none could have passed on sample size alone.
+  - Continuation after a 2-sigma 3-day move nearly held on two coins, with LTC at 0.0048 and ZEC at 0.0032 against the 0.006 asked, but XMR went the other way at -0.0286 with a -0.246 window.
+  - The short-side fade of up-shocks was positive on all three coins (LTC 0.0035, XMR 0.0245, ZEC 0.0048) but cleared 0.005 only on XMR, and each coin had at least 1 negative window (ZEC had 2, plus 1 empty).
+  - Fading a climactic-volume shock lost steadily on ZEC, at -0.0553 with 5 of 6 windows negative, while it gained on LTC at +0.026; the volume condition flips sign between coins.
+  - Post-shock volume dry-up worked on LTC at 0.0215 with 4 of 5 filled windows positive, but was negative on XMR (-0.0054) and ZEC (-0.0057).
+  - The ZEC inside-day reversal had 5 of 6 windows positive, yet its whole-fold effect was -0.0004, because one -0.058 window outweighed small gains of about 0.01.
+  - Fading a shock made on falling volume was strong on ZEC at 0.0478 and passed min_effect on LTC at 0.0093, but XMR was -0.0171, driven by a +0.252 / -0.082 swing between windows.
+  - XMR window 3 was deeply negative on 6 of 8 claims (-0.246, -0.120, -0.124, -0.082, -0.064, -0.064), whether the claim faded or followed the shock; that window punishes any short-horizon bet on XMR.
+  - XMR had a negative whole-fold effect on 6 of 8 claims, which makes it the binding coin for the all-three-must-pass rule.
+next_claim:
+  brief: n12_short_horizon_daily_reversion_1d.md
+  ideas:
+    - id: countertrend_shock_reverts
+      belief: A sharp 3-day move against the prevailing 50-day trend is a temporary liquidity dislocation that the trend's holders lean against, so it reverts over 3 days more than a shock in the trend's direction does.
+      claim:
+        when: bars ending a 3-day move larger than 1.25 units of pre-move 30-day volatility (scaled by sqrt 3) whose sign is opposite to the close's position versus its 50-day mean measured before the move
+        then: over the next 3 bars price moves against the shock
+        compared_to: shocks of the same size whose sign agrees with the prior 50-day trend
+        measure: mean_diff
+        horizon_bars: 3
+        direction: positive
+        min_effect: 0.008
+        code: |
+          vol = ret.rolling(30).std().shift(3)
+          m3 = df.close.pct_change(3)
+          z = m3 / (vol * np.sqrt(3))
+          c0 = df.close.shift(3)
+          trend = np.sign(c0 / c0.rolling(50).mean() - 1)
+          sh = spaced(z.abs() > 1.25, 3)
+          a = sh & (np.sign(m3) == -trend)
+          b = sh & (np.sign(m3) == trend)
+          signal = -np.sign(m3)
+      why_no_lookahead: the volatility, the 50-day mean and the trend sign all use closes from 3 or more bars before the signal bar, and the 3-day move ends at the signal bar's close.
+      how_it_trades: at the close of a counter-trend shock, take the opposite side of the move and exit 3 daily closes later.
+why: Volume and stall conditions gave signs that flip between coins, and the brief's trend-position condition is still untested; the claim uses mean_diff with 0.008 to match the effect sizes seen, and a 1.25 threshold so each side can reach 30 events.

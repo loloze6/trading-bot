@@ -1,0 +1,182 @@
+brief: n33_volume_price_divergence_daily_1d.md
+ideas:
+  - id: rally_on_fading_volume
+    belief: A 10-day rally made on shrinking volume has no new buyers behind it and gives back gains over the next 10 days.
+    claim:
+      when: 10-day return above +5% while the last 5 days' mean volume is at least 20% (log) below the prior 20-day mean volume, one event per 5 bars
+      then: the next 10 days' return is lower (short side pays)
+      compared_to: all other bars
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.015
+      code: |
+        p10 = df.close.pct_change(10)
+        vt = np.log(df.volume.rolling(5).mean() / df.volume.rolling(20).mean().shift(5))
+        a = spaced((p10 > 0.05) & (vt < -0.2), 5).fillna(False)
+        b = ~a
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: Returns and volume means use only closes and volumes up to the current bar; the baseline window is shifted back 5 bars.
+    how_it_trades: Exit longs or go short at the close of the event bar, hold 10 days.
+  - id: capitulation_on_rising_volume
+    belief: A 10-day decline on surging volume is forced selling that exhausts itself, so price rebounds over the following 10 days enough to pay costs.
+    claim:
+      when: 10-day return below -8% while 5-day mean volume is at least 30% (log) above the prior 20-day mean, one event per 5 bars
+      then: a long held 10 days earns more than the round-trip cost
+      compared_to: the cost of 0.15% (absolute profit test)
+      measure: net_return
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.015
+      code: |
+        p10 = df.close.pct_change(10)
+        vt = np.log(df.volume.rolling(5).mean() / df.volume.rolling(20).mean().shift(5))
+        a = spaced((p10 < -0.08) & (vt > 0.3), 5).fillna(False)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The condition uses only past 10-day return and past volume averages at the bar's close.
+    how_it_trades: Buy at the close of the event bar, sell 10 days later.
+  - id: distribution_on_rising_volume
+    belief: Falling price on rising volume is informed distribution, not exhaustion, and the decline continues over the next 10 days (contradicts capitulation_on_rising_volume).
+    claim:
+      when: 10-day return below -5% while 5-day mean volume is at least 20% (log) above the prior 20-day mean, one event per 5 bars
+      then: the next 10 days' return is lower (short side pays)
+      compared_to: all other bars
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.015
+      code: |
+        p10 = df.close.pct_change(10)
+        vt = np.log(df.volume.rolling(5).mean() / df.volume.rolling(20).mean().shift(5))
+        a = spaced((p10 < -0.05) & (vt > 0.2), 5).fillna(False)
+        b = ~a
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: Only trailing returns and trailing volume averages at the bar's close.
+    how_it_trades: Stay flat or short at the close of the event bar for 10 days.
+  - id: decline_on_drying_volume
+    belief: A decline on shrinking volume means sellers have stopped supplying coins, so the next 10 days lean upward more often than usual.
+    claim:
+      when: 10-day return below -5% while 5-day mean volume is at least 20% (log) below the prior 20-day mean, one event per 5 bars
+      then: the 10-day forward return is positive more often
+      compared_to: all other bars
+      measure: hit_rate
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.08
+      code: |
+        p10 = df.close.pct_change(10)
+        vt = np.log(df.volume.rolling(5).mean() / df.volume.rolling(20).mean().shift(5))
+        a = spaced((p10 < -0.05) & (vt < -0.2), 5).fillna(False)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: Trailing price change and trailing volume ratio only.
+    how_it_trades: Buy at the close of the event bar, hold 10 days.
+  - id: volume_signed_trend_score
+    belief: Volume acts as a sign switch on the 20-day trend; rising volume makes the trend continue and falling volume makes it reverse, in proportion to both.
+    claim:
+      when: every bar with a defined score
+      then: the 20-day forward return ranks with the score (trend strength times volume trend)
+      compared_to: not used (rank correlation)
+      measure: rank_corr
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.06
+      code: |
+        p20 = df.close.pct_change(20)
+        vt = np.log(df.volume.rolling(10).mean() / df.volume.rolling(40).mean().shift(10))
+        feature = np.tanh(p20 / 0.1) * vt
+        a = feature.notna()
+        b = ~a
+    why_no_lookahead: The 20-day return and volume means are trailing; the long volume window is shifted back.
+    how_it_trades: Hold long when the score is high, flat when it is low, rebalanced on new readings.
+  - id: divergence_precedes_big_move
+    belief: When price and volume disagree, the disagreement resolves in a larger than usual move in either direction over the next 10 days.
+    claim:
+      when: 10-day return beyond ±5% while the volume trend has the opposite sign and is at least 20% (log) in size, one event per 5 bars
+      then: the absolute 10-day forward return is larger
+      compared_to: all other bars
+      measure: abs_ratio
+      horizon_bars: 10
+      direction: above
+      min_effect: 1.2
+      code: |
+        p10 = df.close.pct_change(10)
+        vt = np.log(df.volume.rolling(5).mean() / df.volume.rolling(20).mean().shift(5))
+        div = (p10.abs() > 0.05) & (vt.abs() > 0.2) & (np.sign(p10) != np.sign(vt))
+        a = spaced(div, 5).fillna(False)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: Uses trailing return and trailing volume trend only.
+    how_it_trades: Size down trend positions or buy volatility exposure on divergence bars.
+  - id: obv_price_divergence
+    belief: When the direction-weighted volume flow (OBV) over 20 days points against the 20-day price change, price follows the flow over the next 10 days.
+    claim:
+      when: 20-day return above +5% with 20-day OBV change below -10% of 20-day volume, or 20-day return below -5% with OBV change above +10%, one event per 5 bars
+      then: the 10-day forward return moves in the direction of OBV, against the price trend
+      compared_to: all other bars
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.015
+      code: |
+        p20 = df.close.pct_change(20)
+        obv = (np.sign(ret).fillna(0) * df.volume).cumsum()
+        flow = obv.diff(20) / df.volume.rolling(20).sum()
+        cond = ((p20 > 0.05) & (flow < -0.1)) | ((p20 < -0.05) & (flow > 0.1))
+        a = spaced(cond, 5).fillna(False)
+        b = ~a
+        signal = np.sign(flow).replace(0, 1.0).fillna(1.0)
+    why_no_lookahead: OBV is a cumulative sum of past signed volume; all windows end at the current bar.
+    how_it_trades: At the event close, trade in the direction of OBV flow for 10 days (long or flat on spot).
+  - id: quiet_day_rally_busy_day_selling
+    belief: A 20-day trend earned on low-volume days while high-volume days pushed the other way is fragile, and price follows the high-volume days over the next 10 days.
+    claim:
+      when: summed return on below-median-volume days over 20 days exceeds 5% in one direction while the sum on above-median days is in the other direction, one event per 5 bars
+      then: the 10-day forward return follows the sign of the high-volume-day return
+      compared_to: all other bars
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.015
+      code: |
+        hv = df.volume > df.volume.rolling(20).median()
+        r_hi = ret.where(hv, 0.0).rolling(20).sum()
+        r_lo = ret.where(~hv, 0.0).rolling(20).sum()
+        cond = ((r_lo > 0.05) & (r_hi < 0)) | ((r_lo < -0.05) & (r_hi > 0))
+        a = spaced(cond, 5).fillna(False)
+        b = ~a
+        signal = np.sign(r_hi).replace(0, 1.0).fillna(1.0)
+    why_no_lookahead: The median volume and both return sums use only bars up to and including the current close.
+    how_it_trades: At the event close, position in the direction of the high-volume-day return for 10 days.
+  - id: wide_ranges_on_thin_volume
+    belief: Price swings that widen while volume shrinks are thin-market moves without commitment, and the 5-day direction reverses over the next 10 days.
+    claim:
+      when: 5-day mean high-low range at least 30% above its prior 20-day mean while 5-day mean volume is below its prior 20-day mean, and the 5-day return exceeds ±3%, one event per 5 bars
+      then: the 10-day forward return goes against the 5-day return more often
+      compared_to: all other bars
+      measure: hit_rate
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.07
+      code: |
+        rng = (df.high - df.low) / df.close
+        rr = rng.rolling(5).mean() / rng.rolling(20).mean().shift(5)
+        vt = np.log(df.volume.rolling(5).mean() / df.volume.rolling(20).mean().shift(5))
+        p5 = df.close.pct_change(5)
+        a = spaced((rr > 1.3) & (vt < 0) & (p5.abs() > 0.03), 5).fillna(False)
+        b = ~a
+        signal = -np.sign(p5).replace(0, 1.0).fillna(1.0)
+    why_no_lookahead: Ranges, volumes and the 5-day return are trailing; baselines are shifted back 5 bars.
+    how_it_trades: At the event close, fade the 5-day move for 10 days (flat instead of short on spot).
+notes: >
+  The brief allows only OHLCV per coin, and every claim must pass on LTC, XMR and ZEC.
+  Ideas use 5 to 20 day trends and 10 to 20 day horizons. This keeps them clear of the
+  already-tried 2 to 5 day reversals after sharp moves. They are conditioned on volume
+  divergence, not on move size alone.
+  Some pairs contradict on purpose: capitulation versus distribution on rising volume,
+  and drying volume as reversal versus volume as trend confirmer. The data decides.
+  Volume trend is measured as log of the short mean over a shifted longer mean. Weekend
+  dips in daily crypto volume are averaged out by windows of 5 days or more.
+  Each claim uses min_effect of 1.5% over 10 days, or the hit-rate and correlation
+  equivalents. That is about ten times the 0.15% round-trip cost.

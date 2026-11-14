@@ -1,6 +1,6 @@
 # Halt recovery + loop-health instrument (E-030)
 
-Not sure this is the doc you need? See [`DOC_INDEX.md`](../DOC_INDEX.md) first.
+Not sure this is the doc you need? See [`CLAUDE.md`](../CLAUDE.md) §1, "Where to read", first.
 
 What `workflow/run_campaign.py` does when a run halts, why it now sometimes
 doesn't stop the whole campaign, and how to read the numbers it keeps about

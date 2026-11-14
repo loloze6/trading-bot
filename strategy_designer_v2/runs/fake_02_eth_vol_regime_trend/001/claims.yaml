@@ -1,0 +1,186 @@
+brief: fake_02_eth_vol_regime_trend.md
+ideas:
+  - id: autocorr_regime_trend
+    belief: ETH alternates between regimes where daily returns are positively serially correlated, so trend pays, and negatively correlated, so it chops; the recent sign of return autocorrelation tells which regime holds.
+    claim:
+      when: the 60-day lag-1 autocorrelation of daily returns is above +0.05
+      then: following the 20-day moving-average trend side earns more over the next 5 days
+      compared_to: bars where the 60-day lag-1 autocorrelation is below -0.05
+      measure: mean_diff
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.006
+      code: |
+        ac = ret.rolling(60).corr(ret.shift(1))
+        ma = df.close.rolling(20).mean()
+        signal = pd.Series(np.where(df.close >= ma, 1, -1), index=df.index)
+        a = (ac > 0.05) & ma.notna()
+        b = (ac < -0.05) & ma.notna()
+    why_no_lookahead: The autocorrelation and the moving average use only returns and closes up to and including the bar's close.
+    how_it_trades: Trade the 20-day MA side only while trailing autocorrelation is positive, and stay flat otherwise.
+
+  - id: close_vol_vs_range_vol
+    belief: When close-to-close volatility is large relative to intraday high-low range volatility, prices are relocating day after day (trend); when ranges are wide but closes go nowhere, it is chop.
+    claim:
+      when: the 20-day close-to-close vol divided by 20-day Parkinson range vol is above its trailing 250-day median
+      then: following the sign of the 20-day return earns more over the next 10 days
+      compared_to: all other bars
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.01
+      code: |
+        lr = np.log(df.close).diff()
+        hl = np.log(df.high / df.low.replace(0, np.nan))
+        park = np.sqrt((hl ** 2 / (4 * np.log(2))).rolling(20).mean())
+        ratio = lr.rolling(20).std() / park.replace(0, np.nan)
+        med = ratio.rolling(250, min_periods=120).median().shift(1)
+        r20 = df.close.pct_change(20)
+        signal = pd.Series(np.where(r20 >= 0, 1, -1), index=df.index)
+        a = (ratio > med) & r20.notna()
+        b = ~a & ratio.notna() & med.notna() & r20.notna()
+    why_no_lookahead: Both volatility estimates and the median use bars up to the current close, and the median is also shifted one bar.
+    how_it_trades: Hold the 20-day momentum side only when interday vol dominates intraday range vol.
+
+  - id: close_location_trend_conviction
+    belief: In a real trend, buyers or sellers hold control into each day's close, so daily closes sit near the extreme in the trend direction; trends whose closes drift mid-range are weak and stall.
+    claim:
+      when: the 10-day mean of close location within the daily range, signed by the 50-day MA trend side, is above 0.2
+      then: following the 50-day MA side earns more over the next 10 days
+      compared_to: all other bars
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.01
+      code: |
+        rng = (df.high - df.low).replace(0, np.nan)
+        clv = ((df.close - df.low) - (df.high - df.close)) / rng
+        m = clv.rolling(10).mean()
+        ma = df.close.rolling(50).mean()
+        signal = pd.Series(np.where(df.close >= ma, 1, -1), index=df.index)
+        a = (m * signal > 0.2) & ma.notna()
+        b = ~a & ma.notna() & m.notna()
+    why_no_lookahead: Close location uses each bar's own high, low and close, which are all known at its close; the MA is trailing.
+    how_it_trades: Take the 50-day MA side only when recent closes confirm it by sitting near the trend-side extreme of the daily range.
+
+  - id: young_trend_pays
+    belief: Trend gains on ETH come in the first days after the price crosses its moving average, and mature trends are where the flat stretches that eat the gains live.
+    claim:
+      when: the close has been on the same side of its 50-day MA for 10 days or fewer
+      then: following that side earns more over the next 10 days
+      compared_to: bars where the close has been on the same side for more than 40 days
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.01
+      code: |
+        ma = df.close.rolling(50).mean()
+        above = df.close > ma
+        grp = (above != above.shift(1)).cumsum()
+        age = above.groupby(grp).cumcount() + 1
+        signal = pd.Series(np.where(above, 1, -1), index=df.index)
+        a = (age <= 10) & ma.notna()
+        b = (age > 40) & ma.notna()
+    why_no_lookahead: Trend age counts consecutive past bars on the same side of a trailing MA, ending at the current bar.
+    how_it_trades: Enter on an MA cross and exit after a fixed holding period instead of riding the trend until it reverses.
+
+  - id: long_side_asymmetry
+    belief: ETH trends are asymmetric; uptrends persist through reflexive inflows, while downtrends get cut by sharp short-covering bounces, so the trend signal pays on the long side only.
+    claim:
+      when: the close is above its 100-day MA (signal long)
+      then: the long trend position earns more over the next 10 days
+      compared_to: bars where the close is below its 100-day MA (signal short)
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.01
+      code: |
+        ma = df.close.rolling(100).mean()
+        a = (df.close > ma) & ma.notna()
+        b = (df.close < ma) & ma.notna()
+        signal = pd.Series(np.where(a, 1, -1), index=df.index)
+    why_no_lookahead: The 100-day MA uses closes up to and including the current bar.
+    how_it_trades: Go long above the 100-day MA and go flat, not short, below it.
+
+  - id: stable_vol_trend
+    belief: It is not the level or the direction of volatility but its stability that matters; when vol is steady, flows are orderly and trends persist, while erratic vol marks chop.
+    claim:
+      when: the vol-of-vol (60-day coefficient of variation of 10-day realized vol) is in the bottom third of its past year
+      then: following the sign of the 30-day return earns more over the next 10 days
+      compared_to: bars where vol-of-vol is in the top third of its past year
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.01
+      code: |
+        v = ret.rolling(10).std()
+        vov = v.rolling(60).std() / v.rolling(60).mean()
+        lo = vov.rolling(365, min_periods=180).quantile(0.33).shift(1)
+        hi = vov.rolling(365, min_periods=180).quantile(0.67).shift(1)
+        r30 = df.close.pct_change(30)
+        signal = pd.Series(np.where(r30 >= 0, 1, -1), index=df.index)
+        a = (vov < lo) & r30.notna()
+        b = (vov > hi) & r30.notna()
+    why_no_lookahead: Realized vol, vol-of-vol and the trailing quantiles (shifted one bar) use only past and current returns.
+    how_it_trades: Run 30-day momentum only while vol-of-vol is low.
+
+  - id: year_high_anchor
+    belief: Traders anchor on the past-year high; ETH trading close to it underreacts and keeps rising, while price far below it is in a regime where rallies fade.
+    claim:
+      when: all bars with a full trailing year
+      then: the 20-day forward return rises with the close's proximity to its 365-day high
+      compared_to: rank correlation across bars, no separate baseline
+      measure: rank_corr
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.08
+      code: |
+        feature = df.close / df.close.rolling(365).max()
+        a = feature.notna()
+        b = ~a
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: The 365-day max includes only closes up to the current bar.
+    how_it_trades: Go long when the close is within a set distance of its 1-year high, otherwise flat.
+
+  - id: semivariance_asymmetry
+    belief: Before a trend shows in net price, the side that holds the volatility reveals it; when upside variance dominates downside variance while price is still flat, accumulation is under way and a rise follows.
+    claim:
+      when: bars where the 30-day return is within ±10% (no visible trend yet)
+      then: the 10-day forward return rises with the log ratio of 30-day upside to downside semivariance
+      compared_to: rank correlation across those bars, no separate baseline
+      measure: rank_corr
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.06
+      code: |
+        up = (ret.clip(lower=0) ** 2).rolling(30).sum()
+        dn = (ret.clip(upper=0) ** 2).rolling(30).sum()
+        feature = np.log(up / dn.replace(0, np.nan)).replace([np.inf, -np.inf], np.nan)
+        r30 = df.close.pct_change(30)
+        a = feature.notna() & (r30.abs() < 0.10)
+        b = ~a
+        signal = pd.Series(np.where(feature >= 0, 1, -1), index=df.index)
+    why_no_lookahead: The semivariances and the 30-day return use returns up to the current close.
+    how_it_trades: In flat markets, lean long when upside semivariance dominates and short when downside does.
+
+  - id: whipsaw_count_fade
+    belief: Chop can be recognised by how often price has recently crossed its own moving average; in that regime the right trade is to fade the last move, not follow it.
+    claim:
+      when: the close crossed its 20-day MA 8 or more times in the past 30 days
+      then: fading the 5-day return earns more over the next 5 days
+      compared_to: bars with 3 or fewer crosses in the past 30 days
+      measure: mean_diff
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.006
+      code: |
+        ma = df.close.rolling(20).mean()
+        side = np.sign(df.close - ma)
+        crosses = ((side != side.shift(1)) & ma.shift(1).notna()).astype(int).rolling(30).sum()
+        r5 = df.close.pct_change(5)
+        signal = pd.Series(np.where(r5 >= 0, -1, 1), index=df.index)
+        a = (crosses >= 8) & r5.notna()
+        b = (crosses <= 3) & r5.notna() & ma.notna()
+    why_no_lookahead: Cross counts compare each past close to a trailing MA over a window that ends at the current bar.
+    how_it_trades: Switch from trend following to a short-term fade when the whipsaw count is high.
+notes: Nine ideas. They cover serial correlation, intraday versus interday vol structure, close location, trend age, long/short asymmetry, vol stability, year-high anchoring, vol asymmetry before a trend, and a chop fade. Each avoids the already-tried mechanisms (vol change, efficiency ratio, compression, Donchian, vol-scaled momentum, multi-horizon agreement, volume, vol spikes, pullbacks). whipsaw_count_fade deliberately contradicts the trend-following claims. stable_vol_trend tests vol stability, which differs from the failed vol-level and vol-change regimes.

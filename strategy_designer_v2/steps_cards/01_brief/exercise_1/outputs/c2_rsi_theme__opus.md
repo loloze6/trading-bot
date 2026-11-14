@@ -1,0 +1,6 @@
+---
+instruments: BTC, ETH, BNB
+---
+Does the RSI, which measures how strongly recent gains have outweighed recent losses, predict whether BTC, ETH and BNB keep moving or turn back? It could predict reversal: a high reading can mark a crowd of late buyers who have run out of new money, and a low reading can mark forced or panicked sellers, such as liquidated leveraged traders, whose selling pushes price below what patient buyers will pay, so price snaps back once that pressure ends. It could instead predict continuation: a high reading can reflect news or capital flows that slow traders and funds absorb over days, so strength keeps going, and traders who sell "overbought" coins may just be supplying the trend-followers. Or it may predict nothing, because RSI is built only from past closes, is watched by almost everyone, and any easy edge would already be traded away. The theory is wrong in both directions if returns after extreme RSI readings, high or low, look the same as returns at other times, with no reliable lean toward reversal or toward continuation.
+
+short-name: rsi-predicts-reversal-or-continuation

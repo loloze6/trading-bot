@@ -1,0 +1,32 @@
+run: n22_friday_effect_hourly_resolution_1h / fold B
+observations:
+  - "The Friday 24-hour hold beat Monday to Thursday on the whole fold for every coin (BTC 0.0043, ETH 0.0029, LTC 0.0123), but it was positive in only 4 of 6 windows on each, because windows 4 and 6 were negative on all three coins (BTC -0.0097 and -0.0024, ETH -0.0077 and -0.0149, LTC -0.0027 and -0.0070)."
+  - "Window 4 was negative on all three coins in 8 of the 13 claims (friday_full_day_vs_other_weekdays, friday_europe_morning_drift, friday_us_session_drift, friday_post_us_close_drift, friday_broad_hourly_drift, friday_us_session_net_profit, friday_full_day_net_profit, friday_post_us_close_net_profit), so the Friday effect fails in one regime of the fold whichever hours are taken."
+  - "Friday after the US close (21:00 to 24:00 UTC) came closest to holding: it passed on BTC (0.0024, 5 of 6 windows) and ETH (0.0016, 5 of 6), and failed on LTC only on windows, where it had the largest effect (0.0046) but only 4 of 6 positive."
+  - "The Asian session (00:00 to 08:00 UTC) passed on LTC (0.0055, 5 of 6 windows) but missed the 0.002 bar on BTC (0.0014) and ETH (0.0013), so the belief may hold there and the asked size was too large for BTC and ETH."
+  - "The European morning carries none of the Friday premium: the effect was negative on all three coins (BTC -0.0008, ETH -0.0011, LTC -0.0016)."
+  - "Thursday 16:00 to 24:00 UTC was weaker than Monday to Wednesday on all three coins (BTC -0.0043, ETH -0.0048, LTC -0.0049), mostly from window 5 (-0.019, -0.028, -0.025), and in that same window the Friday 24-hour effect was strongly positive (0.0148, 0.0070, 0.0260)."
+  - "Friday is not a broad hourly drift: the up-hour hit-rate edge was 0.015 (BTC), 0.003 (ETH) and 0.014 (LTC), all below 0.02."
+  - "Friday intraday momentum is noise: the rank correlation was about 0.02 on every coin, with windows ranging from -0.31 to 0.20."
+  - "The rebound after a down week passed only on ETH (0.0006 per hour, 6 of 6 windows), against 0.00016 on BTC and 0.00006 on LTC."
+  - "No net-return claim passed on all coins: the full-day hold netted 0.0038, 0.0027 and 0.0101 but failed on windows 4 and 6, and the post-close hold passed on LTC (0.0031) but BTC netted 0.0004, under the 0.0005 bar."
+next_claim:
+  id: friday_after_weak_thursday_evening
+  belief: "The Thursday-evening weakness is pre-weekend selling that is bought back on Friday, so the Friday 24-hour return is larger when Thursday 16:00 to Friday 00:00 UTC closed down."
+  claim:
+    when: "Friday 00:00 UTC bars where the close is below the close 8 hours earlier (Thursday 16:00 UTC)"
+    then: "the next 24 hours (Friday 00:00 to Saturday 00:00 UTC) return more"
+    compared_to: "Friday 00:00 UTC bars where Thursday 16:00 to Friday 00:00 UTC closed flat or up"
+    measure: mean_diff
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.005
+    code: |
+      r8 = df.close / df.close.shift(8) - 1
+      fri0 = (dow == 4) & (hour == 0)
+      a = fri0 & (r8 < 0)
+      b = fri0 & (r8 >= 0)
+      signal = pd.Series(1.0, index=df.index)
+  why_no_lookahead: "The selector uses only the Friday 00:00 close and the close 8 bars earlier; the outcome starts after that close."
+  how_it_trades: "At the Friday 00:00 UTC close, go long for 24 hours only if Thursday evening closed down; stay flat otherwise."
+why: "Thursday evening was weak on all three coins (about -0.0045) while the unconditional Friday hold failed only by regime; conditioning Friday on a down Thursday evening tests whether the premium is a buy-back. The 0.005 bar is set above the 24-hour difference of about 0.004 to 0.006 that roughly 50 Fridays per group can produce by luck."

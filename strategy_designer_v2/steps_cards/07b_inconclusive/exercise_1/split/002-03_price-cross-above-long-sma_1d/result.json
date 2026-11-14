@@ -1,0 +1,60 @@
+{
+  "line": "7.b",
+  "backtest": "002-03_price-cross-above-long-sma_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "split": true,
+  "explorations": 2,
+  "cost": 0.32281319999999997,
+  "findings": {
+    "F1": "The block result rests on a few outliers: the 499 active blocks have mean 0.340, median -0.178, std 6.08 and max 77.5; the top 10 blocks hold 183% of the total; after a 1% winsorisation t falls from 1.25 to 0.60; and dropping the top 5 blocks turns the mean negative (-0.122, t -0.74), with only 37% of blocks positive.",
+    "F2": "Within forecast>0 bars, the effect splits by recent momentum: when the close is up over the past 20 bars, the 20-bar excess return is +0.035 (t 6.66, hit 45.7%, n 3856), and when it is down it is -0.027 (t -5.93, hit 37.5%, n 3190); the t-values use overlapping bars, so they are overstated.",
+    "F3": "The same split appears with the distance to the SMA: when the distance has risen over the last 10 bars, excess is +0.039 (t 6.93, hit 46.5%, n 3494), and when it has fallen it is -0.025 (t -5.72, hit 37.6%, n 3552).",
+    "F4": "Time since the cross works against the brief's \"new trend\" reading: the first 10 bars above the SMA give -0.011 (t -1.96, n 1953) and bars 10-30 give -0.002 (t -0.27), while bars 30-60 give +0.016 (t 2.40) and bars 60-120 give +0.035 (t 4.57).",
+    "F5": "The market regime decides the sign: when BTC is also above its 200-day SMA, active bars give +0.013 (t 3.51, n 6264), and when BTC is below it they give -0.049 (t -5.88, hit 38.0%, n 782).",
+    "F6": "The effect depends on the period: active blocks lost in 2018 (mean -1.92, t -3.33) and 2022 (-0.60, t -2.01) and were positive but not significant in 2020, 2024 and 2025 (t 1.31, 1.33, 1.07); bar-level hit rates were only 17-18% in 2018 and 2022, against 54% in 2020.",
+    "F7": "Across coins the block result is uneven and nowhere significant: BTC t 1.42, ZEC mean 1.64 with t 1.18, and ETH, LTC and XMR near zero or negative (t -0.18, 0.11, -0.49); without ZEC the pooled block t falls to 0.53.",
+    "F8": "The forecast's grading is only weakly tied to outcomes: excess is negative in the two lowest forecast quintiles (-0.027, -0.023) and positive in the top three (+0.016, +0.015, +0.052), but medians are negative in every quintile (-0.022 to -0.044) and the hit rate stays at 39-45%; by raw distance, the farthest quintile (mean 110% above the SMA) turns negative again (-0.014, median -0.056).",
+    "F9": "The positive means come from right-skewed returns, not from frequent wins: active bars have mean excess +0.0065 against +0.0002 for inactive bars, yet only 42.0% of active bars beat the coin's drift, so most of the time the position is drowned by the coin's own moves."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's daily close is above its 200-day SMA and also higher than it was 20 bars earlier, its return over the next 20 bars beats its own average drift.",
+      "consequence": "A trader would take the above-average long only when the coin's 20-bar momentum is also up, and refuse it when the coin has been falling while still above the average.",
+      "name": "Above average with rising momentum",
+      "from": "F2, F9, F1",
+      "refs": [
+        "F2",
+        "F9",
+        "F1"
+      ]
+    },
+    {
+      "idea": "When a coin's close is above its 200-day SMA and its percent distance above the SMA is larger than it was 10 bars earlier, its return over the next 20 bars beats its own average drift.",
+      "consequence": "A trader would hold the long only while the gap above the average is widening, and stand aside when the gap is shrinking.",
+      "name": "Widening gap above average",
+      "from": "F3, F2, F9",
+      "refs": [
+        "F3",
+        "F2",
+        "F9"
+      ]
+    },
+    {
+      "idea": "When a coin's close has stayed above its 200-day SMA for at least 30 consecutive bars, its return over the next 20 bars beats its own average drift.",
+      "consequence": "A trader would treat a close above the average as a long only once that trend has lasted, not right after the cross.",
+      "name": "Established stay above average",
+      "from": "F4, F6",
+      "refs": [
+        "F4",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "002-03_price-cross-above-long-sma.b1_above-average-with-rising-momentum",
+    "002-03_price-cross-above-long-sma.b2_widening-gap-above-average",
+    "002-03_price-cross-above-long-sma.b3_established-stay-above-average"
+  ],
+  "no_ideas": null
+}

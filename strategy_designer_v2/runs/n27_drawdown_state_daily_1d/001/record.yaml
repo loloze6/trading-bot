@@ -1,0 +1,680 @@
+brief: n27_drawdown_state_daily_1d.md
+fold: B
+symbols:
+- BTCUSD
+- ETHUSD
+- LTCUSD
+bar_size: 1d
+claims:
+- id: near_high_drift_continues
+  belief: When price sits within a few percent of its 180-day high, trend followers
+    and breakout traders keep buying, so forward returns are higher there than elsewhere.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.015
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.03216924709568008
+      n_a: 68
+      n_b: 662
+      windows:
+      - null
+      - null
+      - null
+      - -0.016103180511191802
+      - -0.10787588632765037
+      - -0.056831073528581945
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.05027923181748356
+      n_a: 82
+      n_b: 648
+      windows:
+      - null
+      - null
+      - null
+      - 0.020625412218899387
+      - -0.03964759863612877
+      - -0.017329203683010157
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.0619301544111095
+      n_a: 23
+      n_b: 707
+      windows:
+      - null
+      - 0.33273141335087086
+      - null
+      - null
+      - -0.1768806899493934
+      - null
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(180).max()
+
+    dd = df.close / hi - 1
+
+    valid = hi.notna()
+
+    a = valid & (dd >= -0.05)
+
+    b = valid & ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: new_year_high_breakout_long
+  belief: A close at a new 365-day high draws fresh buyers and short covering, and
+    the move carries far enough to pay fees.
+  measure: net_return
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.02
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.06427504809341532
+      n_a: 5
+      n_b: 5
+      windows:
+      - null
+      - null
+      - null
+      - -0.1680298292105969
+      - -0.05522980569454067
+      - 0.012344005827142292
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.1533477194404694
+      n_a: 3
+      n_b: 3
+      windows:
+      - null
+      - null
+      - null
+      - 0.4326103010886267
+      - 0.12356735260906421
+      - -0.09613449537628266
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.01216804198215443
+      n_a: 2
+      n_b: 2
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - -0.01216804198215443
+      - null
+      verdict: fail
+      why: null
+  code: 'prior_hi = df.high.rolling(365).max().shift(1)
+
+    brk = df.close >= prior_hi
+
+    a = spaced(brk.fillna(False), 20)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: fresh_high_vs_stale_high_momentum
+  belief: The time since the last high matters more than the distance from it; a high
+    set recently means an active trend, while a high far in the past means the trend
+    is dead.
+  measure: hit_rate
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.06
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.04250381274451298
+      n_a: 198
+      n_b: 457
+      windows:
+      - null
+      - null
+      - null
+      - -0.2902458366375892
+      - null
+      - -0.28414442700156983
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.15907989140973433
+      n_a: 191
+      n_b: 432
+      windows:
+      - null
+      - null
+      - null
+      - -0.03003095975232195
+      - null
+      - -0.40056953013763646
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.044020139701450245
+      n_a: 102
+      n_b: 553
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'ds = df.high.rolling(365).apply(lambda x: len(x) - 1 - np.argmax(x), raw=True)
+
+    a = ds <= 30
+
+    b = ds > 120
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: momentum_rule_pays_near_high_not_in_drawdown
+  belief: The same 20-day momentum rule works near the high, where flows trend, and
+    fails in deep drawdowns, where moves are noise and short squeezes; the state decides
+    the rule.
+  measure: hit_rate
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.05
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.04547275641025639
+      n_a: 128
+      n_b: 312
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.25122590305072057
+      n_a: 137
+      n_b: 390
+      windows:
+      - null
+      - null
+      - null
+      - 0.17476851851851855
+      - null
+      - null
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.1423611111111111
+      n_a: 32
+      n_b: 576
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(365).max()
+
+    dd = df.close / hi - 1
+
+    a = dd >= -0.10
+
+    b = dd <= -0.40
+
+    signal = np.sign(df.close / df.close.shift(20) - 1).replace(0, 1.0)
+
+    '
+- id: mid_drawdown_short_term_reversal
+  belief: In a mid drawdown (20-50% below the yearly high), price chops in a range
+    between dip buyers and trapped holders selling, so 3-day moves revert, unlike
+    near the high.
+  measure: mean_diff
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.006
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.013922563624450568
+      n_a: 313
+      n_b: 128
+      windows:
+      - null
+      - null
+      - null
+      - -0.005652172460110546
+      - 0.08002251972868002
+      - -0.006859161645564849
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.01195712732471383
+      n_a: 154
+      n_b: 137
+      windows:
+      - null
+      - null
+      - null
+      - 0.038080370102382466
+      - 0.03005751292607043
+      - -0.01818788919285267
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.02199623979339524
+      n_a: 124
+      n_b: 32
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - 0.01066724593798376
+      - null
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(365).max()
+
+    dd = df.close / hi - 1
+
+    a = (dd <= -0.20) & (dd >= -0.50)
+
+    b = dd >= -0.10
+
+    signal = -np.sign(df.close / df.close.shift(3) - 1).replace(0, 1.0)
+
+    '
+- id: low_volume_approach_to_high_fails
+  belief: A return to the 180-day high on drying volume shows that buyers are absent,
+    so the test of the high fails more often than one made on rising volume.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.015
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.07489820353240084
+      n_a: 23
+      n_b: 18
+      windows:
+      - null
+      - null
+      - null
+      - 0.06596574309888621
+      - 0.1062671965422868
+      - 0.0665414056490863
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.1627867527123244
+      n_a: 27
+      n_b: 18
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - 0.25754281694166975
+      - null
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.3912108678205285
+      n_a: 8
+      n_b: 9
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - -0.2639347443131382
+      - null
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(180).max()
+
+    near = (df.close / hi - 1) >= -0.03
+
+    vr = df.volume.rolling(10).mean() / df.volume.rolling(60).mean()
+
+    a = near & (vr < 1.0)
+
+    b = near & (vr >= 1.0)
+
+    signal = pd.Series(-1.0, index=df.index)
+
+    '
+- id: recovery_thrust_from_deep_drawdown
+  belief: A strong rally off the 90-day low while still deep below the yearly high
+    marks the end of a bear phase; underinvested holders chase it, so it keeps going.
+  measure: net_return
+  horizon_bars: 20
+  direction: positive
+  min_effect: 0.02
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.09113552748865048
+      n_a: 4
+      n_b: 4
+      windows:
+      - -0.08967221815022935
+      - 0.021659024010264427
+      - null
+      - null
+      - null
+      - 0.4108962800843024
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.07744304238679084
+      n_a: 2
+      n_b: 2
+      windows:
+      - null
+      - null
+      - -0.1251016123918655
+      - null
+      - null
+      - 0.2799876971654472
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.04415365583820202
+      n_a: 2
+      n_b: 2
+      windows:
+      - null
+      - null
+      - -0.2857945584881069
+      - 0.19748724681170288
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(365).max()
+
+    lo = df.low.rolling(90).min()
+
+    dd = df.close / hi - 1
+
+    up = df.close / lo - 1
+
+    cond = (up >= 0.30) & (dd <= -0.35)
+
+    a = spaced(cond.fillna(False), 20)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: stale_deep_drawdown_vol_compression
+  belief: Long after the high, deep in a drawdown, attention leaves the coin and moves
+    shrink, so a long position should be sized up there and down near the high.
+  measure: abs_ratio
+  horizon_bars: 10
+  direction: below
+  min_effect: 0.8
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 1.0484104087306656
+      n_a: 151
+      n_b: 162
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.8333001463416123
+      n_a: 150
+      n_b: 192
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.6288735814799504
+      n_a: 293
+      n_b: 41
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(365).max()
+
+    dd = df.close / hi - 1
+
+    ds = df.high.rolling(365).apply(lambda x: len(x) - 1 - np.argmax(x), raw=True)
+
+    a = (dd <= -0.50) & (ds > 200)
+
+    b = dd >= -0.15
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: slow_grind_drawdown_continues
+  belief: A slow drawdown with no rebound (the 60-day high is old and price keeps
+    sliding) reflects steady distribution, so the decline continues, unlike a fast
+    drop.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.015
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.02157773358150765
+      n_a: 58
+      n_b: 672
+      windows:
+      - -0.03483476431996865
+      - 0.08637897070302311
+      - -0.03106247522067452
+      - null
+      - null
+      - 0.08533247879972912
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.09915739531000782
+      n_a: 66
+      n_b: 664
+      windows:
+      - 0.1446509449368874
+      - 0.09378352314863299
+      - 0.0046515933625797794
+      - null
+      - null
+      - 0.12616257680048182
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.024283849845590007
+      n_a: 31
+      n_b: 699
+      windows:
+      - 0.036242319741363396
+      - 0.041631674919239206
+      - 0.05542713899290063
+      - -0.02677375679005898
+      - -0.29064758655496215
+      - null
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(60).max()
+
+    dd = df.close / hi - 1
+
+    ds = df.high.rolling(60).apply(lambda x: len(x) - 1 - np.argmax(x), raw=True)
+
+    r20 = df.close / df.close.shift(20) - 1
+
+    a = (dd <= -0.15) & (dd >= -0.35) & (ds > 40) & (r20 < 0)
+
+    b = ~a & hi.notna()
+
+    signal = pd.Series(-1.0, index=df.index)
+
+    '
+- id: fast_drop_from_60d_high_rebounds
+  belief: A 15-35% drop below the 60-day high that happened within days of that high
+    is a forced-selling flush rather than steady distribution, so it rebounds relative
+    to other bars.
+  measure: mean_diff
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.015
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.03203499157902251
+      n_a: 18
+      n_b: 712
+      windows:
+      - -0.059887823786371044
+      - null
+      - null
+      - null
+      - 0.03828496498717357
+      - -0.011106990964479547
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.06203057202573613
+      n_a: 35
+      n_b: 695
+      windows:
+      - 0.016400240817209782
+      - -0.009132128416394329
+      - null
+      - 0.059080774671393964
+      - 0.08692689745013531
+      - -0.06014293377273915
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.004615536947777147
+      n_a: 70
+      n_b: 660
+      windows:
+      - -0.0569767508346674
+      - 0.055977413509706114
+      - null
+      - -0.050937884439806284
+      - -0.010456386454073943
+      - -0.09951100319968624
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(60).max()
+
+    dd = df.close / hi - 1
+
+    ds = df.high.rolling(60).apply(lambda x: len(x) - 1 - np.argmax(x), raw=True)
+
+    a = (dd <= -0.15) & (dd >= -0.35) & (ds <= 10)
+
+    b = ~a & hi.notna()
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: dd60_depth_ranks_forward_return
+  belief: Distance below the 60-day high works as a continuous momentum state; the
+    deeper the drawdown, the weaker the next 10 days, as the slow-grind continuation
+    on ETH suggested.
+  measure: rank_corr
+  horizon_bars: 10
+  direction: positive
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0165988534356071
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.5207852342933794
+      - 0.3682553792897058
+      - -0.6551924684671586
+      - -0.3121074150984768
+      - -0.48020001388985345
+      - 0.05654267218732341
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.11489977615768958
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.3744695670119049
+      - -0.030009028404750324
+      - -0.6063171530026896
+      - -0.037765538945712045
+      - -0.2514410722966872
+      - -0.135241771060171
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.05786241592186046
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.43941204068758777
+      - 0.2609639261299696
+      - -0.4684712370781012
+      - -0.16498588465584357
+      - -0.4930524568596515
+      - -0.07308481566051267
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(60).max()
+
+    feature = df.close / hi - 1
+
+    a = hi.notna()
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+profit: 'none: no return claim passed'

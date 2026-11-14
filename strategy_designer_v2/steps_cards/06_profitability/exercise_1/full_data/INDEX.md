@@ -1,0 +1,6 @@
+002-01_sma-golden-cross-upward-drift_1d: not worth acting on (exercise, verdict inconclusive) [Sharpe 0.3762; Sharpe minus holding's Sharpe -0.1934; Calmar 0.0009771]
+002-02_sma-death-cross-downward-drift_1d: not worth acting on (exercise, verdict inconclusive) [Sharpe -0.407; Sharpe minus holding's Sharpe -0.9766; Calmar -0.2719]
+002-03_price-cross-above-long-sma_1d: not worth acting on (exercise, verdict inconclusive) [Sharpe 0.5051; Sharpe minus holding's Sharpe -0.06455; Calmar 0.1399]
+002-04_price-cross-below-long-sma_1d: not worth acting on (exercise, verdict inconclusive) [Sharpe -0.5224; Sharpe minus holding's Sharpe -1.092; Calmar -0.3547]
+002-05_up-cross-to-reverse-cross-gain_1d: not worth acting on (exercise, verdict inconclusive) [Sharpe 0.3762; Sharpe minus holding's Sharpe -0.1934; Calmar 0.0009771]
+002-06_down-cross-to-reverse-cross-loss_1d: not worth acting on (exercise, verdict inconclusive) [Sharpe -0.407; Sharpe minus holding's Sharpe -0.9766; Calmar -0.2719]

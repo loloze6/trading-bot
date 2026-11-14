@@ -1,0 +1,29 @@
+---
+line: 7.d not profitable
+backtest: 002-03_price-cross-above-long-sma_1d
+idea tested: 002-03_price-cross-above-long-sma
+step 5: inconclusive
+step 6: not profitable enough
+mode: analyst then deducer
+explorations: 3
+cost: 0.5053 USD
+---
+## Findings
+- **F1:** The book's gain before fees is smaller than holding the coins. Its gross mean daily return is 0.00102, against 0.00129 for the coins. Its annualised gross Sharpe is 0.39, against 0.51 for holding. The coin's own return on active bars has a higher Sharpe (0.61), so sizing and timing, not the choice of bars, lose the edge.
+- **F2:** Fees are not the cause. Fee drag is 0.000059 per day, against a gross gain of 0.00102. Mean trade gain is 4.23% before fees and 4.13% after.
+- **F3:** Being above the SMA picks better bars only weakly. Coin daily return is 0.00162 on active bars and 0.00087 on flat bars, with t = 1.03. Flat bars (forecast 0) still earn a mean 20-bar return of 2.6%, against 2.4% for forecast 5-10. The 20-bar hit rate is below 50% in every bucket, from 0.39 to 0.43.
+- **F4:** A larger forecast does not earn steadily more per unit of risk.
+- **F5:** Losses come from the first weeks of a trend, the noise around the cross.
+- **F6:** Bars 5-20 days into an above-SMA run have negative gross return (-0.00080 per day) and a 20-bar forward return of only 0.75%. Bars 60-120 days in earn 0.0045 per day and 6.0% over 20 bars.
+- **F7:** Profit is concentrated in a few trades. The win rate is 0.30 and the median trade is -3.6%. The top 5% of trades sum to +15845%, more than the total of +9433%, while losers sum to -12235%.
+- **F8:** Gains depend on the recent market direction.
+- **F9:** The book is long only (share long 1.0) and has deep drawdowns, which explains the Calmar of 0.14.
+- **F10:** Results vary by year and coin.
+
+## Ideas
+- `002-03_price-cross-above-long-sma.d1_mature-trend-keeps-rising` (from F5, F6, F3): A coin whose close has stayed above its 200-day average for roughly two to four months keeps rising over the next 20 days more than the coin does on average, while a coin that crossed above only one to three weeks ago does not.
+- `002-03_price-cross-above-long-sma.d2_fresh-cross-pulls-back` (from F5, F6, F7): In the first weeks after a coin's close crosses above its 200-day average, the coin's next 20-day return falls below its average return, as the cross is followed by a pullback toward the average.
+- `002-03_price-cross-above-long-sma.d3_run-age-beats-distance` (from F4, F6, F3): A coin's next 20-day return rises with the number of days its close has spent above its 200-day average, more than with how far the close sits above it.
+- `002-03_price-cross-above-long-sma.d4_rising-average-confirms-trend` (from F8, F9, F5): A coin whose 200-day average itself has been rising over the past months earns more over the next 20 days while its close is above that average than a coin whose average is flat or falling.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

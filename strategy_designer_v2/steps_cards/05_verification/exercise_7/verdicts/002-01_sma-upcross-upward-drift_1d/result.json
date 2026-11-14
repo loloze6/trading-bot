@@ -1,0 +1,38 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 10-bar forward return in long blocks minus mean over all blocks",
+    "value": 0.004661847936267742,
+    "statistic": {
+      "name": "Welch t (long blocks vs all blocks)",
+      "value": 0.23547545475992646
+    },
+    "threshold": "excess > 0 with t >= 2 confirms; excess <= 0 rejects (t <= -2 = reversal)"
+  },
+  "supporting_check": {
+    "name": "hit rate of long blocks minus hit rate of all blocks",
+    "value": -0.03152709359605904,
+    "passed": false,
+    "hit_rate_long": 0.4827586206896552,
+    "hit_rate_all": 0.5142857142857142,
+    "slope_return_on_forecast": 0.0004018873941285853,
+    "window_excess": {
+      "BTCUSD:w1": -0.11727741795871167,
+      "BTCUSD:w4": -0.013006317750009905,
+      "BTCUSD:w5": 0.0,
+      "BTCUSD:w6": -0.013700809560479026
+    }
+  },
+  "counts": {
+    "non-overlapping 10-bar long blocks": 29,
+    "windows containing long blocks": 4,
+    "windows with positive excess": 0,
+    "all blocks": 70
+  },
+  "decided_by": "Inconclusive: the excess is > 0 but with t between 0 and 2.",
+  "reading": "Blocks start at positions 0, 10, 20, ... of each window with the forward return inside the window, long blocks have forecast > 0 at the start, t is Welch's t of long-block returns against all-block returns, each window's excess uses that window's own all-block mean, the slope is fitted over all blocks, and 'carried by a single window' means that dropping any one window leaves a pooled excess <= 0."
+}

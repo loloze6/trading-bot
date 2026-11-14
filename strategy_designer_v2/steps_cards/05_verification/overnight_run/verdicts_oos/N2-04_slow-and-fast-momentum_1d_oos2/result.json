@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 20-bar forward excess return over coin mean, active bars, non-overlapping",
+    "value": 0.0651756632745916,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.5400991028453634
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; else inconclusive; at least 30 non-overlapping active blocks"
+  },
+  "supporting_check": {
+    "name": "slope of 20-bar excess return on forecast level (non-overlapping active blocks)",
+    "value": 0.004125709234473571,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping 20-bar active blocks": 69
+  },
+  "decided_by": "The t-statistic lies between -2 and 2, meeting the plan's inconclusive rule.",
+  "reading": "The coin's mean 20-bar return is taken over every bar of all its windows (overlapping, within windows); the active blocks are the active bars (forecast > 0) on the grid 0, 20, 40, ... of each window; the situation is checked on the raw slow/medium returns, using the regime label where they are missing."
+}

@@ -1,0 +1,67 @@
+claims_file: strategy_designer_v2/runs/_replications/low_vol_regime_momentum/claims.yaml
+fold: C
+bar_size: 1d
+symbols:
+- ETHUSD
+- LTCUSD
+- XRPUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  low_vol_regime_momentum:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: pass
+        effect: 0.041208467236552235
+        t_stat: 3.34
+        n_a: 310
+        n_b: 310
+        windows:
+        - 0.04406776300177456
+        - -0.06368594977150334
+        - 0.013420905948153625
+        - 0.15617987634964756
+        - 0.12289819181642184
+        - 0.02876659306728927
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      LTCUSD:
+        verdict: pass
+        effect: 0.019634155471678138
+        t_stat: 2.35
+        n_a: 342
+        n_b: 342
+        windows:
+        - 0.035845302798577845
+        - -0.008624155607871895
+        - 5.6936879290215344e-05
+        - 0.021166603024285194
+        - 0.044031942574735125
+        - 0.04109694177751828
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: 0.007003947869285994
+        t_stat: 0.37
+        n_a: 277
+        n_b: 277
+        windows:
+        - null
+        - -0.15618744098256737
+        - -0.027564521301255657
+        - 0.08427181946179563
+        - 0.1428499581457124
+        - 0.08061895121682709
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

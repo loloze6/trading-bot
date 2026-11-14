@@ -1,0 +1,223 @@
+brief: n31_weekly_reversal_daily_1d.md
+ideas:
+  - id: weekly_time_series_momentum
+    belief: Crypto weekly returns carry over, so the sign of the past 7 days predicts the sign of the next 7 days well enough to pay the fee.
+    claim:
+      when: one bar per week, sampled every 7 days, with a valid 7-day return
+      then: holding in the direction of the past 7-day return for the next 7 days earns more than the round-trip cost
+      compared_to: zero after cost
+      measure: net_return
+      horizon_bars: 7
+      direction: positive
+      min_effect: 0.01
+      code: |
+        wk = df.close.pct_change(7)
+        a = spaced(wk.notna(), 7)
+        b = ~a
+        signal = pd.Series(np.where(wk > 0, 1, -1), index=df.index)
+    why_no_lookahead: The 7-day return uses the close of this bar and the close 7 bars earlier.
+    how_it_trades: Every 7 days, go long if the last week was up and short if it was down, and hold 7 days.
+  - id: large_week_reversal
+    belief: Weekly moves larger than 2 weekly sigmas overshoot because of forced flows, and they partly reverse the following week.
+    claim:
+      when: bars where the 7-day return exceeds 2 weekly sigmas in absolute size (weekly sigma = 60-day daily std times sqrt 7), one event per 7 bars
+      then: the next 7-day return moves against the past week's move
+      compared_to: bars without a large weekly move, using the same reversal signal
+      measure: mean_diff
+      horizon_bars: 7
+      direction: positive
+      min_effect: 0.015
+      code: |
+        wk = df.close.pct_change(7)
+        sig = ret.rolling(60).std() * np.sqrt(7)
+        z = wk / sig
+        big = z.abs() > 2
+        a = spaced(big, 7)
+        b = ~big
+        signal = pd.Series(np.where(wk > 0, -1, 1), index=df.index)
+    why_no_lookahead: The 7-day return and the 60-day std use only closes at or before this bar.
+    how_it_trades: After a 2-sigma week, fade it for 7 days.
+  - id: capitulation_week_bounce
+    belief: Large down weeks come from liquidations and panic selling, so they bounce more reliably than large up weeks reverse.
+    claim:
+      when: bars where the 7-day return is below -2 weekly sigmas, one event per 7 bars
+      then: a long position held for 7 days earns more than the cost
+      compared_to: zero after cost
+      measure: net_return
+      horizon_bars: 7
+      direction: positive
+      min_effect: 0.015
+      code: |
+        wk = df.close.pct_change(7)
+        sig = ret.rolling(60).std() * np.sqrt(7)
+        z = wk / sig
+        a = spaced(z < -2, 7)
+        b = ~a
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: The z-score uses past closes up to this bar only.
+    how_it_trades: Buy after a week down by more than 2 sigmas and hold 7 days.
+  - id: volume_confirmed_week_continues
+    belief: A large weekly move on heavy volume reflects new information and keeps going the next week.
+    claim:
+      when: bars where the 7-day return exceeds 1.5 weekly sigmas in absolute size and 7-day volume is above 1.5 times the average 7-day volume of the prior 8 weeks, one event per 7 bars
+      then: holding in the direction of the move for 7 days earns more than the cost
+      compared_to: zero after cost
+      measure: net_return
+      horizon_bars: 7
+      direction: positive
+      min_effect: 0.01
+      code: |
+        wk = df.close.pct_change(7)
+        sig = ret.rolling(60).std() * np.sqrt(7)
+        z = wk / sig
+        v7 = df.volume.rolling(7).sum()
+        vbase = v7.shift(7).rolling(56).mean()
+        cond = (z.abs() > 1.5) & (v7 > 1.5 * vbase)
+        a = spaced(cond, 7)
+        b = ~a
+        signal = pd.Series(np.where(wk > 0, 1, -1), index=df.index)
+    why_no_lookahead: The volume baseline is shifted 7 bars and the current volume sum ends at this bar.
+    how_it_trades: After a high-volume 1.5-sigma week, trade in its direction for 7 days.
+  - id: thin_volume_week_fades
+    belief: A large weekly move on below-normal volume is a liquidity drift, not information, and it fades.
+    claim:
+      when: bars where the 7-day return exceeds 1.5 weekly sigmas in absolute size and 7-day volume is below the average 7-day volume of the prior 8 weeks, one event per 7 bars
+      then: the next 7-day return goes against the move more often
+      compared_to: all other bars, using the same reversal signal
+      measure: hit_rate
+      horizon_bars: 7
+      direction: positive
+      min_effect: 0.06
+      code: |
+        wk = df.close.pct_change(7)
+        sig = ret.rolling(60).std() * np.sqrt(7)
+        z = wk / sig
+        v7 = df.volume.rolling(7).sum()
+        vbase = v7.shift(7).rolling(56).mean()
+        cond = (z.abs() > 1.5) & (v7 < vbase)
+        a = spaced(cond, 7)
+        b = ~cond
+        signal = pd.Series(np.where(wk > 0, -1, 1), index=df.index)
+    why_no_lookahead: Volume and return windows end at this bar's close, and the baseline is shifted.
+    how_it_trades: Fade 1.5-sigma weeks that came on light volume, holding 7 days.
+  - id: shock_week_reverts_drift_week_does_not
+    belief: A big week made mostly in one day is an overreaction to a shock and reverses, while the same size move built gradually does not.
+    claim:
+      when: bars with a 7-day move above 1.5 weekly sigmas in absolute size where the largest daily absolute return is over 40% of the sum of daily absolute returns in the week, one event per 7 bars
+      then: the next 7-day return moves against the week's move
+      compared_to: weeks of the same size whose move was spread across the days, using the same reversal signal
+      measure: mean_diff
+      horizon_bars: 7
+      direction: positive
+      min_effect: 0.015
+      code: |
+        wk = df.close.pct_change(7)
+        sig = ret.rolling(60).std() * np.sqrt(7)
+        z = wk / sig
+        conc = ret.abs().rolling(7).max() / ret.abs().rolling(7).sum()
+        big = z.abs() > 1.5
+        shock = big & (conc > 0.4)
+        a = spaced(shock, 7)
+        b = big & ~(conc > 0.4)
+        signal = pd.Series(np.where(wk > 0, -1, 1), index=df.index)
+    why_no_lookahead: Concentration uses the 7 daily returns ending at this bar.
+    how_it_trades: Fade big weeks driven by a single-day shock and hold 7 days.
+  - id: two_week_trend_persistence
+    belief: When two consecutive weeks move in the same direction, the trend has been confirmed and continues into the third week.
+    claim:
+      when: bars where this 7-day return and the prior 7-day return share a sign and each exceeds 0.75 weekly sigmas in absolute size, one event per 7 bars
+      then: holding in that direction for 7 days earns more than the cost
+      compared_to: zero after cost
+      measure: net_return
+      horizon_bars: 7
+      direction: positive
+      min_effect: 0.01
+      code: |
+        wk = df.close.pct_change(7)
+        sig = ret.rolling(60).std() * np.sqrt(7)
+        z = wk / sig
+        zp = z.shift(7)
+        cond = (np.sign(z) == np.sign(zp)) & (z.abs() > 0.75) & (zp.abs() > 0.75)
+        a = spaced(cond, 7)
+        b = ~a
+        signal = pd.Series(np.where(wk > 0, 1, -1), index=df.index)
+    why_no_lookahead: The prior week's z is a shifted past value, and the current z ends at this bar.
+    how_it_trades: After two same-direction weeks, trade the third week in that direction.
+  - id: calendar_week_boundary_continuation
+    belief: Participants plan on calendar weeks, so the return measured at the UTC week boundary predicts the next calendar week better than arbitrary 7-day windows do.
+    claim:
+      when: bars at the UTC week boundary (dow == 0), with a valid 7-day return
+      then: the next 7-day return has the same sign as the past 7-day return more often
+      compared_to: all other weekdays' 7-day windows, using the same continuation signal
+      measure: hit_rate
+      horizon_bars: 7
+      direction: positive
+      min_effect: 0.05
+      code: |
+        wk = df.close.pct_change(7)
+        a = (dow == 0) & wk.notna()
+        b = (dow != 0) & wk.notna()
+        signal = pd.Series(np.where(wk > 0, 1, -1), index=df.index)
+    why_no_lookahead: The weekday is known at the bar, and the return uses past closes.
+    how_it_trades: At each week boundary, trade in the direction of the last calendar week and hold one week.
+  - id: weekly_range_location_reversion
+    belief: Where the close sits inside the past week's high-low range shows exhaustion, so closes near the weekly high underperform and closes near the weekly low outperform over the next week.
+    claim:
+      when: one bar every 7 days with a valid 7-day range
+      then: the next 7-day return falls as the close's position in the 7-day range rises
+      compared_to: not used (rank correlation)
+      measure: rank_corr
+      horizon_bars: 7
+      direction: negative
+      min_effect: -0.08
+      code: |
+        hi = df.high.rolling(7).max()
+        lo = df.low.rolling(7).min()
+        feature = (df.close - lo) / (hi - lo) - 0.5
+        a = spaced(feature.notna(), 7)
+        b = ~a
+    why_no_lookahead: The 7-day high, low and close are all at or before this bar.
+    how_it_trades: Short when the close is near the weekly high and buy when it is near the weekly low, holding 7 days.
+  - id: big_week_raises_next_week_volatility
+    belief: Large weekly moves cluster, so the size of next week's move is larger after a 2-sigma week whatever its direction.
+    claim:
+      when: bars where the 7-day return exceeds 2 weekly sigmas in absolute size, one event per 7 bars
+      then: the absolute 7-day forward return is larger
+      compared_to: bars without a large weekly move
+      measure: abs_ratio
+      horizon_bars: 7
+      direction: above
+      min_effect: 1.25
+      code: |
+        wk = df.close.pct_change(7)
+        sig = ret.rolling(60).std() * np.sqrt(7)
+        z = wk / sig
+        big = z.abs() > 2
+        a = spaced(big, 7)
+        b = ~big
+        signal = pd.Series(np.where(wk > 0, 1, -1), index=df.index)
+    why_no_lookahead: The z-score uses past closes only.
+    how_it_trades: Size down, or trade volatility breakouts, in the week after a 2-sigma week.
+  - id: low_vol_regime_week_reversal
+    belief: In calm, range-bound regimes weekly moves are noise around a level and reverse, while in high-volatility regimes they trend.
+    claim:
+      when: bars with a 7-day move above 1.25 weekly sigmas in absolute size while the 30-day daily std is below its 180-day median, one event per 7 bars
+      then: the next 7-day return moves against the week's move
+      compared_to: weeks of the same size in a high-volatility regime, using the same reversal signal
+      measure: mean_diff
+      horizon_bars: 7
+      direction: positive
+      min_effect: 0.01
+      code: |
+        wk = df.close.pct_change(7)
+        sig = ret.rolling(60).std() * np.sqrt(7)
+        z = wk / sig
+        v30 = ret.rolling(30).std()
+        calm = v30 < v30.rolling(180).median()
+        big = z.abs() > 1.25
+        a = spaced(big & calm, 7)
+        b = big & ~calm & v30.rolling(180).median().notna()
+        signal = pd.Series(np.where(wk > 0, -1, 1), index=df.index)
+    why_no_lookahead: Vol, its rolling median and the weekly return all use bars at or before this close.
+    how_it_trades: Fade 1.25-sigma weeks only when 30-day vol is below its half-year median.
+notes: All claims use a 7-day lookback and a 7-day horizon, because the coins trade every day and a calendar week is 7 bars. A 5/5 variant would differ only by a parameter, so it is not listed separately. Size conditions are in weekly sigma units, where weekly sigma is the 60-day std of daily returns times sqrt 7. spaced(...,7) avoids overlapping events. The calendar boundary idea assumes the bar with dow == 0 closes at the Monday 00:00 UTC week boundary. If the index is bar open time instead, use dow == 6. Ideas 1/2, 4/5 and 6/11 contradict each other (continuation versus reversal) on purpose. The Friday-long and 12-month-reversal ideas from already_tried are not repeated.

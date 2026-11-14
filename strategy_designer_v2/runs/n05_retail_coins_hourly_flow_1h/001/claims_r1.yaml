@@ -1,0 +1,34 @@
+brief: n05_retail_coins_hourly_flow_1h.md
+source: analyst round 1
+ideas:
+- id: volume_blowout_fade_vs_quiet
+  belief: A 3-day move made on a retail volume blowout is crowd-driven and reverses
+    more than the same-length move made on normal volume, on both DOGE and ADA.
+  claim:
+    when: Hours where the trailing 24h volume exceeds 2.5x its prior 30-day median
+      of daily volume, at most one per 24 bars
+    then: Over the next 72 bars, price moves against the prior 72-bar move more than
+      it does after normal-volume days
+    compared_to: Hours where the trailing 24h volume is at or below 1.5x the same
+      median, at most one per 24 bars
+    measure: mean_diff
+    horizon_bars: 72
+    direction: positive
+    min_effect: 0.01
+    code: 'v24 = df.volume.rolling(24).sum()
+
+      base = v24.shift(24).rolling(720).median()
+
+      r72 = df.close / df.close.shift(72) - 1
+
+      a = spaced(v24 > 2.5 * base, 24)
+
+      b = spaced(v24 <= 1.5 * base, 24)
+
+      signal = -np.sign(r72).replace(0, 1.0)
+
+      '
+  why_no_lookahead: Volume sums, the median baseline and r72 use only bars at or before
+    the current close; the baseline is shifted 24 bars.
+  how_it_trades: On a blowout day, take a position against the 3-day move and hold
+    it for 72 hours. A 1% edge over three days clears the 0.15% round trip.

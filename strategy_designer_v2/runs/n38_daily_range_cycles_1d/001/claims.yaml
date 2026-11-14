@@ -1,0 +1,175 @@
+brief: n38_daily_range_cycles_1d.md
+ideas:
+  - id: wide_range_day_reverts
+    belief: A day that prints the widest range in 10 days is a liquidation or stop-run day, and its move partly retraces over the next few days.
+    claim:
+      when: today's range (high minus low, scaled by the prior close) is the widest of the last 10 days
+      then: the 3-day forward return goes against today's close-to-close direction
+      compared_to: all other days, using the same "fade today's move" signal
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.006
+      code: |
+        rng = (df.high - df.low) / df.close.shift(1)
+        a = (rng >= rng.rolling(10).max()) & rng.notna()
+        a = a.fillna(False)
+        b = ~a
+        signal = pd.Series(np.where(ret > 0, -1, 1), index=df.index)
+    why_no_lookahead: the range, its 10-day max and today's return are all known at today's close.
+    how_it_trades: after a 10-day widest-range day, take the opposite side of the day's move for 3 days.
+  - id: wide_range_close_location_continues
+    belief: A widest-range day that closes at an extreme of its range shows one side in control, and that side keeps pushing for a few days.
+    claim:
+      when: today's range is the widest of the last 10 days and the close sits in the top 20% or bottom 20% of the day's range
+      then: the 3-day forward return follows the side the close sits on (up if near the high, down if near the low)
+      compared_to: all other days, using the same close-location signal
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.006
+      code: |
+        rng = (df.high - df.low) / df.close.shift(1)
+        clv = (df.close - df.low) / (df.high - df.low).replace(0, np.nan)
+        wide = (rng >= rng.rolling(10).max()) & rng.notna()
+        a = (wide & ((clv >= 0.8) | (clv <= 0.2))).fillna(False)
+        b = ~a
+        signal = pd.Series(np.where(clv >= 0.5, 1, -1), index=df.index)
+    why_no_lookahead: the high, low, close and 10-day range max are all final at today's close.
+    how_it_trades: on a widest-range day that closes near an extreme, enter in that direction and hold 3 days.
+  - id: expansion_persists_in_size
+    belief: Volatility clusters, so the widest range in 20 days is followed by larger-than-usual moves, whatever their direction.
+    claim:
+      when: today's range is the widest of the last 20 days
+      then: the absolute 5-day forward return is larger
+      compared_to: all other days
+      measure: abs_ratio
+      horizon_bars: 5
+      direction: above
+      min_effect: 1.25
+      code: |
+        rng = (df.high - df.low) / df.close.shift(1)
+        a = ((rng >= rng.rolling(20).max()) & rng.notna()).fillna(False)
+        b = ~a
+        signal = pd.Series(np.where(ret > 0, 1, -1), index=df.index)
+    why_no_lookahead: the 20-day max includes today and only past days.
+    how_it_trades: after a 20-day widest-range day, buy volatility (straddle-like sizing) or widen stops for 5 days.
+  - id: contraction_persists_quiet
+    belief: Narrow days cluster, so the narrowest range in 7 days is followed by a quiet next day rather than a burst (the opposite of the failed compression-before-a-move idea).
+    claim:
+      when: today's range is the narrowest of the last 7 days
+      then: the absolute next-day return is smaller
+      compared_to: all other days
+      measure: abs_ratio
+      horizon_bars: 1
+      direction: below
+      min_effect: 0.85
+      code: |
+        rng = (df.high - df.low) / df.close.shift(1)
+        a = ((rng <= rng.rolling(7).min()) & rng.notna()).fillna(False)
+        b = ~a
+        signal = pd.Series(np.where(ret > 0, 1, -1), index=df.index)
+    why_no_lookahead: the 7-day min uses today's and past ranges only.
+    how_it_trades: after an NR7 day, cut size or sell volatility for one day.
+  - id: signed_range_ratio_predicts_drift
+    belief: Range expansion carries information in proportion to its size, signed by where the close sits, so a wide day closing high predicts more upside than a narrow day closing high.
+    claim:
+      when: all days with 20 days of range history
+      then: the 5-day forward return rises with the feature (today's range over its 20-day mean, times the close location centred on zero)
+      compared_to: not used (rank correlation across days)
+      measure: rank_corr
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.05
+      code: |
+        rng = (df.high - df.low) / df.close.shift(1)
+        clv = (df.close - df.low) / (df.high - df.low).replace(0, np.nan)
+        feature = (rng / rng.rolling(20).mean()) * (2 * clv - 1)
+        a = feature.notna()
+        b = ~a
+        signal = pd.Series(np.where(feature > 0, 1, -1), index=df.index)
+    why_no_lookahead: the 20-day mean range and close location are computed from today's bar and the past only.
+    how_it_trades: size a 5-day position by the signed range-ratio feature.
+  - id: narrow_day_is_trend_pause
+    belief: A narrowest-range day inside an established trend is a rest, not a reversal, and the prior 20-day trend resumes.
+    claim:
+      when: today's range is the narrowest of the last 7 days (one event per 5 days)
+      then: the 5-day forward return goes in the direction of the prior 20-day return, net of cost
+      compared_to: nothing (net return against zero after cost)
+      measure: net_return
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.004
+      code: |
+        rng = (df.high - df.low) / df.close.shift(1)
+        nr = ((rng <= rng.rolling(7).min()) & rng.notna()).fillna(False)
+        trend = df.close / df.close.shift(20) - 1
+        a = spaced(nr & trend.notna(), 5)
+        b = ~a
+        signal = pd.Series(np.where(trend > 0, 1, -1), index=df.index)
+    why_no_lookahead: the trend uses closes up to today, and the narrowest-range test uses ranges up to today.
+    how_it_trades: on an NR7 day, enter in the 20-day trend direction and hold 5 days.
+  - id: wide_down_day_capitulation_long
+    belief: A 20-day widest-range down day that closes near its low marks forced selling, and buyers step in over the following week.
+    claim:
+      when: today's range is the widest of the last 20 days, the day is down, and the close is in the bottom third of the range (one event per 5 days)
+      then: the 5-day forward return is positive, net of cost
+      compared_to: nothing (net return against zero after cost)
+      measure: net_return
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.01
+      code: |
+        rng = (df.high - df.low) / df.close.shift(1)
+        clv = (df.close - df.low) / (df.high - df.low).replace(0, np.nan)
+        wide = (rng >= rng.rolling(20).max()) & rng.notna()
+        a = spaced((wide & (ret < 0) & (clv <= 1/3)).fillna(False), 5)
+        b = ~a
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: the range, close location and return are all from today's completed bar and earlier.
+    how_it_trades: buy at the close of a capitulation wide-range day and hold 5 days.
+  - id: expansion_regime_reverts_move
+    belief: When several recent days are wide (3-day mean range well above its 20-day mean), the multi-day move is overextended and partly retraces.
+    claim:
+      when: the 3-day mean range is at least 1.6 times the 20-day mean range
+      then: the 5-day forward return goes against the last 3-day return
+      compared_to: all other days, using the same "fade the 3-day move" signal
+      measure: mean_diff
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.008
+      code: |
+        rng = (df.high - df.low) / df.close.shift(1)
+        ratio = rng.rolling(3).mean() / rng.rolling(20).mean()
+        r3 = df.close / df.close.shift(3) - 1
+        a = (ratio >= 1.6).fillna(False)
+        b = ~a
+        signal = pd.Series(np.where(r3 > 0, -1, 1), index=df.index)
+    why_no_lookahead: the rolling means and the 3-day return use only closes, highs and lows up to today.
+    how_it_trades: when a wide-range cluster forms, fade the 3-day move for 5 days.
+  - id: first_wide_after_quiet_continues
+    belief: The first wide day after a long quiet spell (an NR7 within the prior 5 days and now the widest in 10) reveals a fresh order flow imbalance, and its direction holds the next day.
+    claim:
+      when: today is the widest range of the last 10 days and at least one of the prior 5 days was a 7-day narrowest range
+      then: the next-day return has the same sign as today's return more often
+      compared_to: all other days, using the same "follow today" signal
+      measure: hit_rate
+      horizon_bars: 1
+      direction: positive
+      min_effect: 0.06
+      code: |
+        rng = (df.high - df.low) / df.close.shift(1)
+        nr7 = ((rng <= rng.rolling(7).min()) & rng.notna()).astype(float)
+        recent_nr = nr7.shift(1).rolling(5).max() > 0
+        wide = (rng >= rng.rolling(10).max()) & rng.notna()
+        a = (wide & recent_nr).fillna(False)
+        b = ~a
+        signal = pd.Series(np.where(ret > 0, 1, -1), index=df.index)
+    why_no_lookahead: the NR7 flags are shifted to the prior 5 days, and the wide test uses today and the past only.
+    how_it_trades: on the first wide day after a quiet spell, hold one day in the day's direction.
+notes: >
+  The ranges are scaled by the prior close so that the three coins and all eras are comparable. Already-tried ideas are avoided:
+  no compression-then-bigger-move ratio, no compression breakout, no volatility-channel breakout.
+  contraction_persists_quiet deliberately tests the opposite of the failed compression idea (that quiet stays quiet).
+  first_wide_after_quiet_continues tests next-day follow-through by hit rate, not a price-level breakout.
+  wide_range_day_reverts and wide_range_close_location_continues may contradict each other; the data decides.

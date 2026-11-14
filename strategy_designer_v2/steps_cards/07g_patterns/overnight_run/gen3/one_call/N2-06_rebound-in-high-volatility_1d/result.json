@@ -1,0 +1,78 @@
+{
+  "line": "7.g",
+  "backtest": "N2-06_rebound-in-high-volatility_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.35402580000000006,
+  "findings": {
+    "F1": "Across the six coins, a wide-range down day is followed by a next-day excess return of +0.89%, with t=6.07 over 1616 cases and 62.6% up days; a wide-range down day here means the top fifth of each coin's high-low range relative to its 60-day average. A wide-range up day is followed by \u22120.34%, with t=\u22122.04 over 1287 cases and 43.7% up days.",
+    "F2": "Where the bar closes within its range sorts what follows a drop. Drop days (z<\u22121.5) that close in the bottom fifth of their range are followed by +1.22%, with t=4.44 over 454 cases and 66.5% up. Drop days that close in the upper half are followed by \u22120.93%, with t=\u22121.23 over 45 cases and 44% up.",
+    "F3": "Among bars that close in the bottom tenth of their range, the next day returns +1.27% (t=3.73, n=312, 64.7% up) when the bar's range is in its widest third, and \u22120.14% (t=\u22120.53, n=312) when the range is in its narrowest third.",
+    "F4": "Drops (z<\u22121.5) on volume above 1.89 times the 20-day mean are followed by +1.25% (t=2.88, n=271), against +0.10% (t=0.33, n=271) on volume below 1.25 times the mean.",
+    "F5": "The volatility regime changes the size of the rebound but not its frequency, which is the step 5 result (z=0.10). Bars closing near their low are followed by +0.86% in high-volatility bars (t=3.00, n=419) against +0.10% in quiet bars (t=0.48, n=516), while the up shares are about the same (56.6% vs 57.0%). The most extreme drops (z<\u22123) are followed by +3.7% in high volatility (t=2.32, n=48) against \u22120.09% in quiet bars (n=31).",
+    "F6": "The rebound lasts beyond one bar: non-overlapping 3-day returns after drops with z<\u22122 average +1.50%, with t=3.81 over 355 cases.",
+    "F7": "The rebound after drops has faded in recent years. Drops with z<\u22121.5 are followed by \u22120.05% in 2024 (t=\u22120.11, n=129) and +0.17% in 2025 (t=0.32, n=109). Earlier years were stronger, for example +1.91% in 2020 (t=2.34) and +0.83% in 2023 (t=4.22).",
+    "F8": "The bar after a Friday bar returns +0.24% in excess (t=2.66, n=2070), with t=1.78 in 2018\u20132021 and t=2.10 in 2022\u20132025. The bar after a Monday bar returns \u22120.26% (t=\u22122.57, n=2076), with t=\u22121.91 and t=\u22121.72 in the same two halves."
+  },
+  "ideas": [
+    {
+      "idea": "A coin that falls on a day whose high-low range is much wider than its recent average range, and closes near that day's low, tends to close higher the next day, and more so when the day's volume is well above its recent average.",
+      "consequence": "A trader would take a rebound long only after drops that were wide-range, closed near the low and came on heavy volume, and would refuse it after narrow-range or mid-range-close drops.",
+      "name": "wide-range low-close capitulation rebound",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "A coin that rises on a day whose high-low range is much wider than its recent average tends to close lower the next day.",
+      "consequence": "A trader would avoid adding long exposure, or would trim, the day after a wide-range up day.",
+      "name": "wide-range up day fade",
+      "from": "F1",
+      "refs": [
+        "F1"
+      ]
+    },
+    {
+      "idea": "After a large one-day drop, the next-day rebound in a coin is larger in size when its recent volatility is high in its own history, even though rebounds are no more frequent.",
+      "consequence": "A trader would size rebound longs up in high-volatility periods rather than take more of them.",
+      "name": "rebound size scales with volatility",
+      "from": "F5",
+      "refs": [
+        "F5"
+      ]
+    },
+    {
+      "idea": "After a large one-day drop, a coin keeps drifting up over the following three days, not only the next one.",
+      "consequence": "A trader would hold rebound longs for several days instead of exiting after one bar.",
+      "name": "multi-day post-drop drift",
+      "from": "F6, F2",
+      "refs": [
+        "F6",
+        "F2"
+      ]
+    },
+    {
+      "idea": "In a coin's daily bars, the bar that follows a Friday bar tends to close above its open-day level more than other days do.",
+      "consequence": "A trader would favour holding long exposure into the bar after Friday and be wary of the bar after Monday.",
+      "name": "post-Friday upward drift",
+      "from": "F8",
+      "refs": [
+        "F8"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "N2-06_rebound-in-high-volatility.g1_wide-range-low-close-capitulation-rebound",
+    "N2-06_rebound-in-high-volatility.g2_wide-range-up-day-fade",
+    "N2-06_rebound-in-high-volatility.g3_rebound-size-scales-with-volatility",
+    "N2-06_rebound-in-high-volatility.g4_multi-day-post-drop-drift",
+    "N2-06_rebound-in-high-volatility.g5_post-friday-upward-drift"
+  ],
+  "no_ideas": null
+}

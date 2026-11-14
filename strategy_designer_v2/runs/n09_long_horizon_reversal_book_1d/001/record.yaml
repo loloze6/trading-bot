@@ -1,0 +1,553 @@
+brief: n09_long_horizon_reversal_book_1d.md
+fold: A
+symbols:
+- LTCUSD
+- XMRUSD
+- ZECUSD
+bar_size: 1d
+claims:
+- id: deep_12m_loser_long_book
+  belief: Coins whose 12-month log return sits in the bottom fifth of their own recent
+    history are oversold by forced and tired sellers, so a fixed 60-day long entry
+    pays after cost.
+  measure: net_return
+  horizon_bars: 60
+  direction: positive
+  min_effect: 0.04
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.12938954635108474
+      n_a: 1
+      n_b: 1
+      windows:
+      - -0.12938954635108474
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 0.0752717829155847
+      n_a: 4
+      n_b: 4
+      windows:
+      - 0.19384336029786153
+      - null
+      - 0.0254569371459768
+      - -0.11205652607936106
+      - null
+      - null
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: -0.18736693260670423
+      n_a: 4
+      n_b: 4
+      windows:
+      - -0.4989543539325843
+      - -0.07104436645485557
+      - null
+      - null
+      - -0.10842464358452147
+      - null
+      verdict: fail
+      why: null
+  code: 'lr = np.log(df.close / df.close.shift(365))
+
+    q = lr.rolling(1095, min_periods=365).quantile(0.2)
+
+    a = spaced((lr < q).fillna(False), 10)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: extreme_12m_winner_short_book
+  belief: An extreme 12-month run-up draws in late buyers whose gains are later given
+    back, so a 60-day short after a top-quintile year pays after cost.
+  measure: net_return
+  horizon_bars: 60
+  direction: positive
+  min_effect: 0.04
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'lr = np.log(df.close / df.close.shift(365))
+
+    q = lr.rolling(1095, min_periods=365).quantile(0.8)
+
+    a = spaced((lr > q).fillna(False), 10)
+
+    b = ~a
+
+    signal = pd.Series(-1.0, index=df.index)
+
+    '
+- id: drawdown_depth_hit_rate
+  belief: Depth below the 12-month high is the mechanism, not the return over a fixed
+    window; a drawdown beyond 60% is followed by up moves over 60 days more often
+    than ordinary bars.
+  measure: hit_rate
+  horizon_bars: 60
+  direction: positive
+  min_effect: 0.1
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.03873284596639737
+      n_a: 339
+      n_b: 391
+      windows:
+      - null
+      - null
+      - -0.08333333333333337
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 0.4028502609393817
+      n_a: 94
+      n_b: 636
+      windows:
+      - 0.7693803834398444
+      - 0.6404040404040404
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: -0.04960378519772268
+      n_a: 536
+      n_b: 194
+      windows:
+      - 0.7861339600470035
+      - 0.22950819672131148
+      - null
+      - null
+      - 0.09239130434782608
+      - 0.5225225225225225
+      verdict: fail
+      why: null
+  code: 'dd = df.close / df.close.rolling(365).max() - 1
+
+    a = (dd < -0.6).fillna(False)
+
+    b = (~a) & dd.notna()
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: capitulation_volume_in_drawdown
+  belief: A deep drawdown that ends in a volume surge marks seller capitulation, so
+    the reversal starts sooner and is larger than in a quiet drawdown.
+  measure: net_return
+  horizon_bars: 60
+  direction: positive
+  min_effect: 0.05
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.06913350071523473
+      n_a: 3
+      n_b: 3
+      windows:
+      - null
+      - -0.05498540379584793
+      - 0.3173713097374001
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.07790253219821003
+      n_a: 1
+      n_b: 1
+      windows:
+      - null
+      - -0.07790253219821003
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: -0.08910038855541329
+      n_a: 6
+      n_b: 6
+      windows:
+      - -0.14592086282076214
+      - null
+      - null
+      - -0.17030574287578853
+      - 0.2193868628263574
+      - null
+      verdict: fail
+      why: null
+  code: 'dd = df.close / df.close.rolling(365).max() - 1
+
+    vspike = df.volume.rolling(5).mean() > 2.5 * df.volume.rolling(365).median()
+
+    a = spaced(((dd < -0.5) & vspike).fillna(False), 10)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: turned_loser_vs_falling_knife
+  belief: Among 12-month losers, the reversal pays only once price has turned up;
+    buying the still-falling loser catches the knife.
+  measure: mean_diff
+  horizon_bars: 60
+  direction: positive
+  min_effect: 0.04
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.030869429606150165
+      n_a: 95
+      n_b: 188
+      windows:
+      - -0.1644108032475145
+      - -0.05829249550844057
+      - -0.12842934445808163
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.19550430448781178
+      n_a: 83
+      n_b: 153
+      windows:
+      - -0.98626800271855
+      - -0.14803670792976376
+      - -0.07405588051666057
+      - 0.02862721348048733
+      - null
+      - null
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: -0.131085586537721
+      n_a: 76
+      n_b: 265
+      windows:
+      - null
+      - -0.11760449959302238
+      - 0.006397497386906453
+      - -0.13219327965027516
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'lr = np.log(df.close / df.close.shift(365))
+
+    q = lr.rolling(1095, min_periods=365).quantile(0.2)
+
+    deep = (lr < q).fillna(False)
+
+    up = df.close > df.close.rolling(50).mean()
+
+    a = deep & up
+
+    b = deep & ~up
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: quiet_base_after_decline
+  belief: When a long decline falls silent (realized volatility compresses), selling
+    pressure is exhausted and accumulation precedes the reversal.
+  measure: net_return
+  horizon_bars: 60
+  direction: positive
+  min_effect: 0.04
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.06967975879378764
+      n_a: 3
+      n_b: 3
+      windows:
+      - -0.2540685564343262
+      - 0.012356397336692528
+      - 0.4507514354789966
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 0.18608014721020155
+      n_a: 6
+      n_b: 6
+      windows:
+      - 0.3355324363995801
+      - 0.07596529526001589
+      - 0.2151186696635528
+      - 0.09037870338096893
+      - 0.06395334215751164
+      - null
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: -0.042539157420039164
+      n_a: 8
+      n_b: 8
+      windows:
+      - -0.5486267547195907
+      - 0.19403305188485626
+      - 0.028609890109889957
+      - -0.2547467532467533
+      - -0.1265850104735684
+      - 0.299554275673565
+      verdict: fail
+      why: null
+  code: 'lr = np.log(df.close / df.close.shift(365))
+
+    q = lr.rolling(1095, min_periods=365).quantile(0.33)
+
+    vol = ret.rolling(30).std()
+
+    calm = vol < vol.rolling(365).median()
+
+    a = spaced(((lr < q) & calm).fillna(False), 10)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: stale_high_time_exhaustion
+  belief: Time, not depth, exhausts a bear phase; when the 12-month high is more than
+    9 months old and price is far below it, holders who wanted out are gone.
+  measure: hit_rate
+  horizon_bars: 60
+  direction: positive
+  min_effect: 0.1
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.0849106727767816
+      n_a: 252
+      n_b: 478
+      windows:
+      - -0.3249738766980146
+      - -0.3037151702786378
+      - null
+      - 0.6434782608695653
+      - null
+      - null
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 0.031927989679045865
+      n_a: 187
+      n_b: 543
+      windows:
+      - 0.052794072244519874
+      - 0.4811965811965812
+      - -0.2291434927697441
+      - 0.6890756302521008
+      - null
+      - null
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: 0.01944035346097206
+      n_a: 485
+      n_b: 245
+      windows:
+      - 0.12197159565580618
+      - -0.28
+      - -0.18627450980392157
+      - null
+      - null
+      - 0.8529411764705882
+      verdict: fail
+      why: null
+  code: 'hi = df.close.rolling(365).max()
+
+    age = df.close.rolling(365).apply(lambda x: len(x) - 1 - np.argmax(x), raw=True)
+
+    dd = df.close / hi - 1
+
+    a = ((age >= 270) & (dd < -0.5)).fillna(False)
+
+    b = (~a) & age.notna()
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: rolled_over_winner_short
+  belief: The short side pays only after an extreme run-up has started to roll over;
+    shorting a still-rising winner fights momentum.
+  measure: net_return
+  horizon_bars: 60
+  direction: positive
+  min_effect: 0.04
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: null
+      n_a: 0
+      n_b: 0
+      windows:
+      - null
+      - null
+      - null
+      - null
+      - null
+      - null
+      verdict: fail
+      why: null
+  code: 'lr = np.log(df.close / df.close.shift(365))
+
+    q = lr.rolling(1095, min_periods=365).quantile(0.8)
+
+    down = df.close < df.close.rolling(50).mean()
+
+    a = spaced(((lr > q) & down).fillna(False), 10)
+
+    b = ~a
+
+    signal = pd.Series(-1.0, index=df.index)
+
+    '
+- id: yearly_mean_distance_reversal_book
+  belief: Price far from its 365-day mean is pulled back toward it over the next 60
+    days, so a book that is always in the market, long below the yearly mean and short
+    above it, pays after cost.
+  measure: net_return
+  horizon_bars: 60
+  direction: positive
+  min_effect: 0.03
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.029722166135252918
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.24413031832745993
+      - -0.05931001485598131
+      - 0.2851101168879054
+      - 0.04334340411279953
+      - 0.10835171565263925
+      - 0.04078727480475816
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 0.058741674190845396
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.10261818767048765
+      - -0.023699047811738854
+      - 0.06269672413640093
+      - 0.034530267965112445
+      - 0.07491401541287615
+      - 0.10225546002839608
+      verdict: pass
+      why: null
+    ZECUSD:
+      effect: -0.042618125510840536
+      n_a: 730
+      n_b: 730
+      windows:
+      - 0.27842015508696955
+      - -0.17042515582301784
+      - -0.08766112206984975
+      - -0.16527503633082277
+      - -0.07481092623389328
+      - -0.03139304006663498
+      verdict: fail
+      why: null
+  code: 'm = df.close.rolling(365).mean()
+
+    z = np.log(df.close / m)
+
+    a = z.notna()
+
+    b = ~a
+
+    signal = pd.Series(np.where(z < 0, 1.0, -1.0), index=df.index)
+
+    '
+profit: 'none: no return claim passed'

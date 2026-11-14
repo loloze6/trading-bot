@@ -1,0 +1,16 @@
+{
+  "status": "rejected",
+  "main_measure": {
+    "name": "mean 5-bar fwd return after extreme minus after neutral bars (pooled)",
+    "value": -0.0007005980644819161,
+    "threshold": "positive with t-statistic >= 2 (reject if t <= 0)"
+  },
+  "supporting_check": {
+    "name": "strategy return minus exposure-scaled buy-and-hold, pooled over coins",
+    "value": 0.4677280517162469,
+    "passed": true
+  },
+  "cases": 42,
+  "decided_by": "Rejected: pooled extreme-minus-neutral difference is zero or negative (t <= 0). (t=-0.05569658268715827, extreme n=42, neutral n=180, coins positive=1/2)",
+  "reading": "Non-overlapping returns are taken on a fixed grid t=0,5,10,... within each window; the top-20% cut-off is the 80th percentile of non-zero forecasts pooled over all coins and windows; t is Welch's two-sample t; with only 2 coins present the 'at least 2 of 3 coins' rule requires both positive; the supporting excess sums per-bar returns with exposure = mean allocation per coin, and 'cases' counts the non-overlapping extreme cases."
+}

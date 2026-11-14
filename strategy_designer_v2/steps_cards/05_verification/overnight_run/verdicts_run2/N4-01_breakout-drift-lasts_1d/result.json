@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 10-bar forward return after new-high bars (event return minus coin's mean 10-bar return)",
+    "value": 0.01594527530252748,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.048712536079455
+    },
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2; else inconclusive; minimum 100 non-overlapping events"
+  },
+  "supporting_check": {
+    "name": "mean excess 10-bar return of events whose next close is below the new high (must be > 0)",
+    "value": -0.026768838026628685,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping events": 559,
+    "events with next close below the new high": 299
+  },
+  "decided_by": "The mean excess 10-bar return is above 0 with t >= 2 on non-overlapping events (confirm rule).",
+  "reading": "A new-high bar is a bar whose recorded since_high value equals 20, events are taken in time order per coin and window with a new one counted only if it is at least 10 bars after the last counted event (so 10-bar returns do not overlap) and has a full 10-bar forward return inside its window, the coin mean is over all overlapping 10-bar returns of that coin in all its windows, the plan's 'fewer than 100 events' is treated as the minimum count giving 'not observable', and the supporting check is reported but does not change the status since the confirm and reject rules name only the main measure."
+}

@@ -1,0 +1,20 @@
+{
+  "status": "mismatch",
+  "situation_check": {
+    "agreement": 0.0,
+    "passed": false
+  },
+  "main_measure": {
+    "name": "mean 10-bar forward return on short bars minus mean over all bars (non-overlapping blocks)",
+    "value": null,
+    "statistic": null,
+    "threshold": "difference <= -1.0% per 10 bars with t <= -2"
+  },
+  "supporting_check": null,
+  "counts": {
+    "active_bars": 293,
+    "active_bars_in_situation_on_short_side": 0
+  },
+  "decided_by": "Fewer than 90% of active (non-zero forecast) bars are short bars with SMA50 below SMA200 (raw spread < 0), so the config does not trade the plan's situation on its side.",
+  "reading": "Situation taken as last_history_value (SMA50-SMA200)/SMA200 < 0 with forecast < 0 on every bar with a non-zero forecast."
+}

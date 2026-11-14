@@ -1,0 +1,13 @@
+---
+idea: 002-01_sma-upcross-upward-drift
+brief: 002_moving-average-cross-trend-persistence
+data-instruments: BTC/USDT
+data-bar: 1d
+data-period: fold A
+---
+Forecast: One graded component, the spread between a 10-bar and a 30-bar simple moving average of the close: (SMA10 − SMA30) / SMA30 × 100. Each bar, this spread is divided by the mean absolute spread of the 60 bars before it and multiplied by 10, then capped at ±20. Negative values are cut to 0, so the forecast is long-only. - It is positive while the short average is above the long one, that is, after an upward cross and until the next downward cross. - It is near 0 just after the cross and grows as the short average pulls further above the long one; a spread equal to its recent average gives +10 (100 % long). - It is exactly 0 while the short average is below the long one. - It is active on every bar, with no regime. - Settings: 10/30 rather than the 50/200 convention, because each window holds only about 122 daily bars. 10/30 becomes ready near bar 51, leaving about 70 tradable bars per window.
+Config: 002-01_sma-upcross-upward-drift_config.json
+Confirm: Horizon 5 bars, before costs, pooled over the 6 windows. Use only the bars where the forecast is ready, and sample every 5th of them so that 5-bar returns do not overlap. - Main measure: the forecast-weighted mean of BTC's next 5-bar return (sum of f×r over sum of f) minus the plain mean next 5-bar return over all sampled bars. The second term is the random-point and buy-and-hold baseline. - The idea is confirmed if this excess is positive with t ≥ 2.0 (non-overlapping samples) and positive in at least 4 of the 6 windows. - Supporting check: the share of positive next 5-bar returns on bars with forecast > 0 exceeds the share on all sampled bars.
+Reject: The idea is rejected in either of two cases: - The excess is ≤ 0 pooled, or positive in at most 2 of the 6 windows. - The excess is negative with t ≤ −2.0, meaning moves after upward crosses tend to reverse.
+Inconclusive: The excess is positive but has t < 2.0. Or it is positive pooled while positive in only 3 of the 6 windows. Neither confirms nor rejects the idea.
+Deviation: The idea says "after an upward cross." The config tests "while the short average is above the long one," sized by how far above it is. As a result: - Fresh crosses get small positions and mature, extended trends get the largest ones. - The position ends at the downward cross rather than after a fixed number of bars. - The 10/30 periods replace a longer conventional pair because the windows are short. - Downward crosses (the brief's short side) are not tested.

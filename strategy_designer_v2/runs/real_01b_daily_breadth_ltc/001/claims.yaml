@@ -1,0 +1,147 @@
+brief: real_01b_daily_breadth_ltc.md
+ideas:
+  - id: weekend_move_reversal
+    belief: Price moves made over the weekend happen on thin, retail-only liquidity without institutional desks, so they are partly undone in the first days of the week once that liquidity returns, more than ordinary two-day moves are.
+    claim:
+      when: the bar that closes the weekend (UTC Monday 00:00 close), signed against the two-day move into it
+      then: the next two days move against the weekend move
+      compared_to: the same two-day-reversal bet placed on every other weekday
+      measure: mean_diff
+      horizon_bars: 2
+      direction: positive
+      min_effect: 0.004
+      code: |
+        r2 = df.close.pct_change(2)
+        a = (dow == 0) & (r2.abs() > 0)
+        b = (dow != 0) & (r2.abs() > 0)
+        signal = -np.sign(r2).fillna(0)
+    why_no_lookahead: the two-day return and the weekday are known at the bar's close.
+    how_it_trades: At the Monday 00:00 UTC close, take a position against the weekend's two-day move and hold it for two days.
+  - id: low_volume_move_reversal
+    belief: A large daily move made on below-normal volume reflects a liquidity gap, not new information, so it reverts. The same move on heavy volume reflects real flow and does not revert.
+    claim:
+      when: a day whose absolute return exceeds 1.25 times recent volatility, on volume below its 20-day median
+      then: the next three days move against that day's move
+      compared_to: equally large moves made on volume at or above the 20-day median
+      measure: mean_diff
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.006
+      code: |
+        sd = ret.rolling(20).std().shift(1)
+        vmed = df.volume.rolling(20).median().shift(1)
+        big = ret.abs() > 1.25 * sd
+        a = big & (df.volume < vmed)
+        b = big & (df.volume >= vmed)
+        signal = -np.sign(ret).fillna(0)
+    why_no_lookahead: volatility and the volume median use prior bars only, and the bar's own return and volume are known at its close.
+    how_it_trades: After a large low-volume day, fade it at the close and hold for three days.
+  - id: up_streak_fomo_continuation
+    belief: A run of consecutive up closes draws in late momentum and FOMO buyers who keep arriving for several days, so up-streaks extend rather than exhaust.
+    claim:
+      when: the first bar at which three or more consecutive up closes are reached (one event per 5 bars)
+      then: price rises over the next five days by more than the round-trip cost
+      compared_to: zero net of cost
+      measure: net_return
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.005
+      code: |
+        up = (ret > 0).astype(int)
+        streak = up.groupby((up == 0).cumsum()).cumsum()
+        a = spaced(streak >= 3, 5)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: the streak counts closes at or before the bar.
+    how_it_trades: Buy at the close of the third straight up day and exit after five days.
+  - id: downside_semivariance_premium
+    belief: When recent volatility has come mostly from down moves, holders demand a crash-risk premium and forced selling has already been done, so forward returns are higher than when volatility came from up moves.
+    claim:
+      when: all bars with a 30-day history
+      then: the 20-day forward return is higher when a larger share of 30-day squared returns came from down days
+      compared_to: rank ordering across bars (no baseline set)
+      measure: rank_corr
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.08
+      code: |
+        dn = (ret.clip(upper=0) ** 2).rolling(30).sum()
+        upv = (ret.clip(lower=0) ** 2).rolling(30).sum()
+        feature = dn / (dn + upv)
+        a = feature.notna()
+        b = ~a
+    why_no_lookahead: semivariances sum returns over the 30 bars ending at the bar's close.
+    how_it_trades: Hold long when the downside-variance share is high, and stay flat or short when it is low.
+  - id: trend_efficiency_follow
+    belief: A move that took a smooth, efficient path, rather than its size, reveals one-sided slow flow (an allocator working an order), and that flow keeps pushing in the same direction.
+    claim:
+      when: the 20-day efficiency ratio (net move over summed absolute daily moves) exceeds 0.4 (one event per 10 bars), trading in the direction of the 20-day move
+      then: price continues in that direction over the next 10 days by more than cost
+      compared_to: zero net of cost
+      measure: net_return
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.008
+      code: |
+        move = df.close - df.close.shift(20)
+        path = df.close.diff().abs().rolling(20).sum()
+        er = move.abs() / path
+        a = spaced(er > 0.4, 10)
+        b = ~a
+        signal = np.sign(move).fillna(0)
+    why_no_lookahead: the net move and the path length use closes at or before the bar.
+    how_it_trades: When the 20-day path is efficient, enter in the trend's direction for 10 days.
+  - id: wide_day_volatility_clustering
+    belief: A day with an unusually wide high-low range signals a deleveraging or news cascade that takes days to clear, so the following days carry larger absolute moves.
+    claim:
+      when: the day's high-low range, as a share of close, exceeds twice its prior 30-day median
+      then: the absolute 5-day forward return is larger
+      compared_to: all other days
+      measure: abs_ratio
+      horizon_bars: 5
+      direction: above
+      min_effect: 1.25
+      code: |
+        rng = (df.high - df.low) / df.close
+        a = rng > 2 * rng.rolling(30).median().shift(1)
+        b = ~a
+    why_no_lookahead: the range is the bar's own high, low and close, compared with a median of prior bars.
+    how_it_trades: Scale exposure down, or switch to breakout rules, for five days after a wide-range day.
+  - id: weekend_quiet_days
+    belief: Without institutional desks and traditional-market news, Saturday and Sunday trading carries less information and so smaller moves than weekdays.
+    claim:
+      when: bars whose next bar is a Saturday or Sunday trading day (bars closing Saturday or Sunday 00:00 UTC)
+      then: the next day's absolute return is smaller
+      compared_to: bars whose next bar is a weekday
+      measure: abs_ratio
+      horizon_bars: 1
+      direction: below
+      min_effect: 0.85
+      code: |
+        a = dow.isin([5, 6])
+        b = ~a
+    why_no_lookahead: the calendar of the next bar is known in advance, and no price data after the close is used.
+    how_it_trades: Size the volatility target up over the weekend, or run weekday-only exposure for vol-targeted books.
+  - id: volume_absorption_expansion
+    belief: A day of heavy volume with almost no net price change shows two-sided absorption (a large buyer meeting a large seller); when one side finishes, price breaks away and larger moves follow.
+    claim:
+      when: volume is above 1.5 times its prior 30-day median while the day's absolute return is below half of recent volatility
+      then: the absolute 5-day forward return is larger
+      compared_to: all other days
+      measure: abs_ratio
+      horizon_bars: 5
+      direction: above
+      min_effect: 1.20
+      code: |
+        vrel = df.volume / df.volume.rolling(30).median().shift(1)
+        sd = ret.rolling(30).std().shift(1)
+        a = (vrel > 1.5) & (ret.abs() < 0.5 * sd)
+        b = ~a
+    why_no_lookahead: the volume median and volatility use prior bars, and the bar's own volume and return are known at its close.
+    how_it_trades: After an absorption day, arm a breakout entry, or a straddle-like pair of stops, for the next five days.
+notes: >
+  The 12 already-tried ideas and the SMA-distance family are avoided. trend_efficiency_follow tests path smoothness, not distance from an average or a channel break.
+  up_streak_fomo_continuation knowingly contradicts the failed down-streak idea on the other side of the tape.
+  The three abs_ratio claims (wide_day_volatility_clustering, weekend_quiet_days, volume_absorption_expansion) are volatility-timing ideas. They are meant as sizing blocks for the branch-3 drawdown cap, not as standalone profit.
+  The weekday logic assumes the index is the bar's close time, as CLAIM_FORMAT states (a 00:00 UTC close stamp belongs to the prior UTC day).
+  Event-count risk: low_volume_move_reversal and volume_absorption_expansion may come close to 30 bars per fold on BTC in quiet years.

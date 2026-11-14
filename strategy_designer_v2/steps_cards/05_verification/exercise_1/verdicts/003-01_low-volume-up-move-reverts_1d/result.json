@@ -1,0 +1,17 @@
+{
+  "status": "rejected",
+  "main_measure": {
+    "name": "drift-adjusted, position-weighted next-bar return of the short (mean per case)",
+    "value": -0.0008129600837140532,
+    "threshold": "above 0 with t-stat >= 2.0 to confirm; <= 0 with t-stat <= 0 to reject",
+    "t_stat": -0.5175970990482268
+  },
+  "supporting_check": {
+    "name": "largest-third minus smallest-third (by |position|) mean drift-adjusted next-bar drop",
+    "value": 0.0022831228717990217,
+    "passed": true
+  },
+  "cases": 195,
+  "decided_by": "Reject rule: the short earns 0 or less after the drift adjustment, with a t-stat of 0 or below.",
+  "reading": "A case is a bar labelled regime 'mean_reversion' with a next bar in the same window. Its value is postRebalance_current_allocation x (next-bar return minus that window's unconditional mean next-bar return), and cases with a zero position count with value 0. The t-stat is the mean over its standard error, pooled over all windows. Thirds come from a stable sort by |position|."
+}

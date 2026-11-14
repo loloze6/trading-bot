@@ -1,0 +1,1 @@
+already-in-index: 003_moving-average-cross-trend-persistence: After a moving-average cross, price keeps drifting in the cross direction. [source: TradingView SMAcross-mvr]

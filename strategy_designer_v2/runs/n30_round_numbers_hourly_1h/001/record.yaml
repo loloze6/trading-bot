@@ -1,0 +1,683 @@
+brief: n30_round_numbers_hourly_1h.md
+fold: B
+symbols:
+- BTCUSD
+- ETHUSD
+bar_size: 1h
+claims:
+- id: round_level_magnet_rank
+  belief: Resting orders at round prices pull the price toward the nearest round level,
+    so the signed distance from it predicts a move back toward it.
+  measure: rank_corr
+  horizon_bars: 6
+  direction: negative
+  min_effect: 0.04
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.013070220486138888
+      n_a: 17519
+      n_b: 17519
+      windows:
+      - 0.016108902369460446
+      - -0.048841830702466955
+      - -0.003989557856669819
+      - 0.03617018647390141
+      - -0.03522882885202432
+      - -0.016790300796336196
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.000502124094561269
+      n_a: 17519
+      n_b: 17519
+      windows:
+      - 0.011784287244392837
+      - 0.02588584658570872
+      - -0.009761922054358496
+      - -0.03049348450999756
+      - -0.007978771012467136
+      - -0.0029469127511022103
+      verdict: fail
+      why: null
+  code: 'step = 10.0 ** np.floor(np.log10(df.close)) / 10
+
+    near = (df.close / step).round() * step
+
+    vol = df.close * ret.rolling(24).std()
+
+    feature = (df.close - near) / vol
+
+    a = feature.notna() & np.isfinite(feature)
+
+    b = ~a
+
+    signal = pd.Series(-np.sign(feature).fillna(1).replace(0, 1), index=df.index)
+
+    '
+- id: round_level_resistance_below
+  belief: Sell orders stacked at a round level cap the price just below it, and buy
+    orders support the price just above it, so the price is pushed away from the level.
+  measure: mean_diff
+  horizon_bars: 4
+  direction: positive
+  min_effect: 0.0015
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.00044574957526385256
+      n_a: 3524
+      n_b: 13995
+      windows:
+      - 0.0013649332368801332
+      - 0.0006304032055930487
+      - 0.00014201716260987918
+      - -0.0006170167384752957
+      - 0.0014607017031226506
+      - -0.0004188997442650011
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.00017065132156317224
+      n_a: 2178
+      n_b: 15341
+      windows:
+      - 0.0004453662355743666
+      - 0.003391480091471259
+      - 0.0007857397450487355
+      - 0.0006624038841778783
+      - -0.0011213658792556458
+      - -0.0007924768372842481
+      verdict: fail
+      why: null
+  code: 'step = 10.0 ** np.floor(np.log10(df.close)) / 10
+
+    near = (df.close / step).round() * step
+
+    vol = df.close * ret.rolling(24).std()
+
+    dist = (df.close - near) / vol
+
+    a = (dist.abs() <= 0.3) & (dist != 0)
+
+    b = ~a
+
+    signal = pd.Series(np.where(dist < 0, -1, 1), index=df.index)
+
+    '
+- id: half_level_cross_continuation
+  belief: Crossing a major round level, the half step of the leading digit, triggers
+    stops and breakout orders, so the move keeps going.
+  measure: net_return
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.001
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0008208004237210166
+      n_a: 238
+      n_b: 238
+      windows:
+      - 0.0019969050777524726
+      - -0.0029860710296356263
+      - 0.009372406055208612
+      - -0.003460600453232212
+      - -0.0024981032903579736
+      - -0.00038659152359058033
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.00042223024786418274
+      n_a: 146
+      n_b: 146
+      windows:
+      - 0.00188368208257109
+      - 0.00991922371801377
+      - 0.02306843631127672
+      - -0.007894887888692574
+      - -0.004656275606072718
+      - -0.00479245615859185
+      verdict: fail
+      why: null
+  code: 'step = 10.0 ** np.floor(np.log10(df.close)) / 2
+
+    k = np.floor(df.close / step)
+
+    kp = np.floor(df.close.shift(1) / step)
+
+    cross = (k != kp) & kp.notna()
+
+    a = spaced(cross, 12)
+
+    b = ~a
+
+    signal = pd.Series(np.where(k < kp, -1, 1), index=df.index)
+
+    '
+- id: fine_level_first_cross_fade
+  belief: The first touch of a fine round level in two days is met by the resting
+    orders there, so it is absorbed and the price falls back.
+  measure: hit_rate
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.03
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.04824530080557621
+      n_a: 16
+      n_b: 17503
+      windows:
+      - null
+      - -0.20271682340647862
+      - 0.5160628844839371
+      - 0.27539871055310494
+      - null
+      - null
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.12266275714636166
+      n_a: 49
+      n_b: 17470
+      windows:
+      - -0.4972881355932203
+      - -0.14758274948121058
+      - -0.048208757187085394
+      - -0.02681602172437203
+      - -0.2045665275846083
+      - null
+      verdict: fail
+      why: null
+  code: 'step = 10.0 ** np.floor(np.log10(df.close)) / 10
+
+    k = np.floor(df.close / step)
+
+    kp = np.floor(df.close.shift(1) / step)
+
+    cross = (k != kp) & kp.notna()
+
+    a = spaced(cross, 48)
+
+    b = ~a
+
+    signal = pd.Series(np.where(k > kp, -1, 1), index=df.index)
+
+    '
+- id: wick_rejection_at_level
+  belief: A bar that pierces a round level intrabar but closes back on the original
+    side shows orders absorbing at that level, and the rejection continues.
+  measure: mean_diff
+  horizon_bars: 4
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.00023224680593320532
+      n_a: 3898
+      n_b: 13621
+      windows:
+      - 0.001107987506584497
+      - -0.0006978540817718328
+      - -0.00028383885152606593
+      - -0.0009891422367742184
+      - -0.0008902312346025747
+      - -0.0002272221264766869
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.0007694971701904094
+      n_a: 2511
+      n_b: 15008
+      windows:
+      - 0.0004408196787054385
+      - 9.51099580349011e-05
+      - -0.0007194445250149075
+      - -8.557053792716774e-06
+      - -0.0032162260944249054
+      - -0.0007654177385469684
+      verdict: fail
+      why: null
+  code: 'step = 10.0 ** np.floor(np.log10(df.close)) / 10
+
+    prev = df.close.shift(1)
+
+    up_lvl = (np.floor(prev / step) + 1) * step
+
+    dn_lvl = np.floor(prev / step) * step
+
+    rej_up = (df.high >= up_lvl) & (df.close < up_lvl)
+
+    rej_dn = (df.low <= dn_lvl) & (df.close > dn_lvl) & (prev > dn_lvl)
+
+    a = (rej_up ^ rej_dn) & prev.notna()
+
+    b = ~a
+
+    signal = pd.Series(np.where(rej_up, -1, 1), index=df.index)
+
+    '
+- id: cross_volatility_burst
+  belief: Crossing a round level releases clustered stop orders, so the next hours
+    are more volatile than usual.
+  measure: abs_ratio
+  horizon_bars: 6
+  direction: above
+  min_effect: 1.15
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 1.162182381935886
+      n_a: 632
+      n_b: 16887
+      windows:
+      - 1.1176432884282863
+      - 1.1635143805975923
+      - 1.406571289969652
+      - 1.0320918059251463
+      - 0.8958085491059004
+      - 1.3639120618194835
+      verdict: pass
+      why: null
+    ETHUSD:
+      effect: 1.1127192634187917
+      n_a: 621
+      n_b: 16898
+      windows:
+      - 1.0622899831977026
+      - 1.613843487045907
+      - 1.19901133787048
+      - 1.158666771982776
+      - 0.8986097726616823
+      - 1.030730845099479
+      verdict: fail
+      why: null
+  code: 'step = 10.0 ** np.floor(np.log10(df.close)) / 10
+
+    k = np.floor(df.close / step)
+
+    kp = np.floor(df.close.shift(1) / step)
+
+    cross = (k != kp) & kp.notna()
+
+    a = spaced(cross, 6)
+
+    b = ~a
+
+    signal = pd.Series(1, index=df.index)
+
+    '
+- id: pinning_low_volatility
+  belief: When the close sits right on a round level, the dense orders on both sides
+    pin the price and damp the next hours' movement.
+  measure: abs_ratio
+  horizon_bars: 6
+  direction: below
+  min_effect: 0.9
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 1.239972768585673
+      n_a: 1832
+      n_b: 11499
+      windows:
+      - 1.0193040079835591
+      - 1.4048354785769868
+      - 1.4221476294585473
+      - 1.2178887272168726
+      - 1.0378080611808598
+      - 1.0720575146893851
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 1.2656157509373376
+      n_a: 1170
+      n_b: 13802
+      windows:
+      - 1.0919914860111777
+      - 1.589522421072173
+      - 1.1057364336031341
+      - 1.1811434403843373
+      - 1.3491123577410715
+      - 1.0342417515097933
+      verdict: fail
+      why: null
+  code: 'step = 10.0 ** np.floor(np.log10(df.close)) / 10
+
+    near = (df.close / step).round() * step
+
+    vol = df.close * ret.rolling(24).std()
+
+    dist = ((df.close - near) / vol).abs()
+
+    a = dist <= 0.15
+
+    b = dist > 0.5
+
+    signal = pd.Series(1, index=df.index)
+
+    '
+- id: day_open_magnet
+  belief: The UTC day's open is a reference price that intraday traders anchor on,
+    so the price drifts back toward it.
+  measure: rank_corr
+  horizon_bars: 4
+  direction: negative
+  min_effect: 0.04
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.021196234821667163
+      n_a: 10949
+      n_b: 10949
+      windows:
+      - -0.014012987670317079
+      - -0.06785199163013109
+      - -0.017807918781383176
+      - 0.04560958738284479
+      - -0.06307489040897976
+      - -0.0304730648471162
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.01835160477403103
+      n_a: 10949
+      n_b: 10949
+      windows:
+      - 0.03066981143000705
+      - -0.016361325848256118
+      - 0.04364710843962897
+      - 0.05744877860385574
+      - -0.0367740142373003
+      - -0.0135917682248385
+      verdict: fail
+      why: null
+  code: 'day = df.index.normalize()
+
+    dopen = df.open.groupby(day).transform(''first'')
+
+    vol = df.close * ret.rolling(24).std()
+
+    feature = (df.close - dopen) / vol
+
+    a = (hour >= 6) & (hour <= 20) & feature.notna()
+
+    b = ~a
+
+    signal = pd.Series(-np.sign(feature).fillna(1).replace(0, 1), index=df.index)
+
+    '
+- id: day_open_cross_continuation
+  belief: Reclaiming or losing the day's open flips intraday traders' bias, so a cross
+    of the day open continues.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.00021164651776965534
+      n_a: 640
+      n_b: 16879
+      windows:
+      - 0.0007289529188044038
+      - 5.116476838710064e-05
+      - -0.0005382415393769839
+      - 0.0005244029796633852
+      - 0.00045922393988879085
+      - 0.00014110294349833514
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.0002403945299422689
+      n_a: 606
+      n_b: 16913
+      windows:
+      - 9.897067032469433e-05
+      - -0.0010711342990777086
+      - 0.0005712719124259358
+      - 0.0017287137598879431
+      - -0.003768804092255832
+      - 0.001384958625740615
+      verdict: fail
+      why: null
+  code: 'day = df.index.normalize()
+
+    dopen = df.open.groupby(day).transform(''first'')
+
+    side = np.sign(df.close - dopen)
+
+    sidep = np.sign(df.close.shift(1) - dopen)
+
+    cross = (side != sidep) & (side != 0) & (sidep != 0) & (hour >= 2)
+
+    a = spaced(cross, 6)
+
+    b = ~a
+
+    signal = pd.Series(np.where(side < 0, -1, 1), index=df.index)
+
+    '
+- id: volume_confirmed_level_cross
+  belief: A round level cross on heavy volume means the resting orders were consumed
+    and the move is real, while a light volume cross is a probe.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0006070287499799732
+      n_a: 1808
+      n_b: 1470
+      windows:
+      - 3.2780013417111675e-05
+      - -0.00156225605901205
+      - 0.004654776896846613
+      - 0.00047417248949736476
+      - -0.0002182035926469938
+      - -0.0006222439180024455
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -9.506085117818165e-05
+      n_a: 1267
+      n_b: 1019
+      windows:
+      - 0.000349490908198799
+      - -0.008843340988184775
+      - 0.007114666112605505
+      - -0.00315177519075175
+      - -0.00466158927179572
+      - 0.002951256722737803
+      verdict: fail
+      why: null
+  code: 'step = 10.0 ** np.floor(np.log10(df.close)) / 10
+
+    k = np.floor(df.close / step)
+
+    kp = np.floor(df.close.shift(1) / step)
+
+    cross = (k != kp) & kp.notna()
+
+    medv = df.volume.shift(1).rolling(24).median()
+
+    a = cross & (df.volume > 1.5 * medv)
+
+    b = cross & (df.volume < medv)
+
+    signal = pd.Series(np.where(k < kp, -1, 1), index=df.index)
+
+    '
+- id: us_session_level_cross
+  belief: Round level crosses during US hours, when larger directional flow trades,
+    carry more information and continue more than crosses in the thin Asian night.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.0015
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0003188795299735715
+      n_a: 1219
+      n_b: 2848
+      windows:
+      - 0.0016613092085601216
+      - -0.00016109822754649373
+      - 0.0007121330270555017
+      - 0.00043430431632264196
+      - -0.0007559808838065041
+      - 4.624562444000414e-05
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.0006404490463594141
+      n_a: 795
+      n_b: 1948
+      windows:
+      - 0.0019762589135295344
+      - -0.0071012218965216135
+      - 0.002190988333892014
+      - 0.00019979241957627462
+      - -0.006360571858333799
+      - -0.0004617854049014696
+      verdict: fail
+      why: null
+  code: 'step = 10.0 ** np.floor(np.log10(df.close)) / 10
+
+    k = np.floor(df.close / step)
+
+    kp = np.floor(df.close.shift(1) / step)
+
+    cross = (k != kp) & kp.notna()
+
+    us = (hour >= 13) & (hour <= 21) & (dow <= 4)
+
+    a = cross & us
+
+    b = cross & ~us
+
+    signal = pd.Series(np.where(k < kp, -1, 1), index=df.index)
+
+    '
+- id: cross_vol_burst_regime_matched
+  belief: Crossing a fine round level releases clustered stops and adds volatility
+    beyond what the bar's own size and the current volatility regime already imply.
+  measure: abs_ratio
+  horizon_bars: 6
+  direction: above
+  min_effect: 1.1
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 1.1579559563303463
+      n_a: 655
+      n_b: 656
+      windows:
+      - 1.0877047618516313
+      - 0.7439884642894828
+      - 0.9479373592715289
+      - 1.608204049060076
+      - 0.888101037181499
+      - 1.0551133888354982
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 1.189218663274174
+      n_a: 519
+      n_b: 963
+      windows:
+      - 1.2344196825661011
+      - 1.5374651394281604
+      - 1.0931432103506207
+      - 1.025151713529914
+      - 1.127372574245309
+      - 1.0308361270553905
+      verdict: pass
+      why: null
+  code: 'step = 10.0 ** np.floor(np.log10(df.close)) / 10
+
+    k = np.floor(df.close / step)
+
+    kp = np.floor(df.close.shift(1) / step)
+
+    cross = (k != kp) & kp.notna()
+
+    sd = ret.rolling(24).std().shift(1)
+
+    z = ret.abs() / sd
+
+    reg = sd / sd.rolling(720).median()
+
+    band = (z >= 1.0) & (z <= 2.5) & (reg >= 0.8) & (reg <= 1.25)
+
+    a = cross & band
+
+    b = ~cross & band
+
+    signal = pd.Series(1, index=df.index)
+
+    '
+- id: level_proximity_vol_regime_matched
+  belief: Prices sitting close to a round level, measured in price terms rather than
+    volatility units, are followed by larger moves than prices midway between levels,
+    even at the same volatility regime and the same current bar size.
+  measure: abs_ratio
+  horizon_bars: 6
+  direction: above
+  min_effect: 1.08
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 1.0023279622688794
+      n_a: 635
+      n_b: 3402
+      windows:
+      - 1.1399175039925642
+      - 1.003354801518192
+      - 0.921029504938799
+      - 1.0002614481465844
+      - 0.9485573894940079
+      - 1.0633871745727608
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 1.0380593565947709
+      n_a: 662
+      n_b: 3564
+      windows:
+      - 1.1794935521648868
+      - 0.9838114644311304
+      - 0.8816920960559963
+      - 0.9182798748229744
+      - 0.9811194312269906
+      - 1.0560242432109486
+      verdict: fail
+      why: null
+  code: 'step = 10.0 ** np.floor(np.log10(df.close)) / 10
+
+    near = (df.close / step).round() * step
+
+    d = (df.close - near).abs() / step
+
+    sd = ret.rolling(24).std().shift(1)
+
+    z = ret.abs() / sd
+
+    reg = sd / sd.rolling(720).median()
+
+    band = (z <= 2.5) & (reg >= 0.8) & (reg <= 1.25) & sd.notna() & reg.notna()
+
+    a = (d <= 0.05) & band
+
+    b = (d >= 0.25) & band
+
+    signal = pd.Series(1, index=df.index)
+
+    '
+profit: 'none: no return claim passed'

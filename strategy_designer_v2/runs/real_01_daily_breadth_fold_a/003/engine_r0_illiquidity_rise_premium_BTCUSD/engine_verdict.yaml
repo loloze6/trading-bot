@@ -1,0 +1,147 @@
+claim: illiquidity_rise_premium
+symbol: BTCUSD
+bar_size: 1d
+fold: A
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 200
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: -0.7761
+  median_window_sharpe: -0.8080499999999999
+  worst_window_drawdown: 0.6175
+  trades: 305
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: -0.0154
+    trades: 28
+    sharpe: 0.0596
+    max_drawdown: 0.1623
+    exposure_pct: 98.3333
+    cost_drag_pct: 45.682
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_BTCUSD/results/full_size/20261106T195406Z_982a920e
+    seconds: 3
+  - window: W2
+    net_return: -0.2661
+    trades: 49
+    sharpe: -0.9551
+    max_drawdown: 0.4787
+    exposure_pct: 99.187
+    cost_drag_pct: 2.2663
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_BTCUSD/results/full_size/20261106T195410Z_982a920e
+    seconds: 3
+  - window: W3
+    net_return: -0.0908
+    trades: 53
+    sharpe: -0.661
+    max_drawdown: 0.2101
+    exposure_pct: 96.7213
+    cost_drag_pct: 12.1437
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_BTCUSD/results/full_size/20261106T195413Z_982a920e
+    seconds: 4
+  - window: W4
+    net_return: -0.5687
+    trades: 52
+    sharpe: -2.9175
+    max_drawdown: 0.6175
+    exposure_pct: 99.1667
+    cost_drag_pct: 1.4779
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_BTCUSD/results/full_size/20261106T195417Z_982a920e
+    seconds: 4
+  - window: W5
+    net_return: 0.0089
+    trades: 67
+    sharpe: 0.2299
+    max_drawdown: 0.0932
+    exposure_pct: 99.187
+    cost_drag_pct: 64.5306
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_BTCUSD/results/full_size/20261106T195420Z_982a920e
+    seconds: 4
+  - window: W6
+    net_return: -0.2167
+    trades: 56
+    sharpe: -1.1733
+    max_drawdown: 0.3124
+    exposure_pct: 99.1803
+    cost_drag_pct: 5.7463
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_BTCUSD/results/full_size/20261106T195424Z_982a920e
+    seconds: 4
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: -0.4077
+    median_window_sharpe: -0.89795
+    worst_window_drawdown: 0.3129
+    trades: 305
+  windows:
+  - window: W1
+    net_return: -0.0146
+    trades: 26
+    sharpe: -0.3096
+    max_drawdown: 0.0604
+    exposure_pct: 98.3333
+    cost_drag_pct: 11.1381
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_BTCUSD/results/vol_target/20261106T195428Z_203d8a19
+    seconds: 4
+  - window: W2
+    net_return: -0.0645
+    trades: 47
+    sharpe: -0.7573
+    max_drawdown: 0.1763
+    exposure_pct: 99.187
+    cost_drag_pct: 3.7012
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_BTCUSD/results/vol_target/20261106T195431Z_203d8a19
+    seconds: 4
+  - window: W3
+    net_return: -0.0583
+    trades: 52
+    sharpe: -1.0386
+    max_drawdown: 0.1161
+    exposure_pct: 96.7213
+    cost_drag_pct: 7.5142
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_BTCUSD/results/vol_target/20261106T195435Z_203d8a19
+    seconds: 3
+  - window: W4
+    net_return: -0.2736
+    trades: 56
+    sharpe: -3.0101
+    max_drawdown: 0.3129
+    exposure_pct: 99.1667
+    cost_drag_pct: 1.6524
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_BTCUSD/results/vol_target/20261106T195438Z_203d8a19
+    seconds: 3
+  - window: W5
+    net_return: 0.0428
+    trades: 66
+    sharpe: 0.7666
+    max_drawdown: 0.0546
+    exposure_pct: 99.187
+    cost_drag_pct: 14.7236
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_BTCUSD/results/vol_target/20261106T195442Z_203d8a19
+    seconds: 4
+  - window: W6
+    net_return: -0.0993
+    trades: 58
+    sharpe: -1.2118
+    max_drawdown: 0.1615
+    exposure_pct: 99.1803
+    cost_drag_pct: 6.8519
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_BTCUSD/results/vol_target/20261106T195445Z_203d8a19
+    seconds: 4
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail

@@ -1,0 +1,33 @@
+run: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001
+observations:
+  - "The plain 24h-VWAP stretch fade (|z|>2.5, 12 bars) lost money: net_return -0.00056 against a required +0.002 (gross about +0.0009, under the 0.0015 cost), and its windows split 3 positive to 3 negative (-1.7% to +1.1%)."
+  - "Weekend fade and weekend continuation are exact mirrors: fade net -0.0093, continuation net +0.0063, a gap of 0.003, which is two round-trip costs. Weekend stretches therefore continue by about +0.0078 gross over 12 bars, positive in 5 of 6 windows."
+  - "Weekend continuation also passed the engine on direction (net positive in 5 of 6 windows, +24.1% fold total, worst drawdown 9.9%). It failed only on median window Sharpe, 0.51 against 1.0, with just 39 trades."
+  - "Asia-hours fade passed the judge on mean_diff +0.0051 (5 of 6 windows; W5 -0.0068). The comparison was afternoon 12-20 UTC stretches, so the gap may come partly from afternoon stretches continuing rather than from Asia stretches reverting."
+  - "Asia-hours fade failed the profit test: W2 -5.4% and W3 -1.0%, median window Sharpe 0.33, worst drawdown 25.1%. W3 cost drag was 494% of gross."
+  - "Heavy-volume stretch continuation nearly held: +0.0045 against a required 0.003. Only 4 of 6 windows were positive (W4 -0.0018, W6 -0.0042), so a second continuation reading points the same way as the weekend one."
+  - "Gradual-grind fade (+0.0051) and day-anchored late-day fade (+0.0029) both cleared min_effect on the whole fold but had only 4 of 6 positive windows. Their swings ran from -0.025 to +0.018 on 55 bars and from -0.0068 to +0.0106 on 204 bars."
+  - "The slow-EMA z-score had almost no reversion content: rank_corr -0.0034 against a required -0.05. It was negative in 4 of 6 windows, and only W6 (-0.060) reached the threshold."
+  - "Restricting fades by calm regime (mean_diff -0.0071) or by fading volume (hit_rate +0.022 against 0.06, windows from -0.21 to +0.17) made reversion no more reliable."
+next_claim:
+  id: us_hours_weekday_stretch_continuation
+  belief: "On weekdays during European-afternoon and US hours, a close far from the 24h VWAP reflects deep, informed flow, so price keeps moving in the stretch direction over the next 8 hours by more than cost."
+  claim:
+    when: "Weekday bars closing 13-20 UTC whose distance from the rolling 24h VWAP exceeds 2 of its 720-bar standard deviations, one event per 8 bars"
+    then: "The 8-bar forward return goes in the direction of the stretch, net of the 0.15% round-trip cost"
+    compared_to: "zero after cost (net_return); b is all other bars"
+    measure: net_return
+    horizon_bars: 8
+    direction: positive
+    min_effect: 0.003
+    code: |
+      tp = (df.high + df.low + df.close) / 3
+      vwap = (tp * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+      dev = df.close / vwap - 1
+      z = dev / dev.rolling(720).std()
+      a = spaced((z.abs() > 2) & (hour >= 13) & (hour <= 20) & (dow <= 4), 8)
+      b = ~a
+      signal = np.sign(dev)
+  why_no_lookahead: "VWAP, deviation, z-score, hour and weekday use only bars at or before the signal bar's close; the forward return is computed by the judge."
+  how_it_trades: "At the close of a qualifying weekday 13-20 UTC bar, enter in the direction of the VWAP stretch and exit at market 8 bars later."
+why: "Weekend continuation (+0.0078 gross), heavy-volume continuation (+0.0045) and the Asia-versus-afternoon gap (+0.0051) all suggest stretches in deep sessions continue rather than revert; this tests weekday US-hours continuation on its own, net of cost, with a 0.003 bar that leaves room above the 0.0015 cost."

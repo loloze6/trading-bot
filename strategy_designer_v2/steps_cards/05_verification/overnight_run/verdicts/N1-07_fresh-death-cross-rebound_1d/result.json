@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 10-bar forward return on fresh-death-cross bars minus coin's mean 10-bar return",
+    "value": 0.010719880077406556,
+    "statistic": {
+      "name": "t clustered by cross event",
+      "value": 0.9063365600183635
+    },
+    "threshold": "confirm if above 0 with t >= +2 and supporting check positive; reject if below 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "allocation-weighted 1-bar return on regime bars minus coin's mean 1-bar return",
+    "value": 0.0013326754346640738,
+    "passed": true
+  },
+  "counts": {
+    "distinct death-cross events": 62,
+    "non-overlapping 10-bar blocks": 110
+  },
+  "decided_by": "Enough events and blocks, but the numbers meet neither the confirm rule nor the reject rule (t between -2 and +2, or confirm's supporting check not positive).",
+  "reading": "Regime bars are those labelled mean_reversion, blocks are the window grid bars 0,10,20,... on those bars, holding is the coin's mean grid 10-bar return over all its windows, an event is one contiguous run of regime bars in a window and the clustered t uses the CR1 cluster variance of the mean, both minimums (15 events and 30 blocks) must be reached, and the supporting check is sum(alloc x (1-bar return - coin's mean 1-bar return)) / sum(alloc) over regime bars."
+}

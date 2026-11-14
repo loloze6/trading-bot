@@ -1,0 +1,25 @@
+---
+line: 7.a not observable
+backtest: 001-01_rsi-high-extreme-reversal_1d
+idea tested: 001-01_rsi-high-extreme-reversal
+step 5: not observable
+step 6: none
+mode: analyst then deducer
+explorations: 2
+cost: 0.3104 USD
+---
+## Findings
+- **F1:** The backtest holds only BTCUSD, in one window (w1) of 120 daily bars spanning 119 days, all in 2022. ETH and BNB from the plan's three instruments are absent. So 120 bars is the whole sample, against a plan that pools 3 coins and several windows.
+- **F2:** With a 5-bar horizon on non-overlapping grid bars, the single 120-bar window yields only 23 usable blocks in total. That is below the plan's minimum of 30 extreme cases even if every block were extreme.
+- **F3:** The extreme situation was reached on 15 of 120 bars (forecast ≤ −10). These bars fell in only 3 episodes of 2, 1 and 12 bars, so the 5-bar grid kept just 3 non-overlapping cases against the required 30.
+- **F4:** The RSI(14), recovered as 50 minus the component's raw value, never exceeded 58.0 in the window (95th percentile 55.2, median 47.5). It was above 55 on 8.3% of bars and never above 60 or 70. A high-extreme RSI in the usual sense never occurred in this period.
+- **F5:** Because the forecast is standardised over its past 60 values, the −10 threshold was hit at mild absolute RSI levels. On those 15 bars the implied RSI averaged 55.6 (range 54.0–58.0), against 45.8 on the 81 zero-forecast bars. The "extreme" cases here are extremes relative to a bearish 2022 stretch, not RSI extremes.
+- **F6:** The direction measured so far matches the reversal claim, though the counts are tiny:
+- **F7:** The case-to-case spread is large relative to the effect. The 5-bar forward return has an sd of 7.3% across all bars and the excess return 5.7% on extreme bars. At an effect of −2.3%, about 23 independent cases are needed for |t| = 2. A sample with that many extreme cases needs roughly 8–10 times the current extreme frequency in bar-count terms: several coins, several windows or years, or a shorter bar size where 14-bar RSI runs recur more often.
+
+## Ideas
+- `001-01_rsi-high-extreme-reversal.a1_daily-rsi-high-extreme-reversal` (from F1, F2, F3, F6, F7): In BTC, ETH and BNB daily bars, when RSI(14) is in the top of its own past-60-bar range (high-extreme reading), the coin's return over the next 5 bars is lower than its average 5-bar return over the same coin and window.
+- `001-01_rsi-high-extreme-reversal.a2_intraday-rsi-high-extreme-reversal` (from F2, F3, F5, F7): In BTC, ETH and BNB 4-hour bars, when RSI(14) is in the top of its own past-60-bar range, the coin's return over the next 5 bars is lower than its average 5-bar return over the same coin and window.
+- `001-01_rsi-high-extreme-reversal.a3_absolute-rsi-overbought-reversal` (from F4, F5, F7): In BTC, ETH and BNB daily bars, when RSI(14) is above 70, the coin's return over the next 5 bars is lower than its average 5-bar return over the same coin and window.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

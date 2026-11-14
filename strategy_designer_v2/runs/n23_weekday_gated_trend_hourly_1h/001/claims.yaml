@@ -1,0 +1,230 @@
+brief: n23_weekday_gated_trend_hourly_1h.md
+ideas:
+  - id: ma_cross_weekday_vs_weekend
+    belief: A 24/168-bar moving-average trend rule earns its edge on weekday hours and gives it back in the quiet weekend window from Friday evening to Monday morning.
+    claim:
+      when: weekday bars outside Fri 21:00 to Mon 08:00 UTC, once the 168-bar average exists
+      then: the 24-bar forward return taken in the direction of the 24/168 MA cross is larger
+      compared_to: the same rule's bars inside the Fri 21:00 to Mon 08:00 UTC window
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.002
+      code: |
+        wk = ((dow == 4) & (hour >= 21)) | (dow >= 5) | ((dow == 0) & (hour < 8))
+        f = df.close.rolling(24).mean()
+        s = df.close.rolling(168).mean()
+        signal = np.sign(f - s).replace(0, 1).fillna(1)
+        a = (~wk) & s.notna()
+        b = wk & s.notna()
+    why_no_lookahead: The moving averages use closes up to the bar, and the calendar gate uses the bar's own UTC timestamp.
+    how_it_trades: Hold the 24/168 MA-cross direction on weekdays and go flat from Friday 21:00 to Monday 08:00 UTC.
+  - id: weekend_breakouts_fail
+    belief: Breakouts of the 72-hour range made in thin weekend trading are mostly false and do not follow through, while weekday breakouts do.
+    claim:
+      when: first close beyond the prior 72-bar high or low (one event per 24 bars), occurring on a weekday bar
+      then: the 24-bar forward return keeps the breakout direction more often
+      compared_to: the same breakout events occurring inside the Fri 21:00 to Mon 08:00 UTC window
+      measure: hit_rate
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.05
+      code: |
+        wk = ((dow == 4) & (hour >= 21)) | (dow >= 5) | ((dow == 0) & (hour < 8))
+        hi = df.high.rolling(72).max().shift(1)
+        lo = df.low.rolling(72).min().shift(1)
+        up = df.close > hi
+        dn = df.close < lo
+        ev = spaced(up | dn, 24)
+        signal = pd.Series(np.where(up, 1, -1), index=df.index)
+        a = ev & ~wk
+        b = ev & wk
+    why_no_lookahead: The range is built from the prior 72 bars through shift(1), and the breakout is judged at the bar's close.
+    how_it_trades: Take 72-hour range breakouts only on weekdays and ignore those that print during the weekend window.
+  - id: tsmom_low_vol_gate
+    belief: Time-series momentum works when trailing 24h volatility is not in its bottom third, because quiet regimes are mean-reverting chop whatever the weekday.
+    claim:
+      when: bars whose trailing 24-bar return volatility is above its trailing 720-bar 33rd percentile
+      then: the 24-bar forward return taken in the direction of the 72-bar return is larger
+      compared_to: bars whose trailing 24-bar volatility is in the bottom third of its trailing 720 bars
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.002
+      code: |
+        m = df.close.pct_change(72)
+        signal = np.sign(m).replace(0, 1).fillna(1)
+        v = ret.rolling(24).std()
+        q = v.rolling(720).quantile(0.33)
+        ok = q.notna() & m.notna()
+        a = ok & (v > q)
+        b = ok & (v <= q)
+    why_no_lookahead: The volatility, its percentile and the momentum all use returns up to and including the bar's close.
+    how_it_trades: Hold the sign of the 72-hour return only while 24h volatility is above its 30-day lower tercile, and stay flat otherwise.
+  - id: vol_expansion_gate
+    belief: What matters is whether volatility is expanding or compressing, not its level; trend rules pay while 24h volatility is rising and bleed while it contracts, as it does into a weekend.
+    claim:
+      when: bars whose trailing 24-bar volatility is above its value 24 bars earlier
+      then: the 24-bar forward return taken in the direction of the 168-bar return is larger
+      compared_to: bars whose trailing 24-bar volatility is at or below its value 24 bars earlier
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.0015
+      code: |
+        m = df.close.pct_change(168)
+        signal = np.sign(m).replace(0, 1).fillna(1)
+        v = ret.rolling(24).std()
+        ok = v.shift(24).notna() & m.notna()
+        a = ok & (v > v.shift(24))
+        b = ok & (v <= v.shift(24))
+    why_no_lookahead: The volatility now and 24 bars ago, and the 168-bar return, are all computed from past closes.
+    how_it_trades: Hold the 168-hour momentum sign while 24h volatility is expanding and go flat while it is contracting.
+  - id: efficiency_ratio_gate
+    belief: Weekend compression shows as a choppy, inefficient price path; a trend rule pays when the trailing 24-bar efficiency ratio is high and fails when the path is noise.
+    claim:
+      when: bars whose 24-bar efficiency ratio (net move over summed absolute moves) is above its trailing 720-bar median
+      then: the 12-bar forward return taken in the direction of the 48-bar return is larger
+      compared_to: bars whose 24-bar efficiency ratio is at or below its trailing 720-bar median
+      measure: mean_diff
+      horizon_bars: 12
+      direction: positive
+      min_effect: 0.0012
+      code: |
+        er = (df.close - df.close.shift(24)).abs() / df.close.diff().abs().rolling(24).sum()
+        med = er.rolling(720).median()
+        m = df.close.pct_change(48)
+        signal = np.sign(m).replace(0, 1).fillna(1)
+        ok = med.notna() & m.notna()
+        a = ok & (er > med)
+        b = ok & (er <= med)
+    why_no_lookahead: The efficiency ratio, its rolling median and the 48-bar return use only closes at or before the bar.
+    how_it_trades: Hold the 48-hour momentum sign only when the last 24 hours were directionally efficient.
+  - id: volume_participation_gate
+    belief: Trends need participation; when trailing 24h volume is below its monthly norm, as on weekends, moves are not carried by real flow and the trend rule loses.
+    claim:
+      when: bars whose trailing 24-bar volume sum is above its trailing 720-bar median
+      then: the 24-bar forward return taken in the direction of the 24/168 MA cross is larger
+      compared_to: bars whose trailing 24-bar volume sum is at or below that median
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.0015
+      code: |
+        vs = df.volume.rolling(24).sum()
+        med = vs.rolling(720).median()
+        f = df.close.rolling(24).mean()
+        s = df.close.rolling(168).mean()
+        signal = np.sign(f - s).replace(0, 1).fillna(1)
+        ok = med.notna() & s.notna()
+        a = ok & (vs > med)
+        b = ok & (vs <= med)
+    why_no_lookahead: The volume sums, the median and the averages use only bars up to the current close.
+    how_it_trades: Hold the 24/168 MA-cross direction only while 24h volume is above its 30-day median.
+  - id: monday_weekend_range_release
+    belief: The weekend compression stores energy; the first Monday break of the weekend's high or low starts a move that follows through more than an ordinary midweek breakout.
+    claim:
+      when: first close on Monday 08:00 to 23:00 UTC beyond the high or low of the just-ended Fri 21:00 to Mon 08:00 window
+      then: the 24-bar forward return in the break direction is larger
+      compared_to: first closes beyond the prior 60-bar range on Tuesday to Thursday (one event per 24 bars)
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.003
+      code: |
+        wk = ((dow == 4) & (hour >= 21)) | (dow >= 5) | ((dow == 0) & (hour < 8))
+        wid = (wk & ~wk.shift(1, fill_value=False)).cumsum()
+        whi = df.high.where(wk).groupby(wid).cummax().groupby(wid).ffill()
+        wlo = df.low.where(wk).groupby(wid).cummin().groupby(wid).ffill()
+        mon = (dow == 0) & (hour >= 8)
+        up = df.close > whi
+        dn = df.close < wlo
+        ev = spaced((up | dn) & mon, 24)
+        hi60 = df.high.rolling(60).max().shift(1)
+        lo60 = df.low.rolling(60).min().shift(1)
+        up60 = df.close > hi60
+        dn60 = df.close < lo60
+        evb = spaced((up60 | dn60) & dow.isin([1, 2, 3]), 24)
+        signal = pd.Series(np.where(ev, np.where(up, 1, -1), np.where(up60, 1, -1)), index=df.index)
+        a = ev & (wid > 0)
+        b = evb
+    why_no_lookahead: The weekend range is a running max and min of past weekend bars, carried forward, and every break is judged at the bar's close.
+    how_it_trades: Stay flat over the weekend, then enter in the direction of the first Monday break of the weekend range and hold 24 hours.
+  - id: gated_cross_pays_net
+    belief: A 12/72 MA-cross entry taken only on weekdays with 24h volatility above its lower tercile is profitable after the 0.15% round trip.
+    claim:
+      when: 12/72 MA cross events (one per 24 bars) on a weekday outside Fri 21:00 to Mon 08:00 UTC with 24-bar volatility above its trailing 720-bar 33rd percentile
+      then: the 48-bar forward return in the cross direction, net of cost, is positive
+      compared_to: zero after cost
+      measure: net_return
+      horizon_bars: 48
+      direction: positive
+      min_effect: 0.002
+      code: |
+        wk = ((dow == 4) & (hour >= 21)) | (dow >= 5) | ((dow == 0) & (hour < 8))
+        f = df.close.rolling(12).mean()
+        s = df.close.rolling(72).mean()
+        d = np.sign(f - s)
+        cross = (d != d.shift(1)) & d.notna() & d.shift(1).notna() & (d != 0)
+        v = ret.rolling(24).std()
+        q = v.rolling(720).quantile(0.33)
+        gate = (~wk) & (v > q)
+        signal = d.replace(0, 1).fillna(1)
+        a = spaced(cross & gate, 24)
+        b = ~a
+    why_no_lookahead: The cross, the volatility gate and the calendar gate all use data at or before the bar's close.
+    how_it_trades: Enter on 12/72 MA crosses only inside the weekday and volatility gate and hold 48 hours.
+  - id: gated_vs_ungated_cross_events
+    belief: The same 12/72 MA-cross entries taken outside the gate (weekend window or bottom-tercile volatility) do clearly worse than those inside it, so the gate is what turns the rule profitable.
+    claim:
+      when: 12/72 MA cross events (one per 24 bars) inside the gate (weekday and 24-bar volatility above its 720-bar lower tercile)
+      then: the 48-bar forward return in the cross direction is larger
+      compared_to: 12/72 MA cross events (one per 24 bars) outside the gate
+      measure: mean_diff
+      horizon_bars: 48
+      direction: positive
+      min_effect: 0.004
+      code: |
+        wk = ((dow == 4) & (hour >= 21)) | (dow >= 5) | ((dow == 0) & (hour < 8))
+        f = df.close.rolling(12).mean()
+        s = df.close.rolling(72).mean()
+        d = np.sign(f - s)
+        cross = (d != d.shift(1)) & d.notna() & d.shift(1).notna() & (d != 0)
+        v = ret.rolling(24).std()
+        q = v.rolling(720).quantile(0.33)
+        ok = q.notna()
+        gate = (~wk) & (v > q)
+        signal = d.replace(0, 1).fillna(1)
+        a = spaced(cross & gate & ok, 24)
+        b = spaced(cross & ~gate & ok, 24)
+    why_no_lookahead: Cross detection and both gates use only past and current bars, with no forward shift in the selectors.
+    how_it_trades: Take the MA-cross signal only when the gate is open and skip crosses that fire in the weekend window or in quiet volatility.
+  - id: weekday_only_momentum
+    belief: Weekend returns are noise that corrupts the momentum signal; momentum summed over weekday bars only predicts better, most visibly when it disagrees with full momentum.
+    claim:
+      when: weekday bars where the sign of the 120-bar return summed over weekday bars only differs from the sign of the full 120-bar return sum
+      then: the weekday-only momentum ranks the 24-bar forward return positively
+      compared_to: none (correlation on the selected bars)
+      measure: rank_corr
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.05
+      code: |
+        wk = ((dow == 4) & (hour >= 21)) | (dow >= 5) | ((dow == 0) & (hour < 8))
+        mwd = ret.where(~wk, 0.0).rolling(120).sum()
+        mall = ret.rolling(120).sum()
+        feature = mwd
+        a = (~wk) & mall.notna() & (np.sign(mwd) != np.sign(mall))
+        b = ~a
+        signal = np.sign(mwd).replace(0, 1).fillna(1)
+    why_no_lookahead: Both momentum sums are trailing rolling sums of returns up to the bar's close, masked by the bar's own timestamp.
+    how_it_trades: Compute momentum from weekday bars only and trade its sign on weekdays, ignoring the weekend's contribution.
+notes: >
+  Bar timestamps are bar close times in UTC. The weekend window is Fri 21:00 UTC (US cash close) to Mon 08:00 UTC
+  (European open), with no holiday calendar. Every gate idea measures both versions through mean_diff or hit_rate,
+  gated bars (a) against the bars the gate removes (b), with the same trend signal on both. gated_cross_pays_net is
+  the profit proof of the gated rule after the 0.15% round trip. It pairs with gated_vs_ungated_cross_events, which
+  shows the bars outside the gate are what drag the ungated rule down. Three gates are tested apart: the calendar,
+  volatility level and volatility change. Efficiency ratio and volume are two more proxies for the same compression.
+  monday_weekend_range_release tests the opposite view, that the compression itself is a setup. The weekend-versus-
+  weekday volatility ratio is not re-tested, since already_tried covers it.

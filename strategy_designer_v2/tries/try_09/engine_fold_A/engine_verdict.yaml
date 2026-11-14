@@ -1,0 +1,147 @@
+claim: range_break_strength
+symbol: BTCUSD
+bar_size: 1h
+fold: A
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 269
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: -1.0
+  median_window_sharpe: -14.390049999999999
+  worst_window_drawdown: 0.9559
+  trades: 15190
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: -0.9524
+    trades: 2514
+    sharpe: -11.5146
+    max_drawdown: 0.9529
+    exposure_pct: 99.8958
+    cost_drag_pct: 106.0276
+    run_dir: strategy_designer_v2/tries/try_09/engine_fold_A/results/full_size/20261106T191034Z_d178ec39
+    seconds: 24
+  - window: W2
+    net_return: -0.8989
+    trades: 2568
+    sharpe: -7.519
+    max_drawdown: 0.9035
+    exposure_pct: 99.9661
+    cost_drag_pct: 198.8827
+    run_dir: strategy_designer_v2/tries/try_09/engine_fold_A/results/full_size/20261106T191058Z_d178ec39
+    seconds: 25
+  - window: W3
+    net_return: -0.9558
+    trades: 2543
+    sharpe: -17.8864
+    max_drawdown: 0.9559
+    exposure_pct: 99.8292
+    cost_drag_pct: 165.8972
+    run_dir: strategy_designer_v2/tries/try_09/engine_fold_A/results/full_size/20261106T191124Z_d178ec39
+    seconds: 26
+  - window: W4
+    net_return: -0.9092
+    trades: 2499
+    sharpe: -10.4974
+    max_drawdown: 0.91
+    exposure_pct: 99.7222
+    cost_drag_pct: 290.1725
+    run_dir: strategy_designer_v2/tries/try_09/engine_fold_A/results/full_size/20261106T191150Z_d178ec39
+    seconds: 26
+  - window: W5
+    net_return: -0.9336
+    trades: 2528
+    sharpe: -22.0152
+    max_drawdown: 0.9364
+    exposure_pct: 99.3562
+    cost_drag_pct: 144.8377
+    run_dir: strategy_designer_v2/tries/try_09/engine_fold_A/results/full_size/20261106T191217Z_d178ec39
+    seconds: 27
+  - window: W6
+    net_return: -0.9395
+    trades: 2538
+    sharpe: -17.2655
+    max_drawdown: 0.9395
+    exposure_pct: 99.4536
+    cost_drag_pct: 177.8941
+    run_dir: strategy_designer_v2/tries/try_09/engine_fold_A/results/full_size/20261106T191243Z_d178ec39
+    seconds: 26
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: -0.9995
+    median_window_sharpe: -14.817799999999998
+    worst_window_drawdown: 0.8176
+    trades: 15269
+  windows:
+  - window: W1
+    net_return: -0.634
+    trades: 2514
+    sharpe: -12.1669
+    max_drawdown: 0.6363
+    exposure_pct: 99.8958
+    cost_drag_pct: 160.5167
+    run_dir: strategy_designer_v2/tries/try_09/engine_fold_A/results/vol_target/20261106T191309Z_ea7bc35d
+    seconds: 26
+  - window: W2
+    net_return: -0.5105
+    trades: 2563
+    sharpe: -8.2238
+    max_drawdown: 0.5238
+    exposure_pct: 99.9661
+    cost_drag_pct: 435.4568
+    run_dir: strategy_designer_v2/tries/try_09/engine_fold_A/results/vol_target/20261106T191334Z_ea7bc35d
+    seconds: 25
+  - window: W3
+    net_return: -0.8173
+    trades: 2563
+    sharpe: -19.5856
+    max_drawdown: 0.8176
+    exposure_pct: 99.8292
+    cost_drag_pct: 124.4987
+    run_dir: strategy_designer_v2/tries/try_09/engine_fold_A/results/vol_target/20261106T191400Z_ea7bc35d
+    seconds: 26
+  - window: W4
+    net_return: -0.6632
+    trades: 2503
+    sharpe: -11.763
+    max_drawdown: 0.6664
+    exposure_pct: 99.7222
+    cost_drag_pct: 300.516
+    run_dir: strategy_designer_v2/tries/try_09/engine_fold_A/results/vol_target/20261106T191426Z_ea7bc35d
+    seconds: 26
+  - window: W5
+    net_return: -0.7943
+    trades: 2561
+    sharpe: -21.7891
+    max_drawdown: 0.7987
+    exposure_pct: 99.5256
+    cost_drag_pct: 163.6999
+    run_dir: strategy_designer_v2/tries/try_09/engine_fold_A/results/vol_target/20261106T191455Z_ea7bc35d
+    seconds: 29
+  - window: W6
+    net_return: -0.7638
+    trades: 2565
+    sharpe: -17.4687
+    max_drawdown: 0.7639
+    exposure_pct: 99.3852
+    cost_drag_pct: 216.1268
+    run_dir: strategy_designer_v2/tries/try_09/engine_fold_A/results/vol_target/20261106T191521Z_ea7bc35d
+    seconds: 26
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail

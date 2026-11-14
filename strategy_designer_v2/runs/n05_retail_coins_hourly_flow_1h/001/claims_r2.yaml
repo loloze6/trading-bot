@@ -1,0 +1,36 @@
+brief: n05_retail_coins_hourly_flow_1h.md
+source: analyst round 2
+ideas:
+- id: daily_close_location_pressure
+  belief: Retail market orders leave a footprint in where each hour closes within
+    its range, so volume-weighted buying pressure over the past day predicts the next
+    day's drift.
+  claim:
+    when: one bar per day, the 00:00 UTC bar, where 24h of pressure is defined
+    then: the next 24h return rises with the past 24h volume-weighted close-location
+      pressure
+    compared_to: not used (rank_corr)
+    measure: rank_corr
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.08
+    code: 'h = pd.Series(np.asarray(hour), index=df.index)
+
+      rng = (df.high - df.low).replace(0, np.nan)
+
+      clv = ((df.close - df.low) - (df.high - df.close)) / rng
+
+      pressure = (clv * df.volume).rolling(24, min_periods=20).sum() / df.volume.rolling(24,
+      min_periods=20).sum()
+
+      a = h.eq(0) & pressure.notna()
+
+      b = ~a
+
+      feature = pressure
+
+      '
+  why_no_lookahead: Pressure uses only the 24 bars ending at the sampled bar's close,
+    and samples are one per day so the 24h forward windows do not overlap.
+  how_it_trades: At 00:00 UTC, go long for 24h when pressure is high and stay flat
+    or short when it is low; one round trip a day at most.

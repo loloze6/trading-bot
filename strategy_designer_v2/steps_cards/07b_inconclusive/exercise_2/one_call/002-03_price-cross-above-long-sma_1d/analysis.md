@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 002-03_price-cross-above-long-sma_1d
+idea tested: 002-03_price-cross-above-long-sma
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.2859 USD
+---
+## Findings
+- **F1:** The positive result comes from a few extreme winners, not from a typical edge. On the 399 non-overlapping active 20-bar samples, the mean excess return is +0.0052 (t 0.32) but the median is -0.036 and only 40.6% beat the coin's mean. The skew is 7.5, the 10 largest outcomes sum to 5.6 times the total, and dropping the top 5% turns the mean to -0.038 with t -4.14.
+- **F2:** The effect splits by the direction of the 200-day SMA's own 20-bar slope combined with forecast strength. With the SMA rising and the forecast above 10, the mean excess is +0.074 (t 1.77, n 131, hit 44%). With the SMA falling and the forecast above 10, it is -0.058 (t -2.05, n 57, hit 35%). The weak-forecast cells are both about -0.02 (t -0.91 and -1.21).
+- **F3:** The effect depends heavily on the period. With the SMA rising, active samples gained in 2020 (+0.100, t 2.59, hit 59%) and 2021 (+0.102, t 2.34, hit 54%). They lost in 2018 (-0.136, t -2.23) and 2019 (-0.091, t -2.42), and were flat in 2023 to 2025 (t between -0.38 and 0.36). Across the 24 windows, the active mean ranges from -0.37 to +0.27, with a median of -0.036.
+- **F4:** The fresh cross does not lead to persistence. Active samples within 20 bars of the upward cross average -0.021 (t -1.21, n 162). Samples 20 to 60 bars after the cross average +0.026 (t 0.74, n 151).
+- **F5:** The weighting by forecast size only half works. The top forecast bucket (15 to 20) averages +0.055 (t 1.17), against -0.029 (t -1.63) in the 0 to 5 bucket. Raw distance quartiles show no order (means +0.005, -0.019, +0.031, +0.004).
+- **F6:** No coin carries a clear edge. Forecast-weighted t per coin runs from -0.51 (XMR) to 1.49 (BTC), and ZEC's +1.52 weighted mean has only t 0.87. Being above the SMA at all (mean +0.005, t 0.32) differs little from being below it (mean -0.0002, t -0.01).
+
+## Ideas
+- `002-03_price-cross-above-long-sma.b1_far-above-rising-sma` (from F2, F5, F3): When a coin's close sits well above its 200-day SMA and that SMA has itself risen over the last 20 bars, the coin's return over the next 20 bars beats its own average 20-bar return.
+- `002-03_price-cross-above-long-sma.b2_rally-above-falling-sma-fades` (from F2, F4): When a coin's close sits well above its 200-day SMA while that SMA has fallen over the last 20 bars, the coin's return over the next 20 bars falls short of its own average 20-bar return.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

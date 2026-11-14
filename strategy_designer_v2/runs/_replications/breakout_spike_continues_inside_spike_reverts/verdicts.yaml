@@ -1,0 +1,86 @@
+claims_file: strategy_designer_v2/runs/_replications/breakout_spike_continues_inside_spike_reverts/claims.yaml
+fold: A
+bar_size: 1h
+symbols:
+- ETHUSD
+- LTCUSD
+- XRPUSD
+- ADAUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  breakout_spike_continues_inside_spike_reverts:
+    verdict: fail
+    by_symbol:
+      ETHUSD:
+        verdict: pass
+        effect: 0.006430646430210893
+        t_stat: 1.42
+        n_a: 199
+        n_b: 87
+        windows:
+        - 0.00986161452170962
+        - 0.009111798185050684
+        - 0.005682674729914827
+        - 0.012217453720544929
+        - -0.0008046731588035104
+        - 0.0004387681390750727
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      LTCUSD:
+        verdict: pass
+        effect: 0.0072100217238929305
+        t_stat: 1.47
+        n_a: 174
+        n_b: 84
+        windows:
+        - 0.00830599475212196
+        - 0.00976346143281061
+        - 0.003507983726839456
+        - -0.00037494524362939076
+        - 0.02377476985080603
+        - 7.408354408680725e-05
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: 0.0003414520554529028
+        t_stat: 0.07
+        n_a: 167
+        n_b: 80
+        windows:
+        - 0.013348587791173002
+        - 0.0051883373078133056
+        - 0.0035015180591544074
+        - -0.005400515896198185
+        - 0.0020890900136003436
+        - -0.009310373398187684
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ADAUSD:
+        verdict: fail
+        effect: 0.004860496100942509
+        t_stat: 0.96
+        n_a: 167
+        n_b: 83
+        windows:
+        - 0.01265085775299673
+        - 0.020056963937452637
+        - -0.016564531957103237
+        - -0.000623742324673762
+        - 0.002111782817058464
+        - 0.005580219551953806
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess forward 10-bar log return on forecast, short-bar non-overlapping blocks",
+    "value": -0.000745798735528141,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.24165879290728626
+    },
+    "threshold": "slope t >= +2 confirms (with mean excess < 0 and higher decline share); t <= -2 rejects; else inconclusive; < 15 short blocks inconclusive",
+    "mean_excess_forward_return_short_blocks": -0.012578929355023456
+  },
+  "supporting_check": {
+    "name": "share of negative 10-bar returns: short blocks minus all blocks",
+    "value": 0.0026578073089700838,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping 10-bar blocks with forecast < 0": 43,
+    "all non-overlapping 10-bar blocks": 70
+  },
+  "decided_by": "The slope t-statistic lies between -2 and +2, which the plan calls inconclusive.",
+  "reading": "The baseline is the mean forward 10-bar log return over every bar with a full in-window forward return, the regression and the shares use the per-window grid at positions 0, 10, 20, ..., the slope t is the OLS slope over its standard error, the mean excess in the confirm rule is taken on the short grid blocks, and a t >= +2 that fails the other confirm conditions is treated as inconclusive."
+}

@@ -1,0 +1,586 @@
+brief: n35_privacy_coins_hourly_shock_1h.md
+fold: A
+symbols:
+- XMRUSD
+- ZECUSD
+bar_size: 1h
+claims:
+- id: volume_backed_shock_continues
+  belief: On thin privacy coins, a large hourly move on heavy volume reflects news
+    or informed flow that is not fully priced in one bar, so the move keeps going
+    for several hours.
+  measure: net_return
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    XMRUSD:
+      effect: -0.0009173246108032601
+      n_a: 145
+      n_b: 145
+      windows:
+      - -0.002591871363901879
+      - -0.0030632199401042703
+      - 0.009275123857205489
+      - -0.005145158462524314
+      - -0.002570060680089495
+      - -0.0007850897320007114
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: -0.006187309924510276
+      n_a: 166
+      n_b: 166
+      windows:
+      - -0.0031266371229155716
+      - -0.005573590085581474
+      - -0.006753316629888191
+      - -0.009310639036339068
+      - -0.006933800731332132
+      - -0.006839921100606602
+      verdict: fail
+      why: null
+  code: 'sig = ret.rolling(168).std().shift(1)
+
+    volr = df.volume / df.volume.rolling(168).median().shift(1)
+
+    a = spaced((ret.abs() > 3 * sig) & (volr > 3), 6)
+
+    b = ~a
+
+    signal = np.sign(ret).replace(0, 1)
+
+    '
+- id: thin_volume_shock_reverts
+  belief: A large hourly move on below-normal volume is a liquidity hole in a thin
+    order book rather than information, so it gives back part of the move.
+  measure: mean_diff
+  horizon_bars: 4
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    XMRUSD:
+      effect: -0.0006328888986604831
+      n_a: 40
+      n_b: 17478
+      windows:
+      - 0.002086185560219563
+      - -0.020553666457677384
+      - -0.0004946629403209322
+      - 0.0022383881376578005
+      - -0.0032673552348605967
+      - -0.00017277167144089464
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: 0.005586114537293862
+      n_a: 46
+      n_b: 16502
+      windows:
+      - 0.004296856572585159
+      - 0.010649879434399045
+      - 0.004397824517204115
+      - 0.009885220243881214
+      - 0.004258793808715463
+      - 0.00013988409644905204
+      verdict: pass
+      why: null
+  code: 'sig = ret.rolling(168).std().shift(1)
+
+    volr = df.volume / df.volume.rolling(168).median().shift(1)
+
+    a = spaced((ret.abs() > 2.5 * sig) & (volr < 1.0), 4)
+
+    b = ~a
+
+    signal = -np.sign(ret).replace(0, 1)
+
+    '
+- id: shock_raises_volatility
+  belief: Whatever its direction, a volume-backed shock on XMR or ZEC opens a stretch
+    of higher volatility, as news is digested over several hours.
+  measure: abs_ratio
+  horizon_bars: 6
+  direction: above
+  min_effect: 1.6
+  verdict: fail
+  by_symbol:
+    XMRUSD:
+      effect: 1.5323139507677455
+      n_a: 159
+      n_b: 17359
+      windows:
+      - 1.5605389930597393
+      - 1.2028140213681
+      - 1.7507754037935057
+      - 1.4567443409418526
+      - 1.592026565743039
+      - 1.6518704695587767
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: 1.486374387184014
+      n_a: 180
+      n_b: 16368
+      windows:
+      - 1.4452015260323836
+      - 1.5429137884397612
+      - 2.0152155463733283
+      - 1.2097332006025934
+      - 1.033926310620968
+      - 1.2896509145956765
+      verdict: fail
+      why: null
+  code: 'sig = ret.rolling(168).std().shift(1)
+
+    volr = df.volume / df.volume.rolling(168).median().shift(1)
+
+    a = spaced((ret.abs() > 3 * sig) & (volr > 2), 6)
+
+    b = ~a
+
+    signal = np.sign(ret).replace(0, 1)
+
+    '
+- id: wick_rejection_reverses_spike
+  belief: A wide-range hourly bar that closes far from its extreme shows that the
+    spike was absorbed by resting liquidity, and price drifts toward the closing side.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    XMRUSD:
+      effect: -0.0005008755635092039
+      n_a: 27
+      n_b: 17491
+      windows:
+      - -0.01865057330532181
+      - 0.0035408166399357273
+      - 0.0007591737592025306
+      - 0.0007055810658522293
+      - -0.000290551430058681
+      - 0.007013263234883431
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: 0.003917997783342729
+      n_a: 56
+      n_b: 16492
+      windows:
+      - 0.01969649489834076
+      - -0.0031318097939714816
+      - 0.004245980745655632
+      - 0.0012405528825682182
+      - 0.001678955174288765
+      - 0.001873903929406177
+      verdict: pass
+      why: null
+  code: 'rng = (df.high - df.low)
+
+    mr = (rng / df.close).rolling(168).mean().shift(1)
+
+    pos = (df.close - df.low) / rng.replace(0, np.nan)
+
+    big = (rng / df.close) > 3 * mr
+
+    up = big & (pos > 0.75) & ((df[[''open'',''close'']].min(axis=1) - df.low) > 0.5
+    * rng)
+
+    dn = big & (pos < 0.25) & ((df.high - df[[''open'',''close'']].max(axis=1)) >
+    0.5 * rng)
+
+    a = spaced(up | dn, 6)
+
+    b = ~a
+
+    signal = pd.Series(np.where(up, 1, -1), index=df.index)
+
+    '
+- id: multi_hour_overextension_reverts
+  belief: A run of several hours that adds up to an extreme move on a thin coin exhausts
+    the marginal buyers or sellers and partly reverses over the next half day.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    XMRUSD:
+      effect: 0.0014324013893203078
+      n_a: 89
+      n_b: 17429
+      windows:
+      - -0.014388625565496053
+      - 0.004805788583109487
+      - -0.000488699326292823
+      - 0.004505373894847944
+      - 0.0021035054442554444
+      - 0.015720223135987737
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: -0.000415113827243114
+      n_a: 87
+      n_b: 16461
+      windows:
+      - -0.004248647264102936
+      - -0.005107823873121532
+      - -0.006763711616136024
+      - 0.005793001382611768
+      - -0.006555509312230845
+      - 0.006840070796382388
+      verdict: fail
+      why: null
+  code: 'r6 = df.close.pct_change(6)
+
+    s6 = r6.rolling(720).std().shift(6)
+
+    a = spaced(r6.abs() > 3 * s6, 12)
+
+    b = ~a
+
+    signal = -np.sign(r6).replace(0, 1)
+
+    '
+- id: compressed_regime_shock_breakout
+  belief: A shock that arrives after a quiet, compressed period marks a regime change
+    (news on a sleeping coin) and trends, unlike shocks inside already noisy periods.
+  measure: net_return
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    XMRUSD:
+      effect: -0.0024185732626821766
+      n_a: 72
+      n_b: 72
+      windows:
+      - 0.0025591083109216275
+      - 0.0013036317443950278
+      - -0.0017900733469703321
+      - -0.003822096124584857
+      - -0.007254676462386639
+      - -0.006682888483289627
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: -0.000830620039131274
+      n_a: 64
+      n_b: 64
+      windows:
+      - 0.002232267066289029
+      - -0.0032413479298880965
+      - 0.00040603426613965827
+      - 0.0009455775571368336
+      - 0.0006032047045710625
+      - -0.005546255187180592
+      verdict: fail
+      why: null
+  code: 'sig = ret.rolling(168).std().shift(1)
+
+    v72 = ret.rolling(72).std().shift(1)
+
+    q = v72.rolling(720).quantile(0.33)
+
+    a = spaced((ret.abs() > 3 * sig) & (v72 < q), 12)
+
+    b = ~a
+
+    signal = np.sign(ret).replace(0, 1)
+
+    '
+- id: off_hours_shock_reverts_more
+  belief: Shocks during the Asian night and at weekends, when Kraken depth is thinnest,
+    are more often order-book accidents and revert more than shocks during EU/US hours.
+  measure: mean_diff
+  horizon_bars: 4
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    XMRUSD:
+      effect: 0.001766624375278461
+      n_a: 122
+      n_b: 130
+      windows:
+      - 0.006103867802926882
+      - -0.010619548601429864
+      - 0.005777521595053573
+      - 0.006344281858265513
+      - 0.004023688634215248
+      - 0.00030254562189506364
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: -0.004449299851331486
+      n_a: 161
+      n_b: 129
+      windows:
+      - 0.011160269902805161
+      - -0.014608305865170498
+      - -0.004925264326388309
+      - -0.00032212938392770386
+      - -0.00985222131590592
+      - -0.009827857971858242
+      verdict: fail
+      why: null
+  code: 'sig = ret.rolling(168).std().shift(1)
+
+    shock = spaced(ret.abs() > 2.5 * sig, 4)
+
+    off = (hour <= 6) | (dow >= 5)
+
+    on = (hour >= 12) & (hour <= 20) & (dow < 5)
+
+    a = shock & off
+
+    b = shock & on
+
+    signal = -np.sign(ret).replace(0, 1)
+
+    '
+- id: shock_volume_intensity_ranks_continuation
+  belief: The heavier the volume behind a shock, the more it continues, so continuation
+    is graded by volume rather than switched on at a threshold.
+  measure: rank_corr
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    XMRUSD:
+      effect: -0.06865799003384683
+      n_a: 514
+      n_b: 514
+      windows:
+      - -0.06545865768988007
+      - -0.013517194416070823
+      - 0.01488256549232159
+      - -0.009217415915845087
+      - -0.21556924088569657
+      - -0.272910457159649
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: -0.046633252624430126
+      n_a: 545
+      n_b: 545
+      windows:
+      - 0.06896122745179349
+      - 0.01935218339712722
+      - 0.19008931143762603
+      - -0.16397178513293545
+      - -0.18190880442472188
+      - -0.26526208714147
+      verdict: fail
+      why: null
+  code: 'sig = ret.rolling(168).std().shift(1)
+
+    volr = df.volume / df.volume.rolling(168).median().shift(1)
+
+    a = spaced(ret.abs() > 2 * sig, 6)
+
+    b = ~a
+
+    feature = np.sign(ret) * np.log(volr.clip(lower=1e-6))
+
+    '
+- id: confirmed_shock_continues
+  belief: A shock followed by a next hour that extends in the same direction shows
+    the move is being followed rather than faded, and the trend carries on.
+  measure: hit_rate
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.06
+  verdict: fail
+  by_symbol:
+    XMRUSD:
+      effect: -0.04656958037964609
+      n_a: 97
+      n_b: 17421
+      windows:
+      - 0.160377358490566
+      - -0.11631175468483818
+      - 0.009635237439779787
+      - -0.21675392670157068
+      - -0.15390722467959628
+      - -0.052211001078537156
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: -0.06010883415787738
+      n_a: 86
+      n_b: 16462
+      windows:
+      - 0.09301140345288911
+      - -0.20845435885519537
+      - 0.025381908263374164
+      - 0.012895023610606626
+      - -0.31443298969072164
+      - -0.059904407859798225
+      verdict: fail
+      why: null
+  code: 'sig = ret.rolling(168).std().shift(1)
+
+    shock_prev = (ret.abs() > 3 * sig).shift(1, fill_value=False)
+
+    same = np.sign(ret) == np.sign(ret.shift(1))
+
+    a = spaced(shock_prev & same & (ret != 0), 12)
+
+    b = ~a
+
+    signal = np.sign(ret.shift(1)).fillna(1).replace(0, 1)
+
+    '
+- id: weekly_extreme_break_with_volume
+  belief: A shock that breaks the prior week's high or low on heavy volume clears
+    the stops clustered there and starts a day-long trend on a thin coin.
+  measure: net_return
+  horizon_bars: 24
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    XMRUSD:
+      effect: -0.008629403898866352
+      n_a: 117
+      n_b: 117
+      windows:
+      - -0.0013427001841538068
+      - -0.013855360203117907
+      - -0.014513793843510066
+      - -0.009008090129726271
+      - -0.009030839341405316
+      - -0.006127779963442052
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: -0.00463508805866706
+      n_a: 125
+      n_b: 125
+      windows:
+      - 0.0007665605300823486
+      - -0.01834327683904467
+      - 0.004671093547166463
+      - -0.011100400718527529
+      - 0.0026464474735570296
+      - -0.008076605646058757
+      verdict: fail
+      why: null
+  code: 'hi = df.high.rolling(168).max().shift(1)
+
+    lo = df.low.rolling(168).min().shift(1)
+
+    volr = df.volume / df.volume.rolling(168).median().shift(1)
+
+    up = (df.close > hi) & (volr > 2.5)
+
+    dn = (df.close < lo) & (volr > 2.5)
+
+    a = spaced(up | dn, 24)
+
+    b = ~a
+
+    signal = pd.Series(np.where(up, 1, -1), index=df.index)
+
+    '
+- id: quiet_volume_burst_raises_volatility
+  belief: On XMR and ZEC, an hour of very heavy volume with no matching price move
+    signals flow building up, and the following hours are more volatile than usual.
+  measure: abs_ratio
+  horizon_bars: 6
+  direction: above
+  min_effect: 1.2
+  verdict: fail
+  by_symbol:
+    XMRUSD:
+      effect: 1.0539764815922288
+      n_a: 828
+      n_b: 16690
+      windows:
+      - 1.0375505240993932
+      - 1.055442528450436
+      - 1.1159078230999004
+      - 1.1159549716006332
+      - 1.033644107790226
+      - 1.1431353392051435
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: 1.0534754504918045
+      n_a: 792
+      n_b: 15756
+      windows:
+      - 1.062421876070407
+      - 1.041281653020512
+      - 0.9246009476060922
+      - 1.0727290945078851
+      - 1.0533664398416873
+      - 1.1217201773404466
+      verdict: fail
+      why: null
+  code: 'sig = ret.rolling(168).std().shift(1)
+
+    volr = df.volume / df.volume.rolling(168).median().shift(1)
+
+    a = spaced((volr > 3) & (ret.abs() < 1 * sig), 6)
+
+    b = ~a
+
+    signal = np.sign(ret).replace(0, 1)
+
+    '
+- id: range_expansion_raises_halfday_volatility
+  belief: On XMR and ZEC, an hour whose high-low range is far above normal starts
+    a volatility cluster that lasts about half a day, whether or not volume backs
+    it.
+  measure: abs_ratio
+  horizon_bars: 12
+  direction: above
+  min_effect: 1.3
+  verdict: fail
+  by_symbol:
+    XMRUSD:
+      effect: 1.1129964378572939
+      n_a: 159
+      n_b: 17359
+      windows:
+      - 1.1557011574469365
+      - 0.9325361036608039
+      - 1.5813756637636602
+      - 0.9101803785990126
+      - 1.049356861856489
+      - 1.3687046903636437
+      verdict: fail
+      why: null
+    ZECUSD:
+      effect: 1.0014987210031605
+      n_a: 302
+      n_b: 16246
+      windows:
+      - 1.136104987894931
+      - 1.110624446542346
+      - 0.9864428099498279
+      - 0.9282738015514084
+      - 1.4175476099063593
+      - 1.0480661915799032
+      verdict: fail
+      why: null
+  code: 'rng = (df.high - df.low) / df.close
+
+    mr = rng.rolling(168).mean().shift(1)
+
+    a = spaced(rng > 3 * mr, 12)
+
+    b = ~a
+
+    signal = np.sign(ret).replace(0, 1)
+
+    '
+profit: 'none: no return claim passed'

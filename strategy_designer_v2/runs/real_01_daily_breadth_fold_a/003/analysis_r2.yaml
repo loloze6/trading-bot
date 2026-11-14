@@ -1,0 +1,31 @@
+run: real_01_daily_breadth_fold_a / efficiency_excess_fade (BTCUSD, ADAUSD)
+observations:
+  - "book_summary.yaml was not in the inputs, so the best and worst bars, equity deciles, forecast quantiles, share at the cap, sign agreement, long/short split, hold and fees-versus-gross cannot be read; every observation below uses judge_verdict.yaml and engine_verdict.yaml only."
+  - "On BTC the per-window IC was positive in 5 of 6 windows (W1 0.132, W3 0.439, W4 0.151, W5 0.159, W6 0.162; only W2 -0.019), yet the pooled fold_totals.ic_event was only 0.0116 (t 0.30), so the ranking held within each window but its level did not carry across windows."
+  - "On BTC the full-size money came from W1 (net +0.370, Sharpe 1.76) and W3 (net +0.264, Sharpe 1.68); it was lost in W2 (-0.219), W4 (-0.269) and W6 (-0.347, Sharpe -2.87), for a fold net_return of -0.327."
+  - "On BTC, W4 and W6 lost money (net -0.269 and -0.347) despite positive window ICs (0.151 and 0.162), so in those windows a correct ranking still lost money, presumably through the forecast's level or sign bias rather than its ordering."
+  - "On ADA the IC sign flipped in W4 (-0.062) and W6 (-0.076), only 2 windows shared the fold sign, and the pooled ic_event was -0.033 (t -0.85)."
+  - "On ADA the full-size book earned in W1 to W3 (net +0.769, +0.241, +0.161) and lost in W4 to W6 (net -0.426, -0.184, -0.692), so all its losses fell in the 2023 half of the fold."
+  - "Both coins lost their most in W4 and W6 (BTC full-size -0.269 and -0.347, ADA -0.426 and -0.692): the windows agree that the fade fails in the same two blocks."
+  - "The worst full-size drawdowns were BTC W4 at 0.519 and ADA W6 at 0.749, and even vol-targeted the worst were 0.316 (BTC W4) and 0.408 (ADA W6), far beyond the 20% cap."
+  - "Vol targeting cut losses but did not change their location: BTC vol_target net was -0.182 in W4 and -0.223 in W6, ADA -0.154 in W4 and -0.366 in W6, against median window Sharpes of -0.19 (BTC) and -0.16 (ADA)."
+  - "The book traded 367 times on BTC and 380 times on ADA over about 670 bars, roughly 54 to 73 trades per window, or one trade every 1.8 days for a 10-day-horizon belief."
+  - "At 0.15% per round trip, 367 trades cost up to about 55% of notional on BTC if each trade is full size, which is larger than the fold's -0.327 net loss, so fees likely took most of the gross; without book_summary this is an upper bound, not a measurement."
+next_claim:
+  id: trend_with_short_pullback
+  belief: "The 20-day fade lost exactly where a slow trend persisted (W4, W6 on both coins), so short-term stretches should be faded only as entries in the direction of the slower 60-day trend: pullbacks inside a trend get bought, extensions inside a downtrend get sold."
+  claim:
+    when: every daily bar
+    then: "the next 10 days' return leans with the 60-day return and against the 5-day return, each in units of the prior 60-day daily volatility"
+    compared_to: "bars where the 5-day move runs in the same direction as the 60-day trend, or where the 60-day trend is flat"
+    horizon_bars: 10
+    min_effect: 0.04
+    code: |
+      sd = ret.rolling(60, min_periods=60).std().shift(1)
+      trend = df.close.pct_change(60) / (sd * np.sqrt(60))
+      stretch = df.close.pct_change(5) / (sd * np.sqrt(5))
+      event = pd.Series(True, index=df.index)
+      strength = (trend.clip(-3, 3) - stretch.clip(-3, 3)).fillna(0)
+  why_no_lookahead: "pct_change uses only closes at or before the bar, and the volatility is a rolling std of past returns shifted one bar."
+  how_it_trades: "The book is graded long when the slow trend is up and the last 5 days pulled back, and graded short in the mirror case; the 60-day term changes slowly, which should cut the churn seen in the fade."
+why: "The fade's losses on both coins sit in the persistent-trend windows W4 and W6, so the next claim keeps the short-term reversal but anchors its sign to the slow trend; it uses 60-day return momentum, not the closed SMA-distance family."

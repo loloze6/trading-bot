@@ -1,0 +1,167 @@
+brief: fake_03_time_of_week.md
+ideas:
+  - id: us_session_reverted_in_asia
+    belief: The weekday US-session move (about 13-21 UTC) is pushed by desk and ETF flow that has no follow-through once US desks log off, so the following Asian hours partly undo it, and more than after a weekend 13-21 UTC move (return effect, UTC clock approximating New York).
+    claim:
+      when: weekday bars closing at 21 UTC, positioned against the 13-21 UTC move
+      then: the next 8 hours (21-05 UTC) move against the US-session move
+      compared_to: the same 21 UTC bars on Saturday and Sunday with the same rule
+      measure: mean_diff
+      horizon_bars: 8
+      direction: positive
+      min_effect: 0.002
+      code: |
+        us = df.close / df.close.shift(8) - 1
+        a = (hour == 21) & (dow <= 4)
+        b = (hour == 21) & (dow >= 5)
+        signal = -np.sign(us)
+    why_no_lookahead: The US-session return uses closes from 13 UTC to the 21 UTC bar's own close only.
+    how_it_trades: At 21 UTC on weekdays, take a position against the 13-21 UTC move and hold 8 hours.
+  - id: us_session_momentum_next_day
+    belief: Institutional flow is spread over several days, so the direction of yesterday's US session repeats in today's US session on consecutive weekdays (return effect, UTC clock approximating New York).
+    claim:
+      when: bars closing at 13 UTC from Tuesday to Friday, signed by the 13-21 UTC return of the previous day
+      then: the next 8 hours (13-21 UTC) move in the same direction as yesterday's US session
+      compared_to: the 13 UTC bars on the other days (where today or yesterday is a weekend day), same rule
+      measure: mean_diff
+      horizon_bars: 8
+      direction: positive
+      min_effect: 0.002
+      code: |
+        prev_us = df.close.shift(16) / df.close.shift(24) - 1
+        a = (hour == 13) & (dow >= 1) & (dow <= 4)
+        b = (hour == 13) & ~a
+        signal = np.sign(prev_us)
+    why_no_lookahead: The previous day's session return uses closes 16 and 24 bars before the signal bar.
+    how_it_trades: At 13 UTC from Tuesday to Friday, trade in the direction of yesterday's 13-21 UTC move and exit at 21 UTC.
+  - id: friday_afternoon_derisk
+    belief: Desks and leveraged traders cut crypto exposure into the weekend, so Friday's US afternoon (16-21 UTC) drifts down compared with the same hours on Monday to Thursday (return effect, UTC clock).
+    claim:
+      when: Friday bars closing at 16 UTC, short
+      then: the next 5 hours drift down
+      compared_to: the 16 UTC bars from Monday to Thursday, short
+      measure: mean_diff
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.0015
+      code: |
+        a = (dow == 4) & (hour == 16)
+        b = (dow <= 3) & (hour == 16)
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: The condition is the bar's own weekday and hour.
+    how_it_trades: Short from 16 to 21 UTC on Fridays.
+  - id: weekend_hold_drift
+    belief: Retail buyers are the marginal flow on weekends while institutional sellers are away, so prices drift up from Friday evening to Sunday evening more than over a two-day weekday stretch (return effect, UTC clock).
+    claim:
+      when: Friday bars closing at 21 UTC, long
+      then: the next 48 hours (to Sunday 21 UTC) rise
+      compared_to: the 21 UTC bars from Monday to Wednesday, long over the same 48 hours
+      measure: mean_diff
+      horizon_bars: 48
+      direction: positive
+      min_effect: 0.004
+      code: |
+        a = (dow == 4) & (hour == 21)
+        b = (dow <= 2) & (hour == 21)
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The condition is the bar's own weekday and hour.
+    how_it_trades: Buy at Friday 21 UTC and sell at Sunday 21 UTC.
+  - id: turn_of_month_drift
+    belief: Month-end fund rebalancing, salary-day retail buying and recurring purchase plans put net buying into the turn of the month, so the days around it return more than other days (return effect, UTC calendar).
+    claim:
+      when: bars closing at 00 UTC on the last day of the month and on the 1st and 2nd day, long
+      then: the next 24 hours rise
+      compared_to: the 00 UTC bars of all other days, long
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.003
+      code: |
+        day = pd.Series(df.index.day, index=df.index)
+        dim = pd.Series(df.index.days_in_month, index=df.index)
+        tom = (day >= dim) | (day <= 2)
+        a = (hour == 0) & tom
+        b = (hour == 0) & ~tom
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The day of month and the month length are known from the bar's own timestamp.
+    how_it_trades: Hold long for the 24 hours after each 00 UTC bar on the last day of the month and on the 1st and 2nd.
+  - id: europe_open_vol
+    belief: The London and European desk open (07-09 UTC) brings a wave of order flow after the quiet late-Asian hours, so hourly moves just after it are larger than in the 03-06 UTC lull on weekdays (volatility effect, UTC clock approximating London).
+    claim:
+      when: weekday bars closing at 07, 08 and 09 UTC
+      then: the next hour's absolute return is larger
+      compared_to: weekday bars closing at 03, 04 and 05 UTC
+      measure: abs_ratio
+      horizon_bars: 1
+      direction: above
+      min_effect: 1.25
+      code: |
+        a = (hour >= 7) & (hour <= 9) & (dow <= 4)
+        b = (hour >= 3) & (hour <= 5) & (dow <= 4)
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The condition is the bar's own hour and weekday.
+    how_it_trades: Time breakout or option-like volatility entries for 07-10 UTC and stay flat in the 03-06 UTC lull.
+  - id: nfp_friday_vol
+    belief: US payrolls are released on the first Friday of the month at 12:30 or 13:30 UTC, and the macro repricing spills into crypto, so those hours are more volatile than the same hours on other Fridays (volatility effect, UTC clock approximating New York, macro calendar).
+    claim:
+      when: bars closing at 12 and 13 UTC on Fridays falling on day 1 to 7 of the month
+      then: the next hour's absolute return is larger
+      compared_to: bars closing at 12 and 13 UTC on the other Fridays
+      measure: abs_ratio
+      horizon_bars: 1
+      direction: above
+      min_effect: 1.3
+      code: |
+        day = pd.Series(df.index.day, index=df.index)
+        fri = (dow == 4) & (hour >= 12) & (hour <= 13)
+        a = fri & (day <= 7)
+        b = fri & (day > 7)
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The weekday, hour and day of month come from the bar's own timestamp.
+    how_it_trades: Widen stops or cut size, or trade volatility breakouts, at 12-14 UTC on the first Friday of each month.
+  - id: seasonal_vol_profile_forecast
+    belief: The intraday volatility profile is stable (sessions are habitual), so an hour that has been volatile on recent days at that time of day will again be volatile, across all hours and not only the US open (volatility effect, UTC clock, data-driven).
+    claim:
+      when: bars whose next hour has averaged at least 1.3 times the overall recent absolute return over the past 30 days
+      then: the next hour's absolute return is larger
+      compared_to: bars whose next hour has averaged below 0.8 times the overall recent absolute return
+      measure: abs_ratio
+      horizon_bars: 1
+      direction: above
+      min_effect: 1.4
+      code: |
+        absr = ret.abs()
+        nxt = sum(absr.shift(23 + 24 * k) for k in range(30)) / 30
+        base = absr.rolling(720).mean()
+        ratio = nxt / base
+        a = ratio > 1.3
+        b = ratio < 0.8
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The same hour on past days is read through shifts of 23 bars or more, and the base is a trailing rolling mean.
+    how_it_trades: Scale position size and stop width by the forecast for the coming hour's typical volatility.
+  - id: volume_surprise_vs_clock
+    belief: Volume far above its usual level for that hour of the day marks unscheduled news or flow that the clock does not explain, and it carries over into a more volatile next hour (volatility effect, volume adjusted for the UTC clock).
+    claim:
+      when: bars whose volume is more than twice the mean volume of the same hour over the past 20 days
+      then: the next hour's absolute return is larger
+      compared_to: bars whose volume is below the mean volume of the same hour over the past 20 days
+      measure: abs_ratio
+      horizon_bars: 1
+      direction: above
+      min_effect: 1.4
+      code: |
+        vnorm = sum(df.volume.shift(24 * k) for k in range(1, 21)) / 20
+        a = df.volume > 2 * vnorm
+        b = df.volume < vnorm
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The norm uses the same hour on the 20 prior days, and the bar's own volume is known at its close.
+    how_it_trades: After an hour with abnormal volume for its time of day, cut size or switch to breakout mode for the next hour.
+notes: |
+  Most of the obvious calendar effects are already in already_tried, so these ideas use other clocks and other points of view.
+  - Clocks covered: the US session handover to Asia, day-to-day US session momentum, the Friday pre-weekend, the full weekend hold, the turn of the month, the London open, the US macro calendar (payrolls first Friday), a data-driven hourly volatility profile, and volume adjusted for the clock.
+  - Contradictions kept on purpose: us_session_reverted_in_asia and us_session_momentum_next_day can contradict each other, and the data decides.
+  - Ideas dropped:
+    - Monday-Asia volatility rebound: largely implied by the passing weekend_vol_compression.
+    - Quiet-weekend-then-Monday volatility: raw absolute returns are confounded by volatility clustering.
+    - Monday continuing the weekend: the mirror of monday_reverses_weekend.
+  - Count caveat: weekend_hold_drift and turn_of_month_drift have roughly 36-52 events a year, so they need a multi-year fold to clear the 30-bar minimum.

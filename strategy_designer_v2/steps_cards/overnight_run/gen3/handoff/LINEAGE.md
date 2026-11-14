@@ -1,0 +1,4 @@
+- `N3-01_strong-volatile-momentum` <- `N2-04_slow-and-fast-momentum.e1_strong-volatile-momentum-persists` (line 7.e profitable but not proven; backtest N2-04_slow-and-fast-momentum_1d)
+- `N3-02_breakout-shock-continues` <- `N2-05_shock-up-continuation.b2_shock-up-new-high-breakout-continuation` (line 7.b inconclusive; backtest N2-05_shock-up-continuation_1d)
+- `N3-03_calm-uptrend-drift` <- `N2-05_shock-up-continuation.g6_calm-uptrend-upward-drift` (line 7.g patterns; backtest N2-05_shock-up-continuation_1d)
+- `N3-04_dip-in-uptrend` <- `N2-04_slow-and-fast-momentum.g1_buy-dips-inside-uptrends` (line 7.g patterns; backtest N2-04_slow-and-fast-momentum_1d)

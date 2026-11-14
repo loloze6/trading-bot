@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 5-bar return after shock-up new-high cases (forecast >= 10), before costs",
+    "value": 0.011135318260341155,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.6784392634718504
+    },
+    "threshold": "confirm if mean > 0 with t >= 2 (and supporting difference > 0); reject if mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess after new-high cases minus mean excess after inside-range shock-up days",
+    "value": 0.012956349076416436,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases pooled across coins": 447,
+    "inside-range shock-up cases": 809
+  },
+  "decided_by": "t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Situation recomputed from closes as close >= max of current and prior 20 closes within each window (regime=='trending' used where fewer than 21 bars exist) plus a positive one-day return, side long; the coin baseline is the mean of all bars' 5-bar forward returns pooled across its windows; signals within 5 bars (distance <= 5) of the last kept case are merged into it, the case being its first bar, and the same merging is applied to the inside-range group; the standardised return is 10 x r / mean|r| over the last 60 one-day returns including the current one (min 20); t is the ordinary t of the mean."
+}

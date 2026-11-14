@@ -1,0 +1,32 @@
+brief: n27_drawdown_state_daily_1d.md
+source: analyst round 1
+ideas:
+- id: fast_drop_from_60d_high_rebounds
+  belief: A 15-35% drop below the 60-day high that happened within days of that high
+    is a forced-selling flush rather than steady distribution, so it rebounds relative
+    to other bars.
+  claim:
+    when: close is 15-35% below the 60-day high and that high was set 10 or fewer
+      days ago
+    then: the 10-day forward return is higher
+    compared_to: all other bars with a valid 60-day high
+    measure: mean_diff
+    horizon_bars: 10
+    direction: positive
+    min_effect: 0.015
+    code: 'hi = df.high.rolling(60).max()
+
+      dd = df.close / hi - 1
+
+      ds = df.high.rolling(60).apply(lambda x: len(x) - 1 - np.argmax(x), raw=True)
+
+      a = (dd <= -0.15) & (dd >= -0.35) & (ds <= 10)
+
+      b = ~a & hi.notna()
+
+      signal = pd.Series(1.0, index=df.index)
+
+      '
+  why_no_lookahead: The 60-day high, the drawdown and the days since the high all
+    use only bars at or before the current close.
+  how_it_trades: Go long at the close of a fast-drop bar and hold for 10 days.

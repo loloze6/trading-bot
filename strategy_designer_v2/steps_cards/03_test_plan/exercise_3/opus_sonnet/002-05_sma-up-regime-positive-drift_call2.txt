@@ -1,0 +1,7 @@
+config:
+{"regime_detector":{"mode":"threshold_rules","components":[],"rules":[],"default_regime":"unknown"},"strategies":{"regimes":{"unknown":{"components":[{"id":"sma_gap","class":"strategies.strategy_components.EMASpreadComponent","params":{"fast_period":50,"slow_period":200,"average":"sma"},"weight":1.0,"history_transforms":[{"op":"vol_normalize"}],"transforms":[{"op":"standardise","params":{"window":200,"min_periods":50}},{"op":"clip","params":{"min":0.0}}]}],"trending":null,"mean_reversion":null,"chop":null}}}}
+differs: The gap (SMA50 − SMA200)/SMA200 is computed as in the plan, and the forecast is zero when the gap is zero or negative and positive and graded when it is positive. The volatility scale and the cap differ.
+- **Volatility scale:** the plan divides by 10 × the std of daily close-to-close returns over 100 bars, which the catalogue cannot compute. The config divides by the 24-bar price std (`stddev_24`) × close through `vol_normalize`. It then standardises the result against its own past 200 values, with target 10 and cap 20.
+- **Cap:** the plan caps the scaled gap at 1. The config caps the forecast at +20 (allocation 2.0), and the zero floor comes from `clip` with `min` 0. The size therefore does not saturate where the plan's does.
+- **Scale:** the plan's size falls in 0 to 1. The config's average positive forecast is around 10, scaled against the gap's own history.
+- **Direction:** the shape matches the plan. The position starts small after the upward cross, grows as the averages spread, and shrinks to zero as they converge.

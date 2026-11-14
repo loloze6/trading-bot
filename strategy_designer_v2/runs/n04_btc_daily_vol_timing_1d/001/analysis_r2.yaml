@@ -1,0 +1,31 @@
+run: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001
+observations:
+  - low_vol_regime_momentum held on the judge with net_return 0.0387 against 0.01 asked on 291 bars, but two of its six windows are near zero (W1 -0.0006, W6 0.0011), so it passed the 5-of-6 rule only by the W6 margin.
+  - The profit run for low_vol_regime_momentum recorded 0 trades and 0.0 net return in all six windows, so its profit fail reflects a broken translation into the engine, not a market result, and the profit question for the one validated claim is still open.
+  - vol_scaled_momentum_strength nearly held, with rank_corr 0.209 against 0.05 asked on the whole fold, but three windows were negative (-0.045, -0.140, -0.021) and the effect came mostly from W5 (0.341) and W6 (0.176).
+  - upside_semivariance_share showed the same pattern, with 0.184 on the fold but W1 -0.140 and W3 -0.261, which suggests both whole-fold correlations rest on the late windows.
+  - uptrend_vol_spike_exit had a large effect of 0.077 (high-volatility uptrend bars returned about 7.7% less over 10 bars than calm uptrend bars), but it failed because W2 and W4 had no qualifying bars and W5 was -0.008.
+  - high_vol_regime_short_reversal cleared the threshold on the fold (0.0069 against 0.005) but was negative in 4 of 6 windows, so the 3-bar reversal in high volatility is not stable.
+  - falling_vol_momentum_vs_rising failed at -0.0105, with W2 (-0.083) and W6 (-0.087) against it, so the trend in volatility did not time momentum while the level of volatility did.
+  - The event-style claims had too few bars to judge: drawdown_vol_contraction_long n_a 16, compression_breakout_direction n_a 11, low_volume_shock_fade n_a 4, all below the 30-bar minimum.
+next_claim:
+  id: low_vs_high_vol_momentum_contrast
+  belief: BTC 20-day momentum pays more in the bottom third of its past-year volatility than in the top third, so the volatility level, not momentum alone, is what times the trend rule.
+  claim:
+    when: bars whose 20-day realized volatility ranks in the bottom third of the past 365 days
+    then: the sign of 20-day momentum earns more over the next 10 bars
+    compared_to: bars whose 20-day realized volatility ranks in the top third of the past 365 days, same momentum rule
+    measure: mean_diff
+    horizon_bars: 10
+    direction: positive
+    min_effect: 0.01
+    code: |
+      vol20 = ret.rolling(20).std()
+      pct = vol20.rolling(365).rank(pct=True)
+      mom = df.close.pct_change(20)
+      a = (pct < 0.33) & mom.notna()
+      b = (pct > 0.67) & mom.notna()
+      signal = np.sign(mom).replace(0, 1).fillna(1)
+  why_no_lookahead: The volatility rank and momentum use only rolling windows ending at the bar's close.
+  how_it_trades: Hold the 20-day momentum direction only while volatility ranks low, and go flat when it ranks high.
+why: The one pass (low-vol momentum, 0.0387) never tested whether momentum pays everywhere, and uptrend_vol_spike_exit hinted that high volatility weakens it (0.077); a low-versus-high contrast tests whether the volatility state really adds timing, with 1% per 10 bars as the smallest gap worth acting on.

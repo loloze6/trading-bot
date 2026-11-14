@@ -1,0 +1,26 @@
+---
+line: 7.f real and profitable
+backtest: N4-01_breakout-drift-lasts_1d
+idea tested: N4-01_breakout-drift-lasts
+step 5: confirmed
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.3262 USD
+---
+## Findings
+- **F1:** The book's gain rests on a few days: the best 1% of its 2898 daily returns (mean over coins) carry 104% of the summed daily return, and without them the sum is -0.20 instead of +4.93.
+- **F2:** The confirmed drift rests on a few events: on 445 non-overlapping new-20-day-high events the mean excess 10-bar return is 0.0214 (t 2.49), but without the 10 largest it is 0.0035 (t 0.56, n 435), and the median event is -0.0128.
+- **F3:** The book earns only in rising and agitated markets: days with a positive prior 20-day coin move and mid or high volatility carry 43% (mean 0.0041, t 1.73, n 449) and 56% (mean 0.0058, t 2.04, n 412) of the book's sum, while rising calm days (-0.0002, n 499) and all falling-market states (means -0.0003 to 0.0008, |t| < 0.6) earn nothing.
+- **F4:** The effect turns with the year: event excess returns are positive in 2020 (0.046, t 2.62, n 80), 2021 (0.078, t 2.36, n 60) and 2024 (0.057, t 2.29, n 63), and negative in 2018 (-0.050, t -1.64, n 28), 2022 (-0.028, t -1.95, n 55) and 2023 (-0.017, t -1.74, n 66); the book's Sharpe was -1.64 in 2018 and -0.78 in 2022.
+- **F5:** Much of the book is market exposure: regressed on the coins' mean daily return, it has beta 0.79 and a daily alpha of 0.00077 with t 1.61 over 2898 days; across the 24 windows, window means of book and holding move together.
+- **F6:** The gain is spread unevenly across coins: XRP, ETH and ZEC give 78% of the summed book return (Sharpe 0.82, 0.98, 0.69). LTC gives 3% with Sharpe 0.11, below its holding's 0.26, and BTC and XMR also trail holding (0.47 vs 0.65, 0.34 vs 0.44). No single coin's event excess reaches t 1.6 (n 59 to 82).
+- **F7:** Fees are small overall: they take about 2% of the mean gross trade (4.37% gross vs 4.27% net, 3269 long trades of about 21 days). They take 44% of LTC's gross (0.23% to 0.13%) and turn XMR's -0.22% into -0.32%. The top 1% of trades carry 70% of summed net trade returns, and 41% to 46% of trades win.
+- **F8:** New highs reached after the weakest prior 20-day rise drift more: the lowest per-coin momentum tercile gives a mean excess of 0.0277 (t 2.09, n 149), against 0.0116 (t 0.73, n 151) in the highest tercile.
+
+## Ideas
+- `N4-01_breakout-drift-lasts.f1_breakout-drift-needs-agitated-uptrend` (from F3, F4, F5): In one coin, a close at a new 20-day closing high, at a time when the coin's prior 20 days have risen and its 20-day daily volatility is in the middle or upper third of its own range, is followed by a rise over the next ten days larger than the coin's average ten-day move.
+- `N4-01_breakout-drift-lasts.f2_flat-range-breakouts-drift-further` (from F8, F2): In one coin, a new 20-day closing high reached after only a small rise over the prior 20 days, so a break out of a flat range, is followed by a larger ten-day rise than a new high reached after a steep prior run.
+- `N4-01_breakout-drift-lasts.f3_breakout-drift-beyond-these-coins` (from F1, F2, F6): The same rise after a coin's new 20-day closing high appears in other liquid crypto coins and on 4-hour bars, and not only in the few coins and years that carried this book.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

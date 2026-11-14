@@ -1,0 +1,917 @@
+brief: n07_calendar_daily_three_coins_1d.md
+fold: B
+symbols:
+- BTCUSD
+- ETHUSD
+- LTCUSD
+bar_size: 1d
+claims:
+- id: monday_tradfi_reopen_inflow
+  belief: When TradFi reopens on Monday, ETF creations and institutional desks put
+    money to work that was idle over the weekend, so Monday's daily return is higher
+    than other days.
+  measure: mean_diff
+  horizon_bars: 1
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0023495994368601587
+      n_a: 104
+      n_b: 626
+      windows:
+      - -8.48832986561558e-06
+      - 0.01575038839253465
+      - -0.012074612426297033
+      - -0.010168661799515033
+      - 0.002646967512389219
+      - -0.009298963227656038
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.0028395747603547567
+      n_a: 104
+      n_b: 626
+      windows:
+      - -0.0036627654094670914
+      - 0.01483612019760845
+      - -0.014564534068515454
+      - -0.011563828511641075
+      - 0.0076081077333366234
+      - -0.008855784548452851
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.0005208437190259915
+      n_a: 104
+      n_b: 626
+      windows:
+      - -0.0039711138891090885
+      - 0.029413018173209682
+      - -0.012988807587511817
+      - -0.01405380686826985
+      - 0.010362709468775296
+      - -0.010543587966619469
+      verdict: fail
+      why: null
+  code: 'd = df.index - pd.Timedelta(seconds=1)
+
+    wd = pd.Series(d.dayofweek, index=df.index)
+
+    a = wd == 6
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: friday_derisk_before_weekend
+  belief: Leveraged and institutional desks cut crypto risk on Friday before the weekend,
+    when TradFi hedges are unavailable, so Friday's return is weaker than other days.
+  measure: mean_diff
+  horizon_bars: 1
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0039771738099760555
+      n_a: 106
+      n_b: 624
+      windows:
+      - -0.006615235358717399
+      - -0.00418854098863938
+      - -0.00481421614730607
+      - -0.0042875675305923365
+      - 0.0015095384573138113
+      - -0.005219410583318724
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.009538222890051774
+      n_a: 106
+      n_b: 624
+      windows:
+      - -0.013320367893039
+      - -0.010816698262601107
+      - -0.005105431699487363
+      - -0.01768480650171721
+      - 0.0019426400815614198
+      - -0.011508192399925706
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.012235071079078015
+      n_a: 106
+      n_b: 624
+      windows:
+      - -0.010565415999562991
+      - -0.018728665957288948
+      - -0.009843027183770107
+      - -0.021986407095946903
+      - -0.0074140186990001725
+      - -0.004868438998226875
+      verdict: fail
+      why: null
+  code: 'd = df.index - pd.Timedelta(seconds=1)
+
+    wd = pd.Series(d.dayofweek, index=df.index)
+
+    a = wd == 3
+
+    b = ~a
+
+    signal = pd.Series(-1.0, index=df.index)
+
+    '
+- id: weekend_thin_drift_up
+  belief: Weekend trading is retail-dominated and thin, and retail buys more than
+    it sells (salary dip-buying, apps), so Saturday and Sunday bars close up more
+    often than weekday bars.
+  measure: hit_rate
+  horizon_bars: 1
+  direction: positive
+  min_effect: 0.03
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.04845696973055863
+      n_a: 207
+      n_b: 523
+      windows:
+      - -0.08691341705221411
+      - -0.23939808481532154
+      - 0.014778325123152691
+      - 0.031609195402298895
+      - -0.11696306429548564
+      - 0.09959893048128343
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.054396320004433674
+      n_a: 207
+      n_b: 523
+      windows:
+      - -0.07138136153337743
+      - -0.2113543091655266
+      - 0.07750410509031191
+      - 0.04980842911877392
+      - -0.13953488372093026
+      - -0.04077540106951871
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.07855090937641435
+      n_a: 207
+      n_b: 523
+      windows:
+      - 0.007270323859881023
+      - -0.29274965800273595
+      - 0.12906403940886696
+      - -0.017241379310344862
+      - -0.23392612859097128
+      - -0.07486631016042777
+      verdict: fail
+      why: null
+  code: 'd = df.index - pd.Timedelta(seconds=1)
+
+    wd = pd.Series(d.dayofweek, index=df.index)
+
+    a = wd.isin([4, 5])
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: weekend_move_reverts_on_monday
+  belief: Moves made on thin weekend liquidity are partly noise, and Monday's institutional
+    flow corrects them, so the weekend move reverts more than an ordinary 2-day move
+    does.
+  measure: mean_diff
+  horizon_bars: 1
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.001255008963919715
+      n_a: 104
+      n_b: 626
+      windows:
+      - -0.004475864498152586
+      - -0.0052248346819256984
+      - -0.007608832530770727
+      - 0.01666322969283485
+      - -0.00300812680346601
+      - 0.01058434771759949
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.0013592446238063522
+      n_a: 104
+      n_b: 626
+      windows:
+      - 0.00025061060651435096
+      - 0.023392540252207633
+      - -0.015516104546938629
+      - 0.003293343272435536
+      - -0.017026299837168954
+      - -0.0021021725039500694
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.008099116475794015
+      n_a: 104
+      n_b: 625
+      windows:
+      - 0.002095307951251234
+      - -0.011342939127523669
+      - -0.018585112261450036
+      - 0.0005554865773236577
+      - -0.019284889218414748
+      - -0.0019981443519601913
+      verdict: fail
+      why: null
+  code: 'd = df.index - pd.Timedelta(seconds=1)
+
+    wd = pd.Series(d.dayofweek, index=df.index)
+
+    ret2 = df.close / df.close.shift(2) - 1
+
+    a = (wd == 6) & ret2.notna() & (ret2 != 0)
+
+    b = ~a & ret2.notna() & (ret2 != 0)
+
+    signal = -np.sign(ret2)
+
+    '
+- id: pre_month_end_redemption_selling
+  belief: Before month end, funds and treasuries raise cash for redemptions, payroll
+    and reporting, which weighs on prices in the week before the turn of the month
+    (the already-tried inflow window comes after this one).
+  measure: net_return
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.013940898908424813
+      n_a: 24
+      n_b: 24
+      windows:
+      - -0.010391693219765711
+      - -0.0028960526992645994
+      - -0.010914391223835
+      - -0.025614381578979717
+      - -0.02635852467307928
+      - -0.007470350055624573
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.026323024451208512
+      n_a: 24
+      n_b: 24
+      windows:
+      - 0.011872949280995611
+      - -0.001437872311447512
+      - -0.027618808703400638
+      - -0.08197306554030054
+      - -0.044423793766866504
+      - -0.014357555666231479
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.015878343017502603
+      n_a: 24
+      n_b: 24
+      windows:
+      - -0.004054710478317512
+      - 0.016842698201002038
+      - -0.004445145630521589
+      - -0.06297277763441422
+      - -0.03325046026641415
+      - -0.007389662296350184
+      verdict: fail
+      why: null
+  code: 'd = df.index - pd.Timedelta(seconds=1)
+
+    day = pd.Series(d.day, index=df.index)
+
+    dim = pd.Series(d.days_in_month, index=df.index)
+
+    a = spaced((dim - day) == 5, 20)
+
+    b = ~a
+
+    signal = pd.Series(-1.0, index=df.index)
+
+    '
+- id: month_end_rebalance_reversal
+  belief: Multi-asset and crypto index funds rebalance at month end, selling what
+    rallied over the month and buying what fell, so the month's performance predicts
+    the opposite move across the turn of the month.
+  measure: rank_corr
+  horizon_bars: 4
+  direction: negative
+  min_effect: -0.15
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.09304347826086956
+      n_a: 24
+      n_b: 24
+      windows:
+      - -0.7999999999999999
+      - 0.39999999999999997
+      - -0.39999999999999997
+      - 0.7999999999999999
+      - 0.0
+      - -0.19999999999999998
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.19913043478260867
+      n_a: 24
+      n_b: 24
+      windows:
+      - -0.7999999999999999
+      - -0.19999999999999998
+      - 0.39999999999999997
+      - 0.7999999999999999
+      - 1.0
+      - -0.39999999999999997
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.06869565217391303
+      n_a: 24
+      n_b: 24
+      windows:
+      - -0.39999999999999997
+      - 0.0
+      - 0.39999999999999997
+      - 0.39999999999999997
+      - -0.19999999999999998
+      - -0.39999999999999997
+      verdict: fail
+      why: null
+  code: 'd = df.index - pd.Timedelta(seconds=1)
+
+    day = pd.Series(d.day, index=df.index)
+
+    dim = pd.Series(d.days_in_month, index=df.index)
+
+    feature = df.close / df.close.shift(25) - 1
+
+    a = ((dim - day) == 2) & feature.notna()
+
+    b = ~a
+
+    signal = -np.sign(feature)
+
+    '
+- id: mid_month_payday_inflow
+  belief: Semi-monthly salaries paid on the 15th and DCA plans scheduled mid-month
+    bring retail buying around the 15th, separate from the turn-of-month window.
+  measure: net_return
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.00782082783135585
+      n_a: 24
+      n_b: 24
+      windows:
+      - 0.05009141655551777
+      - 0.0382741003049239
+      - -0.013929181042608095
+      - 0.0099439046149874
+      - -0.0016978380751411213
+      - -0.03575743536954476
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.012941427829220033
+      n_a: 24
+      n_b: 24
+      windows:
+      - 0.03866719535175894
+      - 0.07170081272720763
+      - -0.003733944012522915
+      - 0.016464722900583373
+      - 0.010661027660508833
+      - -0.05611124765221567
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.008703353409319225
+      n_a: 24
+      n_b: 24
+      windows:
+      - 0.03936681913060466
+      - 0.04335159996245308
+      - -0.003413060528887678
+      - 0.030273067345669508
+      - 0.02262902742661496
+      - -0.07998733288053919
+      verdict: fail
+      why: null
+  code: 'd = df.index - pd.Timedelta(seconds=1)
+
+    day = pd.Series(d.day, index=df.index)
+
+    a = spaced(day == 14, 20)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: monthly_expiry_hedge_unwind
+  belief: Into the monthly Deribit expiry (last Friday, 08:00 UTC), dealer delta hedging
+    pushes price in the direction of the prior week's move; after expiry those hedges
+    unwind, so the pre-expiry week's move reverts.
+  measure: mean_diff
+  horizon_bars: 5
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.003243674881717217
+      n_a: 21
+      n_b: 709
+      windows:
+      - 0.030203694161182234
+      - -0.013816187030880202
+      - -0.0001377642591962702
+      - -0.03051041970873317
+      - -0.011346678282137722
+      - 0.014401702836986746
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.013154873104584948
+      n_a: 21
+      n_b: 709
+      windows:
+      - 0.04113987916551521
+      - -0.005120346795236158
+      - 0.0048970522777227014
+      - -0.007960610241902366
+      - -0.06595010618371874
+      - -0.05528874473659676
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: 0.015449725494916033
+      n_a: 21
+      n_b: 709
+      windows:
+      - 0.05139616598629077
+      - -0.06451535287897768
+      - 0.03247034879936562
+      - -0.03705041648143299
+      - 0.10222533632690588
+      - 0.038850076597520086
+      verdict: fail
+      why: null
+  code: 'd = df.index - pd.Timedelta(seconds=1)
+
+    day = pd.Series(d.day, index=df.index)
+
+    wd = pd.Series(d.dayofweek, index=df.index)
+
+    dim = pd.Series(d.days_in_month, index=df.index)
+
+    r5 = df.close / df.close.shift(5) - 1
+
+    a = (wd == 4) & ((day + 7) > dim) & r5.notna() & (r5 != 0)
+
+    b = ~a & r5.notna() & (r5 != 0)
+
+    signal = -np.sign(r5)
+
+    '
+- id: q4_seasonal_strength
+  belief: Year-end performance chasing by funds, bonus season inflows and the historical
+    "Uptober to December" pattern make daily returns in October to December higher
+    than in the rest of the year.
+  measure: mean_diff
+  horizon_bars: 1
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0017335750955185182
+      n_a: 184
+      n_b: 546
+      windows:
+      - null
+      - 0.014264199254951284
+      - 0.003273492490882644
+      - null
+      - 0.09066602377396575
+      - 0.00047997097700789914
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: -0.0032122764200087912
+      n_a: 184
+      n_b: 546
+      windows:
+      - null
+      - 0.09600997037582927
+      - -0.005794693387965197
+      - null
+      - 0.047434855266438196
+      - 0.004319369717699395
+      verdict: fail
+      why: null
+    LTCUSD:
+      effect: -0.0033424372757356697
+      n_a: 184
+      n_b: 546
+      windows:
+      - null
+      - 0.03183494121506794
+      - 0.001424390812171552
+      - null
+      - 0.07510751168267915
+      - 0.00010043859954552201
+      verdict: fail
+      why: null
+  code: 'd = df.index - pd.Timedelta(seconds=1)
+
+    month = pd.Series(d.month, index=df.index)
+
+    a = month.isin([10, 11, 12])
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: friday_long_net_profit
+  belief: Crypto buyers add exposure on Friday ahead of the weekend (weekly Deribit
+    expiry at 08:00 UTC clears hedges, and retail funds accounts before the weekend),
+    so being long over Friday pays after cost.
+  measure: net_return
+  horizon_bars: 1
+  direction: positive
+  min_effect: 0.002
+  verdict: pass
+  by_symbol:
+    BTCUSD:
+      effect: 0.0034931337239146316
+      n_a: 106
+      n_b: 106
+      windows:
+      - 0.0027559373558728004
+      - 0.005253045378557489
+      - 0.0006083592945378981
+      - 0.004994539286542305
+      - 0.0039052710734464664
+      - 0.003379157578156724
+      verdict: pass
+      why: null
+    ETHUSD:
+      effect: 0.009324683837195645
+      n_a: 106
+      n_b: 106
+      windows:
+      - 0.0042638658829272785
+      - 0.009779791680081341
+      - 0.0013203563640440835
+      - 0.02086245467668575
+      - 0.010231986500036108
+      - 0.00907024682882898
+      verdict: pass
+      why: null
+    LTCUSD:
+      effect: 0.010756526210611739
+      n_a: 106
+      n_b: 106
+      windows:
+      - 0.001958876924424777
+      - 0.0230688797243805
+      - 0.0039105764507968085
+      - 0.0202304942019192
+      - 0.0131198256463118
+      - 0.002554193413279234
+      verdict: pass
+      why: null
+  code: 'd = df.index - pd.Timedelta(seconds=1)
+
+    wd = pd.Series(d.dayofweek, index=df.index)
+
+    a = wd == 3
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: friday_long_after_down_week
+  belief: The Friday edge comes from shorts and hedges being closed before the weekend,
+    so it should be larger when Monday to Thursday fell and there are more shorts
+    to cover.
+  measure: net_return
+  horizon_bars: 1
+  direction: positive
+  min_effect: 0.005
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0009456174514437111
+      n_a: 53
+      n_b: 53
+      windows:
+      - 0.002923816020016425
+      - 0.0018031882076490584
+      - -0.0019673059321219308
+      - 0.00022356238090600537
+      - -0.005405331161752201
+      - 0.004936451310952031
+      verdict: fail
+      why: null
+    ETHUSD:
+      effect: 0.010010785863005849
+      n_a: 53
+      n_b: 53
+      windows:
+      - 0.010398784816929825
+      - 0.001222464848415096
+      - 0.005144458210088689
+      - 0.004706060979668249
+      - 0.040349445787218254
+      - 0.011533812147989682
+      verdict: pass
+      why: null
+    LTCUSD:
+      effect: 0.007556975262983288
+      n_a: 53
+      n_b: 53
+      windows:
+      - -0.0004990188047089221
+      - 0.007775083213903824
+      - 0.009675032230826443
+      - 0.007130248487637009
+      - 0.019352690895258443
+      - 0.004641112110756783
+      verdict: pass
+      why: null
+  code: 'd = df.index - pd.Timedelta(seconds=1)
+
+    wd = pd.Series(d.dayofweek, index=df.index)
+
+    r4 = df.close / df.close.shift(4) - 1
+
+    a = (wd == 3) & (r4 < 0)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+profit:
+  friday_long_net_profit/BTCUSD:
+    claim: friday_long_net_profit
+    symbol: BTCUSD
+    bar_size: 1d
+    fold: B
+    engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+    fold_totals:
+      net_return: 0.3336
+      median_window_sharpe: 0.6943
+      worst_window_drawdown: 0.0845
+      trades: 106
+    windows:
+    - window: W1
+      net_return: 0.022
+      trades: 18
+      sharpe: 0.504
+      max_drawdown: 0.0712
+      exposure_pct: 13.8211
+      cost_drag_pct: 46.7351
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_BTCUSD/results/20261106T003216Z_e236a1a5
+      seconds: 3
+    - window: W2
+      net_return: 0.0924
+      trades: 17
+      sharpe: 2.752
+      max_drawdown: 0.0159
+      exposure_pct: 14.1667
+      cost_drag_pct: 16.2452
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_BTCUSD/results/20261106T003219Z_e236a1a5
+      seconds: 3
+    - window: W3
+      net_return: 0.0078
+      trades: 17
+      sharpe: 0.2163
+      max_drawdown: 0.0675
+      exposure_pct: 13.9344
+      cost_drag_pct: 71.2763
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_BTCUSD/results/20261106T003222Z_e236a1a5
+      seconds: 3
+    - window: W4
+      net_return: 0.0923
+      trades: 18
+      sharpe: 2.3235
+      max_drawdown: 0.0297
+      exposure_pct: 14.6341
+      cost_drag_pct: 16.85
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_BTCUSD/results/20261106T003225Z_e236a1a5
+      seconds: 3
+    - window: W5
+      net_return: 0.0624
+      trades: 18
+      sharpe: 0.8846
+      max_drawdown: 0.0616
+      exposure_pct: 14.1667
+      cost_drag_pct: 23.804
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_BTCUSD/results/20261106T003228Z_e236a1a5
+      seconds: 3
+    - window: W6
+      net_return: 0.0214
+      trades: 18
+      sharpe: 0.4237
+      max_drawdown: 0.0845
+      exposure_pct: 13.9344
+      cost_drag_pct: 47.0366
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_BTCUSD/results/20261106T003231Z_e236a1a5
+      seconds: 3
+    checks:
+      net_positive_in_5_of_6: true
+      median_window_sharpe_ge_1.0: false
+      worst_window_drawdown_le_20%: true
+    min_bars: 200
+    verdict: fail
+  friday_long_net_profit/ETHUSD:
+    claim: friday_long_net_profit
+    symbol: ETHUSD
+    bar_size: 1d
+    fold: B
+    engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+    fold_totals:
+      net_return: 1.1636
+      median_window_sharpe: 1.8091499999999998
+      worst_window_drawdown: 0.156
+      trades: 106
+    windows:
+    - window: W1
+      net_return: 0.0167
+      trades: 18
+      sharpe: 0.3301
+      max_drawdown: 0.156
+      exposure_pct: 13.8211
+      cost_drag_pct: 55.426
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_ETHUSD/results/20261106T003234Z_e236a1a5
+      seconds: 3
+    - window: W2
+      net_return: 0.1701
+      trades: 17
+      sharpe: 2.8279
+      max_drawdown: 0.0216
+      exposure_pct: 14.1667
+      cost_drag_pct: 9.896
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_ETHUSD/results/20261106T003237Z_e236a1a5
+      seconds: 3
+    - window: W3
+      net_return: 0.0152
+      trades: 17
+      sharpe: 0.3742
+      max_drawdown: 0.0828
+      exposure_pct: 13.9344
+      cost_drag_pct: 55.5953
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_ETHUSD/results/20261106T003240Z_e236a1a5
+      seconds: 3
+    - window: W4
+      net_return: 0.4226
+      trades: 18
+      sharpe: 3.2907
+      max_drawdown: 0.042
+      exposure_pct: 14.6341
+      cost_drag_pct: 4.7431
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_ETHUSD/results/20261106T003243Z_e236a1a5
+      seconds: 3
+    - window: W5
+      net_return: 0.1064
+      trades: 18
+      sharpe: 1.1095
+      max_drawdown: 0.1377
+      exposure_pct: 14.1667
+      cost_drag_pct: 16.5492
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_ETHUSD/results/20261106T003246Z_e236a1a5
+      seconds: 3
+    - window: W6
+      net_return: 0.1382
+      trades: 18
+      sharpe: 2.5088
+      max_drawdown: 0.0261
+      exposure_pct: 13.9344
+      cost_drag_pct: 12.1507
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_ETHUSD/results/20261106T003249Z_e236a1a5
+      seconds: 3
+    checks:
+      net_positive_in_5_of_6: true
+      median_window_sharpe_ge_1.0: true
+      worst_window_drawdown_le_20%: true
+    min_bars: 200
+    verdict: pass
+  friday_long_net_profit/LTCUSD:
+    claim: friday_long_net_profit
+    symbol: LTCUSD
+    bar_size: 1d
+    fold: B
+    engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+    fold_totals:
+      net_return: 1.3058
+      median_window_sharpe: 1.11165
+      worst_window_drawdown: 0.1611
+      trades: 106
+    windows:
+    - window: W1
+      net_return: -0.0578
+      trades: 18
+      sharpe: -0.6635
+      max_drawdown: 0.1611
+      exposure_pct: 13.8211
+      cost_drag_pct: 47.9076
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_LTCUSD/results/20261106T003252Z_e236a1a5
+      seconds: 3
+    - window: W2
+      net_return: 0.4419
+      trades: 17
+      sharpe: 4.6229
+      max_drawdown: 0.0442
+      exposure_pct: 14.1667
+      cost_drag_pct: 4.7928
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_LTCUSD/results/20261106T003255Z_e236a1a5
+      seconds: 3
+    - window: W3
+      net_return: 0.0472
+      trades: 17
+      sharpe: 0.8899
+      max_drawdown: 0.08
+      exposure_pct: 13.9344
+      cost_drag_pct: 27.9789
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_LTCUSD/results/20261106T003258Z_e236a1a5
+      seconds: 3
+    - window: W4
+      net_return: 0.395
+      trades: 18
+      sharpe: 3.5189
+      max_drawdown: 0.0498
+      exposure_pct: 14.6341
+      cost_drag_pct: 5.0029
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_LTCUSD/results/20261106T003300Z_e236a1a5
+      seconds: 3
+    - window: W5
+      net_return: 0.1823
+      trades: 18
+      sharpe: 1.3334
+      max_drawdown: 0.0979
+      exposure_pct: 14.1667
+      cost_drag_pct: 10.4678
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_LTCUSD/results/20261106T003303Z_e236a1a5
+      seconds: 3
+    - window: W6
+      net_return: -0.0173
+      trades: 18
+      sharpe: -0.0343
+      max_drawdown: 0.141
+      exposure_pct: 13.9344
+      cost_drag_pct: 9187.3619
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001/engine_r1_friday_long_net_profit_LTCUSD/results/20261106T003306Z_e236a1a5
+      seconds: 3
+    checks:
+      net_positive_in_5_of_6: false
+      median_window_sharpe_ge_1.0: true
+      worst_window_drawdown_le_20%: true
+    min_bars: 200
+    verdict: fail

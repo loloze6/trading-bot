@@ -1,0 +1,36 @@
+run: "n12_short_horizon_daily_reversion_1d / fold B (try folder name not given in record.yaml)"
+observations:
+  - "The plain vol-scaled 3-day shock fade lost on LTC (net -1.58% over 3 bars) and won on XMR (+1.26%) and ZEC (+0.76%), but no symbol had 5 of 6 windows of one sign (XMR 3 of 6 positive), and n_a was only 23 to 25."
+  - "Fading shocks against the 100-day trend beat fading shocks with the trend on all three coins (LTC +3.36%, XMR +5.77%, ZEC +4.56% over 5 bars, all above the 0.01 asked). It failed only on window consistency (4, 4 and 3 of 6 positive) and on sample size (n_a 15 to 21). This is the claim that nearly held."
+  - "The calm-regime belief came out reversed on all three coins: shocks in calm regimes reverted less than shocks in turbulent ones (LTC -2.77%, XMR -2.71%, ZEC -7.13%), and LTC was negative in all 5 windows with data."
+  - "Size as a continuous ranker was positive but weak on LTC and XMR (rank_corr 0.063 and 0.078) and stronger only on ZEC (0.281). Windows swung from -0.35 to +0.70, so the dose-response is not stable."
+  - "Weekend-ending shocks reverted more on ZEC (+4.22%, 5 of 6 windows positive) and LTC (+1.55%) but not on XMR (-0.54%), with only 9 to 15 weekend events per coin."
+  - "The volume split was mixed in sign (LTC -2.06%, XMR -0.20%, ZEC +0.84%) with n_a 13 to 16, so light-volume moves showed no extra reversion."
+  - "Three claims could not be judged at all: the rejection close had n_a of 1 per coin, the concentrated-vs-grind split had n_b of 2, and the 5-day z below -2 long-only test had n_a of 3 to 7."
+  - "The common problem is sample size. A 1.5-sigma 3-day shock spaced 3 bars gives only about 40 events per coin in the fold, so any two-way split falls below the 30-bar minimum on at least one side."
+next_claim:
+  brief: n12_short_horizon_daily_reversion_1d.md
+  ideas:
+    - id: countertrend_pullback_depth_ranks_rebound
+      belief: "Pullbacks against the 100-day trend are bought back by trend followers, and deeper pullbacks in volatility units are bought back harder, so pullback depth ranks the next 5-day return."
+      claim:
+        when: "Every 5th daily bar whose 3-day move is against the 100-day trend (down in an uptrend, up in a downtrend), of any size, with the trend and volatility defined."
+        then: "The more negative the 3-day vol-scaled move, the higher the next 5-day return."
+        compared_to: "Not used (rank_corr)."
+        measure: rank_corr
+        horizon_bars: 5
+        direction: positive
+        min_effect: 0.15
+        code: |
+          vol = ret.rolling(30).std().shift(3)
+          z3 = (df.close / df.close.shift(3) - 1) / (vol * np.sqrt(3))
+          ma100 = df.close.rolling(100).mean().shift(3)
+          up_trend = df.close.shift(3) > ma100
+          against = ((z3 < 0) & up_trend) | ((z3 > 0) & ~up_trend)
+          grid = pd.Series(np.arange(len(df)) % 5 == 0, index=df.index)
+          a = (against & grid & z3.notna() & ma100.notna()).fillna(False)
+          b = ~a
+          feature = -z3
+      why_no_lookahead: "Volatility, trend and the 3-day move use only closes at or before the bar, the trend and volatility are shifted 3 bars to precede the move, and the grid is a fixed bar index."
+      how_it_trades: "At each 5-day check, if price has pulled back against the 100-day trend, take a position toward the trend sized by pullback depth, and exit after 5 days."
+why: "The against-trend split was the only condition positive on all three coins, but it failed on sample size. A continuous ranking over all counter-trend bars (about 70 per coin) tests the same mechanism as a dose-response with enough data. The bar is 0.15 because 0.10 is under one standard error at that n."

@@ -1,0 +1,38 @@
+{
+  "aux_feeds": [],
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 2,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "or_location_with_prior_day",
+            "class": "strategies.claim_event.ClaimEventComponent",
+            "params": {
+              "code": "t = df.index - pd.Timedelta(hours=1)\nday = pd.Series(t.normalize(), index=df.index)\nhod = pd.Series(t.hour, index=df.index)\ninor = hod < 4\nor_hi = df.high.where(inor).groupby(day).transform('max')\nor_lo = df.low.where(inor).groupby(day).transform('min')\nwidth = or_hi - or_lo\nloc = (df.close - or_lo) / width - 0.5\ndc = df.close.groupby(day).last()\nprev = day.map(dc.pct_change().shift(1))\nsignal = pd.Series(np.sign(loc).replace(0, 1).fillna(1), index=df.index)\na = (hod == 3) & (width > 0) & (loc.abs() >= 0.3) & prev.notna() & (np.sign(prev) == signal)\nb = (hod == 3) & (width > 0) & ~a\n",
+              "horizon": 20,
+              "scaling_factor": 10.0,
+              "min_bars": 200
+            },
+            "weight": 1.0,
+            "lookback": 300,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    }
+  }
+}

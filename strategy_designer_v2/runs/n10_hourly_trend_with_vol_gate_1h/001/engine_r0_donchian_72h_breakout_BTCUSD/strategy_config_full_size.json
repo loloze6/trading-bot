@@ -1,0 +1,38 @@
+{
+  "aux_feeds": [],
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 2,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "donchian_72h_breakout",
+            "class": "strategies.claim_event.ClaimEventComponent",
+            "params": {
+              "code": "hi = df.high.rolling(72).max().shift(1)\nlo = df.low.rolling(72).min().shift(1)\nup = df.close > hi\ndn = df.close < lo\na = spaced(up | dn, 24)\nb = ~a\nsignal = pd.Series(np.where(up, 1, -1), index=df.index)\n",
+              "horizon": 24,
+              "scaling_factor": 10.0,
+              "min_bars": 200
+            },
+            "weight": 1.0,
+            "lookback": 300,
+            "transforms": [
+              {
+                "op": "identity"
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    }
+  }
+}

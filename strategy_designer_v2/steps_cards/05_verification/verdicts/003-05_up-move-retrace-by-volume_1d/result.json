@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9827586206896551,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "heavy-minus-thin |forecast|-weighted mean next-bar return",
+    "value": -0.0006635650609715525,
+    "statistic": {
+      "name": "Welch t",
+      "value": -0.151697209379135
+    },
+    "threshold": "Confirm if difference > 0 and t >= 2; reject if difference < 0 and t <= -2; else inconclusive; inconclusive if fewer than 30 up bars in either group"
+  },
+  "supporting_check": {
+    "name": "thin weighted mean next-bar return minus unconditional mean daily return (< 0)",
+    "value": 0.0010492632046988817,
+    "passed": false
+  },
+  "counts": {
+    "heavy up bars": 151,
+    "thin up bars": 194
+  },
+  "decided_by": "Inconclusive: t lies between -2 and 2.",
+  "reading": "Volume's 20-bar mean is a within-window rolling mean including the current bar (min_periods=1, since warm-up bars are absent); heavy and thin groups are the forecast-bearing up bars with long and short forecast respectively; the Welch t uses |forecast|-weighted means and weighted variances with Kish effective sample sizes; the unconditional mean is the plain mean of all next-bar returns pooled over the windows."
+}

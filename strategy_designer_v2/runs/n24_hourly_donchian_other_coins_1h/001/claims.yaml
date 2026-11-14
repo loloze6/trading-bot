@@ -1,0 +1,243 @@
+brief: n24_hourly_donchian_other_coins_1h.md
+ideas:
+  - id: donchian72_follow_through_net
+    belief: On LTC, XRP and SOL hourly bars, a close beyond the prior 72-hour channel starts a move that persists long enough to pay fees, as it did on BTC and ETH.
+    claim:
+      when: first bar in 24 whose close breaks above the prior 72-bar high or below the prior 72-bar low
+      then: the close 24 bars later has moved in the breakout direction by more than the fee
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.002
+      code: |
+        hi = df.high.rolling(72).max().shift(1)
+        lo = df.low.rolling(72).min().shift(1)
+        up = df.close > hi
+        dn = df.close < lo
+        a = spaced(up | dn, 24)
+        b = ~a
+        signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+    why_no_lookahead: The channel uses highs and lows of the 72 bars before the current bar (shift 1), compared with the current close.
+    how_it_trades: Enter in the breakout direction at the close of the breakout bar, hold 24 hours, size to a volatility target.
+  - id: donchian168_slow_trend_net
+    belief: On smaller coins, short channels catch noise, and only a weekly (168-hour) channel break marks a real trend shift that pays over three days.
+    claim:
+      when: first bar in 72 whose close breaks the prior 168-bar high or low
+      then: the close 72 bars later has moved in the breakout direction by more than the fee
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 72
+      direction: positive
+      min_effect: 0.005
+      code: |
+        hi = df.high.rolling(168).max().shift(1)
+        lo = df.low.rolling(168).min().shift(1)
+        up = df.close > hi
+        dn = df.close < lo
+        a = spaced(up | dn, 72)
+        b = ~a
+        signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+    why_no_lookahead: The channel uses the 168 bars before the current bar only.
+    how_it_trades: Long or short on the 168h channel break, hold 72 hours or until the opposite 72h channel is broken.
+  - id: donchian24_breakout_fade
+    belief: On thinner altcoin books, a break of the one-day channel is often a stop run that reverses within hours.
+    claim:
+      when: first bar in 12 whose close breaks the prior 24-bar high or low
+      then: price moves back against the breakout over the next 6 bars by more than the fee
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.001
+      code: |
+        hi = df.high.rolling(24).max().shift(1)
+        lo = df.low.rolling(24).min().shift(1)
+        up = df.close > hi
+        dn = df.close < lo
+        a = spaced(up | dn, 12)
+        b = ~a
+        signal = pd.Series(np.where(up, -1, 1), index=df.index)
+    why_no_lookahead: The channel uses the 24 bars before the current bar, and the signal uses the current close.
+    how_it_trades: Fade the 24h channel break at the bar's close, exit after 6 hours.
+  - id: breakout_after_compression
+    belief: Breakouts from a narrow channel release stored pressure and follow through more than breakouts from an already wide, volatile channel.
+    claim:
+      when: 72-bar breakout events where the channel width relative to price is in the lowest 30% of the past 30 days
+      then: the 24-bar return in the breakout direction is larger
+      compared_to: 72-bar breakout events from wider channels
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.004
+      code: |
+        hi = df.high.rolling(72).max().shift(1)
+        lo = df.low.rolling(72).min().shift(1)
+        up = df.close > hi
+        dn = df.close < lo
+        ev = spaced(up | dn, 24)
+        width = (hi - lo) / df.close
+        narrow = width < width.rolling(720).quantile(0.3)
+        a = ev & narrow
+        b = ev & ~narrow
+        signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+    why_no_lookahead: The width uses the shifted channel and the current close, and its percentile uses the past 720 bars only.
+    how_it_trades: Take 72h breakouts only when the channel was compressed, hold 24 hours.
+  - id: volume_confirmed_breakout
+    belief: A breakout on heavy volume reflects real participation and persists, while a low-volume breakout is a drift through thin liquidity that fails.
+    claim:
+      when: 72-bar breakout events whose breakout bar volume exceeds twice the median volume of the prior 72 bars
+      then: the 24-bar return in the breakout direction is larger
+      compared_to: 72-bar breakout events without that volume
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.003
+      code: |
+        hi = df.high.rolling(72).max().shift(1)
+        lo = df.low.rolling(72).min().shift(1)
+        up = df.close > hi
+        dn = df.close < lo
+        ev = spaced(up | dn, 24)
+        vmed = df.volume.rolling(72).median().shift(1)
+        heavy = df.volume > 2 * vmed
+        a = ev & heavy
+        b = ev & ~heavy
+        signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+    why_no_lookahead: The volume is the current bar's own, compared with the median of the prior 72 bars.
+    how_it_trades: Require a volume spike on the breakout bar to enter, hold 24 hours.
+  - id: breakout_session_us_hours
+    belief: Breakouts during the US/EU overlap, when the most participants trade, are driven by flow and persist more than breakouts in quiet Asian hours.
+    claim:
+      when: 72-bar breakout events whose bar closes between 13:00 and 20:00 UTC
+      then: the 24-bar return in the breakout direction is larger
+      compared_to: 72-bar breakout events at other hours
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.003
+      code: |
+        hi = df.high.rolling(72).max().shift(1)
+        lo = df.low.rolling(72).min().shift(1)
+        up = df.close > hi
+        dn = df.close < lo
+        ev = spaced(up | dn, 24)
+        us = (hour >= 13) & (hour <= 20)
+        a = ev & us
+        b = ev & ~us
+        signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+    why_no_lookahead: The hour is known at the bar's close, and the channel uses past bars only.
+    how_it_trades: Take 72h breakouts only in the 13-20 UTC window, hold 24 hours.
+  - id: weekday_vs_weekend_breakout
+    belief: Weekend breakouts on thin books are more often false, so weekday breakouts win more often.
+    claim:
+      when: 72-bar breakout events Monday to Friday UTC
+      then: the share of events whose 24-bar return goes in the breakout direction is higher
+      compared_to: 72-bar breakout events on Saturday and Sunday UTC
+      measure: hit_rate
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.05
+      code: |
+        hi = df.high.rolling(72).max().shift(1)
+        lo = df.low.rolling(72).min().shift(1)
+        up = df.close > hi
+        dn = df.close < lo
+        ev = spaced(up | dn, 24)
+        wk = dow < 5
+        a = ev & wk
+        b = ev & ~wk
+        signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+    why_no_lookahead: The weekday is known at the bar, and the channel uses past bars only.
+    how_it_trades: Skip breakout entries on weekends, hold weekday breakouts 24 hours.
+  - id: breakout_with_monthly_trend
+    belief: Breakouts in the direction of the 30-day trend continue, while counter-trend breakouts are corrections that stall.
+    claim:
+      when: 72-bar breakout events in the direction of the 720-bar moving average (up-break above it, down-break below it)
+      then: the 24-bar return in the breakout direction is larger
+      compared_to: 72-bar breakout events against the 720-bar average
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.004
+      code: |
+        hi = df.high.rolling(72).max().shift(1)
+        lo = df.low.rolling(72).min().shift(1)
+        up = df.close > hi
+        dn = df.close < lo
+        ev = spaced(up | dn, 24)
+        sma = df.close.rolling(720).mean()
+        aligned = (up & (df.close > sma)) | (dn & (df.close < sma))
+        a = ev & aligned
+        b = ev & ~aligned
+        signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+    why_no_lookahead: The moving average uses the current and past 719 closes, and the channel uses past bars only.
+    how_it_trades: Take 72h breakouts only with the 30-day trend, hold 24 hours.
+  - id: breakout_overshoot_strength
+    belief: How far the close pushes beyond the channel, scaled by the typical range, measures the urgency of the move, and a larger overshoot predicts a larger continuation.
+    claim:
+      when: 72-bar breakout events
+      then: the 24-bar forward return rises with the signed distance of the close beyond the channel edge in units of average bar range
+      compared_to: not used (rank correlation on the events)
+      measure: rank_corr
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.08
+      code: |
+        hi = df.high.rolling(72).max().shift(1)
+        lo = df.low.rolling(72).min().shift(1)
+        up = df.close > hi
+        dn = df.close < lo
+        a = spaced(up | dn, 24)
+        b = ~a
+        rng = (df.high - df.low).rolling(72).mean().shift(1)
+        feature = pd.Series(np.where(up, (df.close - hi) / rng, np.where(dn, (df.close - lo) / rng, 0.0)), index=df.index)
+        signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+    why_no_lookahead: The overshoot uses the current close against the shifted channel and the past average range.
+    how_it_trades: Size breakout entries up with the overshoot in ATR units, hold 24 hours.
+  - id: breakout_volatility_expansion
+    belief: A channel break starts a high-volatility regime, which is what lets a volatility-targeted breakout make money even when direction is noisy.
+    claim:
+      when: 72-bar breakout events
+      then: the absolute 24-bar forward return is larger
+      compared_to: bars that are not 72-bar breakouts
+      measure: abs_ratio
+      horizon_bars: 24
+      direction: above
+      min_effect: 1.20
+      code: |
+        hi = df.high.rolling(72).max().shift(1)
+        lo = df.low.rolling(72).min().shift(1)
+        up = df.close > hi
+        dn = df.close < lo
+        a = spaced(up | dn, 24)
+        b = ~(up | dn)
+        signal = pd.Series(np.where(dn, -1, 1), index=df.index)
+    why_no_lookahead: The channel uses past bars, and the current close sets the event.
+    how_it_trades: Used as the sizing input of the volatility target; expect larger moves after a break.
+  - id: channel_position_momentum
+    belief: Without any discrete break, where the close sits inside its 72-hour range carries continuous momentum information about the next day.
+    claim:
+      when: all bars with a defined 72-bar channel
+      then: the 24-bar forward return rises with the close's position in the channel (-0.5 at the low, +0.5 at the high)
+      compared_to: not used (rank correlation)
+      measure: rank_corr
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.03
+      code: |
+        hi = df.high.rolling(72).max().shift(1)
+        lo = df.low.rolling(72).min().shift(1)
+        feature = (df.close - (hi + lo) / 2) / (hi - lo)
+        a = feature.notna()
+        b = ~a
+        signal = pd.Series(np.where(feature < 0, -1, 1), index=df.index)
+    why_no_lookahead: The position uses the current close and the channel of the prior 72 bars.
+    how_it_trades: Hold a continuous position scaled by the channel position, rebalanced hourly with a no-trade band.
+notes: >-
+  Every claim is measured on LTC, XRP and SOL separately and must pass on all three, per the brief.
+  The channel lengths tested (24, 72, 168) are each tied to a different mechanism: the 24h fade, the 72h baseline, the slow weekly trend.
+  They are not a parameter sweep.
+  Exits by opposite channel or trailing stop cannot be expressed with a fixed horizon.
+  They are approximated by the 6, 24 and 72-bar horizons and are left to the engine.
+  donchian24_breakout_fade contradicts the follow-through ideas on purpose.

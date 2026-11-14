@@ -1,0 +1,58 @@
+plan (adapted): plans_new/001-01_rsi-high-extreme-reversal_1d.md
+cost: 0.0464 USD, attempts: 1
+plan (adapted): plans_new/002-01_sma-upcross-upward-drift_1d.md
+cost: 0.0495 USD, attempts: 1
+plan (adapted): plans_new/002-05_sma-up-regime-positive-drift_1d.md
+cost: 0.0508 USD, attempts: 1
+plan (adapted): plans_new/003-03_high-volume-up-move-continues_1d.md
+cost: 0.0757 USD, attempts: 1
+untestable: The situation is measured on bitcoin, but the outcome is an altcoin's later return. A config sees only its own symbol's bars and cannot read another coin's prices, so it cannot link one coin's move to another's. The run also covers only BTC/USDT, so no altcoin is ever traded.
+cost: 0.0178 USD, attempts: 1
+untestable: The idea needs bitcoin's returns as the signal for a different coin, and a comparison across altcoins grouped by volume. A config sees only its own coin's bars and cannot read another coin's prices, so the guide puts this outside what a config can express. The test universe is also only BTC/USDT.
+cost: 0.0253 USD, attempts: 1
+missing-components: The idea needs RSI compared between the current price low and the previous swing low. That comparison uses only the coin's closes, and a per-bar graded component could compute it. No catalogue component, alone or combined, does: RSIPullback gives only the current RSI, and no transform can look up or difference a past value of a component's history at a pivot.
+cost: 0.0305 USD, attempts: 1
+missing-components: The divergence needs RSI now compared with RSI at the earlier price low, while price sits at a new low. No catalogue component gives RSI's position against its own recent low. `standardise` must be the only history op in a strategy's transforms, and regime rules compare raw values only, so no graded combination can build that comparison from the closes.
+cost: 0.0350 USD, attempts: 1
+plan (adapted): plans_new/001-02_rsi-low-extreme-rebound_1d.md
+cost: 0.0509 USD, attempts: 1
+plan (adapted): plans_new/002-02_sma-downcross-downward-drift_1d.md
+cost: 0.0592 USD, attempts: 1
+plan (adapted): plans_new/002-06_sma-down-regime-negative-drift_1d.md
+cost: 0.0593 USD, attempts: 1
+plan (adapted): plans_new/003-04_high-volume-down-move-continues_1d.md
+cost: 0.0771 USD, attempts: 1
+untestable: The signal comes from bitcoin and the outcome happens in other coins, but a config sees only one coin's bars and trades only that coin. The test runs on BTC/USDT alone, so no altcoin price is available at all.
+cost: 0.0249 USD, attempts: 1
+untestable: The idea links bitcoin's earlier return to altcoins' later returns, and compares coins by range width. The config sees only its own symbol's bars and feeds, and the guide says it cannot use another coin's prices.
+cost: 0.0235 USD, attempts: 1
+missing-components: The new-high condition can be built as a regime rule on `DonchianBreakoutComponent`'s raw value. No component measures how far the current RSI is below its own highest value over the same lookback. `RSIPullbackComponent` gives only the RSI level. `percentile` on its history cannot sit next to `standardise` in `strategies`, and its window differs from the price window. Using the RSI level instead would test overbought RSI, not divergence, and the brief excludes that question.
+cost: 0.0374 USD, attempts: 1
+plan (adapted): plans_new/001-03_rsi-high-extreme-continuation_1d.md
+cost: 0.0553 USD, attempts: 1
+plan (adapted): plans_new/002-03_price-upcross-long-sma-drift_1d.md
+cost: 0.0546 USD, attempts: 1
+plan (adapted): plans_new/003-01_low-volume-up-move-reverts_1d.md
+cost: 0.0710 USD, attempts: 1
+plan (adapted): plans_new/003-05_up-move-retrace-by-volume_1d.md
+cost: 0.0798 USD, attempts: 1
+untestable: The idea's situation and comparison are the gap between an altcoin's return and bitcoin's return in the same bar. That needs a second coin's prices, and the guide says a component sees only its own symbol's bars and feed columns. The run is also on BTC/USDT only, so the altcoin whose lag is the subject is not tested at all.
+cost: 0.0239 USD, attempts: 1
+untestable: The idea is a lead-lag relation between two coins: bitcoin's earlier returns compared with later altcoin returns, and the reverse. The config sees only one symbol's own bars and feeds, and the guide states that another coin's prices are data it cannot use.
+cost: 0.0231 USD, attempts: 1
+missing-components: The config could hold the idea from one coin's closes alone. The forecast would be RSI's position in its own recent range minus price's position in its own range, gated to new price lows. No catalogue component gives RSI's position in its own range. `percentile` on the RSI history is a second history op, which V15 refuses next to `standardise`, and in the detector it only gives an on/off gate. RSI level (`RSIPullbackComponent`) measures oversold depth, not whether RSI made a higher low.
+cost: 0.0409 USD, attempts: 1
+plan (adapted): plans_new/001-04_rsi-low-extreme-continuation_1d.md
+cost: 0.0556 USD, attempts: 1
+plan (adapted): plans_new/002-04_price-downcross-long-sma-drift_1d.md
+cost: 0.0589 USD, attempts: 1
+plan (adapted): plans_new/003-02_low-volume-down-move-reverts_1d.md
+cost: 0.0724 USD, attempts: 1
+missing-components: Volume is in each coin's own bars, and the config could carry a graded relative-volume reading as a regime input or a component. But no catalogue component outputs volume relative to its average as a continuous value. `VolumeExpansionHedgeComponent` fires only on up bars and is on/off, and `volume_filter` is a dead-zone op that gives a yes/no split, so the graded volume comparison can only be replaced, never kept.
+cost: 0.0563 USD, attempts: 1
+untestable: The idea needs bitcoin's return next to the altcoin's on the same bar, but the config sees only one coin's own bars and feeds. The test also runs only on BTC/USDT, so there is no altcoin whose lagged response could be measured.
+cost: 0.0224 USD, attempts: 1
+missing-components: The idea compares today's RSI with the RSI recorded at the previous price high. Every input for that is in the coin's own closes, but no catalogue component or transform gives a rolling maximum or a value taken at a past swing high. Combining Donchian with `RSIPullbackComponent`, by weighted mean or by a score_product regime, only compares current RSI with 50, so the comparison would be replaced.
+cost: 0.0359 USD, attempts: 1
+missing-components: A lower RSI high at a new price high needs RSI compared with its own recent maximum. The catalogue has RSI only as a level, and no component computes it against its own rolling high. Combining Donchian with RSI's level, or a percentile of RSI in a veto or score, measures "RSI not high", not "RSI below its prior peak", and `standardise` must be the only history op in a strategy pipeline.
+cost: 0.0423 USD, attempts: 1

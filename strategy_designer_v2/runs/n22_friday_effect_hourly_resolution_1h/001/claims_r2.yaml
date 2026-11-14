@@ -1,0 +1,32 @@
+brief: n22_friday_effect_hourly_resolution_1h.md
+source: analyst round 2
+ideas:
+- id: friday_after_weak_thursday_evening
+  belief: The Thursday-evening weakness is pre-weekend selling that is bought back
+    on Friday, so the Friday 24-hour return is larger when Thursday 16:00 to Friday
+    00:00 UTC closed down.
+  claim:
+    when: Friday 00:00 UTC bars where the close is below the close 8 hours earlier
+      (Thursday 16:00 UTC)
+    then: the next 24 hours (Friday 00:00 to Saturday 00:00 UTC) return more
+    compared_to: Friday 00:00 UTC bars where Thursday 16:00 to Friday 00:00 UTC closed
+      flat or up
+    measure: mean_diff
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.005
+    code: 'r8 = df.close / df.close.shift(8) - 1
+
+      fri0 = (dow == 4) & (hour == 0)
+
+      a = fri0 & (r8 < 0)
+
+      b = fri0 & (r8 >= 0)
+
+      signal = pd.Series(1.0, index=df.index)
+
+      '
+  why_no_lookahead: The selector uses only the Friday 00:00 close and the close 8
+    bars earlier; the outcome starts after that close.
+  how_it_trades: At the Friday 00:00 UTC close, go long for 24 hours only if Thursday
+    evening closed down; stay flat otherwise.

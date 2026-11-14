@@ -1,0 +1,33 @@
+run: n37_zec_ltc_hourly_trend_1h/fold_A
+observations:
+  - The 240h channel breakout net 48-bar return was +0.85% on ZEC with 5 of 6 windows positive (only window 4 at -1.40%), but -0.53% on LTC with 2 of 6 windows positive, so it held on one coin and failed on the other.
+  - The vol-scaled weekly trend rank correlation with the next 24h return was negative on both coins, -0.045 on ZEC and -0.048 on LTC, with 5 of 6 windows negative on each (ZEC down to -0.196 in window 3, LTC down to -0.126 in window 5); weekly trend reverted rather than persisted.
+  - The 120h-channel breakout gated by low volatility lost on LTC at -0.42% net with only 1 of 6 windows positive (window 2 at -3.75%), so the quiet-period gate did not rescue breakouts there.
+  - Breakouts after 3x median volume beat thin-volume breakouts on LTC by +1.00% over 24h (4 of 6 windows), but only 2 of 6 windows on ZEC agreed despite a +0.43% whole-fold effect; the belief nearly held on LTC alone.
+  - US-session breakouts beat other-hour breakouts by +0.71% on ZEC and +1.35% on LTC, but the LTC figure rests on one +8.2% window and only 3 of 6 windows were positive.
+  - Breakouts raised the following 24h absolute move only 1.14x on ZEC and 1.06x on LTC against the 1.3 asked, and dropped below 1.0 in 2 of 6 windows on each coin.
+  - Agreement of the 24h, 168h and 720h trends lost net over 72 bars on both coins (-1.20% ZEC, -0.36% LTC), and the last three windows were negative on both.
+  - The efficiency-ratio trend netted -0.34% on LTC and only +0.09% on ZEC, and its last two windows were negative on both coins.
+  - The 168h momentum rank claim produced n_a = 0 on both coins, so it was never measured and says nothing about the market.
+  - The windows disagree on the timing: windows 1-2 favour trend on most claims, while windows 4-6 favour reversal on the multi-horizon, efficiency-ratio and weekly-rank claims.
+next_claim:
+  id: weekly_extreme_fade
+  belief: On ZEC and LTC, a weekly move that is large against its own volatility is over-extended and partly gives back over the next day, enough to pay the round-trip cost.
+  claim:
+    when: bars where the past 168h return, divided by the 168h volatility scaled to a week, is beyond 1.5 in either direction, at most one event per 24 bars
+    then: the next 24h return goes against the sign of the weekly move
+    compared_to: zero after the 0.15% round-trip cost
+    measure: net_return
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.003
+    code: |
+      r168 = df.close / df.close.shift(168) - 1
+      sd = ret.rolling(168).std() * np.sqrt(168)
+      z = (r168 / sd.replace(0, np.nan)).replace([np.inf, -np.inf], np.nan)
+      a = spaced(z.abs() > 1.5, 24)
+      b = ~a
+      signal = pd.Series(-np.sign(z), index=df.index).fillna(0)
+  why_no_lookahead: z uses only closes and returns up to the current bar through rolling windows and a positive shift, and the forward return is left to the judge.
+  how_it_trades: When the weekly z-score crosses 1.5 in absolute value, take a position against its sign at the close, hold 24 bars, then exit.
+why: The one pattern consistent on both coins was weekly-trend reversal (negative rank correlation in 5 of 6 windows each), and this claim tests whether its tails pay after cost as a contrarian trade rather than repeating the correlation test.

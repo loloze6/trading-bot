@@ -1,0 +1,31 @@
+brief: fake_03_time_of_week.md
+source: analyst round 1
+ideas:
+- id: volume_surprise_direction_carries
+  belief: A bar whose volume is far above its usual level for that hour carries unscheduled
+    flow that is not finished in one bar, so its direction tends to continue over
+    the next few hours more than the direction of a normal-volume bar (return effect,
+    volume adjusted for the UTC clock).
+  claim:
+    when: Hourly bars whose volume is more than twice the average volume of the same
+      UTC hour over the prior 20 days, at most one every 4 bars.
+    then: The next 4 hours move in the same direction as that bar's return.
+    compared_to: Hourly bars whose volume is below the same-hour 20-day average, at
+      most one every 4 bars, with the same continuation signal.
+    measure: mean_diff
+    horizon_bars: 4
+    direction: positive
+    min_effect: 0.001
+    code: 'vnorm = sum(df.volume.shift(24 * k) for k in range(1, 21)) / 20
+
+      a = spaced(df.volume > 2 * vnorm, 4)
+
+      b = spaced(df.volume < vnorm, 4)
+
+      signal = pd.Series(np.where(ret >= 0, 1.0, -1.0), index=df.index)
+
+      '
+  why_no_lookahead: Volume norm uses only same-hour bars 1 to 20 days back; the bar's
+    own volume and return are known at its close.
+  how_it_trades: At the close of a volume-surprise bar, enter in that bar's direction
+    and exit 4 bars later.

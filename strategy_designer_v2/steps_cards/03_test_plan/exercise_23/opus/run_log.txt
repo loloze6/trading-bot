@@ -1,0 +1,28 @@
+plan (adapted): exercise_23/opus/plans/001-01_rsi-high-extreme-reversal_1d.md
+cost: 0.2684 USD, attempts: 1
+plan (adapted): exercise_23/opus/plans/001-03_rsi-high-extreme-continuation_1d.md
+cost: 0.0625 USD, attempts: 1
+plan (adapted): exercise_23/opus/plans/002-01_sma-upcross-upward-drift_1d.md
+cost: 0.0528 USD, attempts: 1
+plan (adapted): exercise_23/opus/plans/002-05_sma-up-regime-positive-drift_1d.md
+cost: 0.0547 USD, attempts: 1
+plan (adapted): exercise_23/opus/plans/003-01_low-volume-up-move-reverts_1d.md
+cost: 0.0716 USD, attempts: 1
+untestable: The idea's situation and its reversal both happen within the day, in quiet hours and when busy hours return, and the test runs on 1d bars that cannot show time of day. The config also has no way to pick out weekend bars, and the only volume-aware component is on/off, so the low-volume condition cannot be kept either.
+cost: 0.0358 USD, attempts: 1
+untestable: The idea links one coin's sharp move to another coin's later returns, but a config sees only its own symbol's bars and feeds, and the guide says it cannot read another coin's prices. Here the test also runs on BTC/USDT alone, so there is no altcoin whose drift could be traded.
+cost: 0.0238 USD, attempts: 1
+missing-components: The idea needs RSI compared with its value at the previous price high, or with its own recent peak, alongside price at its range top. That uses only the coin's own closes and fits a graded forecast, but no catalogue component computes it. Strategies only take weighted sums, so "price high AND RSI not high" cannot be built from DonchianBreakoutComponent and RSIPullbackComponent.
+cost: 0.0437 USD, attempts: 1
+missing-components: The divergence compares RSI now with RSI at the previous price swing low. That needs swing-low detection and a look-up of past RSI values from the coin's own closes, which no catalogue component computes. Sums of Donchian position and RSI level give a level, not a comparison, so they cannot rebuild it.
+cost: 0.0387 USD, attempts: 1
+missing-components: The idea needs RSI compared with its own recent high, read on the same bar as price's position in its range. The bars hold everything this needs, and the config could combine it with `DonchianBreakoutComponent` by weights. But the catalogue gives RSI only as a level (`RSIPullbackComponent`, 50 - RSI). No component, alone or combined, gives RSI's place in its own recent range, so "RSI also makes a new high" cannot be measured.
+cost: 0.0374 USD, attempts: 1
+missing-components: The idea needs RSI on the current new low compared with RSI on the previous price low, so earlier swing lows must be remembered. All of this comes from one coin's closes, and a graded component could carry it. No catalogue component computes it, and neither combinations nor history ops can, because the only history op allowed in `strategies` is `standardise` and regime rules compare raw values only.
+cost: 0.0530 USD, attempts: 1
+missing-components: The comparison needs the current RSI measured against its own recent peak, at the moment the close sits at a new high. The RSI components give only the RSI level (50 - RSI). Mixing that level with Donchian position, or ranking it with percentile in a score-mode detector, measures RSI against its long-run distribution rather than against its earlier high. A weighted mean is also additive, not the "and" the divergence needs.
+cost: 0.0505 USD, attempts: 1
+attempt 1 refused: the outcome is a refusal, but the fidelity has no replaced part and a 'yes' verdict transfer
+plan (adapted): exercise_23/opus/plans/005-06_bullish-divergence-downtrend-continues_1d.md
+cost: 0.1530 USD, attempts: 2
+finished

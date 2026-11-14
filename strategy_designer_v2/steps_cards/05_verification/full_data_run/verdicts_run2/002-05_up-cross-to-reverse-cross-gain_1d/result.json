@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-bar return when forecast > 0 minus mean next-bar return over all bars, pooled",
+    "value": -1.5707481751504795e-05,
+    "statistic": {
+      "name": "Newey-West t (10 lags)",
+      "value": -0.0427241175223789
+    },
+    "threshold": "excess > 0 with t >= 2 to confirm; excess < 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "up-bar share when forecast > 0 minus coin-baseline up share (binomial z)",
+    "value": 0.11402224720871527,
+    "passed": false
+  },
+  "counts": {
+    "distinct up-cross spans": 127,
+    "bars with a positive forecast": 8569,
+    "all bars": 17022
+  },
+  "decided_by": "The Newey-West t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Spans are maximal runs of forecast > 0 inside each window; the t-statistic uses a Bartlett Newey-West variance of the influence function of (mean_in - mean_all), with autocovariances taken only within windows; an up bar is a positive next-bar return; the up-share z-test is required for confirmation."
+}

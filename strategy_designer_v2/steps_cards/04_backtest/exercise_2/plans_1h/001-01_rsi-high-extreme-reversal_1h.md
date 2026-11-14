@@ -1,0 +1,13 @@
+---
+idea: 001-01_rsi-high-extreme-reversal
+brief: 001_rsi-extremes-predict-next-move
+data-instruments: BTC, ETH, BNB
+data-bar: 1h
+data-period: fold A
+---
+Forecast: Use the 14-bar Wilder RSI on 1h closes (RSIPullbackComponent, period 14; raw value (50 − RSI) × 0.4, which is negative when RSI is above 50). First, standardise it against the mean absolute value of its previous 60 values, giving about −10 at a typical reading above 50 and capped at ±20. Second, clip it at a maximum of 0, so only the high side (RSI above 50) is kept. Third, apply signed_power with exponent 2 and pivot 20. This damps ordinary readings and grows the short as RSI rises: a standardised −5 becomes −1.25, −10 becomes −5, and −20 becomes −20. The forecast is zero whenever RSI is at or below 50. Below 50 it is never positive. Above 50 it is negative, and its size grows with the square of how far RSI sits above 50 compared with its recent typical distance. The largest shorts (−20, a 200% short allocation) come at the highest readings.
+Config: 001-01_rsi-high-extreme-reversal_1h_config.json
+Confirm: The horizon is 24 bars. Take each bar whose forecast is in the most negative 10% of that coin's non-zero forecasts, and keep non-overlapping 24-bar windows only (an extreme bar is counted once per 24-bar block). Compare the coin's return over the next 24 bars, before costs, with that coin's average return over all 24-bar blocks in the same windows. The idea is confirmed if this excess return is negative on all three coins, with a pooled t-statistic of −2 or lower. The supporting check is that the strategy's gross portfolio value ends below its start in fewer than half of the 18 coin-windows (that is, it is profitable in most of them).
+Reject: The idea is rejected if the pooled excess 24-bar return after the top-decile short forecasts is zero or positive with a t-statistic of +2 or higher (continuation), or if it is positive on at least two of the three coins.
+Inconclusive: The test is inconclusive if the pooled excess is negative but its t-statistic lies between −2 and +2, or if the coins disagree in sign without a pooled result at |t| ≥ 2. It is also inconclusive if the main measure confirms but the supporting check fails (losses in half or more of the coin-windows).
+Deviation: The idea says "after RSI reaches a high extreme", with a fixed threshold. The config tests "while RSI is above 50, short in proportion to the square of how high it is", where height is measured against RSI's own recent 60-bar typical distance from 50, not an absolute level such as 70. Mildly elevated readings therefore carry small shorts. The position ends as soon as RSI falls back to 50, rather than being held for a set number of bars.

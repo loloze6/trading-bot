@@ -1,0 +1,500 @@
+brief: fake_01_btc_overreaction.md
+fold: A
+symbols:
+- BTCUSD
+bar_size: 1h
+claims:
+- id: wick_rejection_follows_close
+  belief: A big-range hourly bar with a small body and a long wick shows a level that
+    was tested and rejected within the hour, and price keeps moving away from the
+    rejected side.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0016489738235930156
+      n_a: 83
+      n_b: 17436
+      windows:
+      - -0.012017237981906343
+      - 0.005445592598748705
+      - -0.00915688396484038
+      - -0.005493812080699621
+      - 0.002236420452174183
+      - 0.004009190564753878
+      verdict: fail
+      why: null
+  code: 'rng = df.high - df.low
+
+    bigr = rng > 3 * rng.rolling(168).mean().shift(1)
+
+    body = (df.close - df.open).abs()
+
+    upper = df.high - np.maximum(df.open, df.close)
+
+    lower = np.minimum(df.open, df.close) - df.low
+
+    a = spaced(bigr & (body < 0.3 * rng), 12)
+
+    b = ~a
+
+    signal = pd.Series(np.where(lower > upper, 1, -1), index=df.index)
+
+    '
+- id: breakout_spike_continues_inside_spike_reverts
+  belief: A big bar that closes beyond the prior 24-hour high or low has triggered
+    resting stops and breakout orders and keeps going, while a big bar that stays
+    inside the day's range is noise that reverts.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.004
+  verdict: pass
+  by_symbol:
+    BTCUSD:
+      effect: 0.006036050007378142
+      n_a: 191
+      n_b: 103
+      windows:
+      - 0.004693799398240833
+      - 0.004187965606324225
+      - 0.009337125216152174
+      - 0.008048830860532676
+      - 0.003584720771279883
+      - 0.006859921359730467
+      verdict: pass
+      why: null
+  code: 'sd = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 3 * sd
+
+    hi24 = df.high.rolling(24).max().shift(1)
+
+    lo24 = df.low.rolling(24).min().shift(1)
+
+    brk = (df.close > hi24) | (df.close < lo24)
+
+    a = spaced(big & brk, 12)
+
+    b = spaced(big & ~brk & hi24.notna(), 12)
+
+    signal = np.sign(ret)
+
+    '
+- id: spike_from_quiet_regime_continues
+  belief: A big bar that comes after a quiet day is a new information shock that continues,
+    while a big bar during an already-volatile day is exhaustion that reverts.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.004250022481347717
+      n_a: 99
+      n_b: 59
+      windows:
+      - -0.01663542145118181
+      - -0.019094336123296803
+      - 0.003737265206808781
+      - 0.010710461295499803
+      - -0.0012581328931427697
+      - 0.0016386916985524388
+      verdict: fail
+      why: null
+  code: 'sd = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 3 * sd
+
+    rv24 = ret.rolling(24).std().shift(1)
+
+    rv720 = ret.rolling(720).std().shift(1)
+
+    a = spaced(big & (rv24 < 0.7 * rv720), 12)
+
+    b = spaced(big & (rv24 > 1.3 * rv720), 12)
+
+    signal = np.sign(ret)
+
+    '
+- id: failed_follow_through_fade
+  belief: The overshoot shows only when the next hour fails to follow through, retracing
+    on collapsing volume, and fading at that point captures the reversion that a blind
+    fade misses.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0014005465850473017
+      n_a: 88
+      n_b: 128
+      windows:
+      - 0.004615775072036676
+      - -0.015111940236630424
+      - 0.0031343603024549757
+      - 0.011231400933927597
+      - -0.003144561772348605
+      - -0.006173779189710998
+      verdict: fail
+      why: null
+  code: 'sd = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 3 * sd
+
+    prev_big = big.shift(1, fill_value=False)
+
+    opp = np.sign(ret) == -np.sign(ret.shift(1))
+
+    same = np.sign(ret) == np.sign(ret.shift(1))
+
+    a = spaced(prev_big & opp & (df.volume < 0.5 * df.volume.shift(1)), 12)
+
+    b = spaced(prev_big & same, 12)
+
+    signal = -np.sign(ret.shift(1))
+
+    '
+- id: vwap_stretch_reverts
+  belief: Overreaction is about how far price has run from the volume-weighted price
+    of the last day, not about any single candle, and the further it stretches the
+    more it gives back.
+  measure: rank_corr
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.02005697202399957
+      n_a: 525
+      n_b: 525
+      windows:
+      - 0.06937119675456388
+      - -0.15458817078846532
+      - 0.12801592053819874
+      - 0.001680672268907563
+      - 0.12909908149306235
+      - -0.1277444271860963
+      verdict: fail
+      why: null
+  code: 'vwap = (df.close * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+    sd = ret.rolling(168).std().shift(1)
+
+    feature = -(df.close / vwap - 1) / sd
+
+    a = spaced(feature.abs() > 2, 6)
+
+    b = ~a
+
+    '
+- id: heavy_volume_spike_follow_net
+  belief: The continuation after big bars on extreme volume, which passed as a gross
+    effect, is large enough to pay a round trip of about 0.2% and still leave a profit.
+  measure: net_return
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.001
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.000637344582291195
+      n_a: 229
+      n_b: 229
+      windows:
+      - 0.0030751642744695786
+      - 0.0007274892023894685
+      - 0.0018558796395577643
+      - -0.0010465040279772062
+      - 0.0008572869047592546
+      - -0.0013056796518166373
+      verdict: fail
+      why: null
+  code: 'sd = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 3 * sd
+
+    vmed = df.volume.rolling(168).median().shift(1)
+
+    a = spaced(big & (df.volume > 3 * vmed), 12)
+
+    b = ~a
+
+    signal = np.sign(ret)
+
+    '
+- id: down_spike_rebounds
+  belief: Down spikes are forced liquidations of leveraged longs in a market structurally
+    long BTC, so they are bought back, while up spikes do not show the same reversion.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0020565235662203564
+      n_a: 152
+      n_b: 17367
+      windows:
+      - -0.002935201442551264
+      - -0.006677737737361817
+      - -0.005775905480378035
+      - 0.0038845702054581465
+      - -0.0030922299771666355
+      - 0.0031771357410669415
+      verdict: fail
+      why: null
+  code: 'sd = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 3 * sd
+
+    a = spaced(big & (ret < 0), 12)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: round_number_spike_reverts
+  belief: A big bar that crosses a round 1000-dollar level runs through clustered
+    stops and option strikes at that level and then gets pulled back to it, more than
+    a big bar that crosses no round level.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.00239201216355583
+      n_a: 171
+      n_b: 117
+      windows:
+      - -0.0023605564220687573
+      - -0.006820875157939279
+      - 0.007207920463292541
+      - 0.013251113369573669
+      - 0.008114047990830995
+      - -0.0030463910401988593
+      verdict: fail
+      why: null
+  code: 'sd = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 3 * sd
+
+    cross = np.floor(df.close / 1000) != np.floor(df.close.shift(1) / 1000)
+
+    a = spaced(big & cross, 12)
+
+    b = spaced(big & ~cross, 12)
+
+    signal = -np.sign(ret)
+
+    '
+- id: late_day_stretch_reverts_to_day_open
+  belief: When the UTC day has moved unusually far from its open by the evening, intraday
+    participants flatten into the daily close, and price drifts back toward the day's
+    open.
+  measure: mean_diff
+  horizon_bars: 4
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: -0.0005765273527060556
+      n_a: 61
+      n_b: 668
+      windows:
+      - -0.012137768583578158
+      - 0.009267997592834554
+      - 0.002298603514122229
+      - 0.0010527838197120806
+      - -0.0070580319873605355
+      - -0.0011984169611654917
+      verdict: fail
+      why: null
+  code: 'h = pd.Series(hour, index=df.index)
+
+    sd = ret.rolling(168).std().shift(1)
+
+    day_open = df.open.groupby(df.index.floor(''D'')).transform(''first'')
+
+    move = df.close / day_open - 1
+
+    stretch = move.abs() > 2 * sd * np.sqrt(20)
+
+    a = (h == 20) & stretch
+
+    b = (h == 20) & ~stretch & sd.notna()
+
+    signal = -np.sign(move)
+
+    '
+- id: second_spike_exhaustion
+  belief: A second big bar in the same direction within six hours of a first one is
+    a climax of capitulation or a short squeeze, and it reverts more than an isolated
+    first spike.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.0004143848350709504
+      n_a: 46
+      n_b: 253
+      windows:
+      - -0.0016900459067143037
+      - -0.008276753340206392
+      - 0.01038030160771605
+      - -0.00900047281457809
+      - 0.0034484362970699815
+      - 0.004883791603769198
+      verdict: fail
+      why: null
+  code: 'sd = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 3 * sd
+
+    up = big & (ret > 0)
+
+    dn = big & (ret < 0)
+
+    prior_up = up.astype(int).shift(1).rolling(6).sum() > 0
+
+    prior_dn = dn.astype(int).shift(1).rolling(6).sum() > 0
+
+    a = spaced((up & prior_up) | (dn & prior_dn), 12)
+
+    b = spaced(big & ~(prior_up | prior_dn), 12)
+
+    signal = -np.sign(ret)
+
+    '
+- id: inside_range_spike_fade_net
+  belief: A big hourly bar that closes inside the prior 24-hour range has not broken
+    any level, is noise, and gives back enough within 12 hours to pay the round trip.
+  measure: net_return
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.001
+  verdict: fail
+  by_symbol:
+    BTCUSD:
+      effect: 0.00040926444463237096
+      n_a: 103
+      n_b: 103
+      windows:
+      - -0.0019492665380510853
+      - -0.004776954542615624
+      - 0.004493644930662774
+      - 0.003945504861558521
+      - -0.0011414150935667505
+      - 0.0017957111841085346
+      verdict: fail
+      why: null
+  code: 'sd = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 3 * sd
+
+    hi24 = df.high.rolling(24).max().shift(1)
+
+    lo24 = df.low.rolling(24).min().shift(1)
+
+    inside = (df.close <= hi24) & (df.close >= lo24)
+
+    a = spaced(big & inside, 12)
+
+    b = ~a
+
+    signal = -np.sign(ret)
+
+    '
+profit:
+  breakout_spike_continues_inside_spike_reverts/BTCUSD:
+    claim: breakout_spike_continues_inside_spike_reverts
+    symbol: BTCUSD
+    bar_size: 1h
+    fold: A
+    engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+    fold_totals:
+      net_return: 0.556
+      median_window_sharpe: 1.02625
+      worst_window_drawdown: 0.1544
+      trades: 193
+    windows:
+    - window: W1
+      net_return: 0.087
+      trades: 30
+      sharpe: 0.9942
+      max_drawdown: 0.1495
+      exposure_pct: 12.0833
+      cost_drag_pct: 25.6969
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/001/engine_r0_breakout_spike_continues_inside_spike_reverts_BTCUSD/results/20261105T192428Z_eb0c9e0c
+      seconds: 31
+    - window: W2
+      net_return: 0.1822
+      trades: 30
+      sharpe: 1.9642
+      max_drawdown: 0.115
+      exposure_pct: 12.1951
+      cost_drag_pct: 16.0841
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/001/engine_r0_breakout_spike_continues_inside_spike_reverts_BTCUSD/results/20261105T192500Z_eb0c9e0c
+      seconds: 32
+    - window: W3
+      net_return: 0.0506
+      trades: 32
+      sharpe: 0.6415
+      max_drawdown: 0.1544
+      exposure_pct: 13.1148
+      cost_drag_pct: 39.4826
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/001/engine_r0_breakout_spike_continues_inside_spike_reverts_BTCUSD/results/20261105T192532Z_eb0c9e0c
+      seconds: 32
+    - window: W4
+      net_return: 0.0303
+      trades: 39
+      sharpe: 0.462
+      max_drawdown: 0.1344
+      exposure_pct: 16.25
+      cost_drag_pct: 57.8183
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/001/engine_r0_breakout_spike_continues_inside_spike_reverts_BTCUSD/results/20261105T192604Z_eb0c9e0c
+      seconds: 31
+    - window: W5
+      net_return: 0.0568
+      trades: 32
+      sharpe: 1.0583
+      max_drawdown: 0.0789
+      exposure_pct: 12.8431
+      cost_drag_pct: 36.4761
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/001/engine_r0_breakout_spike_continues_inside_spike_reverts_BTCUSD/results/20261105T192639Z_eb0c9e0c
+      seconds: 35
+    - window: W6
+      net_return: 0.0585
+      trades: 30
+      sharpe: 1.2731
+      max_drawdown: 0.062
+      exposure_pct: 12.0219
+      cost_drag_pct: 34.3907
+      component_errors: 0
+      run_dir: strategy_designer_v2/runs/fake_01_btc_overreaction/001/engine_r0_breakout_spike_continues_inside_spike_reverts_BTCUSD/results/20261105T192712Z_eb0c9e0c
+      seconds: 33
+    checks:
+      net_positive_in_5_of_6: true
+      median_window_sharpe_ge_1.0: true
+      worst_window_drawdown_le_20%: true
+    verdict: pass

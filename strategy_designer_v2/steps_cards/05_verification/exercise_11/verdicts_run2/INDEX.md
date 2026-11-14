@@ -1,0 +1,2 @@
+001-01_rsi-high-extreme-reversal_1d: not observable (fit: adapted) [main: -0.0675101; t of the mean -1.84161; non-overlapping extreme cases pooled 3, coins with negative excess return 1, coins in record 1]
+002-05_sma-up-regime-positive-drift_1d: not observable (fit: adapted) [main: -0.00690032; Welch t -0.950719; in-stretch bars 13, out-of-stretch bars 106, distinct up-cross stretches 1]

@@ -1,0 +1,48 @@
+claims_file: strategy_designer_v2/runs/n35_privacy_coins_hourly_shock_1h/001/claims_r1.yaml
+fold: A
+bar_size: 1h
+symbols:
+- XMRUSD
+- ZECUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  quiet_volume_burst_raises_volatility:
+    verdict: fail
+    by_symbol:
+      XMRUSD:
+        verdict: fail
+        effect: 1.0539764815922288
+        t_stat: 2.51
+        n_a: 828
+        n_b: 16690
+        windows:
+        - 1.0375505240993932
+        - 1.055442528450436
+        - 1.1159078230999004
+        - 1.1159549716006332
+        - 1.033644107790226
+        - 1.1431353392051435
+        agreeing_windows: 6 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      ZECUSD:
+        verdict: fail
+        effect: 1.0534754504918045
+        t_stat: 0.56
+        n_a: 792
+        n_b: 15756
+        windows:
+        - 1.062421876070407
+        - 1.041281653020512
+        - 0.9246009476060922
+        - 1.0727290945078851
+        - 1.0533664398416873
+        - 1.1217201773404466
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true

@@ -1,0 +1,220 @@
+brief: n39_daily_typical_price_anchor_1d.md
+ideas:
+  - id: vwap5_stretch_reverts_3d
+    belief: A close far from the 5-day volume-weighted typical price is a short-term overreaction away from where the week's money traded, and it pulls back toward that anchor within a few days.
+    claim:
+      when: bars whose close is more than 1.5 daily-volatility units away from the 5-day VWAP of typical price, at most one event per 3 bars
+      then: a position against the stretch, held 3 days, earns more than the cost
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.004
+      code: |
+        tp = (df.high + df.low + df.close) / 3
+        vw = (tp * df.volume).rolling(5).sum() / df.volume.rolling(5).sum()
+        sig = ret.rolling(20).std()
+        z = (df.close / vw - 1) / sig
+        a = spaced(z.abs() > 1.5, 3).fillna(False)
+        b = ~a
+        signal = pd.Series(np.where(z > 0, -1.0, 1.0), index=df.index)
+    why_no_lookahead: The VWAP, the 20-day volatility and the stretch use only bars up to and including the current close.
+    how_it_trades: At the close, fade the stretch toward the 5-day VWAP and exit after 3 days.
+  - id: vwap30_stretch_trends_10d
+    belief: A close far from the 30-day VWAP means a regime shift away from the month's cost basis, and on coins that trend this keeps going instead of reverting.
+    claim:
+      when: bars whose close is more than 2 daily-volatility units away from the 30-day VWAP of typical price, at most one event per 10 bars
+      then: a position in the direction of the stretch, held 10 days, earns more than the cost
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.010
+      code: |
+        tp = (df.high + df.low + df.close) / 3
+        vw = (tp * df.volume).rolling(30).sum() / df.volume.rolling(30).sum()
+        sig = ret.rolling(20).std()
+        z = (df.close / vw - 1) / sig
+        a = spaced(z.abs() > 2.0, 10).fillna(False)
+        b = ~a
+        signal = pd.Series(np.where(z > 0, 1.0, -1.0), index=df.index)
+    why_no_lookahead: The 30-day VWAP and the volatility unit are trailing windows that end at the current close.
+    how_it_trades: At the close, enter in the direction of the stretch from the 30-day VWAP and hold 10 days.
+  - id: vwap20_stretch_rank_reversion
+    belief: The further the close is above (below) the 20-day VWAP in volatility units, the weaker (stronger) the next 5 days, as a smooth relationship rather than only at extremes.
+    claim:
+      when: all bars with a defined 20-day stretch
+      then: the 5-day forward return is negatively rank-correlated with the stretch
+      compared_to: no correlation
+      measure: rank_corr
+      horizon_bars: 5
+      direction: negative
+      min_effect: 0.06
+      code: |
+        tp = (df.high + df.low + df.close) / 3
+        vw = (tp * df.volume).rolling(20).sum() / df.volume.rolling(20).sum()
+        sig = ret.rolling(20).std()
+        feature = (df.close / vw - 1) / sig
+        a = feature.notna()
+        b = ~a
+    why_no_lookahead: The feature is computed from trailing 20-day windows that end at the bar's close.
+    how_it_trades: Hold a position sized against the 20-day stretch, rebalanced daily, with a 5-day holding period.
+  - id: vwap10_stretch_precedes_big_moves
+    belief: A close far from the 10-day VWAP marks a disequilibrium, so the next days move more in absolute terms than when price sits on its anchor, whatever the direction.
+    claim:
+      when: bars whose close is more than 2 volatility units from the 10-day VWAP
+      then: the absolute 5-day forward return is larger
+      compared_to: bars whose close is within 1 volatility unit of the 10-day VWAP
+      measure: abs_ratio
+      horizon_bars: 5
+      direction: above
+      min_effect: 1.20
+      code: |
+        tp = (df.high + df.low + df.close) / 3
+        vw = (tp * df.volume).rolling(10).sum() / df.volume.rolling(10).sum()
+        sig = ret.rolling(20).std()
+        z = (df.close / vw - 1) / sig
+        a = (z.abs() > 2.0).fillna(False)
+        b = (z.abs() < 1.0).fillna(False)
+    why_no_lookahead: The stretch uses only the trailing 10-day VWAP and the trailing 20-day volatility.
+    how_it_trades: Size positions down or widen stops after large anchor stretches, or use the stretch as a gate for the directional ideas.
+  - id: volume_backed_stretch_continues
+    belief: A stretch from the 10-day VWAP made on a volume burst is new money moving the anchor and continues, while the same stretch on ordinary volume is noise.
+    claim:
+      when: bars stretched more than 1 volatility unit from the 10-day VWAP whose volume exceeds twice the prior 20-day median volume
+      then: the 5-day return in the stretch's direction is higher
+      compared_to: bars with the same stretch but without a volume burst
+      measure: mean_diff
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.006
+      code: |
+        tp = (df.high + df.low + df.close) / 3
+        vw = (tp * df.volume).rolling(10).sum() / df.volume.rolling(10).sum()
+        sig = ret.rolling(20).std()
+        z = (df.close / vw - 1) / sig
+        burst = df.volume > 2 * df.volume.rolling(20).median().shift(1)
+        stretched = z.abs() > 1.0
+        a = (stretched & burst).fillna(False)
+        b = (stretched & ~burst).fillna(False)
+        signal = pd.Series(np.where(z > 0, 1.0, -1.0), index=df.index)
+    why_no_lookahead: The burst compares the current bar's volume to the median of the 20 bars before it, and the stretch uses trailing windows only.
+    how_it_trades: Follow anchor stretches that come with a volume burst and hold 5 days. Skip stretches made on quiet volume.
+  - id: vwap20_reclaim_or_loss
+    belief: A first close back across the 20-day VWAP after a week on the other side shows the month's buyers (or sellers) are back above water, and the price follows through.
+    claim:
+      when: a close above the 20-day VWAP after 5 closes below it (signal long), or a close below it after 5 closes above it (signal short), at most one event per 5 bars
+      then: the 5-day return has the predicted sign more often
+      compared_to: all other bars taken long
+      measure: hit_rate
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.06
+      code: |
+        tp = (df.high + df.low + df.close) / 3
+        vw = (tp * df.volume).rolling(20).sum() / df.volume.rolling(20).sum()
+        above = (df.close > vw).astype(float)
+        prior_above = above.shift(1).rolling(5).sum()
+        up = (above == 1) & (prior_above == 0)
+        down = (above == 0) & (prior_above == 5) & vw.notna()
+        a = spaced(up | down, 5).fillna(False)
+        b = ~a
+        signal = pd.Series(np.where(down, -1.0, 1.0), index=df.index)
+    why_no_lookahead: The cross compares the current close with its own VWAP and with the 5 prior bars' position. Nothing after the close is used.
+    how_it_trades: Enter in the direction of the reclaim (or loss) of the 20-day VWAP and exit after 5 days.
+  - id: dip_to_fast_anchor_in_rising_slow_anchor
+    belief: When the 5-day VWAP is above a rising 30-day VWAP, a close that dips under the 5-day anchor but holds the 30-day one is a pullback inside an up-migration of money, and it resumes upward.
+    claim:
+      when: the 5-day VWAP is above the 30-day VWAP, the 30-day VWAP is higher than 5 bars ago, and the close is below the 5-day VWAP but above the 30-day VWAP, at most one event per 5 bars
+      then: a long held 5 days earns more than the cost
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 5
+      direction: positive
+      min_effect: 0.006
+      code: |
+        tp = (df.high + df.low + df.close) / 3
+        pv = tp * df.volume
+        vw5 = pv.rolling(5).sum() / df.volume.rolling(5).sum()
+        vw30 = pv.rolling(30).sum() / df.volume.rolling(30).sum()
+        cond = (vw5 > vw30) & (vw30 > vw30.shift(5)) & (df.close < vw5) & (df.close > vw30)
+        a = spaced(cond.fillna(False), 5).fillna(False)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: Both VWAPs and the slope use bars at or before the current close.
+    how_it_trades: Buy closes that pull back between a rising 30-day VWAP and the 5-day VWAP, and hold 5 days.
+  - id: weekend_stretch_reverts_more
+    belief: Stretches from the 5-day VWAP made on thin Saturday or Sunday volume carry less information and revert more than weekday stretches.
+    claim:
+      when: weekend bars (UTC weekday 5 or 6) stretched more than 1 volatility unit from the 5-day VWAP
+      then: the 2-day return against the stretch is higher
+      compared_to: weekday bars with the same stretch
+      measure: mean_diff
+      horizon_bars: 2
+      direction: positive
+      min_effect: 0.004
+      code: |
+        tp = (df.high + df.low + df.close) / 3
+        vw = (tp * df.volume).rolling(5).sum() / df.volume.rolling(5).sum()
+        sig = ret.rolling(20).std()
+        z = (df.close / vw - 1) / sig
+        stretched = (z.abs() > 1.0).fillna(False)
+        a = stretched & (dow >= 5)
+        b = stretched & (dow < 5)
+        signal = pd.Series(np.where(z > 0, -1.0, 1.0), index=df.index)
+    why_no_lookahead: The weekday comes from the bar's own timestamp, and the stretch uses trailing windows only.
+    how_it_trades: Fade weekend stretches from the 5-day VWAP into the start of the week.
+  - id: squeeze_then_anchor_break_continues
+    belief: After a tight 10-day range, a close that breaks well away from the 20-day VWAP starts a new leg, because positions built in the squeeze are forced to follow.
+    claim:
+      when: the prior bar's 10-day range was in the lowest third of its trailing 90-day distribution and the close is more than 1.5 volatility units from the 20-day VWAP, at most one event per 5 bars
+      then: a position in the direction of the break, held 10 days, earns more than the cost
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.010
+      code: |
+        tp = (df.high + df.low + df.close) / 3
+        vw = (tp * df.volume).rolling(20).sum() / df.volume.rolling(20).sum()
+        sig = ret.rolling(20).std()
+        z = (df.close / vw - 1) / sig
+        rng = df.high.rolling(10).max() / df.low.rolling(10).min() - 1
+        tight = rng < rng.rolling(90).quantile(0.33)
+        cond = tight.shift(1).fillna(False).astype(bool) & (z.abs() > 1.5)
+        a = spaced(cond.fillna(False), 5).fillna(False)
+        b = ~a
+        signal = pd.Series(np.where(z > 0, 1.0, -1.0), index=df.index)
+    why_no_lookahead: The squeeze uses the prior bar's trailing range against a trailing quantile, and the stretch uses the current close and trailing windows.
+    how_it_trades: After a range squeeze, enter in the direction of the break away from the 20-day VWAP and hold 10 days.
+  - id: exhausted_stretch_with_rejection_candle
+    belief: An extreme stretch from the 20-day VWAP that closes near the bar's opposite extreme shows the push was rejected inside the day, and price snaps back toward the anchor.
+    claim:
+      when: the close is more than 2 volatility units above the 20-day VWAP and in the lower third of the bar's range (signal short), or more than 2 units below and in the upper third (signal long), at most one event per 3 bars
+      then: a position toward the anchor, held 3 days, earns more than the cost
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 3
+      direction: positive
+      min_effect: 0.005
+      code: |
+        tp = (df.high + df.low + df.close) / 3
+        vw = (tp * df.volume).rolling(20).sum() / df.volume.rolling(20).sum()
+        sig = ret.rolling(20).std()
+        z = (df.close / vw - 1) / sig
+        pos = (df.close - df.low) / (df.high - df.low).replace(0, np.nan)
+        short_c = (z > 2.0) & (pos < 0.33)
+        long_c = (z < -2.0) & (pos > 0.67)
+        a = spaced((short_c | long_c).fillna(False), 3).fillna(False)
+        b = ~a
+        signal = pd.Series(np.where(z > 0, -1.0, 1.0), index=df.index)
+    why_no_lookahead: The candle position uses the current bar's own high, low and close, and the stretch uses trailing windows ending at that close.
+    how_it_trades: Fade extreme anchor stretches that show an intraday rejection, and exit after 3 days.
+notes: >
+  The anchor in every idea is the rolling VWAP of the typical price (h+l+c)/3, weighted by volume, over 5, 10, 20 or 30 days.
+  The stretch unit is the close's percent distance from the anchor divided by the 20-day std of daily returns.
+  Ideas 1, 3, 8 and 10 bet on reversion; ideas 2, 5, 6 and 9 bet on continuation. They are kept deliberately in conflict so the data decides.
+  The already-tried hourly idea (a 24h VWAP stretch on ETH that did not revert profitably) is not repeated: every idea here uses daily bars with multi-day anchors.
+  The volume-burst idea (5) tests continuation as a comparison against non-burst stretches, not as the hourly pullback pattern.
+  Idea 8 assumes the daily bar's timestamp falls on the trading day it covers. If Kraken stamps daily bars at the open, the weekday label still marks the same day.
+  Ideas 9 and 10 are rare-event claims and may fall short of 30 bars in some folds.

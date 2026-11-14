@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 5-bar forward return after shock-up new-high cases (forecast >= 10)",
+    "value": 0.060804350712523575,
+    "statistic": {
+      "name": "one-sample t of the mean",
+      "value": 2.1308646157081603
+    },
+    "threshold": "confirm if mean > 0 with t >= 2 (and supporting difference > 0); reject if mean < 0 with t <= -2; at least 30 non-overlapping cases"
+  },
+  "supporting_check": {
+    "name": "mean excess after new-high cases minus mean excess after inside-range shock-up days",
+    "value": 0.0776218786478717,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases pooled across coins": 154,
+    "inside-range shock-up cases": 252
+  },
+  "decided_by": "Mean excess 5-bar return is positive with t >= 2 and exceeds the inside-range shock-up mean excess, meeting the confirm rule.",
+  "reading": "Signals are merged when they fall fewer than 5 bars after the last kept case in the same window (the same merge applied to the inside-range group), the coin's mean 5-bar return is the mean of all overlapping 5-bar forward returns of every bar in all its windows, the standardised return is 10 x the one-day return over the rolling mean absolute one-day return of the last 60 bars (min 20, within window), and the t is the ordinary one-sample t of the mean excess return."
+}

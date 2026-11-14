@@ -1,0 +1,28 @@
+claims_file: strategy_designer_v2/runs/fake_01_btc_overreaction/001/claims_r1.yaml
+fold: A
+bar_size: 1h
+symbols:
+- BTCUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  inside_range_spike_fade_net:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: 0.00040926444463237096
+        n_a: 103
+        n_b: 103
+        windows:
+        - -0.0019492665380510853
+        - -0.004776954542615624
+        - 0.004493644930662774
+        - 0.003945504861558521
+        - -0.0011414150935667505
+        - 0.0017957111841085346
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

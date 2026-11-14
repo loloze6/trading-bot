@@ -1,0 +1,201 @@
+brief: n02_alt_daily_trend_other_categories_1d.md
+ideas:
+  - id: tsmom_horizon_agreement
+    belief: When short, medium and long time-series momentum on LTC or XMR all point the same way, the trend is broad and keeps going long enough to pay cost.
+    claim:
+      when: bars where the 20-, 60- and 120-day log returns all have the same sign
+      then: the 20-day forward return, taken in the direction of that common sign, is positive net of cost
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.02
+      code: |
+        lc = np.log(df.close)
+        m20 = lc - lc.shift(20)
+        m60 = lc - lc.shift(60)
+        m120 = lc - lc.shift(120)
+        up = (m20 > 0) & (m60 > 0) & (m120 > 0)
+        dn = (m20 < 0) & (m60 < 0) & (m120 < 0)
+        a = up | dn
+        b = ~a
+        signal = pd.Series(np.where(up, 1, -1), index=df.index)
+    why_no_lookahead: All three returns use closes at or before the bar's close.
+    how_it_trades: Long when all three horizons are up, short when all three are down, flat otherwise; re-checked daily.
+
+  - id: breakout_volume_confirmation
+    belief: A 20-day closing high on heavy volume reflects real new demand and continues, while the same breakout on thin volume is noise.
+    claim:
+      when: bars that close above the prior 20-day closing high with volume at least 1.5 times the prior 50-day median volume
+      then: the 10-day forward return is higher
+      compared_to: bars that close above the prior 20-day closing high on below-median volume
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.02
+      code: |
+        hi = df.close.rolling(20).max().shift(1)
+        brk = df.close > hi
+        vr = df.volume / df.volume.rolling(50).median().shift(1)
+        a = brk & (vr >= 1.5)
+        b = brk & (vr < 1.0)
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: The prior high and median volume are shifted by one bar, and the bar's own close and volume are known at its close.
+    how_it_trades: Buy only high-volume 20-day breakouts and hold about 10 days.
+
+  - id: vol_compression_precedes_expansion
+    belief: Long quiet stretches in these less-crowded coins end in large directional moves, which is the raw material a trend rule needs.
+    claim:
+      when: bars where 20-day realized volatility is in the bottom 20% of its own trailing 365-day distribution
+      then: the absolute 20-day forward return is larger
+      compared_to: all other bars
+      measure: abs_ratio
+      horizon_bars: 20
+      direction: above
+      min_effect: 1.15
+      code: |
+        rv = ret.rolling(20).std()
+        pct = rv.rolling(365).rank(pct=True)
+        a = pct <= 0.2
+        b = ~a
+    why_no_lookahead: Realized volatility and its percentile rank use only returns up to the bar's close.
+    how_it_trades: Arm a breakout rule only after a low-volatility stretch; stay out otherwise.
+
+  - id: trend_linearity_strength
+    belief: A trend that climbs or falls in a straight line, with a high R-squared of log price on time, is driven by steady flow and persists more than an erratic move of the same size.
+    claim:
+      when: all bars with a defined 60-day fit
+      then: the signed linearity score r*|r| of the 60-day log-price fit on time ranks the 20-day forward return
+      compared_to: not used (rank correlation)
+      measure: rank_corr
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.06
+      code: |
+        lc = np.log(df.close)
+        t = pd.Series(np.arange(len(df)), index=df.index, dtype=float)
+        r = lc.rolling(60).corr(t)
+        feature = r * r.abs()
+        a = r.notna()
+        b = ~a
+    why_no_lookahead: The rolling correlation uses the 60 closes ending at the bar.
+    how_it_trades: Size a trend position by the signed R-squared score; flat when it is near zero.
+
+  - id: participation_regime_gate
+    belief: Momentum works when participation is expanding (new money arriving) and fails in a dull, low-turnover market where moves are chop.
+    claim:
+      when: bars where 30-day average volume exceeds 1.2 times the 180-day average volume
+      then: the 20-day forward return, in the direction of the 60-day return sign, is higher
+      compared_to: bars where 30-day average volume is below 0.9 times the 180-day average
+      measure: mean_diff
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.02
+      code: |
+        lc = np.log(df.close)
+        vtrend = df.volume.rolling(30).mean() / df.volume.rolling(180).mean()
+        a = vtrend > 1.2
+        b = vtrend < 0.9
+        signal = np.sign(lc - lc.shift(60)).replace(0, 1)
+    why_no_lookahead: Volume averages and the 60-day return end at the bar's close.
+    how_it_trades: Run 60-day momentum only while the participation ratio is high; flat otherwise.
+
+  - id: yearly_high_proximity_long
+    belief: Traders anchor on the yearly high, so price trading near it signals strength that grinds higher as the anchor gives way.
+    claim:
+      when: bars that close within 5% of the trailing 365-day high
+      then: the 20-day forward return is positive net of cost
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.02
+      code: |
+        yh = df.high.rolling(365).max()
+        a = df.close >= 0.95 * yh
+        b = ~a
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: The 365-day high includes the bar's own high, which is known at its close.
+    how_it_trades: Hold long while the close is within 5% of the yearly high; exit when it falls further away.
+
+  - id: weekday_breakout_beats_weekend
+    belief: Weekend breakouts happen on thin, retail-only books and often fade, while weekday breakouts carry institutional and fiat-hours flow.
+    claim:
+      when: bars closing above the prior 20-day closing high on a weekday (UTC Monday to Friday)
+      then: the 10-day forward return is higher
+      compared_to: the same breakouts on a Saturday or Sunday bar
+      measure: mean_diff
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.015
+      code: |
+        hi = df.close.rolling(20).max().shift(1)
+        brk = df.close > hi
+        a = brk & (dow < 5)
+        b = brk & (dow >= 5)
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: The prior high is shifted, and the weekday is known from the bar's timestamp.
+    how_it_trades: Take 20-day breakouts only on weekday bars; skip weekend ones.
+
+  - id: sharp_dip_inside_uptrend
+    belief: Inside an established uptrend, a sharp short drop is forced selling, not a trend change, and it recovers within days.
+    claim:
+      when: bars where the 120-day log return is positive and the 5-day log return is below -10%, one event per 5 bars
+      then: the 10-day forward return is positive net of cost
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 10
+      direction: positive
+      min_effect: 0.02
+      code: |
+        lc = np.log(df.close)
+        m120 = lc - lc.shift(120)
+        m5 = lc - lc.shift(5)
+        a = spaced((m120 > 0) & (m5 < -0.10), 5)
+        b = (m120 > 0) & ~a
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: Both returns use closes at or before the bar's close.
+    how_it_trades: Buy the qualifying dip at the close and hold 10 days.
+
+  - id: long_horizon_exhaustion
+    belief: In these coins, extreme 12-month gains mark bubble tops and extreme 12-month losses mark capitulation, so long-horizon momentum reverses.
+    claim:
+      when: all bars with a defined 365-day return
+      then: the 365-day log return ranks the 60-day forward return inversely
+      compared_to: not used (rank correlation)
+      measure: rank_corr
+      horizon_bars: 60
+      direction: negative
+      min_effect: 0.08
+      code: |
+        lc = np.log(df.close)
+        feature = lc - lc.shift(365)
+        a = feature.notna()
+        b = ~a
+    why_no_lookahead: The 365-day return ends at the bar's close.
+    how_it_trades: Cut or flip trend exposure when the 12-month return is extreme.
+
+  - id: signed_volume_flow
+    belief: Persistent volume on up days over down days shows accumulation that price has not finished pricing in.
+    claim:
+      when: all bars with a defined 30-day window
+      then: the 30-day share of volume on up days minus down days ranks the 20-day forward return
+      compared_to: not used (rank correlation)
+      measure: rank_corr
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.06
+      code: |
+        sv = (np.sign(ret) * df.volume).rolling(30).sum()
+        feature = sv / df.volume.rolling(30).sum()
+        a = feature.notna()
+        b = ~a
+    why_no_lookahead: Returns and volumes are summed over the 30 bars ending at the bar's close.
+    how_it_trades: Long when signed-volume flow is strongly positive, short when strongly negative.
+notes: >
+  The SMA 50/100/200 distance family is excluded because it was already tried on LTC (D-128).
+  The gates that failed on ETH (efficiency ratio, volatility expansion, autocorrelation regime, candle body, young trend) are not reused.
+  Breakout ideas here instead test volume confirmation and weekday timing, not a plain Donchian net of cost.
+  long_horizon_exhaustion and sharp_dip_inside_uptrend contradict the pure-momentum claims on purpose; the data decides.
+  The weekday claim assumes the daily bar's timestamp marks its trading day; if the index is the next day's 00:00 close, dow is off by one.
+  Short legs assume shorting is available; on spot they read as going flat.

@@ -1,0 +1,147 @@
+claim: illiquidity_rise_premium
+symbol: ADAUSD
+bar_size: 1d
+fold: A
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 200
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: -0.8666
+  median_window_sharpe: -0.28805
+  worst_window_drawdown: 0.8618
+  trades: 214
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: -0.1418
+    trades: 11
+    sharpe: -0.5627
+    max_drawdown: 0.3546
+    exposure_pct: 99.1667
+    cost_drag_pct: 1.1421
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_ADAUSD/results/full_size/20261106T195450Z_982a920e
+    seconds: 4
+  - window: W2
+    net_return: 0.0121
+    trades: 25
+    sharpe: 0.4848
+    max_drawdown: 0.34
+    exposure_pct: 99.187
+    cost_drag_pct: 22.8468
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_ADAUSD/results/full_size/20261106T195454Z_982a920e
+    seconds: 4
+  - window: W3
+    net_return: -0.0247
+    trades: 36
+    sharpe: -0.0134
+    max_drawdown: 0.2194
+    exposure_pct: 99.1803
+    cost_drag_pct: 36.8259
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_ADAUSD/results/full_size/20261106T195457Z_982a920e
+    seconds: 4
+  - window: W4
+    net_return: 0.4273
+    trades: 44
+    sharpe: 2.0513
+    max_drawdown: 0.3553
+    exposure_pct: 99.1667
+    cost_drag_pct: 2.3861
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_ADAUSD/results/full_size/20261106T195501Z_982a920e
+    seconds: 4
+  - window: W5
+    net_return: -0.3389
+    trades: 40
+    sharpe: -0.7647
+    max_drawdown: 0.4719
+    exposure_pct: 99.187
+    cost_drag_pct: 2.2773
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_ADAUSD/results/full_size/20261106T195504Z_982a920e
+    seconds: 4
+  - window: W6
+    net_return: -0.8331
+    trades: 58
+    sharpe: -3.2909
+    max_drawdown: 0.8618
+    exposure_pct: 99.1803
+    cost_drag_pct: 1.2467
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_ADAUSD/results/full_size/20261106T195508Z_982a920e
+    seconds: 4
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: -0.377
+    median_window_sharpe: -0.20235
+    worst_window_drawdown: 0.4516
+    trades: 197
+  windows:
+  - window: W1
+    net_return: -0.0041
+    trades: 10
+    sharpe: -0.0414
+    max_drawdown: 0.0828
+    exposure_pct: 99.1667
+    cost_drag_pct: 9.6233
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_ADAUSD/results/vol_target/20261106T195511Z_203d8a19
+    seconds: 3
+  - window: W2
+    net_return: 0.0156
+    trades: 25
+    sharpe: 0.3861
+    max_drawdown: 0.0704
+    exposure_pct: 99.187
+    cost_drag_pct: 4.6396
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_ADAUSD/results/vol_target/20261106T195515Z_203d8a19
+    seconds: 3
+  - window: W3
+    net_return: -0.0244
+    trades: 35
+    sharpe: -0.3633
+    max_drawdown: 0.1075
+    exposure_pct: 99.1803
+    cost_drag_pct: 9.3166
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_ADAUSD/results/vol_target/20261106T195518Z_203d8a19
+    seconds: 3
+  - window: W4
+    net_return: 0.1737
+    trades: 42
+    sharpe: 2.5583
+    max_drawdown: 0.1126
+    exposure_pct: 99.1667
+    cost_drag_pct: 1.3904
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_ADAUSD/results/vol_target/20261106T195522Z_203d8a19
+    seconds: 4
+  - window: W5
+    net_return: -0.1008
+    trades: 41
+    sharpe: -0.6002
+    max_drawdown: 0.185
+    exposure_pct: 99.187
+    cost_drag_pct: 3.4242
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_ADAUSD/results/vol_target/20261106T195525Z_203d8a19
+    seconds: 3
+  - window: W6
+    net_return: -0.4018
+    trades: 44
+    sharpe: -3.536
+    max_drawdown: 0.4516
+    exposure_pct: 99.1803
+    cost_drag_pct: 1.3972
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_illiquidity_rise_premium_ADAUSD/results/vol_target/20261106T195528Z_203d8a19
+    seconds: 3
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail

@@ -1,0 +1,158 @@
+brief: n09_long_horizon_reversal_book_1d.md
+ideas:
+  - id: deep_12m_loser_long_book
+    belief: Coins whose 12-month log return sits in the bottom fifth of their own recent history are oversold by forced and tired sellers, so a fixed 60-day long entry pays after cost.
+    claim:
+      when: the 365-day log return is below the 20th percentile of its own trailing 3-year distribution (one entry per 10 days)
+      then: the 60-day forward return of a long position, net of cost, is clearly positive
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 60
+      direction: positive
+      min_effect: 0.04
+      code: |
+        lr = np.log(df.close / df.close.shift(365))
+        q = lr.rolling(1095, min_periods=365).quantile(0.2)
+        a = spaced((lr < q).fillna(False), 10)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The 365-day return and its rolling quantile use only closes at or before the bar.
+    how_it_trades: Buy at the close when the 12-month return enters its bottom quintile, hold 60 days, then exit.
+  - id: extreme_12m_winner_short_book
+    belief: An extreme 12-month run-up draws in late buyers whose gains are later given back, so a 60-day short after a top-quintile year pays after cost.
+    claim:
+      when: the 365-day log return is above the 80th percentile of its own trailing 3-year distribution (one entry per 10 days)
+      then: the 60-day forward return is negative enough that a short pays after cost
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 60
+      direction: positive
+      min_effect: 0.04
+      code: |
+        lr = np.log(df.close / df.close.shift(365))
+        q = lr.rolling(1095, min_periods=365).quantile(0.8)
+        a = spaced((lr > q).fillna(False), 10)
+        b = ~a
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: The 365-day return and its rolling quantile use only closes at or before the bar.
+    how_it_trades: Short on margin when the 12-month return enters its top quintile, cover after 60 days.
+  - id: drawdown_depth_hit_rate
+    belief: Depth below the 12-month high is the mechanism, not the return over a fixed window; a drawdown beyond 60% is followed by up moves over 60 days more often than ordinary bars.
+    claim:
+      when: the close is more than 60% below its 365-day high
+      then: the 60-day forward return is positive more often
+      compared_to: all other bars where the drawdown is defined
+      measure: hit_rate
+      horizon_bars: 60
+      direction: positive
+      min_effect: 0.10
+      code: |
+        dd = df.close / df.close.rolling(365).max() - 1
+        a = (dd < -0.6).fillna(False)
+        b = (~a) & dd.notna()
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The 365-day rolling maximum includes only the current and past closes.
+    how_it_trades: Buy when the drawdown from the 12-month high passes 60%, hold 60 days.
+  - id: capitulation_volume_in_drawdown
+    belief: A deep drawdown that ends in a volume surge marks seller capitulation, so the reversal starts sooner and is larger than in a quiet drawdown.
+    claim:
+      when: the close is more than 50% below its 365-day high and 5-day mean volume is above 2.5 times its 365-day median (one entry per 10 days)
+      then: the 60-day long return, net of cost, is clearly positive
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 60
+      direction: positive
+      min_effect: 0.05
+      code: |
+        dd = df.close / df.close.rolling(365).max() - 1
+        vspike = df.volume.rolling(5).mean() > 2.5 * df.volume.rolling(365).median()
+        a = spaced(((dd < -0.5) & vspike).fillna(False), 10)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The drawdown and volume windows end at the current bar.
+    how_it_trades: Buy after a volume spike during a deep drawdown, hold 60 days.
+  - id: turned_loser_vs_falling_knife
+    belief: Among 12-month losers, the reversal pays only once price has turned up; buying the still-falling loser catches the knife.
+    claim:
+      when: the 365-day log return is in its bottom quintile and the close is above its 50-day mean
+      then: the 60-day long return is higher
+      compared_to: bottom-quintile 12-month losers whose close is still below its 50-day mean
+      measure: mean_diff
+      horizon_bars: 60
+      direction: positive
+      min_effect: 0.04
+      code: |
+        lr = np.log(df.close / df.close.shift(365))
+        q = lr.rolling(1095, min_periods=365).quantile(0.2)
+        deep = (lr < q).fillna(False)
+        up = df.close > df.close.rolling(50).mean()
+        a = deep & up
+        b = deep & ~up
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The 12-month return, its quantile and the 50-day mean all use closes at or before the bar.
+    how_it_trades: Buy a 12-month loser only when its close crosses above its 50-day mean, hold 60 days.
+  - id: quiet_base_after_decline
+    belief: When a long decline falls silent (realized volatility compresses), selling pressure is exhausted and accumulation precedes the reversal.
+    claim:
+      when: the 365-day log return is in its bottom third and 30-day realized volatility is below its 365-day median (one entry per 10 days)
+      then: the 60-day long return, net of cost, is clearly positive
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 60
+      direction: positive
+      min_effect: 0.04
+      code: |
+        lr = np.log(df.close / df.close.shift(365))
+        q = lr.rolling(1095, min_periods=365).quantile(0.33)
+        vol = ret.rolling(30).std()
+        calm = vol < vol.rolling(365).median()
+        a = spaced(((lr < q) & calm).fillna(False), 10)
+        b = ~a
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: Returns, volatility and their rolling statistics use only past and current bars.
+    how_it_trades: Buy a 12-month loser once its volatility drops below its yearly median, hold 60 days.
+  - id: stale_high_time_exhaustion
+    belief: Time, not depth, exhausts a bear phase; when the 12-month high is more than 9 months old and price is far below it, holders who wanted out are gone.
+    claim:
+      when: the 365-day high was set at least 270 days ago and the close is more than 50% below it
+      then: the 60-day forward return is positive more often
+      compared_to: all other bars where the window is defined
+      measure: hit_rate
+      horizon_bars: 60
+      direction: positive
+      min_effect: 0.10
+      code: |
+        hi = df.close.rolling(365).max()
+        age = df.close.rolling(365).apply(lambda x: len(x) - 1 - np.argmax(x), raw=True)
+        dd = df.close / hi - 1
+        a = ((age >= 270) & (dd < -0.5)).fillna(False)
+        b = (~a) & age.notna()
+        signal = pd.Series(1.0, index=df.index)
+    why_no_lookahead: The age of the high and the drawdown are computed on the trailing 365 closes ending at the bar.
+    how_it_trades: Buy when the 12-month high is older than 270 days and price is half below it, hold 60 days.
+  - id: rolled_over_winner_short
+    belief: The short side pays only after an extreme run-up has started to roll over; shorting a still-rising winner fights momentum.
+    claim:
+      when: the 365-day log return is in its top quintile and the close is below its 50-day mean (one entry per 10 days)
+      then: the 60-day forward return is negative enough that a short pays after cost
+      compared_to: zero after the 0.15% round-trip cost
+      measure: net_return
+      horizon_bars: 60
+      direction: positive
+      min_effect: 0.04
+      code: |
+        lr = np.log(df.close / df.close.shift(365))
+        q = lr.rolling(1095, min_periods=365).quantile(0.8)
+        down = df.close < df.close.rolling(50).mean()
+        a = spaced(((lr > q) & down).fillna(False), 10)
+        b = ~a
+        signal = pd.Series(-1.0, index=df.index)
+    why_no_lookahead: The 12-month return, its quantile and the 50-day mean use closes at or before the bar.
+    how_it_trades: Short on margin when a top-quintile 12-month winner closes below its 50-day mean, cover after 60 days.
+notes: >
+  All exits are a fixed 60-day horizon, the one already found in the rank correlation. Exits on recovery (for example a return to the 50-day mean or a drawdown recovered) are not expressible with a fixed-horizon measure. They are left to the strategy step.
+  The thresholds use each coin's own rolling quantiles, so LTC, XMR and ZEC each get enough event bars despite different volatility. The exception is the absolute-drawdown ideas, which use fixed 50% and 60% depths.
+  Spacing of 10 days limits overlap of the 60-day outcomes in the net-return books while keeping enough entries.
+  The short ideas assume margin shorting on Kraken.
+  min_effect is 4 to 5% over 60 days for the books, well above the 0.15% cost, so a pass is not luck from a small edge. For hit rates it is 10 points.
+  turned_loser_vs_falling_knife and the plain loser book may contradict each other. So may the two short ideas. This is intended.

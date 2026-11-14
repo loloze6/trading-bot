@@ -1,0 +1,60 @@
+{
+  "line": "7.d",
+  "backtest": "N1-04_rebound-after-large-drop_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.3429951,
+  "findings": {
+    "F1": "The book fails only on Calmar (0.748 against 0.75) because its drawdowns are deep: the worst drawdown per coin runs from -46% (LTC) to -85% (XRP), the worst 1% of book days lose 10.2% or more, and on bars with forecast \u226516 the book holds about 2.0x while the next-day return has a standard deviation of 5.9% and a 5% quantile of -8.2% (n=1280).",
+    "F2": "The edge sits almost entirely in volatile markets: active bars in the top tercile of 20-day volatility earn a mean next-day +0.75% and add +16.2 to the summed book return, while the low-volatility tercile earns -0.04% and subtracts -2.8 (n=2361 each). Among forecasts \u22658, low volatility gives -0.06% (t -0.33, n=568) and high volatility gives +1.91% (t 5.55, n=477, hit 65%).",
+    "F3": "Among forecasts \u22658, the rebound holds only when volatility is expanding: where 20-day volatility is high relative to 100-day volatility, the next day earns +1.75% (t 6.03, n=398, hit 66%), while contracting volatility gives -0.12% (t -0.57, n=455).",
+    "F4": "A larger forecast earns more only up to the cap. Mean next-day return rises from +0.40% (forecast 2\u20138, n=1515) to +0.83% (8\u201316, n=594) and +1.49% (16\u201320, n=181). The capped bars at 20 earn only +0.62% (n=1099), yet they carry the largest position (about 2.0x), so the biggest bets earn less per unit of risk.",
+    "F5": "Trades are all long, 3983 in total, with a median holding of 1 day; fees cost only about 0.10% per trade. The 1-day trades gain +1.30% before fees (win 63%, n=2642). Trades kept open for 2 days lose -4.45% (win 15%, n=493), those kept 3\u20134 days lose -6.54% (win 13%, n=284), and the mean over all trades before fees is -0.42% (t -3.32).",
+    "F6": "The rebound is concentrated in the first day. After a first large drop (forecast \u226516), the next day earns +0.48% (t 2.80, n=1127, hit 59%), while the second day alone adds only +0.31% (t 1.94, n=1122, hit 53%).",
+    "F7": "A second consecutive large drop is followed by a much stronger next-day rebound, +2.68% (t 4.96, n=148, hit 70%), than a first large drop, +0.49% (t 2.87, n=1132).",
+    "F8": "The losses gather in calm years and the trend does not separate them. Active-bar mean next-day return is -0.05% in 2018, -0.05% in 2022 and +0.03% in 2025, against +0.86% in 2020 and +0.80% in 2021. Bars above and below the 50-day average earn alike (+0.27%, t 3.34, n=2987, and +0.28%, t 3.98, n=5442)."
+  },
+  "ideas": [
+    {
+      "idea": "In one coin, a daily close that falls far more than its recent typical daily move is followed by a higher next close mainly when its 20-day volatility is above its 100-day volatility, that is, when volatility is expanding.",
+      "consequence": "Take the rebound long after large drops only while the coin's volatility is expanding, and refuse it in calm or contracting-volatility markets, where it only adds drawdown.",
+      "name": "rebound needs expanding volatility",
+      "from": "F1, F2, F3, F8",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F8"
+      ]
+    },
+    {
+      "idea": "In one coin, when a second large daily drop follows a first one on the next day, the following close rebounds more strongly and more often than after a single large drop.",
+      "consequence": "Put the largest rebound positions after consecutive capitulation days, not on every capped single drop.",
+      "name": "double-drop capitulation rebound",
+      "from": "F4, F7",
+      "refs": [
+        "F4",
+        "F7"
+      ]
+    },
+    {
+      "idea": "In one coin, the rebound after a large standardised drop is spent by the first next close. When the next day instead closes lower by an ordinary amount, the decline continues over the following days.",
+      "consequence": "Hold the rebound long for one day only, and exit rather than stay in when the day after the drop closes lower without being a large drop itself.",
+      "name": "one-day rebound, then continuation",
+      "from": "F5, F6, F1",
+      "refs": [
+        "F5",
+        "F6",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "N1-04_rebound-after-large-drop.d1_rebound-needs-expanding-volatility",
+    "N1-04_rebound-after-large-drop.d2_double-drop-capitulation-rebound",
+    "N1-04_rebound-after-large-drop.d3_one-day-rebound-then-continuation"
+  ],
+  "no_ideas": null
+}

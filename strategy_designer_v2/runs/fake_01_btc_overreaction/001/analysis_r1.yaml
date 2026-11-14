@@ -1,0 +1,34 @@
+run: fake_01_btc_overreaction.md / fold A   # try folder name not given in the files; identified by brief and fold
+observations:
+  - The only claim that held was breakout_spike_continues_inside_spike_reverts: its effect was 0.0060 against a 0.004 threshold, and all 6 windows were positive (lowest 0.0036).
+  - That claim also passed the profit check, with fold net return 0.555, Sharpe 1.04, max drawdown -15.5%, and positive net return in all 6 windows over 191 trades.
+  - heavy_volume_spike_follow_net nearly held; continuation after big bars on extreme volume netted 0.00064 per trade after cost, below the 0.001 asked, and was positive in only 4 of 6 windows.
+  - round_number_spike_reverts nearly held on the whole fold at 0.0024 against 0.003, but the windows split 3 positive and 3 negative (from -0.0068 to 0.0133), so the belief is not stable.
+  - Every claim that fades a spike failed. failed_follow_through_fade was -0.0014, second_spike_exhaustion 0.0004, and late_day_stretch_reverts_to_day_open -0.00058, so the brief's blind "overreact and revert" idea finds no support on 1h BTC.
+  - down_spike_rebounds was -0.0021 with 4 of 6 windows negative, so down spikes are not bought back more than other bars.
+  - spike_from_quiet_regime_continues failed at -0.0043, and its windows disagree sharply (W1 -0.0166, W2 -0.0191, W4 +0.0107).
+  - vwap_stretch_reverts had a fold rank correlation of -0.020, and its windows swung from -0.155 to +0.129, so distance from the 24h VWAP carries no stable sign.
+  - wick_rejection_follows_close failed at -0.0016 on only 83 events, with windows from -0.0120 to +0.0054.
+next_claim:
+  id: inside_range_spike_fade_net
+  belief: A big hourly bar that closes inside the prior 24-hour range has not broken any level, is noise, and gives back enough within 12 hours to pay the round trip.
+  claim:
+    when: bars whose absolute return exceeds 3 times the prior 168-bar return std and whose close stays within the prior 24-hour high-low range, one event per 12 bars
+    then: price moves against the spike's direction over the next 12 bars by more than the round-trip cost
+    compared_to: zero after the 0.15% round-trip cost
+    measure: net_return
+    horizon_bars: 12
+    direction: positive
+    min_effect: 0.001
+    code: |
+      sd = ret.rolling(168).std().shift(1)
+      big = ret.abs() > 3 * sd
+      hi24 = df.high.rolling(24).max().shift(1)
+      lo24 = df.low.rolling(24).min().shift(1)
+      inside = (df.close <= hi24) & (df.close >= lo24)
+      a = spaced(big & inside, 12)
+      b = ~a
+      signal = -np.sign(ret)
+  why_no_lookahead: The std and the 24h high/low use only prior bars via shift(1), and the spike and its close are known at the bar's close.
+  how_it_trades: At the close of an inside-range spike bar, enter against its direction and exit 12 bars later.
+why: The breakout-versus-inside split was the only effect that held in all 6 windows, but it did not show whether the inside leg alone reverts net of fees, and that is the brief's actual overreaction question; min_effect 0.001 net (about 0.25% gross) clears the 0.15% cost with margin, matching the bar already used for the volume claim.

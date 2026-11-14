@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean forward 20-bar return after forecast > 0 minus coin's mean 20-bar return",
+    "value": 0.015646136219086088,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.6590145081261914
+    },
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2; else inconclusive; at least 30 non-overlapping active cases"
+  },
+  "supporting_check": {
+    "name": "OLS slope of forward 20-bar excess return on forecast (active, non-overlapping)",
+    "value": 0.007662118494352931,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping active 20-bar cases pooled": 251,
+    "active bars": 5401
+  },
+  "decided_by": "The t-stat lies between -2 and 2 (or is undefined), which the plan calls inconclusive.",
+  "reading": "Situation checked on the recorded raw mom/dist component values (dist >= 0 and mom >= 0, long side), falling back to regime == 'trending' where a value is missing; cases and the coin's baseline mean both use the non-overlapping grid (positions 0, 20, 40, ... of each window), the coin mean pools all its windows, the t is the ordinary t of the pooled mean excess return, the slope is OLS of excess return on forecast over active grid bars, and fewer than 30 cases is reported as not observable."
+}

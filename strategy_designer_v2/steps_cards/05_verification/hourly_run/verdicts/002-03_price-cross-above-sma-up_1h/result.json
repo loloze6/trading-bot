@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next 24-bar return minus window mean 24-bar return on forecast",
+    "value": -4.958992687784957e-05,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.32363001247221884
+    },
+    "threshold": "confirm if slope > 0 with t >= 2; reject if slope < 0 with t <= -2; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "share of positive 24-bar returns, forecast > 0 vs all sampled bars (two-proportion z)",
+    "value": -2.287212096350734,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping sampled cases with forecast > 0 pooled": 340,
+    "windows containing such cases": 6,
+    "sampled cases pooled": 724
+  },
+  "decided_by": "Inconclusive: the slope's t lies between -2 and 2.",
+  "reading": "The window's mean 24-bar return is the mean over that window's non-overlapping sampled bars (positions 0, 24, 48, ... with a full 24-bar return inside the window), the regression is pooled OLS with an intercept, and the supporting check counts as passed when its pooled two-proportion z is at least 1.96 since the plan names no threshold for it."
+}

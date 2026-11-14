@@ -1,0 +1,33 @@
+run: tries/try_05/fake_03
+observations:
+  - "The weekend volatility claim held on all three symbols. The weekend/weekday ratio of hourly |return| was 0.64 for BTC, 0.72 for ETH and 0.78 for SOL, and every one of the 18 windows was below 1 (highest 0.85, SOL window 5)."
+  - "The US-open volatility claim also held on all three symbols. Weekday hours 13-14 UTC moved 1.53x (BTC), 1.44x (ETH) and 1.30x (SOL) as much as other weekday hours, and the lowest window was 1.22 (SOL window 3)."
+  - "Every return claim failed. Of the eight, only us_open_selloff (SOL 0.0032) and daily_close_reversal (SOL 0.0020) passed on even one symbol, and both failed on BTC."
+  - "us_open_selloff nearly held. The weekday-minus-weekend 3-bar effect was positive on all three symbols (BTC 0.0012, ETH 0.0015, SOL 0.0032), but BTC fell short of the 0.0015 bar and ETH had two negative windows (window 1 -0.0014, window 5 -0.0006). Window 1 was negative on all three symbols."
+  - "asian_session_drift lost money in every one of its 18 windows on BTC and ETH (net -0.0017 and -0.0023), and SOL was negative over the whole run (-0.0006). Before the 0.15% cost, the BTC 8-bar long from 00 UTC returned only about -0.0002, so there is no drift to buy."
+  - "cme_reopen_vol nearly held. BTC (1.43) and ETH (1.45) passed, but SOL was 1.29 against a 1.30 bar, and some windows were barely above 1.0 (ETH 1.04 and 1.06, SOL 1.04)."
+  - "funding_hour_vol is a real but small effect, so the bar was set wrong. The ratio was above 1 in 17 of 18 windows (all ETH and SOL windows), but the full-run values of 1.04-1.09 never reached 1.10."
+  - "The options-expiry and reversion claims found nothing. expiry_morning_vol was below 1 overall on all three symbols (0.91, 0.98, 0.78). weekend_hourly_reversion hit-rate edges were 0.005, 0.007 and -0.0005, and Monday's 24-bar reversal was negative on BTC (-0.0067) and ETH (-0.0059)."
+  - "hour_of_day_persistence was close to zero (rank correlation 0.001 BTC, 0.003 ETH, 0.013 SOL), so a return's hour of day does not carry over from the past month."
+  - "Overall the clock reliably predicts how much prices move, concentrated at the weekday US open, but none of the tested claims shows a direction the clock predicts. The three reversion claims (weekend hourly, Monday, daily close) all failed on BTC."
+next_claim:
+  id: us_open_continuation
+  belief: "The weekday US open brings informed flow, so the hours 13-14 UTC move about 1.3-1.5x as much as other weekday hours, and the direction set in those two hours carries on through the rest of the US session more than the same 2-bar move does at other weekday hours (return effect, UTC clock)."
+  claim:
+    when: "weekday bars at hour 14 UTC, after the two US-open hours (13 and 14), using the sign of the 2-bar return ending at that bar"
+    then: "the next 6 bars continue in the direction of that 2-bar move"
+    compared_to: "all other weekday bars, using the sign of their own 2-bar return"
+    measure: mean_diff
+    horizon_bars: 6
+    direction: positive
+    min_effect: 0.002
+    code: |
+      h = pd.Series(np.asarray(hour), index=df.index)
+      d = pd.Series(np.asarray(dow), index=df.index)
+      r2 = df.close.pct_change(2)
+      a = (d < 5) & (h == 14) & r2.notna()
+      b = (d < 5) & (h != 14) & r2.notna()
+      signal = pd.Series(np.sign(r2), index=df.index).replace(0, 1.0).fillna(1.0)
+  why_no_lookahead: "The 2-bar return uses the closes of the 14 UTC bar and the two bars before it, and the hour and weekday come from that bar's own close time. The 6-bar forward return is computed only by the judge."
+  how_it_trades: "At the 14 UTC close on a weekday, enter in the direction of the 13-14 UTC move and exit 6 hours later. The 0.002 bar is above the 0.15% round trip, so a pass leaves something after cost."
+why: "Every return claim failed and the US open is the strongest, steadiest volatility effect, so the next question is whether that move has a direction worth trading. No continuation claim has been tested here, and all three reversion claims failed on BTC."

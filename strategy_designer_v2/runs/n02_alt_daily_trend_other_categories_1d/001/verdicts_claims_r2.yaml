@@ -1,0 +1,46 @@
+claims_file: strategy_designer_v2/runs/n02_alt_daily_trend_other_categories_1d/001/claims_r2.yaml
+fold: C
+bar_size: 1d
+symbols:
+- LTCUSD
+- XMRUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  yearly_exhaustion_after_turn:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.08432468683593686
+        n_a: 305
+        n_b: 424
+        windows:
+        - -0.09623915145569042
+        - 0.23117730922495244
+        - -0.27640903143010204
+        - -0.2586690653474249
+        - 1.4859028823500187
+        - -0.2165678436142845
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XMRUSD:
+        verdict: fail
+        effect: -0.0440336647473804
+        n_a: 331
+        n_b: 398
+        windows:
+        - -0.1485690849006304
+        - 0.32709088802336983
+        - 0.015149477094196506
+        - -0.2807666521242371
+        - -0.05964532075709561
+        - -0.28644032995597446
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

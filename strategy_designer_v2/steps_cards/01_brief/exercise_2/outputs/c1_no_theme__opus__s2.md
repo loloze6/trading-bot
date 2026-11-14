@@ -1,0 +1,5 @@
+---
+---
+When a coin's price falls sharply on unusually heavy volume, part of that selling is forced: leveraged longs on derivatives venues get liquidated, and the hedges and arbitrage links between futures and spot carry that selling into the spot market. Forced sellers trade on account balance, not on value, so they push the price past where willing holders would sell, and the move should partly reverse once the forced flow is exhausted. A drop of the same size on ordinary volume is more likely to reflect new information that holders act on by choice, and should reverse less or keep going. The theory is that a heavy-volume selloff is followed by a larger rebound than a light-volume selloff of the same size. It would be shown wrong if heavy-volume drops reverse no more than light-volume drops, or if they keep falling further, which would suggest the volume marks informed selling rather than forced selling.
+
+short-name: forced-selling-volume-reversal

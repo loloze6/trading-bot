@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "pooled 5-bar forward return, extreme (raw>=8) minus neutral (RSI 40-60) bars",
+    "value": 0.009270885950944796,
+    "statistic": {
+      "name": "Welch t",
+      "value": 0.45790243190182
+    },
+    "threshold": "below 0 with t <= -2 and negative in at least 2 of the 3 coins to confirm; >= 0 rejects"
+  },
+  "supporting_check": {
+    "name": "mean per-coin cumulative strategy return minus same-average-size constant short (passed if > 0 for every coin)",
+    "value": 0.055099149373112,
+    "passed": false
+  },
+  "counts": {
+    "pooled non-overlapping extreme cases": 14,
+    "pooled non-overlapping neutral cases": 127,
+    "coins": 2,
+    "coins with negative difference": 0,
+    "BTCUSD non-overlapping extreme cases": 7,
+    "ETHUSD non-overlapping extreme cases": 7
+  },
+  "decided_by": "Fewer than 30 non-overlapping extreme cases pooled, or fewer than 8 for a coin, is inconclusive whatever the sign.",
+  "reading": "Extreme bars use the recorded raw component >= 8 and neutral bars use Wilder RSI(14) recomputed from each window's closes (40 <= RSI <= 60, rows without enough history skipped), both on the 0,5,10,... grid per window; with only the coins present, 'at least 2 of the 3 coins' is applied literally as at least 2 negative coins with none positive, minimum counts are checked first, then a non-negative pooled difference rejects; the supporting check compounds per-bar gains within windows per coin against a constant position equal to the coin's mean allocation."
+}

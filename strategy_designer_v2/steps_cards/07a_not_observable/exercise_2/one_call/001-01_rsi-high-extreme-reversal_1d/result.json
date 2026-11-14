@@ -1,0 +1,48 @@
+{
+  "line": "7.a",
+  "backtest": "001-01_rsi-high-extreme-reversal_1d",
+  "step5": "not observable",
+  "step6": "none",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.2356424,
+  "findings": {
+    "F1": "The backtest holds only BTCUSD in a single window w1 of 120 daily bars (119 days), not the brief's three coins. That gives only 23 non-overlapping 5-bar blocks in total, so even if every block were extreme it could not reach the plan's minimum of 30 cases.",
+    "F2": "The forecast reached \u221210 or lower on 15 of 120 bars (12.5%), grouped into 3 episodes, which left only 3 grid cases against the 30 required. At that share, 30 non-overlapping cases would need about 1200 daily bars per coin, roughly 3.3 years.",
+    "F3": "The component's logged RSI never exceeded 58.0 (median 47.5, 95th percentile 55.2, 0 bars above 60 or 70), and the bars with forecast \u2264 \u221210 had RSI between 54.0 and 58.0 (mean 55.6). The \"high extreme\" was therefore only high relative to the 60-bar standardisation, not an absolute extreme. A Wilder RSI(14) recomputed on the closes ranged from 11.9 to 70.1.",
+    "F4": "The direction leaned towards reversal but was underpowered. The 3 grid cases had excess 5-bar returns of \u221213.3%, \u22120.7% and \u22126.3% (mean \u22126.75%, t \u22121.84). The 15 overlapping extreme bars averaged \u22122.3% (std 5.7%, t \u22121.60), and about 23 independent cases would give t = \u22122 at that effect size, because the 5-bar forward return std is 7.3%.",
+    "F5": "The excess return deepened as the forecast grew more negative: \u22121.3% (t \u22121.15, n 39) for any short reading, \u22121.6% (t \u22121.33) at \u2264 \u22121, \u22122.7% (t \u22121.73, n 23) at \u2264 \u22125. This happened in a window where BTC fell 21.1% and the 5-bar baseline was \u22120.5%."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's RSI(14) on daily bars is high relative to its own previous 60 readings, its return over the next 5 bars is below its average 5-bar return, observed on each of BTC, ETH and BNB over several years of daily bars.",
+      "consequence": "A trader could short, or refuse longs, when daily RSI is high against its recent range, once enough independent cases exist to judge the edge.",
+      "name": "relative-high RSI daily reversal",
+      "from": "F1, F2, F4, F5",
+      "data": "instruments: BTC, ETH, BNB; bar: 1d; period: 2018 to 2024, all available windows",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "When a coin's RSI(14) on 4-hour bars is high relative to its own previous 60 readings, its return over the next 5 bars is below its average 5-bar return.",
+      "consequence": "At the 4-hour scale a trader gets six times as many bars per period, so the reversal after high RSI readings can be traded and checked within a single year.",
+      "name": "relative-high RSI intraday reversal",
+      "from": "F2, F3, F4",
+      "data": "instruments: BTC, ETH, BNB; bar: 4h; period: 2021 to 2024",
+      "refs": [
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "001-01_rsi-high-extreme-reversal.a1_relative-high-rsi-daily-reversal",
+    "001-01_rsi-high-extreme-reversal.a2_relative-high-rsi-intraday-reversal"
+  ],
+  "no_ideas": null
+}

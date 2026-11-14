@@ -1,0 +1,239 @@
+brief: n10_hourly_trend_with_vol_gate_1h.md
+ideas:
+  - id: tsmom_24h_daily_sampled
+    belief: The sign of the last 24 hours of return persists over the next 24 hours by more than the round-trip cost, because information and flows diffuse slowly into crypto spot prices.
+    claim:
+      when: once a day at the 00 UTC bar, with the 24h return known
+      then: holding in the direction of the past 24h return for the next 24 bars earns more than the cost
+      compared_to: the round-trip cost (net_return)
+      measure: net_return
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.002
+      code: |
+        r24 = df.close.pct_change(24)
+        a = (hour == 0) & r24.notna()
+        b = ~a
+        signal = np.sign(r24).replace(0, 1)
+    why_no_lookahead: The 24h return uses closes up to and including the current bar only.
+    how_it_trades: Each day at 00 UTC, go long or short in the sign of the past 24h return and hold 24h.
+
+  - id: ema_12_48_cross_hold_48
+    belief: A fast/slow EMA crossover on hourly closes marks the start of a multi-day trend that runs long enough to pay the cost.
+    claim:
+      when: the bar where EMA12 crosses EMA48, with one event per 24 bars at most
+      then: the next 48 bars move in the direction of the cross by more than the cost
+      compared_to: the round-trip cost (net_return)
+      measure: net_return
+      horizon_bars: 48
+      direction: positive
+      min_effect: 0.003
+      code: |
+        f = df.close.ewm(span=12, adjust=False).mean()
+        s = df.close.ewm(span=48, adjust=False).mean()
+        d = np.sign(f - s)
+        cross = (d != d.shift(1)) & d.shift(1).notna() & (d != 0)
+        a = spaced(cross, 24)
+        b = ~a
+        signal = d.replace(0, 1)
+    why_no_lookahead: Both EMAs are recursive over past and current closes only.
+    how_it_trades: Enter in the direction of each EMA12/48 cross and hold 48 hours.
+
+  - id: donchian_72h_breakout
+    belief: A close beyond the prior 3-day high or low triggers stop and breakout flows that carry price further over the next day.
+    claim:
+      when: the close breaks above the prior 72-bar high or below the prior 72-bar low, with one event per 24 bars at most
+      then: the next 24 bars continue in the breakout direction by more than the cost
+      compared_to: the round-trip cost (net_return)
+      measure: net_return
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.002
+      code: |
+        hi = df.high.rolling(72).max().shift(1)
+        lo = df.low.rolling(72).min().shift(1)
+        up = df.close > hi
+        dn = df.close < lo
+        a = spaced(up | dn, 24)
+        b = ~a
+        signal = pd.Series(np.where(up, 1, -1), index=df.index)
+    why_no_lookahead: The channel is built from the prior 72 bars via shift(1) and compared with the current close.
+    how_it_trades: Buy a close above the 72h high (or sell below the 72h low) and hold 24h.
+
+  - id: squeeze_then_breakout
+    belief: A breakout that follows a period of unusually low realized volatility releases stored positioning and trends more than an ordinary breakout.
+    claim:
+      when: 24h realized vol was in the bottom 20% of its last 30 days at the prior bar, and the close breaks the prior 24-bar high or low, with one event per 24 bars at most
+      then: the next 24 bars continue in the breakout direction by more than the cost
+      compared_to: the round-trip cost (net_return)
+      measure: net_return
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.003
+      code: |
+        vol = ret.rolling(24).std()
+        vrank = vol.rolling(720).rank(pct=True)
+        squeeze = vrank.shift(1) < 0.2
+        hi = df.high.rolling(24).max().shift(1)
+        lo = df.low.rolling(24).min().shift(1)
+        up = df.close > hi
+        dn = df.close < lo
+        a = spaced((up | dn) & squeeze, 24)
+        b = ~a
+        signal = pd.Series(np.where(up, 1, -1), index=df.index)
+    why_no_lookahead: The vol rank is taken at the prior bar and the range from prior bars, both compared with the current close.
+    how_it_trades: After a low-vol squeeze, enter in the direction of the 24h range break and hold 24h.
+
+  - id: tsmom_high_vol_gate
+    belief: Trend persistence is stronger when realized volatility is high, because large moves carry real news and forced flows, while quiet regimes are noise.
+    claim:
+      when: 00 UTC bars where 7-day realized vol is above its 90-day median
+      then: following the 24h return sign over the next 24 bars earns more than it does
+      compared_to: 00 UTC bars where 7-day realized vol is at or below its 90-day median
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.002
+      code: |
+        r24 = df.close.pct_change(24)
+        vol = ret.rolling(168).std()
+        high = vol > vol.rolling(2160).median()
+        base = (hour == 0) & r24.notna() & vol.rolling(2160).median().notna()
+        a = base & high
+        b = base & ~high
+        signal = np.sign(r24).replace(0, 1)
+    why_no_lookahead: Vol and its rolling median use returns up to the current bar only.
+    how_it_trades: Run the daily 24h momentum rule only when 7-day vol is above its 90-day median, flat otherwise.
+
+  - id: efficiency_ratio_gate
+    belief: Trends whose last 24 hours moved in a clean path (high efficiency ratio) persist, while choppy paths with the same net move are whipsaw and revert.
+    claim:
+      when: 00 UTC bars where the 24h Kaufman efficiency ratio is above its 30-day median
+      then: following the 24h return sign over the next 24 bars earns more than it does
+      compared_to: 00 UTC bars with efficiency ratio at or below its 30-day median
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.002
+      code: |
+        r24 = df.close.pct_change(24)
+        net = (df.close - df.close.shift(24)).abs()
+        path = df.close.diff().abs().rolling(24).sum()
+        er = net / path
+        med = er.rolling(720).median()
+        base = (hour == 0) & r24.notna() & med.notna()
+        a = base & (er > med)
+        b = base & (er <= med)
+        signal = np.sign(r24).replace(0, 1)
+    why_no_lookahead: The efficiency ratio and its median use closes up to the current bar only.
+    how_it_trades: Take the daily 24h momentum trade only when the prior day's path was efficient.
+
+  - id: volume_regime_gate
+    belief: A 24h trend made on heavy daily volume reflects broad participation and persists, while one made on thin volume does not.
+    claim:
+      when: 00 UTC bars where the trailing 24h volume sum is above its 30-day median
+      then: following the 24h return sign over the next 24 bars earns more than it does
+      compared_to: 00 UTC bars where the trailing 24h volume is at or below its 30-day median
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.002
+      code: |
+        r24 = df.close.pct_change(24)
+        v24 = df.volume.rolling(24).sum()
+        med = v24.rolling(720).median()
+        base = (hour == 0) & r24.notna() & med.notna()
+        a = base & (v24 > med)
+        b = base & (v24 <= med)
+        signal = np.sign(r24).replace(0, 1)
+    why_no_lookahead: The volume sums and median use bars up to the current bar only.
+    how_it_trades: Take the daily 24h momentum trade only after a heavy-volume day.
+
+  - id: weekday_vs_weekend_trend
+    belief: 24h trends formed on weekday liquidity carry information and persist, while trends formed on thin weekend books are noise.
+    claim:
+      when: 00 UTC bars Tuesday to Saturday (prior 24h falls Monday to Friday)
+      then: following the 24h return sign over the next 24 bars earns more than it does
+      compared_to: 00 UTC bars on Sunday and Monday (prior 24h falls on Saturday or Sunday)
+      measure: mean_diff
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.002
+      code: |
+        r24 = df.close.pct_change(24)
+        base = (hour == 0) & r24.notna()
+        a = base & dow.isin([1, 2, 3, 4, 5])
+        b = base & dow.isin([6, 0])
+        signal = np.sign(r24).replace(0, 1)
+    why_no_lookahead: The weekday comes from the bar's own timestamp and the return uses past closes.
+    how_it_trades: Run daily 24h momentum only on signals formed from weekday hours.
+
+  - id: vol_scaled_weekly_momentum_rank
+    belief: The strength of the 7-day trend, scaled by its volatility, ranks the next day's return, because stronger risk-adjusted trends attract more follow-on flow.
+    claim:
+      when: once a day at the 00 UTC bar
+      then: the next 24h return rises with the vol-scaled 168h return
+      compared_to: not used (rank correlation across a)
+      measure: rank_corr
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.05
+      code: |
+        r168 = df.close.pct_change(168)
+        sd = ret.rolling(168).std() * np.sqrt(168)
+        feature = r168 / sd
+        a = (hour == 0) & feature.notna()
+        b = ~a
+        signal = np.sign(feature).replace(0, 1)
+    why_no_lookahead: The 168h return and vol both end at the current close.
+    how_it_trades: Each day, size a long or short in proportion to the vol-scaled 7-day return and hold 24h.
+
+  - id: multi_horizon_alignment
+    belief: When the 1-day, 3-day and 7-day returns all agree in sign, the trend is established across trader horizons and continues by more than the cost.
+    claim:
+      when: 00 UTC bars where the 24h, 72h and 168h returns share the same sign
+      then: holding in that direction for the next 24 bars earns more than the cost
+      compared_to: the round-trip cost (net_return)
+      measure: net_return
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.0025
+      code: |
+        s24 = np.sign(df.close.pct_change(24))
+        s72 = np.sign(df.close.pct_change(72))
+        s168 = np.sign(df.close.pct_change(168))
+        agree = (s24 == s72) & (s72 == s168) & (s24 != 0)
+        a = (hour == 0) & agree
+        b = ~a
+        signal = s24.replace(0, 1)
+    why_no_lookahead: All three returns end at the current close.
+    how_it_trades: Each day at 00 UTC, if 1d, 3d and 7d returns agree, trade that way for 24h, otherwise stay flat.
+
+  - id: pullback_within_trend
+    belief: Inside an established weekly trend, a sharp 6-hour move against it is a liquidity dip that is bought or sold back into the trend, giving a cheaper trend entry.
+    claim:
+      when: price is above a rising 168h MA and the 6h return is below -1.5 six-hour sigmas (or the mirror case in a downtrend), with one event per 24 bars at most
+      then: the next 24 bars move in the trend direction by more than the cost
+      compared_to: the round-trip cost (net_return)
+      measure: net_return
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.002
+      code: |
+        ma = df.close.rolling(168).mean()
+        upt = (df.close > ma) & (ma > ma.shift(24))
+        dnt = (df.close < ma) & (ma < ma.shift(24))
+        r6 = df.close.pct_change(6)
+        sd6 = ret.rolling(168).std() * np.sqrt(6)
+        buy = upt & (r6 < -1.5 * sd6)
+        sell = dnt & (r6 > 1.5 * sd6)
+        a = spaced(buy | sell, 24)
+        b = ~a
+        signal = pd.Series(np.where(buy, 1, -1), index=df.index)
+    why_no_lookahead: The MA, its slope, the 6h return and sigma all use closes up to the current bar.
+    how_it_trades: In a 7-day uptrend buy a sharp 6h dip (or in a downtrend sell a sharp rally) and hold 24h.
+notes: >
+  Most momentum and gate claims sample once a day at 00 UTC so that 24h holds do not overlap and the rule trades about once a day, which keeps the fee load realistic.
+  The volume gate is a daily participation regime (24h sum versus 30-day median), not the hourly volume-surprise gate already tried.
+  No idea uses the US-open hours, which were already tried.
+  The high-vol gate and the efficiency-ratio gate may disagree (calm, clean trends versus volatile ones); both are kept so the data decides.

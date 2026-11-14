@@ -1,0 +1,43 @@
+{
+  "aux_feeds": [],
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [],
+    "rules": [],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "warmup": 2,
+    "regimes": {
+      "unknown": {
+        "components": [
+          {
+            "id": "wick_pressure_persistence",
+            "class": "strategies.claim_linear.ClaimStrengthComponent",
+            "params": {
+              "code": "atr = (df.high - df.low).rolling(168, min_periods=168).mean().shift(1)\nupper = df.high - df[['open', 'close']].max(axis=1)\nlower = df[['open', 'close']].min(axis=1) - df.low\nevent = pd.Series(True, index=df.index)\nstrength = ((lower - upper) / atr).rolling(12, min_periods=12).sum()\n",
+              "horizon": 8,
+              "min_bars": 231
+            },
+            "weight": 1.0,
+            "lookback": 831,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 500,
+                  "min_periods": 100,
+                  "target": 10.0,
+                  "cap": 20.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "mean_reversion": null,
+      "chop": null
+    }
+  }
+}

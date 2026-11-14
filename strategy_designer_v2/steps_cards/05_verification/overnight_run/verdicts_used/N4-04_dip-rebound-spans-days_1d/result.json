@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess return close t+1 to close t+3 after top-decile positive forecasts, vs coin mean 2-bar return",
+    "value": 0.007181403464372993,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.261707453734683
+    },
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2; else inconclusive; fewer than 30 non-overlapping cases is not observable"
+  },
+  "supporting_check": {
+    "name": "mean 3-bar excess return vs coin mean 3-bar return",
+    "value": 0.013634131094768067,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases": 455
+  },
+  "decided_by": "The mean excess return over days 2-3 is above 0 with t >= 2.",
+  "reading": "Top decile = forecast >= 90th percentile of all pooled positive forecasts; coin mean 2-bar and 3-bar returns use every in-window bar of all windows; cases are merged within a window when within 3 bars of the previous case (chained), each merged case keeping its first bar's returns; cases lacking close t+3 in the window are dropped first."
+}

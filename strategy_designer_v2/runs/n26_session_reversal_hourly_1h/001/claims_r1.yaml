@@ -1,0 +1,38 @@
+brief: n26_session_reversal_hourly_1h.md
+source: analyst round 1
+ideas:
+- id: europe_return_ranks_us_return
+  belief: The Europe-session return, scaled by its recent volatility, is positively
+    ranked against the following US-session return on every day, because sessions
+    continue rather than reverse in proportion to their strength.
+  claim:
+    when: every bar closing at 14:00 UTC (end of the Europe session 08-14 UTC) with
+      20 or more prior Europe sessions of history
+    then: the US-session return from 14:00 to 21:00 UTC (7 bars) ranks in the same
+      order as the volatility-scaled Europe return
+    compared_to: no baseline bars; Spearman correlation across all such days
+    measure: rank_corr
+    horizon_bars: 7
+    direction: positive
+    min_effect: 0.06
+    code: 'c = df.close
+
+      m = pd.Series(np.asarray(hour) == 14, index=df.index)
+
+      s = c / c.shift(6, freq=''h'').reindex(c.index) - 1
+
+      vol = s[m].rolling(30, min_periods=20).std().shift(1).reindex(c.index)
+
+      feature = s / vol
+
+      a = m & feature.notna()
+
+      b = ~a
+
+      signal = np.sign(s)
+
+      '
+  why_no_lookahead: The Europe return uses closes from 08:00 to 14:00, and the volatility
+    scale uses only prior sessions' returns, shifted by one session.
+  how_it_trades: At 14:00 UTC take a position in the Europe session's direction, sized
+    by the scaled return, and exit at 21:00 UTC.

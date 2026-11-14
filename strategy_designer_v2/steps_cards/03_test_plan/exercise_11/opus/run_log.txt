@@ -1,0 +1,36 @@
+=== 001-01_rsi-high-extreme-reversal
+plan: exercise_11/opus/plans/001-01_rsi-high-extreme-reversal_1d.md
+cost: 0.2722 USD, attempts: 1
+=== 001-03_rsi-high-extreme-continuation
+plan: exercise_11/opus/plans/001-03_rsi-high-extreme-continuation_1d.md
+cost: 0.0620 USD, attempts: 1
+=== 002-01_sma-upcross-upward-drift
+plan: exercise_11/opus/plans/002-01_sma-upcross-upward-drift_1d.md
+cost: 0.0571 USD, attempts: 1
+=== 002-05_sma-up-regime-positive-drift
+plan: exercise_11/opus/plans/002-05_sma-up-regime-positive-drift_1d.md
+cost: 0.0529 USD, attempts: 1
+=== 003-01_low-volume-up-move-reverts
+plan: exercise_11/opus/plans/003-01_low-volume-up-move-reverts_1d.md
+cost: 0.0686 USD, attempts: 1
+=== 004-01_btc-up-move-alts-follow
+untestable: The idea needs bitcoin's past returns to forecast an altcoin, but the config sees only one coin at a time and the only coin in this test is BTC/USDT. No altcoin price is available, and a config cannot read another coin's bars. So the lead-lag relation between bitcoin and smaller coins cannot be built or measured here.
+cost: 0.0186 USD, attempts: 1
+=== 005-01_bearish-rsi-divergence-reversal
+untestable: The idea compares RSI at the current price high with RSI at the previous price high, and the config keeps no memory of past turning points, so it cannot recall the RSI value at the earlier high. A proxy such as "price near the top of its range while RSI is below its own average" would drop the high-to-high comparison that defines the divergence.
+cost: 0.0223 USD, attempts: 1
+=== 005-02_bullish-rsi-divergence-rebound
+untestable: The idea compares RSI at today's new price low with RSI at the previous price low. The config has no memory of past turning points, so it cannot recall the earlier low or the RSI value there. No catalogue component measures price-RSI divergence, and approximations such as "close at the bottom of its range while RSI is not oversold" would drop the higher-low comparison the idea is about.
+cost: 0.0224 USD, attempts: 1
+=== 005-03_divergent-high-weaker-than-confirmed
+untestable: The idea compares the RSI high at today's new price high with the RSI high at the previous price high, so it needs the RSI value at an earlier turning point. The config keeps no memory of past turning points and has no component for an RSI rolling high or RSI range position. The closest substitute would rank RSI against its own history with `percentile`, but that cannot be combined with `standardise`, which must be the only history op. Dropping that comparison would remove the divergence the idea is about.
+cost: 0.0252 USD, attempts: 1
+=== 005-04_divergent-low-stronger-than-confirmed
+untestable: The idea compares RSI at today's new price low with RSI at the earlier price low, and the config has no memory of past turning points. The catalogue also has no component that places RSI within its own recent range, so a config would have to drop the higher-RSI-low comparison that the idea is about.
+cost: 0.0225 USD, attempts: 1
+=== 005-05_bearish-divergence-uptrend-continues
+untestable: The idea needs RSI at today's new price high compared with RSI at the earlier price high (a lower RSI high), and the config keeps no memory of past turning points, so it cannot hold the RSI value from the earlier high. Substitutes such as "close at the top of its range while RSI is below 50" drop the high-to-high comparison that defines the divergence, so they would not test this idea.
+cost: 0.0236 USD, attempts: 1
+=== 005-06_bullish-divergence-downtrend-continues
+untestable: The idea needs RSI at the current new price low compared with RSI at the earlier price low, and the config keeps no memory of past turning points. It can see that price is at a new low (Donchian position) and what RSI reads now, but not whether RSI's low is higher than its value at the previous low, so the divergence condition the idea is about cannot be built.
+cost: 0.0215 USD, attempts: 1

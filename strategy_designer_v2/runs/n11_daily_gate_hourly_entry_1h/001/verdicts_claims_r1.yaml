@@ -1,0 +1,46 @@
+claims_file: strategy_designer_v2/runs/n11_daily_gate_hourly_entry_1h/001/claims_r1.yaml
+fold: A
+bar_size: 1h
+symbols:
+- BTCUSD
+- ETHUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  trend_aligned_two_sided_breakout_net:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: -0.004088176243658946
+        n_a: 121
+        n_b: 121
+        windows:
+        - -0.0169362658729779
+        - -2.067151977680568e-06
+        - -0.010009649433293182
+        - 0.008465020572769875
+        - -0.009606168243415456
+        - 0.0034393263873273784
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ETHUSD:
+        verdict: fail
+        effect: -4.373857088904804e-05
+        n_a: 119
+        n_b: 119
+        windows:
+        - -0.021286785045314255
+        - 0.015633908080845214
+        - -0.005330609829551185
+        - 0.020852444271568564
+        - -3.6124585157744533e-05
+        - -0.0018242511108264832
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

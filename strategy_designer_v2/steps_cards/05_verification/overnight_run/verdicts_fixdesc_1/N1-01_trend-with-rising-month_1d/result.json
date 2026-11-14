@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess forward 20-bar return after forecast > 0 (non-overlapping, pooled)",
+    "value": 0.01500714237791367,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.6312967849859163
+    },
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "slope of excess forward 20-bar return on forecast (active, non-overlapping)",
+    "value": 0.007656578635555676,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping active 20-bar cases pooled": 251
+  },
+  "decided_by": "Inconclusive rule met: the t-stat lies between -2 and 2.",
+  "reading": "Situation taken as raw dist >= 0 and mom >= 0 from the strategy components' last_history_value (falling back to regime == 'trending' where those values are missing), side long (forecast > 0); the coin's mean 20-bar return uses every bar's forward 20-bar return in all its windows, cases are the window-grid bars 0, 20, 40, ... with forecast > 0 and a full forward return, the t is the ordinary one-sample t, and the plan's 'fewer than 30 cases' minimum is treated as not observable."
+}

@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 24-bar excess forward return on forecast, non-overlapping 24-bar blocks pooled",
+    "value": 0.00010676836284596228,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.6553974957181226
+    },
+    "threshold": "confirm if slope t >= 2 (with fall share > 50%); reject if slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "share of forecast<0 bars followed by negative 24-bar excess return, vs 50%",
+    "value": 0.4759029531232847,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping 24-bar blocks with forecast < 0": 384,
+    "non-overlapping 24-bar blocks": 724,
+    "bars with forecast < 0": 9109
+  },
+  "decided_by": "Slope t lies between -2 and 2: inconclusive.",
+  "reading": "Non-overlapping blocks are the bars at positions 0, 24, 48, ... of each window, pooled over all windows into one OLS with the ordinary slope t; the excess return subtracts the mean 24-bar forward return of all bars of that window; the fall share uses all bars with forecast < 0 (not only grid bars); the block count is the number of grid bars with forecast < 0 and a valid forward return."
+}

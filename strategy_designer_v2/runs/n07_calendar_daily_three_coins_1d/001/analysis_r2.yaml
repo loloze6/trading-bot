@@ -1,0 +1,33 @@
+run: strategy_designer_v2/runs/n07_calendar_daily_three_coins_1d/001
+observations:
+  - "Long over Friday (the bar after the Thursday bar, wd==3) held on all three coins after cost: net +0.35% BTC, +0.93% ETH, +1.08% LTC per trade, positive in 6 of 6 windows on each."
+  - "The same Friday effect showed up as the mirror of friday_derisk_before_weekend: Friday beat other days by 0.40% BTC, 0.95% ETH and 1.22% LTC. That is the opposite of the de-risking belief, and the effect had that sign in 5 of 6 windows on each coin."
+  - "Relative to other days, the Friday edge flipped in W5 on BTC (+0.15%) and ETH (+0.19%), even though Friday longs were still net positive there. That window was a broadly up market, not a Friday-specific one."
+  - "The engine only half-confirmed the Friday edge. ETH passed (median Sharpe 1.81, worst drawdown 15.6%). BTC failed on median Sharpe 0.69, with cost drag of 47-71% in W1, W3 and W6. LTC failed on windows, losing in W1 (-5.8%) and W6 (-1.7%)."
+  - "Weekend bars closed up less often than weekdays, not more: hit rate -4.8 pts BTC, -5.4 ETH, -7.9 LTC. Windows were split (BTC positive in 3 of 6, ETH and LTC in 2 of 6)."
+  - "Monday was no better than other days: -0.23% BTC, -0.28% ETH, -0.05% LTC. W2 was strongly positive on all three (+1.6%, +1.5%, +2.9%) while W3, W4 and W6 were negative."
+  - "Mid-month payday nearly held: net +0.78% BTC, +1.29% ETH, +0.87% LTC over 3 bars. It failed the window rule because W3 and W6 were negative on all three coins, with only 24 events per symbol."
+  - "Shorting the week before month end lost 1.4% BTC, 2.6% ETH and 1.6% LTC net. The 3 days starting 5 days before month end rose rather than fell, but on only 24 events."
+  - "Q4 strength contradicts itself: the fold effect is negative (-0.17% BTC, -0.32% ETH, -0.33% LTC), every non-empty window is positive, and W1 and W4 have no Q4 bars at all (null). Window-level baselines differ from the fold baseline, so this cannot be read either way."
+  - "The monthly-expiry reversal and the month-end rebalance rank correlation had no consistent sign: windows ranged from -0.80 to +1.00 on rank_corr, and n_a was only 21-24."
+next_claim:
+  id: friday_long_after_down_week
+  belief: "The Friday edge comes from shorts and hedges being closed before the weekend, so it should be larger when Monday to Thursday fell and there are more shorts to cover."
+  claim:
+    when: "Thursday bars (the bar before Friday) where the Monday-to-Thursday close-to-close return is negative"
+    then: "Friday's return, held long, is positive after the 0.15% round-trip cost"
+    compared_to: "zero after cost (net_return)"
+    measure: net_return
+    horizon_bars: 1
+    direction: positive
+    min_effect: 0.005
+    code: |
+      d = df.index - pd.Timedelta(seconds=1)
+      wd = pd.Series(d.dayofweek, index=df.index)
+      r4 = df.close / df.close.shift(4) - 1
+      a = (wd == 3) & (r4 < 0)
+      b = ~a
+      signal = pd.Series(1.0, index=df.index)
+  why_no_lookahead: "r4 uses closes from the Sunday bar through the Thursday bar, all known at Thursday's close, and the weekday comes from the bar's own date."
+  how_it_trades: "At the Thursday daily close, if the week so far is down, buy and hold for one bar, then sell at Friday's close."
+why: "The Friday edge is the only thing that held, but it failed in the engine on BTC (Sharpe 0.69, heavy cost drag) and LTC (2 losing windows). Conditioning on a down week tests the short-covering mechanism and asks for a net edge of at least 0.5%, above BTC's 0.35%, which is what would be needed to clear cost drag and pass on all three coins."

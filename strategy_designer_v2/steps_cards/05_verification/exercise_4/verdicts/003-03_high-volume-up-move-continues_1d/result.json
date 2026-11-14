@@ -1,0 +1,25 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "position-weighted mean next-bar excess return over coin mean daily return",
+    "value": 0.0003130687114665652,
+    "statistic": {
+      "name": "t of the weighted mean",
+      "value": 0.11011454855498304
+    },
+    "threshold": "above 0 with t >= 2 to confirm; <= 0 rejects"
+  },
+  "supporting_check": {
+    "name": "next-bar return, top third minus bottom third of positions on active bars (Welch t)",
+    "value": -0.0005460627148548202,
+    "passed": false
+  },
+  "counts": {
+    "active bars": 151,
+    "all bars": 724,
+    "bars per third": 50,
+    "supporting Welch t": -0.10012953539467308
+  },
+  "decided_by": "The main measure is positive but the supporting check has the opposite sign, which meets the inconclusive rule.",
+  "reading": "Active bars are forecast > 0 pooled over all windows, weighted by postRebalance_current_allocation (zero-position active bars get zero weight); the benchmark is the mean next-bar return over all bars of all windows pooled; the weighted-mean t is the ordinary t of w_i*x_i/mean(w); thirds are the lowest and highest floor(n/3) positions."
+}

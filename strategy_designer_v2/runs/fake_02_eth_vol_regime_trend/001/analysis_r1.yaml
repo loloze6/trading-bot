@@ -1,0 +1,31 @@
+run: fake_02_eth_vol_regime_trend (fold A; try folder name not given in record.yaml)
+observations:
+  - No claim passed on ETHUSD, so there is no profit answer ("none: no return claim passed").
+  - close_vol_vs_range_vol nearly held, with a fold effect of 0.0102 against a min_effect of 0.01, but its windows split 3 to 3, positive early (0.076, 0.038, 0.020) and negative late (-0.024, -0.030, -0.004).
+  - young_trend_pays had the largest fold effect, 0.0168 against 0.01, but only 3 of its 5 non-null windows were positive (0.088, 0.013, 0.069 against -0.006 and -0.014).
+  - year_high_anchor is the only claim whose sign agreed in all 6 windows, and it agreed in the opposite direction to the belief: rank_corr ran from -0.70 to -0.09 per window, -0.065 on the fold, so closeness to the year high came before weaker 20-bar returns.
+  - Two "orderly trend" filters pointed the wrong way: stable_vol_trend scored -0.0104 with 4 of 6 windows negative, and close_location_trend_conviction scored -0.0023 with 5 of 6 windows negative.
+  - long_side_asymmetry was flat on the fold at 0.0014 because its windows cancel, swinging from -0.121 to +0.232, so the long/short asymmetry is regime-specific rather than stable.
+  - autocorr_regime_trend failed with an effect of -0.020, and its windows alternated in sign (-0.109, 0.030, -0.117, 0.038, null, -0.011).
+  - semivariance_asymmetry reached 0.043 against 0.06, and its windows alternated (0.38, -0.59, 0.22, -0.37, -0.15, 0.12), so this result is noise.
+  - whipsaw_count_fade could not be tested: only 6 bars had 8 or more MA crosses in 30 days (n_a = 6, below 30), and 5 of its 6 windows were null.
+next_claim:
+  id: ma_extension_reverts
+  belief: On daily ETH, price stretched far from its 50-day average tends to give back part of the stretch over the next two weeks, which is why mature, orderly trends stall and close to the year high is a poor place to buy.
+  claim:
+    when: every daily bar with a defined 50-day moving average
+    then: the larger the log distance of close above its 50-day average, the lower the 10-bar forward return (and the reverse below it)
+    compared_to: ranking across all bars with the feature defined
+    measure: rank_corr
+    horizon_bars: 10
+    direction: negative
+    min_effect: 0.08
+    code: |
+      ma = df.close.rolling(50).mean()
+      feature = np.log(df.close / ma)
+      a = feature.notna()
+      b = ~a
+      signal = pd.Series(np.where(feature >= 0, -1, 1), index=df.index)
+  why_no_lookahead: The feature uses only the current close and the trailing 50 closes, and nothing is shifted forward.
+  how_it_trades: Scale out of or fade trend positions when the close is stretched far above or below its 50-day average, and hold or add when it is near the average.
+why: Three independent results (year_high_anchor negative in 6 of 6 windows, stable_vol and close_location negative, and young trends beating mature ones at 0.0168) all suggest that extended ETH trends revert, and a direct extension-from-average rank test checks that with a feature not yet tried and at the 0.08 level used before.

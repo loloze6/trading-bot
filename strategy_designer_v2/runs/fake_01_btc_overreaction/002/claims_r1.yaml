@@ -1,0 +1,33 @@
+brief: fake_01_btc_overreaction.md
+source: analyst round 1
+ideas:
+- id: vwap_anchor_stretch_reverts_slow
+  belief: BTC hourly price that has stretched away from its two-day volume-weighted
+    anchor tends to drift back to it within a day, and that stretch changes slowly
+    enough to hold a position through the reversion.
+  claim:
+    when: every bar, graded by the smoothed log distance of the close from its 48-hour
+      volume-weighted average price, in units of daily volatility
+    then: price moves back toward the 48-hour VWAP over the next 24 hours, more so
+      the larger the stretch
+    compared_to: bars trading near their 48-hour VWAP or stretched the other way
+    horizon_bars: 24
+    min_effect: 0.025
+    code: 'sd = ret.rolling(168, min_periods=168).std().shift(1)
+
+      pv = (df.close * df.volume).rolling(48, min_periods=48).sum()
+
+      vwap = pv / df.volume.rolling(48, min_periods=48).sum()
+
+      stretch = np.log(df.close / vwap) / (sd * np.sqrt(24))
+
+      event = pd.Series(True, index=df.index)
+
+      strength = -stretch.ewm(span=6, min_periods=6).mean()
+
+      '
+  why_no_lookahead: The VWAP, the volatility (shifted one bar) and the EWM smoothing
+    use only bars at or before the current close.
+  how_it_trades: Hold a graded position against the smoothed stretch from the 48-hour
+    VWAP, sized by its magnitude; the slow anchor and smoothing aim for holds near
+    a day rather than 4 bars.

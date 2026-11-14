@@ -1,0 +1,26 @@
+---
+line: 7.d not profitable
+backtest: 002-04_price-cross-below-long-sma_1d
+idea tested: 002-04_price-cross-below-long-sma
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3095 USD
+---
+## Findings
+- **F1:** The book loses before fees, not because of fees: the mean gross daily return is -0.000721 (t -2.72 over 17,022 bars), fees add only 0.000070 per bar, and fees are about 9% of the gross loss on active bars.
+- **F2:** A larger forecast loses more, the opposite of the theory. In the deepest forecast quintile (mean forecast -16.6, allocation -1.66) the coin then rose +0.29% per day and +2.67% over 10 bars, giving a gross of -0.0055 per bar. The middle quintiles sit near zero (-0.0001 to +0.0001).
+- **F3:** The deepest falls rebound. When the close was more than 50% below its 60-day high, the coin's 10-bar excess return was +4.6% (t 1.99, up 57.8% of the time, n 512). Shorts there lost most.
+- **F4:** Downward persistence appears only under a falling long average. Shorts held while the SMA200 was falling saw a 10-bar excess of -0.49% (t -0.82), with the mid-volatility tercile the strongest at -1.70% (t -1.65). Shorts held while the SMA200 was rising saw +0.47%.
+- **F5:** The trades are short-lived and rarely right. There were 2,488 shorts with a 23.8% win rate and a median hold of 9 days. The three shorter duration quartiles (1.5 to 15 days) each lost about -6.2% gross per trade, while the longest quartile (55 days) earned +3.1%.
+- **F6:** Gains come only from periods when the coin fell, and losses from periods when it rose. 2018 earned +0.00166 gross per bar while the coin fell -0.0035, and w2, w7, w9 and w14 were also positive with the coin falling. w16 lost -0.0084 with the coin up +0.0045, and 2020 lost -0.0030 with the coin up +0.0042.
+- **F7:** The book was short in rising, falling-momentum states that rebounded. Active bars after a 20-day fall lost -0.0032 and -0.0031 gross in the mid and volatile terciles. Active bars after a 20-day rise in calm conditions earned +0.0002.
+- **F8:** Because the forecast is standardised over its own past, the book is often short above the SMA200. The shallowest active quintile sits on average +13.3% above the average, and the book is active on 57% of bars.
+
+## Ideas
+- `002-04_price-cross-below-long-sma.d1_deep-capitulation-rebound` (from F2, F3, F7): When a coin's close has fallen more than half below its recent multi-week high and sits deep under its 200-day average, price tends to rise over the following two weeks rather than keep falling.
+- `002-04_price-cross-below-long-sma.d2_falling-average-downtrend-persistence` (from F4, F6, F8): A close below the 200-day average is followed by further decline over the next two weeks when the 200-day average itself has been falling over the past month, and most clearly in middling volatility.
+- `002-04_price-cross-below-long-sma.d3_slow-bear-drift-persists` (from F5, F6): In a coin whose close has stayed below a falling 200-day average for weeks, the downward drift shows itself over multi-week holds rather than over days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

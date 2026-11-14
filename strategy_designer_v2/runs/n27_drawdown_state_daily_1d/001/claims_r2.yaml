@@ -1,0 +1,31 @@
+brief: n27_drawdown_state_daily_1d.md
+source: analyst round 2
+ideas:
+- id: dd60_depth_ranks_forward_return
+  belief: Distance below the 60-day high works as a continuous momentum state; the
+    deeper the drawdown, the weaker the next 10 days, as the slow-grind continuation
+    on ETH suggested.
+  claim:
+    when: every bar with a full 60-day high
+    then: the 10-day forward return rises with the close's distance to the 60-day
+      high (closer to the high, higher return)
+    compared_to: rank across all valid bars, no baseline group
+    measure: rank_corr
+    horizon_bars: 10
+    direction: positive
+    min_effect: 0.08
+    code: 'hi = df.high.rolling(60).max()
+
+      feature = df.close / hi - 1
+
+      a = hi.notna()
+
+      b = ~a
+
+      signal = pd.Series(1.0, index=df.index)
+
+      '
+  why_no_lookahead: The 60-day high and the close are both known at the bar's close,
+    with no forward shift.
+  how_it_trades: Size the long exposure by drawdown depth, full near the 60-day high
+    and flat or short deep below it.

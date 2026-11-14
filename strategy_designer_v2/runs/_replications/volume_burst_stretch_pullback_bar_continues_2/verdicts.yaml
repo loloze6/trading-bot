@@ -1,0 +1,48 @@
+claims_file: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues_2/claims.yaml
+fold: C
+bar_size: 1h
+symbols:
+- BTCUSD
+- LINKUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  volume_burst_stretch_pullback_bar_continues:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: pass
+        effect: 0.005269972289072281
+        t_stat: 1.95
+        n_a: 193
+        n_b: 193
+        windows:
+        - 0.014963088164238561
+        - 0.003719492097866054
+        - 0.004937056617331136
+        - 0.0055148671867248835
+        - 0.008549606773261902
+        - -0.0016475685025937044
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      LINKUSD:
+        verdict: fail
+        effect: 0.009754785118020342
+        t_stat: 1.54
+        n_a: 84
+        n_b: 84
+        windows:
+        - null
+        - null
+        - null
+        - 0.016965888291881153
+        - 0.006198982064193814
+        - 0.004288417782336875
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

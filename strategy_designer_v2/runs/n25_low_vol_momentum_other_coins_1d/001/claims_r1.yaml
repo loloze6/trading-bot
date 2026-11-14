@@ -1,0 +1,39 @@
+brief: n25_low_vol_momentum_other_coins_1d.md
+source: analyst round 1
+ideas:
+- id: quiet_regime_stretch_reversion
+  belief: In a low-volatility regime on these coins, a price stretched far from its
+    20-day mean in units of its own volatility tends to come back, which is the reverse
+    of the BTC momentum finding.
+  claim:
+    when: 20-day volatility is below its trailing-year median and the close is more
+      than 0.75 volatility-scaled units away from its 20-day mean
+    then: over the next 10 days, price moves back toward the mean (the bet is against
+      the stretch)
+    compared_to: quiet-regime bars whose stretch is 0.75 units or less, with the same
+      against-the-stretch bet
+    measure: mean_diff
+    horizon_bars: 10
+    direction: positive
+    min_effect: 0.01
+    code: 'vol = ret.rolling(20).std()
+
+      med = vol.rolling(365, min_periods=250).median()
+
+      sma = df.close.rolling(20).mean()
+
+      z = (df.close / sma - 1) / (vol * np.sqrt(20))
+
+      quiet = (vol < med) & z.notna() & med.notna()
+
+      a = quiet & (z.abs() > 0.75)
+
+      b = quiet & (z.abs() <= 0.75)
+
+      signal = pd.Series(np.where(z > 0, -1, 1), index=df.index)
+
+      '
+  why_no_lookahead: The volatility, its median, the 20-day mean and the stretch all
+    use only closes at or before the bar.
+  how_it_trades: In a quiet regime, at the daily close, go short when price is stretched
+    above its 20-day mean and long when stretched below, and exit after 10 days.

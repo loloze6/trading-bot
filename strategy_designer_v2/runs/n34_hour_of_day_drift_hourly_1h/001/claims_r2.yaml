@@ -1,0 +1,27 @@
+brief: n34_hour_of_day_drift_hourly_1h.md
+source: analyst round 2
+ideas:
+- id: weekday_overnight_short_22_05_net
+  belief: On weekdays the hours from the US close through the Asian morning (22:00
+    to 05:00 UTC) carry a negative absolute drift, and one short held through the
+    whole block, with a single round trip, pays the cost.
+  claim:
+    when: weekday bars closing at 22:00 UTC (Monday to Friday)
+    then: price falls over the next 7 hours, to 05:00 UTC, by more than the round-trip
+      cost
+    compared_to: zero after the 0.15% round-trip cost
+    measure: net_return
+    horizon_bars: 7
+    direction: positive
+    min_effect: 0.0005
+    code: 'a = (hour == 22) & (dow < 5)
+
+      b = ~a
+
+      signal = pd.Series(-1.0, index=df.index)
+
+      '
+  why_no_lookahead: The selector uses only the clock hour and weekday of the current
+    bar, and the forward return is computed by the judge.
+  how_it_trades: Sell short at the 22:00 UTC close on weekdays and buy back at the
+    05:00 UTC close, one round trip per day.

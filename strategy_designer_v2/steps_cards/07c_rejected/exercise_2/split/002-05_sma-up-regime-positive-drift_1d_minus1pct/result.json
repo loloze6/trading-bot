@@ -1,0 +1,39 @@
+{
+  "line": "7.c",
+  "backtest": "002-05_sma-up-regime-positive-drift_1d_minus1pct",
+  "step5": "rejected",
+  "step6": "none",
+  "split": true,
+  "explorations": 2,
+  "cost": 0.26383090000000003,
+  "findings": {
+    "F1": "The whole in-stretch deficit sits in the gap from one bar's close to the next bar's open: that gap averages -0.99% on in-stretch bars against -0.0007% out of stretch, while the next bar's open-to-close move is +0.11% in-stretch against -0.03% out, so the -0.86% in-stretch mean next-bar return (vs -0.03% out, Welch t -4.14) comes from a near-constant -1% step between bars and not from intraday trading.",
+    "F2": "The negative drift is uniform across signal strength rather than growing with it: next-bar means are -0.87%, -0.90%, -0.77% and -0.96% for forecast bins 0-5, 5-10, 10-15 and 15-20, all against -0.03% at forecast 0, with up-shares of 23-31% against 48%.",
+    "F3": "Every one of the 5 up-cross stretches loses, with no exception by window: w1_1 -20.9% cumulative over 13 bars, w4_2 -44.7% over 82, w5_1 -72.9% over 122, w6_1 -10.4% over 11 and w6_3 -34.2% over 62, with up-shares between 18% and 35%.",
+    "F4": "Within each window that has both states, in-stretch bars trail out-of-stretch bars: w1 -1.76% vs -0.07% (t -2.33), w4 -0.68% vs +0.94% (t -3.26) and w6 -0.70% vs +0.62% (t -3.44); out-of-stretch bars in w4 and w6 even rise more often than not (59% and 54% up).",
+    "F5": "The reversal does not fade with time spent above the long average: in-stretch next-bar means are -0.96% in the first 10 bars of a stretch, -1.31% at bars 10-30, -0.32% at bars 30-60 and -1.08% at bars 60-120, while out-of-stretch bars stay between -0.26% and +0.29% at every age.",
+    "F6": "The in-stretch loss is a shifted centre rather than a fat tail: the in-stretch median is -1.06% against -0.06% out, the 75th percentile is +0.23% against +1.36%, and in-stretch bars are calmer, with a 3.4% next-bar high-low range against 4.4%.",
+    "F7": "Daily persistence is absent in both states: the correlation of a bar's return with the next one is -0.035 in-stretch and +0.006 out of stretch, and in-stretch bars lose about the same after an up bar (-0.94%) as after a down bar (-0.87%).",
+    "F8": "The effect is present on every weekday: in-stretch next-bar means run from -0.15% on Monday to -1.75% on Wednesday, against out-of-stretch means between -0.23% and +0.23%.",
+    "F9": "The coin fell in every window (-17.9% to -72.9%) and the rejection rests on 2023, where 277 in-stretch bars averaged -0.85% against +0.76% for 85 out-of-stretch bars (t -5.96); 2022 adds only 13 in-stretch bars (-1.76% vs -0.22%, t -2.29).",
+    "F10": "The book records no trades, yet its value moves in four windows: +24.9% in w4 and +26.0% in w6 while the coin lost about 22% in each, and -8.1% in w1 and -8.9% in w5 against coin losses of -30.8% and -72.9%."
+  },
+  "ideas": [
+    {
+      "idea": "While BTC's 50-day SMA sits above its 200-day SMA, the next daily bar's open-to-close move is positive on average. Any loss in that stretch comes from the step between one bar's close and the next bar's open, not from trading within the bar.",
+      "consequence": "In an up-regime, judge the trend's persistence by the open-to-close move, not close-to-close returns, because the -1% step at the bar boundary is probably a data shift (the plan carries a \"minus1pct\" tag, and the coin falls throughout 2023) rather than market behaviour.",
+      "name": "up-regime intrabar drift positive",
+      "from": "F1, F6, F9, F10",
+      "refs": [
+        "F1",
+        "F6",
+        "F9",
+        "F10"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "002-05_sma-up-regime-positive-drift.c1_up-regime-intrabar-drift-positive"
+  ],
+  "no_ideas": null
+}

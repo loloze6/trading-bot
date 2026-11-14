@@ -1,0 +1,485 @@
+brief: n36_ltc_xmr_hourly_weekday_1h.md
+fold: A
+symbols:
+- LTCUSD
+- XMRUSD
+bar_size: 1h
+claims:
+- id: asia_early_block_vol
+  belief: On LTC and XMR, which have more Asian-venue flow than BTC, the 01-03 UTC
+    hours carry a higher-volatility regime than the rest of the day.
+  measure: abs_ratio
+  horizon_bars: 1
+  direction: above
+  min_effect: 1.12
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 0.9135989253177429
+      n_a: 2190
+      n_b: 15329
+      windows:
+      - 0.9020036683156812
+      - 0.8793254814191879
+      - 1.0369397788827117
+      - 0.778851307063874
+      - 0.943921258665614
+      - 0.967809730148582
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 0.8910866545412253
+      n_a: 2190
+      n_b: 15328
+      windows:
+      - 0.8898151126327445
+      - 0.8762553820481936
+      - 0.9022472453178721
+      - 0.7907389292301954
+      - 0.9075727789483429
+      - 1.0301544208093842
+      verdict: fail
+      why: null
+  code: 'a = hour.isin([1, 2, 3])
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: funding_hour_vol_spike
+  belief: Perpetual-swap funding settlements at 00, 08 and 16 UTC cause spot repositioning,
+    so the hour after them moves more than the hours around them.
+  measure: abs_ratio
+  horizon_bars: 1
+  direction: above
+  min_effect: 1.1
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 1.0066220938728145
+      n_a: 2190
+      n_b: 8030
+      windows:
+      - 0.9797130222241834
+      - 0.8998733382953463
+      - 1.0442242506827664
+      - 1.0163114328568459
+      - 1.0722415784081702
+      - 1.1189580947417257
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 1.0026986177751582
+      n_a: 2190
+      n_b: 8029
+      windows:
+      - 1.009029774382609
+      - 0.9228728633292701
+      - 1.0340318093797378
+      - 0.9869697224594266
+      - 1.0763002275470848
+      - 1.103638503406338
+      verdict: fail
+      why: null
+  code: 'a = hour.isin([0, 8, 16])
+
+    b = hour.isin([22, 23, 1, 6, 7, 9, 10, 14, 15, 17, 18])
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: monday_open_weekend_reversal
+  belief: Weekend moves on thin books in small coins are partly liquidity noise and
+    are unwound once weekday flow returns early Monday UTC.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.008393342919865198
+      n_a: 104
+      n_b: 312
+      windows:
+      - -0.014643043388728681
+      - -0.010540208134573513
+      - 0.0023055934074169555
+      - -0.006718305040868303
+      - -0.011198465434658841
+      - -0.009356389075826515
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.0037878334619771354
+      n_a: 104
+      n_b: 312
+      windows:
+      - -0.01110591807561877
+      - -0.010108644982321446
+      - -0.0001587261010610767
+      - -0.003213900520907211
+      - 0.0008684139137320743
+      - 0.001221069083228612
+      verdict: fail
+      why: null
+  code: 'r48 = df.close / df.close.shift(48) - 1
+
+    a = (dow == 0) & (hour == 0) & r48.notna()
+
+    b = dow.isin([2, 3, 4]) & (hour == 0) & r48.notna()
+
+    signal = -np.sign(r48).replace(0, 1)
+
+    '
+- id: thin_hours_shock_reversal
+  belief: Large hourly moves in thin hours (03-06 UTC on weekdays, or any weekend
+    hour) are order-book shocks that revert, unlike large moves in liquid hours.
+  measure: hit_rate
+  horizon_bars: 3
+  direction: positive
+  min_effect: 0.06
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.0013349514563106846
+      n_a: 80
+      n_b: 206
+      windows:
+      - 0.006993006993007034
+      - 0.08648648648648649
+      - 0.04838709677419356
+      - -0.042857142857142816
+      - -0.14718614718614725
+      - -0.009009009009009028
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.06874999999999998
+      n_a: 50
+      n_b: 160
+      windows:
+      - -0.051724137931034475
+      - -0.434065934065934
+      - 0.08620689655172414
+      - 0.25
+      - -0.1693121693121693
+      - -0.0692640692640693
+      verdict: fail
+      why: null
+  code: 'sd = ret.rolling(168).std().shift(1)
+
+    big = ret.abs() > 3 * sd
+
+    thin = hour.isin([3, 4, 5, 6]) | (dow >= 5)
+
+    a = spaced(big & thin, 3)
+
+    b = spaced(big & ~thin, 3)
+
+    signal = -np.sign(ret).replace(0, 1)
+
+    '
+- id: same_hour_drift_persistence
+  belief: Recurring clock flows (an exchange's daily rebalancing, OTC desk hours)
+    give each UTC hour a persistent drift sign over weeks, on these coins specifically.
+  measure: rank_corr
+  horizon_bars: 1
+  direction: positive
+  min_effect: 0.03
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.01157228206984212
+      n_a: 17519
+      n_b: 17519
+      windows:
+      - -0.043099372434314054
+      - -0.0024115245851118435
+      - -0.016715477174619534
+      - 0.0029582055069530926
+      - -0.0005041787238184079
+      - -0.004401922488273492
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.010881641899157688
+      n_a: 17518
+      n_b: 17518
+      windows:
+      - -0.04645522409585179
+      - -0.022237500431227228
+      - -0.023998294655297053
+      - 0.03372455597585752
+      - 0.034870465331793755
+      - 0.008080912489670277
+      verdict: fail
+      why: null
+  code: 'feature = sum(ret.shift(24 * k) for k in range(1, 31)) / 30
+
+    a = feature.notna()
+
+    b = ~a
+
+    '
+- id: sunday_evening_preweek_drift
+  belief: Sunday evening UTC (before the Asia Monday and CME reopen) sees positioning
+    bids into the new week, which gives a positive drift into Monday morning.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.00738012473267189
+      n_a: 105
+      n_b: 416
+      windows:
+      - -0.0029593072287481476
+      - -0.011497954136592813
+      - -0.01497242554908046
+      - -0.0026956721019632405
+      - -0.0070506768037942626
+      - -0.005465444992843793
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.0026928734796394333
+      n_a: 105
+      n_b: 416
+      windows:
+      - -0.009782647417812408
+      - 0.0059106021628013965
+      - -0.0072200241129211605
+      - 0.0015910402068539662
+      - -0.0011420115043406219
+      - -0.006144395922713499
+      verdict: fail
+      why: null
+  code: 'a = (dow == 6) & (hour == 18)
+
+    b = dow.isin([0, 1, 2, 3]) & (hour == 18)
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: us_session_into_asia_momentum
+  belief: A strong US-session move in a small coin is slow to be absorbed and continues
+    through the Asia session, enough to pay the cost.
+  measure: net_return
+  horizon_bars: 8
+  direction: positive
+  min_effect: 0.001
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.0012842160952290884
+      n_a: 58
+      n_b: 58
+      windows:
+      - -0.0003180138860352608
+      - -0.002751028161628928
+      - 0.0014220579831726323
+      - -0.004313495217205965
+      - 0.001724265413032168
+      - -0.0015880792914602
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.006960544042827893
+      n_a: 41
+      n_b: 41
+      windows:
+      - 0.0014080677340130646
+      - -0.006752755010927546
+      - -0.01317976797584348
+      - -0.0030803934760265895
+      - -0.008997861617862101
+      - -0.03059433945472595
+      verdict: fail
+      why: null
+  code: 'us = df.close / df.close.shift(10) - 1
+
+    sd = ret.rolling(240).std().shift(1) * np.sqrt(10)
+
+    a = (hour == 0) & (us.abs() > 2 * sd)
+
+    b = ~a
+
+    signal = np.sign(us).replace(0, 1)
+
+    '
+- id: clock_normalized_volume_surprise
+  belief: Volume that is unusual for that specific hour of the day signals news or
+    informed flow, and a volatility regime follows over the next hours.
+  measure: abs_ratio
+  horizon_bars: 4
+  direction: above
+  min_effect: 1.3
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 1.1534561906808634
+      n_a: 695
+      n_b: 16824
+      windows:
+      - 1.2195012835556545
+      - 1.0017795866605004
+      - 1.1012591947054293
+      - 1.1509165646083441
+      - 1.5076278669473984
+      - 1.1091096926299637
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: 1.0555332397158603
+      n_a: 773
+      n_b: 16745
+      windows:
+      - 1.098843592857072
+      - 0.920919779629577
+      - 1.0688496350856844
+      - 1.1981466526647737
+      - 1.0985439252403646
+      - 1.116298666047316
+      verdict: fail
+      why: null
+  code: 'vb = sum(df.volume.shift(24 * k) for k in range(1, 21)) / 20
+
+    a = spaced(df.volume > 3 * vb, 4)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: friday_us_afternoon_derisk
+  belief: Traders cut exposure to small, illiquid coins before the weekend, so Friday's
+    late US session drifts down.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: -0.0026395526086170572
+      n_a: 104
+      n_b: 416
+      windows:
+      - -0.007171391351570874
+      - -0.0016322242796139347
+      - 0.003581954073963815
+      - -0.012075545069441546
+      - 0.0004186416531103993
+      - 0.0007397581856791314
+      verdict: fail
+      why: null
+    XMRUSD:
+      effect: -0.0031336031303504123
+      n_a: 104
+      n_b: 416
+      windows:
+      - 0.0023429114332512158
+      - 0.0019072473048550426
+      - -0.005870359044566493
+      - -0.011444642380127086
+      - -0.0028028502574889485
+      - -0.002542519059029483
+      verdict: fail
+      why: null
+  code: 'a = (dow == 4) & (hour == 19)
+
+    b = dow.isin([0, 1, 2, 3]) & (hour == 19)
+
+    signal = pd.Series(-1.0, index=df.index)
+
+    '
+- id: weekday_us_open_vol_block
+  belief: On LTC and XMR, hourly volatility is concentrated in the weekday US-open
+    hours (13-16 UTC), the mirror of the quiet Asia block seen in this run.
+  measure: abs_ratio
+  horizon_bars: 1
+  direction: above
+  min_effect: 1.2
+  verdict: fail
+  by_symbol:
+    LTCUSD:
+      effect: 1.2936420651052203
+      n_a: 2080
+      n_b: 15439
+      windows:
+      - 1.3122065452817122
+      - 1.1878382519628568
+      - 1.1857908579816132
+      - 1.2758033565606468
+      - 1.503009964481449
+      - 1.4258341054407009
+      verdict: pass
+      why: null
+    XMRUSD:
+      effect: 1.1898679131058354
+      n_a: 2080
+      n_b: 15438
+      windows:
+      - 1.2123565575824817
+      - 1.1142406178429922
+      - 1.1889579481076236
+      - 1.2394965357137189
+      - 1.2738559928196773
+      - 1.1943344212343812
+      verdict: fail
+      why: null
+  code: 'a = hour.isin([13, 14, 15, 16]) & (dow < 5)
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+- id: weekend_quiet_regime
+  belief: On LTC and XMR, hourly volatility is driven by weekday trading-desk flow
+    (the US-open block is loud, the Asia block is quiet), so weekend hours carry a
+    lower-volatility regime than weekday hours.
+  measure: abs_ratio
+  horizon_bars: 1
+  direction: below
+  min_effect: 0.85
+  verdict: pass
+  by_symbol:
+    LTCUSD:
+      effect: 0.7921099271430871
+      n_a: 5039
+      n_b: 12480
+      windows:
+      - 0.8626664526466908
+      - 0.7915014321240189
+      - 0.7365844164018486
+      - 0.8052800142052331
+      - 0.7812583561129183
+      - 0.7694492977153107
+      verdict: pass
+      why: null
+    XMRUSD:
+      effect: 0.8289476798852145
+      n_a: 5039
+      n_b: 12479
+      windows:
+      - 0.8893029524072894
+      - 0.8022277836484273
+      - 0.7801564978981766
+      - 0.8518621786605339
+      - 0.8141448510813242
+      - 0.8076669875862866
+      verdict: pass
+      why: null
+  code: 'a = dow >= 5
+
+    b = ~a
+
+    signal = pd.Series(1.0, index=df.index)
+
+    '
+profit: 'none: no return claim passed'

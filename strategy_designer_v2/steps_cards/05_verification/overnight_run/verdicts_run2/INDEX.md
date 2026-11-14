@@ -1,0 +1,5 @@
+N1-04_rebound-after-large-drop_1d: confirmed (fit: adapted) [main: 0.102019; two-proportion z (pooled) 7.04569; qualifying bars 1280, all bars 17260]
+N3-02_breakout-shock-continues_1d: confirmed (fit: adapted) [main: 0.0100951; one-sample t 2.00262; non-overlapping cases pooled across coins 684, inside-range cases 1112]
+N3-04_dip-in-uptrend_1d: confirmed (fit: adapted) [main: 0.00315653; t of the mean 3.06453; bars with forecast > 0 2383]
+N4-01_breakout-drift-lasts_1d: confirmed (fit: adapted) [main: 0.0159453; t of the mean 2.04871; non-overlapping events 559, events with next close below the new high 299]
+N5-03_high-in-confirmed-uptrend_1d: confirmed (fit: adapted) [main: 0.0366019; t of the mean (non-overlapping samples) 2.53071; non-overlapping cases with forecast >= 10 251]

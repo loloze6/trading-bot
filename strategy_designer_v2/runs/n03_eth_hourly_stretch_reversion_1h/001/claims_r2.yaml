@@ -1,0 +1,36 @@
+brief: n03_eth_hourly_stretch_reversion_1h.md
+source: analyst round 2
+ideas:
+- id: us_hours_weekday_stretch_continuation
+  belief: On weekdays during European-afternoon and US hours, a close far from the
+    24h VWAP reflects deep, informed flow, so price keeps moving in the stretch direction
+    over the next 8 hours by more than cost.
+  claim:
+    when: Weekday bars closing 13-20 UTC whose distance from the rolling 24h VWAP
+      exceeds 2 of its 720-bar standard deviations, one event per 8 bars
+    then: The 8-bar forward return goes in the direction of the stretch, net of the
+      0.15% round-trip cost
+    compared_to: zero after cost (net_return); b is all other bars
+    measure: net_return
+    horizon_bars: 8
+    direction: positive
+    min_effect: 0.003
+    code: 'tp = (df.high + df.low + df.close) / 3
+
+      vwap = (tp * df.volume).rolling(24).sum() / df.volume.rolling(24).sum()
+
+      dev = df.close / vwap - 1
+
+      z = dev / dev.rolling(720).std()
+
+      a = spaced((z.abs() > 2) & (hour >= 13) & (hour <= 20) & (dow <= 4), 8)
+
+      b = ~a
+
+      signal = np.sign(dev)
+
+      '
+  why_no_lookahead: VWAP, deviation, z-score, hour and weekday use only bars at or
+    before the signal bar's close; the forward return is computed by the judge.
+  how_it_trades: At the close of a qualifying weekday 13-20 UTC bar, enter in the
+    direction of the VWAP stretch and exit at market 8 bars later.

@@ -1,0 +1,67 @@
+claims_file: strategy_designer_v2/runs/_replications/friday_long_net_profit/claims.yaml
+fold: B
+bar_size: 1d
+symbols:
+- XRPUSD
+- ADAUSD
+- XMRUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  friday_long_net_profit:
+    verdict: pass
+    by_symbol:
+      XRPUSD:
+        verdict: pass
+        effect: 0.011106301488908408
+        t_stat: 1.58
+        n_a: 106
+        n_b: 106
+        windows:
+        - -0.0030049970280555784
+        - 0.0008710184794079373
+        - 0.00197519899184184
+        - 0.014383700483286134
+        - 0.044924140897929836
+        - 0.006412836803119883
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      ADAUSD:
+        verdict: pass
+        effect: 0.01871232051115763
+        t_stat: 3.26
+        n_a: 88
+        n_b: 88
+        windows:
+        - null
+        - 0.016796601186141506
+        - 0.0012364746044428634
+        - 0.031681790739912924
+        - 0.030085327309494626
+        - 0.01268409953625562
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true
+      XMRUSD:
+        verdict: pass
+        effect: 0.007580776108187311
+        t_stat: 2.23
+        n_a: 106
+        n_b: 106
+        windows:
+        - 0.0048193529634749915
+        - 0.0016930919670588196
+        - -0.005296548097712734
+        - 0.009996671638789301
+        - 0.02567477604471792
+        - 0.007554811669071758
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true

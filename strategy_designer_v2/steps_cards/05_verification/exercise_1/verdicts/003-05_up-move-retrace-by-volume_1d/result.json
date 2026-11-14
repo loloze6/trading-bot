@@ -1,0 +1,21 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "thin minus heavy mean next-bar share of move (heavy mean - thin mean), Welch t",
+    "value": 44.547874886304214,
+    "threshold": "thin mean share below heavy mean share with Welch t >= 2.0, and thin mean share below 0",
+    "thin_mean_share": -44.74690793925855,
+    "heavy_mean_share": -0.19903305295433427,
+    "welch_t": 1.0769170625318458
+  },
+  "supporting_check": {
+    "name": "active-bar gain before costs minus holding BTC, heavy-only and thin-only parts (min of the two)",
+    "value": -0.13148609395121608,
+    "passed": false,
+    "heavy_excess": -0.13148609395121608,
+    "thin_excess": 0.14909307695302176
+  },
+  "cases": 357,
+  "decided_by": "Inconclusive: thin mean share is below heavy but the Welch t-stat is under 2.0.",
+  "reading": "Sharp-move bars are those labelled regime 'trending' (heavy) or 'mean_reversion' (thin); the move is close[t]/close[t-1]-1 within the window (so a window's first bar and last bar drop out); the supporting check sums per-bar position gain minus BTC return over active bars (non-zero held allocation) split by the bar's regime label, and does not change the status; thin below heavy with t >= 2 but thin share >= 0 meets no stated rule and is reported inconclusive."
+}

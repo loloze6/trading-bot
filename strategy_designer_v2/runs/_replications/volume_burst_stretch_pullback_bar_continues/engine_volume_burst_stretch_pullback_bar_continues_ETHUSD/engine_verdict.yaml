@@ -1,0 +1,147 @@
+claim: volume_burst_stretch_pullback_bar_continues
+symbol: ETHUSD
+bar_size: 1h
+fold: C
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 221
+verdict: pass
+passed_as: vol_target
+fold_totals: &id001
+  net_return: 0.2882
+  median_window_sharpe: 1.21025
+  worst_window_drawdown: 0.0629
+  trades: 199
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals:
+    net_return: 1.907
+    median_window_sharpe: 1.7362
+    worst_window_drawdown: 0.3632
+    trades: 205
+  windows:
+  - window: W1
+    net_return: 0.1532
+    trades: 24
+    sharpe: 1.1774
+    max_drawdown: 0.2624
+    exposure_pct: 9.3286
+    cost_drag_pct: 13.3197
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues/engine_volume_burst_stretch_pullback_bar_continues_ETHUSD/results/full_size/20261106T025742Z_f1abed77
+    seconds: 29
+  - window: W2
+    net_return: 0.4813
+    trades: 39
+    sharpe: 2.9171
+    max_drawdown: 0.1324
+    exposure_pct: 14.7541
+    cost_drag_pct: 8.9237
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues/engine_volume_burst_stretch_pullback_bar_continues_ETHUSD/results/full_size/20261106T025806Z_f1abed77
+    seconds: 24
+  - window: W3
+    net_return: 0.2234
+    trades: 36
+    sharpe: 2.295
+    max_drawdown: 0.1098
+    exposure_pct: 14.649
+    cost_drag_pct: 15.4508
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues/engine_volume_burst_stretch_pullback_bar_continues_ETHUSD/results/full_size/20261106T025832Z_f1abed77
+    seconds: 26
+  - window: W4
+    net_return: 0.643
+    trades: 37
+    sharpe: 3.1393
+    max_drawdown: 0.1184
+    exposure_pct: 14.876
+    cost_drag_pct: 6.8742
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues/engine_volume_burst_stretch_pullback_bar_continues_ETHUSD/results/full_size/20261106T025857Z_f1abed77
+    seconds: 25
+  - window: W5
+    net_return: 0.0864
+    trades: 43
+    sharpe: 1.1059
+    max_drawdown: 0.1579
+    exposure_pct: 17.2591
+    cost_drag_pct: 33.6369
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues/engine_volume_burst_stretch_pullback_bar_continues_ETHUSD/results/full_size/20261106T025924Z_f1abed77
+    seconds: 27
+  - window: W6
+    net_return: -0.2207
+    trades: 26
+    sharpe: -1.6792
+    max_drawdown: 0.3632
+    exposure_pct: 8.3814
+    cost_drag_pct: 9.264
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues/engine_volume_burst_stretch_pullback_bar_continues_ETHUSD/results/full_size/20261106T025952Z_f1abed77
+    seconds: 27
+  checks:
+    net_positive_in_5_of_6: true
+    median_window_sharpe_ge_1.0: true
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: 0.0818
+    trades: 22
+    sharpe: 3.3652
+    max_drawdown: 0.0258
+    exposure_pct: 9.3286
+    cost_drag_pct: 5.616
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues/engine_volume_burst_stretch_pullback_bar_continues_ETHUSD/results/vol_target/20261106T030021Z_1c204fed
+    seconds: 29
+  - window: W2
+    net_return: 0.0679
+    trades: 39
+    sharpe: 1.5769
+    max_drawdown: 0.0602
+    exposure_pct: 14.7541
+    cost_drag_pct: 14.4931
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues/engine_volume_burst_stretch_pullback_bar_continues_ETHUSD/results/vol_target/20261106T030046Z_1c204fed
+    seconds: 25
+  - window: W3
+    net_return: 0.0088
+    trades: 36
+    sharpe: 0.8436
+    max_drawdown: 0.0258
+    exposure_pct: 14.649
+    cost_drag_pct: 52.7798
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues/engine_volume_burst_stretch_pullback_bar_continues_ETHUSD/results/vol_target/20261106T030112Z_1c204fed
+    seconds: 26
+  - window: W4
+    net_return: 0.1272
+    trades: 36
+    sharpe: 3.3563
+    max_drawdown: 0.0277
+    exposure_pct: 14.876
+    cost_drag_pct: 7.1175
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues/engine_volume_burst_stretch_pullback_bar_continues_ETHUSD/results/vol_target/20261106T030138Z_1c204fed
+    seconds: 26
+  - window: W5
+    net_return: 0.0125
+    trades: 45
+    sharpe: 0.528
+    max_drawdown: 0.0487
+    exposure_pct: 17.2591
+    cost_drag_pct: 50.4347
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues/engine_volume_burst_stretch_pullback_bar_continues_ETHUSD/results/vol_target/20261106T030203Z_1c204fed
+    seconds: 25
+  - window: W6
+    net_return: -0.0315
+    trades: 21
+    sharpe: -1.2417
+    max_drawdown: 0.0629
+    exposure_pct: 8.3814
+    cost_drag_pct: 17.6473
+    run_dir: strategy_designer_v2/runs/_replications/volume_burst_stretch_pullback_bar_continues/engine_volume_burst_stretch_pullback_bar_continues_ETHUSD/results/vol_target/20261106T030231Z_1c204fed
+    seconds: 28
+  checks:
+    net_positive_in_5_of_6: true
+    median_window_sharpe_ge_1.0: true
+    worst_window_drawdown_le_20%: true
+  verdict: pass

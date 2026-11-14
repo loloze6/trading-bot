@@ -1,0 +1,22 @@
+{
+  "status": "rejected",
+  "main_measure": {
+    "name": "drift-adjusted position-weighted next-bar return of the short after thin up bars",
+    "value": -0.0013933602036421227,
+    "statistic": {
+      "name": "t of the mean of drift-adjusted position gains",
+      "value": -0.5175970990482268
+    },
+    "threshold": "above 0 with t-stat >= 2.0 to confirm; <= 0 with t-stat <= 0 to reject"
+  },
+  "supporting_check": {
+    "name": "mean next-bar drop vs unconditional mean, largest third minus smallest third by |position|",
+    "value": 0.0022831228717990217,
+    "passed": true
+  },
+  "counts": {
+    "qualifying bars": 195
+  },
+  "decided_by": "The short earns 0 or less after the drift adjustment, with a t-stat of 0 or below.",
+  "reading": "Cases are bars labelled regime 'mean_reversion' with a next bar in the same window, the position is postRebalance_current_allocation (zero positions kept as cases), the main value is sum(pos x (r - window mean)) / sum(|pos|) so a short gains when r falls below the mean, its t-stat is the ordinary t of the per-case gains pos x (r - mean), and thirds are the n//3 cases with smallest and largest |position|."
+}

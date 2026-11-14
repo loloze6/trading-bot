@@ -1,0 +1,29 @@
+{
+  "status": "rejected",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 5-bar forward return after extreme minus after neutral bars",
+    "value": -0.0007005980644819161,
+    "statistic": {
+      "name": "Welch t",
+      "value": -0.05569658268715827
+    },
+    "threshold": "t >= 2 confirms (with >= 2 coins positive and positive pooled supporting excess); t <= 0 rejects"
+  },
+  "supporting_check": {
+    "name": "strategy return minus exposure-scaled buy-and-hold, pooled",
+    "value": 0.46772805171624693,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping extreme cases pooled": 42,
+    "neutral cases": 180,
+    "coins with positive difference": 1,
+    "coins in record": 2
+  },
+  "decided_by": "Reject: the pooled difference is zero or negative (t <= 0).",
+  "reading": "The 80th-percentile cut of non-zero forecasts is pooled over all coins and windows, neutral bars are forecast < 1 (including 0) on the same 0,5,10,... grid, 'at least 2 of the 3 coins' is applied as at least 2 coins among those in the record, and the supporting excess per coin is the summed daily strategy gain minus the coin's mean allocation times its summed daily returns, added over coins."
+}

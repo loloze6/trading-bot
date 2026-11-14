@@ -1,0 +1,41 @@
+brief: fake_02_eth_vol_regime_trend.md
+fold: A
+symbols:
+- ETHUSD
+bar_size: 1d
+claims:
+- id: ma_extension_reverts
+  belief: On daily ETH, price stretched far from its 50-day average tends to give
+    back part of the stretch over the next two weeks, which is why mature, orderly
+    trends stall and close to the year high is a poor place to buy.
+  measure: rank_corr
+  horizon_bars: 10
+  direction: negative
+  min_effect: 0.08
+  verdict: fail
+  by_symbol:
+    ETHUSD:
+      effect: 0.009482549405967005
+      n_a: 730
+      n_b: 730
+      windows:
+      - -0.16371275783040487
+      - 0.07486037842927346
+      - -0.35128758413989775
+      - -0.4080491700812556
+      - -0.2767602636364809
+      - 0.06362083265867206
+      verdict: fail
+      why: null
+  code: 'ma = df.close.rolling(50).mean()
+
+    feature = np.log(df.close / ma)
+
+    a = feature.notna()
+
+    b = ~a
+
+    signal = pd.Series(np.where(feature >= 0, -1, 1), index=df.index)
+
+    '
+profit: 'none: no return claim passed'

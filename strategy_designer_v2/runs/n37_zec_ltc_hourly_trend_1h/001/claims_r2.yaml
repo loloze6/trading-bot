@@ -1,0 +1,33 @@
+brief: n37_zec_ltc_hourly_trend_1h.md
+source: analyst round 2
+ideas:
+- id: weekly_extreme_fade
+  belief: On ZEC and LTC, a weekly move that is large against its own volatility is
+    over-extended and partly gives back over the next day, enough to pay the round-trip
+    cost.
+  claim:
+    when: bars where the past 168h return, divided by the 168h volatility scaled to
+      a week, is beyond 1.5 in either direction, at most one event per 24 bars
+    then: the next 24h return goes against the sign of the weekly move
+    compared_to: zero after the 0.15% round-trip cost
+    measure: net_return
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.003
+    code: 'r168 = df.close / df.close.shift(168) - 1
+
+      sd = ret.rolling(168).std() * np.sqrt(168)
+
+      z = (r168 / sd.replace(0, np.nan)).replace([np.inf, -np.inf], np.nan)
+
+      a = spaced(z.abs() > 1.5, 24)
+
+      b = ~a
+
+      signal = pd.Series(-np.sign(z), index=df.index).fillna(0)
+
+      '
+  why_no_lookahead: z uses only closes and returns up to the current bar through rolling
+    windows and a positive shift, and the forward return is left to the judge.
+  how_it_trades: When the weekly z-score crosses 1.5 in absolute value, take a position
+    against its sign at the close, hold 24 bars, then exit.

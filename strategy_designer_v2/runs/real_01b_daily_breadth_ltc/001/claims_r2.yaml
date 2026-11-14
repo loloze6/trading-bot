@@ -1,0 +1,35 @@
+brief: real_01b_daily_breadth_ltc.md
+source: analyst round 2
+ideas:
+- id: relative_downside_share_premium
+  belief: Forward returns are higher when the share of recent variance coming from
+    down moves is high relative to its own recent norm, rather than in absolute terms;
+    the absolute level drifts between regimes and hides the relation.
+  claim:
+    when: every bar with a defined feature
+    then: the 20-bar forward return is higher when the 30-day downside share of variance
+      sits above its own 120-day average
+    compared_to: the same bars ranked by the feature (rank correlation, no baseline
+      set)
+    measure: rank_corr
+    horizon_bars: 20
+    direction: positive
+    min_effect: 0.1
+    code: 'dn = (ret.clip(upper=0) ** 2).rolling(30).sum()
+
+      upv = (ret.clip(lower=0) ** 2).rolling(30).sum()
+
+      share = dn / (dn + upv)
+
+      feature = share - share.rolling(120).mean()
+
+      a = feature.notna()
+
+      b = ~a
+
+      '
+  why_no_lookahead: The feature uses only trailing 30-bar and 120-bar rolling windows
+    of returns that end at the bar's close; there is no forward shift.
+  how_it_trades: Hold long when the feature is above zero and stay flat otherwise,
+    deciding at each daily close; the slow 20-bar horizon keeps round trips to a few
+    per year.

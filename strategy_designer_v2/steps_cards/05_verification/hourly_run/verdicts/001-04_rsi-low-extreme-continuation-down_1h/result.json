@@ -1,0 +1,31 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean fwd 24-bar return, most-short decile minus zero-forecast bars",
+    "value": -0.00035732239870431385,
+    "statistic": {
+      "name": "Newey-West t (24 lags)",
+      "value": -0.27684286662414576
+    },
+    "threshold": "confirm if negative with t <= -2 and negative in at least 2 of 3 coins; reject if positive with t >= +2"
+  },
+  "supporting_check": {
+    "name": "HAC slope of demeaned fwd 24-bar return on forecast (must be positive)",
+    "value": 1.9858993782189375e-05,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping extreme episodes BTCUSD": 193,
+    "non-overlapping extreme episodes ETHUSD": 200,
+    "non-overlapping extreme episodes pooled": 393,
+    "coins": 2,
+    "coins with negative difference": 1,
+    "coins with positive difference": 1
+  },
+  "decided_by": "|t| < 2 or the coins split in sign, which the plan calls inconclusive.",
+  "reading": "The most-short decile is the 10% most negative forecasts among all negative-forecast bars pooled over coins and windows, neutral bars are forecast == 0, the Newey-West t is the HAC t of the extreme-dummy slope with lags kept within each coin-window, 'at least 2 of the 3 coins' and 'matching strength' are both applied as at least 2 coins of those present having the difference's sign, and the episode minimums apply to each coin present."
+}

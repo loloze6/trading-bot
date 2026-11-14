@@ -1,0 +1,110 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "slope",
+        "class": "strategies.strategy_components.MovingAverageSlopeComponent",
+        "params": {
+          "period": 20,
+          "lookback": 5,
+          "average": "sma"
+        }
+      },
+      {
+        "id": "dist",
+        "class": "strategies.strategy_components.MovingAverageDistanceComponent",
+        "params": {
+          "period": 20,
+          "average": "sma"
+        }
+      },
+      {
+        "id": "since_high",
+        "class": "strategies.strategy_components.BarsSinceHighComponent",
+        "params": {
+          "lookback": 20,
+          "max_bars": 20
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "slope",
+              "op": "gt",
+              "value": 0.0
+            },
+            {
+              "id": "dist",
+              "op": "gt",
+              "value": 0.0
+            },
+            {
+              "id": "since_high",
+              "op": "gt",
+              "value": 0.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "near_high",
+            "class": "strategies.strategy_components.DonchianBreakoutComponent",
+            "params": {
+              "period": 20
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0.0
+                }
+              }
+            ]
+          },
+          {
+            "id": "recency",
+            "class": "strategies.strategy_components.BarsSinceHighComponent",
+            "params": {
+              "lookback": 20,
+              "max_bars": 20
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "mean_reversion": null,
+      "chop": null,
+      "unknown": null
+    }
+  }
+}

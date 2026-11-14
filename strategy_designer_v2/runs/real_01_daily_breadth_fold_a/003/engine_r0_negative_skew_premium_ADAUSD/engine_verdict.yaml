@@ -1,0 +1,147 @@
+claim: negative_skew_premium
+symbol: ADAUSD
+bar_size: 1d
+fold: A
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 200
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: 2.4508
+  median_window_sharpe: 1.5742
+  worst_window_drawdown: 0.4908
+  trades: 144
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: 0.2765
+    trades: 22
+    sharpe: 1.3867
+    max_drawdown: 0.3089
+    exposure_pct: 99.1667
+    cost_drag_pct: 1.2778
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_ADAUSD/results/full_size/20261106T195036Z_85298895
+    seconds: 3
+  - window: W2
+    net_return: 0.3794
+    trades: 24
+    sharpe: 1.7797
+    max_drawdown: 0.2007
+    exposure_pct: 96.748
+    cost_drag_pct: 1.9491
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_ADAUSD/results/full_size/20261106T195039Z_85298895
+    seconds: 3
+  - window: W3
+    net_return: 0.4432
+    trades: 24
+    sharpe: 1.7617
+    max_drawdown: 0.4484
+    exposure_pct: 99.1803
+    cost_drag_pct: 1.3141
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_ADAUSD/results/full_size/20261106T195042Z_85298895
+    seconds: 3
+  - window: W4
+    net_return: -0.1616
+    trades: 33
+    sharpe: -0.0699
+    max_drawdown: 0.4908
+    exposure_pct: 99.1667
+    cost_drag_pct: 5.4753
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_ADAUSD/results/full_size/20261106T195045Z_85298895
+    seconds: 3
+  - window: W5
+    net_return: 1.1956
+    trades: 22
+    sharpe: 2.5092
+    max_drawdown: 0.3796
+    exposure_pct: 99.187
+    cost_drag_pct: 0.8636
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_ADAUSD/results/full_size/20261106T195048Z_85298895
+    seconds: 3
+  - window: W6
+    net_return: -0.2623
+    trades: 19
+    sharpe: -0.8346
+    max_drawdown: 0.4549
+    exposure_pct: 99.1803
+    cost_drag_pct: 2.6655
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_ADAUSD/results/full_size/20261106T195052Z_85298895
+    seconds: 3
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: true
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: 0.5604
+    median_window_sharpe: 1.38605
+    worst_window_drawdown: 0.1982
+    trades: 107
+  windows:
+  - window: W1
+    net_return: 0.0783
+    trades: 14
+    sharpe: 1.5953
+    max_drawdown: 0.0768
+    exposure_pct: 99.1667
+    cost_drag_pct: 0.5983
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_ADAUSD/results/vol_target/20261106T195055Z_7750142f
+    seconds: 3
+  - window: W2
+    net_return: 0.0556
+    trades: 23
+    sharpe: 1.1768
+    max_drawdown: 0.0621
+    exposure_pct: 96.748
+    cost_drag_pct: 2.5825
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_ADAUSD/results/vol_target/20261106T195058Z_7750142f
+    seconds: 3
+  - window: W3
+    net_return: 0.1455
+    trades: 22
+    sharpe: 1.5976
+    max_drawdown: 0.191
+    exposure_pct: 99.1803
+    cost_drag_pct: 1.4745
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_ADAUSD/results/vol_target/20261106T195101Z_7750142f
+    seconds: 3
+  - window: W4
+    net_return: -0.0146
+    trades: 17
+    sharpe: -0.0258
+    max_drawdown: 0.1543
+    exposure_pct: 99.1667
+    cost_drag_pct: 15.1853
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_ADAUSD/results/vol_target/20261106T195104Z_7750142f
+    seconds: 3
+  - window: W5
+    net_return: 0.3175
+    trades: 15
+    sharpe: 2.0643
+    max_drawdown: 0.1627
+    exposure_pct: 99.187
+    cost_drag_pct: 1.0575
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_ADAUSD/results/vol_target/20261106T195107Z_7750142f
+    seconds: 3
+  - window: W6
+    net_return: -0.0782
+    trades: 16
+    sharpe: -1.0013
+    max_drawdown: 0.1982
+    exposure_pct: 99.1803
+    cost_drag_pct: 3.8501
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_negative_skew_premium_ADAUSD/results/vol_target/20261106T195111Z_7750142f
+    seconds: 3
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: true
+    worst_window_drawdown_le_20%: true
+  verdict: fail

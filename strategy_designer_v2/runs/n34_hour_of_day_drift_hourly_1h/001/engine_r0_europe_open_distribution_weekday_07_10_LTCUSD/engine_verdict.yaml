@@ -1,0 +1,147 @@
+claim: europe_open_distribution_weekday_07_10
+symbol: LTCUSD
+bar_size: 1h
+fold: C
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 200
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: -0.485
+  median_window_sharpe: -0.5607
+  worst_window_drawdown: 0.3089
+  trades: 509
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: -0.0462
+    trades: 80
+    sharpe: 0.0197
+    max_drawdown: 0.281
+    exposure_pct: 8.3924
+    cost_drag_pct: 283.2692
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/full_size/20261106T033416Z_0dc8fc41
+    seconds: 23
+  - window: W2
+    net_return: 0.1764
+    trades: 86
+    sharpe: 1.6963
+    max_drawdown: 0.1263
+    exposure_pct: 8.8205
+    cost_drag_pct: 36.0534
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/full_size/20261106T033439Z_0dc8fc41
+    seconds: 23
+  - window: W3
+    net_return: -0.2836
+    trades: 88
+    sharpe: -3.3538
+    max_drawdown: 0.3089
+    exposure_pct: 8.9522
+    cost_drag_pct: 33.5397
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/full_size/20261106T033500Z_0dc8fc41
+    seconds: 21
+  - window: W4
+    net_return: -0.1882
+    trades: 86
+    sharpe: -1.1411
+    max_drawdown: 0.2184
+    exposure_pct: 8.9027
+    cost_drag_pct: 65.349
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/full_size/20261106T033525Z_0dc8fc41
+    seconds: 25
+  - window: W5
+    net_return: -0.2303
+    trades: 88
+    sharpe: -1.9947
+    max_drawdown: 0.291
+    exposure_pct: 9.0226
+    cost_drag_pct: 53.0168
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/full_size/20261106T033547Z_0dc8fc41
+    seconds: 21
+  - window: W6
+    net_return: 0.0253
+    trades: 81
+    sharpe: 0.3821
+    max_drawdown: 0.1926
+    exposure_pct: 8.2457
+    cost_drag_pct: 76.7779
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/full_size/20261106T033608Z_0dc8fc41
+    seconds: 22
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: -0.1621
+    median_window_sharpe: -0.9894999999999999
+    worst_window_drawdown: 0.117
+    trades: 510
+  windows:
+  - window: W1
+    net_return: 0.0238
+    trades: 79
+    sharpe: 1.1037
+    max_drawdown: 0.0259
+    exposure_pct: 8.3924
+    cost_drag_pct: 37.5517
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/vol_target/20261106T033632Z_86186add
+    seconds: 23
+  - window: W2
+    net_return: 0.016
+    trades: 87
+    sharpe: 0.576
+    max_drawdown: 0.0516
+    exposure_pct: 8.8205
+    cost_drag_pct: 63.0022
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/vol_target/20261106T033655Z_86186add
+    seconds: 23
+  - window: W3
+    net_return: -0.1024
+    trades: 89
+    sharpe: -3.8698
+    max_drawdown: 0.117
+    exposure_pct: 8.9522
+    cost_drag_pct: 23.3852
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/vol_target/20261106T033717Z_86186add
+    seconds: 22
+  - window: W4
+    net_return: -0.0542
+    trades: 86
+    sharpe: -2.0957
+    max_drawdown: 0.0625
+    exposure_pct: 8.9027
+    cost_drag_pct: 59.5768
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/vol_target/20261106T033742Z_86186add
+    seconds: 25
+  - window: W5
+    net_return: -0.0531
+    trades: 88
+    sharpe: -2.1019
+    max_drawdown: 0.0729
+    exposure_pct: 9.0226
+    cost_drag_pct: 73.5416
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/vol_target/20261106T033803Z_86186add
+    seconds: 20
+  - window: W6
+    net_return: 0.0021
+    trades: 81
+    sharpe: 0.1167
+    max_drawdown: 0.0289
+    exposure_pct: 8.2457
+    cost_drag_pct: 89.8273
+    run_dir: strategy_designer_v2/runs/n34_hour_of_day_drift_hourly_1h/001/engine_r0_europe_open_distribution_weekday_07_10_LTCUSD/results/vol_target/20261106T033825Z_86186add
+    seconds: 22
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: true
+  verdict: fail

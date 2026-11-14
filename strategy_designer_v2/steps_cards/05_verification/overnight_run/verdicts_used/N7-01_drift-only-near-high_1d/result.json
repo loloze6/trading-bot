@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted mean forward 5-bar excess return over coin mean",
+    "value": 0.009220026015347712,
+    "statistic": {
+      "name": "t of weighted mean (weighted sandwich SE)",
+      "value": 2.611760841321573
+    },
+    "threshold": "confirm if positive with t >= 2; reject if negative with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean forward 5-bar excess return on flat bars with recent high and close below SMA20",
+    "value": -0.006487254293569819,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping active 5-bar blocks": 1310,
+    "supporting flat blocks": 540
+  },
+  "decided_by": "The forecast-weighted mean excess return is positive with t >= 2.",
+  "reading": "Active blocks are grid bars 0,5,10,... of each window with forecast > 0; the coin's mean 5-bar return is over all bars of all its windows; excess on supporting bars is the coin's forward return minus that mean; the weighted t uses SE = sqrt(sum w^2 (x-m)^2)/sum w x sqrt(n/(n-1)); 'new high within 20 bars' means a 20-bar closing high 0-19 bars ago; and fewer than 100 blocks gives 'not observable'."
+}

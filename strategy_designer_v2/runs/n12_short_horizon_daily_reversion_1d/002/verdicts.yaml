@@ -1,0 +1,466 @@
+claims_file: strategy_designer_v2/runs/n12_short_horizon_daily_reversion_1d/002/claims.yaml
+fold: A
+bar_size: 1d
+symbols:
+- LTCUSD
+- XMRUSD
+- ZECUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  vol_scaled_shock_continuation:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.004759012035226351
+        t_stat: 0.32
+        n_a: 23
+        n_b: 23
+        windows:
+        - 0.12527715625847335
+        - 0.010289406503189465
+        - -0.008310293987475207
+        - -0.042095516446440134
+        - -0.007331763681584034
+        - 0.03534546289362556
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      XMRUSD:
+        verdict: fail
+        effect: -0.02863555376642928
+        t_stat: -1.43
+        n_a: 24
+        n_b: 24
+        windows:
+        - -0.08230504781201807
+        - 0.047676289737554965
+        - -0.24578733745739173
+        - -0.047581298817424934
+        - 0.015165492098288798
+        - -0.002924196352869315
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      ZECUSD:
+        verdict: fail
+        effect: 0.003185362505507086
+        t_stat: 0.18
+        n_a: 27
+        n_b: 27
+        windows:
+        - 0.0263201334621579
+        - -0.050673936972270885
+        - 0.03508826324542663
+        - -0.014628949936030143
+        - 0.01923677352275977
+        - 0.019308785407726348
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+  up_shock_short_fade:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.003534502120217987
+        t_stat: 0.28
+        n_a: 15
+        n_b: 15
+        windows:
+        - null
+        - 0.047914094255917195
+        - -0.010798096185084637
+        - 0.013830213064169448
+        - 0.011078382368459615
+        - -0.03177298104051429
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      XMRUSD:
+        verdict: fail
+        effect: 0.024531931167765305
+        t_stat: 1.44
+        n_a: 15
+        n_b: 15
+        windows:
+        - 0.05162947217277166
+        - 0.06990437226688179
+        - 0.017815742961747094
+        - 0.0063278207570337825
+        - -0.09048078975453583
+        - 0.008688312941755651
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: false
+      ZECUSD:
+        verdict: fail
+        effect: 0.004756283587511333
+        t_stat: 0.3
+        n_a: 16
+        n_b: 16
+        windows:
+        - -0.051151764975962764
+        - -0.022292027458636732
+        - null
+        - 0.023790230771897958
+        - 0.05047590591179918
+        - 0.011736957378246789
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+  confirmed_reversal_after_shock:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: -3.422335063194069e-05
+        t_stat: -0.0
+        n_a: 37
+        n_b: 29
+        windows:
+        - 0.009557365377916294
+        - 0.119554727269304
+        - 0.04498937703642377
+        - -0.05639521959506173
+        - -0.011934968242814897
+        - -0.02027589876421645
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      XMRUSD:
+        verdict: fail
+        effect: 0.01047453645537991
+        t_stat: 0.6
+        n_a: 33
+        n_b: 23
+        windows:
+        - 0.028616165438550605
+        - 0.08678069105111594
+        - -0.12016891116919519
+        - -0.023679397333491628
+        - 0.053933402885313265
+        - -0.007106908672909068
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      ZECUSD:
+        verdict: fail
+        effect: -0.006394895476770133
+        t_stat: -0.27
+        n_a: 39
+        n_b: 28
+        windows:
+        - 0.13553668951379189
+        - -0.09673540353069257
+        - -0.04201292498575364
+        - -0.022220366968804833
+        - 0.0031008899485252903
+        - 0.0036389954283579445
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+  volume_climax_shock_reverts:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.026016029983351775
+        t_stat: 0.87
+        n_a: 11
+        n_b: 11
+        windows:
+        - -0.04601995121101238
+        - -0.06009115508791485
+        - 0.10547551439492825
+        - 0.1044442047223294
+        - 0.009898368105283793
+        - 0.002844048653344923
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      XMRUSD:
+        verdict: fail
+        effect: -0.010213754000289139
+        t_stat: -0.18
+        n_a: 3
+        n_b: 3
+        windows:
+        - 0.01937859678872339
+        - -0.12018708231114111
+        - 0.0701672235215503
+        - null
+        - null
+        - null
+        agreeing_windows: 1 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      ZECUSD:
+        verdict: fail
+        effect: -0.055320585319191574
+        t_stat: -2.57
+        n_a: 10
+        n_b: 10
+        windows:
+        - -0.057999326143940155
+        - -0.06747447544884272
+        - -0.06612342599192217
+        - -0.02152743484224956
+        - -0.11574295717309885
+        - 0.003701687934558441
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: false
+  fading_volume_into_shock:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.009258696427309119
+        t_stat: 0.41
+        n_a: 12
+        n_b: 24
+        windows:
+        - -0.030795831526898944
+        - -0.03372387255790146
+        - -0.012373999329796983
+        - 0.01128339090531394
+        - 0.07725803924332836
+        - 0.0023313067533615728
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      XMRUSD:
+        verdict: fail
+        effect: -0.01711865057121966
+        t_stat: -0.69
+        n_a: 11
+        n_b: 16
+        windows:
+        - -0.08136464021525984
+        - 0.2521709956927185
+        - -0.08225362003239878
+        - -0.006097871233418428
+        - -0.035794489961422225
+        - -0.03689040106234792
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: true
+          min_30_bars_each: false
+      ZECUSD:
+        verdict: fail
+        effect: 0.04775911413831416
+        t_stat: 2.04
+        n_a: 15
+        n_b: 16
+        windows:
+        - 0.17396664844611415
+        - 0.03785353924535476
+        - 0.11777619524247154
+        - -0.05167940999285187
+        - 0.03142575105131873
+        - -0.010888352332522448
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+  post_shock_volume_dryup:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.021530626198388705
+        t_stat: 1.24
+        n_a: 14
+        n_b: 40
+        windows:
+        - 0.05573319073006402
+        - 0.038192764052041375
+        - 0.02345351127899307
+        - -0.008732796995943195
+        - 0.018253338859520116
+        - null
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      XMRUSD:
+        verdict: fail
+        effect: -0.005442986914294298
+        t_stat: -0.32
+        n_a: 13
+        n_b: 35
+        windows:
+        - -0.014203997322113662
+        - 0.0035305814942241387
+        - -0.06366630126397088
+        - -0.01948029497434431
+        - 0.0209257259782412
+        - null
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      ZECUSD:
+        verdict: fail
+        effect: -0.00571488740954919
+        t_stat: -0.27
+        n_a: 23
+        n_b: 36
+        windows:
+        - -0.03553238107025588
+        - 0.07221818522750066
+        - -0.08018760992266491
+        - -0.07071337330135012
+        - 0.005935704694385122
+        - 0.015250391207370644
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+  inside_day_after_shock_reverts:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.022118691289224703
+        t_stat: 1.13
+        n_a: 21
+        n_b: 37
+        windows:
+        - -0.026044075273874145
+        - 0.046578579705183115
+        - 0.11655288293607578
+        - -0.03381056968340278
+        - -0.0009341048845296666
+        - 0.007866580369696138
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      XMRUSD:
+        verdict: fail
+        effect: -0.002492476480160972
+        t_stat: -0.16
+        n_a: 23
+        n_b: 34
+        windows:
+        - -0.018409000922380805
+        - 0.09873310992504794
+        - -0.1243694444837898
+        - -0.013629047293081637
+        - 0.026372377904697944
+        - -0.0405722814839877
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      ZECUSD:
+        verdict: fail
+        effect: -0.0004465417159930686
+        t_stat: -0.02
+        n_a: 22
+        n_b: 41
+        windows:
+        - -0.05760697938444602
+        - 0.011580992546435482
+        - 0.0128813816734372
+        - 0.009205117030189077
+        - 0.011920842281390143
+        - 0.007156031801462525
+        agreeing_windows: 1 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+  whipsaw_regime_shock_reverts:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.0036217198024774844
+        t_stat: 0.17
+        n_a: 14
+        n_b: 35
+        windows:
+        - -0.055247003513868874
+        - 0.03345032158648202
+        - 0.11518320804322937
+        - 0.026410675310683203
+        - -0.024909781174116352
+        - -0.030332197083451452
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      XMRUSD:
+        verdict: fail
+        effect: -0.014020358113006438
+        t_stat: -0.68
+        n_a: 18
+        n_b: 29
+        windows:
+        - -0.10207964163184377
+        - 0.16603131284304837
+        - -0.0635043278591952
+        - 0.021616671103803407
+        - -0.030725699641072912
+        - 0.019753977696113523
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false
+      ZECUSD:
+        verdict: fail
+        effect: 0.03424050106372855
+        t_stat: 1.34
+        n_a: 18
+        n_b: 33
+        windows:
+        - 0.1470272467590226
+        - 0.017677465546878587
+        - 0.16636622844693888
+        - -0.010472065068608039
+        - -0.015005934751206484
+        - -0.015309782182663009
+        agreeing_windows: 3 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: false

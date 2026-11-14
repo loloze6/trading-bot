@@ -1,0 +1,252 @@
+validated:
+- id: heavy_volume_spike_continues
+  brief: fake_01_btc_overreaction.md
+  run: try_03/fake_01
+  kind: book
+  belief: A big bar on extreme volume carries informed flow and keeps going rather
+    than reverting.
+  profit: fail (try_04)
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: weekend_vol_compression
+  brief: fake_03_time_of_week.md
+  run: try_03/fake_03
+  kind: filter
+  belief: With institutional desks and market makers away, hourly volatility on Saturday
+    and Sunday (UTC clock) is clearly lower than on weekdays.
+  profit: not applicable (filter)
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: us_open_vol
+  brief: fake_03_time_of_week.md
+  run: try_03/fake_03
+  kind: filter
+  belief: The US equity open (13:30 or 14:30 UTC depending on US daylight time) brings
+    ETF, futures and desk flow, so the hours around it are more volatile on weekdays
+    (volatility effect, UTC clock approximating New York).
+  profit: not applicable (filter)
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: volume_surprise_vs_clock
+  brief: fake_03_time_of_week.md
+  run: fake_03_time_of_week/001
+  kind: filter
+  belief: Volume far above its usual level for that hour of the day marks unscheduled
+    news or flow that the clock does not explain, and it carries over into a more
+    volatile next hour (volatility effect, volume adjusted for the UTC clock).
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: breakout_spike_continues_inside_spike_reverts
+  brief: fake_01_btc_overreaction.md
+  run: fake_01_btc_overreaction/001
+  kind: book
+  belief: A big bar that closes beyond the prior 24-hour high or low has triggered
+    resting stops and breakout orders and keeps going, while a big bar that stays
+    inside the day's range is noise that reverts.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: long_horizon_exhaustion
+  brief: n02_alt_daily_trend_other_categories_1d.md
+  run: n02_alt_daily_trend_other_categories_1d/001
+  kind: filter
+  belief: In these coins, extreme 12-month gains mark bubble tops and extreme 12-month
+    losses mark capitulation, so long-horizon momentum reverses.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: low_vol_regime_momentum
+  brief: n04_btc_daily_vol_timing_1d.md
+  run: n04_btc_daily_vol_timing_1d/001
+  kind: book
+  belief: BTC trends persist when realized volatility is calm relative to its own
+    past year, because calm markets carry less forced deleveraging that breaks trends.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: asia_hours_stretch_fade
+  brief: n03_eth_hourly_stretch_reversion_1h.md
+  run: n03_eth_hourly_stretch_reversion_1h/001
+  kind: book
+  belief: Stretches built during thin Asian hours (00-06 UTC), with Europe and the
+    US away, reflect poor liquidity and are corrected once deeper books arrive in
+    the European morning.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: weekend_stretch_continuation
+  brief: n03_eth_hourly_stretch_reversion_1h.md
+  run: n03_eth_hourly_stretch_reversion_1h/001
+  kind: book
+  belief: On thin, retail-driven weekends, a close far from the 24h VWAP reflects
+    one-sided flow that liquidity providers do not absorb, so price keeps moving in
+    the stretch direction over the next half day by more than cost.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: friday_long_net_profit
+  brief: n07_calendar_daily_three_coins_1d.md
+  run: n07_calendar_daily_three_coins_1d/001
+  kind: book
+  belief: Crypto buyers add exposure on Friday ahead of the weekend (weekly Deribit
+    expiry at 08:00 UTC clears hedges, and retail funds accounts before the weekend),
+    so being long over Friday pays after cost.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: or_close_location_drift
+  brief: n08_opening_range_breakout_eth_1h.md
+  run: n08_opening_range_breakout_eth_1h/001
+  kind: filter
+  belief: Where price closes inside the opening range shows who won the first hours,
+    and the rest of the day drifts the same way.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: break_aligned_with_prior_day
+  brief: n08_opening_range_breakout_eth_1h.md
+  run: n08_opening_range_breakout_eth_1h/001
+  kind: book
+  belief: An opening-range break in the direction of the prior UTC day's move joins
+    a running trend and continues, while a counter-trend break is more often a retracement
+    that fails.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: or_location_with_prior_day
+  brief: n08_opening_range_breakout_eth_1h.md
+  run: n08_opening_range_breakout_eth_1h/001
+  kind: book
+  belief: When the first four UTC hours close near one edge of their range in the
+    same direction as the prior day's move, both the early flow and the running trend
+    agree, and the next 20 hours drift that way by more than the cost.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: donchian_72h_breakout
+  brief: n10_hourly_trend_with_vol_gate_1h.md
+  run: n10_hourly_trend_with_vol_gate_1h/001
+  kind: book
+  belief: A close beyond the prior 3-day high or low triggers stop and breakout flows
+    that carry price further over the next day.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: long_quiet_stays_quiet
+  brief: n13_quiet_period_then_move_btc_1h.md
+  run: n13_quiet_period_then_move_btc_1h/001
+  kind: filter
+  belief: Volatility clusters, so a long run with no large bar means a low-volatility
+    regime that persists and the next move is smaller than usual.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: mom_24h_short_reversal
+  brief: n15_eth_hourly_momentum_horizons_1h.md
+  run: n15_eth_hourly_momentum_horizons_1h/001
+  kind: filter
+  belief: A one-day ETH move is mostly liquidity-driven overshoot that partly gives
+    back over the next day, unlike the weekly trend.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: weekend_low_volatility
+  brief: n16_day_of_week_other_coins_1d.md
+  run: n16_day_of_week_other_coins_1d/001
+  kind: filter
+  belief: Weekend sessions have less news and fewer participants, so their absolute
+    moves are smaller than weekday moves, even if mean returns do not differ.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: volume_backed_shock_more_volatile_after
+  brief: n18_payment_coins_hourly_shock_1h.md
+  run: n18_payment_coins_hourly_shock_1h/001
+  kind: filter
+  belief: On XRP and TRX, an hourly price shock that comes with a volume surge is
+    followed by more volatility over the next hours than a shock on ordinary volume,
+    because it reflects real flow rather than a thin book.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: gated_cross_pays_net
+  brief: n23_weekday_gated_trend_hourly_1h.md
+  run: n23_weekday_gated_trend_hourly_1h/001
+  kind: book
+  belief: A 12/72 MA-cross entry taken only on weekdays with 24h volatility above
+    its lower tercile is profitable after the 0.15% round trip.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: trend_aligned_24h_break
+  brief: n06_range_break_continuation_other_coins_1h.md
+  run: n06_range_break_continuation_other_coins_1h/002
+  kind: book
+  belief: On SOL and AVAX, a 24h-range break continues only when the slow weekly trend
+    is behind it, because the trend-following flow seen in the weekly results is what
+    carries a break.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: volume_burst_stretch_pullback_bar_continues
+  brief: n28_hourly_stretch_reversion_older_coins_1h.md
+  run: n28_hourly_stretch_reversion_older_coins_1h/001
+  kind: book
+  belief: On LTC and XRP, a stretch from the 24h VWAP that comes with a volume burst
+    and a bar closing off its extreme is forced flow pausing inside the bar, and it
+    keeps going over the next 12 hours.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: lag24_same_hour_echo
+  brief: n29_hourly_autocorrelation_regimes_1h.md
+  run: n29_hourly_autocorrelation_regimes_1h/001
+  kind: filter
+  belief: The lag-24 autocorrelation captures an intraday echo, where the return at
+    a given UTC hour repeats or reverses the return at the same hour the previous
+    day, and its 14-day sign tells which.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: expansion_persists_in_size
+  brief: n32_vol_term_structure_hourly_1h.md
+  run: n32_vol_term_structure_hourly_1h/001
+  kind: filter
+  belief: Volatility clusters on hourly crypto bars, so a 24h-over-168h volatility
+    expansion means larger absolute moves over the next day than when the term structure
+    is flat or inverted, which makes the ratio usable as a gate for other rules.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: europe_open_distribution_weekday_07_10
+  brief: n34_hour_of_day_drift_hourly_1h.md
+  run: n34_hour_of_day_drift_hourly_1h/001
+  kind: book
+  belief: European desks open their books and de-risk the overnight Asian inventory,
+    which produces a negative drift from 07:00 to 10:00 UTC on weekdays.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: weekend_quiet_regime
+  brief: n36_ltc_xmr_hourly_weekday_1h.md
+  run: n36_ltc_xmr_hourly_weekday_1h/001
+  kind: filter
+  belief: On LTC and XMR, hourly volatility is driven by weekday trading-desk flow
+    (the US-open block is loud, the Asia block is quiet), so weekend hours carry a
+    lower-volatility regime than weekday hours.
+  void: '2026-11-06 morning: judged on the raw cache and backtested as an on-off book;
+    void under the rules ''the engine is the only reader of bars'' and ''forecasts
+    are linear'''
+- id: thin_volume_drift_reverts
+  brief: fake_01_btc_overreaction.md
+  run: fake_01_btc_overreaction/002
+  belief: A multi-hour move made on below-normal volume is price drifting through
+    a thin book without real participation, so it gives back part of the move within
+    half a day.
+  status: validated
+note: Nothing on this shelf is valid. Kept as history. A new shelf starts with the
+  first claim judged from the engine's outputs with a linear forecast.

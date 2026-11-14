@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "main_measure": {
+    "name": "pooled extreme-minus-neutral 5-bar forward return",
+    "value": 0.009270885950944796,
+    "statistic": {
+      "name": "Welch t",
+      "value": 0.45790243190182
+    },
+    "threshold": "confirm if below 0 with t <= -2 and negative in at least 2 coins; reject if >= 0; at least 30 extreme cases pooled and 8 per coin"
+  },
+  "supporting_check": {
+    "name": "strategy cumulative return minus same-average-size short hold, summed over coins",
+    "value": 0.9832416384050991,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping extreme cases pooled": 14,
+    "non-overlapping neutral cases pooled": 127,
+    "coins with negative difference": 0,
+    "coins in record": 2,
+    "extreme cases BTCUSD": 7,
+    "neutral cases BTCUSD": 60,
+    "extreme cases ETHUSD": 7,
+    "neutral cases ETHUSD": 67
+  },
+  "decided_by": "Fewer than 30 non-overlapping extreme cases pooled or fewer than 8 for some coin, which is inconclusive whatever the sign.",
+  "reading": "Extreme bars are those with raw component >= 8 and neutral bars are those with Wilder RSI(14) recomputed from each window's own closes between 40 and 60 inclusive (the first 14 bars of each window, with no RSI, are left out of the neutral group); both use the 0,5,10,... grid per window. Since only 2 coins are in the record, 'negative in at least 2 of the 3 coins' is applied literally as at least 2 coins negative. The supporting check uses summed per-bar gains, with the benchmark being a short of the coin's mean absolute allocation, and it passes only if every coin is above zero."
+}

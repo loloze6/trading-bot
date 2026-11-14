@@ -1,0 +1,6 @@
+---
+instruments: BTC, ETH, BNB
+---
+Does the RSI, which measures how one-sided recent up and down closes have been, carry information about where BTC, ETH and BNB go next, and if so, does a stretched reading point to a reversal or a continuation? It could point to reversal: a run of one-sided closes is often driven by impatient traders or forced sellers and buyers, such as liquidated leveraged positions. Those who absorb that flow are paid by the price snapping back once the pressure is spent. It could point to continuation: news and flows reach participants slowly, and trend followers and herding traders keep buying strength and selling weakness, so a one-sided run marks demand that persists. It could also carry no information at all, because RSI is among the most watched indicators in crypto and any simple pattern in it may already be traded away. The idea that RSI predicts price behaviour would be shown wrong if price moves after stretched-high, stretched-low and neutral readings did not differ in direction or size beyond what chance alone produces in these three coins.
+
+short-name: rsi-predicts-price-direction

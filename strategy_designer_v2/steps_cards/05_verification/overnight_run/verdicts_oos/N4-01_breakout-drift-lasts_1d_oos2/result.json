@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 10-bar forward return after new 20-day closing highs (vs coin mean 10-bar return)",
+    "value": 0.06872445879642027,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.3407131709007236
+    },
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2; at least 100 non-overlapping events"
+  },
+  "supporting_check": {
+    "name": "mean excess 10-bar return of events whose next close is below the new high (must be > 0)",
+    "value": 0.03698125342109103,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping events": 105,
+    "events with next close below the new high": 59
+  },
+  "decided_by": "Inconclusive rule met: the t of the mean excess 10-bar return lies between -2 and 2 with at least 100 events.",
+  "reading": "A new-high event is a bar whose recorded countdown equals 20 and has a 10-bar forward return in its window; events are kept greedily per window and one less than 10 bars after the last counted event is skipped; the coin mean uses every bar with a 10-bar forward return across all its windows; 'closes below the new high' means close[t+1] < close[t]; the supporting check does not change the status."
+}

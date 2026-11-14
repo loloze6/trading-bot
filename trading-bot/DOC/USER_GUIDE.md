@@ -1,7 +1,7 @@
 # Trading Bot Engine — User Guide
 
-Not sure this is the doc you need? See [`strategy-research/DOC_INDEX.md`](../../strategy-research/DOC_INDEX.md)
-first — that file maps every doc in this monorepo by the question you arrived with.
+Not sure this is the doc you need? See [`strategy-research/CLAUDE.md`](../../strategy-research/CLAUDE.md)
+§1, "Where to read", which lists the research-side docs by purpose.
 
 This is a **capability reference**, not an engineering history or a forced-read
 doc. It exists for a reader (human or a fresh agent) who wants to understand

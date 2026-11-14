@@ -1,0 +1,67 @@
+claims_file: strategy_designer_v2/runs/n24_hourly_donchian_other_coins_1h/001/claims_r1.yaml
+fold: A
+bar_size: 1h
+symbols:
+- LTCUSD
+- XRPUSD
+- SOLUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  donchian168_heavy_volume_net:
+    verdict: fail
+    by_symbol:
+      LTCUSD:
+        verdict: fail
+        effect: 0.0007592085994613516
+        t_stat: 0.07
+        n_a: 55
+        n_b: 55
+        windows:
+        - 0.05772269626930332
+        - -0.03398631007731574
+        - 0.03408463546211107
+        - -0.0165585857900578
+        - -0.012593421619331415
+        - -0.01657214330062233
+        agreeing_windows: 2 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      XRPUSD:
+        verdict: fail
+        effect: 0.01182075539709443
+        t_stat: 1.18
+        n_a: 73
+        n_b: 73
+        windows:
+        - 0.05514051216441034
+        - 0.014000601049550589
+        - -0.010311266574082975
+        - 0.012629010886587282
+        - 0.014510997358401603
+        - -0.00634002418097241
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      SOLUSD:
+        verdict: pass
+        effect: 0.040031982475480093
+        t_stat: 2.74
+        n_a: 58
+        n_b: 58
+        windows:
+        - 0.04356419094593909
+        - 0.06345583928507742
+        - -0.009845329580973004
+        - 0.03731267614886554
+        - 0.04048288252908476
+        - 0.08047599156673979
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true

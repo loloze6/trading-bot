@@ -1,0 +1,28 @@
+claims_file: strategy_designer_v2/runs/n03_eth_hourly_stretch_reversion_1h/001/claims_r1.yaml
+fold: B
+bar_size: 1h
+symbols:
+- ETHUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  weekend_stretch_continuation:
+    verdict: pass
+    by_symbol:
+      ETHUSD:
+        verdict: pass
+        effect: 0.006347792876866055
+        n_a: 39
+        n_b: 39
+        windows:
+        - 0.0022486313627435458
+        - 0.006231556805717443
+        - -0.0015574049460899515
+        - 0.005132216146119197
+        - 0.02065146095575046
+        - 0.0020454303052580293
+        agreeing_windows: 5 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: true
+          min_30_bars_each: true

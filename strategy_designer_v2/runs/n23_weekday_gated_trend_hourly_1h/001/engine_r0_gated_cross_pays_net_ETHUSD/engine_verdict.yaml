@@ -1,0 +1,147 @@
+claim: gated_cross_pays_net
+symbol: ETHUSD
+bar_size: 1h
+fold: C
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 880
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: 0.5411
+  median_window_sharpe: 0.55435
+  worst_window_drawdown: 0.3769
+  trades: 84
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: 0.0086
+    trades: 6
+    sharpe: 0.2145
+    max_drawdown: 0.1469
+    exposure_pct: 8.4806
+    cost_drag_pct: 43.1902
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/full_size/20261106T015629Z_64dd3614
+    seconds: 46
+  - window: W2
+    net_return: 0.3813
+    trades: 17
+    sharpe: 2.685
+    max_drawdown: 0.1066
+    exposure_pct: 24.8634
+    cost_drag_pct: 5.1228
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/full_size/20261106T015711Z_64dd3614
+    seconds: 42
+  - window: W3
+    net_return: 0.0495
+    trades: 16
+    sharpe: 0.7181
+    max_drawdown: 0.1943
+    exposure_pct: 23.9403
+    cost_drag_pct: 23.9523
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/full_size/20261106T015753Z_64dd3614
+    seconds: 42
+  - window: W4
+    net_return: -0.1516
+    trades: 18
+    sharpe: -0.5711
+    max_drawdown: 0.3769
+    exposure_pct: 24.5179
+    cost_drag_pct: 9.6207
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/full_size/20261106T015835Z_64dd3614
+    seconds: 42
+  - window: W5
+    net_return: 0.2098
+    trades: 18
+    sharpe: 1.5916
+    max_drawdown: 0.2039
+    exposure_pct: 24.607
+    cost_drag_pct: 7.5243
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/full_size/20261106T015916Z_64dd3614
+    seconds: 41
+  - window: W6
+    net_return: 0.0269
+    trades: 9
+    sharpe: 0.3906
+    max_drawdown: 0.2466
+    exposure_pct: 13.0302
+    cost_drag_pct: 24.9222
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/full_size/20261106T020000Z_64dd3614
+    seconds: 44
+  checks:
+    net_positive_in_5_of_6: true
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: 0.018
+    median_window_sharpe: 0.49870000000000003
+    worst_window_drawdown: 0.1506
+    trades: 91
+  windows:
+  - window: W1
+    net_return: 0.0044
+    trades: 5
+    sharpe: 0.338
+    max_drawdown: 0.0202
+    exposure_pct: 8.4806
+    cost_drag_pct: 15.0118
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/vol_target/20261106T020048Z_be4deeb5
+    seconds: 48
+  - window: W2
+    net_return: 0.0483
+    trades: 21
+    sharpe: 1.6382
+    max_drawdown: 0.0531
+    exposure_pct: 24.8634
+    cost_drag_pct: 12.2794
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/vol_target/20261106T020130Z_be4deeb5
+    seconds: 42
+  - window: W3
+    net_return: 0.0368
+    trades: 18
+    sharpe: 1.6076
+    max_drawdown: 0.0391
+    exposure_pct: 23.9403
+    cost_drag_pct: 10.5684
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/vol_target/20261106T020214Z_be4deeb5
+    seconds: 44
+  - window: W4
+    net_return: -0.0898
+    trades: 21
+    sharpe: -1.6441
+    max_drawdown: 0.1506
+    exposure_pct: 24.5179
+    cost_drag_pct: 5.4057
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/vol_target/20261106T020255Z_be4deeb5
+    seconds: 41
+  - window: W5
+    net_return: 0.0216
+    trades: 18
+    sharpe: 0.6594
+    max_drawdown: 0.0734
+    exposure_pct: 24.607
+    cost_drag_pct: 16.1366
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/vol_target/20261106T020338Z_be4deeb5
+    seconds: 43
+  - window: W6
+    net_return: 0.0029
+    trades: 8
+    sharpe: 0.1775
+    max_drawdown: 0.0383
+    exposure_pct: 13.0302
+    cost_drag_pct: 29.5976
+    run_dir: strategy_designer_v2/runs/n23_weekday_gated_trend_hourly_1h/001/engine_r0_gated_cross_pays_net_ETHUSD/results/vol_target/20261106T020422Z_be4deeb5
+    seconds: 44
+  checks:
+    net_positive_in_5_of_6: true
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: true
+  verdict: fail

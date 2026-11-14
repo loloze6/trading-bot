@@ -1,0 +1,147 @@
+claim: close_location_accumulation
+symbol: BTCUSD
+bar_size: 1d
+fold: A
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 200
+verdict: fail
+passed_as: null
+fold_totals: &id001
+  net_return: 0.7077
+  median_window_sharpe: 0.698
+  worst_window_drawdown: 0.4669
+  trades: 528
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: 0.123
+    trades: 91
+    sharpe: 0.8717
+    max_drawdown: 0.3058
+    exposure_pct: 99.1667
+    cost_drag_pct: 19.5772
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_close_location_accumulation_BTCUSD/results/full_size/20261106T194709Z_56dae178
+    seconds: 3
+  - window: W2
+    net_return: 0.0256
+    trades: 91
+    sharpe: 0.5243
+    max_drawdown: 0.4669
+    exposure_pct: 99.187
+    cost_drag_pct: 57.6826
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_close_location_accumulation_BTCUSD/results/full_size/20261106T194713Z_56dae178
+    seconds: 3
+  - window: W3
+    net_return: -0.2752
+    trades: 89
+    sharpe: -0.8115
+    max_drawdown: 0.405
+    exposure_pct: 99.1803
+    cost_drag_pct: 9.5552
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_close_location_accumulation_BTCUSD/results/full_size/20261106T194716Z_56dae178
+    seconds: 3
+  - window: W4
+    net_return: 0.8099
+    trades: 84
+    sharpe: 3.4836
+    max_drawdown: 0.1008
+    exposure_pct: 99.1667
+    cost_drag_pct: 5.0754
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_close_location_accumulation_BTCUSD/results/full_size/20261106T194719Z_56dae178
+    seconds: 3
+  - window: W5
+    net_return: 0.2335
+    trades: 96
+    sharpe: 1.847
+    max_drawdown: 0.1016
+    exposure_pct: 99.187
+    cost_drag_pct: 10.6361
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_close_location_accumulation_BTCUSD/results/full_size/20261106T194722Z_56dae178
+    seconds: 3
+  - window: W6
+    net_return: -0.0837
+    trades: 77
+    sharpe: -0.355
+    max_drawdown: 0.1962
+    exposure_pct: 98.3607
+    cost_drag_pct: 35.472
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_close_location_accumulation_BTCUSD/results/full_size/20261106T194726Z_56dae178
+    seconds: 4
+  checks:
+    net_positive_in_5_of_6: false
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals:
+    net_return: 0.6883
+    median_window_sharpe: 0.9854499999999999
+    worst_window_drawdown: 0.146
+    trades: 511
+  windows:
+  - window: W1
+    net_return: 0.0635
+    trades: 90
+    sharpe: 0.999
+    max_drawdown: 0.0855
+    exposure_pct: 99.1667
+    cost_drag_pct: 12.5218
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_close_location_accumulation_BTCUSD/results/vol_target/20261106T194729Z_99386a41
+    seconds: 3
+  - window: W2
+    net_return: 0.0811
+    trades: 85
+    sharpe: 0.9719
+    max_drawdown: 0.146
+    exposure_pct: 99.187
+    cost_drag_pct: 10.2422
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_close_location_accumulation_BTCUSD/results/vol_target/20261106T194733Z_99386a41
+    seconds: 3
+  - window: W3
+    net_return: 0.0086
+    trades: 84
+    sharpe: 0.2314
+    max_drawdown: 0.1421
+    exposure_pct: 99.1803
+    cost_drag_pct: 59.8067
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_close_location_accumulation_BTCUSD/results/vol_target/20261106T194736Z_99386a41
+    seconds: 3
+  - window: W4
+    net_return: 0.3505
+    trades: 79
+    sharpe: 3.6662
+    max_drawdown: 0.0421
+    exposure_pct: 99.1667
+    cost_drag_pct: 3.4725
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_close_location_accumulation_BTCUSD/results/vol_target/20261106T194739Z_99386a41
+    seconds: 3
+  - window: W5
+    net_return: 0.1542
+    trades: 98
+    sharpe: 2.0006
+    max_drawdown: 0.0537
+    exposure_pct: 99.187
+    cost_drag_pct: 8.6774
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_close_location_accumulation_BTCUSD/results/vol_target/20261106T194742Z_99386a41
+    seconds: 3
+  - window: W6
+    net_return: -0.066
+    trades: 75
+    sharpe: -0.866
+    max_drawdown: 0.1207
+    exposure_pct: 98.3607
+    cost_drag_pct: 21.1833
+    run_dir: strategy_designer_v2/runs/real_01_daily_breadth_fold_a/003/engine_r0_close_location_accumulation_BTCUSD/results/vol_target/20261106T194745Z_99386a41
+    seconds: 3
+  checks:
+    net_positive_in_5_of_6: true
+    median_window_sharpe_ge_1.0: false
+    worst_window_drawdown_le_20%: true
+  verdict: fail

@@ -1,0 +1,38 @@
+run: strategy_designer_v2/runs/n10_hourly_trend_with_vol_gate_1h/001
+observations:
+  - "Plain 24h time-series momentum sampled daily loses after cost on both coins (net_return BTC -0.38%, ETH -0.24% per trade), with only 2 of 6 windows positive on BTC and 3 of 6 on ETH."
+  - "The 72h Donchian breakout held on both coins (net_return BTC +0.36%, ETH +1.02% per trade); ETH is positive in all 6 windows, and BTC is positive in 5 of 6, with W6 at -1.09%."
+  - "In the engine, the breakout passed only with vol-target sizing (BTC +32.0%, ETH +66.1% fold net; worst drawdown 15.9% and 9.0%); full size failed on drawdown (BTC 51.9%, ETH 44.9% in W6)."
+  - "Window W6 is where trend rules break: Donchian BTC -1.09%, tsmom_24h BTC -0.81%, pullback BTC -0.72% and ETH -0.45%, and vol-target Donchian BTC -13.6% with Sharpe -3.24."
+  - "Pullback-within-trend nearly held: the whole-fold effect beat 0.2% on both coins (BTC +0.60%, ETH +0.31%), but each coin had only 4 of 6 windows positive (W1 and W6 negative)."
+  - "Squeeze-then-breakout nearly held on BTC (+0.308% vs 0.3%, but only 4 of 6 windows positive) and passed on ETH (+0.56%), which is still weaker than the ungated 72h breakout's +1.02% on ETH."
+  - "Every gate placed on daily 24h momentum failed as a mean_diff: high vol (BTC +0.07%, ETH -0.06%), efficiency ratio (BTC +0.04%, ETH -0.53%), volume (BTC -0.04%, ETH -1.22%) and weekday (BTC +0.25%, ETH -0.02%)."
+  - "The EMA 12/48 cross held 48 bars lost on both coins (BTC -0.30%, ETH -0.53%); its ETH windows range from -2.37% to +0.97%."
+  - "Multi-horizon sign agreement split by coin: ETH +0.36% with 4 of 6 windows positive, BTC +0.02%."
+  - "Vol-scaled weekly momentum barely ranks the next day's return (rank_corr BTC 0.021, ETH 0.042 vs 0.05), and its windows swing from -0.25 to +0.16 on ETH."
+next_claim:
+  id: breakout_aligned_with_weekly_trend
+  belief: A 72h breakout in the direction of the rising or falling weekly average carries further over the next day than a breakout against that average, which is more often a failed range break.
+  claim:
+    when: spaced 72h Donchian breakouts whose direction matches the sign of the 24-bar change in the 168h moving average
+    then: the signed 24-bar forward return in the breakout direction is larger
+    compared_to: spaced 72h Donchian breakouts against the 168h moving-average slope
+    measure: mean_diff
+    horizon_bars: 24
+    direction: positive
+    min_effect: 0.003
+    code: |
+      hi = df.high.rolling(72).max().shift(1)
+      lo = df.low.rolling(72).min().shift(1)
+      up = df.close > hi
+      dn = df.close < lo
+      ev = spaced(up | dn, 24)
+      ma = df.close.rolling(168).mean()
+      slope = np.sign(ma - ma.shift(24))
+      signal = pd.Series(np.where(up, 1, -1), index=df.index)
+      ok = ev & slope.notna() & (slope != 0)
+      a = ok & (signal == slope)
+      b = ok & (signal != slope)
+  why_no_lookahead: The highs, lows and moving average use only past bars (shift(1) and trailing rolling windows), and the breakout is judged on the current close.
+  how_it_trades: At the bar close, take the 72h breakout only when it agrees with the weekly MA slope, hold it 24 bars, and size it by vol target.
+why: The breakout is the only rule that paid, and trend context helped pullbacks on average, so testing a weekly-trend gate on the breakout directly asks whether a gate removes the W6-type losses; 0.3% is roughly the BTC breakout edge, so a smaller gap would be noise.

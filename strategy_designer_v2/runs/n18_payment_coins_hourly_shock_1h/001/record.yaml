@@ -1,0 +1,566 @@
+brief: n18_payment_coins_hourly_shock_1h.md
+fold: A
+symbols:
+- XRPUSD
+- TRXUSD
+bar_size: 1h
+claims:
+- id: shock_vol_clustering_6h
+  belief: On XRP and TRX an hourly price shock is followed by hours of elevated volatility,
+    whatever the direction of the next move.
+  measure: abs_ratio
+  horizon_bars: 6
+  direction: above
+  min_effect: 1.5
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: 1.307172394704519
+      n_a: 513
+      n_b: 16956
+      windows:
+      - 1.1855515365114258
+      - 1.0837923985056466
+      - 1.329905428326641
+      - 1.264105720543535
+      - 1.6923323800993506
+      - 1.441470894566862
+      verdict: fail
+      why: null
+    TRXUSD:
+      effect: 1.2577481221563844
+      n_a: 492
+      n_b: 17026
+      windows:
+      - 1.2143840812583377
+      - 1.1147059530301013
+      - 1.176580131806741
+      - 1.6815244916113397
+      - 1.1794405078041423
+      - 1.2216851466396277
+      verdict: fail
+      why: null
+  code: 'absr = ret.abs()
+
+    scale = absr.rolling(168).median().shift(1)
+
+    shock = absr > 4 * scale
+
+    a = spaced(shock, 6)
+
+    b = ~a
+
+    signal = np.sign(ret)
+
+    '
+- id: volume_confirmed_shock_continues
+  belief: A price shock backed by a volume surge reflects real news or large flow
+    and keeps going, more than a shock on ordinary volume.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: -0.0017846895211394661
+      n_a: 402
+      n_b: 241
+      windows:
+      - -0.0013624469834695443
+      - -0.0026279943226494556
+      - -0.002728693626140271
+      - 0.003001438865015423
+      - 0.006019404345918708
+      - -0.008471637663774116
+      verdict: fail
+      why: null
+    TRXUSD:
+      effect: 0.0017791597744142298
+      n_a: 314
+      n_b: 322
+      windows:
+      - 0.0037969944231062997
+      - 0.000721947044890363
+      - -0.001958995666794825
+      - 0.0055298523838307675
+      - 0.001387875818460594
+      - 0.0006424385460045664
+      verdict: fail
+      why: null
+  code: 'absr = ret.abs()
+
+    scale = absr.rolling(168).median().shift(1)
+
+    vmed = df.volume.rolling(168).median().shift(1)
+
+    shock = absr > 4 * scale
+
+    a = spaced(shock & (df.volume > 3 * vmed), 6)
+
+    b = spaced(shock & (df.volume <= 3 * vmed), 6)
+
+    signal = np.sign(ret)
+
+    '
+- id: thin_volume_shock_fades
+  belief: A large hourly move on thin volume is a liquidity air pocket in a thin book
+    and retraces within a few hours.
+  measure: net_return
+  horizon_bars: 4
+  direction: positive
+  min_effect: 0.002
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: -0.004208689353785111
+      n_a: 116
+      n_b: 116
+      windows:
+      - -0.00748305824524245
+      - -0.001578558730503699
+      - -0.007044152933329424
+      - -0.0016815381026502175
+      - -0.001998917329756983
+      - -0.0027787278117706463
+      verdict: fail
+      why: null
+    TRXUSD:
+      effect: -0.0008850055767309607
+      n_a: 218
+      n_b: 218
+      windows:
+      - -0.0021068292061046713
+      - -0.001483130706011208
+      - -0.0007415099659663125
+      - 0.0003374936765350963
+      - -0.0007268656110826771
+      - -0.0008894215600473745
+      verdict: fail
+      why: null
+  code: 'absr = ret.abs()
+
+    scale = absr.rolling(168).median().shift(1)
+
+    vmed = df.volume.rolling(168).median().shift(1)
+
+    shock = absr > 4 * scale
+
+    a = spaced(shock & (df.volume < 1.5 * vmed), 4)
+
+    b = ~a
+
+    signal = -np.sign(ret)
+
+    '
+- id: wick_rejection_shock_direction
+  belief: A shock bar with a wide range but a small body, closing near one extreme,
+    shows that one side was rejected, and price drifts toward the closing side.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: 0.002316094926026601
+      n_a: 45
+      n_b: 17424
+      windows:
+      - -0.014096297602321877
+      - 0.024231131770978694
+      - 0.01777732006563977
+      - 0.012535462770740623
+      - 9.001583848320131e-06
+      - -0.005342864833363328
+      verdict: fail
+      why: null
+    TRXUSD:
+      effect: 0.008206370395643304
+      n_a: 30
+      n_b: 17488
+      windows:
+      - 0.014773493205852802
+      - 0.02628245071397651
+      - 0.010111878893521685
+      - -0.005952727119476089
+      - 0.01316875414736775
+      - -0.003416156379282278
+      verdict: fail
+      why: null
+  code: 'rng = df.high - df.low
+
+    rmed = rng.rolling(168).median().shift(1)
+
+    pos = (df.close - df.low) / rng.replace(0, np.nan)
+
+    big = rng > 4 * rmed
+
+    smallbody = (df.close - df.open).abs() < 0.4 * rng
+
+    a = spaced(big & smallbody & ((pos > 0.7) | (pos < 0.3)), 6)
+
+    b = ~a
+
+    signal = np.sign(pos - 0.5).fillna(0)
+
+    '
+- id: volume_surge_without_move_precedes_volatility
+  belief: A large-transfer-style volume surge with no price move signals absorbed
+    flow or pending news, and volatility follows.
+  measure: abs_ratio
+  horizon_bars: 12
+  direction: above
+  min_effect: 1.3
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: 1.185601294023715
+      n_a: 356
+      n_b: 17113
+      windows:
+      - 1.2227792145169962
+      - 1.0907009560311385
+      - 0.9229441671468701
+      - 1.1065171175065067
+      - 1.6494066300924248
+      - 0.8875351553675415
+      verdict: fail
+      why: null
+    TRXUSD:
+      effect: 1.0218963933469407
+      n_a: 435
+      n_b: 17083
+      windows:
+      - 0.9879586559505308
+      - 1.0795203915563765
+      - 0.9748151904963255
+      - 1.2508372917027664
+      - 0.7659089068131711
+      - 1.057774255922833
+      verdict: fail
+      why: null
+  code: 'absr = ret.abs()
+
+    scale = absr.rolling(168).median().shift(1)
+
+    vmed = df.volume.rolling(168).median().shift(1)
+
+    a = spaced((df.volume > 4 * vmed) & (absr < scale), 12)
+
+    b = ~a
+
+    signal = np.sign(ret)
+
+    '
+- id: confirmed_shock_follow_through_12h
+  belief: When the hour after a shock moves the same way, the market has accepted
+    the news and the move extends over the next half day.
+  measure: net_return
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.003
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: 0.0018680586498974459
+      n_a: 246
+      n_b: 246
+      windows:
+      - 0.004592367008019628
+      - 0.004138587350508278
+      - 0.001089047115281897
+      - -0.0035773699791160404
+      - 0.005073420156029818
+      - 0.0009861745816872555
+      verdict: fail
+      why: null
+    TRXUSD:
+      effect: -0.002838166929137716
+      n_a: 231
+      n_b: 231
+      windows:
+      - -0.004000642505853986
+      - -0.007800014743791481
+      - -0.006935254512754419
+      - 0.0069452812006455065
+      - 0.00010829641583584267
+      - -0.004267141553074854
+      verdict: fail
+      why: null
+  code: 'absr = ret.abs()
+
+    scale = absr.rolling(168).median().shift(1)
+
+    shock = absr > 4 * scale
+
+    prev = shock.shift(1).fillna(False).astype(bool)
+
+    same = np.sign(ret) == np.sign(ret.shift(1))
+
+    a = spaced(prev & same, 12)
+
+    b = ~a
+
+    signal = np.sign(ret.shift(1)).fillna(0)
+
+    '
+- id: us_session_shock_continues_more_than_asia
+  belief: Shocks during US hours carry institutional and news flow and continue, while
+    Asian-hour shocks on these Asia-heavy coins are more often local flow that fades.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: 0.0025727920418484092
+      n_a: 268
+      n_b: 215
+      windows:
+      - 0.00206881159229564
+      - 0.005478463063541523
+      - 0.004577226573541652
+      - 0.003580525676327169
+      - 0.002628679485027709
+      - -0.0015059596135895141
+      verdict: fail
+      why: null
+    TRXUSD:
+      effect: -0.0001343153670269907
+      n_a: 243
+      n_b: 216
+      windows:
+      - 0.0023715549978626607
+      - -0.01254085825415015
+      - 0.0004094448668752282
+      - 0.008625152319098625
+      - 0.0011929033693653063
+      - -0.0009042270255628952
+      verdict: fail
+      why: null
+  code: 'absr = ret.abs()
+
+    scale = absr.rolling(168).median().shift(1)
+
+    shock = absr > 4 * scale
+
+    us = (hour >= 13) & (hour <= 20)
+
+    asia = (hour >= 0) & (hour <= 7)
+
+    a = spaced(shock & us, 6)
+
+    b = spaced(shock & asia, 6)
+
+    signal = np.sign(ret)
+
+    '
+- id: shock_size_overreaction_24h
+  belief: The bigger the hourly shock relative to normal, the more it overshoots,
+    so shock size predicts a reversal over the next day.
+  measure: rank_corr
+  horizon_bars: 24
+  direction: negative
+  min_effect: 0.1
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: -0.054807840993265064
+      n_a: 218
+      n_b: 218
+      windows:
+      - 0.3643907064959696
+      - -0.16210847975553858
+      - 0.07539118065433853
+      - 0.009781209781209782
+      - -0.2398970398970399
+      - -0.2841667578509684
+      verdict: fail
+      why: null
+    TRXUSD:
+      effect: -0.16403395523666986
+      n_a: 219
+      n_b: 219
+      windows:
+      - 0.05729564553093964
+      - -0.37098930481283426
+      - -0.1759530791788856
+      - 0.034467666046613415
+      - 0.045818815331010454
+      - -0.28432055749128926
+      verdict: fail
+      why: null
+  code: 'absr = ret.abs()
+
+    scale = absr.rolling(168).median().shift(1)
+
+    shock = absr > 4 * scale
+
+    a = spaced(shock, 24)
+
+    b = ~a
+
+    feature = ret / scale
+
+    '
+- id: exhausted_shock_after_extended_move_reverts
+  belief: A shock that arrives at the end of an already extended day-long move in
+    the same direction is capitulation or blow-off and reverts.
+  measure: mean_diff
+  horizon_bars: 6
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: -0.007835905928733563
+      n_a: 32
+      n_b: 512
+      windows:
+      - 0.0017411847115060006
+      - 0.0203444416210577
+      - -0.0023672314381390194
+      - -0.0031462429827433234
+      - -0.05697658763241296
+      - -0.0063099534481528335
+      verdict: fail
+      why: null
+    TRXUSD:
+      effect: 0.00689993990139638
+      n_a: 49
+      n_b: 492
+      windows:
+      - 0.001007567981768888
+      - 0.037383782036961063
+      - 0.025117363229212864
+      - 0.003391274870416503
+      - -0.004387053447452384
+      - 0.0018952573984566232
+      verdict: pass
+      why: null
+  code: 'absr = ret.abs()
+
+    scale = absr.rolling(168).median().shift(1)
+
+    shock = absr > 4 * scale
+
+    r24 = df.close.shift(1).pct_change(24)
+
+    sd24 = ret.rolling(168).std().shift(1) * np.sqrt(24)
+
+    ext = (np.sign(r24) == np.sign(ret)) & (r24.abs() > 2 * sd24)
+
+    a = spaced(shock & ext, 6)
+
+    b = spaced(shock & ~ext, 6)
+
+    signal = -np.sign(ret)
+
+    '
+- id: shock_out_of_calm_continues
+  belief: A shock that comes out of a quiet regime is fresh information, such as a
+    news event or a large transfer, and trends, while a shock inside an already volatile
+    regime is noise.
+  measure: mean_diff
+  horizon_bars: 12
+  direction: positive
+  min_effect: 0.004
+  verdict: fail
+  by_symbol:
+    XRPUSD:
+      effect: 0.0015210421979343545
+      n_a: 245
+      n_b: 214
+      windows:
+      - 0.0035638865303796443
+      - 0.0031604868314230733
+      - -0.0007890502069891649
+      - 0.0019540464172203326
+      - 0.0024420748475419748
+      - -0.0014299222362151595
+      verdict: fail
+      why: null
+    TRXUSD:
+      effect: -0.0015487387109029747
+      n_a: 253
+      n_b: 197
+      windows:
+      - 0.009775642846021011
+      - -0.0038780352685839157
+      - -0.0005121839186215814
+      - -0.012162131921596393
+      - 0.0008527845411768231
+      - -0.002110933926176966
+      verdict: fail
+      why: null
+  code: 'absr = ret.abs()
+
+    scale = absr.rolling(168).median().shift(1)
+
+    shock = absr > 4 * scale
+
+    rv24 = ret.rolling(24).std().shift(1)
+
+    calm = rv24 < rv24.rolling(720).median()
+
+    a = spaced(shock & calm, 12)
+
+    b = spaced(shock & ~calm, 12)
+
+    signal = np.sign(ret)
+
+    '
+- id: volume_backed_shock_more_volatile_after
+  belief: On XRP and TRX, an hourly price shock that comes with a volume surge is
+    followed by more volatility over the next hours than a shock on ordinary volume,
+    because it reflects real flow rather than a thin book.
+  measure: abs_ratio
+  horizon_bars: 6
+  direction: above
+  min_effect: 1.15
+  verdict: pass
+  by_symbol:
+    XRPUSD:
+      effect: 1.1826465182099626
+      n_a: 402
+      n_b: 241
+      windows:
+      - 1.0531738840425429
+      - 1.3538514879437056
+      - 1.030882298935987
+      - 1.018778716351784
+      - 1.9436006727071982
+      - 1.1273200787655469
+      verdict: pass
+      why: null
+    TRXUSD:
+      effect: 1.3054787008226898
+      n_a: 314
+      n_b: 322
+      windows:
+      - 1.226780522871634
+      - 1.2286716628364152
+      - 1.4219587119708688
+      - 1.1693582420568993
+      - 1.2965651465653272
+      - 1.0004715561283501
+      verdict: pass
+      why: null
+  code: 'absr = ret.abs()
+
+    scale = absr.rolling(168).median().shift(1)
+
+    vmed = df.volume.rolling(168).median().shift(1)
+
+    shock = absr > 4 * scale
+
+    a = spaced(shock & (df.volume > 3 * vmed), 6)
+
+    b = spaced(shock & (df.volume <= 3 * vmed), 6)
+
+    signal = np.sign(ret)
+
+    '
+profit: 'none: no return claim passed'

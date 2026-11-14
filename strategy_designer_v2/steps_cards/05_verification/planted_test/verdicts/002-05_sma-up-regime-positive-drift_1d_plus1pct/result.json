@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "in-stretch minus out-of-stretch mean next-bar return",
+    "value": 0.01144308395076019,
+    "statistic": {
+      "name": "Welch t",
+      "value": 5.5421507683559135
+    },
+    "threshold": "confirm if positive with Welch t >= 2; reject if negative with Welch t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "share of up next-bars in-stretch minus out-of-stretch",
+    "value": 0.28166216430955027,
+    "passed": true
+  },
+  "counts": {
+    "in-stretch bars": 290,
+    "out-of-stretch bars": 434,
+    "distinct up-cross stretches": 5
+  },
+  "decided_by": "The in-stretch minus out-of-stretch mean next-bar return is positive with t >= 2.",
+  "reading": "Situation is the raw SMA spread > 0 on long bars. In-stretch means forecast > 0 and out-of-stretch means forecast = 0, pooled over all windows with one next-bar return per bar inside its window. A distinct up-cross stretch is a contiguous run of forecast > 0 bars within one window, and a run already open at the window's start counts. 'Up' means a next-bar return > 0, and the supporting check passes if the difference in up shares is > 0."
+}

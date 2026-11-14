@@ -1,0 +1,318 @@
+brief: n08_opening_range_breakout_eth_1h.md
+ideas:
+  - id: asia_or_break_continuation
+    belief: A close beyond the 00-04 UTC opening range shows that the day's first directional flow has started, and it keeps going for the next several hours.
+    claim:
+      when: The first hourly close of the UTC day above the 00-04 UTC range high or below its low, after 04 UTC.
+      then: Price keeps moving in the break direction over the next 8 hours, enough to pay the cost.
+      compared_to: Zero after the 0.15% round-trip cost.
+      measure: net_return
+      horizon_bars: 8
+      direction: positive
+      min_effect: 0.002
+      code: |
+        t = df.index - pd.Timedelta(hours=1)
+        day = pd.Series(t.normalize(), index=df.index)
+        hod = pd.Series(t.hour, index=df.index)
+        inor = hod < 4
+        post = hod >= 4
+        or_hi = df.high.where(inor).groupby(day).transform('max')
+        or_lo = df.low.where(inor).groupby(day).transform('min')
+        up = post & (df.close > or_hi)
+        dn = post & (df.close < or_lo)
+        brk = up | dn
+        a = brk & (brk.astype(int).groupby(day).cumsum() == 1)
+        b = ~a
+        signal = pd.Series(np.where(up, 1, -1), index=df.index)
+    why_no_lookahead: The range uses only bars that open from 00 to 03 UTC, and it is applied only to bars opening at 04 UTC or later, so it is complete by then.
+    how_it_trades: On the first close outside the Asian opening range, enter in the break direction and exit 8 hours later.
+
+  - id: or_false_break_reversal
+    belief: The first wick through the opening range that closes back inside is a stop-run, and price then rotates toward the other side of the range.
+    claim:
+      when: The first bar after 04 UTC whose high goes above the 00-04 range high (or whose low goes below the range low) but whose close is back inside the range.
+      then: Price moves away from the failed side over the next 6 hours.
+      compared_to: Zero after the 0.15% round-trip cost.
+      measure: net_return
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.0015
+      code: |
+        t = df.index - pd.Timedelta(hours=1)
+        day = pd.Series(t.normalize(), index=df.index)
+        hod = pd.Series(t.hour, index=df.index)
+        inor = hod < 4
+        post = hod >= 4
+        or_hi = df.high.where(inor).groupby(day).transform('max')
+        or_lo = df.low.where(inor).groupby(day).transform('min')
+        inside = (df.close <= or_hi) & (df.close >= or_lo)
+        tu = post & (df.high > or_hi)
+        td = post & (df.low < or_lo)
+        fu = tu & (tu.astype(int).groupby(day).cumsum() == 1) & inside & ~td
+        fd = td & (td.astype(int).groupby(day).cumsum() == 1) & inside & ~tu
+        a = fu | fd
+        b = ~a
+        signal = pd.Series(np.where(fu, -1, 1), index=df.index)
+    why_no_lookahead: The range is fixed by 04 UTC, and the touch and the close back inside are both known at the close of the bar.
+    how_it_trades: When the first wick through a range edge closes back inside, fade it and exit after 6 hours.
+
+  - id: london_takes_asia_range
+    belief: European participants arriving at 07 UTC run the liquidity sitting beyond the Asian-session range, and a close beyond that range sets the direction into the European day.
+    claim:
+      when: The first close between 07 and 12 UTC above the 00-07 UTC high or below its low.
+      then: Price continues in the break direction over the next 6 hours.
+      compared_to: Zero after the 0.15% round-trip cost.
+      measure: net_return
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.002
+      code: |
+        t = df.index - pd.Timedelta(hours=1)
+        day = pd.Series(t.normalize(), index=df.index)
+        hod = pd.Series(t.hour, index=df.index)
+        asia = hod < 7
+        win = (hod >= 7) & (hod <= 11)
+        as_hi = df.high.where(asia).groupby(day).transform('max')
+        as_lo = df.low.where(asia).groupby(day).transform('min')
+        up = win & (df.close > as_hi)
+        dn = win & (df.close < as_lo)
+        brk = up | dn
+        a = brk & (brk.astype(int).groupby(day).cumsum() == 1)
+        b = ~a
+        signal = pd.Series(np.where(up, 1, -1), index=df.index)
+    why_no_lookahead: The Asian range uses bars opening from 00 to 06 UTC, and it is applied only to bars opening from 07 UTC on.
+    how_it_trades: During the European morning, enter on the first close beyond the Asian range in that direction and hold 6 hours.
+
+  - id: us_open_range_break
+    belief: US equity-open and ETF flows from 13 UTC set the direction of the US afternoon, and a break of the first two US hours captures it.
+    claim:
+      when: The first close between 15 and 20 UTC beyond the high or low of the bars from 13 to 15 UTC.
+      then: Price continues in the break direction over the next 4 hours.
+      compared_to: Zero after the 0.15% round-trip cost.
+      measure: net_return
+      horizon_bars: 4
+      direction: positive
+      min_effect: 0.002
+      code: |
+        t = df.index - pd.Timedelta(hours=1)
+        day = pd.Series(t.normalize(), index=df.index)
+        hod = pd.Series(t.hour, index=df.index)
+        uor = (hod >= 13) & (hod <= 14)
+        win = (hod >= 15) & (hod <= 20)
+        u_hi = df.high.where(uor).groupby(day).transform('max')
+        u_lo = df.low.where(uor).groupby(day).transform('min')
+        up = win & (df.close > u_hi)
+        dn = win & (df.close < u_lo)
+        brk = up | dn
+        a = brk & (brk.astype(int).groupby(day).cumsum() == 1)
+        b = ~a
+        signal = pd.Series(np.where(up, 1, -1), index=df.index)
+    why_no_lookahead: The US range uses bars opening at 13 and 14 UTC, and it is applied only to bars opening from 15 UTC on.
+    how_it_trades: Enter on the first close outside the US opening range in the break direction and exit 4 hours later.
+
+  - id: volume_confirmed_break
+    belief: A range break carried by heavy volume reflects real participation and continues, while a thin-volume break is noise.
+    claim:
+      when: First breaks of the 00-04 UTC range whose bar volume is at least 2 times the average volume of the opening-range bars.
+      then: Continuation in the break direction over the next 8 hours is larger.
+      compared_to: First breaks whose bar volume is below 1.2 times the opening-range average.
+      measure: mean_diff
+      horizon_bars: 8
+      direction: positive
+      min_effect: 0.002
+      code: |
+        t = df.index - pd.Timedelta(hours=1)
+        day = pd.Series(t.normalize(), index=df.index)
+        hod = pd.Series(t.hour, index=df.index)
+        inor = hod < 4
+        post = hod >= 4
+        or_hi = df.high.where(inor).groupby(day).transform('max')
+        or_lo = df.low.where(inor).groupby(day).transform('min')
+        or_v = df.volume.where(inor).groupby(day).transform('mean')
+        up = post & (df.close > or_hi)
+        dn = post & (df.close < or_lo)
+        brk = up | dn
+        first = brk & (brk.astype(int).groupby(day).cumsum() == 1)
+        vr = df.volume / or_v
+        a = first & (vr >= 2.0)
+        b = first & (vr < 1.2)
+        signal = pd.Series(np.where(up, 1, -1), index=df.index)
+    why_no_lookahead: The opening-range volume average is complete by 04 UTC, and the break bar's own volume is known at its close.
+    how_it_trades: Trade only opening-range breaks whose break bar has at least 2 times the opening-range volume, hold 8 hours.
+
+  - id: break_bar_vol_expansion
+    belief: A break of the opening range releases stored orders and starts a period of larger moves than hours that stay inside the range.
+    claim:
+      when: The first close of the day beyond the 00-04 UTC range.
+      then: The absolute 4-hour forward move is larger.
+      compared_to: Bars opening from 04 to 20 UTC that close inside the opening range.
+      measure: abs_ratio
+      horizon_bars: 4
+      direction: above
+      min_effect: 1.3
+      code: |
+        t = df.index - pd.Timedelta(hours=1)
+        day = pd.Series(t.normalize(), index=df.index)
+        hod = pd.Series(t.hour, index=df.index)
+        inor = hod < 4
+        post = (hod >= 4) & (hod <= 20)
+        or_hi = df.high.where(inor).groupby(day).transform('max')
+        or_lo = df.low.where(inor).groupby(day).transform('min')
+        brk = (hod >= 4) & ((df.close > or_hi) | (df.close < or_lo))
+        a = brk & (brk.astype(int).groupby(day).cumsum() == 1)
+        b = post & ~brk
+        signal = pd.Series(np.where(df.close > or_hi, 1, -1), index=df.index)
+    why_no_lookahead: The range is complete by 04 UTC, and both whether a bar breaks and whether it stays inside are known at its close.
+    how_it_trades: Use the first break as a trigger to go long volatility, or to widen stops and targets, for the next 4 hours.
+
+  - id: inside_by_midday_quiet
+    belief: A day that has not broken its opening range by 12 UTC is a balance day, and the afternoon stays quiet.
+    claim:
+      when: The bar opening at 12 UTC, on days whose high and low since 04 UTC are still inside the 00-04 UTC range.
+      then: The absolute 8-hour forward move is smaller.
+      compared_to: The bar opening at 12 UTC on days that have already broken the range.
+      measure: abs_ratio
+      horizon_bars: 8
+      direction: below
+      min_effect: 0.85
+      code: |
+        t = df.index - pd.Timedelta(hours=1)
+        day = pd.Series(t.normalize(), index=df.index)
+        hod = pd.Series(t.hour, index=df.index)
+        inor = hod < 4
+        post = hod >= 4
+        or_hi = df.high.where(inor).groupby(day).transform('max')
+        or_lo = df.low.where(inor).groupby(day).transform('min')
+        ph = df.high.where(post).groupby(day).cummax()
+        pl = df.low.where(post).groupby(day).cummin()
+        inside = (ph <= or_hi) & (pl >= or_lo)
+        a = (hod == 12) & inside
+        b = (hod == 12) & ~inside & ph.notna()
+        signal = pd.Series(1, index=df.index)
+    why_no_lookahead: The running high and low use only bars of the day up to and including the 12 UTC bar, and the range is complete by 04 UTC.
+    how_it_trades: On days still inside the range at midday, fade moves toward the range edges, or sell volatility, until 20 UTC.
+
+  - id: or_close_location_drift
+    belief: Where price closes inside the opening range shows who won the first hours, and the rest of the day drifts the same way.
+    claim:
+      when: The last opening-range bar (opening at 03 UTC), on days with a non-zero range.
+      then: The 20-hour forward return rises with the close's position inside the 00-04 UTC range.
+      compared_to: Rank correlation across those bars.
+      measure: rank_corr
+      horizon_bars: 20
+      direction: positive
+      min_effect: 0.06
+      code: |
+        t = df.index - pd.Timedelta(hours=1)
+        day = pd.Series(t.normalize(), index=df.index)
+        hod = pd.Series(t.hour, index=df.index)
+        inor = hod < 4
+        or_hi = df.high.where(inor).groupby(day).transform('max')
+        or_lo = df.low.where(inor).groupby(day).transform('min')
+        width = or_hi - or_lo
+        a = (hod == 3) & (width > 0)
+        b = ~a
+        feature = (df.close - or_lo) / width - 0.5
+        signal = pd.Series(np.sign(feature).replace(0, 1), index=df.index)
+    why_no_lookahead: At the close of the 03 UTC bar, all four opening-range bars are complete, so the range and the close location are known.
+    how_it_trades: At 04 UTC, go long if the close is in the upper part of the opening range and short if in the lower part, and exit at the end of the day.
+
+  - id: weekday_vs_weekend_break
+    belief: Weekend breaks happen in thin books without institutional follow-through, so weekday breaks continue better.
+    claim:
+      when: First breaks of the 00-04 UTC range on Monday to Friday.
+      then: Continuation in the break direction over the next 8 hours is larger.
+      compared_to: First breaks on Saturday and Sunday.
+      measure: mean_diff
+      horizon_bars: 8
+      direction: positive
+      min_effect: 0.002
+      code: |
+        t = df.index - pd.Timedelta(hours=1)
+        day = pd.Series(t.normalize(), index=df.index)
+        hod = pd.Series(t.hour, index=df.index)
+        wd = pd.Series(t.dayofweek, index=df.index)
+        inor = hod < 4
+        post = hod >= 4
+        or_hi = df.high.where(inor).groupby(day).transform('max')
+        or_lo = df.low.where(inor).groupby(day).transform('min')
+        up = post & (df.close > or_hi)
+        dn = post & (df.close < or_lo)
+        brk = up | dn
+        first = brk & (brk.astype(int).groupby(day).cumsum() == 1)
+        a = first & (wd < 5)
+        b = first & (wd >= 5)
+        signal = pd.Series(np.where(up, 1, -1), index=df.index)
+    why_no_lookahead: The weekday comes from the bar's own time, and the range is complete by 04 UTC.
+    how_it_trades: Trade opening-range breaks on weekdays only and skip weekend breaks.
+
+  - id: second_side_break_trap
+    belief: When the first break is reversed and price then breaks the opposite edge, traders caught on the first break are forced out, and the second break runs.
+    claim:
+      when: The first close beyond one edge of the 00-04 UTC range on a day when the opposite edge was already closed beyond earlier.
+      then: Price continues in the direction of the second break over the next 6 hours.
+      compared_to: Zero after the 0.15% round-trip cost.
+      measure: net_return
+      horizon_bars: 6
+      direction: positive
+      min_effect: 0.002
+      code: |
+        t = df.index - pd.Timedelta(hours=1)
+        day = pd.Series(t.normalize(), index=df.index)
+        hod = pd.Series(t.hour, index=df.index)
+        inor = hod < 4
+        post = hod >= 4
+        or_hi = df.high.where(inor).groupby(day).transform('max')
+        or_lo = df.low.where(inor).groupby(day).transform('min')
+        up = post & (df.close > or_hi)
+        dn = post & (df.close < or_lo)
+        cu = up.astype(int).groupby(day).cumsum()
+        cd = dn.astype(int).groupby(day).cumsum()
+        su = up & (cu == 1) & (cd > 0)
+        sd = dn & (cd == 1) & (cu > 0)
+        a = su | sd
+        b = ~a
+        signal = pd.Series(np.where(su, 1, -1), index=df.index)
+    why_no_lookahead: The cumulative break counts include only the day's bars up to the current one, and the range is complete by 04 UTC.
+    how_it_trades: After a failed first break, enter on the first close beyond the opposite edge in that direction and hold 6 hours.
+
+  - id: break_aligned_with_prior_day
+    belief: An opening-range break in the direction of the prior UTC day's move joins a running trend and continues, while a counter-trend break is more often a retracement that fails.
+    claim:
+      when: First breaks of the 00-04 UTC range in the same direction as the prior UTC day's close-to-close return.
+      then: Continuation in the break direction over the next 8 hours is larger.
+      compared_to: First breaks against the prior day's return.
+      measure: mean_diff
+      horizon_bars: 8
+      direction: positive
+      min_effect: 0.002
+      code: |
+        t = df.index - pd.Timedelta(hours=1)
+        day = pd.Series(t.normalize(), index=df.index)
+        hod = pd.Series(t.hour, index=df.index)
+        inor = hod < 4
+        post = hod >= 4
+        or_hi = df.high.where(inor).groupby(day).transform('max')
+        or_lo = df.low.where(inor).groupby(day).transform('min')
+        up = post & (df.close > or_hi)
+        dn = post & (df.close < or_lo)
+        brk = up | dn
+        first = brk & (brk.astype(int).groupby(day).cumsum() == 1)
+        dc = df.close.groupby(day).last()
+        prev = day.map(dc.pct_change().shift(1))
+        signal = pd.Series(np.where(up, 1, -1), index=df.index)
+        aligned = np.sign(prev) == signal
+        a = first & aligned & prev.notna()
+        b = first & ~aligned & prev.notna() & (prev != 0)
+    why_no_lookahead: The prior-day return uses only the closes of earlier complete UTC days, shifted by one day.
+    how_it_trades: Take opening-range breaks only when they point the same way as the prior day's move, and hold 8 hours.
+notes: >
+  The day is keyed on bar open time (index minus 1 hour), so the 00-04 UTC opening range is the bars opening at 00, 01, 02 and 03 UTC.
+  Range highs and lows are taken with transform over range bars only and used only after the range has closed.
+  The ideas cover four groups:
+  direction (1, 3, 4, 8, 10),
+  failure and reversal (2, which contradicts 10 on purpose),
+  conditional filters (5, 9, 11),
+  size after a break or no break (6, 7).
+  Fading stretches from VWAP or the range midpoint is not repeated, since it is listed under already_tried.
+  Session variants (Asia, London-takes-Asia, US) are kept as separate ideas because each one rests on a different group of participants, not on a different window length.

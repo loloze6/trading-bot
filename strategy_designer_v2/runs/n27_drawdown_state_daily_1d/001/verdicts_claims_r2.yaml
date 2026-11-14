@@ -1,0 +1,67 @@
+claims_file: strategy_designer_v2/runs/n27_drawdown_state_daily_1d/001/claims_r2.yaml
+fold: B
+bar_size: 1d
+symbols:
+- BTCUSD
+- ETHUSD
+- LTCUSD
+rule: min_effect in direction on the fold; same sign in >= 5 of 6 windows; >= 30 bars
+  in a and b; cost 0.15% per round trip
+ideas:
+  dd60_depth_ranks_forward_return:
+    verdict: fail
+    by_symbol:
+      BTCUSD:
+        verdict: fail
+        effect: -0.0165988534356071
+        t_stat: -0.45
+        n_a: 730
+        n_b: 730
+        windows:
+        - -0.5207852342933794
+        - 0.3682553792897058
+        - -0.6551924684671586
+        - -0.3121074150984768
+        - -0.48020001388985345
+        - 0.05654267218732341
+        agreeing_windows: 4 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      ETHUSD:
+        verdict: fail
+        effect: 0.11489977615768958
+        t_stat: 3.12
+        n_a: 730
+        n_b: 730
+        windows:
+        - -0.3744695670119049
+        - -0.030009028404750324
+        - -0.6063171530026896
+        - -0.037765538945712045
+        - -0.2514410722966872
+        - -0.135241771060171
+        agreeing_windows: 0 of 6
+        checks:
+          meets_min_effect: true
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true
+      LTCUSD:
+        verdict: fail
+        effect: 0.05786241592186046
+        t_stat: 1.56
+        n_a: 730
+        n_b: 730
+        windows:
+        - -0.43941204068758777
+        - 0.2609639261299696
+        - -0.4684712370781012
+        - -0.16498588465584357
+        - -0.4930524568596515
+        - -0.07308481566051267
+        agreeing_windows: 1 of 6
+        checks:
+          meets_min_effect: false
+          same_sign_in_5_of_6: false
+          min_30_bars_each: true

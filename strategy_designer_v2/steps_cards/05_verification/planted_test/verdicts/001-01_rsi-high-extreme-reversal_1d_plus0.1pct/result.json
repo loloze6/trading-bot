@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled excess forward 5-bar return after forecast <= -10 (vs coin/window mean 5-bar return)",
+    "value": -0.013658945721682662,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -1.521576007967325
+    },
+    "threshold": "confirm if pooled excess < 0 with t <= -2 and negative in >= 2 of 3 coins; reject if pooled excess > 0 with t >= +2; inconclusive otherwise or if < 30 cases"
+  },
+  "supporting_check": {
+    "name": "number of coins with negative mean excess return (need >= 2)",
+    "value": 2,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping extreme cases pooled": 60,
+    "coins in record": 2,
+    "coins with negative excess": 2
+  },
+  "decided_by": "The t-statistic lies strictly between -2 and +2, so the plan rules inconclusive.",
+  "reading": "Extreme cases are grid bars (positions 0,5,10,... of each window) with forecast <= -10, the holding baseline is the mean 5-bar forward return over all bars of that coin and window that have one, and with only the coins present in the record the coin rule still requires at least 2 coins negative."
+}

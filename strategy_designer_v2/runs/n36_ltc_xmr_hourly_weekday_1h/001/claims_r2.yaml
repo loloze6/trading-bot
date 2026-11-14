@@ -1,0 +1,27 @@
+brief: n36_ltc_xmr_hourly_weekday_1h.md
+source: analyst round 2
+ideas:
+- id: weekend_quiet_regime
+  belief: On LTC and XMR, hourly volatility is driven by weekday trading-desk flow
+    (the US-open block is loud, the Asia block is quiet), so weekend hours carry a
+    lower-volatility regime than weekday hours.
+  claim:
+    when: every hourly bar on Saturday or Sunday UTC
+    then: the absolute return of the next bar is smaller
+    compared_to: every hourly bar Monday to Friday UTC
+    measure: abs_ratio
+    horizon_bars: 1
+    direction: below
+    min_effect: 0.85
+    code: 'a = dow >= 5
+
+      b = ~a
+
+      signal = pd.Series(1.0, index=df.index)
+
+      '
+  why_no_lookahead: The selector uses only the bar's own UTC weekday, which is known
+    at its close.
+  how_it_trades: Cut position size or tighten breakout thresholds on weekends, and
+    keep volatility-seeking entries for weekday US hours. It is a regime filter, not
+    a return bet.

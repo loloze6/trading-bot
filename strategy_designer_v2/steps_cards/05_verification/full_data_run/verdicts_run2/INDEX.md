@@ -1,0 +1,6 @@
+002-01_sma-golden-cross-upward-drift_1d: inconclusive (fit: adapted) [main: 0.000223776; OLS t of slope 0.410585; non-overlapping blocks with forecast > 0 832, non-overlapping blocks 1657]
+002-02_sma-death-cross-downward-drift_1d: inconclusive (fit: adapted) [main: 0.00149497; t of |forecast|-weighted mean (weighted standard error) 0.261822; non-overlapping short cases 825]
+002-03_price-cross-above-long-sma_1d: inconclusive (fit: adapted) [main: 0.209052; t of the block mean 1.24871; non-overlapping 20-bar blocks with a non-zero position 499, non-overlapping 20-bar blocks 811, bars with forecast > 0 7046]
+002-04_price-cross-below-long-sma_1d: inconclusive (fit: adapted) [main: -0.000724788; t of the mean -0.274762; non-overlapping 10-bar blocks with a nonzero position 930, non-overlapping 10-bar blocks 1657]
+002-05_up-cross-to-reverse-cross-gain_1d: inconclusive (fit: adapted) [main: -1.57075e-05; Newey-West t (10 lags) -0.0427241; distinct up-cross spans 127, bars with a positive forecast 8569, all bars 17022]
+002-06_down-cross-to-reverse-cross-loss_1d: inconclusive (fit: adapted) [main: 6.57232e-05; t of the weighted mean 0.116595; pooled bars with forecast below 0 8453]

@@ -1,0 +1,190 @@
+brief: n15_eth_hourly_momentum_horizons_1h.md
+ideas:
+  - id: mom_168h_plain_rankcorr
+    belief: ETH's past week of return carries slow-moving trend information that keeps paying over the next three days.
+    claim:
+      when: every bar with a full 168-bar return history
+      then: the 72-bar forward return rises with the past 168-bar return
+      compared_to: not used (rank correlation)
+      measure: rank_corr
+      horizon_bars: 72
+      direction: positive
+      min_effect: 0.03
+      code: |
+        feature = df.close / df.close.shift(168) - 1
+        a = feature.notna()
+        b = ~a
+        signal = np.sign(feature).replace(0, 1)
+    why_no_lookahead: The feature uses only the closes at the bar and 168 bars before it.
+    how_it_trades: Hold long when the 168-bar return is positive and short or flat when it is negative, rechecked daily.
+  - id: mom_24h_short_reversal
+    belief: A one-day ETH move is mostly liquidity-driven overshoot that partly gives back over the next day, unlike the weekly trend.
+    claim:
+      when: every bar with a full 24-bar return history
+      then: the 24-bar forward return rises with the negative of the past 24-bar return
+      compared_to: not used (rank correlation)
+      measure: rank_corr
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.03
+      code: |
+        r24 = df.close / df.close.shift(24) - 1
+        feature = -r24
+        a = feature.notna()
+        b = ~a
+        signal = -np.sign(r24).replace(0, 1)
+    why_no_lookahead: The feature uses only the closes at the bar and 24 bars before it.
+    how_it_trades: Fade the last 24 hours' move and hold for 24 hours.
+  - id: mom_72h_vol_scaled_rankcorr
+    belief: A 3-day move is a stronger signal when it is large relative to recent hourly volatility, so the risk-adjusted move predicts better than the raw move.
+    claim:
+      when: every bar with full 72-bar return and 168-bar volatility history
+      then: the 48-bar forward return rises with the 72-bar return divided by 168-bar hourly volatility times sqrt(72)
+      compared_to: not used (rank correlation)
+      measure: rank_corr
+      horizon_bars: 48
+      direction: positive
+      min_effect: 0.03
+      code: |
+        r72 = df.close / df.close.shift(72) - 1
+        vol = ret.rolling(168).std()
+        feature = r72 / (vol * np.sqrt(72))
+        a = feature.notna() & np.isfinite(feature)
+        b = ~a
+        signal = np.sign(feature).replace(0, 1)
+    why_no_lookahead: The return and the rolling volatility use only bars at or before the current close.
+    how_it_trades: Size a long or short position by the vol-scaled 3-day move and hold for 2 days.
+  - id: sign_only_up_hour_share
+    belief: Persistent buying shows up as a high share of up hours over the week, whatever their size, and that consistency predicts continuation better than one big candle.
+    claim:
+      when: every bar with 168 bars of history
+      then: the 72-bar forward return rises with the share of up hours in the past 168 bars
+      compared_to: not used (rank correlation)
+      measure: rank_corr
+      horizon_bars: 72
+      direction: positive
+      min_effect: 0.03
+      code: |
+        feature = (ret > 0).astype(float).rolling(168).mean() - 0.5
+        a = feature.notna() & ret.rolling(168).count().eq(168)
+        b = ~a
+        signal = np.sign(feature).replace(0, 1)
+    why_no_lookahead: The share counts only past hourly returns up to the current bar.
+    how_it_trades: Go long when more than half the past week's hours closed up and short otherwise, holding 3 days.
+  - id: multi_horizon_sign_agreement
+    belief: When the 1-day, 3-day and 7-day trends all point the same way, flows are aligned across trader horizons and the trend is more likely to continue.
+    claim:
+      when: bars where the signs of the 24-, 72- and 168-bar returns all agree
+      then: the 72-bar forward return goes in the agreed direction more often
+      compared_to: bars where the three signs disagree, signed by the 168-bar return
+      measure: hit_rate
+      horizon_bars: 72
+      direction: positive
+      min_effect: 0.03
+      code: |
+        s24 = np.sign(df.close / df.close.shift(24) - 1)
+        s72 = np.sign(df.close / df.close.shift(72) - 1)
+        s168 = np.sign(df.close / df.close.shift(168) - 1)
+        valid = s168.notna() & (s24 != 0) & (s72 != 0) & (s168 != 0)
+        a = valid & (s24 == s72) & (s72 == s168)
+        b = valid & ~a
+        signal = s168.replace(0, 1).fillna(1)
+    why_no_lookahead: All three signs use closes at or before the current bar.
+    how_it_trades: Trade in the trend direction only when all three horizons agree, and hold for 3 days.
+  - id: mom_168h_works_in_calm_regime
+    belief: Weekly momentum persists in calm markets, where trends come from slow flows, and breaks down in high-volatility regimes, where moves are liquidation noise.
+    claim:
+      when: bars where 168-bar hourly volatility is below its rolling 30-day median
+      then: following the sign of the 168-bar return earns more over 72 bars
+      compared_to: bars where that volatility is above its rolling median
+      measure: mean_diff
+      horizon_bars: 72
+      direction: positive
+      min_effect: 0.003
+      code: |
+        r168 = df.close / df.close.shift(168) - 1
+        vol = ret.rolling(168).std()
+        med = vol.rolling(720).median()
+        valid = r168.notna() & med.notna()
+        a = valid & (vol < med)
+        b = valid & (vol >= med)
+        signal = np.sign(r168).replace(0, 1).fillna(1)
+    why_no_lookahead: The volatility, its median and the return all use only past bars.
+    how_it_trades: Run weekly momentum only when realized volatility is below its 30-day median.
+  - id: mom_168h_volume_confirmed
+    belief: A weekly trend that comes with rising volume reflects real participation and continues more than a trend on fading volume.
+    claim:
+      when: bars where the past 168 bars' volume exceeds the 168 bars before that
+      then: following the sign of the 168-bar return earns more over 72 bars
+      compared_to: bars where weekly volume fell versus the prior week
+      measure: mean_diff
+      horizon_bars: 72
+      direction: positive
+      min_effect: 0.003
+      code: |
+        r168 = df.close / df.close.shift(168) - 1
+        v = df.volume.rolling(168).sum()
+        vprev = v.shift(168)
+        valid = r168.notna() & vprev.notna()
+        a = valid & (v > vprev)
+        b = valid & (v <= vprev)
+        signal = np.sign(r168).replace(0, 1).fillna(1)
+    why_no_lookahead: The volume sums cover only bars at or before the current close.
+    how_it_trades: Take weekly momentum trades only when weekly volume is rising.
+  - id: downtrend_persists_more_than_uptrend
+    belief: ETH downtrends persist more than uptrends because deleveraging cascades and risk-off flows are self-reinforcing, while rallies get sold.
+    claim:
+      when: bars where the 168-bar return is negative
+      then: following the trend (short) earns more over 72 bars
+      compared_to: bars where the 168-bar return is positive (long)
+      measure: mean_diff
+      horizon_bars: 72
+      direction: positive
+      min_effect: 0.003
+      code: |
+        r168 = df.close / df.close.shift(168) - 1
+        a = r168 < 0
+        b = r168 > 0
+        signal = np.sign(r168).replace(0, 1).fillna(1)
+    why_no_lookahead: The sign comes from the closes at the bar and 168 bars before it.
+    how_it_trades: Apply weekly momentum on the short side only, or size the short side larger.
+  - id: trend_acceleration_rankcorr
+    belief: When the last day's move outpaces the weekly pace, a trend is accelerating as new money joins, and it carries on over the next day.
+    claim:
+      when: every bar with 168 bars of history
+      then: the 24-bar forward return rises with the 24-bar return minus one seventh of the 168-bar return, scaled by volatility
+      compared_to: not used (rank correlation)
+      measure: rank_corr
+      horizon_bars: 24
+      direction: positive
+      min_effect: 0.03
+      code: |
+        r24 = df.close / df.close.shift(24) - 1
+        r168 = df.close / df.close.shift(168) - 1
+        vol = ret.rolling(168).std()
+        feature = (r24 - r168 / 7) / (vol * np.sqrt(24))
+        a = feature.notna() & np.isfinite(feature)
+        b = ~a
+        signal = np.sign(feature).replace(0, 1)
+    why_no_lookahead: Every term uses only closes and returns at or before the current bar.
+    how_it_trades: Go long when the daily pace beats the weekly pace and short when it lags, holding 1 day.
+  - id: vol_scaled_168h_rule_net
+    belief: A strong vol-scaled weekly trend, traded as discrete non-overlapping 3-day holds, earns more than the 0.15% round-trip cost.
+    claim:
+      when: bars where the absolute 168-bar return exceeds one 168-bar volatility unit, at most one event per 72 bars
+      then: holding in the trend's direction for 72 bars earns a positive net return
+      compared_to: all other bars (not used by net_return)
+      measure: net_return
+      horizon_bars: 72
+      direction: positive
+      min_effect: 0.003
+      code: |
+        r168 = df.close / df.close.shift(168) - 1
+        vol = ret.rolling(168).std()
+        z = r168 / (vol * np.sqrt(168))
+        a = spaced((z.abs() > 1).fillna(False), 72)
+        b = ~a
+        signal = np.sign(z).replace(0, 1).fillna(1)
+    why_no_lookahead: The z-score uses past closes and past volatility, and spaced only looks at prior bars.
+    how_it_trades: When the vol-scaled weekly move is beyond 1, enter in its direction and exit after 72 hours.
+notes: The rank_corr thresholds of 0.03 reflect the low signal-to-noise of overlapping hourly forward returns; the judge's 5-of-6 window sign rule guards against a single regime driving them. The 24-hour reversal and acceleration ideas contradict the weekly continuation ideas on purpose, so the data can decide which horizon carries signal. Anchor and stretch ideas are left out per already_tried.

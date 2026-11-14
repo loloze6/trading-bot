@@ -1,0 +1,24 @@
+---
+line: 7.b inconclusive
+backtest: N2-04_slow-and-fast-momentum_1d
+idea tested: N2-04_slow-and-fast-momentum
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.3022 USD
+---
+## Findings
+- **F1:** The pooled effect is buried in noise: active blocks earn a mean 20-bar excess of +0.018 (t 0.82, n 269 non-overlapping blocks), but the median is -0.030, only 43% of excess returns are positive, skew is 7.3, and the 5%-trimmed mean is -0.009, so a few large gains carry the mean.
+- **F2:** The effect appears when the whole market is trending up too: active blocks where BTC's own 60-bar and 20-bar returns are both positive earn +0.078 mean excess (t 3.09, n 102, trimmed mean +0.052, hit 0.62). Active blocks where BTC is not up on both earn -0.082 (t -2.05, n 37, hit 0.32).
+- **F3:** The split on BTC's 60-bar return alone shows the same pattern: +0.058 (t 2.42, n 118, hit 0.59) with BTC up against -0.094 (t -2.06, n 21, hit 0.24) with BTC down. Inactive blocks are near zero or negative in both states (-0.032, t -1.88, n 153 and -0.003, t -0.11, n 98).
+- **F4:** Within the BTC-up active blocks the sign is positive in every coin, from LTC +0.025 to XRP +0.142, with ETH strongest (+0.073, t 2.06, n 24, hit 0.79). It is positive in 5 of 7 years, with 2022 (-0.119, n 6) and 2023 (-0.011, n 29) the exceptions. The per-window means are positive in 10 of 16 windows (t 1.02).
+- **F5:** The edge belongs to the market trend, not to a coin's own strength. With BTC up, alts beat BTC's own forward return by only +0.026 (t 0.85, n 93, median -0.017). Alts whose 60-bar return beats BTC's do no better (+0.066, t 1.06, n 38) than weaker alts (+0.059, t 2.22, n 55).
+- **F6:** Forecast size adds little: excess return is near zero in forecast quartiles q1 to q3 (-0.007 to +0.005) and is higher only in q4 (+0.071, t 0.96, n 67), so the "strongest cases" do not give a clear answer.
+- **F7:** The losses come from market-wide down years: 2018 active blocks lost -0.226 (t -3.71, n 12, hit 0.08) and 2022 lost -0.065 (t -1.58, n 14). These are the periods when the coin's own trend fired against a falling BTC.
+
+## Ideas
+- `N2-04_slow-and-fast-momentum.b1_coin-trend-with-btc-confirmation` (from F2, F3, F4, F7): When a coin's own 60-day and 20-day returns are both positive and BTC's 60-day and 20-day returns are also both positive at the same close, the coin's next 20 days rise more than its average 20-day return.
+- `N2-04_slow-and-fast-momentum.b2_lone-uptrend-against-btc-fades` (from F2, F3, F5, F7): When a coin's own 60-day and 20-day returns are both positive but BTC's 60-day return is negative at that close, the coin's next 20 days rise less than its average 20-day return.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

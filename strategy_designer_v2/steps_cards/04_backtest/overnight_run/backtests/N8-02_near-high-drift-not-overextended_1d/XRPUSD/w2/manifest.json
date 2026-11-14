@@ -1,0 +1,162 @@
+{
+  "run_id": "20261113T040222Z_e82bf9d8",
+  "created_utc": "2026-11-13T04:02:22.093047+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "run30",
+          "class": "strategies.strategy_components.PriceEvolutionComponent",
+          "params": {
+            "period": 30
+          }
+        }
+      ],
+      "vetoes": [
+        {
+          "id": "run30",
+          "transforms": [
+            {
+              "op": "percentile"
+            }
+          ],
+          "rules": [
+            {
+              "op": "gte",
+              "value": 0.9
+            }
+          ],
+          "consecutive_bars": 1,
+          "result": "chop"
+        }
+      ],
+      "rules": [],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "unknown": {
+          "components": [
+            {
+              "id": "recent_high",
+              "class": "strategies.strategy_components.BarsSinceHighComponent",
+              "params": {
+                "lookback": 20,
+                "max_bars": 20
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "min": 0.0
+                  }
+                }
+              ]
+            },
+            {
+              "id": "near_high",
+              "class": "strategies.strategy_components.DonchianBreakoutComponent",
+              "params": {
+                "period": 20
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "min": 0.0
+                  }
+                }
+              ]
+            },
+            {
+              "id": "above_ma",
+              "class": "strategies.strategy_components.MovingAverageDistanceComponent",
+              "params": {
+                "period": 20,
+                "average": "sma"
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "min": 0.0
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "mean_reversion": null,
+        "chop": null
+      }
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 3,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 7.5,
+        "BTCUSD": 2.5,
+        "ETHUSD": 4,
+        "AVAXUSD": 7.5,
+        "SOLUSD": 7.5
+      }
+    }
+  },
+  "config_sha256": "e82bf9d829beb343f99beaa4e33b48f5640583f5931051b91947f90c8fc7581d",
+  "data": {
+    "symbols": [
+      "XRPUSD"
+    ],
+    "timeframe": "86400s",
+    "start": "2021-12-30 00:00:00",
+    "end": "2022-08-31 00:00:00",
+    "bar_count": 243,
+    "data_sha256": "8ddaaeb8486c8ecbc4338eef4e6dbe1894add4233ada0f777efee29465ab4512"
+  },
+  "git_sha": "28d8259d510f5c957a31d8d301ca49bbfdd4c6a1-dirty",
+  "engine": {
+    "lookback": 61,
+    "warmup": 61
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

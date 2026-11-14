@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "forecast-weighted 20-bar excess return, block mean over non-overlapping 20-bar blocks",
+    "value": 0.3397614785427329,
+    "statistic": {
+      "name": "t of the block mean",
+      "value": 1.2489809610237559
+    },
+    "threshold": "confirm if block mean > 0 with t >= 2; reject if block mean < 0 with t <= -2; else inconclusive; inconclusive if fewer than 50 blocks with a non-zero position"
+  },
+  "supporting_check": {
+    "name": "share of forecast>0 bars whose next 20-bar return beats 20 x pooled mean daily return, vs 50%",
+    "value": 0.4198126596650582,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping 20-bar blocks with a non-zero position": 499,
+    "non-overlapping 20-bar blocks": 811,
+    "bars with forecast > 0": 7046
+  },
+  "decided_by": "Inconclusive: t lies between -2 and 2.",
+  "reading": "Allocation is postRebalance_current_allocation, blocks are rows 0-19, 20-39, ... of each window summed over bars that have a 20-bar forward return, the t-statistic is taken over the blocks holding a non-zero position (the blocks the plan's minimum counts), and the supporting check passes when the share exceeds 50%."
+}

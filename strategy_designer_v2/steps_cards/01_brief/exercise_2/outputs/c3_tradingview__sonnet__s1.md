@@ -1,0 +1,7 @@
+---
+source: TradingView, "SMAcross-mvr" (SMAcross-mvrNew v2) by vmedaram1, a moving-average crossover strategy page
+---
+When a short moving average of prices crosses above a longer one, the coin tends to keep drifting in that direction over the following bars, and the same holds in reverse after a cross below. The source gives no reason; my reason is that large holders build or unwind positions in steps, and slower participants react to a move only after it has persisted, so a trend that has already started is extended. A cross of the short average over the long one is a delayed sign that such a persistent move is under way. The theory is wrong if, after such crosses, price direction over the following bars is no more likely to continue than to reverse, or if it tends to reverse, as it would in a market that mean-reverts around its longer average.
+
+short-name: sma-cross-trend-persistence
+other-theories: Price crossing the long average (rather than the two averages crossing) marks trend-continuation entries, a variant of the same idea | Exiting when price closes beyond the short average ends trends earlier than waiting for the opposite cross | Other scripts listed on the page (SPY mean-reversion with ML filter, RSI/SMA pullbacks, 3-bar ignite-pullback-confirm pattern, Ichimoku with Bollinger Bands)

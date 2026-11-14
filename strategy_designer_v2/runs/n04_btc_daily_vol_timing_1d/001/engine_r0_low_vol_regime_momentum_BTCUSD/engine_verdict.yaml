@@ -1,0 +1,147 @@
+claim: low_vol_regime_momentum
+symbol: BTCUSD
+bar_size: 1d
+fold: C
+engine: trading-bot run_backtest, warmup prefetch, kraken 5 bps per leg
+min_bars: 455
+verdict: pass
+passed_as: vol_target
+fold_totals: &id001
+  net_return: 1.0223
+  median_window_sharpe: 2.1024000000000003
+  worst_window_drawdown: 0.1054
+  trades: 43
+full_size:
+  sizing: full size (forecast 10 = 100%)
+  fold_totals:
+    net_return: 1.718
+    median_window_sharpe: 1.63415
+    worst_window_drawdown: 0.4255
+    trades: 43
+  windows:
+  - window: W1
+    net_return: -0.3973
+    trades: 6
+    sharpe: -2.2733
+    max_drawdown: 0.4255
+    exposure_pct: 40.8333
+    cost_drag_pct: 0.9943
+    run_dir: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001/engine_r0_low_vol_regime_momentum_BTCUSD/results/full_size/20261106T011750Z_092799eb
+    seconds: 7
+  - window: W2
+    net_return: 0.2988
+    trades: 11
+    sharpe: 1.814
+    max_drawdown: 0.2104
+    exposure_pct: 64.7541
+    cost_drag_pct: 2.4885
+    run_dir: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001/engine_r0_low_vol_regime_momentum_BTCUSD/results/full_size/20261106T011757Z_092799eb
+    seconds: 7
+  - window: W3
+    net_return: 0.2669
+    trades: 5
+    sharpe: 1.4543
+    max_drawdown: 0.2793
+    exposure_pct: 28.4553
+    cost_drag_pct: 2.2349
+    run_dir: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001/engine_r0_low_vol_regime_momentum_BTCUSD/results/full_size/20261106T011803Z_092799eb
+    seconds: 6
+  - window: W4
+    net_return: 0.1945
+    trades: 7
+    sharpe: 1.3184
+    max_drawdown: 0.1893
+    exposure_pct: 49.5868
+    cost_drag_pct: 3.5639
+    run_dir: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001/engine_r0_low_vol_regime_momentum_BTCUSD/results/full_size/20261106T011810Z_092799eb
+    seconds: 6
+  - window: W5
+    net_return: 0.773
+    trades: 8
+    sharpe: 4.0645
+    max_drawdown: 0.0851
+    exposure_pct: 53.2787
+    cost_drag_pct: 1.2257
+    run_dir: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001/engine_r0_low_vol_regime_momentum_BTCUSD/results/full_size/20261106T011817Z_092799eb
+    seconds: 7
+  - window: W6
+    net_return: 0.2941
+    trades: 6
+    sharpe: 2.1167
+    max_drawdown: 0.1269
+    exposure_pct: 38.2114
+    cost_drag_pct: 2.3492
+    run_dir: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001/engine_r0_low_vol_regime_momentum_BTCUSD/results/full_size/20261106T011823Z_092799eb
+    seconds: 6
+  checks:
+    net_positive_in_5_of_6: true
+    median_window_sharpe_ge_1.0: true
+    worst_window_drawdown_le_20%: false
+  verdict: fail
+vol_target:
+  sizing:
+    kind: vol_target
+    window: 30
+    target_annual_vol: 0.2
+    max_allocation: 1.0
+  fold_totals: *id001
+  windows:
+  - window: W1
+    net_return: -0.0958
+    trades: 5
+    sharpe: -2.3825
+    max_drawdown: 0.1054
+    exposure_pct: 40.8333
+    cost_drag_pct: 1.0675
+    run_dir: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001/engine_r0_low_vol_regime_momentum_BTCUSD/results/vol_target/20261106T011830Z_6b458136
+    seconds: 7
+  - window: W2
+    net_return: 0.237
+    trades: 11
+    sharpe: 2.4318
+    max_drawdown: 0.0824
+    exposure_pct: 64.7541
+    cost_drag_pct: 1.7619
+    run_dir: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001/engine_r0_low_vol_regime_momentum_BTCUSD/results/vol_target/20261106T011836Z_6b458136
+    seconds: 6
+  - window: W3
+    net_return: 0.1584
+    trades: 5
+    sharpe: 2.0564
+    max_drawdown: 0.082
+    exposure_pct: 28.4553
+    cost_drag_pct: 1.0938
+    run_dir: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001/engine_r0_low_vol_regime_momentum_BTCUSD/results/vol_target/20261106T011843Z_6b458136
+    seconds: 7
+  - window: W4
+    net_return: 0.053
+    trades: 7
+    sharpe: 0.9542
+    max_drawdown: 0.0773
+    exposure_pct: 49.5868
+    cost_drag_pct: 4.6705
+    run_dir: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001/engine_r0_low_vol_regime_momentum_BTCUSD/results/vol_target/20261106T011849Z_6b458136
+    seconds: 6
+  - window: W5
+    net_return: 0.355
+    trades: 9
+    sharpe: 4.3892
+    max_drawdown: 0.0306
+    exposure_pct: 53.2787
+    cost_drag_pct: 1.1277
+    run_dir: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001/engine_r0_low_vol_regime_momentum_BTCUSD/results/vol_target/20261106T011856Z_6b458136
+    seconds: 7
+  - window: W6
+    net_return: 0.0939
+    trades: 6
+    sharpe: 2.1484
+    max_drawdown: 0.0361
+    exposure_pct: 38.2114
+    cost_drag_pct: 2.0317
+    run_dir: strategy_designer_v2/runs/n04_btc_daily_vol_timing_1d/001/engine_r0_low_vol_regime_momentum_BTCUSD/results/vol_target/20261106T011902Z_6b458136
+    seconds: 7
+  checks:
+    net_positive_in_5_of_6: true
+    median_window_sharpe_ge_1.0: true
+    worst_window_drawdown_le_20%: true
+  verdict: pass

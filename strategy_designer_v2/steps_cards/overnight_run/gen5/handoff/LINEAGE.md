@@ -1,0 +1,4 @@
+- `N5-01_breakout-after-strong-month` <- `N4-01_breakout-drift-lasts.d1_breakouts-need-prior-momentum` (line 7.d not profitable; backtest N4-01_breakout-drift-lasts_1d)
+- `N5-02_high-below-60-day-fails` <- `N4-01_breakout-drift-lasts.d2_rebound-highs-fail-fast` (line 7.d not profitable; backtest N4-01_breakout-drift-lasts_1d)
+- `N5-03_high-in-confirmed-uptrend` <- `N4-03_breakouts-pay-in-uptrends.d1_breakouts-pay-in-uptrends` (line 7.d not profitable; backtest N4-03_breakouts-pay-in-uptrends_1d)
+- `N5-04_clustered-new-highs` <- `N4-02_new-high-not-shock.b3_repeated-highs-extend-trend` (line 7.b inconclusive; backtest N4-02_new-high-not-shock_1d)

@@ -1,0 +1,12 @@
+run: n33_volume_price_divergence_daily_1d / fold A
+observations:
+  - No claim of the nine passed on all three coins, and none passed on even one coin, so the profit step had nothing to test ("none: no return claim passed").
+  - Most event selectors were too rare to judge. n_a was 5 to 31 per coin, under the 30-bar minimum in all but one case (XMR divergence_precedes_big_move, n_a 31), and it fell as low as 5 (LTC wide_ranges_on_thin_volume).
+  - capitulation_on_rising_volume nearly held on two coins, with net effects of +0.040 on LTC (5 of 6 windows positive) and +0.086 on XMR (5 of 5 non-null windows positive). It reversed on ZEC at -0.082, with every non-null window negative, and on all three coins it had only 9 to 15 events.
+  - distribution_on_rising_volume is the mirror test of capitulation, and it confirms the split by coin. LTC (-0.039) and XMR (-0.029) favour rebound after a high-volume decline, while ZEC (+0.070, all 5 non-null windows positive) favours continuation.
+  - divergence_precedes_big_move nearly held on LTC, with an abs_ratio of 1.189 against a minimum of 1.2. It was below 1 on XMR (0.935) and only 1.067 on ZEC, with windows ranging from 0.43 to 1.58.
+  - Window 5 was negative for almost every claim on every coin, for example rally_on_fading_volume at -0.104 / -0.158 / -0.088 and volume_signed_trend_score at -0.457 / -0.429 / -0.253. This points to a shared market regime rather than a price-volume effect.
+  - volume_signed_trend_score was the only dense test (730 bars), and it shows no usable link. Its rank correlation was +0.016 on LTC, -0.160 on XMR and +0.013 on ZEC, with window signs flipping on every coin.
+  - The hit_rate claims swung by ±0.4 to 0.58 from one window to the next (decline_on_drying_volume on LTC went from -0.467 to +0.445). Those swings are about the size you would expect from 1 to 5 events per window, so they carry no signal.
+next_claim: none
+why: Nine distinct framings of price-volume divergence produced no sign agreement across LTC, XMR and ZEC (ZEC directly opposes the other two on high-volume declines), and the dense test shows near-zero correlation; any further claim would be a threshold change of a tried one or a fit to the shared window-5 regime, not a divergence effect.
