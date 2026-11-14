@@ -1,0 +1,47 @@
+{
+  "line": "7.d",
+  "backtest": "002-04_price-cross-below-long-sma_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.3032361,
+  "findings": {
+    "F1": "The short book lost on its own trades: 1,571 trades lasting 24.6 days on average lost 4.36% gross and 4.46% net, and only 26.0% of them made money, so the loss comes from the forecast and not from fees.",
+    "F2": "The short gain depended on the slope of the 200-day average itself. In the quartile where that average had fallen most over the past 20 bars (\u221215.9% to \u22125.5%), the mean excess 10-bar return was \u22120.0148 and the short gain was +0.0093 (t 1.93, n 199). In the other three slope quartiles the gain was \u22120.0040, \u22120.0014 and \u22120.0008 (t \u22120.84, \u22120.34, \u22120.44, about 199 blocks each).",
+    "F3": "Shorts held while the 200-day average was still rising lost (gain \u22120.0029, t \u22121.11, n 244). The loss was worst when the close was also deep below that rising average (gain \u22120.0107, t \u22121.59, n 63; mean excess 10-bar return +0.0093). Shorts under a falling average gained +0.0024 (n 551).",
+    "F4": "The grading by depth worked against the book. In the deepest distance quartile (close 32% to 72% below the SMA200), the coin rose beyond holding (mean excess +0.0074) and the short gain was \u22120.0040 (t \u22120.65, n 233). The two middle quartiles gained +0.0008 and +0.0014.",
+    "F5": "The losses fell in recovery years. The short gain was \u22120.0184 in 2020 (t \u22123.26, n 87), \u22120.0108 in 2021 (t \u22122.65, n 68) and \u22120.0110 in 2023 (t \u22122.13, n 119). It was positive in the falling-market years 2018 (+0.0125, t 1.59), 2019 (+0.0061, t 2.02) and 2022 (+0.0080, t 1.42).",
+    "F6": "The book's result rests on a few windows. It summed +0.28 in w2 and +0.26 in w14 but \u22120.33 in w16, and it was negative in 19 of the 24 windows. That matches the failed \"lowest Sharpe, one window left out\" measure of \u22120.70."
+  },
+  "ideas": [
+    {
+      "idea": "While a coin's close sits below its 200-day simple moving average, the coin keeps falling beyond its usual drift only while that average is itself declining, and the faster the average declines, the further the coin falls over the following bars.",
+      "consequence": "A trader would short a close below the long average only when the average is turning down, and would size the short by the steepness of that decline instead of by the distance below it, refusing shorts under a still-rising average.",
+      "name": "shorts under falling average",
+      "from": "F2, F3, F5, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "While a coin's close sits below its 200-day simple moving average, the coin keeps falling, and it falls further the farther the close sits below the average, except when the close is far below a still-rising average, where the coin rebounds more the farther below it sits.",
+      "consequence": "A trader would stop deepening a short as the distance under the long average grows while that average still rises, and treat a close deep under a rising average as a reason to refuse the short.",
+      "name": "deep-below-rising-average rebound",
+      "from": "F3, F4, F5",
+      "refs": [
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "002-04_price-cross-below-long-sma.d1_shorts-under-falling-average",
+    "002-04_price-cross-below-long-sma.d2_deep-below-rising-average-rebound"
+  ],
+  "no_ideas": null
+}

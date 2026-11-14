@@ -8,6 +8,8 @@
 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 002-03_price-cross-above-long-sma.d1_rising-distance-above-average_1d: missing-components: The idea needs the change in (close - SMA)/SMA over the last few bars, and its sign, from the coin's [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 002-03_price-upcross-long-sma-drift_1d: plan (fit: adapted) [BTC/USDT, 1d, fold A]
+002-04_price-cross-below-long-sma.d1_below-average-fall-not-stretched_1d: missing-components: The rebound exception needs how far the close sits beneath its recent highest close, and how fast it got there. [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+002-04_price-cross-below-long-sma.d1_shorts-under-falling-average_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 002-04_price-downcross-long-sma-drift_1d: plan (fit: adapted) [BTC/USDT, 1d, fold A]
 002-05_sma-up-regime-positive-drift_1d: plan (fit: adapted) [BTC/USDT, 1d, fold A]
 002-06_sma-down-regime-negative-drift_1d: plan (fit: adapted) [BTC/USDT, 1d, fold A]

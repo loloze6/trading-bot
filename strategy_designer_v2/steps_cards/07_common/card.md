@@ -102,7 +102,7 @@ One analysis per backtest: findings, then ideas, each idea in step 2's format, o
 - **To try later:** a fixed query format instead of Python functions, if the functions prove hard to control.
 
 ## Who judges the output
-The operator: "are these findings true and important, and would I test these ideas?". Code checks the shape.
+The workflow: a line is relevant when one of its ideas, taken through steps 3 to 6, changes the result that sent the backtest to the line (each line's card says which). The operator reads the findings ("are they true and important?"). Code checks the shape.
 
 ## To observe in the tests
 - **Setting values in ideas** ("the 200-day average", "20 bars"). Step 2's definition says no setting value; whether an extra guard is needed is decided by the tests. Exercise 1: almost every idea names values, some inherited from the plan, some new and found in the data (`exercise_1/reading.md`).

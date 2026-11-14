@@ -24,3 +24,19 @@ step 5 measures a rise in the mean return (the same as N7-01 in the overnight ru
 **What the exercise revealed.** The sizing's longer warm-up costs a few windows (XMR 23/24, XRP 22/24): the parked
 warm-up defect of the engine now bites. Both fixed inputs fail on their falls; no input exercises 7.d's other branches
 (a gain too weak; too few trades).
+
+## Third input: 002-04, a gain that fails (added on the operator's instruction)
+
+002-04 (short below the 200-day average, refreshed with the sizing): it loses (Sharpe -0.43, -1.00 against holding,
+Calmar -0.16). 7.d twice (0.63 USD): both runs start from the gain (the short loses on its own trades, not on fees:
+the coin keeps rising while the book is short) and both find that shorts deep below the average rebound.
+
+| Repair | Step 3 | Step 5 | Book, 6 coins | Book, 9 unseen coins (diagnostic) |
+|---|---|---|---|---|
+| run 1 d1: below the average, the coin keeps falling only while the average itself declines | plan (exact) | inconclusive (t -0.37) | Sharpe -0.16, -0.72 against holding, Calmar -0.09 (was -0.43, -1.00, -0.16) | Sharpe -0.43, -0.83, Calmar -0.21 (original book: -0.38, -0.78, -0.19) |
+| run 2 d1: ..., except when the close has already fallen sharply and far below its recent high | missing-components (the distance below the recent high, and the speed of that fall) | | | |
+
+**Reading.** On the falls branch (002-01, 002-03) 7.d's repairs hold on coins it never saw. On the gain branch they
+move the measures only on the coins it read, and not on unseen coins: the short side fights the coins' upward drift,
+and the conditional cut 7.d found there (t 1.93 in one quartile) does not carry over. Two of the five repairs needed a
+component the catalogue does not have (the change of the distance to an average; the distance below the recent high).

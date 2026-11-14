@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "ordinary t of mean allocation x (20-bar return minus coin mean 20-bar return), shorts only",
+    "value": -0.002965160804887248,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": -0.37163576111710506
+    },
+    "threshold": "confirm if t >= 2 and supporting slope < 0; reject if t <= -2; inconclusive otherwise or if fewer than 30 active cases"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 20-bar return on |forecast|, must be below 0",
+    "value": 0.00197786287042368,
+    "passed": false
+  },
+  "counts": {
+    "active cases": 300
+  },
+  "decided_by": "The main t lies between -2 and 2.",
+  "reading": "Situation checked as regime == 'trending' (detector's close below SMA200) and raw 20-bar SMA200 slope (last_history_value) below 0 with forecast below 0; allocation x is the postRebalance_current_allocation held after the case bar's trade, the coin's mean 20-bar return is taken over all non-overlapping grid bars of all its windows, and a case requires forecast < 0 at the grid bar and a close 20 bars later in the same window."
+}

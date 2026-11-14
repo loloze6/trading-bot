@@ -27,3 +27,7 @@ One block per idea that needs components the catalogue does not have.
 
 ## 002-03_price-cross-above-long-sma.d1_rising-distance-above-average_1d
 - Component: MovingAverageDistanceChange: from closes, (close - SMA(period))/SMA(period) x 100 now minus the same value `lookback` bars earlier (e.g. period 200, lookback 10). Positive and growing as the distance widens, negative as it narrows. | measures: situation
+
+## 002-04_price-cross-below-long-sma.d1_below-average-fall-not-stretched_1d
+- Component: DrawdownFromHighComponent: (close / max(close over the last N bars, current included) - 1) x 100, from closes; 0 at a new high, more negative the further the close sits below the recent high | measures: situation
+- Component: DrawdownSpeedComponent: the drawdown from the N-bar high close divided by the number of bars since that high, from closes; more negative the deeper and faster the fall from the high | measures: situation

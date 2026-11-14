@@ -7,6 +7,7 @@
 002-02_sma-downcross-downward-drift_1d: inconclusive (fit: adapted) [main: 0.0102576; t of the mean excess across short blocks 0.318951; short_blocks 20, short_bars 437]
 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs_1d: inconclusive (fit: adapted) [main: 0.0195146; t of the mean 0.606872; grid cases with a positive forecast 284, active bars 6128]
 002-03_price-upcross-long-sma-drift_1d: inconclusive (fit: adapted) [main: 0.00120966; OLS slope t-stat 0.64857; non-overlapping blocks 70, blocks starting with forecast > 0 27]
+002-04_price-cross-below-long-sma.d1_shorts-under-falling-average_1d: inconclusive (fit: exact) [main: -0.00296516; ordinary t of the mean -0.371636; active cases 300]
 002-04_price-downcross-long-sma-drift_1d: inconclusive (fit: adapted) [main: -0.000745799; OLS slope t -0.241659; non-overlapping 10-bar blocks with forecast < 0 43, non-overlapping 10-bar blocks, all bars 70]
 002-05_sma-up-regime-positive-drift_1d: inconclusive (fit: adapted) [main: 0.00144308; Welch t 0.698919; in-stretch bars 290, out-of-stretch bars 434, distinct up-cross stretches 5]
 002-06_sma-down-regime-negative-drift_1d: inconclusive (fit: adapted) [main: -0.00100349; t of weighted mean -0.538966; active bars 434, down-cross stretches 5]

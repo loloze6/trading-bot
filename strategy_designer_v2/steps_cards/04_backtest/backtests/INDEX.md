@@ -7,6 +7,7 @@
 002-02_sma-downcross-downward-drift_1d: ran: BTCUSD 6/6 [1d, fold A]
 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 002-03_price-upcross-long-sma-drift_1d: ran: BTCUSD 6/6 [1d, fold A]
+002-04_price-cross-below-long-sma.d1_shorts-under-falling-average_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 23/24 (1 not run: the engine stopped); ZECUSD 24/24 [1d, folds A, B, C, D]
 002-04_price-downcross-long-sma-drift_1d: ran: BTCUSD 6/6 [1d, fold A]
 002-05_sma-up-regime-positive-drift_1d: ran: BTCUSD 6/6 [1d, fold A]
 002-06_sma-down-regime-negative-drift_1d: ran: BTCUSD 6/6 [1d, fold A]
