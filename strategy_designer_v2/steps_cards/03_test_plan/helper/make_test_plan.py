@@ -20,7 +20,7 @@ from pathlib import Path
 import yaml
 
 HERE = Path(__file__).resolve().parent
-REF = HERE / "reference"   # set from --reference-dir in main()
+REF = HERE / "reference"   # the two references: the strategy config guide and the component catalogue
 DEFAULT_DATA = {"instruments": "BTC, ETH, LTC, XMR, XRP, ZEC", "bar": "1d", "period": "folds A, B, C, D"}   # the cached coins with data in all four folds
 FOLDS = HERE.parents[3] / "strategy-research" / "config" / "folds.yaml"
 BARS_PER_DAY = {"1d": 1, "4h": 6, "1h": 24}
@@ -212,11 +212,7 @@ def main():
     a.add_argument("--plans-dir", type=Path, default=HERE.parent / "plans")
     a.add_argument("--model", default="claude-opus-5-5")
     a.add_argument("--bar", default=None, help="bar size to test on (e.g. 1h), overriding the header and the default")
-    a.add_argument("--reference-dir", type=Path, default=HERE / "reference",
-                   help="the folder of the two references (overnight test: reference_overnight, with two more components)")
     args = a.parse_args()
-    global REF
-    REF = args.reference_dir.resolve()
 
     idea_text, idea_id = args.idea.read_text(), args.idea.stem
     idea_header, _ = header(idea_text)

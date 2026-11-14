@@ -5,19 +5,19 @@
 | Item | What | Status |
 |---|---|---|
 | F1 | 7.d starts from what failed; a repair is the tested idea amended, in full | **Applied** |
-| New | Step 7: an idea is graded or a regime, never an on/off threshold | **Applied** (`07_common/helper/common_rules.md`) |
+| New | An idea is graded or a regime, never an on/off threshold | **Applied** in the shared definition of an idea (`common/idea_definition.md`, steps 2 and 7) |
 | E1, F3 | Sizing by each coin's volatility, 2 % a day, signal unchanged (±20) | **Applied** in step 3 (code adds it to every config); N7-01 now passes on 3 of 4 data sets |
 | F4 | Label a step 7 what-if | **Not taken** |
 | F5, A1 | Limits per data set; unseen-data test after a confirmation | **Parked**: moved to `POTENTIAL_ADJUSTMENTS.md` |
-| F2 | For an amended idea, step 5 tests the new part | Rethought (2026-11-14): no new notion; see the supporting check |
+| F2 | For an amended idea, step 5 tests the new part | **Replaced**: the supporting check counts in the decision (steps 3 and 5) |
 | E2 | Calmar bar absolute or relative to holding | **Kept** at 0.75 (operator) |
 | A2 | Step 5 shows its result per period (information only) | **Not taken**: no informational field |
-| B1, B6 | Step 7 rules: non-overlapping returns; the coin's mean over all windows; book claims on the book's daily returns | Challenged (2026-11-14): one shared definition of the measures proposed |
-| B5 | Step 7 code check: an idea about another coin or the market is sent back | Challenged: a word list, with false refusals; removal proposed |
+| B1, B6 | Step 7 rules: non-overlapping returns; the coin's mean over all windows; book claims on the book's daily returns | **Applied** as one shared definition (`common/measures.md`, steps 3, 5, 7) |
+| B5 | Step 7 code check: an idea about another coin or the market is sent back | **Removed** (a word list with false refusals); the rule is in the shared definition of an idea |
 | B3 | One call as step 7's mode | Already the default in the card |
 | B2, B4 | Count of cuts; run twice | B2 **not taken**; B4 open (decide from the validation runs) |
 | B7 | An idea's situation is known at a bar's close | Covered by step 2's definition; to confirm a line in step 7 |
-| C1 | Which test components to keep | Reviewed (2026-11-14) against the conventions; see the review |
+| C1 | Which test components to keep | **Applied**: slope (forecast), age, bars since high, weekday (regime measures); weekday return dropped; tests and catalogue rows added |
 | C2 | Step 3 reads only the idea, not step 7's numbers | **Applied**: step 3 reads brief, data lines, Idea, Consequence |
 | D1 | Step 5's corrected record description as default | **Applied**; recording the detector's values **parked** |
 | Open | No step looks for regimes directly | **Approved** as a line; to design |
