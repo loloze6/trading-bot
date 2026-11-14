@@ -24,3 +24,6 @@ One block per idea that needs components the catalogue does not have.
 ## 005-05_bearish-divergence-uptrend-continues_1d
 - Component: RsiPriceDivergence: position of the close in its N-bar close range minus the position of the Wilder RSI(14) in its own N-bar range, both from closes, signed; grows from 0 to +1 as price sits at its range top while RSI sits further below its range top (and to -1 for the mirror case at lows) | measures: situation
 - Component: RsiRangePosition: (RSI - min RSI) / (max RSI - min RSI) over the last N bars, from closes, 0 to 1; falls as the current RSI sits further below its recent peak | measures: comparison
+
+## 002-03_price-cross-above-long-sma.d1_rising-distance-above-average_1d
+- Component: MovingAverageDistanceChange: from closes, (close - SMA(period))/SMA(period) x 100 now minus the same value `lookback` bars earlier (e.g. period 200, lookback 10). Positive and growing as the distance widens, negative as it narrows. | measures: situation

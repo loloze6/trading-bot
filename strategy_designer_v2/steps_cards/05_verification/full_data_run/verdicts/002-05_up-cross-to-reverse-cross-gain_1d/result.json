@@ -5,23 +5,24 @@
     "passed": true
   },
   "main_measure": {
-    "name": "excess mean next-bar return while forecast > 0 vs all bars (pooled)",
+    "name": "mean next-bar return while forecast > 0 minus mean next-bar return over all bars (pooled)",
     "value": -1.5707481751504795e-05,
     "statistic": {
       "name": "Newey-West t (10 lags)",
-      "value": -0.042724100122940194
+      "value": -0.02724639344635337
     },
-    "threshold": "excess > 0 with t >= 2 confirms; excess < 0 with t <= -2 rejects"
+    "threshold": "confirm: excess > 0 with Newey-West(10) t >= 2; reject: excess < 0 with t <= -2"
   },
   "supporting_check": {
-    "name": "binomial z of up-bar share while forecast > 0 vs per-coin baseline",
+    "name": "up-bar share while forecast > 0 vs coin's own up-bar share (binomial z)",
     "value": 0.11402224720871527,
     "passed": false
   },
   "counts": {
-    "distinct up-cross spans": 127,
-    "bars with a positive forecast": 8569
+    "distinct up-cross spans pooled across coins": 92,
+    "bars with a positive forecast": 8569,
+    "all bars (next-bar returns)": 17022
   },
-  "decided_by": "The t-statistic lies between -2 and 2, which the plan calls inconclusive.",
-  "reading": "The situation is the raw SMA spread above 0 on the long side; the Newey-West t is the t of the slope in a regression of next-bar return on a forecast>0 indicator with lag sums kept within each coin-window; an up bar is a positive next-bar return; a span is a run of consecutive positive-forecast bars within one window; and confirmation requires both t >= 2 and z >= 2."
+  "decided_by": "The Newey-West t of the excess mean return lies between -2 and 2.",
+  "reading": "Situation is sma_cross raw value > 0 with a positive forecast; next-bar returns stay inside each window and the all-bars baseline pools every coin and window; Newey-West autocovariances use only pairs of positive-forecast bars in the same window; an up-cross span is a run of positive forecast, merged across time-contiguous windows; the binomial z sums each coin's expected up count from its own pooled up share; unmet minimum counts give 'not observable' as the workflow requires."
 }

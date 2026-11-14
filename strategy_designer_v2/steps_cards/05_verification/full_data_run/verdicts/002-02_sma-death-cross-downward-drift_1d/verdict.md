@@ -6,11 +6,11 @@ status: inconclusive
 ---
 Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
-- Main measure: |forecast|-weighted mean excess gain of the short over holding, 10 bars, non-overlapping, pooled: 0.00223806; t of the |forecast|-weighted mean: 0.391989 (threshold: confirm if > 0 with t >= 2; reject if < 0 with t <= -2; else inconclusive; fewer than 30 cases inconclusive)
-- Supporting check: top minus bottom tercile of |forecast|, weighted mean short excess gain: 0.00711283, passed: True
+- Main measure: |forecast|-weighted mean 10-bar excess gain of the short over holding (holding - forward return), pooled: 0.00149497; t of the weighted mean (effective n): 0.259295 (threshold: confirm if mean > 0 with t >= 2 (and top tercile > bottom tercile); reject if mean < 0 with t <= -2)
+- Supporting check: top minus bottom |forecast| tercile weighted excess gain: 0.00647281, passed: True
 - Counts: non-overlapping short cases: 825
-- Decided by: The t-statistic lies strictly between -2 and 2, which the plan calls inconclusive.
-- Reading: Holding is the coin's mean of all overlapping 10-bar forward returns over all its windows, the short's excess gain is -(forward return - holding), cases are bars 0,10,20,... of each window with forecast < 0, the t uses a weighted-mean standard error sqrt(sum w^2 (x-m)^2 * n/(n-1)) / sum w, and terciles are equal-count thirds of the pooled cases ranked by |forecast|, compared by their |forecast|-weighted means.
+- Decided by: The t-statistic is strictly between -2 and 2 (or undefined), which the plan calls inconclusive.
+- Reading: Active bars whose raw spread is missing are left out of the situation check; holding is the coin's mean 10-bar return on the non-overlapping grid (positions 0,10,20,... of each window) across all its windows; the short's excess gain is holding minus the forward return; the t of the weighted mean uses the weighted standard deviation and Kish's effective n; terciles split the short cases by rank of |forecast| into three near-equal groups, and each tercile's excess is its |forecast|-weighted mean; the plan's 'fewer than 30 short cases' rule is reported as not observable.
 Plan: `steps_cards/03_test_plan/full_data_run/plans/002-02_sma-death-cross-downward-drift_1d.md`
 Record: `steps_cards/04_backtest/full_data_run/backtests/002-02_sma-death-cross-downward-drift_1d`
 Measure: `measure.py`

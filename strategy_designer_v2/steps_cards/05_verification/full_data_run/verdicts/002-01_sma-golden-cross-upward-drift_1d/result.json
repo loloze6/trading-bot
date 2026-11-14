@@ -5,23 +5,23 @@
     "passed": true
   },
   "main_measure": {
-    "name": "OLS slope of excess forward 10-bar return on forecast (non-overlapping, pooled)",
+    "name": "OLS slope of forward 10-bar return minus coin holding mean on forecast",
     "value": 0.00020217125287157067,
     "statistic": {
       "name": "OLS slope t",
       "value": 0.3709763364377277
     },
-    "threshold": "confirm if slope > 0 with t >= 2; reject if slope < 0 with t <= -2; else inconclusive"
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; otherwise inconclusive"
   },
   "supporting_check": {
-    "name": "share positive fwd 10-bar returns when forecast > 0 minus coin's share positive",
+    "name": "share of positive 10-bar returns when forecast > 0 minus coin's share over all bars",
     "value": -0.02141046191338635,
     "passed": false
   },
   "counts": {
     "non-overlapping blocks with forecast > 0": 832,
-    "non-overlapping blocks": 1657
+    "non-overlapping blocks (all)": 1657
   },
-  "decided_by": "The slope's t lies between -2 and 2: inconclusive.",
-  "reading": "Blocks start at positions 0, 10, 20, ... of each window, the forecast is taken at the block's first bar, the coin's holding mean and positive share use the same non-overlapping grid over all its windows, the slope t is the ordinary OLS t, and the supporting check averages, over blocks with forecast > 0, the positive indicator minus that coin's positive share."
+  "decided_by": "The t of the slope lies between -2 and 2 (inconclusive rule).",
+  "reading": "Non-overlapping samples are positions 0,10,20,... of each window; holding is the coin's mean of those samples over all its windows; the regression is OLS with intercept on the pooled samples; the supporting check is pooled as the mean over forecast>0 samples of (positive indicator minus that coin's all-sample positive share) and passes if above zero; fewer than 100 forecast>0 blocks gives 'not observable'."
 }

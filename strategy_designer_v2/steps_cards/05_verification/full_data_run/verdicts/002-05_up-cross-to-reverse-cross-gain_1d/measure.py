@@ -1,165 +1,201 @@
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 
 def measure(bars):
-    RAW = "debug_info.components.sma_cross.last_history_value"
+    LHV = "debug_info.components.sma_cross.last_history_value"
     NW_LAGS = 10
+    T_THR = 2.0
+    Z_THR = 2.0
+    MIN_SPANS = 30
+    MIN_POS_BARS = 1000
+
+    def wkey(w):
+        try:
+            return int(str(w).lstrip("w"))
+        except Exception:
+            return 10 ** 9
 
     # ---------- 1. situation check ----------
     n_active = 0
     n_agree = 0
     for coin, wins in bars.items():
         for w, df in wins.items():
-            if "forecast" not in df.columns or RAW not in df.columns:
+            if df is None or len(df) == 0 or "forecast" not in df.columns:
                 continue
-            sub = df[["forecast", RAW]].dropna()
-            act = sub["forecast"] != 0
-            n_active += int(act.sum())
-            # situation: 50-day SMA above 200-day SMA (raw spread > 0), expected side long
-            n_agree += int(((sub[RAW] > 0) & (sub["forecast"] > 0) & act).sum())
-    agreement = float(n_agree / n_active) if n_active > 0 else 0.0
-    passed = bool(n_active > 0 and agreement >= 0.9)
+            fc = pd.to_numeric(df["forecast"], errors="coerce")
+            active = fc.notna() & (fc != 0)
+            if LHV in df.columns:
+                raw = pd.to_numeric(df[LHV], errors="coerce")
+                in_sit = raw.notna() & (raw > 0)  # SMA50 above SMA200
+            else:
+                in_sit = pd.Series(False, index=df.index)  # missing column is not a value
+            n_active += int(active.sum())
+            n_agree += int((active & in_sit & (fc > 0)).sum())
+    agreement = (n_agree / n_active) if n_active > 0 else None
+    passed = bool(agreement is not None and agreement >= 0.9)
+
+    main_name = "mean next-bar return while forecast > 0 minus mean next-bar return over all bars (pooled)"
+    main_thr = "confirm: excess > 0 with Newey-West(10) t >= 2; reject: excess < 0 with t <= -2"
+    sup_name = "up-bar share while forecast > 0 vs coin's own up-bar share (binomial z)"
+
     if not passed:
         return {
             "status": "mismatch",
-            "situation_check": {"agreement": agreement, "passed": False},
-            "main_measure": None,
+            "situation_check": {"agreement": None if agreement is None else float(agreement), "passed": False},
+            "main_measure": {"name": main_name, "value": None, "statistic": None, "threshold": main_thr},
             "supporting_check": None,
             "counts": {"active bars": int(n_active)},
-            "decided_by": ("The plan's situation is the 50-day SMA above the 200-day SMA (raw spread > 0) with a long position, "
-                           "but fewer than 90% of the bars with a non-zero forecast are such long bars: the standardised and clipped "
-                           "forecast does not follow the sign of the SMA spread."),
-            "reading": "The situation is read as the component's raw last_history_value (the SMA spread) being above zero, on the long side.",
+            "decided_by": ("Fewer than 90% of bars with a non-zero forecast are long bars where the 50-day SMA is above "
+                           "the 200-day SMA (sma_cross raw value > 0)"
+                           if n_active > 0 else "No bar has a non-zero forecast, so the situation cannot be checked"),
+            "reading": "Situation taken as sma_cross last_history_value > 0 with a long (positive) forecast; missing raw values count as outside the situation.",
         }
 
-    # ---------- 2. build pooled data ----------
-    groups = []  # per coin-window: (coin, returns array, indicator array)
+    # ---------- 2. build per-window next-bar returns ----------
+    segments = []  # list of (coin, ret array, active array)
+    all_rets = []
+    coin_stats = {}
     n_spans = 0
     for coin, wins in bars.items():
-        for w, df in wins.items():
-            if "close" not in df.columns or "forecast" not in df.columns:
+        prev_end_ts = None
+        prev_end_pos = False
+        coin_all = []
+        coin_act = []
+        for w in sorted(wins.keys(), key=wkey):
+            df = wins[w]
+            if df is None or len(df) == 0:
                 continue
-            close = df["close"].astype(float).values
-            fc = df["forecast"].astype(float).values
-            if len(close) < 2:
-                continue
-            r = close[1:] / close[:-1] - 1.0
-            f = fc[:-1]
-            ok = np.isfinite(r) & np.isfinite(f)
-            r = r[ok]
-            f = f[ok]
-            if len(r) == 0:
-                continue
-            ind = (f > 0).astype(float)
-            # distinct spans: runs of consecutive positive-forecast bars within the window
-            if len(ind) > 0:
-                starts = (ind[0] == 1) + int(np.sum((ind[1:] == 1) & (ind[:-1] == 0)))
-                n_spans += int(starts)
-            groups.append((coin, r, ind))
+            df = df.sort_values("timestamp") if "timestamp" in df.columns else df
+            close = pd.to_numeric(df["close"], errors="coerce").to_numpy(dtype=float)
+            fc = pd.to_numeric(df["forecast"], errors="coerce").to_numpy(dtype=float)
+            ret = np.full(len(close), np.nan)
+            if len(close) > 1:
+                ret[:-1] = close[1:] / close[:-1] - 1.0
+            pos = np.where(np.isnan(fc), False, fc > 0)
 
-    if not groups:
-        return {
-            "status": "inconclusive",
-            "situation_check": {"agreement": agreement, "passed": passed},
-            "main_measure": {"name": "excess mean next-bar return while forecast > 0 vs all bars", "value": None,
-                             "statistic": None, "threshold": "t >= 2 confirms, t <= -2 rejects (Newey-West, 10 lags)"},
-            "supporting_check": None,
-            "counts": {"distinct up-cross spans": 0, "bars with a positive forecast": 0},
-            "decided_by": "No usable bars, so the plan's minimum counts are not met.",
-            "reading": "none",
-        }
+            # spans: runs of forecast > 0, merged across windows that are contiguous in time
+            ts = pd.to_datetime(df["timestamp"]) if "timestamp" in df.columns else None
+            step = None
+            if ts is not None and len(ts) > 1:
+                step = ts.diff().dropna().median()
+            for i in range(len(pos)):
+                if pos[i] and (i == 0 or not pos[i - 1]):
+                    cont = False
+                    if i == 0 and prev_end_pos and prev_end_ts is not None and ts is not None and step is not None:
+                        gap = ts.iloc[0] - prev_end_ts
+                        cont = gap <= step * 1.5
+                    if not cont:
+                        n_spans += 1
+            if ts is not None and len(ts) > 0:
+                prev_end_ts = ts.iloc[-1]
+                prev_end_pos = bool(pos[-1])
 
-    r_all = np.concatenate([g[1] for g in groups])
-    i_all = np.concatenate([g[2] for g in groups])
-    n_pos = int(i_all.sum())
-    N = len(r_all)
+            valid = ~np.isnan(ret)
+            act = pos & valid
+            all_rets.append(ret[valid])
+            coin_all.append(ret[valid])
+            coin_act.append(ret[act])
+            segments.append((coin, ret, act))
+        ca = np.concatenate(coin_all) if coin_all else np.array([])
+        cp = np.concatenate(coin_act) if coin_act else np.array([])
+        coin_stats[coin] = (ca, cp)
 
-    excess = None
-    t_stat = None
-    if n_pos > 0 and n_pos < N:
-        excess = float(r_all[i_all == 1].mean() - r_all.mean())
-        # regression r = a + b*I ; excess = b*(1-p); t of excess = t of b (p treated as fixed)
-        X = np.column_stack([np.ones(N), i_all])
-        XtX_inv = np.linalg.inv(X.T @ X)
-        beta = XtX_inv @ (X.T @ r_all)
-        u = r_all - X @ beta
-        S = np.zeros((2, 2))
-        pos = 0
-        for coin, r, ind in groups:
-            n = len(r)
-            Xg = X[pos:pos + n]
-            ug = u[pos:pos + n]
-            pos += n
-            sg = Xg * ug[:, None]
-            S += sg.T @ sg
-            for L in range(1, min(NW_LAGS, n - 1) + 1):
-                wgt = 1.0 - L / (NW_LAGS + 1.0)
-                G = sg[L:].T @ sg[:-L]
-                S += wgt * (G + G.T)
-        V = XtX_inv @ S @ XtX_inv
-        se_b = float(np.sqrt(V[1, 1])) if V[1, 1] > 0 else np.nan
-        t_stat = float(beta[1] / se_b) if np.isfinite(se_b) and se_b > 0 else None
+    all_r = np.concatenate(all_rets) if all_rets else np.array([])
+    pos_r = np.concatenate([s[1][s[2]] for s in segments]) if segments else np.array([])
+    n_pos = int(len(pos_r))
+    n_all = int(len(all_r))
 
-    # ---------- supporting check: binomial z with per-coin baselines ----------
-    obs_up = 0.0
-    exp_up = 0.0
-    var_up = 0.0
-    n_act_tot = 0
-    up_all_tot = 0
-    for coin in sorted(set(g[0] for g in groups)):
-        rc = np.concatenate([g[1] for g in groups if g[0] == coin])
-        ic = np.concatenate([g[2] for g in groups if g[0] == coin])
-        pc = float(np.mean(rc > 0))
-        na = int(ic.sum())
-        obs_up += float(np.sum((rc > 0) & (ic == 1)))
-        exp_up += na * pc
-        var_up += na * pc * (1 - pc)
-        n_act_tot += na
-        up_all_tot += int(np.sum(rc > 0))
-    z = float((obs_up - exp_up) / np.sqrt(var_up)) if var_up > 0 else None
-    share_diff = (float(obs_up / n_act_tot - up_all_tot / N) if n_act_tot > 0 else None)
-    z_passed = None if z is None else bool(z >= 2)
+    counts = {
+        "distinct up-cross spans pooled across coins": int(n_spans),
+        "bars with a positive forecast": n_pos,
+        "all bars (next-bar returns)": n_all,
+    }
 
-    counts = {"distinct up-cross spans": int(n_spans), "bars with a positive forecast": int(n_pos)}
+    # ---------- main measure ----------
+    value = None
+    t_nw = None
+    if n_pos > 1 and n_all > 0:
+        mu_all = float(np.mean(all_r))
+        dbar = float(np.mean(pos_r)) - mu_all
+        value = dbar
+        # residuals around the mean of active excess returns
+        g = np.zeros(NW_LAGS + 1)
+        for coin, ret, act in segments:
+            e = np.where(act, ret - mu_all - dbar, 0.0)
+            g[0] += np.sum(e[act] ** 2)
+            for l in range(1, NW_LAGS + 1):
+                if len(e) > l:
+                    both = act[l:] & act[:-l]
+                    g[l] += np.sum(e[l:][both] * e[:-l][both])
+        g /= n_pos
+        lrv = g[0] + 2.0 * sum((1.0 - l / (NW_LAGS + 1.0)) * g[l] for l in range(1, NW_LAGS + 1))
+        if lrv > 0:
+            t_nw = dbar / np.sqrt(lrv / n_pos)
+
+    # ---------- supporting check ----------
+    k = 0
+    expected = 0.0
+    var = 0.0
+    for coin, (ca, cp) in coin_stats.items():
+        if len(ca) == 0 or len(cp) == 0:
+            continue
+        p = float(np.mean(ca > 0))
+        k += int(np.sum(cp > 0))
+        expected += len(cp) * p
+        var += len(cp) * p * (1 - p)
+    z = None
+    share_diff = None
+    if n_pos > 0:
+        share_diff = (k - expected) / n_pos
+        if var > 0:
+            z = (k - expected) / np.sqrt(var)
+    sup_passed = None if z is None else bool(z >= Z_THR)
 
     # ---------- decision ----------
-    if n_spans < 30 or n_pos < 1000:
+    if n_spans < MIN_SPANS:
+        status = "not observable"
+        decided = f"Only {n_spans} distinct up-cross spans pooled across coins, below the plan's minimum of {MIN_SPANS}."
+    elif n_pos < MIN_POS_BARS:
+        status = "not observable"
+        decided = f"Only {n_pos} bars with a positive forecast, below the plan's minimum of {MIN_POS_BARS}."
+    elif value is None or t_nw is None:
         status = "inconclusive"
-        decided = "Fewer than 30 distinct up-cross spans or fewer than 1000 bars with a positive forecast, which the plan calls inconclusive."
-    elif excess is None or t_stat is None:
-        status = "inconclusive"
-        decided = "The excess return or its t-statistic could not be computed, so no verdict is reached."
-    elif excess > 0 and t_stat >= 2 and z is not None and z >= 2:
-        status = "confirmed"
-        decided = "The excess mean return is above 0 with t >= 2 and the up-bar share is higher with z >= 2, meeting the confirm rule."
-    elif excess < 0 and t_stat <= -2:
+        decided = "The excess return or its Newey-West t could not be computed."
+    elif value > 0 and t_nw >= T_THR:
+        if sup_passed:
+            status = "confirmed"
+            decided = "Excess mean return is above 0 with t >= 2 and the up-bar share is higher with z >= 2."
+        else:
+            status = "inconclusive"
+            decided = "Excess mean return is above 0 with t >= 2, but the up-bar share check fails (z < 2)."
+    elif value < 0 and t_nw <= -T_THR:
         status = "rejected"
-        decided = "The excess mean return is below 0 with t <= -2, meeting the reject rule (returns in cross spans below holding)."
-    elif excess > 0 and t_stat >= 2:
-        status = "inconclusive"
-        decided = "The excess mean return is above 0 with t >= 2, but the up-bar share z is below 2, so the confirm rule is not fully met."
+        decided = "Excess mean return is below 0 with t <= -2: returns in cross spans are lower than holding."
     else:
         status = "inconclusive"
-        decided = "The t-statistic lies between -2 and 2, which the plan calls inconclusive."
+        decided = "The Newey-West t of the excess mean return lies between -2 and 2."
 
     return {
         "status": status,
-        "situation_check": {"agreement": agreement, "passed": passed},
+        "situation_check": {"agreement": float(agreement), "passed": True},
         "main_measure": {
-            "name": "excess mean next-bar return while forecast > 0 vs all bars (pooled)",
-            "value": excess,
-            "statistic": None if t_stat is None else {"name": "Newey-West t (10 lags)", "value": t_stat},
-            "threshold": "excess > 0 with t >= 2 confirms; excess < 0 with t <= -2 rejects",
+            "name": main_name,
+            "value": None if value is None else float(value),
+            "statistic": None if t_nw is None else {"name": "Newey-West t (10 lags)", "value": float(t_nw)},
+            "threshold": main_thr,
         },
         "supporting_check": {
-            "name": "binomial z of up-bar share while forecast > 0 vs per-coin baseline",
-            "value": z,
-            "passed": z_passed,
+            "name": sup_name,
+            "value": None if z is None else float(z),
+            "passed": sup_passed,
         },
         "counts": counts,
         "decided_by": decided,
-        "reading": ("The situation is the raw SMA spread above 0 on the long side; the Newey-West t is the t of the slope in a regression of "
-                    "next-bar return on a forecast>0 indicator with lag sums kept within each coin-window; an up bar is a positive next-bar return; "
-                    "a span is a run of consecutive positive-forecast bars within one window; and confirmation requires both t >= 2 and z >= 2."),
+        "reading": ("Situation is sma_cross raw value > 0 with a positive forecast; next-bar returns stay inside each window "
+                    "and the all-bars baseline pools every coin and window; Newey-West autocovariances use only pairs of "
+                    "positive-forecast bars in the same window; an up-cross span is a run of positive forecast, merged across "
+                    "time-contiguous windows; the binomial z sums each coin's expected up count from its own pooled up share; "
+                    "unmet minimum counts give 'not observable' as the workflow requires."),
     }

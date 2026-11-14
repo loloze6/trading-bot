@@ -1,63 +1,63 @@
-import numpy as np, pandas as pd
+import pandas as pd, numpy as np
+from scipy import stats
 
 def explore(data):
     out = {}
-    H = 20
-    pm = {c: pd.concat([b["close"].pct_change().dropna() for b in ws.values()]).mean() for c, ws in data["bars"].items()}
-    dl = []; nb = []
-    for c, ws in data["bars"].items():
-        for w, b in ws.items():
-            b = b.reset_index(drop=True)
-            cl = b["close"]; raw = b["debug_info.components.above_ma.last_history_value"]
-            sma = cl/(1+raw/100.0)
-            slope = sma/sma.shift(20)-1
-            al = b["postRebalance_current_allocation"]
-            r1 = cl.shift(-1)/cl-1
-            f = b["forecast"].values
-            run = np.zeros(len(b))
-            for i in range(len(b)):
-                run[i] = (run[i-1]+1 if i>0 else 1) if f[i] > 0 else 0
-            tv = b["postRebalance_total_value"]
-            dd = tv/tv.cummax()-1
-            ddc = cl/cl.cummax()-1
-            past60 = cl/cl.shift(60)-1
-            df = pd.DataFrame(dict(coin=c, win=w, al=al, g=al*r1, r1=r1, f=b["forecast"], slope=slope,
-                                   run=run, dd=dd, ddc=ddc, raw=raw, past60=past60))
-            dl.append(df)
-            for i in range(0, len(b)-H, H):
-                nb.append(dict(coin=c, f=f[i], slope=slope.iloc[i], run=run[i],
-                               ex=cl.iloc[i+H]/cl.iloc[i]-1-H*pm[c], al=al.iloc[i]))
-    d = pd.concat(dl)
-    h = d[(d.al > 0)].dropna(subset=["g"])
-    def tab(gb):
-        return pd.DataFrame({"n": gb.size(), "mean_gain": gb["g"].mean(), "sum_gain": gb["g"].sum(),
-                             "t": gb["g"].apply(lambda s: s.mean()/(s.std()/np.sqrt(len(s)))), "mean_al": gb["al"].mean()})
-    h = h.copy()
-    h["slb"] = pd.cut(h["slope"], [-1, -0.05, 0, 0.05, 0.15, 10])
-    out["held days by SMA200 20d slope"] = tab(h.groupby("slb", observed=True))
-    h["runb"] = pd.cut(h["run"], [0, 10, 30, 60, 150, 10000])
-    out["held days by days since on"] = tab(h.groupby("runb", observed=True))
-    h["ddb"] = pd.cut(h["dd"], [-1.01, -0.6, -0.4, -0.2, -0.0001, 0.01])
-    out["held days by book drawdown depth"] = tab(h.groupby("ddb", observed=True))
-    h["p60"] = pd.cut(h["past60"], [-1, 0, 0.3, 0.8, 100])
-    out["held days by past60 return"] = tab(h.groupby("p60", observed=True))
-    # share of losses: worst 5% held days
-    q = h["g"].quantile(0.05)
-    w5 = h[h.g <= q]
-    out["worst5pct held days profile"] = pd.DataFrame({"mean_slope": [w5.slope.mean(), h.slope.mean()],
-        "mean_run": [w5.run.mean(), h.run.mean()], "mean_al": [w5.al.mean(), h.al.mean()],
-        "mean_raw": [w5.raw.mean(), h.raw.mean()]}, index=["worst5", "all_held"])
-    n = pd.DataFrame(nb); a = n[n.f > 0].copy()
-    a["slb"] = pd.cut(a["slope"], [-1, 0, 0.05, 0.15, 10])
-    g = a.groupby("slb", observed=True)["ex"]
-    out["nonoverlap active excess20 by slope"] = pd.DataFrame({"n": g.size(), "mean": g.mean(),
-        "t": g.apply(lambda s: s.mean()/(s.std()/np.sqrt(len(s))))})
-    # time held fraction and book-days in drawdown
-    allb = d.dropna(subset=["g"])
-    out["share days held"] = float((allb.al > 0).mean())
-    # Sharpe/calmar-like sim: gain only when slope>0
-    sim = allb.copy(); sim["g2"] = np.where(sim.slope > 0, sim.g, 0.0)
-    out["daily-bar sharpe all vs slope>0 only"] = pd.Series({
-        "all": sim.g.mean()/sim.g.std()*np.sqrt(365), "slope_pos": sim.g2.mean()/sim.g2.std()*np.sqrt(365),
-        "hold": sim.r1.mean()/sim.r1.std()*np.sqrt(365)})
+    rows = []
+    for c in data["bars"]:
+        for w, b in data["bars"][c].items():
+            b = b.copy()
+            r1 = b["close"].shift(-1)/b["close"]-1
+            a = b["postRebalance_current_allocation"]
+            dist = b.get("debug_info.components.above_ma.last_history_value")
+            df = pd.DataFrame({"gain": a*r1, "alloc": a, "fc": b["forecast"], "r1": r1, "dist": dist,
+                               "mom20": b["close"]/b["close"].shift(20)-1,
+                               "mom60": b["close"]/b["close"].shift(60)-1,
+                               "dd60": b["close"]/b["close"].rolling(60,min_periods=20).max()-1,
+                               "coin": c, "w": w})
+            # forward 20 bar return on grid for non-overlap
+            df["pos"] = np.arange(len(df))
+            df["f20"] = b["close"].shift(-20)/b["close"]-1
+            df["g20"] = a*df["f20"]
+            rows.append(df)
+    B = pd.concat(rows).dropna(subset=["gain"])
+    act = B[B.alloc > 0].copy()
+    # share of total loss days among active bars by state
+    act["mom20_neg"] = act.mom20 < 0
+    act["dd_deep"] = act.dd60 < -0.15
+    tab = act.groupby(["mom20_neg","dd_deep"]).agg(n=("gain","size"), mean_gain=("gain","mean"),
+            sd=("gain","std"), sum_gain=("gain","sum"), sum_neg=("gain", lambda s: s[s<0].sum()),
+            alloc=("alloc","mean"))
+    tab["t"] = tab.mean_gain/(tab.sd/np.sqrt(tab.n))
+    out["state_mom_dd"] = tab.round(5)
+    # mom20 graded within forecast>10 (high allocation)
+    hi = act[act.fc > 10].dropna(subset=["mom20"]).copy()
+    hi["b"] = pd.qcut(hi.mom20, 5, labels=False)
+    g = hi.groupby("b").agg(lo=("mom20","min"), hi=("mom20","max"), n=("gain","size"), mean_gain=("gain","mean"),
+            sd=("gain","std"), sum_neg=("gain", lambda s: s[s<0].sum()), alloc=("alloc","mean"))
+    g["t"] = g.mean_gain/(g.sd/np.sqrt(g.n))
+    out["hi_fc_by_mom20"] = g.round(5)
+    # non-overlapping 20-bar, active grid
+    grid = B[(B.pos % 20 == 0) & (B.alloc > 0)].dropna(subset=["f20","mom20"]).copy()
+    grid["b"] = pd.qcut(grid.mom20, 4, labels=False)
+    g2 = grid.groupby("b").agg(lo=("mom20","min"), hi=("mom20","max"), n=("f20","size"), mean_f20=("f20","mean"),
+            sd=("f20","std"), mean_g20=("g20","mean"), q10=("f20", lambda s: s.quantile(0.1)))
+    g2["t"] = g2.mean_f20/(g2.sd/np.sqrt(g2.n))
+    out["grid_f20_by_mom20"] = g2.round(4)
+    # mom60 graded on active
+    m = act.dropna(subset=["mom60"]).copy()
+    m["b"] = pd.qcut(m.mom60, 5, labels=False)
+    g3 = m.groupby("b").agg(lo=("mom60","min"), hi=("mom60","max"), n=("gain","size"), mean_gain=("gain","mean"),
+            sd=("gain","std"), sum_neg=("gain", lambda s: s[s<0].sum()), alloc=("alloc","mean"))
+    g3["t"] = g3.mean_gain/(g3.sd/np.sqrt(g3.n))
+    out["act_by_mom60"] = g3.round(5)
+    # book daily drawdown episodes: state of held coins during deepest falls
+    wins = sorted({w for c in data["days"] for w in data["days"][c]}, key=lambda s:int(s[1:]))
+    in_falls = act[act.w.isin(["w15","w16","w17","w18","w19","w12","w13","w21","w22"])]
+    out["fall_windows_state"] = pd.DataFrame({
+        "share_mom20_neg": [ (in_falls.mom20<0).mean(), (act.mom20<0).mean()],
+        "sum_gain": [in_falls.gain.sum(), act.gain.sum()],
+        "sum_gain_mom20_neg": [in_falls.gain[in_falls.mom20<0].sum(), act.gain[act.mom20<0].sum()],
+        "mean_alloc": [in_falls.alloc.mean(), act.alloc.mean()]}, index=["fall_windows","all"]).round(4)
+    # by year of bars
     return out

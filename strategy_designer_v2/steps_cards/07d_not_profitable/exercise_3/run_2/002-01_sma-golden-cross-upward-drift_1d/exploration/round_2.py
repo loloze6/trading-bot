@@ -1,52 +1,60 @@
-import pandas as pd, numpy as np
-
 def explore(data):
-    rows=[]
-    for c,ws in data["bars"].items():
-        for w,b in ws.items():
-            b=b.copy().reset_index(drop=True)
-            cl=b["close"]
-            r=cl.shift(-1)/cl-1
-            a=b["postRebalance_current_allocation"].astype(float)
-            sp=b["debug_info.components.sma_cross.last_history_value"]
-            d=pd.DataFrame({"coin":c,"w":w,"fc":b["forecast"],"alloc":a,"r":r,"g":a*r,
-                "sp":sp,"dsp10":sp-sp.shift(10),
-                "dd20":cl/cl.rolling(20,min_periods=20).max()-1,
-                "ret20":cl/cl.shift(20)-1,"ret5":cl/cl.shift(5)-1,
-                "vol20":cl.pct_change().rolling(20).std()})
-            d["r10"]=cl.shift(-10)/cl-1
-            d["pos"]=np.arange(len(d))
-            rows.append(d)
-    D=pd.concat(rows).dropna(subset=["r"])
-    act=D[D.alloc.abs()>1e-9].copy()
-    out={}
-    out["alloc_vs_fc"]=act.groupby(pd.cut(act.fc,[0,5,10,15,20.01])).alloc.agg(["mean","min","max"]).round(3)
-    def summ(x,k):
-        g=x.groupby(k)
-        return g.agg(n=("g","size"),mean_g=("g","mean"),sd_g=("g","std"),mean_r=("r","mean"),
-                     worst5=("g",lambda s:s.quantile(0.05)),
-                     sum_g=("g","sum")).assign(shr=lambda t:(t.mean_g/t.sd_g*np.sqrt(365))).round(4)
-    act["dd20q"]=pd.qcut(act.dd20,5,labels=False,duplicates="drop")
-    out["by_dd20"]=summ(act,"dd20q").join(act.groupby("dd20q").dd20.agg(lo="min",hi="max").round(3))
-    act["vq"]=pd.qcut(act.vol20,5,labels=False)
-    out["by_vol"]=summ(act,"vq")
-    act["state"]=np.where(act.dsp10<0,"spread_falling","spread_rising")+np.where(act.ret20<0,"_px_down","_px_up")
-    out["by_state"]=summ(act.dropna(subset=["dsp10","ret20"]),"state")
-    # non-overlapping 10-bar fwd, active, by dsp10 sign & ret20 sign
-    nb=act[(act.pos%10==0)].dropna(subset=["r10","dsp10","ret20"])
-    hm=D[D.pos%10==0].groupby("coin").r10.mean()
-    nb=nb.assign(ex=nb.r10-nb.coin.map(hm))
-    out["nonoverlap10_state"]=nb.groupby("state").ex.agg(n="size",mean="mean",t=lambda s:s.mean()/s.std()*np.sqrt(len(s))).round(4)
-    # pooled book worst days: states held
-    act["dayloss"]=act.g
-    worst=act[act.g<=act.g.quantile(0.02)]
-    out["worst2pct_states"]=pd.Series({"n":len(worst),"mean_alloc":worst.alloc.mean(),"all_alloc":act.alloc.mean(),
-        "share_spread_falling":(worst.dsp10<0).mean(),"all_spread_falling":(act.dsp10<0).mean(),
-        "share_px_down20":(worst.ret20<0).mean(),"all_px_down20":(act.ret20<0).mean(),
-        "mean_vol20":worst.vol20.mean(),"all_vol20":act.vol20.mean(),
-        "mean_dd20":worst.dd20.mean(),"all_dd20":act.dd20.mean()}).round(4)
-    # window 11-18 vs rest
-    act["wn"]=act.w.str[1:].astype(int)
-    act["era"]=np.where(act.wn<=10,"w1-10",np.where(act.wn<=18,"w11-18","w19-24"))
-    out["by_era"]=summ(act,"era")
+    import numpy as np, pandas as pd
+    out = {}
+    rows = []; blocks = []
+    for coin, ws in data["days"].items():
+        for w, d in ws.items():
+            b = data["bars"][coin][w].copy()
+            b["day"] = pd.to_datetime(b["timestamp"]).dt.floor("D")
+            bl = b.groupby("day").last()
+            dd = d.copy()
+            dd["day"] = pd.to_datetime(dd["day"]).dt.floor("D")
+            dd = dd.set_index("day")
+            dd["alloc_prev"] = bl["postRebalance_current_allocation"].reindex(dd.index).shift(1)
+            dd["fc_prev"] = bl["forecast"].reindex(dd.index).shift(1)
+            c = bl["close"].reindex(dd.index)
+            dd["ret20_prev"] = (c / c.shift(20) - 1).shift(1)
+            dd["coin"] = coin; dd["w"] = w
+            # drawdown of book within window
+            v = dd["book_value"]
+            dd["dd"] = v / v.cummax() - 1
+            rows.append(dd)
+            cl = b["close"].values; fc = b["forecast"].values
+            for i in range(0, len(b) - 10, 10):
+                r10 = cl[i+10]/cl[i]-1
+                past = cl[i]/cl[i-20]-1 if i >= 20 else np.nan
+                past60 = cl[i]/cl[i-60]-1 if i >= 60 else np.nan
+                blocks.append((coin, w, fc[i], r10, past, past60))
+    D = pd.concat(rows).dropna(subset=["book_return"])
+    tt = lambda x: x.mean()/x.std()*np.sqrt(len(x))
+    L = D[D.alloc_prev > 0].copy()
+    L["sgn"] = np.where(L.ret20_prev > 0, "past20 up", "past20 down")
+    out["long days by past20 sign"] = L.groupby("sgn").agg(n=("book_return","size"), book=("book_return","mean"), coin=("coin_return","mean"), t_coin=("coin_return", tt), sd_book=("book_return","std"))
+    F = D[(D.fc_prev == 0)].copy()
+    F["sgn"] = np.where(F.ret20_prev > 0, "past20 up", "past20 down")
+    out["flat days coin by past20 sign"] = F.groupby("sgn").agg(n=("coin_return","size"), coin=("coin_return","mean"), t=("coin_return", tt))
+    # deep drawdown days (book dd < -20%) 
+    deep = D[D.dd < -0.2]
+    out["deep dd days profile"] = pd.Series({"n": len(deep), "share long": (deep.alloc_prev>0).mean(), "mean prior20": deep.ret20_prev.mean(), "share prior20<0": (deep.ret20_prev<0).mean(), "mean fc": deep.fc_prev.mean(), "all-days share prior20<0 when long": (L.ret20_prev<0).mean()})
+    out["max dd by coin"] = D.groupby("coin").dd.min()
+    # hypothetical: book returns only when past20 up (else 0) -> sharpe, mean, calmar-ish
+    D["book_f"] = np.where(D.ret20_prev > 0, D.book_return, 0.0)
+    res = {}
+    for col in ["book_return", "book_f", "coin_return"]:
+        x = D[col]
+        res[col] = {"mean": x.mean(), "sharpe": x.mean()/x.std()*np.sqrt(365)}
+    out["hypothetical filter"] = pd.DataFrame(res)
+    B = pd.DataFrame(blocks, columns=["coin","w","fc","r10","past","past60"])
+    B["r10x"] = B.r10 - B.groupby("coin").r10.transform("mean")
+    act = B[B.fc > 0].dropna(subset=["past"])
+    sl = np.polyfit(act.past.clip(-0.5,1), act.r10x, 1)
+    from scipy import stats
+    r = stats.linregress(act.past.clip(-0.5,1), act.r10x)
+    out["active blocks: r10x on past20 (clipped)"] = pd.Series({"slope": r.slope, "t": r.slope/r.stderr, "n": len(act)})
+    allb = B.dropna(subset=["past"])
+    r2 = stats.linregress(allb.past.clip(-0.5,1), allb.r10x)
+    out["all blocks: r10x on past20"] = pd.Series({"slope": r2.slope, "t": r2.slope/r2.stderr, "n": len(allb)})
+    fl = B[B.fc == 0].dropna(subset=["past"])
+    r3 = stats.linregress(fl.past.clip(-0.5,1), fl.r10x)
+    out["flat blocks: r10x on past20"] = pd.Series({"slope": r3.slope, "t": r3.slope/r3.stderr, "n": len(fl)})
     return out

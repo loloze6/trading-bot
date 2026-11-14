@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 20-bar forward excess return over coin mean, active grid bars",
+    "value": 0.028028968448820798,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.9688539006932869
+    },
+    "threshold": "mean excess > 0 with t >= 2 (and top-half minus bottom-half > 0) to confirm; mean excess < 0 with t <= -2 to reject; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess top half minus bottom half by forecast (median split)",
+    "value": 0.022701964013287623,
+    "passed": true
+  },
+  "counts": {
+    "active grid cases": 205,
+    "top half cases": 102,
+    "bottom half cases": 103
+  },
+  "decided_by": "t lies strictly between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Situation read from regime == 'trending' with forecast > 0; grid at positions 0, 20, 40, ... of each window with only bars having a full 20-bar forward return inside the window; the coin's mean 20-bar return is the mean over all its grid bars in all windows; the median split puts forecasts above the median in the top half and those at or below it in the bottom half."
+}

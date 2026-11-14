@@ -6,11 +6,11 @@ status: inconclusive
 ---
 Situation check: 100 % of the active bars match the plan's situation and side
 Evidence:
-- Main measure: |forecast|-weighted mean excess short 1-bar return vs coin all-window mean: 6.57232e-05; t of weighted mean (heteroskedasticity-robust weighted SE): 0.116595 (threshold: confirm if weighted mean excess short return > 0 with t >= 2; reject if < 0 with t <= -2; otherwise, or with fewer than 300 pooled forecast<0 bars, inconclusive)
-- Supporting check: share of forecast<0 bars with next return below coin mean (binomial z vs 50%): 0.512362, passed: True
-- Counts: pooled bars with forecast below 0: 8453
-- Decided by: Inconclusive: the t-statistic lies between -2 and 2.
-- Reading: The situation is a raw spread below 0 with a negative forecast; the coin's mean is the mean of all its within-window next-bar returns over all its windows; the weighted mean's t uses the robust weighted standard error sqrt(sum w^2 (x-m)^2)/sum w with n/(n-1) correction; the supporting check passes when its binomial z is at least 2 (z = 2.2732).
+- Main measure: |forecast|-weighted mean excess short 1-bar return (next return minus coin all-window mean, sign flipped), pooled: 6.57232e-05; t of the weighted mean: 0.116596 (threshold: confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; else inconclusive; fewer than 300 pooled bars with forecast < 0 is not observable)
+- Supporting check: share of forecast<0 bars with next return below coin mean, binomial z vs 50%: 2.27322, passed: True
+- Counts: pooled bars with forecast below 0: 8453, bars with next return below coin mean: 4331
+- Decided by: The t-statistic of the weighted mean excess short return lies between -2 and 2.
+- Reading: Situation taken as last_history_value of sma_cross_spread < 0 (50-day SMA below 200-day SMA) with forecast < 0 on active bars; the weighted mean is sum(-(r-mu)|f|)/sum(|f|) with its t the ordinary t of the values -(r-mu)|f|/mean|f| (each bar once, h=1); mu is the coin's mean next-bar return over all its windows; the 300-bar minimum counts bars with forecast < 0 and a valid next return; the supporting check passes when the share below the mean exceeds 50% with binomial z >= 2. (share below mean = 0.5124).
 Plan: `steps_cards/03_test_plan/full_data_run/plans/002-06_down-cross-to-reverse-cross-loss_1d.md`
 Record: `steps_cards/04_backtest/full_data_run/backtests/002-06_down-cross-to-reverse-cross-loss_1d`
 Measure: `measure.py`

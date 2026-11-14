@@ -6,21 +6,20 @@ step 5: inconclusive
 step 6: not profitable enough
 mode: one call
 explorations: 2
-cost: 0.3202 USD
+cost: 0.3363 USD
 ---
 ## Findings
-- **F1:** The book falls short of holding on both failed measures: its daily Sharpe is 0.376 against holding's 0.570, its mean daily return is 0.00074 against 0.00121, and its deepest fall is -93.1% against holding's -79.97%, which leaves a Calmar of 0.001.
-- **F2:** The size of the forecast does not grade what follows: the mean excess 10-bar return across forecast buckets (0-5, 5-10, 10-15, 15-20) is -0.85%, +0.23%, +1.05% and +0.004% (n = 212, 183, 174, 263), the step-5 slope has t = 0.37 over 832 active blocks, and the raw-spread quartiles show no rising pattern either (+0.14%, +1.30%, -0.53%, -0.70%).
-- **F3:** On the book's invested days, the coin's own 20-bar return sorts the gain: in the lowest r20 quartile the position earns a mean of -0.00139 per day and carries -24% of the total gain, while in the highest quartile it earns +0.00495 per day and carries 86% of it (next-day coin return t = 2.77, n = 1132).
-- **F4:** The same sort holds on non-overlapping 10-bar blocks while the forecast is positive: blocks whose 20-bar return is in the lowest quartile have a mean excess 10-bar return of -2.94% (t = -2.73, 174 blocks), and those in the highest quartile have +3.39% (t = 1.83, 174 blocks).
-- **F5:** The losing state is a spread that is still widening while price has already turned down over 20 bars: on invested days in that state the next-day coin return averages -0.245% (n = 885) and the state carries -33% of the book's gain, while the r20-positive states earn +0.40% and +0.32% per day (t = 2.38 and 2.49).
-- **F6:** The book's deepest falls sit in that state: across windows w12, w13, w16 and w18 (book -23%, -55%, -35% and -60%), invested days with a falling 20-bar return and a widening spread average -1.45% per day (t = -2.13, n = 168), and 12.5% of those days drop more than 8%.
-- **F7:** Distance from the recent high sorts the gain in the same way: on invested days, when the close is within the top quartile of closeness to its 60-bar high, the next-day return averages +0.48% (t = 3.17) and carries 72% of the gain, while the quartile farthest below the high averages -0.10% and has 6.5% of its days below -8%.
-- **F8:** The result rests on one window: w11 alone returns +405% for the book against +281% for holding, while most other windows lose or stay near flat even when holding gains (w16 -35% against +36%; w23 +0.4% against +32%).
+- **F1:** While the short SMA is above the long one, the 10-bar excess return depends on the coin's recent 20-bar return, not on the spread. When that return is negative the mean excess is -0.0171 (t -2.26, n 333), and when it is positive it is +0.0221 (t 2.07, n 361). Across the 20-bar return quartiles the excess rises steadily, from -0.029 (t -2.73) through -0.001 and +0.010 to +0.034 (t 1.83).
+- **F2:** The spread size that sets the forecast does not grade what follows. Its active quartiles give 10-bar excesses of +0.001, +0.013, -0.005 and -0.007, with no |t| above 1.04, which is why the main slope's t is 0.37.
+- **F3:** The book's deepest falls come while it is long in a golden-cross state but the coin is falling. On active bars inside book drawdowns deeper than 15%, 71% have a negative 20-bar return, against 49% of all active bars. Their median 20-bar return is -0.089 against +0.004, and their median distance below the 30-bar high is -0.199 against -0.102.
+- **F4:** How close price sits to its recent high grades the gain the same way. In the active state, bars at the 30-bar high are followed by a 10-bar excess of +0.041 (t 2.37). Bars in the deepest quartile below it (median -0.28) are followed by -0.022 (t -2.03).
+- **F5:** Scaling the position by a positive 20-bar return lifts the proxy coin-averaged book on all its fall measures but not its mean. Calmar rises from 0.39 to 0.57, the deepest fall shrinks from -0.41 to -0.21, and Sharpe rises from 0.71 to 0.81 (holding 0.64). The mean daily gain drops from 0.000501 to 0.000347.
+- **F6:** In the active state the daily book earns 0.001234 when the 20-bar return is up and 0.000443 when it is down. The coin itself earns 0.00335 against 0.00049 in those two states.
+- **F7:** The 20-bar return carries no such effect while the short SMA is below the long one. There, its lowest quartile is followed by an excess of +0.010 (t 0.97) and its highest by -0.003 (t -0.29), so the effect belongs to the golden-cross regime.
+- **F8:** The mean daily gain is starved by small positions. The lowest forecast bucket (0-5) holds a mean allocation of 0.13 and earns -0.000011 a day while the coin earns 0.000909. The 8453 flat days earn about zero while the coin earns 0.0013.
 
 ## Ideas
-- `002-01_sma-golden-cross-upward-drift.d1_golden-cross-with-live-momentum` (from F2, F3, F4, F5, F6, F8): While the 50-day SMA is above the 200-day SMA, the coin keeps drifting upward, and the drift is larger the stronger the coin's own return over the last several weeks, only while that recent return is positive.
-- `002-01_sma-golden-cross-upward-drift.d2_uptrend-near-recent-highs` (from F1, F5, F6, F7): While the 50-day SMA is above the 200-day SMA, the coin keeps rising, and the rise is larger the closer its close sits to its recent high, only while price trades near that high rather than deep below it.
-- `002-01_sma-golden-cross-upward-drift.d3_recent-momentum-carries-forward` (from F2, F3, F4): (new idea) In a coin's own bars, the forward drift over the next days is graded by the coin's recent return: the stronger the gain over the last several weeks, the further price continues upward.
+- `002-01_sma-golden-cross-upward-drift.d1_golden-cross-with-rising-momentum` (from F1, F3, F4, F5, F6, F7): While the short moving average of the close is above the long one, price keeps drifting upward, but only while the coin's own recent return is positive. The drift is larger the stronger that recent rise and the closer price stands to its recent high, and it turns into a decline when the coin has been falling inside the golden-cross state.
+- `002-01_sma-golden-cross-upward-drift.d2_nearness-to-recent-high` (from F2, F4, F8): (new idea) In one coin, the closer the close stands to its recent high, the larger its rise over the following days; the further below that high it stands, the more it keeps falling.
 
 Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

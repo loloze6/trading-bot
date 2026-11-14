@@ -5,24 +5,24 @@
     "passed": true
   },
   "main_measure": {
-    "name": "forecast-weighted 20-bar excess return, block mean over non-overlapping 20-bar blocks",
-    "value": 0.3397614785427329,
+    "name": "forecast-weighted 20-bar excess return, block mean over non-overlapping 20-bar blocks (before costs)",
+    "value": 0.12630450663059725,
     "statistic": {
       "name": "t of the block mean",
-      "value": 1.2489809610237559
+      "value": 1.7267243180019543
     },
-    "threshold": "confirm if block mean > 0 with t >= 2; reject if block mean < 0 with t <= -2; else inconclusive; inconclusive if fewer than 50 blocks with a non-zero position"
+    "threshold": "confirm: block mean > 0 with t >= 2; reject: block mean < 0 with t <= -2; else inconclusive; at least 50 blocks with a non-zero position"
   },
   "supporting_check": {
-    "name": "share of forecast>0 bars whose next 20-bar return beats 20 x pooled mean daily return, vs 50%",
-    "value": 0.4198126596650582,
+    "name": "share of forecast > 0 bars whose next 20-bar return beats 20 x the coin's pooled mean daily return, vs 50%",
+    "value": 0.40601503759398494,
     "passed": false
   },
   "counts": {
-    "non-overlapping 20-bar blocks with a non-zero position": 499,
+    "non-overlapping 20-bar blocks with a non-zero position": 502,
     "non-overlapping 20-bar blocks": 811,
-    "bars with forecast > 0": 7046
+    "forecast > 0 grid bars (supporting check)": 399
   },
-  "decided_by": "Inconclusive: t lies between -2 and 2.",
-  "reading": "Allocation is postRebalance_current_allocation, blocks are rows 0-19, 20-39, ... of each window summed over bars that have a 20-bar forward return, the t-statistic is taken over the blocks holding a non-zero position (the blocks the plan's minimum counts), and the supporting check passes when the share exceeds 50%."
+  "decided_by": "The t of the block-mean excess return lies between -2 and 2.",
+  "reading": "The allocation is postRebalance_current_allocation; a block is each run of 20 rows from position 0 of each window and sums allocation x excess over its rows that have a full 20-bar forward return inside the window, all such blocks are pooled for the t (ordinary t of the mean), a block 'has a non-zero position' if any of those rows has a non-zero allocation; the supporting check uses the non-overlapping grid rows (positions 0, 20, 40, ...) with forecast > 0 and passes if the share is above 50%; active rows with a missing raw component value are left out of the situation check."
 }
