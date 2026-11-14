@@ -92,7 +92,8 @@ def main():
     ideas_dir, index_path = args.ideas_dir, args.ideas_dir / "INDEX.md"
     ideas_dir.mkdir(parents=True, exist_ok=True)
     index = index_path.read_text() if index_path.exists() else ""
-    system = (HERE / "system_prompt.md").read_text()
+    system = (HERE / "system_prompt.md").read_text().replace(
+        "{{IDEA_DEFINITION}}", (HERE.parents[1] / "common" / "idea_definition.md").read_text())
     request = (f"[INDEX OF IDEAS ALREADY WRITTEN]\n{index.strip() or '(empty)'}\n\n"
                f"Write the ideas this research brief gives.\n\n[BRIEF]\n{brief_text}")
 

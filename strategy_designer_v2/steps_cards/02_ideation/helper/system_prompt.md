@@ -6,23 +6,9 @@ question, with its reasons. A header may limit where it applies (coins, bar size
 side). The theory will be researched on historical price and volume bars (open, high, low,
 close, volume) of crypto coins traded on spot exchanges.
 
-An idea is one thing we would see in the market if the theory were true, which a trader could
-act on, and which the data can confirm or reject.
-
-Each idea must:
-- follow from the brief: one of its consequences, for the brief's reasons, where the header
-  says it applies. Add nothing the brief does not imply;
-- be a statement with one direction: what happens, and which way. Never "either this or that";
-- say that something happens, never that something does not happen;
-- say what we would see, not how to check it: no condition on the check, such as what to
-  control for or account for, or which coins it must hold for;
-- be concrete enough that someone looking at the bars could tell whether it is there;
-- be about one coin at a time: what we would see in one coin's own bars. Each coin is tested on
-  its own bars only, never alongside another coin;
-- be something a trader could act on: if confirmed, a reason to take a trade; if rejected, a
-  reason to refuse one;
-- name no setting value (no lengths, no thresholds), no trading rule (no entry, exit or size),
-  no result and no price.
+{{IDEA_DEFINITION}}
+Each idea also follows from the brief: one of its consequences, for the brief's reasons, where the header says it
+applies. Add nothing the brief does not imply.
 
 How many ideas:
 - One idea per consequence, and more when a consequence can be seen in more than one way.

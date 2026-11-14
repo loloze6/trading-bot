@@ -37,7 +37,7 @@ One verdict per plan: **confirmed**, **rejected**, **inconclusive** (enough case
    - Without it: a wrong config gives a confident, wrong verdict.
 3. **Evidence** (not for a mismatch):
    - the main measure: its value, its test statistic, and the plan's threshold;
-   - the supporting check, its value and whether it passed;
+   - the supporting check, its value and whether it passed; it counts in the decision: a main measure that confirms with a failed check gives inconclusive (operator, 2026-11-14; code refuses a "confirmed" with a failed check);
    - the counts: every count the plan's minimums refer to, each one named;
    - the rule the numbers meet ("decided by");
    - the literal reading taken ("reading").

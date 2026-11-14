@@ -65,9 +65,10 @@ same settings.
 
 Your criterion (plan only). Ask: if this idea is true, where would it show in the forecast, in
 its changes, or in the portfolio's value, and what would we see there if it is false? Name one
-horizon, in bars. Use one main measure, and at most one supporting check. State the result that
+horizon, in bars. Use one main measure, and at most one supporting check. A supporting check is part of the decision: the idea
+is confirmed only when the main measure confirms and the check passes; write the confirm rule so. State the result that
 would confirm the idea and the result that would reject it, in terms that can be measured on
-that record, with the evidence you require as a number, counting overlapping returns once. A reject needs evidence as strong as a
+that record, with the evidence you require as a number, measured as the workflow measures (below). A reject needs evidence as strong as a
 confirm: the same strength of test in the other direction (if t of 2 or more confirms, t of -2 or less rejects).
 An estimate merely on the wrong side of zero is not a reject. A result near zero is never a reject, even
 when the idea or its brief says it is wrong if there is no difference: it is inconclusive. Say
@@ -75,9 +76,7 @@ which results would neither confirm nor reject, and the minimum count of cases. 
 idea: an idea about rare extreme situations shows in what follows the largest positions; an
 idea about a steady relation shows in gains that grow with the size of the position. Judge
 before costs, and against simply holding the coin, so that the market's own rise is not
-credited to the idea. Holding is the coin's mean return over all the test's windows together, never a
-mean over a single window: such a mean contains the price moves that set the forecast, and biases
-the result.
+credited to the idea.
 
 One test per idea. Keep every line short: each fidelity line is one short sentence, and each criterion line one
 or two. Output exactly this, and nothing else.

@@ -84,6 +84,9 @@ def check_result(out):
             if not isinstance(out.get(k), str) or not out[k].strip():
                 raise ValueError(f"{k} must be a sentence")
         return
+    sup = out.get("supporting_check")
+    if out["status"] == "confirmed" and isinstance(sup, dict) and sup.get("passed") is False:
+        raise ValueError("the status is confirmed but the supporting check failed: a confirm needs the check to pass (inconclusive)")
     mm = out.get("main_measure")
     if not isinstance(mm, dict) or "value" not in mm:
         raise ValueError("main_measure must be a dict with a value")
@@ -165,6 +168,7 @@ def main():
     system = (HERE / "system_prompt.md").read_text()
     request = (f"[TEST PLAN]\n{plan_text}\n[CONFIG]\n{config}\n"
                f"[THE RECORD]\n{args.record_description.read_text()}\n"
+               f"[HOW THE WORKFLOW MEASURES]\n{(HERE.parents[1] / 'common' / 'measures.md').read_text()}\n"
                f"This record holds:\n{windows}\nColumns: {', '.join(columns)}\n\n"
                f"Write measure(bars) for this plan.")
 

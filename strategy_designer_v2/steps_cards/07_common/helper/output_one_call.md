@@ -1,10 +1,4 @@
-Ideas. From your findings, write the ideas your line asks for. An idea is something we would see in the market if a
-theory were true, that a trader could act on (take or refuse a trade), and that the data can confirm or reject:
-- about one coin at a time: what we would see in one coin's own bars;
-- one direction, never "either"; it says something happens, never that something does not;
-- concrete: someone looking at the bars could tell whether it is there;
-- no trading rule, no setting value, no result, no price;
-- its situation uses only what is known at a bar's close.
+Ideas. From your findings, write the ideas your line asks for. {{IDEA_DEFINITION}}
 Every idea rests on findings and names them. Write no idea that no finding supports. If your findings support none,
 say so.
 

@@ -93,7 +93,7 @@ Index line: `001-01_rsi-high-extreme-gives-back: after an extreme high RSI, pric
 
 **Cost.** 0.02 to 0.05 USD per brief; a retry doubles it.
 
-**Prompt**: `helper/system_prompt.md`.
+**Prompt**: `helper/system_prompt.md`, with the definition of an idea from `../common/idea_definition.md` (shared with step 7; operator, 2026-11-14).
 
 ## Quality criteria on the ideas
 - Each idea meets the definition: we would see it if the theory were true, a trader could take or refuse a trade on its answer, the data can confirm or reject it.

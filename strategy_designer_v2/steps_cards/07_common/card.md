@@ -84,16 +84,16 @@ One analysis per backtest: findings, then ideas, each idea in step 2's format, o
 - **One call** (the default): the same model explores, writes its findings, then its ideas.
 - **Analyst, then deducer** (`--split`): the analyst explores and writes findings only; a deducer, who does not see the data, writes the ideas from the findings.
 
-**Checks in code.** They refuse only an answer they cannot read, and send it back (three attempts): no findings; an idea without its sentence, consequence or findings; an idea resting on a finding that does not exist; a field over 300 words; neither ideas nor "no-ideas". A function that fails returns its error as the round's result, without any file path. Code also refuses a period named by its months and year (a month name next to a year, a quarter with its year, a year and month written as numbers): periods are named by window or by year. The verdict and check text given to the model carry no path lines. An idea that compares with or depends on another coin or the market is sent back (overnight test, 2026-11-13).
+**Checks in code.** They refuse only an answer they cannot read, and send it back (three attempts): no findings; an idea without its sentence, consequence or findings; an idea resting on a finding that does not exist; a field over 300 words; neither ideas nor "no-ideas". A function that fails returns its error as the round's result, without any file path. Code also refuses a period named by its months and year (a month name next to a year, a quarter with its year, a year and month written as numbers): periods are named by window or by year. The verdict and check text given to the model carry no path lines.
 
 **Model.** Opus. **Cost.** About 0.3 USD and 1 to 2 minutes per analysis (exercise 1: 17 analyses, 5.38 USD; the split costs about 20 % more).
 
-**Prompts.** `helper/common_rules.md` + the line's `line_prompt.md` + `helper/output_one_call.md` (or `output_analyst.md`, then `deducer.md`).
+**Prompts.** `helper/common_rules.md` + the workflow's measuring definitions (`../common/measures.md`, shared with steps 3 and 5) + the line's `line_prompt.md` + `helper/output_one_call.md` (or `output_analyst.md`, then `deducer.md`), each with the definition of an idea (`../common/idea_definition.md`, shared with step 2).
 
 ## Quality criteria (every line)
 - **Every finding states its numbers,** and they are in its exploration results.
 - **Every idea rests on named findings** and follows from them.
-- **Every idea meets step 2's definition of an idea:** one coin at a time, one direction, it says something happens, concrete, its situation known at a bar's close.
+- **Every idea meets the definition of an idea** (`../common/idea_definition.md`, the same as step 2's).
 - **The line keeps to its objective:** it looks where its card says, and proposes what its card says.
 - **No dates** in what it writes.
 

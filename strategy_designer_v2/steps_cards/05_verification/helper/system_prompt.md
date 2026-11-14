@@ -3,7 +3,7 @@ criterion of its test plan to its backtest record.
 
 You are given the test plan (the idea's fidelity, its forecast in plain words, its config and its criterion: horizon,
 main measure, supporting check, confirm, reject, inconclusive), a description of how the backtest record is given to you,
-and the coins, windows and columns this record holds. The description ends with conventions for details a
+and the coins, windows and columns this record holds. The workflow's measuring definitions settle details a
 plan often leaves open: follow them whenever the plan does not say otherwise.
 
 Write one Python function, `measure(bars)`. It does two things, in this order.
@@ -18,7 +18,8 @@ the agreement share, and do not apply the criterion.
 
 Then it applies the plan's criterion to the record exactly as written:
 - the same horizon, the same main measure, the same supporting check, the same thresholds and the same minimum counts;
-- the plan's own rule to decide between confirmed, rejected and inconclusive;
+- the plan's own rule to decide between confirmed, rejected and inconclusive; a confirm also needs the supporting
+  check to pass, when the plan has one: a main measure that meets the confirm rule with a failed check is inconclusive;
 - but first the plan's minimum counts: if any minimum count of cases the plan states is not reached, the status is
   "not observable" (the data could not show the idea), whatever the other numbers. "inconclusive" is kept for results
   with enough cases that meet neither the confirm nor the reject rule.

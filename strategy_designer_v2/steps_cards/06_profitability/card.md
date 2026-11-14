@@ -57,7 +57,7 @@ One profitability check per backtest: **profitable enough** or **not profitable 
 | Calmar | 0.75 | strictly above |
 | Trades per bar | 1 % | at least |
 
-**Definitions, the same for every backtest:**
+**Definitions, the same for every backtest** (the same as the workflow's shared definitions, `../common/measures.md`):
 - **The book of one coin in one window:** the backtest's value after each rebalance and its fees, at the last bar of each day. Daily returns stay inside a window.
 - **The backtest's book:** all its coins together, equal weight: each day, the mean of the coins' daily returns. **Holding:** the same, from the coins' closing prices.
 - **Sharpe:** the mean of all daily returns over their standard deviation, times √365.

@@ -139,7 +139,9 @@ def parse_findings(text):
     return {f"F{k}": v.strip() for k, v in f.items()}
 
 
-OTHER_COIN = re.compile(r"\b(other coins?|altcoins?|bitcoin'?s|btc'?s|than (bitcoin|btc|the market)|the market'?s|the average of the)\b", re.I)
+COMMON = HERE.parents[1] / "common"   # the workflow's shared definitions (measures, what an idea is)
+IDEA_DEFINITION = (COMMON / "idea_definition.md").read_text()
+MEASURES = (COMMON / "measures.md").read_text()
 
 
 def parse_ideas(text, findings):
@@ -163,9 +165,6 @@ def parse_ideas(text, findings):
         missing = [r for r in refs if r not in findings]
         if missing:
             raise ValueError(f"an idea rests on findings that do not exist: {', '.join(missing)}")
-        if OTHER_COIN.search(g["idea"]):
-            raise ValueError(f"an idea compares with or depends on another coin or the market ('{OTHER_COIN.search(g['idea']).group(0)}'); "
-                             "every idea is about one coin's own bars: rewrite it, or drop it")
         g["refs"] = refs
         ideas.append(g)
     if not ideas and not m:
@@ -223,8 +222,9 @@ def main():
                f"[THE CHECK OF THE BOOK (step 6)]\n{no_paths(check) if check.exists() else s6}\n"
                f"[THE DATA]\n{(HERE / 'data_description.md').read_text()}\nThis backtest holds:\n{data_summary(record)}\n")
     line_prompt = (line_dir / "helper" / "line_prompt.md").read_text()
-    system = ((HERE / "common_rules.md").read_text() + "\n" + line_prompt + "\n"
-              + (HERE / ("output_analyst.md" if args.split else "output_one_call.md")).read_text())
+    system = ((HERE / "common_rules.md").read_text() + "\n[HOW THE WORKFLOW MEASURES]\n" + MEASURES + "\n" + line_prompt + "\n"
+              + (HERE / ("output_analyst.md" if args.split else "output_one_call.md")).read_text()
+              ).replace("{{IDEA_DEFINITION}}", IDEA_DEFINITION)
 
     d = out_dir / rid
     (d / "exploration").mkdir(parents=True, exist_ok=True)
@@ -258,7 +258,7 @@ def main():
         sys.exit(f"no valid answer; cost {cost:.4f} USD")
 
     if args.split:
-        deducer_system = (HERE / "deducer.md").read_text() + "\n" + line_prompt
+        deducer_system = (HERE / "deducer.md").read_text().replace("{{IDEA_DEFINITION}}", IDEA_DEFINITION) + "\n" + line_prompt
         fl = "\n".join(f"{k}: {v}" for k, v in findings.items())
         req = context.split("[THE DATA]")[0] + f"[THE FINDINGS]\n{fl}\n\nWrite the ideas your line asks for."
         retry = ""

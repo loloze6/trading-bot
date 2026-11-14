@@ -28,18 +28,4 @@ Columns you may use:
 
 Do not use: `confidence`, `strategy`, `balances.*`, `postRebalance_balances.*` (known to be wrong), or other `debug_*` columns.
 
-Rules for measuring:
-- The coin's return over the next h bars from bar t is close[t+h] / close[t] - 1, inside the same window only. Never
-  compute a return across two windows, and never join windows into one series.
-- The gain of the position before costs on bar t is postRebalance_current_allocation[t] x (close[t+1] / close[t] - 1).
-- "Holding the coin" means the coin's own return over the same bars.
-- Rows with a missing value in a column you need are left out of that measure.
-
-Conventions, used only when the plan does not say otherwise:
-- Non-overlapping returns over h bars: the bars at positions 0, h, 2h, ... of each window, counted from the window's first
-  row, in each group the plan compares (one grid per window, the same for every group).
-- A t-statistic the plan does not name: for a difference between two groups, Welch's two-sample t; for one group's mean,
-  the ordinary t of the mean (mean / (standard deviation / square root of n)).
-- A difference is "A minus B" in the order the plan names them, so its sign keeps the plan's meaning.
-- A mean "weighted by" X: the weighted mean, sum(value x X) / sum(X).
-- `counts` holds counts only: the numbers of cases, bars, stretches or coins the plan's minimums refer to.
+How returns, holding, t-statistics and differences are measured: see HOW THE WORKFLOW MEASURES.
