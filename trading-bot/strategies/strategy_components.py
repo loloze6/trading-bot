@@ -1845,6 +1845,45 @@ class WeekdayComponent(SubStrategyComponent):
         return 2
 
 
+class DistanceFromHighComponent(SubStrategyComponent):
+    """
+    Percent distance of the close below its recent highest close, on every bar:
+
+        raw_value = (close[t] - H[t]) / H[t] x 100,   H[t] = the highest of the last `period` closes (bar t included)
+
+    Graded and one-sided: 0 at a new high, more negative the deeper the close sits below it. No lag: H includes bar t's
+    close. Closes only, no lookahead. No scaling_factor: the config's transforms scale it.
+
+    NaN: a window that holds a NaN close gives NaN. A `period` below 2 raises when the component is built.
+    """
+
+    def __init__(self, name="DistanceFromHigh", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 60))
+        if self.period < 2:
+            raise ValueError(f"DistanceFromHighComponent: period must be >= 2, got {self.period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        window = data['close'].iloc[-self.period:].astype(float)
+        high = float(window.max(skipna=False))
+        last_close = float(window.iloc[-1])
+        self._raw_value = (last_close - high) / high * 100.0
+        self.confidence = 1.0
+        self.debug_info = {'recent_high': high, 'close': last_close}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period
+
+
 class BarsSinceHighComponent(SubStrategyComponent):
     """
     How recent the last new closing high is, as a regime measure, on every bar:

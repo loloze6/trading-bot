@@ -40,3 +40,18 @@ the coin keeps rising while the book is short) and both find that shorts deep be
 move the measures only on the coins it read, and not on unseen coins: the short side fights the coins' upward drift,
 and the conditional cut 7.d found there (t 1.93 in one quartile) does not carry over. Two of the five repairs needed a
 component the catalogue does not have (the change of the distance to an average; the distance below the recent high).
+
+## Final review and confirming run (`run_3/`, 1.03 USD)
+
+The review against the business objective found four things, all fixed in the line's prompt and card:
+- the card's objective still said "angle by angle"; it now says "starting from the measures that failed", and "or say
+  that none would";
+- the measures are named by what they mean (falls, one period carrying the result, the gain, how often it trades), and
+  "one period carrying the result" has its own angle instead of sitting with the falls;
+- "a new idea, marked as such" put the label inside the idea's text, which step 3 reads; an idea of its own is now
+  written like any idea;
+- nothing said what to answer when no idea removes the cause; "no ideas, with that cause" is now said.
+
+One run on the three inputs with the fixed prompt: no label in any idea's text (0 of 9); repairs written in full; the
+same main repairs as runs 1 and 2 on 002-01 and 002-03; on 002-04 the line reads the short's bet as reversed (the
+deeper below the average, the larger the rebound) and proposes it as an idea of its own.

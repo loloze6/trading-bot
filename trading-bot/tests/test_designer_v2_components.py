@@ -1,5 +1,6 @@
 """
-strategy_designer_v2 components (operator, 2026-11-14): MovingAverageSlopeComponent (graded, a forecast source),
+strategy_designer_v2 components (operator, 2026-11-14): MovingAverageSlopeComponent and DistanceFromHighComponent
+(graded, forecast sources),
 and three regime measures: MovingAverageAgeComponent, BarsSinceHighComponent, WeekdayComponent.
 
 Each output is checked against an independent hand computation on synthetic bars that uses only rows up to and
@@ -7,6 +8,7 @@ including bar t (no lookahead), plus warmup, parameter validation, a real engine
 validate_config accepts each class where it is meant to be used (the graded one in a strategy, the regime measures in
 the regime detector).
 """
+import math
 import sys
 from pathlib import Path
 
@@ -20,6 +22,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from strategies.strategy_base import MarketRegime  # noqa: E402
 from strategies.strategy_components import (  # noqa: E402
     BarsSinceHighComponent,
+    DistanceFromHighComponent,
     MovingAverageAgeComponent,
     MovingAverageSlopeComponent,
     WeekdayComponent,
@@ -235,4 +238,44 @@ def test_validator_accepts_the_regime_measures_in_the_detector(cls, params, op, 
               "strategies": {**_strategies("MovingAverageSlopeComponent", {"period": 50, "lookback": 10}), "warmup": 61}}
     config["strategies"]["regimes"]["trending"] = config["strategies"]["regimes"].pop("unknown")
     config["strategies"]["regimes"]["unknown"] = None
+    assert validate(config) == []
+
+
+# ---------------------------------------------------------------------------
+# DistanceFromHighComponent
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("t", [30, 77, 149])
+def test_distance_from_high_matches_the_hand_computation_using_rows_up_to_t(t):
+    df = _bars(150)
+    c = df["close"].to_numpy()[: t + 1]
+    high = c[-30:].max()
+    got = _run(DistanceFromHighComponent(parameters={"period": 30}), df.iloc[: t + 1])
+    assert got == pytest.approx((c[-1] - high) / high * 100.0, rel=1e-12)
+
+
+def test_distance_from_high_is_zero_at_a_new_high_and_negative_below():
+    close = np.r_[np.linspace(100, 120, 40), np.linspace(119, 90, 20)]
+    df = pd.DataFrame({"timestamp": pd.date_range("2021-01-01", periods=len(close), freq="D"), "close": close})
+    p = {"period": 30}
+    assert _run(DistanceFromHighComponent(parameters=p), df.iloc[:40]) == 0.0
+    assert _run(DistanceFromHighComponent(parameters=p), df) == pytest.approx((90 - 120) / 120 * 100.0)
+
+
+def test_distance_from_high_warmup_nan_and_bad_params():
+    comp = DistanceFromHighComponent(parameters={"period": 30})
+    assert comp.get_required_periods() == 30
+    assert _run(comp, _bars(29)) == 0.0 and not comp.is_ready()
+    df = _bars(60)
+    df.loc[45, "close"] = np.nan
+    assert math.isnan(_run(DistanceFromHighComponent(parameters={"period": 30}), df))
+    assert DistanceFromHighComponent().period == 60
+    with pytest.raises(ValueError, match="period"):
+        DistanceFromHighComponent(parameters={"period": 1})
+
+
+def test_validator_accepts_the_distance_from_high_in_a_strategy():
+    config = {"regime_detector": {"mode": "threshold_rules", "components": [], "rules": [],
+                                  "default_regime": "unknown"},
+              "strategies": {**_strategies("DistanceFromHighComponent", {"period": 60}), "warmup": 61}}
     assert validate(config) == []
