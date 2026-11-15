@@ -23,8 +23,8 @@ import yaml
 
 HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[1]
-sys.path.insert(0, str(STEPS / "03_test_plan" / "helper"))
-from make_test_plan import call, write_atomic, idea_for_step3   # noqa: E402  (the same closed-book call as steps 3 and 5; the idea fields step 3 reads)
+sys.path.insert(0, str(STEPS / "common"))
+from lib import call, write_atomic, header_fields as header, idea_fields  # noqa: E402  (shared helpers, common/lib.py)
 
 ATTEMPTS, MAX_WORDS, ROW_CAP, CHAR_CAP = 3, 300, 40, 15000
 DATE = re.compile(r"\b(19|20)\d\d-\d\d(-\d\d)?([ T]\d\d:\d\d(:\d\d)?(\.\d+)?([+-]\d\d:\d\d|Z)?)?\b")
@@ -66,11 +66,6 @@ with pd.option_context("display.max_rows", cap_rows, "display.max_columns", 14, 
         parts.append(f"## {k}\n{txt}")
 print("\n\n".join(parts)[:cap_chars])
 '''
-
-
-def header(text):
-    m = re.match(r"\s*---\n(.*?)---\n", text, re.S)
-    return {k.strip(): v.strip() for k, v in (l.split(":", 1) for l in m.group(1).splitlines() if ":" in l)} if m else {}
 
 
 def status_of(folder, rid):
@@ -250,7 +245,7 @@ def main():
     check = (args.checks_dir / rid / "check.md")
     no_paths = lambda f: "".join(l for l in f.read_text().splitlines(True) if not re.match(r"(Plan|Record|Measure|Rule):", l))
     idea_file = args.idea or next(iter(sorted(HERE.parents[1].glob(f"**/{h.get('idea', '')}.md"))), None)
-    idea_text = idea_for_step3(idea_file.read_text()) if idea_file and idea_file.exists() else "(not found)"
+    idea_text = idea_fields(idea_file.read_text()) if idea_file and idea_file.exists() else "(not found)"
     context = (f"[THE BRIEF]\n{brief}\n[THE IDEA THAT WAS TESTED]\n{idea_text}\n[THE TEST PLAN]\n{plan_text}\n[ITS CONFIG]\n{config.read_text() if config.exists() else '(none)'}\n"
                f"[THE VERDICT ON THE IDEA (step 5)]\n{no_paths(verdict) if verdict.exists() else s5}\n"
                f"[THE CHECK OF THE BOOK (step 6)]\n{no_paths(check) if check.exists() else s6}\n"

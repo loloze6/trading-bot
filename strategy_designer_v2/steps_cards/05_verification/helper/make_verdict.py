@@ -15,9 +15,8 @@ import argparse, gzip, json, os, re, subprocess, sys, tempfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-STEP3_HELPER = HERE.parents[1] / "03_test_plan" / "helper"
-sys.path.insert(0, str(STEP3_HELPER))
-from make_test_plan import call, write_atomic   # noqa: E402  (the same closed-book call as step 3)
+sys.path.insert(0, str(HERE.parents[1] / "common"))
+from lib import common_text, call, write_atomic  # noqa: E402  (shared helpers, common/lib.py)
 
 ATTEMPTS = 3
 STATUSES = ("confirmed", "rejected", "inconclusive", "not observable", "mismatch")
@@ -166,8 +165,8 @@ def main():
     system = (HERE / "system_prompt.md").read_text()
     request = (f"[TEST PLAN]\n{plan_text}\n[CONFIG]\n{config}\n"
                f"[THE RECORD]\n{(HERE / 'record_description.md').read_text()}\n"
-               f"[WHAT A BACKTEST RECORDS]\n{(HERE.parents[1] / 'common' / 'backtest_record.md').read_text()}\n"
-               f"[HOW THE WORKFLOW MEASURES]\n{(HERE.parents[1] / 'common' / 'measures.md').read_text()}\n"
+               f"[WHAT A BACKTEST RECORDS]\n{common_text("backtest_record")}\n"
+               f"[HOW THE WORKFLOW MEASURES]\n{common_text("measures")}\n"
                f"This record holds:\n{windows}\nColumns: {', '.join(columns)}\n\n"
                f"Write measure(bars) for this plan.")
 

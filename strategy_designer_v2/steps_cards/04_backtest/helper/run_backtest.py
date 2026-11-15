@@ -25,6 +25,8 @@ This script does not open the price data itself: only the engine reads bars.
 """
 import argparse, gzip, json, os, re, shutil, subprocess, sys, tempfile
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common"))
+from lib import write_atomic  # noqa: E402  (shared helpers, common/lib.py)
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[3]
@@ -110,12 +112,6 @@ def protocol(python, symbol, bar, folds):
     if r.returncode:
         sys.exit(f"could not build the protocol: {r.stderr[-500:]}")
     return json.loads(r.stdout)
-
-
-def write_atomic(path, text):
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(text)
-    os.replace(tmp, path)
 
 
 def index_line(index_path, plan_id, line):

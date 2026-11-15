@@ -20,6 +20,8 @@ Definitions (the same for every backtest):
 """
 import argparse, gzip, json, math, os, re, sys
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common"))
+from lib import write_atomic  # noqa: E402  (shared helpers, common/lib.py)
 
 import numpy as np
 import pandas as pd
@@ -35,12 +37,6 @@ MEASURES = [  # (rule key, label, comparison)
     ("calmar_min", "Calmar", "above"),
     ("trade_frequency_min", "Trades per bar", "at least"),
 ]
-
-
-def write_atomic(path, text):
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(text)
-    os.replace(tmp, path)
 
 
 def sharpe(r):

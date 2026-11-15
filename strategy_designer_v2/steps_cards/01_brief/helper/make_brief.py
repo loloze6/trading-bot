@@ -13,28 +13,12 @@ repository, an empty working folder. This script reads no market data.
 """
 import argparse, json, os, re, subprocess, sys, tempfile
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common"))
+from lib import call, write_atomic  # noqa: E402  (shared helpers, common/lib.py)
 
 HERE = Path(__file__).resolve().parent
 KEYS = {"venue", "instruments", "bar", "period", "side", "source"}
 MAX_THEORY_WORDS, MAX_INDEX_WORDS, ATTEMPTS = 900, 100, 3   # guards against a runaway answer, not length rules
-DROP_ENV = {"CLAUDE_ADDITIONAL_DIRECTORIES", "CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD", "CLAUDE_EFFORT",
-            "CLAUDE_CODE_USER_EMAIL", "CLAUDE_CODE_REMOTE_SESSION_ID", "CLAUDE_CODE_SESSION_ID"}
-
-
-def call(model, system, request):
-    """One model call, closed book. Returns (text, cost in USD)."""
-    cmd = ["claude", "-p", request, "--model", model, "--system-prompt", system, "--tools", "",
-           "--strict-mcp-config", "--disable-slash-commands", "--no-session-persistence", "--setting-sources", "",
-           "--settings", '{"attribution":{"commit":"","pr":""},"includeCoAuthoredBy":false}', "--output-format", "json"]
-    env = {k: v for k, v in os.environ.items() if k not in DROP_ENV}
-    with tempfile.TemporaryDirectory() as empty:
-        p = subprocess.run(cmd, cwd=empty, env=env, capture_output=True, text=True, timeout=600)
-    d = json.loads(p.stdout)
-    if d.get("is_error"):
-        sys.exit(f"model call failed: {d.get('result')}")
-    return d["result"], d["total_cost_usd"]
-
-
 def slug(text, max_words=8):
     """A file-safe name: lowercase words joined by hyphens, at most max_words words."""
     words = re.sub(r"[^a-z0-9]+", " ", text.lower()).split()
@@ -67,12 +51,6 @@ def parse(text, with_source):
     others = fields.get("other-theories", "not given") if with_source else None
     bracket = "[" + ", ".join(header) + "]"
     return header, body, short, summary, bracket, others
-
-
-def write_atomic(path, text):
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(text)
-    os.replace(tmp, path)
 
 
 def main():

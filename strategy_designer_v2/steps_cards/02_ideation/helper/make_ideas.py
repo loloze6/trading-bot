@@ -10,28 +10,12 @@ repository, an empty working folder. This script reads no market data.
 """
 import argparse, json, os, re, subprocess, sys, tempfile
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common"))
+from lib import common_text, call, write_atomic  # noqa: E402  (shared helpers, common/lib.py)
 
 HERE = Path(__file__).resolve().parent
 MAX_FIELD_WORDS, ATTEMPTS = 300, 3   # 300 words: a guard against a runaway answer, not a length rule
 MARKET_KEYS = {"venue", "instruments", "bar", "period", "side"}
-DROP_ENV = {"CLAUDE_ADDITIONAL_DIRECTORIES", "CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD", "CLAUDE_EFFORT",
-            "CLAUDE_CODE_USER_EMAIL", "CLAUDE_CODE_REMOTE_SESSION_ID", "CLAUDE_CODE_SESSION_ID"}
-
-
-def call(model, system, request):
-    """One model call, closed book. Returns (text, cost in USD)."""
-    cmd = ["claude", "-p", request, "--model", model, "--system-prompt", system, "--tools", "",
-           "--strict-mcp-config", "--disable-slash-commands", "--no-session-persistence", "--setting-sources", "",
-           "--settings", '{"attribution":{"commit":"","pr":""},"includeCoAuthoredBy":false}', "--output-format", "json"]
-    env = {k: v for k, v in os.environ.items() if k not in DROP_ENV}
-    with tempfile.TemporaryDirectory() as empty:
-        p = subprocess.run(cmd, cwd=empty, env=env, capture_output=True, text=True, timeout=600)
-    d = json.loads(p.stdout)
-    if d.get("is_error"):
-        sys.exit(f"model call failed: {d.get('result')}")
-    return d["result"], d["total_cost_usd"]
-
-
 def brief_header(text):
     """The brief's header lines, word for word."""
     m = re.match(r"\s*---\n(.*?)---\n", text, re.S)
@@ -74,12 +58,6 @@ def parse(text):
     return ideas, already
 
 
-def write_atomic(path, text):
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(text)
-    os.replace(tmp, path)
-
-
 def main():
     a = argparse.ArgumentParser()
     a.add_argument("brief", type=Path)
@@ -93,7 +71,7 @@ def main():
     ideas_dir.mkdir(parents=True, exist_ok=True)
     index = index_path.read_text() if index_path.exists() else ""
     system = (HERE / "system_prompt.md").read_text().replace(
-        "{{IDEA_DEFINITION}}", (HERE.parents[1] / "common" / "idea_definition.md").read_text())
+        "{{IDEA_DEFINITION}}", common_text("idea_definition"))
     request = (f"[INDEX OF IDEAS ALREADY WRITTEN]\n{index.strip() or '(empty)'}\n\n"
                f"Write the ideas this research brief gives.\n\n[BRIEF]\n{brief_text}")
 
