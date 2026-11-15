@@ -1,0 +1,57 @@
+{
+  "line": "7.b",
+  "backtest": "002-01_sma-golden-cross-upward-drift_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.3016058,
+  "findings": {
+    "F1": "The plan's forecast slope on the coin's excess 10-day return is flat at every horizon (t 0.20, 0.37, 0.55 and -0.06 at 5, 10, 20 and 40 days; 3349, 1657, 811 and 388 non-overlapping cases), and inside the active bars the forecast buckets do not rise in order (0\u20135: -0.0085, 5\u201310: +0.0023, 10\u201315: +0.0105, 15\u201320: -0.0012, capped 20: +0.0009). So the spread's size grades nothing.",
+    "F2": "The effect is mixed by year, not absent. The forecast slope is negative in 2020 (t -2.22, 216 cases) and 2022 (t -2.42, 210 cases), and near zero or slightly positive in the other years. No coin reaches |t| 1 (BTC 0.94 to XRP -0.28), so year-level swings cancel in the pooled test.",
+    "F3": "Within bars where the 50-day SMA is above the 200-day SMA, the coin's 20-day return grades the next 10 days clearly. Its slope on excess return is 0.069 with t 3.26 over 694 cases. The quartiles rise in order: q1 -0.029, q2 -0.001, q3 +0.010, q4 +0.034.",
+    "F4": "The same 20-day return carries no forward information while the 50-day SMA is below the 200-day SMA (slope -0.020, t -0.84, 681 cases). The up-minus-down 20-day-return split is -0.004 (t -0.40) there, against +0.039 (t 3.00; 361 vs 333 cases) in the up-trend. So the golden-cross state acts as a regime for short-term momentum, not as a signal by itself.",
+    "F5": "The interaction of forecast and 20-day return is significant (slope 0.0031, t 2.87, 1375 cases). The 20-day effect is positive for 4 of 6 coins in the up-trend (ZEC t 1.78, XRP t 1.60). It is positive in 2019\u20132021 and 2024\u20132025 (t 2.47 in 2024, 2.24 in 2025) but negative in 2023 (t -2.66, 99 cases).",
+    "F6": "The cross itself does not start a drift. Bars within 20 days after the spread turned positive have mean excess 10-day return -0.018 (107 cases) and 40-day return -0.123 (17 cases). Bars 20\u201360 days after have +0.004 and +0.082. Early post-cross moves tend to give back first.",
+    "F7": "The book's Sharpe is 0.49 against holding's 0.57 (difference -0.080), with Calmar 0.20, consistent with a position sized on the spread level that F1 shows carries no gradient."
+  },
+  "ideas": [
+    {
+      "idea": "While a coin's 50-day SMA is above its 200-day SMA, the higher its 20-day return, the more it rises over the next 10 days relative to its usual 10-day move.",
+      "consequence": "Within a golden-cross up-trend, a trader should weight longs by recent 20-day strength rather than by the width of the SMA spread, and stand aside on up-trend coins that have lagged.",
+      "name": "momentum inside golden-cross regime",
+      "from": "F3, F4, F5, F1",
+      "refs": [
+        "F3",
+        "F4",
+        "F5",
+        "F1"
+      ]
+    },
+    {
+      "idea": "The further a coin's 20-day return has risen, the more it rises over the next 10 days, only while its 50-day SMA is above its 200-day SMA.",
+      "consequence": "A short-term momentum long is worth taking only in the coin's long-term up-trend regime and should be refused below the 200-day average cross.",
+      "name": "trend regime gates momentum",
+      "from": "F4, F3",
+      "refs": [
+        "F4",
+        "F3"
+      ]
+    },
+    {
+      "idea": "In the first 20 days after a coin's 50-day SMA crosses above its 200-day SMA, the coin falls relative to its usual move over the next 10 days, and the fall is larger the more recent the cross.",
+      "consequence": "A trader should not buy the golden cross on its day but wait for the early give-back before following the trend.",
+      "name": "early golden-cross give-back",
+      "from": "F6",
+      "refs": [
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-regime",
+    "002-01_sma-golden-cross-upward-drift.b2_trend-regime-gates-momentum",
+    "002-01_sma-golden-cross-upward-drift.b3_early-golden-cross-give-back"
+  ],
+  "no_ideas": null
+}

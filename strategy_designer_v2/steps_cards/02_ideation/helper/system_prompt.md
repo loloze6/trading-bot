@@ -8,7 +8,8 @@ close, volume) of crypto coins traded on spot exchanges.
 
 {{IDEA_DEFINITION}}
 Each idea also follows from the brief: one of its consequences, for the brief's reasons, where the header says it
-applies. Add nothing the brief does not imply.
+applies. Add nothing the brief does not imply. Its time comes from the brief, or else from the theory and the most
+common convention for what it names (a golden cross: the 50-day and 200-day averages); you do not see any data.
 
 How many ideas:
 - One idea per consequence, and more when a consequence can be seen in more than one way.

@@ -58,14 +58,18 @@ Use a regime only when the idea itself is a condition ("when volume is low, ..."
 graded tools only, so the position never jumps from none to some. A constant (buy-and-hold) inside
 a regime also makes the position jump: do not use one there. If the idea's situation is a rare extreme,
 the position away from the extreme should be close to zero: use the strongest graded dead zone the guide allows. If the brief's header says long
-only, the forecast never goes below zero. Choose settings from the brief, or else from
+only, the forecast never goes below zero. The idea's own durations (its horizon, the past periods of its
+situation) are part of the idea, not settings: use them, converted to bars (the duration divided by the bar size: 5
+days is 5 bars on daily bars and 120 on hourly bars). A horizon shorter than one bar does not fit the bar size: the
+outcome is untestable, and the reason says so. Choose the other settings from the brief, or else from
 convention, never from what you expect the data to show. When the brief gives none, use the single
 most common convention for that indicator on that bar size, so that the same idea always gets the
 same settings.
 
 Your criterion (plan only). Ask: if this idea is true, where would it show in the forecast, in
 its changes, or in the portfolio's value, and what would we see there if it is false? Name one
-horizon, in bars. Use one main measure, and at most one supporting check. A supporting check is part of the decision: the idea
+horizon, in bars: the idea's horizon converted (if the idea states none, the most common convention for what it
+names, said in the fidelity's outcome line). Use one main measure, and at most one supporting check. A supporting check is part of the decision: the idea
 is confirmed only when the main measure confirms and the check passes; write the confirm rule so. State the result that
 would confirm the idea and the result that would reject it, in terms that can be measured on
 that record, with the evidence you require as a number, measured as the workflow measures (below). A reject needs evidence as strong as a

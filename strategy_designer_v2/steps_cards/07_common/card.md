@@ -105,7 +105,7 @@ One analysis per backtest: findings, then ideas, each idea in step 2's format, o
 The workflow: a line is relevant when one of its ideas, taken through steps 3 to 6, changes the result that sent the backtest to the line (each line's card says which). The operator reads the findings ("are they true and important?"). Code checks the shape.
 
 ## To observe in the tests
-- **Setting values in ideas** ("the 200-day average", "20 bars"). Step 2's definition says no setting value; whether an extra guard is needed is decided by the tests. Exercise 1: almost every idea names values, some inherited from the plan, some new and found in the data (`exercise_1/reading.md`).
+- **Durations in ideas.** Settled (operator, 2026-11-15): an idea states its time in real time (its horizon, and the past period of its situation), never in bars; levels and thresholds stay out (`../common/idea_definition.md`). Before: Exercise 1: almost every idea names values, some inherited from the plan, some new and found in the data (`exercise_1/reading.md`).
 - **How many looks at the data** a line takes before its ideas.
 
 ## What the lines do not do

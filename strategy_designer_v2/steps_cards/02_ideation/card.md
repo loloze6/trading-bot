@@ -103,7 +103,7 @@ Index line: `001-01_rsi-high-extreme-gives-back: after an extreme high RSI, pric
 - Faithful: a consequence of the brief, for the brief's reasons, where its header says it applies.
 - Concrete: someone looking at the bars could tell whether it is there.
 - About one coin at a time: what we would see in one coin's own bars. A consequence that needs two coins at once is not an idea here; when no consequence of a brief is about one coin, the helper writes `no-ideas` with the reason.
-- No setting value, no trading rule, no result, no price.
+- Its time in real time (its horizon, and the past period of its situation), from the brief or the theory's convention; no level or threshold, no trading rule, no result, no price (operator, 2026-11-15).
 - Distinct: no two ideas differ only by a setting. A span between two events the brief names (from one cross to the opposite cross) is a situation of its own.
 - Together, the ideas cover the brief's consequences, and every answer of a question brief that has a reason.
 - Not the same as an idea in the index. A close one is allowed.
