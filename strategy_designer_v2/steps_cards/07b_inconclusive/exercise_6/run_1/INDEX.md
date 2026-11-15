@@ -1,2 +1,0 @@
-002-01_sma-golden-cross-upward-drift_1d: 1 ideas (2 explorations)
-002-03_price-cross-above-long-sma_1d: no ideas: Being above the 200-day average is followed by excess returns close to zero at every horizon from 5 to 60 days (F2), with no grading by distance (F4) and no subset where the effect shows clearly (F5). The main measure's positive t comes from ten outlier blocks (F1), so the clear answer is that this situation carries no usable trend persistence on these coins.

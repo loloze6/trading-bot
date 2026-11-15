@@ -1,0 +1,6 @@
+002-01_sma-golden-cross-upward-drift_1d: not profitable enough [Sharpe 0.4894; Sharpe minus holding's Sharpe -0.08021; Calmar 0.2015]
+002-02_sma-death-cross-downward-drift_1d: not profitable enough [Sharpe -0.4822; Sharpe minus holding's Sharpe -1.052; Calmar -0.1591]
+002-03_price-cross-above-long-sma_1d: not profitable enough [Sharpe 0.6758; Sharpe minus holding's Sharpe 0.1062; Calmar 0.3855]
+002-04_price-cross-below-long-sma_1d: not profitable enough [Sharpe -0.4263; Sharpe minus holding's Sharpe -0.9959; Calmar -0.1584]
+002-05_up-cross-to-reverse-cross-gain_1d: not profitable enough [Sharpe 0.4894; Sharpe minus holding's Sharpe -0.08021; Calmar 0.2015]
+002-06_down-cross-to-reverse-cross-loss_1d: not profitable enough [Sharpe -0.4822; Sharpe minus holding's Sharpe -1.052; Calmar -0.1591]
