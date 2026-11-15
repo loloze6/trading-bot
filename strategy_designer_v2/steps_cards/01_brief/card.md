@@ -3,6 +3,8 @@
 ## Business objective, one question
 Which trading theory should the pipeline research?
 
+**Establish, from a source or a theme, one trading theory worth researching: a claim or a question about how crypto markets behave, with its reasons and where it applies, written before any data is seen.** (operator, 2026-11-15)
+
 ## Input
 The operator's request: nothing (a theory of the helper's choice), a theme in the operator's words, or a source the operator pastes. Or no request at all: the operator writes the brief by hand.
 

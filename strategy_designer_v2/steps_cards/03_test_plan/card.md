@@ -3,6 +3,8 @@
 ## Business objective, one question
 How will we know whether this idea is real?
 
+**Establish, before any data is seen, how an idea will be tested: a strategy that trades what the idea says, and the measure and thresholds that will confirm or reject it, or why it cannot be tested.** (operator, 2026-11-15)
+
 ## Input
 (With the strategy config guide, the component catalogue, `../common/backtest_record.md` and `../common/measures.md`, so that every measure can be computed from what the backtest records.)
 

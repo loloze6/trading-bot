@@ -3,7 +3,7 @@
 ## Business objective, one question
 What did the market data do when this idea's test ran?
 
-Run one test plan from step 3 through the bot's own backtest, unchanged, and keep the complete record, so the next steps can confirm or reject the idea from it.
+**Establish what the market data did under an idea's test: the plan's strategy run unchanged through the bot's own backtest, on the plan's coins, bar size and period, and recorded for the next steps.** (operator, 2026-11-15)
 
 ## Input
 One test plan from step 3 whose outcome is `plan`: its config and its data (coins, bar size, one fold or several). A plan whose outcome is untestable or missing-components is not run, and its index line says so.

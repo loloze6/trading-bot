@@ -3,7 +3,7 @@
 ## Business objective, one question
 Which testable ideas does this theory give?
 
-Turn a theory into things the market data can confirm or reject, so a trader learns what to trade and what not to trade.
+**Establish the ideas a theory implies: each one thing we would see in one coin's market if the theory were true, which the data can confirm or reject and a trader could act on.** (operator, 2026-11-15)
 
 ## Input
 One brief from step 1: a theory, as a claim or a question, with its optional context.
