@@ -15,7 +15,6 @@ the book the same way). A plan's own words come first; these apply wherever it s
   these daily returns, never on summed trade returns.
 - The book's gain from the market's own rise: the position held x the coin's mean daily return over all the windows,
   averaged like the book; the rest of the book's mean gain is timing (being in when the coin rises more than usual).
-  Say which part is larger by comparing these two numbers.
 - Sharpe: the mean of the daily returns over their standard deviation, times the square root of 365. Calmar: the yearly
   return of the daily returns chained in window order, over the deepest fall of that chain.
 - A t-statistic not named: for a difference between two groups, Welch's two-sample t; for one group's mean, the

@@ -13,6 +13,6 @@ can confirm or reject. Every idea:
   a position on or off;
 - is something a trader could act on: if confirmed, a reason to take a trade; if rejected, a reason to refuse one;
 - states its time in real time (days or hours, never bars), so it means the same on any bar size: always its horizon,
-  how long after its situation the move shows ("over the next 5 days"), and the past period its situation uses when it
-  has one ("its 20-day return", "its 200-day average");
+  how long after its situation the move shows ("over the next N days"), and the past period its situation uses when it
+  has one ("its N-day return");
 - names no level or threshold, no trading rule (no entry, exit or size), no result and no price.

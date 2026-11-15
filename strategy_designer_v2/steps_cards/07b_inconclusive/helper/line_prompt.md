@@ -20,7 +20,7 @@ Propose the answer your findings call for, in this order, each idea from a findi
    line (from the data available below) says the data.
 3. Otherwise, if the effect shows in part of the data only: the tested idea amended to where it shows (a condition,
    one side, the strongest cases, its horizon), written in full, as one sentence that keeps the tested idea's own
-   situation in its own words and adds the change ("... , only while ...", "... , over the next 10 days ...").
+   situation in its own words and adds the change ("... , only while ...", "... , over the next N days ...").
 You may also propose an idea of its own, written like any idea.
 
 The data available:
