@@ -52,7 +52,10 @@ the final test on the sealed holdout, what could break the idea and its book, ho
 trading, a small live test, and watching it once live. First inputs: 7.e's two confirmed and profitable ideas
 (002-03's e1, N2-04's e1, 2026-11-14).
 
-## To design: the regime line (approved by the operator, 2026-11-14)
+## Parked: the regime line, folded into "proven and profitable, what next" (operator, 2026-11-15)
+Most of its problem is now covered by validated lines (7.d asks when a book should not be in the market; 7.b and 7.c propose an effect limited by a condition; the sizing cuts exposure in violent periods). What is left belongs with combining books: a regime shared by several strategies (one condition that switches books on and off), and pure regime findings (a condition with nothing graded inside, not an idea under the shared definition), as building blocks for that switch.
+
+Before (approved 2026-11-14):
 A step 7 line that asks in which market conditions a strategy loses, and what the coin's own bars show at a bar's
 close to recognise them. To include (operator, 2026-11-15): pure regime ideas, an effect that holds as a condition
 alone ("on Saturdays the coin rises", "in a bear market the coin falls"), which the shared definition of an idea now
