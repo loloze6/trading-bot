@@ -1,3 +1,5 @@
+001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
+001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 001-01_rsi-high-extreme-reversal_1d: ran: BTCUSD 6/6; ETHUSD 6/6; BNBUSD not run (no historical data on the venue) [1d, fold A]
 001-02_rsi-low-extreme-rebound_1d: ran: BTCUSD 6/6; ETHUSD 6/6; BNBUSD not run (no historical data on the venue) [1d, fold A]

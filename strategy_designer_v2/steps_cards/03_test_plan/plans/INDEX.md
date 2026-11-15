@@ -1,3 +1,5 @@
+001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 001-01_rsi-high-extreme-reversal_1d: plan (fit: adapted) [BTC, ETH, BNB, 1d, fold A]
 001-02_rsi-low-extreme-rebound_1d: plan (fit: adapted) [BTC, ETH, BNB, 1d, fold A]
