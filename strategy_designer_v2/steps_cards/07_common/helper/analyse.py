@@ -141,6 +141,11 @@ def parse_findings(text):
 
 COMMON = HERE.parents[1] / "common"   # the workflow's shared definitions (measures, what an idea is)
 IDEA_DEFINITION = (COMMON / "idea_definition.md").read_text()
+
+
+def with_common(text):
+    """A prompt with each {{NAME}} replaced by the shared file common/name.md (for example {{DATA_AVAILABLE}})."""
+    return re.sub(r"\{\{([A-Z_]+)\}\}", lambda m: (COMMON / f"{m.group(1).lower()}.md").read_text(), text)
 MEASURES = (COMMON / "measures.md").read_text()
 
 
@@ -221,10 +226,11 @@ def main():
                f"[THE VERDICT ON THE IDEA (step 5)]\n{no_paths(verdict) if verdict.exists() else s5}\n"
                f"[THE CHECK OF THE BOOK (step 6)]\n{no_paths(check) if check.exists() else s6}\n"
                f"[THE DATA]\n{(HERE / 'data_description.md').read_text()}\nThis backtest holds:\n{data_summary(record)}\n")
-    line_prompt = (line_dir / "helper" / "line_prompt.md").read_text()
+    line_prompt = with_common((line_dir / "helper" / "line_prompt.md").read_text())
     system = ((HERE / "common_rules.md").read_text() + "\n[HOW THE WORKFLOW MEASURES]\n" + MEASURES + "\n" + line_prompt + "\n"
               + (HERE / ("output_analyst.md" if args.split else "output_one_call.md")).read_text()
               ).replace("{{IDEA_DEFINITION}}", IDEA_DEFINITION)
+    system = with_common(system)
 
     d = out_dir / rid
     (d / "exploration").mkdir(parents=True, exist_ok=True)
