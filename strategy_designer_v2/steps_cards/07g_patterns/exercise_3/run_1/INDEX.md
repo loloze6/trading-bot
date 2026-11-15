@@ -1,0 +1,2 @@
+001-01_rsi-high-extreme-reversal-down_1h: no ideas: Every pattern in the bars that the idea does not explain stays below what chance produces across the roughly 150 cells examined: weakest-72-hour continuation peaks at t -1.8, hour 19 at +1.9, and volatility and weekday splits are smaller. The book's failure is explained by fees and short-squeeze losses inherent to the tested idea (F1–F3), so no finding is strong enough to support a new idea.
+002-03_price-cross-above-long-sma_1d: 1 ideas (2 explorations)

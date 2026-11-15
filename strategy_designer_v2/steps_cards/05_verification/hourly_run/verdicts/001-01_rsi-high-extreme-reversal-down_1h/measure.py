@@ -4,143 +4,151 @@ import pandas as pd
 
 def measure(bars):
     H = 12
-    VAL = "debug_info.components.rsi_high.last_history_value"
+    COL_RAW = "debug_info.components.rsi_high.last_history_value"
     SCALE = 0.4
-    THRESH_WORDS = ("confirm: pooled excess < 0 with t <= -2 and negative in >= 2 coins; "
-                    "reject: pooled excess > 0 with t >= +2; needs >= 30 non-overlapping "
-                    "extreme episodes per coin and >= 100 pooled")
 
-    def _f(x):
-        return None if x is None or not np.isfinite(x) else float(x)
-
-    # ---------- 1. situation check ----------
+    # ---------- 1. Situation check: RSI above 50, short side ----------
     n_active = 0
     n_agree = 0
-    frames = []
     for coin, wins in bars.items():
         for w, df in wins.items():
-            d = df.copy().reset_index(drop=True)
-            d["_coin"] = coin
-            d["_win"] = w
-            d["_pos"] = np.arange(len(d))
-            c = d["close"].astype(float).values
-            fwd = np.full(len(d), np.nan)
-            if len(d) > H:
-                fwd[:-H] = np.log(c[H:] / c[:-H])
-            d["_fwd"] = fwd
-            fc = d["forecast"].astype(float)
-            raw = d[VAL].astype(float) if VAL in d.columns else pd.Series(np.nan, index=d.index)
+            f = pd.to_numeric(df["forecast"], errors="coerce")
+            active = f.notna() & (f != 0)
+            n_active += int(active.sum())
+            if COL_RAW not in df.columns:
+                continue  # missing column is not a value: those active bars cannot agree
+            raw = pd.to_numeric(df[COL_RAW], errors="coerce")
             rsi = 50.0 - raw / SCALE
-            act = fc.notna() & (fc != 0)
-            n_active += int(act.sum())
-            # Situation: RSI above 50; expected side: short
-            n_agree += int((act & (rsi > 50) & (fc < 0)).sum())
-            drift = np.nanmean(fwd) if np.isfinite(fwd).any() else np.nan
-            d["_ex"] = d["_fwd"] - drift
-            frames.append(d)
+            situ = rsi > 50.0
+            agree = active & situ & (f < 0)
+            n_agree += int(agree.sum())
+    agreement = float(n_agree / n_active) if n_active > 0 else 0.0
+    passed = bool(n_active > 0 and agreement >= 0.9)
 
-    agreement = n_agree / n_active if n_active > 0 else 0.0
-    passed = agreement >= 0.9
+    main_name = "mean forward 12-bar log return after top-decile |forecast| bars minus coin's unconditional mean"
+    thr_text = "confirm: negative with t <= -2 and negative in >= 2 coins; reject: positive with t >= +2"
+
     if not passed:
         return {
             "status": "mismatch",
-            "situation_check": {"agreement": float(agreement), "passed": False},
-            "main_measure": {"name": "mean fwd 12-bar log return after top-decile |forecast| minus drift",
-                             "value": None, "statistic": None, "threshold": THRESH_WORDS},
+            "situation_check": {"agreement": agreement, "passed": False},
+            "main_measure": {"name": main_name, "value": None, "statistic": None, "threshold": thr_text},
             "supporting_check": None,
             "counts": {"active bars": int(n_active)},
-            "decided_by": ("Fewer than 90% of active bars are short positions taken while RSI is above 50, "
-                           "so the config does not implement the plan's situation and side."),
-            "reading": "Situation taken as RSI > 50 (raw component value < 0) with a negative forecast.",
+            "decided_by": "Fewer than 90% of the bars with a nonzero forecast are bars with RSI above 50 and a short (negative) forecast, so the config does not do what the plan's Fidelity says.",
+            "reading": "Situation taken as RSI(14) > 50 from last_history_value (RSI = 50 - value/0.4), expected side short.",
         }
 
-    allb = pd.concat(frames, ignore_index=True)
-    allb["_abs"] = allb["forecast"].astype(float).abs()
+    # ---------- 2. Build samples ----------
+    # all |forecast| for pooled thresholds
+    all_abs = []
+    for coin, wins in bars.items():
+        for w, df in wins.items():
+            f = pd.to_numeric(df["forecast"], errors="coerce").abs()
+            all_abs.append(f.dropna().values)
+    all_abs = np.concatenate(all_abs) if all_abs else np.array([])
+    dec_thr = float(np.quantile(all_abs, 0.9)) if all_abs.size else np.nan
+    nz = all_abs[all_abs > 0]
+    q_edges = np.quantile(nz, [0.2, 0.4, 0.6, 0.8]) if nz.size else None
 
-    # ---------- 2. main measure ----------
-    valid_f = allb["_abs"].dropna()
-    q90 = float(np.quantile(valid_f.values, 0.9)) if len(valid_f) else np.nan
-    extreme = (allb["_abs"] >= q90) & (allb["_abs"] > 0)
-    grid = (allb["_pos"] % H == 0)
-    ext_grid = allb[extreme & grid & allb["_ex"].notna()]
-
-    x = ext_grid["_ex"].values.astype(float)
-    n_pool = len(x)
-    mean_pool = float(np.mean(x)) if n_pool > 0 else np.nan
-    t_pool = (mean_pool / (np.std(x, ddof=1) / np.sqrt(n_pool))
-              if n_pool > 1 and np.std(x, ddof=1) > 0 else np.nan)
+    rows = []
+    for coin, wins in bars.items():
+        for w, df in wins.items():
+            close = pd.to_numeric(df["close"], errors="coerce").values
+            f = pd.to_numeric(df["forecast"], errors="coerce").values
+            n = len(df)
+            for i in range(0, n - H, H):
+                c0, c1, fi = close[i], close[i + H], f[i]
+                if not (np.isfinite(c0) and np.isfinite(c1) and np.isfinite(fi)) or c0 <= 0 or c1 <= 0:
+                    continue
+                rows.append((coin, w, float(np.log(c1 / c0)), abs(float(fi))))
+    samp = pd.DataFrame(rows, columns=["coin", "window", "r", "af"])
 
     coins = list(bars.keys())
-    per_coin_n = {}
+    if len(samp):
+        drift = samp.groupby("coin")["r"].mean()
+        samp["ex"] = samp["r"] - samp["coin"].map(drift)
+        samp["extreme"] = (samp["af"] >= dec_thr) & (samp["af"] > 0)
+
+        def grp(a):
+            if a == 0:
+                return 0
+            return int(1 + np.searchsorted(q_edges, a, side="right")) if q_edges is not None else -1
+
+        samp["grp"] = samp["af"].apply(grp)
+    ext = samp[samp["extreme"]] if len(samp) else samp
+
+    counts = {"pooled extreme episodes": int(len(ext))}
     per_coin_mean = {}
-    for coin in coins:
-        xc = ext_grid.loc[ext_grid["_coin"] == coin, "_ex"].values
-        per_coin_n[coin] = int(len(xc))
-        per_coin_mean[coin] = float(np.mean(xc)) if len(xc) else np.nan
-    coins_neg = sum(1 for c in coins if np.isfinite(per_coin_mean[c]) and per_coin_mean[c] < 0)
+    for c in coins:
+        e = ext[ext["coin"] == c] if len(ext) else ext
+        counts[f"extreme episodes {c}"] = int(len(e))
+        per_coin_mean[c] = float(e["ex"].mean()) if len(e) else np.nan
 
-    # ---------- 3. supporting check ----------
-    sup = allb[allb["_ex"].notna() & allb["_abs"].notna()].copy()
-    sup_value = None
+    m = float(ext["ex"].mean()) if len(ext) else np.nan
+    if len(ext) > 1 and ext["ex"].std(ddof=1) > 0:
+        t = float(m / (ext["ex"].std(ddof=1) / np.sqrt(len(ext))))
+    else:
+        t = np.nan
+    n_neg_coins = int(sum(1 for c in coins if np.isfinite(per_coin_mean[c]) and per_coin_mean[c] < 0))
+    counts["coins with negative excess"] = n_neg_coins
+
+    # ---------- supporting check ----------
+    sup_val = None
     sup_pass = None
-    nz = sup[sup["_abs"] > 0]
-    if len(nz) >= 5:
-        try:
-            sup.loc[nz.index, "_grp"] = pd.qcut(nz["_abs"], 5, labels=False, duplicates="drop") + 1
-        except ValueError:
-            sup.loc[nz.index, "_grp"] = np.nan
-        sup.loc[sup["_abs"] == 0, "_grp"] = 0
-        g = sup.dropna(subset=["_grp"]).groupby("_grp")["_ex"].mean().sort_index()
-        if len(g) >= 2:
-            steady = bool(np.all(np.diff(g.values) < 0))
-            top = g.index.max()
-            sign_coins = 0
-            for coin in coins:
-                sc = sup[(sup["_coin"] == coin) & (sup["_grp"] == top)]["_ex"]
-                if len(sc) and sc.mean() < 0:
-                    sign_coins += 1
-            sup_value = float(g.loc[top] - g.loc[g.index.min()])
-            sup_pass = bool(steady and sign_coins >= 2)
+    if len(samp):
+        g_means = [float(samp.loc[samp["grp"] == g, "ex"].mean()) if (samp["grp"] == g).any() else np.nan
+                   for g in range(6)]
+        diffs = np.diff(g_means)
+        steady = bool(np.all(np.isfinite(g_means)) and np.all(diffs <= 0))
+        coin_neg = 0
+        for c in coins:
+            sc = samp[samp["coin"] == c]
+            a = sc.loc[sc["grp"] == 5, "ex"]
+            b = sc.loc[sc["grp"] == 0, "ex"]
+            if len(a) and len(b) and (a.mean() - b.mean()) < 0:
+                coin_neg += 1
+        sup_val = float(g_means[5] - g_means[0]) if np.isfinite(g_means[5]) and np.isfinite(g_means[0]) else None
+        sup_pass = bool(steady and coin_neg >= 2)
+    supporting = {
+        "name": "excess return falls steadily from neutral (zero) group through |forecast| quintiles 1-5, and top-minus-neutral negative in >= 2 coins (value: Q5 minus neutral)",
+        "value": sup_val,
+        "passed": sup_pass,
+    }
 
-    # ---------- 4. decision ----------
-    enough = n_pool >= 100 and all(per_coin_n[c] >= 30 for c in coins)
-    if not enough:
-        status = "inconclusive"
-        decided = "Fewer than 30 non-overlapping extreme episodes in some coin or fewer than 100 pooled, so the test is inconclusive whatever the t."
-    elif np.isfinite(t_pool) and t_pool <= -2 and mean_pool < 0 and coins_neg >= 2:
-        status = "confirmed"
-        decided = "The pooled excess return after extreme bars is negative with t <= -2 and negative in at least 2 coins."
-    elif np.isfinite(t_pool) and t_pool >= 2 and mean_pool > 0:
+    # ---------- decision ----------
+    min_ok = counts["pooled extreme episodes"] >= 100 and all(counts[f"extreme episodes {c}"] >= 30 for c in coins)
+    if not min_ok:
+        status = "not observable"
+        decided = "The plan's minimum of 30 non-overlapping extreme episodes per coin and 100 pooled is not reached."
+    elif np.isfinite(t) and m < 0 and t <= -2 and n_neg_coins >= 2:
+        if sup_pass:
+            status = "confirmed"
+            decided = "Pooled excess return after extreme bars is negative with t <= -2, negative in at least 2 coins, and the supporting check passes."
+        else:
+            status = "inconclusive"
+            decided = "The main measure meets the confirm rule (t <= -2, >= 2 coins negative) but the supporting check fails."
+    elif np.isfinite(t) and m > 0 and t >= 2:
         status = "rejected"
-        decided = "The pooled excess return after extreme bars is positive with t >= +2 (continuation rather than give-back)."
-    elif np.isfinite(t_pool) and t_pool <= -2:
+        decided = "Pooled excess return after extreme bars is positive with t >= +2 (continuation rather than give-back)."
+    elif np.isfinite(t) and t <= -2:
         status = "inconclusive"
-        decided = "Pooled t <= -2 but fewer than 2 coins agree in sign."
+        decided = "Pooled t <= -2 but fewer than 2 coins agree on a negative excess return."
     else:
         status = "inconclusive"
         decided = "Pooled t lies between -2 and +2."
 
-    counts = {"pooled non-overlapping extreme episodes": int(n_pool),
-              "coins with negative excess": int(coins_neg)}
-    for c in coins:
-        counts[f"non-overlapping extreme episodes {c}"] = per_coin_n[c]
-
     return {
         "status": status,
-        "situation_check": {"agreement": float(agreement), "passed": True},
-        "main_measure": {"name": "mean fwd 12-bar log return after top-decile |forecast| minus drift",
-                         "value": _f(mean_pool),
-                         "statistic": {"name": "t of the mean on non-overlapping 12-bar blocks",
-                                       "value": _f(t_pool)} if np.isfinite(t_pool) else None,
-                         "threshold": THRESH_WORDS},
-        "supporting_check": {"name": "excess return falls across |forecast| quintiles (top minus neutral)",
-                             "value": sup_value, "passed": sup_pass},
+        "situation_check": {"agreement": agreement, "passed": True},
+        "main_measure": {
+            "name": main_name,
+            "value": m if np.isfinite(m) else None,
+            "statistic": {"name": "t of the mean on non-overlapping 12-bar blocks", "value": t} if np.isfinite(t) else None,
+            "threshold": thr_text,
+        },
+        "supporting_check": supporting,
         "counts": counts,
         "decided_by": decided,
-        "reading": ("Top decile is |forecast| >= its 90th percentile over all pooled bars (nonzero only), the drift "
-                    "is the mean forward 12-bar log return of all bars of the same coin and window, extreme "
-                    "episodes are extreme bars on the 0,12,24,... grid of each window, the supporting check uses "
-                    "all bars with zero-forecast bars as group 0 and needs a strictly falling mean plus a negative "
-                    "top-quintile excess in at least 2 coins, and with only the coins present the rule "
-                    "'at least 2 of 3 coins' is applied as at least 2 coins."),
+        "reading": "Top decile is the 90th percentile of |forecast| over all bars pooled across coins and windows (nonzero only), returns are 12-bar log returns on each window's 0,12,24,... grid with each coin's drift being its mean over all its windows, quintiles are pooled quintiles of nonzero |forecast| with zero-forecast bars as neutral, 'steadily' means each group mean is no higher than the previous one, and with only BTC and ETH present the '2 of 3 coins' rules need both coins and the per-coin minimums apply to the coins present.",
     }

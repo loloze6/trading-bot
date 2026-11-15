@@ -1,0 +1,2 @@
+001-01_rsi-high-extreme-reversal-down_1h: no ideas: The only pattern near significance, weaker returns after sharp 72-hour falls (F5), changes sign between the first three windows and the last three and does not rank across quintiles, so after the many angles examined (past returns over 12, 72 and 168 hours, volatility, forecast size, hour, weekday, trade duration and cost split) nothing stands out from chance well enough to found an idea on.
+002-03_price-cross-above-long-sma_1d: 1 ideas (2 explorations)

@@ -1,0 +1,20 @@
+{
+  "line": "7.g",
+  "backtest": "001-01_rsi-high-extreme-reversal-down_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "split": false,
+  "explorations": 2,
+  "cost": 0.33353999999999995,
+  "findings": {
+    "F1": "Trading costs, not the signal, carry most of the book's loss: before costs the position earns -0.000030 per hour, costs take 0.000095 per hour, and the book returns -0.000125 per hour; the position changes by 0.14 of its size every hour and trades 0.22 times per bar.",
+    "F2": "Of the -0.000030 per hour earned before costs, the market's own rise accounts for only -0.000002 (an average position of -0.34 times the coin's mean return), so timing is the larger part at about -0.000028 per hour: the short loses on when it is in, not on the coins' drift.",
+    "F3": "The trades are short-gamma: the quarter of trades held shortest (median 60 minutes) gain +0.36% with 90% winners, while the quarter held longest (median 1560 minutes) lose -2.49% with 21% winners; the 1% tail of trade results is -11.2% against +3.5% for the 99% tail. Persistent rises hurt the short, but this follows partly from how trades end: a short stays open only while RSI stays above 50.",
+    "F4": "The forecast's size does not grade the next 12 hours: the excess return by |forecast| quintile runs -0.00011, +0.00225, -0.00082 and -0.00028 against -0.00016 for zero-forecast bars (1437 cases), with no |t| above 1.83.",
+    "F5": "The lowest fifth of the 72-hour return measured in volatility units is followed by a weaker 12-hour excess return of -0.00318 (t -2.70, 568 cases; BTC -0.00244, ETH -0.00392) and a weaker 24-hour excess of -0.00551 (t -2.32, 284 cases). On the raw 72-hour return the same bottom fifth is negative in w1 to w3 (-0.00448, -0.00754, -0.00109) but positive in w4 to w6 (+0.00233, +0.00183, +0.00430), and the rank correlation across all quintiles is 0.016 (p 0.41).",
+    "F6": "Hour of day and weekday show nothing beyond chance: the largest hourly |t| is 2.47 (hour 19) among 24 hours tested, and the largest weekday |t| is 1.77."
+  },
+  "ideas": [],
+  "idea_ids": [],
+  "no_ideas": "The only pattern near significance, weaker returns after sharp 72-hour falls (F5), changes sign between the first three windows and the last three and does not rank across quintiles, so after the many angles examined (past returns over 12, 72 and 168 hours, volatility, forecast size, hour, weekday, trade duration and cost split) nothing stands out from chance well enough to found an idea on."
+}

@@ -75,7 +75,7 @@ One test plan per idea, with one of three outcomes: **plan**, **untestable** or 
    - For: the test, in the engine's language.
    - Used by: step 4.
    - Without it: nothing to run.
-   - **Sizing, added by code, the same for every plan** (operator, 2026-11-13; the engine's `strategies.sizing` block, as in v1): the forecast stays the signal, capped at ±20; the allocation is forecast ÷ 10 × target ÷ the coin's realised volatility (60 bars), capped at 2×, the target being a 2 % daily move (0.382 a year). A more volatile coin gets a smaller position. The model does not write it.
+   - **Sizing, added by code, the same for every plan** (operator, 2026-11-13; the engine's `strategies.sizing` block, as in v1): the forecast stays the signal, capped at ±20; the allocation is forecast ÷ 10 × target ÷ the coin's realised volatility over the last 60 days (in bars of the bar size), capped at 2×, the target being a 2 % daily move (0.382 a year). A more volatile coin gets a smaller position. The model does not write it.
 9. **Criterion** (plan only): horizon (bars: the idea's horizon in real time divided by the bar size; operator, 2026-11-15), main measure, supporting check (or none), confirm (with its number), reject, inconclusive (with the minimum count). The supporting check is part of the decision: confirmed needs the main measure to confirm and the check to pass (operator, 2026-11-14).
    - For: the result that confirms or rejects, fixed before the data.
    - Used by: step 5.

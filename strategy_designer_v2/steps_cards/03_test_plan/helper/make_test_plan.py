@@ -185,15 +185,16 @@ def parse(text):
 
 # Sizing (operator, 2026-11-13; the engine's strategies.sizing block, as in v1's D-176/D-181): the same for every plan,
 # added by code, never by the model. The forecast stays the signal (-20 to +20); the allocation is
-# forecast / 10 x target / the coin's realised volatility, capped at 2: a more volatile coin gets a smaller position,
-# each coin aiming at a 2 % daily move at a forecast of 10.
-DAILY_VOL_TARGET, SIZING_WINDOW, MAX_ALLOCATION = 0.02, 60, 2
+# forecast / 10 x target / the coin's realised volatility over the last 60 days (in bars of the bar size, so the
+# same in real time on any bar size), capped at 2: a more volatile coin gets a smaller position, each coin aiming
+# at a 2 % daily move at a forecast of 10.
+DAILY_VOL_TARGET, SIZING_DAYS, MAX_ALLOCATION = 0.02, 60, 2
 PERIODS_PER_YEAR = {"1d": 365, "4h": 2190, "1h": 8760}
 
 
 def add_sizing(config, bar):
     config.setdefault("strategies", {})["sizing"] = {
-        "kind": "vol_target", "window": SIZING_WINDOW,
+        "kind": "vol_target", "window": SIZING_DAYS * PERIODS_PER_YEAR[bar] // 365,
         "target_annual_vol": round(DAILY_VOL_TARGET * 365 ** 0.5, 6),
         "periods_per_year": PERIODS_PER_YEAR[bar], "max_allocation": MAX_ALLOCATION}
     return config

@@ -18,7 +18,7 @@ One analysis per backtest that meets the entry condition: findings, then ideas i
 Angle by angle: the forecast (what follows small and large values), the positions, the trades, the regimes, and the bars (returns after large moves, by volatility level, by weekday and hour, by regime, around the book's largest gains and losses).
 
 ## What it proposes
-New ideas, each from a finding. A pattern that cannot be told apart from chance is not a finding.
+New ideas, each from a finding, written like any idea. A pattern that cannot be told apart from chance is not a finding, and the more angles looked at, the more a pattern must stand out. If none does, "no ideas", with what was looked at.
 
 ## The AI
 The shared mechanism (`../07_common/helper/analyse.py`), with this line's `helper/line_prompt.md`. Opus.

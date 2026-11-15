@@ -1,3 +1,4 @@
+001-01_rsi-high-extreme-reversal-down_1h: not profitable enough [Sharpe -3.087; Sharpe minus holding's Sharpe -3.153; Calmar -0.7576]
 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1d: profitable enough [Sharpe 0.9003; Sharpe minus holding's Sharpe 0.2823; Calmar 0.883]
 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends_1d: not profitable enough [Sharpe 0.8505; Sharpe minus holding's Sharpe 0.2963; Calmar 0.7164]
 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross_1d: not profitable enough [Sharpe 0.4881; Sharpe minus holding's Sharpe -0.07762; Calmar 0.2291]

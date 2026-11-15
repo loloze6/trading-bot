@@ -5,25 +5,25 @@
     "passed": true
   },
   "main_measure": {
-    "name": "mean fwd 12-bar log return after top-decile |forecast| minus drift",
-    "value": -0.001432631131269509,
+    "name": "mean forward 12-bar log return after top-decile |forecast| bars minus coin's unconditional mean",
+    "value": -0.0013056572690154184,
     "statistic": {
       "name": "t of the mean on non-overlapping 12-bar blocks",
-      "value": -1.230792003975105
+      "value": -1.1190824026016297
     },
-    "threshold": "confirm: pooled excess < 0 with t <= -2 and negative in >= 2 coins; reject: pooled excess > 0 with t >= +2; needs >= 30 non-overlapping extreme episodes per coin and >= 100 pooled"
+    "threshold": "confirm: negative with t <= -2 and negative in >= 2 coins; reject: positive with t >= +2"
   },
   "supporting_check": {
-    "name": "excess return falls across |forecast| quintiles (top minus neutral)",
-    "value": 0.00045439766391252494,
+    "name": "excess return falls steadily from neutral (zero) group through |forecast| quintiles 1-5, and top-minus-neutral negative in >= 2 coins (value: Q5 minus neutral)",
+    "value": -0.001142713621429536,
     "passed": false
   },
   "counts": {
-    "pooled non-overlapping extreme episodes": 390,
-    "coins with negative excess": 2,
-    "non-overlapping extreme episodes BTCUSD": 187,
-    "non-overlapping extreme episodes ETHUSD": 203
+    "pooled extreme episodes": 390,
+    "extreme episodes BTCUSD": 187,
+    "extreme episodes ETHUSD": 203,
+    "coins with negative excess": 2
   },
   "decided_by": "Pooled t lies between -2 and +2.",
-  "reading": "Top decile is |forecast| >= its 90th percentile over all pooled bars (nonzero only), the drift is the mean forward 12-bar log return of all bars of the same coin and window, extreme episodes are extreme bars on the 0,12,24,... grid of each window, the supporting check uses all bars with zero-forecast bars as group 0 and needs a strictly falling mean plus a negative top-quintile excess in at least 2 coins, and with only the coins present the rule 'at least 2 of 3 coins' is applied as at least 2 coins."
+  "reading": "Top decile is the 90th percentile of |forecast| over all bars pooled across coins and windows (nonzero only), returns are 12-bar log returns on each window's 0,12,24,... grid with each coin's drift being its mean over all its windows, quintiles are pooled quintiles of nonzero |forecast| with zero-forecast bars as neutral, 'steadily' means each group mean is no higher than the previous one, and with only BTC and ETH present the '2 of 3 coins' rules need both coins and the per-coin minimums apply to the coins present."
 }
