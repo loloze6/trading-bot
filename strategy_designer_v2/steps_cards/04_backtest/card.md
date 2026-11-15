@@ -55,6 +55,9 @@ Modelled on the engine's own run folders, one folder per plan, named after the p
       run.md
       config.json
       <SYMBOL>/wK/             one folder per coin and window, K in the folds' order
+                               (committed: the summaries, metrics.json, manifest.json, engine_log.txt,
+                               forecast_distribution.csv; kept local only: the *.gz files, which step 4
+                               rebuilds from the plan; operator, 2026-11-15)
   validation/reading.md        the reading of the exercise that validated this card
   full_data_run/, hourly_run/, validation_run/   the records of named runs
 ```
