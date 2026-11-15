@@ -18,7 +18,12 @@ One analysis per backtest that meets the entry condition: findings, then ideas i
 Two things. Whether the effect is weak or mixed: its size and how much it varies, whether it is present in part of the data only (some coins, periods, regimes, the largest forecasts, one side), whether the market's own moves drown it. Or whether the test measured the idea elsewhere than where it shows: another horizon, comparison or side. Or whether the effect is the same everywhere but too small for this data.
 
 ## What it proposes
-Ideas that would give a clear answer. One that states where the effect is (a condition, one side, the strongest cases, its horizon) is the tested idea amended, written in full; an idea of its own is written like any idea, without a label. If the effect is the same everywhere but too small for the data, the tested idea unchanged, on more data (its `data:` line, from `../common/data_available.md`; operator, 2026-11-15). If the effect is not there at all, the answer is "no ideas", with that finding: a clear answer.
+The answer the findings call for, in this order (operator, 2026-11-15):
+1. the effect is close to zero across the data (not a result short of the bar): "no ideas", with that finding: a clear answer;
+2. else, the same sign everywhere but too small for the data: the tested idea unchanged, on more data (its `data:` line, from `../common/data_available.md`);
+3. else, the effect shows in part of the data: the tested idea amended to where it shows, written in full.
+
+An idea of its own is written like any idea, without a label.
 
 ## The AI
 The shared mechanism (`../07_common/helper/analyse.py`), with this line's `helper/line_prompt.md`. Opus.

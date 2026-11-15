@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 002-03_price-cross-above-long-sma_1d
+idea tested: 002-03_price-cross-above-long-sma
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3303 USD
+---
+## Findings
+- **F1:** Over all coins and windows, the coin's mean daily return on Saturdays is 0.00443 (t 5.41, n 2433) and on Fridays 0.00320 (t 3.41, n 2429), while Tuesday is -0.00094 and Thursday -0.00175; Friday and Saturday together minus the other days is +0.00354 (Welch t 4.59, 4862 vs 12160 days), and Saturday is positive in all six coins (0.0016 to 0.0058). The idea does not explain this, and since it is a calendar condition rather than a graded one, it gives no idea here.
+- **F2:** On days the book is long, the position's next-day gain is 0.00364 per bar (t 3.93, n 1689) in the coin's lowest tercile of 60-day volatility, against 0.00028 (t 0.40) and 0.00041 (t 0.72) in the middle and highest terciles. The trend above the 200-day average pays almost only when the coin is calm.
+- **F3:** On a non-overlapping 5-bar grid, after the day's return is in the highest quintile of its z-score against the prior 20-day volatility (mean z 1.54), the next 5-day excess return is +1.39% (t 2.88, n 529). The other four quintiles range from -0.57% to +0.32%, all with |t| below 1.2, so the effect sits in the largest up-shocks only.
+- **F4:** The idea's own grading is weak and not monotone. By 200-day-distance quintile, the next 20-day excess return is +0.49%, -0.12%, -0.41%, -1.99% and +3.16%, with no |t| above 1.35. By forecast quintile among positive forecasts it is -3.46%, -3.06%, +0.14%, +1.10% and +7.79% (top t 1.21). Above-SMA bars beat the hurdle only 40.6% of the time, so a few large winners carry the mean.
+- **F5:** The book's gain comes from a few long trends. Trades in the longest duration quartile (mean 63 days) average +35.7% with 68.7% winners, while the shortest quartile (1.8 days) averages -5.8% with 3% winners. The book's mean bar gain of 0.000580 is mostly the market's own rise, 0.000342, rather than timing, 0.000238.
+- **F6:** The book's worst window drawdown is -30% to -36% for every coin, with mean window drawdowns of -13% to -17%, which is consistent with the failed Calmar of 0.39.
+
+## Ideas
+- `002-03_price-cross-above-long-sma.g1_calm-trends-pay-more` (from F2, F5): While a coin trades above its 200-day average, the lower its 60-day volatility, the larger its average daily return over the next day.
+- `002-03_price-cross-above-long-sma.g2_large-up-shock-continuation` (from F3): The larger a coin's one-day rise relative to its own 20-day volatility, the larger its return over the next 5 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

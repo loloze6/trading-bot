@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 3-bar forward return on forecast (forecast > 0, non-overlapping grid)",
+    "value": 5.2508125913507586e-05,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.2000842551323671
+    },
+    "threshold": "confirm if slope t >= 2 and top-quintile mean excess > 0; reject if slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 3-bar return of top-quintile forecast cases",
+    "value": 0.0031425876420428374,
+    "passed": true
+  },
+  "counts": {
+    "cases with a positive forecast": 2718,
+    "cases in the top quintile": 544
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Cases are pooled over all coins and windows on the 0,3,6,... grid of each window; the coin's mean 3-bar return is the mean over all its grid bars in all windows; the top quintile is cases with forecast at or above the pooled 80th percentile; the plan's 'fewer cases -> inconclusive' minimums are reported as 'not observable' per the workflow; a fall is a negative raw component value (price 1-bar return where the raw value is missing)."
+}

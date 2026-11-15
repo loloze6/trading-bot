@@ -51,3 +51,11 @@ profitable is not a result to diagnose but the end of the research, where a deci
 the final test on the sealed holdout, what could break the idea and its book, how several such books combine, paper
 trading, a small live test, and watching it once live. First inputs: 7.e's two confirmed and profitable ideas
 (002-03's e1, N2-04's e1, 2026-11-14).
+
+## To design: the regime line (approved by the operator, 2026-11-14)
+A step 7 line that asks in which market conditions a strategy loses, and what the coin's own bars show at a bar's
+close to recognise them. To include (operator, 2026-11-15): pure regime ideas, an effect that holds as a condition
+alone ("on Saturdays the coin rises", "in a bear market the coin falls"), which the shared definition of an idea now
+leaves out (inside a regime the effect must be graded). Options to weigh then: a strategy assigned to a regime, with
+step 5 measuring the regime's own values (see "record the regime detector's values").
+

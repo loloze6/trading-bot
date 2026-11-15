@@ -1884,6 +1884,51 @@ class DistanceFromHighComponent(SubStrategyComponent):
         return self.period
 
 
+class VolatilityScaledReturnComponent(SubStrategyComponent):
+    """
+    The coin's return over the last `period` bars, in units of its usual move, on every bar:
+
+        raw_value = (close[t] / close[t - period] - 1) / (s x sqrt(period))
+
+    s is the standard deviation (ddof 1) of the last `vol_period` one-bar returns, bar t's included. Graded and signed:
+    about +1 for a rise of one usual move over `period` bars, -2 for a fall of two. No lag: everything up to bar t's
+    close. Closes only, no lookahead. No scaling_factor: the config's transforms scale it.
+
+    NaN: a window holding a NaN close gives NaN; a flat window (s = 0) gives 0. A `period` below 1 or a `vol_period`
+    below 2 raises when the component is built.
+    """
+
+    def __init__(self, name="VolatilityScaledReturn", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 1))
+        self.vol_period = int(self.parameters.get("vol_period", 20))
+        if self.period < 1 or self.vol_period < 2:
+            raise ValueError("VolatilityScaledReturnComponent: period >= 1 and vol_period >= 2")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        close = data['close'].iloc[-(max(self.period, self.vol_period) + 1):].astype(float)
+        move = float(close.iloc[-1] / close.iloc[-1 - self.period] - 1.0)
+        s = float(close.pct_change(fill_method=None).iloc[-self.vol_period:].std(ddof=1, skipna=False))
+        if np.isnan(move) or np.isnan(s):
+            self._raw_value = float("nan")
+        elif s > 0:
+            self._raw_value = move / (s * np.sqrt(self.period))
+        self.confidence = 1.0
+        self.debug_info = {'move': move, 'usual_move': s}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.period, self.vol_period) + 1
+
+
 class BarsSinceHighComponent(SubStrategyComponent):
     """
     How recent the last new closing high is, as a regime measure, on every bar:

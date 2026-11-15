@@ -20,3 +20,11 @@ is followed by a weaker 10 days). 002-04: narrower versions of the idea already 
 **Reading.** The route gives clear answers: the effect was real but too small for 6 coins. On 002-03 the two runs
 disagreed ("not there" against "more data"), and the test decided; a third run (`run_3/`, after a wording fix that
 keeps any label out of the idea's text) chose narrower ideas. The line's route varies from run to run.
+
+## After the route order (run 4, 2026-11-15)
+
+With the routes in order (close to zero, then the same everywhere but small, then in part of the data), run 4 on
+002-03 chose the third route (the effect turns negative in bear years, so it is not "the same everywhere"): "above the
+200-day average, only while the 60-day return is positive". Through steps 3 to 6: inconclusive (t 0.53). On 002-03,
+narrower ideas failed three times (rising average t 0.58; 60-day momentum t 0.53) and the same idea on more data was
+confirmed (t 2.40): the order's condition for "more data" is too strict.

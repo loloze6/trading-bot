@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (forecast/10) x excess 20-bar forward return on active non-overlapping cases",
+    "value": 0.016492903391943307,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 0.5337580631138079
+    },
+    "threshold": "t >= 2.0 confirms (with slope > 0), t <= -2.0 rejects, over at least 30 active cases"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 20-bar forward return on forecast",
+    "value": 0.0008578802321937662,
+    "passed": true
+  },
+  "counts": {
+    "active non-overlapping cases": 329,
+    "active bars": 6890
+  },
+  "decided_by": "t is between -2.0 and 2.0, which the plan calls inconclusive.",
+  "reading": "The situation is checked as regime == 'trending' (the detector's close-above-200-SMA rule) and ret60 last_history_value > 0 with a positive forecast; the coin's mean 20-bar return is the mean over all windows' non-overlapping grid bars (positions 0, 20, 40, ...), active or not, and a case is a grid bar with forecast > 0 and a forward return inside its window."
+}

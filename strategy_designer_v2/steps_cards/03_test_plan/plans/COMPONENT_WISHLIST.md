@@ -31,6 +31,3 @@ One block per idea that needs components the catalogue does not have.
 ## 002-04_price-cross-below-long-sma.d1_below-average-fall-not-stretched_1d
 - Component: DrawdownFromHighComponent: (close / max(close over the last N bars, current included) - 1) x 100, from closes; 0 at a new high, more negative the further the close sits below the recent high | measures: situation
 - Component: DrawdownSpeedComponent: the drawdown from the N-bar high close divided by the number of bars since that high, from closes; more negative the deeper and faster the fall from the high | measures: situation
-
-## 002-03_price-cross-above-long-sma.g1_calm-regime-daily-move-continuation_1d
-- Component: VolScaledReturnComponent: (close[t] / close[t-1] - 1) divided by the standard deviation of the last 20 one-bar returns (from closes); signed, grows with the size of the day's move relative to recent volatility, positive on up days | measures: situation

@@ -8,8 +8,9 @@ can confirm or reject. Every idea:
 - is about one coin at a time: what we would see in one coin's own bars. Each coin is tested on its own bars only,
   never alongside another coin, the market or an average of coins;
 - uses only what is known at a bar's close;
-- is graded (the stronger the situation, the larger the move that follows) or a market condition in which an effect
-  holds (a regime); never a fixed threshold that turns a position on or off;
+- is graded: the stronger its situation, the larger the move that follows. A market condition (a regime) may limit
+  where it holds, but inside it the effect is still graded; never a fixed threshold, or a condition alone, that turns
+  a position on or off;
 - is something a trader could act on: if confirmed, a reason to take a trade; if rejected, a reason to refuse one;
 - states its time in real time (days or hours, never bars), so it means the same on any bar size: always its horizon,
   how long after its situation the move shows ("over the next 5 days"), and the past period its situation uses when it

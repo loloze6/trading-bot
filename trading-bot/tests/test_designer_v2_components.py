@@ -1,6 +1,6 @@
 """
-strategy_designer_v2 components (operator, 2026-11-14): MovingAverageSlopeComponent and DistanceFromHighComponent
-(graded, forecast sources),
+strategy_designer_v2 components (operator, 2026-11-14): MovingAverageSlopeComponent, DistanceFromHighComponent and
+VolatilityScaledReturnComponent (graded, forecast sources),
 and three regime measures: MovingAverageAgeComponent, BarsSinceHighComponent, WeekdayComponent.
 
 Each output is checked against an independent hand computation on synthetic bars that uses only rows up to and
@@ -23,6 +23,7 @@ from strategies.strategy_base import MarketRegime  # noqa: E402
 from strategies.strategy_components import (  # noqa: E402
     BarsSinceHighComponent,
     DistanceFromHighComponent,
+    VolatilityScaledReturnComponent,
     MovingAverageAgeComponent,
     MovingAverageSlopeComponent,
     WeekdayComponent,
@@ -278,4 +279,43 @@ def test_validator_accepts_the_distance_from_high_in_a_strategy():
     config = {"regime_detector": {"mode": "threshold_rules", "components": [], "rules": [],
                                   "default_regime": "unknown"},
               "strategies": {**_strategies("DistanceFromHighComponent", {"period": 60}), "warmup": 61}}
+    assert validate(config) == []
+
+
+# ---------------------------------------------------------------------------
+# VolatilityScaledReturnComponent
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("t,period", [(40, 1), (77, 5), (149, 10)])
+def test_scaled_return_matches_the_hand_computation_using_rows_up_to_t(t, period):
+    df = _bars(150)
+    c = df["close"].to_numpy()[: t + 1]
+    r = c[1:] / c[:-1] - 1
+    s = np.std(r[-20:], ddof=1)
+    expected = (c[-1] / c[-1 - period] - 1) / (s * np.sqrt(period))
+    got = _run(VolatilityScaledReturnComponent(parameters={"period": period, "vol_period": 20}), df.iloc[: t + 1])
+    assert got == pytest.approx(expected, rel=1e-12)
+
+
+def test_scaled_return_sign_warmup_flat_nan_and_bad_params():
+    up = pd.DataFrame({"timestamp": pd.date_range("2021-01-01", periods=30, freq="D"),
+                       "close": 100 * np.exp(np.cumsum(np.r_[0, np.full(28, 0.001), 0.05]))})
+    assert _run(VolatilityScaledReturnComponent(), up) > 0
+    assert _run(VolatilityScaledReturnComponent(), up.assign(close=1 / up["close"])) < 0
+    comp = VolatilityScaledReturnComponent(parameters={"period": 5, "vol_period": 20})
+    assert comp.get_required_periods() == 21 and _run(comp, _bars(20)) == 0.0
+    flat = up.assign(close=100.0)
+    assert _run(VolatilityScaledReturnComponent(), flat) == 0.0
+    df = _bars(40)
+    df.loc[30, "close"] = np.nan
+    assert math.isnan(_run(VolatilityScaledReturnComponent(), df))
+    for p in ({"period": 0}, {"vol_period": 1}):
+        with pytest.raises(ValueError):
+            VolatilityScaledReturnComponent(parameters=p)
+
+
+def test_validator_accepts_the_scaled_return_in_a_strategy():
+    config = {"regime_detector": {"mode": "threshold_rules", "components": [], "rules": [],
+                                  "default_regime": "unknown"},
+              "strategies": {**_strategies("VolatilityScaledReturnComponent", {"period": 1, "vol_period": 20}), "warmup": 61}}
     assert validate(config) == []
