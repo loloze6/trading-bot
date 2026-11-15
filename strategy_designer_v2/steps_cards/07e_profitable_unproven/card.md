@@ -27,7 +27,7 @@ The shared mechanism (`../07_common/helper/analyse.py`), with this line's `helpe
 Two books profitable enough whose idea was not confirmed, backtested with the current steps: the 002-03 repair from 7.d (`002-03_...d1_above-average-drift-near-highs_1d`) and N2-04 (slow and fast momentum). One book where the line must not run: N2-06 (not profitable enough, by a hair).
 
 ## Variants compared
-One call against analyst then deducer, on the fixed inputs (exercise 1).
+One call against analyst then deducer: one call kept, for every line (`../07_common/card.md`).
 
 ## Done when
 On two exercises in a row, on the fixed inputs, every analysis meets the shared quality criteria and keeps to this line's objective, and at least one of its ideas, taken through steps 3 to 6, changes the result that sent the backtest to this line: the idea of what the book earns from is confirmed (operator, 2026-11-14). Status: **validated** (operator, 2026-11-14) by exercise 2 (`exercise_2/reading.md`): on both inputs the idea it proposed was confirmed and its book profitable. Earlier: exercise 1 and the shared exercise 2 ran (`../07_common/exercise_2/reading.md`); used in the overnight run (`overnight_run/` in this folder, `../OVERNIGHT_RUN.md`).

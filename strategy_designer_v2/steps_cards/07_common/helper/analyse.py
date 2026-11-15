@@ -2,8 +2,8 @@
 (id, name, entry condition) and helper/line_prompt.md (its objective, what it looks for, what it proposes).
 
   python analyse.py LINE_DIR RECORD --plan PLAN.md --briefs-dir DIR --verdicts-dir DIR --checks-dir DIR --python VENV_PY
-Options: --out-dir (default: LINE_DIR/analyses), --rounds (default 3), --split (an analyst writes the findings, then a
-separate deducer, who does not see the data, writes the ideas), --model (default: the strongest).
+Options: --out-dir (default: LINE_DIR/analyses), --rounds (default 3), --idea (the tested idea's file; default: found
+by the plan's idea id), --model (default: the strongest).
 
 How it runs:
 1. The entry condition: the line runs only when step 5's verdict and step 6's check on this backtest meet it.
@@ -221,7 +221,6 @@ def main():
     a.add_argument("--python", required=True)
     a.add_argument("--out-dir", type=Path)
     a.add_argument("--rounds", type=int, default=3)
-    a.add_argument("--split", action="store_true")
     a.add_argument("--model", default="claude-opus-5-5")
     args = a.parse_args()
 
@@ -258,7 +257,7 @@ def main():
                f"[THE DATA]\n{(HERE / 'data_description.md').read_text()}\n[WHAT A BACKTEST RECORDS]\n{(COMMON / 'backtest_record.md').read_text()}\nThis backtest holds:\n{data_summary(record)}\n")
     line_prompt = with_common((line_dir / "helper" / "line_prompt.md").read_text())
     system = ((HERE / "common_rules.md").read_text() + "\n[HOW THE WORKFLOW MEASURES]\n" + MEASURES + "\n" + line_prompt + "\n"
-              + (HERE / ("output_analyst.md" if args.split else "output_one_call.md")).read_text()
+              + (HERE / "output_one_call.md").read_text()
               ).replace("{{IDEA_DEFINITION}}", IDEA_DEFINITION)
     system = with_common(system)
 
@@ -282,33 +281,13 @@ def main():
             continue
         try:
             findings = parse_findings(text)
-            if args.split:
-                ideas, none_why = None, None
-            else:
-                ideas, none_why = parse_ideas(text, findings)
+            ideas, none_why = parse_ideas(text, findings)
             break
         except ValueError as e:
             print(f"answer refused: {e}")
             retry = f"\n\nYour previous answer was refused: {e}. Give your answer again, in the format."
     else:
         sys.exit(f"no valid answer; cost {cost:.4f} USD")
-
-    if args.split:
-        deducer_system = (HERE / "deducer.md").read_text().replace("{{IDEA_DEFINITION}}", IDEA_DEFINITION) + "\n" + line_prompt
-        fl = "\n".join(f"{k}: {v}" for k, v in findings.items())
-        req = context.split("[THE DATA]")[0] + f"[THE FINDINGS]\n{fl}\n\nWrite the ideas your line asks for."
-        retry = ""
-        for attempt in range(ATTEMPTS):
-            text2, c = call(args.model, deducer_system, req + retry)
-            cost += c
-            try:
-                ideas, none_why = parse_ideas(text2, findings)
-                break
-            except ValueError as e:
-                print(f"deducer answer refused: {e}")
-                retry = f"\n\nYour previous answer was refused: {e}. Give your answer again, in the format."
-        else:
-            sys.exit(f"no valid deducer answer; cost {cost:.4f} USD")
 
     # Save: the analysis, one file per idea, the index line.
     market = {k: h[f"data-{k}"] for k in ("instruments", "bar", "period") if h.get(f"data-{k}")}
@@ -333,12 +312,12 @@ def main():
     fl = "\n".join(f"- **{k}:** {v}" for k, v in findings.items())
     il = "\n".join(f"- `{n}` (from {', '.join(g['refs'])}): {g['idea']}" for n, g in zip(names, ideas or [])) or f"- No ideas: {none_why}"
     md = (f"---\nline: {line['id']} {line['name']}\nbacktest: {rid}\nidea tested: {h.get('idea', '')}\n"
-          f"step 5: {s5}\nstep 6: {s6}\nmode: {'analyst then deducer' if args.split else 'one call'}\n"
+          f"step 5: {s5}\nstep 6: {s6}\nmode: one call\n"
           f"explorations: {rounds_used}\ncost: {cost:.4f} USD\n---\n## Findings\n{fl}\n\n## Ideas\n{il}\n\n"
           f"Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.\n")
     write_atomic(d / "analysis.md", DATE.sub("<date>", md))
     write_atomic(d / "result.json", DATE.sub("<date>", json.dumps({"line": line["id"], "backtest": rid, "step5": s5, "step6": s6,
-                                                "split": args.split, "explorations": rounds_used, "cost": cost,
+                                                "explorations": rounds_used, "cost": cost,
                                                 "findings": findings, "ideas": [{k: v for k, v in g.items()} for g in ideas or []],
                                                 "idea_ids": names, "no_ideas": none_why}, indent=2)) + "\n")
     index_line(f"{rid}: {len(names)} ideas ({rounds_used} explorations)" if names else f"{rid}: no ideas: {none_why}")

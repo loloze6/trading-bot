@@ -36,7 +36,7 @@ The shared mechanism (`../07_common/helper/analyse.py`), with this line's `helpe
 The full-data run's 002-01 and 002-03 (they fail on their falls and against holding) and 002-04 (it loses money: its gain fails), backtested with the current steps. No book of the workflow fails on too few trades yet: that branch has no fixed input.
 
 ## Variants compared
-One call against analyst then deducer, on the fixed inputs (exercise 1).
+One call against analyst then deducer: one call kept, for every line (`../07_common/card.md`).
 
 ## Done when
 On two exercises in a row, on the fixed inputs, every analysis meets the shared quality criteria and keeps to this line's objective, and at least one of its ideas, taken through steps 3 to 6, changes the result that sent the backtest to this line: the measures that failed move the right way, without breaking the others (operator, 2026-11-14). Status: **validated** (operator, 2026-11-14) by exercise 3 (`exercise_3/reading.md`): on the falls, the repairs move the failing measures (002-03's book becomes profitable); the final review's fixes confirmed by a third run. Earlier: exercises 1 and 2 ran; "start from what failed" approved by the operator on 2026-11-13 after the overnight test (`overnight_run/test_failing_measure/`) (`../07_common/exercise_2/reading.md`); used in the overnight run (`overnight_run/` in this folder, `../OVERNIGHT_RUN.md`).

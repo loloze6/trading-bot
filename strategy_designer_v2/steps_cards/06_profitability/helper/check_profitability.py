@@ -79,26 +79,16 @@ def load(record):
     return eq(book), eq(hold), trades, bars, coins
 
 
-def check(record, rule, target_vol=None, calmar_vs_hold=False):
+def check(record, rule):
     book, hold, trades, bars, coins = load(record)
     windows = sorted(book)
     r = np.concatenate([book[w].to_numpy() for w in windows])
-    if target_vol:   # overnight test: one common risk level (the book's daily returns scaled to a yearly volatility)
-        vol = r.std(ddof=1) * math.sqrt(365)
-        if vol > 0:
-            r = r * (target_vol / vol)
-            book = {w: book[w] * (target_vol / vol) for w in windows}
     h = np.concatenate([hold[w].to_numpy() for w in windows])
     curve = np.cumprod(1 + r)
     years = len(r) / 365
     ann = curve[-1] ** (1 / years) - 1 if years > 0 and curve[-1] > 0 else -1.0
     fall = float(np.max(1 - curve / np.maximum.accumulate(np.concatenate([[1.0], curve]))[1:]))
     calmar = math.inf if fall == 0 and ann > 0 else (ann / fall if fall > 0 else 0.0)
-    if calmar_vs_hold:   # overnight test: the Calmar bar relative to holding the same coins
-        hc = np.cumprod(1 + h); hann = hc[-1] ** (1 / years) - 1 if years > 0 and hc[-1] > 0 else -1.0
-        hfall = float(np.max(1 - hc / np.maximum.accumulate(np.concatenate([[1.0], hc]))[1:]))
-        hold_calmar = math.inf if hfall == 0 and hann > 0 else (hann / hfall if hfall > 0 else 0.0)
-        rule = dict(rule, calmar_min=hold_calmar)
     loo = {w: sharpe(np.concatenate([book[x].to_numpy() for x in windows if x != w])) for w in windows}
     v = {
         "sharpe_min": sharpe(r),
@@ -128,8 +118,6 @@ def main():
     a = argparse.ArgumentParser()
     a.add_argument("record", type=Path, help="one backtest record folder")
     a.add_argument("--checks-dir", type=Path, default=HERE.parent / "checks")
-    a.add_argument("--calmar-vs-hold", action="store_true", help="overnight test: the Calmar bar is holding's Calmar instead of 0.75")
-    a.add_argument("--target-vol", type=float, default=None, help="overnight test: scale the book to this yearly volatility first (for example 0.2)")
     args = a.parse_args()
 
     record = args.record.resolve()
@@ -150,7 +138,7 @@ def main():
     data = next((l[len("- Data: "):] for l in (record / "run.md").read_text().splitlines() if l.startswith("- Data: ")), "") \
         if (record / "run.md").exists() else ""
 
-    rows, facts = check(record, rule, args.target_vol, args.calmar_vs_hold)
+    rows, facts = check(record, rule)
     ok = all(x["passed"] for x in rows)
     decided = "every measure passed" if ok else "failed: " + "; ".join(x["label"] for x in rows if not x["passed"])
     status = "profitable enough" if ok else "not profitable enough"

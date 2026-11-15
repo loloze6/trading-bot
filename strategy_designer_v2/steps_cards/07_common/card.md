@@ -61,8 +61,6 @@ One analysis per backtest: findings, then ideas, each idea in step 2's format, o
     analyse.py                 one line, one backtest: entry condition, rounds, answer, saved files
     common_rules.md            the shared part of every line's instructions (role, input, how to explore, findings)
     output_one_call.md         the answer's format, one call (findings, then ideas)
-    output_analyst.md          the analyst's format, split mode (findings only)
-    deducer.md                 the deducer's instructions, split mode (ideas from the findings, no data)
     data_description.md        how the backtest's tables are handed to the code; their columns: ../common/backtest_record.md
 07x_<line>/
   card.md                      the line's card
@@ -80,15 +78,13 @@ One analysis per backtest: findings, then ideas, each idea in step 2's format, o
 
 **Closed book,** as in steps 1 to 3 and 5: no tools, no files, no web; what it needs is pasted into the call (the brief, the plan, its config, the verdict, the check, the data description, the earlier rounds).
 
-**Two modes, to compare:**
-- **One call** (the default): the same model explores, writes its findings, then its ideas.
-- **Analyst, then deducer** (`--split`): the analyst explores and writes findings only; a deducer, who does not see the data, writes the ideas from the findings.
+**One call:** the same model explores, writes its findings, then its ideas (chosen over an analyst-then-deducer split, see "Variants compared").
 
 **Checks in code.** They refuse only an answer they cannot read, and send it back (three attempts): no findings; an idea without its sentence, consequence or findings; an idea resting on a finding that does not exist; a field over 300 words; neither ideas nor "no-ideas"; a `same-idea-on:` block (the tested idea unchanged, on other data) whose data is not in `../common/data_available.md`. For that block, code copies the tested idea's Idea and Consequence into the idea file. A function that fails returns its error as the round's result, without any file path. Code also refuses a period named by its months and year (a month name next to a year, a quarter with its year, a year and month written as numbers): periods are named by window or by year. The verdict and check text given to the model carry no path lines.
 
-**Model.** Opus. **Cost.** About 0.3 USD and 1 to 2 minutes per analysis (exercise 1: 17 analyses, 5.38 USD; the split costs about 20 % more).
+**Model.** Opus. **Cost.** About 0.3 USD and 1 to 2 minutes per analysis.
 
-**Prompts.** `helper/common_rules.md` + the workflow's measuring definitions (`../common/measures.md`, shared with steps 3 and 5) + the line's `line_prompt.md` + `helper/output_one_call.md` (or `output_analyst.md`, then `deducer.md`), each with the definition of an idea (`../common/idea_definition.md`, shared with step 2).
+**Prompts.** `helper/common_rules.md` + the workflow's measuring definitions (`../common/measures.md`) + the line's `line_prompt.md` + `helper/output_one_call.md`, with the definition of an idea (`../common/idea_definition.md`); shared files are pasted where a prompt names them (`{{NAME}}`).
 
 ## Quality criteria (every line)
 - **Every finding states its numbers,** and they are in its exploration results.
