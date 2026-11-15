@@ -1,3 +1,4 @@
+001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 001-01_rsi-high-extreme-reversal_1d: plan (fit: adapted) [BTC, ETH, BNB, 1d, fold A]
 001-02_rsi-low-extreme-rebound_1d: plan (fit: adapted) [BTC, ETH, BNB, 1d, fold A]
 001-03_rsi-high-extreme-continuation_1d: plan (fit: adapted) [BTC, ETH, BNB, 1d, fold A]
@@ -24,6 +25,8 @@
 002-04_price-cross-below-long-sma.d1_below-average-fall-not-stretched_1d: missing-components: The rebound exception needs how far the close sits beneath its recent highest close, and how fast it got there. [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 002-04_price-cross-below-long-sma.d1_shorts-under-falling-average_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 002-04_price-downcross-long-sma-drift_1d: plan (fit: adapted) [BTC/USDT, 1d, fold A]
+002-05_sma-up-regime-positive-drift.a1_sma-up-regime-positive-drift_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C and D]
+002-05_sma-up-regime-positive-drift.a1_sma-up-stretch-drift-broad_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, 1d, folds A, B, C, D]
 002-05_sma-up-regime-positive-drift_1d: plan (fit: adapted) [BTC/USDT, 1d, fold A]
 002-06_sma-down-regime-negative-drift_1d: plan (fit: adapted) [BTC/USDT, 1d, fold A]
 003-01_low-volume-up-move-reverts_1d: plan (fit: adapted) [BTC/USDT, 1d, fold A]
@@ -46,3 +49,4 @@
 005-05_bearish-divergence-uptrend-continues_1d: missing-components: A lower RSI high at a new price high needs RSI compared with its own recent maximum. The catalogue has [BTC, ETH, BNB, 1d, fold A]
 005-06_bullish-divergence-downtrend-continues_1d: missing-components: The divergence needs RSI now compared with RSI at the earlier price low, while price sits at a new low. [BTC, ETH, BNB, 1d, fold A]
 N2-04_slow-and-fast-momentum.e1_short-horizon-dual-momentum-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+N4-01_breakout-drift-lasts_1d: plan (fit: adapted) [NEAR, SUI, TAO, ONDO, 1d, fold D]

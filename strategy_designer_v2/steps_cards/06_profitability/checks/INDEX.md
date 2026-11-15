@@ -1,4 +1,5 @@
 001-01_rsi-high-extreme-reversal-down_1h: not profitable enough [Sharpe -3.087; Sharpe minus holding's Sharpe -3.153; Calmar -0.7576]
+001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample_1d: not profitable enough [Sharpe -1.256; Sharpe minus holding's Sharpe -1.811; Calmar -0.2793]
 002-01_sma-golden-cross-upward-drift.b1_golden-cross-spread-drift_1d: not profitable enough [Sharpe 0.5589; Sharpe minus holding's Sharpe 0.006145; Calmar 0.2326]
 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1d: profitable enough [Sharpe 0.9003; Sharpe minus holding's Sharpe 0.2823; Calmar 0.883]
 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends_1d: not profitable enough [Sharpe 0.8505; Sharpe minus holding's Sharpe 0.2963; Calmar 0.7164]
@@ -18,8 +19,11 @@
 002-03_price-cross-above-long-sma_1d: not profitable enough [Sharpe 0.6758; Sharpe minus holding's Sharpe 0.1062; Calmar 0.3855]
 002-04_price-cross-below-long-sma.d1_shorts-under-falling-average_1d: not profitable enough [Sharpe -0.1577; Sharpe minus holding's Sharpe -0.7234; Calmar -0.08977]
 002-04_price-cross-below-long-sma_1d: not profitable enough [Sharpe -0.4263; Sharpe minus holding's Sharpe -0.9959; Calmar -0.1584]
+002-05_sma-up-regime-positive-drift.a1_sma-up-regime-positive-drift_1d: not checked: the record holds no window that ran
+002-05_sma-up-regime-positive-drift.a1_sma-up-stretch-drift-broad_1d: not profitable enough [Sharpe 0.5479; Sharpe minus holding's Sharpe -0.02029; Calmar 0.233]
 002-05_up-cross-to-reverse-cross-gain_1d: not profitable enough [Sharpe 0.4894; Sharpe minus holding's Sharpe -0.08021; Calmar 0.2015]
 002-06_down-cross-to-reverse-cross-loss_1d: not profitable enough [Sharpe -0.4822; Sharpe minus holding's Sharpe -1.052; Calmar -0.1591]
 N2-04_slow-and-fast-momentum.e1_short-horizon-dual-momentum-continuation_1d: profitable enough [Sharpe 1.056; Sharpe minus holding's Sharpe 0.5014; Calmar 1.216]
 N2-04_slow-and-fast-momentum_1d: profitable enough [Sharpe 1.055; Sharpe minus holding's Sharpe 0.5013; Calmar 1.218]
 N2-06_rebound-in-high-volatility_1d: not profitable enough [Sharpe 0.7934; Sharpe minus holding's Sharpe 0.2393; Calmar 0.7421]
+N4-01_breakout-drift-lasts_1d: not profitable enough [Sharpe 0.6995; Sharpe minus holding's Sharpe 0.202; Calmar 0.6221]

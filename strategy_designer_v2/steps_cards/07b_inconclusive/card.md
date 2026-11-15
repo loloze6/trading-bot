@@ -19,7 +19,7 @@ Two things. Whether the effect is weak or mixed: its size and how much it varies
 
 ## What it proposes
 The answer step 5's result calls for (its main measure and statistic, not a measure of the line's own; operator, 2026-11-15):
-- the result is on the idea's side but short of the bar, and more data is available than the test used: the tested idea unchanged, on more data (its `data:` line, from `../common/data_available.md`); narrowing would leave fewer cases when the problem is too few;
+- the result is on the idea's side but short of the bar, and more data is available than the test used: the tested idea unchanged, on more data: a `same-idea-on:` block (the line gives the data, from `../common/data_available.md`; code copies the idea's text); narrowing would leave fewer cases when the problem is too few;
 - the result is on the other side or zero, or no more data is available: the tested idea amended to the part of the data where the findings show the effect clearly, written in full; or, if there is none, "no ideas", with that finding: a clear answer.
 
 An idea of its own is written like any idea, without a label.

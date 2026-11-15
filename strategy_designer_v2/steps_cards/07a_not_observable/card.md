@@ -18,7 +18,7 @@ One analysis per backtest that meets the entry condition: findings, then ideas i
 How often the idea's situation occurs (per coin, per window, per year); how the forecast is spread; how many cases the plan asked for and got; how much the outcome varies.
 
 ## What it proposes
-The same idea where it can be observed: on other data (other coins, another bar size, another period, in the idea's data lines), or stated at the time scale where its situation occurs often enough. Never a loosened situation, which would be another idea.
+The tested idea unchanged, on data where it can be observed: more coins, more periods, or another bar size (its times are in real time). It is written as a `same-idea-on:` block: the line gives only the data, from `../common/data_available.md`; code copies the tested idea's text and refuses data that is not available (operator, 2026-11-15). Never a loosened situation or changed times, which would be another idea. If no available data reaches the plan's minimum count, "no ideas", with the cases needed and the cases the data could give.
 
 ## The AI
 The shared mechanism (`../07_common/helper/analyse.py`), with this line's `helper/line_prompt.md`. Opus.
@@ -30,7 +30,7 @@ Two real records cut to one window of one coin (`05_verification/exercise_11/rec
 One call against analyst then deducer, on the fixed inputs (exercise 1).
 
 ## Done when
-On two exercises in a row, on the fixed inputs, every analysis meets the shared quality criteria and keeps to this line's objective, and at least one of its ideas, taken through steps 3 to 6, changes the result that sent the backtest to this line: the test of the new idea is observable (its minimum counts are reached) (operator, 2026-11-14). Status: exercises 1 and 2 ran (`../07_common/exercise_2/reading.md`); used in the overnight run (`overnight_run/` in this folder, `../OVERNIGHT_RUN.md`).
+On two exercises in a row, on the fixed inputs, every analysis meets the shared quality criteria and keeps to this line's objective, and at least one of its ideas, taken through steps 3 to 6, changes the result that sent the backtest to this line: the test of the new idea is observable (its minimum counts are reached) (operator, 2026-11-14). Status: **validated** (operator, 2026-11-15) by exercise 3 (`exercise_3/reading.md`): both proposals made the idea observable (001-01 rejected, 002-05 inconclusive). Earlier: exercises 1 and 2 ran (`../07_common/exercise_2/reading.md`); used in the overnight run (`overnight_run/` in this folder, `../OVERNIGHT_RUN.md`).
 
 ## What this line does not do
 It does not test its ideas, write a test plan, or look beyond its objective.

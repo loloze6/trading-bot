@@ -1,3 +1,4 @@
+001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample_1d: rejected (fit: adapted) [main: 0.0143993; ordinary t of the mean 2.5761; cases 595, coins with negative mean excess 1, cases BTCUSD 107, cases ETHUSD 106, cases LTCUSD 97, cases XMRUSD 109, cases XRPUSD 77, cases ZECUSD 99]
 001-01_rsi-high-extreme-reversal_1d: inconclusive (fit: adapted) [main: -0.0119429; t of the mean -1.32313; non-overlapping extreme cases pooled 60, coins 2, coins with negative excess 2]
 001-02_rsi-low-extreme-rebound_1d: inconclusive (fit: adapted) [main: 0.00388501; t of the mean 0.496856; pooled non-overlapping top-quintile cases 77, top-quintile cases BTCUSD 36, top-quintile cases ETHUSD 41, coins with positive top-minus-neutral excess 1]
 001-03_rsi-high-extreme-continuation_1d: inconclusive (fit: adapted) [main: -0.00717955; Welch t -0.560234; non-overlapping extreme cases 42, neutral cases 149, coins with positive difference 1, coins with negative difference 1, coins in record 2]
@@ -21,6 +22,8 @@
 002-03_price-upcross-long-sma-drift_1d: inconclusive (fit: adapted) [main: 0.00120966; OLS slope t-stat 0.64857; non-overlapping blocks 70, blocks starting with forecast > 0 27]
 002-04_price-cross-below-long-sma.d1_shorts-under-falling-average_1d: inconclusive (fit: exact) [main: -0.00296516; ordinary t of the mean -0.371636; active cases 300]
 002-04_price-downcross-long-sma-drift_1d: inconclusive (fit: adapted) [main: -0.000745799; OLS slope t -0.241659; non-overlapping 10-bar blocks with forecast < 0 43, non-overlapping 10-bar blocks, all bars 70]
+002-05_sma-up-regime-positive-drift.a1_sma-up-regime-positive-drift_1d: no verdict: no backtest record
+002-05_sma-up-regime-positive-drift.a1_sma-up-stretch-drift-broad_1d: inconclusive (fit: adapted) [main: 1.56518e-05; t of the mean 0.0322316; bars with forecast > 0 12451]
 002-05_sma-up-regime-positive-drift_1d: inconclusive (fit: adapted) [main: 0.00144308; Welch t 0.698919; in-stretch bars 290, out-of-stretch bars 434, distinct up-cross stretches 5]
 002-06_sma-down-regime-negative-drift_1d: inconclusive (fit: adapted) [main: -0.00100349; t of weighted mean -0.538966; active bars 434, down-cross stretches 5]
 003-01_low-volume-up-move-reverts_1d: no verdict: no backtest record
@@ -45,3 +48,4 @@
 N2-04_slow-and-fast-momentum.e1_short-horizon-dual-momentum-continuation_1d: confirmed (fit: adapted) [main: 0.00822748; t of the mean 2.222; active non-overlapping 5-bar cases 1130, active non-overlapping 20-bar cases 269]
 N2-04_slow-and-fast-momentum_1d: inconclusive (fit: exact) [main: 0.0190129; t of the mean 0.849656; non-overlapping 20-bar active blocks pooled across coins and windows 269]
 N2-06_rebound-in-high-volatility_1d: inconclusive (fit: adapted) [main: 0.00234706; two-proportion z 0.099304; top-decile drop bars high-volatility 992, top-decile drop bars quiet 749]
+N4-01_breakout-drift-lasts_1d: inconclusive (fit: adapted) [main: 0.0233349; t of the mean 1.07383; pooled independent cases 64, supporting cases 44]

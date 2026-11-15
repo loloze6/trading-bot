@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next 1-bar return minus coin mean, on forecast > 0 bars",
+    "value": 1.565181228895259e-05,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.03223157612544875
+    },
+    "threshold": "confirm t >= 2 (with up-share above coin's), reject t <= -2"
+  },
+  "supporting_check": {
+    "name": "up-bar share on forecast > 0 bars minus coin overall up-share",
+    "value": -0.0008547114195130989,
+    "passed": false
+  },
+  "counts": {
+    "bars with forecast > 0": 12451
+  },
+  "decided_by": "The t of the mean excess return lies between -2 and 2.",
+  "reading": "Situation is bars where the raw SMA50-SMA200 spread (last_history_value) is > 0, on the long side, and bars with a missing spread are left out of the agreement; the next 1-bar return is taken on every bar inside its window, the coin's mean and up-share use all of its bars over all windows, and the supporting check compares the pooled up-share of forecast > 0 bars with the same bars' coin overall up-shares (mean of up minus the coin's share > 0)."
+}

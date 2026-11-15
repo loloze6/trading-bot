@@ -1,3 +1,4 @@
+001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 001-01_rsi-high-extreme-reversal_1d: ran: BTCUSD 6/6; ETHUSD 6/6; BNBUSD not run (no historical data on the venue) [1d, fold A]
 001-02_rsi-low-extreme-rebound_1d: ran: BTCUSD 6/6; ETHUSD 6/6; BNBUSD not run (no historical data on the venue) [1d, fold A]
 001-03_rsi-high-extreme-continuation_1d: ran: BTCUSD 6/6; ETHUSD 6/6; BNBUSD not run (no historical data on the venue) [1d, fold A]
@@ -21,6 +22,7 @@
 002-03_price-upcross-long-sma-drift_1d: ran: BTCUSD 6/6 [1d, fold A]
 002-04_price-cross-below-long-sma.d1_shorts-under-falling-average_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 23/24 (1 not run: the engine stopped); ZECUSD 24/24 [1d, folds A, B, C, D]
 002-04_price-downcross-long-sma-drift_1d: ran: BTCUSD 6/6 [1d, fold A]
+002-05_sma-up-regime-positive-drift.a1_sma-up-stretch-drift-broad_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 23/24 (1 not run: the engine stopped); XRPUSD 22/24 (2 not run: the engine stopped); ZECUSD 24/24; ADAUSD 18/24 (6 not run: no historical data on the venue); DOGEUSD 14/24 (10 not run: no historical data on the venue); LINKUSD 15/24 (9 not run: no historical data on the venue); TRXUSD 14/24 (10 not run: no historical data on the venue) [1d, folds A, B, C, D]
 002-05_sma-up-regime-positive-drift_1d: ran: BTCUSD 6/6 [1d, fold A]
 002-06_sma-down-regime-negative-drift_1d: ran: BTCUSD 6/6 [1d, fold A]
 003-01_low-volume-up-move-reverts_1d: not run: BTCUSD not run (the engine stopped) [1d, fold A]
@@ -45,3 +47,4 @@
 N2-04_slow-and-fast-momentum.e1_short-horizon-dual-momentum-continuation_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 N2-04_slow-and-fast-momentum_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
 N2-06_rebound-in-high-volatility_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1d, folds A, B, C, D]
+N4-01_breakout-drift-lasts_1d: ran: NEARUSD 6/6; SUIUSD 6/6; TAOUSD 3/6 (3 not run: no historical data on the venue); ONDOUSD 4/6 (2 not run: the engine stopped) [1d, fold D]

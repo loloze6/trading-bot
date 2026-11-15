@@ -24,7 +24,7 @@ import yaml
 HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[1]
 sys.path.insert(0, str(STEPS / "03_test_plan" / "helper"))
-from make_test_plan import call, write_atomic   # noqa: E402  (the same closed-book call as steps 3 and 5)
+from make_test_plan import call, write_atomic, idea_for_step3   # noqa: E402  (the same closed-book call as steps 3 and 5; the idea fields step 3 reads)
 
 ATTEMPTS, MAX_WORDS, ROW_CAP, CHAR_CAP = 3, 300, 40, 15000
 DATE = re.compile(r"\b(19|20)\d\d-\d\d(-\d\d)?([ T]\d\d:\d\d(:\d\d)?(\.\d+)?([+-]\d\d:\d\d|Z)?)?\b")
@@ -149,15 +149,42 @@ def with_common(text):
 MEASURES = (COMMON / "measures.md").read_text()
 
 
+COINS = set(re.findall(r"\b[A-Z]{2,5}\b", (COMMON / "data_available.md").read_text())) - {"UTC"}
+
+
+def data_problems(spec):
+    """What a 'instruments: ...; bar: ...; period: ...' line names that is not in common/data_available.md."""
+    d = {k: v.strip() for k, v in re.findall(r"(instruments|bar|period)\s*:\s*([^;]+)", spec)}
+    if not d.get("instruments") or not d.get("period"):
+        return "it needs 'instruments: ...; period: ...' (and 'bar: ...' if not the tested one)"
+    coins = [c.strip() for c in d["instruments"].split(",")]
+    bad = [c for c in coins if c not in COINS]
+    if not re.fullmatch(r"folds? [A-D](, [A-D])*", d["period"]):
+        bad.append(f"period '{d['period']}' (write: folds A, B, C, D)")
+    return ", ".join(bad)
+
+
 def parse_ideas(text, findings):
     no_dates(text)
     m = re.search(r"^no-ideas:\s*(.+)$", text, re.M)
-    start = re.search(r"(?m)^idea:", text)
-    blocks = re.split(r"(?m)^(?=idea:)", text[start.start():]) if start else []
+    start = re.search(r"(?m)^(idea|same-idea-on):", text)
+    blocks = re.split(r"(?m)^(?=idea:|same-idea-on:)", text[start.start():]) if start else []
     ideas = []
     for b in blocks:
-        g = {k: v.strip() for k, v in re.findall(r"^(idea|consequence|name|from|data):\s*(.+)$", b, re.M)}
+        g = {k: v.strip() for k, v in re.findall(r"^(idea|same-idea-on|consequence|name|from|data):\s*(.+)$", b, re.M)}
         if not g:
+            continue
+        if "same-idea-on" in g:   # the tested idea unchanged, on other data: code copies its text
+            bad = data_problems(g["same-idea-on"])
+            if bad:
+                raise ValueError(f"same-idea-on names data that is not available: {bad}; use the data available")
+            if not g.get("from"):
+                raise ValueError("a same-idea-on block names the findings it rests on, in 'from: F1, F3'")
+            g["refs"] = re.findall(r"F\d+", g["from"])
+            missing = [r for r in g["refs"] if r not in findings]
+            if not g["refs"] or missing:
+                raise ValueError("a same-idea-on block rests on findings that exist, in 'from: F1, F3'")
+            ideas.append(g)
             continue
         for k in ("idea", "consequence", "from"):
             if not g.get(k):
@@ -190,6 +217,7 @@ def main():
     a.add_argument("--briefs-dir", type=Path, required=True)
     a.add_argument("--verdicts-dir", type=Path, required=True)
     a.add_argument("--checks-dir", type=Path, required=True)
+    a.add_argument("--idea", type=Path, help="the tested idea's file (default: found by the plan's idea id)")
     a.add_argument("--python", required=True)
     a.add_argument("--out-dir", type=Path)
     a.add_argument("--rounds", type=int, default=3)
@@ -222,7 +250,9 @@ def main():
     verdict = (args.verdicts_dir / rid / "verdict.md")
     check = (args.checks_dir / rid / "check.md")
     no_paths = lambda f: "".join(l for l in f.read_text().splitlines(True) if not re.match(r"(Plan|Record|Measure|Rule):", l))
-    context = (f"[THE BRIEF]\n{brief}\n[THE TEST PLAN]\n{plan_text}\n[ITS CONFIG]\n{config.read_text() if config.exists() else '(none)'}\n"
+    idea_file = args.idea or next(iter(sorted(HERE.parents[1].glob(f"**/{h.get('idea', '')}.md"))), None)
+    idea_text = idea_for_step3(idea_file.read_text()) if idea_file and idea_file.exists() else "(not found)"
+    context = (f"[THE BRIEF]\n{brief}\n[THE IDEA THAT WAS TESTED]\n{idea_text}\n[THE TEST PLAN]\n{plan_text}\n[ITS CONFIG]\n{config.read_text() if config.exists() else '(none)'}\n"
                f"[THE VERDICT ON THE IDEA (step 5)]\n{no_paths(verdict) if verdict.exists() else s5}\n"
                f"[THE CHECK OF THE BOOK (step 6)]\n{no_paths(check) if check.exists() else s6}\n"
                f"[THE DATA]\n{(HERE / 'data_description.md').read_text()}\n[WHAT A BACKTEST RECORDS]\n{(COMMON / 'backtest_record.md').read_text()}\nThis backtest holds:\n{data_summary(record)}\n")
@@ -285,7 +315,11 @@ def main():
     letter = line["id"].split(".")[1]
     (d / "ideas").mkdir(exist_ok=True)
     names = []
+    tested = {f: (re.search(rf"^{f}:\s*(.+)$", idea_text, re.M) or [None, ""])[1].strip() for f in ("Idea", "Consequence")}
     for i, g in enumerate(ideas or [], 1):
+        if "same-idea-on" in g:
+            g["idea"], g["consequence"], g["data"] = tested["Idea"], tested["Consequence"], g["same-idea-on"]
+            g.setdefault("name", "same idea on other data")
         mk = dict(market)
         for k, v in re.findall(r"(instruments|bar|period)\s*:\s*([^;]+)", g.get("data", "")):
             mk[k] = v.strip()

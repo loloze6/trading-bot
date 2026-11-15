@@ -15,7 +15,8 @@ Propose the answer the test's result calls for. The result is step 5's main meas
 above), not a measure of your own; your findings say why it is unclear. Each idea from a finding.
 - If the test's result is on the side the idea predicts, but short of the bar, and more data is available than the
   test used: the tested idea unchanged, on more data (narrowing it would leave fewer cases, when the problem is too
-  few). Its text is the tested idea's, written like any idea; only its `data:` line (from the data available below) says the data.
+  few). Write it as a `same-idea-on:` block (the code copies the tested
+  idea's text), with data from the data available below.
 - If the test's result is on the other side, or zero, or no more data is available: if your findings show the effect clearly in one part of the
   data and absent elsewhere, the tested idea amended to where it shows (a condition, one side, the strongest cases,
   its horizon), written in full, as one sentence that keeps the tested idea's own situation in its own words and adds

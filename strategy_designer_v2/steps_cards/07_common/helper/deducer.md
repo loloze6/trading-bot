@@ -14,5 +14,10 @@ name: <three to five words>
 from: <the findings it rests on, for example F1, F3>
 data: <only if your idea is about other data than the backtest's: instruments: ...; bar: ...; period: ...>
 
+For the tested idea unchanged, on other data, a block of its own instead (the code copies the tested idea's text):
+same-idea-on: instruments: <coins, from the data available>; bar: <bar size>; period: folds <A, B, C, D>
+name: <three to five words>
+from: <the findings it rests on>
+
 Or:
 no-ideas: <why, in one sentence>
