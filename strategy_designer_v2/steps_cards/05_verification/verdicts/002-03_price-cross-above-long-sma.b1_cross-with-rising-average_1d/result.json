@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 20-bar forward return of active cases (forecast > 0) over coin holding mean",
+    "value": 0.011268806808235244,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.5846756584268593
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and slope > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 20-bar return on forecast, active cases",
+    "value": 0.005980254571503756,
+    "passed": true
+  },
+  "counts": {
+    "active non-overlapping cases": 322
+  },
+  "decided_by": "The main t lies between -2 and 2 (or is undefined), which the plan calls inconclusive.",
+  "reading": "Holding is each coin's mean 20-bar return over the same non-overlapping grid samples of all its windows; a grid bar counts only if t+20 lies in the same window; the plan's 'fewer than 30 active cases' minimum is treated as not observable; the situation is checked on regime == 'trending' plus the recorded ma_slope raw value > 0."
+}

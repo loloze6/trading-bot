@@ -15,16 +15,16 @@ The shared input: the backtest record, its plan and brief, step 5's verdict and 
 One analysis per backtest that meets the entry condition: findings, then ideas in step 2's format, or "no ideas" with the reason (`analyses/`).
 
 ## What it looks for
-The size of the effect and how much it varies; whether it is present in part of the data only (some coins, periods, regimes, the largest forecasts, one side); whether the market's own moves drown it.
+Two things. Whether the effect is weak or mixed: its size and how much it varies, whether it is present in part of the data only (some coins, periods, regimes, the largest forecasts, one side), whether the market's own moves drown it. Or whether the test measured the idea elsewhere than where it shows: another horizon, comparison or side.
 
 ## What it proposes
-Ideas that state where the effect is, when the findings show it in part of the data: a condition, one side, the strongest cases.
+Ideas that would give a clear answer. One that states where the effect is (a condition, one side, the strongest cases, its horizon) is the tested idea amended, written in full; an idea of its own is written like any idea, without a label. If the effect is not there at all, the answer is "no ideas", with that finding: a clear answer.
 
 ## The AI
 The shared mechanism (`../07_common/helper/analyse.py`), with this line's `helper/line_prompt.md`. Opus.
 
 ## Fixed inputs for the iterations
-The full-data run's 002-01 and 002-03 (6 coins, folds A to D), both inconclusive.
+The full-data run's 002-01 (a weak result, t 0.37), 002-03 (close to a confirm, t 1.73) and 002-04 (an effect that looks absent, t -0.23), all inconclusive, backtested with the current steps (6 coins, folds A to D).
 
 ## Variants compared
 One call against analyst then deducer, on the fixed inputs (exercise 1).

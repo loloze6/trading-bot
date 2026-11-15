@@ -44,3 +44,10 @@ From the overnight run (2026-11-13), parked by the operator until the steps are 
 From the overnight run (2026-11-13; step 5's false "mismatch" on N1-01), parked by the operator.
 - **What was seen:** the engine records the strategies' components, but not the regime detector's components: only its decision (the `regime` column). Step 5 and step 7 must recompute the detector's measures from prices.
 - **To do:** record the detector's value and each of its components' values in the backtest record, for analysis.
+
+## Parked: an idea proven and profitable, what next (a topic of its own)
+Operator, 2026-11-15. Line 7.f ("what could break a confirmed idea and its profitable book") is on hold: being real and
+profitable is not a result to diagnose but the end of the research, where a decision starts. To design as one topic:
+the final test on the sealed holdout, what could break the idea and its book, how several such books combine, paper
+trading, a small live test, and watching it once live. First inputs: 7.e's two confirmed and profitable ideas
+(002-03's e1, N2-04's e1, 2026-11-14).

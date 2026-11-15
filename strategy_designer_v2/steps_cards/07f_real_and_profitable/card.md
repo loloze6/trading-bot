@@ -1,5 +1,7 @@
 # Step card 7.f: Real and profitable (2026-11-12)
 
+**On hold (operator, 2026-11-15):** "proven and profitable, what next" is to be designed as a topic of its own (`../POTENTIAL_ADJUSTMENTS.md`); this line is not validated or used until then.
+
 ## Business objective
 **Establish what could break a confirmed idea and its profitable book, and propose how to check it.**
 

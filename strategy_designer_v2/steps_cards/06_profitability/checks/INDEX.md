@@ -1,6 +1,8 @@
+002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross_1d: not profitable enough [Sharpe 0.4881; Sharpe minus holding's Sharpe -0.07762; Calmar 0.2291]
 002-01_sma-golden-cross-upward-drift.d1_golden-cross-with-momentum_1d: not profitable enough [Sharpe 0.8505; Sharpe minus holding's Sharpe 0.2963; Calmar 0.7164]
 002-01_sma-golden-cross-upward-drift_1d: not profitable enough [Sharpe 0.4894; Sharpe minus holding's Sharpe -0.08021; Calmar 0.2015]
 002-02_sma-death-cross-downward-drift_1d: not profitable enough [Sharpe -0.4822; Sharpe minus holding's Sharpe -1.052; Calmar -0.1591]
+002-03_price-cross-above-long-sma.b1_cross-with-rising-average_1d: not profitable enough [Sharpe 0.6745; Sharpe minus holding's Sharpe 0.09284; Calmar 0.4105]
 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_short-horizon-uptrend-momentum-near-highs_1d: profitable enough [Sharpe 0.9487; Sharpe minus holding's Sharpe 0.3829; Calmar 0.9168]
 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs_1d: profitable enough [Sharpe 0.9536; Sharpe minus holding's Sharpe 0.3994; Calmar 0.9239]
 002-03_price-cross-above-long-sma_1d: not profitable enough [Sharpe 0.6758; Sharpe minus holding's Sharpe 0.1062; Calmar 0.3855]
