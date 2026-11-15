@@ -2,6 +2,7 @@
 001-02_rsi-low-extreme-rebound_1d: plan (fit: adapted) [BTC, ETH, BNB, 1d, fold A]
 001-03_rsi-high-extreme-continuation_1d: plan (fit: adapted) [BTC, ETH, BNB, 1d, fold A]
 001-04_rsi-low-extreme-continuation_1d: plan (fit: adapted) [BTC, ETH, BNB, 1d, fold A]
+002-01_sma-golden-cross-upward-drift.b1_golden-cross-spread-drift_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, 1d, folds A, B, C, D]
 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

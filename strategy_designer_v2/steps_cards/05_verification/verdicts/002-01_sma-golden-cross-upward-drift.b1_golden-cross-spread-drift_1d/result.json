@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 10-day return on forecast, positive-forecast grid cases",
+    "value": 0.0004819988239335171,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.7424524401003073
+    },
+    "threshold": "confirm if slope t >= 2 and forecast-weighted mean excess > 0; reject if slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 10-day return > 0",
+    "value": 0.0005481608116264931,
+    "passed": true
+  },
+  "counts": {
+    "positive-forecast grid cases": 1567
+  },
+  "decided_by": "The slope t is between -2 and 2.",
+  "reading": "The situation is read from the recorded raw spread being above 0 with a positive forecast; the coin's usual 10-bar return is the mean of all its non-overlapping grid returns (positions 0, 10, 20, ...) pooled over its windows, the slope t is the ordinary OLS slope t from scipy linregress, and the plan's 'fewer than 100 cases' rule is treated as a minimum count giving 'not observable'."
+}

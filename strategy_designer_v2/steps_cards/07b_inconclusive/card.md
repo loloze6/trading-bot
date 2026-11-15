@@ -15,13 +15,12 @@ The shared input: the backtest record, its plan and brief, step 5's verdict and 
 One analysis per backtest that meets the entry condition: findings, then ideas in step 2's format, or "no ideas" with the reason (`analyses/`).
 
 ## What it looks for
-Two things. Whether the effect is weak or mixed: its size and how much it varies, whether it is present in part of the data only (some coins, periods, regimes, the largest forecasts, one side), whether the market's own moves drown it. Or whether the test measured the idea elsewhere than where it shows: another horizon, comparison or side. Or whether the effect is the same everywhere but too small for this data.
+Two things. Whether the effect is weak or mixed: its size and how much it varies, whether it is present in part of the data only (some coins, periods, regimes, the largest forecasts, one side), whether the market's own moves drown it. Or whether the test measured the idea elsewhere than where it shows: another horizon, comparison or side. Or whether the result is on the idea's side but too small for this data.
 
 ## What it proposes
-The answer the findings call for, in this order (operator, 2026-11-15):
-1. the effect is close to zero across the data (not a result short of the bar): "no ideas", with that finding: a clear answer;
-2. else, the same sign everywhere but too small for the data: the tested idea unchanged, on more data (its `data:` line, from `../common/data_available.md`);
-3. else, the effect shows in part of the data: the tested idea amended to where it shows, written in full.
+The answer step 5's result calls for (its main measure and statistic, not a measure of the line's own; operator, 2026-11-15):
+- the result is on the idea's side but short of the bar, and more data is available than the test used: the tested idea unchanged, on more data (its `data:` line, from `../common/data_available.md`); narrowing would leave fewer cases when the problem is too few;
+- the result is on the other side or zero, or no more data is available: the tested idea amended to the part of the data where the findings show the effect clearly, written in full; or, if there is none, "no ideas", with that finding: a clear answer.
 
 An idea of its own is written like any idea, without a label.
 

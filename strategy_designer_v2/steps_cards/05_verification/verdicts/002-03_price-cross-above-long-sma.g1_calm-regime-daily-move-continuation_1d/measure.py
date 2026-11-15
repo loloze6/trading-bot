@@ -1,133 +1,161 @@
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 
 def measure(bars):
     H = 5
-    FC = "forecast"
-    LHV = "debug_info.components.scaled_day.last_history_value"
-    CALM = "trending"
+    LHV = "debug_info.components.scaled_move.last_history_value"
 
-    # ---------- 1. situation check ----------
-    n_active = 0
-    n_agree = 0
+    def scaled_move(close):
+        r = close.pct_change()
+        vol = r.rolling(20, min_periods=20).std()
+        return r, r / vol
+
+    def standardise(x):
+        m = x.rolling(60, min_periods=20).mean()
+        s = x.rolling(60, min_periods=20).std()
+        return (x - m) / s
+
+    # ---------- per-window preparation ----------
+    prepared = {}
     for coin, wins in bars.items():
         for w, df in wins.items():
-            if df is None or len(df) == 0:
-                continue
-            fc = pd.to_numeric(df[FC], errors="coerce")
-            active = fc.notna() & (fc != 0)
-            if not active.any():
-                continue
-            reg = df["regime"].astype(str) if "regime" in df.columns else pd.Series("", index=df.index)
-            if LHV in df.columns:
-                z = pd.to_numeric(df[LHV], errors="coerce")
-            else:
-                z = pd.Series(np.nan, index=df.index)
-            ok = (reg == CALM) & z.notna() & (np.sign(fc) == np.sign(z)) & (z != 0)
-            n_active += int(active.sum())
-            n_agree += int((ok & active).sum())
+            d = df.reset_index(drop=True).copy()
+            close = d["close"].astype(float)
+            ret1, sm = scaled_move(close)
+            d["_ret1"] = ret1
+            d["_z"] = standardise(sm)
+            d["_fwd"] = close.shift(-H) / close - 1.0
+            d["_grid"] = (np.arange(len(d)) % H) == 0
+            d["_fc"] = pd.to_numeric(d["forecast"], errors="coerce")
+            d["_low"] = d["regime"].astype(str) == "trending"
+            prepared.setdefault(coin, {})[w] = d
 
-    agreement = (n_agree / n_active) if n_active > 0 else None
-    passed = bool(agreement is not None and agreement >= 0.9)
+    # ---------- situation check ----------
+    n_active, n_ok = 0, 0
+    for coin, wins in prepared.items():
+        for w, d in wins.items():
+            act = d["_fc"].notna() & (d["_fc"] != 0)
+            if not act.any():
+                continue
+            move = d["_ret1"].copy()
+            if LHV in d.columns:
+                lhv = pd.to_numeric(d[LHV], errors="coerce")
+                move = move.where(move.notna(), lhv)
+            side_ok = np.sign(d["_fc"]) == np.sign(move)
+            ok = act & d["_low"] & side_ok & move.notna() & (move != 0)
+            n_active += int(act.sum())
+            n_ok += int(ok.sum())
+    agreement = float(n_ok / n_active) if n_active > 0 else 0.0
+    passed = bool(n_active > 0 and agreement >= 0.9)
+
+    reading = ("The plan's low-volatility situation is read from the recorded regime "
+               "('trending' is the config rule volpct <= 0.5, since the 100-bar percentile "
+               "cannot be recomputed inside ~120-bar windows), the side is the sign of the "
+               "day's return, the coin mean 5-bar return is the mean over all its grid bars "
+               "of all windows, and on high-volatility bars the forecast is recomputed as "
+               "k*sign(z)*z^2 (clipped to +-20) from the price-recomputed standardised scaled "
+               "move, with k fitted on the active bars against the recorded forecast.")
+
     if not passed:
         return {
             "status": "mismatch",
             "situation_check": {"agreement": agreement, "passed": False},
             "main_measure": None,
             "supporting_check": None,
-            "counts": {"active bars": n_active},
-            "decided_by": ("Fewer than 90% of the bars with a non-zero forecast are calm-regime bars whose "
-                           "forecast sign follows the sign of the standardised scaled day return"
-                           if n_active > 0 else "The record has no bar with a non-zero forecast."),
-            "reading": "The situation is checked as regime == 'trending' (detector's vol percentile <= 0.5) "
-                       "and sign(forecast) == sign(recorded standardised scaled_day value).",
+            "counts": {"active bars": int(n_active)},
+            "decided_by": ("Fewer than 90% of non-zero-forecast bars are low-volatility "
+                           "(trending) bars with the forecast in the direction of the day's "
+                           "move, so the config does not do what the Fidelity says."),
+            "reading": reading,
         }
 
-    # ---------- 2. grid samples ----------
-    rows = []
-    for coin, wins in bars.items():
-        for w, df in wins.items():
-            if df is None or len(df) <= H:
-                continue
-            close = pd.to_numeric(df["close"], errors="coerce").to_numpy(dtype=float)
-            fc = pd.to_numeric(df[FC], errors="coerce").to_numpy(dtype=float)
-            reg = df["regime"].astype(str).to_numpy()
-            if LHV in df.columns:
-                z = pd.to_numeric(df[LHV], errors="coerce").to_numpy(dtype=float)
-            else:
-                z = np.full(len(df), np.nan)
-            for i in range(0, len(df) - H, H):
-                c0, c1 = close[i], close[i + H]
-                if not (np.isfinite(c0) and np.isfinite(c1)) or c0 == 0:
-                    continue
-                rows.append({"coin": coin, "r": c1 / c0 - 1.0, "fc": fc[i],
-                             "z": z[i], "calm": reg[i] == CALM})
-    g = pd.DataFrame(rows, columns=["coin", "r", "fc", "z", "calm"])
-    if len(g):
-        coin_mean = g.groupby("coin")["r"].mean()
-        g["ex"] = g["r"] - g["coin"].map(coin_mean)
-    else:
-        g["ex"] = []
+    # ---------- coin mean 5-bar return over all windows ----------
+    coin_mu = {}
+    for coin, wins in prepared.items():
+        vals = []
+        for w, d in wins.items():
+            g = d[d["_grid"] & d["_fwd"].notna()]
+            vals.append(g["_fwd"].values)
+        allv = np.concatenate(vals) if vals else np.array([])
+        coin_mu[coin] = float(np.mean(allv)) if len(allv) else np.nan
 
-    calm = g[g["calm"] & g["fc"].notna()]
-    prod_calm = (calm["fc"] / 10.0) * calm["ex"]
-    n_calm = int(len(prod_calm))
+    # ---------- calibrate k for recomputed forecast ----------
+    num, den = 0.0, 0.0
+    for coin, wins in prepared.items():
+        for w, d in wins.items():
+            m = d["_fc"].notna() & (d["_fc"] != 0) & d["_z"].notna() & (d["_fc"].abs() < 20)
+            if m.any():
+                gz = np.sign(d.loc[m, "_z"]) * d.loc[m, "_z"] ** 2
+                num += float((d.loc[m, "_fc"] * gz).sum())
+                den += float((gz * gz).sum())
+    k = num / den if den > 0 else 1.0
 
-    hv = g[(~g["calm"]) & g["z"].notna()]
-    prod_hv = (hv["z"] / 10.0) * hv["ex"]
-    n_hv = int(len(prod_hv))
+    # ---------- main measure and supporting check ----------
+    lo_prod, hi_prod = [], []
+    for coin, wins in prepared.items():
+        mu = coin_mu[coin]
+        if not np.isfinite(mu):
+            continue
+        for w, d in wins.items():
+            g = d[d["_grid"] & d["_fwd"].notna()]
+            a = g[g["_fc"].notna() & (g["_fc"] != 0)]
+            lo_prod.extend((a["_fc"] * (a["_fwd"] - mu)).tolist())
+            hv = g[(~g["_low"]) & g["_z"].notna()]
+            if len(hv):
+                fh = np.clip(k * np.sign(hv["_z"]) * hv["_z"] ** 2, -20, 20)
+                hi_prod.extend((fh * (hv["_fwd"] - mu)).tolist())
 
-    mean_calm = float(prod_calm.mean()) if n_calm > 0 else None
-    t_calm = None
-    if n_calm > 1:
-        sd = float(prod_calm.std(ddof=1))
-        if sd > 0:
-            t_calm = mean_calm / (sd / np.sqrt(n_calm))
-    mean_hv = float(prod_hv.mean()) if n_hv > 0 else None
-    diff = (mean_calm - mean_hv) if (mean_calm is not None and mean_hv is not None) else None
-    sup_pass = (diff > 0) if diff is not None else None
+    lo = np.array(lo_prod, dtype=float)
+    hi = np.array(hi_prod, dtype=float)
+    n = int(len(lo))
+    mean_lo = float(lo.mean()) if n > 0 else None
+    t = None
+    if n > 1:
+        sd = lo.std(ddof=1)
+        t = float(mean_lo / (sd / np.sqrt(n))) if sd > 0 else None
+    mean_hi = float(hi.mean()) if len(hi) > 0 else None
+    diff = (mean_lo - mean_hi) if (mean_lo is not None and mean_hi is not None) else None
+    sup_pass = (bool(diff > 0) if diff is not None else None)
 
-    reading = ("Calm bars are grid bars with regime 'trending' and high-vol bars the other grid bars; the coin's "
-               "mean 5-bar return is the mean of its non-overlapping grid returns over all windows; calm bars with "
-               "zero forecast are kept as zero products; the high-vol product uses the recorded standardised "
-               "scaled_day value in place of the forecast, i.e. (value / 10) x excess return; the 100-case minimum "
-               "is counted on calm grid bars with a valid 5-bar return.")
-
-    main = {"name": "mean of (forecast/10) x excess 5-bar return on calm grid bars",
-            "value": mean_calm,
-            "statistic": ({"name": "t of the mean", "value": float(t_calm)} if t_calm is not None else None),
-            "threshold": "confirm: mean > 0 with t >= 2 and supporting difference > 0; reject: mean < 0 with t <= -2"}
-    support = {"name": "calm mean minus high-vol mean of the product",
-               "value": diff, "passed": sup_pass}
-    counts = {"calm grid cases": n_calm, "high-vol grid cases": n_hv}
-
-    if n_calm < 100:
+    if n < 30:
         status = "not observable"
-        decided = f"Only {n_calm} calm grid cases, below the plan's minimum of 100."
-    elif t_calm is None:
+        decided = f"Only {n} non-zero-forecast grid cases pooled across coins, fewer than the plan's minimum of 30."
+    elif t is None:
         status = "inconclusive"
-        decided = "The t-statistic cannot be computed (zero dispersion), so neither rule is met."
-    elif mean_calm > 0 and t_calm >= 2 and sup_pass is True:
-        status = "confirmed"
-        decided = "The calm mean is positive with t >= 2 and the calm minus high-vol difference is above 0."
-    elif mean_calm < 0 and t_calm <= -2:
+        decided = "The t of the mean product could not be computed, so neither confirm nor reject is met."
+    elif mean_lo > 0 and t >= 2:
+        if sup_pass:
+            status = "confirmed"
+            decided = "Mean product positive with t >= 2 on at least 30 cases, and low-vol minus high-vol mean product is above 0."
+        else:
+            status = "inconclusive"
+            decided = "Confirm-level main measure (positive, t >= 2) but the supporting check fails (low-vol minus high-vol mean not above 0)."
+    elif mean_lo < 0 and t <= -2:
         status = "rejected"
-        decided = "The calm mean is negative with t <= -2."
-    elif t_calm >= 2:
-        status = "inconclusive"
-        decided = "t >= 2 but the supporting check fails (difference not above 0), which the plan calls inconclusive."
+        decided = "Mean product negative with t <= -2 on at least 30 cases: calm-market strong days reverse."
     else:
         status = "inconclusive"
-        decided = "t lies between -2 and 2, which the plan calls inconclusive."
+        decided = "The t of the mean product lies between -2 and 2."
 
     return {
         "status": status,
-        "situation_check": {"agreement": float(agreement), "passed": True},
-        "main_measure": main,
-        "supporting_check": support,
-        "counts": counts,
+        "situation_check": {"agreement": agreement, "passed": True},
+        "main_measure": {
+            "name": "mean of forecast x (5-bar forward return minus coin mean 5-bar return), non-overlapping grid, pooled",
+            "value": mean_lo,
+            "statistic": ({"name": "t of the mean", "value": t} if t is not None else None),
+            "threshold": "confirm: mean > 0 with t >= 2 on >= 30 cases and supporting check passes; reject: mean < 0 with t <= -2 on >= 30 cases",
+        },
+        "supporting_check": {
+            "name": "low-vol mean product minus high-vol mean product (recomputed) > 0",
+            "value": (float(diff) if diff is not None else None),
+            "passed": sup_pass,
+        },
+        "counts": {
+            "non-zero-forecast grid cases pooled across coins": n,
+            "high-volatility grid cases": int(len(hi)),
+        },
         "decided_by": decided,
         "reading": reading,
     }

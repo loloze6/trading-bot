@@ -168,6 +168,7 @@ def main():
     system = (HERE / "system_prompt.md").read_text()
     request = (f"[TEST PLAN]\n{plan_text}\n[CONFIG]\n{config}\n"
                f"[THE RECORD]\n{args.record_description.read_text()}\n"
+               f"[WHAT A BACKTEST RECORDS]\n{(HERE.parents[1] / 'common' / 'backtest_record.md').read_text()}\n"
                f"[HOW THE WORKFLOW MEASURES]\n{(HERE.parents[1] / 'common' / 'measures.md').read_text()}\n"
                f"This record holds:\n{windows}\nColumns: {', '.join(columns)}\n\n"
                f"Write measure(bars) for this plan.")

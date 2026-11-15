@@ -63,7 +63,7 @@ One analysis per backtest: findings, then ideas, each idea in step 2's format, o
     output_one_call.md         the answer's format, one call (findings, then ideas)
     output_analyst.md          the analyst's format, split mode (findings only)
     deducer.md                 the deducer's instructions, split mode (ideas from the findings, no data)
-    data_description.md        the backtest's tables and their columns, given to every call
+    data_description.md        how the backtest's tables are handed to the code; their columns: ../common/backtest_record.md
 07x_<line>/
   card.md                      the line's card
   helper/

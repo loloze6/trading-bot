@@ -4,6 +4,8 @@
 How will we know whether this idea is real?
 
 ## Input
+(With the strategy config guide, the component catalogue, `../common/backtest_record.md` and `../common/measures.md`, so that every measure can be computed from what the backtest records.)
+
 One idea, from step 2 or from a step 7 analysis, with its brief. Step 3 reads only these fields of the idea file: `brief`, `instruments`, `bar`, `period`, `Idea:` and `Consequence:` (operator, 2026-11-14). Everything else (a step 7 idea's `Why:`, with numbers measured on the data; a source line) is left out by code, so the plan is written closed book.
 
 ## Output

@@ -72,7 +72,8 @@ horizon, in bars: the idea's horizon converted (if the idea states none, the mos
 names, said in the fidelity's outcome line). Use one main measure, and at most one supporting check. A supporting check is part of the decision: the idea
 is confirmed only when the main measure confirms and the check passes; write the confirm rule so. State the result that
 would confirm the idea and the result that would reject it, in terms that can be measured on
-that record, with the evidence you require as a number, measured as the workflow measures (below). A reject needs evidence as strong as a
+that record, with the evidence you require as a number, measured as the workflow measures (below), and only from what the
+backtest records on the bars each measure uses (below). A reject needs evidence as strong as a
 confirm: the same strength of test in the other direction (if t of 2 or more confirms, t of -2 or less rejects).
 An estimate merely on the wrong side of zero is not a reject. A result near zero is never a reject, even
 when the idea or its brief says it is wrong if there is no difference: it is inconclusive. Say

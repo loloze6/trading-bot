@@ -225,7 +225,7 @@ def main():
     context = (f"[THE BRIEF]\n{brief}\n[THE TEST PLAN]\n{plan_text}\n[ITS CONFIG]\n{config.read_text() if config.exists() else '(none)'}\n"
                f"[THE VERDICT ON THE IDEA (step 5)]\n{no_paths(verdict) if verdict.exists() else s5}\n"
                f"[THE CHECK OF THE BOOK (step 6)]\n{no_paths(check) if check.exists() else s6}\n"
-               f"[THE DATA]\n{(HERE / 'data_description.md').read_text()}\nThis backtest holds:\n{data_summary(record)}\n")
+               f"[THE DATA]\n{(HERE / 'data_description.md').read_text()}\n[WHAT A BACKTEST RECORDS]\n{(COMMON / 'backtest_record.md').read_text()}\nThis backtest holds:\n{data_summary(record)}\n")
     line_prompt = with_common((line_dir / "helper" / "line_prompt.md").read_text())
     system = ((HERE / "common_rules.md").read_text() + "\n[HOW THE WORKFLOW MEASURES]\n" + MEASURES + "\n" + line_prompt + "\n"
               + (HERE / ("output_analyst.md" if args.split else "output_one_call.md")).read_text()

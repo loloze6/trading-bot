@@ -16,7 +16,7 @@ One verdict per plan: **confirmed**, **rejected**, **inconclusive** (enough case
 
 - **First, the test must match its plan.** From the plan's Fidelity lines (the situation, and the side the outcome expects) and the record's raw indicator values, the function checks that the config's forecast is active on the bars of that situation, on that side. Below 90 % agreement, the status is "mismatch" and the criterion is not applied. The check reads the Fidelity, not the plan's Forecast line or its config, because those two are what may be wrong. Found by exercise 6's review: the down-cross plan (002-02) went short in up-trends, and nothing in steps 3 to 5 saw it.
 - **The criterion was fixed before the data.** The verdict applies it and never adjusts it: no new measure, no other threshold, no other horizon.
-- **When the criterion leaves a detail open,** the conventions in `record_description.md` apply: how non-overlapping samples are drawn, which t-test, the order of a difference. Otherwise the most literal reading of the plan is taken, chosen from its words alone, and stated.
+- **When the criterion leaves a detail open,** the workflow's measuring definitions apply (`../common/measures.md`); what the record holds is `../common/backtest_record.md` (shared with steps 3 and 7). Otherwise the most literal reading of the plan is taken, chosen from its words alone, and stated.
 - **What it means for a trader** follows from the status and the plan's forecast:
   - confirmed: the action the forecast describes is supported;
   - rejected: a reason to refuse it;
@@ -66,7 +66,7 @@ Aligned with the other steps.
   card.md                      this card
   helper/
     system_prompt.md           the helper's instructions
-    record_description.md      how a backtest record is given to the function (pasted into each call)
+    record_description.md      how a record is handed to the function; its columns: ../common/backtest_record.md
     make_verdict.py            one closed-book call writes measure(bars); a small runner executes it on the record; saves the verdict
   verdicts/
     INDEX.md                   one line per plan

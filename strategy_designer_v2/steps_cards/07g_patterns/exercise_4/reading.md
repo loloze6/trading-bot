@@ -21,3 +21,15 @@ made the result inconclusive. Step 3 wrote a check the record cannot hold: it is
 is: `05_verification/helper/record_description.md`).
 
 **Not validated yet**: its strongest idea is blocked by the record gap, not by the market.
+
+## After the shared record description (2026-11-15)
+
+`common/backtest_record.md` (what a backtest records, its limits included) is now read by steps 3, 5 and 7, in place
+of step 5's and step 7's own copies. Step 3 re-planned the calm-coin idea: its comparison of calm and volatile days
+now measures the day's move from the prices, which exist on every bar.
+
+| Idea | Step 5 | Step 6 |
+|---|---|---|
+| in a calm coin, a day's move large against its 20-day volatility continues over the next 5 days | **confirmed** (t 3.34; 1,806 calm cases, 1,033 volatile cases) | not profitable (Sharpe -0.58): for 7.d |
+
+**Validated**: one of its ideas, taken through steps 3 to 6, was confirmed.

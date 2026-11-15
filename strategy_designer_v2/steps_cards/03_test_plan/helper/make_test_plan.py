@@ -232,6 +232,7 @@ def main():
     system = ((HERE / "system_prompt.md").read_text()
               + f"\n\n[STRATEGY CONFIG GUIDE]\n{(ref / 'strategy_config_guide.md').read_text()}"
               + f"\n[COMPONENT CATALOGUE]\n{(ref / 'component_catalogue.md').read_text()}"
+              + f"\n[WHAT A BACKTEST RECORDS]\n{(HERE.parents[1] / 'common' / 'backtest_record.md').read_text()}"
               + f"\n[HOW THE WORKFLOW MEASURES]\n{(HERE.parents[1] / 'common' / 'measures.md').read_text()}")
     request = (f"[DATA THE TEST RUNS ON]\ncoins: {data['instruments']}\nbar size: {data['bar']}\n"
                f"windows: {windows(data['period'], data['bar'])}\n\n"
