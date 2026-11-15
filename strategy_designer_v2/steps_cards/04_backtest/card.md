@@ -91,7 +91,7 @@ The seven plans of step 3, exercise 10 (five testable, two untestable), on daily
 Daily against hourly bars, for the same idea (`001-01`). Hourly is about 24 times the bars, in about 6 times the time.
 
 ## Production run
-The named runs, backtested with the current steps: `full_data_run/` (6 coins, folds A to D, daily), `hourly_run/` (BTC, ETH, fold A, hourly), `validation_run/` (the step 7 validation loops' ideas).
+The named runs: `full_data_run/` (6 coins, folds A to D, daily; with the current steps), `hourly_run/` (BTC, ETH, fold A, hourly; 001-01 with the current steps, the nine others before the sizing rule), `validation_run/` (the step 7 validation loops' ideas; with the current steps).
 
 ## Who judges the output
 The operator: "is this the run of my plan, complete and the same if run again?". Code records what ran and what did not. Each exercise has a one-page reading.

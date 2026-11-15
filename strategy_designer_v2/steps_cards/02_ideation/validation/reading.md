@@ -53,3 +53,12 @@ Prompt change: each idea is about one coin at a time. When no consequence of a b
 | 003 thin and heavy volume (one coin) | 7 ideas, all about one coin: the six of exercise 3, plus 003-07 "quiet-hours moves revert" |
 
 The rule does what it should, and it removes from step 2 the case that step 3 could only mark untestable. Since briefs are now about one coin (step 1, exercise 7), the `no-ideas` line should be rare. It stays for briefs written by hand or before the rule.
+
+
+# Check after the shared definition of an idea (2026-11-15)
+
+Step 2 now takes the definition of an idea from `../../common/idea_definition.md` (shared with step 7): an idea is
+graded (a regime may only limit where it holds), and states its time in real time (its horizon, and the past period
+of its situation), taken from the brief or the theory's convention. One run on brief 002 (0.05 USD): 4 ideas, each
+graded ("the wider the 50-day average sits above the 200-day average, the larger that rise"), each with its horizon
+in days ("over the next 30 days"), each on one coin, with the theory's conventional lengths (50 and 200 days).
