@@ -30,7 +30,7 @@ The full-data run's 002-03 (daily, 6 coins, 8 years) and the hourly run's 001-01
 One call against analyst then deducer: one call kept, for every line (`../07_common/card.md`).
 
 ## Done when
-On two exercises in a row, on the fixed inputs, every analysis meets the shared quality criteria and keeps to this line's objective, and at least one of its ideas, taken through steps 3 to 6, changes the result that sent the backtest to this line: one of its ideas is confirmed (operator, 2026-11-14). Status: **validated** (operator, 2026-11-15) by exercises 3 and 4 (`exercise_4/reading.md`): its calm-coin idea confirmed (t 3.34); on the hourly input both runs answered "no ideas" for the same reason. Earlier: exercises 1 and 2 ran (`../07_common/exercise_2/reading.md`); used in the overnight run (`overnight_run/` in this folder, `../OVERNIGHT_RUN.md`).
+On two exercises in a row, on the fixed inputs, every analysis meets the shared quality criteria and keeps to this line's objective, and at least one of its ideas, taken through steps 3 to 6, changes the result that sent the backtest to this line: one of its ideas is confirmed (operator, 2026-11-14). Status: **validated** (operator, 2026-11-15) by exercises 3 and 4 (`validation/reading.md`): its calm-coin idea confirmed (t 3.34); on the hourly input both runs answered "no ideas" for the same reason. Earlier: exercises 1 and 2 ran (`../07_common/validation/reading.md`).
 
 ## What this line does not do
 It does not test its ideas, write a test plan, or look beyond its objective.

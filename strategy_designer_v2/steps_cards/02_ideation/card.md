@@ -59,11 +59,9 @@ Modelled on step 1: a pre-registered hypothesis, one numbered file per record, n
   helper/
     system_prompt.md       the helper's instructions
     make_ideas.py          one closed-book call; refuses only a major deviation; saves one file per idea; adds the index lines
-  ideas/
-    INDEX.md               one line per idea
-    NNN-KK_short-name.md   one file per idea
-  exercise_k/              the comparison exercises
-  hourly_run/, full_data_run/   the ideas of a named run
+  validation/reading.md    the reading of the exercises that validated this card
+  ideas/                   created by the helper when it runs (default): INDEX.md, one NNN-KK_short-name.md per idea
+  full_data_run/, hourly_run/   the ideas of a named run
 ```
 
 - **One file per idea**: each idea is confirmed or rejected on its own, so each has its own id.
@@ -130,7 +128,7 @@ Exercise 4: the one-coin rule and the `no-ideas` answer, on briefs 004 (no ideas
 The operator: "would I see this if my theory were true, and would I act on the answer?" and "do these ideas cover my theory?". Code checks the shape. Each exercise has a one-page reading against the criteria and the counts below.
 
 ## Done when
-On two exercises in a row, on the fixed inputs, every idea meets every criterion and the operator would keep the set. Status: met by opus on exercises 2 and 3 (`exercise_3/reading.md`); exercise 4 added the one-coin rule, clean on its two briefs.
+On two exercises in a row, on the fixed inputs, every idea meets every criterion and the operator would keep the set. Status: met by opus on exercises 2 and 3 (`validation/reading.md`); exercise 4 added the one-coin rule, clean on its two briefs.
 
 ## To observe in the tests
 No number of ideas is enforced. A quota would push the model to pad or to cut. The tests count, per brief:

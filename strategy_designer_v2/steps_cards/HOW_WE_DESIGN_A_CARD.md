@@ -34,7 +34,7 @@ Every card has these sections, in this order (step 1 and step 2 are the worked e
 
 ## The tests
 - The operator sets the matrix (models by inputs). Each call reports its result and its cost.
-- Outputs go side by side in `NN_step/exercise_k/`, with a one-page reading against the card's criteria: what held, the pros and cons of each model, the prompt changes the outputs ask for, and a recommendation.
+- While a card is designed, outputs go side by side in `NN_step/exercise_k/`, with a one-page reading against the card's criteria: what held, the pros and cons of each model, the prompt changes the outputs ask for, and a recommendation.
 - Report faithfully: say when a change was made after a run and is untested; give counts, not impressions.
 - Model calls only: no backtest, nothing that reads price data.
 
@@ -45,7 +45,9 @@ steps_cards/NN_step/
   helper/          system_prompt.md and the script that calls the model and saves the output
   <outputs>/       the step's artifact folder: one file (or folder) per output, INDEX.md (one line per output),
                    and, once a real run has filled it, REVIEW.md (its reading) and run_log*.txt (its logs)
-  exercise_k/      inputs, outputs, costs, side_by_side.md, reading.md
+  exercise_k/      while the card is designed: inputs, outputs, costs, side_by_side.md, reading.md
+  validation/      once the card is validated: reading.md, the reading(s) of the validating exercise(s); the
+                   exercise folders are then removed (git keeps them), so every step has the same layout
   <name>_run/      a named run the operator asked for, through several steps: in each step's folder, the step's
                    outputs for that run, with INDEX.md, REVIEW.md and run_log*.txt; its run brief (purpose,
                    pre-registered outcomes, review) is steps_cards/<NAME>_RUN.md

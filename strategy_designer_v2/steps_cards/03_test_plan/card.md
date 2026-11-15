@@ -100,15 +100,15 @@ One test plan per idea, with one of three outcomes: **plan**, **untestable** or 
     make_test_plan.py          one closed-book call; checks the answer; saves the plan, its config, its index line, its wish block
     check_plans.py             code checks on saved plans, for the readings
     reference/                 trimmed copies of the strategy config guide and the component catalogue
-  plans/
+  plans/                       created by the helper when it runs (default):
     INDEX.md                   one line per plan
     COMPONENT_WISHLIST.md      one block per missing-components plan
     REVIEW.md                  the review of a real run
     run_log*.txt               the logs of real runs
     NNN-KK_short-name_<bar>.md one test plan per idea and bar size
     NNN-KK_short-name_<bar>_config.json   its config (plans only)
-  exercise_k/                  the comparison exercises
-  hourly_run/, full_data_run/, exercise_hourly_anticipation/   the plans of named runs
+  validation/reading.md        the reading of the exercise that validated this card
+  full_data_run/, hourly_run/, validation_run/   the plans of named runs
 ```
 
 ## The AI
@@ -193,7 +193,7 @@ Each exercise has its reading.
 The operator: "if this test confirms, would I believe the idea; if it rejects, would I drop it?". Code checks the shape, the names and the agreement between fidelity and outcome. Each exercise has a one-page reading against the criteria.
 
 ## Done when
-On two exercises in a row, on the fixed inputs, every plan meets every criterion. Status: met by exercises 27 and 28 (`exercise_27/reading.md`).
+On two exercises in a row, on the fixed inputs, every plan meets every criterion. Status: met by exercises 27 and 28 (`validation/reading.md`).
 
 ## Open
 - **A pattern the engine refuses.** In step 4, volume plans could not run (five in the first run, 003-01 and 003-02 in the current one): their regime detector is a veto on a constant (`BuyAndHoldStrategy` with `volume_filter`), with the default regime flat. The engine stops at its warm-up check. The cause is under investigation by another agent.

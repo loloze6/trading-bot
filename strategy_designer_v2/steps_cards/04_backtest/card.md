@@ -47,7 +47,7 @@ Modelled on the engine's own run folders, one folder per plan, named after the p
   card.md                      this card
   helper/
     run_backtest.py            one plan -> the engine, once per coin and window; stores the record; adds the index line
-  backtests/
+  backtests/                   created by the helper when it runs (default):
     INDEX.md                   one line per plan
     REVIEW.md                  the review of a real run
     run_log.txt                the log of a real run
@@ -55,8 +55,8 @@ Modelled on the engine's own run folders, one folder per plan, named after the p
       run.md
       config.json
       <SYMBOL>/wK/             one folder per coin and window, K in the folds' order
-  exercise_k/                  the exercises
-  hourly_run/, full_data_run/, exercise_hourly_anticipation/   the records of named runs
+  validation/reading.md        the reading of the exercise that validated this card
+  full_data_run/, hourly_run/, validation_run/   the records of named runs
 ```
 
 - Windows are named `w1` to `wN`, in the fold's order; with several folds, their windows one after the other (folds A to D: `w1` to `w24`). My files (`run.md`, `INDEX.md`, the card, the readings) name periods by fold id only. The engine's own files carry their timestamps and window dates inside, as the engine wrote them.
@@ -91,13 +91,13 @@ The seven plans of step 3, exercise 10 (five testable, two untestable), on daily
 Daily against hourly bars, for the same idea (`001-01`). Hourly is about 24 times the bars, in about 6 times the time.
 
 ## Production run
-Every plan of step 3's `plans/`, one per idea, on daily bars and fold A: see `backtests/REVIEW.md`. These plans predate step 3's latest rules and default data; refreshing them is the operator's call. Named runs: `hourly_run/`, `full_data_run/`; the hourly set of the first night is kept in `exercise_hourly_anticipation/` as a record.
+The named runs, backtested with the current steps: `full_data_run/` (6 coins, folds A to D, daily), `hourly_run/` (BTC, ETH, fold A, hourly), `validation_run/` (the step 7 validation loops' ideas).
 
 ## Who judges the output
 The operator: "is this the run of my plan, complete and the same if run again?". Code records what ran and what did not. Each exercise has a one-page reading.
 
 ## Done when
-On two exercises in a row, every criterion holds, and a full rerun of the fixed inputs is identical, bar for bar. Status: met by exercises 1 and 2 (`exercise_2/reading.md`).
+On two exercises in a row, every criterion holds, and a full rerun of the fixed inputs is identical, bar for bar. Status: met by exercises 1 and 2 (`validation/reading.md`).
 
 ## Open
 - **An engine defect, found by this step.** The engine names a run folder after the current second plus the config's hash (`reporting/run_artifact.py`). When two windows of one wrapper call finish within the same second, they share one folder, and the second overwrites the first. Daily windows run in under a second each, so this happens. A rerun check found two windows with the same run id. This helper avoids it by running each window on its own. The research pipeline's own daily runs may be affected; that is for the operator to check.

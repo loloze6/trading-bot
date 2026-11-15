@@ -62,15 +62,16 @@ One analysis per backtest: findings, then ideas, each idea in step 2's format, o
     common_rules.md            the shared part of every line's instructions (role, input, how to explore, findings)
     output_one_call.md         the answer's format, one call (findings, then ideas)
     data_description.md        how the backtest's tables are handed to the code; their columns: ../common/backtest_record.md
+    test_analyse.py            tests of the code checks
+  validation/reading.md        the readings of the one-call choice
+  validation_run/ideas/        the ideas the validation run tested (written by the lines)
 07x_<line>/
   card.md                      the line's card
   helper/
     line.yaml                  id, name, entry condition
     line_prompt.md             the line's objective, what it looks at, what it proposes
-  analyses/
-    INDEX.md, REVIEW.md, run_log*.txt
-    <backtest>/                analysis.md, result.json, ideas/, exploration/
-  exercise_k/
+  validation/reading.md        the reading of the exercises that validated the line
+  analyses/                    created by analyse.py when it runs (default): INDEX.md, <backtest>/ with analysis.md, result.json, ideas/, exploration/
 ```
 
 ## The AI
@@ -94,14 +95,14 @@ One analysis per backtest: findings, then ideas, each idea in step 2's format, o
 - **No dates** in what it writes.
 
 ## Variants compared
-- **One call against analyst then deducer,** on the same backtests (exercises 1 and 2): one call kept (blind quality 9 of 16, ideas found again on a rerun 59 % against 42 %, fewer values fitted to the data, cheaper; `exercise_2/reading.md`).
+- **One call against analyst then deducer,** on the same backtests (exercises 1 and 2): one call kept (blind quality 9 of 16, ideas found again on a rerun 59 % against 42 %, fewer values fitted to the data, cheaper; `validation/reading.md`).
 - **To try later:** a fixed query format instead of Python functions, if the functions prove hard to control.
 
 ## Who judges the output
 The workflow: a line is relevant when one of its ideas, taken through steps 3 to 6, changes the result that sent the backtest to the line (each line's card says which). The operator reads the findings ("are they true and important?"). Code checks the shape.
 
 ## To observe in the tests
-- **Durations in ideas.** Settled (operator, 2026-11-15): an idea states its time in real time (its horizon, and the past period of its situation), never in bars; levels and thresholds stay out (`../common/idea_definition.md`). Before: Exercise 1: almost every idea names values, some inherited from the plan, some new and found in the data (`exercise_1/reading.md`).
+- **Durations in ideas.** Settled (operator, 2026-11-15): an idea states its time in real time (its horizon, and the past period of its situation), never in bars; levels and thresholds stay out (`../common/idea_definition.md`). Before: Exercise 1: almost every idea names values, some inherited from the plan, some new and found in the data (`validation/reading.md`).
 - **How many looks at the data** a line takes before its ideas.
 
 ## What the lines do not do

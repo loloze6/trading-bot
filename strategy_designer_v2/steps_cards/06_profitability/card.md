@@ -72,11 +72,12 @@ One profitability check per backtest: **profitable enough** or **not profitable 
     rule.yaml                    the six measures' values
     check_profitability.py       one backtest record -> its check; adds the index line
     test_check_profitability.py  tests on hand-made records: numbers recomputed independently, both answers reached
-  checks/
+  checks/                        created by the helper when it runs (default):
     INDEX.md                     one line per backtest
     REVIEW.md, run_log*.txt      once a real run has filled it
     <backtest>/                  check.md, result.json
-  exercise_k/                    the exercises
+  validation/reading.md          the reading of the exercise that validated this card
+  full_data_run/, hourly_run/, validation_run/   the checks of named runs
 ```
 
 ## The AI
@@ -101,7 +102,7 @@ None: there is no model to compare. Exercises 1 and 2 ran an earlier form of thi
 The operator: "given these numbers, would I trade this book?". The tests check the arithmetic.
 
 ## Done when
-The tests pass, and on the real records every check's numbers are consistent with the record and every status follows the rule. Status: met by exercise 3 (`exercise_3/reading.md`).
+The tests pass, and on the real records every check's numbers are consistent with the record and every status follows the rule. Status: met by exercise 3 (`validation/reading.md`).
 
 ## To observe
 - **No real book has passed yet.** "Profitable enough" is reached only by the hand-made records.

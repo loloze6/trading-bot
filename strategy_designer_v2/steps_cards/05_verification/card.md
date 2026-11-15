@@ -68,13 +68,14 @@ Aligned with the other steps.
     system_prompt.md           the helper's instructions
     record_description.md      how a record is handed to the function; its columns: ../common/backtest_record.md
     make_verdict.py            one closed-book call writes measure(bars); a small runner executes it on the record; saves the verdict
-  verdicts/
+  verdicts/                    created by the helper when it runs (default):
     INDEX.md                   one line per plan
     REVIEW.md, run_log*.txt    once a real run has filled it
     <plan id>/                 one folder per verdict: verdict.md, measure.py, result.json
-  exercise_k/                  the exercises
-  planted_test/                step 5 on copies of real records with a known gain planted (not market evidence)
-  hourly_run/, full_data_run/  the verdicts of named runs (each with REVIEW.md)
+  validation/reading.md        the reading of the exercise that validated this card
+  planted_test/                a test set: copies of real records with a known gain planted (not market evidence)
+  cut_records/                 a test set: two real records cut to one window of one coin, with their plans, verdicts, ideas and briefs (7.a's fixed inputs)
+  full_data_run/, hourly_run/, validation_run/   the verdicts of named runs
 ```
 
 ## The AI and the runner
@@ -127,7 +128,7 @@ The 15 daily plans of `03_test_plan/plans/` whose outcome is `plan` (13 with a b
 The operator: "does this verdict apply my plan's rule, and would I accept it?". Code checks the shape of the result. Each exercise has a one-page reading: the functions are read against their plans, and the two runs are compared.
 
 ## Done when
-On two exercises in a row, every verdict meets every criterion, and the two runs give the same status for every plan. Status: met by exercises 9 and 10, with "not observable" (`exercise_9/reading.md`): the same status for all 13 plans (`exercise_8/reading.md`).
+On two exercises in a row, every verdict meets every criterion, and the two runs give the same status for every plan. Status: met by exercises 9 and 10, with "not observable" (`validation/reading.md`): the same status for all 13 plans (`validation/reading.md`).
 
 ## Open
 - **A coin without data** (BNB, for the RSI ideas): the function takes the plan's rule literally on the coins present and says so in "reading". Parked with the quality of the backtest output.

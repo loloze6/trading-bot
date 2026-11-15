@@ -34,7 +34,7 @@ The full-data run's 002-01 (a weak result, t 0.37), 002-03 (close to a confirm, 
 One call against analyst then deducer: one call kept, for every line (`../07_common/card.md`).
 
 ## Done when
-On two exercises in a row, on the fixed inputs, every analysis meets the shared quality criteria and keeps to this line's objective, and at least one of its ideas, taken through steps 3 to 6, changes the result that sent the backtest to this line: the new idea gets a clear answer (confirmed or rejected) (operator, 2026-11-14). Status: **validated** (operator, 2026-11-15) by exercises 3 to 5 (`exercise_5/reading.md`): its "more data" idea on 002-03 was confirmed. Its route (narrower idea, more data, no ideas) varies from run to run. Earlier: exercises 1 and 2 ran (`../07_common/exercise_2/reading.md`); used in the overnight run (`overnight_run/` in this folder, `../OVERNIGHT_RUN.md`).
+On two exercises in a row, on the fixed inputs, every analysis meets the shared quality criteria and keeps to this line's objective, and at least one of its ideas, taken through steps 3 to 6, changes the result that sent the backtest to this line: the new idea gets a clear answer (confirmed or rejected) (operator, 2026-11-14). Status: **validated** (operator, 2026-11-15) by exercises 3 to 5 (`validation/reading.md`): its "more data" idea on 002-03 was confirmed. Its route (narrower idea, more data, no ideas) varies from run to run. Earlier: exercises 1 and 2 ran (`../07_common/validation/reading.md`).
 
 ## What this line does not do
 It does not test its ideas, write a test plan, or look beyond its objective.

@@ -24,13 +24,13 @@ The tested idea unchanged, on data where it can be observed: more coins, more pe
 The shared mechanism (`../07_common/helper/analyse.py`), with this line's `helper/line_prompt.md`. Opus.
 
 ## Fixed inputs for the iterations
-Two real records cut to one window of one coin (`05_verification/exercise_11/records/`): 001-01 and 002-05, both not observable. Not market evidence.
+Two real records cut to one window of one coin (`05_verification/cut_records/`): 001-01 and 002-05, both not observable. Not market evidence.
 
 ## Variants compared
 One call against analyst then deducer: one call kept, for every line (`../07_common/card.md`).
 
 ## Done when
-On two exercises in a row, on the fixed inputs, every analysis meets the shared quality criteria and keeps to this line's objective, and at least one of its ideas, taken through steps 3 to 6, changes the result that sent the backtest to this line: the test of the new idea is observable (its minimum counts are reached) (operator, 2026-11-14). Status: **validated** (operator, 2026-11-15) by exercise 3 (`exercise_3/reading.md`): both proposals made the idea observable (001-01 rejected, 002-05 inconclusive). Earlier: exercises 1 and 2 ran (`../07_common/exercise_2/reading.md`); used in the overnight run (`overnight_run/` in this folder, `../OVERNIGHT_RUN.md`).
+On two exercises in a row, on the fixed inputs, every analysis meets the shared quality criteria and keeps to this line's objective, and at least one of its ideas, taken through steps 3 to 6, changes the result that sent the backtest to this line: the test of the new idea is observable (its minimum counts are reached) (operator, 2026-11-14). Status: **validated** (operator, 2026-11-15) by exercise 3 (`validation/reading.md`): both proposals made the idea observable (001-01 rejected, 002-05 inconclusive). Earlier: exercises 1 and 2 ran (`../07_common/validation/reading.md`).
 
 ## What this line does not do
 It does not test its ideas, write a test plan, or look beyond its objective.

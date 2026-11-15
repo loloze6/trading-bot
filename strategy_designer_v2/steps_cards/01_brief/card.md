@@ -57,11 +57,9 @@ Modelled on a pre-registered hypothesis (short, written before the data, never r
   helper/
     system_prompt.md     the helper's instructions
     make_brief.py        one closed-book call; refuses only a major deviation; saves the brief; adds its index line
-  briefs/
-    INDEX.md             one line per brief
-    NNN_short-name.md    one file per brief
-  exercise_1 ... 8/      the comparison exercises
-  hourly_run/, full_data_run/   the briefs of a named run: copies with header lines the operator set for that run
+  validation/reading.md  the reading of the exercises that validated this card
+  briefs/                created by the helper when it runs (default): INDEX.md, one NNN_short-name.md per brief
+  full_data_run/, hourly_run/, validation_run/   the briefs of a named run (copies with header lines set for that run)
 ```
 
 - **One file per brief**: a header of `key: value` lines, then the theory in plain prose.
@@ -120,7 +118,7 @@ The operator: "would I research this theory?" and, with a source, "is this what 
 ## Done when
 On two exercises in a row, on the three inputs, the helper's brief meets every criterion and would be kept with wording changes only.
 
-Status: met by exercises 7 and 8, both clean (`exercise_8/reading.md`); they cover the no-theme and theme inputs and the cases of the one-coin rule. The source input was last run in exercise 6.
+Status: met by exercises 7 and 8, both clean (`validation/reading.md`); they cover the no-theme and theme inputs and the cases of the one-coin rule. The source input was last run in exercise 6.
 
 ## What this step does not do
 It does not write ideas, judge whether a theory is promising, check that the engine can test it, or set anything about how it is tested.
