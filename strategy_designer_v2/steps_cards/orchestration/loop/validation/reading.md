@@ -23,3 +23,15 @@ stop said so and finished the idea under way; the queue says what happened to ea
 where it stopped. No duplicate was proposed in this run, so the duplicate rule was met only by the tests.
 
 **No goal reached**: two ideas confirmed, none with a profitable book.
+
+## Second run: the same run resumed with `--budget 15` (2026-11-16)
+
+Turns 4 to 11 (logged as 6 to 13: the two earlier stop lines were counted as turns; fixed after the run, the label
+only). 8 ideas, generation 3 and 4, then stopped: "budget reached (18.30 of 15.00 USD)".
+
+- **Results of the 12 ideas tested in the run**: 6 confirmed, 6 inconclusive, none with a profitable book. The checks
+  that fail are almost always mean daily return and Calmar: the effects are real but too small to pay. Closest: the
+  volatility-scaled momentum idea (confirmed, +4.19), which failed Calmar only.
+- **The overshoot**: the last idea cost 4.88 USD, 3.77 of it one 7.b call that ran 14.4 minutes (the call's timeout is
+  15). The budget is checked between ideas, so one long call can pass it by that much.
+- **Durations**: about 12 minutes an idea; the idea on more coins took about 24.

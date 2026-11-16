@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 5-bar excess return on positive forecast, pooled",
+    "value": 0.0010010969921307189,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.3702382730431495
+    },
+    "threshold": "confirm if slope t >= 2 with supporting check passing; reject if slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "top fifth minus bottom fifth mean 5-bar excess return > 0",
+    "value": 0.013814662515916813,
+    "passed": true
+  },
+  "counts": {
+    "independent positive-forecast cases": 1660,
+    "top fifth cases": 332,
+    "bottom fifth cases": 332
+  },
+  "decided_by": "Slope t >= 2 and the top-minus-bottom fifth excess return difference is > 0.",
+  "reading": "Coin mean 5-bar return is taken over all grid bars of all its windows; the top and bottom fifths are the n//5 largest and n//5 smallest positive forecasts by stable sort of the pooled grid cases; the plan's 300-case minimum maps to 'not observable'; the situation's up day is read from the close-to-close return (raw component sign on a window's first row)."
+}

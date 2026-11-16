@@ -1,0 +1,30 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of next-bar return minus coin mean on forecast, mean_reversion bars, pooled",
+    "value": 0.0011027260794452354,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 5.886388647400704
+    },
+    "threshold": "t >= 2 confirms (with supporting check), t <= -2 rejects, otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "slope(pct>=0.9) minus slope(0.8<=pct<0.9) among forecast>0 bars",
+    "value": -0.00043391789770370936,
+    "passed": false
+  },
+  "counts": {
+    "bars with forecast > 0 in the regime": 1698,
+    "regime bars in regression": 3447,
+    "forecast>0 bars with percentile >= 0.9": 636,
+    "forecast>0 bars with percentile 0.8-0.9": 242,
+    "active bars": 1708
+  },
+  "decided_by": "The slope's t is >= 2 but the supporting check fails, which the plan calls inconclusive.",
+  "reading": "The fall is read as the recorded raw VolatilityScaledReturn (last_history_value) below 0 and the regime as the recorded 'mean_reversion' label; the main regression uses every mean_reversion bar (forecast 0 included) with an OLS slope t; the supporting check's percentile is recomputed inside each window as the rank of the 20-bar return std among its last up-to-100 values (at least 20), smoothed over 5 bars as in the config, and compares OLS slopes of next-bar return on forecast among forecast>0 bars (>=0.9 minus 0.8-0.9); the 100-bar minimum is applied as a minimum count giving 'not observable'."
+}

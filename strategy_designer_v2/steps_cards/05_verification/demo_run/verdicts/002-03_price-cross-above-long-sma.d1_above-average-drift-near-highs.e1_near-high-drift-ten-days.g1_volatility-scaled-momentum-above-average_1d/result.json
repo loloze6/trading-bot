@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess 10-bar forward return on forecast, trending grid bars",
+    "value": 0.003391490375274394,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 4.191353390457891
+    },
+    "threshold": "t >= 2 confirms (with timing gain > 0), t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "book timing gain (mean daily return minus market part), before costs",
+    "value": 0.0003445337195762823,
+    "passed": true
+  },
+  "counts": {
+    "trending grid cases": 833
+  },
+  "decided_by": "The slope's t is 2 or more and the timing gain is above 0 before costs.",
+  "reading": "The 200-day condition is read from the recorded regime 'trending' (the detector's components are not recorded and the windows are too short to recompute a 200-day average), the situation is a trending bar with the vsr component recorded (graded, so any size counts) on the long side; the coin's mean 10-bar return is the mean over all grid bars of all its windows, the slope is an OLS slope with intercept, and the book's daily return is postRebalance_total_value bar to bar inside a window with the market part from the position held into that day."
+}

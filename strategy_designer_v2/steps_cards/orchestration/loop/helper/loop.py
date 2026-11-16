@@ -36,6 +36,11 @@ def turns(run, root=ORCH):
     return [json.loads(l) for l in p.read_text().splitlines()] if p.exists() else []
 
 
+def next_turn(run, root=ORCH):
+    """The number of the next turn: the turns logged so far, not the stop or failure lines, plus one."""
+    return sum("turn" in t for t in turns(run, root)) + 1
+
+
 def failed(run, root=ORCH):
     """Ideas whose run_idea call failed: not picked again (they are not retried)."""
     return {t["idea"] for t in turns(run, root) if t.get("outcome", "").startswith("failed")}
@@ -111,7 +116,7 @@ def main():
 
     if args.idea is not None and args.idea.stem not in {r["idea"] for r in table_rows(args.run)}:
         used = spent(args.run)
-        log_turn(args.run, {"turn": len(turns(args.run)) + 1, "idea": args.idea.stem, "why": "the starting idea", "spent_before": used})
+        log_turn(args.run, {"turn": next_turn(args.run), "idea": args.idea.stem, "why": "the starting idea", "spent_before": used})
         code, last = call_run_idea(args.idea, args, args.brief)
         if code:
             log_turn(args.run, {"idea": args.idea.stem, "outcome": f"failed: {last[0][:300]}"})
@@ -126,7 +131,7 @@ def main():
             print(f"{args.run}: stopped: {why}")
             return
         top = cands[0]
-        log_turn(args.run, {"turn": len(turns(args.run)) + 1, "idea": top["idea"],
+        log_turn(args.run, {"turn": next_turn(args.run), "idea": top["idea"],
                             "why": f"select_next rank 1: score {top['score']} = record {top['record']} ({top['line']}) / (1 + generation {top['generation']})",
                             "spent_before": used})
         code, last = call_run_idea(Path(top["path"]), args)

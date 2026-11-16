@@ -1,0 +1,55 @@
+{
+  "line": "7.d",
+  "backtest": "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d1_near-high-drift-extension-fades.b2_monthly-run-drift-then-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5579435,
+  "findings": {
+    "F1": "The short side earns nothing and the long side carries the whole book. In the trending regime, short bars average a gain of 0.000174 per bar (t 0.53, n 2535, mean allocation \u22120.27), while long bars average 0.001244 (t 4.71, n 5918, mean allocation 0.41). Across all bars, shorts summed 0.43 against 7.38 for longs.",
+    "F2": "Shorts deepen the falls that sink Calmar. The deepest fall is in w5 (\u221224.5%, the worst 20-day book sum \u22120.124). There shorts lost \u22120.58 against \u22120.29 for longs, and XRP alone lost \u22120.67 while its price rose 0.33. In 2023, shorts lost \u22120.639 while the coins' mean daily return was +0.0015 and the book's was \u22120.000192.",
+    "F3": "The coins do drift down after a negative 30-day run above the 200-day average, but only against their own average. Trending grid cases with a 30-day return \u2264 0 have a 10-day excess return of \u22120.024 (t \u22122.39, n 175). Shorting them still yields almost nothing (F1), because the coins' mean rise offsets the shortfall.",
+    "F4": "The fade at extreme runs is real in the raw 30-day return but missed by the standardised forecast. On trending grid cases with a positive 30-day return, the 10-day excess return is +0.044 (t 1.84) in the 26\u201345% quintile and \u22120.006 (t \u22120.24) above 45%. Long bars with a 30-day return above 40% gain 0.000189 per bar against 0.001998 for 7\u201340%, yet they still hold an allocation of 0.38 against 0.50. Meanwhile the standardised s \u2265 14 bucket shows no fade (s\u226514 minus 8\u2264s<14: \u22120.0095, t \u22120.38).",
+    "F5": "The book's worst days come from large longs held after big runs. On the worst 5% of book days, the book is long on 68% of coin-bars (32% on other days), with mean allocation 0.26 (0.09), mean 30-day return 0.23 (0.04) and mean s 9.4 (6.3).",
+    "F6": "Among trending cases with a positive 30-day return, the gain shows up mostly where the 10-day run is also strongest. The top 10-day-return quartile has a 10-day excess return of +0.049 (t 2.18, n 114), while the other quartiles lie between \u22120.001 and +0.014 (|t| \u2264 1.13)."
+  },
+  "ideas": [
+    {
+      "idea": "While a coin's close is above its 200-day average and its 30-day return is positive, the larger that 30-day return, the larger its rise over the next 10 days, except at its very largest 30-day returns, where the larger that return, the smaller the rise over the next 10 days.",
+      "consequence": "A trader would hold only longs above the long average, sized up with the month-long run, and would stop shorting the uptrend's pullbacks, since those shorts add falls and no gain.",
+      "name": "long-only monthly run drift",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "While a coin's close is above its 200-day average, the larger its 30-day percent gain, the larger its rise over the next 10 days, except where that gain is largest as a share of the price itself, where the larger the 30-day percent gain, the smaller the rise over the next 10 days.",
+      "consequence": "A trader would cut the long as the raw month-long gain becomes very large, rather than judging the run only against its own recent range, which keeps him fully long into the falls.",
+      "name": "raw run fade above average",
+      "from": "F4, F5",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "While a coin's close is above its 200-day average and its 30-day return is positive, the larger its 10-day return, the larger its rise over the next 10 days.",
+      "consequence": "A trader would add to a long in an uptrend when the latest ten days carry the run, and stay light when the month's gain is old.",
+      "name": "fresh run carries drift",
+      "from": "F6, F1",
+      "refs": [
+        "F6",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d1_near-high-drift-extension-fades.b2_monthly-run-drift-then-fade.d1_long-only-monthly-run-drift",
+    "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d1_near-high-drift-extension-fades.b2_monthly-run-drift-then-fade.d2_raw-run-fade-above-average",
+    "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d1_near-high-drift-extension-fades.b2_monthly-run-drift-then-fade.d3_fresh-run-carries-drift"
+  ],
+  "no_ideas": null
+}

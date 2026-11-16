@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of forward 10-bar return minus coin mean on forecast, trending bars",
+    "value": 0.0003612330514161849,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.908928719892387
+    },
+    "threshold": "t >= 2 confirms (with timing gain > 0), t <= -2 rejects, with at least 100 independent cases"
+  },
+  "supporting_check": {
+    "name": "timing gain (book mean daily return minus market-rise gain), before costs",
+    "value": -0.00029767188445948303,
+    "passed": false
+  },
+  "counts": {
+    "independent cases": 833
+  },
+  "decided_by": "The slope's t is between -2 and 2.",
+  "reading": "Trending bars are those with regime 'trending' at grid positions 0,10,20,... of each window with a full 10-bar forward return inside the window; the coin's mean 10-bar return is the mean over the same non-overlapping grid of all bars in all windows; the slope's t is the OLS t with an intercept on pooled coins; the side check uses the sign of range20 - 0.5*ext30 on trending bars."
+}

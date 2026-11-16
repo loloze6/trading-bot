@@ -25,7 +25,9 @@ def test_turns_spend_and_failures(tmp_path):
     assert loop.spent("x_run", tmp_path) == 1.75
     loop.log_turn("x_run", {"turn": 1, "idea": "a"}, tmp_path)
     loop.log_turn("x_run", {"idea": "c", "outcome": "failed: step 3 wrote no plan"}, tmp_path)
-    assert len(loop.turns("x_run", tmp_path)) == 2 and loop.failed("x_run", tmp_path) == {"c"}
+    loop.log_turn("x_run", {"stop": "budget reached", "spent": 1.75}, tmp_path)
+    assert len(loop.turns("x_run", tmp_path)) == 3 and loop.failed("x_run", tmp_path) == {"c"}
+    assert loop.next_turn("x_run", tmp_path) == 2                  # stop and failure lines are not turns
 
 
 def test_the_queue_marks_a_goal(tmp_path):
