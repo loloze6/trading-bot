@@ -31,7 +31,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-_SCHEMAS_DIR = Path(__file__).resolve().parent.parent / "workflow_artifacts" / "schemas"
+_SCHEMAS_DIR = Path(__file__).resolve().parents[2] / "strategy-research" / "workflow_artifacts" / "schemas"   # the campaign's schemas
 
 _RAISE_VALUE = "raise"
 _ENV_FLAG = "WORKFLOW_ARTIFACT_VALIDATION"

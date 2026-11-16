@@ -57,7 +57,7 @@ import holdout_policy as _hp
 import novelty as _nov
 
 #: The real file. Tests pass their own path.
-FOLDS_PATH = Path(__file__).resolve().parent.parent / "config" / "folds.yaml"
+FOLDS_PATH = Path(__file__).resolve().parent.parent / "config" / "folds.yaml"   # trading-bot/config/
 
 FOLD_ORDER = ("A", "B", "C")
 #: D-115: the fold of the 2024-2025 period, defined in the folds file after A, B, C but
@@ -363,7 +363,8 @@ def load_fold_d_windows(*, path=None, policy_path=None) -> list:
 
 
 #: config/campaign_config.yaml, where orchestrator.folds.enabled lives.
-CAMPAIGN_CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "campaign_config.yaml"
+# The campaign's switches stay in strategy-research/; read only when that file is there (absent: False, as before).
+CAMPAIGN_CONFIG_PATH = Path(__file__).resolve().parents[2] / "strategy-research" / "config" / "campaign_config.yaml"
 
 
 def folds_flag_enabled(config_path=None) -> bool:

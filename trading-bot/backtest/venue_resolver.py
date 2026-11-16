@@ -49,10 +49,9 @@ from pathlib import Path
 
 import yaml
 
-_HERE = Path(__file__).resolve().parent
-_SR = _HERE.parent
-_TBOT = _SR.parent / "trading-bot"
-LAYER1_PATH = _SR / "config" / "venue_data_capability.yaml"
+_HERE = Path(__file__).resolve().parent              # trading-bot/backtest/
+_TBOT = _HERE.parent                                  # trading-bot/
+LAYER1_PATH = _TBOT / "config" / "venue_data_capability.yaml"
 
 DEFAULT_VENUE = "binance"
 PRODUCT_ALIASES = {"perp": "futures"}  # brief/tradability word -> cost/capability key

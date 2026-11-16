@@ -36,7 +36,7 @@ from pathlib import Path
 
 #: The real policy file. Callers that sandbox the policy in tests pass their
 #: own path explicitly; nothing here caches it.
-POLICY_PATH = Path(__file__).resolve().parent.parent / "config" / "campaign_data_policy.yaml"
+POLICY_PATH = Path(__file__).resolve().parent.parent / "config" / "campaign_data_policy.yaml"   # trading-bot/config/
 
 _ISO_DAY = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
 

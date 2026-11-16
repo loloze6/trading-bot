@@ -2,8 +2,8 @@
 run_protocol.py — walk-forward protocol runner.
 
 CLI (run from repo root or strategy-research/):
-  python strategy-research/tools/run_protocol.py <config_path> <protocol_path>
-  python strategy-research/tools/run_protocol.py <config_path> <protocol_path> --holdout --i-understand
+  python trading-bot/backtest/run_protocol.py <config_path> <protocol_path>
+  python trading-bot/backtest/run_protocol.py <config_path> <protocol_path> --holdout --i-understand
 """
 import sys
 import contextlib
@@ -21,10 +21,10 @@ from hashlib import sha256
 from pathlib import Path
 from typing import NoReturn
 
-_HERE = os.path.dirname(os.path.abspath(__file__))   # strategy-research/tools/
-_SR   = os.path.dirname(_HERE)                        # strategy-research/
-_REPO = os.path.dirname(_SR)                          # repo root
-_TBOT = os.path.join(_REPO, "trading-bot")            # trading-bot/
+_HERE = os.path.dirname(os.path.abspath(__file__))   # trading-bot/backtest/ (moved from strategy-research/tools/, 2026-11-16)
+_TBOT = os.path.dirname(_HERE)                        # trading-bot/
+_REPO = os.path.dirname(_TBOT)                        # repo root
+_SR   = os.path.join(_REPO, "strategy-research")      # strategy-research/: only the default results folder, below
 
 if _TBOT not in sys.path:
     sys.path.insert(0, _TBOT)
@@ -249,7 +249,7 @@ def _load_bars(run_dir: Path) -> list:
 
 def _load_cost_model() -> dict | None:
     """Load config/cost_model.yaml if available (Step 09 creates this file)."""
-    p = Path(_SR) / "config" / "cost_model.yaml"
+    p = Path(_TBOT) / "config" / "cost_model.yaml"
     if not p.exists():
         return None
     try:
@@ -1487,7 +1487,7 @@ def _assemble_pooled_symbol_records(rows: list, runs_root, horizon: int = 1) -> 
 #: CUL-339: the campaign data policy -- the single source of truth for
 #: holdout_range. Read at CALL time (never captured at import) so a test can
 #: point it at a sandboxed copy with monkeypatch.
-_DATA_POLICY_PATH = Path(_SR) / "config" / "campaign_data_policy.yaml"
+_DATA_POLICY_PATH = Path(_TBOT) / "config" / "campaign_data_policy.yaml"
 
 
 def _load_campaign_data_policy() -> dict:
@@ -2374,7 +2374,7 @@ def main():
                         help="Override output directory (default: results/protocols/<run_id>)")
     parser.add_argument("--cost-product", default="spot", choices=["spot", "perp"],
                         dest="cost_product",
-                        help="2026-07-20 (Dispatch H): which cost_model.yaml fee block to "
+                        help="(Dispatch H): which cost_model.yaml fee block to "
                              "cost this re-run at. Default 'spot' preserves exact prior "
                              "behavior (top-level fee_rate_bps). 'perp' reads the additive "
                              "cost_model['perp']['fee_rate_bps'] block instead -- valid only "
@@ -2382,7 +2382,7 @@ def main():
                              "do not use for funding-carry strategies, see cost_model.yaml's "
                              "PERP CALIBRATION block).")
     parser.add_argument("--commission-bps", type=float, default=None, dest="commission_bps",
-                        help="2026-07-20 (Dispatch L): explicit one-way taker commission in bps "
+                        help="(Dispatch L): explicit one-way taker commission in bps "
                              "per leg (e.g. 10 for the historical 0.001 default, 5 for the perp "
                              "0.0005 rate), converted the same way as --cost-product (/10000, no "
                              "double-charge). Takes precedence over --cost-product when both are "
@@ -2391,7 +2391,7 @@ def main():
                              "fee-isolation experiments that need an exact rate cost_model.yaml "
                              "doesn't happen to supply as either 'spot' or 'perp'.")
     parser.add_argument("--exchange", default=None,
-                        help="2026-08-09 (fix/exchange-plumbing-campaign-aux, Ticket 13): CCXT "
+                        help="(fix/exchange-plumbing-campaign-aux, Ticket 13): CCXT "
                              "exchange id for every run_backtest() call this campaign makes. "
                              "Takes precedence over the protocol file's own top-level 'exchange' "
                              "field when both are given. Option Y (locked): resolution is "
@@ -2401,7 +2401,7 @@ def main():
                              "both, campaigns resolve to 'binance', identical to the venue every "
                              "existing campaign already scored via the engine's own default.")
     parser.add_argument("--drop-feeds", default=None,
-                        help="2026-08-11 (fix/feed-dependency-safety, Step 2): comma-separated "
+                        help="(fix/feed-dependency-safety, Step 2): comma-separated "
                              "FEED_REGISTRY names (e.g. 'funding_rate,fear_greed') to exclude "
                              "from every run_backtest() call this campaign makes. Takes "
                              "precedence over the protocol file's own top-level 'drop_feeds' "
@@ -2423,7 +2423,7 @@ def main():
                              "all-bars forecast / h-bar forward-return correlation). Absent: "
                              "byte-identical output.")
     parser.add_argument("--trades-file-in-out-dir", action="store_true", dest="trades_file_in_out_dir",
-                        help="2026-11-16 (strategy_designer_v2 step 4, coins at the same time): the "
+                        help="(strategy_designer_v2 step 4, coins at the same time): the "
                              "engine's interim trades file goes to <out-dir>/interim_trades.json "
                              "instead of the one shared trading-bot/results/trades.json, so several "
                              "calls can run at once. The file only feeds tradesxl.xlsx; trades.json, "

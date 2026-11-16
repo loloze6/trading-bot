@@ -102,7 +102,7 @@ from recorder.whale_features import (  # noqa: E402
 logger = logging.getLogger("trading_bot")
 
 #: Policy entry governing the capture.
-POLICY_PATH = _REPO_ROOT / "strategy-research" / "config" / "campaign_data_policy.yaml"
+POLICY_PATH = _REPO_ROOT / "trading-bot" / "config" / "campaign_data_policy.yaml"
 POLICY_KEY = "kraken_ws_forward_recorder"
 
 #: Capture root, relative to the bot's `local_data` dir.

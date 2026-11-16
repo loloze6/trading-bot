@@ -61,11 +61,11 @@ from data.fetchers.base_fetcher import BaseFetcher
 
 logger = logging.getLogger("trading_bot")
 
-#: `strategy-research/config/campaign_data_policy.yaml:holdout_range`. Read, never
+#: `trading-bot/config/campaign_data_policy.yaml:holdout_range`. Read, never
 #: assumed — the seal moves with the policy, per the rule
 #: `tests/test_no_sealed_date_literals.py` states and follows.
 _POLICY_PATH = (Path(__file__).resolve().parents[2]
-                / "strategy-research" / "config" / "campaign_data_policy.yaml")
+                / "trading-bot" / "config" / "campaign_data_policy.yaml")
 
 
 def _holdout_bounds() -> tuple:

@@ -7,11 +7,11 @@ Nothing here trades live.
 | Folder | What it is | Status |
 |---|---|---|
 | `strategy_designer_v2/steps_cards/` | **The research workflow.** One card per step, the functions that chain them, the runs | current: start here |
-| `trading-bot/` | The bot and its backtest engine; the components the cards' configs use | shared |
-| `strategy-research/` | The earlier research campaign. The cards still use some of its tools for the backtest (`tools/run_protocol.py`, `tools/research_folds.py`, `tools/venue_resolver.py`, the holdout guard) | shared; its own workflow, ledger and docs are not the current workflow |
+| `trading-bot/` | The bot and its backtest engine; the components the cards' configs use; `backtest/` (the wrapper that runs the engine window by window, the folds, the holdout guard, the venue and costs) and their settings in `config/` | shared |
+| `strategy-research/` | The earlier research campaign, kept as reading material (its briefs, findings and results can feed ideas). Its code no longer runs since its backtest tools moved to `trading-bot/backtest/` (2026-11-16); its last runnable state is commit `c534774`. Still live inside it: the Kraken recorder (`tools/recorder/`) and the holdout-date check (`tools/holdout_date_gate.sh`) | reading material; not the current workflow |
 
-Also at the root: `deploy/kraken_recorder/` (records market data from Kraken), `run_tests.py` (runs the bot's and the
-campaign's test suites), and `archive/` (history: the earlier session log and guided tour; read-only, do not follow
+Also at the root: `deploy/kraken_recorder/` (records market data from Kraken), `run_tests.py` (runs the bot's, the
+recorder's and the cards' test suites), and `archive/` (history: the earlier session log and guided tour; read-only, do not follow
 its conventions or write to it).
 
 ## The workflow, in one paragraph
@@ -36,7 +36,7 @@ VENV_PYTHON -m pytest -q trading-bot/tests                    # the bot's tests
 - **No secrets, no venvs in git.** If you see a key, stop and tell the operator; never echo it.
 - **No lookahead.** A bar's decision uses only data timestamped at or before that bar's close. Every new feature,
   data source or change to how data is read carries a short "why this can't leak" note.
-- **The sealed holdout.** Its dates are only in `strategy-research/config/campaign_data_policy.yaml`; never write them.
+- **The sealed holdout.** Its dates are only in `trading-bot/config/campaign_data_policy.yaml`; never write them.
   Never open `local_data/holdout_sealed/`. Name periods by fold id (and years when needed), never by window dates.
 - **No trial ledger.** Do not write to `research/TRIALS.csv` or any ledger. A run's own files are its record.
 - **Shared code needs the operator's go.** A change to `trading-bot/` or `strategy-research/` reaches the

@@ -81,10 +81,10 @@ if _reconfigure is not None:
     with contextlib.suppress(OSError):
         _reconfigure(errors="replace")
 
-#: `strategy-research/config/campaign_data_policy.yaml:holdout_range`. Read, never
+#: `trading-bot/config/campaign_data_policy.yaml:holdout_range`. Read, never
 #: assumed — the seal moves with the policy, the same rule
 #: `tests/test_no_sealed_date_literals.py` states and follows.
-_POLICY_PATH = PROJECT_ROOT.parent / "strategy-research" / "config" / "campaign_data_policy.yaml"
+_POLICY_PATH = PROJECT_ROOT / "config" / "campaign_data_policy.yaml"
 
 
 def _holdout_bounds() -> tuple:

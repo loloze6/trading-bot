@@ -7,7 +7,7 @@ nothing there; the only contact with the bot tree is the output directory
 by the `.gitignore` rule `trading-bot/local_data/*/`.
 
 Data written by this package is RESERVED, not searchable. See
-`strategy-research/config/campaign_data_policy.yaml:kraken_ws_forward_recorder`.
+`trading-bot/config/campaign_data_policy.yaml:kraken_ws_forward_recorder`.
 No stage, prescreen or diagnostic may read any recorded window until an
 explicit, separately-committed designation releases it.
 """

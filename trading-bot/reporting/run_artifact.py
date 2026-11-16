@@ -29,7 +29,7 @@ from performance.signal_statistics import (
 # strategy-research" rule the block-adjusted significance port (CUL-262) is
 # built around. Falls back to prescreen's own hardcoded defaults if the file
 # is missing (e.g. a vendored/deployed trading-bot without the sibling repo).
-_COST_MODEL_PATH = Path(__file__).resolve().parent.parent.parent / "strategy-research" / "config" / "cost_model.yaml"
+_COST_MODEL_PATH = Path(__file__).resolve().parent.parent / "config" / "cost_model.yaml"
 
 # D-186 (orchestrator.forecast_ic_horizons): the all-bars forecast/forward-return
 # correlation at several horizons, beside the one-bar field. build_core never
