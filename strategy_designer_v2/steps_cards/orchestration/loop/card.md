@@ -1,4 +1,4 @@
-# Function card: loop (orchestration, proposed 2026-11-16, for the operator's review)
+# Function card: loop (orchestration, agreed with the operator 2026-11-16; to build)
 
 A function card, not a step card: no model of its own, so no prompt, no model variants. It has what a step card
 has not: the turn of the loop, the selection of the next idea, stop rules, failures, where its state lives.
@@ -35,15 +35,14 @@ line that wrote the idea / (1 + its generation)), the first is the next idea. Th
 ## Duplicates
 Found by `select_next`: an idea already tested or already a candidate (same text, same data) is not run again.
 
-## Stop rules (the operator sets the limits on each call)
-The loop stops at the first that holds, and the queue says which:
-- **budget:** the run's USD has reached the limit (an idea already started is finished);
-- **ideas:** the number of ideas run has reached the limit;
-- **depth:** the next idea would be beyond the limit of generations from the starting idea;
-- **empty queue:** no idea left to try.
+## Stopping (operator, 2026-11-16)
+The loop has no natural end (every tested idea brings new ones) and no default limit. It stops when:
+- **the operator stops it:** it can be stopped at any time and resumed, nothing is lost, and the journal shows the
+  spend after every idea;
+- **a budget is given and reached** (`--budget USD`, optional): an idea already started is finished;
+- **no candidate is left.**
 
-An idea **confirmed with a profitable book** is marked in the queue and the table ("goal reached"); the loop goes on
-unless the call asks it to stop there (`--stop-on-goal`).
+An idea **confirmed with a profitable book** is marked in the queue and the table ("goal reached"); the loop goes on.
 
 ## When a step fails
 An idea whose `run_idea` call fails (a helper error, a step that writes nothing) is marked "failed at step N" with its
@@ -57,8 +56,8 @@ the queue from these files.
 ## Visibility
 - **The queue** (`<name>_run/queue.md`, `queue.json`): every idea proposed in the run: its line, parent, generation,
   rank, and what happened (tested: its step 5 and step 6; waiting; duplicate of; not reached: stop rule).
-- **The turns** (`<name>_run/loop.jsonl`): one line per turn: the idea picked, why (its rank), the stop rules' values,
-  the run's USD so far.
+- **The turns** (`<name>_run/loop.jsonl`): one line per turn: the idea picked, why (its score and its parts), the run's
+  USD so far.
 - **What each idea did:** `run_idea`'s table, journal and logs, unchanged.
 
 ## Storage
@@ -76,22 +75,18 @@ orchestration/loop/
 ## How to call it
 ```
 python3 orchestration/loop/helper/loop.py --run NAME_run --python VENV_PYTHON [IDEA_FILE [--brief BRIEF]]
-    [--budget USD] [--max-ideas N] [--max-depth G] [--stop-on-goal] [--model MODEL]
+    [--budget USD] [--model MODEL]
 ```
-Without `IDEA_FILE`, it resumes the run. Defaults (to decide): budget 10 USD, 8 ideas, depth 3.
+Without `IDEA_FILE`, it resumes the run. No limit unless `--budget` is given.
 
 ## Checks in code
-Refused before any call: a run name not ending in `_run`; no starting idea for a new run; a limit that is not a
+Refused before any call: a run name not ending in `_run`; no starting idea for a new run; a budget that is not a
 positive number.
 
 ## Done when
-On a fixed starting idea, with small limits: every turn picks the idea the rule says, no duplicate is run, the loop
-stops on the rule it reports, the queue and the turns say what happened, and a resumed call continues where it
-stopped.
-
-## Open (for the operator)
-1. Going on after a goal is reached (default) or stopping (`--stop-on-goal`).
-2. The default limits.
+On a fixed starting idea, with a small budget: every turn picks the idea `select_next` ranks first, no duplicate is
+run, the loop stops on the budget and says so, the queue and the turns say what happened, and a resumed call continues
+where it stopped.
 
 ## What this function does not do
 It does not judge an idea, change a step, test on data the analysis did not see, or start from a brief.
