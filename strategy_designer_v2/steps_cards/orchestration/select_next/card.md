@@ -40,7 +40,7 @@ afresh at every call, so the records grow with every run and the order adapts by
 
 **Not in the score:** step 7's own numbers (inflated by its search), a model's opinion (cost, not auditable).
 
-**Today's records** (validation run and full-data run, 2026-11-16; ideas renamed by hand during the overnight run,
+**Today's records** (every named run, 2026-11-16; ideas renamed by hand during the overnight run,
 `N2-04` and the like, do not follow the id convention and are left out):
 
 | Line | Analyses | With a success | Record |
@@ -50,7 +50,7 @@ afresh at every call, so the records grow with every run and the order adapts by
 | 7.c | 1 | 1 | 0.67 |
 | 7.g | 1 | 1 | 0.67 |
 | 7.d | 3 | 1 | 0.40 |
-| step 2 | 1 (brief 002) | 0 | 0.33 |
+| step 2 | 2 (briefs 001, hourly, and 002, daily) | 0 | 0.25 |
 | 7.a | 2 | 0 | 0.25 |
 
 **Simulated** (2026-11-16; a new brief with 4 ideas, assumed results, 8 turns): the brief's ideas are tested at turns
