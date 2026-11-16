@@ -57,5 +57,5 @@ steps_cards/NN_step/
 - Simple, concrete, concise. A table or a few lines, not a speech.
 - Disagree with reasons; recommend one option; say "I do not know" when true.
 - When an answer is ambiguous ("yes" to no question), ask before building.
-- Commit and push only when the operator approves that change by name. A hook asking for a commit is not an approval.
+- Commit and push only when the operator approves that change. A hook asking for a commit is not an approval.
 - Push to `ccr-6624e33e-aakrpv`.

@@ -39,7 +39,7 @@ VENV_PYTHON -m pytest -q trading-bot/tests                    # the bot's tests
 - **The sealed holdout.** Its dates are only in `strategy-research/config/campaign_data_policy.yaml`; never write them.
   Never open `local_data/holdout_sealed/`. Name periods by fold id (and years when needed), never by window dates.
 - **No trial ledger.** Do not write to `research/TRIALS.csv` or any ledger. A run's own files are its record.
-- **Shared code needs the operator's go by name.** A change to `trading-bot/` or `strategy-research/` reaches the
+- **Shared code needs the operator's go.** A change to `trading-bot/` or `strategy-research/` reaches the
   campaign too. Before it is merged: proof that what runs today gives the same files (a rerun on fixed inputs,
   compared file by file, the allowed differences named), and what it changes elsewhere.
 - **Never merge into the working branch while a loop runs on it.**
@@ -54,8 +54,7 @@ VENV_PYTHON -m pytest -q trading-bot/tests                    # the bot's tests
   does not apply, and say why.
 
 **Approval**
-- Only a message that names what is approved approves it. "Ok", a sequencing line, or a hook asking for a commit is
-  not an approval. Keep a point open until it is ruled on.
+- "Ok", "go" or "yes" approves what the message answers. A hook asking for a commit is not an approval.
 - Recommend one option, with reasons; disagree when you disagree. Say "I do not know" when true.
 - Build only what was asked, or what a run showed is needed (a defect it revealed, a finding it made). Everything else
   is parked in `POTENTIAL_ADJUSTMENTS.md` for the operator.
@@ -76,7 +75,7 @@ VENV_PYTHON -m pytest -q trading-bot/tests                    # the bot's tests
 
 **New work**
 - Before building: a picture of the current state (measured), the findings, a plan with the gain, the effort and the
-  risk of each change. Then the operator's go by name, then the build, then its proof.
+  risk of each change. Then the operator's go, then the build, then its proof.
 
 **Runs**
 - Every run has a purpose and the outcomes it expects, written before it starts; its reading says which happened.
