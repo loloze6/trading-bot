@@ -9,7 +9,7 @@ the journal existed, so its cost, about 0.3 USD, is not counted):
 | Step | What happened | USD | Minutes |
 |---|---|---|---|
 | 3 | skipped: the plan exists | 0 | 0 |
-| 4 | backtest, 6 coins (XMR 23 of 24 windows, XRP 22: the engine's warm-up defect) | 0 | 11.6 |
+| 4 | backtest, 6 coins, every window run (24 of 24 each) | 0 | 11.6 |
 | 5 | **not observable** (t +1.22): the plan asks about 860 cases in all; the record gives 827 | 0.14 | 0.6 |
 | 6 | profitable enough | 0 | 0.1 |
 | 7 | 7.a, 7.e, 7.g ran (4 ideas); 7.b, 7.c, 7.d declined: entry condition not met; 7.f not active | 0.91 | 2.8 |
@@ -27,5 +27,6 @@ last call's cost (0 after a resume) instead of the idea's total; the journal sai
 **Met**: every status in the row is the step's own file; the lines that ran are those whose entry held; every file is
 in its place and in the journal; a second call makes no model call and no backtest.
 
-**Seen on the way, not the function's**: the engine's warm-up defect (parked) now changes a verdict: a plan whose
-minimum count is close to the most the data can give becomes "not observable" when a few windows do not run.
+**Corrected 2026-11-16**: this reading first said step 4 ran XMR 23 and XRP 22 windows (the engine's warm-up defect)
+and that the defect caused the "not observable" verdict. Wrong: the record and the step's log show 24 of 24 windows on
+every coin. The verdict comes from the plan alone: it asks about 860 cases, and the full data gives 827.

@@ -34,8 +34,9 @@ false "nothing here"). Expected by the session, not checked.
 
 ## Parked B: the engine waits for 400 rows while it declares 250 (cause found 2026-11-16)
 **What is seen:** XMR 23 of 24 windows, XRP 22 of 24 on the default data ("the engine stopped" at warm-up: XMR w13,
-XRP w7 and w13 in full_data_run). It changes verdicts: a plan whose minimum count is close to the most the data can
-give becomes "not observable" (002-03's repair in demo_run); and since step 4's one-call-per-coin change, a coin with
+XRP w7 and w13 in full_data_run). It could change a verdict whose minimum count is close to the most the data can
+give (an earlier note here named 002-03's repair in demo_run: wrong, that record ran every window); and since step
+4's one-call-per-coin change, a coin with
 a failing window is run twice.
 
 **Not the sizing rule** (an earlier note here said so, wrongly): the same three windows failed in the first full-data
