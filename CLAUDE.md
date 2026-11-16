@@ -10,8 +10,9 @@ Nothing here trades live.
 | `trading-bot/` | The bot and its backtest engine; the components the cards' configs use | shared |
 | `strategy-research/` | The earlier research campaign. The cards still use some of its tools for the backtest (`tools/run_protocol.py`, `tools/research_folds.py`, `tools/venue_resolver.py`, the holdout guard) | shared; its own workflow, ledger and docs are not the current workflow |
 
-Other folders at the root (`research/`, `tasks/`, `guided_tour/`, `night_work_*`, `SESSION_LOG.md`) belong to earlier
-work. Do not follow their conventions.
+Also at the root: `deploy/kraken_recorder/` (records market data from Kraken), `run_tests.py` (runs the bot's and the
+campaign's test suites), and `archive/` (history: the earlier session log and guided tour; read-only, do not follow
+its conventions or write to it).
 
 ## The workflow, in one paragraph
 Step 1 writes a brief, step 2 turns it into ideas, step 3 writes a test plan, step 4 runs the backtest, step 5 says
