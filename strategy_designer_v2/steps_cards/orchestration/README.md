@@ -2,12 +2,14 @@
 
 The steps are used exactly as validated; an orchestration function only calls them in order and passes their files
 from one to the next. One folder per function, named after it, with the same layout as a step: `card.md`, `helper/`,
-`validation/reading.md` once validated, and its output for a named run in `<name>_run/`.
+`validation/reading.md` once validated, and its output for a named run in `<name>_run/`. A function card keeps the
+step card's spine (objective, input, output, definition, storage, how to call it, done when) and replaces what only a
+model step needs (prompt, model variants) with what a function needs (its turn, its rules, failures, state, visibility).
 
 | Function | Card | Starts from | What it does | Status |
 |---|---|---|---|---|
 | `run_idea` | `run_idea/card.md` | one idea | steps 3 to 7, once, with its journal, logs and consumption | met on its fixed input (scope 1) |
-| `loop` | to design | one idea | `run_idea`, then picks one of step 7's ideas and runs it again, until a stop rule | to design (scope 2: the selection of the next idea) |
+| `loop` | `loop/card.md` | one idea | `run_idea`, then picks one of step 7's ideas and runs it again, until a stop rule | card proposed, for review (scope 2) |
 | `run_brief` | to design | a brief | step 2, then `loop` over one list of ideas fed by step 2 and step 7 | to design (scope 3) |
 
 ## What the manual orchestration did that the next functions should keep (2026-11-15)
