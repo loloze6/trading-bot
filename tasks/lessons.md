@@ -772,3 +772,16 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-24 -- A full suite was queued on a base that was about to move
 - **Pattern:** #541's full suite started on edbf70a3 while #536 merged. The merge condition "full suite on the rebased branch" was then met only by targeted re-runs, because the rebase brought in text only. The operator was told.
 - **Rule:** before queueing a full suite, check whether another PR merges first; if so, merge it, rebase, then queue. A suite on a stale base is stated as such in the PR body.
+
+## 2026-11-16 -- Speed gains measured on the wrong machine, proof on the easy case only
+- **Pattern:** the run_idea duration plan measured every gain on the Windows laptop, but the loop runs on a 4-core
+  Linux container. The plan also proposed proving "identical results" on one idea where every window ran. The reviewer
+  caught both. Re-checking also found a shared data file (`fear_greed_daily.csv`, an aux feed loaded by every coin) that
+  the parallel plan had missed.
+- **Rule:**
+  - A speed claim names the machine it was measured on. The gain for the run machine stays an estimate until it is
+    timed there.
+  - A no-change proof includes the failure paths (windows that fail, a coin that fails entirely) and a second data
+    shape (hourly), with an explicit list of what is allowed to differ.
+  - Before running things in parallel, list every file the processes write, aux feeds included, not just the obvious
+    ones.

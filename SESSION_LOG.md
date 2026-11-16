@@ -1411,3 +1411,63 @@
 3. **Files touched:** PRs #553-#556 and PR-A #557 (see their diffs) and this PR (SESSION_LOG.md). Operator checkout: none (still at adc2f737, branch c4/flag-set).
 4. **Next-session prompt (paste verbatim):**
    > You are the implementation lead. Read SESSION_LOG.md's 2026-10-28 implementation-lead entry and CLAUDE.md's working rules. Master is 0d07fb33 or later; D-199..D-208 are merged. First check the state read-only: the queue (forecast_power-run_102-2 should be its next entry), the registry, the flags in c4/flag-set's campaign_config.yaml, whether the next run was launched and where it stands, and git status of the checkout. Then act only on the operator's words. Rules: one test process at a time via %TEMP%\claude\scripts\lock_pytest_1026.ps1 / lock_fullsuite_1026.ps1 launched in the background; the venv interpreter only; no trailers; never read local_data or holdout_sealed; never print a sealed-window date.
+
+## 2026-11-16 -- strategy_designer_v2: why one idea's run (run_idea) takes 12 minutes, and how to make it faster with identical results (assessment only, no code change)
+
+1. **Hypothesis:** most of one idea's ~12 minutes is step 4 (the backtest), and it can be cut without changing any result.
+2. **Result:** confirmed from demo_run's records and timings on this PC (0 USD, no model call, no repo change):
+   - Per idea: 11.7 min on average. Step 4 takes 9.3 min (79%): 144 backtests (6 coins x 24 windows) run one after another, each a new Python process. About 1/3 of each is Python starting up. Steps 3, 5 and 7 (model calls) take 2.4 min; step 7's lines already run in parallel.
+   - Measured candidates:
+     - one process per coin: -44% on 6 windows, identical;
+     - coins in parallel: x2 on this 4-core laptop, identical; but a parallel run crashed on a shared interim trades file (`trading-bot/results/trades.json`).
+   - Engine work per window, one process: rebuilding the bar table every bar 38%; turning nested state fields into columns, twice, 16%; `git status` 7%; strategy maths 13%.
+   - Writing outputs takes about 0.94 s per window: the column step twice (505 ms), `git` for the manifest (185 ms), Excel (76 ms, deleted by step 4). The file writes themselves take under 15 ms.
+   - No chart is drawn, but matplotlib and plotly load in every process (0.32 s).
+   - Correction made: `portfolio_states.csv` is read by `run_protocol.py`, so it is not waste.
+   - Plan, in rank order, each on the operator's go by name:
+     1. one process per coin (`run_backtest.py` only);
+     2. coins in parallel (plus an opt-in flag in `run_protocol.py` for a per-process interim trades file);
+     3. once-per-process engine caches (`git`, YAML, coin CSV) and an opt-in to skip Excel;
+     4. faster bar table and column step (exact types required).
+   - Target: about 4 to 5.5 min per idea after changes 1 and 2.
+3. **Files touched:** `strategy_designer_v2/steps_cards/orchestration/duration/` 1_current_duration.md, 2_findings.md, 3_plan.md, 4_backtest_code.md, 5_output_times.md; this entry. Branch `sd2/run-idea-duration` (worktree `../wt/run-idea-duration`, from `ccr-6624e33e-aakrpv` 0594a784b), uncommitted. Scratch timing scripts only in the session's scratchpad.
+4. **Next-session prompt (paste verbatim):**
+   > Repository loloze6/trading-bot, project strategy_designer_v2/steps_cards. Read CLAUDE.md, steps_cards/HOW_WE_DESIGN_A_CARD.md, and strategy_designer_v2/steps_cards/orchestration/duration/1..5 (branch sd2/run-idea-duration, or wherever the operator says they were committed). The operator approved: <paste the approved changes by name>. Build only those, one branch per change. Prove each before review, per 3_plan.md: re-run step 4 of demo_run's idea e1 into scratch out-roots (baseline with today's helper, then the new helper twice); all 144 windows byte-identical (manifest except run_id, created_utc, git_sha); same step 6 result.json and the same step 5 runner result on the saved measure.py (no model call). Report step 4 minutes measured. Hard rules: no lookahead, never open local_data/holdout_sealed, no secrets, no venv committed, no model call without asking, commit and push only on the operator's approval by name.
+
+### 2026-11-16 addendum -- review of the run_idea duration plan
+- **Review points, checked:**
+  1. Timings came from Windows; the loop runs on Linux (confirmed by the record's `/home/user/` paths). Gains are now
+     estimates until gate 0.
+  2. The run machine has 4 cores. Target revised to 5 to 6.5 min per idea; 6 workers kept (beat 4 on the 4-core
+     laptop); the proof times both.
+  3. Proof widened to three cases:
+     - `demo_run` e1;
+     - `full_data_run` 002-03 (the 3 warm-up failures are there, not in `demo_run` d1, which ran 144 of 144);
+     - `hourly_run` 001-01 (1h bars; BNB fails on every window).
+     There is now an explicit list of what may differ.
+  4. Added a "why this can't leak" note.
+- **Found while checking:**
+  - `run_protocol.py` stops at the first failing window, so change 1 reruns a failing coin one window at a time.
+  - `fear_greed_daily.csv` is shared by all coins, so change 2 gets a guard on local_data files before and after.
+- **Changes 4 and 5:** deferred (under 1 min once 1 and 2 are in, and shared engine code).
+- **Files:** `orchestration/duration/2_findings.md`, `3_plan.md`; `tasks/lessons.md`.
+- **Status:** still uncommitted; awaiting the operator's go by name.
+
+### 2026-11-16 -- change 1 built and proven (operator: "Ok go")
+- **Hypothesis:** one `run_protocol.py` call per coin, with a fallback to one call per window when the call failed or
+  two windows shared a run folder, gives the same record faster.
+- **Result:**
+  - Identical on 297 windows across 3 cases (`demo_run` e1, `full_data_run` 002-03, `hourly_run` 001-01), old vs
+    new twice. Steps 5 and 6 give the same results. No data file changed.
+  - Step 4 on this PC: -59% (e1), -36% (002-03, 2 coins fell back), -19% (hourly 001-01, BNB fell back).
+  - The gain on the Linux run machine is not measured yet.
+  - Details in `orchestration/duration/6_change1_proof.md`.
+- **Files:**
+  - branch `sd2/step4-per-coin` (worktree `wt/step4-per-coin`, from `cc19b01c9`): `04_backtest/helper/run_backtest.py`,
+    `04_backtest/card.md`, new `04_backtest/helper/test_run_backtest.py`;
+  - here: `6_change1_proof.md`.
+  - Nothing committed or pushed.
+- **Next-session prompt:** "Read strategy_designer_v2/steps_cards/orchestration/duration/3_plan.md and
+  6_change1_proof.md (branch sd2/run-idea-duration). If the operator approved change 1 by name: commit
+  sd2/step4-per-coin (no Co-Authored-By trailer), push it, and merge into ccr-6624e33e-aakrpv only while no loop runs.
+  Then time step 4 on the run machine from the journal. Change 2 waits for its own approval by name."
