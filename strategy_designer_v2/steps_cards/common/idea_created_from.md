@@ -18,7 +18,8 @@ The track follows by reading the id from left to right:
 
 - **An analysis:** one line reading the backtest of one idea. Its ideas share the same start and the same letter:
   `001-01.a1.c1` and `001-01.a1.c2` are two ideas of the same analysis (line 7.c on idea `001-01.a1`); `001-01.a1.e1`
-  is another analysis of the same idea (line 7.e).
+  is another analysis of the same idea (line 7.e). The same line reading the same idea in another run is another
+  analysis: it writes other ideas (operator, 2026-11-16).
 - **Ideas written together:** the ideas of one analysis.
 - **Generation:** the number of analyses between the idea and its brief: the number of `.<letter><number>_` parts in
   its id (0 for an idea created from a brief).

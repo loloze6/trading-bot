@@ -30,7 +30,7 @@ In the words of `../../common/idea_created_from.md`.
 
 | Part | What it is | Why |
 |---|---|---|
-| **record of the line** | the line is the step 7 line that wrote the idea (its last letter in the id), or step 2 for an idea created from a brief. Over every analysis of that line with at least one tested idea, in every run (for step 2, an analysis is one brief): (s + 1) / (n + 2), n the number of these analyses, s the number of them with a **success**: at least one of their tested ideas confirmed or with a profitable book (operator, 2026-11-16) | how often that line's analyses moved an idea towards the goal; counted per analysis, because the ideas written together are not independent; the +1 / +2 (Laplace) keeps 1 of 1 from counting as certain, and puts a line with no analysis yet at 0.5 |
+| **record of the line** | the line is the step 7 line that wrote the idea (its last letter in the id), or step 2 for an idea created from a brief. Over every analysis of that line with at least one tested idea, in every run (the same idea read by the line in two runs is two analyses; for step 2, an analysis is one brief in one run): (s + 1) / (n + 2), n the number of these analyses, s the number of them with a **success**: at least one of their tested ideas confirmed or with a profitable book (operator, 2026-11-16) | how often that line's analyses moved an idea towards the goal; counted per analysis, because the ideas written together are not independent; the +1 / +2 (Laplace) keeps 1 of 1 from counting as certain, and puts a line with no analysis yet at 0.5 |
 | **1 + generation** | the generation is the number of analyses between the idea and its brief (0 for a brief's idea) | ideas close to the theory first; a deeper idea goes first only if its line's record is clearly better, so one thread does not take the run |
 
 **Ties:** the lower number first (the order in which the brief or the line wrote them).
@@ -40,18 +40,18 @@ afresh at every call, so the records grow with every run and the order adapts by
 
 **Not in the score:** step 7's own numbers (inflated by its search), a model's opinion (cost, not auditable).
 
-**Today's records** (every named run, 2026-11-16; ideas renamed by hand during the overnight run,
+**Today's records** (every named run, 2026-11-16, after the loop's test on demo_run; ideas renamed by hand during the overnight run,
 `N2-04` and the like, do not follow the id convention and are left out):
 
 | Line | Analyses | With a success | Record |
 |---|---|---|---|
+| 7.e | 3 | 3 | 0.80 |
 | 7.b | 2 | 2 | 0.75 |
-| 7.e | 2 | 2 | 0.75 |
 | 7.c | 1 | 1 | 0.67 |
-| 7.g | 1 | 1 | 0.67 |
-| 7.d | 3 | 1 | 0.40 |
-| step 2 | 2 (briefs 001, hourly, and 002, daily) | 0 | 0.25 |
+| 7.g | 2 | 1 | 0.50 |
+| 7.d | 4 | 2 | 0.50 |
 | 7.a | 2 | 0 | 0.25 |
+| step 2 | 3 (brief 001 in hourly_run; brief 002 in hourly_run and in full_data_run) | 0 | 0.20 |
 
 **Simulated** (2026-11-16; a new brief with 4 ideas, assumed results, 8 turns): the brief's ideas are tested at turns
 1, 6 and 8 (the fourth would come at turn 9), mixed with the best leads; no thread is followed down more than two

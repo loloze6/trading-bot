@@ -7,7 +7,8 @@ line in 07x_<line>/<run>/<backtest>/ideas/), not yet tested in the run (no plan 
 not duplicates (same Idea text and same data as an idea tested or listed before them).
 
 score = record of the line that wrote the idea / (1 + the idea's generation)
-record = (s + 1) / (n + 2) over every analysis of that line with a tested idea, in every named run; s the analyses with a
+record = (s + 1) / (n + 2) over every analysis of that line with a tested idea, in every named run (the same idea
+read by a line in two runs is two analyses); s the analyses with a
 success (at least one tested idea confirmed, or with a profitable book). Words and id convention:
 common/idea_created_from.md. It writes nothing; it returns (and prints) the ranking.
 """
@@ -52,10 +53,10 @@ def records(root=STEPS):
         c = root / "06_profitability" / run / "checks" / rid / "result.json"
         ok = (v.exists() and json.loads(v.read_text()).get("status") == "confirmed") or \
              (c.exists() and json.loads(c.read_text()).get("status") == "profitable enough")
-        key = (line, created_from)
+        key = (run, line, created_from)                    # each run's reading is its own analysis
         analyses[key] = analyses.get(key, False) or bool(ok)
     out = {}
-    for (line, _), ok in analyses.items():
+    for (_, line, _), ok in analyses.items():
         s, n = out.get(line, (0, 0))[:2]
         out[line] = (s + ok, n + 1)
     return {line: (s, n, (s + 1) / (n + 2)) for line, (s, n) in out.items()}

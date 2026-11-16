@@ -9,7 +9,8 @@
 - **Same files, same ranking**: two calls on the same files gave the same output, byte for byte.
 - **Duplicates**: none in this run; the rule is met by the tests (same text and same data; other data is not a duplicate).
 
-**Seen, open for the operator**: an analysis is counted once per line and parent idea, across runs. 7.e's analysis of
-the repair had already counted as a success in `validation_run`, so its success here did not move 7.e's record (2 of 2).
-The card says "every analysis ... in every named run"; read strictly, the same idea read again in another run is a
-second analysis. Not changed.
+**Changed after the test (operator, 2026-11-16)**: an analysis was counted once per line and parent idea, across
+runs, so 7.e's reading of the repair in demo_run (e1, e2, both confirmed) did not count: its reading in validation_run
+(another e1, confirmed) already had. Each run's reading now counts as its own analysis: it writes other ideas, tested
+on their own. Records after the change: 7.e 0.80 (3 of 3), 7.b 0.75, 7.c 0.67, 7.g 0.50, 7.d 0.50 (2 of 4), 7.a 0.25,
+step 2 0.20 (0 of 3). The next turn on demo_run is unchanged (7.b first).
