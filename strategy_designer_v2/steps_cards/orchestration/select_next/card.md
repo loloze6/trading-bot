@@ -20,33 +20,37 @@ workflow's own recorded results, and shown with its parts.**
 - **Not tested:** no plan for it in the run (`03_test_plan/<run>/plans/`).
 - **Not a duplicate:** its text and its data are not those of an idea already tested or already a candidate (the same
   text on other data, a `same-idea-on:` proposal, is not a duplicate). A duplicate is listed, with the idea it repeats.
+- The words (created from, line, analysis, ideas written together, generation) are those of
+  `../../common/idea_created_from.md`.
 
 ## The score
-**score = line record x novelty**
+In the words of `../../common/idea_created_from.md`. A candidate's id is `F.lN_name`: `F` the idea it was created
+from, `l` the line's letter, `N` its number in that analysis.
 
-| Part | What it is | Why |
+**score = record of line l x novelty of the candidate**
+
+| Part | In id terms | Why |
 |---|---|---|
-| **line record** | (p + 1) / (n + 2) for the line that proposed the idea: n its ideas tested so far, p the sum of their **progress**, 1 if the idea was confirmed and its book profitable, 0.5 if one of the two, 0 if neither | how often that line's ideas moved towards the goal; the +1 / +2 (Laplace) keeps a line with 2 of 2 from counting as certain, and an untried line at 0.5 |
-| **novelty** | 1 / (1 + k), k the ideas of the same parent already tested in the run | one analysis with many ideas does not take the whole run; a parent's next idea waits behind other leads |
+| **record of line l** | over every analysis of line `l` with at least one tested idea (every id `F'.lM`, in any run): (s + 1) / (n + 2), n the number of these analyses, s the sum of their **progress**; an analysis's progress is the best of its tested ideas': 1 if confirmed and its book profitable, 0.5 if one of the two, 0 if neither (a plan that was not testable: 0) | how often line `l`'s analyses moved an idea towards the goal; counted per analysis, because the ideas written together are not independent; the +1 / +2 (Laplace) keeps 1 of 1 from counting as certain, and puts a line with no analysis yet at 0.5 |
+| **novelty** | 1 / (1 + k), k the ideas `F.lM` (written together with it) already tested in the run | one analysis with several ideas does not take the whole run: its next idea waits behind other leads |
 
-**Ties:** the newest generation first (the thread that is moving), then the order in which the line wrote its ideas.
+**Ties:** the higher generation first (the thread that is moving), then the lower `N` (the order the line wrote them).
 
-**Where the line record comes from:** every named run's files: an idea's line is the letter in its id (`.e1_`: 7.e),
-its progress is read from its verdict and its check. Computed afresh at every call, so the record grows with every run
-and the order adapts by itself. A plan that was not testable counts as a test with progress 0.
+**Where the numbers come from:** the ids, and each tested idea's verdict and check, in every named run; computed
+afresh at every call, so the record grows with every run and the order adapts by itself.
 
 **Not in the score:** step 7's own numbers (inflated by its search), a model's opinion (cost, not auditable).
 
-**Today's line records** (validation run; 2026-11-16):
+**Today's records** (validation run, 2026-11-16):
 
-| Line | Tested | Progress | Record |
+| Line | Analyses | Progress | Record |
 |---|---|---|---|
-| 7.c | 2 | 2 | 0.75 |
-| 7.e | 2 | 2 | 0.75 |
-| 7.g | 3 | 0.5 | 0.30 |
-| 7.a | 2 | 0 | 0.25 |
-| 7.b | 9 | 1.5 | 0.23 |
-| 7.d | 5 | 0.5 | 0.21 |
+| 7.e | 2 | 2.0 | 0.75 |
+| 7.c | 1 | 1.0 | 0.67 |
+| 7.b | 2 | 1.5 | 0.62 |
+| 7.g | 1 | 0.5 | 0.50 |
+| 7.d | 3 | 0.5 | 0.30 |
+| 7.a | 2 | 0.0 | 0.25 |
 
 ## Storage
 ```
