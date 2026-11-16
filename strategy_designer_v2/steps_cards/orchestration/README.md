@@ -10,7 +10,7 @@ model step needs (prompt, model variants) with what a function needs (its turn, 
 |---|---|---|---|---|
 | `run_idea` | `run_idea/card.md` | one idea | steps 3 to 7, once, with its journal, logs and consumption | met on its fixed input (scope 1) |
 | `loop` | `loop/card.md` | one idea | `run_idea`, then picks one of step 7's ideas and runs it again, until a stop rule | card proposed, for review (scope 2) |
-| `select_next` | `select_next/card.md` | a run | ranks the ideas proposed in the run and not yet tested, by one score (the proposing line's record x novelty) | card proposed, for review |
+| `select_next` | `select_next/card.md` | a run | ranks the ideas written in the run (by step 2 or a step 7 line) and not yet tested, by one score: the record of the line that wrote it / (1 + its generation) | card written (score agreed); to build |
 | `run_brief` | to design | a brief | step 2, then `loop` over one list of ideas fed by step 2 and step 7 | to design (scope 3) |
 
 ## What the manual orchestration did that the next functions should keep (2026-11-15)

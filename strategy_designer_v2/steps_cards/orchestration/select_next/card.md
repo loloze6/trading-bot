@@ -5,9 +5,9 @@ A function card (no model of its own): what it selects, its score, where its num
 ## Business objective, one question
 Which idea should the workflow test next?
 
-**Establish, among the ideas the analysis lines proposed in a run and not yet tested, the one most likely to bring
-the workflow closer to an idea that is real with a book that pays, by one score fixed in advance, computed from the
-workflow's own recorded results, and shown with its parts.**
+**Establish, among the ideas written in a run and not yet tested, whether step 2 wrote them from a brief or a step 7
+line from another idea, the one most likely to bring the workflow closer to an idea that is real with a book that pays,
+by one score fixed in advance, computed from the workflow's own recorded results, and shown with its parts.**
 
 ## Input and output
 - **Input:** a run name.
@@ -15,33 +15,32 @@ workflow's own recorded results, and shown with its parts.**
   candidate. The first is the next idea.
 
 ## What a candidate is
-**A candidate is an idea a step 7 line proposed in the run, not yet tested in the run, and not a duplicate.**
-- **Proposed in the run:** in a line's `<run>/<backtest>/ideas/`.
+**A candidate is an idea written in the run, by step 2 from a brief or by a step 7 line from another idea, not yet
+tested in the run, and not a duplicate.**
+- **Written in the run:** in step 2's `02_ideation/<run>/ideas/`, or in a line's `<run>/<backtest>/ideas/`.
 - **Not tested:** no plan for it in the run (`03_test_plan/<run>/plans/`).
 - **Not a duplicate:** its text and its data are not those of an idea already tested or already a candidate (the same
   text on other data, a `same-idea-on:` proposal, is not a duplicate). A duplicate is listed, with the idea it repeats.
-- The words (created from, line, analysis, ideas written together, generation) are those of
-  `../../common/idea_created_from.md`.
+- The words (created from, line, analysis, generation) are those of `../../common/idea_created_from.md`.
 
 ## The score
-In the words of `../../common/idea_created_from.md`. A candidate's id is `F.lN_name`: `F` the idea it was created
-from, `l` the line's letter, `N` its number in that analysis.
+In the words of `../../common/idea_created_from.md`.
 
-**score = record of line l x novelty of the candidate**
+**score = record of the line that wrote the idea / (1 + the idea's generation)**
 
-| Part | In id terms | Why |
+| Part | What it is | Why |
 |---|---|---|
-| **record of line l** | over every analysis of line `l` with at least one tested idea (every id `F'.lM`, in any run): (s + 1) / (n + 2), n the number of these analyses, s the sum of their **progress**; an analysis's progress is the best of its tested ideas': 1 if confirmed and its book profitable, 0.5 if one of the two, 0 if neither (a plan that was not testable: 0) | how often line `l`'s analyses moved an idea towards the goal; counted per analysis, because the ideas written together are not independent; the +1 / +2 (Laplace) keeps 1 of 1 from counting as certain, and puts a line with no analysis yet at 0.5 |
-| **novelty** | 1 / (1 + k), k the ideas `F.lM` (written together with it) already tested in the run | one analysis with several ideas does not take the whole run: its next idea waits behind other leads |
+| **record of the line** | the line is the step 7 line that wrote the idea (its last letter in the id), or step 2 for an idea created from a brief. Over every analysis of that line with at least one tested idea, in every run (for step 2, an analysis is one brief): (s + 1) / (n + 2), n the number of these analyses, s the sum of their **progress**; an analysis's progress is the best of its tested ideas': 1 if confirmed and its book profitable, 0.5 if one of the two, 0 if neither (a plan that was not testable: 0) | how often that line's analyses moved an idea towards the goal; counted per analysis, because the ideas written together are not independent; the +1 / +2 (Laplace) keeps 1 of 1 from counting as certain, and puts a line with no analysis yet at 0.5 |
+| **1 + generation** | the generation is the number of analyses between the idea and its brief (0 for a brief's idea) | ideas close to the theory first; a deeper idea goes first only if its line's record is clearly better, so one thread does not take the run |
 
-**Ties:** the higher generation first (the thread that is moving), then the lower `N` (the order the line wrote them).
+**Ties:** the lower number first (the order in which the brief or the line wrote them).
 
 **Where the numbers come from:** the ids, and each tested idea's verdict and check, in every named run; computed
-afresh at every call, so the record grows with every run and the order adapts by itself.
+afresh at every call, so the records grow with every run and the order adapts by itself.
 
 **Not in the score:** step 7's own numbers (inflated by its search), a model's opinion (cost, not auditable).
 
-**Today's records** (validation run, 2026-11-16):
+**Today's records** (validation run and full-data run, 2026-11-16):
 
 | Line | Analyses | Progress | Record |
 |---|---|---|---|
@@ -49,8 +48,13 @@ afresh at every call, so the record grows with every run and the order adapts by
 | 7.c | 1 | 1.0 | 0.67 |
 | 7.b | 2 | 1.5 | 0.62 |
 | 7.g | 1 | 0.5 | 0.50 |
+| step 2 | 1 (brief 002) | 0.0 | 0.33 |
 | 7.d | 3 | 0.5 | 0.30 |
 | 7.a | 2 | 0.0 | 0.25 |
+
+**Simulated** (2026-11-16; a new brief with 4 ideas, assumed results, 8 turns): the 4 brief ideas are all tested,
+mixed with the best leads (turns 1, 4, 6, 7); no thread is followed down more than two analyses. Without the
+generation, the score dived down one thread for 7 turns and never tested the brief's 3 other ideas.
 
 ## Storage
 ```
@@ -76,7 +80,6 @@ follows the score, and a second call on the same files gives the same ranking.
 
 ## Open (for the operator)
 1. Progress: confirmed 0.5, profitable 0.5 (the two answers weigh the same).
-2. Novelty: 1 / (1 + k).
 
 ## What this function does not do
 It does not test an idea, judge one, or change a step.

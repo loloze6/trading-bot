@@ -29,8 +29,8 @@ selection rule picks among those the step 7 lines proposed in the run and not ye
 3. Call `run_idea` on the first candidate; go to 1.
 
 ## The selection of the next idea
-Delegated to `select_next` (`../select_next/card.md`): the run's candidates ranked by one score (the proposing line's
-record x novelty), the first is the next idea. The loop writes the ranking it used in its queue.
+Delegated to `select_next` (`../select_next/card.md`): the run's candidates ranked by one score (the record of the
+line that wrote the idea / (1 + its generation)), the first is the next idea. The loop writes the ranking it used in its queue.
 
 ## Duplicates
 Found by `select_next`: an idea already tested or already a candidate (same text, same data) is not run again.
