@@ -2,9 +2,35 @@
 
 Items noted while designing the steps, not started. Each waits for the operator's go.
 
-## Parked: why the backtest engine refuses some valid strategy configs at warm-up
-**Now changes verdicts (run_idea, 2026-11-16):** since the sizing's 60-day window, a few windows do not run (XMR 23 of 24, XRP 22 of 24 on the default data); a plan whose minimum count is close to the most the data can give becomes "not observable".
+Two separate defects, both seen as "not ready at warm-up" (split 2026-11-16, after the "Known data defects" session's findings):
+- **A. A component that needs 0 bars makes the strategy wait forever** (the volume plans 003-01, 003-02): cause found, below.
+- **B. A few XMR and XRP windows do not run since the sizing's 60-day window**: open; this is the one that changes verdicts today.
 
+## Parked A: a component that needs 0 bars of history makes the strategy never ready (cause found 2026-11-16)
+**Cause** (the "Known data defects" session, on made-up bars, no market data used, no file changed): `BuyAndHoldStrategy`
+needs no history, so it reports 0 bars needed (`trading-bot/strategies/strategy_components.py:671`). The regime detector
+sizes its history store to the most its components report, so it keeps room for 0 values
+(`regime_engine.py:56`), then counts itself ready only once it holds at least 1 (`regime_engine.py:100`). It never
+can, so the strategy is never ready. No number of warm-up bars helps (still not ready after 200); `required_bars=24`
+in the message is the engine's floor, and the message ("2x-required_bars was insufficient") points the wrong way.
+003-02 ran when its detector component was `PriceEvolutionComponent` (needs 2 bars).
+
+**At fault: the engine.** The config is valid; the component catalogue lists `BuyAndHoldStrategy` with 0 warm-up bars.
+
+**The fix, when approved:** in the engine, a component that needs 0 bars counts as ready (shared with the campaign:
+the operator's call). Not in step 3: a config workaround exists (swap the detector component for one that needs a bar
+and put a constant clip before the veto; checked on 153 of 153 test bars), but it would teach step 3 a trick for one
+engine fault.
+
+**To check first:** whether a run without the warm-up check would trade nothing and read as an ordinary flat result (a
+false "nothing here"). Expected by the session, not checked.
+
+## Parked B: a few XMR and XRP windows do not run since the sizing's 60-day window (open)
+**Changes verdicts (run_idea, 2026-11-16):** XMR 23 of 24 windows, XRP 22 of 24 on the default data ("the engine
+stopped" at warm-up: XMR w13, XRP w7 and w13 in full_data_run); a plan whose minimum count is close to the most the
+data can give becomes "not observable" (002-03's repair in demo_run). Not covered by A's findings; cause not looked into.
+
+## History of A and B (the original brief, kept as written)
 **Where the files are now (2026-11-16):** the brief's example files (`04_backtest/backtests/003-01_low-volume-up-move-reverts_1d/run.md`, `config.json`) were removed from the working tree by the clean-up of 2026-11-15; they are in git history, commit `57269c6` (the commit before the clean-up): `git show 57269c6:strategy_designer_v2/steps_cards/04_backtest/backtests/003-01_low-volume-up-move-reverts_1d/run.md`. A current example, in a folder that stays: `04_backtest/full_data_run/backtests/` (see its `INDEX.md`): XMRUSD runs 23 of 24 windows and XRPUSD 22 of 24, "the engine stopped", since the sizing's 60-day window. Only the summaries of a backtest are committed now (`04_backtest/.gitignore`): to look inside, rerun that backtest (a trial, as the note below says).
 
 Added on the operator's instruction, relayed from the "Known data defects" session. The brief is the operator's, unchanged:
