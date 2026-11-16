@@ -5,6 +5,8 @@ Items noted while designing the steps, not started. Each waits for the operator'
 ## Parked: why the backtest engine refuses some valid strategy configs at warm-up
 **Now changes verdicts (run_idea, 2026-11-16):** since the sizing's 60-day window, a few windows do not run (XMR 23 of 24, XRP 22 of 24 on the default data); a plan whose minimum count is close to the most the data can give becomes "not observable".
 
+**Where the files are now (2026-11-16):** the brief's example files (`04_backtest/backtests/003-01_low-volume-up-move-reverts_1d/run.md`, `config.json`) were removed from the working tree by the clean-up of 2026-11-15; they are in git history, commit `57269c6` (the commit before the clean-up): `git show 57269c6:strategy_designer_v2/steps_cards/04_backtest/backtests/003-01_low-volume-up-move-reverts_1d/run.md`. A current example, in a folder that stays: `04_backtest/full_data_run/backtests/` (see its `INDEX.md`): XMRUSD runs 23 of 24 windows and XRPUSD 22 of 24, "the engine stopped", since the sizing's 60-day window. Only the summaries of a backtest are committed now (`04_backtest/.gitignore`): to look inside, rerun that backtest (a trial, as the note below says).
+
 Added on the operator's instruction, relayed from the "Known data defects" session. The brief is the operator's, unchanged:
 
 > In loloze6/trading-bot, branch ccr-6624e33e-aakrpv, find out why the backtest engine refuses some valid strategy configs at warm-up. Do not change any file.
