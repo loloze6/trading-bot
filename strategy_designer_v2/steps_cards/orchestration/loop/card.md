@@ -11,7 +11,7 @@ proposed, chosen by one rule fixed in advance, until a stop rule is met, so that
 towards ideas that are real and books that pay.**
 
 ## Input and output
-- **Input:** a starting idea (step 2's or step 7's format) with its brief, a run name, and the stop limits.
+- **Input:** a starting idea (step 2's or step 7's format) with its brief, a run name, and an optional budget.
 - **Output:** every idea it ran, each run by `run_idea` (its row, journal, logs); the queue (every idea proposed in
   the run, with its place in the order and what happened to it); the run's consumption.
 
