@@ -13,12 +13,16 @@ What it does, in order:
      (which refuses any window touching the sealed holdout), the bar size, and the venue keys from
      strategy-research/tools/venue_resolver.py. The protocol is written to a temporary folder only: it holds dates.
   3. Runs strategy-research/tools/run_protocol.py (the pipeline's wrapper around the bot's run_backtest, with warm-up
-     prefetch and the holdout guard) once per coin and window, each in its own folder: the engine names a run
-     folder after the current second, so two windows finishing in the same second would otherwise share one.
-     A coin or window without data does not stop the others.
+     prefetch and the holdout guard) once per coin, on all the coin's windows, so Python and the bot load once per
+     coin. That call is used only when every window got its own run folder. The engine names a run folder after the
+     current second, so two windows finishing in the same second share one; and the wrapper stops at the first window
+     that fails. In either case the coin is run again once per window, each in its own folder (the way every coin ran
+     before 2026-11-16). A coin or window without data does not stop the others.
   4. Keeps the engine's files per coin and window (metrics.json, manifest.json, forecast_distribution.csv, and
-     bars.csv and trades.json gzipped), plus the window's protocol_summary.json and trade_diagnostics.json, gzipped. It drops tradesxl.xlsx and
-     portfolio_states.csv, which repeat what bars.csv and trades.json hold. Windows are named w1..wN in the fold's order.
+     bars.csv and trades.json gzipped). The wrapper call's own protocol_summary.json and trade_diagnostics.json
+     (gzipped) and its log (engine_log.txt) go in the coin's folder, or in the window's folder when the coin ran once
+     per window. It drops tradesxl.xlsx and portfolio_states.csv, which repeat what bars.csv and trades.json hold.
+     Windows are named w1..wN in the fold's order.
   5. Writes run.md for the plan and its line in the backtests folder's INDEX.md.
 
 This script does not open the price data itself: only the engine reads bars.
@@ -114,6 +118,59 @@ def protocol(python, symbol, bar, folds):
     return json.loads(r.stdout)
 
 
+def call_protocol(python, config_path, proto, windows, tmp):
+    """One call of the pipeline's wrapper on these windows, in its own temporary folder.
+    Returns (exit code, log without dates, the call's output folder)."""
+    (tmp / "protocol.json").write_text(json.dumps(dict(proto, windows=windows)))
+    r = subprocess.run([python, "tools/run_protocol.py", str(config_path), str(tmp / "protocol.json"),
+                        "--out-dir", str(tmp / "out"), "--legacy-verdict-retired"],
+                       cwd=SR, capture_output=True, text=True, timeout=6 * 3600)
+    return r.returncode, re.sub(r"20\d\d-\d\d(-\d\d)?", "<date>", (r.stdout + r.stderr)), tmp / "out"   # no dates stored
+
+
+def coin_runs(rc, out, windows):
+    """The run folder of each window, in the windows' order, from one wrapper call on all of them. None when the call
+    cannot be used: it failed, or a window has no run folder of its own (the engine names a run folder after the
+    current second and the config's hash, so two windows finishing in the same second share one, and the second
+    overwrites the first)."""
+    if rc:
+        return None
+    try:
+        results = json.loads((out / "protocol_summary.json").read_text(encoding="utf-8"))["results"]
+        folders = [out / "results" / r["run_id"] for r in results]
+        labels = [r["window"] for r in results]
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    if (labels != [w["label"] for w in windows] or len(set(folders)) != len(windows)
+            or not all((f / "metrics.json").exists() for f in folders)
+            or len(list((out / "results").glob("*/metrics.json"))) != len(windows)):
+        return None
+    return folders
+
+
+def keep_window(src, wdir, k):
+    """Keeps one window's engine files (src: its run folder) in wdir; returns its row of the run.md table."""
+    wdir.mkdir(parents=True)
+    for f in KEEP:
+        if (src / f).exists():
+            shutil.copy(src / f, wdir / f)
+    for f in KEEP_GZ:
+        if (src / f).exists():
+            with open(src / f, "rb") as fi, gzip.open(wdir / (f + ".gz"), "wb") as fo:
+                shutil.copyfileobj(fi, fo)
+    c = json.loads((src / "metrics.json").read_text())["core"]
+    return k, c.get("trade_count"), c.get("forecast_return_corr_all_bars"), c.get("net_return_pct")
+
+
+def keep_call(out, log, folder):
+    """Keeps one wrapper call's own files in folder: its summary and trade diagnostics (gzipped) and its log."""
+    for f in ["protocol_summary.json", "trade_diagnostics.json"]:
+        if (out / f).exists():
+            with open(out / f, "rb") as fi, gzip.open(folder / (f + ".gz"), "wb") as fo:
+                shutil.copyfileobj(fi, fo)
+    (folder / "engine_log.txt").write_text(log)
+
+
 def index_line(index_path, plan_id, line):
     lines = [l for l in (index_path.read_text().splitlines() if index_path.exists() else []) if not l.startswith(plan_id + ":")]
     write_atomic(index_path, "".join(l + "\n" for l in sorted(lines + [line])))
@@ -169,39 +226,33 @@ def main():
         proto = protocol(args.python, symbol, bar, folds)
         windows = proto["windows"]
         cdir = dest / symbol
-        rows, failed = [], []
-        # One wrapper call per window, each in its own folder: the engine names a run folder after the current
-        # second and the config's hash, so two windows finishing in the same second would share (overwrite) one.
-        for k, window in enumerate(windows, 1):
+        rows, failed, folders = [], [], None
+        # One wrapper call for all the coin's windows: Python and the bot are loaded once per coin, not once per
+        # window. Its record is used only when every window has its own run folder (coin_runs); otherwise the coin
+        # is run again one window at a time, below.
+        if windows:
             with tempfile.TemporaryDirectory() as tmp:
-                tmp = Path(tmp)
-                (tmp / "protocol.json").write_text(json.dumps(dict(proto, windows=[window])))
-                r = subprocess.run([args.python, "tools/run_protocol.py", str(config_path), str(tmp / "protocol.json"),
-                                    "--out-dir", str(tmp / "out"), "--legacy-verdict-retired"],
-                                   cwd=SR, capture_output=True, text=True, timeout=6 * 3600)
-                log = re.sub(r"20\d\d-\d\d(-\d\d)?", "<date>", (r.stdout + r.stderr))   # no dates in what we store
-                runs = list((tmp / "out" / "results").glob("*/metrics.json")) if (tmp / "out" / "results").exists() else []
-                if r.returncode or len(runs) != 1:
+                rc, log, out = call_protocol(args.python, config_path, proto, windows, Path(tmp))
+                folders = coin_runs(rc, out, windows)
+                if folders:
+                    for k, src in enumerate(folders, 1):
+                        rows.append(keep_window(src, cdir / f"w{k}", k))
+                    keep_call(out, log, cdir)
+        # One wrapper call per window, each in its own folder (the way every coin ran before 2026-11-16). Used
+        # when the coin's call failed (the wrapper stops at the first window that fails, so the later ones would be
+        # lost) or two of its windows shared one run folder. The coin's record is then exactly that of a run made
+        # this way from the start.
+        for k, window in enumerate([] if folders else windows, 1):
+            with tempfile.TemporaryDirectory() as tmp:
+                rc, log, out = call_protocol(args.python, config_path, proto, [window], Path(tmp))
+                runs = list((out / "results").glob("*/metrics.json")) if (out / "results").exists() else []
+                if rc or len(runs) != 1:
                     failed.append((k, "no historical data on the venue" if "No historical data" in log else "the engine stopped",
                                    "\n".join(log.strip().splitlines()[-4:])))
                     continue
-                src = runs[0].parent
                 wdir = cdir / f"w{k}"
-                wdir.mkdir(parents=True)
-                for f in KEEP:
-                    if (src / f).exists():
-                        shutil.copy(src / f, wdir / f)
-                for f in KEEP_GZ:
-                    if (src / f).exists():
-                        with open(src / f, "rb") as fi, gzip.open(wdir / (f + ".gz"), "wb") as fo:
-                            shutil.copyfileobj(fi, fo)
-                for f in ["protocol_summary.json", "trade_diagnostics.json"]:
-                    if (tmp / "out" / f).exists():
-                        with open(tmp / "out" / f, "rb") as fi, gzip.open(wdir / (f + ".gz"), "wb") as fo:
-                            shutil.copyfileobj(fi, fo)
-                (wdir / "engine_log.txt").write_text(log)
-                c = json.loads(runs[0].read_text())["core"]
-                rows.append((k, c.get("trade_count"), c.get("forecast_return_corr_all_bars"), c.get("net_return_pct")))
+                rows.append(keep_window(runs[0].parent, wdir, k))
+                keep_call(out, log, wdir)
         part = f"- {symbol}: {len(rows)} of {len(windows)} windows run."
         if rows:
             part += ("\n\n| window | trades | forecast vs next return (all bars) | net return % |\n|---|---|---|---|\n"

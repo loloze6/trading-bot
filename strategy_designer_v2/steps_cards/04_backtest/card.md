@@ -30,7 +30,7 @@ One backtest record per plan, or "not run", with the reason.
 3. **Per coin and window, `wK/`**: the engine's files.
    - `bars.csv.gz`: one row per bar, with prices, the forecast, each component's raw and transformed value, the position and the portfolio's value.
    - `trades.json.gz`, `metrics.json`, `manifest.json` (what ran: the config's hash, the data's hash, the costs, the engine's version), `forecast_distribution.csv`.
-   - The window's `protocol_summary.json.gz`, `trade_diagnostics.json.gz` and `engine_log.txt`.
+   - The wrapper call's `protocol_summary.json.gz`, `trade_diagnostics.json.gz` and `engine_log.txt`: in the coin's folder (one call per coin), or in the window's folder when the coin ran once per window.
    - For: the record itself.
    - Used by: step 5 (verification), step 6 (profitability).
    - Without it: there is nothing to judge.
@@ -46,7 +46,7 @@ Modelled on the engine's own run folders, one folder per plan, named after the p
 04_backtest/
   card.md                      this card
   helper/
-    run_backtest.py            one plan -> the engine, once per coin and window; stores the record; adds the index line
+    run_backtest.py            one plan -> the engine, once per coin (once per window as fallback); stores the record; adds the index line
   backtests/                   created by the helper when it runs (default):
     INDEX.md                   one line per plan
     REVIEW.md                  the review of a real run
@@ -54,6 +54,7 @@ Modelled on the engine's own run folders, one folder per plan, named after the p
     <plan id>/                 one record per plan (the plan id carries the bar size)
       run.md
       config.json
+      <SYMBOL>/                one folder per coin: the call's summaries and engine_log.txt (one call per coin)
       <SYMBOL>/wK/             one folder per coin and window, K in the folds' order
                                (committed: the summaries, metrics.json, manifest.json, engine_log.txt,
                                forecast_distribution.csv; kept local only: the *.gz files, which step 4
@@ -72,7 +73,8 @@ Modelled on the engine's own run folders, one folder per plan, named after the p
 1. Reads the plan's header, including its outcome. When the plan's config and data are those of its stored record, the record is kept, not rerun: the plan's other fields (fidelity, forecast in words, criterion) do not change what the engine runs.
 2. Builds the protocol with the pipeline's own fold loader, `strategy-research/tools/research_folds.py` (`fold A`, or `folds A, B, C, D`: the windows of each, one after the other). The loader refuses any window touching the sealed holdout. It adds the pipeline's venue keys, from `tools/venue_resolver.py`. The protocol holds dates, so it is written to a temporary folder only.
 3. Runs `strategy-research/tools/run_protocol.py`, the pipeline's wrapper around the bot's `run_backtest`. The wrapper keeps the warm-up prefetch and the holdout guard.
-4. Runs one call per coin and window, each in its own folder (see "Open").
+4. Runs one call per coin, on all its windows: Python and the bot load once per coin, not once per window (2026-11-16, `orchestration/duration/3_plan.md`, change 1). The call is used only when every window got its own run folder. Otherwise the coin runs again with one call per window, each in its own folder, and its record is that of a run made this way from the start. Two cases trigger it: the wrapper stops at the first window that fails, and two windows can share a run folder (see "Open").
+   - **Why this can't leak:** each window still makes its own `run_backtest` call with its own dates, warm-up and holdout guard, and that call builds a new data manager. So no bar passes from one window to the next, and each window sees exactly the bars it saw when it ran alone. Checked on 297 windows: every window's data block in `manifest.json` (start, end, bar count, data hash) and its `bars.csv` are identical to one call per window (`orchestration/duration/6_change1_proof.md`, branch `sd2/run-idea-duration`).
 
 The helper never opens the price data: only the engine reads bars. It needs a Python environment with `trading-bot/requirements.txt` (`--python`). `helper/summarise_backtests.py` prints one table of a backtests folder from the engine's `metrics.json` files, for the readings.
 
@@ -103,7 +105,7 @@ The operator: "is this the run of my plan, complete and the same if run again?".
 On two exercises in a row, every criterion holds, and a full rerun of the fixed inputs is identical, bar for bar. Status: met by exercises 1 and 2 (`validation/reading.md`).
 
 ## Open
-- **An engine defect, found by this step.** The engine names a run folder after the current second plus the config's hash (`reporting/run_artifact.py`). When two windows of one wrapper call finish within the same second, they share one folder, and the second overwrites the first. Daily windows run in under a second each, so this happens. A rerun check found two windows with the same run id. This helper avoids it by running each window on its own. The research pipeline's own daily runs may be affected; that is for the operator to check.
+- **An engine defect, found by this step.** The engine names a run folder after the current second plus the config's hash (`reporting/run_artifact.py`). When two windows of one wrapper call finish within the same second, they share one folder, and the second overwrites the first. Daily windows run in under a second each, so this happens. A rerun check found two windows with the same run id. This helper detects it (fewer run folders than windows) and then runs that coin one window at a time. The research pipeline's own daily runs may be affected; that is for the operator to check.
 - **A config pattern the engine's warm-up check refuses.** Volume plans (five in the first run; `003-01_1d` and `003-02_1d` in the current production) gate the strategy with a veto on a constant (`BuyAndHoldStrategy` with `volume_filter`) and leave the default regime flat. The validator accepts this, but the engine stops at its warm-up check: "strategy not ready after 48 prefetch bars". Their record says "not run", with the engine's message. Step 3 could avoid the pattern (the same ideas run when the gate is a rule on `VolumeExpansionHedgeComponent`, or a veto on `PriceEvolutionComponent`).
 - **BNB has no data on the reachable venue.** Ideas from briefs that name BNB run on BTC and ETH only.
 - **Data gaps before a window.** On the full data, 1 XMR and 2 XRP windows were refused at the warm-up check: fewer daily bars before them than a 200-day average needs. Recorded as "not run".
