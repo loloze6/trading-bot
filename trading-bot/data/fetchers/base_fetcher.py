@@ -537,7 +537,17 @@ class BaseFetcher(ABC):
                     combined.equals(existing.reset_index(drop=True)):
                 logger.info(f"  {symbol}: merge added no rows -- {path} left untouched")
                 return
-            combined.to_csv(path, index=False)
+            # Written under a temporary name in the same folder, then renamed over
+            # the file (2026-11-16): backtests run side by side can read one shared
+            # file (fear_greed_daily.csv serves every coin), and a reader must see
+            # the old file or the new one, never part of one. Same bytes as before.
+            tmp = f"{path}.{os.getpid()}.tmp"
+            try:
+                combined.to_csv(tmp, index=False)
+                os.replace(tmp, path)
+            finally:
+                if os.path.exists(tmp):
+                    os.remove(tmp)
             logger.info(f"  Saved {symbol} to {path} ({len(combined)} rows)")
 
     # -----------------------------------------------------------------------

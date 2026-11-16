@@ -149,3 +149,8 @@ reading the file during that write could see part of it. Not seen: no data file 
 before and after, rerun one coin at a time if a file changed) was not built: the operator's rules say no gates.
 **Proposed fix, at its cause:** the fetcher writes the new file to a temporary name and then renames it, so a reader
 sees the old file or the new one, never part of one. A change to `trading-bot/`, so it needs its own go and proof.
+**Fixed (operator's go, 2026-11-16):** `_merge_and_store` writes to `<file>.<process id>.tmp` in the same folder and
+renames it over the file; a failed write leaves the file as it was and no temporary file. Proof: tests on made-up data
+(`trading-bot/tests/test_merge_noop_no_rewrite.py`: the file holds exactly the bytes `to_csv` writes, one rename, nothing
+left behind; a failed rename leaves the old bytes); the bot's suite passes (1,499). No named run reaches this write
+today (the folds' data is already in the files), so no run was rerun for it.
