@@ -66,3 +66,9 @@ alone ("on Saturdays the coin rises", "in a bear market the coin falls"), which 
 leaves out (inside a regime the effect must be graded). Options to weigh then: a strategy assigned to a regime, with
 step 5 measuring the regime's own values (see "record the regime detector's values").
 
+## Parked: a cost limit per model call (operator, 2026-11-16: only if it happens again)
+On demo_run (budget 15), one 7.b analysis cost 3.77 USD in 14.4 minutes (usually at most 0.37 USD, about a minute):
+two calls (one exploration and the answer), no retry. A call cannot loop (no tools, one answer); each is killed at
+15 minutes; a line makes at most 6. Every call's tokens and time are now in the step's log, so a repeat would show
+which call and why. If it happens again: test the `claude` command's `--max-budget-usd` (not known to stop a single
+answer partway).

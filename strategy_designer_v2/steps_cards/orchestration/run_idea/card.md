@@ -51,7 +51,11 @@ In `<name>_run/table.md` (and `table.json`, for code), one row per idea:
 **Next to the table:**
 
 6. **The journal** (`journal.jsonl`): one line per step call: the time, the backtest, the step, called or skipped (its
-   output exists) , its USD and seconds, the files it wrote (paths from `steps_cards/`), its log.
+   output exists) , its USD and seconds, its number of model calls and the longest one's seconds, the files it wrote
+   (paths from `steps_cards/`), its log. Every model call prints one line in the step's log: its seconds, its tokens
+   (input, cache, output and thinking) and its USD. A call killed at the timeout (15 minutes, `common/lib.py`) is
+   written so, "cost unknown", in the log and in the journal's action (operator, 2026-11-16). The step's USD is the
+   sum of its calls, so the calls made before a step stops are counted.
    - For: auditing a run step by step, a resumed run included.
    - Used by: the operator.
    - Without it: what ran, when, and what it wrote must be pieced together from four folders.
@@ -70,7 +74,7 @@ orchestration/run_idea/
   validation/reading.md        once validated
   <name>_run/
     table.md, table.json       one row per idea run, then the run's consumption (totals, per step)
-    journal.jsonl              one line per step call (called or skipped, USD, seconds, files written, log)
+    journal.jsonl              one line per step call (called or skipped, USD, seconds, model calls, files written, log)
     logs/<backtest>/<step>.txt each helper's own output
 The steps' files for the run, in their usual named-run folders:
   01_brief/<name>_run/briefs/              the brief (a copy)

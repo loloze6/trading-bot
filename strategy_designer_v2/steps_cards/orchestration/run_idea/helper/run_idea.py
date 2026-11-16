@@ -20,6 +20,8 @@ import yaml  # noqa: E402
 
 DEFAULT_BAR = "1d"   # step 3's default bar size, when the idea's header names none
 COST = re.compile(r"cost:?\s*([0-9]+\.[0-9]+)\s*USD")
+CALL = re.compile(r"^model call: ([0-9.]+) s; .*?; ([0-9.]+) USD", re.M)          # one line per call (common/lib.py)
+KILLED = re.compile(r"^model call: killed after ([0-9]+) s", re.M)
 
 
 def folders(run):
@@ -55,10 +57,21 @@ def check_idea(text):
     return h
 
 
+def model_calls(out):
+    """The model calls a helper's output reports (common/lib.py prints one line each): [{seconds, usd}], a killed
+    call with usd None."""
+    calls = [{"seconds": float(s), "usd": float(u)} for s, u in CALL.findall(out)]
+    return calls + [{"seconds": float(s), "usd": None} for s in KILLED.findall(out)]
+
+
 def call(cmd):
-    """One step's helper; returns (stdout, the cost it reports)."""
+    """One step's helper; returns (stdout, its cost): the sum of its model calls' USD, so the calls made before a
+    helper stops are counted too (the helper's own "cost: X USD" line if it reports no call line)."""
     p = subprocess.run([sys.executable] + [str(c) for c in cmd], capture_output=True, text=True)
     out = p.stdout + p.stderr
+    calls = model_calls(out)
+    if calls:
+        return out, sum(c["usd"] or 0.0 for c in calls)
     return out, sum(float(c) for c in COST.findall(out))
 
 
@@ -79,6 +92,10 @@ class Journal:
             out, cost = call(cmd)
             (self.dir / "logs" / self.rid / f"{name}.txt").write_text(out)
         secs = round(time.time() - t0, 1)
+        calls = model_calls(out)
+        killed = sum(c["usd"] is None for c in calls)
+        if killed:
+            action += f": {killed} model call(s) killed after the timeout, cost unknown"
         if said:
             what = said()
             if what and what.startswith("not run"):
@@ -88,6 +105,7 @@ class Journal:
         rel = lambda x: str(Path(x).resolve().relative_to(STEPS)) if Path(x).exists() else f"{Path(x).name} (not written)"
         entry = {"at": datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M:%S UTC"), "run": self.run,
                  "backtest": self.rid, "step": name, "action": action, "usd": round(cost, 4), "seconds": secs,
+                 "model_calls": len(calls), "longest_call_seconds": max((c["seconds"] for c in calls), default=0.0),
                  "outputs": [rel(o) for o in outputs],
                  "log": str((self.dir / "logs" / self.rid / f"{name}.txt").relative_to(STEPS)) if not done else None}
         with open(self.dir / "journal.jsonl", "a") as fh:

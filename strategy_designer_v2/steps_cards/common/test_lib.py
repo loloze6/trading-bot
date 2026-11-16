@@ -49,3 +49,14 @@ def test_write_atomic_and_common_text(tmp_path):
     write_atomic(p, "two")
     assert p.read_text() == "two" and not (tmp_path / "f.md.tmp").exists()
     assert "Every idea" in common_text("idea_definition")
+
+
+def test_the_line_a_model_call_prints():
+    import lib
+    d = {"usage": {"input_tokens": 5, "cache_read_input_tokens": 600, "cache_creation_input_tokens": 4000,
+                   "output_tokens": 9000, "output_tokens_details": {"thinking_tokens": 7000}},
+         "total_cost_usd": 0.41234, "stop_reason": "end_turn"}
+    line = lib.call_line(d, 63.04)
+    assert line == ("model call: 63.0 s; tokens: input 5, cache read 600, cache write 4000, output 9000 (thinking 7000); "
+                    "0.4123 USD; stop: end_turn")
+    assert "cost" not in line.split(";")[2]          # run_idea's "cost: X USD" pattern must not count it twice

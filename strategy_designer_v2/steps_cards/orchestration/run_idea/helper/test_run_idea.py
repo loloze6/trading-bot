@@ -67,3 +67,18 @@ def test_the_journal_records_called_and_skipped_steps(tmp_path, monkeypatch):
     assert lines[0]["usd"] == 0.25 and lines[1]["usd"] == 0.0 and lines[0]["outputs"] == ["plan.md"]
     assert (tmp_path / "t" / "logs" / "X_1d" / "step3_plan.txt").read_text() == "cost: 0.25 USD\n"
     assert j.use["step3_plan"]["usd"] == 0.25
+
+
+def test_model_calls_are_read_and_a_killed_call_is_marked(tmp_path, monkeypatch):
+    out = ("model call: 41.2 s; tokens: input 10, cache read 0, cache write 900, output 2000 (thinking 1500); 0.3100 USD; "
+           "stop: end_turn\nanswer refused: x\nmodel call: killed after 900 s; cost unknown\n"
+           "7.b X: 3 findings; cost 0.3100 USD\n")
+    calls = r.model_calls(out)
+    assert calls == [{"seconds": 41.2, "usd": 0.31}, {"seconds": 900.0, "usd": None}]
+    monkeypatch.setattr(r, "STEPS", tmp_path)
+    monkeypatch.setattr(r, "call", lambda cmd: (out, 0.31))
+    j = r.Journal(tmp_path / "t", "demo_run", "X_1d")
+    j.step("step7_7.b", ["analyse.py"], [], done=False)
+    e = json.loads((tmp_path / "t" / "journal.jsonl").read_text())
+    assert e["model_calls"] == 2 and e["longest_call_seconds"] == 900.0
+    assert e["action"] == "called: 1 model call(s) killed after the timeout, cost unknown"

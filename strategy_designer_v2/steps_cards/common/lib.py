@@ -2,7 +2,7 @@
 idea fields step 3 reads, and the shared definitions. A helper imports it with
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common")); from lib import ...
 """
-import json, os, re, subprocess, sys, tempfile
+import json, os, re, subprocess, sys, tempfile, time
 from pathlib import Path
 
 COMMON = Path(__file__).resolve().parent
@@ -11,16 +11,36 @@ DROP_ENV = {"CLAUDE_ADDITIONAL_DIRECTORIES", "CLAUDE_CODE_ADDITIONAL_DIRECTORIES
             "CLAUDE_CODE_USER_EMAIL", "CLAUDE_CODE_REMOTE_SESSION_ID", "CLAUDE_CODE_SESSION_ID"}
 
 
+TIMEOUT = 900          # seconds; a call still running then is killed
+
+
+def call_line(d, seconds):
+    """The line a model call prints: its time, its tokens and its USD (visibility only)."""
+    u = d.get("usage") or {}
+    thinking = (u.get("output_tokens_details") or {}).get("thinking_tokens", 0)
+    return (f"model call: {seconds:.1f} s; tokens: input {u.get('input_tokens', 0)}, cache read "
+            f"{u.get('cache_read_input_tokens', 0)}, cache write {u.get('cache_creation_input_tokens', 0)}, output "
+            f"{u.get('output_tokens', 0)} (thinking {thinking}); {d.get('total_cost_usd', 0.0):.4f} USD; "
+            f"stop: {d.get('stop_reason')}")
+
+
 def call(model, system, request):
     """One model call, closed book: no tools, no files, no settings; the request on standard input. Returns (text,
-    cost in USD)."""
+    cost in USD). Prints one line per call on standard error (time, tokens, USD); a call killed at the timeout says
+    so, its cost unknown, and stops the helper."""
     cmd = ["claude", "-p", "--model", model, "--system-prompt", system, "--tools", "",
            "--strict-mcp-config", "--disable-slash-commands", "--no-session-persistence", "--setting-sources", "",
            "--settings", '{"attribution":{"commit":"","pr":""},"includeCoAuthoredBy":false}', "--output-format", "json"]
     env = {k: v for k, v in os.environ.items() if k not in DROP_ENV}
+    t0 = time.time()
     with tempfile.TemporaryDirectory() as empty:
-        p = subprocess.run(cmd, input=request, cwd=empty, env=env, capture_output=True, text=True, timeout=900)
+        try:
+            p = subprocess.run(cmd, input=request, cwd=empty, env=env, capture_output=True, text=True, timeout=TIMEOUT)
+        except subprocess.TimeoutExpired:
+            print(f"model call: killed after {TIMEOUT} s; cost unknown", file=sys.stderr, flush=True)
+            sys.exit(f"model call killed after {TIMEOUT} s (cost unknown)")
     d = json.loads(p.stdout)
+    print(call_line(d, time.time() - t0), file=sys.stderr, flush=True)
     if d.get("is_error"):
         sys.exit(f"model call failed: {d.get('result')}")
     return d["result"], d["total_cost_usd"]
