@@ -59,6 +59,11 @@ runs:
 - run_095
 - run_096
 - run_097
+- run_098
+- run_099
+- run_100
+- run_101
+- run_102
 altitude_history:
 - run: run_011
   altitude: parameter
@@ -580,6 +585,31 @@ diagnostics_log:
   cost_drag_pct: 77.2071
   win_rate_vs_sharpe: N/A (no rule set)
   avg_trade_duration_bars: 1.72
+- run: run_098
+  forecast_return_corr: -0.0582
+  cost_drag_pct: 2.9356
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 27.01
+- run: run_099
+  forecast_return_corr: -0.0211
+  cost_drag_pct: 0.3669
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 69.28
+- run: run_100
+  forecast_return_corr: 0.0004
+  cost_drag_pct: 14.4153
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 108.97
+- run: run_101
+  forecast_return_corr: 0.0012
+  cost_drag_pct: 131.9343
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 14.26
+- run: run_102
+  forecast_return_corr: -0.0086
+  cost_drag_pct: 35.0956
+  win_rate_vs_sharpe: N/A (no rule set)
+  avg_trade_duration_bars: 49.71
 notes:
 - 'run_011 through run_015 first attempt: config_path bug — all ran default strategy_config.json.
   Numbers invalid for inter-run comparison. Directional conclusions (RSI parameter
@@ -640,7 +670,7 @@ notes:
   regime_retune_results.yaml, config/regime_retune_winner.json, runs/run_039/artifacts/regime_audit_decision.yaml.'
 review_every_n_runs: 6
 status: active
-updated_at: '2026-10-18T20:11:29.866512+00:00'
+updated_at: '2026-10-28T06:30:51.810156+00:00'
 last_escalation:
   target: timeframe
   detail: 15m
@@ -2013,3 +2043,372 @@ trial_sharpes:
     n_daily_returns: 729
     skew: -0.16361104780229388
     kurtosis: 15.71962560656647
+- trial_id: run_098:asset_ada
+  source: backtest_failed
+  sharpe: null
+  expectancy_bps: null
+  n_trades: 0
+  statistic_valid: failed
+  forecast_hash: 0ae437792ef96f015cd2d9544198beecacb2befa30369fc2302f9bc67f69d428
+  error: run_protocol.py non-zero exit (1) for variant 'asset_ada'
+  symbols:
+  - ADAUSD
+  windows_sha256: 1adf5a37700ec6a01744ca7f68c9c82a3fd42b8c13e231e3a5ad38097551429c
+  fold: B
+- trial_id: run_098:base
+  source: backtest
+  sharpe: -1.175
+  expectancy_bps: -2.6208
+  n_trades: 176
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 0ae437792ef96f015cd2d9544198beecacb2befa30369fc2302f9bc67f69d428
+  symbols:
+  - BTCUSD
+  fold: B
+  protocol_run_id: 20261020T195523Z_58e26d2f
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.005468552249498961
+    n_daily_returns: 730
+    skew: -0.16649565702197638
+    kurtosis: 8.025645168184926
+- trial_id: run_098:design_lookback_120
+  source: backtest
+  sharpe: 0.7365
+  expectancy_bps: 52.8249
+  n_trades: 204
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 18163a477560e04a21c408148e94a385b8c707f840c1b42584da57cb61983bab
+  symbols:
+  - BTCUSD
+  fold: B
+  protocol_run_id: 20261020T195603Z_9747296a
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.04189336426163702
+    n_daily_returns: 730
+    skew: -0.23907750863110885
+    kurtosis: 14.014887874465177
+- trial_id: run_099:asset_ltc
+  source: backtest
+  sharpe: null
+  expectancy_bps: 263.1719
+  n_trades: 4
+  statistic_valid: expectancy
+  below_floor_pct: 100.0
+  forecast_hash: 0ca7e24cc123060b9ac1a38af87d44da08dafa4ed9d7c321c2a61006b6847aa3
+  symbols:
+  - LTCUSD
+  fold: B
+  protocol_run_id: 20261022T113407Z_a2236b7d
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.024836577299697935
+    n_daily_returns: 730
+    skew: -0.38875009421459655
+    kurtosis: 51.979666592895455
+- trial_id: run_099:base
+  source: backtest
+  sharpe: 7.033
+  expectancy_bps: 278.9476
+  n_trades: 12
+  statistic_valid: expectancy
+  below_floor_pct: 83.33
+  forecast_hash: 0ca7e24cc123060b9ac1a38af87d44da08dafa4ed9d7c321c2a61006b6847aa3
+  symbols:
+  - BTCUSD
+  fold: B
+  protocol_run_id: 20261022T113450Z_a2236b7d
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.04385519995919635
+    n_daily_returns: 730
+    skew: 1.373483793224402
+    kurtosis: 20.91953249771591
+- trial_id: run_099:design_no_vol_target
+  source: backtest
+  sharpe: -1.1545
+  expectancy_bps: 94.6421
+  n_trades: 80
+  statistic_valid: sharpe
+  below_floor_pct: 33.33
+  forecast_hash: 767df308eb22c20d2550d7e0cccd60982df6f5a7a507d507da25203a34ef83f4
+  symbols:
+  - BTCUSD
+  fold: B
+  protocol_run_id: 20261022T113532Z_d3924e39
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.03515217496855858
+    n_daily_returns: 730
+    skew: 0.471279517081602
+    kurtosis: 13.118771214444925
+- trial_id: run_100:asset_AAVEUSDT
+  source: backtest
+  sharpe: 0.6015
+  expectancy_bps: 1.2089
+  n_trades: 1321
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 770459d569dadcb86322bc3a7b9e955b84410a2d79a777794aa696804c9091b5
+  symbols:
+  - AAVEUSD
+  fold: A
+  protocol_run_id: 20261023T191433Z_2bddb705
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.016281583136287366
+    n_daily_returns: 730
+    skew: 1.254868616888651
+    kurtosis: 8.458549254684272
+- trial_id: run_100:asset_SOLUSDT
+  source: backtest
+  sharpe: 1.485
+  expectancy_bps: 5.806
+  n_trades: 1296
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 770459d569dadcb86322bc3a7b9e955b84410a2d79a777794aa696804c9091b5
+  symbols:
+  - SOLUSD
+  fold: A
+  protocol_run_id: 20261023T192208Z_2bddb705
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.06938855503315872
+    n_daily_returns: 730
+    skew: 1.266322433597781
+    kurtosis: 8.146209543518609
+- trial_id: run_100:base
+  source: backtest
+  sharpe: 1.453
+  expectancy_bps: 3.7669
+  n_trades: 1464
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 770459d569dadcb86322bc3a7b9e955b84410a2d79a777794aa696804c9091b5
+  symbols:
+  - BTCUSD
+  fold: A
+  protocol_run_id: 20261023T192635Z_2bddb705
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.04430998001271305
+    n_daily_returns: 730
+    skew: 2.2815808960694244
+    kurtosis: 17.305414501146366
+- trial_id: run_100:fast_period_100
+  source: backtest
+  sharpe: 1.678
+  expectancy_bps: 4.4469
+  n_trades: 1245
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 20ca224ed55f120996e668dae99efe32ecbb838c4429e871424b5db55b4c333d
+  symbols:
+  - BTCUSD
+  fold: A
+  protocol_run_id: 20261023T193121Z_802dcd63
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.04343063589716732
+    n_daily_returns: 730
+    skew: 2.3116425885265444
+    kurtosis: 18.43849288330234
+- trial_id: run_101:asset_avaxusdt
+  source: backtest
+  sharpe: -1.255
+  expectancy_bps: -0.68
+  n_trades: 4481
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: b45d1013d9eabd228bdf3e1eb80917ef5c8651bdb64f72dcdd645f1fc1702b18
+  symbols:
+  - AVAXUSD
+  windows_sha256: 0e44a80d57fa2290dff866ecd182bc6aa80d447ce4e97f93d43834b5a9b52ff5
+  fold: A
+  structure_hash: 05c14345bce18192399284e94b0b0beb01a758f99bbe9f9fdd0902821bb6a884
+  timeframe: 1h
+  protocol_run_id: 20261025T100053Z_c6c2536c
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: -0.07141891306652401
+    n_daily_returns: 610
+    skew: -0.6330032425262202
+    kurtosis: 9.024892507176535
+- trial_id: run_101:asset_linkusdt
+  source: backtest
+  sharpe: -2.0085
+  expectancy_bps: -0.9383
+  n_trades: 5651
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: b45d1013d9eabd228bdf3e1eb80917ef5c8651bdb64f72dcdd645f1fc1702b18
+  symbols:
+  - LINKUSD
+  fold: A
+  structure_hash: 05c14345bce18192399284e94b0b0beb01a758f99bbe9f9fdd0902821bb6a884
+  timeframe: 1h
+  protocol_run_id: 20261025T100433Z_c6c2536c
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: -0.10699628619628197
+    n_daily_returns: 730
+    skew: -1.2481697920898995
+    kurtosis: 6.699177121284352
+- trial_id: run_101:base
+  source: backtest
+  sharpe: -2.1565
+  expectancy_bps: -1.2926
+  n_trades: 5002
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: b45d1013d9eabd228bdf3e1eb80917ef5c8651bdb64f72dcdd645f1fc1702b18
+  symbols:
+  - BTCUSD
+  fold: A
+  structure_hash: 05c14345bce18192399284e94b0b0beb01a758f99bbe9f9fdd0902821bb6a884
+  timeframe: 1h
+  protocol_run_id: 20261025T100859Z_c6c2536c
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: -0.1115648813552211
+    n_daily_returns: 730
+    skew: -1.601141469979398
+    kurtosis: 8.542582956966678
+- trial_id: run_101:design_stretch_sma48
+  source: backtest
+  sharpe: -1.58
+  expectancy_bps: -1.1
+  n_trades: 3349
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: dd24912a43d7f9de4b30f9729a9c5b6a13a602e49de9d6ac71638b4be7a0d5be
+  symbols:
+  - BTCUSD
+  fold: A
+  structure_hash: 05c14345bce18192399284e94b0b0beb01a758f99bbe9f9fdd0902821bb6a884
+  timeframe: 1h
+  protocol_run_id: 20261025T101329Z_374a71f0
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: -0.07429283877937816
+    n_daily_returns: 730
+    skew: -1.687824263359106
+    kurtosis: 9.401519952358061
+- trial_id: run_102:asset_ltc_altcoin_l1
+  source: backtest
+  sharpe: -0.0185
+  expectancy_bps: -0.2567
+  n_trades: 2432
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: b0adcce3649ed9d17db07da9f572a7bdb298f7baa3bc22fe8b2fde61e3d92ea3
+  symbols:
+  - LTCUSD
+  fold: B
+  structure_hash: 05c14345bce18192399284e94b0b0beb01a758f99bbe9f9fdd0902821bb6a884
+  timeframe: 1h
+  protocol_run_id: 20261026T200802Z_589e60b9
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: -0.008384679458565093
+    n_daily_returns: 730
+    skew: 0.12623591158647368
+    kurtosis: 10.869897490635708
+- trial_id: run_102:asset_xrp_payment
+  source: backtest
+  sharpe: 1.1605
+  expectancy_bps: 0.4107
+  n_trades: 2376
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: b0adcce3649ed9d17db07da9f572a7bdb298f7baa3bc22fe8b2fde61e3d92ea3
+  symbols:
+  - XRPUSD
+  fold: B
+  structure_hash: 05c14345bce18192399284e94b0b0beb01a758f99bbe9f9fdd0902821bb6a884
+  timeframe: 1h
+  protocol_run_id: 20261026T201247Z_589e60b9
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.01275873737960075
+    n_daily_returns: 730
+    skew: 0.7827742817497401
+    kurtosis: 15.569855656581035
+- trial_id: run_102:base
+  source: backtest
+  sharpe: -0.5675
+  expectancy_bps: -0.7164
+  n_trades: 2374
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: b0adcce3649ed9d17db07da9f572a7bdb298f7baa3bc22fe8b2fde61e3d92ea3
+  symbols:
+  - BTCUSD
+  fold: B
+  structure_hash: 05c14345bce18192399284e94b0b0beb01a758f99bbe9f9fdd0902821bb6a884
+  timeframe: 1h
+  protocol_run_id: 20261026T201710Z_589e60b9
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: -0.017646397060936767
+    n_daily_returns: 730
+    skew: 5.1150158231480285
+    kurtosis: 106.07536267528172
+- trial_id: run_102:split_stretch_weight
+  source: backtest
+  sharpe: -0.059
+  expectancy_bps: 0.3386
+  n_trades: 1797
+  statistic_valid: sharpe
+  below_floor_pct: 0.0
+  forecast_hash: 727c1260204c33260bb05156377b56ff01b2c4eff1646e14413fbcd7cbea7578
+  symbols:
+  - BTCUSD
+  fold: B
+  structure_hash: 05c14345bce18192399284e94b0b0beb01a758f99bbe9f9fdd0902821bb6a884
+  timeframe: 1h
+  protocol_run_id: 20261026T202130Z_fe0091e5
+  whole_test:
+    basis: whole_test_daily_equal_weight_v2
+    status: ok
+    reason: null
+    sr_daily: 0.004287931986576305
+    n_daily_returns: 730
+    skew: 6.322919949749405
+    kurtosis: 117.27653964676075

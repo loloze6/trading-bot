@@ -1,6 +1,6 @@
 # Campaign summary
 
-_Regenerated: 2026-10-18T20:11:34Z_
+_Regenerated: 2026-10-28T06:31:16Z_
 
 ## Queue
 
@@ -68,13 +68,27 @@ _Regenerated: 2026-10-18T20:11:34Z_
 | forecast_power-run_095-1 | done | run_096 | refuted |
 | trade_efficiency-run_095-1 | superseded | - | - |
 | rebase_run_095_standardised_host | done | run_097 | refuted |
-| trade_efficiency-run_075-1 | blocked_on_operator_approval | - | - |
+| trade_efficiency-run_075-1 | superseded | - | - |
+| trade_efficiency-run_097-1 | superseded | - | - |
+| daily_breadth_fold_b | done | run_098 | refuted |
+| E068_hourly_shock_reversal_kraken_perp__more_4 | superseded | - | - |
+| daily_breadth_fold_a__more_1 | superseded | - | - |
+| daily_breadth_fold_b__more_1 | superseded | - | - |
+| rebase_run_095_standardised_host__more_1 | blocked_on_operator_approval | - | - |
+| child_run_098_long_only_fold_b ([obsolete] Child of run_098: long-only Donchian 250 position, vol-targeted, BTC, fold B) | done | run_099 | refuted |
+| sma_trend_1h_fold_a | done | run_100 | refuted |
+| sma_trend_1h_fold_a__more_1 | done | run_101 | refuted |
+| forecast_power-run_101-1 | superseded | - | - |
+| trade_efficiency-run_101-1 | done | run_102 | refuted |
+| trade_efficiency-run_102-1 | superseded | - | - |
+| forecast_power-run_102-2 | blocked_on_operator_approval | - | - |
 
 ## Awaiting operator approval (approve with --approve <id>)
 
 | id | origin | priority | brief |
 |---|---|---|---|
-| trade_efficiency-run_075-1 | reader | 999 | campaign_record/candidate_briefs/trade_efficiency-run_075-1.md |
+| rebase_run_095_standardised_host__more_1 | brief | 999 | briefs/rebase_run_095_standardised_host.md |
+| forecast_power-run_102-2 | reader | 999 | campaign_record/candidate_briefs/forecast_power-run_102-2.md |
 
 ## Closed briefs (reopen: RUNBOOK §3, completed_brief_exhausted)
 
@@ -84,48 +98,43 @@ _Regenerated: 2026-10-18T20:11:34Z_
 | C4_donchian_daily_trend | superseded by C4_donchian_daily_trend_kraken_perp (operator 2026-10-02, E-065) (closed before O-20; no rule recorded) |
 | C4_donchian_daily_trend_kraken_perp | empty-R2 streak: 5 consecutive R2 requests with no new card (C4_donchian_daily_trend_kraken_perp__more_1, C4_donchian_daily_trend_kraken_perp__more_2, C4_donchian_daily_trend_kraken_perp__more_3, C4_donchian_daily_trend_kraken_perp__more_4, C4_donchian_daily_trend_kraken_perp__more_5; limit 2) |
 | C4_vol_managed_trend_kraken_perp | step_1a_reported (closed before O-20; no rule recorded) |
+| E068_hourly_shock_reversal_kraken_perp | operator 2026-10-23: brief closed (superseded by a simpler 1h SMA brief); reopen by setting brief_status: open and brief_reopened_after: <last entry id> |
 | L1_daily_trend_basket_sma100_v2 | operator closure of lane 1 (D-128, 2026-10-14 ruling), not an automatic rule |
 | L1_daily_trend_basket_sma50_v2 | operator closure of lane 1 (D-128, 2026-10-14 ruling), not an automatic rule |
 | L1_daily_trend_basket_sma200_v2 | operator closure of lane 1 (D-128, 2026-10-14 ruling), not an automatic rule |
 | L1_daily_trend_basket_sma50_v3_rerun1 | operator closure of lane 1 (D-128, 2026-10-14 ruling), not an automatic rule |
 | L1_daily_trend_basket_sma200_v3_rerun2 | operator closure of lane 1 (D-128, 2026-10-14 ruling), not an automatic rule |
 | L1_daily_trend_basket_sma50_v3_rerun2 | operator closure of lane 1 (D-128, 2026-10-14 ruling), not an automatic rule |
+| daily_breadth_fold_a | operator direction 2026-10-22: the daily breadth family closed after run_099 (runs/run_099/artifacts/idea_status.yaml: refuted; pre-registered outcome C); reopen by setting brief_status: open and brief_reopened_after: <last entry id> |
+| daily_breadth_fold_b | operator direction 2026-10-22: the daily breadth family closed after run_099 (runs/run_099/artifacts/idea_status.yaml: refuted; pre-registered outcome C); reopen by setting brief_status: open and brief_reopened_after: <last entry id> |
 
 ## Claim tests (E-068, information only)
 
-- Runs with a usable claim test: 18
+- Runs with a usable claim test: 23
 - Runs without one: 5
   - criteria_refs_only: 2 (run_073, run_085)
   - exempt: 1 (run_072)
   - tests_none: 2 (run_094, run_095)
-- Claim tests measured after the backtests (effect sizes, measured, not proven): 37 test(s) in 8 run(s) (run_070, run_071, run_074, run_075, run_078, run_079, run_096, run_097); tests whose selector matched no bars: 0; runs not measured: 10
-
-## Readers skipped by a code rule (E-068 slice 5, no model call)
-
-- Reader calls skipped: 53 in 21 run(s)
-  - operator_refold: 20 (component_attribution in run_090, forecast_power in run_090, profitability in run_090, regime_power in run_090, trade_efficiency in run_090, component_attribution in run_091, forecast_power in run_091, profitability in run_091, regime_power in run_091, trade_efficiency in run_091, component_attribution in run_092, forecast_power in run_092, profitability in run_092, regime_power in run_092, trade_efficiency in run_092, component_attribution in run_093, forecast_power in run_093, profitability in run_093, regime_power in run_093, trade_efficiency in run_093)
-  - regime_detector_scaffolding: 10 (regime_power in run_071, regime_power in run_073, regime_power in run_074, regime_power in run_081, regime_power in run_082, regime_power in run_083, regime_power in run_084, regime_power in run_085, regime_power in run_088, regime_power in run_089)
-  - replaced_by_analyst: 21 (component_attribution in run_075, profitability in run_075, regime_power in run_075, component_attribution in run_078, profitability in run_078, regime_power in run_078, component_attribution in run_079, profitability in run_079, regime_power in run_079, component_attribution in run_094, profitability in run_094, regime_power in run_094, component_attribution in run_095, profitability in run_095, regime_power in run_095, component_attribution in run_096, profitability in run_096, regime_power in run_096, component_attribution in run_097, profitability in run_097, regime_power in run_097)
-  - single_component: 2 (component_attribution in run_073, component_attribution in run_074)
+- Claim tests measured after the backtests (effect sizes, measured, not proven): 70 test(s) in 13 run(s) (run_070, run_071, run_074, run_075, run_078, run_079, run_096, run_097, run_098, run_099, run_100, run_101, run_102); tests whose selector matched no bars: 1; runs not measured: 10
 
 ## Claims measured on a child run's fold (E-077; a noise rule, not proof)
 
-- Claims measured: 4. Confirmed = the pooled sign holds at every horizon and the claimed sign holds in all but one window (at least 4 windows): a noise rule, about an 11% chance per fold under a symmetric null; no cost is compared.
+- Claims measured: 5. Confirmed = the pooled sign holds at every horizon and the claimed sign holds in all but one of the fold's windows (an empty window counts against): a noise rule, about an 11% chance per fold under a symmetric null; no cost is compared.
 - Confirmed: 3 (fold B 2, fold C 1)
-- Not confirmed: 0
+- Not confirmed: 1 (fold B 1)
 - Not measurable: 0
 - Not comparable: 1 (fold D 1)
   - fold windows 2018-01[2018-01-01..2018-04-30],2018-09[2018-09-01..2018-12-31],2019-05[2019-05-01..2019-08-31],2020-01[2020-01-01..2020-04-30],2020-09[2020-09-01..2020-12-31],2021-05[2021-05-01..2021-08-31]: 1 look(s), 1 comparison(s)
-  - fold windows 2018-05[2018-05-01..2018-08-31],2019-01[2019-01-01..2019-04-30],2019-09[2019-09-01..2019-12-31],2020-05[2020-05-01..2020-08-31],2021-01[2021-01-01..2021-04-30],2021-09[2021-09-01..2021-12-31]: 2 look(s), 4 comparison(s)
+  - fold windows 2018-05[2018-05-01..2018-08-31],2019-01[2019-01-01..2019-04-30],2019-09[2019-09-01..2019-12-31],2020-05[2020-05-01..2020-08-31],2021-01[2021-01-01..2021-04-30],2021-09[2021-09-01..2021-12-31]: 3 look(s), 6 comparison(s)
 
 ## Requests
 
 Open = every row: none of these files records a closed request. Newest last.
 
-- `component_requests.yaml`: 24 open
-  - run_095 (strategy_config_authoring): deviation: Engine has no position or lot state available to the config.
-  - run_095 (strategy_config_authoring): deviation: Engine has no exit, stop or time-hold key.
-  - run_095 (strategy_config_authoring): deviation: A lot-level trade_net_return slot with an entry_forecast se...
+- `component_requests.yaml`: 29 open
+  - run_098 (strategy_config_authoring): deviation: A one-bar execution delay. The config has no key or op that...
+  - run_100 (strategy_config_authoring): deviation: Simple moving averages of close at 50 and 200 bars. The cat...
+  - run_101 (strategy_config_authoring): deviation: a 720-bar standard-deviation scale (standardise windows are...
 - `test_requests.yaml`: 6 open
   - run_071 (specialist_readers): outcome measuring whipsaw_cycles: count of entry/exit/re-entry sequences with...
   - run_094 (hypothesis_generation): Event selector on overnight gap magnitude and direction (not available in ...
@@ -143,13 +152,13 @@ Open = every row: none of these files records a closed request. Newest last.
 
 ## Scoreboard
 
-- Trials recorded (campaign_state.trial_sharpes): 74
+- Trials recorded (campaign_state.trial_sharpes): 92
   - kill_no_ic: 8
   - no_signal_artifact: 2
   - proceed_to_backtest: 1
-  - recorded: 62
+  - recorded: 80
   - refine_inverted_ic: 1
 - Distinct failed hypothesis families: 9
-- Knowledge-base findings on file: 43
-- Total campaign runs so far: 55
-- Estimated spend: $62.82 (26,078,970 weighted token units, see config/campaign_config.yaml orchestrator.token_budget_per_run_weighted_units)
+- Knowledge-base findings on file: 48
+- Total campaign runs so far: 60
+- Estimated spend: $95.40 (32,202,715 weighted token units, see config/campaign_config.yaml orchestrator.token_budget_per_run_weighted_units)

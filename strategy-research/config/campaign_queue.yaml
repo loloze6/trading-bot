@@ -256,6 +256,7 @@ queue:
   - run_057
   outcome: ungated_er_gate_variant_too_sparse_to_evaluate
   verdict_status: ungated
+  title: '[obsolete] P4_ts_trend'
 - id: XS_momentum
   brief_path: briefs/research_brief_XS_momentum.md
   status: done
@@ -310,6 +311,7 @@ queue:
     the four C7-EXT preconditions. Full record: KB xs_momentum_cost_surviving_but_decaying.
 
     '
+  title: '[obsolete] Research brief: XS-momentum — cross-sectional momentum'
 - id: H-041-C-v2
   brief_path: briefs/H-041-C-v2.md
   status: done
@@ -338,6 +340,7 @@ queue:
   - run_058
   outcome: stage_discretion_rejection_no_gated_verdict
   verdict_status: stage_discretion
+  title: '[obsolete] H-041-C-v2'
 - id: FUNDING_MR_DAILY_RETEST
   brief_path: briefs/FUNDING_MR_DAILY_RETEST.md
   status: done
@@ -353,6 +356,7 @@ queue:
   outcome: completed_rejected
   verdict_status: gated
   pass_rule_evaluation_ref: runs/run_059/artifacts/pass_rule_evaluation.yaml
+  title: '[obsolete] FUNDING_MR_DAILY_RETEST'
 - id: FUNDING_MR_4H_RETEST
   brief_path: briefs/FUNDING_MR_4H_RETEST.md
   status: done
@@ -416,3 +420,955 @@ queue:
   - run_060
   outcome: ungated_prescreen_kill_no_ic_before_windows
   verdict_status: ungated
+  title: '[obsolete] FUNDING_MR_4H_RETEST - the last named branch'
+- id: C4_vol_managed_trend
+  brief_path: briefs/C4_vol_managed_trend.md
+  status: done
+  priority: 1
+  source: operator_ratified
+  relation: new_registration
+  notes: 'C4 first new-pipeline brief (D-050). Brief REOPENED by the operator 2026-10-01:
+    run_062 had reported it exhausted (brief_status_reason step_1a_reported) on grounds
+    removed that day -- the withdrawn KB bans (D-055), the deleted no-regime-gating
+    rule (D-052) and pre-backtest judgement (O-3). CLOSED 2026-10-02 (operator): run_061
+    stopped -- its base config made 0 trades from a units bug (O-10), trial run_061:base
+    invalidated; the card is relaunched as C4_vol_managed_trend__h1. brief_status
+    stays open. CLOSED 2026-10-02 (operator, Linear CUL-375 / epic E-065): superseded
+    by the Kraken-perp brief C4_vol_managed_trend_kraken_perp. This brief''s venue
+    never reached its backtests (O-12, fixed by D-057), so its trials ran on Binance
+    spot data and costs; they stay counted.'
+  run_ids:
+  - run_061
+  brief_status: exhausted
+  brief_status_reason: superseded by C4_vol_managed_trend_kraken_perp (operator 2026-10-02,
+    E-065)
+- id: C4_vol_managed_trend__more_1
+  brief_path: briefs/C4_vol_managed_trend.md
+  status: done
+  priority: 999
+  source: agent
+  notes: 'R2 after run_061: ask step 1a for more hypotheses on open brief C4_vol_managed_trend
+    (see decision_ref)'
+  run_ids:
+  - run_062
+  origin: brief
+  decision_ref: runs/run_061/artifacts/parked/park_1/decision_record.yaml
+  outcome: completed_brief_exhausted
+- id: C4_donchian_daily_trend
+  brief_path: briefs/C4_donchian_daily_trend.md
+  status: superseded
+  priority: 2
+  source: operator_ratified
+  relation: new_registration
+  notes: 'C4 second new-pipeline brief (operator: option 3, new brief) CLOSED 2026-10-02
+    (operator, Linear CUL-375 / epic E-065): superseded by the Kraken-perp brief C4_donchian_daily_trend_kraken_perp.
+    This brief''s venue never reached its backtests (O-12, fixed by D-057), so its
+    trials ran on Binance spot data and costs; they stay counted.'
+  run_ids:
+  - run_063
+  brief_status: exhausted
+  brief_status_reason: superseded by C4_donchian_daily_trend_kraken_perp (operator
+    2026-10-02, E-065)
+- id: C4_donchian_daily_trend__more_1
+  brief_path: briefs/C4_donchian_daily_trend.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'R2 after run_063: ask step 1a for more hypotheses on open brief C4_donchian_daily_trend
+    (see decision_ref) CLOSED 2026-10-02 (operator, Linear CUL-375 / epic E-065):
+    superseded by the Kraken-perp brief C4_donchian_daily_trend_kraken_perp. This
+    brief''s venue never reached its backtests (O-12, fixed by D-057), so its trials
+    ran on Binance spot data and costs; they stay counted.'
+  run_ids: []
+  origin: brief
+  decision_ref: runs/run_063/artifacts/parked/park_1/decision_record.yaml
+- id: C4_vol_managed_trend__h1
+  brief_path: briefs/C4_vol_managed_trend.md
+  status: superseded
+  priority: 1
+  source: operator_ratified
+  notes: 'Relaunch of C4_vol_managed_trend''s card (run_061) past step 1a, operator
+    2026-10-02: run_061''s base config made 0 trades from a units bug (vol_adjusted
+    on a percent forecast, O-10); its trial was invalidated. A new run id keeps the
+    new trials counted (the trial recorder skips a repeated trial_id). Runs with orchestrator.forecast_size_probe
+    on (D-056). CLOSED 2026-10-02 (operator, Linear CUL-375 / epic E-065): superseded
+    by the Kraken-perp brief C4_vol_managed_trend_kraken_perp. This brief''s venue
+    never reached its backtests (O-12, fixed by D-057), so its trials ran on Binance
+    spot data and costs; they stay counted.'
+  run_ids:
+  - run_064
+  origin: brief
+  card_ref: campaign_record/queued_cards/run_061/hypothesis_card_relaunch.yaml
+- id: C4_donchian_daily_trend_kraken_perp
+  brief_path: briefs/C4_donchian_daily_trend_kraken_perp.md
+  status: done
+  priority: 1
+  source: operator_ratified
+  relation: new_registration
+  notes: 'C4 end-to-end workflow run on Kraken perp (E-065, CUL-375/376): Donchian
+    1d, 2022-2023, six 4-month windows. Supersedes C4_donchian_daily_trend. Not an
+    edge test.'
+  run_ids:
+  - run_065
+  brief_status: exhausted
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_065/artifacts/idea_status.yaml
+  brief_status_reason: no_new_hypothesis
+  brief_status_rule: 'empty-R2 streak: 5 consecutive R2 requests with no new card
+    (C4_donchian_daily_trend_kraken_perp__more_1, C4_donchian_daily_trend_kraken_perp__more_2,
+    C4_donchian_daily_trend_kraken_perp__more_3, C4_donchian_daily_trend_kraken_perp__more_4,
+    C4_donchian_daily_trend_kraken_perp__more_5; limit 2)'
+- id: C4_vol_managed_trend_kraken_perp
+  brief_path: briefs/C4_vol_managed_trend_kraken_perp.md
+  status: done
+  priority: 2
+  source: operator_ratified
+  relation: new_registration
+  notes: 'C4 end-to-end workflow run on Kraken perp (E-065, CUL-375/376): vol-managed
+    trend 1h, 2022-2023, six 4-month windows. Supersedes C4_vol_managed_trend. Not
+    an edge test. Blocked until CUL-374 (one missing hourly bar per coin would pause
+    the data gate). Unblocked 2026-10-02: CUL-374 merged (#305). RE-OPENED 2026-10-04
+    (operator): brief_status exhausted -> open. run_067 step 1a said exhausted (step_1a_reported)
+    after three earlier calls on the same inputs each proposed a different new idea;
+    one more request tests whether exhaustion is stable (O-20, test B).'
+  run_ids:
+  - run_066
+  brief_status: exhausted
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_066/artifacts/idea_status.yaml
+  brief_status_reason: step_1a_reported
+- id: C4_donchian_daily_trend_kraken_perp__more_1
+  brief_path: briefs/C4_donchian_daily_trend_kraken_perp.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'R2 after run_066: ask step 1a for more hypotheses on open brief C4_donchian_daily_trend_kraken_perp
+    (see decision_ref) HELD 2026-10-02 (operator): no more runs until E-068 redesigns
+    what an idea is and rebuilds the readers. CONVERTED 2026-10-05 (operator): blocked_on_e068
+    -> blocked_on_operator_approval (approval mode on in c4/flag-set); still held
+    until `run_campaign.py --approve`.'
+  run_ids: []
+  origin: brief
+  decision_ref: runs/run_066/artifacts/decision_record.yaml
+- id: C4_vol_managed_trend_kraken_perp__more_1
+  brief_path: briefs/C4_vol_managed_trend_kraken_perp.md
+  status: done
+  priority: 999
+  source: agent
+  notes: 'R2 after run_066: ask step 1a for more hypotheses on open brief C4_vol_managed_trend_kraken_perp
+    (see decision_ref) HELD 2026-10-02 (operator): no more runs until E-068 redesigns
+    what an idea is and rebuilds the readers. UNBLOCKED 2026-10-04 (operator) for
+    the E-068 validation run, claim_tests on.'
+  run_ids:
+  - run_067
+  origin: brief
+  decision_ref: runs/run_066/artifacts/decision_record.yaml
+  outcome: completed_brief_exhausted
+- id: C4_vol_managed_trend_kraken_perp__more_2
+  brief_path: briefs/C4_vol_managed_trend_kraken_perp.md
+  status: done
+  priority: 999
+  source: operator_ratified
+  notes: 'Added by hand 2026-10-04 (operator, test B of O-20): run_067 step 1a declared
+    this brief exhausted after three earlier calls on the same inputs had each proposed
+    a different new idea. One more R2 request, same inputs, claim_tests on, to see
+    whether exhaustion is stable. E-068 validation run.'
+  run_ids:
+  - run_069
+  origin: brief
+  decision_ref: runs/run_067/artifacts/decision_record.yaml
+  outcome: completed_brief_exhausted
+- id: C4_donchian_daily_trend_kraken_perp__more_2
+  brief_path: briefs/C4_donchian_daily_trend_kraken_perp.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'R2 after run_067: ask step 1a for more hypotheses on open brief C4_donchian_daily_trend_kraken_perp
+    (see decision_ref) HELD 2026-10-04 (operator): queued despite the hold on __more_1
+    (O-20, decide_next.r2_request_yielded counts blocked_on_* as yielded); its run_068
+    was launched by an unpaced --resume and killed during step 1a. CONVERTED 2026-10-05
+    (operator): blocked_on_e068 -> blocked_on_operator_approval (approval mode on
+    in c4/flag-set); still held until `run_campaign.py --approve`.'
+  run_ids:
+  - run_068
+  origin: brief
+  decision_ref: runs/run_067/artifacts/decision_record.yaml
+- id: C4_donchian_daily_trend_kraken_perp__more_3
+  brief_path: briefs/C4_donchian_daily_trend_kraken_perp.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'R2 after run_069: ask step 1a for more hypotheses on open brief C4_donchian_daily_trend_kraken_perp
+    (see decision_ref) HELD 2026-10-04 (operator hold on this brief, O-20): queued
+    again despite the holds on __more_1/__more_2; not launched (--once). CONVERTED
+    2026-10-05 (operator): blocked_on_e068 -> blocked_on_operator_approval (approval
+    mode on in c4/flag-set); still held until `run_campaign.py --approve`.'
+  run_ids: []
+  origin: brief
+  decision_ref: runs/run_069/artifacts/decision_record.yaml
+- id: E068_hourly_shock_reversal_kraken_perp
+  brief_path: briefs/E068_hourly_shock_reversal_kraken_perp.md
+  status: done
+  priority: 1
+  source: operator_ratified
+  relation: new_registration
+  notes: 'E-068 validation run (operator 2026-10-04): short-horizon hourly claim,
+    claim_tests on; test A after O-20 test B'
+  run_ids:
+  - run_070
+  brief_status: exhausted
+  brief_status_reason: 'superseded 2026-10-23 (operator): brief replaced by a simpler
+    1h SMA brief; three refutations on costs (run_070, run_071, run_075, cost drag
+    over 100 percent per window); the brief predates D-149, D-166, D-176 and the 2026-10-21
+    working rules'
+  brief_status_rule: 'operator 2026-10-23: brief closed (superseded by a simpler 1h
+    SMA brief); reopen by setting brief_status: open and brief_reopened_after: <last
+    entry id>'
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_070/artifacts/idea_status.yaml
+- id: C4_donchian_daily_trend_kraken_perp__more_4
+  brief_path: briefs/C4_donchian_daily_trend_kraken_perp.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'R2 after run_070: ask step 1a for more hypotheses on open brief C4_donchian_daily_trend_kraken_perp
+    (see decision_ref) HELD 2026-10-04 (operator hold on this brief, CUL-398). CONVERTED
+    2026-10-05 (operator): blocked_on_e068 -> blocked_on_operator_approval (approval
+    mode on in c4/flag-set); still held until `run_campaign.py --approve`.'
+  run_ids: []
+  origin: brief
+  decision_ref: runs/run_070/artifacts/parked/park_1/decision_record.yaml
+- id: E068_hourly_shock_reversal_kraken_perp__more_1
+  brief_path: briefs/E068_hourly_shock_reversal_kraken_perp.md
+  status: done
+  priority: 999
+  source: agent
+  notes: 'R2 after run_070: ask step 1a for more hypotheses on open brief E068_hourly_shock_reversal_kraken_perp
+    (see decision_ref) HELD 2026-10-04 (operator): not approved; the E-068 validation
+    runs run_070 only. CONVERTED 2026-10-05 (operator): blocked_on_e068 -> blocked_on_operator_approval
+    (approval mode on in c4/flag-set); still held until `run_campaign.py --approve`.'
+  run_ids:
+  - run_071
+  origin: brief
+  decision_ref: runs/run_070/artifacts/parked/park_1/decision_record.yaml
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_071/artifacts/idea_status.yaml
+- id: C4_donchian_daily_trend_kraken_perp__more_5
+  brief_path: briefs/C4_donchian_daily_trend_kraken_perp.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'R2 after run_070: ask step 1a for more hypotheses on open brief C4_donchian_daily_trend_kraken_perp
+    (see decision_ref) HELD 2026-10-04 (operator hold on this brief, CUL-398). CONVERTED
+    2026-10-05 (operator): blocked_on_e068 -> blocked_on_operator_approval (approval
+    mode on in c4/flag-set); still held until `run_campaign.py --approve`.'
+  run_ids: []
+  origin: brief
+  decision_ref: runs/run_070/artifacts/parked/park_2/decision_record.yaml
+- id: E068_hourly_shock_reversal_kraken_perp__more_2
+  brief_path: briefs/E068_hourly_shock_reversal_kraken_perp.md
+  status: done
+  priority: 999
+  source: agent
+  notes: 'R2 after run_070: ask step 1a for more hypotheses on open brief E068_hourly_shock_reversal_kraken_perp
+    (see decision_ref) HELD 2026-10-04 (operator): not approved (CUL-398). CONVERTED
+    2026-10-05 (operator): blocked_on_e068 -> blocked_on_operator_approval (approval
+    mode on in c4/flag-set); still held until `run_campaign.py --approve`.'
+  run_ids:
+  - run_075
+  origin: brief
+  decision_ref: runs/run_070/artifacts/parked/park_2/decision_record.yaml
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_075/artifacts/idea_status.yaml
+- id: trade_efficiency-run_070-1
+  brief_path: campaign_record/candidate_briefs/trade_efficiency-run_070-1.md
+  status: done
+  priority: 999
+  source: agent
+  notes: 'decide_next after run_070: patch from runs/run_070/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_070-1
+    (rank 1; see decision_ref) HELD 2026-10-04 (operator): the E-068 validation runs
+    run_070 only; not approved. CONVERTED 2026-10-05 (operator): blocked_on_e068 ->
+    blocked_on_operator_approval (approval mode on in c4/flag-set); still held until
+    `run_campaign.py --approve`. RELAUNCHED FRESH 2026-10-05 (operator): run_072 failed
+    before any backtest (pass-through manifest check, CUL-405, fixed in PR #332);
+    run_ids cleared so the scheduler starts a new run with the fixed code (CUL-405/406)
+    instead of continuing run_072; run_072 kept as a record (runs/run_072/ORPHANED_README.md).'
+  run_ids:
+  - run_073
+  origin: reader
+  proposal_ref: runs/run_070/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_070-1
+  decision_ref: runs/run_070/artifacts/decision_record.yaml
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_073/artifacts/idea_status.yaml
+- id: profitability-run_073-1
+  brief_path: campaign_record/candidate_briefs/profitability-run_073-1.md
+  status: done
+  priority: 999
+  source: agent
+  notes: 'decide_next after run_073: side_finding from runs/run_073/artifacts/proposals/profitability.yaml#profitability-run_073-1
+    (rank 1; see decision_ref)'
+  run_ids:
+  - run_074
+  origin: reader
+  proposal_ref: runs/run_073/artifacts/proposals/profitability.yaml#profitability-run_073-1
+  decision_ref: runs/run_073/artifacts/decision_record.yaml
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_074/artifacts/idea_status.yaml
+- id: component_attribution-run_071-1
+  brief_path: campaign_record/candidate_briefs/component_attribution-run_071-1.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'decide_next after run_071: side_finding from runs/run_071/artifacts/proposals/component_attribution.yaml#component_attribution-run_071-1
+    (rank 1; see decision_ref) REJECTED 2026-10-18 (operator): D-149: parent host
+    not standardised; re-base run registered as rebase_run_095_standardised_host'
+  run_ids: []
+  origin: reader
+  proposal_ref: runs/run_071/artifacts/proposals/component_attribution.yaml#component_attribution-run_071-1
+  decision_ref: runs/run_071/artifacts/decision_record.yaml
+- id: trade_efficiency-run_073-1
+  brief_path: campaign_record/candidate_briefs/trade_efficiency-run_073-1.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'decide_next after run_074: side_finding from runs/run_073/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_073-1
+    (rank 1; see decision_ref) SUPERSEDED 2026-10-07 (operator): an old-format patch
+    idea -- PR #336 (D-078) removed the stand-alone reader patch; not run.'
+  run_ids: []
+  origin: reader
+  proposal_ref: runs/run_073/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_073-1
+  decision_ref: runs/run_074/artifacts/decision_record.yaml
+- id: trade_efficiency-run_071-1
+  brief_path: campaign_record/candidate_briefs/trade_efficiency-run_071-1.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'decide_next after run_075: side_finding from runs/run_071/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_071-1
+    (rank 1; see decision_ref) REJECTED 2026-10-18 (operator): D-149: parent host
+    not standardised; re-base run registered as rebase_run_095_standardised_host'
+  run_ids: []
+  origin: reader
+  proposal_ref: runs/run_071/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_071-1
+  decision_ref: runs/run_075/artifacts/decision_record.yaml
+- id: trade_efficiency-run_071-3
+  brief_path: campaign_record/candidate_briefs/trade_efficiency-run_071-3.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'decide_next after run_075: side_finding from runs/run_071/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_071-3
+    (rank 1; see decision_ref)'
+  run_ids:
+  - run_076
+  origin: reader
+  proposal_ref: runs/run_071/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_071-3
+  decision_ref: runs/run_075/artifacts/decision_record_2.yaml
+- id: trade_efficiency-run_071-4
+  brief_path: campaign_record/candidate_briefs/trade_efficiency-run_071-4.md
+  status: done
+  priority: 999
+  source: agent
+  notes: 'decide_next after run_075: side_finding from runs/run_071/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_071-4
+    (rank 1; see decision_ref) RELAUNCHED 2026-10-10 (operator, --relaunch): run_077
+    ended ''paused:unhandled_exception''; run_ids cleared so the scheduler starts
+    a fresh run; kept as a record (runs/run_077/ORPHANED_README.md).'
+  run_ids:
+  - run_078
+  origin: reader
+  proposal_ref: runs/run_071/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_071-4
+  decision_ref: runs/run_075/artifacts/decision_record_3.yaml
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_078/artifacts/idea_status.yaml
+- id: trade_efficiency-run_078-1
+  brief_path: campaign_record/candidate_briefs/trade_efficiency-run_078-1.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'decide_next after run_078: side_finding from runs/run_078/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_078-1
+    (rank 1; see decision_ref) REJECTED 2026-10-18 (operator): D-149: parent host
+    not standardised; re-base run registered as rebase_run_095_standardised_host'
+  run_ids: []
+  origin: reader
+  proposal_ref: runs/run_078/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_078-1
+  decision_ref: runs/run_078/artifacts/decision_record.yaml
+- id: trade_efficiency-run_066-2
+  brief_path: campaign_record/candidate_briefs/trade_efficiency-run_066-2.md
+  status: done
+  priority: 999
+  source: agent
+  notes: 'decide_next after run_078: side_finding from runs/run_066/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_066-2
+    (rank 1; see decision_ref)'
+  run_ids:
+  - run_079
+  origin: reader
+  proposal_ref: runs/run_066/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_066-2
+  decision_ref: runs/run_078/artifacts/decision_record_2.yaml
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_079/artifacts/idea_status.yaml
+- id: trade_efficiency-run_079-1
+  brief_path: campaign_record/candidate_briefs/trade_efficiency-run_079-1.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'decide_next after run_079: side_finding from runs/run_079/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_079-1
+    (rank 1; see decision_ref) REJECTED 2026-10-18 (operator): D-149: parent host
+    not standardised; re-base run registered as rebase_run_095_standardised_host'
+  run_ids: []
+  origin: reader
+  proposal_ref: runs/run_079/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_079-1
+  decision_ref: runs/run_079/artifacts/decision_record.yaml
+- id: L1_daily_trend_basket_sma100
+  brief_path: briefs/L1_daily_trend_basket_sma100.md
+  status: superseded
+  priority: 1
+  source: operator_ratified
+  relation: new_registration
+  notes: 'VOID 2026-10-11 (operator): run_080 stopped at innovation_expansion before
+    any backtest (no trial row): 1b replaced the brief''s on/off component (D-051)
+    and dropped vol_target (not in the design guide''s op list). Superseded by the
+    _v2 briefs (D-103). Was: Lane 1 (D-102): daily SMA(100) trend, vol_target, 9-coin
+    Kraken basket, fold A; pre-registered continue rule in the brief'
+  run_ids:
+  - run_080
+  brief_status: open
+- id: L1_daily_trend_basket_sma50
+  brief_path: briefs/L1_daily_trend_basket_sma50.md
+  status: superseded
+  priority: 2
+  source: operator_ratified
+  relation: new_registration
+  notes: 'Superseded 2026-10-11 by the _v2 briefs (D-103) before any run: the brief''s
+    on/off component breaks D-051. Was: Lane 1 (D-102): daily SMA(50) trend, vol_target,
+    9-coin Kraken basket, fold A; pre-registered continue rule in the brief'
+  run_ids: []
+  brief_status: open
+- id: L1_daily_trend_basket_sma200
+  brief_path: briefs/L1_daily_trend_basket_sma200.md
+  status: superseded
+  priority: 3
+  source: operator_ratified
+  relation: new_registration
+  notes: 'Superseded 2026-10-11 by the _v2 briefs (D-103) before any run: the brief''s
+    on/off component breaks D-051. Was: Lane 1 (D-102): daily SMA(200) trend, vol_target,
+    9-coin Kraken basket, fold A; pre-registered continue rule in the brief'
+  run_ids: []
+  brief_status: open
+- id: L1_daily_trend_basket_sma100_v2
+  brief_path: briefs/L1_daily_trend_basket_sma100_v2.md
+  status: done
+  priority: 1
+  source: operator_ratified
+  relation: new_registration
+  notes: 'Lane 1 v2 (D-105): daily trend on distance from SMA(100), vol_target, 8-coin
+    Kraken basket, fold A; continue rule in the brief'
+  run_ids:
+  - run_081
+  brief_status: exhausted
+  brief_status_reason: lane 1 closed (D-128), operator 2026-10-15
+  brief_status_rule: operator closure of lane 1 (D-128, 2026-10-14 ruling), not an
+    automatic rule
+  outcome: inconclusive
+- id: L1_daily_trend_basket_sma50_v2
+  brief_path: briefs/L1_daily_trend_basket_sma50_v2.md
+  status: done
+  priority: 2
+  source: operator_ratified
+  relation: new_registration
+  notes: 'Lane 1 v2 (D-105): daily trend on distance from SMA(50), vol_target, 8-coin
+    Kraken basket, fold A; continue rule in the brief'
+  run_ids:
+  - run_082
+  brief_status: exhausted
+  brief_status_reason: lane 1 closed (D-128), operator 2026-10-15
+  brief_status_rule: operator closure of lane 1 (D-128, 2026-10-14 ruling), not an
+    automatic rule
+  outcome: inconclusive
+- id: L1_daily_trend_basket_sma200_v2
+  brief_path: briefs/L1_daily_trend_basket_sma200_v2.md
+  status: done
+  priority: 3
+  source: operator_ratified
+  relation: new_registration
+  notes: 'Lane 1 v2 (D-105): daily trend on distance from SMA(200), vol_target, 8-coin
+    Kraken basket, fold A; continue rule in the brief'
+  run_ids:
+  - run_083
+  brief_status: exhausted
+  brief_status_reason: lane 1 closed (D-128), operator 2026-10-15
+  brief_status_rule: operator closure of lane 1 (D-128, 2026-10-14 ruling), not an
+    automatic rule
+  outcome: validated
+  pass_rule_evaluation_ref: runs/run_083/artifacts/idea_status.yaml
+- id: forecast_power-run_078-1
+  brief_path: campaign_record/candidate_briefs/forecast_power-run_078-1.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'decide_next after run_083: side_finding from runs/run_078/artifacts/proposals/forecast_power.yaml#forecast_power-run_078-1
+    (rank 1; see decision_ref) REJECTED 2026-10-18 (operator): D-149: parent host
+    not standardised; re-base run registered as rebase_run_095_standardised_host'
+  run_ids: []
+  origin: reader
+  proposal_ref: runs/run_078/artifacts/proposals/forecast_power.yaml#forecast_power-run_078-1
+  decision_ref: runs/run_083/artifacts/decision_record.yaml
+- id: L1_daily_trend_basket_sma100_v3
+  brief_path: briefs/L1_daily_trend_basket_sma100_v3.md
+  status: done
+  priority: 1
+  source: operator_ratified
+  relation: new_registration
+  notes: 'Lane 1 v3 (D-108): v2 config, SMA(100), BTC/ETH/LTC, fold B; continue rule
+    in the brief'
+  run_ids:
+  - run_084
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_084/artifacts/idea_status.yaml
+  title: '[obsolete] Lane 1 v3 -- daily trend on the distance from SMA(100), vol-targeted,
+    3-coin Kraken basket, fold B (BASE run)'
+- id: L1_daily_trend_basket_sma50_v3
+  brief_path: briefs/L1_daily_trend_basket_sma50_v3.md
+  status: done
+  priority: 2
+  source: operator_ratified
+  relation: new_registration
+  notes: 'Lane 1 v3 (D-108): v2 config, SMA(50), BTC/ETH/LTC, fold B; continue rule
+    in the brief'
+  title: '[obsolete] Lane 1 v3 -- daily trend on the distance from SMA(50), vol-targeted,
+    3-coin Kraken basket, fold B (design run, shorter lookback)'
+  run_ids:
+  - run_085
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_085/artifacts/idea_status.yaml
+- id: L1_daily_trend_basket_sma200_v3
+  brief_path: briefs/L1_daily_trend_basket_sma200_v3.md
+  status: superseded
+  priority: 3
+  source: operator_ratified
+  relation: new_registration
+  notes: 'Lane 1 v3 (D-108): v2 config, SMA(200), BTC/ETH/LTC, fold B; continue rule
+    in the brief'
+  title: '[obsolete] Lane 1 v3 -- daily trend on the distance from SMA(200), vol-targeted,
+    3-coin Kraken basket, fold B (design run, longer lookback)'
+  run_ids:
+  - run_086
+- id: L1_daily_trend_basket_sma50_v3_rerun1
+  brief_path: briefs/L1_daily_trend_basket_sma50_v3.md
+  status: done
+  priority: 1
+  source: operator_ratified
+  relation: new_registration
+  notes: 'Lane 1 v3 (D-108) SMA 50 re-run: run_085 VOID by replay (D-109); the continue
+    rule reads this run'
+  run_ids:
+  - run_087
+  brief_status: exhausted
+  brief_status_reason: lane 1 closed (D-128), operator 2026-10-15
+  brief_status_rule: operator closure of lane 1 (D-128, 2026-10-14 ruling), not an
+    automatic rule
+  outcome: completed_brief_exhausted
+  brief_exhausted_answers:
+  - L1_daily_trend_basket_sma50_v3_rerun1
+- id: E068_hourly_shock_reversal_kraken_perp__more_3
+  brief_path: briefs/E068_hourly_shock_reversal_kraken_perp.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'R2 after run_087: ask step 1a for more hypotheses on open brief E068_hourly_shock_reversal_kraken_perp
+    (see decision_ref)'
+  run_ids: []
+  origin: brief
+  decision_ref: runs/run_087/artifacts/decision_record.yaml
+- id: L1_daily_trend_basket_sma100_v2__more_1
+  brief_path: briefs/L1_daily_trend_basket_sma100_v2.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'R2 after run_087: ask step 1a for more hypotheses on open brief L1_daily_trend_basket_sma100_v2
+    (see decision_ref)'
+  run_ids: []
+  origin: brief
+  decision_ref: runs/run_087/artifacts/decision_record.yaml
+- id: L1_daily_trend_basket_sma50_v3_rerun1__more_1
+  brief_path: briefs/L1_daily_trend_basket_sma50_v3.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'R2 after run_087: ask step 1a for more hypotheses on open brief L1_daily_trend_basket_sma50_v3_rerun1
+    (see decision_ref)'
+  run_ids: []
+  origin: brief
+  decision_ref: runs/run_087/artifacts/decision_record.yaml
+- id: L1_daily_trend_basket_sma50_v2__more_1
+  brief_path: briefs/L1_daily_trend_basket_sma50_v2.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'R2 after run_087: ask step 1a for more hypotheses on open brief L1_daily_trend_basket_sma50_v2
+    (see decision_ref)'
+  run_ids: []
+  origin: brief
+  decision_ref: runs/run_087/artifacts/decision_record.yaml
+- id: L1_daily_trend_basket_sma200_v2__more_1
+  brief_path: briefs/L1_daily_trend_basket_sma200_v2.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'R2 after run_087: ask step 1a for more hypotheses on open brief L1_daily_trend_basket_sma200_v2
+    (see decision_ref)'
+  run_ids: []
+  origin: brief
+  decision_ref: runs/run_087/artifacts/decision_record.yaml
+- id: L1_daily_trend_basket_sma200_v3_rerun2
+  brief_path: briefs/L1_daily_trend_basket_sma200_v3_rerun2.md
+  status: done
+  priority: 1
+  source: operator_ratified
+  relation: new_registration
+  notes: Lane 1 v3 SMA 200 re-run via the rerun2 copy (D-111); run_086 retired
+  run_ids:
+  - run_088
+  brief_status: exhausted
+  brief_status_reason: lane 1 closed (D-128), operator 2026-10-15
+  brief_status_rule: operator closure of lane 1 (D-128, 2026-10-14 ruling), not an
+    automatic rule
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_088/artifacts/idea_status.yaml
+- id: L1_daily_trend_basket_sma200_v3_rerun2__more_1
+  brief_path: briefs/L1_daily_trend_basket_sma200_v3_rerun2.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'R2 after run_088: ask step 1a for more hypotheses on open brief L1_daily_trend_basket_sma200_v3_rerun2
+    (see decision_ref)'
+  run_ids: []
+  origin: brief
+  decision_ref: runs/run_088/artifacts/decision_record.yaml
+- id: L1_daily_trend_basket_sma50_v3_rerun2
+  brief_path: briefs/L1_daily_trend_basket_sma50_v3_rerun2.md
+  status: done
+  priority: 1
+  source: operator_ratified
+  relation: new_registration
+  notes: Lane 1 v3 SMA 50 re-run via the rerun2 copy (D-108 amendment, CUL-433); run_085
+    VOID
+  run_ids:
+  - run_089
+  brief_status: exhausted
+  brief_status_reason: lane 1 closed (D-128), operator 2026-10-15
+  brief_status_rule: operator closure of lane 1 (D-128, 2026-10-14 ruling), not an
+    automatic rule
+  outcome: validated
+  pass_rule_evaluation_ref: runs/run_089/artifacts/idea_status.yaml
+- id: L1_daily_trend_basket_sma50_v3_rerun2__more_1
+  brief_path: briefs/L1_daily_trend_basket_sma50_v3_rerun2.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'R2 after run_089: ask step 1a for more hypotheses on open brief L1_daily_trend_basket_sma50_v3_rerun2
+    (see decision_ref)'
+  run_ids: []
+  origin: brief
+  decision_ref: runs/run_089/artifacts/decision_record.yaml
+- id: refold_run_089_fold_C
+  brief_path: briefs/refold_run_089_fold_C.md
+  status: done
+  priority: 0
+  source: operator_ratified
+  relation: new_registration
+  notes: Refold of run_089 on fold C (D-122), branch 3 only.
+  run_ids:
+  - run_090
+  outcome: completed_refold
+  title: '[obsolete] Refold: run_089 on fold C'
+- id: refold_run_089_fold_D
+  brief_path: briefs/refold_run_089_fold_D.md
+  status: done
+  priority: 0
+  source: operator_ratified
+  relation: new_registration
+  notes: Refold of run_089 on fold D (D-122), branch 3 only.
+  run_ids:
+  - run_091
+  outcome: completed_refold
+  title: '[obsolete] Refold: run_089 on fold D'
+- id: refold_run_084_fold_C
+  brief_path: briefs/refold_run_084_fold_C.md
+  status: done
+  priority: 0
+  source: operator_ratified
+  relation: new_registration
+  notes: Refold of run_084 on fold C (D-122), branch 3 only.
+  run_ids:
+  - run_092
+  outcome: completed_refold
+  title: '[obsolete] Refold: run_084 on fold C'
+- id: refold_run_088_fold_C
+  brief_path: briefs/refold_run_088_fold_C.md
+  status: done
+  priority: 0
+  source: operator_ratified
+  relation: new_registration
+  notes: Refold of run_088 on fold C (D-122), branch 3 only.
+  run_ids:
+  - run_093
+  outcome: completed_refold
+  title: '[obsolete] Refold: run_088 on fold C'
+- id: daily_breadth_fold_a
+  brief_path: briefs/daily_breadth_fold_a.md
+  status: done
+  priority: 1
+  source: operator_ratified
+  relation: new_registration
+  notes: daily breadth, fold A (D-130)
+  run_ids:
+  - run_094
+  brief_status: exhausted
+  brief_status_reason: family closed after run_099, outcome C (operator 2026-10-22)
+  brief_status_rule: 'operator direction 2026-10-22: the daily breadth family closed
+    after run_099 (runs/run_099/artifacts/idea_status.yaml: refuted; pre-registered
+    outcome C); reopen by setting brief_status: open and brief_reopened_after: <last
+    entry id>'
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_094/artifacts/idea_status.yaml
+- id: daily_breadth_fold_a__h2
+  brief_path: briefs/daily_breadth_fold_a.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: Extra hypothesis RSI_7_DAILY_MEAN_REVERSION_1D from run_094's step 1a (multi-card
+    brief; ranked by its 1a scores, see runs/run_094/artifacts/queued_hypotheses.yaml);
+    SUPERSEDED 2026-10-15 (operator), its card names the retired lot ratio (D-133)
+  run_ids: []
+  origin: brief
+  card_ref: campaign_record/queued_cards/run_094/hypothesis_card_3.yaml
+- id: forecast_power-run_094-1
+  brief_path: campaign_record/candidate_briefs/forecast_power-run_094-1.md
+  status: done
+  priority: 999
+  source: agent
+  notes: 'decide_next after run_094: side_finding from runs/run_094/artifacts/proposals/forecast_power.yaml#forecast_power-run_094-1
+    (rank 1; see decision_ref). ANALYST CHILD 1 OF 6 (kill rule), COUNTS: run, claim
+    not measured: pipeline defect (1a dropped the pre-registered tests); no re-run
+    (direction ruling 2026-10-15, Q2)'
+  run_ids:
+  - run_095
+  origin: reader
+  proposal_ref: runs/run_094/artifacts/proposals/forecast_power.yaml#forecast_power-run_094-1
+  decision_ref: runs/run_094/artifacts/decision_record.yaml
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_095/artifacts/idea_status.yaml
+- id: forecast_power-run_095-1
+  brief_path: campaign_record/candidate_briefs/forecast_power-run_095-1.md
+  status: done
+  priority: 999
+  source: agent
+  notes: 'decide_next after run_095: side_finding from runs/run_095/artifacts/proposals/forecast_power.yaml#forecast_power-run_095-1
+    (rank 1; see decision_ref). ANALYST CHILD 2 OF 6 (kill rule), COUNTS: run completed;
+    claim measured and confirmed on fold C (information only); whole-test Sharpe >
+    0 after costs on 3 of 4 host variants, total return < 0 on 2 of them (LTC -23%,
+    base -59%); no claim-built variant yet. Kill rule wording (operator 2026-10-17):
+    no claim-built variant with whole-test Sharpe after costs > 0 AND chained total
+    return > 0 on its fold'
+  run_ids:
+  - run_096
+  origin: reader
+  proposal_ref: runs/run_095/artifacts/proposals/forecast_power.yaml#forecast_power-run_095-1
+  decision_ref: runs/run_095/artifacts/decision_record.yaml
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_096/artifacts/idea_status.yaml
+- id: trade_efficiency-run_095-1
+  brief_path: campaign_record/candidate_briefs/trade_efficiency-run_095-1.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'decide_next after run_096: side_finding from runs/run_095/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_095-1
+    (rank 1; see decision_ref). SUPERSEDED 2026-10-17 (operator): empty vehicle (runs/run_095/artifacts/proposals/trade_efficiency.yaml:65-66);
+    approving it is a third unchanged re-run of run_095''s host with no new question;
+    superseded by the operator''s 2026-10-17 direction (a confirmed claim leads to
+    mechanism claims, not a re-run)'
+  run_ids: []
+  origin: reader
+  proposal_ref: runs/run_095/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_095-1
+  decision_ref: runs/run_096/artifacts/decision_record.yaml
+- id: rebase_run_095_standardised_host
+  brief_path: briefs/rebase_run_095_standardised_host.md
+  status: done
+  priority: 1
+  source: operator_ratified
+  relation: new_registration
+  notes: D-149 re-base of the run_095 host; new lineage; fold D as run_095
+  run_ids:
+  - run_097
+  brief_status: open
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_097/artifacts/idea_status.yaml
+- id: trade_efficiency-run_075-1
+  brief_path: campaign_record/candidate_briefs/trade_efficiency-run_075-1.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'decide_next after run_097: side_finding from runs/run_075/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_075-1
+    (rank 1; see decision_ref) empty-vehicle legacy pick, operator 2026-10-19'
+  run_ids: []
+  origin: reader
+  proposal_ref: runs/run_075/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_075-1
+  decision_ref: runs/run_097/artifacts/decision_record.yaml
+- id: trade_efficiency-run_097-1
+  status: superseded
+  priority: 999
+  source: agent
+  notes: empty-vehicle legacy, operator 2026-10-19
+  run_ids: []
+  origin: reader
+  proposal_ref: runs/run_097/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_097-1
+  decision_ref: runs/run_097/artifacts/decision_record.yaml
+- id: daily_breadth_fold_b
+  brief_path: briefs/daily_breadth_fold_b.md
+  status: done
+  priority: 1
+  source: operator_ratified
+  relation: new_registration
+  notes: second shot of the daily breadth family, fold B; operator 2026-10-20
+  run_ids:
+  - run_098
+  brief_status: exhausted
+  brief_status_reason: family closed after run_099, outcome C (operator 2026-10-22)
+  brief_status_rule: 'operator direction 2026-10-22: the daily breadth family closed
+    after run_099 (runs/run_099/artifacts/idea_status.yaml: refuted; pre-registered
+    outcome C); reopen by setting brief_status: open and brief_reopened_after: <last
+    entry id>'
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_098/artifacts/idea_status.yaml
+- id: E068_hourly_shock_reversal_kraken_perp__more_4
+  brief_path: briefs/E068_hourly_shock_reversal_kraken_perp.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'R2 after run_098: ask step 1a for more hypotheses on open brief E068_hourly_shock_reversal_kraken_perp
+    (see decision_ref); superseded 2026-10-23 (operator): brief replaced by a simpler
+    1h SMA brief; three refutations on costs (run_070, run_071, run_075, cost drag
+    over 100 percent per window); the brief predates D-149, D-166, D-176 and the 2026-10-21
+    working rules'
+  run_ids: []
+  origin: brief
+  decision_ref: runs/run_098/artifacts/decision_record.yaml
+- id: daily_breadth_fold_a__more_1
+  brief_path: briefs/daily_breadth_fold_a.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'family closed after run_099, outcome C (operator 2026-10-22); R2 after run_098:
+    ask step 1a for more hypotheses on open brief daily_breadth_fold_a (see decision_ref)'
+  run_ids: []
+  origin: brief
+  decision_ref: runs/run_098/artifacts/decision_record.yaml
+- id: daily_breadth_fold_b__more_1
+  brief_path: briefs/daily_breadth_fold_b.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'family closed after run_099, outcome C (operator 2026-10-22); R2 after run_098:
+    ask step 1a for more hypotheses on open brief daily_breadth_fold_b (see decision_ref)'
+  run_ids: []
+  origin: brief
+  decision_ref: runs/run_098/artifacts/decision_record.yaml
+- id: rebase_run_095_standardised_host__more_1
+  brief_path: briefs/rebase_run_095_standardised_host.md
+  status: blocked_on_operator_approval
+  priority: 999
+  source: agent
+  notes: 'R2 after run_098: ask step 1a for more hypotheses on open brief rebase_run_095_standardised_host
+    (see decision_ref)'
+  run_ids: []
+  origin: brief
+  decision_ref: runs/run_098/artifacts/decision_record.yaml
+- id: child_run_098_long_only_fold_b
+  brief_path: briefs/child_run_098_long_only_fold_b.md
+  status: done
+  priority: 1
+  source: operator_ratified
+  relation: new_registration
+  notes: child of run_098, the long side of the Donchian 250 position, BTC plus LTC,
+    fold B; operator direction 2026-10-21
+  run_ids:
+  - run_099
+  card_ref: campaign_record/queued_cards/run_098/hypothesis_card_child_long_only.yaml
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_099/artifacts/idea_status.yaml
+  title: '[obsolete] Child of run_098: long-only Donchian 250 position, vol-targeted,
+    BTC, fold B'
+- id: sma_trend_1h_fold_a
+  brief_path: briefs/sma_trend_1h_fold_a.md
+  status: done
+  priority: 1
+  source: operator_ratified
+  relation: new_registration
+  notes: 1h SMA trend, BTC, fold A (operator idea 2026-10-23; direction ratified 2026-10-23)
+  run_ids:
+  - run_100
+  brief_status: open
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_100/artifacts/idea_status.yaml
+- id: sma_trend_1h_fold_a__more_1
+  brief_path: briefs/sma_trend_1h_fold_a.md
+  status: done
+  priority: 999
+  source: agent
+  notes: 'R2 after run_100: ask step 1a for more hypotheses on open brief sma_trend_1h_fold_a
+    (see decision_ref)'
+  run_ids:
+  - run_101
+  origin: brief
+  decision_ref: runs/run_100/artifacts/decision_record.yaml
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_101/artifacts/idea_status.yaml
+- id: forecast_power-run_101-1
+  brief_path: campaign_record/candidate_briefs/forecast_power-run_101-1.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'decide_next after run_101: side_finding from runs/run_101/artifacts/proposals/forecast_power.yaml#forecast_power-run_101-1
+    (rank 1; see decision_ref)'
+  run_ids: []
+  origin: reader
+  proposal_ref: runs/run_101/artifacts/proposals/forecast_power.yaml#forecast_power-run_101-1
+  decision_ref: runs/run_101/artifacts/decision_record.yaml
+- id: trade_efficiency-run_101-1
+  brief_path: campaign_record/candidate_briefs/trade_efficiency-run_101-1.md
+  status: done
+  priority: 1
+  source: operator_ratified
+  relation: new_registration
+  notes: 'operator pick after run_101: trade_efficiency-run_101-1 (stretch_from_short_sma
+    weight 1.0 -> 0.25, forecast_block); fold B, drawn in runs/run_101/artifacts/decision_record.yaml;
+    source proposal runs/run_101/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_101-1
+    RETRY-ANALYST 2026-10-28 (operator, retry-analyst, D-202): the analyst stage of
+    run_102 runs again; its first result is kept in runs/run_102/artifacts/retry_1/
+    (was refuted).'
+  run_ids:
+  - run_102
+  brief_status: open
+  outcome: refuted
+  pass_rule_evaluation_ref: runs/run_102/artifacts/idea_status.yaml
+- id: trade_efficiency-run_102-1
+  brief_path: campaign_record/candidate_briefs/trade_efficiency-run_102-1.md
+  status: superseded
+  priority: 999
+  source: agent
+  notes: 'decide_next after run_102: side_finding from runs/run_102/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_102-1
+    (rank 1; see decision_ref) rejected by the operator 2026-10-26: run_101''s config
+    refolded'
+  run_ids: []
+  origin: reader
+  proposal_ref: runs/run_102/artifacts/proposals/trade_efficiency.yaml#trade_efficiency-run_102-1
+  decision_ref: runs/run_102/artifacts/decision_record.yaml
+- id: forecast_power-run_102-2
+  brief_path: campaign_record/candidate_briefs/forecast_power-run_102-2.md
+  status: blocked_on_operator_approval
+  priority: 999
+  source: agent
+  notes: 'decide_next after run_102: side_finding from runs/run_102/artifacts/proposals/forecast_power.yaml#forecast_power-run_102-2
+    (rank 1; see decision_ref)'
+  run_ids: []
+  origin: reader
+  proposal_ref: runs/run_102/artifacts/proposals/forecast_power.yaml#forecast_power-run_102-2
+  decision_ref: runs/run_102/artifacts/decision_record.yaml

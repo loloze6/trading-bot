@@ -1,0 +1,81 @@
+hypothesis_id: DAILY_BREADTH_CLV_CONTINUATION_1D_BTC
+thesis: >
+  Daily BTC closes near the top of the day's range, averaged over five bars, are followed by higher returns over the next 1 to 5 days than closes near the bottom of the range.
+rationale: >
+  Close-location value (CLV) measures where each day closes within its range. Persistent buying pressure into the close, and participants who read a strong close as demand, may extend the move. This is the weakest of the three ideas: no published daily measurement on BTC was cited, and confidence is 0. It is kept because the brief covers slow flows on daily horizons and CLV needs no feed beyond OHLC.
+edge_source:
+  category: persistent_behavioral_bias
+  specific_mechanism: >
+    Causal chain: buying pressure that carries into the close leaves the bar closing near its high; participants who treat a strong close as evidence of demand extend the move over the next days, so forward returns are higher after high-CLV closes. Measurable proxy: c(t), the 5-bar mean of CLV computed from daily open-high-low-close bars. The mechanism predicts a positive rank correlation between c(t) and forward 1 to 5 bar returns.
+  why_not_arbitraged: >
+    The effect at daily resolution is small relative to daily range, and exploiting it means trading BTC perp every day, paying fees on each rebalance. Capacity to arbitrage a sub-daily-range signal is limited by those costs, so a weak daily effect can persist.
+  evidence_type: price_volume_only
+  measurable_proxy: >
+    c(t) = mean CLV over 5 daily bars. Mechanism predicts positive rank IC of c(t) with fwd_return at horizons 1 and 5, and a higher mean forward return after the top fifth of c(t) readings.
+signal_concept: >
+  Quantity: CLV(i) = (2 x close(i) - high(i) - low(i)) / (high(i) - low(i)) for each bar, in [-1, +1]: +1 when the bar closes at its high, -1 at its low, 0 at mid-range. Bars with high equal to low score 0. c(t) = mean of CLV over bars t-4 to t. Graded forecast: forecast(t) = clip(20 x c(t), -20, +20), linear from -20 at c = -1 to +20 at c = +1. Position = forecast / 10: closes consistently near the day's high give a long, closes near the low a short, mid-range flat. Rule first conceived: "long after closes in the top third of the day range, short after the bottom third." Restated as the graded map, so how far the close sits within the range sets the size. Not expressible in the config: CLV needs each bar's high and low as inputs, not close only (declared as a component deviation). Not expressible in the config: no stop, exit or hold rule; none is part of this idea. Ungated design: regime rules empty. Design variant on BTC: 10-bar average instead of 5, same mapping. Asset variant: LTCUSD (altcoin layer-one category), empty patch. No lookahead: CLV(t) and c(t) use bar t's own high, low and close, all known at bar t's close; the position is set there and earns the move to bar t+1.
+target_market: "BTC perp on Kraken, priced on spot daily bars (base and design variants); asset variant LTC (altcoin layer one)"
+timeframe: 1d
+assumptions:
+  - "Daily Kraken OHLC bars are correct, with high and low consistent with close."
+  - "The 5-bar warm-up is covered by cached history before each window."
+  - "Close location carries next-day information on daily BTC bars."
+  - "Perp funding is not modelled; the 10 bps round trip is fee-only."
+expected_failure_modes:
+  - "Wick and body mixed: CLV reads both wick and body of one bar, which can carry opposite meanings (a close at the high after a long wick may reverse). The proxy is a net effect."
+  - "Turnover: c(t) moves almost every day, so the position turns over often and the 10 bps round trip may dominate a daily signal. Cost plausibility is marginal."
+  - "Weak prior: no cited measurement, confidence 0; a flat IC is the most likely result."
+  - "Daily resolution: high and low of a daily bar mix overnight and session effects. A 1h test would be a different idea."
+  - "Noise floor: about 120 bars per window, so a no-edge variant clears 0.02 roughly 1 time in 3."
+  - "LTC asset variant: thinner liquidity than BTC on daily bars; a failure may reflect liquidity, not the mechanism."
+criteria:
+  - id: forecast_ic_median
+library_lookup:
+  indicator_id: "none_in_library"
+  regime_affinity_for_target: "neutral"
+  affinity_justification: "n/a: ungated design. No library entry for close-location value. Keltner channel results (1h, different signal) are not the same measurement."
+  prior_campaign_failures: []
+  crowding_risk: "low"
+  crowding_deviation_justification: "n/a: low crowding."
+cost_feasibility:
+  assumed_round_trip_cost_bps: 10.0
+  expected_holding_bars:
+    min: 1
+    max: 5
+  expected_trades_per_window: "about 120 daily rebalances; the 5-bar mean reshuffles the position most days, so lot count is high"
+  required_gross_edge_bps_per_trade: 20.0
+  plausibility: marginal
+  plausibility_rationale: "Daily graded signal on BTC perp at the cost_model perp round trip of 10.0 bps (taker fee only). Frequent reshuffling against a 1 to 5 day return makes costs a large share of the edge. Information only."
+power_parameters:
+  activation_rate: 1.0
+  plausible_ic_upper: 0.05
+  n_bars: 730
+  n_symbols: 1
+  is_market_wide: false
+  power_note: "A8.6 row: dense OHLCV, lower crowding, lower end (0.05). Chosen at the low end: a candle-level measure with no published daily BTC result."
+claim:
+  statement: >
+    After daily closes in the upper part of the day's range (averaged over 5 bars), returns over the next 1 to 5 days are higher than after closes in the lower part.
+  kind: direction_forecast
+  tests:
+    - name: forecast_rank_ic_1_5
+      selector: {kind: all}
+      outcome: {kind: fwd_return, horizons: [1, 5]}
+      baseline: null
+      statistic: rank_ic
+      direction: greater
+      floor: {min_events: 300, min_windows: 5}
+    - name: top_fifth_vs_rest
+      selector: {kind: quantile, field: forecast, side: top, q: 0.2, lookback: 100}
+      outcome: {kind: fwd_return, horizons: [1, 5]}
+      baseline: {kind: complement}
+      statistic: mean_diff
+      direction: greater
+      floor: {min_events: 100, min_windows: 4}
+      consistency: {unit: window, min_same_sign: 4}
+  pass_if: >
+    Rank IC of forecast with forward return is positive at horizons 1 and 5. Top-fifth forecast bars have a higher mean forward return than the rest at both horizons, the same sign in at least 4 of 6 windows, with at least 100 selected bars.
+  fail_if: >
+    Rank IC is near zero or negative, or top-fifth bars have a lower mean forward return than the rest in most windows.
+  rationale: >
+    Rank IC of the forecast tests the close-location prediction over all bars. The quantile test checks the top fifth of readings, the bars the claim names. Both tests read only the block's own output, as the claim rules require.

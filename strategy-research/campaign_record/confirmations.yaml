@@ -23,13 +23,19 @@ looks:
   spec_hash: 05508ac0c6df321b1ff06d30f20ad42e37e052a8924a700e79fa77f8931c2951
   n_comparisons: 1
   confirmation_set: 2018-01[2018-01-01..2018-04-30],2018-09[2018-09-01..2018-12-31],2019-05[2019-05-01..2019-08-31],2020-01[2020-01-01..2020-04-30],2020-09[2020-09-01..2020-12-31],2021-05[2021-05-01..2021-08-31]
+- run_id: run_102
+  finding_id: trade_efficiency-run_101-1
+  test: week_uptrend_continues
+  spec_hash: 15f09e714a89ba96fc6285fffb11de220f81b4b9e16d6baf58d36b71e69b6fdd
+  n_comparisons: 2
+  confirmation_set: 2018-05[2018-05-01..2018-08-31],2019-01[2019-01-01..2019-04-30],2019-09[2019-09-01..2019-12-31],2020-05[2020-05-01..2020-08-31],2021-01[2021-01-01..2021-04-30],2021-09[2021-09-01..2021-12-31]
 by_set:
   ? 2018-01[2018-01-01..2018-04-30],2018-09[2018-09-01..2018-12-31],2019-05[2019-05-01..2019-08-31],2020-01[2020-01-01..2020-04-30],2020-09[2020-09-01..2020-12-31],2021-05[2021-05-01..2021-08-31]
   : n_looks: 1
     n_comparisons: 1
   ? 2018-05[2018-05-01..2018-08-31],2019-01[2019-01-01..2019-04-30],2019-09[2019-09-01..2019-12-31],2020-05[2020-05-01..2020-08-31],2021-01[2021-01-01..2021-04-30],2021-09[2021-09-01..2021-12-31]
-  : n_looks: 2
-    n_comparisons: 4
+  : n_looks: 3
+    n_comparisons: 6
 fold_confirmations:
   forecast_power-run_094-1@run_095:
     schema_version: 1
@@ -339,3 +345,135 @@ fold_confirmations:
       confirmation_set: 2018-05[2018-05-01..2018-08-31],2019-01[2019-01-01..2019-04-30],2019-09[2019-09-01..2019-12-31],2020-05[2020-05-01..2020-08-31],2021-01[2021-01-01..2021-04-30],2021-09[2021-09-01..2021-12-31]
       n_looks_on_set: 1
       n_comparisons_on_set: 1
+  trade_efficiency-run_101-1@run_102:
+    schema_version: 1
+    finding_id: trade_efficiency-run_101-1
+    category: trade_efficiency
+    source_run: run_101
+    run_id: run_102
+    basis: child_run
+    fold: B
+    kind: conditional_behaviour
+    statement: 'After bars whose past 168-hour return is in the top 20% of its trailing
+      500 bars, BTC returns over the next 6 and 24 hours are higher than on other
+      bars. The slow trend leg therefore carries the persistent part of the forecast,
+      and the negated 24-bar stretch leg, which bets on reversal, adds sign flips
+      without a matching reversal edge.
+
+      '
+    rule:
+      name: noise_rule
+      min_windows: 4
+      windows_allowed_against: 1
+      text: 'NOISE RULE, not a size rule and no cost comparison: not measurable when
+        the claim''s own floor is not met at any horizon (pooled over the fold''s
+        windows, as claim_measure computes it); else confirmed when, at every horizon
+        with a value, the pooled effect has the claimed sign AND the claimed sign
+        holds in all but at most 1 of the fold''s windows, a window with no value
+        counting against (fewer of the fold''s windows with a value than all but 1,
+        or than 4: not measurable). About an 11% chance per fold for a claim with
+        no effect (6 windows), about 1% after two folds; every look is counted. Measured
+        on the run built from the claim, on a fold its source run was not on; not
+        proven.'
+    vehicle:
+    - component_id: stretch_from_short_sma
+      field: weight
+      before: 1.0
+      after: 0.25
+    combines_as: forecast_block
+    fold_observed: A
+    spec_hashes:
+    - 15f09e714a89ba96fc6285fffb11de220f81b4b9e16d6baf58d36b71e69b6fdd
+    fold_blocks:
+    - 2018-05
+    - 2019-01
+    - 2019-09
+    - 2020-05
+    - 2021-01
+    - 2021-09
+    confirmation_set: 2018-05[2018-05-01..2018-08-31],2019-01[2019-01-01..2019-04-30],2019-09[2019-09-01..2019-12-31],2020-05[2020-05-01..2020-08-31],2021-01[2021-01-01..2021-04-30],2021-09[2021-09-01..2021-12-31]
+    vehicle_variant: base
+    base_variant: base
+    tests:
+      week_uptrend_continues:
+        spec_hash: 15f09e714a89ba96fc6285fffb11de220f81b4b9e16d6baf58d36b71e69b6fdd
+        status: not_confirmed
+        horizons:
+          '6':
+            effect: 0.0006842432959382086
+            oriented: 0.0006842432959382086
+            n_events: 3361
+            windows_claimed_sign: 5
+            windows_with_value: 6
+            windows_in_fold: 6
+            windows_against: 1
+            windows_without_value: []
+            windows_needed_with_value: 5
+            per_window:
+              BTCUSD/2018-05: 0.0019828984825577016
+              BTCUSD/2019-01: 0.0010051683113150552
+              BTCUSD/2019-09: 0.00013348843128129732
+              BTCUSD/2020-05: 0.0013896597728896743
+              BTCUSD/2021-01: -0.0017857197311901402
+              BTCUSD/2021-09: 0.00031066397184095887
+            events_per_window:
+              BTCUSD/2018-05: 845
+              BTCUSD/2019-01: 655
+              BTCUSD/2019-09: 623
+              BTCUSD/2020-05: 490
+              BTCUSD/2021-01: 235
+              BTCUSD/2021-09: 513
+            pooled_sign_held: true
+            windows_rule_held: true
+          '24':
+            effect: 0.0006222520001618616
+            oriented: 0.0006222520001618616
+            n_events: 3330
+            windows_claimed_sign: 3
+            windows_with_value: 6
+            windows_in_fold: 6
+            windows_against: 3
+            windows_without_value: []
+            windows_needed_with_value: 5
+            per_window:
+              BTCUSD/2018-05: 0.005335725142327445
+              BTCUSD/2019-01: 0.003649739069739228
+              BTCUSD/2019-09: -0.004323911382888716
+              BTCUSD/2020-05: 0.006650757331310255
+              BTCUSD/2021-01: -0.010124563456391619
+              BTCUSD/2021-09: -0.0029187216820716895
+            events_per_window:
+              BTCUSD/2018-05: 830
+              BTCUSD/2019-01: 655
+              BTCUSD/2019-09: 623
+              BTCUSD/2020-05: 490
+              BTCUSD/2021-01: 219
+              BTCUSD/2021-09: 513
+            pooled_sign_held: true
+            windows_rule_held: false
+        reason: 'the noise rule fails: h=24: pooled held, windows 3 of 6'
+        floor:
+          min_events: 100
+          min_windows: 4
+    windows_measured:
+    - BTCUSD/2018-05
+    - BTCUSD/2019-01
+    - BTCUSD/2019-09
+    - BTCUSD/2020-05
+    - BTCUSD/2021-01
+    - BTCUSD/2021-09
+    effect:
+      week_uptrend_continues:
+        '6': 0.0006842432959382086
+        '24': 0.0006222520001618616
+    agreement:
+      week_uptrend_continues:
+        '6': 5 of 6
+        '24': 3 of 6
+    status: not_confirmed
+    reason: 'week_uptrend_continues: the noise rule fails: h=24: pooled held, windows
+      3 of 6'
+    looks:
+      confirmation_set: 2018-05[2018-05-01..2018-08-31],2019-01[2019-01-01..2019-04-30],2019-09[2019-09-01..2019-12-31],2020-05[2020-05-01..2020-08-31],2021-01[2021-01-01..2021-04-30],2021-09[2021-09-01..2021-12-31]
+      n_looks_on_set: 3
+      n_comparisons_on_set: 6

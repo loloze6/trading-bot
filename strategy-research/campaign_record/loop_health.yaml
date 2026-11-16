@@ -1,15 +1,15 @@
-computed_at: '2026-10-18T20:11:35Z'
+computed_at: '2026-10-28T06:31:18Z'
 source:
   campaign_log: campaign_log.md
-  halt_history_runs: 16
+  halt_history_runs: 17
   note: Re-derived from primary records on every process_once() step; never accumulated.
     Safe to delete -- the next step rewrites it.
-span_hours: 2502.21
+span_hours: 2728.54
 halts:
-  total: 39
-  downtime_hours: 181.91
-  downtime_share_pct: 7.3
-  median_downtime_hours: 1.09
+  total: 40
+  downtime_hours: 217.95
+  downtime_share_pct: 8.0
+  median_downtime_hours: 1.26
   unpaired: 0
   denominator_note: campaign_log.md HALT lines only. A quarantined halt writes a QUARANTINE
     line, not a HALT line, so it is NOT counted here -- see outcomes.
@@ -46,10 +46,13 @@ cause_breakdown:
     human_pause_unclassified:
       count: 1
       downtime_hours: 0.48
+    campaign_review_reframe_unregist:
+      count: 1
+      downtime_hours: 36.035
 outcomes:
   auto_recovered: 0
-  escalated: 25
-  halt_history_records: 25
+  escalated: 26
+  halt_history_records: 26
   repeat_quarantine_escalations: 0
   denominator_note: halt_history across every run on disk, which covers both quarantined
     and escalated halts. Does not equal halts.total.

@@ -1686,6 +1686,64 @@ findings:
   pass_rule_evaluation_ref: runs/run_097/artifacts/idea_status.yaml
   outcome_reason: at least one criterion FAILed with sufficient data on at least one
     variant
+- id: grid_run_098
+  hypothesis_id: DAILY_ANCHOR_52W_PROXIMITY_1D
+  evidence_runs:
+  - run_098
+  evidence_count: 1
+  outcome: refuted
+  legacy_schema: false
+  verdict_status: gated
+  pass_rule_evaluation_ref: runs/run_098/artifacts/idea_status.yaml
+  outcome_reason: at least one criterion FAILed with sufficient data on at least one
+    variant; variant(s) ['asset_ada'] failed their backtest (a backtest_failed trial
+    row counts the look) -- a variant without a graded result never validates an idea
+    (D-015); variant(s) ['asset_link'] have no graded result in this run -- an idea
+    validates only when all its variants are graded in one run (card D)
+- id: grid_run_099
+  hypothesis_id: DAILY_DONCHIAN_250_LONG_ONLY_VOLTARGET_1D_BTC
+  evidence_runs:
+  - run_099
+  evidence_count: 1
+  outcome: refuted
+  legacy_schema: false
+  verdict_status: gated
+  pass_rule_evaluation_ref: runs/run_099/artifacts/idea_status.yaml
+  outcome_reason: at least one criterion FAILed with sufficient data on at least one
+    variant
+- id: grid_run_100
+  hypothesis_id: SMA_SPREAD_TREND_STATE_1H_BTC_FOLD_A
+  evidence_runs:
+  - run_100
+  evidence_count: 1
+  outcome: refuted
+  legacy_schema: false
+  verdict_status: gated
+  pass_rule_evaluation_ref: runs/run_100/artifacts/idea_status.yaml
+  outcome_reason: at least one criterion FAILed with sufficient data on at least one
+    variant
+- id: grid_run_101
+  hypothesis_id: SMA_PULLBACK_IN_TREND_24H_1H_BTC_FOLD_A
+  evidence_runs:
+  - run_101
+  evidence_count: 1
+  outcome: refuted
+  legacy_schema: false
+  verdict_status: gated
+  pass_rule_evaluation_ref: runs/run_101/artifacts/idea_status.yaml
+  outcome_reason: at least one criterion FAILed with sufficient data on at least one
+    variant
+- id: grid_run_102
+  hypothesis_id: SMA_PULLBACK_IN_TREND_24H_1H_BTC_FOLD_A__trade_efficiency-run_101-1
+  evidence_runs:
+  - run_102
+  evidence_count: 1
+  outcome: refuted
+  legacy_schema: false
+  verdict_status: gated
+  pass_rule_evaluation_ref: runs/run_102/artifacts/idea_status.yaml
+  outcome_reason: at least one criterion FAILed with sufficient data on at least one
+    variant
 meta_findings:
 - id: daily_regime_overlay_recommended_before_a23_trigger
   title: campaign_review recommended detector_wishlist.yaml work twice without checking
@@ -1962,6 +2020,26 @@ coverage_matrix:
     evidence_count: 1
   - hypothesis_id: REBASE_RUN_095_STD_REVERSAL_1D_BTC_FOLD_D
     finding_id: grid_run_097
+    outcome: refuted
+    evidence_count: 1
+  - hypothesis_id: DAILY_ANCHOR_52W_PROXIMITY_1D
+    finding_id: grid_run_098
+    outcome: refuted
+    evidence_count: 1
+  - hypothesis_id: DAILY_DONCHIAN_250_LONG_ONLY_VOLTARGET_1D_BTC
+    finding_id: grid_run_099
+    outcome: refuted
+    evidence_count: 1
+  - hypothesis_id: SMA_SPREAD_TREND_STATE_1H_BTC_FOLD_A
+    finding_id: grid_run_100
+    outcome: refuted
+    evidence_count: 1
+  - hypothesis_id: SMA_PULLBACK_IN_TREND_24H_1H_BTC_FOLD_A
+    finding_id: grid_run_101
+    outcome: refuted
+    evidence_count: 1
+  - hypothesis_id: SMA_PULLBACK_IN_TREND_24H_1H_BTC_FOLD_A__trade_efficiency-run_101-1
+    finding_id: grid_run_102
     outcome: refuted
     evidence_count: 1
   structural_forced_flow:

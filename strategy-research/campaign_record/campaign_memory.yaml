@@ -6798,3 +6798,3436 @@ runs:
           asset_link: runs/run_097/artifacts/variants/asset_link/claim_test.yaml
           base: runs/run_097/artifacts/variants/base/claim_test.yaml
           std_window_120: runs/run_097/artifacts/variants/std_window_120/claim_test.yaml
+  run_098:
+    run_id: run_098
+    hypothesis_id: DAILY_ANCHOR_52W_PROXIMITY_1D
+    legacy: false
+    recorded_at: '2026-10-20T19:59:24.786064+00:00'
+    idea_status: refuted
+    idea_status_reason: at least one criterion FAILed with sufficient data on at least
+      one variant; variant(s) ['asset_ada'] failed their backtest (a backtest_failed
+      trial row counts the look) -- a variant without a graded result never validates
+      an idea (D-015); variant(s) ['asset_link'] have no graded result in this run
+      -- an idea validates only when all its variants are graded in one run (card
+      D)
+    idea_status_ref: runs/run_098/artifacts/idea_status.yaml
+    engineering_fault: null
+    engineering_fault_detail: []
+    grid:
+      ref: runs/run_098/artifacts/grid_evaluation.yaml
+      criteria:
+      - forecast_ic_median
+      - residual_ic
+      variants:
+      - base
+      - design_lookback_120
+      cells:
+        forecast_ic_median:
+          base:
+            result: FAIL
+            value: -0.058206999999999995
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 176
+          design_lookback_120:
+            result: FAIL
+            value: -0.0569435
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 204
+        residual_ic:
+          base:
+            result: FAIL
+            value: 0.000169
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 176
+          design_lookback_120:
+            result: FAIL
+            value: 0.025752
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 204
+            reason: 'not significant: p_value_one_sided=0.244633 >= max_p_value=0.05'
+      counts:
+        PASS: 0
+        FAIL: 4
+        INCONCLUSIVE: 0
+    variants:
+      asset_ada:
+        status: failed
+        reason: 'backtest_failed: run_protocol.py non-zero exit (1)'
+        config_ref: runs/run_098/artifacts/variants/asset_ada/strategy_config.json
+        forecast_hash: 0ae437792ef96f015cd2d9544198beecacb2befa30369fc2302f9bc67f69d428
+        symbols: []
+        n_windows: 0
+        trial_id: run_098:asset_ada
+        windows_sha256: 1adf5a37700ec6a01744ca7f68c9c82a3fd42b8c13e231e3a5ad38097551429c
+      asset_link:
+        status: not_tested
+        reason: 'insufficient_coverage: the coin covers 3/6 protocol windows (50%;
+          era(s) [''era_2019_2023_full_feed'']) by the Layer-1 precheck and the listing
+          date -- D-042 runs a partial-coverage asset variant only at >= 60% of the
+          windows; not run, the idea is at best inconclusive'
+        config_ref: null
+        forecast_hash: null
+        symbols: []
+        n_windows: 0
+        trial_id: null
+      base:
+        status: tested
+        reason: null
+        config_ref: runs/run_098/artifacts/variants/base/strategy_config.json
+        forecast_hash: 0ae437792ef96f015cd2d9544198beecacb2befa30369fc2302f9bc67f69d428
+        symbols:
+        - BTCUSD
+        n_windows: 6
+        trial_id: run_098:base
+      design_lookback_120:
+        status: tested
+        reason: null
+        config_ref: runs/run_098/artifacts/variants/design_lookback_120/strategy_config.json
+        forecast_hash: 18163a477560e04a21c408148e94a385b8c707f840c1b42584da57cb61983bab
+        symbols:
+        - BTCUSD
+        n_windows: 6
+        trial_id: run_098:design_lookback_120
+    trial_ids:
+    - run_098:asset_ada
+    - run_098:base
+    - run_098:design_lookback_120
+    protocol_ref: protocols/run_098_generated.json
+    timeframe: 1d
+    proposals:
+    - category: profitability
+      ref: runs/run_098/artifacts/proposals/profitability.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'',
+          ''trade_efficiency'']) replace the readers; no lens writes profitability'
+    - category: trade_efficiency
+      ref: runs/run_098/artifacts/proposals/trade_efficiency.yaml
+      proposal_ids: []
+      count: 0
+    - category: forecast_power
+      ref: runs/run_098/artifacts/proposals/forecast_power.yaml
+      proposal_ids: []
+      count: 0
+    - category: regime_power
+      ref: runs/run_098/artifacts/proposals/regime_power.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'',
+          ''trade_efficiency'']) replace the readers; no lens writes regime_power'
+    - category: component_attribution
+      ref: runs/run_098/artifacts/proposals/component_attribution.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'',
+          ''trade_efficiency'']) replace the readers; no lens writes component_attribution'
+    registry:
+      skipped: not_validated
+    profit_bars:
+      ref: runs/run_098/artifacts/profit_bars_evaluation.yaml
+      scope: every_backtest
+      result: FAIL
+      passing: []
+      variants:
+        asset_ada:
+          result: NOT_TESTED
+          bars: {}
+        asset_link:
+          result: NOT_TESTED
+          bars: {}
+        base:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: PASS
+              actual: 0.10447654403026334
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.006646603143099616
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 41.561840890368174
+              threshold: 20.0
+            avg_daily_return_min:
+              result: FAIL
+              actual: 0.00021342499388591553
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: FAIL
+              actual: -0.7172155488236658
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.21506849315068494
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: FAIL
+              actual: -0.4204898716888431
+              threshold: 0.0
+        design_lookback_120:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: PASS
+              actual: 0.8003716004099253
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.06917935479671489
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 38.91615629406838
+              threshold: 20.0
+            avg_daily_return_min:
+              result: PASS
+              actual: 0.001696709072645032
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: FAIL
+              actual: -0.021320492444003802
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.2452054794520548
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: PASS
+              actual: 0.48485371253980264
+              threshold: 0.0
+    profit_bars_reason: null
+    kb_entry_id: grid_run_098
+    fold: B
+    observations:
+    - lens: forecast
+      statement: 'Bars with forecast at or above 8 show a positive pooled next-bar
+        return against the rest, but in each window with such bars the next-bar effect
+        is negative or flat, so the pooled sign is not a per-window behaviour.
+
+        '
+      test: q9
+      evidence:
+      - q9:horizons.1.effect=0.0012112745
+      floors_met: true
+      spec:
+        spec_hash: e4ea2de2da762da99c946e0adbff75c384d933b289667ad259f5465ad9440223
+        selector:
+          kind: event
+          field: forecast
+          op: '>='
+          value: 8
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 1
+          - 2
+          - 5
+          - 10
+        baseline:
+          kind: complement
+        statistic: mean_diff
+        direction: greater
+        floor:
+          min_events: 100
+          min_windows: 4
+      ref: runs/run_098/artifacts/analyst/forecast.yaml
+    - lens: forecast
+      statement: 'Top-quintile forecast bars show a positive next-bar effect and a
+        negative five-bar effect against the rest, and their 20- and 60-bar effects
+        have no events, so the test cannot show a longer-horizon edge.
+
+        '
+      test: q6
+      evidence:
+      - q6:horizons.5.effect=-0.0072307673
+      floors_met: false
+      spec:
+        spec_hash: f34f012e0441fa560f8ed93a349f380f8bce946ddb9b8a7f3c229e6e8d16be78
+        selector:
+          kind: quantile
+          field: forecast
+          side: top
+          q: 0.2
+          lookback: 100
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 1
+          - 5
+          - 20
+          - 60
+        baseline:
+          kind: complement
+        statistic: mean_diff
+        direction: greater
+        floor:
+          min_events: 100
+          min_windows: 4
+      ref: runs/run_098/artifacts/analyst/forecast.yaml
+    - lens: trade_efficiency
+      statement: 'After bars with a forecast of -10 or lower, forward returns over
+        5, 10 and 20 bars are higher than on other bars, in all four windows with
+        events, while the 1-bar return is lower on average but points the claimed
+        way in only one window.
+
+        '
+      test: q8
+      evidence:
+      - q8:horizons.5.effect=0.00636
+      - q8:horizons.20.windows_claimed_sign=4
+      floors_met: true
+      spec:
+        spec_hash: 8f8d57f1c1019efdd854af14d602f28bc917ff01bb6625a2ad0713aa25d62b73
+        selector:
+          kind: event
+          field: forecast
+          op: <=
+          value: -10
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 1
+          - 5
+          - 10
+          - 20
+        baseline:
+          kind: complement
+        statistic: mean_diff
+        direction: greater
+        floor:
+          min_events: 100
+          min_windows: 4
+      ref: runs/run_098/artifacts/analyst/trade_efficiency.yaml
+    finding:
+      approximation:
+        line: 'this run tested an approximation of the idea: Quantity d_t = close_t
+          / max(close over last 250 bars incl. t) - 1, the distance below the 250-bar
+          high -> DonchianBreakoutComponent(period 250, scaling_factor 1.0): position
+          of close_t in the 250-bar close range, (close - min) / (max - min), mapped
+          to [-1, +1]; forecast = clip(80 x (d_t + 0.25), -20, +20) -> standardise(window
+          60, min_periods 20), default target 10 and cap 20, applied to the Donchian
+          position; Forecast from bar t is applied from bar t+1 or later; no same-bar
+          fill. (The card asks 1b to confirm the fill convention.) -> Forecast from
+          bar t, computed on the close of bar t, traded at that bar''s close, as the
+          engine does'
+        n_deviations: 3
+        deviations:
+        - clause: Quantity d_t = close_t / max(close over last 250 bars incl. t) -
+            1, the distance below the 250-bar high
+          built_instead: 'DonchianBreakoutComponent(period 250, scaling_factor 1.0):
+            position of close_t in the 250-bar close range, (close - min) / (max -
+            min), mapped to [-1, +1]'
+          missing: A component that outputs distance to a rolling maximum (close /
+            rolling max - 1); none exists in COMPONENT_CATALOG.md
+          effect: The position also depends on the 250-bar low, so the same distance
+            below the high scores differently in wide and narrow ranges. Zero sits
+            at mid-range, not at 25 percent below the high. The two measures are correlated
+            but not identical.
+        - clause: forecast = clip(80 x (d_t + 0.25), -20, +20)
+          built_instead: standardise(window 60, min_periods 20), default target 10
+            and cap 20, applied to the Donchian position
+          missing: A fixed linear map with the card's anchors (+20 at the high, 0
+            at 25 percent below, -20 at 50 percent below or further)
+          effect: The forecast is scaled to the trailing mean absolute value, so its
+            level drifts with recent range. Ordering and sign are kept, but the size
+            of a position at a given distance differs from the card's.
+        - clause: Forecast from bar t is applied from bar t+1 or later; no same-bar
+            fill. (The card asks 1b to confirm the fill convention.)
+          built_instead: Forecast from bar t, computed on the close of bar t, traded
+            at that bar's close, as the engine does
+          missing: A one-bar execution delay. The config has no key or op that lags
+            the forecast, and STRATEGY_DESIGN_GUIDE documents the fill at the signal
+            bar's close.
+          effect: Strategy P&L may be optimistic because the position is taken at
+            the close that generated the signal. The forward-return rank IC claim
+            is measured on subsequent bars and is not changed by the fill timing.
+        ref: artifacts/deviations.yaml
+      finding_id: F-run_098-1
+      label: measured, not proven
+      status: measured
+      reason: null
+      information_only: true
+      statement: 'On BTC daily bars, a higher forecast (closer to the 250-day high)
+        is followed by higher returns over the next 1 and 2 bars. The top 30 percent
+        of forecast days have higher next-day returns than other days.
+
+        '
+      kind: direction_forecast
+      block_visibility: ok
+      manifest_kind: forecast
+      claim_revision: not_needed
+      tests:
+      - name: anchor_rank_ic
+        spec_hash: 41fb7a032482a3ac23566df9fe907c0f4d87cda6f2f6390825956e90ea628711
+        statistic: rank_ic
+        direction: greater
+        outcome: fwd_return
+        spec:
+          selector:
+            kind: all
+          outcome:
+            kind: fwd_return
+            horizons:
+            - 1
+            - 2
+          statistic: rank_ic
+          direction: greater
+          floor:
+            min_events: 100
+            min_windows: 4
+          consistency:
+            unit: window
+            min_same_sign: 4
+      - name: near_high_top30
+        spec_hash: 805bf8437b41c3b0211bb546250c2583d3b6f2f307e2259ebb7ebca5550b204f
+        statistic: mean_diff
+        direction: greater
+        outcome: fwd_return
+        spec:
+          selector:
+            kind: quantile
+            field: forecast
+            side: top
+            q: 0.3
+            lookback: 60
+          outcome:
+            kind: fwd_return
+            horizons:
+            - 1
+            - 2
+          baseline:
+            kind: complement
+          statistic: mean_diff
+          direction: greater
+          floor:
+            min_events: 100
+            min_windows: 4
+      scope:
+        venue: kraken
+        product: perp
+        price_proxy: true
+        funding_modelled: false
+        timeframe: 1d
+        symbols:
+        - BTCUSD
+        period:
+          start: '2018-05-01'
+          end: '2021-12-31'
+        windows_sha256: 7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+        windows_vary: false
+      result:
+        per_variant:
+          asset_ada:
+            trial_id: run_098:asset_ada
+            status: not_measured
+            reason: variant_failed
+          asset_link:
+            trial_id: null
+            status: not_measured
+            reason: variant_not_tested
+          base:
+            trial_id: run_098:base
+            status: measured
+            tests:
+              anchor_rank_ic:
+                status: measured
+                spec_hash: 41fb7a032482a3ac23566df9fe907c0f4d87cda6f2f6390825956e90ea628711
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.00399482
+                    n_events: 724
+                    windows_claimed_sign: 1
+                    windows_with_value: 6
+                  '2':
+                    effect: 0.0103664
+                    n_events: 718
+                    windows_claimed_sign: 1
+                    windows_with_value: 6
+              near_high_top30:
+                status: measured
+                spec_hash: 805bf8437b41c3b0211bb546250c2583d3b6f2f307e2259ebb7ebca5550b204f
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.00143458
+                    n_events: 129
+                    windows_claimed_sign: 0
+                    windows_with_value: 6
+                  '2':
+                    effect: 0.00237467
+                    n_events: 127
+                    windows_claimed_sign: 0
+                    windows_with_value: 6
+            windows_sha256: 7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+          design_lookback_120:
+            trial_id: run_098:design_lookback_120
+            status: measured
+            tests:
+              anchor_rank_ic:
+                status: measured
+                spec_hash: 41fb7a032482a3ac23566df9fe907c0f4d87cda6f2f6390825956e90ea628711
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.0364352
+                    n_events: 724
+                    windows_claimed_sign: 2
+                    windows_with_value: 6
+                  '2':
+                    effect: 0.0576623
+                    n_events: 718
+                    windows_claimed_sign: 2
+                    windows_with_value: 6
+              near_high_top30:
+                status: measured
+                spec_hash: 805bf8437b41c3b0211bb546250c2583d3b6f2f307e2259ebb7ebca5550b204f
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.001213
+                    n_events: 102
+                    windows_claimed_sign: 1
+                    windows_with_value: 5
+                  '2':
+                    effect: 0.0019742
+                    n_events: 102
+                    windows_claimed_sign: 1
+                    windows_with_value: 5
+            windows_sha256: 7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+      trial_ids:
+      - run_098:base
+      - run_098:design_lookback_120
+      source:
+        run_id: run_098
+        hypothesis_id: DAILY_ANCHOR_52W_PROXIMITY_1D
+        claim_status_ref: runs/run_098/artifacts/claim_measurement.yaml
+        claim_test_refs:
+          base: runs/run_098/artifacts/variants/base/claim_test.yaml
+          design_lookback_120: runs/run_098/artifacts/variants/design_lookback_120/claim_test.yaml
+  run_099:
+    run_id: run_099
+    hypothesis_id: DAILY_DONCHIAN_250_LONG_ONLY_VOLTARGET_1D_BTC
+    legacy: false
+    recorded_at: '2026-10-22T11:39:04.011519+00:00'
+    idea_status: refuted
+    idea_status_reason: at least one criterion FAILed with sufficient data on at least
+      one variant
+    idea_status_ref: runs/run_099/artifacts/idea_status.yaml
+    engineering_fault: null
+    engineering_fault_detail: []
+    grid:
+      ref: runs/run_099/artifacts/grid_evaluation.yaml
+      criteria:
+      - forecast_ic_median
+      - residual_ic
+      variants:
+      - asset_ltc
+      - base
+      - design_no_vol_target
+      cells:
+        forecast_ic_median:
+          asset_ltc:
+            result: INCONCLUSIVE
+            n_windows: 4
+            n_trades: 4
+            reason: n_windows=4 < floor.min_windows=5
+          base:
+            result: FAIL
+            value: -0.076797
+            threshold: 0.02
+            n_windows: 5
+            n_trades: 12
+          design_no_vol_target:
+            result: FAIL
+            value: -0.070288
+            threshold: 0.02
+            n_windows: 5
+            n_trades: 80
+        residual_ic:
+          asset_ltc:
+            result: FAIL
+            value: -0.018008
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 4
+          base:
+            result: FAIL
+            value: -0.018521
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 12
+          design_no_vol_target:
+            result: FAIL
+            value: -0.010024
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 80
+      counts:
+        PASS: 0
+        FAIL: 5
+        INCONCLUSIVE: 1
+    variants:
+      asset_ltc:
+        status: tested
+        reason: null
+        config_ref: runs/run_099/artifacts/variants/asset_ltc/strategy_config.json
+        forecast_hash: 0ca7e24cc123060b9ac1a38af87d44da08dafa4ed9d7c321c2a61006b6847aa3
+        symbols:
+        - LTCUSD
+        n_windows: 6
+        trial_id: run_099:asset_ltc
+      base:
+        status: tested
+        reason: null
+        config_ref: runs/run_099/artifacts/variants/base/strategy_config.json
+        forecast_hash: 0ca7e24cc123060b9ac1a38af87d44da08dafa4ed9d7c321c2a61006b6847aa3
+        symbols:
+        - BTCUSD
+        n_windows: 6
+        trial_id: run_099:base
+      design_no_vol_target:
+        status: tested
+        reason: null
+        config_ref: runs/run_099/artifacts/variants/design_no_vol_target/strategy_config.json
+        forecast_hash: 767df308eb22c20d2550d7e0cccd60982df6f5a7a507d507da25203a34ef83f4
+        symbols:
+        - BTCUSD
+        n_windows: 6
+        trial_id: run_099:design_no_vol_target
+    trial_ids:
+    - run_099:asset_ltc
+    - run_099:base
+    - run_099:design_no_vol_target
+    protocol_ref: protocols/run_099_generated.json
+    timeframe: 1d
+    proposals:
+    - category: profitability
+      ref: runs/run_099/artifacts/proposals/profitability.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'',
+          ''trade_efficiency'']) replace the readers; no lens writes profitability'
+    - category: trade_efficiency
+      ref: runs/run_099/artifacts/proposals/trade_efficiency.yaml
+      proposal_ids: []
+      count: 0
+    - category: forecast_power
+      ref: runs/run_099/artifacts/proposals/forecast_power.yaml
+      proposal_ids: []
+      count: 0
+    - category: regime_power
+      ref: runs/run_099/artifacts/proposals/regime_power.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'',
+          ''trade_efficiency'']) replace the readers; no lens writes regime_power'
+    - category: component_attribution
+      ref: runs/run_099/artifacts/proposals/component_attribution.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'',
+          ''trade_efficiency'']) replace the readers; no lens writes component_attribution'
+    registry:
+      skipped: not_validated
+    profit_bars:
+      ref: runs/run_099/artifacts/profit_bars_evaluation.yaml
+      scope: every_backtest
+      result: FAIL
+      passing: []
+      variants:
+        asset_ltc:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: PASS
+              actual: 0.47450214305818766
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.022537825372349773
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: PASS
+              actual: 10.014074473856605
+              threshold: 20.0
+            avg_daily_return_min:
+              result: FAIL
+              actual: 0.00014338544874255177
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: FAIL
+              actual: -0.1491193178180396
+              threshold: 0.0
+            trade_frequency_min:
+              result: FAIL
+              actual: 0.0013698630136986301
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: FAIL
+              actual: -0.8689972325851785
+              threshold: 0.0
+        base:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: PASS
+              actual: 0.8378524187846568
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.06085586230897666
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: PASS
+              actual: 12.789629153755621
+              threshold: 20.0
+            avg_daily_return_min:
+              result: FAIL
+              actual: 0.000446295856837176
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: PASS
+              actual: 0.016160325930727693
+              threshold: 0.0
+            trade_frequency_min:
+              result: FAIL
+              actual: 0.00821917808219178
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: PASS
+              actual: 0.34171314459801627
+              threshold: 0.0
+        design_no_vol_target:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: PASS
+              actual: 0.6715813598011465
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.0396993970856821
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 42.069798457785325
+              threshold: 20.0
+            avg_daily_return_min:
+              result: PASS
+              actual: 0.0011290018506471748
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: FAIL
+              actual: -0.15011073305278255
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.0958904109589041
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: PASS
+              actual: 0.10579551770863937
+              threshold: 0.0
+    profit_bars_reason: null
+    kb_entry_id: grid_run_099
+    fold: B
+    observations:
+    - lens: forecast
+      statement: 'Bars with forecast at or above 4 show lower forward returns than
+        other bars at 1, 5 and 10 bars, and in none of the windows that have such
+        bars does the effect point the claimed way. The window floor is not reached
+        (such bars fall in only two windows).
+
+        '
+      test: q6
+      evidence:
+      - q6:horizons.1.effect=-0.0019116712
+      - q6:horizons.5.effect=-0.0013222797
+      - q6:horizons.10.effect=-0.001853995
+      floors_met: false
+      spec:
+        spec_hash: 9f492989f969c635e73ec76293b3413296500ffc4c203591adf233b4a3660489
+        selector:
+          kind: event
+          field: forecast
+          op: '>='
+          value: 4
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 1
+          - 5
+          - 10
+        baseline:
+          kind: complement
+        statistic: mean_diff
+        direction: greater
+        floor:
+          min_events: 100
+          min_windows: 4
+      ref: runs/run_099/artifacts/analyst/forecast.yaml
+    - lens: forecast
+      statement: 'Bars in the top 20% of the forecast''s own 100-bar range show no
+        higher return at 1 bar and a lower return at 5 bars than other bars. At 20
+        bars there are only a few events, so the test cannot read that horizon.
+
+        '
+      test: q5
+      evidence:
+      - q5:horizons.1.effect=-3.5955961e-06
+      - q5:horizons.5.effect=-0.0024697194
+      floors_met: false
+      spec:
+        spec_hash: 1db1cd82721781e0bc2deafdce23b167910c1fe0c9e96c245691e7404f6aaf1b
+        selector:
+          kind: quantile
+          field: forecast
+          side: top
+          q: 0.2
+          lookback: 100
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 1
+          - 5
+          - 20
+        baseline:
+          kind: complement
+        statistic: mean_diff
+        direction: greater
+        floor:
+          min_events: 100
+          min_windows: 4
+      ref: runs/run_099/artifacts/analyst/forecast.yaml
+    - lens: trade_efficiency
+      statement: 'The forecast''s rank correlation with forward returns is negative
+        at 5 and 20 bars, in most windows: higher-forecast bars are followed by lower
+        returns over those horizons.
+
+        '
+      test: q9
+      evidence:
+      - q9:horizons.5.effect=-0.023100387
+      - q9:horizons.5.n_events=700
+      - q9:horizons.20.effect=-0.038826816
+      floors_met: true
+      spec:
+        spec_hash: b4ed77c7cb00c0b0d9f978c15ddd85b9d92a19dc8bd1df5d2c4aa565f6090605
+        selector:
+          kind: all
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 5
+          - 20
+        baseline: null
+        statistic: rank_ic
+        direction: less
+        floor:
+          min_events: 100
+          min_windows: 4
+      ref: runs/run_099/artifacts/analyst/trade_efficiency.yaml
+    finding:
+      finding_id: F-run_099-1
+      label: measured, not proven
+      status: measured
+      reason: null
+      information_only: true
+      statement: 'The long-only forecast ranks the next 5 and 20 daily returns positively
+        (higher forecast, higher return), and after a forecast of 8 or more the return
+        over the next 5 bars is lower than on the other bars (half (a) of the run_098
+        re-run question: whether the strongest long readings are already exhausted
+        at 5 bars).
+
+        '
+      kind: direction_forecast
+      block_visibility: ok
+      manifest_kind: forecast
+      claim_revision: not_needed
+      tests:
+      - name: long_forecast_rank_ic_5_20
+        spec_hash: 322acac88fc9a108cd25d2f4097bc5ab7d5b1e364025359d97acc4b39162237a
+        statistic: rank_ic
+        direction: greater
+        outcome: fwd_return
+        spec:
+          selector:
+            kind: all
+          outcome:
+            kind: fwd_return
+            horizons:
+            - 5
+            - 20
+          baseline: null
+          statistic: rank_ic
+          direction: greater
+          floor:
+            min_windows: 5
+      - name: half_a_strong_long_lower_5
+        spec_hash: 1854af2bfe6b44b988fb2eb4726deb20b5d1a79e6d79e13eb40d01abf9cc62f3
+        statistic: mean_diff
+        direction: less
+        outcome: fwd_return
+        spec:
+          selector:
+            kind: event
+            field: forecast
+            op: '>='
+            value: 8
+          outcome:
+            kind: fwd_return
+            horizons:
+            - 5
+          baseline:
+            kind: complement
+          statistic: mean_diff
+          direction: less
+          floor:
+            min_events: 50
+      scope:
+        venue: kraken
+        product: perp
+        price_proxy: true
+        funding_modelled: false
+        timeframe: 1d
+        symbols:
+        - BTCUSD
+        - LTCUSD
+        period:
+          start: '2018-05-01'
+          end: '2021-12-31'
+        windows_sha256: 7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+        windows_vary: false
+      result:
+        per_variant:
+          asset_ltc:
+            trial_id: run_099:asset_ltc
+            status: measured
+            tests:
+              long_forecast_rank_ic_5_20:
+                status: measured
+                spec_hash: 322acac88fc9a108cd25d2f4097bc5ab7d5b1e364025359d97acc4b39162237a
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '5':
+                    effect: 0.0615101
+                    n_events: 700
+                    windows_claimed_sign: 0
+                    windows_with_value: 4
+                  '20':
+                    effect: 0.183235
+                    n_events: 610
+                    windows_claimed_sign: 0
+                    windows_with_value: 4
+              half_a_strong_long_lower_5:
+                status: no_events
+                spec_hash: 1854af2bfe6b44b988fb2eb4726deb20b5d1a79e6d79e13eb40d01abf9cc62f3
+                reason: the selector matched no bars
+            windows_sha256: 7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+          base:
+            trial_id: run_099:base
+            status: measured
+            tests:
+              long_forecast_rank_ic_5_20:
+                status: measured
+                spec_hash: 322acac88fc9a108cd25d2f4097bc5ab7d5b1e364025359d97acc4b39162237a
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '5':
+                    effect: -0.0231004
+                    n_events: 700
+                    windows_claimed_sign: 0
+                    windows_with_value: 5
+                  '20':
+                    effect: -0.0388268
+                    n_events: 610
+                    windows_claimed_sign: 1
+                    windows_with_value: 5
+              half_a_strong_long_lower_5:
+                status: measured
+                spec_hash: 1854af2bfe6b44b988fb2eb4726deb20b5d1a79e6d79e13eb40d01abf9cc62f3
+                peak_horizon: null
+                floor_not_met:
+                - min_events=50 at h=5 (have 21)
+                horizons:
+                  '5':
+                    effect: 0.0159876
+                    n_events: 21
+                    windows_claimed_sign: 0
+                    windows_with_value: 1
+            windows_sha256: 7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+          design_no_vol_target:
+            trial_id: run_099:design_no_vol_target
+            status: measured
+            tests:
+              long_forecast_rank_ic_5_20:
+                status: measured
+                spec_hash: 322acac88fc9a108cd25d2f4097bc5ab7d5b1e364025359d97acc4b39162237a
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '5':
+                    effect: -0.0142204
+                    n_events: 700
+                    windows_claimed_sign: 0
+                    windows_with_value: 5
+                  '20':
+                    effect: -0.0321455
+                    n_events: 610
+                    windows_claimed_sign: 0
+                    windows_with_value: 5
+              half_a_strong_long_lower_5:
+                status: measured
+                spec_hash: 1854af2bfe6b44b988fb2eb4726deb20b5d1a79e6d79e13eb40d01abf9cc62f3
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '5':
+                    effect: 0.00623656
+                    n_events: 268
+                    windows_claimed_sign: 3
+                    windows_with_value: 3
+            windows_sha256: 7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+      trial_ids:
+      - run_099:asset_ltc
+      - run_099:base
+      - run_099:design_no_vol_target
+      source:
+        run_id: run_099
+        hypothesis_id: DAILY_DONCHIAN_250_LONG_ONLY_VOLTARGET_1D_BTC
+        claim_status_ref: runs/run_099/artifacts/claim_measurement.yaml
+        claim_test_refs:
+          asset_ltc: runs/run_099/artifacts/variants/asset_ltc/claim_test.yaml
+          base: runs/run_099/artifacts/variants/base/claim_test.yaml
+          design_no_vol_target: runs/run_099/artifacts/variants/design_no_vol_target/claim_test.yaml
+  run_100:
+    run_id: run_100
+    hypothesis_id: SMA_SPREAD_TREND_STATE_1H_BTC_FOLD_A
+    legacy: false
+    recorded_at: '2026-10-23T19:41:44.672252+00:00'
+    idea_status: refuted
+    idea_status_reason: at least one criterion FAILed with sufficient data on at least
+      one variant
+    idea_status_ref: runs/run_100/artifacts/idea_status.yaml
+    engineering_fault: null
+    engineering_fault_detail: []
+    grid:
+      ref: runs/run_100/artifacts/grid_evaluation.yaml
+      criteria:
+      - forecast_ic_median
+      - residual_ic
+      variants:
+      - asset_AAVEUSDT
+      - asset_SOLUSDT
+      - base
+      - fast_period_100
+      cells:
+        forecast_ic_median:
+          asset_AAVEUSDT:
+            result: FAIL
+            value: 0.004608
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 1321
+          asset_SOLUSDT:
+            result: FAIL
+            value: 0.011566
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 1296
+          base:
+            result: FAIL
+            value: 0.00036300000000000004
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 1464
+          fast_period_100:
+            result: FAIL
+            value: 0.0018795
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 1245
+        residual_ic:
+          asset_AAVEUSDT:
+            result: FAIL
+            value: -0.000215
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 1321
+          asset_SOLUSDT:
+            result: FAIL
+            value: 0.008783
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 1296
+          base:
+            result: FAIL
+            value: 0.014479
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 1464
+          fast_period_100:
+            result: FAIL
+            value: 0.014801
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 1245
+      counts:
+        PASS: 0
+        FAIL: 8
+        INCONCLUSIVE: 0
+    variants:
+      asset_AAVEUSDT:
+        status: tested
+        reason: null
+        config_ref: runs/run_100/artifacts/variants/asset_AAVEUSDT/strategy_config.json
+        forecast_hash: 770459d569dadcb86322bc3a7b9e955b84410a2d79a777794aa696804c9091b5
+        symbols:
+        - AAVEUSD
+        n_windows: 6
+        trial_id: run_100:asset_AAVEUSDT
+      asset_SOLUSDT:
+        status: tested
+        reason: null
+        config_ref: runs/run_100/artifacts/variants/asset_SOLUSDT/strategy_config.json
+        forecast_hash: 770459d569dadcb86322bc3a7b9e955b84410a2d79a777794aa696804c9091b5
+        symbols:
+        - SOLUSD
+        n_windows: 6
+        trial_id: run_100:asset_SOLUSDT
+      base:
+        status: tested
+        reason: null
+        config_ref: runs/run_100/artifacts/variants/base/strategy_config.json
+        forecast_hash: 770459d569dadcb86322bc3a7b9e955b84410a2d79a777794aa696804c9091b5
+        symbols:
+        - BTCUSD
+        n_windows: 6
+        trial_id: run_100:base
+      fast_period_100:
+        status: tested
+        reason: null
+        config_ref: runs/run_100/artifacts/variants/fast_period_100/strategy_config.json
+        forecast_hash: 20ca224ed55f120996e668dae99efe32ecbb838c4429e871424b5db55b4c333d
+        symbols:
+        - BTCUSD
+        n_windows: 6
+        trial_id: run_100:fast_period_100
+    trial_ids:
+    - run_100:asset_AAVEUSDT
+    - run_100:asset_SOLUSDT
+    - run_100:base
+    - run_100:fast_period_100
+    protocol_ref: protocols/run_100_generated.json
+    timeframe: 1h
+    proposals:
+    - category: profitability
+      ref: runs/run_100/artifacts/proposals/profitability.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'',
+          ''trade_efficiency'']) replace the readers; no lens writes profitability'
+    - category: trade_efficiency
+      ref: runs/run_100/artifacts/proposals/trade_efficiency.yaml
+      proposal_ids: []
+      count: 0
+    - category: forecast_power
+      ref: runs/run_100/artifacts/proposals/forecast_power.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: output_refused_after_retry
+        reason: 'the analyst''s answer was refused twice: query(ies) q11 cleared the
+          floor of their own test but appear nowhere in your answer: every conditional_effect
+          result that cleared its floors, in either direction and at any horizon,
+          is written as a claim or recorded as an observation (`observations`, `test`,
+          under the claim or the no_claim), or is the why_query or the best_rejected
+          killed_by. Record each'
+    - category: regime_power
+      ref: runs/run_100/artifacts/proposals/regime_power.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'',
+          ''trade_efficiency'']) replace the readers; no lens writes regime_power'
+    - category: component_attribution
+      ref: runs/run_100/artifacts/proposals/component_attribution.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'',
+          ''trade_efficiency'']) replace the readers; no lens writes component_attribution'
+    registry:
+      skipped: not_validated
+    profit_bars:
+      ref: runs/run_100/artifacts/profit_bars_evaluation.yaml
+      scope: every_backtest
+      result: FAIL
+      passing: []
+      variants:
+        asset_AAVEUSDT:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: PASS
+              actual: 0.31105920905785855
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.007162708470056012
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 26.688014964666174
+              threshold: 20.0
+            avg_daily_return_min:
+              result: FAIL
+              actual: 0.00021961211022903556
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: PASS
+              actual: 0.2429555567413746
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.0739525782688766
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: PASS
+              actual: 0.021413543587831627
+              threshold: 0.0
+        asset_SOLUSDT:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: PASS
+              actual: 1.325666482528784
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.15095793879443314
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 25.278483618772306
+              threshold: 20.0
+            avg_daily_return_min:
+              result: PASS
+              actual: 0.0009936646701602342
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: PASS
+              actual: 1.0199868129758332
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.07209315600205492
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: PASS
+              actual: 0.8168566706092631
+              threshold: 0.0
+        base:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: PASS
+              actual: 0.8465409795074105
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.0399558020711297
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 23.596293782397957
+              threshold: 20.0
+            avg_daily_return_min:
+              result: PASS
+              actual: 0.0006912297679590534
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: PASS
+              actual: 0.6686579187363154
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.08105485472915121
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: PASS
+              actual: 0.3875707694540819
+              threshold: 0.0
+        fast_period_100:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: PASS
+              actual: 0.8297411337687172
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.037929991980690525
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 26.81954784565399
+              threshold: 20.0
+            avg_daily_return_min:
+              result: PASS
+              actual: 0.0006912124359737855
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: PASS
+              actual: 0.6518580729976221
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.06901078828700269
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: PASS
+              actual: 0.5093051467311694
+              threshold: 0.0
+    profit_bars_reason: null
+    kb_entry_id: grid_run_100
+    fold: A
+    observations:
+    - lens: trade_efficiency
+      statement: 'Long lots opened at a forecast of 15 or more earn a lower mean net
+        return than the other lots, in 5 of <n> windows. Their median holding is about
+        half as long, which fits last-in-first-out closing.
+
+        '
+      test: q8
+      evidence:
+      - q8:horizons.trade.effect=-0.005677464
+      - q8:horizons.trade.n_events=178
+      - q8:horizons.trade.windows_claimed_sign=5
+      floors_met: true
+      spec:
+        spec_hash: 03e2555e76b4982c2454775e569d228b93395fc0a834f2a3ff60027222e614f2
+        selector:
+          kind: trade
+          where:
+          - field: entry_forecast
+            op: '>='
+            value: 15
+        outcome:
+          kind: trade_net_return
+        baseline:
+          kind: other_trades
+        statistic: mean_diff
+        direction: less
+        floor:
+          min_events: 100
+          min_windows: 4
+      mechanism_query: q12
+      ref: runs/run_100/artifacts/analyst/trade_efficiency.yaml
+    - lens: trade_efficiency
+      statement: 'Short lots opened at a forecast of -15 or lower do not earn less
+        than the other lots. Their mean net return is higher, and the lower-return
+        sign holds in only 3 of <n> windows, so the long-side effect is not symmetric.
+        Their median holding is also short, which fits last-in-first-out closing.
+
+        '
+      test: q9
+      evidence:
+      - q9:horizons.trade.effect=0.0030532884
+      - q9:horizons.trade.n_events=134
+      - q9:horizons.trade.windows_claimed_sign=3
+      floors_met: true
+      spec:
+        spec_hash: 618af232734bfa5648444fcd65eadad87cd56edd791678195b77be4742ad33b3
+        selector:
+          kind: trade
+          where:
+          - field: entry_forecast
+            op: <=
+            value: -15
+        outcome:
+          kind: trade_net_return
+        baseline:
+          kind: other_trades
+        statistic: mean_diff
+        direction: less
+        floor:
+          min_events: 50
+          min_windows: 4
+      mechanism_query: q15
+      ref: runs/run_100/artifacts/analyst/trade_efficiency.yaml
+    - lens: trade_efficiency
+      statement: 'The forecast''s rank correlation with forward returns over all bars
+        is about zero at 24 and 72 bars, with the claimed positive sign in only <n>
+        and 2 of <n> windows. The strategy''s gross is not forecast ranking.
+
+        '
+      test: q14
+      evidence:
+      - q14:horizons.24.effect=-0.0014277571
+      - q14:horizons.72.effect=0.0074364567
+      - q14:horizons.72.windows_claimed_sign=2
+      floors_met: true
+      spec:
+        spec_hash: 039a5840394f619e131fe753cda393aa9786c48c753358d59b7bb0760e94ced5
+        selector:
+          kind: all
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 24
+          - 72
+        baseline: null
+        statistic: rank_ic
+        direction: greater
+        floor:
+          min_events: 100
+          min_windows: 4
+      mechanism_query: q16
+      ref: runs/run_100/artifacts/analyst/trade_efficiency.yaml
+    finding:
+      approximation:
+        line: 'this run tested an approximation of the idea: Standardised spread between
+          the 50-bar and 200-bar simple moving averages of close -> EMASpreadComponent(fast_period
+          50, slow_period 200) with standardise(window 200, min_periods 50); Allocation
+          = forecast / 10, with the forecast as the unsized signal -> strategies.sizing
+          vol_target block (window 60, target_annual_vol 0.2, periods_per_year 8760,
+          max_allocation 2) sizes the allocation. The forecast stays the unsized standardised
+          signal.'
+        n_deviations: 2
+        deviations:
+        - clause: Standardised spread between the 50-bar and 200-bar simple moving
+            averages of close
+          built_instead: EMASpreadComponent(fast_period 50, slow_period 200) with
+            standardise(window 200, min_periods 50)
+          missing: Simple moving averages of close at 50 and 200 bars. The catalogue
+            has no SMA-pair spread component.
+          effect: EMAs weight recent closes more heavily, so the spread turns sooner
+            than the SMA spread and may lead it by a few bars at turning points. The
+            sign and the trend-state reading are unchanged.
+        - clause: Allocation = forecast / 10, with the forecast as the unsized signal
+          built_instead: strategies.sizing vol_target block (window 60, target_annual_vol
+            0.2, periods_per_year 8760, max_allocation 2) sizes the allocation. The
+            forecast stays the unsized standardised signal.
+          missing: null
+          effect: Position size now scales with realised volatility, so the test measures
+            a volatility-targeted position rather than the card's plain forecast /
+            10. The sign and timing of positions are unchanged.
+        ref: artifacts/deviations.yaml
+      finding_id: F-run_100-1
+      label: measured, not proven
+      status: measured
+      reason: null
+      information_only: true
+      statement: 'After a 1h bar where the 50-bar SMA is far above the 200-bar SMA
+        (top 10% of the trailing 168-bar spread), and in general across bars, the
+        next 1 to 24 bars have returns with the same sign as the spread; the spread
+        ranks forward returns positively.
+
+        '
+      kind: direction_forecast
+      block_visibility: ok
+      manifest_kind: forecast
+      claim_revision: not_needed
+      tests:
+      - name: spread_rank_ic_all_bars
+        spec_hash: 273479b62e972c2290e7389a3002ff928bf16708a4b4237b063c8a6b4582037d
+        statistic: rank_ic
+        direction: greater
+        outcome: fwd_return
+        spec:
+          selector:
+            kind: all
+          outcome:
+            kind: fwd_return
+            horizons:
+            - 1
+            - 6
+            - 24
+          baseline: null
+          statistic: rank_ic
+          direction: greater
+          floor:
+            min_events: 100
+            min_windows: 4
+      - name: top_decile_spread_vs_rest
+        spec_hash: 36d928112809f1a2b86ee7fbc3ccefd82365103b84523f17e403fca7908d2144
+        statistic: mean_diff
+        direction: greater
+        outcome: fwd_return
+        spec:
+          selector:
+            kind: quantile
+            field: forecast
+            side: top
+            q: 0.1
+            lookback: 168
+          outcome:
+            kind: fwd_return
+            horizons:
+            - 1
+            - 6
+            - 24
+          baseline:
+            kind: complement
+          statistic: mean_diff
+          direction: greater
+          floor:
+            min_events: 100
+            min_windows: 4
+          consistency:
+            unit: window
+            min_same_sign: 4
+      scope:
+        venue: kraken
+        product: perp
+        price_proxy: true
+        funding_modelled: false
+        timeframe: 1h
+        symbols:
+        - AAVEUSD
+        - BTCUSD
+        - SOLUSD
+        period:
+          start: '2022-01-01'
+          end: '2023-12-31'
+        windows_sha256: d931dfa50fb1aaddde738abd5eb1b2f9011df7e1c49fbc0ea7b0b87d492fb289
+        windows_vary: false
+      result:
+        per_variant:
+          asset_AAVEUSDT:
+            trial_id: run_100:asset_AAVEUSDT
+            status: measured
+            tests:
+              spread_rank_ic_all_bars:
+                status: measured
+                spec_hash: 273479b62e972c2290e7389a3002ff928bf16708a4b4237b063c8a6b4582037d
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: -0.000174227
+                    n_events: 17233
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+                  '6':
+                    effect: -0.0129307
+                    n_events: 17203
+                    windows_claimed_sign: 2
+                    windows_with_value: 6
+                  '24':
+                    effect: -0.0202429
+                    n_events: 17100
+                    windows_claimed_sign: 2
+                    windows_with_value: 6
+              top_decile_spread_vs_rest:
+                status: measured
+                spec_hash: 36d928112809f1a2b86ee7fbc3ccefd82365103b84523f17e403fca7908d2144
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.000155108
+                    n_events: 4621
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '6':
+                    effect: 0.00126577
+                    n_events: 4617
+                    windows_claimed_sign: 5
+                    windows_with_value: 6
+                  '24':
+                    effect: 0.00346553
+                    n_events: 4606
+                    windows_claimed_sign: 5
+                    windows_with_value: 6
+            windows_sha256: d931dfa50fb1aaddde738abd5eb1b2f9011df7e1c49fbc0ea7b0b87d492fb289
+          asset_SOLUSDT:
+            trial_id: run_100:asset_SOLUSDT
+            status: measured
+            tests:
+              spread_rank_ic_all_bars:
+                status: measured
+                spec_hash: 273479b62e972c2290e7389a3002ff928bf16708a4b4237b063c8a6b4582037d
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.00879956
+                    n_events: 17512
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '6':
+                    effect: 0.00934402
+                    n_events: 17482
+                    windows_claimed_sign: 2
+                    windows_with_value: 6
+                  '24':
+                    effect: 0.024838
+                    n_events: 17374
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+              top_decile_spread_vs_rest:
+                status: measured
+                spec_hash: 36d928112809f1a2b86ee7fbc3ccefd82365103b84523f17e403fca7908d2144
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 7.83814e-05
+                    n_events: 4412
+                    windows_claimed_sign: 2
+                    windows_with_value: 6
+                  '6':
+                    effect: 0.000539048
+                    n_events: 4402
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '24':
+                    effect: -0.000344577
+                    n_events: 4375
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+            windows_sha256: d931dfa50fb1aaddde738abd5eb1b2f9011df7e1c49fbc0ea7b0b87d492fb289
+          base:
+            trial_id: run_100:base
+            status: measured
+            tests:
+              spread_rank_ic_all_bars:
+                status: measured
+                spec_hash: 273479b62e972c2290e7389a3002ff928bf16708a4b4237b063c8a6b4582037d
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.0145187
+                    n_events: 17512
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '6':
+                    effect: 0.00527014
+                    n_events: 17482
+                    windows_claimed_sign: 2
+                    windows_with_value: 6
+                  '24':
+                    effect: -0.00142776
+                    n_events: 17374
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+              top_decile_spread_vs_rest:
+                status: measured
+                spec_hash: 36d928112809f1a2b86ee7fbc3ccefd82365103b84523f17e403fca7908d2144
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.000104772
+                    n_events: 4569
+                    windows_claimed_sign: 5
+                    windows_with_value: 6
+                  '6':
+                    effect: 0.000535244
+                    n_events: 4569
+                    windows_claimed_sign: 5
+                    windows_with_value: 6
+                  '24':
+                    effect: 0.00132526
+                    n_events: 4552
+                    windows_claimed_sign: 2
+                    windows_with_value: 6
+            windows_sha256: d931dfa50fb1aaddde738abd5eb1b2f9011df7e1c49fbc0ea7b0b87d492fb289
+          fast_period_100:
+            trial_id: run_100:fast_period_100
+            status: measured
+            tests:
+              spread_rank_ic_all_bars:
+                status: measured
+                spec_hash: 273479b62e972c2290e7389a3002ff928bf16708a4b4237b063c8a6b4582037d
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.0148607
+                    n_events: 17512
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '6':
+                    effect: 0.0056258
+                    n_events: 17482
+                    windows_claimed_sign: 2
+                    windows_with_value: 6
+                  '24':
+                    effect: -0.00389962
+                    n_events: 17374
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+              top_decile_spread_vs_rest:
+                status: measured
+                spec_hash: 36d928112809f1a2b86ee7fbc3ccefd82365103b84523f17e403fca7908d2144
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '1':
+                    effect: 0.000129675
+                    n_events: 5008
+                    windows_claimed_sign: 6
+                    windows_with_value: 6
+                  '6':
+                    effect: 0.000660553
+                    n_events: 4999
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '24':
+                    effect: 0.00168549
+                    n_events: 4963
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+            windows_sha256: d931dfa50fb1aaddde738abd5eb1b2f9011df7e1c49fbc0ea7b0b87d492fb289
+      trial_ids:
+      - run_100:asset_AAVEUSDT
+      - run_100:asset_SOLUSDT
+      - run_100:base
+      - run_100:fast_period_100
+      source:
+        run_id: run_100
+        hypothesis_id: SMA_SPREAD_TREND_STATE_1H_BTC_FOLD_A
+        claim_status_ref: runs/run_100/artifacts/claim_measurement.yaml
+        claim_test_refs:
+          asset_AAVEUSDT: runs/run_100/artifacts/variants/asset_AAVEUSDT/claim_test.yaml
+          asset_SOLUSDT: runs/run_100/artifacts/variants/asset_SOLUSDT/claim_test.yaml
+          base: runs/run_100/artifacts/variants/base/claim_test.yaml
+          fast_period_100: runs/run_100/artifacts/variants/fast_period_100/claim_test.yaml
+  run_101:
+    run_id: run_101
+    hypothesis_id: SMA_PULLBACK_IN_TREND_24H_1H_BTC_FOLD_A
+    legacy: false
+    recorded_at: '2026-10-25T10:20:48.520830+00:00'
+    idea_status: refuted
+    idea_status_reason: at least one criterion FAILed with sufficient data on at least
+      one variant
+    idea_status_ref: runs/run_101/artifacts/idea_status.yaml
+    engineering_fault: null
+    engineering_fault_detail: []
+    grid:
+      ref: runs/run_101/artifacts/grid_evaluation.yaml
+      criteria:
+      - forecast_ic_median
+      variants:
+      - asset_avaxusdt
+      - asset_linkusdt
+      - base
+      - design_stretch_sma48
+      cells:
+        forecast_ic_median:
+          asset_avaxusdt:
+            result: PASS
+            value: 0.036359
+            threshold: 0.02
+            n_windows: 5
+            n_trades: 4481
+          asset_linkusdt:
+            result: FAIL
+            value: 0.0076965
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 5651
+          base:
+            result: PASS
+            value: 0.0282675
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 5002
+          design_stretch_sma48:
+            result: PASS
+            value: 0.0542695
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 3349
+      counts:
+        PASS: 3
+        FAIL: 1
+        INCONCLUSIVE: 0
+    variants:
+      asset_avaxusdt:
+        status: tested
+        reason: null
+        config_ref: runs/run_101/artifacts/variants/asset_avaxusdt/strategy_config.json
+        forecast_hash: b45d1013d9eabd228bdf3e1eb80917ef5c8651bdb64f72dcdd645f1fc1702b18
+        symbols:
+        - AVAXUSD
+        n_windows: 5
+        trial_id: run_101:asset_avaxusdt
+        windows_sha256: 0e44a80d57fa2290dff866ecd182bc6aa80d447ce4e97f93d43834b5a9b52ff5
+      asset_linkusdt:
+        status: tested
+        reason: null
+        config_ref: runs/run_101/artifacts/variants/asset_linkusdt/strategy_config.json
+        forecast_hash: b45d1013d9eabd228bdf3e1eb80917ef5c8651bdb64f72dcdd645f1fc1702b18
+        symbols:
+        - LINKUSD
+        n_windows: 6
+        trial_id: run_101:asset_linkusdt
+      base:
+        status: tested
+        reason: null
+        config_ref: runs/run_101/artifacts/variants/base/strategy_config.json
+        forecast_hash: b45d1013d9eabd228bdf3e1eb80917ef5c8651bdb64f72dcdd645f1fc1702b18
+        symbols:
+        - BTCUSD
+        n_windows: 6
+        trial_id: run_101:base
+      design_stretch_sma48:
+        status: tested
+        reason: null
+        config_ref: runs/run_101/artifacts/variants/design_stretch_sma48/strategy_config.json
+        forecast_hash: dd24912a43d7f9de4b30f9729a9c5b6a13a602e49de9d6ac71638b4be7a0d5be
+        symbols:
+        - BTCUSD
+        n_windows: 6
+        trial_id: run_101:design_stretch_sma48
+    trial_ids:
+    - run_101:asset_avaxusdt
+    - run_101:asset_linkusdt
+    - run_101:base
+    - run_101:design_stretch_sma48
+    protocol_ref: protocols/run_101_generated.json
+    timeframe: 1h
+    proposals:
+    - category: profitability
+      ref: runs/run_101/artifacts/proposals/profitability.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'',
+          ''trade_efficiency'']) replace the readers; no lens writes profitability'
+    - category: trade_efficiency
+      ref: runs/run_101/artifacts/proposals/trade_efficiency.yaml
+      proposal_ids:
+      - trade_efficiency-run_101-1
+      count: 1
+    - category: forecast_power
+      ref: runs/run_101/artifacts/proposals/forecast_power.yaml
+      proposal_ids:
+      - forecast_power-run_101-1
+      count: 1
+    - category: regime_power
+      ref: runs/run_101/artifacts/proposals/regime_power.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'',
+          ''trade_efficiency'']) replace the readers; no lens writes regime_power'
+    - category: component_attribution
+      ref: runs/run_101/artifacts/proposals/component_attribution.yaml
+      proposal_ids: []
+      count: 0
+      skipped:
+        rule: replaced_by_analyst
+        reason: 'orchestrator.analyst.enabled: the analyst''s lenses ([''forecast'',
+          ''trade_efficiency'']) replace the readers; no lens writes component_attribution'
+    registry:
+      skipped: not_validated
+    profit_bars:
+      ref: runs/run_101/artifacts/profit_bars_evaluation.yaml
+      scope: every_backtest
+      result: FAIL
+      passing: []
+      variants:
+        asset_avaxusdt:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: FAIL
+              actual: -1.3644564182909453
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.0020840978368657503
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 38.65167038968046
+              threshold: 18.282411639126433
+            calmar_min:
+              result: FAIL
+              actual: -0.4500446937315579
+              threshold: 0.8204606862640758
+            avg_daily_return_min:
+              result: FAIL
+              actual: -0.0004989691054225681
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: FAIL
+              actual: -1.61033272449778
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.3031566001639792
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: FAIL
+              actual: -2.182257920431571
+              threshold: 0.0
+        asset_linkusdt:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: FAIL
+              actual: -2.044161177555671
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 1.366965672333631e-05
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 46.397883710404095
+              threshold: 20.0
+            calmar_min:
+              result: FAIL
+              actual: -0.5167486239760674
+              threshold: 0.75
+            avg_daily_return_min:
+              result: FAIL
+              actual: -0.0007275017416620535
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: FAIL
+              actual: -2.3203662704667924
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.31898618563762987
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: FAIL
+              actual: -2.341699235087175
+              threshold: 0.0
+        base:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: FAIL
+              actual: -2.1314440655125493
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 4.8923327929939475e-06
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 51.93313242372306
+              threshold: 20.0
+            calmar_min:
+              result: FAIL
+              actual: -0.5474081163480581
+              threshold: 0.75
+            avg_daily_return_min:
+              result: FAIL
+              actual: -0.0008842793989349773
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: FAIL
+              actual: -2.3093271262836446
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.2824362121125635
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: FAIL
+              actual: -2.4462283058312106
+              threshold: 0.0
+        design_stretch_sma48:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: FAIL
+              actual: -1.4193626919406528
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.0005801826312437086
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 36.448681331326206
+              threshold: 20.0
+            calmar_min:
+              result: FAIL
+              actual: -0.4818095550791462
+              threshold: 0.75
+            avg_daily_return_min:
+              result: FAIL
+              actual: -0.000505622107943896
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: FAIL
+              actual: -1.5972457527117478
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.1889948056395913
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: FAIL
+              actual: -1.7564730571511944
+              threshold: 0.0
+    profit_bars_reason: null
+    kb_entry_id: grid_run_101
+    fold: A
+    finding:
+      approximation:
+        line: 'this run tested an approximation of the idea: f_t = S_t/sd_720(S)_t
+          - D_t/sd_720(D)_t, where sd_720 is the trailing 720-bar standard deviation
+          -> standardise (window 500, min_periods 120, target 10, cap 20) on each
+          of S and D; the D component is then negated; equal weights 1 and 1; price_minus_long_sma,
+          L_t = close_t / SMA_168(close)_t - 1 -> nothing as a separate component;
+          the long-SMA information enters through the S_t component; exits and holding
+          rules: a forecast cannot say when to leave a trade -> nothing; position
+          state and sizing -> no position state; sizing is the campaign-default strategies.sizing
+          vol_target block; cost and turnover control -> nothing; the default risk-layer
+          min_allocation_change applies'
+        n_deviations: 5
+        deviations:
+        - clause: f_t = S_t/sd_720(S)_t - D_t/sd_720(D)_t, where sd_720 is the trailing
+            720-bar standard deviation
+          built_instead: standardise (window 500, min_periods 120, target 10, cap
+            20) on each of S and D; the D component is then negated; equal weights
+            1 and 1
+          missing: a 720-bar standard-deviation scale (standardise windows are capped
+            at 500 and use mean absolute value, not standard deviation)
+          effect: The scale is the mean absolute value over 500 past bars instead
+            of the standard deviation over 720 bars. The relative weight of S and
+            D shifts only slightly, since both series are near zero-mean. The forecast
+            is half of f_t, which does not change rank or sign, and readiness comes
+            at about 290 bar...
+        - clause: price_minus_long_sma, L_t = close_t / SMA_168(close)_t - 1
+          built_instead: nothing as a separate component; the long-SMA information
+            enters through the S_t component
+          missing: null
+          effect: None on the forecast, because f_t does not use L_t.
+        - clause: 'exits and holding rules: a forecast cannot say when to leave a
+            trade'
+          built_instead: nothing
+          missing: null
+          effect: Declared by step 1a. The position follows forecast / 10 on every
+            bar.
+        - clause: position state and sizing
+          built_instead: no position state; sizing is the campaign-default strategies.sizing
+            vol_target block
+          missing: null
+          effect: Declared by step 1a. Sizing scales exposure by target volatility
+            over realised volatility, while the logged forecast stays unsized.
+        - clause: cost and turnover control
+          built_instead: nothing; the default risk-layer min_allocation_change applies
+          missing: null
+          effect: Declared by step 1a. Costs are judged only by the backtest.
+        ref: artifacts/deviations.yaml
+      finding_id: F-run_101-1
+      label: measured, not proven
+      status: measured
+      reason: null
+      information_only: true
+      statement: BTC's 24-bar forward return is higher when the SMA24/SMA168 trend
+        is positive and price sits below SMA24 (high f), and lower in the mirror case,
+        so f ranks forward returns over 12 to 48 bars.
+      kind: direction_forecast
+      block_visibility: ok
+      manifest_kind: forecast
+      claim_revision: not_needed
+      tests:
+      - name: ic_all_bars_around_24
+        spec_hash: d3748710854b26fcbff6b88c94f3f814ef4253ef5cface4e2b4e04f79b87a894
+        statistic: rank_ic
+        direction: greater
+        outcome: fwd_return
+        spec:
+          selector:
+            kind: all
+          outcome:
+            kind: fwd_return
+            horizons:
+            - 12
+            - 24
+            - 48
+          baseline: null
+          statistic: rank_ic
+          direction: greater
+          floor:
+            min_windows: 4
+          consistency:
+            unit: window
+            min_same_sign: 4
+      - name: top_bucket_beats_rest
+        spec_hash: a3cf0821b6866b940951a8c4649cf521fb09a216be76eed470e05db46efbfeec
+        statistic: mean_diff
+        direction: greater
+        outcome: fwd_return
+        spec:
+          selector:
+            kind: quantile
+            field: forecast
+            side: top
+            q: 0.2
+            lookback: 72
+          outcome:
+            kind: fwd_return
+            horizons:
+            - 12
+            - 24
+            - 48
+          baseline:
+            kind: complement
+          statistic: mean_diff
+          direction: greater
+          floor:
+            min_windows: 4
+      - name: opposite_reading_bottom_bucket_beats_rest
+        spec_hash: e44958618aa90d91a060aea3ad2ca7a9844b0575ee3d38081fdeb3f7f380709f
+        statistic: mean_diff
+        direction: greater
+        outcome: fwd_return
+        spec:
+          selector:
+            kind: quantile
+            field: forecast
+            side: bottom
+            q: 0.2
+            lookback: 72
+          outcome:
+            kind: fwd_return
+            horizons:
+            - 12
+            - 24
+            - 48
+          baseline:
+            kind: complement
+          statistic: mean_diff
+          direction: greater
+          floor:
+            min_windows: 4
+      scope:
+        venue: kraken
+        product: perp
+        price_proxy: true
+        funding_modelled: false
+        timeframe: 1h
+        symbols:
+        - AVAXUSD
+        - BTCUSD
+        - LINKUSD
+        period:
+          start: '2022-01-01'
+          end: '2023-12-31'
+        windows_sha256: null
+        windows_vary: true
+      result:
+        per_variant:
+          asset_avaxusdt:
+            trial_id: run_101:asset_avaxusdt
+            status: measured
+            tests:
+              ic_all_bars_around_24:
+                status: measured
+                spec_hash: d3748710854b26fcbff6b88c94f3f814ef4253ef5cface4e2b4e04f79b87a894
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '12':
+                    effect: 0.0332454
+                    n_events: 14573
+                    windows_claimed_sign: 3
+                    windows_with_value: 5
+                  '24':
+                    effect: 0.0352062
+                    n_events: 14513
+                    windows_claimed_sign: 3
+                    windows_with_value: 5
+                  '48':
+                    effect: 0.017726
+                    n_events: 14393
+                    windows_claimed_sign: 4
+                    windows_with_value: 5
+              top_bucket_beats_rest:
+                status: measured
+                spec_hash: a3cf0821b6866b940951a8c4649cf521fb09a216be76eed470e05db46efbfeec
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '12':
+                    effect: 0.00067123
+                    n_events: 3405
+                    windows_claimed_sign: 3
+                    windows_with_value: 5
+                  '24':
+                    effect: 0.00128074
+                    n_events: 3402
+                    windows_claimed_sign: 4
+                    windows_with_value: 5
+                  '48':
+                    effect: 9.72735e-05
+                    n_events: 3377
+                    windows_claimed_sign: 2
+                    windows_with_value: 5
+              opposite_reading_bottom_bucket_beats_rest:
+                status: measured
+                spec_hash: e44958618aa90d91a060aea3ad2ca7a9844b0575ee3d38081fdeb3f7f380709f
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '12':
+                    effect: -0.00359053
+                    n_events: 3350
+                    windows_claimed_sign: 1
+                    windows_with_value: 5
+                  '24':
+                    effect: -0.00395422
+                    n_events: 3335
+                    windows_claimed_sign: 1
+                    windows_with_value: 5
+                  '48':
+                    effect: 0.000387228
+                    n_events: 3307
+                    windows_claimed_sign: 2
+                    windows_with_value: 5
+            windows_sha256: 0e44a80d57fa2290dff866ecd182bc6aa80d447ce4e97f93d43834b5a9b52ff5
+          asset_linkusdt:
+            trial_id: run_101:asset_linkusdt
+            status: measured
+            tests:
+              ic_all_bars_around_24:
+                status: measured
+                spec_hash: d3748710854b26fcbff6b88c94f3f814ef4253ef5cface4e2b4e04f79b87a894
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '12':
+                    effect: -0.0165274
+                    n_events: 17444
+                    windows_claimed_sign: 1
+                    windows_with_value: 6
+                  '24':
+                    effect: -0.00445379
+                    n_events: 17372
+                    windows_claimed_sign: 2
+                    windows_with_value: 6
+                  '48':
+                    effect: -0.0146299
+                    n_events: 17228
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+              top_bucket_beats_rest:
+                status: measured
+                spec_hash: a3cf0821b6866b940951a8c4649cf521fb09a216be76eed470e05db46efbfeec
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '12':
+                    effect: 0.00146226
+                    n_events: 4058
+                    windows_claimed_sign: 5
+                    windows_with_value: 6
+                  '24':
+                    effect: 0.00269369
+                    n_events: 4056
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '48':
+                    effect: 0.00368756
+                    n_events: 4021
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+              opposite_reading_bottom_bucket_beats_rest:
+                status: measured
+                spec_hash: e44958618aa90d91a060aea3ad2ca7a9844b0575ee3d38081fdeb3f7f380709f
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '12':
+                    effect: 0.00017995
+                    n_events: 3975
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '24':
+                    effect: -0.000496378
+                    n_events: 3954
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+                  '48':
+                    effect: 0.00172702
+                    n_events: 3922
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+            windows_sha256: d931dfa50fb1aaddde738abd5eb1b2f9011df7e1c49fbc0ea7b0b87d492fb289
+          base:
+            trial_id: run_101:base
+            status: measured
+            tests:
+              ic_all_bars_around_24:
+                status: measured
+                spec_hash: d3748710854b26fcbff6b88c94f3f814ef4253ef5cface4e2b4e04f79b87a894
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '12':
+                    effect: 0.00676382
+                    n_events: 17446
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+                  '24':
+                    effect: 0.0331073
+                    n_events: 17374
+                    windows_claimed_sign: 5
+                    windows_with_value: 6
+                  '48':
+                    effect: 0.0281038
+                    n_events: 17230
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+              top_bucket_beats_rest:
+                status: measured
+                spec_hash: a3cf0821b6866b940951a8c4649cf521fb09a216be76eed470e05db46efbfeec
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '12':
+                    effect: 0.000155074
+                    n_events: 4023
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '24':
+                    effect: 0.00217727
+                    n_events: 4018
+                    windows_claimed_sign: 5
+                    windows_with_value: 6
+                  '48':
+                    effect: 0.00421697
+                    n_events: 3978
+                    windows_claimed_sign: 5
+                    windows_with_value: 6
+              opposite_reading_bottom_bucket_beats_rest:
+                status: measured
+                spec_hash: e44958618aa90d91a060aea3ad2ca7a9844b0575ee3d38081fdeb3f7f380709f
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '12':
+                    effect: -0.000528814
+                    n_events: 4200
+                    windows_claimed_sign: 2
+                    windows_with_value: 6
+                  '24':
+                    effect: -0.00126354
+                    n_events: 4187
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+                  '48':
+                    effect: -0.00118172
+                    n_events: 4165
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+            windows_sha256: d931dfa50fb1aaddde738abd5eb1b2f9011df7e1c49fbc0ea7b0b87d492fb289
+          design_stretch_sma48:
+            trial_id: run_101:design_stretch_sma48
+            status: measured
+            tests:
+              ic_all_bars_around_24:
+                status: measured
+                spec_hash: d3748710854b26fcbff6b88c94f3f814ef4253ef5cface4e2b4e04f79b87a894
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '12':
+                    effect: 0.020656
+                    n_events: 17446
+                    windows_claimed_sign: 5
+                    windows_with_value: 6
+                  '24':
+                    effect: 0.0415002
+                    n_events: 17374
+                    windows_claimed_sign: 5
+                    windows_with_value: 6
+                  '48':
+                    effect: 0.0197141
+                    n_events: 17230
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+              top_bucket_beats_rest:
+                status: measured
+                spec_hash: a3cf0821b6866b940951a8c4649cf521fb09a216be76eed470e05db46efbfeec
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '12':
+                    effect: 0.000404957
+                    n_events: 4374
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+                  '24':
+                    effect: 0.00209869
+                    n_events: 4357
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+                  '48':
+                    effect: 0.00337554
+                    n_events: 4319
+                    windows_claimed_sign: 5
+                    windows_with_value: 6
+              opposite_reading_bottom_bucket_beats_rest:
+                status: measured
+                spec_hash: e44958618aa90d91a060aea3ad2ca7a9844b0575ee3d38081fdeb3f7f380709f
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '12':
+                    effect: 3.21173e-05
+                    n_events: 4593
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+                  '24':
+                    effect: -2.48969e-05
+                    n_events: 4581
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+                  '48':
+                    effect: 0.00113875
+                    n_events: 4553
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+            windows_sha256: d931dfa50fb1aaddde738abd5eb1b2f9011df7e1c49fbc0ea7b0b87d492fb289
+      trial_ids:
+      - run_101:asset_avaxusdt
+      - run_101:asset_linkusdt
+      - run_101:base
+      - run_101:design_stretch_sma48
+      source:
+        run_id: run_101
+        hypothesis_id: SMA_PULLBACK_IN_TREND_24H_1H_BTC_FOLD_A
+        claim_status_ref: runs/run_101/artifacts/claim_measurement.yaml
+        claim_test_refs:
+          asset_avaxusdt: runs/run_101/artifacts/variants/asset_avaxusdt/claim_test.yaml
+          asset_linkusdt: runs/run_101/artifacts/variants/asset_linkusdt/claim_test.yaml
+          base: runs/run_101/artifacts/variants/base/claim_test.yaml
+          design_stretch_sma48: runs/run_101/artifacts/variants/design_stretch_sma48/claim_test.yaml
+  run_102:
+    run_id: run_102
+    hypothesis_id: SMA_PULLBACK_IN_TREND_24H_1H_BTC_FOLD_A__trade_efficiency-run_101-1
+    legacy: false
+    recorded_at: '2026-10-28T06:30:43.591893+00:00'
+    idea_status: refuted
+    idea_status_reason: at least one criterion FAILed with sufficient data on at least
+      one variant
+    idea_status_ref: runs/run_102/artifacts/idea_status.yaml
+    engineering_fault: null
+    engineering_fault_detail: []
+    grid:
+      ref: runs/run_102/artifacts/grid_evaluation.yaml
+      criteria:
+      - forecast_ic_median
+      variants:
+      - asset_ltc_altcoin_l1
+      - asset_xrp_payment
+      - base
+      - split_stretch_weight
+      cells:
+        forecast_ic_median:
+          asset_ltc_altcoin_l1:
+            result: FAIL
+            value: -0.000255
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 2432
+          asset_xrp_payment:
+            result: PASS
+            value: 0.028596
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 2376
+          base:
+            result: FAIL
+            value: -0.0083525
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 2374
+          split_stretch_weight:
+            result: FAIL
+            value: -0.013586
+            threshold: 0.02
+            n_windows: 6
+            n_trades: 1797
+      counts:
+        PASS: 1
+        FAIL: 3
+        INCONCLUSIVE: 0
+    variants:
+      asset_ltc_altcoin_l1:
+        status: tested
+        reason: null
+        config_ref: runs/run_102/artifacts/variants/asset_ltc_altcoin_l1/strategy_config.json
+        forecast_hash: b0adcce3649ed9d17db07da9f572a7bdb298f7baa3bc22fe8b2fde61e3d92ea3
+        symbols:
+        - LTCUSD
+        n_windows: 6
+        trial_id: run_102:asset_ltc_altcoin_l1
+      asset_xrp_payment:
+        status: tested
+        reason: null
+        config_ref: runs/run_102/artifacts/variants/asset_xrp_payment/strategy_config.json
+        forecast_hash: b0adcce3649ed9d17db07da9f572a7bdb298f7baa3bc22fe8b2fde61e3d92ea3
+        symbols:
+        - XRPUSD
+        n_windows: 6
+        trial_id: run_102:asset_xrp_payment
+      base:
+        status: tested
+        reason: null
+        config_ref: runs/run_102/artifacts/variants/base/strategy_config.json
+        forecast_hash: b0adcce3649ed9d17db07da9f572a7bdb298f7baa3bc22fe8b2fde61e3d92ea3
+        symbols:
+        - BTCUSD
+        n_windows: 6
+        trial_id: run_102:base
+      split_stretch_weight:
+        status: tested
+        reason: null
+        config_ref: runs/run_102/artifacts/variants/split_stretch_weight/strategy_config.json
+        forecast_hash: 727c1260204c33260bb05156377b56ff01b2c4eff1646e14413fbcd7cbea7578
+        symbols:
+        - BTCUSD
+        n_windows: 6
+        trial_id: run_102:split_stretch_weight
+    trial_ids:
+    - run_102:asset_ltc_altcoin_l1
+    - run_102:asset_xrp_payment
+    - run_102:base
+    - run_102:split_stretch_weight
+    protocol_ref: protocols/run_102_generated.json
+    timeframe: 1h
+    proposals:
+    - category: profitability
+      ref: null
+      proposal_ids: []
+      count: 0
+    - category: trade_efficiency
+      ref: runs/run_102/artifacts/proposals/trade_efficiency.yaml
+      proposal_ids:
+      - trade_efficiency-run_102-2
+      count: 1
+    - category: forecast_power
+      ref: runs/run_102/artifacts/proposals/forecast_power.yaml
+      proposal_ids:
+      - forecast_power-run_102-2
+      count: 1
+    - category: regime_power
+      ref: null
+      proposal_ids: []
+      count: 0
+    - category: component_attribution
+      ref: null
+      proposal_ids: []
+      count: 0
+    registry:
+      skipped: not_validated
+    profit_bars:
+      ref: runs/run_102/artifacts/profit_bars_evaluation.yaml
+      scope: every_backtest
+      result: FAIL
+      passing: []
+      variants:
+        asset_ltc_altcoin_l1:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: FAIL
+              actual: -0.16018907613302613
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.0460557449163988
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: PASS
+              actual: 14.807808674647738
+              threshold: 20.0
+            calmar_min:
+              result: FAIL
+              actual: -0.2994123880975925
+              threshold: 0.75
+            avg_daily_return_min:
+              result: FAIL
+              actual: -7.943406474424542e-05
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: FAIL
+              actual: -0.8883046339043713
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.13589128697042366
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: FAIL
+              actual: -0.3654643758600683
+              threshold: 0.0
+        asset_xrp_payment:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: PASS
+              actual: 0.2437553353783088
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.13139940706606407
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 24.01186386274925
+              threshold: 20.0
+            calmar_min:
+              result: FAIL
+              actual: 0.12201514325093693
+              threshold: 0.75
+            avg_daily_return_min:
+              result: FAIL
+              actual: 0.00013362925886490723
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: FAIL
+              actual: -0.546082743763515
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.13294896677702933
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: FAIL
+              actual: -0.23825654284131453
+              threshold: 0.0
+        base:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: FAIL
+              actual: -0.33713394247652784
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.03239504100027396
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 21.704429031802842
+              threshold: 20.0
+            calmar_min:
+              result: FAIL
+              actual: -0.5378033678766005
+              threshold: 0.75
+            avg_daily_return_min:
+              result: FAIL
+              actual: -0.000246397182566679
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: FAIL
+              actual: -1.257104629689624
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.1327130543980821
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: FAIL
+              actual: -0.5628264683294574
+              threshold: 0.0
+        split_stretch_weight:
+          result: FAIL
+          bars:
+            sharpe_min:
+              result: PASS
+              actual: 0.08192082557780432
+              threshold: 0.0
+            deflated_sharpe_threshold:
+              result: FAIL
+              actual: 0.08668513688078067
+              threshold: 0.5
+            max_drawdown_pct_max:
+              result: FAIL
+              actual: 21.338606798873816
+              threshold: 20.0
+            calmar_min:
+              result: FAIL
+              actual: -0.08911708194390504
+              threshold: 0.75
+            avg_daily_return_min:
+              result: FAIL
+              actual: 6.87755760287003e-05
+              threshold: 0.0005
+            buy_and_hold_sharpe_excess_min:
+              result: FAIL
+              actual: -0.8380498616352919
+              threshold: 0.0
+            trade_frequency_min:
+              result: PASS
+              actual: 0.1000057080883612
+              threshold: 0.01
+            leave_one_block_out_sharpe_min:
+              result: FAIL
+              actual: -0.0593536207687157
+              threshold: 0.0
+    profit_bars_reason: null
+    kb_entry_id: grid_run_102
+    fold: B
+    base_book:
+      sharpe: -0.33713394247652784
+      max_drawdown_pct: 21.704429031802842
+      mean_abs_allocation: 0.27297048
+      turnover_annualised: 5.1624732
+      median_holding_bars: 27.0
+    observations:
+    - lens: forecast
+      id: O-run_102-forecast-1
+      statement: 'The trend leg''s rank IC with forward returns is negative at 6 and
+        24 hours over all bars, with the claimed positive sign in only 1 of 6 windows
+        at each horizon.
+
+        '
+      test: q4
+      evidence:
+      - q4:horizons.24.effect=-0.00951
+      - q4:horizons.6.windows_claimed_sign=1
+      floors_met: true
+      variant: base
+      measured:
+        function: conditional_effect
+        params:
+          baseline: null
+          by: window
+          condition:
+            kind: all
+          direction: greater
+          horizons:
+          - 6
+          - 24
+          outcome: fwd_return
+          signal: debug_info.components.trend_spread.post_pipeline_value
+          statistic: rank_ic
+          variant: base
+        statistic: rank_ic
+        spec_hash: 9294f3a8751fd5666dc563994a555abf1b4c2ffc836a47fdf2c42d8bad2d4325
+        selector:
+          kind: all
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 6
+          - 24
+        baseline: null
+        direction: greater
+        floor:
+          min_events: 1
+        signal: debug_info.components.trend_spread.post_pipeline_value
+      fold_observed: B
+      mechanism_query: q11
+      ref: runs/run_102/artifacts/analyst/forecast.yaml
+    - lens: forecast
+      id: O-run_102-forecast-2
+      statement: 'The stretch leg''s rank IC over all bars is positive at 6 and 24
+        hours in 6 of 6 windows at each horizon. This is a component-level test on
+        all bars, so it is not itself a claim test.
+
+        '
+      test: q5
+      evidence:
+      - q5:horizons.24.effect=0.0824
+      - q5:horizons.24.windows_claimed_sign=6
+      floors_met: true
+      variant: base
+      measured:
+        function: conditional_effect
+        params:
+          baseline: null
+          by: window
+          condition:
+            kind: all
+          direction: greater
+          horizons:
+          - 6
+          - 24
+          outcome: fwd_return
+          signal: debug_info.components.stretch_from_short_sma.post_pipeline_value
+          statistic: rank_ic
+          variant: base
+        statistic: rank_ic
+        spec_hash: 52dc10dbb0dfad1eb5207462d2fc58eea9cc51f2fb0c3e925284fd71b4254b34
+        selector:
+          kind: all
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 6
+          - 24
+        baseline: null
+        direction: greater
+        floor:
+          min_events: 1
+        signal: debug_info.components.stretch_from_short_sma.post_pipeline_value
+      fold_observed: B
+      mechanism_query: q9
+      ref: runs/run_102/artifacts/analyst/forecast.yaml
+    - lens: forecast
+      id: O-run_102-forecast-3
+      statement: 'The top quintile of the stretch leg shows higher 24-hour returns
+        than the other bars in 4 of 6 windows and lower 6-hour returns in all 6 windows.
+        This is weaker than its rank IC and does not clear a 4-window agreement at
+        6 hours.
+
+        '
+      test: q6
+      evidence:
+      - q6:horizons.24.effect=0.00134
+      - q6:horizons.6.windows_claimed_sign=0
+      floors_met: true
+      variant: base
+      measured:
+        function: conditional_effect
+        params:
+          baseline:
+            kind: complement
+          by: null
+          condition:
+            field: forecast
+            kind: quantile
+            lookback: 500
+            q: 0.2
+            side: top
+          direction: greater
+          floor:
+            min_events: 100
+            min_windows: 4
+          horizons:
+          - 6
+          - 24
+          outcome: fwd_return
+          signal: debug_info.components.stretch_from_short_sma.post_pipeline_value
+          statistic: mean_diff
+          variant: base
+        statistic: mean_diff
+        spec_hash: 0e2e3d1bc127817598ca9b883102070a28e84b98b42d06f4fb6ea297da003c03
+        selector:
+          kind: quantile
+          field: forecast
+          side: top
+          q: 0.2
+          lookback: 500
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 6
+          - 24
+        baseline:
+          kind: complement
+        direction: greater
+        floor:
+          min_events: 100
+          min_windows: 4
+        signal: debug_info.components.stretch_from_short_sma.post_pipeline_value
+      fold_observed: B
+      mechanism_query: q10
+      ref: runs/run_102/artifacts/analyst/forecast.yaml
+    - lens: forecast
+      id: O-run_102-forecast-4
+      statement: 'The bottom quintile of the stretch leg shows lower 24-hour returns
+        than the other bars in 5 of 6 windows, and only 3 of 6 at 6 hours.
+
+        '
+      test: q10
+      evidence:
+      - q10:horizons.24.effect=-0.00294
+      - q10:horizons.24.windows_claimed_sign=5
+      floors_met: true
+      variant: base
+      measured:
+        function: conditional_effect
+        params:
+          baseline:
+            kind: complement
+          by: null
+          condition:
+            field: forecast
+            kind: quantile
+            lookback: 500
+            q: 0.2
+            side: bottom
+          direction: less
+          floor:
+            min_events: 100
+            min_windows: 4
+          horizons:
+          - 6
+          - 24
+          outcome: fwd_return
+          signal: debug_info.components.stretch_from_short_sma.post_pipeline_value
+          statistic: mean_diff
+          variant: base
+        statistic: mean_diff
+        spec_hash: 0436f56df80dae581771cab285a2204fe961e486ab7e0965893db90826e79f21
+        selector:
+          kind: quantile
+          field: forecast
+          side: bottom
+          q: 0.2
+          lookback: 500
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 6
+          - 24
+        baseline:
+          kind: complement
+        direction: less
+        floor:
+          min_events: 100
+          min_windows: 4
+        signal: debug_info.components.stretch_from_short_sma.post_pipeline_value
+      fold_observed: B
+      mechanism_query: q9
+      ref: runs/run_102/artifacts/analyst/forecast.yaml
+    - lens: forecast
+      id: O-run_102-forecast-5
+      statement: 'Bars in the bottom quintile of the 24-hour past return show higher
+        24-hour forward returns in 4 of 6 windows, with an opposite sign at 6 hours.
+
+        '
+      test: q7
+      evidence:
+      - q7:horizons.24.effect=0.00154
+      - q7:horizons.24.windows_claimed_sign=4
+      floors_met: true
+      variant: base
+      measured:
+        function: conditional_effect
+        params:
+          baseline:
+            kind: complement
+          by: null
+          condition:
+            bars: 24
+            field: past_return
+            kind: quantile
+            lookback: 500
+            q: 0.2
+            side: bottom
+          direction: greater
+          floor:
+            min_events: 100
+            min_windows: 4
+          horizons:
+          - 6
+          - 24
+          outcome: fwd_return
+          statistic: mean_diff
+          variant: base
+        statistic: mean_diff
+        spec_hash: 7a9da714c9432c88e1c5eefca97522a1f0bc1aebaa0ea165d7186ae720510fd5
+        selector:
+          kind: quantile
+          field: past_return
+          bars: 24
+          side: bottom
+          q: 0.2
+          lookback: 500
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 6
+          - 24
+        baseline:
+          kind: complement
+        direction: greater
+        floor:
+          min_events: 100
+          min_windows: 4
+      fold_observed: B
+      mechanism_query: q9
+      angle: regime
+      ref: runs/run_102/artifacts/analyst/forecast.yaml
+    - lens: forecast
+      id: O-run_102-forecast-6
+      statement: 'The top quintile of the trend leg shows lower forward returns than
+        the other bars in only 3 of 6 windows at both horizons, so the trend leg''s
+        negative edge is not robust.
+
+        '
+      test: q8
+      evidence:
+      - q8:horizons.24.windows_claimed_sign=3
+      floors_met: true
+      variant: base
+      measured:
+        function: conditional_effect
+        params:
+          baseline:
+            kind: complement
+          by: null
+          condition:
+            field: forecast
+            kind: quantile
+            lookback: 500
+            q: 0.2
+            side: top
+          direction: less
+          floor:
+            min_events: 100
+            min_windows: 4
+          horizons:
+          - 6
+          - 24
+          outcome: fwd_return
+          signal: debug_info.components.trend_spread.post_pipeline_value
+          statistic: mean_diff
+          variant: base
+        statistic: mean_diff
+        spec_hash: 011c0dfc983a7a0d31592743c2de8ae8854bf4e94eb608c5b2b2b27e1cab3d17
+        selector:
+          kind: quantile
+          field: forecast
+          side: top
+          q: 0.2
+          lookback: 500
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 6
+          - 24
+        baseline:
+          kind: complement
+        direction: less
+        floor:
+          min_events: 100
+          min_windows: 4
+        signal: debug_info.components.trend_spread.post_pipeline_value
+      fold_observed: B
+      mechanism_query: q11
+      ref: runs/run_102/artifacts/analyst/forecast.yaml
+    - lens: forecast
+      id: O-run_102-forecast-7
+      statement: 'Not reported by the model: query q11 (conditional_effect) cleared
+        its own floor; what it measured is in `measured`.'
+      test: q11
+      evidence:
+      - q11:horizons.6.effect=-0.017828918
+      - q11:horizons.24.effect=-0.0097387546
+      floors_met: true
+      variant: base
+      measured:
+        function: conditional_effect
+        params:
+          baseline: null
+          by: null
+          condition:
+            field: abs_forecast
+            kind: event
+            op: '>='
+            value: 5
+          direction: less
+          floor:
+            min_events: 100
+            min_windows: 4
+          horizons:
+          - 6
+          - 24
+          outcome: fwd_return
+          signal: debug_info.components.trend_spread.post_pipeline_value
+          statistic: rank_ic
+          variant: base
+        statistic: rank_ic
+        spec_hash: 645c8c1e75cadf178a666fd2793191cf5dc2571a4dc6d13bcbbd6511a58c29df
+        selector:
+          kind: event
+          field: abs_forecast
+          op: '>='
+          value: 5
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 6
+          - 24
+        baseline: null
+        direction: less
+        floor:
+          min_events: 100
+          min_windows: 4
+        signal: debug_info.components.trend_spread.post_pipeline_value
+      fold_observed: B
+      unreported_by_model: true
+      effect:
+        '6': -0.017828918
+        '24': -0.0097387546
+      windows:
+        '6':
+          n_windows_with_events: 6
+          windows_claimed_sign: 6
+          windows_with_value: 6
+        '24':
+          n_windows_with_events: 6
+          windows_claimed_sign: 3
+          windows_with_value: 6
+      ref: runs/run_102/artifacts/analyst/forecast.yaml
+    - lens: trade_efficiency
+      id: O-run_102-trade_efficiency-1
+      statement: 'The slow trend leg (SMA24/SMA168 spread) has a negative rank IC
+        with forward returns at 6 and 24 bars, in 5 of 6 windows. This is the opposite
+        of the card''s premise.
+
+        '
+      test: q7
+      evidence:
+      - q7:horizons.24.effect=-0.0095106009
+      - q7:horizons.6.effect=-0.010307667
+      floors_met: true
+      variant: base
+      measured:
+        function: conditional_effect
+        params:
+          baseline: null
+          by: null
+          condition:
+            kind: all
+          direction: less
+          floor:
+            min_events: 100
+            min_windows: 4
+          horizons:
+          - 6
+          - 24
+          outcome: fwd_return
+          signal: debug_info.components.trend_spread.post_pipeline_value
+          statistic: rank_ic
+          variant: base
+        statistic: rank_ic
+        spec_hash: 02da5ff62c8ae659f88a5179d63db8caa55f6ad97dc5fa125a2276256e5a2dd1
+        selector:
+          kind: all
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 6
+          - 24
+        baseline: null
+        direction: less
+        floor:
+          min_events: 100
+          min_windows: 4
+        signal: debug_info.components.trend_spread.post_pipeline_value
+      fold_observed: B
+      mechanism_query: q6
+      ref: runs/run_102/artifacts/analyst/trade_efficiency.yaml
+    - lens: trade_efficiency
+      id: O-run_102-trade_efficiency-2
+      statement: 'Bars whose past 24-hour return is in the bottom 20% of the trailing
+        500 bars show a higher 24-bar forward return than other bars, but the effect
+        points the claimed way in only 4 of 6 windows. At 6 bars it points the other
+        way (3 of 6 windows).
+
+        '
+      test: q8
+      evidence:
+      - q8:horizons.24.effect=0.0015419001
+      - q8:horizons.6.effect=-0.00036362563
+      floors_met: true
+      variant: base
+      measured:
+        function: conditional_effect
+        params:
+          baseline:
+            kind: complement
+          by: null
+          condition:
+            bars: 24
+            field: past_return
+            kind: quantile
+            lookback: 500
+            q: 0.2
+            side: bottom
+          direction: greater
+          floor:
+            min_events: 100
+            min_windows: 4
+          horizons:
+          - 6
+          - 24
+          outcome: fwd_return
+          statistic: mean_diff
+          variant: base
+        statistic: mean_diff
+        spec_hash: 7a9da714c9432c88e1c5eefca97522a1f0bc1aebaa0ea165d7186ae720510fd5
+        selector:
+          kind: quantile
+          field: past_return
+          bars: 24
+          side: bottom
+          q: 0.2
+          lookback: 500
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 6
+          - 24
+        baseline:
+          kind: complement
+        direction: greater
+        floor:
+          min_events: 100
+          min_windows: 4
+      fold_observed: B
+      mechanism_query: q6
+      angle: regime
+      ref: runs/run_102/artifacts/analyst/trade_efficiency.yaml
+    - lens: trade_efficiency
+      id: O-run_102-trade_efficiency-3
+      statement: 'Not reported by the model: query q5 (conditional_effect) cleared
+        its own floor; what it measured is in `measured`.'
+      test: q5
+      evidence:
+      - q5:horizons.6.effect=-0.010307667
+      - q5:horizons.24.effect=-0.0095106009
+      floors_met: true
+      variant: base
+      measured:
+        function: conditional_effect
+        params:
+          baseline: null
+          by: null
+          condition:
+            kind: all
+          direction: greater
+          floor:
+            min_events: 100
+            min_windows: 4
+          horizons:
+          - 6
+          - 24
+          outcome: fwd_return
+          signal: debug_info.components.trend_spread.post_pipeline_value
+          statistic: rank_ic
+          variant: base
+        statistic: rank_ic
+        spec_hash: d12fdd53b8201bb80f63f341485d02be0a01a77f3a15f688e805df2c85d02a8c
+        selector:
+          kind: all
+        outcome:
+          kind: fwd_return
+          horizons:
+          - 6
+          - 24
+        baseline: null
+        direction: greater
+        floor:
+          min_events: 100
+          min_windows: 4
+        signal: debug_info.components.trend_spread.post_pipeline_value
+      fold_observed: B
+      unreported_by_model: true
+      effect:
+        '6': -0.010307667
+        '24': -0.0095106009
+      windows:
+        '6':
+          n_windows_with_events: 6
+          windows_claimed_sign: 1
+          windows_with_value: 6
+        '24':
+          n_windows_with_events: 6
+          windows_claimed_sign: 1
+          windows_with_value: 6
+      ref: runs/run_102/artifacts/analyst/trade_efficiency.yaml
+    finding:
+      finding_id: F-run_102-1
+      label: measured, not proven
+      status: measured
+      reason: null
+      information_only: true
+      statement: 'After bars whose past 168-hour return is in the top 20% of its trailing
+        500 bars, BTC returns over the next 6 and 24 hours are higher than on other
+        bars. The slow trend leg therefore carries the persistent part of the forecast,
+        and the negated 24-bar stretch leg, which bets on reversal, adds sign flips
+        without a matching reversal edge.
+
+        '
+      kind: conditional_behaviour
+      block_visibility: blind
+      manifest_kind: forecast
+      claim_revision: frozen
+      tests:
+      - name: week_uptrend_continues
+        spec_hash: 15f09e714a89ba96fc6285fffb11de220f81b4b9e16d6baf58d36b71e69b6fdd
+        statistic: mean_diff
+        direction: greater
+        outcome: fwd_return
+        spec:
+          selector:
+            kind: quantile
+            field: past_return
+            bars: 168
+            side: top
+            q: 0.2
+            lookback: 500
+          outcome:
+            kind: fwd_return
+            horizons:
+            - 6
+            - 24
+          baseline:
+            kind: complement
+          statistic: mean_diff
+          direction: greater
+          floor:
+            min_events: 100
+            min_windows: 4
+      scope:
+        venue: kraken
+        product: perp
+        price_proxy: true
+        funding_modelled: false
+        timeframe: 1h
+        symbols:
+        - BTCUSD
+        - LTCUSD
+        - XRPUSD
+        period:
+          start: '2018-05-01'
+          end: '2021-12-31'
+        windows_sha256: 7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+        windows_vary: false
+      result:
+        per_variant:
+          asset_ltc_altcoin_l1:
+            trial_id: run_102:asset_ltc_altcoin_l1
+            status: measured
+            tests:
+              week_uptrend_continues:
+                status: measured
+                spec_hash: 15f09e714a89ba96fc6285fffb11de220f81b4b9e16d6baf58d36b71e69b6fdd
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '6':
+                    effect: 0.00141664
+                    n_events: 2712
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+                  '24':
+                    effect: 0.00300128
+                    n_events: 2696
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+            windows_sha256: 7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+          asset_xrp_payment:
+            trial_id: run_102:asset_xrp_payment
+            status: measured
+            tests:
+              week_uptrend_continues:
+                status: measured
+                spec_hash: 15f09e714a89ba96fc6285fffb11de220f81b4b9e16d6baf58d36b71e69b6fdd
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '6':
+                    effect: 0.00101883
+                    n_events: 3277
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+                  '24':
+                    effect: 0.00686521
+                    n_events: 3273
+                    windows_claimed_sign: 4
+                    windows_with_value: 6
+            windows_sha256: 7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+          base:
+            trial_id: run_102:base
+            status: measured
+            tests:
+              week_uptrend_continues:
+                status: measured
+                spec_hash: 15f09e714a89ba96fc6285fffb11de220f81b4b9e16d6baf58d36b71e69b6fdd
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '6':
+                    effect: 0.000684243
+                    n_events: 3361
+                    windows_claimed_sign: 5
+                    windows_with_value: 6
+                  '24':
+                    effect: 0.000622252
+                    n_events: 3330
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+            windows_sha256: 7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+          split_stretch_weight:
+            trial_id: run_102:split_stretch_weight
+            status: measured
+            tests:
+              week_uptrend_continues:
+                status: measured
+                spec_hash: 15f09e714a89ba96fc6285fffb11de220f81b4b9e16d6baf58d36b71e69b6fdd
+                peak_horizon: null
+                floor_not_met: []
+                horizons:
+                  '6':
+                    effect: 0.000684243
+                    n_events: 3361
+                    windows_claimed_sign: 5
+                    windows_with_value: 6
+                  '24':
+                    effect: 0.000622252
+                    n_events: 3330
+                    windows_claimed_sign: 3
+                    windows_with_value: 6
+            windows_sha256: 7a83cc6c53bba25fc1540b1a62d6a3d016c4ff6fbefe440eb2de44e4564081ae
+      trial_ids:
+      - run_102:asset_ltc_altcoin_l1
+      - run_102:asset_xrp_payment
+      - run_102:base
+      - run_102:split_stretch_weight
+      source:
+        run_id: run_102
+        hypothesis_id: SMA_PULLBACK_IN_TREND_24H_1H_BTC_FOLD_A__trade_efficiency-run_101-1
+        claim_status_ref: runs/run_102/artifacts/claim_measurement.yaml
+        claim_test_refs:
+          asset_ltc_altcoin_l1: runs/run_102/artifacts/variants/asset_ltc_altcoin_l1/claim_test.yaml
+          asset_xrp_payment: runs/run_102/artifacts/variants/asset_xrp_payment/claim_test.yaml
+          base: runs/run_102/artifacts/variants/base/claim_test.yaml
+          split_stretch_weight: runs/run_102/artifacts/variants/split_stretch_weight/claim_test.yaml

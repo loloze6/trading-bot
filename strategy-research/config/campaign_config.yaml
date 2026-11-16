@@ -791,7 +791,7 @@ orchestrator:
       # backtest's question. Every probe is recorded in
       # artifacts/forecast_size_probe.yaml. Adds a few seconds per config.
   claim_tests:
-    enabled: false
+    enabled: true
       # E-068 slice 2 (CUL-389, engineering/roadmap/E-068/DESIGN_PROPOSAL.md
       # sections 2, 2.3 and 4). OFF BY DEFAULT, read by
       # run_phase1_research._claim_tests_enabled(). HARD DEPENDENCY: raises if
@@ -841,7 +841,7 @@ orchestrator:
       # fix, PR #349): losing an era can turn FAIL into INCONCLUSIVE, never
       # into PASS. The engine's metrics.json is unchanged.
   analyst:
-    enabled: false
+    enabled: true
     model: claude-sonnet-5-5
       # D-179 (operator item D, 2026-10-22; supersedes D-098's Haiku 5.5): Sonnet 5.5. Measured
       # on run_099 (CLI cost meter): Haiku 0.99 (forecast) and 1.10 (trade_efficiency), Sonnet
@@ -892,7 +892,7 @@ orchestrator:
       # run_098 1.93 USD, run_100 1.26 (1a) and 0.64 (1b). Not measured: their quality and
       # cost on Sonnet.
   folds:
-    enabled: false
+    enabled: true
       # E-077 PR-1 (D-085). OFF BY DEFAULT, read by run_phase1_research._folds_enabled().
       # No dependency on another flag (its two effects are independent). While
       # false: byte-identical -- decide-next copies the parent's windows into
@@ -937,7 +937,7 @@ orchestrator:
       #    least 4 windows), no cost. (explore_confirm's in-run route and weak
       #    follow-up resolution were deleted with the explore_confirm flag, D-198.)
   operator_approval:
-    enabled: false
+    enabled: true
       # E-068 PR 4 (D-071, CUL-399). OFF BY DEFAULT, read by
       # run_campaign._operator_approval_enabled(). HARD DEPENDENCY: refused by
       # the launch pre-flight if true while decide_next.enabled or
@@ -958,7 +958,7 @@ orchestrator:
       # operator approves one with `run_campaign.py --approve <id>` (sets it
       # ready). Operator actions (`register`, --unpark, --resume) are unchanged.
   nearest_build:
-    enabled: false
+    enabled: true
       # E-068 (operator, 2026-10-05; D-075). OFF BY DEFAULT, read by
       # run_phase1_research._nearest_build_enabled(). HARD DEPENDENCY: raises if
       # true while config_direct_authoring.enabled or claim_tests.enabled is
@@ -994,7 +994,7 @@ orchestrator:
       # config_deviation before step 2 -- before any backtest, so no trial row.
       # Nearest build's own record stays information only.
   config_replay_gate:
-    enabled: false
+    enabled: true
       # Lane 1 (operator, 2026-10-12; D-109). OFF BY DEFAULT, read by
       # run_phase1_research._config_replay_gate_enabled(). No dependency. While
       # false: byte-identical (nothing read, 1b's route unchanged).
@@ -1006,7 +1006,7 @@ orchestrator:
       # run, pauses with config_replay_mismatch -- before any backtest, so no
       # trial row. Catches a rewrite 1b does not declare (CUL-429, run_085).
   exact_config_1b:
-    enabled: false
+    enabled: true
       # Lane 1 (operator, 2026-10-12; D-110). OFF BY DEFAULT, read by
       # run_phase1_research._exact_config_1b_enabled(). No dependency. While
       # false: byte-identical (1b is the model call as before).
@@ -1023,7 +1023,7 @@ orchestrator:
       # written by code too -- variant_patches.yaml with `base` only, empty
       # patch, no symbol; no model call. Loop on: step 2 is the model, as before.
   brief_criteria:
-    enabled: false
+    enabled: true
       # D-121 (operator, 2026-10-13). OFF BY DEFAULT, read by
       # run_phase1_research._brief_criteria_enabled(). No dependency. While false:
       # byte-identical. While true: a brief's own criteria -- evaluation.pass_rule with
@@ -1032,7 +1032,7 @@ orchestrator:
       # brief; decide-next copies a fold child's source criteria into that field. No
       # criteria given: step 1a picks (criteria_from: hypothesis_generation).
   dsr_same_structure:
-    enabled: false
+    enabled: true
       # D-185 (operator direction 2026-10-24, PR-2). OFF BY DEFAULT, read by
       # run_phase1_research._dsr_same_structure_enabled(). No dependency; it
       # changes a grade only with profit_bars_v2 on (the v2 whole-test DSR is the
@@ -1063,7 +1063,7 @@ orchestrator:
       # enqueue after the run is then a no-op). A 1a that did not complete enqueues
       # nothing, as before.
   cost_bar_all_costs:
-    enabled: false
+    enabled: true
       # CUL-414 (D-082; audit finding A7 in docs/DATA_DICTIONARY.md). OFF BY
       # DEFAULT, read by run_phase1_research._cost_bar_all_costs_enabled(). No
       # dependency. While false: byte-identical (run_protocol.py's arguments,
@@ -1084,7 +1084,7 @@ orchestrator:
       # values. Operator decision 2026-10-08: switch on before the next
       # comparison of results.
   forecast_ic_horizons:
-    enabled: false
+    enabled: true
       # D-186 (direction 2026-10-24, PR-4). OFF BY DEFAULT, read by
       # run_phase1_research._forecast_ic_horizons_enabled(). No dependency. While
       # false: byte-identical (run_protocol.py's arguments, every window's metrics.json
@@ -1101,7 +1101,7 @@ orchestrator:
       # never picks a criterion or a horizon from the card's statement. Amends D-134's
       # "one fixed default (step 1a may not override it)" for the horizon only.
   residual_ic_requires_block:
-    enabled: false
+    enabled: true
       # D-186 (direction 2026-10-24, PR-4). OFF BY DEFAULT, read by
       # run_phase1_research._residual_ic_requires_block_enabled(). No dependency. While
       # false: byte-identical (_residual_ic_exempt_reason as before). While true: an idea

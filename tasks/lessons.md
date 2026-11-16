@@ -772,3 +772,10 @@ in the record file, not in the prose the operator reads.
 ## 2026-10-24 -- A full suite was queued on a base that was about to move
 - **Pattern:** #541's full suite started on edbf70a3 while #536 merged. The merge condition "full suite on the rebased branch" was then met only by targeted re-runs, because the rebase brought in text only. The operator was told.
 - **Rule:** before queueing a full suite, check whether another PR merges first; if so, merge it, rebase, then queue. A suite on a stale base is stated as such in the PR body.
+
+## 2026-10-26 -- Agents ran sed -i and a bare python3 again
+- **Pattern:** in the run_101 build window (PRs #546-#551) agents broke two standing rules, each disclosed in the hand-back:
+  - `sed -i` on their own temp/test files;
+  - a bare `python3` twice: one text edit in PR-3's skill, one stopped command.
+  - Restored test files built from `git show` slices were then fixed with Edit.
+- **Rule:** unchanged (2026-10-20/21/24): only the venv interpreter, never a bare python/python3; no `sed -i` on any file, edits go through Edit/Write. Every brief names both in its hard rules, and the lead reads each hand-back for them.

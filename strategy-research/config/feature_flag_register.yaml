@@ -573,7 +573,7 @@ flags:
     config_key: orchestrator.claim_tests.enabled
     reader: run_phase1_research._claim_tests_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: "E-068 slice 5 (readers v3); automatic claim verdicts parked in CUL-394; no campaign runs until slices 1-3 are built and reviewed"
     criterion: >
       Landed 2026-10-03 (E-068 slice 2, CUL-389). Off: byte-identical --
@@ -645,8 +645,8 @@ flags:
     config_key: orchestrator.analyst.enabled
     reader: run_phase1_research._analyst_enabled
     owner: Jeremy
-    state: off_incomplete
-    blocked_on: "the operator's smoke session and pilot (engineering/roadmap/E-075/PR5_RUNBOOK.md)"
+    state: "on"
+    blocked_on: "c4/flag-set (runtime, uncommitted): switched on by the operator 2026-10-14 as the idea source of the daily breadth loop; D-092..D-098 settings and caps unchanged (folds, specialist_readers, reader_findings on; explore_confirm off)"
     criterion: >
       Landed 2026-10-08 (E-075 PR-5a, CUL-424, D-091), the first part of the analyst's
       flag. Off: byte-identical. On: the trade-level claim-test family (D-086) reaches
@@ -672,8 +672,8 @@ flags:
     config_key: orchestrator.folds.enabled
     reader: run_phase1_research._folds_enabled
     owner: Jeremy
-    state: off_incomplete
-    blocked_on: "the operator's decision to switch it on (with decide_next, so children take a drawn fold); a declared output change only for children that decide-next writes after that"
+    state: "on"
+    blocked_on: "c4/flag-set (runtime, uncommitted): switched on by the operator for the lane-1 runs and kept on for the daily breadth loop (D-123: a child run's fold is drawn at random among the folds its source is not on)"
     criterion: >
       Landed 2026-10-08 (E-077 PR-1, CUL-419, D-085). Off: byte-identical --
       decide-next copies the parent's machine_constraints (windows) into the
@@ -711,8 +711,8 @@ flags:
     config_key: orchestrator.operator_approval.enabled
     reader: run_campaign._operator_approval_enabled
     owner: Jeremy
-    state: off_incomplete
-    blocked_on: "decide_next and verdict_routing_retired (both off_incomplete; operator_approval requires them) and the operator's choice to supervise each agent pick before it runs"
+    state: "on"
+    blocked_on: "c4/flag-set (runtime, uncommitted): switched on by the operator 2026-10-05 -- every entry decide-next queues waits as blocked_on_operator_approval until `run_campaign.py --approve <id>`; decide_next and verdict_routing_retired are on there too. On master it stays off (decide_next and verdict_routing_retired are off_incomplete)."
     criterion: >
       Landed 2026-10-04 (E-068 PR 4, CUL-399, D-071). Off: byte-identical --
       every entry is created exactly as before. On (requires decide_next and
@@ -735,8 +735,8 @@ flags:
     config_key: orchestrator.nearest_build.enabled
     reader: run_phase1_research._nearest_build_enabled
     owner: Jeremy
-    state: off_incomplete
-    blocked_on: "config_direct_authoring and claim_tests (off_incomplete; nearest_build requires both); the operator switches it on in c4/flag-set for the next E-068 validation run"
+    state: "on"
+    blocked_on: "c4/flag-set (runtime, uncommitted): switched on by the operator 2026-10-05 for the E-068 validation runs (config_direct_authoring and claim_tests on there). On master it stays off (config_direct_authoring and claim_tests are off_incomplete)."
     criterion: >
       Landed 2026-10-05 (E-068, D-075). Off: byte-identical -- 1b's inputs,
       routing, the finding, the readers' digest and decide-next's request count
@@ -768,7 +768,7 @@ flags:
     config_key: orchestrator.config_replay_gate.enabled
     reader: run_phase1_research._config_replay_gate_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: "the operator switches it on in c4/flag-set for the lane-1 fold-B runs (D-109)"
     criterion: >
       Landed 2026-10-12 (lane 1, D-109). Off: byte-identical -- nothing read,
@@ -782,7 +782,7 @@ flags:
     config_key: orchestrator.exact_config_1b.enabled
     reader: run_phase1_research._exact_config_1b_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: "the operator switches it on in c4/flag-set for the lane-1 fold-B runs (D-110)"
     criterion: >
       Landed 2026-10-12 (lane 1, D-110). Off: byte-identical -- 1b is the model
@@ -800,8 +800,8 @@ flags:
     config_key: orchestrator.brief_criteria.enabled
     reader: run_phase1_research._brief_criteria_enabled
     owner: Jeremy
-    state: off_incomplete
-    blocked_on: "the operator switches it on in c4/flag-set (D-121)"
+    state: "on"
+    blocked_on: "c4/flag-set (runtime, uncommitted): switched on by the operator 2026-10-14 for the daily breadth loop (D-121: decide-next fold children copy their source run's criteria)"
     criterion: >
       Landed 2026-10-13 (D-121). Off: byte-identical. On: a brief's own criteria in
       evaluation.pass_rule (every criterion a menu id) are linted only by
@@ -814,7 +814,7 @@ flags:
     config_key: orchestrator.dsr_same_structure.enabled
     reader: run_phase1_research._dsr_same_structure_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: "the operator switches it on in c4/flag-set (D-185)"
     criterion: >
       Landed 2026-10-24 (D-185, PR-2). Off: byte-identical. On: new trial rows
@@ -844,7 +844,7 @@ flags:
     config_key: orchestrator.forecast_ic_horizons.enabled
     reader: run_phase1_research._forecast_ic_horizons_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: "the operator switches it on in c4/flag-set (D-186)"
     criterion: >
       Landed 2026-10-24 (D-186, direction PR-4 step 1a code and config). Off:
@@ -864,7 +864,7 @@ flags:
     config_key: orchestrator.residual_ic_requires_block.enabled
     reader: run_phase1_research._residual_ic_requires_block_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: "the operator switches it on in c4/flag-set (D-186)"
     criterion: >
       Landed 2026-10-24 (D-186, direction PR-4). Off: byte-identical. On: an idea on a
@@ -877,7 +877,7 @@ flags:
     config_key: orchestrator.cost_bar_all_costs.enabled
     reader: run_phase1_research._cost_bar_all_costs_enabled
     owner: Jeremy
-    state: off_incomplete
+    state: "on"
     blocked_on: "CUL-414 review and merge; operator decision 2026-10-08: switched on before the next comparison of results (a declared output change)"
     criterion: >
       Landed with CUL-414 (D-082, audit finding A7). Off: byte-identical --

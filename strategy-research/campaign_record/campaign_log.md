@@ -998,3 +998,144 @@ Traceback (most recent call last):
 - 2026-10-18T20:11:33Z awaiting operator approval: trade_efficiency-run_075-1 (run_campaign.py --approve trade_efficiency-run_075-1)
 - 2026-10-18T20:11:34Z DONE rebase_run_095_standardised_host (run_097) -> refuted
 - 2026-10-18T20:11:34Z DECIDE after rebase_run_095_standardised_host (run_097): picked trade_efficiency-run_075-1 -> queue entry trade_efficiency-run_075-1 (blocked_on_operator_approval). Record: runs/run_097/artifacts/decision_record.yaml
+- 2026-10-20T19:18:50Z REGISTER: queue entry 'daily_breadth_fold_b' appended (brief=briefs/daily_breadth_fold_b.md, priority=1, status=ready).
+- 2026-10-20T19:44:50Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-10-20T19:44:51Z RECONCILE: 97 run dir(s) scanned, 95 referenced/grandfathered, 0 unexpected (2 known-quarantined)
+- 2026-10-20T19:44:51Z [DRY RUN] queue: selected entry 'daily_breadth_fold_b' (status=ready, brief=briefs/daily_breadth_fold_b.md)
+- 2026-10-20T19:44:51Z [DRY RUN] classified next action for 'daily_breadth_fold_b': 'fresh_launch'
+- 2026-10-20T19:44:51Z [DRY RUN] brief frontmatter parsed OK: strategy_domain=daily_breadth, market_universe=['BTCUSDT']
+- 2026-10-20T19:44:51Z VENUE-CHECK run_dryrun_verify: venue='kraken' market_type='perp' tradable=True research_only=False
+- 2026-10-20T19:44:51Z [DRY RUN] setup_run + brief materialization OK: runs\run_dryrun_verify\artifacts\research_brief.yaml written, pre_registration.yaml written
+- 2026-10-20T19:44:51Z [DRY RUN] terminal-state classification OK: pending_stage=completed_rejected -> no pause, queue would advance
+- 2026-10-20T19:44:51Z [DRY RUN] hard-pause classification OK: detected reason='no_signal_artifact'
+- 2026-10-20T19:44:51Z [DRY RUN] wishlist-trigger classification OK: detected reason='wishlist_trigger_data_gap' (liquidation_data: family 'liquidation_data' has no trigger_condition.predicate (still prose-only -- rewrite it before this can auto-evaluate))
+- 2026-10-20T19:44:51Z [DRY RUN] cleanup complete — no real run_ids, campaign_state.yaml, or campaign_queue.yaml were touched.
+- 2026-10-20T19:44:51Z [DRY RUN] === DRY RUN PASSED ===
+- 2026-10-20T19:46:23Z RECONCILE: 97 run dir(s) scanned, 95 referenced/grandfathered, 0 unexpected (2 known-quarantined)
+- 2026-10-20T19:46:23Z VENUE-CHECK run_098: venue='kraken' market_type='perp' tradable=True research_only=False
+- 2026-10-20T19:46:23Z LAUNCH daily_breadth_fold_b -> run_098 (brief=briefs/daily_breadth_fold_b.md)
+- 2026-10-20T19:59:37Z STAGE  daily_breadth_fold_b / run_098: pending_stage=completed_refuted status=completed (median_sharpe=-1.175, idea_status=refuted)
+- 2026-10-20T19:59:41Z REGISTER: queue entry 'E068_hourly_shock_reversal_kraken_perp__more_4' appended (brief=briefs/E068_hourly_shock_reversal_kraken_perp.md, priority=999, status=blocked_on_operator_approval).
+- 2026-10-20T19:59:42Z REGISTER: queue entry 'daily_breadth_fold_a__more_1' appended (brief=briefs/daily_breadth_fold_a.md, priority=999, status=blocked_on_operator_approval).
+- 2026-10-20T19:59:42Z REGISTER: queue entry 'daily_breadth_fold_b__more_1' appended (brief=briefs/daily_breadth_fold_b.md, priority=999, status=blocked_on_operator_approval).
+- 2026-10-20T19:59:43Z REGISTER: queue entry 'rebase_run_095_standardised_host__more_1' appended (brief=briefs/rebase_run_095_standardised_host.md, priority=999, status=blocked_on_operator_approval).
+- 2026-10-20T19:59:43Z WARNING regime_power-run_070-1: reader names unknown component class VarianceRatioRegimeComponent (nearest real class: VarianceRatioComponent) -- warning only, see runs/run_098/artifacts/decision_record.yaml
+- 2026-10-20T19:59:43Z awaiting operator approval: E068_hourly_shock_reversal_kraken_perp__more_4 (run_campaign.py --approve E068_hourly_shock_reversal_kraken_perp__more_4)
+- 2026-10-20T19:59:43Z awaiting operator approval: daily_breadth_fold_a__more_1 (run_campaign.py --approve daily_breadth_fold_a__more_1)
+- 2026-10-20T19:59:43Z awaiting operator approval: daily_breadth_fold_b__more_1 (run_campaign.py --approve daily_breadth_fold_b__more_1)
+- 2026-10-20T19:59:43Z awaiting operator approval: rebase_run_095_standardised_host__more_1 (run_campaign.py --approve rebase_run_095_standardised_host__more_1)
+- 2026-10-20T19:59:45Z DONE daily_breadth_fold_b (run_098) -> refuted
+- 2026-10-20T19:59:45Z DECIDE after daily_breadth_fold_b (run_098): R2 -- 4 eligible open brief(s); awaiting operator approval: ['E068_hourly_shock_reversal_kraken_perp__more_4', 'daily_breadth_fold_a__more_1', 'daily_breadth_fold_b__more_1', 'rebase_run_095_standardised_host__more_1'] (4 new). Record: runs/run_098/artifacts/decision_record.yaml
+- 2026-10-22T11:31:15Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-10-22T11:31:16Z RECONCILE: 98 run dir(s) scanned, 96 referenced/grandfathered, 0 unexpected (2 known-quarantined)
+- 2026-10-22T11:31:16Z [DRY RUN] queue: selected entry 'child_run_098_long_only_fold_b' (status=ready, brief=briefs/child_run_098_long_only_fold_b.md)
+- 2026-10-22T11:31:16Z [DRY RUN] classified next action for 'child_run_098_long_only_fold_b': 'queued_card'
+- 2026-10-22T11:31:16Z [DRY RUN] brief frontmatter parsed OK: strategy_domain=daily_breadth, market_universe=['BTCUSDT']
+- 2026-10-22T11:31:16Z VENUE-CHECK run_dryrun_verify: venue='kraken' market_type='perp' tradable=True research_only=False
+- 2026-10-22T11:31:17Z [DRY RUN] setup_run + brief materialization OK: runs\run_dryrun_verify\artifacts\research_brief.yaml written, pre_registration.yaml written
+- 2026-10-22T11:31:17Z [DRY RUN] terminal-state classification OK: pending_stage=completed_rejected -> no pause, queue would advance
+- 2026-10-22T11:31:17Z [DRY RUN] hard-pause classification OK: detected reason='no_signal_artifact'
+- 2026-10-22T11:31:17Z [DRY RUN] wishlist-trigger classification OK: detected reason='wishlist_trigger_data_gap' (liquidation_data: family 'liquidation_data' has no trigger_condition.predicate (still prose-only -- rewrite it before this can auto-evaluate))
+- 2026-10-22T11:31:17Z [DRY RUN] cleanup complete — no real run_ids, campaign_state.yaml, or campaign_queue.yaml were touched.
+- 2026-10-22T11:31:17Z [DRY RUN] === DRY RUN PASSED ===
+- 2026-10-22T11:31:40Z RECONCILE: 98 run dir(s) scanned, 96 referenced/grandfathered, 0 unexpected (2 known-quarantined)
+- 2026-10-22T11:31:41Z VENUE-CHECK run_099: venue='kraken' market_type='perp' tradable=True research_only=False
+- 2026-10-22T11:31:44Z LAUNCH-CARD child_run_098_long_only_fold_b -> run_099 (card=campaign_record/queued_cards/run_098/hypothesis_card_child_long_only.yaml, brief=briefs/child_run_098_long_only_fold_b.md; step 1a skipped)
+- 2026-10-22T11:39:12Z STAGE  child_run_098_long_only_fold_b / run_099: pending_stage=completed_refuted status=completed (median_sharpe=7.033, idea_status=refuted)
+- 2026-10-22T11:39:15Z WARNING regime_power-run_070-1: reader names unknown component class VarianceRatioRegimeComponent (nearest real class: VarianceRatioComponent) -- warning only, see runs/run_099/artifacts/decision_record.yaml
+- 2026-10-22T11:39:18Z DONE child_run_098_long_only_fold_b (run_099) -> refuted
+- 2026-10-22T11:39:18Z DECIDE stop after child_run_098_long_only_fold_b (run_099): no_eligible_candidate -- the scheduler has no in_progress or ready entry to run, 0 of 18 candidate(s) eligible, and no open brief for R2 (10 exhausted, 13 legacy, 4 held by an operator hold: E068_hourly_shock_reversal_kraken_perp, daily_breadth_fold_a, daily_breadth_fold_b, rebase_run_095_standardised_host). Record: runs/run_099/artifacts/decision_record.yaml. See RUNBOOK.md §3. Awaiting operator approval: ['E068_hourly_shock_reversal_kraken_perp__more_4', 'daily_breadth_fold_a__more_1', 'daily_breadth_fold_b__more_1', 'rebase_run_095_standardised_host__more_1'] -- approve with --approve <id> (RUNBOOK.md §4 Approval mode).
+- 2026-10-23T08:17:36Z APPROVE E068_hourly_shock_reversal_kraken_perp__more_4: approved by the operator; entry ready (priority 999).
+- 2026-10-23T18:35:06Z REGISTER: queue entry 'sma_trend_1h_fold_a' appended (brief=briefs/sma_trend_1h_fold_a.md, priority=1, status=ready).
+- 2026-10-23T19:05:22Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-10-23T19:05:23Z RECONCILE: 99 run dir(s) scanned, 97 referenced/grandfathered, 0 unexpected (2 known-quarantined)
+- 2026-10-23T19:05:23Z [DRY RUN] queue: selected entry 'sma_trend_1h_fold_a' (status=ready, brief=briefs/sma_trend_1h_fold_a.md)
+- 2026-10-23T19:05:23Z [DRY RUN] classified next action for 'sma_trend_1h_fold_a': 'fresh_launch'
+- 2026-10-23T19:05:23Z [DRY RUN] brief frontmatter parsed OK: strategy_domain=SMA trend, market_universe=['BTCUSDT']
+- 2026-10-23T19:05:23Z VENUE-CHECK run_dryrun_verify: venue='kraken' market_type='perp' tradable=True research_only=False
+- 2026-10-23T19:05:23Z [DRY RUN] setup_run + brief materialization OK: runs\run_dryrun_verify\artifacts\research_brief.yaml written, pre_registration.yaml written
+- 2026-10-23T19:05:23Z [DRY RUN] terminal-state classification OK: pending_stage=completed_rejected -> no pause, queue would advance
+- 2026-10-23T19:05:23Z [DRY RUN] hard-pause classification OK: detected reason='no_signal_artifact'
+- 2026-10-23T19:05:23Z [DRY RUN] wishlist-trigger classification OK: detected reason='wishlist_trigger_data_gap' (liquidation_data: family 'liquidation_data' has no trigger_condition.predicate (still prose-only -- rewrite it before this can auto-evaluate))
+- 2026-10-23T19:05:23Z [DRY RUN] cleanup complete — no real run_ids, campaign_state.yaml, or campaign_queue.yaml were touched.
+- 2026-10-23T19:05:23Z [DRY RUN] === DRY RUN PASSED ===
+- 2026-10-23T19:05:36Z RECONCILE: 99 run dir(s) scanned, 97 referenced/grandfathered, 0 unexpected (2 known-quarantined)
+- 2026-10-23T19:05:37Z VENUE-CHECK run_100: venue='kraken' market_type='perp' tradable=True research_only=False
+- 2026-10-23T19:05:38Z LAUNCH sma_trend_1h_fold_a -> run_100 (brief=briefs/sma_trend_1h_fold_a.md)
+- 2026-10-23T19:46:39Z STAGE  sma_trend_1h_fold_a / run_100: pending_stage=completed_refuted status=completed (median_sharpe=1.453 [per-window trade Sharpe, windows with >= 5 trades: 6 of 6; mean over 1 symbol(s) with a value], idea_status=refuted)
+- 2026-10-23T19:46:41Z REGISTER REFUSED: malformed brief C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\campaign_record\candidate_briefs\run_100__reframe.md: C:\Users\alauz\Documents\Projects\trading-bot\strategy-research\campaign_record\candidate_briefs\run_100__reframe.md: timeframe='1d' does not match machine_constraints.protocol's timeframe='1h' -- a brief's declared bar size must agree with what it will actually backtest.
+- 2026-10-23T19:46:45Z HALT — campaign_review_reframe_unregistered: registering campaign_record/candidate_briefs/run_100__reframe.md failed: registering 'run_100__reframe' was refused (see the REGISTER line above). Campaign stopped on sma_trend_1h_fold_a / run_100. See RUNBOOK.md §3.
+- 2026-10-25T07:48:50Z RESUME sma_trend_1h_fold_a / run_100: resolution confirmed for 'campaign_review_reframe_unregistered', resuming queue processing.
+- 2026-10-25T07:48:51Z RECONCILE: 100 run dir(s) scanned, 98 referenced/grandfathered, 0 unexpected (2 known-quarantined)
+- 2026-10-25T07:49:05Z STAGE  sma_trend_1h_fold_a / run_100: pending_stage=completed_refuted status=completed (median_sharpe=1.453 [per-window trade Sharpe, windows with >= 5 trades: 6 of 6; mean over 1 symbol(s) with a value], idea_status=refuted)
+- 2026-10-25T07:49:13Z REGISTER: queue entry 'sma_trend_1h_fold_a__more_1' appended (brief=briefs/sma_trend_1h_fold_a.md, priority=999, status=blocked_on_operator_approval).
+- 2026-10-25T07:49:13Z WARNING regime_power-run_070-1: reader names unknown component class VarianceRatioRegimeComponent (nearest real class: VarianceRatioComponent) -- warning only, see runs/run_100/artifacts/decision_record.yaml
+- 2026-10-25T07:49:14Z awaiting operator approval: sma_trend_1h_fold_a__more_1 (run_campaign.py --approve sma_trend_1h_fold_a__more_1)
+- 2026-10-25T07:49:19Z DONE sma_trend_1h_fold_a (run_100) -> refuted
+- 2026-10-25T07:49:19Z DECIDE after sma_trend_1h_fold_a (run_100): R2 -- 1 eligible open brief(s); awaiting operator approval: ['sma_trend_1h_fold_a__more_1'] (1 new). Record: runs/run_100/artifacts/decision_record.yaml
+- 2026-10-25T09:55:22Z APPROVE sma_trend_1h_fold_a__more_1: approved by the operator; entry ready (priority 999).
+- 2026-10-25T09:55:38Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-10-25T09:55:39Z RECONCILE: 100 run dir(s) scanned, 98 referenced/grandfathered, 0 unexpected (2 known-quarantined)
+- 2026-10-25T09:55:39Z [DRY RUN] queue: selected entry 'sma_trend_1h_fold_a__more_1' (status=ready, brief=briefs/sma_trend_1h_fold_a.md)
+- 2026-10-25T09:55:39Z [DRY RUN] classified next action for 'sma_trend_1h_fold_a__more_1': 'fresh_launch'
+- 2026-10-25T09:55:39Z [DRY RUN] brief frontmatter parsed OK: strategy_domain=SMA trend, market_universe=['BTCUSDT']
+- 2026-10-25T09:55:39Z VENUE-CHECK run_dryrun_verify: venue='kraken' market_type='perp' tradable=True research_only=False
+- 2026-10-25T09:55:39Z [DRY RUN] setup_run + brief materialization OK: runs\run_dryrun_verify\artifacts\research_brief.yaml written, pre_registration.yaml written
+- 2026-10-25T09:55:39Z [DRY RUN] terminal-state classification OK: pending_stage=completed_rejected -> no pause, queue would advance
+- 2026-10-25T09:55:39Z [DRY RUN] hard-pause classification OK: detected reason='no_signal_artifact'
+- 2026-10-25T09:55:39Z [DRY RUN] wishlist-trigger classification OK: detected reason='wishlist_trigger_data_gap' (liquidation_data: family 'liquidation_data' has no trigger_condition.predicate (still prose-only -- rewrite it before this can auto-evaluate))
+- 2026-10-25T09:55:39Z [DRY RUN] cleanup complete — no real run_ids, campaign_state.yaml, or campaign_queue.yaml were touched.
+- 2026-10-25T09:55:39Z [DRY RUN] === DRY RUN PASSED ===
+- 2026-10-25T09:55:53Z RECONCILE: 100 run dir(s) scanned, 98 referenced/grandfathered, 0 unexpected (2 known-quarantined)
+- 2026-10-25T09:55:54Z VENUE-CHECK run_101: venue='kraken' market_type='perp' tradable=True research_only=False
+- 2026-10-25T09:55:55Z LAUNCH sma_trend_1h_fold_a__more_1 -> run_101 (brief=briefs/sma_trend_1h_fold_a.md)
+- 2026-10-25T10:20:58Z STAGE  sma_trend_1h_fold_a__more_1 / run_101: pending_stage=completed_refuted status=completed (median_sharpe=-2.156 [per-window trade Sharpe, windows with >= 5 trades: 6 of 6; mean over 1 symbol(s) with a value], idea_status=refuted)
+- 2026-10-25T10:21:03Z REGISTER: queue entry 'forecast_power-run_101-1' appended (brief=campaign_record/candidate_briefs/forecast_power-run_101-1.md, priority=999, status=blocked_on_operator_approval).
+- 2026-10-25T10:21:03Z WARNING regime_power-run_070-1: reader names unknown component class VarianceRatioRegimeComponent (nearest real class: VarianceRatioComponent) -- warning only, see runs/run_101/artifacts/decision_record.yaml
+- 2026-10-25T10:21:03Z awaiting operator approval: forecast_power-run_101-1 (run_campaign.py --approve forecast_power-run_101-1)
+- 2026-10-25T10:21:05Z DONE sma_trend_1h_fold_a__more_1 (run_101) -> refuted
+- 2026-10-25T10:21:05Z DECIDE after sma_trend_1h_fold_a__more_1 (run_101): picked forecast_power-run_101-1 -> queue entry forecast_power-run_101-1 (blocked_on_operator_approval). Record: runs/run_101/artifacts/decision_record.yaml
+- 2026-10-26T19:51:15Z REGISTER: queue entry 'trade_efficiency-run_101-1' appended (brief=campaign_record/candidate_briefs/trade_efficiency-run_101-1.md, priority=1, status=ready).
+- 2026-10-26T20:01:59Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-10-26T20:01:59Z RECONCILE: 101 run dir(s) scanned, 99 referenced/grandfathered, 0 unexpected (2 known-quarantined)
+- 2026-10-26T20:02:00Z [DRY RUN] queue: selected entry 'trade_efficiency-run_101-1' (status=ready, brief=campaign_record/candidate_briefs/trade_efficiency-run_101-1.md)
+- 2026-10-26T20:02:00Z [DRY RUN] classified next action for 'trade_efficiency-run_101-1': 'fresh_launch'
+- 2026-10-26T20:02:00Z [DRY RUN] brief frontmatter parsed OK: strategy_domain=SMA trend, market_universe=['BTCUSDT']
+- 2026-10-26T20:02:00Z VENUE-CHECK run_dryrun_verify: venue='kraken' market_type='perp' tradable=True research_only=False
+- 2026-10-26T20:02:00Z [DRY RUN] setup_run + brief materialization OK: runs\run_dryrun_verify\artifacts\research_brief.yaml written, pre_registration.yaml written
+- 2026-10-26T20:02:00Z [DRY RUN] terminal-state classification OK: pending_stage=completed_rejected -> no pause, queue would advance
+- 2026-10-26T20:02:00Z [DRY RUN] hard-pause classification OK: detected reason='no_signal_artifact'
+- 2026-10-26T20:02:00Z [DRY RUN] wishlist-trigger classification OK: detected reason='wishlist_trigger_data_gap' (liquidation_data: family 'liquidation_data' has no trigger_condition.predicate (still prose-only -- rewrite it before this can auto-evaluate))
+- 2026-10-26T20:02:00Z [DRY RUN] cleanup complete — no real run_ids, campaign_state.yaml, or campaign_queue.yaml were touched.
+- 2026-10-26T20:02:00Z [DRY RUN] === DRY RUN PASSED ===
+- 2026-10-26T20:02:12Z RECONCILE: 101 run dir(s) scanned, 99 referenced/grandfathered, 0 unexpected (2 known-quarantined)
+- 2026-10-26T20:02:13Z VENUE-CHECK run_102: venue='kraken' market_type='perp' tradable=True research_only=False
+- 2026-10-26T20:02:14Z LAUNCH trade_efficiency-run_101-1 -> run_102 (brief=campaign_record/candidate_briefs/trade_efficiency-run_101-1.md)
+- 2026-10-26T20:29:28Z STAGE  trade_efficiency-run_101-1 / run_102: pending_stage=completed_refuted status=completed (median_sharpe=-0.568 [per-window trade Sharpe, windows with >= 5 trades: 6 of 6; mean over 1 symbol(s) with a value], idea_status=refuted)
+- 2026-10-26T20:29:32Z REGISTER: queue entry 'trade_efficiency-run_102-1' appended (brief=campaign_record/candidate_briefs/trade_efficiency-run_102-1.md, priority=999, status=blocked_on_operator_approval).
+- 2026-10-26T20:29:32Z WARNING regime_power-run_070-1: reader names unknown component class VarianceRatioRegimeComponent (nearest real class: VarianceRatioComponent) -- warning only, see runs/run_102/artifacts/decision_record.yaml
+- 2026-10-26T20:29:32Z WARNING trade_efficiency-run_101-1: repeats_measured_spec -- warning only, see runs/run_102/artifacts/decision_record.yaml
+- 2026-10-26T20:29:32Z awaiting operator approval: trade_efficiency-run_102-1 (run_campaign.py --approve trade_efficiency-run_102-1)
+- 2026-10-26T20:29:34Z DONE trade_efficiency-run_101-1 (run_102) -> refuted
+- 2026-10-26T20:29:34Z DECIDE after trade_efficiency-run_101-1 (run_102): picked trade_efficiency-run_102-1 -> queue entry trade_efficiency-run_102-1 (blocked_on_operator_approval). Record: runs/run_102/artifacts/decision_record.yaml
+- 2026-10-28T06:19:37Z RETRY-ANALYST trade_efficiency-run_101-1 / run_102: first analyst result kept in artifacts/retry_1/; the run is active at pending_stage analyst, the entry in_progress (was done, outcome refuted). Launch with --once.
+- 2026-10-28T06:27:09Z [DRY RUN] === DRY RUN: verifying queue -> launch -> pause wiring (no LLM spend) ===
+- 2026-10-28T06:27:10Z RECONCILE: 102 run dir(s) scanned, 100 referenced/grandfathered, 0 unexpected (2 known-quarantined)
+- 2026-10-28T06:27:10Z [DRY RUN] queue: selected entry 'trade_efficiency-run_101-1' (status=in_progress, brief=campaign_record/candidate_briefs/trade_efficiency-run_101-1.md)
+- 2026-10-28T06:27:10Z [DRY RUN] classified next action for 'trade_efficiency-run_101-1': 'continue'
+- 2026-10-28T06:27:10Z [DRY RUN] brief frontmatter parsed OK: strategy_domain=SMA trend, market_universe=['BTCUSDT']
+- 2026-10-28T06:27:10Z VENUE-CHECK run_dryrun_verify: venue='kraken' market_type='perp' tradable=True research_only=False
+- 2026-10-28T06:27:10Z [DRY RUN] setup_run + brief materialization OK: runs\run_dryrun_verify\artifacts\research_brief.yaml written, pre_registration.yaml written
+- 2026-10-28T06:27:10Z [DRY RUN] terminal-state classification OK: pending_stage=completed_rejected -> no pause, queue would advance
+- 2026-10-28T06:27:10Z [DRY RUN] hard-pause classification OK: detected reason='no_signal_artifact'
+- 2026-10-28T06:27:10Z [DRY RUN] wishlist-trigger classification OK: detected reason='wishlist_trigger_data_gap' (liquidation_data: family 'liquidation_data' has no trigger_condition.predicate (still prose-only -- rewrite it before this can auto-evaluate))
+- 2026-10-28T06:27:10Z [DRY RUN] cleanup complete — no real run_ids, campaign_state.yaml, or campaign_queue.yaml were touched.
+- 2026-10-28T06:27:10Z [DRY RUN] === DRY RUN PASSED ===
+- 2026-10-28T06:27:21Z RECONCILE: 102 run dir(s) scanned, 100 referenced/grandfathered, 0 unexpected (2 known-quarantined)
+- 2026-10-28T06:31:07Z STAGE  trade_efficiency-run_101-1 / run_102: pending_stage=completed_refuted status=completed (median_sharpe=-0.568 [per-window trade Sharpe, windows with >= 5 trades: 6 of 6; mean over 1 symbol(s) with a value], idea_status=refuted)
+- 2026-10-28T06:31:14Z REGISTER: queue entry 'forecast_power-run_102-2' appended (brief=campaign_record/candidate_briefs/forecast_power-run_102-2.md, priority=999, status=blocked_on_operator_approval).
+- 2026-10-28T06:31:14Z WARNING regime_power-run_070-1: reader names unknown component class VarianceRatioRegimeComponent (nearest real class: VarianceRatioComponent) -- warning only, see runs/run_102/artifacts/decision_record.yaml
+- 2026-10-28T06:31:14Z WARNING trade_efficiency-run_101-1: repeats_measured_spec -- warning only, see runs/run_102/artifacts/decision_record.yaml
+- 2026-10-28T06:31:14Z awaiting operator approval: forecast_power-run_102-2 (run_campaign.py --approve forecast_power-run_102-2)
+- 2026-10-28T06:31:16Z DONE trade_efficiency-run_101-1 (run_102) -> refuted
+- 2026-10-28T06:31:16Z DECIDE after trade_efficiency-run_101-1 (run_102): picked forecast_power-run_102-2 -> queue entry forecast_power-run_102-2 (blocked_on_operator_approval). Record: runs/run_102/artifacts/decision_record.yaml

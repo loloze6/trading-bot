@@ -1,0 +1,81 @@
+hypothesis_id: DAILY_BREADTH_LOW_VOL_PREMIUM_1D_BTC
+thesis: >
+  Daily BTC returns over the next 1 to 5 days are higher after calm volatility readings, relative to the trailing year, than after volatile readings, because speculative demand peaks in volatile phases and prices overshoot.
+rationale: >
+  Frazzini and Pedersen (2014) and Bali and colleagues (MAX effect) document that leverage-constrained and lottery-seeking investors bid up high-volatility assets, leaving them overpriced. The signal ranks 30-bar realized volatility against its trailing year, a volatility-level forecast rather than the trend-sign forecast tested in run_066. Expected sign: negative correlation between volatility percentile and forward return. Fold B gives six windows of about 120 daily bars each.
+edge_source:
+  category: persistent_behavioral_bias
+  specific_mechanism: >
+    Causal chain: high realized volatility attracts speculative and lottery-seeking demand, which overprices BTC; the premium reverses as demand fades, so forward returns fall after volatile readings. Calm readings restore a lower premium. Measurable proxy: p(t), the percentile of 30-bar realized volatility within the trailing 365 bars, computed from daily closes. The mechanism predicts a negative rank correlation between p(t) and forward 1 to 5 bar returns.
+  why_not_arbitraged: >
+    The premium is paid by demand that is not price-elastic: lottery preference and leverage constraints push buyers toward volatile assets regardless of expected return. Shorting BTC on a daily horizon carries perp fees and funding each rebalance, and the premium per day is small relative to volatility, so capacity to correct it is limited.
+  evidence_type: price_volume_only
+  measurable_proxy: >
+    p(t) from 30-bar standard deviation of daily log returns, ranked over 365 bars. The mechanism predicts negative rank IC of the forecast with fwd_return, and a higher mean forward return in the calmest fifth of readings than in the rest.
+signal_concept: >
+  Quantity: v(t) = sample standard deviation of the last 30 daily log returns. p(t) = fraction of the last 365 values of v (including v(t)) at or below v(t), so p = 0 is the calmest reading of the year and p = 1 the most volatile. Graded forecast: forecast(t) = clip(20 x (1 - 2 x p(t)), -20, +20). This is +20 at p = 0, 0 at p = 0.5, -20 at p = 1, linear between. Position = forecast / 10: calm readings give a long, volatile readings a short, median readings are flat. Rule first conceived: "long when 30-day volatility is below its one-year median, short when above." Restated as the graded map, which keeps how far from the median the reading sits. Not expressible in the config: rolling percentile rank of v over 365 bars (needs a rank component, declared as a component deviation). Not expressible in the config: no stop, exit or hold rule; none is part of this idea. Ungated design: regime rules empty. Design variant on BTC: 60-bar volatility window instead of 30, same mapping. Asset variant: DOGEUSD (memecoin category), empty patch. No lookahead: v(t) and p(t) use returns up to the close of bar t; the position is set at that close and earns the move to bar t+1.
+target_market: "BTC perp on Kraken, priced on spot daily bars (base and design variants); asset variant DOGE (memecoin)"
+timeframe: 1d
+assumptions:
+  - "Daily Kraken closes are correct and timestamped at bar close."
+  - "The 395-bar warm-up (30-bar window plus 365-bar rank) is covered by cached history before fold B."
+  - "Volatility premia from equity and leverage-constraint literature transfer to BTC daily returns."
+  - "Perp funding is not modelled; the 10 bps round trip is fee-only."
+expected_failure_modes:
+  - "Mixed high-volatility readings: capitulation rebounds after crashes go the other way, so the proxy mixes overpricing reversal with rebound dynamics (net-effect hypothesis)."
+  - "Volatility-trend overlap: calm periods often coincide with slow uptrends such as 2019 to 2021, so the forecast may proxy trend. The quantile claim test separates this from the IC."
+  - "Turnover: the percentile moves most days, so the position turns over more than a slow reference ratio; cost plausibility is marginal to plausible."
+  - "Noise floor: about 120 bars per window, so a no-edge variant clears 0.02 roughly 1 time in 3."
+  - "Funding omitted: a short position in volatile phases earns or pays funding that is not modelled, so cost is misstated in one direction or the other."
+  - "DOGE asset variant: a memecoin whose volatility is driven by social-media spikes; a failure may reflect the category, not the BTC mechanism."
+criteria:
+  - id: forecast_ic_median
+library_lookup:
+  indicator_id: "atr_volatility_filter"
+  regime_affinity_for_target: "neutral"
+  affinity_justification: "n/a: ungated design. Volatility-class entry; the signal is a volatility level, not an ATR stop."
+  prior_campaign_failures: [{run_id: run_066, mechanism_tried: "volatility-scaled time-series momentum; trend sign, not a volatility-level forecast"}]
+  crowding_risk: "low"
+  crowding_deviation_justification: "n/a: low crowding."
+cost_feasibility:
+  assumed_round_trip_cost_bps: 10.0
+  expected_holding_bars:
+    min: 1
+    max: 60
+  expected_trades_per_window: "about 120 daily rebalances; percentile moves in steps, so position changes are moderate"
+  required_gross_edge_bps_per_trade: 20.0
+  plausibility: plausible
+  plausibility_rationale: "Daily graded signal on BTC perp at the cost_model perp round trip of 10.0 bps (taker fee only). Moderate turnover against a 1 to 5 day return. Information only."
+power_parameters:
+  activation_rate: 1.0
+  plausible_ic_upper: 0.06
+  n_bars: 730
+  n_symbols: 1
+  is_market_wide: false
+  power_note: "A8.6 row: dense OHLCV, lower crowding (0.05 to 0.08). Chosen 0.06: volatility premium is documented in equities, not standard in crypto retail algos. Axes: OHLCV-only, dense, crowding low."
+claim:
+  statement: >
+    Days in the calmest fifth of the trailing year's volatility are followed by higher returns over the next 1 to 5 days than other days.
+  kind: direction_forecast
+  tests:
+    - name: forecast_rank_ic_1_5
+      selector: {kind: all}
+      outcome: {kind: fwd_return, horizons: [1, 5]}
+      baseline: null
+      statistic: rank_ic
+      direction: greater
+      floor: {min_events: 300, min_windows: 5}
+    - name: calmest_fifth_vs_rest
+      selector: {kind: quantile, field: trailing_vol, bars: 30, side: bottom, q: 0.2, lookback: 365}
+      outcome: {kind: fwd_return, horizons: [1, 5]}
+      baseline: {kind: complement}
+      statistic: mean_diff
+      direction: greater
+      floor: {min_events: 100, min_windows: 4}
+      consistency: {unit: window, min_same_sign: 4}
+  pass_if: >
+    Rank IC of forecast with forward return is positive at horizons 1 and 5. Calm-fifth days have a higher mean forward return than other days at both horizons, the same sign in at least 4 of 6 windows, with at least 100 selected bars.
+  fail_if: >
+    Rank IC is near zero or negative, or calm-fifth days have a lower mean forward return than other days in most windows.
+  rationale: >
+    The forecast is the claim's signal, so its rank IC with forward returns tests the premium over all bars. The quantile test on trailing volatility checks the same prediction on the bars the claim names, so a result that rests only on the forecast's shape is visible. Floors prevent a pass on too few calm days.
