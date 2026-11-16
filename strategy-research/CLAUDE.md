@@ -1,7 +1,9 @@
 # CLAUDE.md (strategy-research)
 
-The root `CLAUDE.md` hard rules (secrets, no lookahead, trial ledger, sealed
-holdout) and working rules apply here too and are not repeated.
+The root `CLAUDE.md` hard rules (secrets, no lookahead, sealed holdout, no trial
+ledger) and its rules on how we work apply here too and are not repeated. The
+current research workflow is `strategy_designer_v2/steps_cards/`; this folder's
+own workflow is the earlier campaign's.
 
 ## 1. Objective and overview
 
