@@ -3,8 +3,15 @@
 Items noted while designing the steps, not started. Each waits for the operator's go.
 
 Two separate defects, both seen as "not ready at warm-up" (split 2026-11-16, after the "Known data defects" session's findings):
-- **A. A component that needs 0 bars makes the strategy wait forever** (the volume plans 003-01, 003-02): cause found, below.
-- **B. A few XMR and XRP windows do not run: the engine waits for 400 rows while it declares 250**: cause found, below; this is the one that changes verdicts today.
+- **A. A component that needs 0 bars makes the strategy wait forever** (the volume plans 003-01, 003-02). **Fixed**
+  in the engine (operator's go, 2026-11-16; merged in `171902d`).
+- **B. A few XMR and XRP windows do not run: the engine waited for 400 rows while it declares 250.** **Fixed** in the
+  engine (operator's go, Option 1: ready at the rows the config declares; merged in `171902d`). Proof on the six
+  full_data_run plans: the 846 windows that ran before give the same files; XMR w13 and XRP w7 now run (12 more
+  windows); XRP w13 is still refused (228 rows, fewer than the 250 its plan needs: a real lack of data). The records
+  in the named runs were made before the fix and were not rerun.
+
+Both are kept below as the record of the cause.
 
 ## Parked A: a component that needs 0 bars of history makes the strategy never ready (cause found 2026-11-16)
 **Cause** (the "Known data defects" session, on made-up bars, no market data used, no file changed): `BuyAndHoldStrategy`
@@ -125,3 +132,9 @@ two calls (one exploration and the answer), no retry. A call cannot loop (no too
 15 minutes; a line makes at most 6. Every call's tokens and time are now in the step's log, so a repeat would show
 which call and why. If it happens again: test the `claude` command's `--max-budget-usd` (not known to stop a single
 answer partway).
+
+## Parked: a component with no history step declares one bar fewer than it needs (found 2026-11-16)
+`SmaTrendLongOnlyComponent(100)` declares `required_bars` 101 but is ready at bar 102: a component with no history
+step stores 2 values, and the declared count covers the first only. No harm today: the warm-up fetches twice
+`required_bars`, so the extra bar is always there (the engine's design guide now says so). Found by the warm-up fix
+session; not built.
