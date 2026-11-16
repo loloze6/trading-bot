@@ -624,7 +624,7 @@ def test_schema_documented_and_no_not_built_leftovers():
     entry = next(f for f in reg["flags"] if f["name"] == "verdict_routing_retired")
     assert "S2d" in entry["criterion"] and "holdout_decision.yaml" in entry["criterion"]
     assert "S2d (the holdout unlock)" not in entry["blocked_on"]
-    for rel in ("docs/RUNBOOK.md", "docs/USER_GUIDE.md", "DOC_INDEX.md",
+    for rel in ("docs/RUNBOOK.md", "docs/USER_GUIDE.md",
                 "config/campaign_config.yaml", "workflow/run_phase1_research.py"):
         text = (_SR / rel).read_text(encoding="utf-8")
         assert "S2d, not built" not in text and "S2d), not built" not in text, rel

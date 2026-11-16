@@ -35,7 +35,7 @@ Phases gated by conditions. "Session" = one working session with agent dispatche
 
 ### Phase 0 — Close the current arc *(in flight, hours)*
 - **0.1 — run_059 terminal verdict.** Objective: the campaign's first honest end-to-end verdict (the pending dispatch G5c: clear a stale cached artifact, resume, read the final numbers). Deliverable: verdict recorded in the knowledge base; KPI counts 1.
-- **0.2 — Session close.** Objective: nothing learned this week can be lost. Deliverable: all commits landed (fixes, registration, run artifacts policy), the week's five defects ledgered with their fix-or-trigger, provenance caveats written on pre-fix daily-bar runs, this roadmap committed as `docs/ROADMAP.md`, session log + next-session file rewritten around Phase 1.
+- **0.2 — Session close.** Objective: nothing learned this week can be lost. Deliverable: all commits landed (fixes, registration, run artifacts policy), the week's five defects ledgered with their fix-or-trigger, provenance caveats written on pre-fix daily-bar runs, this roadmap committed as `docs/ROADMAP.md` (since renamed `docs/CAMPAIGN_PROGRAM.md`, this file), session log + next-session file rewritten around Phase 1.
 - **Gate:** repo clean, verdict counted, roadmap in repo.
 
 ### Phase 1 — Reality alignment: France, venue, fees *(1–2 sessions — your concern 5)*

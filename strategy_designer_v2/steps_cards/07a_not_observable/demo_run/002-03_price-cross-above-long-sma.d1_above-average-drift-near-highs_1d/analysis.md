@@ -1,0 +1,22 @@
+---
+line: 7.a not observable
+backtest: 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs_1d
+idea tested: 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs
+step 5: not observable
+step 6: profitable enough
+mode: one call
+explorations: 1
+cost: 0.1869 USD
+---
+## Findings
+- **F1:** The shortfall is in the total count only. The non-overlapping 20-day grid gave 827 cases, against about 860 asked for. The plan's other minimum was met easily: 284 cases with forecast above 0, against 100 needed.
+- **F2:** The windows are short compared with the 20-day horizon, so each coin gets few cases. Windows hold 119 to 123 bars, with a mean of 121.7, so each gives only 5 or 6 grid cases. Six coins over 24 windows yields 137 to 138 cases per coin, so about 860 cases would need roughly 6.3 coins.
+- **F3:** The situation is met on only about a third of grid cases (284 of 827, 34%), and on 49% of all bars. It is very uneven by year: 6 of 102 cases in 2022 and 15 of 102 in 2018, against 51 to 54 in 2020 and 2024. Several windows had almost none: w2 had 0 of 36, w14 had 1 of 36, w1 and w8 had 2.
+- **F4:** The outcome varies widely from case to case. The de-meaned 20-day return has a standard deviation of 0.274, ranging from 0.171 for BTC to 0.460 for ZEC. Against that noise, the slope of 0.0020 per forecast unit gives t = 1.22 over 827 cases. At the same effect size, t = 2 would need about 2,200 cases.
+- **F5:** The forecast where the coin is long is spread over its whole range, so the grading can be measured once there are enough cases. Over the 284 long cases it has a mean of 9.5, a standard deviation of 6.1 and a median of 9.8, with quartiles 3.5 and 15.1 and values reaching 20.
+- **F6:** Adding coins from the available data clears both minimums:
+
+## Ideas
+- `002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.a1_near-high-drift-wider-universe` (from F1, F2, F3, F4, F5, F6): While the close is above its long moving average, price keeps drifting upward, and the drift is larger the closer the close sits to its recent high and the stronger its recent rise. The drift fades as the close falls back from its recent high while still above the long average.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

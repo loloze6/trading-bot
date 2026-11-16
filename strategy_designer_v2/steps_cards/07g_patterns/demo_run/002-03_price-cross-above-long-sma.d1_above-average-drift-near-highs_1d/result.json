@@ -1,0 +1,33 @@
+{
+  "line": "7.g",
+  "backtest": "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs_1d",
+  "step5": "not observable",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.3582704,
+  "findings": {
+    "F1": "A coin's next-day return reverses its previous day's move, and the reversal grows with the size of that move. These are next-day returns minus the coin's mean, grouped by the previous day's return standardised per coin:",
+    "F2": "The forecast does not grade the 20-day move. On the 20-day grid, the de-meaned forward returns by active-forecast quartile are +1.9%, -3.8%, -2.2% and +7.7% (t from -1.27 to 1.11, n 71 each). Trending minus unknown regime is only +0.23% vs -0.22% (t 0.14 and -0.21).",
+    "F3": "Saturday is the strongest day for the coins:",
+    "F4": "The book carries the same weekend tilt. The day-averaged book return is 0.195% on Saturday (t 3.22) and 0.108% on Friday (t 2.10), against -0.059% on Tuesday (t -1.11).",
+    "F5": "The book's gain comes from long holds:",
+    "F6": "Over 5 days, the close's position in its 20-day close range leans weakly towards continuation. The bottom quintile is followed by -0.95% (t -2.10, n 659) and the top quintile by +0.83% (t 1.73). This vanishes over 20 days: -0.6% to +2.4%, with all t below 1.3. Given the number of angles checked, it does not stand out from chance.",
+    "F7": "The book's best and worst days both follow coin rises. In the 5 days before, the coins had risen +6.1% before the best-decile days and +5.5% before the worst-decile days. This only reflects the book being exposed after rises, not timing."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's one-day fall relative to its usual daily move, the larger its rise over the next day; a large one-day rise is followed by a smaller, opposite fall the next day.",
+      "consequence": "A trader would avoid adding to a trend-following long on the day after a sharp rise, and would let a sharp one-day fall in an uptrend be bought rather than sold.",
+      "name": "one-day move reversal",
+      "from": "F1, F5",
+      "refs": [
+        "F1",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.g1_one-day-move-reversal"
+  ],
+  "no_ideas": null
+}

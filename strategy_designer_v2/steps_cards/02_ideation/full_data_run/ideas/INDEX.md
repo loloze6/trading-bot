@@ -1,0 +1,6 @@
+002-01_sma-golden-cross-upward-drift: After a short moving average crosses above a long one, price keeps rising more often and further than after random bars. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, period: folds A, B, C, D]
+002-02_sma-death-cross-downward-drift: After a short moving average crosses below a long one, price keeps falling more often and further than after random bars. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, period: folds A, B, C, D]
+002-03_price-cross-above-long-sma: After price closes above its long moving average, it keeps rising more often and further than after random bars. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, period: folds A, B, C, D]
+002-04_price-cross-below-long-sma: After price closes below its long moving average, it keeps falling more often and further than after random bars. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, period: folds A, B, C, D]
+002-05_up-cross-to-reverse-cross-gain: Price rises over the span from a short-over-long average up-cross to the next down-cross, more than over random spans. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, period: folds A, B, C, D]
+002-06_down-cross-to-reverse-cross-loss: Price falls over the span from a short-under-long average down-cross to the next up-cross, more than over random spans. [instruments: BTC, ETH, LTC, XMR, XRP, ZEC, period: folds A, B, C, D]

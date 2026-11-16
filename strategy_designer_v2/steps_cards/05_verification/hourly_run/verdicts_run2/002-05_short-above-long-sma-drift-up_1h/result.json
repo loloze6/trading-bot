@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled excess 24-bar forward return in zone over all-bar mean",
+    "value": -0.00019407596977843173,
+    "statistic": {
+      "name": "Welch t",
+      "value": -0.10906480547195192
+    },
+    "threshold": "positive with t >= 2 and >= 4 of 6 windows positive to confirm; negative with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "in-zone minus all-block share of positive 24-bar blocks",
+    "value": -0.02160729027751318,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping in-zone 24-bar blocks pooled": 348,
+    "all non-overlapping 24-bar blocks pooled": 724,
+    "windows with positive excess": 4,
+    "windows": 6
+  },
+  "decided_by": "The t lies strictly between -2 and +2, so the result is inconclusive.",
+  "reading": "Blocks start at positions 0, 24, 48... of each window and are in-zone when forecast > 0 at the block start; each block return is demeaned by its window's all-block mean, the pooled excess is the mean of in-zone demeaned returns tested by Welch t against all demeaned blocks; a window with no in-zone blocks counts as not positive; the supporting check passes at a difference >= 0 and does not enter the decision."
+}

@@ -454,11 +454,14 @@ def _rsi(transforms, **extra):
 
 
 def test_first_forecast_bars_quoted_in_the_guide(tmp_path):
-    assert _first_ready_bar(_strategy(tmp_path, _ungated([_rsi([{"op": "identity"}])]))) == 29
+    # Re-measured after the Parked B fix (operator ruling 2026-11-16); before it: 29, 44, 201.
+    assert _first_ready_bar(_strategy(tmp_path, _ungated([_rsi([{"op": "identity"}])]))) == 24
     assert _first_ready_bar(_strategy(tmp_path, _ungated([_rsi([{"op": "ratio_to_mean"}])]))) == 44
     sma = {"id": "s", "class": COMP + "SmaTrendLongOnlyComponent", "params": {}, "weight": 1.0,
            "transforms": [{"op": "identity"}]}
-    assert _first_ready_bar(_strategy(tmp_path, _ungated([sma])), n=300) == 201
+    strategy = _strategy(tmp_path, _ungated([sma]))
+    assert strategy.required_bars == 101
+    assert _first_ready_bar(strategy, n=300) == 102  # its second stored value, one bar after
 
 
 def test_strategies_warmup_has_no_effect(tmp_path):

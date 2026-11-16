@@ -1,0 +1,22 @@
+---
+line: 7.d not profitable
+backtest: 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d1_near-high-drift-extension-fades_1d
+idea tested: 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d1_near-high-drift-extension-fades
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3253 USD
+---
+## Findings
+- **F1:** The extension penalty, not range position, sets the book's side. On trending bars the ext30 term after its transforms is positive on 69.5 % of bars with a mean of 22.6, against a mean of 3.0 for range20. As a result the forecast is negative on 69.5 % of trending bars and the book is short on 68.8 % of them, although range20 is negative on only 39.2 %.
+- **F2:** The book loses on its shorts, which are bets against rising coins. Its 5,922 short bars average -0.00163 a bar while the coin rose 0.00102 a bar on them. Its 2,762 long bars average +0.00122. Across all bars the mean is -0.000362 a bar before fees of 0.000156, and every coin's shorts lose (ETH -0.00308, XRP -0.00309 a bar).
+- **F3:** The tested situation itself carries the effect. On the 10-day grid of trending bars, the forward 10-day return minus the coin's mean rises with range position: raw range slope t 3.45 (n 698), range20 slope t 3.08 (n 833). The top range20 quintile averages +0.0477 and the bottom -0.0212. By raw range, the top quintile averages +0.0668 against -0.0162 for the bottom.
+- **F4:** A strong 30-day run does not fade over the next 10 days as the penalty assumed. The ext30 slope on the excess 10-day return is +0.000383 (t 2.00) and the ret30 slope is t 2.56 (n 630). By 30-day return quintile, the 10-day returns are -0.0129, 0.0014, 0.0369, 0.0531 and 0.0129, so even the most extended quintile still rises.
+- **F5:** Removing the penalty turns the book positive. On trending bars, a position of 2 × (raw range position - 0.5) gives a mean of +0.000647 a day and a Sharpe of 0.81 before fees, against the book's -0.000361 and -0.42. The book's long bars alone give a Sharpe of 0.51.
+
+## Ideas
+- `002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d1_near-high-drift-extension-fades.d1_near-high-drift-without-penalty` (from F1, F2, F3, F4, F5): While a coin's close is above its 200-day average, the higher its close sits in its 20-day close range, the larger its rise over the next 10 days, and the larger its 30-day return, the larger that rise, except in its very largest 30-day runs, where the added rise shrinks.
+- `002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d1_near-high-drift-extension-fades.d2_range-position-drift-above-average` (from F3, F5): While a coin's close is above its 200-day average, the higher its close sits in its 20-day close range, the larger its rise over the next 10 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

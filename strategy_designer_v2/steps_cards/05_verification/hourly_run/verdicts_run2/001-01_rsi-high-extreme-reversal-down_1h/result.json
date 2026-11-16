@@ -1,0 +1,30 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean forward 12-bar log excess return after top-decile |forecast| bars",
+    "value": -0.001432631131269509,
+    "statistic": {
+      "name": "t of the mean on non-overlapping 12-bar blocks",
+      "value": -1.230792003975105
+    },
+    "threshold": "confirm: negative with t <= -2 and negative in >= 2 coins; reject: positive with t >= +2; else inconclusive; needs >= 30 episodes per coin and >= 100 pooled"
+  },
+  "supporting_check": {
+    "name": "excess return falls steadily from zero-forecast group through |forecast| quintiles (Spearman rho), same sign in >= 2 coins",
+    "value": null,
+    "passed": null
+  },
+  "counts": {
+    "pooled non-overlapping extreme episodes": 390,
+    "non-overlapping extreme episodes BTCUSD": 187,
+    "non-overlapping extreme episodes ETHUSD": 203,
+    "coins with negative excess": 2,
+    "coins in record": 2
+  },
+  "decided_by": "The pooled t lies between -2 and +2.",
+  "reading": "Top decile is the pooled 90th percentile of |forecast| over all bars of all coins and windows (non-zero only), excess is each bar's forward 12-bar log return minus its coin-window mean over all bars, sampled on the 0,12,24,... grid with the ordinary t of the mean; with only 2 coins in the record, 'at least 2 of 3 coins' is read as both coins, and 'fall steadily' as strictly decreasing pooled means over neutral then quintiles 1-5, with a negative per-coin Spearman slope in at least 2 coins."
+}

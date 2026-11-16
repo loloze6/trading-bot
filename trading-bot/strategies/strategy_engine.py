@@ -401,7 +401,12 @@ class ConfigDrivenStrategyEngine:
         min_buf) calculation. Still capped at _min_buf -- a per-component
         "lookback" override can make an individual deque smaller than
         required_bars, and warmup must never exceed the smallest deque's maxlen
-        or that component could never satisfy len(h) >= warmup."""
+        or that component could never satisfy len(h) >= warmup.
+
+        Parked B (strategy_designer_v2 POTENTIAL_ADJUSTMENTS.md): _warmup is a ROW
+        count and no longer gates is_ready(), which compares HISTORY counts with
+        _need. AdvancedStrategy gates the rows itself (buffer >= required_bars).
+        Kept as the record of the declared warm-up."""
         self._warmup = min(required_bars, self._min_buf)
 
     def set_indicators(self, indicators: Dict[str, Any]) -> None:
@@ -563,8 +568,15 @@ class ConfigDrivenStrategyEngine:
             if self._block_fault:
                 raise BlockCombinerError(self._block_fault)
             return all(self._block_ready(rkey, b) for b in self._block_regimes[rkey]["blocks"])
+        # A component is ready once it holds the history values its config asks for
+        # (_need: a standardise op's min_periods + 1, read from its params; 2 without
+        # a history op). The ROW count is gated once, outside, by AdvancedStrategy's
+        # `buffer >= required_bars`. Comparing this history count with _warmup (a row
+        # count, required_bars) made a strategy wait for component warm-up + required_bars
+        # rows -- 400 where it declared 250 -- so windows whose prefetch had 250..399 rows
+        # were refused (Parked B, strategy_designer_v2 POTENTIAL_ADJUSTMENTS.md).
         return all(
-            len(h) >= max(self._warmup, self._need[rkey][cid])
+            len(h) >= self._need[rkey][cid]
             for cid, h in self._history[rkey].items()
         )
 
@@ -628,4 +640,7 @@ class ConfigDrivenStrategyEngine:
                 "weight_normalized":     float(w_norm),
                 "weighted_contribution": float(w_norm * value),
             }
+            comp = self._components[rkey][cid]
+            if getattr(comp, "report_debug", False):   # opt-in: the component's own numeric debug fields reach bars.csv
+                debug[cid].update({k: float(v) for k, v in comp.debug_info.items() if isinstance(v, (bool, int, float))})
         return float(np.clip(ensemble, -20.0, 20.0)), debug

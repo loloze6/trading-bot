@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-20-bar excess return on forecast, trending grid bars",
+    "value": 0.0016847613319552113,
+    "statistic": {
+      "name": "t of OLS slope",
+      "value": 1.1329801688597347
+    },
+    "threshold": "t >= 2 confirms (with positive timing), t <= -2 rejects, on at least 50 grid cases"
+  },
+  "supporting_check": {
+    "name": "trending-regime book mean daily return minus market-rise gain (timing), before costs",
+    "value": 0.0006535843500925043,
+    "passed": true
+  },
+  "counts": {
+    "trending-regime grid cases": 414
+  },
+  "decided_by": "Slope t lies between -2 and 2.",
+  "reading": "Trending bars are those with regime=='trending'; the coin's mean 20-bar return is the mean over all its non-overlapping grid returns in all windows; the regression is pooled OLS with an intercept; the timing part uses held position x (next daily return minus the coin's all-window mean daily return) on trending-regime bars, averaged across coins per (window, day) and then over days."
+}

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t-stat of mean of (forecast/10 x block forward 24-bar excess return over window mean 24-bar return)",
+    "value": 0.0004837501647442967,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.4311235319376631
+    },
+    "threshold": "t-stat >= 2 confirms, <= -2 rejects, strictly between is inconclusive; fewer than 100 active blocks is inconclusive"
+  },
+  "supporting_check": {
+    "name": "share of active blocks with negative 24-bar excess return vs 50%",
+    "value": 0.5,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping active blocks (forecast < 0)": 376,
+    "non-overlapping blocks": 724
+  },
+  "decided_by": "Inconclusive: the main-measure t-stat is strictly between -2 and 2.",
+  "reading": "Blocks start at positions 0, 24, 48, ... of each window with a full 24-bar forward return inside it, all blocks (including forecast 0) enter the products, the window's mean 24-bar return is the mean of the forward 24-bar returns from every bar of that window, and the supporting check passes when the negative share exceeds 50%."
+}

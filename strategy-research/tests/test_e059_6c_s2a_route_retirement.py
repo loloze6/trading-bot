@@ -198,7 +198,7 @@ def test_legacy_continuation_halt_is_documented_and_schema_valid():
 
 def test_flag_documented_in_guide_runbook_and_index():
     key = "orchestrator.verdict_routing_retired.enabled"
-    for rel in ("docs/RUNBOOK.md", "docs/USER_GUIDE.md", "DOC_INDEX.md", "CLAUDE.md"):
+    for rel in ("docs/RUNBOOK.md", "docs/USER_GUIDE.md", "CLAUDE.md"):
         assert key in (_SR / rel).read_text(encoding="utf-8"), rel
 
 

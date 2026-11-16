@@ -236,8 +236,12 @@ def test_scalar_only_component_has_no_extra_wait():
 
 
 @pytest.mark.parametrize("k", [2, 3, 4, 7])
-def test_identity_readiness_flips_exactly_at_warmup(k):
-    # lookback override so the deque (hence the warmup cap) is larger than every k
+def test_identity_readiness_flips_at_its_history_need_not_at_warmup(k):
+    # Parked B (strategy_designer_v2 POTENTIAL_ADJUSTMENTS.md): set_warmup(k) is a
+    # ROW count (AdvancedStrategy passes required_bars and gates the rows itself);
+    # it no longer gates the HISTORY count. An identity-only component is ready at
+    # its need (2 values), whatever k is. Before the fix it waited for k values,
+    # which put a component's own warm-up on top of required_bars.
     eng = ConfigDrivenStrategyEngine(
         _engine_cfg([_comp("i", [{"op": "identity"}], lookback=20)], warmup=k))
     eng.set_warmup(k)
@@ -246,7 +250,7 @@ def test_identity_readiness_flips_exactly_at_warmup(k):
     for i in range(1, len(df) + 1):
         eng.update(df.iloc[:i])
         n = len(eng._history["unknown"]["i"])
-        assert eng.is_ready(MarketRegime.UNKNOWN) == (n >= k), f"n={n}, k={k}"
+        assert eng.is_ready(MarketRegime.UNKNOWN) == (n >= 2), f"n={n}, k={k}"
         f, dbg = eng.forecast(MarketRegime.UNKNOWN)
         if n < 2:
             assert (f, dbg) == (0.0, {"not_ready_component": "i"})   # the forecast guard's floor

@@ -158,3 +158,47 @@ def test_merge_that_normalises_the_cache_is_still_written(tmp_path):
     assert path.stat().st_mtime_ns != mtime_before
     on_disk = pd.read_csv(path, parse_dates=["timestamp"])
     pd.testing.assert_frame_equal(on_disk, df.reset_index(drop=True))
+
+
+def test_rows_added_are_written_whole_by_a_rename(tmp_path, monkeypatch):
+    """Backtests run side by side read one shared file (2026-11-16): a write goes to a temporary file in the same
+    folder, renamed over the cache, so a reader sees the old file or the new one, never part of one. The bytes are
+    those to_csv writes; no temporary file is left behind."""
+    path = _write_cache(tmp_path, _cache())
+
+    def remote(start, end):
+        if start <= pd.Timestamp("2018-04-14") <= end:
+            ts = pd.date_range("2018-04-14", "2018-04-16", freq="D")
+            return pd.DataFrame({"timestamp": ts, "fear_greed": 50, "classification": "Neutral"})
+        return pd.DataFrame()
+
+    replaced, written = [], []
+    real_replace, real_to_csv = os.replace, pd.DataFrame.to_csv
+    monkeypatch.setattr(os, "replace", lambda src, dst: (replaced.append((str(src), str(dst))), real_replace(src, dst)))
+    monkeypatch.setattr(pd.DataFrame, "to_csv", lambda self, *a, **k: (written.append(self.copy()), real_to_csv(self, *a, **k))[1])
+    f, _ = _fetcher(tmp_path, remote)
+    f.get_data("fear_greed")
+
+    assert len(replaced) == 1 and replaced[0][1] == str(path) and replaced[0][0].endswith(".tmp")
+    assert [p.name for p in tmp_path.iterdir()] == [path.name]
+    assert path.read_bytes() == real_to_csv(written[-1], index=False).encode()   # the bytes to_csv writes
+
+
+def test_a_failed_write_leaves_the_cache_and_no_temporary_file(tmp_path, monkeypatch):
+    path = _write_cache(tmp_path, _cache())
+    raw_before = path.read_bytes()
+
+    def remote(start, end):
+        if start <= pd.Timestamp("2018-04-14") <= end:
+            ts = pd.date_range("2018-04-14", "2018-04-16", freq="D")
+            return pd.DataFrame({"timestamp": ts, "fear_greed": 50, "classification": "Neutral"})
+        return pd.DataFrame()
+
+    def fail(src, dst):
+        raise PermissionError(13, "denied")
+    monkeypatch.setattr(os, "replace", fail)
+    f, _ = _fetcher(tmp_path, remote)
+    with pytest.raises(PermissionError):
+        f.get_data("fear_greed")
+    assert path.read_bytes() == raw_before
+    assert [p.name for p in tmp_path.iterdir()] == [path.name]

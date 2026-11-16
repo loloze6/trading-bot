@@ -1,0 +1,27 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 10-bar excess return of grid bars with forecast > 0, pooled",
+    "value": 0.023334928606929373,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.0738323255014204
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and supporting check passes); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean 10-bar excess of regime grid bars below the 20-bar high",
+    "value": 0.02586754849067567,
+    "passed": true
+  },
+  "counts": {
+    "pooled independent cases": 64,
+    "supporting cases": 44
+  },
+  "reading": "Situation recomputed from closes inside each window (close above its prior 20 closes, bars since <= 9), falling back on the recorded regime where history is too short; the coin's mean 10-bar return is the mean over all its non-overlapping grid returns in all windows; the supporting check takes all grid bars in the regime with bars since the high >= 1, whatever their forecast; the plan's 'fewer than 20 pooled independent cases' is applied as a minimum count (not observable).",
+  "status": "inconclusive",
+  "decided_by": "t lies strictly between -2 and 2, which the plan calls inconclusive."
+}

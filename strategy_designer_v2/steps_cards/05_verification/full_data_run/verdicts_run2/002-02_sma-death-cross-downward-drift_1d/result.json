@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "weighted mean excess gain of the short over holding (10 bars, non-overlapping, pooled)",
+    "value": 0.001494967395724899,
+    "statistic": {
+      "name": "t of |forecast|-weighted mean (weighted standard error)",
+      "value": 0.26182162928563013
+    },
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2; else inconclusive; fewer than 30 cases inconclusive"
+  },
+  "supporting_check": {
+    "name": "top minus bottom |forecast| tercile weighted excess gain",
+    "value": 0.0064728093104520395,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping short cases": 825
+  },
+  "decided_by": "The t-statistic lies strictly between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Holding is each coin's mean 10-bar return over the same non-overlapping grid (positions 0, 10, 20, ... of every window) pooled across its windows, the short's excess gain is -(forward return - holding), the t uses the weighted standard error sqrt(n/(n-1) * sum(w^2 (x-m)^2)) / sum(w), and terciles are equal-count splits of the short cases sorted by |forecast| compared by their weighted means."
+}

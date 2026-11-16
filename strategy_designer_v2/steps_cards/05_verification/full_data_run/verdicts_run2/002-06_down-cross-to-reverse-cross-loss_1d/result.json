@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean excess short 1-bar return vs coin all-window mean",
+    "value": 6.572318858696761e-05,
+    "statistic": {
+      "name": "t of the weighted mean",
+      "value": 0.11659547294673678
+    },
+    "threshold": "above 0 with t >= 2 confirms; below 0 with t <= -2 rejects; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "share of short bars with next return below coin all-window mean (binomial z vs 50%)",
+    "value": 0.5123624748609961,
+    "passed": true
+  },
+  "counts": {
+    "pooled bars with forecast below 0": 8453
+  },
+  "decided_by": "Inconclusive: the t-statistic lies between -2 and 2.",
+  "reading": "The coin's mean is the mean of all within-window next-bar returns pooled over all its windows, every bar with forecast below 0 and a next-bar return counts once, the t of the weighted mean uses the weighted standard error sqrt(sum w^2 (x - m)^2) / sum w with an n/(n-1) correction, and the supporting check counts as passed when the binomial z is at least 2 (it does not enter the decision)."
+}

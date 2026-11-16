@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t-stat of slope of excess next-24-bar return on forecast (non-overlapping blocks, pooled)",
+    "value": 0.6496007328763773,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.6496007328763773
+    },
+    "threshold": "confirm if slope t >= 2 with in-zone falling share > 50%; reject if slope t <= -2; at least 60 in-zone blocks"
+  },
+  "supporting_check": {
+    "name": "in-zone share of blocks with excess 24-bar return < 0 (binomial vs 50%, one-sided p = 0.5615)",
+    "value": 0.4973404255319149,
+    "passed": false
+  },
+  "counts": {
+    "in-zone non-overlapping blocks": 376,
+    "non-overlapping blocks": 724
+  },
+  "decided_by": "Slope t lies between -2 and 2: inconclusive.",
+  "reading": "The window's mean 24-bar return is taken as the mean of that window's non-overlapping grid-block returns (blocks at positions 0, 24, 48, ... with a full 24 bars ahead in the window), the slope t is the OLS slope over its standard error, and the supporting check passes when the share is above 50%."
+}

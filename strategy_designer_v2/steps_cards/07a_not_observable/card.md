@@ -1,0 +1,36 @@
+# Step card 7.a: Not observable (2026-11-12)
+
+## Business objective
+**Establish why an idea could not be observed in its backtest, and propose how it could be made observable, without changing the idea.**
+
+The parts every line shares (input, output, how the data is read, the model, storage, quality criteria) are in `../07_common/card.md`.
+
+## Entry condition
+Step 5's verdict is **not observable**: the test found fewer cases than its plan's minimum. Otherwise the line does not run, and its index line says so (`helper/line.yaml`).
+
+## Input
+The shared input: the backtest record, its plan and brief, step 5's verdict and step 6's check.
+
+## Output
+One analysis per backtest that meets the entry condition: findings, then ideas in step 2's format, or "no ideas" with the reason (`analyses/`).
+
+## What it looks for
+How often the idea's situation occurs (per coin, per window, per year); how the forecast is spread; how many cases the plan asked for and got; how much the outcome varies.
+
+## What it proposes
+The tested idea unchanged, on data where it can be observed: more coins, more periods, or another bar size (its times are in real time). It is written as a `same-idea-on:` block: the line gives only the data, from `../common/data_available.md`; code copies the tested idea's text and refuses data that is not available (operator, 2026-11-15). Never a loosened situation or changed times, which would be another idea. If no available data reaches the plan's minimum count, "no ideas", with the cases needed and the cases the data could give.
+
+## The AI
+The shared mechanism (`../07_common/helper/analyse.py`), with this line's `helper/line_prompt.md`. Opus.
+
+## Fixed inputs for the iterations
+Two real records cut to one window of one coin (`05_verification/cut_records/`): 001-01 and 002-05, both not observable. Not market evidence.
+
+## Variants compared
+One call against analyst then deducer: one call kept, for every line (`../07_common/card.md`).
+
+## Done when
+On two exercises in a row, on the fixed inputs, every analysis meets the shared quality criteria and keeps to this line's objective, and at least one of its ideas, taken through steps 3 to 6, changes the result that sent the backtest to this line: the test of the new idea is observable (its minimum counts are reached) (operator, 2026-11-14). Status: **validated** (operator, 2026-11-15) by exercise 3 (`validation/reading.md`): both proposals made the idea observable (001-01 rejected, 002-05 inconclusive). Earlier: exercises 1 and 2 ran (`../07_common/validation/reading.md`).
+
+## What this line does not do
+It does not test its ideas, write a test plan, or look beyond its objective.

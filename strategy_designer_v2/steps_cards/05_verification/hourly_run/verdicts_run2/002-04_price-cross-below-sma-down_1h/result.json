@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 24-bar excess forward return on forecast",
+    "value": 0.00010676836284596228,
+    "statistic": {
+      "name": "OLS slope t (non-overlapping 24-bar blocks)",
+      "value": 0.6553974957181226
+    },
+    "threshold": "slope t >= 2 confirms (with fall share > 50%), t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "share of forecast<0 blocks followed by negative 24-bar excess return (> 50%)",
+    "value": 0.4583333333333333,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping 24-bar blocks with forecast < 0": 384,
+    "non-overlapping 24-bar blocks": 724
+  },
+  "decided_by": "Inconclusive: slope t between -2 and 2.",
+  "reading": "Used non-overlapping 24-bar blocks (bars 0, 24, 48, ... of each window) pooled across all coins and windows with a plain OLS slope t-stat of excess return on forecast (all grid bars, zero forecasts included), the excess taken against the mean 24-bar forward return of all bars of the same window, and the 200-block minimum applied before the confirm/reject rules."
+}

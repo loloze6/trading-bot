@@ -88,9 +88,41 @@ Prose below the closing `---` is for human readers only -- the orchestrator
 never reads it. Use this space for the idea's motivation, links, and any
 context that does not belong in a field.
 
+<!--
+How to write this prose (guidance; delete this comment in your copy).
+
+Context: the person who drafts the brief writes this part before registering
+it; direction adds the Ratification section below when it ratifies the run.
+No pipeline step reads this text, so it exists only for the people who will
+review the brief, decide on the run, or read it again months later.
+
+Purpose, in one line: tell that reader, in under a minute, what idea is being
+tested and why it deserves a run. The fields above already carry everything
+the machine needs; do not repeat them here.
+
+Write, in this order:
+- Why this idea, and why now: what prompted it (an earlier run id, a source,
+  a decision row), in one or two sentences.
+- What the result would change: what we would do next if the idea holds, and
+  if it fails.
+- Anything a reader needs that has no field: a caveat, a known limit, an open
+  question for the operator. Leave it out if there is none.
+
+How to write it:
+- Plain words and short sentences, one idea per sentence. No jargon a
+  newcomer would have to look up, no code paths unless the reader must open
+  the file.
+- Keep the idea as the person who gave it stated it; do not strengthen it.
+- Suggested maximum: about 200 words (two or three short paragraphs), not
+  counting the Ratification section. Anything longer belongs in a linked
+  document.
+-->
+
 ## Ratification (direction; people only)
 
 <!-- filled by direction at ratification; the frontmatter stays the idea, the machine fields and the scope block -->
+<!-- PURPOSE: one or two plain sentences naming the roadmap item this run serves and the question it answers. -->
+<!-- Pre-registered outcomes: written before the run, one plain sentence each (A., B., ...), so the review can name which one happened. -->
 
 ### PURPOSE
 

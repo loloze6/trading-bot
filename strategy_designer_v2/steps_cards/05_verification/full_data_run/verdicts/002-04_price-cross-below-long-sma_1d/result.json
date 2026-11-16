@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean allocation x excess 10-bar return, pooled non-overlapping blocks",
+    "value": -0.0002712661436249522,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -0.22734799431934868
+    },
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "slope of excess 10-bar return on allocation, nonzero-position blocks",
+    "value": -0.012570054546721502,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping 10-bar blocks with a nonzero position": 931,
+    "non-overlapping 10-bar blocks (all)": 1657
+  },
+  "decided_by": "The t of the mean excess gain lies between -2 and 2 (inconclusive rule).",
+  "reading": "The main measure pools the products of all blocks (zero-position blocks included) as the plan's main measure says, blocks start at rows 0, 10, 20, ... of each window with the allocation after that bar's trade, the coin mean daily return pools all its windows, the situation is below_ma last_history_value < 0 with forecast < 0 (rows with missing values left out), and a block count under 30 is reported as not observable."
+}

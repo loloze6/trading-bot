@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess forward 10-bar return on forecast (non-overlapping, pooled)",
+    "value": 0.00022377602874393163,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": 0.4105845131969093
+    },
+    "threshold": "confirm if slope > 0 with t >= 2; reject if slope < 0 with t <= -2; otherwise inconclusive; inconclusive if fewer than 100 non-overlapping blocks with forecast > 0"
+  },
+  "supporting_check": {
+    "name": "share of positive fwd 10-bar returns on forecast>0 bars minus coin's share over all bars",
+    "value": -0.017680456997749124,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping blocks with forecast > 0": 832,
+    "non-overlapping blocks": 1657
+  },
+  "decided_by": "The slope's t lies between -2 and 2: inconclusive.",
+  "reading": "The coin's holding mean and positive share use all overlapping 10-bar returns of all its windows, the regression is OLS with intercept on grid bars 0,10,20,... of each window, and the supporting check pools all forecast>0 bars, each compared with its own coin's share."
+}

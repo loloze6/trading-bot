@@ -1,0 +1,29 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (forecast/10) x excess 5-bar return on trending grid bars",
+    "value": 0.004383213088366022,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 2.8401689054511996
+    },
+    "threshold": "t >= 2 confirms (with check < 0); t <= -2 rejects; otherwise inconclusive; needs >= 100 active grid cases and >= 30 with forecast < 0"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return, forecast < -10 minus forecast == 0 (active grid bars)",
+    "value": -0.024288078957891382,
+    "passed": true
+  },
+  "counts": {
+    "active grid cases": 1674,
+    "active grid cases with forecast below 0": 642,
+    "grid cases with forecast below -10": 279,
+    "grid cases with forecast 0": 1032
+  },
+  "decided_by": "Main-measure t is 2 or more and the supporting check's difference is below 0.",
+  "reading": "Active grid cases are taken as grid bars with regime == trending (the forecast is active only in that regime, so forecast-0 trending bars are the check's comparison group), the coin's mean 5-bar return is the mean of its non-overlapping grid returns over all windows and regimes, the situation is the range_pos raw value <= 0 in the trending regime on the short side, and a minimum-count shortfall is reported as not observable."
+}

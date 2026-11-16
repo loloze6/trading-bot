@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled mean 20-bar forward excess return over the coin's mean 20-bar return, active bars, non-overlapping",
+    "value": 0.01901291563325452,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.8496559142986656
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; at least 30 non-overlapping active blocks"
+  },
+  "supporting_check": {
+    "name": "OLS slope of 20-bar excess return on forecast level, active non-overlapping blocks",
+    "value": 0.004047841047938617,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping 20-bar active blocks pooled across coins and windows": 269
+  },
+  "decided_by": "The t-statistic lies between -2 and 2.",
+  "reading": "Situation checked on the regime label 'trending' plus both 60- and 20-bar close returns > 0 where computable inside the window, long side = forecast > 0; the coin's mean 20-bar return and the active samples use the same non-overlapping grid (positions 0, 20, 40, ... of each window), an active block is a grid bar with forecast > 0 and a full 20-bar forward return, and the supporting slope is an OLS of excess return on forecast over those same blocks."
+}

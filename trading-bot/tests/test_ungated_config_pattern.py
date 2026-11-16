@@ -188,15 +188,18 @@ def test_pattern_a_all_four_regime_labels_now_agree():
     ready = [v for v in unknown if v is not None]
     assert len(ready) > 10, "warmup consumed the whole synthetic window — widen BARS"
     first_ready_index = next(i for i, v in enumerate(unknown) if v is not None)
-    # Measured, not derived: EMASpreadComponent's own get_required_periods() (driven
-    # by slow_period=21) gates its readiness later than the outer required_bars=24
-    # check, so first readiness now lands at index 40 for every regime label -- later
-    # than the old (buggy) index 23, because index 23 was reached by vacuously
-    # bypassing this component's real warmup rather than by satisfying it.
-    assert first_ready_index == 40, (
-        f"Expected first readiness at index 40 (measured); got index {first_ready_index}. "
-        "Re-derive before trusting this test -- do not just restore 40 without checking "
-        "why it moved."
+    # Measured, then derived: first readiness is index 23, the 24th row, i.e. the
+    # outer required_bars=24 gate, for every regime label. EMASpreadComponent
+    # (slow_period=21) has had a value since row 21, so it holds 4 history values by
+    # then, above its need of 2. This was index 40 until Parked B
+    # (strategy_designer_v2 POTENTIAL_ADJUSTMENTS.md): the strategy engine compared its
+    # HISTORY count with required_bars (a ROW count), capped at the deque's 20, so it
+    # waited 21 + 20 - 1 = 40 rows while declaring 24. The F7 fix's point stands: all
+    # four labels agree, and none is ready before the declared warm-up.
+    assert first_ready_index == 23, (
+        f"Expected first readiness at index 23 (required_bars=24 rows); got index "
+        f"{first_ready_index}. Re-derive before trusting this test -- do not just "
+        "restore 23 without checking why it moved."
     )
 
 

@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean excess short 1-bar return (next return minus coin all-window mean, sign flipped), pooled",
+    "value": 6.572318858696761e-05,
+    "statistic": {
+      "name": "t of the weighted mean",
+      "value": 0.11659622659363744
+    },
+    "threshold": "confirm: mean > 0 with t >= 2; reject: mean < 0 with t <= -2; else inconclusive; fewer than 300 pooled bars with forecast < 0 is not observable"
+  },
+  "supporting_check": {
+    "name": "share of forecast<0 bars with next return below coin mean, binomial z vs 50%",
+    "value": 2.2732167718667675,
+    "passed": true
+  },
+  "counts": {
+    "pooled bars with forecast below 0": 8453,
+    "bars with next return below coin mean": 4331
+  },
+  "decided_by": "The t-statistic of the weighted mean excess short return lies between -2 and 2.",
+  "reading": "Situation taken as last_history_value of sma_cross_spread < 0 (50-day SMA below 200-day SMA) with forecast < 0 on active bars; the weighted mean is sum(-(r-mu)|f|)/sum(|f|) with its t the ordinary t of the values -(r-mu)|f|/mean|f| (each bar once, h=1); mu is the coin's mean next-bar return over all its windows; the 300-bar minimum counts bars with forecast < 0 and a valid next return; the supporting check passes when the share below the mean exceeds 50% with binomial z >= 2. (share below mean = 0.5124)."
+}

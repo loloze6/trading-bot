@@ -1,0 +1,23 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of coin-demeaned 5-bar forward return on forecast (trending, non-overlapping grid)",
+    "value": 0.0014769794643640238,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.315563803912812
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; otherwise inconclusive; at least 100 grid cases with regime trending and forecast > 0"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases with regime trending and forecast > 0": 1032,
+    "grid cases with regime trending": 1674
+  },
+  "decided_by": "The pooled slope is positive with t >= 2 (confirm rule).",
+  "reading": "The coin's mean 5-bar return is taken over all grid bars of all its windows (every regime), the pooled regression is an OLS with intercept over all coins' trending grid bars, and the 200-day gate is read from the regime column since the detector's component is not recorded."
+}

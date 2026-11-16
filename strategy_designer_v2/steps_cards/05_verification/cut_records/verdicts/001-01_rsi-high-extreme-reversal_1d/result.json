@@ -1,0 +1,27 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled excess forward 5-bar return after forecast <= -10",
+    "value": -0.0675100848188564,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -1.8416074287729935
+    },
+    "threshold": "confirm if negative with t <= -2 (and negative in >= 2 of 3 coins); reject if positive with t >= +2"
+  },
+  "supporting_check": {
+    "name": "number of coins with negative excess return",
+    "value": 1,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping extreme cases pooled": 3,
+    "coins with extreme cases": 1
+  },
+  "decided_by": "Only 3 non-overlapping extreme cases pooled, below the plan's minimum of 30.",
+  "reading": "Extreme cases are grid bars (positions 0,5,10,... of each window) with forecast <= -10 and a defined 5-bar forward return, the baseline is the mean 5-bar forward return over all bars of that coin and window with a defined forward return, t is the ordinary t of the pooled mean, and the 'at least 2 of the 3 coins' rule is applied literally to the coins present, so with fewer than 2 negative coins it cannot be met."
+}

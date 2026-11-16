@@ -1,0 +1,48 @@
+{
+  "line": "7.d",
+  "backtest": "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.g1_one-day-move-reversal.g1_high-volatility-fall-rebound_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5072794,
+  "findings": {
+    "F1": "The book's gain comes almost entirely from its largest forecasts. The top forecast tercile (mean forecast 13.6, n 613) earned 0.00699 per active bar, while the lower two terciles earned 0.00004 (n 1226) and 0.00041 (n 613). With the book active on only 14.0 % of bars at a mean allocation of 0.247, its mean daily return is only 0.000209, against 0.00118 for holding.",
+    "F2": "Most signal bars are small falls that do not rebound. Of 1408 signal bars with a measured fall, 1153 had a vol-scaled fall between -1 and 0, with a next-day excess of 0.00196 (t 1.17) and a gain of 0.00042. Falls between -1.5 and -1 gave 0.01655 (t 3.07, n 163), and falls below -3 gave 0.201 (t 7.74, n 8).",
+    "F3": "The rebound sits in coins already deep in a 60-day fall. Signal bars in the lowest 60-day-return quartile (mean -36.6 %, n 215) had a next-day excess of 0.01703 (t 4.60) and a 5-day excess of 0.02186. The other three quartiles had next-day excesses of 0.00002, 0.00315 and 0.00367, all with t below 1.",
+    "F4": "The same holds for the 20-day trend. Among the largest forecasts, signal bars after a 20-day fall had a next-day excess of 0.01412 (t 3.80, n 389), against 0.00841 (t 2.04, n 181) after a 20-day rise.",
+    "F5": "The rebound does not end after one day. Over all 1698 signal bars, the excess over the coin's mean was 0.00515 over 1 day (t 3.47), 0.00742 over 3 days (t 3.18, n 1674) and 0.00876 over 5 days (t 2.84, n 1661). A one-day hold captures well under the full move.",
+    "F6": "The Calmar failure comes from one stretch. The deepest fall, -20.7 %, is in w16, with w17 at -14.1 % and w15 at -10.0 %. In w15\u2013w17 the active bars earned 0.000388 each (n 486), against 0.002235 in the other windows (n 1966). The coins there were on average up 5.0 % over 60 days, and the 50 worst bars were held at a mean allocation of 0.66 and forecast 13.5.",
+    "F7": "The volatility grading the idea claims is absent. The forecast-vs-rebound slope was 0.000434 lower where the volatility percentile is at least 0.9 than where it is 0.8\u20130.9, so the supporting check failed."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's 20-day volatility is high compared with its own past levels, the larger its one-day fall relative to its usual daily move over the past 20 days, the larger its rise over the next day, and the further the coin has fallen over its past 60 days, the stronger that rebound.",
+      "consequence": "A trader would buy sharp falls in turbulent stretches mostly in coins already well down over the past two months, and stay small in coins near their highs, where the falls kept going.",
+      "name": "rebound after deep 60-day fall",
+      "from": "F1, F2, F3, F4, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When a coin's 20-day volatility is high compared with its own past levels, the larger its one-day fall relative to its usual daily move over the past 20 days, the larger its rise over the next three days.",
+      "consequence": "A trader would hold the rebound from a sharp fall for several days instead of one, collecting more of the move per trade.",
+      "name": "multi-day rebound after sharp falls",
+      "from": "F1, F2, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.g1_one-day-move-reversal.g1_high-volatility-fall-rebound.d1_rebound-after-deep-60-day-fall",
+    "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.g1_one-day-move-reversal.g1_high-volatility-fall-rebound.d2_multi-day-rebound-after-sharp-falls"
+  ],
+  "no_ideas": null
+}

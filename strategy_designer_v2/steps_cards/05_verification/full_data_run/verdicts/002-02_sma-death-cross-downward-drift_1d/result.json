@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "|forecast|-weighted mean 10-bar excess gain of the short over holding (holding - forward return), pooled",
+    "value": 0.001494967395724899,
+    "statistic": {
+      "name": "t of the weighted mean (effective n)",
+      "value": 0.2592949973560916
+    },
+    "threshold": "confirm if mean > 0 with t >= 2 (and top tercile > bottom tercile); reject if mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "top minus bottom |forecast| tercile weighted excess gain",
+    "value": 0.0064728093104520395,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping short cases": 825
+  },
+  "decided_by": "The t-statistic is strictly between -2 and 2 (or undefined), which the plan calls inconclusive.",
+  "reading": "Active bars whose raw spread is missing are left out of the situation check; holding is the coin's mean 10-bar return on the non-overlapping grid (positions 0,10,20,... of each window) across all its windows; the short's excess gain is holding minus the forward return; the t of the weighted mean uses the weighted standard deviation and Kish's effective n; terciles split the short cases by rank of |forecast| into three near-equal groups, and each tercile's excess is its |forecast|-weighted mean; the plan's 'fewer than 30 short cases' rule is reported as not observable."
+}

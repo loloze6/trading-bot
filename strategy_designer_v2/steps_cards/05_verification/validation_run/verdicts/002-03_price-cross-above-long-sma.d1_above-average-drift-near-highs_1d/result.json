@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (forecast/10) x (next 20-bar return minus coin's mean 20-bar return) on grid bars with forecast > 0",
+    "value": 0.01951456541837619,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.6068721414943451
+    },
+    "threshold": "mean > 0 with t >= 2 to confirm, mean < 0 with t <= -2 to reject, on at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "book Calmar minus holding Calmar (before costs), passes if >= 0",
+    "value": 0.7638910085767843,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with a positive forecast": 284,
+    "active bars": 6128
+  },
+  "decided_by": "The t lies between -2 and 2 (or is undefined), meeting neither the confirm nor the reject rule.",
+  "reading": "Situation checked on regime == 'trending' with forecast > 0; grid bars are positions 0, 20, 40, ... of each window that have a bar 20 ahead in the same window; the coin's mean 20-bar return is the mean over all its grid samples in all windows; the book is postRebalance_total_value per bar, coins averaged per day, chained over windows w1..wN in order, and holding is the same from closes."
+}

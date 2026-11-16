@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 10-bar forward excess return on regime bars vs coin's all-window grid mean",
+    "value": -0.018810265538113883,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -1.712864548444709
+    },
+    "threshold": "confirm if t <= -2 (with fresh-minus-stale below zero); reject if t >= +2; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "fresh (age 1-15) minus stale (age 16-30) excess return, Welch t below 0",
+    "value": 0.3565601959509204,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping regime cases": 166,
+    "fresh cases (age 1-15)": 88,
+    "stale cases (age 16-30)": 78
+  },
+  "decided_by": "The main-measure t lies between -2 and +2.",
+  "reading": "Regime bars and freshness are read from the raw cross_age value on grid bars (positions 0,10,20,... of each window, with the forward return inside the window), the baseline is each coin's mean 10-bar grid return over all its windows, the supporting check counts as passed only when the Welch t (fresh minus stale) is below 0, and fewer than 20 cases gives 'not observable' as the workflow's minimum-count rule requires."
+}

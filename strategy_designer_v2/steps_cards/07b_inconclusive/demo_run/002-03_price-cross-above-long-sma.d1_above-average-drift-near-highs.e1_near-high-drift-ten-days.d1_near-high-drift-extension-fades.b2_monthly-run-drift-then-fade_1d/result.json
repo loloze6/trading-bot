@@ -1,0 +1,42 @@
+{
+  "line": "7.b",
+  "backtest": "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d1_near-high-drift-extension-fades.b2_monthly-run-drift-then-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 1,
+  "cost": 0.2071887,
+  "findings": {
+    "F1": "The fade part of the idea is absent, not reversed: excess 10-day returns stay flat or positive at the largest runs. Tier means are +0.003 for s 8\u201311, +0.055 for s 11\u201314, +0.0016 for s 14\u201317 and +0.021 for s \u2265 17 (n=189). The supporting check is therefore only \u22120.0095 with t=\u22120.38 (248 vs 110 cases), while the main slope is positive with t=3.18 on 833 cases.",
+    "F2": "The graded rise is carried by the lower and negative runs, not the high ones. The slope of excess 10-day return on s is t=2.38 for s < 8 (n=475) but t=0.10 for s \u2265 8 (n=358). Runs at or below zero above the 200-day average are followed by below-average 10-day returns: \u22120.024 (t=\u22122.32, n=142) for s \u2264 \u22124 and \u22120.042 (t=\u22122.24, n=49) for s between \u22122 and 0.",
+    "F3": "The effect is strongest at short horizons and fades at longer ones. The slope on s has t=4.01 at 5 days (1674 cases), t=3.00 at 10 days (833), t=0.98 at 20 days (408) and t=1.36 at 30 days (276).",
+    "F4": "The effect varies across coins and years. The 10-day slope on s is positive for 5 of 6 coins (ZEC t=2.24, ETH 1.98, BTC 1.69, XRP 0.79, LTC 0.58) and nil for XMR (\u22120.01). By year, t=2.61 in 2024 and 2.45 in 2025 against \u22122.10 in 2023, so the market's own moves drown the effect in some periods."
+  },
+  "ideas": [
+    {
+      "idea": "While a coin's close is above its 200-day average, the larger its 30-day return, the larger its rise over the next 5 days.",
+      "consequence": "A trader would size a coin's long by its month-long run while the coin is above its long average, with no trim at extreme runs, and hold it for days rather than weeks.",
+      "name": "monthly run drives short drift",
+      "from": "F1, F3, F4",
+      "refs": [
+        "F1",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "While a coin's close is above its 200-day average, the more its 30-day return has fallen, the larger its fall relative to its usual move over the next 10 days.",
+      "consequence": "A trader would cut a long in a coin above its long average when its month-long return turns down, and cut it more the deeper that return goes.",
+      "name": "weak run above trend lags",
+      "from": "F2, F1",
+      "refs": [
+        "F2",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d1_near-high-drift-extension-fades.b2_monthly-run-drift-then-fade.b1_monthly-run-drives-short-drift",
+    "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d1_near-high-drift-extension-fades.b2_monthly-run-drift-then-fade.b2_weak-run-above-trend-lags"
+  ],
+  "no_ideas": null
+}

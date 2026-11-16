@@ -1,5 +1,6 @@
 """
-D-176 byte-identity against a recording made on MASTER's code (no D-176).
+D-176 byte-identity against a recording made on MASTER's code (no D-176), plus the Parked A/B
+engine warm-up fix (re-recorded 2026-11-16, see the fixture README).
 
 strategy-research/tests/fixtures/d176/master_recorded_run_{099,084}.csv are the bars.csv files
 master produced for run_099's and run_084's real configs (no strategies.sizing block) over the

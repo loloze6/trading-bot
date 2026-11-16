@@ -1,6 +1,6 @@
 # RUNBOOK — autonomous campaign mode
 
-Not sure this is the doc you need? See [`DOC_INDEX.md`](DOC_INDEX.md) first.
+Not sure this is the doc you need? See [`CLAUDE.md`](../CLAUDE.md) §1, "Where to read", first.
 
 Registering a hypothesis at a NEW TIMEFRAME (not one this campaign has run
 before)? Read `docs/DATA_AVAILABILITY.md` first (cache availability, the
@@ -13,7 +13,8 @@ hypothesis and split out of the retired `TIMEFRAME_CHANGE_PLAYBOOK.md`.
 Operational playbook for `workflow/run_campaign.py`, the multi-run wrapper around
 `workflow/run_phase1_research.py`. Every command below assumes:
 
-- Shell: bash (Git Bash / WSL / any POSIX shell). No PowerShell syntax used here.
+- Shell: bash (Git Bash / WSL / any POSIX shell). No PowerShell syntax used here,
+  except the run-viewer line in section 2 (PowerShell, as written there).
 - Working directory: `trading-bot/strategy-research/` (same convention as the
   single-run orchestrator — `cd` there first, every command below is relative to it).
 - Python: `../venv/Scripts/python.exe` (the trading-bot venv — same interpreter every
@@ -226,7 +227,7 @@ one-line-per-transition version meant for a human to actually read.
 **Blocked — grounds re-based 2026-07-12 (was the security investigation;
 that incident closed benign, see `docs/analysis-reports/INCIDENT_20260710.md` Resolution
 addendum). nohup/background mode is now blocked on
-[`IMPROVEMENTS_DONE_20260712.md`](engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md)'s
+[`IMPROVEMENTS_DONE_20260712.md`](../engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md)'s
 P0 defect kernel** (A1+A3+B1 routing/registration, A8+A9+B11+C7
 verdict/routing machinery, B3+B10 protocol pinning, B4+B7+D3 conformance,
 B8 spec semantics, C6 prescreen statistic — see that file's sequencing
@@ -278,7 +279,7 @@ this section where they differ.
 BASE strategy config is authored directly at the `strategy_config_authoring`
 stage instead of going through `validation`, and `backtest_specification`
 becomes a deterministic tool stage that applies `innovation_expansion`'s
-patches to it (`strategy-research/CLAUDE.md`, `docs/USER_GUIDE.md` §2.1/§2.2).
+patches to it (`docs/USER_GUIDE.md` §2.1/§2.2).
 This section is everything needed to get the FIRST run going on it, in order.
 Do all of §0b (PREFLIGHT) first — nothing below replaces it.
 
@@ -359,8 +360,8 @@ pipeline runs); `venue`, `product`, the coin(s), `timeframe`, the windows and
 `available_data` are the machine fields, one guidance line each in the template;
 the dated `scope` block (what the pipeline can test for now) is copied unchanged
 into every brief and step 1a reads it with the brief. Only operator-written
-briefs carry `scope`: the briefs decide-next writes (`tools/decide_next.py:1494`,
-`:2343-2344`) and refold writes (`workflow/run_campaign.py:5443`) are built from a fixed
+briefs carry `scope`: the briefs decide-next writes (`tools/decide_next.py:1537`,
+`:2664-2665`) and refold writes (`workflow/run_campaign.py:5707`) are built from a fixed
 key list that does not include it, so step 1a does not see the scope block in those
 runs (operator decision 2026-10-14: deferred). `criteria_from:
 hypothesis_generation` is pre-filled (step 1a picks the criteria from
@@ -529,13 +530,13 @@ for e in q['queue']:
 ### Tail the campaign log
 
 ```bash
-tail -n 20 campaign_log.md
+tail -n 20 campaign_record/campaign_log.md
 ```
 
 ### Read the scoreboard
 
 ```bash
-cat campaign_summary.md
+cat campaign_record/campaign_summary.md
 ```
 
 Regenerated every time a brief reaches `done` or the campaign halts — trial count,
@@ -693,7 +694,7 @@ S2d (`holdout_unlock_refused`, `holdout_unlocked_awaiting_result`,
 | `component_gap` | `backtest_specification` needs an engine piece that doesn't exist yet. **Under `orchestrator.verdict_routing_retired.enabled`** (slice 6c S2c) this never pauses the campaign: the run parks instead (row `paused:waiting_for_component` below). | Extend the engine per `STRATEGY_EXTENDING.md`, then resume. |
 | `new_component_escalation` | `campaign_review`/verdict routing decided a brand-new engine component is needed. | Author the component, then resume. |
 | `regime_misattribution` | Regime-detector instrumentation problem, not a hypothesis failure (Improvement 01). | Consult `regime-auditor` skill output, fix instrumentation, then resume. |
-| `component_execution_error` | **On the grid route (`orchestrator.grid_evaluation.enabled`; E-046a 5b-ii-B, D-198) this is set mechanically**, not by an LLM: after `protocol_execution`, any `results[*].component_errors.count > 0` in `protocol_result.yaml` (or a variant's own copy) pauses the run before the analyst runs and before the grid's `idea_status.yaml` is consulted; `pending_stage` stays at the stage before the route (`protocol_execution`, or `analyst`) — or `regroup_record` when `orchestrator.regroup_record.enabled` is also on (E-058 S2a, off by default), in which case the run is first recorded in `campaign_record/campaign_memory.yaml` as a fault-only entry (`engineering_fault: component_execution_error`, no idea status; if that write fails it is logged and the pause still fires). Otherwise: a strategy component threw during the backtest itself — OR, per the run_059 tz-bug arc (2026-07-18/19), silently produced a degenerate result with no exception at all (`FundingRateMeanReversionComponent`'s settlement-boundary check failing on every 1d bar because `CandleBuilder._align()` misaligned every daily candle's timestamp — see `trading-bot/PIPELINE_IMPROVEMENTS_20260712_v4.md`'s A12/A13/C11/D4 for the surrounding arc). Confirmed 4-step procedure from that arc, in order: **(1) fix the component/engine bug** at its confirmed root-cause site (in-process repro FIRST, per the standing NO-SPECULATIVE-FIX rule — do not patch on a hypothesis); **(2) snapshot the STALE pre-fix artifacts before re-running** (e.g. copy `protocol_result.yaml`/`pass_rule_evaluation.yaml` to a `_prefix_snapshot` sidecar, or simply note their timestamps) — these are evidence the bug existed and were produced by DEFECTIVE code, not a real result, and are worth preserving for the KB finding's own honesty note even though they must not be cited as the run's actual verdict; **(3) `update_state` to reset `pending_stage`** back to the correct UPSTREAM stage that must re-run against the fixed engine (per an explicit operator ruling on which stage — for run_059 this was `protocol_execution`, since `signal_prescreen` was independently confirmed unaffected by the specific bug and did not need to re-run); **(4) `--resume`** (section 4 below) to clear both run-level and queue-level state and continue. | Fix the component (root-caused via in-process repro, not assumed), then resume per the 4-step procedure above. |
+| `component_execution_error` | **On the grid route (`orchestrator.grid_evaluation.enabled`; E-046a 5b-ii-B, D-198) this is set mechanically**, not by an LLM: after `protocol_execution`, any `results[*].component_errors.count > 0` in `protocol_result.yaml` (or a variant's own copy) pauses the run before the analyst runs and before the grid's `idea_status.yaml` is consulted; `pending_stage` stays at the stage before the route (`protocol_execution`, or `analyst`) — or `regroup_record` when `orchestrator.regroup_record.enabled` is also on (E-058 S2a, off by default), in which case the run is first recorded in `campaign_record/campaign_memory.yaml` as a fault-only entry (`engineering_fault: component_execution_error`, no idea status; if that write fails it is logged and the pause still fires). Otherwise: a strategy component threw during the backtest itself — OR, per the run_059 tz-bug arc (2026-07-18/19), silently produced a degenerate result with no exception at all (`FundingRateMeanReversionComponent`'s settlement-boundary check failing on every 1d bar because `CandleBuilder._align()` misaligned every daily candle's timestamp — see `engineering/improvements/done/IMPROVEMENTS_DONE_20260712.md`'s A12/A13/C11/D4 for the surrounding arc). Confirmed 4-step procedure from that arc, in order: **(1) fix the component/engine bug** at its confirmed root-cause site (in-process repro FIRST, per the standing NO-SPECULATIVE-FIX rule — do not patch on a hypothesis); **(2) snapshot the STALE pre-fix artifacts before re-running** (e.g. copy `protocol_result.yaml`/`pass_rule_evaluation.yaml` to a `_prefix_snapshot` sidecar, or simply note their timestamps) — these are evidence the bug existed and were produced by DEFECTIVE code, not a real result, and are worth preserving for the KB finding's own honesty note even though they must not be cited as the run's actual verdict; **(3) `update_state` to reset `pending_stage`** back to the correct UPSTREAM stage that must re-run against the fixed engine (per an explicit operator ruling on which stage — for run_059 this was `protocol_execution`, since `signal_prescreen` was independently confirmed unaffected by the specific bug and did not need to re-run); **(4) `--resume`** (section 4 below) to clear both run-level and queue-level state and continue. | Fix the component (root-caused via in-process repro, not assumed), then resume per the 4-step procedure above. |
 | `data_block_hitl` | Refinement planner determined missing data blocks the hypothesis (the original human-in-the-loop pause this pipeline was first built for). | Fetch the data, write `runs/<run_id>/artifacts/human_resolution.yaml` (`status: resolved_proceed` or `unresolvable`), then resume — this ONE reason uses a different resume path (section 4). |
 | `human_pause_unclassified` | A pause the wrapper's classifier doesn't have a specific bucket for yet. **Includes, as of 2026-09-20, the `data_availability_gate` stage's own "refine" outcome** (E-054 Layer 2, on by default since delivery_plan_v26.md s:0.4 item 14 — see `orchestrator.data_availability_gate.enabled` in `config/campaign_config.yaml` and the register entry in `config/feature_flag_register.yaml`): `run_loop`'s `data_availability_gate` branch sets `status: paused_for_human` and `next_stage = "human_pause"` then `break`s BEFORE the loop's own end-of-iteration block ever writes `pending_stage`, so `pending_stage` on disk is left at the literal stage name `data_availability_gate` itself (the stage that triggered the pause), not the `human_pause` sentinel some other rows use — same convention as `anti_adjacency_gate_exhausted`/`variant_anti_adjacency_gate_refused` below. `_classify_human_pause` (`run_campaign.py`) has no dedicated check for this case (it sets no `flags` entry and writes no `refinement_notes.yaml`/`escalation_request.yaml`/`decision.yaml`), so it falls through to this generic bucket rather than getting its own reason string — a real, not-yet-closed gap, not a design choice. **Known code/doc mismatch:** the pause's own console message says "write `artifacts/human_resolution.yaml` and resume," mirroring `data_block_hitl`'s UX, but `resume_paused_entry()` (`run_campaign.py`) only special-cases the literal reason string `"data_block_hitl"` for that file — a `data_availability_gate` refine pause resumes through the GENERIC path instead (below), and `human_resolution.yaml` is neither required nor read. | Read `runs/<run_id>/artifacts/data_availability_gate.yaml`'s `reasons` (which window(s)/symbol/aux feed is only partially available). Either fetch the missing data or narrow the variant (drop the listed window(s)/feed) by editing `artifacts/candidate_strategy_config.json` and/or the protocol. Then just reset `status: active` per section 4 step 1's generic one-liner — **no `pending_stage` override needed**, since it is already the real stage name (`data_availability_gate`) as described above; resuming re-invokes the gate itself against the corrected inputs. Ignore the "write human_resolution.yaml" console message (see the mismatch note) unless a later slice wires this pause into the `data_block_hitl` resume path. |
 | `anti_adjacency_gate_exhausted` | **RETIRED by E-036 S2a (2026-09-27): nothing sets this flag any more.** It came from E-032 S2c's `orchestrator.anti_adjacency_retry` (removed: it fired before any config existed, so it could never catch a repeat -- `engineering/roadmap/E-036/S1_FINDINGS_SLICE8.md` §1). The classifier keeps the reason only so a `pipeline_state.yaml` paused before the retirement still reads as itself. | For such an old pause: read `pipeline_state.yaml`'s `anti_adjacency_gate_retry.history`, author a genuinely different direction (or fix the record the old gate read), then resume from `innovation_expansion` as before. |
@@ -1028,7 +1029,7 @@ decision record carries `picked.status: blocked_on_operator_approval` (R2:
 loop stops with `Queue exhausted — ... Awaiting operator approval: [...]` (a
 decide-next stop line names them the same way). A held R2 request or extra card
 holds its brief (R2 never mints another request behind it). Operator actions
-are unchanged: `register`, `--unpark` and `--resume` set `ready` as before.
+are unchanged: `register` and `--unpark` set `ready`, and `--resume` sets `in_progress`, as before.
 
 1. Read the entry's brief (`brief_path`) and its decision record (`decision_ref`).
 2. With no campaign running (it takes the campaign lock):
@@ -1112,8 +1113,9 @@ kill -0 "$(cat campaign.pid)" 2>/dev/null && echo STILL RUNNING || echo STOPPED
 
 ## Standing rules (unchanged by this wrapper)
 
-Holdout (2026-01-01 to 2026-06-30) is untouchable outside `holdout_evaluation`,
-once per hypothesis. All conformance/pre-registration gates
+The sealed holdout period (dates in `config/campaign_data_policy.yaml`, key
+`holdout_range`) is untouchable outside `holdout_evaluation`, once per hypothesis.
+All conformance/pre-registration gates
 (`config/campaign_config.yaml`, F4d) stay active. Trial recording
 (`campaign_state.trial_sharpes`) is always on — nothing in this wrapper can disable
 it. Cost model is taker-only (`config/cost_model.yaml`

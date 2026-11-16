@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "6-bar return after top-decile forecast bars minus after neutral RSI (45-55) bars",
+    "value": -0.0006960488929752271,
+    "statistic": {
+      "name": "Welch t",
+      "value": -1.0376090468003587
+    },
+    "threshold": "difference > 0 with t >= 2 to confirm; difference < 0 with t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "coins with positive top-decile excess over unconditional 6-bar mean",
+    "value": 0,
+    "passed": false
+  },
+  "counts": {
+    "top_decile_cases": 782,
+    "neutral_cases": 1998,
+    "coins": 2
+  },
+  "decided_by": "The t-statistic lies strictly between -2 and 2, so the plan rules the test inconclusive.",
+  "reading": "Top decile is forecast >= the 90th percentile of all forecast values pooled over coins and windows (and > 0), cases and the unconditional mean use the non-overlapping 6-bar grid from each window's first row, neutral is raw value in [-2, 2] inclusive, and with only 2 coins in the record the '2 of 3 coins' rule requires both coins positive."
+}

@@ -1,0 +1,28 @@
+{
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 10-bar excess forward return on forecast (trending grid bars)",
+    "value": 0.0028653962896156705,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.184060520726962
+    },
+    "threshold": "confirm needs t >= 2 (with check negative, t <= -2); reject if t <= -2 (or check positive, t >= +2)"
+  },
+  "supporting_check": {
+    "name": "mean excess return s>=14 minus 8<=s<14 (Welch t) (t=-0.382)",
+    "value": -0.009460342802633987,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping cases (main)": 833,
+    "cases with s >= 14": 248,
+    "cases with 8 <= s < 14": 110
+  },
+  "reading": "Situation is regime == 'trending' and expected side is the sign of the graded shape of s (run's standardised value); the coin's mean 10-bar return is taken over all grid bars of all its windows; a tier below 20 cases is treated as a minimum count not reached (not observable).",
+  "status": "inconclusive",
+  "decided_by": "Inconclusive rule: enough cases, but neither confirm (slope t >= 2 with check t <= -2) nor reject (slope t <= -2 or check t >= +2) holds."
+}

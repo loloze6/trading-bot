@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean forward 12-bar log return after top-decile |forecast| bars minus coin's unconditional mean",
+    "value": -0.0013056572690154184,
+    "statistic": {
+      "name": "t of the mean on non-overlapping 12-bar blocks",
+      "value": -1.1190824026016297
+    },
+    "threshold": "confirm: negative with t <= -2 and negative in >= 2 coins; reject: positive with t >= +2"
+  },
+  "supporting_check": {
+    "name": "excess return falls steadily from neutral (zero) group through |forecast| quintiles 1-5, and top-minus-neutral negative in >= 2 coins (value: Q5 minus neutral)",
+    "value": -0.001142713621429536,
+    "passed": false
+  },
+  "counts": {
+    "pooled extreme episodes": 390,
+    "extreme episodes BTCUSD": 187,
+    "extreme episodes ETHUSD": 203,
+    "coins with negative excess": 2
+  },
+  "decided_by": "Pooled t lies between -2 and +2.",
+  "reading": "Top decile is the 90th percentile of |forecast| over all bars pooled across coins and windows (nonzero only), returns are 12-bar log returns on each window's 0,12,24,... grid with each coin's drift being its mean over all its windows, quintiles are pooled quintiles of nonzero |forecast| with zero-forecast bars as neutral, 'steadily' means each group mean is no higher than the previous one, and with only BTC and ETH present the '2 of 3 coins' rules need both coins and the per-coin minimums apply to the coins present."
+}

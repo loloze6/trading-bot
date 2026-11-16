@@ -1,0 +1,53 @@
+{
+  "line": "7.g",
+  "backtest": "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d1_near-high-drift-extension-fades.b2_monthly-run-drift-then-fade_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5122774,
+  "findings": {
+    "F1": "On Saturdays, a coin's day return rises with its 5-day return up to Friday's close. The slope is 0.0645 (t=8.92, n=2382 coin-Saturdays). By quintile of that 5-day return, the mean Saturday return climbs steadily: \u22120.0031 (t=\u22121.47), 0.0007, 0.0047 (t=4.30), 0.0093 (t=4.93), 0.0111 (t=4.39).",
+    "F2": "Saturdays are the strongest day for both the coins and the book.",
+    "F3": "After a coin's largest 1-day falls (lowest quintile of the prior day's return), the next day's mean return is +0.0060 (t=6.09, n=3448). In the other four quintiles it stays between \u22120.0011 and +0.0007, all |t|<1.2.",
+    "F4": "The book's worst 5% of days come after a run-up. On those days the coin's prior 5-day return averaged +0.0583; the coin then fell 0.0465 and the book lost 0.0303.",
+    "F5": "Above the 200-day average, the 10-day excess return rises with the 30-day return only up to about the 8th decile (mean 0.0634, t=1.96, 30-day return \u22480.30). It then drops to \u22120.0079 and 0.0083 in the top two deciles (30-day return \u22480.44 and 0.66).",
+    "F6": "Below the 200-day average, the top quintile of 30-day returns is followed by a 10-day excess return of \u22120.0228 (t=\u22122.10, n=130). The overall slope is negative (t=\u22121.69, n=629), which is weak given how many angles were examined."
+  },
+  "ideas": [
+    {
+      "idea": "Going into the weekend, the larger a coin's 5-day return at Friday's close, the larger its rise over the next 1 day (Saturday).",
+      "consequence": "A trader would lean long into Saturday in proportion to the coin's past week's gain, and refuse to hold a coin through Saturday after a weak week.",
+      "name": "Weekend continuation of weekly run",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 1-day fall, the larger its rise over the next 1 day.",
+      "consequence": "A trader would buy a coin after a sharp daily drop, sized with the depth of that drop, for a one-day rebound.",
+      "name": "Next-day rebound after falls",
+      "from": "F3",
+      "refs": [
+        "F3"
+      ]
+    },
+    {
+      "idea": "While a coin's close is above its 200-day average, the larger its 30-day return beyond its usual size, the smaller its rise over the next 10 days.",
+      "consequence": "A trader would cut a trend-following long as the month's run stretches into extreme territory, since the book's worst days follow run-ups.",
+      "name": "Extreme monthly run fades",
+      "from": "F5, F4",
+      "refs": [
+        "F5",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d1_near-high-drift-extension-fades.b2_monthly-run-drift-then-fade.g1_weekend-continuation-of-weekly-run",
+    "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d1_near-high-drift-extension-fades.b2_monthly-run-drift-then-fade.g2_next-day-rebound-after-falls",
+    "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d1_near-high-drift-extension-fades.b2_monthly-run-drift-then-fade.g3_extreme-monthly-run-fades"
+  ],
+  "no_ideas": null
+}
