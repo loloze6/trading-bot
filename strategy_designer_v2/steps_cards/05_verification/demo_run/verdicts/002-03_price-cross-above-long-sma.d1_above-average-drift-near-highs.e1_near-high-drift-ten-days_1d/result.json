@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t-statistic of the pooled OLS slope of excess 10-bar forward return on forecast (trending, 10-bar grid)",
+    "value": 3.076227790833928,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.076227790833928
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and top-minus-bottom-third > 0; reject: slope < 0 with t <= -2; at least 100 grid cases"
+  },
+  "supporting_check": {
+    "name": "mean excess 10-bar return, top third of forecasts minus bottom third",
+    "value": 0.04400790800218021,
+    "passed": true
+  },
+  "counts": {
+    "independent grid cases in regime trending": 833
+  },
+  "decided_by": "Slope positive with t = 3.08 >= 2 and top-minus-bottom-third difference 0.0440 > 0: confirm rule met.",
+  "reading": "Coin mean 10-bar return taken over all grid samples of all its windows (all regimes), cases are grid bars whose `regime` is trending, and thirds are the n//3 lowest and n//3 highest forecasts by sorted rank."
+}

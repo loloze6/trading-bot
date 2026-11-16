@@ -1,4 +1,4 @@
-# Function card: loop (orchestration, agreed with the operator 2026-11-16; to build)
+# Function card: loop (orchestration, agreed with the operator 2026-11-16; met on demo_run, `validation/reading.md`)
 
 A function card, not a step card: no model of its own, so no prompt, no model variants. It has what a step card
 has not: the turn of the loop, the selection of the next idea, stop rules, failures, where its state lives.
@@ -50,12 +50,13 @@ log, and the loop goes on with the next idea. It is not retried.
 
 ## Where its state lives
 Nothing of its own but the queue's rendering: the ideas tested are `run_idea`'s table; the ideas proposed are the step 7
-lines' `ideas/` folders in the run; an idea's generation is read from its `source-idea` chain. A resumed loop rebuilds
+lines' `ideas/` folders in the run; an idea's line and generation are read from its id (`common/idea_created_from.md`). A resumed loop rebuilds
 the queue from these files.
 
 ## Visibility
-- **The queue** (`<name>_run/queue.md`, `queue.json`): every idea proposed in the run: its line, parent, generation,
-  rank, and what happened (tested: its step 5 and step 6; waiting; duplicate of; not reached: stop rule).
+- **The queue** (`<name>_run/queue.md`, `queue.json`): every idea written in the run: its line, generation, record,
+  score, rank (its parent is its id), and what happened (tested: its step 5 and step 6, a goal marked; candidate:
+  waiting; duplicate of; excluded: its call failed).
 - **The turns** (`<name>_run/loop.jsonl`): one line per turn: the idea picked, why (its score and its parts), the run's
   USD so far.
 - **What each idea did:** `run_idea`'s table, journal and logs, unchanged.

@@ -1,4 +1,4 @@
-# Function card: select_next (orchestration, proposed 2026-11-16, for the operator's review)
+# Function card: select_next (orchestration, agreed 2026-11-16; met on demo_run, `validation/reading.md`)
 
 A function card (no model of its own): what it selects, its score, where its numbers come from, how to call it.
 

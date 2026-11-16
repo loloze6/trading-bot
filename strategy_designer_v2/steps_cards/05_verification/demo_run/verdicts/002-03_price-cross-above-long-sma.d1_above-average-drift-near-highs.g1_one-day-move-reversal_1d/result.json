@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-bar excess return on forecast, pooled",
+    "value": 0.00014277977320565594,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 4.23799660338459
+    },
+    "threshold": "slope t >= 2 (with positive timing gain) confirms; slope t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "book timing gain before costs (mean daily)",
+    "value": -0.00013207249591771293,
+    "passed": false
+  },
+  "counts": {
+    "bars with a non-zero forecast": 17363,
+    "bars in the regression": 17380
+  },
+  "decided_by": "The slope t is 2 or more but the book's timing gain is zero or below.",
+  "reading": "Situation bars are those with a non-zero recorded raw vsr value (the one-day move over the 20-day std, price return used where it is missing), with the expected side being the opposite sign of that move; the slope is plain OLS with an intercept on every in-window bar with a next close (horizon 1, so the non-overlapping grid is every bar), the count is bars with a non-zero forecast in that regression, and the timing gain uses per-coin daily returns of postRebalance_total_value averaged across coins by day."
+}

@@ -1,1 +1,4 @@
+002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days_1d: confirmed (fit: exact) [main: 3.07623; OLS slope t 3.07623; independent grid cases in regime trending 833]
+002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e2_short-drift-after-strong-highs_1d: confirmed (fit: adapted) [main: 0.00147698; OLS slope t 3.31556; grid cases with regime trending and forecast > 0 1032, grid cases with regime trending 1674]
+002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.g1_one-day-move-reversal_1d: inconclusive (fit: exact) [main: 0.00014278; OLS slope t 4.238; bars with a non-zero forecast 17363, bars in the regression 17380]
 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs_1d: not observable (fit: adapted) [main: 1.22072; OLS slope t 1.22072; grid cases with forecast above 0 284, grid cases in total 827]

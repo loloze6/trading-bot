@@ -1,0 +1,55 @@
+{
+  "line": "7.d",
+  "backtest": "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.506671,
+  "findings": {
+    "F1": "The short side earns nothing after fees. In the trending regime, short bars gain 0.000178 a day before fees and pay 0.000231 in fees, so they net -0.000053 over 3316 bars, while long bars net 0.001633 over 5173 bars (summed gain before fees 0.62 for shorts against 9.50 for longs).",
+    "F2": "The lower half of the 20-day range does not lead to a fall. On the trending 10-bar grid, bars with a negative forecast are followed by +0.0023 over 10 days (t 0.24, n 229), against +0.0274 (t 2.96, n 401) for bars with a positive forecast. Selling the low half bets on a fall that is not in the data.",
+    "F3": "Dropping the shorts would fix most of the falls. In an approximate rebuild of the book, long-only cuts the deepest fall from -0.340 to -0.243 and lifts Calmar from 0.46 to 0.70 and mean daily return from 0.000468 to 0.000486. Also skipping longs whose 30-day return is in the top fifth cuts the fall to -0.195 and lifts Calmar to 0.89 and Sharpe to 1.08, with the mean at 0.000476.",
+    "F4": "The drift fades when the coin has already run far. Long bars whose past 30-day return is in the top fifth (above +44%) gain -0.000168 a day. The middle fifth (+15% to +28%) gains 0.004317. On the trending 10-bar grid, the 10-day forward return is +0.053 (t 2.95, n 126) for 30-day returns of +18% to +36%, but only +0.013 (t 0.67, n 126) for the top fifth.",
+    "F5": "The worst moves come after extended runs while long. The worst 2% of position-bars are 73% long and all in the trending regime. On those bars the past 30-day return averages +30%, the past 10-day return +13% and the range position 0.70.",
+    "F6": "Volatility sizing shrinks the long position where the coin moves most. Long gain per bar falls from 0.0035 in the lowest 20-day-volatility fifth (mean position 0.96) to 0.0011 in the highest (mean position 0.31), even though the coin's next-day return is larger there (0.0041 against 0.0021). This holds the mean daily return below its bar."
+  },
+  "ideas": [
+    {
+      "idea": "While a coin's close is above its 200-day average, the higher its close sits in its 20-day close range, the larger its rise over the next 10 days, except when its 30-day return is already extended, where the larger that 30-day return, the smaller the rise over the next 10 days.",
+      "consequence": "A trader would scale a long by how near the close is to its 20-day high above the long average, and cut it back as the coin's 30-day run grows very large, which is where the book's deepest falls start.",
+      "name": "near-high drift, extension fades",
+      "from": "F3, F4, F5",
+      "refs": [
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "While a coin's close is above its 200-day average, the higher its close sits in its 20-day close range, the larger its rise over the next 10 days, the coin still rising, only less, when its close sits in the lower half of that range.",
+      "consequence": "A trader would hold only longs graded by range position above the long average, and refuse shorts near the range low, since those pay fees for a fall that does not come.",
+      "name": "near-high drift, long only",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "While a coin's close is above its 200-day average, the larger its 30-day return up to a moderate gain, the larger its rise over the next 10 days.",
+      "consequence": "A trader would size longs above the long average by how strong, but not yet stretched, the coin's 30-day run is, expecting the payoff within about 10 days.",
+      "name": "moderate momentum above average",
+      "from": "F4",
+      "refs": [
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d1_near-high-drift-extension-fades",
+    "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d2_near-high-drift-long-only",
+    "002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d3_moderate-momentum-above-average"
+  ],
+  "no_ideas": null
+}
