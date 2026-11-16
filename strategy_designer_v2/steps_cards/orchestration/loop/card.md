@@ -24,34 +24,16 @@ selection rule picks among those the step 7 lines proposed in the run and not ye
 - **Its state is the run's files.** Nothing is kept anywhere else, so a loop stopped for any reason resumes.
 
 ## One turn
-1. Read the run: the ideas tested (`run_idea`'s table) and the ideas proposed (every step 7 line's `ideas/` in the run).
-2. Build the queue: proposed, not tested, not a duplicate.
-3. Check the stop rules; if one is met, stop and say which.
-4. Pick the first idea of the queue in the selection order.
-5. Call `run_idea` on it; go to 1.
+1. Ask `select_next` for the run's candidates, ranked.
+2. Check the stop rules; if one is met, stop and say which.
+3. Call `run_idea` on the first candidate; go to 1.
 
-## The selection of the next idea (to decide)
-**Order, line first, then lineage:**
-
-| Rank | Line that proposed it | Why (what the validation runs showed) |
-|---|---|---|
-| 1 | 7.e profitable, not proven | it names what a paying book earns from; 2 of 2 confirmed and profitable |
-| 2 | 7.c rejected | what the market does instead; 2 of 2 confirmed and profitable |
-| 3 | 7.b inconclusive | a clear answer, often on more data; 2 of 3 confirmed on more data |
-| 4 | 7.d not profitable | a repair of a book that does not pay; repairs moved the failing measures |
-| 5 | 7.a not observable | the same idea on more data; both made observable |
-| 6 | 7.g patterns | new ideas from what the data shows; 1 of 3 confirmed |
-
-Within a line: the idea of the latest generation first (follow the thread that is moving), then the order in which
-the line wrote its ideas.
-
-**Not used:** step 7's own numbers (its t-statistics are inflated by its search); a model judging the ideas (cost,
-and not auditable).
+## The selection of the next idea
+Delegated to `select_next` (`../select_next/card.md`): the run's candidates ranked by one score (the proposing line's
+record x novelty), the first is the next idea. The loop writes the ranking it used in its queue.
 
 ## Duplicates
-An idea whose text and data are those of an idea already tested in the run, or already in the queue, is not queued
-again: it is listed as a duplicate of the first. The same text on other data (a `same-idea-on:` proposal) is not a
-duplicate.
+Found by `select_next`: an idea already tested or already a candidate (same text, same data) is not run again.
 
 ## Stop rules (the operator sets the limits on each call)
 The loop stops at the first that holds, and the queue says which:
@@ -108,9 +90,8 @@ stops on the rule it reports, the queue and the turns say what happened, and a r
 stopped.
 
 ## Open (for the operator)
-1. The selection order above.
-2. Going on after a goal is reached (default) or stopping (`--stop-on-goal`).
-3. The default limits.
+1. Going on after a goal is reached (default) or stopping (`--stop-on-goal`).
+2. The default limits.
 
 ## What this function does not do
 It does not judge an idea, change a step, test on data the analysis did not see, or start from a brief.
