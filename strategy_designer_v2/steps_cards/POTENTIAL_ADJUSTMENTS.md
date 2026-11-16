@@ -4,7 +4,7 @@ Items noted while designing the steps, not started. Each waits for the operator'
 
 Two separate defects, both seen as "not ready at warm-up" (split 2026-11-16, after the "Known data defects" session's findings):
 - **A. A component that needs 0 bars makes the strategy wait forever** (the volume plans 003-01, 003-02): cause found, below.
-- **B. A few XMR and XRP windows do not run since the sizing's 60-day window**: open; this is the one that changes verdicts today.
+- **B. A few XMR and XRP windows do not run: the engine waits for 400 rows while it declares 250**: cause found, below; this is the one that changes verdicts today.
 
 ## Parked A: a component that needs 0 bars of history makes the strategy never ready (cause found 2026-11-16)
 **Cause** (the "Known data defects" session, on made-up bars, no market data used, no file changed): `BuyAndHoldStrategy`
@@ -25,10 +25,37 @@ engine fault.
 **To check first:** whether a run without the warm-up check would trade nothing and read as an ordinary flat result (a
 false "nothing here"). Expected by the session, not checked.
 
-## Parked B: a few XMR and XRP windows do not run since the sizing's 60-day window (open)
-**Changes verdicts (run_idea, 2026-11-16):** XMR 23 of 24 windows, XRP 22 of 24 on the default data ("the engine
-stopped" at warm-up: XMR w13, XRP w7 and w13 in full_data_run); a plan whose minimum count is close to the most the
-data can give becomes "not observable" (002-03's repair in demo_run). Not covered by A's findings; cause not looked into.
+## Parked B: the engine waits for 400 rows while it declares 250 (cause found 2026-11-16)
+**What is seen:** XMR 23 of 24 windows, XRP 22 of 24 on the default data ("the engine stopped" at warm-up: XMR w13,
+XRP w7 and w13 in full_data_run). It changes verdicts: a plan whose minimum count is close to the most the data can
+give becomes "not observable" (002-03's repair in demo_run); and since step 4's one-call-per-coin change, a coin with
+a failing window is run twice.
+
+**Not the sizing rule** (an earlier note here said so, wrongly): the same three windows failed in the first full-data
+run (commit `5fb1516`), whose configs had no sizing, with the same row counts. Sizing needs 61 rows; the strategy
+already needs more, so `required_bars` is 250 either way (measured on all six plans).
+
+**Cause** (the "Known data defects" session, on made-up bars, no market data used, no file changed): the engine says
+the strategy needs 250 rows (200 for the 200-day average, plus the 50 values the standardise step declares as its
+minimum), but it becomes ready only at row 400: its readiness check reuses `required_bars` (a count of rows) as the
+number of past values to wait for, capped at the standardise buffer's size (201), so 200 + 201 - 1. The warm-up
+fetches 2 x 250 = 500 days, so a window runs only if at most 100 of them are missing. The three windows got 364, 347
+and 228 rows; every window that ran had at least 400.
+
+**At fault:** the engine for XMR w13 and XRP w7 (it demands 400 rows while declaring 250; its message blames the
+warm-up length). The data for XRP w13: 228 rows is fewer than the 250 the config needs, so refusing it is right.
+Not the config.
+
+**The fix, when approved:** one line in `trading-bot/strategies/strategy_engine.py` `is_ready` (line 567): wait only
+for the past values the transforms declare (drop `self._warmup` from the max; it is used nowhere else). The outer
+check (rows >= `required_bars`) still holds. All six plans then become ready at row 250.
+
+**What it changes:** XMR w13 and XRP w7 would run (their opening bars may be flat: the engine's gap rule blocks new
+entries for some bars after a medium gap); XRP w13 is still refused (needs data). Windows that run today do not
+change (on made-up bars: identical forecasts once both versions are ready, 501 bars, six plans), except a window with
+a gap of 250 or more missing bars inside it, where the engine re-warms from row 250 instead of 400 (its trades and
+not-ready rows would change). The engine is shared: any campaign config with a history transform is affected; the
+campaign's windows were not checked.
 
 ## History of A and B (the original brief, kept as written)
 **Where the files are now (2026-11-16):** the brief's example files (`04_backtest/backtests/003-01_low-volume-up-move-reverts_1d/run.md`, `config.json`) were removed from the working tree by the clean-up of 2026-11-15; they are in git history, commit `57269c6` (the commit before the clean-up): `git show 57269c6:strategy_designer_v2/steps_cards/04_backtest/backtests/003-01_low-volume-up-move-reverts_1d/run.md`. A current example, in a folder that stays: `04_backtest/full_data_run/backtests/` (see its `INDEX.md`): XMRUSD runs 23 of 24 windows and XRPUSD 22 of 24, "the engine stopped", since the sizing's 60-day window. Only the summaries of a backtest are committed now (`04_backtest/.gitignore`): to look inside, rerun that backtest (a trial, as the note below says).
