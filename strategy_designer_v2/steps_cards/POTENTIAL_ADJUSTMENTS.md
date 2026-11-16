@@ -139,3 +139,13 @@ answer partway).
 step stores 2 values, and the declared count covers the first only. No harm today: the warm-up fetches twice
 `required_bars`, so the extra bar is always there (the engine's design guide now says so). Found by the warm-up fix
 session; not built.
+
+## Parked: two coins at once could rewrite the same data file (found 2026-11-16, step 4's change 2)
+Since step 4 runs the coins at the same time, two backtests can read the same aux data file at once
+(`fear_greed_daily.csv` is one file for every coin). The fetcher rewrites a data file only when a read adds rows the
+file lacked (`_merge_and_store`, `trading-bot/data/fetchers/base_fetcher.py`); it writes in place, so a backtest
+reading the file during that write could see part of it. Not seen: no data file changed in change 2's proof (3 plans,
+3 runs each) nor in `demo_run`; the folds' data is already in the files. The plan's guard (check the data folder
+before and after, rerun one coin at a time if a file changed) was not built: the operator's rules say no gates.
+**Proposed fix, at its cause:** the fetcher writes the new file to a temporary name and then renames it, so a reader
+sees the old file or the new one, never part of one. A change to `trading-bot/`, so it needs its own go and proof.

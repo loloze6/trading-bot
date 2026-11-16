@@ -14,8 +14,7 @@ model step needs (prompt, model variants) with what a function needs (its turn, 
 | `run_brief` | to design | a brief | step 2, then `loop` over one list of ideas fed by step 2 and step 7 | to design (scope 3) |
 
 `duration/` is a study, not a function: how long one idea's run takes and how to make it faster (1 the picture, 2 the
-findings, 3 the plan, 4 and 5 measurements, 6 the proof of change 1, built in step 4). Change 2, the coins at the same
-time, waits for the operator's decision.
+findings, 3 the plan, 4 and 5 measurements, 6 and 7 the proofs of changes 1 and 2, built in step 4).
 
 ## What the manual orchestration did that the next functions should keep (2026-11-15)
 From the overnight run and the step 7 validation loops, run by hand:

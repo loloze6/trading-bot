@@ -17,6 +17,10 @@ the loop).
 | 4 | Engine, safe and simple (B3 to B6 in `4_backtest_code.md`) | `trading-bot/` | under 1 min once 1 and 2 are in | **deferred** (see below) |
 | 5 | Engine, faster tables (B1, B2) | `trading-bot/` | under 1 min once 1 and 2 are in | **deferred** (see below) |
 
+**Change 2 as built** (operator's go, 2026-11-16): as many coins at once as the machine has cores, not 6; the
+data-file guard was not built (the operator's rules: no gates) and the risk is parked with a fix at its cause
+(`../../POTENTIAL_ADJUSTMENTS.md`). Proof: `7_change2_proof.md`.
+
 **Deferred: changes 4 and 5.** After changes 1 and 2, step 4 is about 2.5 to 4 min. The 15 to 35% they cut from the
 engine is then under a minute per idea. They also change engine code that the campaign and the live bot use. Revisit
 only if step 4 is still over about 3 min on the run machine after 1 and 2.

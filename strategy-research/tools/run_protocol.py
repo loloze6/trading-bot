@@ -2422,6 +2422,13 @@ def main():
                              "also carries forecast_return_corr_all_bars_h{1,6,24,72,168} (the "
                              "all-bars forecast / h-bar forward-return correlation). Absent: "
                              "byte-identical output.")
+    parser.add_argument("--trades-file-in-out-dir", action="store_true", dest="trades_file_in_out_dir",
+                        help="2026-11-16 (strategy_designer_v2 step 4, coins at the same time): the "
+                             "engine's interim trades file goes to <out-dir>/interim_trades.json "
+                             "instead of the one shared trading-bot/results/trades.json, so several "
+                             "calls can run at once. The file only feeds tradesxl.xlsx; trades.json, "
+                             "metrics.json and bars.csv come from memory. Absent: byte-identical "
+                             "output, and the shared file is used as before.")
     args = parser.parse_args()
 
     # D-186: build_core is reached only through core/backtester.py (not
@@ -2567,6 +2574,8 @@ def main():
     # (P4_ts_trend/run_054) is the first to clear prescreen and expose it.
     out_dir = out_dir.resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
+    # --trades-file-in-out-dir: None (the default) keeps the engine's shared interim trades file.
+    trades_log_file = str(out_dir / "interim_trades.json") if args.trades_file_in_out_dir else None
 
     # CUL-165 / GH#79: immutable run-private snapshot of the config bytes hashed
     # above. Every run_backtest() below reads THIS instead of args.config_path,
@@ -2611,7 +2620,7 @@ def main():
                               warmup_prefetch=True, bar_equity=True,
                               commission_rate=_resolve_commission_rate(
                                   symbol, cost_model, commission_bps, args.cost_product),
-                              exchange=exchange, drop_feeds=drop_feeds,
+                              exchange=exchange, drop_feeds=drop_feeds, trades_log_file=trades_log_file,
                               **({"market_type": market_type} if market_type is not None else {}))
             with open(rd / "metrics.json", encoding="utf-8") as f:
                 m = json.load(f)
@@ -2684,7 +2693,7 @@ def main():
                               warmup_prefetch=True, bar_equity=True, holdout_start=_holdout_start,
                               commission_rate=_resolve_commission_rate(
                                   symbol, cost_model, commission_bps, args.cost_product),
-                              exchange=exchange, drop_feeds=drop_feeds,
+                              exchange=exchange, drop_feeds=drop_feeds, trades_log_file=trades_log_file,
                               **({"market_type": market_type} if market_type is not None else {}))
             with open(rd / "metrics.json", encoding="utf-8") as f:
                 m = json.load(f)

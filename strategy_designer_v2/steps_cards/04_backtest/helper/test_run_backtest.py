@@ -1,7 +1,9 @@
-"""Tests of step 4's helper: when one wrapper call per coin is used, and the fallback to one call per window.
-The wrapper is replaced by a fake that writes run folders; no engine runs, no data is read."""
+"""Tests of step 4's helper: when one wrapper call per coin is used, the fallback to one call per window, and the
+coins at the same time. The wrapper is replaced by a fake that writes run folders; no engine runs, no data is read."""
 import json
 import sys
+import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -74,7 +76,7 @@ def plan(tmp_path):
 
 
 def run_main(monkeypatch, plan, out_root, wrapper):
-    calls = []
+    calls = []   # (coin, windows) per call; the coins run at the same time, so only each coin's own order is fixed
 
     def call_protocol(python, config_path, proto, windows, tmp):
         calls.append((proto["symbols"][0], [w["label"] for w in windows]))
@@ -97,8 +99,8 @@ def test_one_call_per_coin_and_fallback_for_a_coin_whose_call_fails(monkeypatch,
 
     out_root = tmp_path / "backtests"
     calls = run_main(monkeypatch, plan, out_root, wrapper)
-    assert calls == [("BTCUSD", ["W1", "W2", "W3"]),
-                     ("ETHUSD", ["W1", "W2", "W3"]), ("ETHUSD", ["W1"]), ("ETHUSD", ["W2"]), ("ETHUSD", ["W3"])]
+    assert [w for c, w in calls if c == "BTCUSD"] == [["W1", "W2", "W3"]]
+    assert [w for c, w in calls if c == "ETHUSD"] == [["W1", "W2", "W3"], ["W1"], ["W2"], ["W3"]]
 
     rec = out_root / "001-01_some-idea_1d"
     # BTC: one call; window files per window, the call's files in the coin's folder
@@ -129,9 +131,54 @@ def test_fallback_when_two_windows_share_a_run_folder(monkeypatch, plan, tmp_pat
 
     out_root = tmp_path / "backtests"
     calls = run_main(monkeypatch, plan, out_root, wrapper)
-    assert [len(w) for _, w in calls] == [3, 1, 1, 1, 3, 1, 1, 1]
+    for coin in ("BTCUSD", "ETHUSD"):
+        assert [len(w) for c, w in calls if c == coin] == [3, 1, 1, 1]
     rec = out_root / "001-01_some-idea_1d"
     for coin in ("BTCUSD", "ETHUSD"):
         assert sorted(p.name for p in (rec / coin).iterdir()) == ["w1", "w2", "w3"]
         assert (rec / coin / "w2" / "bars.csv.gz").exists()
     assert "BTCUSD 3/3; ETHUSD 3/3" in (out_root / "INDEX.md").read_text()
+
+
+# --- the coins at the same time ------------------------------------------------------------------------------------
+
+def test_coins_run_at_the_same_time_up_to_the_cores(monkeypatch, plan, tmp_path):
+    plan.write_text(plan.read_text().replace("BTC, ETH", "BTC, ETH, LTC, XMR, XRP, ZEC"))
+    monkeypatch.setattr(rb, "cores", lambda: 4)
+    running, most = [0], [0]
+    lock = threading.Lock()
+
+    def wrapper(symbol, windows, out):
+        with lock:
+            running[0] += 1
+            most[0] = max(most[0], running[0])
+        time.sleep(0.05)
+        with lock:
+            running[0] -= 1
+        return fake_call(out, windows)
+
+    run_main(monkeypatch, plan, tmp_path / "backtests", wrapper)
+    assert most[0] == 4          # 6 coins, 4 cores: 4 at once, never more
+
+
+def test_the_record_keeps_the_coins_order_whatever_finishes_first(monkeypatch, plan, tmp_path):
+    plan.write_text(plan.read_text().replace("BTC, ETH", "BTC, ETH, LTC"))
+    monkeypatch.setattr(rb, "cores", lambda: 3)
+
+    def wrapper(symbol, windows, out):
+        time.sleep({"BTCUSD": 0.2, "ETHUSD": 0.1, "LTCUSD": 0.0}[symbol])   # BTC finishes last
+        return fake_call(out, windows)
+
+    out_root = tmp_path / "backtests"
+    run_main(monkeypatch, plan, out_root, wrapper)
+    run_md = (out_root / "001-01_some-idea_1d" / "run.md").read_text()
+    assert run_md.index("- BTCUSD:") < run_md.index("- ETHUSD:") < run_md.index("- LTCUSD:")
+    assert "BTCUSD 3/3; ETHUSD 3/3; LTCUSD 3/3" in (out_root / "INDEX.md").read_text()
+
+
+def test_each_call_has_its_own_interim_trades_file(monkeypatch, tmp_path):
+    seen = []
+    monkeypatch.setattr(rb.subprocess, "run", lambda cmd, **kw: seen.append(cmd) or
+                        type("R", (), {"returncode": 0, "stdout": "", "stderr": ""})())
+    rb.call_protocol("py", tmp_path / "c.json", {"symbols": ["BTCUSD"]}, WINDOWS, tmp_path)
+    assert "--trades-file-in-out-dir" in seen[0]
