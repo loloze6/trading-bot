@@ -384,7 +384,8 @@ def _bars(n, seed):
                          "close": close, "volume": 1.0})
 
 
-def _standalone_vs_composite(tmp_path, sources, n=700, seed=0):
+def _standalone_vs_composite(tmp_path, sources, n=700, seed=0, block_ready=None):
+    """block_ready: optional list, filled with {block_id: composite block ready} per bar."""
     doc = _registry_from_sources(tmp_path, sources)
     _, out, m = _write(tmp_path, doc=doc)
     comp_strat = AdvancedStrategy(config_path=str(out / "base.json"))
@@ -402,6 +403,9 @@ def _standalone_vs_composite(tmp_path, sources, n=700, seed=0):
             sig = s.generate_signals()
             row[bid] = (sig.forecast, sig.regime, blocks[cb[bid]].raw, blocks[cb[bid]].regime)
         rows.append(row)
+        if block_ready is not None:
+            block_ready.append({bid: comp_strat.strategy_engine._block_ready("unknown", blocks[cb[bid]])
+                                for bid in alone})
     return rows, comp_strat, alone, m
 
 
@@ -409,17 +413,30 @@ def test_block_forecast_equals_standalone_even_next_to_a_longer_lookback_block(t
     """Fix 2: block A (short lookback) next to block B (EMA spread over the
     whole window + ratio_to_mean over a long deque, so it needs a much longer
     lookback and buffer) -- each block's final forecast in the composite equals
-    its stand-alone forecast on every bar."""
+    its stand-alone forecast on every bar where both are ready.
+
+    Parked B (operator ruling 2026-11-16): a stand-alone strategy is now ready at its
+    declared required_bars rows; a block keeps the old rule (its source's warm-up
+    copied into the composite config, `max(2, warmup)` history values) until a run asks
+    for "blocks follow fix B" (parked). So the stand-alone strategy can forecast a few
+    bars before its block does: on those bars the block abstains (raw 0.0) and they are
+    left out of the comparison. Once the block is ready, the forecasts are equal."""
     a = _source_config(5, [{"op": "identity"}])
     b = _source_config(0, [{"op": "ratio_to_mean"}, {"op": "scale", "params": {"factor": 10}}])
     b["strategies"]["regimes"]["unknown"]["components"][0].update(
         {"class": EMA, "params": {"fast_period": 12, "slow_period": 150}, "lookback": 400})
     ptr = "/strategies/regimes/unknown/components/0"
-    rows, comp_strat, alone, m = _standalone_vs_composite(tmp_path, [(a, [ptr]), (b, [ptr])])
+    ready = []
+    rows, comp_strat, alone, m = _standalone_vs_composite(tmp_path, [(a, [ptr]), (b, [ptr])],
+                                                          block_ready=ready)
     assert comp_strat.required_bars > max(s.required_bars for s in alone.values())
     live = {bid: 0 for bid in alone}
-    for row in rows:
-        for bid, (f_alone, _r, raw, _cr) in row.items():
+    for row, rdy in zip(rows, ready):
+        for bid, (f_alone, r_alone, raw, _cr) in row.items():
+            if not rdy[bid]:
+                assert raw == 0.0, (bid, raw)                 # the block abstains
+                continue
+            assert r_alone != "NOT_READY", bid                # never ready before its source
             assert raw == f_alone, (bid, raw, f_alone)
             live[bid] += f_alone != 0.0
     assert all(v > 100 for v in live.values()), live

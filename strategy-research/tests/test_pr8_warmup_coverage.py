@@ -8,8 +8,9 @@ launcher's warm-up probe (`assert probe.is_ready()` after a 2 x required_bars pr
 
 Covers:
   1. The number: strategy_required_bars equals AdvancedStrategy.required_bars, the
-     strategy is ready only between required_bars and 2 x required_bars bars (so
-     required_bars alone would let the probe crash), warmup_bars_needed = 2 x.
+     strategy is ready at exactly required_bars bars (Parked B fix, 2026-11-16; before it,
+     somewhere between required_bars and 2 x), warmup_bars_needed = 2 x, which is what the
+     launcher prefetches: the gate stays on 2 x (operator ruling 2026-11-16).
   2. layer1_warmup_check / layer1_price_precheck: a coin whose history starts inside the
      warm-up is excluded with the reason; a full-history coin is unchanged; the exact
      boundary; warmup_bars=None is byte-identical to the structural precheck.
@@ -101,11 +102,15 @@ def test_required_bars_matches_the_strategy_and_the_prefetch_doubles_it(tmp_path
     assert dag.strategy_required_bars(fast) == _strategy(tmp_path, fast).required_bars == 24
 
 
-def test_ready_only_after_required_bars_so_required_bars_alone_would_not_do(tmp_path):
-    """Why the rule needs 2 x required_bars and not required_bars (the component lookback plus
-    the standardise min_periods): the strategy is not ready at required_bars bars; it is ready
-    somewhere before the launcher's 2 x required_bars prefetch. A coin with required_bars bars
-    would pass a required_bars rule and still fail the launcher's probe."""
+def test_ready_at_required_bars_and_the_gate_keeps_the_launchers_2x(tmp_path):
+    """The strategy is ready at exactly required_bars bars (the component lookback plus the
+    standardise min_periods) and stays ready through the launcher's 2 x required_bars prefetch.
+
+    Before the Parked B fix (operator ruling 2026-11-16) it became ready only somewhere
+    between required_bars and 2 x required_bars, which is why this gate asks for 2 x. The
+    gate keeps 2 x: that is still exactly what the launcher fetches before its probe
+    (core/launcher.py), so a coin the gate passes can fill the prefetch; it is now more
+    cautious than readiness alone needs, never less."""
     strategy = _strategy(tmp_path, SLOW)
     rng = np.random.default_rng(3)
     n = NEEDED
@@ -114,16 +119,14 @@ def test_ready_only_after_required_bars_so_required_bars_alone_would_not_do(tmp_
         "timestamp": pd.date_range("2019-01-01", periods=n, freq="D"),
         "open": close, "high": close * 1.01, "low": close * 0.99, "close": close,
         "volume": rng.uniform(50.0, 150.0, n)})
-    first_ready, ready_at_required = None, None
+    first_ready = None
     for t in range(n):
         strategy.update(bars.iloc[t:t + 1])
-        if t + 1 == REQUIRED:
-            ready_at_required = strategy.is_ready()
         if first_ready is None and strategy.is_ready():
             first_ready = t + 1
-    assert ready_at_required is False
-    assert first_ready is not None and REQUIRED < first_ready <= NEEDED
+    assert first_ready == REQUIRED
     assert strategy.is_ready()  # the probe's assertion, after exactly the prefetch
+    assert dag.warmup_bars_needed(SLOW) == NEEDED  # the gate is unchanged
 
 
 @pytest.mark.parametrize("config", [{}, {"aux_feeds": []}, {"strategies": {"regimes": {}}},

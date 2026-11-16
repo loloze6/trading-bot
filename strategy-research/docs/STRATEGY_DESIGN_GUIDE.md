@@ -248,12 +248,16 @@ A transform step is `{"op": "<name>", "params": {...}}`. See "Transform ops".
   its history once the component itself is ready.
 - A forecast needs at least 2 history entries for every component of the regime, and a component with a history op waits for that op's stated minimum of values (Minimum periods, below) before its first forecast; else the forecast is 0.0.
 - The strategy is ready, and emits forecasts, only when the bar window holds `required_bars` bars AND the detector
-  is ready AND every component of the classified regime has stored at least `min(required_bars, S)` values, where
-  `S` is the smallest history size (`lookback`) of any component in `strategies`, in any regime. One component with
-  a short explicit `lookback` therefore lowers the warmup of the whole config.
-  Measured on synthetic bars: `RSIPullbackComponent(14)` with `identity` forecasts from bar 29; the same component
-  with `ratio_to_mean` from bar 44; `SmaTrendLongOnlyComponent(100)` from bar 201. Before readiness the forecast is
-  0.0 and nothing trades.
+  is ready AND every component of the classified regime has stored the history values its ops need: 2, or a
+  history op's own minimum (`standardise`: `min_periods` + 1, read from its params). `required_bars` counts bars
+  (rows); the history count is checked separately, never against `required_bars`. A component stores its first
+  value once it is itself ready, so a component with no history op whose own warmup sets `required_bars` is
+  ready one bar after it (it needs a second stored value).
+  Measured on synthetic bars: `RSIPullbackComponent(14)` with `identity` forecasts from bar 24 (the 24-bar floor);
+  the same component with `ratio_to_mean` from bar 44; `SmaTrendLongOnlyComponent(100)` from bar 102
+  (`required_bars` 101). Before readiness the forecast is 0.0 and nothing trades. (Until the Parked B fix,
+  2026-11-16, a component also had to store `min(required_bars, S)` values, `S` the smallest `lookback` in
+  `strategies`: the same examples started at bars 29, 44 and 201.)
 - If any component value or pipeline result is NaN, the regime forecast is NaN for that bar (a NaN component makes
   the weighted sum NaN); a NaN is never turned into "flat". The catalogue's "Data & NaN" column says which
   components can produce one.
