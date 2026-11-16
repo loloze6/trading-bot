@@ -18,6 +18,9 @@ What it does, in order:
      current second, so two windows finishing in the same second share one; and the wrapper stops at the first window
      that fails. In either case the coin is run again once per window, each in its own folder (the way every coin ran
      before 2026-11-16). A coin or window without data does not stop the others.
+     The coins run at the same time, as many at once as the machine has cores (2026-11-16, change 2 of
+     orchestration/duration/3_plan.md). Each coin's calls are separate processes with their own output folders, and
+     the wrapper gives each call its own interim trades file (--trades-file-in-out-dir).
   4. Keeps the engine's files per coin and window (metrics.json, manifest.json, forecast_distribution.csv, and
      bars.csv and trades.json gzipped). The wrapper call's own protocol_summary.json and trade_diagnostics.json
      (gzipped) and its log (engine_log.txt) go in the coin's folder, or in the window's folder when the coin ran once
@@ -28,6 +31,7 @@ What it does, in order:
 This script does not open the price data itself: only the engine reads bars.
 """
 import argparse, gzip, json, os, re, shutil, subprocess, sys, tempfile
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common"))
 from lib import write_atomic  # noqa: E402  (shared helpers, common/lib.py)
@@ -123,7 +127,7 @@ def call_protocol(python, config_path, proto, windows, tmp):
     Returns (exit code, log without dates, the call's output folder)."""
     (tmp / "protocol.json").write_text(json.dumps(dict(proto, windows=windows)))
     r = subprocess.run([python, "tools/run_protocol.py", str(config_path), str(tmp / "protocol.json"),
-                        "--out-dir", str(tmp / "out"), "--legacy-verdict-retired"],
+                        "--out-dir", str(tmp / "out"), "--legacy-verdict-retired", "--trades-file-in-out-dir"],
                        cwd=SR, capture_output=True, text=True, timeout=6 * 3600)
     return r.returncode, re.sub(r"20\d\d-\d\d(-\d\d)?", "<date>", (r.stdout + r.stderr)), tmp / "out"   # no dates stored
 
@@ -169,6 +173,45 @@ def keep_call(out, log, folder):
             with open(out / f, "rb") as fi, gzip.open(folder / (f + ".gz"), "wb") as fo:
                 shutil.copyfileobj(fi, fo)
     (folder / "engine_log.txt").write_text(log)
+
+
+def cores():
+    """How many coins run at once: the cores this process may use."""
+    return len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else (os.cpu_count() or 1)
+
+
+def run_coin(python, config_path, symbol, bar, folds, cdir):
+    """Runs one coin's windows into cdir. Returns (the protocol, the rows of the windows run, the windows not run)."""
+    proto = protocol(python, symbol, bar, folds)
+    windows = proto["windows"]
+    rows, failed, folders = [], [], None
+    # One wrapper call for all the coin's windows: Python and the bot are loaded once per coin, not once per
+    # window. Its record is used only when every window has its own run folder (coin_runs); otherwise the coin
+    # is run again one window at a time, below.
+    if windows:
+        with tempfile.TemporaryDirectory() as tmp:
+            rc, log, out = call_protocol(python, config_path, proto, windows, Path(tmp))
+            folders = coin_runs(rc, out, windows)
+            if folders:
+                for k, src in enumerate(folders, 1):
+                    rows.append(keep_window(src, cdir / f"w{k}", k))
+                keep_call(out, log, cdir)
+    # One wrapper call per window, each in its own folder (the way every coin ran before 2026-11-16). Used
+    # when the coin's call failed (the wrapper stops at the first window that fails, so the later ones would be
+    # lost) or two of its windows shared one run folder. The coin's record is then exactly that of a run made
+    # this way from the start.
+    for k, window in enumerate([] if folders else windows, 1):
+        with tempfile.TemporaryDirectory() as tmp:
+            rc, log, out = call_protocol(python, config_path, proto, [window], Path(tmp))
+            runs = list((out / "results").glob("*/metrics.json")) if (out / "results").exists() else []
+            if rc or len(runs) != 1:
+                failed.append((k, "no historical data on the venue" if "No historical data" in log else "the engine stopped",
+                               "\n".join(log.strip().splitlines()[-4:])))
+                continue
+            wdir = cdir / f"w{k}"
+            rows.append(keep_window(runs[0].parent, wdir, k))
+            keep_call(out, log, wdir)
+    return proto, rows, failed
 
 
 def index_line(index_path, plan_id, line):
@@ -221,38 +264,14 @@ def main():
     dest.mkdir(parents=True)
     shutil.copy(config_path, dest / "config.json")
     report, summary, proto = [], [], None
-    for base in coins(h["data-instruments"]):
-        symbol = f"{base}USD"
-        proto = protocol(args.python, symbol, bar, folds)
+    symbols = [f"{base}USD" for base in coins(h["data-instruments"])]
+    # The coins at the same time: each coin's calls are separate processes with their own folders. The record is
+    # written in the coins' order, as before.
+    with ThreadPoolExecutor(max_workers=max(1, min(len(symbols), cores()))) as pool:
+        runs = [pool.submit(run_coin, args.python, config_path, symbol, bar, folds, dest / symbol) for symbol in symbols]
+        results = [r.result() for r in runs]
+    for symbol, (proto, rows, failed) in zip(symbols, results):
         windows = proto["windows"]
-        cdir = dest / symbol
-        rows, failed, folders = [], [], None
-        # One wrapper call for all the coin's windows: Python and the bot are loaded once per coin, not once per
-        # window. Its record is used only when every window has its own run folder (coin_runs); otherwise the coin
-        # is run again one window at a time, below.
-        if windows:
-            with tempfile.TemporaryDirectory() as tmp:
-                rc, log, out = call_protocol(args.python, config_path, proto, windows, Path(tmp))
-                folders = coin_runs(rc, out, windows)
-                if folders:
-                    for k, src in enumerate(folders, 1):
-                        rows.append(keep_window(src, cdir / f"w{k}", k))
-                    keep_call(out, log, cdir)
-        # One wrapper call per window, each in its own folder (the way every coin ran before 2026-11-16). Used
-        # when the coin's call failed (the wrapper stops at the first window that fails, so the later ones would be
-        # lost) or two of its windows shared one run folder. The coin's record is then exactly that of a run made
-        # this way from the start.
-        for k, window in enumerate([] if folders else windows, 1):
-            with tempfile.TemporaryDirectory() as tmp:
-                rc, log, out = call_protocol(args.python, config_path, proto, [window], Path(tmp))
-                runs = list((out / "results").glob("*/metrics.json")) if (out / "results").exists() else []
-                if rc or len(runs) != 1:
-                    failed.append((k, "no historical data on the venue" if "No historical data" in log else "the engine stopped",
-                                   "\n".join(log.strip().splitlines()[-4:])))
-                    continue
-                wdir = cdir / f"w{k}"
-                rows.append(keep_window(runs[0].parent, wdir, k))
-                keep_call(out, log, wdir)
         part = f"- {symbol}: {len(rows)} of {len(windows)} windows run."
         if rows:
             part += ("\n\n| window | trades | forecast vs next return (all bars) | net return % |\n|---|---|---|---|\n"
