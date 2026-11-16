@@ -3,6 +3,8 @@
 Items noted while designing the steps, not started. Each waits for the operator's go.
 
 ## Parked: why the backtest engine refuses some valid strategy configs at warm-up
+**Now changes verdicts (run_idea, 2026-11-16):** since the sizing's 60-day window, a few windows do not run (XMR 23 of 24, XRP 22 of 24 on the default data); a plan whose minimum count is close to the most the data can give becomes "not observable".
+
 Added on the operator's instruction, relayed from the "Known data defects" session. The brief is the operator's, unchanged:
 
 > In loloze6/trading-bot, branch ccr-6624e33e-aakrpv, find out why the backtest engine refuses some valid strategy configs at warm-up. Do not change any file.

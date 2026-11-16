@@ -1,0 +1,1 @@
+002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs_1d: not observable (fit: adapted) [main: 1.22072; OLS slope t 1.22072; grid cases with forecast above 0 284, grid cases in total 827]
