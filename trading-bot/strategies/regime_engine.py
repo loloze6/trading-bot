@@ -57,7 +57,11 @@ class ConfigDrivenRegimeEngine:
                 cid = c_spec["id"]
                 needed = component_effective_lookback(c_spec, base_periods.get(cid, 1))
                 base_periods[cid] = max(base_periods.get(cid, 1), needed)
-        self.lookback = max(base_periods.values(), default=50)
+        # At least 1: a component that needs 0 bars (BuyAndHoldStrategy) still has a
+        # value to keep. With deque(maxlen=0) every value was dropped, is_ready()
+        # (len >= 1) could never hold, and the strategy never became ready
+        # (Parked A, strategy_designer_v2 POTENTIAL_ADJUSTMENTS.md).
+        self.lookback = max(max(base_periods.values(), default=50), 1)
 
         # Phase 3: create history deques sized to lookback
         self._history: Dict[str, deque] = {

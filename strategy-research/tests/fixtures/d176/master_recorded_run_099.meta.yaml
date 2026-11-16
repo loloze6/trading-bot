@@ -1,5 +1,6 @@
 # sidecar for master_recorded_run_099.csv (see README.md)
 master_sha: 4b1b1c60d6ca8b0acb5e4b990a8f6ba0d156cb1b
+engine_patch: Parked A/B warm-up fix (regime_engine.py, strategy_engine.py of commit 550f447) applied on top
 config: strategy-research/tests/fixtures/d176/run_099_strategy_config.json
 sizing_block: absent
 series: synthetic_daily_ohlcv.csv
@@ -10,6 +11,7 @@ bar_interval_seconds: 86400
 drift_per_bar: 0.0004
 daily_vol: 0.03
 entry_point: core.launcher.run_backtest (fetch replaced by CSV read)
-generation_guard: replay_harness.assert_traded passed (executed rebalances: 10; nonzero position present)
+generation_guard: replay_harness.assert_traded passed (executed rebalances: 13; nonzero position present)
 configs_edited_to_trade: false
 
+re_recorded: operator ruling 2026-11-16 (Parked B changes runs with no warm-up prefetch); see README.md
