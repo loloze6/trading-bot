@@ -13,6 +13,10 @@ model step needs (prompt, model variants) with what a function needs (its turn, 
 | `select_next` | `select_next/card.md` | a run | ranks the ideas written in the run (by step 2 or a step 7 line) and not yet tested, by one score: the record of the line that wrote it / (1 + its generation) | met on demo_run (called by `loop`) |
 | `run_brief` | to design | a brief | step 2, then `loop` over one list of ideas fed by step 2 and step 7 | to design (scope 3) |
 
+`duration/` is a study, not a function: how long one idea's run takes and how to make it faster (1 the picture, 2 the
+findings, 3 the plan, 4 and 5 measurements, 6 the proof of change 1, built in step 4). Change 2, the coins at the same
+time, waits for the operator's decision.
+
 ## What the manual orchestration did that the next functions should keep (2026-11-15)
 From the overnight run and the step 7 validation loops, run by hand:
 - **Do not test an idea twice in a run** (same text, same data): lines proposed the same idea more than once. Kept: `select_next`.

@@ -1,7 +1,8 @@
 # Change 1 (one process per coin): built and proven (2026-11-16)
 
 Branch `sd2/step4-per-coin` (worktree `wt/step4-per-coin`), from `ccr-6624e33e-aakrpv` at `cc19b01c9`. Committed and
-pushed as `f1a8aa626` on the operator's go (2026-11-16); not yet merged into `ccr-6624e33e-aakrpv`.
+pushed as `f1a8aa626` on the operator's go (2026-11-16); merged into `ccr-6624e33e-aakrpv` as `4a4d084`. On the run
+machine (Linux container, 4 cores): demo_run e1 559 s before, 288 s after (-48%), outputs identical (step 4's card).
 Changed files:
 - `04_backtest/helper/run_backtest.py`
 - `04_backtest/card.md`
