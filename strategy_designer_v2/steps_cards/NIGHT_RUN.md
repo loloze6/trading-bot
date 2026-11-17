@@ -31,3 +31,15 @@
 
 ## Reading
 (written during and after the run)
+
+**Stage 1 (00:09 to 00:11 UTC; brief 003; budget 6 USD; spent 0.43 USD).** Step 2 wrote 4 ideas (0.04 USD). The loop
+took them in score order; step 3 refused all four as missing-components, and the loop stopped: "no candidate left".
+- **Why:** each idea needs a graded measure of the day's volume against its own recent average, and no component in the
+  catalogue computes one. The four answers converge on one component (the bar's volume over the mean of the last
+  N bars), written in `03_test_plan/night_run/plans/COMPONENT_WISHLIST.md`. A new component is a change to
+  `trading-bot/`, so it waits for the operator: parked in `POTENTIAL_ADJUSTMENTS.md`.
+- **Defect found and fixed (general):** an idea step 3 could not plan was counted in its line's record as a failure
+  (step 2's record fell from 0.20 to 0.17 after each refusal). A record now counts only ideas with a verdict from
+  step 5 (`select_next`, test added). An idea that was never tested says nothing about the line that wrote it.
+- **run_brief:** steps 2 and the loop chained as the card says; the "done when" is not met yet (no line's idea was
+  reached, as no idea could be tested). Next: a brief whose ideas the catalogue can express.

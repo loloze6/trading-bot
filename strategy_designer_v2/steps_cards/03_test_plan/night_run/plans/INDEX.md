@@ -1,0 +1,4 @@
+003-01_thin-volume-rise-reverses_1d: missing-components: The one-day rise is available (`VolatilityScaledReturnComponent`, period 1). The idea also needs a graded measure of the day's volume against [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+003-02_thin-volume-drop-rebounds_1d: missing-components: Volume is in the coin's own bars, and a graded volume-thinness measure could be weighted against the one-day fall. But [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+003-03_heavy-volume-rise-continues_1d: missing-components: The idea needs the day's volume against its own 30-day average, graded, so that heavier volume gives a larger position. [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+003-04_heavy-volume-drop-continues_1d: missing-components: The idea needs the day's volume divided by its 30-day average, as a graded value that sets the position's size, [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

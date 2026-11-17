@@ -154,3 +154,12 @@ renames it over the file; a failed write leaves the file as it was and no tempor
 (`trading-bot/tests/test_merge_noop_no_rewrite.py`: the file holds exactly the bytes `to_csv` writes, one rename, nothing
 left behind; a failed rename leaves the old bytes); the bot's suite passes (1,499). No named run reaches this write
 today (the folds' data is already in the files), so no run was rerun for it.
+
+## Parked: a relative-volume component (night_run, 2026-11-17)
+Brief 003 (volume separates reversal from continuation) cannot be tested: all four of its ideas need a graded measure
+of a bar's volume against its own recent average, and no component computes one (step 3: missing-components, four
+times). The four wish-list entries converge on one component: the bar's volume divided by the mean volume of the last
+N bars (or its log), from the `volume` column (`03_test_plan/night_run/plans/COMPONENT_WISHLIST.md`). Why it cannot
+leak: it reads the current bar's volume and the volumes before it, known at the bar's close. A change to `trading-bot/`
+(a new component and its tests), so it waits for the operator's go.
+

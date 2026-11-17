@@ -51,6 +51,8 @@ def records(root=STEPS):
             continue
         v = root / "05_verification" / run / "verdicts" / rid / "result.json"
         c = root / "06_profitability" / run / "checks" / rid / "result.json"
+        if not v.exists():
+            continue                     # not tested: no plan could be built (step 3), or no backtest; no evidence about the line
         ok = (v.exists() and json.loads(v.read_text()).get("status") == "confirmed") or \
              (c.exists() and json.loads(c.read_text()).get("status") == "profitable enough")
         key = (run, line, created_from)                    # each run's reading is its own analysis
