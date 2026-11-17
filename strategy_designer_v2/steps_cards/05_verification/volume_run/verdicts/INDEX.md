@@ -1,4 +1,5 @@
 003-01_thin-volume-rise-reverses_1d: inconclusive (fit: adapted) [main: -0.00178307; t of the mean -0.501122; non-overlapping events 930, active bars 3838]
+003-02_thin-volume-drop-rebounds_1d: not observable (fit: adapted) [main: 0.0664532; one-sample t 1.27244; independent events 5, bars with forecast above 0 5]
 012-02_volume-burst-fall-reversal_1d: inconclusive (fit: adapted) [main: 0.00431798; OLS t of slope 1.58575; kept sharp-fall cases 440]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume_1d: confirmed (fit: exact) [main: 0.00244546; OLS slope t 4.17064; non-overlapping samples 2443]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d: confirmed (fit: exact) [main: 0.00633208; OLS t of slope 2.74505; trending-regime grid cases 2840]

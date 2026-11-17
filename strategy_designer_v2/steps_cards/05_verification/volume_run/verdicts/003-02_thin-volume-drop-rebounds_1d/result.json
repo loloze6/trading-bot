@@ -1,0 +1,27 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 5-bar forward return after forecast>0 bars (vs coin's mean 5-bar return)",
+    "value": 0.06645324447275684,
+    "statistic": {
+      "name": "one-sample t",
+      "value": 1.2724371619383823
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2; at least 20 independent events"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 5-bar return on forecast",
+    "value": -0.027925215365380406,
+    "passed": false
+  },
+  "counts": {
+    "independent events": 5,
+    "bars with forecast above 0": 5
+  },
+  "decided_by": "Only 5 independent events, fewer than the plan's minimum of 20.",
+  "reading": "Raw fall size and volume ratio are read from the recorded 'fall' and 'volume' components' last_history_value (recomputed from prices only if missing); the coin's mean 5-bar return is taken on the non-overlapping grid (positions 0,5,10,... of each window) pooled over all windows; an event is dropped when it lies fewer than 5 bars after the previous counted event in the same window, and events without a full 5-bar forward return inside their window are left out."
+}
