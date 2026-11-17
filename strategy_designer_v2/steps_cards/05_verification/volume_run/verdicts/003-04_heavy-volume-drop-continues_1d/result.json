@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 5-bar return after signal bars (vs holding the coin)",
+    "value": -0.008940375438835657,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -1.5054121037353922
+    },
+    "threshold": "confirm: mean < 0 with t <= -2 over >= 30 independent events; reject: mean > 0 with t >= +2 over >= 30"
+  },
+  "supporting_check": {
+    "name": "mean excess of more-negative-forecast half minus other half (< 0)",
+    "value": -0.008572905105214048,
+    "passed": true
+  },
+  "counts": {
+    "independent events": 286
+  },
+  "decided_by": "t lies between -2 and +2 over at least 30 events.",
+  "reading": "A signal is kept when at least 5 bars after the previous kept one in its window (so 5-bar returns do not overlap) and only if close[t+5] exists in the window; the coin's mean is over non-overlapping 5-bar returns on positions 0,5,10,... of all its windows; the median split puts the floor(n/2) most negative forecasts (stable sort) in the more-negative half."
+}
