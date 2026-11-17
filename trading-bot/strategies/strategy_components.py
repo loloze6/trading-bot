@@ -2762,3 +2762,68 @@ class HighProximityVolatilityRatioComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return max(self.period, self.vol_lookback + self.vol_period)
+
+
+class VolatilityRankedFallComponent(SubStrategyComponent):
+    """
+    Today's fall in usual moves, weighted by how high volatility stands against its recent past:
+
+        r(j)  = close[j] / close[j-1] - 1
+        s(i)  = std (ddof 1) of r(i - vol_period + 1 .. i)
+        fall  = max(0, -r(t) / s(t))
+        rank  = (number of i in t - lookback + 1 .. t with s(i) <= s(t)) / lookback
+        raw_value = fall x rank
+
+    Range and sign: 0 and up, unbounded above, never negative. It is 0 on an up or flat bar. On a down bar it
+    grows with the depth of the fall measured in usual moves, and with the rank of today's volatility. The rank
+    is above 0 (s(t) counts itself) and at most 1. Graded, one-sided, no short side.
+    Warm-up: lookback + vol_period rows, bar t included.
+    NaN: a NaN close anywhere in the last lookback + vol_period rows gives NaN. A current std s(t) that is not
+    above 0 also gives NaN (20 equal returns, never seen on real bars).
+    Building the component raises for a vol_period below 2 or a lookback below 1.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last lookback + vol_period rows of data, which
+    end at bar t (the last row); every return and every std uses closes at or before bar t.
+    """
+
+    def __init__(self, name="VolRankedFall", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.vol_period = int(self.parameters.get("vol_period", 20))
+        if self.vol_period < 2:
+            raise ValueError(f"VolatilityRankedFallComponent: vol_period must be >= 2, got {self.vol_period}")
+        self.lookback = int(self.parameters.get("lookback", 120))
+        if self.lookback < 1:
+            raise ValueError(f"VolatilityRankedFallComponent: lookback must be >= 1, got {self.lookback}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data['close'].astype(float).iloc[-n:].to_numpy()
+        self.confidence = 1.0
+        if np.isnan(c).any():
+            self._raw_value = float("nan")
+            return
+        r = c[1:] / c[:-1] - 1.0
+        stds = []
+        for k in range(self.lookback):
+            end = self.vol_period + k
+            stds.append(float(np.std(r[end - self.vol_period:end], ddof=1)))
+        s_t = stds[-1]
+        if not s_t > 0:
+            self._raw_value = float("nan")
+            return
+        rank = sum(1 for x in stds if x <= s_t) / float(self.lookback)
+        fall = max(0.0, -float(r[-1]) / s_t)
+        self._raw_value = float(fall * rank)
+        self.debug_info = {'return': float(r[-1]), 'std': s_t, 'fall': fall, 'rank': rank}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.lookback + self.vol_period
