@@ -215,7 +215,9 @@ fault is step 3's config or step 5's reading of the situation is not looked at.
 position), given to steps 3 and 5 (code only: one more shared text in their calls). Proof, step 5 again on the 5 cases
 (0.79 USD; the new verdicts in the session's scratch folder, the runs' records unchanged): 013-01, e2 and g3 now
 inconclusive, volume g1 confirmed, each with a situation check of 100 %; d2 still a mismatch (57 %): the real step 3
-error, as expected. Not done: the 4 corrected verdicts are not written into their runs (their step 6 and 7 would follow).
+error, as expected. **Written into their runs** (operator, 2026-11-17): the 4 verdicts copied in, their rows rebuilt by
+`run_idea` (step 6 again, code only; no model call). Their step 7 analyses are those written when they were mismatches
+(the lines' entry conditions read the old status): kept, not rerun.
 
 ## Parked: TAO has no data where `common/data_available.md` says it has (night, 2026-11-17)
 `data_available.md` lists TAO for fold D; the more-coins backtest got "No historical data for TAOUSD" in all 24

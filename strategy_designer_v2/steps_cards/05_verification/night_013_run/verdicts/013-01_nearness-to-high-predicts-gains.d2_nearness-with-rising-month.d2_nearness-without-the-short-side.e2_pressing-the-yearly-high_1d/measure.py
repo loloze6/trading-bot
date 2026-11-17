@@ -5,50 +5,56 @@ from scipy import stats
 
 def measure(bars):
     H = 7
-    DCOL = "debug_info.components.dist_high.last_history_value"
-    OCOL = "debug_info.components.offset.last_history_value"
+    FC = "forecast"
+    RAW_D = "debug_info.components.dist_high.last_history_value"
+    PP_D = "debug_info.components.dist_high.post_pipeline_value"
+
+    reading = (
+        "The situation is graded and centred on the coin's usual distance, as the Fidelity states, so each active bar's "
+        "expected side is the sign of (dist_high after standardise + the plan's +10 offset): long when the close is nearer "
+        "its 52-week high than usual, short when it is farther; a bar counts only if its raw distance is valid (<= 0); "
+        "the top and fourth quintiles are cut at the 80th and 60th percentiles of the pooled grid forecasts (top: >= q80, "
+        "fourth: q60 <= f < q80); holding is the coin's mean 7-bar return over all its grid bars in all windows; "
+        "fewer than 100 top-quintile cases gives 'not observable'."
+    )
 
     # ---------- 1. situation check ----------
     n_active = 0
     n_agree = 0
     for coin, wins in bars.items():
         for w, df in wins.items():
-            if df is None or len(df) == 0 or "forecast" not in df.columns:
+            if df is None or len(df) == 0 or FC not in df.columns:
                 continue
-            f = pd.to_numeric(df["forecast"], errors="coerce")
-            d = pd.to_numeric(df[DCOL], errors="coerce") if DCOL in df.columns else pd.Series(np.nan, index=df.index)
-            o = pd.to_numeric(df[OCOL], errors="coerce") if OCOL in df.columns else pd.Series(np.nan, index=df.index)
+            f = pd.to_numeric(df[FC], errors="coerce")
             active = f.notna() & (f != 0)
             n_active += int(active.sum())
-            # closeness relative to the coin's usual distance: standardised distance plus the centring offset
-            score = d + o
-            valid = active & score.notna()
-            near = score > 0
-            agree = valid & (((f > 0) & near) | ((f < 0) & (~near)))
-            n_agree += int(agree.sum())
+            if RAW_D not in df.columns or PP_D not in df.columns:
+                continue
+            raw = pd.to_numeric(df[RAW_D], errors="coerce")
+            pp = pd.to_numeric(df[PP_D], errors="coerce")
+            centred = pp + 10.0
+            valid = raw.notna() & pp.notna() & (raw <= 1e-12) & (pp <= 1e-9)
+            exp_sign = np.sign(centred)
+            ok = active & valid & (exp_sign != 0) & (np.sign(f) == exp_sign)
+            n_agree += int(ok.sum())
 
     agreement = float(n_agree / n_active) if n_active > 0 else 0.0
-    passed = bool(n_active > 0 and agreement >= 0.90)
+    passed = bool(n_active > 0 and agreement >= 0.9)
 
-    reading = ("Situation check: an active bar agrees when the forecast sign matches closeness relative to the coin's usual "
-               "distance (recorded standardised dist_high plus the recorded offset, positive = nearer than usual, which the "
-               "Fidelity says is the long side of a graded, centred forecast); quintiles use the 60th/80th percentiles of the "
-               "forecast pooled over all grid bars with a valid 7-bar return (top = forecast >= 80th percentile, fourth = "
-               "60th <= forecast < 80th); holding is each coin's mean 7-bar grid return over all its windows; fewer than 100 "
-               "top-quintile cases gives 'not observable'.")
-
-    main_name = "mean 7-bar forward return of top forecast quintile minus coin holding"
-    main_thr = "confirm if t >= 2 (with supporting check), reject if t <= -2, else inconclusive; at least 100 top-quintile cases"
+    main_name = "top-quintile mean 7-bar excess return over holding"
+    threshold = "t >= 2 confirms (with supporting check), t <= -2 rejects; at least 100 top-quintile cases"
 
     if not passed:
         return {
             "status": "mismatch",
             "situation_check": {"agreement": agreement, "passed": False},
-            "main_measure": {"name": main_name, "value": None, "statistic": None, "threshold": main_thr},
+            "main_measure": {"name": main_name, "value": None, "statistic": None, "threshold": threshold},
             "supporting_check": None,
-            "counts": {"active bars": int(n_active)},
-            "decided_by": ("Fewer than 90% of active bars have a forecast whose sign matches the plan's situation "
-                           "(long when the close is nearer its 52-week high than usual)."),
+            "counts": {"active bars": int(n_active), "top-quintile cases": 0},
+            "decided_by": (
+                f"Only {agreement:.1%} of the {n_active} active bars carry the sign of the plan's centred closeness to the "
+                "52-week high (long nearer than usual, short farther), below the 90% required."
+            ),
             "reading": reading,
         }
 
@@ -58,80 +64,91 @@ def measure(bars):
         for w, df in wins.items():
             if df is None or len(df) <= H:
                 continue
-            c = pd.to_numeric(df["close"], errors="coerce").to_numpy()
-            f = pd.to_numeric(df["forecast"], errors="coerce").to_numpy()
-            for t in range(0, len(df) - H, H):
-                r = c[t + H] / c[t] - 1.0 if (np.isfinite(c[t]) and np.isfinite(c[t + H]) and c[t] != 0) else np.nan
-                rows.append((coin, w, f[t], r))
-    g = pd.DataFrame(rows, columns=["coin", "window", "forecast", "ret"])
-    g = g.dropna(subset=["ret"])
-    hold = g.groupby("coin")["ret"].mean()
-    g["excess"] = g["ret"] - g["coin"].map(hold)
-    gq = g.dropna(subset=["forecast"])
+            c = pd.to_numeric(df["close"], errors="coerce").to_numpy(dtype=float)
+            f = pd.to_numeric(df[FC], errors="coerce").to_numpy(dtype=float)
+            n = len(c)
+            for t in range(0, n - H, H):
+                c0, c1 = c[t], c[t + H]
+                if not (np.isfinite(c0) and np.isfinite(c1)) or c0 == 0:
+                    continue
+                rows.append((coin, w, f[t], c1 / c0 - 1.0))
+    grid = pd.DataFrame(rows, columns=["coin", "window", "forecast", "ret"])
 
-    if len(gq) == 0:
+    if len(grid) == 0:
         return {
             "status": "not observable",
-            "situation_check": {"agreement": agreement, "passed": True},
-            "main_measure": {"name": main_name, "value": None, "statistic": None, "threshold": main_thr},
-            "supporting_check": {"name": "top minus fourth quintile 7-bar return, Welch t > 0", "value": None, "passed": None},
-            "counts": {"independent top-quintile cases": 0},
-            "decided_by": "Fewer than 100 independent top-quintile cases (none).",
+            "situation_check": {"agreement": agreement, "passed": passed},
+            "main_measure": {"name": main_name, "value": None, "statistic": None, "threshold": threshold},
+            "supporting_check": None,
+            "counts": {"top-quintile cases": 0},
+            "decided_by": "No 7-bar grid cases exist, below the 100 top-quintile cases required.",
             "reading": reading,
         }
 
-    q60 = float(np.percentile(gq["forecast"], 60))
-    q80 = float(np.percentile(gq["forecast"], 80))
-    top = gq[gq["forecast"] >= q80]
-    q4 = gq[(gq["forecast"] >= q60) & (gq["forecast"] < q80)]
-    n_top = int(len(top))
-    n_q4 = int(len(q4))
+    hold = grid.groupby("coin")["ret"].mean()
+    grid["excess"] = grid["ret"] - grid["coin"].map(hold)
 
-    ex = top["excess"].to_numpy()
-    mean_ex = float(np.mean(ex)) if n_top > 0 else None
-    if n_top > 1 and np.std(ex, ddof=1) > 0:
-        t_main = float(np.mean(ex) / (np.std(ex, ddof=1) / np.sqrt(n_top)))
+    g = grid.dropna(subset=["forecast", "ret"])
+    q60 = float(np.quantile(g["forecast"], 0.6))
+    q80 = float(np.quantile(g["forecast"], 0.8))
+    top = g[g["forecast"] >= q80]
+    fourth = g[(g["forecast"] >= q60) & (g["forecast"] < q80)]
+    n_top = int(len(top))
+    n_fourth = int(len(fourth))
+
+    mean_ex = float(top["excess"].mean()) if n_top > 0 else None
+    if n_top > 1:
+        sd = float(top["excess"].std(ddof=1))
+        t_main = float(mean_ex / (sd / np.sqrt(n_top))) if sd > 0 else None
     else:
         t_main = None
 
-    if n_top > 1 and n_q4 > 1:
-        tw = stats.ttest_ind(top["ret"].to_numpy(), q4["ret"].to_numpy(), equal_var=False).statistic
-        t_sup = float(tw) if np.isfinite(tw) else None
+    if n_top > 1 and n_fourth > 1:
+        tw = stats.ttest_ind(top["ret"].to_numpy(), fourth["ret"].to_numpy(), equal_var=False).statistic
+        tw = float(tw) if np.isfinite(tw) else None
     else:
-        t_sup = None
-    sup_pass = (t_sup > 0) if t_sup is not None else None
+        tw = None
+    sup_pass = (tw is not None and tw > 0)
 
-    counts = {"independent top-quintile cases": n_top, "fourth-quintile cases": n_q4,
-              "grid cases": int(len(gq))}
+    counts = {
+        "top-quintile cases": n_top,
+        "fourth-quintile cases": n_fourth,
+        "grid cases": int(len(g)),
+        "active bars": int(n_active),
+    }
+
+    def result(status, decided):
+        return {
+            "status": status,
+            "situation_check": {"agreement": agreement, "passed": passed},
+            "main_measure": {
+                "name": main_name,
+                "value": mean_ex,
+                "statistic": {"name": "t of the mean", "value": t_main} if t_main is not None else None,
+                "threshold": threshold,
+            },
+            "supporting_check": {
+                "name": "top minus fourth quintile mean 7-bar return, Welch t > 0",
+                "value": tw,
+                "passed": bool(sup_pass) if tw is not None else None,
+            },
+            "counts": counts,
+            "decided_by": decided,
+            "reading": reading,
+        }
 
     if n_top < 100:
-        status = "not observable"
-        decided = f"Only {n_top} independent top-quintile cases, fewer than the 100 the plan requires."
-    elif t_main is None:
-        status = "inconclusive"
-        decided = "The t of the top-quintile excess return could not be computed."
-    elif t_main >= 2 and sup_pass:
-        status = "confirmed"
-        decided = "Top-quintile mean excess return over holding has t >= 2 and the top quintile beats the fourth (Welch t > 0)."
-    elif t_main <= -2:
-        status = "rejected"
-        decided = "Top-quintile mean excess return over holding has t <= -2."
-    elif t_main >= 2:
-        status = "inconclusive"
-        decided = "t >= 2 but the supporting check (top minus fourth quintile Welch t > 0) fails."
-    else:
-        status = "inconclusive"
-        decided = "The top-quintile excess return t lies between -2 and 2."
-
-    return {
-        "status": status,
-        "situation_check": {"agreement": agreement, "passed": True},
-        "main_measure": {"name": main_name, "value": mean_ex,
-                         "statistic": ({"name": "t of the mean", "value": t_main} if t_main is not None else None),
-                         "threshold": main_thr},
-        "supporting_check": {"name": "top minus fourth quintile 7-bar return, Welch t > 0",
-                             "value": t_sup, "passed": (bool(sup_pass) if sup_pass is not None else None)},
-        "counts": counts,
-        "decided_by": decided,
-        "reading": reading,
-    }
+        return result("not observable",
+                      f"Only {n_top} independent top-quintile cases, below the 100 the plan requires.")
+    if t_main is None:
+        return result("inconclusive", "The top-quintile excess return has no defined t, so neither rule is met.")
+    if t_main >= 2:
+        if sup_pass:
+            return result("confirmed",
+                          f"The top-quintile mean excess over holding has t = {t_main:.2f} >= 2 and the top quintile beats the fourth (Welch t = {tw:.2f} > 0).")
+        return result("inconclusive",
+                      f"t = {t_main:.2f} >= 2 but the supporting check fails (Welch t top minus fourth = {tw}).")
+    if t_main <= -2:
+        return result("rejected",
+                      f"The top-quintile mean excess over holding has t = {t_main:.2f} <= -2.")
+    return result("inconclusive", f"The top-quintile mean excess over holding has t = {t_main:.2f}, between -2 and 2.")

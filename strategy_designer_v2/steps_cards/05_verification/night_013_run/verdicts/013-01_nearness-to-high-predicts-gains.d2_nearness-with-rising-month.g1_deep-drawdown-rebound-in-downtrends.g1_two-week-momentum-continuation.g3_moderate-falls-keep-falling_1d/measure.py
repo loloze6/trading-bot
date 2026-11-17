@@ -1,47 +1,57 @@
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 
 def measure(bars):
     H = 7
-    LHV = "debug_info.components.fall_short.last_history_value"
-    LHV2 = "debug_info.components.deep_rebound.last_history_value"
-    CROSS = np.sqrt(300.0)  # s where short turns to long in the graded hump (about 17.3)
-    BAND = (15.0, 20.0)     # tolerance around the crossing: either side accepted there
+    S_CROSS = np.sqrt(300.0)  # -3s + s^3/100 = 0  ->  s = sqrt(300) ~ 17.32
+    TOL = 0.5                 # bars this close to the crossing may take either side
+    RAW = "debug_info.components.fall_short.last_history_value"
+    POST = "debug_info.components.fall_short.post_pipeline_value"
 
     # ---------- 1. situation check ----------
     n_active = 0
     n_agree = 0
     for coin, wins in bars.items():
         for w, df in wins.items():
-            if df is None or len(df) == 0:
-                continue
+            df = df.reset_index(drop=True)
             fc = pd.to_numeric(df["forecast"], errors="coerce")
-            if LHV in df.columns:
-                z = pd.to_numeric(df[LHV], errors="coerce")
-            elif LHV2 in df.columns:
-                z = pd.to_numeric(df[LHV2], errors="coerce")
-            else:
-                z = pd.Series(np.nan, index=df.index)
-            active = fc.notna() & (fc != 0)
-            n_active += int(active.sum())
-            if active.sum() == 0:
-                continue
-            za = z[active].values
-            fa = fc[active].values
-            s = -za
-            fall = np.isfinite(za) & (za < 0)
-            moderate = fall & (s < BAND[0])
-            deep = fall & (s > BAND[1])
-            near = fall & (s >= BAND[0]) & (s <= BAND[1])
-            ok = (moderate & (fa < 0)) | (deep & (fa > 0)) | near
-            n_agree += int(ok.sum())
+            close = pd.to_numeric(df["close"], errors="coerce")
+            raw = pd.to_numeric(df[RAW], errors="coerce") if RAW in df.columns else pd.Series(np.nan, index=df.index)
+            # recompute the 14-bar change from prices where the raw value is not recorded
+            raw = raw.where(raw.notna(), close / close.shift(14) - 1.0)
+            post = pd.to_numeric(df[POST], errors="coerce") if POST in df.columns else pd.Series(np.nan, index=df.index)
+            s = (-post).clip(lower=0.0)  # size of the standardised fall, 0..20
+            for i in range(len(df)):
+                f = fc.iloc[i]
+                if pd.isna(f) or f == 0:
+                    continue
+                n_active += 1
+                r = raw.iloc[i]
+                if pd.isna(r):
+                    is_fall = (not pd.isna(post.iloc[i])) and post.iloc[i] < 0
+                else:
+                    is_fall = r < 0
+                if not is_fall:
+                    continue
+                si = s.iloc[i]
+                if pd.isna(si):
+                    continue
+                if abs(si - S_CROSS) <= TOL:
+                    ok = True
+                elif si < S_CROSS:
+                    ok = f < 0  # moderate fall: short
+                else:
+                    ok = f > 0  # deepest fall: long
+                if ok:
+                    n_agree += 1
     agreement = float(n_agree / n_active) if n_active > 0 else 0.0
     passed = bool(n_active > 0 and agreement >= 0.9)
 
-    main_name = "OLS slope of excess 7-bar return on forecast, non-overlapping grid, pooled"
-    thr = "slope t >= +2 (with positive supporting difference) confirms; t <= -2 rejects"
-    sup_name = "mean excess 7-bar return at forecast>0 minus at forecast<0"
+    main_name = "OLS slope of excess 7-bar return on forecast (non-overlapping grid, forecast != 0, pooled)"
+    thr = "t >= +2 confirms (with positive supporting difference); t <= -2 rejects; between is inconclusive"
+    sup_name = "mean excess 7-bar return at forecast > 0 minus at forecast < 0"
 
     if not passed:
         return {
@@ -50,96 +60,76 @@ def measure(bars):
             "main_measure": {"name": main_name, "value": None, "statistic": None, "threshold": thr},
             "supporting_check": None,
             "counts": {"active bars": int(n_active)},
-            "decided_by": "Fewer than 90% of non-zero forecasts are on 14-bar falls with short at moderate falls and long at the deepest falls, as the Fidelity states.",
-            "reading": "The situation is a negative recorded fall_short value (14-bar change, standardised); the side is short for s < 15, long for s > 20, and either side is accepted between 15 and 20 around the hump's crossing.",
+            "decided_by": "Fewer than 90% of active bars are 14-bar falls with the forecast short below s~17.3 and long above it, as the Fidelity states.",
+            "reading": "Fall size s taken as minus the fall_short post-pipeline value, raw 14-bar change sign from last_history_value (prices when missing); bars within 0.5 of the crossing s=17.32 accepted on either side.",
         }
 
     # ---------- 2. criterion ----------
-    # coin mean 7-bar return over all windows (grid points, all bars)
-    coin_rows = {}
+    rows = []
     for coin, wins in bars.items():
-        rets_all = []
-        rows = []
         for w, df in wins.items():
-            if df is None or len(df) == 0:
-                continue
+            df = df.reset_index(drop=True)
             close = pd.to_numeric(df["close"], errors="coerce").values
             fc = pd.to_numeric(df["forecast"], errors="coerce").values
             n = len(df)
-            for i in range(0, n - H, H):
-                c0, c1 = close[i], close[i + H]
+            for t in range(0, n, H):
+                if t + H >= n:
+                    break
+                c0, c1 = close[t], close[t + H]
                 if not (np.isfinite(c0) and np.isfinite(c1)) or c0 == 0:
                     continue
-                r = c1 / c0 - 1.0
-                rets_all.append(r)
-                rows.append((fc[i], r))
-        mu = float(np.mean(rets_all)) if rets_all else np.nan
-        coin_rows[coin] = (mu, rows)
+                rows.append((coin, c1 / c0 - 1.0, fc[t]))
+    g = pd.DataFrame(rows, columns=["coin", "ret", "fc"])
+    if len(g):
+        g["excess"] = g["ret"] - g.groupby("coin")["ret"].transform("mean")
+        s_ = g[g["fc"].notna() & (g["fc"] != 0)]
+    else:
+        s_ = pd.DataFrame(columns=["coin", "ret", "fc", "excess"])
 
-    X, Y = [], []
-    for coin, (mu, rows) in coin_rows.items():
-        if not np.isfinite(mu):
-            continue
-        for f, r in rows:
-            if np.isfinite(f) and f != 0:
-                X.append(f)
-                Y.append(r - mu)
-    X = np.asarray(X, float)
-    Y = np.asarray(Y, float)
-    n_nz = int(len(X))
-    n_pos = int((X > 0).sum())
-    n_neg = int((X < 0).sum())
-
-    slope, tstat = None, None
-    if n_nz >= 3 and np.var(X) > 0:
-        xm, ym = X.mean(), Y.mean()
-        sxx = np.sum((X - xm) ** 2)
-        b = np.sum((X - xm) * (Y - ym)) / sxx
-        a = ym - b * xm
-        resid = Y - a - b * X
-        s2 = np.sum(resid ** 2) / (n_nz - 2)
-        se = np.sqrt(s2 / sxx)
-        slope = float(b)
-        tstat = float(b / se) if se > 0 else None
-
-    diff = None
-    if n_pos > 0 and n_neg > 0:
-        diff = float(Y[X > 0].mean() - Y[X < 0].mean())
-    sup_pass = None if diff is None else bool(diff > 0)
-
+    n_nz = int(len(s_))
+    pos = s_[s_["fc"] > 0]["excess"]
+    neg = s_[s_["fc"] < 0]["excess"]
+    n_pos = int(len(pos))
     counts = {"non-zero grid points": n_nz, "grid points with forecast > 0": n_pos,
-              "grid points with forecast < 0": n_neg}
+              "grid points with forecast < 0": int(len(neg))}
 
-    if n_nz < 200:
+    slope, tval = None, None
+    if n_nz >= 3 and s_["fc"].astype(float).var() > 0:
+        lr = stats.linregress(s_["fc"].astype(float).values, s_["excess"].astype(float).values)
+        slope = float(lr.slope)
+        tval = float(lr.slope / lr.stderr) if lr.stderr and lr.stderr > 0 else None
+
+    diff = float(pos.mean() - neg.mean()) if (n_pos > 0 and len(neg) > 0) else None
+    sup_pass = bool(diff is not None and diff > 0)
+
+    if n_nz < 200 or n_pos < 30:
         status = "not observable"
-        decided = f"Fewer than 200 non-zero grid points ({n_nz})."
-    elif n_pos < 30:
-        status = "not observable"
-        decided = f"Fewer than 30 grid points with forecast > 0 ({n_pos})."
-    elif tstat is None:
+        decided = ("Fewer than 200 non-zero grid points." if n_nz < 200
+                   else "Fewer than 30 grid points with forecast > 0.")
+    elif tval is None:
         status = "inconclusive"
-        decided = "The slope t could not be computed."
-    elif tstat >= 2 and sup_pass:
-        status = "confirmed"
-        decided = "Slope t >= +2 and the supporting difference (forecast>0 minus forecast<0) is positive."
-    elif tstat <= -2:
+        decided = "The slope's t could not be computed, so neither the confirm nor the reject rule is met."
+    elif tval <= -2:
         status = "rejected"
-        decided = "Slope t <= -2."
-    elif tstat >= 2:
+        decided = "The slope has t <= -2 (reject rule)."
+    elif tval >= 2 and sup_pass:
+        status = "confirmed"
+        decided = "The slope has t >= +2 and the supporting difference is positive (confirm rule)."
+    elif tval >= 2:
         status = "inconclusive"
-        decided = "Slope t >= +2 but the supporting difference is not positive."
+        decided = "The slope has t >= 2 but the supporting difference is not positive (inconclusive rule)."
     else:
         status = "inconclusive"
-        decided = "Slope t is between -2 and +2."
+        decided = "The slope t lies between -2 and +2 (inconclusive rule)."
 
     return {
         "status": status,
         "situation_check": {"agreement": agreement, "passed": True},
         "main_measure": {"name": main_name, "value": slope,
-                         "statistic": None if tstat is None else {"name": "OLS slope t", "value": tstat},
+                         "statistic": ({"name": "OLS slope t", "value": tval} if tval is not None else None),
                          "threshold": thr},
         "supporting_check": {"name": sup_name, "value": diff, "passed": sup_pass},
         "counts": counts,
         "decided_by": decided,
-        "reading": "The grid is positions 0, 7, 14, ... of each window with t+7 inside the window; the coin's mean 7-bar return is taken over all its grid points in all windows; the slope t is the ordinary OLS t with intercept; the situation check treats a negative fall_short last_history_value as the fall and accepts either side for s between 15 and 20, around the hump's crossing.",
+        "reading": "Grid points at positions 0,7,14,... of each window with t+7 inside the window; the coin's mean 7-bar return is the mean over all its grid points in all windows; the minimum counts of the plan's inconclusive rule are applied as minimums (not observable).",
     }
