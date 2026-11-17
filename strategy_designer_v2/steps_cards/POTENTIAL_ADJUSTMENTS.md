@@ -220,3 +220,11 @@ a plan, then the operator's go.
 ## New topic: a visual of the runs (operator, 2026-11-17)
 A user-friendly HTML view of the runs done: brief, ideas, backtests, results, analyses (step 5, 6 and 7 readings), and
 how the ideas lead to one another. Not started.
+
+## New topic: a card for creating a component from the wish list (operator, 2026-11-17)
+A card (business objective, guideline, possibly a prompt, the implementation steps) for turning a wish-list block into
+a component, written from the expertise and the lessons of building `VolumeRatioComponent`. Lessons so far: group the
+wish-list blocks that ask for one measure under different names, and take the general form (volume_run: two ideas need
+a short average of several bars, not one bar, against the long one); a "why it cannot leak" note; tests that compute by
+hand on rows up to bar t, show later bars are ignored, and run the engine; the catalogue row (and its class count); the
+proof rerun on fixed inputs, file by file; the bot's tests run from its own folder. Not started.
