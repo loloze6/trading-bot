@@ -174,3 +174,29 @@ forecast over the next N bars** (a weekend return carried through Monday and Tue
 gave the same t (+2.75) and the same failures: probably one test written twice in other words (about 1 USD each).
 A rule on the plan (same config, same data) rather than on the text would catch it. Not built.
 
+
+## To discuss: the score that ranks the next idea favours re-finding a known effect (night, 2026-11-17)
+A line's record counts each confirmed idea as a success, so a line that keeps confirming one effect in new words keeps
+a high record and its variants keep coming first. Seen twice: in night_run, brief 010's ideas ranked below the 7.g
+line's third-generation variants of one rebound (0.17 against 0.18); in night_013_run, 8 of the last 13 tested ideas
+were variants of momentum or of the one-day rebound. The operator: "improvement point on the idea ranking decision, to
+be discussed". Not changed.
+
+## Parked: one list of missing components across runs (night, 2026-11-17)
+Each run has its own `03_test_plan/<run>/plans/COMPONENT_WISHLIST.md`; there is no list across runs. Tonight, 40 ideas
+in 6 runs were refused for missing components (48 requests), and the same component carries several names (11
+"VolumeRatioComponent", 3 "RelativeVolumeComponent", "volume_ratio", ...). By subject: volume against its recent average
+19 ideas, a past high or a break of it 13, RSI's time above or below its midline or a divergence 10, a bar's wick or
+range 7. Nothing says which component would unblock the most ideas.
+
+## Parked: step 5 "mismatch" on 4 of 19 tested ideas in night_013_run (night, 2026-11-17)
+Step 5 found that the config does not trade the plan's situation (57 % to 68 % of active bars on the plan's situation
+and side, 90 % needed). The idea's backtest is spent (about 1 USD each) and says nothing about the idea. Whether the
+fault is step 3's config or step 5's reading of the situation is not looked at.
+
+## Parked: TAO has no data where `common/data_available.md` says it has (night, 2026-11-17)
+`data_available.md` lists TAO for fold D; the more-coins backtest got "No historical data for TAOUSD" in all 24
+windows. The other 18 coins ran.
+
+## Parked: the GitHub security warning (2026-11-17)
+GitHub reports 1 critical vulnerability on the default branch (Dependabot alert 1). Not examined. The operator: park.
