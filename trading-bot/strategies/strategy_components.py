@@ -2673,3 +2673,77 @@ class HighProximityMomentumComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return max(self.period, self.return_period + 1)
+
+
+class HighProximityVolatilityRatioComponent(SubStrategyComponent):
+    """
+    Closeness to the high close, times how calm current volatility is against its past:
+
+        H    = max(close[t - period + 1 .. t])
+        P    = 100 + (close[t] - H) / H x 100
+        r(j) = close[j] / close[j - 1] - 1
+        s(i) = std (ddof 1) of r(i - vol_period + 1 .. i)
+        R    = mean(s(t - vol_lookback + 1 .. t)) / s(t)
+        raw_value = P x R
+
+    Graded, non-negative, unbounded above, no direction. P is 100 at a new high and lower the deeper the close
+    sits below it. R is above 1 when today's volatility is below its past mean.
+    Warm-up: max(period, vol_lookback + vol_period) rows, bar t included (385 at the defaults).
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max(period, vol_lookback + vol_period)
+    rows of data, the last row being bar t; a close is known at its bar's close.
+
+    NaN: a NaN close in those rows gives NaN, and so do an H not above 0 or a current std s(t) of 0.
+    Building the component raises for period < 2, vol_period < 2 or vol_lookback < 1.
+    """
+
+    def __init__(self, name="HighProximityVolRatio", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 365))
+        if self.period < 2:
+            raise ValueError(f"HighProximityVolatilityRatioComponent: period must be >= 2, got {self.period}")
+        self.vol_period = int(self.parameters.get("vol_period", 20))
+        if self.vol_period < 2:
+            raise ValueError(
+                f"HighProximityVolatilityRatioComponent: vol_period must be >= 2, got {self.vol_period}")
+        self.vol_lookback = int(self.parameters.get("vol_lookback", 365))
+        if self.vol_lookback < 1:
+            raise ValueError(
+                f"HighProximityVolatilityRatioComponent: vol_lookback must be >= 1, got {self.vol_lookback}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data['close'].astype(float).to_numpy()[-n:]
+        if np.isnan(c).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        high = float(np.max(c[-self.period:]))
+        last = float(c[-1])
+        if not high > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        prox = 100.0 + (last - high) / high * 100.0
+        rets = c[1:] / c[:-1] - 1.0
+        stds = pd.Series(rets).rolling(self.vol_period).std(ddof=1).to_numpy()[-self.vol_lookback:]
+        s_now = float(stds[-1])
+        mean_s = float(np.mean(stds))
+        if np.isnan(s_now) or np.isnan(mean_s) or not s_now > 0:
+            self._raw_value = float("nan")
+        else:
+            self._raw_value = float(prox * mean_s / s_now)
+        self.confidence = 1.0
+        self.debug_info = {'proximity': prox, 'std_now': s_now, 'std_mean': mean_s}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.period, self.vol_lookback + self.vol_period)
