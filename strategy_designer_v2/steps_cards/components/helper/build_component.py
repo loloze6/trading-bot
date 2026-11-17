@@ -14,7 +14,7 @@ reads it against the component catalogue as it stands (with what this call built
 - cannot build: the reason, in the index line.
 Every answer is one line in components/INDEX.md, so a wish is not asked twice. Visibility: components/journal.jsonl (one
 line per wish: run, plan, wish, answer, USD, seconds, attempts) and components/builds/<class>/ (the answers, the checks'
-output, the proof). Card: ../card.md.
+output, the proof; a build undone: components/builds/not_built/<run>/<plan>/<wish>/). Card: ../card.md.
 """
 import argparse, datetime, gzip, json, re, subprocess, sys, tempfile, time
 from pathlib import Path
@@ -304,10 +304,10 @@ def record(wish, line, usd, seconds, attempts, log, built):
     with open(ROOT / "journal.jsonl", "a") as fh:
         fh.write(json.dumps({"at": now(), "run": run_name, "plan": pid, "wish": name, "answer": line,
                              "usd": round(usd, 4), "seconds": round(seconds, 1), "attempts": attempts}) + "\n")
-    if built:
-        d = ROOT / "builds" / built
+    if built or any(l.startswith("checks:") for l in log):      # every build tried, kept or undone: its answers and checks
+        d = ROOT / "builds" / (built or f"not_built/{run_name}/{pid}/{re.sub(r'[^A-Za-z0-9_-]', '_', name)}")
         d.mkdir(parents=True, exist_ok=True)
-        write_atomic(d / "answer.md", f"# {built}: {run_name} | {pid} | {name}\n\n" + "\n".join(log))
+        write_atomic(d / "answer.md", f"# {built or 'not built'}: {run_name} | {pid} | {name}\n\n" + "\n".join(log))
 
 
 def main():

@@ -149,3 +149,13 @@ def test_answers_without_a_build(monkeypatch):
     assert line == 'exists: VolumeRatioComponent {"period": 20}' and attempts == 1 and built is None
     line, usd, attempts, _, _ = B.answer_wish(("x_run", "p_1d", "Book", "- ..."), "python", "m")
     assert line == "cannot build: it needs the order book" and attempts == 2 and usd == pytest.approx(0.02)
+
+
+def test_a_build_undone_keeps_its_answers_and_checks(tmp_path, monkeypatch):
+    monkeypatch.setattr(B, "ROOT", tmp_path / "components")
+    monkeypatch.setattr(B.W, "index_path", lambda root=None: tmp_path / "components" / "INDEX.md")
+    log = ["## attempt 1\n\nanswer: built\n", "checks:\nFAIL real data {}: BTCUSD: 3 of 900 bars\n"]
+    B.record(("x_run", "p_1d", "Lower Wick", "- ..."), "cannot build: no answer passed", 0.1, 5.0, 3, log, None)
+    kept = tmp_path / "components" / "builds" / "not_built" / "x_run" / "p_1d" / "Lower_Wick" / "answer.md"
+    assert "FAIL real data" in kept.read_text()
+    assert "x_run | p_1d | Lower Wick | cannot build" in (tmp_path / "components" / "INDEX.md").read_text()
