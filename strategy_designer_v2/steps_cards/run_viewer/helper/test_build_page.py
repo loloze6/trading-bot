@@ -20,8 +20,9 @@ def w(p, text):
 
 def window(cards, bid, coin, k, ret, end):
     d = cards / f"04_backtest/x_run/backtests/{bid}/{coin}/w{k}"
-    w(d / "metrics.json", {"core": {"net_return_pct": ret}})
-    w(d / "manifest.json", {"data": {"end": end}})
+    w(d / "metrics.json", {"core": {"net_return_pct": ret, "trade_count": k, "win_rate": 50.0},
+                           "bar_equity": {"max_drawdown_pct": -2.0, "sharpe": 1.0, "exposure_pct": 30.0}})
+    w(d / "manifest.json", {"data": {"end": end}, "created_utc": f"2026-11-17T0{k}:00:00+00:00"})
 
 
 @pytest.fixture
@@ -29,6 +30,7 @@ def cards(tmp_path):
     c = tmp_path
     w(c / "X_RUN.md", "# Run brief: x_run\n\n**Purpose.** See whether rises continue.\n\n**Scope.** one coin.\n")
     w(c / "01_brief/x_run/briefs/001_rises-continue.md", "---\n---\nRises continue.\n")
+    w(c / "01_brief/x_run/briefs/INDEX.md", "001: rises continue\n")
     w(c / f"02_ideation/x_run/ideas/{ROOT}.md", "---\nbrief: 001\n---\nIdea: A rise continues.\nConsequence: lean long.\n")
     w(c / f"03_test_plan/x_run/plans/{ROOT}_1d.md",
       f"---\nidea: {ROOT}\noutcome: plan\nfit: exact\ndata-bar: 1d\n---\nFidelity:\n- kept\n")
@@ -42,7 +44,7 @@ def cards(tmp_path):
     window(c, f"{ROOT}_1d", "ETHUSD", 2, 0.0, "2019-04-30 00:00:00")
     w(c / f"05_verification/x_run/verdicts/{ROOT}_1d/result.json",
       {"status": "confirmed", "main_measure": {"name": "slope", "statistic": {"name": "OLS slope t", "value": 3.1}},
-       "decided_by": "t >= 2", "supporting_check": {"name": "mean > 0", "passed": True}, "counts": {"cases": 300}})
+       "decided_by": "t >= 2", "situation_check": {"agreement": 0.97, "passed": True}, "supporting_check": {"name": "mean > 0", "passed": True}, "counts": {"cases": 300}})
     w(c / f"06_profitability/x_run/checks/{ROOT}_1d/result.json",
       {"status": "not profitable enough", "decided_by": "failed: Calmar",
        "measures": [{"label": "Sharpe", "value": 0.5, "threshold": 0, "comparison": "above", "passed": True},
@@ -51,9 +53,11 @@ def cards(tmp_path):
       {"line": "7.d", "findings": {"F1": "a finding"}, "ideas": [{"name": "Fall rebounds", "idea": "A fall rebounds."}],
        "idea_ids": [WAITING], "no_ideas": None})
     w(c / "orchestration/run_idea/x_run/journal.jsonl", "\n".join(json.dumps(j) for j in [
-        {"backtest": f"{ROOT}_1d", "step": "step3_plan", "usd": 0.1, "seconds": 20},
-        {"backtest": f"{ROOT}_1d", "step": "step5_verdict", "usd": 0.2, "seconds": 30},
-        {"backtest": f"{CHILD}_1d", "step": "step3_plan", "usd": 0.05, "seconds": 10}]) + "\nnot json\n")
+        {"backtest": f"{ROOT}_1d", "step": "step3_plan", "action": "called", "usd": 0.1, "seconds": 20},
+        {"backtest": f"{ROOT}_1d", "step": "step5_verdict", "action": "called", "usd": 0.2, "seconds": 30},
+        {"backtest": f"{ROOT}_1d", "step": "step7_7.a", "action": "called: not run: entry condition", "usd": 0,
+         "seconds": 0.5},
+        {"backtest": f"{CHILD}_1d", "step": "step3_plan", "action": "called", "usd": 0.05, "seconds": 10}]) + "\nnot json\n")
     w(c / "orchestration/run_brief/x_run/journal.jsonl", json.dumps({"step": "step2_ideas", "usd": 0.04, "seconds": 12}))
     w(c / "orchestration/loop/x_run/loop.jsonl", json.dumps({"turn": 1, "idea": ROOT, "why": "rank 1"}))
     w(c / "orchestration/loop/x_run/queue.json", [{"idea": WAITING, "status": "candidate", "score": 0.2}])
@@ -71,6 +75,7 @@ def test_steps_read_from_their_own_files(cards):
     b = r["backtests"][f"{ROOT}_1d"]
     assert b["step3"]["outcome"] == "plan" and b["step3"]["fit"] == "exact"
     assert b["step5"]["status"] == "confirmed" and b["step5"]["t"] == 3.1 and b["step5"]["counts"] == {"cases": 300}
+    assert b["step5"]["situation"] == 0.97 and b["step5"]["situation_passed"] is True
     assert b["step6"]["status"] == "not profitable enough" and b["step6"]["failed"] == ["Calmar"]
     assert b["step7"][0]["line"] == "7.d" and b["step7"][0]["ideas"][0]["id"] == WAITING
     refused = r["backtests"][f"{CHILD}_1d"]["step3"]
@@ -100,9 +105,29 @@ def test_counts_and_sums(cards):
     t = the_run(cards)["totals"]
     assert t["step3"] == {"plan": 1, "missing-components": 1}
     assert t["step5"] == {"confirmed": 1} and t["step6"] == {"not profitable enough": 1}
-    assert t["usd"] == pytest.approx(0.39) and t["seconds"] == 72 and t["turns"] == 1
+    assert t["usd"] == pytest.approx(0.39) and t["seconds"] == pytest.approx(72.5, abs=0.5) and t["turns"] == 1
     cost = the_run(cards)["backtests"][f"{ROOT}_1d"]["cost"]
-    assert cost == {"step3_plan": {"usd": 0.1, "seconds": 20.0}, "step5_verdict": {"usd": 0.2, "seconds": 30.0}}
+    assert cost == {"step3_plan": {"usd": 0.1, "seconds": 20.0, "ran": True},
+                    "step5_verdict": {"usd": 0.2, "seconds": 30.0, "ran": True},
+                    "step7_7.a": {"usd": 0.0, "seconds": 0.5, "ran": False}}
+    # every idea in exactly one state
+    assert t["idea_states"] == {"backtested": 1, "blocked at step 3": 1, "waiting in the queue": 1}
+
+
+def test_per_coin_rows_and_when_it_ran(cards):
+    book = the_run(cards)["backtests"][f"{ROOT}_1d"]["book"]
+    assert book["fields"][0] == "net_return_pct"
+    assert book["per_coin"]["ETHUSD"] == [[0.0, 2, 50.0, -2.0, 1.0, 30.0], [20.0, 1, 50.0, -2.0, 1.0, 30.0]]
+    assert book["ran"] == "2026-11-17 01:00"
+
+
+def test_briefs_are_found_by_the_idea_number(cards):
+    data = bp.build(cards)
+    assert list(data["briefs"]) == ["001"]                       # INDEX.md is not a brief
+    assert data["briefs"]["001"]["title"] == "rises continue" and data["briefs"]["001"]["runs"] == ["x_run"]
+    r = data["runs"][0]
+    assert {i["brief"] for i in r["ideas"].values()} == {"001"}
+    assert r["dates"] is None                                    # no git history in the test folder
 
 
 def test_run_brief_and_purpose(cards):

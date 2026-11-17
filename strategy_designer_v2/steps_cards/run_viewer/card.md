@@ -23,11 +23,17 @@ in order with one result per step, and the run's cost and time.**
 - The detail of a tested idea: its text; step 3's reason; step 5's measure, t and "decided by"; step 6's measures with the
   failed ones marked; the step 7 lines with their findings and the ideas they proposed (links into the tree); the book
   by window; cost and time per step.
-- Ideas not tested are in the tree too, greyed, with their place in the queue when the loop holds one.
-- What the page never shows: an opinion, a score of its own, a date of its own.
+- Ideas not tested are in the tree too, greyed, with their place in the queue when the loop holds one; in the run's tree
+  a branch's untested ideas fold into one line; under an idea, two generations show and deeper ones fold.
+- A backtest page: the book of all coins, then one coin at a time (its book and its windows' figures).
+- A "?" next to each notion that needs it: a plain-words explanation, written from the step cards and
+  `common/measures.md`.
+- What the page never shows: an opinion, a score of its own, a date of its own (dates shown are commit times and the
+  engine's run time, read from the record).
 
 ## The fields of a view
-1. **Run line** (the list of runs): name, ideas tested, step 5 and step 6 counts, cost, time.
+1. **Run line** (the list of runs, last updated first): name, first and last commit time of the run's files, ideas,
+   backtested ideas, step 5 and step 6 counts, cost, step time.
    - For: choosing which run to open.
    - Used by: the operator.
    - Without it: one opens runs blind.
@@ -35,8 +41,9 @@ in order with one result per step, and the run's cost and time.**
    - For: reading the results against what the run was for.
    - Used by: the operator.
    - Without it: results with no question.
-3. **Briefs**: title, the whole text one tap away.
-   - For: the theory the ideas come from.
+3. **Briefs**: title, the whole text one tap away; under each, its ideas (an idea's brief is the number its id starts
+   with: `011-01_...` is from brief 011; a brief written in another run is named with that run).
+   - For: the theory the ideas come from, and which ideas come from which theory.
    - Used by: the operator.
    - Without it: ideas with no theory.
 4. **Idea tree**: one node per idea, under the idea it came from (its id without the last segment). The line letter
@@ -56,10 +63,28 @@ in order with one result per step, and the run's cost and time.**
    - Used by: the operator.
    - Without it: the measures of step 6 with no picture.
    - Holding the coins: not in the committed files, so not drawn. Proposal in `current_state.md` (step 6 writes `curve.csv`).
-7. **Cost and time**: the sum of `usd` and `seconds` over the run's journal lines; first and last journal time.
+7. **Cost and time**: the sum of `usd` and `seconds` over the run's journal lines; per idea, per step (the step 7
+   lines journaled "not run" in one line).
    - For: what the run cost.
    - Used by: the operator.
    - Without it: no cost to weigh the results against.
+8. **What happened to each idea**: each idea in one state: backtested, blocked at step 3, planned but not backtested,
+   waiting in the queue, duplicate (the queue's own word), not tested.
+   - For: the run's ideas accounted for, untested and blocked ones included.
+   - Used by: the operator.
+   - Without it: the untested majority is invisible (night_013_run: 56 of 91 ideas waiting).
+9. **Dates**: run: first and last commit of its files (git); idea: first commit of its plan or idea file; backtest:
+   the engine's run time (`manifest.json` `created_utc`). Commit times, never data dates.
+   - For: when a run happened, what is newest.
+   - Used by: the operator.
+   - Without it: runs with no order in time.
+10. **Backtest page**: per coin and window, from `metrics.json`: net return, trades, win rate, deepest fall, Sharpe,
+   share of bars in a position; the coin's own book by window.
+   - For: which coins and periods carry or sink the book.
+   - Used by: the operator.
+   - Without it: one averaged line hides the coin that lost.
+   - Price, forecast, position and the book's value bar by bar, and the trades: not committed. Proposal in
+     `current_state.md`.
 
 ## Storage and naming
 ```
@@ -70,7 +95,8 @@ steps_cards/run_viewer/
     build_page.py    reads the run folders, writes runs.html (Python standard library only)
     page.html        the page: style and code; build_page.py puts the data into it
     test_build_page.py
-  runs.html          the output; rebuilt by the script, kept out of git (.gitignore)
+  runs.html          the output, rebuilt by the script; committed on the run-visualizer branch so a phone can open it
+                     (operator, 2026-11-17); ignored elsewhere (.gitignore)
 ```
 Practice copied: a static report page (like a test coverage report): built from the files, one self-contained file,
 rebuilt in seconds, never edited by hand.
@@ -79,8 +105,8 @@ rebuilt in seconds, never edited by hand.
 None: this function reads files and writes one page. No model call.
 
 ## Quality criteria
-- Every figure on the page is a field of a committed file, or a count or sum of such fields; the test checks this on a
-  small built-in run.
+- Every figure on the page is a field of a committed file, or a count, sum, mean or product of such fields; the tests
+  check this on a small built-in run.
 - Readable at 390 px width with no horizontal page scroll.
 - Writes nothing but `runs.html`; reads nothing outside `steps_cards/`.
 - A missing or unreadable file shows as "not in the record", never as a failure of the page.
@@ -92,13 +118,15 @@ The operator, by opening the page.
 - [x] The page lists the 11 runs, and for each tested idea shows steps 3, 5, 6 and the step 7 lines from the files.
 - [x] The idea tree follows the ids, across runs.
 - [x] The book by window is drawn for every idea with a backtest.
-- [ ] The operator has opened it on a phone. (status: waiting)
+- [x] The operator has opened it on a phone (2026-11-17). First feedback built: dates, purpose subtitle, idea states,
+  briefs linked to their ideas, backtest page, help buttons, two generations under an idea.
 - [ ] Holding the coins on the chart: waits for the operator's ruling on the step 6 `curve.csv` proposal.
+- [ ] Price, forecast, position, book value bar by bar and the trades on the backtest page: waits for the operator's
+  ruling on the step 4 `chart.csv.gz` proposal.
 
 ## Open (for the operator)
 - The `curve.csv` proposal (`current_state.md`): one row per window, or one per week.
-- Commit `runs.html` too, so a phone can fetch it without a PC? It is about 1 MB and rebuilt after every run; kept out
-  of git for now ("records stay small").
+- The `chart.csv.gz` proposal (`current_state.md`): about 185 KB per idea on six coins.
 - `verdicts_run2/` (full_data_run, hourly_run): a second set of verdicts on the same backtests. Not shown.
 
 ## What this function does not do

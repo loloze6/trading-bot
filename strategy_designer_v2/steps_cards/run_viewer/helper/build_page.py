@@ -8,6 +8,7 @@ file, or a count, sum, mean or product of such fields (card: run_viewer/card.md)
 import argparse
 import json
 import re
+import subprocess
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -137,27 +138,35 @@ def idea_text(files, idea, run):
     return None
 
 
+WINDOW_FIELDS = ("net_return_pct", "trade_count", "win_rate", "max_drawdown_pct", "sharpe", "exposure_pct")
+
+
 def book_by_window(bt_dir):
     """Each window's net return (metrics.json) averaged over the coins, chained in the windows' time order (the
-    window's last bar, manifest.json). Returns the points and what they rest on; no date is returned, only years."""
-    per_window = {}
-    coins = []
+    window's last bar, manifest.json); per coin, its windows' own figures. Only years are returned, no data date; `ran`
+    is when the engine ran (manifest created_utc, the earliest)."""
+    per_window, coins, ran = {}, {}, []
     for coin in sorted(p for p in bt_dir.iterdir() if p.is_dir()):
-        got = False
+        rows = {}
         for w in coin.glob("w*"):
             m = read_json(w / "metrics.json")
             man = read_json(w / "manifest.json")
             try:
-                r = float(m["core"]["net_return_pct"])
+                core = m["core"]
+                r = float(core["net_return_pct"])
                 end = str(man["data"]["end"])
             except (TypeError, KeyError, ValueError):
                 continue
+            be = m.get("bar_equity") or {}
+            rows[w.name] = [r, core.get("trade_count"), core.get("win_rate"), be.get("max_drawdown_pct"),
+                            be.get("sharpe"), be.get("exposure_pct")]
             slot = per_window.setdefault(w.name, {"returns": [], "end": end})
             slot["returns"].append(r)
             slot["end"] = max(slot["end"], end)
-            got = True
-        if got:
-            coins.append(coin.name)
+            if man.get("created_utc"):
+                ran.append(str(man["created_utc"]))
+        if rows:
+            coins[coin.name] = rows
     if not per_window:
         return None
     order = sorted(per_window, key=lambda w: per_window[w]["end"])
@@ -167,8 +176,10 @@ def book_by_window(bt_dir):
         value *= 1 + sum(rs) / len(rs) / 100
         values.append(round(value, 5))
         years.append(per_window[w]["end"][:4])
-    return {"windows": order, "values": values, "years": years, "coins": coins,
-            "coin_windows": sum(len(per_window[w]["returns"]) for w in order)}
+    per_coin = {c: [rows.get(w) for w in order] for c, rows in coins.items()}
+    return {"windows": order, "values": values, "years": years, "coins": list(coins),
+            "coin_windows": sum(len(per_window[w]["returns"]) for w in order),
+            "fields": list(WINDOW_FIELDS), "per_coin": per_coin, "ran": min(ran)[:16].replace("T", " ") if ran else None}
 
 
 def step3(plan_path):
@@ -190,7 +201,9 @@ def step5(path):
     sc = r.get("supporting_check") or {}
     return {"status": r.get("status"), "t": st.get("value"), "t_name": st.get("name"), "measure": mm.get("name"),
             "threshold": mm.get("threshold"), "decided_by": r.get("decided_by"),
-            "support": sc.get("name"), "support_passed": sc.get("passed"), "counts": r.get("counts")}
+            "support": sc.get("name"), "support_passed": sc.get("passed"), "counts": r.get("counts"),
+            "situation": (r.get("situation_check") or {}).get("agreement"),
+            "situation_passed": (r.get("situation_check") or {}).get("passed")}
 
 
 def step6(path):
@@ -218,7 +231,42 @@ def step7(cards, run, bid):
     return out
 
 
-def build_run(cards, run, files):
+def git_dates(cards):
+    """path (relative to cards) -> [first, last] commit time (UTC, minutes), from the committed history. None without git."""
+    try:
+        out = subprocess.run(["git", "-C", str(cards), "log", "--name-only", "--format=@@%cI", "--relative", "--", "."],
+                             capture_output=True, text=True, encoding="utf-8", check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return {}
+    dates, when = {}, None
+    for line in out.splitlines():
+        if line.startswith("@@"):
+            when = line[2:18].replace("T", " ")
+        elif line.strip() and when:
+            d = dates.setdefault(line.strip(), [when, when])
+            d[0], d[1] = min(d[0], when), max(d[1], when)
+    return dates
+
+
+def span(dates, prefixes):
+    hits = [d for p, d in dates.items() if p.startswith(prefixes)]
+    return [min(d[0] for d in hits), max(d[1] for d in hits)] if hits else None
+
+
+def all_briefs(cards):
+    """brief number ('011') -> {id, title, text, runs}, from every run's brief folder."""
+    out = {}
+    for p in sorted(cards.glob("01_brief/*/briefs/*.md")):
+        if not re.match(r"^\d{3}_", p.stem):
+            continue
+        b = out.setdefault(p.stem.split("_")[0], {"id": p.stem, "title": words(p.stem), "text": None, "runs": []})
+        b["runs"].append(p.parts[-3])
+        if b["text"] is None:
+            b["text"] = front_matter(read_text(p))[1].strip()
+    return out
+
+
+def build_run(cards, run, files, dates):
     rb = run_brief_file(cards, run)
     rb_text = read_text(rb) if rb else None
     briefs = []
@@ -246,7 +294,8 @@ def build_run(cards, run, files):
         cost = {}
         for j in journal:
             if j.get("backtest") == bid:
-                c = cost.setdefault(j.get("step", "?"), {"usd": 0.0, "seconds": 0.0})
+                c = cost.setdefault(j.get("step", "?"), {"usd": 0.0, "seconds": 0.0, "ran": False})
+                c["ran"] = c["ran"] or j.get("action") == "called"
                 c["usd"] += float(j.get("usd") or 0)
                 c["seconds"] += float(j.get("seconds") or 0)
         bt_dir = cards / f"04_backtest/{run}/backtests/{bid}"
@@ -256,7 +305,7 @@ def build_run(cards, run, files):
             "step5": step5(cards / f"05_verification/{run}/verdicts/{bid}/result.json"),
             "step6": step6(cards / f"06_profitability/{run}/checks/{bid}/result.json"),
             "step7": step7(cards, run, bid),
-            "cost": {k: {"usd": round(v["usd"], 4), "seconds": round(v["seconds"], 1)} for k, v in cost.items()},
+            "cost": {k: {"usd": round(v["usd"], 4), "seconds": round(v["seconds"], 1), "ran": v["ran"]} for k, v in cost.items()},
         }
 
     # the run's ideas: step 2's folder, the tested ones, the ones step 7 proposed, the queue
@@ -272,7 +321,10 @@ def build_run(cards, run, files):
     for i in sorted(ids):
         fm, body = front_matter(idea_text(files, i, run))
         q = q_by.get(i)
-        ideas[i] = {"id": i, "title": words(i), "parent": parent_of(i), "line": line_of(i),
+        own = [f"03_test_plan/{run}/plans/{b}.md" for b in backtests if backtests[b]["idea"] == i]
+        first = [dates[x][0] for x in own + [f"02_ideation/{run}/ideas/{i}.md"] if x in dates]
+        ideas[i] = {"id": i, "title": words(i), "parent": parent_of(i), "line": line_of(i), "brief": i[:3],
+                    "recorded": min(first) if first else None,
                     "text": body.strip() or None, "statement": labelled(body, "Idea:"),
                     "backtests": sorted(b for b in backtests if backtests[b]["idea"] == i),
                     "queue": {"status": q.get("status"), "score": q.get("score")} if q else None,
@@ -281,6 +333,21 @@ def build_run(cards, run, files):
         i["children"] = sorted(c for c in ideas if ideas[c]["parent"] == i["id"])
         i["root"] = i["parent"] not in ideas
     roots = [i for i in sorted(ideas) if ideas[i]["root"]]
+    for i in ideas.values():
+        bs = [backtests[b] for b in i["backtests"]]
+        q = (i["queue"] or {}).get("status") or ""
+        if any(b["book"] or b["step5"] for b in bs):
+            i["state"] = "backtested"
+        elif any(b["step3"] and b["step3"]["outcome"] not in ("plan", None) for b in bs):
+            i["state"] = "blocked at step 3"
+        elif bs:
+            i["state"] = "planned, not backtested"
+        elif q.startswith("duplicate"):
+            i["state"] = "duplicate"
+        elif q == "candidate":
+            i["state"] = "waiting in the queue"
+        else:
+            i["state"] = "not tested"
 
     # totals: counts of the steps' own statuses, sums of the journals
     tested = [b for b in backtests.values() if b["step3"] or b["step5"] or b["book"]]
@@ -291,7 +358,9 @@ def build_run(cards, run, files):
     return {
         "name": run, "run_brief": rb.name if rb else None, "run_brief_text": rb_text, "purpose": purpose(rb_text),
         "briefs": briefs, "ideas": ideas, "roots": roots, "backtests": backtests,
-        "totals": {"ideas": len(ideas), "backtests": len(tested),
+        "dates": span(dates, tuple(f"{d.name}/{run}/" for d in cards.iterdir() if d.is_dir())
+                      + tuple(f"orchestration/{f}/{run}/" for f in ("loop", "run_brief", "run_idea"))),
+        "totals": {"ideas": len(ideas), "backtests": len(tested), "idea_states": _count(i["state"] for i in ideas.values()),
                    "step3": _count((b["step3"] or {}).get("outcome") for b in backtests.values() if b["step3"]),
                    "step5": count("step5"), "step6": count("step6"),
                    "usd": round(usd, 2) if lines else None, "seconds": round(secs) if lines else None,
@@ -307,8 +376,9 @@ def _count(values):
 
 
 def build(cards):
-    files = idea_files(cards)
-    runs = [build_run(cards, r, files) for r in run_names(cards)]
+    files, dates = idea_files(cards), git_dates(cards)
+    runs = [build_run(cards, r, files, dates) for r in run_names(cards)]
+    runs.sort(key=lambda r: (r["dates"] or ["", ""])[1], reverse=True)   # last updated first
     # an idea whose parent sits in another run says which
     where = {}
     for r in runs:
@@ -318,7 +388,7 @@ def build(cards):
         for i in r["ideas"].values():
             if i["root"] and i["parent"]:
                 i["parent_runs"] = [x for x in where.get(i["parent"], []) if x != r["name"]]
-    return {"runs": runs}
+    return {"runs": runs, "briefs": all_briefs(cards)}
 
 
 def main():

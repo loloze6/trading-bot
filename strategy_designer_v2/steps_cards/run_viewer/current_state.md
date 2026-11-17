@@ -46,6 +46,22 @@ one row per window, in time order: `window` (w1..), `book_return`, `hold_return`
 the chart its second line and makes both lines the exact series step 6 measured. Variant: one row per week (about 420
 rows, ~12 KB per idea) for drawdowns inside a window.
 
+## The backtest page: what it would need (measured 2026-11-17)
+One backtest (night_013_run, "rising month weekly momentum", 6 coins, 24 windows) rebuilt with step 4's own helper into
+a temporary folder; nothing in the run folders touched.
+
+| file | size for the idea |
+|---|---|
+| the full local files (`bars.csv.gz`, 46 columns, and `trades.json.gz`), 144 coin-windows | 1.13 MB + 0.81 MB = 1.9 MB |
+| compact: per coin, window and day: date, close, forecast, position after the rebalance, book value (17,524 rows), gzip | 168 KB |
+| compact trades: entry and exit time, side, return (3,431 trades), gzip | 16 KB |
+
+Proposal (needs the operator's go, a change to step 4): step 4 writes the two compact files per backtest beside
+`run.md`, committed: about 185 KB per idea on 6 coins, about 550 KB on 19 coins; over 150 ideas, 30 to 40 MB in git.
+With them, the backtest page draws per coin the price against the book (holding that coin, exactly), the forecast and
+the position, and marks the trades. The step 6 `curve.csv` above still gives "holding all the coins" as step 6
+measured it.
+
 ## The v1 viewer (`strategy-research/tools/run_viewer/`), what is kept
 Kept: read-only, one JSON per view built from the files, phone width first, no network, dark mode.
 Dropped: the server, the four levels, the raw-file views, the date masking module (this page shows no date: it shows
