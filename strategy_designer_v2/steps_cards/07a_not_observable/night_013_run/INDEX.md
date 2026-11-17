@@ -2,6 +2,7 @@
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
