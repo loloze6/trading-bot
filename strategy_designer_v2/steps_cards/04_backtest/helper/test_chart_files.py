@@ -58,3 +58,11 @@ def test_each_column_lands_in_its_own_place_whatever_the_file_s_order(tmp_path):
     C.write(tmp_path / "rec")
     row = gzip.decompress((tmp_path / "rec" / "chart_bars.csv.gz").read_bytes()).decode().splitlines()[1].split(",")
     assert row[5] == "0" and row[6] == "1000"               # position 0, value 1000
+
+
+def test_a_backtest_not_worth_a_chart_gets_the_local_names_and_one_pair_only(tmp_path):
+    rec = record(tmp_path)
+    C.write(rec, local=True)
+    assert sorted(p.name for p in rec.glob("chart_*")) == ["chart_bars.local.csv.gz", "chart_trades.local.csv.gz"]
+    C.write(rec)                                            # later worth a chart: the committed names replace them
+    assert sorted(p.name for p in rec.glob("chart_*")) == ["chart_bars.csv.gz", "chart_trades.csv.gz"]
