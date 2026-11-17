@@ -150,7 +150,7 @@ profitable book. The run in all: 33 ideas, 8 confirmed, **3 confirmed and profit
   variants of momentum or of the one-day rebound). More turns here would buy little. The runs stop for the night.
 
 ## End of the night (04:50 UTC)
-Seven briefs tried in six runs; 77 ideas written, 51 tested, about 46 USD. Outcomes: **A** (3 confirmed and profitable,
+Seven briefs tried in six runs; 81 ideas through `run_idea`, 38 of them with a plan and a backtest (43 refused by step 3), 48.0 USD (47.61 in `run_idea`, 0.35 for step 2, 0.07 for step 1). Outcomes: **A** (3 confirmed and profitable,
 one effect: trend following, and it holds on 12 unseen coins); **B** for brief 011 (real reversals, none paying);
 **F** for 5 of 7 briefs (the catalogue lacks components: a bar's volume against its average, above all); **D** (two
 chain defects found and fixed: an untested idea counted in a line's record; an interrupted idea counted as tested).
