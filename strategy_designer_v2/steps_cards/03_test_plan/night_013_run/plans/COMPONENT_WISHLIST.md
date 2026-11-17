@@ -32,3 +32,6 @@ One block per idea that needs components the catalogue does not have.
 
 ## 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume_1d
 - Component: VolumeRatioComponent: today's `volume` divided by the mean of the last 30 bars' `volume`, minus 1 (zero at average volume); it grows the heavier today's volume is against its 30-day average | measures: comparison
+
+## 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d
+- Component: RelativeVolumeComponent: the latest bar's volume divided by the mean volume of the last 20 bars (current bar included), minus 1, from the `volume` column; it is 0 at average volume and grows as volume rises above its 20-day average | measures: situation
