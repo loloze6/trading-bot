@@ -1,3 +1,4 @@
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum_1d: confirmed (fit: exact) [main: 0.000480893; OLS slope t 3.46685; independent grid cases in the regime 1215]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades_1d: inconclusive (fit: exact) [main: 0.000305746; OLS slope t 0.423318; cases 1177]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends_1d: confirmed (fit: exact) [main: 0.00110197; OLS slope t 3.01294; trending grid cases 1215]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week_1d: confirmed (fit: adapted) [main: 0.00223083; OLS slope t 3.07765; trending grid cases 1199]
