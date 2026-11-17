@@ -21,3 +21,4 @@
 013-03_breakout-above-high-continues_1d: not observable (fit: adapted) [main: 0.205492; OLS slope t 5.17955; grid bars where the forecast is above 0 10]
 013-04_heavy-volume-below-high-breakout_1d: inconclusive (fit: adapted) [main: 0.273124; Welch t 1.98702; de-duplicated breakout events 50, top half events 25, bottom half events 25]
 013-05_longer-stall-bigger-breakout_1d: not observable (fit: adapted) [main: None; trending grid bars 18]
+013-06_breakout-volume-drives-continuation_1d: confirmed (fit: adapted) [main: 0.0639746; OLS slope t 4.71565; non-overlapping breakout cases 60, top-third cases 20]

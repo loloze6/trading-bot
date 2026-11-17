@@ -21,3 +21,4 @@
 013-03_breakout-above-high-continues_1d: 2 ideas (2 explorations)
 013-04_heavy-volume-below-high-breakout_1d: 1 ideas (2 explorations)
 013-05_longer-stall-bigger-breakout_1d: 1 ideas (3 explorations)
+013-06_breakout-volume-drives-continuation_1d: 2 ideas (2 explorations)

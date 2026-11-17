@@ -1,98 +1,102 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 27.77 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 28.65 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
-| 1 | 013-06_breakout-volume-drives-continuation | step 2 | 0 | 0.1818 | 0.1818 | candidate |
-| 2 | 013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound | 7.g | 1 | 0.6774 | 0.3387 | candidate |
-| 3 | 013-03_breakout-above-high-continues.g1_near-30-day-high-continuation | 7.g | 1 | 0.6774 | 0.3387 | candidate |
-| 4 | 013-04_heavy-volume-below-high-breakout.g1_volume-confirmed-short-term-continuation | 7.g | 1 | 0.6774 | 0.3387 | candidate |
-| 5 | 013-05_longer-stall-bigger-breakout.g1_weekly-gain-carries-into-saturday | 7.g | 1 | 0.6774 | 0.3387 | candidate |
+| 1 | 013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound | 7.g | 1 | 0.6774 | 0.3387 | candidate |
+| 2 | 013-03_breakout-above-high-continues.g1_near-30-day-high-continuation | 7.g | 1 | 0.6774 | 0.3387 | candidate |
+| 3 | 013-04_heavy-volume-below-high-breakout.g1_volume-confirmed-short-term-continuation | 7.g | 1 | 0.6774 | 0.3387 | candidate |
+| 4 | 013-05_longer-stall-bigger-breakout.g1_weekly-gain-carries-into-saturday | 7.g | 1 | 0.6774 | 0.3387 | candidate |
+| 5 | 013-06_breakout-volume-drives-continuation.g1_up-day-volume-drives-continuation | 7.g | 1 | 0.6774 | 0.3387 | candidate |
 | 6 | 013-02_follow-through-stronger-near-high.g2_short-term-five-day-momentum-carry | 7.g | 1 | 0.6774 | 0.3387 | candidate |
 | 7 | 013-03_breakout-above-high-continues.g2_volume-backed-near-high-continuation | 7.g | 1 | 0.6774 | 0.3387 | candidate |
-| 8 | 013-02_follow-through-stronger-near-high.g3_volume-surge-predicts-gains | 7.g | 1 | 0.6774 | 0.3387 | candidate |
-| 9 | 013-02_follow-through-stronger-near-high.b1_momentum-only-near-52-week-high | 7.b | 1 | 0.6 | 0.3 | candidate |
-| 10 | 013-04_heavy-volume-below-high-breakout.b1_volume-before-breakout-more-coins | 7.b | 1 | 0.6 | 0.3 | candidate |
-| 11 | 013-01_nearness-to-high-predicts-gains.d1_gain-concentrated-at-the-high | 7.d | 1 | 0.4545 | 0.2273 | candidate |
-| 12 | 013-02_follow-through-stronger-near-high.d1_upside-follow-through-near-high | 7.d | 1 | 0.4545 | 0.2273 | candidate |
-| 13 | 013-03_breakout-above-high-continues.d1_fresh-held-breaks-continue | 7.d | 1 | 0.4545 | 0.2273 | candidate |
-| 14 | 013-04_heavy-volume-below-high-breakout.d1_post-breakout-month-volume-graded | 7.d | 1 | 0.4545 | 0.2273 | candidate |
-| 15 | 013-05_longer-stall-bigger-breakout.d1_stall-under-monthly-high | 7.d | 1 | 0.4545 | 0.2273 | candidate |
-| 16 | 013-02_follow-through-stronger-near-high.d2_calm-follow-through-near-high | 7.d | 1 | 0.4545 | 0.2273 | candidate |
-| 17 | 013-03_breakout-above-high-continues.d2_heavy-volume-breaks-continue-further | 7.d | 1 | 0.4545 | 0.2273 | candidate |
-| 18 | 013-04_heavy-volume-below-high-breakout.d2_closeness-to-recent-high | 7.d | 1 | 0.4545 | 0.2273 | candidate |
-| 19 | 013-05_longer-stall-bigger-breakout.d2_closeness-to-monthly-high | 7.d | 1 | 0.4545 | 0.2273 | candidate |
-| 20 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g2_rising-volume-precedes-gains | 7.g | 2 | 0.6774 | 0.2258 | candidate |
-| 21 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through | 7.e | 3 | 0.75 | 0.1875 | candidate |
-| 22 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume | 7.g | 3 | 0.6774 | 0.1694 | candidate |
-| 23 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g2_volume-surge-precedes-gains | 7.g | 3 | 0.6774 | 0.1694 | candidate |
-| 24 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d3_nearness-strongest-when-calm | 7.d | 2 | 0.4545 | 0.1515 | candidate |
-| 25 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains | 7.g | 4 | 0.6774 | 0.1355 | candidate |
-| 26 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls.g1_rebound-grows-with-volatility | 7.g | 4 | 0.6774 | 0.1355 | candidate |
-| 27 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g2_building-volume-predicts-gains | 7.g | 4 | 0.6774 | 0.1355 | candidate |
-| 28 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g2_gain-sits-at-the-high | 7.g | 4 | 0.6774 | 0.1355 | candidate |
-| 29 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g2_nearness-to-high-finer-bars | 7.g | 4 | 0.6774 | 0.1355 | candidate |
-| 30 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g2_heavy-volume-under-the-high | 7.g | 4 | 0.6774 | 0.1355 | candidate |
-| 31 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls.g2_high-volatility-one-day-reversal | 7.g | 4 | 0.6774 | 0.1355 | candidate |
-| 32 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g2_break-of-30-day-high | 7.g | 4 | 0.6774 | 0.1355 | candidate |
-| 33 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g3_volume-backed-nearness-to-high | 7.g | 4 | 0.6774 | 0.1355 | candidate |
-| 34 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g3_nearness-to-60-day-high | 7.g | 4 | 0.6774 | 0.1355 | candidate |
-| 35 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls.g3_heavy-volume-falls-rebound-more | 7.g | 4 | 0.6774 | 0.1355 | candidate |
-| 36 | 013-05_longer-stall-bigger-breakout.a1_stall-breakout-wider-coin-set | 7.a | 1 | 0.25 | 0.125 | candidate |
-| 37 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.b1_falling-month-high-fades-wider | 7.b | 4 | 0.6 | 0.12 | candidate |
-| 38 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.b1_pullback-inside-rising-trend | 7.b | 4 | 0.6 | 0.12 | candidate |
-| 39 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.b2_raw-distance-high-fades | 7.b | 4 | 0.6 | 0.12 | candidate |
-| 40 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.b2_falling-month-more-coins | 7.b | 4 | 0.6 | 0.12 | candidate |
-| 41 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.d1_near-high-gain-in-calm-trends | 7.d | 3 | 0.4545 | 0.1136 | candidate |
-| 42 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.d1_raw-depth-rebound-bear-quarter | 7.d | 3 | 0.4545 | 0.1136 | candidate |
-| 43 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.d2_weekly-momentum-in-rising-months | 7.d | 3 | 0.4545 | 0.1136 | candidate |
-| 44 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.d2_deep-gap-after-long-decline | 7.d | 3 | 0.4545 | 0.1136 | candidate |
-| 45 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.d3_deep-drawdown-rebound-in-downtrends | 7.d | 3 | 0.4545 | 0.1136 | candidate |
-| 46 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum.g1_falling-month-depth-rebound | 7.g | 5 | 0.6774 | 0.1129 | candidate |
-| 47 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g1_down-day-rebound-in-uptrends.g1_high-volatility-one-day-reversal | 7.g | 5 | 0.6774 | 0.1129 | candidate |
-| 48 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs.g1_volatility-scaled-weekly-momentum-continuation | 7.g | 5 | 0.6774 | 0.1129 | candidate |
-| 49 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends.g1_uptrend-momentum-on-4h-bars | 7.g | 5 | 0.6774 | 0.1129 | candidate |
-| 50 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g3_moderate-falls-keep-falling.g1_two-week-momentum-carries-a-week | 7.g | 5 | 0.6774 | 0.1129 | candidate |
-| 51 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum.g2_volatility-scaled-down-day-bounce | 7.g | 5 | 0.6774 | 0.1129 | candidate |
-| 52 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g2_falling-month-weekly-reversal.g2_volume-surge-precedes-gains | 7.g | 5 | 0.6774 | 0.1129 | candidate |
-| 53 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g1_down-day-rebound-in-uptrends.g2_heavy-volume-selloff-rebound | 7.g | 5 | 0.6774 | 0.1129 | candidate |
-| 54 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs.g2_volume-surge-precedes-gains | 7.g | 5 | 0.6774 | 0.1129 | candidate |
-| 55 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g3_moderate-falls-keep-falling.g2_one-day-overreaction-reversal | 7.g | 5 | 0.6774 | 0.1129 | candidate |
-| 56 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum.g3_short-horizon-rise-continuation | 7.g | 5 | 0.6774 | 0.1129 | candidate |
-| 57 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g2_falling-month-weekly-reversal.g3_one-day-shock-reversal | 7.g | 5 | 0.6774 | 0.1129 | candidate |
-| 58 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g1_down-day-rebound-in-uptrends.g3_down-month-down-day-rebound | 7.g | 5 | 0.6774 | 0.1129 | candidate |
-| 59 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g2_falling-month-weekly-reversal.g4_calm-market-nearness-to-high | 7.g | 5 | 0.6774 | 0.1129 | candidate |
-| 60 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g2_falling-month-weekly-reversal.b1_deep-fall-weekly-reversal | 7.b | 5 | 0.6 | 0.1 | candidate |
-| 61 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g1_falling-month-keeps-falling.b1_deepening-drawdown-two-week-follow-through | 7.b | 5 | 0.6 | 0.1 | candidate |
-| 62 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs.b1_scaled-sell-off-rebound-more-coins | 7.b | 5 | 0.6 | 0.1 | candidate |
-| 63 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g2_falling-month-weekly-reversal.b2_weekly-continuation-outside-crashes | 7.b | 5 | 0.6 | 0.1 | candidate |
-| 64 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs.b2_next-day-rebound-after-sell-offs | 7.b | 5 | 0.6 | 0.1 | candidate |
-| 65 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs.b3_sell-off-rebound-in-turbulence | 7.b | 5 | 0.6 | 0.1 | candidate |
-| 66 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.d1_weekly-strength-follow-through-uptrend | 7.d | 4 | 0.4545 | 0.0909 | candidate |
-| 67 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.d1_raw-closeness-to-yearly-high | 7.d | 4 | 0.4545 | 0.0909 | candidate |
-| 68 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.d1_falling-month-in-rising-quarter | 7.d | 4 | 0.4545 | 0.0909 | candidate |
-| 69 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls.d1_rebound-in-expanding-volatility | 7.d | 4 | 0.4545 | 0.0909 | candidate |
-| 70 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.d1_two-week-momentum-in-rising-months | 7.d | 4 | 0.4545 | 0.0909 | candidate |
-| 71 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.d2_strong-up-day-follow-through | 7.d | 4 | 0.4545 | 0.0909 | candidate |
-| 72 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.d2_yearly-high-with-rising-month | 7.d | 4 | 0.4545 | 0.0909 | candidate |
-| 73 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.d2_month-lagging-quarter-falls | 7.d | 4 | 0.4545 | 0.0909 | candidate |
-| 74 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls.d2_rebound-inside-strong-trends | 7.d | 4 | 0.4545 | 0.0909 | candidate |
-| 75 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.d2_trend-aligned-momentum-strength | 7.d | 4 | 0.4545 | 0.0909 | candidate |
-| 76 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g2_falling-month-weekly-reversal.d1_deep-fall-bounce-reversal | 7.d | 5 | 0.4545 | 0.0758 | candidate |
-| 77 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g1_down-day-rebound-in-uptrends.d1_down-day-rebound-over-three-days | 7.d | 5 | 0.4545 | 0.0758 | candidate |
-| 78 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g1_falling-month-keeps-falling.d1_slow-slide-not-crash | 7.d | 5 | 0.4545 | 0.0758 | candidate |
-| 79 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs.d1_sell-off-inside-rising-week | 7.d | 5 | 0.4545 | 0.0758 | candidate |
-| 80 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g3_moderate-falls-keep-falling.d1_two-week-momentum-both-sides | 7.d | 5 | 0.4545 | 0.0758 | candidate |
-| 81 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g1_down-day-rebound-in-uptrends.d2_rebound-scaled-by-month-strength | 7.d | 5 | 0.4545 | 0.0758 | candidate |
-| 82 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g1_falling-month-keeps-falling.d2_calm-decline-keeps-falling | 7.d | 5 | 0.4545 | 0.0758 | candidate |
-| 83 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g3_moderate-falls-keep-falling.d2_falls-fall-rises-rise | 7.d | 5 | 0.4545 | 0.0758 | candidate |
-| 84 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g1_falling-month-keeps-falling.d3_crash-week-rebounds | 7.d | 5 | 0.4545 | 0.0758 | candidate |
-| - | 013-01_nearness-to-high-predicts-gains | step 2 | 0 | 0.1818 | 0.1818 | tested: step 5 inconclusive (+0.95); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) |
-| - | 013-02_follow-through-stronger-near-high | step 2 | 0 | 0.1818 | 0.1818 | tested: step 5 inconclusive (+0.13); step 6 not profitable enough (failed: Mean daily return, Calmar) |
-| - | 013-03_breakout-above-high-continues | step 2 | 0 | 0.1818 | 0.1818 | tested: step 5 not observable (+5.18); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar, Trades per bar) |
-| - | 013-04_heavy-volume-below-high-breakout | step 2 | 0 | 0.1818 | 0.1818 | tested: step 5 inconclusive (+1.99); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar, Trades per bar) |
-| - | 013-05_longer-stall-bigger-breakout | step 2 | 0 | 0.1818 | 0.1818 | tested: step 5 not observable; step 6 not profitable enough (failed: Mean daily return) |
+| 8 | 013-06_breakout-volume-drives-continuation.g2_sharp-drop-next-day-rebound | 7.g | 1 | 0.6774 | 0.3387 | candidate |
+| 9 | 013-02_follow-through-stronger-near-high.g3_volume-surge-predicts-gains | 7.g | 1 | 0.6774 | 0.3387 | candidate |
+| 10 | 013-02_follow-through-stronger-near-high.b1_momentum-only-near-52-week-high | 7.b | 1 | 0.6 | 0.3 | candidate |
+| 11 | 013-04_heavy-volume-below-high-breakout.b1_volume-before-breakout-more-coins | 7.b | 1 | 0.6 | 0.3 | candidate |
+| 12 | 013-01_nearness-to-high-predicts-gains.d1_gain-concentrated-at-the-high | 7.d | 1 | 0.4545 | 0.2273 | candidate |
+| 13 | 013-02_follow-through-stronger-near-high.d1_upside-follow-through-near-high | 7.d | 1 | 0.4545 | 0.2273 | candidate |
+| 14 | 013-03_breakout-above-high-continues.d1_fresh-held-breaks-continue | 7.d | 1 | 0.4545 | 0.2273 | candidate |
+| 15 | 013-04_heavy-volume-below-high-breakout.d1_post-breakout-month-volume-graded | 7.d | 1 | 0.4545 | 0.2273 | candidate |
+| 16 | 013-05_longer-stall-bigger-breakout.d1_stall-under-monthly-high | 7.d | 1 | 0.4545 | 0.2273 | candidate |
+| 17 | 013-06_breakout-volume-drives-continuation.d1_volume-breakout-persists-past-high | 7.d | 1 | 0.4545 | 0.2273 | candidate |
+| 18 | 013-02_follow-through-stronger-near-high.d2_calm-follow-through-near-high | 7.d | 1 | 0.4545 | 0.2273 | candidate |
+| 19 | 013-03_breakout-above-high-continues.d2_heavy-volume-breaks-continue-further | 7.d | 1 | 0.4545 | 0.2273 | candidate |
+| 20 | 013-04_heavy-volume-below-high-breakout.d2_closeness-to-recent-high | 7.d | 1 | 0.4545 | 0.2273 | candidate |
+| 21 | 013-05_longer-stall-bigger-breakout.d2_closeness-to-monthly-high | 7.d | 1 | 0.4545 | 0.2273 | candidate |
+| 22 | 013-06_breakout-volume-drives-continuation.d2_breakout-volume-sixty-day-drift | 7.d | 1 | 0.4545 | 0.2273 | candidate |
+| 23 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g2_rising-volume-precedes-gains | 7.g | 2 | 0.6774 | 0.2258 | candidate |
+| 24 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through | 7.e | 3 | 0.75 | 0.1875 | candidate |
+| 25 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume | 7.g | 3 | 0.6774 | 0.1694 | candidate |
+| 26 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g2_volume-surge-precedes-gains | 7.g | 3 | 0.6774 | 0.1694 | candidate |
+| 27 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d3_nearness-strongest-when-calm | 7.d | 2 | 0.4545 | 0.1515 | candidate |
+| 28 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains | 7.g | 4 | 0.6774 | 0.1355 | candidate |
+| 29 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls.g1_rebound-grows-with-volatility | 7.g | 4 | 0.6774 | 0.1355 | candidate |
+| 30 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g2_building-volume-predicts-gains | 7.g | 4 | 0.6774 | 0.1355 | candidate |
+| 31 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g2_gain-sits-at-the-high | 7.g | 4 | 0.6774 | 0.1355 | candidate |
+| 32 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g2_nearness-to-high-finer-bars | 7.g | 4 | 0.6774 | 0.1355 | candidate |
+| 33 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g2_heavy-volume-under-the-high | 7.g | 4 | 0.6774 | 0.1355 | candidate |
+| 34 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls.g2_high-volatility-one-day-reversal | 7.g | 4 | 0.6774 | 0.1355 | candidate |
+| 35 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g2_break-of-30-day-high | 7.g | 4 | 0.6774 | 0.1355 | candidate |
+| 36 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g3_volume-backed-nearness-to-high | 7.g | 4 | 0.6774 | 0.1355 | candidate |
+| 37 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g3_nearness-to-60-day-high | 7.g | 4 | 0.6774 | 0.1355 | candidate |
+| 38 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls.g3_heavy-volume-falls-rebound-more | 7.g | 4 | 0.6774 | 0.1355 | candidate |
+| 39 | 013-05_longer-stall-bigger-breakout.a1_stall-breakout-wider-coin-set | 7.a | 1 | 0.25 | 0.125 | candidate |
+| 40 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.b1_falling-month-high-fades-wider | 7.b | 4 | 0.6 | 0.12 | candidate |
+| 41 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.b1_pullback-inside-rising-trend | 7.b | 4 | 0.6 | 0.12 | candidate |
+| 42 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.b2_raw-distance-high-fades | 7.b | 4 | 0.6 | 0.12 | candidate |
+| 43 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.b2_falling-month-more-coins | 7.b | 4 | 0.6 | 0.12 | candidate |
+| 44 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.d1_near-high-gain-in-calm-trends | 7.d | 3 | 0.4545 | 0.1136 | candidate |
+| 45 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.d1_raw-depth-rebound-bear-quarter | 7.d | 3 | 0.4545 | 0.1136 | candidate |
+| 46 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.d2_weekly-momentum-in-rising-months | 7.d | 3 | 0.4545 | 0.1136 | candidate |
+| 47 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.d2_deep-gap-after-long-decline | 7.d | 3 | 0.4545 | 0.1136 | candidate |
+| 48 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.d3_deep-drawdown-rebound-in-downtrends | 7.d | 3 | 0.4545 | 0.1136 | candidate |
+| 49 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum.g1_falling-month-depth-rebound | 7.g | 5 | 0.6774 | 0.1129 | candidate |
+| 50 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g1_down-day-rebound-in-uptrends.g1_high-volatility-one-day-reversal | 7.g | 5 | 0.6774 | 0.1129 | candidate |
+| 51 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs.g1_volatility-scaled-weekly-momentum-continuation | 7.g | 5 | 0.6774 | 0.1129 | candidate |
+| 52 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends.g1_uptrend-momentum-on-4h-bars | 7.g | 5 | 0.6774 | 0.1129 | candidate |
+| 53 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g3_moderate-falls-keep-falling.g1_two-week-momentum-carries-a-week | 7.g | 5 | 0.6774 | 0.1129 | candidate |
+| 54 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum.g2_volatility-scaled-down-day-bounce | 7.g | 5 | 0.6774 | 0.1129 | candidate |
+| 55 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g2_falling-month-weekly-reversal.g2_volume-surge-precedes-gains | 7.g | 5 | 0.6774 | 0.1129 | candidate |
+| 56 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g1_down-day-rebound-in-uptrends.g2_heavy-volume-selloff-rebound | 7.g | 5 | 0.6774 | 0.1129 | candidate |
+| 57 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs.g2_volume-surge-precedes-gains | 7.g | 5 | 0.6774 | 0.1129 | candidate |
+| 58 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g3_moderate-falls-keep-falling.g2_one-day-overreaction-reversal | 7.g | 5 | 0.6774 | 0.1129 | candidate |
+| 59 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum.g3_short-horizon-rise-continuation | 7.g | 5 | 0.6774 | 0.1129 | candidate |
+| 60 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g2_falling-month-weekly-reversal.g3_one-day-shock-reversal | 7.g | 5 | 0.6774 | 0.1129 | candidate |
+| 61 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g1_down-day-rebound-in-uptrends.g3_down-month-down-day-rebound | 7.g | 5 | 0.6774 | 0.1129 | candidate |
+| 62 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g2_falling-month-weekly-reversal.g4_calm-market-nearness-to-high | 7.g | 5 | 0.6774 | 0.1129 | candidate |
+| 63 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g2_falling-month-weekly-reversal.b1_deep-fall-weekly-reversal | 7.b | 5 | 0.6 | 0.1 | candidate |
+| 64 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g1_falling-month-keeps-falling.b1_deepening-drawdown-two-week-follow-through | 7.b | 5 | 0.6 | 0.1 | candidate |
+| 65 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs.b1_scaled-sell-off-rebound-more-coins | 7.b | 5 | 0.6 | 0.1 | candidate |
+| 66 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g2_falling-month-weekly-reversal.b2_weekly-continuation-outside-crashes | 7.b | 5 | 0.6 | 0.1 | candidate |
+| 67 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs.b2_next-day-rebound-after-sell-offs | 7.b | 5 | 0.6 | 0.1 | candidate |
+| 68 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs.b3_sell-off-rebound-in-turbulence | 7.b | 5 | 0.6 | 0.1 | candidate |
+| 69 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.d1_weekly-strength-follow-through-uptrend | 7.d | 4 | 0.4545 | 0.0909 | candidate |
+| 70 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.d1_raw-closeness-to-yearly-high | 7.d | 4 | 0.4545 | 0.0909 | candidate |
+| 71 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.d1_falling-month-in-rising-quarter | 7.d | 4 | 0.4545 | 0.0909 | candidate |
+| 72 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls.d1_rebound-in-expanding-volatility | 7.d | 4 | 0.4545 | 0.0909 | candidate |
+| 73 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.d1_two-week-momentum-in-rising-months | 7.d | 4 | 0.4545 | 0.0909 | candidate |
+| 74 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.d2_strong-up-day-follow-through | 7.d | 4 | 0.4545 | 0.0909 | candidate |
+| 75 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.d2_yearly-high-with-rising-month | 7.d | 4 | 0.4545 | 0.0909 | candidate |
+| 76 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.d2_month-lagging-quarter-falls | 7.d | 4 | 0.4545 | 0.0909 | candidate |
+| 77 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls.d2_rebound-inside-strong-trends | 7.d | 4 | 0.4545 | 0.0909 | candidate |
+| 78 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.d2_trend-aligned-momentum-strength | 7.d | 4 | 0.4545 | 0.0909 | candidate |
+| 79 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g2_falling-month-weekly-reversal.d1_deep-fall-bounce-reversal | 7.d | 5 | 0.4545 | 0.0758 | candidate |
+| 80 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g1_down-day-rebound-in-uptrends.d1_down-day-rebound-over-three-days | 7.d | 5 | 0.4545 | 0.0758 | candidate |
+| 81 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g1_falling-month-keeps-falling.d1_slow-slide-not-crash | 7.d | 5 | 0.4545 | 0.0758 | candidate |
+| 82 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs.d1_sell-off-inside-rising-week | 7.d | 5 | 0.4545 | 0.0758 | candidate |
+| 83 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g3_moderate-falls-keep-falling.d1_two-week-momentum-both-sides | 7.d | 5 | 0.4545 | 0.0758 | candidate |
+| 84 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g1_down-day-rebound-in-uptrends.d2_rebound-scaled-by-month-strength | 7.d | 5 | 0.4545 | 0.0758 | candidate |
+| 85 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g1_falling-month-keeps-falling.d2_calm-decline-keeps-falling | 7.d | 5 | 0.4545 | 0.0758 | candidate |
+| 86 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g3_moderate-falls-keep-falling.d2_falls-fall-rises-rise | 7.d | 5 | 0.4545 | 0.0758 | candidate |
+| 87 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g1_falling-month-keeps-falling.d3_crash-week-rebounds | 7.d | 5 | 0.4545 | 0.0758 | candidate |
+| - | 013-01_nearness-to-high-predicts-gains | step 2 | 0 | 0.2727 | 0.2727 | tested: step 5 inconclusive (+0.95); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) |
+| - | 013-02_follow-through-stronger-near-high | step 2 | 0 | 0.2727 | 0.2727 | tested: step 5 inconclusive (+0.13); step 6 not profitable enough (failed: Mean daily return, Calmar) |
+| - | 013-03_breakout-above-high-continues | step 2 | 0 | 0.2727 | 0.2727 | tested: step 5 not observable (+5.18); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar, Trades per bar) |
+| - | 013-04_heavy-volume-below-high-breakout | step 2 | 0 | 0.2727 | 0.2727 | tested: step 5 inconclusive (+1.99); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar, Trades per bar) |
+| - | 013-05_longer-stall-bigger-breakout | step 2 | 0 | 0.2727 | 0.2727 | tested: step 5 not observable; step 6 not profitable enough (failed: Mean daily return) |
+| - | 013-06_breakout-volume-drives-continuation | step 2 | 0 | 0.2727 | 0.2727 | tested: step 5 confirmed (+4.72); step 6 not profitable enough (failed: Mean daily return, Calmar) |
 | - | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month | 7.d | 1 | 0.4545 | 0.2273 | tested: step 5 mismatch; step 6 not profitable enough (failed: Mean daily return, Calmar) |
 | - | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week | 7.d | 2 | 0.4545 | 0.1515 | tested: step 5 confirmed (+3.08); step 6 not profitable enough (failed: Mean daily return) |
 | - | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side | 7.d | 2 | 0.4545 | 0.1515 | tested: step 5 inconclusive (+1.71); step 6 profitable enough |

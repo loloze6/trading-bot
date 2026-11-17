@@ -15,9 +15,6 @@ One block per idea that needs components the catalogue does not have.
 ## 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g2_break-of-30-day-high_1d
 - Component: PriorHighBreakoutDistance: (close[t] - H) / H x 100, where H is the highest `high` of the `period` bars before bar t (bar t excluded); positive and growing as the close clears that high further, negative below it (a clip at 0 keeps only the break) | measures: situation
 
-## 013-06_breakout-volume-drives-continuation_1d
-- Component: VolumeRatio: volume[t] / mean(volume over the last 90 bars, bar t included), from the `volume` column; it grows continuously as the bar's volume rises above its 90-day average (1 is an average day, above 1 is heavy) | measures: comparison
-
 ## 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume_1d
 - Component: VolumeRatioComponent: today's `volume` divided by the mean of the last 30 bars' `volume`, minus 1 (zero at average volume); it grows the heavier today's volume is against its 30-day average | measures: comparison
 
