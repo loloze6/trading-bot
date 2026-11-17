@@ -9,3 +9,5 @@
 009_eth-btc-pair-mean-reversion: Question: does the ETH/BTC pair's own price revert toward its recent average, via rebalancing, or trend on lasting relative-value shifts? [instruments: ETH/BTC]
 010_rsi-midline-regime-direction: Question: does RSI holding above or below its midpoint predict continuation, reversal, or nothing in BTC, ETH and BNB moves? [instruments: BTC, ETH, BNB]
 011_weekend-moves-reverse-weekday: Weekend price moves on thin liquidity partly reverse once weekday market makers and arbitrage capital return to deepen the books. []
+012_liquidation-flush-partial-rebound: Sharp falls with extreme volume and deep lower wicks mark forced liquidation cascades that overshoot, then partly retrace once forced selling ends. []
+013_anchoring-to-recent-high: Coins near their recent high under-react as anchored holders sell into it; breaks above the high then continue as that supply is exhausted. []

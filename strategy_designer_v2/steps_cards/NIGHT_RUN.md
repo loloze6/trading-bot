@@ -97,3 +97,7 @@ window left out 0.73: **it passes every bar of step 6's rule, where none of the 
 - **What it points to:** "what makes small real effects pay" has a first answer to test: combine them. That is the
   parked topic "proven and profitable, what next": the operator's to open.
 
+**Stage 5, written before it starts (03:00 UTC).** Purpose: two new theories chosen by step 1 itself (no theme: "a
+trading theory of your choice"; step 1's list of the 11 briefs already written keeps it from repeating one), each in
+its own run (`night_012_run`, `night_013_run`), 10 USD each. Outcomes: A to D, F as above.
+
