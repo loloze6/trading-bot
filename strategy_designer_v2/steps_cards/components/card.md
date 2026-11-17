@@ -1,7 +1,8 @@
 # Step card: components (DRAFT 2026-11-17, for the operator's review; not validated, nothing built)
 
 A step outside the chain of steps 1 to 7: it does not test an idea, it adds to the bot what step 3 lacked to test
-one. It changes `trading-bot/` (shared code), so each component it builds needs the operator's go (CLAUDE.md).
+one. Its card has two sections a step card usually has not ("What a wish is", "The sequence"): it reads many runs' output
+and has two parts, as a function card has. It changes `trading-bot/` (shared code), so each component it builds needs the operator's go (CLAUDE.md).
 
 ## Business objective, one question
 Which strategy components does the bot lack to test the ideas waiting for them, and is each one built right?
@@ -42,6 +43,20 @@ bar, that a config can use as a forecast source or in a regime rule.**
 - **No lookahead:** the value at bar t uses only rows up to t (CLAUDE.md's hard rule; its "why this can't leak" note
   is in the class's docstring).
 
+## What a wish is, and its four kinds
+**A wish is what step 3 wrote when it refused an idea as missing-components: the measure a part of the idea needs and
+the catalogue does not give.** Each wish is one of four kinds, and the kind says what would answer it:
+
+| Kind | What it is | What answers it |
+|---|---|---|
+| **new measure** | no component measures it | a new component |
+| **missing setting** | a component measures it, but lacks a setting the idea needs (a mean of several bars, not one) | a parameter on that component, whose default keeps today's output |
+| **missing combination** | existing components measure each part, but the config cannot combine them that way (a product; it averages) | a change to how the config combines components: an engine change, outside this step; the row says so |
+| **near variant** | a component measures nearly the same thing (a median for a mean, the bars before t for the bars up to t) | nothing, unless the waiting ideas need both forms: then a parameter, as a missing setting |
+
+The kind is set by the measure, never by the idea's name (volume_run: the 5 volume ideas still refused were 2 missing
+settings, 2 missing combinations and 1 near variant, not 5 new components).
+
 ## The fields
 **A row of the wanted list** (written by the specification part):
 1. **name:** the class name, `<Measure>Component`.
@@ -59,7 +74,8 @@ bar, that a config can use as a forecast source or in a regime rule.**
    - For: the rank, and the ideas to rerun once built.
    - Used by: the operator (what to build first), the end check.
    - Without it: a component is built for nobody, or its ideas are never rerun.
-4. **status:** wanted, built (with its commit), or not buildable (with why: the data is not in the bars).
+4. **kind and status:** the wish's kind (above); wanted, built (with its commit), outside this step (a missing
+   combination), or not buildable (with why: the data is not in the bars).
    - For: what is left.
    - Used by: the operator.
    - Without it: a built component stays on the list.
@@ -69,8 +85,8 @@ standard tests, its catalogue row, its proof (below).
 
 ## The sequence
 1. **Specification** (one model call, on demand or after a run): all wish blocks and the catalogue in; out: the wanted
-   list. The model groups the wishes by measure, writes one specification per measure (the general form, parameters
-   only where waiting ideas differ), and marks a wish the catalogue already covers. Code counts the waiting ideas and
+   list. The model groups the wishes by measure, gives each its kind, and writes one specification per measure (the
+   general form, parameters only where waiting ideas differ). Code counts the waiting ideas and
    ranks.
 2. **The operator chooses** a row (the go for the shared-code change).
 3. **Build** (one model call): the specification, the contract and the worked example in; out: the class, one test
@@ -110,16 +126,20 @@ components/
 - **Model:** Opus (code, exact formulas). **Cost:** to be measured.
 
 ## Quality criteria
-- One row per measure; no two rows the same measure; no row an existing component already covers.
+- One row per measure; no two rows the same measure; each row's kind is the one its wishes show.
 - A specification is exact enough to compute by hand, and covers every waiting idea's variant without a parameter
   nobody asked for.
 - The built component passes every standard check, and the proof shows nothing else changed.
 - The end check: the ideas waiting for it are planned by step 3, or their new refusal names a different measure.
 
 ## Fixed inputs for the iterations
-The wish blocks of the night runs and of volume_run (the measures still wanted): a multi-bar volume average (2 ideas),
-a past high or its break (13), RSI's time above or below its midline (several), a price-RSI divergence, a bar's wick or
-place in its range (7), a move held over the next bars (2).
+The wish blocks of the night runs and of volume_run, each kind present:
+- **new measures:** a past high or its break (13 ideas), RSI's time above or below its midline, a price-RSI divergence,
+  a bar's wick or place in its range (7, among them the 3 of brief 012), a move held over the next bars (2);
+- **missing setting:** a mean of several bars' volume against a longer mean (2, volume_run);
+- **missing combination:** a scaled move times its volume ratio (2, volume_run);
+- **near variant:** volume against the median of the bars before t (1, volume_run);
+- **already answered** (to check the card does not ask again): the 11 volume ideas `VolumeRatioComponent` unblocked.
 
 ## Variants compared
 To set: specification and build in one call or two; Opus or Sonnet for the build.
@@ -129,8 +149,9 @@ The operator: the wanted list ("is this the measure these ideas need?") and the 
 build (the harness, the proof). The waiting ideas' rerun judges the business result.
 
 ## Done when
-On the fixed inputs: the wanted list groups the wishes as the operator would, twice in a row; two components built
-through the card pass every check and the proof; and their waiting ideas get past step 3.
+On the fixed inputs: the wanted list groups the wishes and gives their kinds as the operator would, twice in a row;
+one new measure and one missing setting built through the card pass every check and the proof; and their waiting ideas
+get past step 3.
 
 ## Open (for the operator)
 1. **One step or several?** Recommended: one step with two parts (specification, build), the operator's choice between
@@ -140,7 +161,8 @@ through the card pass every check and the proof; and their waiting ideas get pas
 3. **One list of wanted components?** Recommended: yes, `WANTED.md`, rebuilt from every run's wish blocks. A further
    option: give step 3 the wanted list, so it reuses a name already wanted (a change to a validated step: later).
 4. **Acceptance criteria:** "Done when" above.
-5. **Test:** with the components still wanted (fixed inputs), two built through the card.
+5. **Test:** with the components still wanted (fixed inputs): one new measure and one missing setting built through the card.
 
 ## What this step does not do
-It does not test an idea, decide which component to build, or change an existing component.
+It does not test an idea, decide which component to build, change an existing component's output at its defaults, or
+change how the config combines components.

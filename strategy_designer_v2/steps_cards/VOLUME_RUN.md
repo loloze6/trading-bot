@@ -42,7 +42,7 @@ show once tested?
 ## Reading
 (written after the run)
 
-**volume_run (11:00 to 12:20 UTC; 19 ideas, 12.64 USD, 65 minutes; no failure, no restart).**
+**volume_run (11:35 to 12:24 UTC; 19 ideas, 12.64 USD, 65 minutes of step time in all; no failure, no restart).**
 
 | Outcome | Count | Ideas |
 |---|---|---|
