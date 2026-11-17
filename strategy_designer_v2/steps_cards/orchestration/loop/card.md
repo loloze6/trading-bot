@@ -78,10 +78,12 @@ orchestration/loop/
 python3 orchestration/loop/helper/loop.py --run NAME_run --python VENV_PYTHON [IDEA_FILE [--brief BRIEF]]
     [--budget USD] [--model MODEL]
 ```
-Without `IDEA_FILE`, it resumes the run. No limit unless `--budget` is given.
+Without `IDEA_FILE`, it continues with the ideas already in the run (a resumed run, or the brief's ideas `run_brief`
+wrote). No limit unless `--budget` is given.
 
 ## Checks in code
-Refused before any call: a run name not ending in `_run`; no starting idea for a new run; a budget that is not a
+Refused before any call: a run name not ending in `_run`; a new run with no starting idea and no idea written in it
+(`run_brief` writes the brief's ideas first, then calls the loop without a starting idea); a budget that is not a
 positive number.
 
 ## Done when

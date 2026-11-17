@@ -100,7 +100,7 @@ def call_run_idea(idea_path, args, brief=None):
 
 def main():
     a = argparse.ArgumentParser()
-    a.add_argument("idea", type=Path, nargs="?", help="the starting idea (a new run); without it, the run is resumed")
+    a.add_argument("idea", type=Path, nargs="?", help="the starting idea (a new run); without it, the run's own ideas are used")
     a.add_argument("--run", required=True)
     a.add_argument("--python", required=True)
     a.add_argument("--brief", type=Path)
@@ -111,8 +111,8 @@ def main():
         sys.exit("a run name ends in _run")
     if args.budget is not None and args.budget <= 0:
         sys.exit("a budget is a positive number of USD")
-    if args.idea is None and not table_rows(args.run):
-        sys.exit("a new run needs a starting idea")
+    if args.idea is None and not table_rows(args.run) and not select_next.written_in(args.run):
+        sys.exit("a new run needs a starting idea, or ideas already written in it (run_brief's step 2)")
 
     if args.idea is not None and args.idea.stem not in {r["idea"] for r in table_rows(args.run)}:
         used = spent(args.run)

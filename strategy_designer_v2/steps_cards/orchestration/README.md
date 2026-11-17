@@ -11,7 +11,7 @@ model step needs (prompt, model variants) with what a function needs (its turn, 
 | `run_idea` | `run_idea/card.md` | one idea | steps 3 to 7, once, with its journal, logs and consumption | met on its fixed input (scope 1) |
 | `loop` | `loop/card.md` | one idea | `run_idea`, then picks one of step 7's ideas and runs it again, until a stop rule | met on demo_run, budget 4 USD: 3 turns, stopped on the budget (scope 2) |
 | `select_next` | `select_next/card.md` | a run | ranks the ideas written in the run (by step 2 or a step 7 line) and not yet tested, by one score: the record of the line that wrote it / (1 + its generation) | met on demo_run (called by `loop`) |
-| `run_brief` | to design | a brief | step 2, then `loop` over one list of ideas fed by step 2 and step 7 | to design (scope 3) |
+| `run_brief` | `run_brief/card.md` | a brief, a theme or a source | step 1 (theme or source only), step 2, then `loop` over one queue fed by step 2 and the step 7 lines | built 2026-11-17; validation in `NIGHT_RUN.md` (scope 3) |
 
 `duration/` is a study, not a function: how long one idea's run takes and how to make it faster (1 the picture, 2 the
 findings, 3 the plan, 4 and 5 measurements, 6 and 7 the proofs of changes 1 and 2, built in step 4).
