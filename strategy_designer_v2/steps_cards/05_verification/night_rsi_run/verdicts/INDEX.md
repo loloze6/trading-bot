@@ -1,3 +1,4 @@
 010-01_rsi-above-share-continuation.b1_rsi-share-more-coins_1d: inconclusive (fit: adapted) [main: -0.299209; OLS slope t -0.299209; non-overlapping cases with a recorded forecast 1152]
 010-01_rsi-above-share-continuation.g1_rsi-share-continuation-calm-markets_1d: inconclusive (fit: exact) [main: 3.31939e-06; OLS slope t 0.00354393; independent grid cases 191, active bars 2993]
 010-01_rsi-above-share-continuation_1d: inconclusive (fit: exact) [main: 1.65376; OLS slope t 1.65376; independent 14-bar samples 384, samples with forecast > 0 187, samples with forecast < 0 186]
+010-02_rsi-below-share-continuation_1d: inconclusive (fit: exact) [main: 0.0156167; t of the mean 1.59469; independent grid cases in total 384, grid cases BTCUSD 192, grid cases ETHUSD 192, coins with negative Spearman 2]
