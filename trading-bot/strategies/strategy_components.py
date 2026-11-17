@@ -2827,3 +2827,71 @@ class VolatilityRankedFallComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return self.lookback + self.vol_period
+
+
+class VolumeWeightedScaledReturnComponent(SubStrategyComponent):
+    """
+    The bar's return in usual moves, weighted by the bar's volume against its average, on every bar:
+
+        r(j)  = close[j] / close[j-1] - 1
+        s     = std (ddof 1) of r(t - vol_period + 1) .. r(t)              (bar t's return included)
+        z     = r(t) / s        (0 when s = 0)
+        v     = volume[t] / mean(volume[t - volume_period + 1 .. t])       (bar t included)
+        raw_value = z x v
+
+    Graded, signed, unbounded: positive after a rise, negative after a fall. The size grows with the size of
+    the move in the coin's usual moves and with how heavy the bar's volume was against its average. v is above
+    0 and at most volume_period. The fall-positive reading is its mirror, given exactly by the `negate` step.
+    Warm-up: max(vol_period + 1, volume_period) rows, bar t included.
+
+    NaN: a NaN close in the last vol_period + 1 rows, or a NaN volume in the last volume_period rows, gives NaN.
+    A mean volume not above 0 gives NaN (never seen on real bars). A flat return window (s = 0, never seen on
+    real bars) gives 0. Building the component raises for a vol_period below 2 or a volume_period below 2.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last vol_period + 1 rows and the `volume`
+    column of the last volume_period rows of data, all up to and including bar t (the last row). A bar's close
+    and volume are known at that bar's close.
+    """
+
+    def __init__(self, name="VolumeWeightedScaledReturn", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.vol_period = int(self.parameters.get("vol_period", 20))
+        if self.vol_period < 2:
+            raise ValueError(
+                f"VolumeWeightedScaledReturnComponent: vol_period must be >= 2, got {self.vol_period}")
+        self.volume_period = int(self.parameters.get("volume_period", 30))
+        if self.volume_period < 2:
+            raise ValueError(
+                f"VolumeWeightedScaledReturnComponent: volume_period must be >= 2, got {self.volume_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        close = data['close'].astype(float).iloc[-(self.vol_period + 1):].to_numpy()
+        vol = data['volume'].astype(float).iloc[-self.volume_period:].to_numpy()
+        if np.isnan(close).any() or np.isnan(vol).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        rets = close[1:] / close[:-1] - 1.0
+        s = float(np.std(rets, ddof=1))
+        den = float(vol.mean())
+        if not den > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        ratio = float(vol[-1] / den)
+        z = 0.0 if s == 0 else float(rets[-1] / s)
+        self._raw_value = float(z * ratio)
+        self.confidence = 1.0
+        self.debug_info = {'scaled_return': z, 'volume_ratio': ratio, 'return_std': s}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.vol_period + 1, self.volume_period)

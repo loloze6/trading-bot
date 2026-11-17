@@ -39,3 +39,5 @@ night_run | 003-01_thin-volume-rise-reverses_1d | RelativeVolumeComponent | exis
 night_run | 003-02_thin-volume-drop-rebounds_1d | VolumeRatioComponent | exists: VolumeRatioComponent {"log": 1, "period": 30}
 night_run | 003-03_heavy-volume-rise-continues_1d | VolumeRatioComponent | exists: VolumeRatioComponent {"period": 30}
 night_run | 003-04_heavy-volume-drop-continues_1d | VolumeRatioComponent | exists: VolumeRatioComponent {"exclude_current": 1, "period": 30}
+night_run | 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d | volume_ratio | exists: VolumeRatioComponent {"period": 60}
+night_run | 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d | volume_weighted_fall | built: VolumeWeightedScaledReturnComponent {"vol_period": 20, "volume_period": 30}
