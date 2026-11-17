@@ -43,7 +43,7 @@ def write(record):
         return 0, 0
     for f in files:
         coin, w = f.parts[-3], f.parent.name
-        d = pd.read_csv(f, usecols=BAR_COLS)
+        d = pd.read_csv(f, usecols=BAR_COLS)[BAR_COLS]       # usecols keeps the file's own order: put them in ours
         for t, c, fc, p, v in d.itertuples(index=False):
             bars.append(f"{coin},{w},{t},{g6(c)},{'' if fc != fc else f'{float(fc):.2f}'},{g6(p)},{g6(v)}")
         tj = f.parent / "trades.json.gz"
