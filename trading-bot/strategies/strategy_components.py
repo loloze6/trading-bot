@@ -1923,24 +1923,35 @@ class DistanceFromHighComponent(SubStrategyComponent):
 
 class VolatilityScaledReturnComponent(SubStrategyComponent):
     """
-    The coin's return over the last `period` bars, in units of its usual move, on every bar:
+    The size of a move against the coin's usual move, read on bar u = t - lag:
 
-        raw_value = (close[t] / close[t - period] - 1) / (s x sqrt(period))
+        r(j) = close[j] / close[j-1] - 1
+        s    = std(r(u - vol_period + 1) .. r(u)), ddof 1
+        raw_value = (close[u] / close[u - period] - 1) / (s x sqrt(period)),   u = t - lag
 
-    s is the standard deviation (ddof 1) of the last `vol_period` one-bar returns, bar t's included. Graded and signed:
-    about +1 for a rise of one usual move over `period` bars, -2 for a fall of two. No lag: everything up to bar t's
-    close. Closes only, no lookahead. No scaling_factor: the config's transforms scale it.
+    lag 0 (default) gives the move ending at bar t, the original output, unchanged.
+    Graded and signed: positive after a rise, negative after a fall, unbounded. A value of +1 is a rise of one
+    usual move and -2 a fall of two.
+    Warm-up: max(period, vol_period) + 1 + lag rows, bar t included.
 
-    NaN: a window holding a NaN close gives NaN; a flat window (s = 0) gives 0. A `period` below 1 or a `vol_period`
-    below 2 raises when the component is built.
+    WHY THIS CANNOT LEAK: it reads only the `close` column of rows t - lag - max(period, vol_period) .. t - lag,
+    all at or before bar t (the last row of data). Each close is known at its bar's close.
+
+    NaN: a NaN close in those rows gives NaN. A flat return window (s = 0) gives 0.
+    Building the component raises for a period below 1, a vol_period below 2, or a lag below 0.
     """
 
     def __init__(self, name="VolatilityScaledReturn", weight=1.0, parameters=None):
         super().__init__(name, weight, parameters or {})
         self.period = int(self.parameters.get("period", 1))
+        if self.period < 1:
+            raise ValueError(f"VolatilityScaledReturnComponent: period must be >= 1, got {self.period}")
         self.vol_period = int(self.parameters.get("vol_period", 20))
-        if self.period < 1 or self.vol_period < 2:
-            raise ValueError("VolatilityScaledReturnComponent: period >= 1 and vol_period >= 2")
+        if self.vol_period < 2:
+            raise ValueError(f"VolatilityScaledReturnComponent: vol_period must be >= 2, got {self.vol_period}")
+        self.lag = int(self.parameters.get("lag", 0))
+        if self.lag < 0:
+            raise ValueError(f"VolatilityScaledReturnComponent: lag must be >= 0, got {self.lag}")
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -1949,21 +1960,30 @@ class VolatilityScaledReturnComponent(SubStrategyComponent):
         self.debug_info = {}
         if not self.is_ready():
             return
-        close = data['close'].iloc[-(max(self.period, self.vol_period) + 1):].astype(float)
-        move = float(close.iloc[-1] / close.iloc[-1 - self.period] - 1.0)
-        s = float(close.pct_change(fill_method=None).iloc[-self.vol_period:].std(ddof=1, skipna=False))
-        if np.isnan(move) or np.isnan(s):
+        n = max(self.period, self.vol_period) + 1
+        close = data["close"].astype(float).to_numpy()
+        end = len(close) - self.lag
+        win = close[end - n:end]
+        if np.isnan(win).any():
             self._raw_value = float("nan")
-        elif s > 0:
-            self._raw_value = move / (s * np.sqrt(self.period))
+            self.confidence = 1.0
+            self.debug_info = {"lag": self.lag, "error": "nan_close"}
+            return
+        rets = win[1:] / win[:-1] - 1.0
+        s = float(np.std(rets[-self.vol_period:], ddof=1))
+        move = float(win[-1] / win[-1 - self.period] - 1.0)
+        if not s > 0:
+            self._raw_value = 0.0
+        else:
+            self._raw_value = float(move / (s * np.sqrt(self.period)))
         self.confidence = 1.0
-        self.debug_info = {'move': move, 'usual_move': s}
+        self.debug_info = {"lag": self.lag, "move": move, "usual_move": s}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
     def get_required_periods(self) -> int:
-        return max(self.period, self.vol_period) + 1
+        return max(self.period, self.vol_period) + 1 + self.lag
 
 
 class BarsSinceHighComponent(SubStrategyComponent):
