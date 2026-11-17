@@ -17,3 +17,4 @@
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends_1d: no ideas: The tested forecast shows no relation (t -0.37). The plain-depth effect it missed is driven by outliers and by 2018, is not graded across depth, and cannot be separated from the 30-day fall, so no part of the data shows the idea clearly enough to amend it to.
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
 013-01_nearness-to-high-predicts-gains_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
+013-02_follow-through-stronger-near-high_1d: 1 ideas (2 explorations)

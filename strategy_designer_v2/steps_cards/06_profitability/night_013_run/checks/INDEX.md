@@ -17,3 +17,4 @@
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends_1d: not profitable enough [Sharpe 0.08757; Sharpe minus holding's Sharpe -0.4666; Calmar -0.05382]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month_1d: not profitable enough [Sharpe 0.8574; Sharpe minus holding's Sharpe 0.2758; Calmar 0.6201]
 013-01_nearness-to-high-predicts-gains_1d: not profitable enough [Sharpe 0.5233; Sharpe minus holding's Sharpe -0.05834; Calmar 0.2338]
+013-02_follow-through-stronger-near-high_1d: not profitable enough [Sharpe 0.6761; Sharpe minus holding's Sharpe 0.09443; Calmar 0.2726]
