@@ -2,9 +2,6 @@
 
 One block per idea that needs components the catalogue does not have.
 
-## 010-03_rsi-above-streak-continuation_1d
-- Component: RsiMidlineAgeComponent: from the closes, takes the Wilder RSI (`period` 14). It outputs +n while RSI has been above 50 for the last n bars including bar t, and -n while it has been at or below 50, with n capped at `max_bars`; the size grows by one for each further day on the same side. | measures: situation
-
 ## 010-04_rsi-below-streak-continuation_1d
 - Component: RsiMidlineAgeComponent: from closes, the Wilder RSI (`period` 14) on each bar; outputs -n while RSI has been below 50 for the last n bars including bar t, and +n while it has been at or above 50; n is capped at `max_bars`, and the size grows by one each bar the side holds | measures: situation
 

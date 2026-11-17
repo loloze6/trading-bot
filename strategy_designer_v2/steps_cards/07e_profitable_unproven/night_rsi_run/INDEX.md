@@ -2,3 +2,4 @@
 010-01_rsi-above-share-continuation.g1_rsi-share-continuation-calm-markets_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 010-01_rsi-above-share-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 010-02_rsi-below-share-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+010-03_rsi-above-streak-continuation_1d: 2 ideas (2 explorations)
