@@ -1977,18 +1977,20 @@ class VolumeRatioComponent(SubStrategyComponent):
     """
     The bar's volume against its own recent average, on every bar:
 
-        raw_value = volume[t] / mean(volume[t - period + 1 .. t])   (the average includes bar t)
+        exclude_current = 0 (default):
+            raw_value = volume[t] / mean(volume[t - period + 1 .. t])   (the average includes bar t)
+        exclude_current = 1:
+            raw_value = volume[t] / mean(volume[t - period .. t - 1])   (the average of the prior `period` bars)
 
-    Graded and positive: 1 at an average bar, 2 for a bar with twice the average volume, near 0 for a very quiet bar;
-    at most `period` (when every other bar of the window has zero volume). It has no direction: a config combines it
-    with a price move, or uses it in a regime rule. No lag: everything up to bar t's close.
+    Graded and non-negative: 1 at an average bar, 2 for a bar with twice the average volume, near 0 for a very quiet
+    bar. With exclude_current 0 it is at most `period`; with exclude_current 1 it is unbounded above. No direction.
+    Warm-up: `period` rows (exclude_current 0) or `period + 1` rows (exclude_current 1), bar t included.
 
-    WHY THIS CANNOT LEAK: it reads only the `volume` column of the bars up to and including bar t; a bar's volume is
-    known at that bar's close.
+    WHY THIS CANNOT LEAK: it reads only the `volume` column of the bars up to and including bar t (the last row of
+    data); a bar's volume is known at that bar's close.
 
-    NaN: a window that holds a NaN volume, or whose volumes are all zero (no average to compare with), gives NaN, which
-    the engine refuses loudly rather than reading as a quiet bar. A missing `volume` column raises. A `period` below 2
-    raises when the component is built.
+    NaN: a NaN volume at bar t or in the averaged bars, or an average of 0, gives NaN. A missing `volume` column
+    raises. A `period` below 2, or an `exclude_current` other than 0 or 1, raises when the component is built.
     """
 
     def __init__(self, name="VolumeRatio", weight=1.0, parameters=None):
@@ -1996,6 +1998,10 @@ class VolumeRatioComponent(SubStrategyComponent):
         self.period = int(self.parameters.get("period", 30))
         if self.period < 2:
             raise ValueError(f"VolumeRatioComponent: period must be >= 2, got {self.period}")
+        ex = self.parameters.get("exclude_current", 0)
+        if ex not in (0, 1):
+            raise ValueError(f"VolumeRatioComponent: exclude_current must be 0 or 1, got {ex!r}")
+        self.exclude_current = int(ex)
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -2004,9 +2010,13 @@ class VolumeRatioComponent(SubStrategyComponent):
         self.debug_info = {}
         if not self.is_ready():
             return
-        window = data['volume'].iloc[-self.period:].astype(float)
-        mean = float(window.mean(skipna=False))
-        last = float(window.iloc[-1])
+        vol = data['volume'].astype(float)
+        last = float(vol.iloc[-1])
+        if self.exclude_current:
+            base = vol.iloc[-(self.period + 1):-1]
+        else:
+            base = vol.iloc[-self.period:]
+        mean = float(base.mean(skipna=False))
         self._raw_value = last / mean if mean > 0 else float("nan")
         self.confidence = 1.0
         self.debug_info = {'volume': last, 'mean_volume': mean}
@@ -2015,7 +2025,7 @@ class VolumeRatioComponent(SubStrategyComponent):
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
     def get_required_periods(self) -> int:
-        return self.period
+        return self.period + self.exclude_current
 
 
 class RsiChangeFromPriorLowComponent(SubStrategyComponent):
