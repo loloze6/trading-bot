@@ -55,3 +55,5 @@ volume_run | 012-04_flush-depth-retracement-size_1d | OpenToLowDropComponent | e
 volume_run | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g2_rising-volume-precedes-gains_1d | VolumeMeanRatio | exists: VolumeRatioComponent {"period": 30, "short_period": 5}
 volume_run | 013-04_heavy-volume-below-high-breakout_1d | VolumeMeanRatio | exists: VolumeRatioComponent {"period": 90, "short_period": 10}
 volume_run | 003-03_heavy-volume-rise-continues_1d | volume-weighted rise | exists: VolumeWeightedScaledReturnComponent {"vol_period": 20, "volume_period": 30}
+volume_run | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g2_heavy-volume-fall-rebounds_1d | VolumeToMedianRatio | exists: VolumeRatioComponent {"exclude_current": 1, "period": 20, "statistic": "median"}
+volume_run | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal.g1_high-volume-weekend-moves-reverse_1d | VolumeWeightedScaledReturnComponent | exists: VolumeWeightedScaledReturnComponent {"vol_period": 20, "volume_period": 20}
