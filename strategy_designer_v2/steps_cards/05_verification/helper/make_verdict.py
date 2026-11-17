@@ -166,6 +166,7 @@ def main():
     request = (f"[TEST PLAN]\n{plan_text}\n[CONFIG]\n{config}\n"
                f"[THE RECORD]\n{(HERE / 'record_description.md').read_text()}\n"
                f"[WHAT A BACKTEST RECORDS]\n{common_text("backtest_record")}\n"
+               f"[HOW A FORECAST IS BUILT]\n{common_text("forecast")}\n"
                f"[HOW THE WORKFLOW MEASURES]\n{common_text("measures")}\n"
                f"This record holds:\n{windows}\nColumns: {', '.join(columns)}\n\n"
                f"Write measure(bars) for this plan.")

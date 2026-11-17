@@ -211,6 +211,11 @@ fault is step 3's config or step 5's reading of the situation is not looked at.
   size without centring; a one-sided measure stays one-sided; "above its usual level" needs a constant offset block;
   the record's raw and standardised columns). **Proposed:** define it once in `common/` and give it to steps 3 and 5
   (code only). Proof: step 5 again on the 5 cases (about 1 USD): 013-01, e2 and volume g1 no longer mismatch, d2 still.
+**Fixed (operator's go, 2026-11-17):** `common/forecast.md` (how a config turns its components into a forecast and a
+position), given to steps 3 and 5 (code only: one more shared text in their calls). Proof, step 5 again on the 5 cases
+(0.79 USD; the new verdicts in the session's scratch folder, the runs' records unchanged): 013-01, e2 and g3 now
+inconclusive, volume g1 confirmed, each with a situation check of 100 %; d2 still a mismatch (57 %): the real step 3
+error, as expected. Not done: the 4 corrected verdicts are not written into their runs (their step 6 and 7 would follow).
 
 ## Parked: TAO has no data where `common/data_available.md` says it has (night, 2026-11-17)
 `data_available.md` lists TAO for fold D; the more-coins backtest got "No historical data for TAOUSD" in all 24
