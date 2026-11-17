@@ -17,6 +17,7 @@
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
 013-01_nearness-to-high-predicts-gains_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
+013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 013-02_follow-through-stronger-near-high_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 013-03_breakout-above-high-continues_1d: no ideas: The plan needs at least 30 break grid cases. The default data gives 10 (F1), and adding every available coin on daily bars across all folds would give only about 21 to 27 (F6, F7). A finer bar size adds none, because the 30-day grid is fixed in calendar time (F4). So no available data can show this idea either way.
 013-04_heavy-volume-below-high-breakout_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

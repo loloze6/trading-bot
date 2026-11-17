@@ -37,19 +37,20 @@ One row per idea run; every status is read from the step's own result file. Each
 | 013-04_heavy-volume-below-high-breakout | - | plan | inconclusive (+1.99) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar, Trades per bar) | 7.b: 013-04_heavy-volume-below-high-breakout.b1_volume-before-breakout-more-coins; 7.d: 013-04_heavy-volume-below-high-breakout.d1_post-breakout-month-volume-graded, 013-04_heavy-volume-below-high-breakout.d2_closeness-to-recent-high; 7.g: 013-04_heavy-volume-below-high-breakout.g1_volume-confirmed-short-term-continuation | 1.07 | 8.9 |
 | 013-05_longer-stall-bigger-breakout | - | plan | not observable | not profitable enough (failed: Mean daily return) | 7.a: 013-05_longer-stall-bigger-breakout.a1_stall-breakout-wider-coin-set; 7.d: 013-05_longer-stall-bigger-breakout.d1_stall-under-monthly-high, 013-05_longer-stall-bigger-breakout.d2_closeness-to-monthly-high; 7.g: 013-05_longer-stall-bigger-breakout.g1_weekly-gain-carries-into-saturday | 1.25 | 11.5 |
 | 013-06_breakout-volume-drives-continuation | - | plan | confirmed (+4.72) | not profitable enough (failed: Mean daily return, Calmar) | 7.d: 013-06_breakout-volume-drives-continuation.d1_volume-breakout-persists-past-high, 013-06_breakout-volume-drives-continuation.d2_breakout-volume-sixty-day-drift; 7.g: 013-06_breakout-volume-drives-continuation.g1_up-day-volume-drives-continuation, 013-06_breakout-volume-drives-continuation.g2_sharp-drop-next-day-rebound | 0.93 | 8.1 |
+| 013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound | 013-02_follow-through-stronger-near-high | plan | confirmed (+3.90) | not profitable enough (failed: Mean daily return, Calmar) | 7.d: 013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound.d1_rebound-after-volatility-expansion, 013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound.d2_rebound-concentrated-in-extreme-falls; 7.g: 013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound.g1_volume-confirmed-down-day-rebound, 013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound.g2_raw-size-down-day-rebound, 013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound.g3_rebound-grows-with-volatility-expansion, 013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound.g4_high-volatility-up-day-giveback | 0.89 | 4.6 |
 
 ## Consumption
-33 ideas, 25.79 USD, 186.1 minutes in all.
+34 ideas, 26.68 USD, 190.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.42 | 17.9 |
-| step4_backtest | 0.00 | 85.8 |
-| step5_verdict | 3.11 | 14.8 |
-| step6_check | 0.00 | 0.8 |
+| step3_plan | 2.49 | 18.5 |
+| step4_backtest | 0.00 | 86.9 |
+| step5_verdict | 3.22 | 15.2 |
+| step6_check | 0.00 | 0.9 |
 | step7_7.a | 0.46 | 1.6 |
 | step7_7.e | 0.37 | 1.3 |
 | step7_7.b | 2.76 | 9.2 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.d | 6.90 | 23.6 |
-| step7_7.g | 9.77 | 31.1 |
+| step7_7.d | 7.24 | 24.9 |
+| step7_7.g | 10.13 | 32.2 |
