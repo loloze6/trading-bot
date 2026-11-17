@@ -1,0 +1,54 @@
+{
+  "line": "7.g",
+  "backtest": "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3737371,
+  "findings": {
+    "F1": "The day after a sharp fall reverses. Across all bars, the next-day excess return in the lowest decile of the day's return over its 30-day volatility is +0.584% (t 3.90, n 1450), and in the second-lowest decile +0.321% (t 2.72, n 1450). Deciles 3 to 10 sit between -0.215% and -0.003%, none with |t| above 1.9. The idea, which is about rising into the high, does not explain this.",
+    "F2": "At the 7-day horizon, the last day's own move predicts as well as the idea's forecast. Over non-overlapping 7-day samples, the slope t on 7-day excess return is 3.45 for the 1-day return (n 2299) and 3.22 for the vol-scaled 1-day return (n 2011), against 4.17 for the forecast and 2.55 for distance to the high. In a joint regression on 1723 samples, none of distance (t 1.54), volume ratio (t 1.40) or the vol-scaled day (t 1.67) stands out on its own.",
+    "F3": "Where the close sits inside the day's range also predicts the next 7 days. The slope t of 7-day excess return on (close - low)/(high - low) is 2.94 (n 2443).",
+    "F4": "The gain concentrates in the top of the move. The top quintile of the vol-scaled day earns +1.81% 7-day excess (t 2.31, n 402); the other four quintiles lie between -0.87% and +0.10%. A strong up day on heavy volume earns +2.40% (n 264), against -0.82% for a down day on heavy volume (n 225).",
+    "F5": "Closeness and volume add up as the idea says. Near the high on heavy volume earns +2.32% 7-day excess (n 238), against -1.64% far from the high on heavy volume (n 183). But this is uneven across time: the forecast's slope t is 3.99 in 2020 and negative in 2018 (-0.54), 2019 (-0.99) and 2023 (-0.15).",
+    "F6": "The book's worst days follow market rises and are followed by rebounds. On the book's worst 2% of days, the mean coin return the day before is +1.65% and the book's next day is +0.134%. This fits with F1: the book is caught long into sharp one-day reversals."
+  },
+  "ideas": [
+    {
+      "idea": "The deeper a coin's one-day fall relative to its own 30-day daily volatility, the higher its return over the next 1 day.",
+      "consequence": "After a coin's sharp vol-scaled down day, lean long for the next day instead of following the drop, and refuse new shorts into it.",
+      "name": "next-day rebound after selloffs",
+      "from": "F1, F6",
+      "refs": [
+        "F1",
+        "F6"
+      ]
+    },
+    {
+      "idea": "The higher a coin's daily close sits within that day's high-low range, the higher the coin's return over the next 7 days.",
+      "consequence": "Favour longs in coins closing at the top of their daily range, and distrust coins closing at the bottom of it.",
+      "name": "close-in-range predicts week",
+      "from": "F3, F2",
+      "refs": [
+        "F3",
+        "F2"
+      ]
+    },
+    {
+      "idea": "The larger a coin's one-day rise relative to its own 30-day daily volatility, and the heavier that day's volume against its 30-day average, the higher the coin's return over the next 7 days.",
+      "consequence": "Favour week-long longs after a coin's strong vol-scaled up day on heavy volume, rather than waiting for it to near its recent high.",
+      "name": "strong day on volume continues",
+      "from": "F2, F4",
+      "refs": [
+        "F2",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume.g1_next-day-rebound-after-selloffs",
+    "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume.g2_close-in-range-predicts-week",
+    "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume.g3_strong-day-on-volume-continues"
+  ],
+  "no_ideas": null
+}
