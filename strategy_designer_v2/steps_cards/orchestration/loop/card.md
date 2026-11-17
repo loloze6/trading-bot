@@ -48,6 +48,12 @@ An idea **confirmed with a profitable book** is marked in the queue and the tabl
 An idea whose `run_idea` call fails (a helper error, a step that writes nothing) is marked "failed at step N" with its
 log, and the loop goes on with the next idea. It is not retried.
 
+## When the loop is stopped mid-idea
+An idea whose turn started but whose `run_idea` call did not finish (the operator stopped the loop, the machine
+restarted) is finished first when the loop resumes: `run_idea` is called on it again and skips the steps already done.
+Without this, its plan would make it count as tested and it would never get its backtest and verdict (found by
+night_run, 2026-11-17). The resumed call is written in `loop.jsonl` ("resumed").
+
 ## Where its state lives
 Nothing of its own but the queue's rendering: the ideas tested are `run_idea`'s table; the ideas proposed are the step 7
 lines' `ideas/` folders in the run; an idea's line and generation are read from its id (`common/idea_created_from.md`). A resumed loop rebuilds
