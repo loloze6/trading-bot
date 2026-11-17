@@ -2012,30 +2012,33 @@ class BarsSinceHighComponent(SubStrategyComponent):
 
 class VolumeRatioComponent(SubStrategyComponent):
     """
-    Recent volume against its own longer average, on every bar:
+    Recent volume against its own longer base, on every bar:
 
-        num = mean(volume[t - short_period + 1 .. t])                (bar t included)
-        exclude_current = 0 (default): den = mean(volume[t - period + 1 .. t])
-        exclude_current = 1:           den = mean(volume[t - period .. t - 1])
+        num = mean(volume[t - short_period + 1 .. t])                     (bar t included)
+        exclude_current = 0 (default): W = volume[t - period + 1 .. t]
+        exclude_current = 1:           W = volume[t - period .. t - 1]
+        statistic = "mean" (default):  den = mean(W)
+        statistic = "median":          den = median(W)  (average of the two middle values for an even count)
         log = 0 (default): raw_value = num / den - centred
         log = 1:           raw_value = ln(num / den)
 
-    Defaults (short_period 1, centred 0, log 0) give volume[t] / mean volume, the original output.
-    Graded. With log 0 and centred 0 the value is non-negative and equals 1 at average volume. With
-    exclude_current 0 it is at most period / short_period; with exclude_current 1 it is unbounded above.
-    With centred 1 the value is shifted down by 1, so it is positive when recent volume is above the longer
-    average and negative when that volume is thin. With log 1 it is the natural log of the ratio. That value
-    is 0 at average volume, positive and growing on heavy volume, negative on thin volume. It is at most
-    ln(period / short_period) with exclude_current 0, and unbounded below. No direction.
+    The defaults (short_period 1, centred 0, log 0, statistic "mean") give volume[t] / mean volume, the
+    original output, unchanged. With period 20, exclude_current 1 and statistic "median" the output is
+    volume[t] / median(volume of the past 20 bars).
+    Graded, with no direction. With log 0 and centred 0 the value is non-negative and equals 1 when recent
+    volume equals the base. With "mean" and exclude_current 0 it is at most period / short_period. With
+    exclude_current 1, or with "median", it is unbounded above. centred 1 shifts the value down by 1. log 1
+    gives the natural log of the ratio: 0 at the base, positive on heavy volume, negative on thin volume.
     Warm-up: period + exclude_current rows, bar t included.
 
     WHY THIS CANNOT LEAK: it reads only the `volume` column of the rows up to and including bar t (the last row of
     data), over at most the last period + exclude_current rows; a bar's volume is known at that bar's close.
 
-    NaN: a NaN volume in either window, or an average of 0, gives NaN. With log 1, a recent mean of 0 gives NaN
+    NaN: a NaN volume in either window, or a base of 0, gives NaN. With log 1, a recent mean of 0 gives NaN
     (zero volume, never seen on real bars). A missing `volume` column raises.
     Building the component raises for a period below 2, an exclude_current other than 0 or 1, a short_period
-    below 1 or above period, a centred other than 0 or 1, a log other than 0 or 1, or log 1 with centred 1.
+    below 1 or above period, a centred other than 0 or 1, a log other than 0 or 1, log 1 with centred 1, or
+    a statistic other than "mean" or "median".
     """
 
     def __init__(self, name="VolumeRatio", weight=1.0, parameters=None):
@@ -2061,6 +2064,10 @@ class VolumeRatioComponent(SubStrategyComponent):
         self.log = int(lg)
         if self.log == 1 and self.centred == 1:
             raise ValueError("VolumeRatioComponent: log 1 cannot be combined with centred 1")
+        st = self.parameters.get("statistic", "mean")
+        if st not in ("mean", "median"):
+            raise ValueError(f"VolumeRatioComponent: statistic must be 'mean' or 'median', got {st!r}")
+        self.statistic = st
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -2075,7 +2082,12 @@ class VolumeRatioComponent(SubStrategyComponent):
             base = vol.iloc[-(self.period + 1):-1]
         else:
             base = vol.iloc[-self.period:]
-        den = float(base.mean(skipna=False))
+        if base.isna().any():
+            den = float("nan")
+        elif self.statistic == "median":
+            den = float(np.median(base.to_numpy()))
+        else:
+            den = float(base.mean(skipna=False))
         if np.isnan(num) or np.isnan(den) or not den > 0:
             self._raw_value = float("nan")
         elif self.log == 1:
@@ -2086,7 +2098,7 @@ class VolumeRatioComponent(SubStrategyComponent):
         else:
             self._raw_value = float(num / den - self.centred)
         self.confidence = 1.0
-        self.debug_info = {'short_mean_volume': num, 'mean_volume': den}
+        self.debug_info = {'short_mean_volume': num, 'base_volume': den, 'statistic': self.statistic}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
