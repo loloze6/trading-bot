@@ -228,3 +228,11 @@ wish-list blocks that ask for one measure under different names, and take the ge
 a short average of several bars, not one bar, against the long one); a "why it cannot leak" note; tests that compute by
 hand on rows up to bar t, show later bars are ignored, and run the engine; the catalogue row (and its class count); the
 proof rerun on fixed inputs, file by file; the bot's tests run from its own folder. Not started.
+
+## Parked: the engine keeps too short a history for a one-bar component with no history op (components exercise 1, 2026-11-17)
+`ConfigDrivenStrategyEngine` sizes each component's history to the largest lookback its components and transforms
+need (`strategy_engine.py`, phase 2): a component that needs one bar, with no history op (`identity`, `clip`), gets a
+history of length 1, but `forecast` needs 2 values (`max(2, ...)`), so it is never ready. Not met by real configs (step
+3 writes `standardise` first, whose window sets the history); met by the components step's harness, which ran its
+engine check without `standardise` (fixed: it now uses step 3's form). Fix when approved: a history at least as long as
+the forecast needs (`max(2, lookback)`). A change to `trading-bot/`: the operator's go.

@@ -5,8 +5,8 @@ judges it. Each check returns a list of failures (empty when it passes).
 
   check_warmup     not ready before get_required_periods() rows, ready at it
   check_hand       the class matches an independent hand computation that uses only the rows up to bar t
-  check_engine     the engine runs it as a forecast source; the config validator accepts it in a strategy and in a
-                   regime rule
+  check_engine     the engine runs it as a forecast source, with standardise first as step 3 writes every config;
+                   the config validator accepts it in a strategy and in a regime rule
   check_real_data  on every cached coin's daily bars, a finite value on every bar once warm
   check_defaults   (a class given a new setting) its output at the old defaults is unchanged on real data
   check_catalogue  every class in strategy_components.py has one row in step 3's component catalogue
@@ -88,10 +88,13 @@ def check_hand(cls, settings, hand, df=None):
     return out
 
 
+STANDARDISE = {"op": "standardise", "params": {"window": 60, "min_periods": 20}}   # step 3's rule: standardise first
+
+
 def _strategy(cls_name, params):
     return {"warmup": 5, "regimes": {
         "unknown": {"components": [{"id": "c", "class": PREFIX + cls_name, "params": params, "weight": 1.0,
-                                    "transforms": [{"op": "identity"}, {"op": "clip", "params": {"min": -20, "max": 20}}]}]},
+                                    "transforms": [STANDARDISE, {"op": "clip", "params": {"min": -20, "max": 20}}]}]},
         "trending": None, "mean_reversion": None, "chop": None}}
 
 
@@ -100,7 +103,7 @@ def check_engine(cls, params, df=None):
     name, out = cls.__name__, []
     req = cls(parameters=dict(params)).get_required_periods()
     eng = ConfigDrivenStrategyEngine(_strategy(name, params))
-    start = max(2 * req, req + 20)
+    start = req + STANDARDISE["params"]["window"] + 5
     for i in range(2, len(df) + 1):
         eng.update(df.iloc[:i])
         if i >= start:
