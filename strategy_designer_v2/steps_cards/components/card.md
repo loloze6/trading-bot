@@ -77,7 +77,19 @@ nothing is running then):
 It answers **the open wishes of the run in progress**: the wishes step 3 wrote for that run's ideas (the brief's ideas
 and the lines' ideas, every idea the run tested), not yet in the index. Its cost counts in the run's budget.
 
-**By the operator**, naming one or more runs: their open wishes.
+**By the operator**, naming one or more runs: their open wishes (for example the wishes of runs made before this step
+existed).
+
+## How to call it
+One command, the same for `loop` and for the operator:
+```
+python3 components/helper/build_component.py --runs NAME_run [NAME_run ...] --python VENV_PYTHON [--model MODEL]
+python3 components/helper/build_component.py --runs NAME_run [NAME_run ...] --list
+```
+- `--runs`: the runs whose open wishes are answered (`loop` passes the run in progress).
+- `--python`: the venv that runs the checks and the proof.
+- `--list`: prints the open wishes of those runs (run, plan id, wish name), with no model call and nothing built.
+Called again, it answers only the wishes still open: a wish with a line in the index is not asked twice.
 
 ## Unblocking
 **An idea refused as missing-components is unblocked when every wish of its refusal is answered built or exists.**
