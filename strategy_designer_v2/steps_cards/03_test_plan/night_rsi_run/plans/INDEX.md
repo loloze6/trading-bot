@@ -1,0 +1,1 @@
+010-01_rsi-above-share-continuation_1d: missing-components: The situation needs a 30-bar count of the days on which the 14-day RSI closed above 50, computed from the [BTC, ETH, BNB, 1d, folds A, B, C, D]

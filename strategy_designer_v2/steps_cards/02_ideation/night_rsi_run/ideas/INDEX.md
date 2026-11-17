@@ -1,0 +1,8 @@
+010-01_rsi-above-share-continuation: More time with 14-day RSI above 50 over the past 30 days predicts a higher return over the next 14 days. [instruments: BTC, ETH, BNB]
+010-02_rsi-below-share-continuation: More time with 14-day RSI below 50 over the past 30 days predicts a lower return over the next 14 days. [instruments: BTC, ETH, BNB]
+010-03_rsi-above-streak-continuation: A longer unbroken stretch of 14-day RSI above 50 predicts a higher return over the next 14 days. [instruments: BTC, ETH, BNB]
+010-04_rsi-below-streak-continuation: A longer unbroken stretch of 14-day RSI below 50 predicts a lower return over the next 14 days. [instruments: BTC, ETH, BNB]
+010-05_rsi-above-share-reversal: More time with 14-day RSI above 50 over the past 30 days predicts a lower return over the next 14 days. [instruments: BTC, ETH, BNB]
+010-06_rsi-below-share-reversal: More time with 14-day RSI below 50 over the past 30 days predicts a higher return over the next 14 days. [instruments: BTC, ETH, BNB]
+010-07_rsi-above-streak-reversal: A longer unbroken stretch of 14-day RSI above 50 predicts a lower return over the next 14 days. [instruments: BTC, ETH, BNB]
+010-08_rsi-below-streak-reversal: A longer unbroken stretch of 14-day RSI below 50 predicts a higher return over the next 14 days. [instruments: BTC, ETH, BNB]
