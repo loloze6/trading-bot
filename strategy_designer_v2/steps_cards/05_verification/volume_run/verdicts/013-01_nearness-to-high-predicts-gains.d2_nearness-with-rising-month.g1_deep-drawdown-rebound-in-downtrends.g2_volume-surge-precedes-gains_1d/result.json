@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope t of excess 7-bar return on forecast",
+    "value": 1.955486105287914,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.955486105287914
+    },
+    "threshold": "confirm if t >= 2 with supporting check passing; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "per-coin slope of excess 7-bar return on forecast positive in at least 4 of 6 coins",
+    "value": 4,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping 7-bar cases pooled across coins": 2443,
+    "coins with positive slope": 4
+  },
+  "decided_by": "Pooled slope t = 1.96 lies between -2 and 2 over 2443 cases.",
+  "reading": "Grid at positions 0, 7, 14, ... of each window keeping only points with a full 7-bar forward return inside the window, the coin's mean taken over its grid returns from all windows, OLS with intercept on all grid bars including zero forecasts, and the supporting check needs 4 positive per-coin slopes among the coins present."
+}
