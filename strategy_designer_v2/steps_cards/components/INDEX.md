@@ -37,3 +37,5 @@ night_013_run | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-m
 night_013_run | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls.g1_rebound-grows-with-volatility_1d | VolRankedFallRebound | built: VolatilityRankedFallComponent {"lookback": 120, "vol_period": 20}
 night_run | 003-01_thin-volume-rise-reverses_1d | RelativeVolumeComponent | exists: VolumeRatioComponent {"log": 1, "period": 30}
 night_run | 003-02_thin-volume-drop-rebounds_1d | VolumeRatioComponent | exists: VolumeRatioComponent {"log": 1, "period": 30}
+night_run | 003-03_heavy-volume-rise-continues_1d | VolumeRatioComponent | exists: VolumeRatioComponent {"period": 30}
+night_run | 003-04_heavy-volume-drop-continues_1d | VolumeRatioComponent | exists: VolumeRatioComponent {"exclude_current": 1, "period": 30}
