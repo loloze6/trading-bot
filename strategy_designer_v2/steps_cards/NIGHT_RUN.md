@@ -70,3 +70,14 @@ own run, `night_rsi_run` (budget 15 USD), under the same outcomes.
   confirming one effect in new words (a fall in a volatile day rebounds), so the score keeps choosing that effect's
   variants over a new theory's ideas. A line's record rewards re-finding a known effect as much as finding a new one.
 
+**night_rsi_run (02:38 to 02:41 UTC, plus restarts; brief 010; spent 0.31 USD).** Step 2 wrote 8 ideas; step 3 refused
+all 8 as missing-components: each needs how long, or how often, RSI has stayed above (or below) its midpoint, and no
+component measures that. The run stopped: "no candidate left". Parked with the other components.
+
+**Stage 4, written before it starts (02:51 UTC).** Of three briefs, two cannot be tested at all (12 of 12 ideas refused
+for missing components). Purpose: find out whether other theories in step 1's list can be tested with today's
+catalogue, each in its own small run so a line's variants do not crowd them out: brief 006 (quiet narrow ranges
+precede large moves) in `night_006_run`, then brief 005 (RSI divergence) in `night_005_run`, 10 USD each.
+Outcomes: as above (A to D); and **F**: their ideas are refused too, so the catalogue, not the theories, is the limit
+on new research until components are added.
+
