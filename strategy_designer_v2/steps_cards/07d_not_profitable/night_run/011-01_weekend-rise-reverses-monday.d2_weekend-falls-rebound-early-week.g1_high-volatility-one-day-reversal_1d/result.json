@@ -1,0 +1,46 @@
+{
+  "line": "7.d",
+  "backtest": "011-01_weekend-rise-reverses-monday.d2_weekend-falls-rebound-early-week.g1_high-volatility-one-day-reversal_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.33131380000000005,
+  "findings": {
+    "F1": "Fees eat the gain: the position earns 0.000826 per bar before costs and pays 0.000706 per bar in fees on a turnover of 0.65 of the book per bar, so the book's daily mean is 0.000103 against holding's 0.001180.",
+    "F2": "The fade loses after costs in every volatility state except the most turbulent. Split by the coin's 20-day volatility against its 120-bar mean absolute move, the four lowest sextiles net -0.000706 to -0.001039 per bar (t -1.15 to -1.87, about 1480 bars each), the fifth nets 0.000429 (t 0.43), and only the top sextile (ratio 2.25) nets 0.003212 (t 3.49).",
+    "F3": "Even in calm sextiles the book carries mean |position| 0.30 to 0.46 and pays fees of 0.00050 to 0.00077 per bar, so the forecast's grading does not shrink exposure enough where there is no edge.",
+    "F4": "The short side carries the losses. Short bars earn 0.000261 timing per bar against 0.001481 for long bars (about 8.4k to 8.9k bars each). In the high-volatility tercile shorts net -0.000226 per bar while longs net 0.004040 (t 4.52, n 1408).",
+    "F5": "Shorting an up day while the coin's 20-day return is up is the worst case: net -0.001477 per bar (t -2.95, n 4089). Buying a down day nets 0.001187 in a 20-day downtrend (t 2.52) and 0.001265 in an uptrend (t 2.88).",
+    "F6": "The result depends on the period. Inside the top two volatility sextiles net is negative in 9 of 23 windows (for example w12 -0.0065, w17 -0.0049, w21 -0.0040), and outside them it is negative in 16 of 24. This matches the failed leave-one-window-out Sharpe of -0.081 and the Calmar of -0.048."
+  },
+  "ideas": [
+    {
+      "idea": "A coin whose last day's move was large relative to its 20-day volatility moves the opposite way over the next 1 day, and the reversal is larger the larger that scaled move and the higher the coin's 20-day volatility stands against its own history, only while its 20-day volatility stands well above its own 120-day average daily move.",
+      "consequence": "Fade violent days only in clearly turbulent stretches and stay out otherwise, so the book stops paying fees on calm-market fades that earn nothing.",
+      "name": "reversal only in turbulence",
+      "from": "F1, F2, F3, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F6"
+      ]
+    },
+    {
+      "idea": "A coin whose last day's move was large relative to its 20-day volatility moves the opposite way over the next 1 day, and the reversal is larger the larger that scaled move and the higher the coin's 20-day volatility stands against its own history, except after an up day, when the coin keeps the drift it had over its last 20 days.",
+      "consequence": "Buy the bounce after violent down days in turbulent markets, but do not short violent up days, especially in a rising market.",
+      "name": "violent falls rebound next day",
+      "from": "F4, F5, F2",
+      "refs": [
+        "F4",
+        "F5",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.d2_weekend-falls-rebound-early-week.g1_high-volatility-one-day-reversal.d1_reversal-only-in-turbulence",
+    "011-01_weekend-rise-reverses-monday.d2_weekend-falls-rebound-early-week.g1_high-volatility-one-day-reversal.d2_violent-falls-rebound-next-day"
+  ],
+  "no_ideas": null
+}

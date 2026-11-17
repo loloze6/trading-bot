@@ -38,3 +38,14 @@ def test_the_queue_marks_a_goal(tmp_path):
                                {"idea": "a", "line": "step 2", "generation": 0, "record": 0.25, "score": 0.25, "status": "tested"}], tmp_path)
     q = (tmp_path / "loop" / "x_run" / "queue.md").read_text()
     assert "| 1 | b | 7.e |" in q and "GOAL REACHED" in q and "Spent: 1.00 USD" in q
+
+
+def test_an_idea_stopped_mid_run_is_unfinished(tmp_path):
+    (tmp_path / "run_idea" / "x_run").mkdir(parents=True)
+    (tmp_path / "run_idea" / "x_run" / "table.json").write_text(json.dumps([{"idea": "a", "cost": 1.0}]))
+    loop.log_turn("x_run", {"turn": 1, "idea": "a"}, tmp_path)
+    loop.log_turn("x_run", {"turn": 2, "idea": "b"}, tmp_path)          # stopped before its row was written
+    loop.log_turn("x_run", {"turn": 3, "idea": "c"}, tmp_path)
+    loop.log_turn("x_run", {"idea": "c", "outcome": "failed: step 3 wrote no plan"}, tmp_path)
+    assert loop.unfinished("x_run", tmp_path) == ["b"]
+

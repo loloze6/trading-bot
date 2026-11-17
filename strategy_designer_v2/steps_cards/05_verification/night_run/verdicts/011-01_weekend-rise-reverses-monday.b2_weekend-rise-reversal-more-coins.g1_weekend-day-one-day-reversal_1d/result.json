@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9999058469070708,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of position x (next-bar return - coin mean daily return) on weekend bars",
+    "value": 0.0010314154847002428,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 4.613152894315317
+    },
+    "threshold": "t >= 2 confirms (with supporting t >= 2); t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "Welch t of per-unit fade -z_t x (r_{t+1} - coin mean), weekend minus weekday",
+    "value": 3.4703757165665943,
+    "passed": true
+  },
+  "counts": {
+    "weekend bars (main measure)": 10535,
+    "weekend bars (supporting check)": 8806,
+    "weekday bars (supporting check)": 22022
+  },
+  "decided_by": "Confirm rule met: the main measure's t is >= 2 and the supporting check's t is >= 2.",
+  "reading": "Weekend bars are the bars with regime mean_reversion (bar just closed is Saturday or Sunday), weekday bars all others; z_t is the bar's close-to-close return over the std of the last 20 daily returns including it, inside each window; every bar with a next close in its window is one case. Supporting weekend-minus-weekday mean difference: 0.002808274751651743."
+}

@@ -1,0 +1,120 @@
+{
+  "run_id": "20261117T012023Z_045f78c7",
+  "created_utc": "2026-11-17T01:20:23.232898+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "wd",
+          "class": "strategies.strategy_components.WeekdayComponent",
+          "params": {}
+        }
+      ],
+      "vetoes": [],
+      "rules": [
+        {
+          "regime": "mean_reversion",
+          "any_of": [
+            [
+              {
+                "id": "wd",
+                "op": "between",
+                "low": -0.5,
+                "high": 0.5
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "mean_reversion": {
+          "components": [
+            {
+              "id": "sun_fall",
+              "class": "strategies.strategy_components.VolatilityScaledReturnComponent",
+              "params": {
+                "period": 1,
+                "vol_period": 20
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "negate"
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "min": 0.0
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "chop": null,
+        "unknown": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 60,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 365,
+        "max_allocation": 2
+      }
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 3,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 7.5,
+        "BTCUSD": 2.5,
+        "ETHUSD": 4,
+        "AVAXUSD": 7.5,
+        "SOLUSD": 7.5
+      }
+    }
+  },
+  "config_sha256": "045f78c76d24ea4175e30d7c8a395e06075a8dd2cea5a7a9987b92637f284514",
+  "data": {
+    "symbols": [
+      "LTCUSD"
+    ],
+    "timeframe": "86400s",
+    "start": "2022-05-02 00:00:00",
+    "end": "2022-12-31 00:00:00",
+    "bar_count": 244,
+    "data_sha256": "1f49f763c647f2fa89d17d28589d5b5da3208bd7e49bc0472aa5788320631c7a"
+  },
+  "git_sha": "000f00318f75db60cb822b214646bcd7a04e4eeb",
+  "engine": {
+    "lookback": 61,
+    "warmup": 61
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

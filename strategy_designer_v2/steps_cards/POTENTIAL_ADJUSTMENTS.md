@@ -154,3 +154,54 @@ renames it over the file; a failed write leaves the file as it was and no tempor
 (`trading-bot/tests/test_merge_noop_no_rewrite.py`: the file holds exactly the bytes `to_csv` writes, one rename, nothing
 left behind; a failed rename leaves the old bytes); the bot's suite passes (1,499). No named run reaches this write
 today (the folds' data is already in the files), so no run was rerun for it.
+
+## Parked: a relative-volume component (night_run, 2026-11-17)
+Brief 003 (volume separates reversal from continuation) cannot be tested: all four of its ideas need a graded measure
+of a bar's volume against its own recent average, and no component computes one (step 3: missing-components, four
+times). The four wish-list entries converge on one component: the bar's volume divided by the mean volume of the last
+N bars (or its log), from the `volume` column (`03_test_plan/night_run/plans/COMPONENT_WISHLIST.md`). Why it cannot
+leak: it reads the current bar's volume and the volumes before it, known at the bar's close. A change to `trading-bot/`
+(a new component and its tests), so it waits for the operator's go.
+
+## Parked: two more components asked for by night_run (2026-11-17)
+Besides relative volume (above): **the close's place in the day's high-low range** (1 idea), and **a move held as the
+forecast over the next N bars** (a weekend return carried through Monday and Tuesday, 2 ideas). Each is a change to
+`trading-bot/`, so each waits for the operator. Wish lists: `03_test_plan/night_run/plans/COMPONENT_WISHLIST.md`.
+
+## Parked: near-duplicate ideas (night_run, 2026-11-17)
+`select_next` finds a duplicate only when two ideas have the same text and data. Two ideas from different parents
+(`...d1_weekend-moves-reverse-both-ways` and `...b1_weekend-fall-reverses-monday.d1_weekend-moves-reverse-both-ways`)
+gave the same t (+2.75) and the same failures: probably one test written twice in other words (about 1 USD each).
+A rule on the plan (same config, same data) rather than on the text would catch it. Not built.
+
+
+## To discuss: the score that ranks the next idea favours re-finding a known effect (night, 2026-11-17)
+A line's record counts each confirmed idea as a success, so a line that keeps confirming one effect in new words keeps
+a high record and its variants keep coming first. Seen twice: in night_run, brief 010's ideas ranked below the 7.g
+line's third-generation variants of one rebound (0.17 against 0.18); in night_013_run, 8 of the last 13 tested ideas
+were variants of momentum or of the one-day rebound. The operator: "improvement point on the idea ranking decision, to
+be discussed". Not changed.
+
+## Parked: one list of missing components across runs (night, 2026-11-17)
+Each run has its own `03_test_plan/<run>/plans/COMPONENT_WISHLIST.md`; there is no list across runs. Tonight, 40 ideas
+in 6 runs were refused for missing components (48 requests), and the same component carries several names (11
+"VolumeRatioComponent", 3 "RelativeVolumeComponent", "volume_ratio", ...). By subject: volume against its recent average
+19 ideas, a past high or a break of it 13, RSI's time above or below its midline or a divergence 10, a bar's wick or
+range 7. Nothing says which component would unblock the most ideas.
+
+## Parked: step 5 "mismatch" on 4 of 19 tested ideas in night_013_run (night, 2026-11-17)
+Step 5 found that the config does not trade the plan's situation (57 % to 68 % of active bars on the plan's situation
+and side, 90 % needed). The idea's backtest is spent (about 1 USD each) and says nothing about the idea. Whether the
+fault is step 3's config or step 5's reading of the situation is not looked at.
+
+## Parked: TAO has no data where `common/data_available.md` says it has (night, 2026-11-17)
+`data_available.md` lists TAO for fold D; the more-coins backtest got "No historical data for TAOUSD" in all 24
+windows. The other 18 coins ran.
+
+## Parked: the GitHub security warning (2026-11-17)
+GitHub reports 1 critical vulnerability on the default branch (Dependabot alert 1). Not examined. The operator: park.
+
+## Parked, larger topic: brief management (2026-11-17)
+The operator's grouping: **result loop back** (a file next to the brief, not inside it, saying what its run found: its
+ideas' results, its blocked ideas, where the lines went), **brief archiving**, **brief reopening**. Seen tonight: the
+answer to "which of the theory's ideas are real and pay" was written by hand in NIGHT_RUN.md; no file holds it.

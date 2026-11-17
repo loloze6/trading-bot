@@ -1,0 +1,45 @@
+{
+  "line": "7.g",
+  "backtest": "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month_1d",
+  "step5": "mismatch",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5401185000000001,
+  "findings": {
+    "F1": "The book's gain comes only from its longs: long bars earn a mean 0.00099 a day (sum 4.96 over 5019 bars), while short bars earn -0.00002 (sum -0.11 over 4429 bars). The 3468 short bars inside the `trending` regime earn 0.00000. The forecast is negative on 43.1 % of trending bars, which is why only 57 % of active bars are long.",
+    "F2": "When the 30-day return is negative, the farther the close sits below its 60-day highest close, the higher the 7-day excess return: slope -0.01426 per standard deviation, t = -2.60, n = 511. The slope is negative in 5 of 6 coins and in 6 of 8 years. The deepest quintile below the high returns +0.0220 (t = 1.47), against about -0.02 in each of the other four quintiles.",
+    "F3": "The same reversal shows against the 52-week high inside falling months: slope -0.03054, t = -4.14, n = 258. Inside rising months it is flat: -0.00770, t = -1.07, n = 300. So the plan's nearness component is wrongly signed in falling markets and carries nothing in rising ones.",
+    "F4": "Inside falling months, a deeper 30-day fall is followed by a higher 7-day excess return: slope -0.00855, t = -2.05, n = 790, strongest in BTC (t = -2.85) and in 2018 (t = -2.42).",
+    "F5": "The sign of the 30-day return separates later 7-day returns: positive minus non-positive is 0.0205, t = 3.33, n = 888 against 790. The top 30-day-return quintile gains +0.0182 (t = 2.09) and the bottom loses -0.0111. Inside rising months, though, the graded slope (0.00949, t = 2.10) rests on ZEC (t = 2.54) and on 2025 (t = 3.90), and four of six coins show negative slopes.",
+    "F6": "Inside the trending regime, nearness to the 52-week high gives only a weak, insignificant spread in 7-day excess returns: top minus bottom quintile t = 1.78, top quintile +0.0244 with t = 1.85. The forecast's own quintiles spread even less (t = 1.25).",
+    "F7": "Volume relative to its 20-day mean predicts 7-day excess returns overall: slope 0.00722, t = 2.52, n = 1958, with the lowest-volume quintile at -0.0157 (t = -3.10). The 5-day/30-day log volume ratio gives slope 0.01035, t = 3.34, n = 1678. Both are concentrated in 2024 and 2025 (t = 4.37 and 4.13 for the 20-day ratio) and in XRP and ZEC, and are flat or negative in most other years.",
+    "F8": "Weekday next-day excess returns are positive after Fridays (+0.00295, t = 3.64, n = 2414) and negative after Wednesdays (-0.00312, t = -2.84). By year, Friday is positive in only 5 of 8, so the pattern is too unstable to stand out among seven weekday tests."
+  },
+  "ideas": [
+    {
+      "idea": "While a coin's 30-day return is negative, the farther its daily close sits below its highest close of the past 60 days, the higher its return over the next 7 days.",
+      "consequence": "In a falling month, a coin deep below its recent high is a rebound candidate to buy, and one still close to its high after a down month is one to avoid holding long.",
+      "name": "deep-drawdown rebound in downtrends",
+      "from": "F2, F3, F4",
+      "refs": [
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "The higher a coin's traded volume over the past 5 days relative to its past 30 days, the higher its return over the next 7 days.",
+      "consequence": "Thin recent volume is a reason to refuse a long, and rising participation a reason to take one.",
+      "name": "rising volume precedes gains",
+      "from": "F7",
+      "refs": [
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends",
+    "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g2_rising-volume-precedes-gains"
+  ],
+  "no_ideas": null
+}

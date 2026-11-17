@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.99963113242346,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 2-bar return on forecast, Sunday-fall cases",
+    "value": 0.00028366242764502097,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.119107070941964
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and mean excess > 0; reject: slope < 0 with t <= -2; at least 300 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess 2-bar return above 0",
+    "value": 0.0022997632270189703,
+    "passed": true
+  },
+  "counts": {
+    "Sunday-fall cases": 2665
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Cases are bars with regime mean_reversion and forecast > 0 whose t+2 close lies in the same window; the coin mean is over non-overlapping 2-bar returns on a grid from each window's first row, pooled over all its windows; the slope's t is the OLS slope over its standard error; fewer than 300 cases is reported as not observable."
+}

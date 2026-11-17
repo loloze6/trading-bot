@@ -1,0 +1,49 @@
+{
+  "line": "7.d",
+  "backtest": "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4182945,
+  "findings": {
+    "F1": "The book earns only on Mondays: its mean on Mondays is 0.00150, every other weekday is about 0 (Sunday \u22120.00037, from fees), and it holds a position on only 28.6 % of days with an average |allocation| of 0.053, so its mean daily return of 0.000162 is far below holding's 0.00139.",
+    "F2": "The reversal the book bets on lasts two days, but the book is held only on Monday: per active Sunday (n = 5238), the gross Monday gain is 0.00147 (t = 3.99) and the Tuesday gain it would have added is 0.00099 (t = 2.84), and the signed Tuesday move against Sunday's move is +0.0027 after falls and +0.0044 after rises.",
+    "F3": "The gain comes almost entirely from the largest Sunday moves. The top |forecast| tercile makes 0.0040 per case on Monday at a mean |allocation| of 0.73, against 0.00005 for the bottom tercile at 0.075. The bottom two terciles each make less than the roughly 0.0009 round-trip fee (0.00044 on Sunday plus 0.00043 on Monday).",
+    "F4": "Sunday's own move grades the reversal better than the two-day weekend move. Its Spearman correlation with the next two days' reversal is 0.120, against 0.029 for the Saturday-plus-Sunday return (n = 4320).",
+    "F5": "Sunday moves that run with the coin's prior 20-day return reverse more over Monday and Tuesday than moves against it. The signed two-day reversal is 0.0154 vs 0.0060 in the largest |z| quartile and 0.0126 vs 0.0039 in the second quartile (about 510\u2013570 cases each).",
+    "F6": "Shorting Sunday rises loses when the 20-day trend is flat: \u22120.00017 per case on Monday in the middle 20-day-return tercile (n = 756). In the down and up terciles it gains 0.0016 and 0.0007.",
+    "F7": "The next-day reversal is not limited to the weekend. The mean of \u2212sign(today's move) \u00d7 the next day's return is 0.00325 after Sunday but also 0.00312 after Tuesday and 0.00186 after Saturday (about 5,200 cases each), so a one-day-a-week book leaves most of this effect unused.",
+    "F8": "The book's falls are spread over several windows rather than one crash. The deepest chained fall is \u221222.9 %, and the window sums of the daily returns are \u22120.124 in w24, \u22120.059 in w6 and \u22120.055 in w11, against a yearly return that gives a Calmar of only 0.33."
+  },
+  "ideas": [
+    {
+      "idea": "A coin that moved over the weekend (its Saturday-to-Sunday close-to-close return) moves the other way over the next 2 days (Monday and Tuesday), and the larger the weekend move in either direction, the larger the move back, all the more when the weekend move ran in the same direction as the coin's 20-day return.",
+      "consequence": "A trader would lean hardest against Sunday moves that extend the coin's recent 20-day trend and hold the lean through Tuesday, and would size down against Sunday moves that run against the trend.",
+      "name": "trend-extending weekend moves reverse",
+      "from": "F2, F3, F4, F5, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "A coin's daily close-to-close move is partly undone over the next day on any day of the week, and the larger that day's move relative to the coin's usual daily move over the past 60 days, the larger the move back.",
+      "consequence": "A trader would lean against every large daily move rather than Sunday's alone, so the book is exposed on many more days and its mean daily return can grow.",
+      "name": "daily moves reverse next day",
+      "from": "F1, F3, F7",
+      "refs": [
+        "F1",
+        "F3",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.d1_trend-extending-weekend-moves-reverse",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.d2_daily-moves-reverse-next-day"
+  ],
+  "no_ideas": null
+}

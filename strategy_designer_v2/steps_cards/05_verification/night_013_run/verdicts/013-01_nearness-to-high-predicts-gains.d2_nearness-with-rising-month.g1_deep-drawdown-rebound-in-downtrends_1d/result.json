@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 7-bar forward excess return on forecast, regime grid bars",
+    "value": -0.0002763317575576463,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.37347396270411903
+    },
+    "threshold": "t >= 2 confirms (with supporting check), t <= -2 rejects, else inconclusive; at least 100 regime grid cases"
+  },
+  "supporting_check": {
+    "name": "mean 7-bar excess return of top third by forecast > 0",
+    "value": -0.0012534738422811116,
+    "passed": false
+  },
+  "counts": {
+    "independent regime grid cases": 1226,
+    "top third cases": 409
+  },
+  "decided_by": "The slope's t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "30-bar return recomputed from closes inside each window (detector's regime used where fewer than 30 prior bars exist); situation = that return < 0 and depth < 0, side long; grid = positions 0,7,14,... of each window with t+7 in the window; coin mean 7-bar return = mean over that coin's grid bars in all windows; top third = regime grid bars with forecast >= its 2/3 quantile."
+}

@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs_1d
+idea tested: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3711 USD
+---
+## Findings
+- **F1:** The coin's 7-day return in units of its 30-day daily volatility predicts its excess return over the next 7 days: the pooled slope t is 4.09 (2011 non-overlapping cases) and 3.05 at 3 days (4715 cases), but the gain sits almost entirely in the top fifth, which earned +2.62% over 7 days (t 3.18, n 402) against −0.16% to −0.89% for the other four fifths.
+- **F2:** The same 7-day scaled-return slope is positive for all six coins at 7 days but is carried by XRP (t 3.22) and ZEC (t 2.49), and it is positive in 5 of 8 years at 3 days (2024 t 2.42; 2022 t −1.01, 2023 t −1.12), so it is uneven across coins and years.
+- **F3:** The book leans against this pattern: its mean position is 0.38 in the lowest fifth of 7-day scaled return and falls steadily to 0.13 in the top fifth, which is the only fifth with a clearly positive 3-day excess return (+1.12%, t 3.54, n 943).
+- **F4:** The tested signal, the 1-day scaled fall, carries little: its lowest seventh earned only +0.59% excess over 3 days (t 1.64, n 674), and the per-coin slopes split, with XMR at t −2.46 and LTC at t −1.89 against XRP's up-day slope t +2.62 and ZEC's up-day slope t +3.34.
+- **F5:** A day's volume relative to its 30-day mean predicts the next 3 days: the top fifth (volume at 1.37 times the average or more) earned +0.98% excess (t 3.04, n 943), and log relative volume keeps a slope t of 2.30 alongside the 7-day scaled return (t 3.44) and the 1-day scaled return (t −2.35) in one regression.
+- **F6:** The book's daily returns correlate 0.62 with holding the coins, and its 20 worst days average −9.25% against +7.56% for its 20 best, consistent with a book that mostly carries the coins' own moves; its Calmar of 0.55 failed the check.
+- **F7:** Weekday effects in 1-day excess returns (Wednesday −0.30%, t −2.70; Friday +0.30%, t 3.76) weaken in the 2022–25 half, where Wednesday's t is −0.99 and Thursday's is 0.10, so they are not robust enough to act on given how many angles were checked.
+
+## Ideas
+- `013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs.g1_volatility-scaled-weekly-momentum-continuation` (from F1, F2, F3): The larger a coin's 7-day return measured in units of its own 30-day daily volatility, the larger its rise over the next 7 days.
+- `013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs.g2_volume-surge-precedes-gains` (from F5, F1): The higher a coin's daily volume relative to its own 30-day average volume, the larger its rise over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

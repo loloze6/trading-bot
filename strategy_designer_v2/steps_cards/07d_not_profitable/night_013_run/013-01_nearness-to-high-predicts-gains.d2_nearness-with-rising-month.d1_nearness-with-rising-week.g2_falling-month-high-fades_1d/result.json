@@ -1,0 +1,19 @@
+{
+  "line": "7.d",
+  "backtest": "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 0,
+  "cost": 0.1674263,
+  "findings": {
+    "F1": "The book does not pay against simply holding the coins: its Sharpe is 0.1525 while holding's is about 0.58 (Sharpe minus holding's Sharpe = -0.4292), and its mean daily return is 0.000125, a quarter of the 0.0005 required.",
+    "F2": "The falls swamp the gain: Calmar is 0.001061 against a required 0.75, so the yearly return of the chained daily returns is almost nil next to its deepest fall.",
+    "F3": "The graded effect the book is sized on is not in the data: on 1177 non-overlapping 7-day falling-month cases, the pooled slope of excess 7-day return on the forecast is 0.000306 with t = 0.42, far inside \u00b12.",
+    "F4": "Ranked into thirds, the nearest-to-high third minus the farthest third earns only -0.0081 in mean excess 7-day return. That is less than 1% per week, and with a flat slope it gives no steady grading for the sizing to use.",
+    "F5": "The book is only active in falling months (30-day return below 0) and is otherwise flat, so it holds no position through the coins' rising months that carry holding's Sharpe of about 0.58. It still trades 0.063 times per bar, so fees eat into a gain that is already near zero.",
+    "F6": "Removing any single window does not explain the failure: the lowest leave-one-window-out Sharpe is still positive at 0.0646. The weakness is spread evenly across periods rather than coming from one bad window."
+  },
+  "ideas": [],
+  "idea_ids": [],
+  "no_ideas": "The forecast does not predict 7-day returns inside falling months (slope t = 0.42 on 1177 cases, F3, with only a sub-1% weekly spread between thirds, F4). No amendment of this situation would remove the cause of the failed Sharpe-versus-holding, mean-return and Calmar measures, because the effect the book bets on is absent from the data."
+}

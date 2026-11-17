@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean next-bar excess return (vs coin's all-window mean daily return) on bars with forecast >= 5",
+    "value": 0.0062229991184333065,
+    "statistic": {
+      "name": "ordinary t of the mean (n=2295)",
+      "value": 5.53154944174924
+    },
+    "threshold": "confirm: mean > 0 with ordinary t >= 2 and high-vol minus low-vol > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess high-vol half minus low-vol half (split at pooled median 60-day std)",
+    "value": 0.005778144756295955,
+    "passed": true
+  },
+  "counts": {
+    "cases with forecast >= 5": 2295,
+    "high-volatility half cases": 585,
+    "low-volatility half cases": 586
+  },
+  "decided_by": "Mean excess > 0 with t >= 2 and high-vol minus low-vol difference > 0 (confirm rule).",
+  "reading": "Situation bars are those where the recorded vol-scaled 1-day return (price return where unrecorded) is below 0, long side; the 60-day std is recomputed within each window (60 returns, min 60, missing earlier), the high-volatility half is std > pooled median of cases with a std and the low half is std <= median, and the plan's minimum counts not reached give 'not observable'."
+}

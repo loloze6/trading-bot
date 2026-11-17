@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways_1d
+idea tested: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4121 USD
+---
+## Findings
+- **F1:** Next-day reversal of a coin's daily move depends on its recent volatility. On all days, the slope of the next-day excess return on the standardised daily return is -22.1 bp per unit (t -5.9, n 10179) in each coin's top 20-day-volatility tercile, against +6.9 bp (t 2.2) in the bottom tercile. On weekdays alone it is -16.2 bp (t -3.8) in the top tercile against +10.3 bp (t 2.9) and +8.3 bp (t 2.2) in the lower two. In a weekday regression, the volatility-by-move interaction is -2.3 bp (t -2.34) while the plain move term is -1.4 bp (t -0.56).
+- **F2:** The reversal is strongest on weekend days in high volatility. The slope is -51.1 bp per unit (t -6.5, n 2891) in the top volatility tercile, -21.2 bp (t -2.8) in the middle and -7.3 bp (t -1.1) in the bottom. The high-volatility weekday reversal is negative in 6 of 8 years, with t ≤ -2.4 in 5 of them.
+- **F3:** Saturday's own move also reverses the next day, not only Sunday's. The slope is -23.7 bp per unit (t -4.4, n 4347), negative in 7 of 8 years, but positive in 2025 (+78.5 bp, t 3.6). Sunday's move reverses at -40.2 bp per unit (t -6.0), and Tuesday's at -17.7 bp (t -3.6).
+- **F4:** Low relative volume does not strengthen the Sunday reversal, against the brief. The Sunday slope is -50.7 bp (t -2.7) in the lowest volume tercile, -47.7 bp (t -3.2) in the middle and -37.9 bp (t -4.0) in the highest, which are close, overlapping values.
+- **F5:** Saturday is a reliably rising day. Its mean return is +43.1 bp (t 7.0, n 5287), positive in all 8 years (t ≥ 1.97 in 6 of them) and positive in 16 of 19 coins. Wednesday (+42.6 bp, t 5.2) and Friday (+35.4 bp, t 4.8) are also up on average, but Wednesday is negative in 2018 (t -3.1) and 2022 (t -2.1).
+- **F6:** The tested Sunday reversal is not steady over time. It is large in 2019–2021 (-61 to -107 bp per unit, t -3.0 to -4.6), near zero in 2022–2024 (t between -0.8 and +0.5), and back in 2025 (-47.8 bp, t -3.8).
+- **F7:** Friday's move goes the other way. It continues on the next day on average (+12.5 bp per unit, t 3.1), but its sign flips by year: from -107.6 bp (t -5.9) in 2018 to +61.3 bp (t 7.0) in 2024. Weekly 7-day momentum is not distinguishable from chance (+40 bp per unit, t 1.7, n 4891).
+
+## Ideas
+- `011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.g1_volatile-regime-daily-move-reversal` (from F1, F2): A coin's daily move is followed by a move the other way over the next day, and the larger the move and the higher the coin's 20-day volatility, the larger the move back.
+- `011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.g2_saturday-move-reverses-sunday` (from F3, F2): A coin's Saturday move (its 1-day return at Saturday's close) is followed by a move the other way over the next day, larger the larger the Saturday move.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

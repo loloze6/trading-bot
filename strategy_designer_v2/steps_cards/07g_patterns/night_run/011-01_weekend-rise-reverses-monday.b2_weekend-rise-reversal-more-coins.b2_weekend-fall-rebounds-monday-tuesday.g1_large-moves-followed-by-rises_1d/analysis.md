@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.g1_large-moves-followed-by-rises_1d
+idea tested: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.g1_large-moves-followed-by-rises
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.6011 USD
+---
+## Findings
+- **F1:** When a coin is in the bottom fifth of its 7-day return scaled by its 60-day volatility, its next 2-day excess return falls as its signed 1-day move rises: slope −0.0100 per unit of z, t −8.98, n 3004 non-overlapping cases; at 3 days the slope is −0.0127, t −8.84, n 2005; the middle and top fifths have flat or positive slopes (+0.0003 t 0.25, +0.0068 t 3.01, +0.0022 t 1.81, +0.0013 t 1.13).
+- **F2:** Split by the sign of the prior 7-day return, the 1-day move's sign reverses in falling coins and persists in rising ones: down-trend slope −0.0040 (t −4.11, n 7580) against up-trend slope +0.0025 (t 3.19, n 7440), and −0.0063 (t −5.61) against +0.0049 (t 4.24) at 3 days.
+- **F3:** In falling coins, days down by more than one usual move are followed by +0.0080 excess over 2 days (t 3.11, n 923), while up days of 0.3 to 1 usual moves are followed by −0.0070 (t −4.41, n 1755); in rising coins, up days of more than one usual move are followed by +0.0093 (t 3.40, n 1056).
+- **F4:** The 1-day move's z times the prior 7-day z predicts the next 2-day excess return with slope +0.0021 (t 4.74, n 15020), but the signed z alone predicts nothing (slope −0.0007, t −1.18).
+- **F5:** The move-against-the-7-day-trend measure keeps its effect when the tested idea's absolute move size is in the same regression (t −4.86 against absz t 2.58), so the tested idea misses most of the pattern.
+- **F6:** The against-trend slope is negative in 15 of 19 coins and in 7 of 8 years, with t at or below −2.7 in 2021, 2023, 2024 and 2025; 2020 goes the other way (t +3.87), and so do the down-trend reversals in that year (t +2.16).
+- **F7:** The book does not lead the coins on any weekday: on Saturday the book averages +0.00053 a day against the coins' +0.0043, and on Wednesday +0.0018 against +0.0043; the weekday split of large moves showed no cell that stands out from the many tested (Sunday large up moves −0.0266, t −2.55, n 106 is the extreme).
+
+## Ideas
+- `011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.g1_large-moves-followed-by-rises.g1_downtrend-daily-moves-reverse` (from F1, F2, F3, F5, F6): When a coin's 7-day return is negative, the further its latest 1-day move falls relative to its 60-day volatility, the more the coin rises over the next 2 days. The effect is stronger the deeper the coin's 7-day fall relative to its volatility.
+- `011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.g1_large-moves-followed-by-rises.g2_trend-aligned-move-then-rise` (from F2, F4, F5, F6): The more a coin's latest 1-day move, relative to its 60-day volatility, points the same way as its 7-day return, relative to its volatility, the more the coin rises over the next 2 days.
+- `011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.g1_large-moves-followed-by-rises.g3_uptrend-strong-days-continue` (from F2, F3): When a coin's 7-day return is positive, the larger its latest 1-day rise relative to its 60-day volatility, the more the coin rises over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

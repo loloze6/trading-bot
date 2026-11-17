@@ -37,6 +37,10 @@ def test_records_count_analyses_not_ideas(tmp_path):
     mark_tested(tmp_path, "a_run", "003-01_x", "inconclusive", "profitable enough")
     mark_tested(tmp_path, "a_run", "N2-04_hand", "confirmed", "profitable enough")         # left out
     mark_tested(tmp_path, "c_run", "003-01_x.b1_s", "confirmed", "not profitable enough")  # same idea read in another run
+    (tmp_path / "03_test_plan" / "c_run" / "plans" / "003-01_x.b2_t_1d.md").write_text(          # no plan built: not counted
+        "---\nidea: 003-01_x.b2_t\noutcome: missing-components\n---\n")
+    (tmp_path / "03_test_plan" / "c_run" / "plans" / "004-01_z_1d.md").write_text(
+        "---\nidea: 004-01_z\noutcome: missing-components\n---\n")
     r = s.records(tmp_path)
     assert r["7.b"] == (2, 3, 0.6) and r["step 2"] == (1, 1, 2 / 3) and len(r) == 2
     assert s.record_of("7.e", r) == 0.5                                                # no analysis yet

@@ -1,0 +1,59 @@
+{
+  "line": "7.g",
+  "backtest": "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week.g1_sunday-move-reverses-volatility-graded_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.462527,
+  "findings": {
+    "F1": "Daily moves reverse only when the coin's own 20-day volatility is high, and the effect is graded. In the top volatility tercile, the excess next-day return taken against the sign of the day's vol-scaled move averages +0.46% (t 6.43, n 10814), and the slope of next-day excess return on the move is \u22120.0058 (t \u22127.8). In the bottom tercile the same fade averages \u22120.10% (t \u22122.65). The high-volatility reversal also holds on non-overlapping grids: +0.49% over 2 days (t 3.21, n 5333) and +0.75% over 3 days (t 3.53, n 3592).",
+    "F2": "Volatility measured against the coin's own past sorts the reversal the same way. When the 20-day/90-day volatility ratio is in its top tercile, the next-day fade averages +0.29% (t 4.73, n 8259). In the bottom tercile it averages \u22120.03% (t \u22120.51).",
+    "F3": "The high-volatility reversal is not specific to Sunday. Within the top volatility tercile, the fade is positive on all seven weekdays (t 1.13 to 4.03; mean +0.15% to +0.75%). Sunday versus the other days gives a Welch t of only 1.65. Weekend bars as a whole fade more than weekday bars (Welch t 4.48).",
+    "F4": "The high-volatility reversal is lopsided toward falls. On non-Sunday high-volatility bars, the bottom quintile of vol-scaled moves (mean z \u22121.24) is followed by a +1.18% excess next-day return. The top quintile (mean z +1.46) is followed by only \u22120.27%. On Sundays, the top quintile is followed by \u22120.45% and the bottom by +0.61%.",
+    "F5": "In calm periods moves continue rather than reverse. In the lowest volatility tercile, the next-day fade has t \u22123.40, \u22123.95 and \u22123.71 on Wednesday, Thursday and Friday bars. The overall slope of next-day return on the move in that tercile is +0.0013 (t 3.6).",
+    "F6": "The high-volatility reversal has weakened over time. Its yearly t is 4.75 in 2018, 3.50 in 2020, 3.60 in 2022, 1.23 in 2023, 1.03 in 2024 and 0.39 in 2025. The Sunday-only fade is also \u22120.06% (t \u22120.29) in 2025.",
+    "F7": "The book earns only on its Monday hold, at +0.090% mean daily return. Its Sharpe of 0.41 is 0.20 below holding the coins, and its mean daily return of 0.0137% fails the 0.05% bar. The Sunday-only regime leaves the stronger high-volatility reversal on the other six days unused.",
+    "F8": "In the Sunday bars, the fade grows with that day's volume relative to its 20-day mean. It is +0.26% (t 2.04) in the low-volume tercile and +0.68% (t 4.01) in the high-volume tercile, with a Welch t of 1.95. This is the opposite of the brief's claim that thin volume drives the reversal."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's 1-day return, measured in units of its own 20-day daily volatility, is followed by a move the opposite way over the next 1 to 3 days on any weekday. The reversal is larger the larger the move and the higher the coin's 20-day volatility relative to its own 90-day volatility.",
+      "consequence": "A trader can fade large vol-scaled daily moves every day of the week when the coin is in an unusually volatile period, sizing with how volatile that period is, rather than waiting for Sunday.",
+      "name": "High-volatility daily moves reverse",
+      "from": "F1, F2, F3, F6, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F6",
+        "F7"
+      ]
+    },
+    {
+      "idea": "When a coin's 20-day volatility is high, a fall measured in units of that volatility is followed by a rebound over the next day. The rebound is larger the deeper the fall.",
+      "consequence": "A trader can buy sharp vol-scaled falls in volatile periods at the close, with confidence growing with the size of the fall, and need not short sharp rises as hard.",
+      "name": "Volatile-period falls rebound",
+      "from": "F1, F4",
+      "refs": [
+        "F1",
+        "F4"
+      ]
+    },
+    {
+      "idea": "When a coin's 20-day volatility is low, its 1-day return in units of that volatility is followed by a move the same way over the next day. The continuation is larger the larger the move.",
+      "consequence": "A trader should refuse to fade daily moves in calm periods and can lean with them instead.",
+      "name": "Calm-period moves continue",
+      "from": "F1, F5",
+      "refs": [
+        "F1",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week.g1_sunday-move-reverses-volatility-graded.g1_high-volatility-daily-moves-reverse",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week.g1_sunday-move-reverses-volatility-graded.g2_volatile-period-falls-rebound",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week.g1_sunday-move-reverses-volatility-graded.g3_calm-period-moves-continue"
+  ],
+  "no_ideas": null
+}

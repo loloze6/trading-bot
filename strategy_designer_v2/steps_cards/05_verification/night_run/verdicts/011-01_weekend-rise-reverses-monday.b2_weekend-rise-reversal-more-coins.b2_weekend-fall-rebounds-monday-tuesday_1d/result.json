@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.99963113242346,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean position-weighted 2-bar excess return after weekend fall",
+    "value": 0.004475633757495335,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 2.9353208544885647
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2; at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 2-bar return on forecast",
+    "value": 0.0008228449213116863,
+    "passed": true
+  },
+  "counts": {
+    "cases": 2664,
+    "active bars": 2711
+  },
+  "decided_by": "Mean position-weighted excess return is positive with t >= 2 and the regression slope is above 0.",
+  "reading": "Cases are all bars whose coming bar is Monday with forecast > 0 and close[t+2] in the same window (one per coin per week by construction), the coin mean daily return is pooled over all its windows, the slope is an OLS of the unweighted excess 2-bar return on forecast, and the plan's 'fewer than 100 cases' rule is reported as not observable."
+}

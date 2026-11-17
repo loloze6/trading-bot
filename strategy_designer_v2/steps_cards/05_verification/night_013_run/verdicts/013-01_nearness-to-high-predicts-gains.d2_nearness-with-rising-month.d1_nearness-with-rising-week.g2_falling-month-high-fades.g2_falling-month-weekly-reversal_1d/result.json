@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of demeaned 7-bar forward return on forecast, mean_reversion grid bars",
+    "value": 6.316952889912204e-05,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.18188066401960015
+    },
+    "threshold": "t >= 2 confirms (with timing gain > 0); t <= -2 rejects; otherwise inconclusive; at least 100 grid cases"
+  },
+  "supporting_check": {
+    "name": "book mean daily timing gain > 0",
+    "value": -0.00022919848918016953,
+    "passed": false
+  },
+  "counts": {
+    "independent grid cases in mean_reversion": 1226
+  },
+  "decided_by": "The slope's t lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The 30-bar return for the situation check is recomputed from closes inside each window (first 30 bars left out); the coin mean subtracted is the mean 7-bar forward return over all its windows' grid bars; the slope t is the OLS slope over its standard error; the timing gain uses each coin's book value after rebalance, daily returns averaged across coins per day, minus the held allocation times the coin's mean daily return."
+}

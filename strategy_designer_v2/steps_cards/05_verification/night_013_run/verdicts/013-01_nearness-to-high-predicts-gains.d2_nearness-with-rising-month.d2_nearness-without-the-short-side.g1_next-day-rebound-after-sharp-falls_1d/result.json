@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of OLS slope of next-day excess return on forecast, forecast>0 bars",
+    "value": 0.00032777039289403703,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.9039161765502532
+    },
+    "threshold": "confirm if slope t >= 2 with mean timing gain > 0; reject if slope t <= -2; at least 500 bars with forecast > 0"
+  },
+  "supporting_check": {
+    "name": "mean daily timing gain of the book (position x (coin return - coin mean))",
+    "value": 0.0005411290614553856,
+    "passed": true
+  },
+  "counts": {
+    "bars with forecast > 0": 8514,
+    "book days": 2898
+  },
+  "decided_by": "Slope t is 2 or more and the mean timing gain is above 0, meeting the confirm rule.",
+  "reading": "The 500-bar minimum counts forecast > 0 bars that have a next-day close in the same window, and the daily book's timing gain is each day's mean over coins of postRebalance_current_allocation x (next-day return - coin mean), averaged over all days."
+}

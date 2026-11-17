@@ -1,0 +1,19 @@
+{
+  "status": "mismatch",
+  "situation_check": {
+    "agreement": 0.6122389110537433,
+    "passed": false
+  },
+  "main_measure": {
+    "name": "mean 7-bar forward return of top forecast quintile minus coin holding",
+    "value": null,
+    "statistic": null,
+    "threshold": "confirm if t >= 2 (with supporting check), reject if t <= -2, else inconclusive; at least 100 top-quintile cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "active bars": 17044
+  },
+  "decided_by": "Fewer than 90% of active bars have a forecast whose sign matches the plan's situation (long when the close is nearer its 52-week high than usual).",
+  "reading": "Situation check: an active bar agrees when the forecast sign matches closeness relative to the coin's usual distance (recorded standardised dist_high plus the recorded offset, positive = nearer than usual, which the Fidelity says is the long side of a graded, centred forecast); quintiles use the 60th/80th percentiles of the forecast pooled over all grid bars with a valid 7-bar return (top = forecast >= 80th percentile, fourth = 60th <= forecast < 80th); holding is each coin's mean 7-bar grid return over all its windows; fewer than 100 top-quintile cases gives 'not observable'."
+}

@@ -46,6 +46,20 @@ def failed(run, root=ORCH):
     return {t["idea"] for t in turns(run, root) if t.get("outcome", "").startswith("failed")}
 
 
+def unfinished(run, root=ORCH):
+    """Ideas a turn started whose run_idea call did not finish (no row in run_idea's table, not marked failed): the loop
+    was stopped mid-idea (the operator, a restart). Their plan exists, so select_next counts them as tested; they are
+    finished first when the loop resumes (run_idea skips the steps already done)."""
+    rows = {r["idea"] for r in table_rows(run, root)}
+    seen, out = set(), []
+    for t in turns(run, root):
+        i = t.get("idea")
+        if "turn" in t and i not in rows and i not in seen:
+            seen.add(i)
+            out.append(i)
+    return [i for i in out if i not in failed(run, root)]
+
+
 def stop_reason(budget, used, candidates):
     if budget is not None and used >= budget:
         return f"budget reached ({used:.2f} of {budget:.2f} USD)"
@@ -100,7 +114,7 @@ def call_run_idea(idea_path, args, brief=None):
 
 def main():
     a = argparse.ArgumentParser()
-    a.add_argument("idea", type=Path, nargs="?", help="the starting idea (a new run); without it, the run is resumed")
+    a.add_argument("idea", type=Path, nargs="?", help="the starting idea (a new run); without it, the run's own ideas are used")
     a.add_argument("--run", required=True)
     a.add_argument("--python", required=True)
     a.add_argument("--brief", type=Path)
@@ -111,8 +125,8 @@ def main():
         sys.exit("a run name ends in _run")
     if args.budget is not None and args.budget <= 0:
         sys.exit("a budget is a positive number of USD")
-    if args.idea is None and not table_rows(args.run):
-        sys.exit("a new run needs a starting idea")
+    if args.idea is None and not table_rows(args.run) and not select_next.written_in(args.run):
+        sys.exit("a new run needs a starting idea, or ideas already written in it (run_brief's step 2)")
 
     if args.idea is not None and args.idea.stem not in {r["idea"] for r in table_rows(args.run)}:
         used = spent(args.run)
@@ -120,6 +134,14 @@ def main():
         code, last = call_run_idea(args.idea, args, args.brief)
         if code:
             log_turn(args.run, {"idea": args.idea.stem, "outcome": f"failed: {last[0][:300]}"})
+    paths = {f.stem: f for f in select_next.written_in(args.run)}
+    for iid in unfinished(args.run):
+        if iid not in paths:
+            continue
+        log_turn(args.run, {"idea": iid, "resumed": "its run was stopped before it finished", "spent_before": spent(args.run)})
+        code, last = call_run_idea(paths[iid], args)
+        if code:
+            log_turn(args.run, {"idea": iid, "outcome": f"failed: {last[0][:300]}"})
     while True:
         ranking = select_next.rank(args.run, exclude=failed(args.run))
         write_queue(args.run, ranking)

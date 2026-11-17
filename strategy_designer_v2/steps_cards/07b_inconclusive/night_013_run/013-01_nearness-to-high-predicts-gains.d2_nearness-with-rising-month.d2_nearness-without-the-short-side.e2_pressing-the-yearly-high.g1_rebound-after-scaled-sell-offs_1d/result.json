@@ -1,0 +1,57 @@
+{
+  "line": "7.b",
+  "backtest": "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3206138,
+  "findings": {
+    "F1": "The test's own result is on the predicted side but short of the bar: the 3-day slope is +0.000164 (t 0.90) over 5,723 grid bars, the 2,718 bars with a forecast above 0 have a mean excess return of +0.00065, and the 6 default coins used are only part of the 19 coins available.",
+    "F2": "The effect is clear at short horizons and fades with the horizon: on the pooled non-overlapping grids the slope t is 6.43 at 1 day (n 17,380), 2.94 at 2 days (n 8,650), 0.90 at 3 days (n 5,723), -0.29 at 5 days (n 3,419) and -1.69 at 7 days (n 2,443), so the plan's 3-day horizon reads the rebound after most of it has already happened.",
+    "F3": "At 1 day the rebound is graded and sits in the largest falls: among forecast-positive bars the two top forecast quintiles have mean excess returns of +0.0037 (t 3.05, n 1,703) and +0.0057 (t 4.39, n 1,703), while the three lower quintiles range from -0.0011 to +0.0001.",
+    "F4": "The 1-day effect is broad. Its slope is positive in all 6 coins (t from 1.32 for BTC to 5.55 for XMR) and in both window halves (t 4.77 in w1\u201312, 4.41 in w13\u201324). It is positive in every year from 2018 to 2023 (t 1.21 to 4.03) and fades in 2024 (t 0.72) and 2025 (t -0.53).",
+    "F5": "At 3 days the signal is drowned by noise. The standard deviation of the excess return is 0.088 against a mean of 0.00065, the forecast quintiles go up and down with no order (-0.0051 to +0.0051), coin t's range from -0.59 to 1.51, and year t's from -1.70 to 2.69.",
+    "F6": "The effect is concentrated in high-volatility conditions. In each coin's top 30-day-volatility tercile the slope t is 5.89 at 1 day and 2.40 at 3 days (forecast-positive mean excess +0.0070). In the bottom tercile it is 0.29 at 1 day and -0.95 at 3 days."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "scaled sell-off rebound, more coins",
+      "from": "F1, F5",
+      "refs": [
+        "F1",
+        "F5"
+      ],
+      "idea": "The larger a coin's one-day fall measured in units of its own 30-day daily volatility, the larger its rebound over the next 3 days.",
+      "consequence": "A trader would buy a coin's sharp volatility-scaled sell-off, sized up with the depth of the fall, rather than treat a collapse as the start of further decline.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "The larger a coin's one-day fall measured in units of its own 30-day daily volatility, the larger its rebound over the next 1 day.",
+      "consequence": "A trader would buy a coin's sharp volatility-scaled sell-off for the next day only, sized with the depth of the fall, and not count on the bounce lasting several days.",
+      "name": "next-day rebound after sell-offs",
+      "from": "F2, F3, F4",
+      "refs": [
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "The larger a coin's one-day fall measured in units of its own 30-day daily volatility, the larger its rebound over the next 3 days, only while the coin's 30-day daily volatility is high compared with its own past.",
+      "consequence": "A trader would buy scaled sell-offs mainly when the coin is in a turbulent phase, and give less weight to the same signal in calm periods.",
+      "name": "sell-off rebound in turbulence",
+      "from": "F5, F6",
+      "refs": [
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs.b1_scaled-sell-off-rebound-more-coins",
+    "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs.b2_next-day-rebound-after-sell-offs",
+    "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs.b3_sell-off-rebound-in-turbulence"
+  ],
+  "no_ideas": null
+}

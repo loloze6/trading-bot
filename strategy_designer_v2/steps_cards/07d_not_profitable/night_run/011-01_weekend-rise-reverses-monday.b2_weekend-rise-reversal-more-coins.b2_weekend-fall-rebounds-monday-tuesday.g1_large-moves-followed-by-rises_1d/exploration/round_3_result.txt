@@ -1,0 +1,49 @@
+## gain by trend, all bars (n,alloc,gain,sum share)
+         n    alloc     gain      gsum
+tr                                    
+down  9256  0.27128  0.00030   2.77225
+mid   9256  0.30311  0.00051   4.75183
+up    9256  0.34319  0.00188  17.40178
+
+## w1-3 gain by trend x dir
+             n   alloc    gain    gsum
+tr   dir                              
+down fall  997  0.2631  0.0012  1.1536
+     rise  689  0.1841 -0.0008 -0.5464
+mid  fall  740  0.2410 -0.0018 -1.3462
+     rise  775  0.2469  0.0008  0.6382
+up   fall  379  0.1555  0.0000  0.0043
+     rise  500  0.2747 -0.0007 -0.3705
+
+## exc2 big rises by 30d return quintile
+        n     exc2        t
+r30q                       
+0     254 -0.00926 -1.77985
+1     275 -0.00354 -1.08638
+2     292  0.00271  0.61448
+3     419  0.00860  2.71355
+4     610  0.01318  3.14250
+
+## exc2 big falls by 30d return quintile
+        n     exc2        t
+r30q                       
+0     461  0.01031  2.86027
+1     373 -0.00173 -0.54208
+2     314 -0.00315 -0.85876
+3     310  0.00472  1.16062
+4     227  0.00983  1.59942
+
+## exc2~f+f*sign(ma) beta,t
+                beta         t
+c          -0.002666 -3.254036
+f           0.000425  4.902927
+f*sign(ma)  0.000320  4.946219
+
+## sim all: sharpe,yr,mdd,calmar
+[ 0.9261  0.2758 -0.3544  0.7782]
+
+## sim only above ma: sharpe,yr,mdd,calmar
+[ 1.2551  0.2532 -0.2347  1.0789]
+
+## sim skip rises below ma: sharpe,yr,mdd,calmar
+[ 1.2249  0.3666 -0.2443  1.5007]

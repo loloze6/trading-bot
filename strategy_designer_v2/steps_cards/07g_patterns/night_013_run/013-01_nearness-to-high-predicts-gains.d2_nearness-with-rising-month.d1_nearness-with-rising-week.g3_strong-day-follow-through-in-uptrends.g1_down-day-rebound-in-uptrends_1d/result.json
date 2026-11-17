@@ -1,0 +1,52 @@
+{
+  "line": "7.g",
+  "backtest": "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g1_down-day-rebound-in-uptrends_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.5195922000000001,
+  "findings": {
+    "F1": "The coin's next-day excess return runs against the day's own volatility-scaled return only when 30-day volatility is high: the slope is -0.0058 (t -6.30, n 4355) in each coin's top volatility tercile, against -0.0013 (t -2.06) in the middle tercile and +0.0008 (t 1.46) in the low tercile. In the high tercile the slope is negative in all six coins (t from -0.90 for ZEC to -4.15 for XMR) and in both halves of the windows (w1-12: t -2.66, w13-24: t -5.79).",
+    "F2": "On down days, the heavier the volume against its 30-day average, the higher the next day's excess return. The top volume-surprise quartile of down days returns +0.0068 (t 4.85, n 1573), while the other three quartiles return -0.0004 to +0.0006. The slope on log volume surprise is positive in all six coins (0.0019 to 0.0057) and in both halves (t 2.50 and 3.71). In a joint regression the fall \u00d7 volume term carries the effect (t 2.93), while the fall alone (t 1.09) and the volume alone (t 0.55) do not; on up days the volume slope has no consistent sign (-0.0040 to +0.0048).",
+    "F3": "The rebound after vol-scaled falls is at least as strong when the 30-day return is negative. Falls beyond 2 daily volatilities return +0.0083 (t 1.97, n 255) and falls of 1 to 2 volatilities return +0.0045 (t 2.27, n 681). The per-coin slope of the next-day return on fall size is positive in all six coins in that regime (t 0.53 to 2.66), against five of six while the 30-day return is positive.",
+    "F4": "Up days in high volatility while the 30-day return is negative are followed by a weak next day, -0.0070 excess (t -4.46, n 1109), while high-volatility down days in the same regime are followed by +0.0068 (t 3.78, n 1200). The reversal of F1 is concentrated in falling months.",
+    "F5": "The book stays mostly out of the market (mean allocation 0.10, in a position on 24% of bars) and earns 0.000219 a day. It lost less than holding in the falling years (2018: -0.00045 against -0.00349) but gave up most of the rise in the rising ones (2020: 0.00082 against 0.00423). The tested rule captures only the down-day, up-month slice of the reversal shown in F1 to F4."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's 30-day daily volatility is high relative to its own usual level, the larger its latest one-day return in units of that volatility, the more its return over the next 1 day goes the opposite way, with falls followed by gains and rises followed by losses.",
+      "consequence": "In a volatile market, fade the day's move in proportion to its size rather than following it.",
+      "name": "high-volatility one-day reversal",
+      "from": "F1, F4",
+      "refs": [
+        "F1",
+        "F4"
+      ]
+    },
+    {
+      "idea": "The larger a coin's one-day fall relative to its 30-day daily volatility, multiplied by how far that day's volume stands above its 30-day average volume, the higher the coin's return over the next 1 day.",
+      "consequence": "A sharp fall on heavy volume is a reason to buy for the next day, not to sell.",
+      "name": "heavy-volume selloff rebound",
+      "from": "F2",
+      "refs": [
+        "F2"
+      ]
+    },
+    {
+      "idea": "While a coin's 30-day return is negative, the larger its latest one-day fall relative to its 30-day daily volatility, the higher its return over the next 1 day.",
+      "consequence": "Do not chase a coin lower after a sharp down day in a falling month, because the next day tends to bounce.",
+      "name": "down-month down-day rebound",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g1_down-day-rebound-in-uptrends.g1_high-volatility-one-day-reversal",
+    "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g1_down-day-rebound-in-uptrends.g2_heavy-volume-selloff-rebound",
+    "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends.g1_down-day-rebound-in-uptrends.g3_down-month-down-day-rebound"
+  ],
+  "no_ideas": null
+}

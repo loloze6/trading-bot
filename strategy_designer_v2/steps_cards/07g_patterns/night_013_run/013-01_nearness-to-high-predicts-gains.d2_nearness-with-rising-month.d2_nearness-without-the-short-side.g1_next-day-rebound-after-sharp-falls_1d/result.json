@@ -1,0 +1,57 @@
+{
+  "line": "7.g",
+  "backtest": "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3587072,
+  "findings": {
+    "F1": "The rebound after down days lives in high volatility: on down days split by the coin's 20-day volatility rank within its own past 120 days, the slope of next-day excess return on the scaled fall is 0.0073 (t 3.45, n 1459) in the high tercile, 0.0007 (t 0.37) in the middle and \u22120.0011 (t \u22120.59) in the low; the fall \u00d7 volatility-rank interaction has t 3.57, and fall alone has t \u22121.84.",
+    "F2": "The book's timing gain follows the same split: the mean daily position \u00d7 excess return is 0.00153 (sum 4.52) in the high-volatility tercile, 0.00044 in the middle and \u22120.00063 (sum \u22121.87) in the low, so low-volatility days give back about 40% of what high-volatility days earn.",
+    "F3": "For falls beyond one usual move (z < \u22121), next-day excess return is 0.0121 (t 3.54, n 373) in high volatility against \u22120.0028 (t \u22121.19, n 374) in low; high-minus-low Welch t is positive in 5 of 6 coins (BTC 2.44, ZEC 2.23, ETH 1.71, XRP 1.71, LTC 1.17), and XMR is the exception at \u22120.48.",
+    "F4": "In the high-volatility tercile the reversal holds on all bars, both sides: the slope of next-day excess return on the scaled one-day return is \u22120.0041 (t \u22124.38, n 2962), against 0.0009 (t 1.14) in the low tercile; moderate up days (z 0.5 to 1) are followed by \u22120.0023 (t \u22122.43, n 1987).",
+    "F5": "Heavy volume strengthens the rebound: for z < \u22121, next-day excess return is 0.0102 (t 4.02, n 614) in the high volume-surprise tercile against 0.0018 (t 0.91) in the low; the fall \u00d7 volume-z interaction is only t 2.05, so this is weak given how many angles were checked.",
+    "F6": "The rebound is not steady over time: for z < \u22121 it is 0.0150 (t 3.49) in 2020 and 0.0146 (t 3.43) in 2021, but between \u22120.0013 and 0.0043 (all |t| < 1.1) in 2022\u20132025, which fits the book's weak Calmar of 0.43.",
+    "F7": "A weekday pattern shows across all bars: next-day excess return is 0.0030 (t 3.76, n 2479) from Friday's bar and 0.0025 (t 2.63) from Thursday's, against \u22120.0024 (t \u22122.53) from Monday's and \u22120.0030 (t \u22122.70) from Wednesday's; Friday is positive in both halves of the sample (0.0040, 0.0021) and in all 6 coins (t 0.35 to 2.44)."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's one-day fall relative to its own 20-day volatility of daily returns, the higher its return over the next 1 day, and the rebound per unit of fall grows the higher the coin's 20-day volatility stands against its own past 120 days.",
+      "consequence": "A trader can size one-day rebound buys after sharp falls up when the coin's volatility is high against its own past, and refuse them when its volatility is low.",
+      "name": "rebound grows with volatility",
+      "from": "F1, F2, F3, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When a coin's 20-day volatility is high against its own past 120 days, the larger its one-day return relative to that 20-day volatility, the lower its return over the next 1 day, on up days as well as down days.",
+      "consequence": "In high-volatility periods a trader can fade a coin's sharp one-day moves in both directions for one day, instead of trading only the down side.",
+      "name": "high-volatility one-day reversal",
+      "from": "F4, F1",
+      "refs": [
+        "F4",
+        "F1"
+      ]
+    },
+    {
+      "idea": "The larger a coin's one-day fall relative to its 20-day volatility, the higher its return over the next 1 day, and the rebound per unit of fall grows with that day's volume relative to the coin's own 20-day volume.",
+      "consequence": "A trader can favour rebound buys after sharp falls on heavy volume, and refuse them after sharp falls on thin volume.",
+      "name": "heavy-volume falls rebound more",
+      "from": "F5, F3",
+      "refs": [
+        "F5",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls.g1_rebound-grows-with-volatility",
+    "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls.g2_high-volatility-one-day-reversal",
+    "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls.g3_heavy-volume-falls-rebound-more"
+  ],
+  "no_ideas": null
+}

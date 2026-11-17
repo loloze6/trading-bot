@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9988713318284425,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of mean of (forecast/10) x excess 2-bar return on Sunday bars",
+    "value": 0.0060255856475983135,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 5.390204730442899
+    },
+    "threshold": "confirm if t >= 2 with supporting check passing; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean sign(forecast) x excess 2-bar return, top third by |forecast|",
+    "value": 0.009257950355340593,
+    "passed": true
+  },
+  "counts": {
+    "Sunday cases": 5244,
+    "top-third cases": 1748
+  },
+  "decided_by": "The main measure's t is >= 2 and the supporting check passes (confirm rule).",
+  "reading": "Sunday bars are those whose UTC start timestamp is a Sunday (closing into Monday) with regime mean_reversion and forecast not 0, the expected side is opposite to the sign of Sunday's 1-bar return, the coin's mean 2-bar return is taken on the non-overlapping grid (positions 0, 2, 4, ...) pooled over its windows, and the 'top third' is the ceil(n/3) cases with the largest |forecast|."
+}

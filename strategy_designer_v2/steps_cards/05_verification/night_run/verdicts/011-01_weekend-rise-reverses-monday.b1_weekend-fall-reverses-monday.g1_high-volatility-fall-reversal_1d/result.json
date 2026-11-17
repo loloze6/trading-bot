@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (forecast/10) x next-day excess return on bars with forecast > 0, pooled",
+    "value": 0.005531644024969562,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 5.095341469664765
+    },
+    "threshold": "confirm if t >= 2 with Spearman rho > 0; reject if t <= -2; else inconclusive; at least 100 bars with forecast > 0"
+  },
+  "supporting_check": {
+    "name": "Spearman rho of forecast vs next-day excess return > 0",
+    "value": 0.062474143026681146,
+    "passed": true
+  },
+  "counts": {
+    "bars with forecast > 0": 3982
+  },
+  "decided_by": "t = 5.10 >= 2 and the rank correlation 0.062 > 0: the confirm rule.",
+  "reading": "The plan's situation (a down day in the high-volatility regime) is taken as regime == 'mean_reversion' (the volatility-percentile regime, which is not recorded and cannot be rebuilt inside ~120-bar windows) and a negative close-to-close return from the prices, falling back to the sign of fall_vol's raw value on a window's first bar; the expected side is long; the coin's mean daily return is the mean of all its next-day returns over all windows; the 'fewer than 100 bars with forecast > 0' rule is applied as a minimum count, counting only bars that have a next-day return."
+}

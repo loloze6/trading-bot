@@ -1,0 +1,56 @@
+{
+  "line": "7.g",
+  "backtest": "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4276487,
+  "findings": {
+    "F1": "Weekend reversal is concentrated in weekend days with high relative volume, the opposite of what the brief predicted. The per-unit fade -z x next-day excess return is 0.0071 (t 4.66, n 2936) in the top third of volume relative to its 20-day median, against 0.0012 (t 1.90) in the middle third and 0.0005 (t 1.10) in the bottom third. When the coins are averaged per date first, the three thirds are 0.0040 (t 2.07, 618 dates), 0.0017 (t 1.35) and 0.0003 (t 0.38).",
+    "F2": "The weekend size-grading survives the volume weighting. Regressing the next-day excess return on z x relative volume gives a slope of -0.0017 (t -5.80), close in strength to z alone (slope -0.0041, t -6.31). The largest weekend rises (z>2) are followed by -1.52% (t -3.09, n 210), and z in 1 to 2 by -0.37% (t -1.86).",
+    "F3": "The weekend fade is larger when the coin's 20-day volatility is high against its own 60-day median. It is 0.0056 (t 3.96, n 2377) in the wildest third, against 0.0024 (t 2.88) in the calmest. The same weekday fade in the calm third is -0.0018 (t -2.71).",
+    "F4": "The weekend fade has faded over time. It was 0.0049 to 0.0066 a year in 2018\u20132021 (t 2.3 to 4.2) and 0.0006 to 0.0035 in 2022\u20132025 (t 0.33 to 2.53). Its date-clustered t is only -2.08 on Saturday and -1.76 on Sunday, so much of the pooled t of 4.6 comes from coins moving together.",
+    "F5": "Friday's move continues into Saturday rather than reversing. The slope of the next-day excess return on z is +0.0033 (t 5.40, n 4401), the fade is -0.0038 (t -4.33), and the two-day continuation is 0.0037 (t 3.39). The date-clustered t is only 0.87, and the sign flips by year: 2018 is -0.0132 (t -4.67), while 2024 is +0.0117 (t 4.79) and 2025 is +0.0053 (t 4.10).",
+    "F6": "Friday's continuation sits in high-relative-volume Fridays, at 0.0094 (t 4.00) against 0.0004 (t 0.61) on low-volume Fridays. It is also one-sided toward falls: Friday falls beyond -2 z are followed by -1.75% (t -3.88, n 146) and falls of -1 to -2 z by -0.59% (t -3.06), while rises beyond 2 z are followed by only +0.40% (t 0.67).",
+    "F7": "The book loses a nearly fixed -0.040% per coin on Saturday days (t -38.4), which looks like the cost of the Saturday rebalance. That cost takes back roughly half of the Monday gain of 0.075% (t 2.10), against an overall mean daily return of only 0.019%."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's Saturday or Sunday one-day move, scaled by its 20-day volatility, is reversed over the next day, and the reversal is larger the higher that day's volume is relative to the coin's usual volume over the past 20 days.",
+      "consequence": "Weight weekend fades toward heavy-volume weekend moves and refuse to fade quiet, low-volume weekend drifts.",
+      "name": "High-volume weekend moves reverse",
+      "from": "F1, F2, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F4"
+      ]
+    },
+    {
+      "idea": "When a coin's 20-day volatility is high against its own volatility over the past 60 days, its Saturday or Sunday vol-scaled move is reversed more strongly over the next day, in proportion to the move's size.",
+      "consequence": "Lean harder into weekend fades in turbulent stretches and scale them down when the coin is calm.",
+      "name": "Weekend reversal in turbulence",
+      "from": "F3, F2",
+      "refs": [
+        "F3",
+        "F2"
+      ]
+    },
+    {
+      "idea": "A coin's Friday one-day fall, scaled by its 20-day volatility, continues over the next day, and the continuation is larger the larger the fall and the higher Friday's volume relative to its 20-day usual.",
+      "consequence": "Avoid buying a heavy-volume Friday sell-off before the weekend, and treat it as a reason to stay short into Saturday.",
+      "name": "Friday selloffs extend into Saturday",
+      "from": "F5, F6",
+      "refs": [
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal.g1_high-volume-weekend-moves-reverse",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal.g2_weekend-reversal-in-turbulence",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal.g3_friday-selloffs-extend-into-saturday"
+  ],
+  "no_ideas": null
+}

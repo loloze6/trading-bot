@@ -1,0 +1,34 @@
+{
+  "line": "7.b",
+  "backtest": "011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3642501,
+  "findings": {
+    "F1": "The tested fall side has a level but no grading: Sunday falls are followed by a mean excess 2-day return of +0.0054 (t 2.45, n 1036), but within falls the slope on the fall's size has t 0.71 (n 1050). The deepest fall quintile (z \u22121.13) earns +0.0045 against +0.0078 for the next quintile (z \u22120.37), so the plan's graded slope (t 0.29) finds nothing.",
+    "F2": "The effect is graded once both sides of Sunday's move are taken together. The slope of the excess forward return on Sunday's volatility-scaled return is \u22120.0047 at 2 days (t \u22122.62) and \u22120.0075 at 3 days (t \u22123.54), with n 2087 at both horizons. Sunday is the only weekday with a significant 3-day slope; the other days range from t \u22120.06 to 1.67.",
+    "F3": "Weekend rises carry most of the reversal. Sunday rises are followed by a mean excess 2-day return of \u22120.0103 (t \u22124.60, n 1116), against +0.0054 after falls (rise-minus-fall Welch t \u22125.00). At 3 days the Sunday rise-minus-fall Welch t is \u22124.17, while on the other weekdays it runs from \u22120.37 to 1.68.",
+    "F4": "The Sunday 3-day reversal slope has the same sign everywhere. Its t is negative in all 8 years (from \u22120.01 to \u22124.16, strongest in 2019) and in all 6 coins (BTC \u22120.87, ETH \u22121.33, LTC \u22122.31, XMR \u22123.04, XRP \u22121.57, ZEC \u22120.00).",
+    "F5": "The reversal is somewhat stronger after low-volume Sundays. The 2-day slope t is \u22122.24 when Sunday volume is below its 28-day median, against \u22121.75 above it (n 1076 and 1077).",
+    "F6": "Within rises alone, the size of the reversal is not monotone. By rise quartile, the excess 2-day return is \u22120.0056, \u22120.0218, \u22120.0120 and \u22120.0006, so the grading in F2 comes from the full range of moves across both signs."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's weekend move (its Saturday-to-Sunday close-to-close return) is partly undone over the next 3 days (Monday to Wednesday): the higher its weekend return relative to the coin's usual daily move, the lower its return over those 3 days, and the lower the weekend return, the higher.",
+      "consequence": "A weekend rise is a reason to refuse longs and lean short into Monday to Wednesday, and a weekend fall a reason to lean long, more so the larger the weekend move in usual moves.",
+      "name": "Weekend move reverses three days",
+      "from": "F2, F3, F4, F1",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.b1_weekend-move-reverses-three-days"
+  ],
+  "no_ideas": null
+}

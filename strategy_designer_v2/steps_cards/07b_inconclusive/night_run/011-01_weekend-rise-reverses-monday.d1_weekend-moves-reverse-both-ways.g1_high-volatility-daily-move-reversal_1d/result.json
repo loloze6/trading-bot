@@ -1,0 +1,48 @@
+{
+  "line": "7.b",
+  "backtest": "011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3130063,
+  "findings": {
+    "F1": "The verdict's check fails because the down-minus-up gap is concentrated in large moves. On active bars with |vol-scaled move| \u2265 1, down days reverse more than up days by 0.0121 (Welch t 4.03; 722 down, 846 up). On smaller moves the gap is \u22120.0010 (t \u22120.74; 3200 down, 3303 up). Pooled, this gives the verdict's 0.0015 at Welch t 1.23.",
+    "F2": "The grading in the idea holds only on the down side. Regressing next-day reversal on |vol-scaled move| gives a slope of 0.0068 (t 4.17, n 3266) after down days, but \u22120.0016 (t \u22121.26, n 3469) after up days. In the active regime the reversal is 0.0106 (t 3.54) for falls of 1 to 1.5 vols and 0.0215 (t 2.89) for falls beyond 2 vols. For up moves beyond 1.5 vols it is \u22120.0065 (t \u22121.61) and 0.0026 (t 0.58).",
+    "F3": "The book's gain also comes from the long side. Gain per bar is 0.00204 (t 5.18, n 3902) when long after a fall, against 0.00051 (t 1.34, n 4152) when short after a rise.",
+    "F4": "The large-move down-minus-up gap is positive in all 8 years, from 0.0058 to 0.0259 (Welch t 0.70 to 2.64). Year-by-year it is mixed only when all moves are included, from \u22120.0040 to 0.0044.",
+    "F5": "The regime matters. Outside the high-volatility regime, next-day reversal is \u22120.0009 (t \u22121.43) after down days and 0.0005 (t 0.75) after up days. Inside it, these are 0.0043 (t 4.75) and 0.0028 (t 3.43).",
+    "F6": "The pooled down-minus-up gap is on the side the idea predicts, at 0.0015 (Welch t 1.23 on 3922 vs 4149 bars). It would need roughly 2.6 times as many cases to reach t 2 at the same size, and the backtest used only 6 of the 19 coins available."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's 20-day volatility is high relative to its own 120-day volatility, its last day's fall reverses over the next 1 day: the larger that day's fall measured in its 20-day volatility, the larger the rise back.",
+      "consequence": "Buy volatility-scaled daily falls in proportion to their size while the coin's volatility is elevated, and do not short its rises, which give no matching fall back.",
+      "name": "high-vol down-day rebound",
+      "from": "F1, F2, F3, F4, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "vol-regime reversal, more coins",
+      "from": "F6, F1",
+      "refs": [
+        "F6",
+        "F1"
+      ],
+      "idea": "When a coin's 20-day volatility is high relative to its own 120-day volatility, its last day's move reverses over the next 1 day. The larger that day's return measured in its 20-day volatility, the larger the move back, and the reversal is stronger after down days than after up days.",
+      "consequence": "Fade daily moves in proportion to their volatility-scaled size only while the coin's volatility is elevated, and stay out of daily reversal trades in calm periods, where there is none.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal.b1_high-vol-down-day-rebound",
+    "011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal.b2_vol-regime-reversal-more-coins"
+  ],
+  "no_ideas": null
+}

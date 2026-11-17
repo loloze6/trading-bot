@@ -1,0 +1,20 @@
+{
+  "status": "mismatch",
+  "situation_check": {
+    "agreement": 0.5689170182841069,
+    "passed": false
+  },
+  "main_measure": {
+    "name": "slope of 7-bar excess return on forecast",
+    "value": null,
+    "statistic": null,
+    "threshold": "slope > 0 with t >= 2 to confirm; slope < 0 with t <= -2 to reject"
+  },
+  "supporting_check": null,
+  "counts": {
+    "non-overlapping in-regime cases": 0,
+    "active bars": 8532
+  },
+  "decided_by": "Only 56.9% of active bars are long bars with a positive 30-day return, below the 90% needed for the config to match the plan's situation and side.",
+  "reading": "The situation is read as the gate 'PriceEvolution(30) > 0' with a long side, since 'near the high' has no cut-off and is the graded part of the comparison; the coin's mean 7-bar return is taken over all its non-overlapping grid bars in all windows; the regression is pooled OLS with intercept across coins and windows; the before-cost book is the held allocation times the next bar's return per coin, averaged across coins per day."
+}

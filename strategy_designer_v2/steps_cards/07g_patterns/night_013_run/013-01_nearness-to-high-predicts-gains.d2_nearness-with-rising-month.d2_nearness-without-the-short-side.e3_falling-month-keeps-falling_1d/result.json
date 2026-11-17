@@ -1,0 +1,44 @@
+{
+  "line": "7.g",
+  "backtest": "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3318131,
+  "findings": {
+    "F1": "The coin's day volume relative to its own 30-day mean volume carries the clearest pattern in the bars. In the top quintile, the excess 3-day return over the coin's mean is +0.0083 (t 2.83, 1061 non-overlapping cases), against -0.0030 to +0.0009 in the four lower quintiles. The top two deciles are +0.0069 and +0.0097, but the lower deciles do not rise in order: decile 0 is +0.0028 and decile 1 is -0.0089.",
+    "F2": "The volume effect holds up under checks. In a pooled regression with nearness to the 30-day high and the 7-day return, relative volume keeps a t of 2.52 (near 0.77, 7-day return 1.27). The top quintile minus the rest is positive in 5 of 6 coins (BTC -0.0047 is the exception; XRP +0.019, ZEC +0.021), in 7 of 8 years (2018 -0.012 is the exception), and in both halves of the windows (w1-12 +0.012, t 2.99; w13-24 +0.009, t 1.85). Many angles were looked at, so it stands out only moderately.",
+    "F3": "Nearness to the 30-day high predicts in single sorts but not on its own. The top quintile's excess 3-day return is +0.0073 (t 2.89, 1061 cases) and the second quintile's is -0.0068 (t -2.83). Inside the regression with volume and the 7-day return its t falls to 0.77, and in windows w1-12 the top-minus-rest is only +0.0034 (t 1.04).",
+    "F4": "Near the high, heavy volume and the high go together. The cell nearest the high with the heaviest volume tercile has an excess 3-day return of +0.0120, while the other heavy-volume cells are +0.0022 and +0.0026. The interaction itself is only t 1.57.",
+    "F5": "Closes above the prior 30-day high show weak follow-through. They have a mean excess 3-day return of +0.0142 (t 2.25, 217 cases), and 69% are still above that high 3 days later. Low-volume breakouts give -0.0032, against +0.033 and +0.012 in the middle and heavy terciles, but with 72 cases per tercile.",
+    "F6": "The tested short-on-falling-month book loses. Its mean daily book return is negative in 17 of 24 windows, and it lost most where the coins rose (w11, coin +0.0126 vs book -0.0005). The 30-day return quintiles of the 3-day excess return are not ordered (lowest +0.0003, second -0.0065, highest +0.0051), which fits the Sharpe of -0.27."
+  },
+  "ideas": [
+    {
+      "idea": "The heavier a coin's day volume relative to its own 30-day average volume, the higher its return over the next 3 days.",
+      "consequence": "A day of unusually heavy volume in a coin is a reason to favour a long over the next few days, more firmly the heavier the volume.",
+      "name": "heavy volume precedes gains",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "The closer a coin closes to its own 30-day high on a day of heavy volume relative to its 30-day average, the higher its return over the next 3 days.",
+      "consequence": "A coin pressing its monthly high on heavy volume is a reason to take a long over the next few days rather than fade the high.",
+      "name": "heavy volume under the high",
+      "from": "F3, F4, F5",
+      "refs": [
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains",
+    "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g2_heavy-volume-under-the-high"
+  ],
+  "no_ideas": null
+}
