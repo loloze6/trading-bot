@@ -211,3 +211,12 @@ GitHub reports 1 critical vulnerability on the default branch (Dependabot alert 
 The operator's grouping: **result loop back** (a file next to the brief, not inside it, saying what its run found: its
 ideas' results, its blocked ideas, where the lines went), **brief archiving**, **brief reopening**. Seen tonight: the
 answer to "which of the theory's ideas are real and pay" was written by hand in NIGHT_RUN.md; no file holds it.
+
+## New topic: develop the live part of the trading bot (operator, 2026-11-17)
+Refactor the bot's live mode (not the research workflow) so that it runs live, connected to the Kraken API, for real
+trading. Today nothing in this repository trades live (CLAUDE.md). Not started: a picture of the current live code, then
+a plan, then the operator's go.
+
+## New topic: a visual of the runs (operator, 2026-11-17)
+A user-friendly HTML view of the runs done: brief, ideas, backtests, results, analyses (step 5, 6 and 7 readings), and
+how the ideas lead to one another. Not started.
