@@ -3,8 +3,9 @@
   python3 orchestration/select_next/helper/select_next.py --run NAME_run [--top N]
 
 Candidates: the ideas written in the run (by step 2, or the run's starting idea, in 02_ideation/<run>/ideas/; by a step 7
-line in 07x_<line>/<run>/<backtest>/ideas/), not yet tested in the run (no plan for them in 03_test_plan/<run>/plans/),
-not duplicates (same Idea text and same data as an idea tested or listed before them).
+line in 07x_<line>/<run>/<backtest>/ideas/), not yet tested in the run (no plan for them in 03_test_plan/<run>/plans/,
+or a missing-components refusal the components step has unblocked: components/card.md), not duplicates (same Idea text
+and same data as an idea tested or listed before them).
 
 score = record of the line that wrote the idea / (1 + the idea's generation)
 record = (s + 1) / (n + 2) over every analysis of that line with a tested idea, in every named run (the same idea
@@ -19,6 +20,8 @@ HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[2]
 sys.path.insert(0, str(STEPS / "common"))
 from lib import header_fields  # noqa: E402  (shared helpers, common/lib.py)
+sys.path.insert(0, str(STEPS / "components" / "helper"))
+import wishes  # noqa: E402  (the components step: which refusals are unblocked)
 
 SEG = re.compile(r"\.([a-g])(\d+)_")                 # one analysis in an id: .<line letter><number>_
 BRIEF_IDEA = re.compile(r"^(\d{3})-(\d{2})_")          # an idea created from a brief: NNN-KK_
@@ -84,10 +87,14 @@ def written_in(run, root=STEPS):
 
 
 def tested_in(run, root=STEPS):
-    """The ids of the ideas tested in the run: those with a plan in it."""
+    """The ids of the ideas tested in the run: those with a plan in it, but a missing-components refusal the components
+    step has unblocked (every wish answered built or exists, the catalogue changed since): that idea is a candidate
+    again."""
     out = set()
     for plan in (root / "03_test_plan" / run / "plans").glob("*.md"):
         if plan.name in ("INDEX.md", "COMPONENT_WISHLIST.md"):
+            continue
+        if wishes.unblocked(plan, root):
             continue
         out.add(header_fields(plan.read_text()).get("idea") or BAR.sub("", plan.stem))
     return out

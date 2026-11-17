@@ -49,3 +49,32 @@ def test_an_idea_stopped_mid_run_is_unfinished(tmp_path):
     loop.log_turn("x_run", {"idea": "c", "outcome": "failed: step 3 wrote no plan"}, tmp_path)
     assert loop.unfinished("x_run", tmp_path) == ["b"]
 
+
+
+def test_the_components_step_is_called_every_10_turns_and_before_stopping(tmp_path, monkeypatch):
+    root = tmp_path / "orchestration"
+    for i in range(1, 12):
+        loop.log_turn("x_run", {"turn": i, "idea": f"i{i}"}, root)
+    assert loop.turns_since_components("x_run", root) == 11
+    loop.log_turn("x_run", {"components": "3 wishes answered", "outcome": "ok"}, root)
+    loop.log_turn("x_run", {"turn": 12, "idea": "i12"}, root)
+    assert loop.turns_since_components("x_run", root) == 1
+    # its cost counts in the run's spend
+    (root / "run_idea" / "x_run").mkdir(parents=True)
+    (root / "run_idea" / "x_run" / "table.json").write_text(json.dumps([{"idea": "a", "cost": 1.0}]))
+    (tmp_path / "components").mkdir()
+    (tmp_path / "components" / "journal.jsonl").write_text(
+        json.dumps({"run": "x_run", "usd": 0.5}) + "\n" + json.dumps({"run": "y_run", "usd": 9.0}) + "\n")
+    assert loop.spent("x_run", root) == 1.5
+    # when it is due
+    args = type("A", (), {"run": "x_run"})()
+    monkeypatch.setattr(loop, "ORCH", root)
+    monkeypatch.setattr(loop.wishes, "open_wishes", lambda runs, root=None: [("x_run", "p", "w", "t")])
+    assert not loop.components_due(args, None)                       # 1 turn since its last call
+    assert loop.components_due(args, "no candidate left")            # but the loop would stop
+    loop.log_turn("x_run", {"components": "failed", "outcome": "failed (exit 1)"}, root)
+    assert not loop.components_due(args, "no candidate left")        # never twice without a turn between
+    monkeypatch.setattr(loop.wishes, "open_wishes", lambda runs, root=None: [])
+    for i in range(13, 25):
+        loop.log_turn("x_run", {"turn": i, "idea": f"i{i}"}, root)
+    assert not loop.components_due(args, None)                       # no open wish: nothing to call

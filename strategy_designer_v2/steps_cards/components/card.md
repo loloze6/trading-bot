@@ -1,10 +1,9 @@
-# Step card: components (DRAFT 3, 2026-11-17, for the operator's review; not validated, nothing built)
+# Step card: components (2026-11-17: built, not validated)
 
 A step outside the chain of steps 1 to 7: it does not test an idea, it gives the bot the measures step 3 lacked to
 test one. `loop` calls it on its own (see "When it is called"). It changes `trading-bot/` (shared code) under the
 operator's standing go (2026-11-17): a component built through this card, its checks and its proof passed, may be added
-on the working branch; merging into master stays the operator's go, with the build record. (To be written in CLAUDE.md
-when this step is built.)
+on the working branch; merging into master stays the operator's go, with the build record (CLAUDE.md).
 
 Its card has sections a step card usually has not ("When it is called", "Unblocking"): like `loop`, it is called by
 another function and changes what that function does next.
@@ -51,7 +50,8 @@ bar, that a config can use as a forecast source or in a regime rule.** Five rule
 - **exists:** a component, with given settings, already gives exactly the measure. Nothing is built. It is also a
   finding on step 3, which should have found it: recorded in the line; fixed in step 3 if it repeats.
 - **cannot build:** the measure needs data not in the coin's own bars or feeds, or the model does not know how, or its
-  code still fails the checks after three attempts. Nothing is added; the wish stays open, with the reason.
+  code still fails the checks after three attempts. Nothing is added; the idea stays blocked. Its index line holds the
+  reason, so the wish is not asked again on every call (the operator decides what to do with it).
 
 A measure that combines components in a way the config cannot (the config averages components, it does not multiply
 them) is a measure like any other: built as one component.
@@ -92,18 +92,24 @@ python3 components/helper/build_component.py --runs NAME_run [NAME_run ...] --li
 Called again, it answers only the wishes still open: a wish with a line in the index is not asked twice.
 
 ## Unblocking
-**An idea refused as missing-components is unblocked when every wish of its refusal is answered built or exists.**
-`select_next` then counts it as a candidate again, and `run_idea` calls step 3 again for it: its new answer replaces
-the refusal (the refusal stays in the journal). An idea with one wish still open stays blocked.
+**An idea refused as missing-components is unblocked when every wish of its refusal is answered built or exists, and
+the catalogue has changed since the refusal.** `select_next` then counts it as a candidate again, and `run_idea` calls
+step 3 again for it: its new answer replaces the refusal (the refusal stays in the journal). An idea with one wish still
+open, or answered cannot build, stays blocked.
+- **Why the catalogue must have changed:** step 3 writes the catalogue's version in each plan's header. A refusal
+  written with the catalogue as it is today would come back the same: step 3 missed a component it had (a finding on
+  step 3, in its index line). Without this, such an idea would be unblocked and refused again without end.
 
 ## Checks in code (each build)
-The same for every component, by a standard harness the model does not write:
-- the value at bar t does not change when every row after t is changed (no lookahead);
+The same for every component, by a standard harness the model does not write (`trading-bot/tests/component_harness.py`):
 - not ready before `get_required_periods()` rows, ready at it;
-- the model's hand computation matches the class on several bars and settings;
+- the model's hand computation, which uses only the rows up to bar t, matches the class on several bars and settings
+  (no lookahead is by construction: the engine hands a component the rows up to bar t only; this check makes sure it
+  reads the right ones);
 - on every cached coin's real data, a value on every bar once warm;
 - the engine runs it in a config, and the config validator accepts it, as a forecast source and in a regime rule;
-- every class in the file has one catalogue row;
+- every class in the file has one catalogue row, and the catalogue's class count is the file's;
+- a class given a new setting: its output at the old defaults is unchanged on real data;
 - **proof:** one fixed backtest rerun with the new code gives the same files as its record (allowed differences: run
   ids, times, temporary paths); the bot's suite passes.
 
@@ -114,13 +120,17 @@ A failed check goes back to the model with its output (up to three attempts); th
 components/
   card.md                this card
   INDEX.md               one line per wish answered, every run
+  journal.jsonl          one line per wish: run, plan, wish, answer, USD, seconds, attempts
   helper/
     system_prompt.md     the instructions
-    build_component.py   one call per open wish; the checks; the index line
-    harness.py           the standard checks, for any component class
-  builds/<class>/        per component built: the call's answer, the checks' output, the proof's comparison
+    build_component.py   one call per open wish; writes, checks, proves or undoes; the index and journal lines
+    wishes.py            the wishes, their answers, the open ones, the unblocking rule (used by select_next, run_idea)
+    test_components.py   the tests of this code (a fake model call)
+  builds/<class>/        per component built: the calls' answers, the checks' output, the proof
   validation/reading.md  once validated
-(the class: trading-bot/strategies/strategy_components.py; its test: trading-bot/tests/; its row: step 3's catalogue)
+(in trading-bot/: the class in strategies/strategy_components.py; its spec, the settings and the hand computation, in
+ tests/built_components/<class>.py; the standard checks in tests/component_harness.py, run on every spec by
+ tests/test_built_components.py; its row in step 3's catalogue)
 ```
 
 ## The AI
@@ -154,12 +164,22 @@ On the fixed inputs, twice in a row:
 - **standardization:** one component per measure, named by it; the same docstring and checks for every component; the
   answered wishes come back as exists;
 - **unblocking:** the blocked ideas are rerun; count those step 3 now plans.
-Status: not started.
+Status: not started (the 57 open wishes of the 11 runs, of which the volume wishes `VolumeRatioComponent` answers).
 
-## What it changes elsewhere (each in its own card, when built)
-- `loop`: the two calls (every 10 turns; before stopping for no candidate).
-- `select_next`: the unblocking rule.
+## What it changes elsewhere (each in its own card)
+- `loop`: the two calls (every 10 turns; before stopping for no candidate; never twice without a turn between); its
+  spend counts the calls.
+- `select_next`: an unblocked refusal is a candidate again.
 - `run_idea`: step 3 called again for an unblocked idea.
+- step 3: the catalogue's version in each plan's header (code only).
+
+## Proof of the build (2026-11-17)
+- Tests: this step's 6, loop's and select_next's new ones; the cards' suite passes (57); the bot's suite passes (1,518,
+  with the harness run on `VolumeRatioComponent`, the first spec, which passes every check, real data included: 19
+  coins, 13 s).
+- Nothing that runs today changes: `select_next`'s ranking of all 11 runs, old code against new, is identical (426
+  lines); the proof machinery run once: 588 files identical, the bot's suite passes (2 minutes).
+- Not run yet: a real call of the step (its validation, on the 57 open wishes of the 11 runs).
 
 ## What this step does not do
 It does not test an idea, choose which ideas to run, change a component's output at its defaults, or change how the

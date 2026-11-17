@@ -15,6 +15,8 @@ HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[2]
 sys.path.insert(0, str(STEPS / "common"))
 from lib import header_fields, write_atomic  # noqa: E402  (shared helpers, common/lib.py)
+sys.path.insert(0, str(STEPS / "components" / "helper"))
+import wishes  # noqa: E402  (the components step: which refusals are unblocked)
 
 import yaml  # noqa: E402
 
@@ -195,10 +197,11 @@ def main():
     row = {"idea": idea_id, "backtest": rid, "parent": h.get("source-idea"), "cost": 0.0}
     j = Journal(f["table"], args.run, rid)
 
-    # Step 3: the plan
+    # Step 3: the plan (called again for a missing-components refusal the components step has unblocked)
     plan = f["plans"] / f"{rid}.md"
+    done = plan.exists() and not wishes.unblocked(plan)
     out, c = j.step("step3_plan", [STEPS / "03_test_plan/helper/make_test_plan.py", idea_file, "--briefs-dir", f["briefs"],
-                                   "--plans-dir", f["plans"]] + model, [plan, plan.with_name(plan.stem + "_config.json")], done=plan.exists())
+                                   "--plans-dir", f["plans"]] + model, [plan, plan.with_name(plan.stem + "_config.json")], done=done)
     row["cost"] += c
     if not plan.exists():
         sys.exit(f"step 3 wrote no plan for {rid}:\n{out[-800:]}")

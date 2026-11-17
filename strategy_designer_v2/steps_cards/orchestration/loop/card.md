@@ -44,6 +44,15 @@ The loop has no natural end (every tested idea brings new ones) and no default l
 
 An idea **confirmed with a profitable book** is marked in the queue and the table ("goal reached"); the loop goes on.
 
+## The components step (2026-11-17)
+Between two ideas (after an idea's step 7, before the next is chosen), when the run has open wishes (components step 3
+could not find), the loop calls the components step (`../../components/card.md`) on the run's open wishes:
+- **every 10 turns** since its last call (counted from `loop.jsonl`, so restarts and resumes count right);
+- **before stopping for "no candidate left"**: what it builds can unblock ideas, which `select_next` counts as candidates
+  again, and the loop goes on.
+It is never called twice without a turn between (a call that fails before answering is not repeated), nor once the
+budget is reached. Its cost counts in the run's spend. Each call is one line in `loop.jsonl` (`"components"`).
+
 ## When a step fails
 An idea whose `run_idea` call fails (a helper error, a step that writes nothing) is marked "failed at step N" with its
 log, and the loop goes on with the next idea. It is not retried.
@@ -64,7 +73,7 @@ the queue from these files.
   score, rank (its parent is its id), and what happened (tested: its step 5 and step 6, a goal marked; candidate:
   waiting; duplicate of; excluded: its call failed).
 - **The turns** (`<name>_run/loop.jsonl`): one line per turn: the idea picked, why (its score and its parts), the run's
-  USD so far.
+  USD so far; one line per call of the components step (its summary).
 - **What each idea did:** `run_idea`'s table, journal and logs, unchanged.
 
 ## Storage

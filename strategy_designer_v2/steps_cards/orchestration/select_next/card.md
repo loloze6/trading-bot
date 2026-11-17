@@ -18,7 +18,9 @@ by one score fixed in advance, computed from the workflow's own recorded results
 **A candidate is an idea written in the run, by step 2 from a brief or by a step 7 line from another idea, not yet
 tested in the run, and not a duplicate.**
 - **Written in the run:** in step 2's `02_ideation/<run>/ideas/`, or in a line's `<run>/<backtest>/ideas/`.
-- **Not tested:** no plan for it in the run (`03_test_plan/<run>/plans/`).
+- **Not tested:** no plan for it in the run (`03_test_plan/<run>/plans/`), or a missing-components refusal the
+  components step has unblocked (every wish answered built or exists, the catalogue changed since the refusal:
+  `../../components/card.md`, "Unblocking"; 2026-11-17).
 - **Not a duplicate:** its text and its data are not those of an idea already tested or already a candidate (the same
   text on other data, a `same-idea-on:` proposal, is not a duplicate). A duplicate is listed, with the idea it repeats.
 - The words (created from, line, analysis, generation) are those of `../../common/idea_created_from.md`.
