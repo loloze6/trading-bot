@@ -236,3 +236,7 @@ history of length 1, but `forecast` needs 2 values (`max(2, ...)`), so it is nev
 3 writes `standardise` first, whose window sets the history); met by the components step's harness, which ran its
 engine check without `standardise` (fixed: it now uses step 3's form). Fix when approved: a history at least as long as
 the forecast needs (`max(2, lookback)`). A change to `trading-bot/`: the operator's go.
+**Fixed (operator's go, 2026-11-17):** the history holds at least the values the forecast waits for
+(`strategy_engine.py`, phase 3: `max(lookback, 2, the history ops' minimum)`). Proof: a test (a one-bar component with
+no history op is ready; it fails without the fix); the fixed backtest rerun with the fix, compared with its full record
+on disk: 588 files identical; the bot's suite passes.

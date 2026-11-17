@@ -402,3 +402,27 @@ def test_engine_forecast_is_the_clipped_volume_ratio_once_warm():
             assert "not_ready_component" not in dbg, (i, dbg)
             probe = _run(VolumeRatioComponent(parameters=params), df.iloc[:i])
             assert fc == pytest.approx(float(np.clip(probe, -20, 20)), rel=1e-12) and fc > 0
+
+
+def test_a_one_bar_component_with_no_history_op_is_ready_in_the_engine():
+    """The engine's history holds at least the 2 values its forecast waits for (components step, 2026-11-17): a component
+    that needs one bar, with no history op, was never ready (its history was 1 long)."""
+    class OneBar(VolumeRatioComponent):
+        def get_required_periods(self):
+            return 1
+
+        def update(self, data):
+            self.data = data
+            self._raw_value = float(data["close"].iloc[-1]) / 100.0
+
+    import strategies.strategy_components as sc
+    sc.OneBarForTest = OneBar
+    try:
+        eng = ConfigDrivenStrategyEngine(_strategies("OneBarForTest", {}))
+        df = _bars(10)
+        for i in range(2, len(df) + 1):
+            eng.update(df.iloc[:i])
+        fc, dbg = eng.forecast(MarketRegime.UNKNOWN)
+        assert "not_ready_component" not in dbg and fc == pytest.approx(float(df["close"].iloc[-1]) / 100.0)
+    finally:
+        del sc.OneBarForTest

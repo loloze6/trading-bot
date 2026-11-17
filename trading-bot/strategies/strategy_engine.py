@@ -327,7 +327,10 @@ class ConfigDrivenStrategyEngine:
             self._history_tf[rname] = {}
             for c_spec in rcfg["components"]:
                 cid = c_spec["id"]
-                buf = c_spec.get("lookback", self.lookback)
+                # The history holds at least the values the forecast waits for (max(2, the history ops' minimum),
+                # self._need below): a component needing one bar with no history op got a deque of 1 and was never
+                # ready (found by the components step, 2026-11-17). A larger deque changes no value it already held.
+                buf = max(c_spec.get("lookback", self.lookback), 2, history_op_min_periods(c_spec))
                 self._history[rname][cid]    = deque(maxlen=buf)
                 self._history_tf[rname][cid] = c_spec.get("history_transforms", [])
 
