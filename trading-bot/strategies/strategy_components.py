@@ -1975,22 +1975,26 @@ class BarsSinceHighComponent(SubStrategyComponent):
 
 class VolumeRatioComponent(SubStrategyComponent):
     """
-    The bar's volume against its own recent average, on every bar:
+    Recent volume against its own longer average, on every bar:
 
-        exclude_current = 0 (default):
-            raw_value = volume[t] / mean(volume[t - period + 1 .. t])   (the average includes bar t)
-        exclude_current = 1:
-            raw_value = volume[t] / mean(volume[t - period .. t - 1])   (the average of the prior `period` bars)
+        num = mean(volume[t - short_period + 1 .. t])                (bar t included)
+        exclude_current = 0 (default): den = mean(volume[t - period + 1 .. t])
+        exclude_current = 1:           den = mean(volume[t - period .. t - 1])
+        raw_value = num / den - centred
 
-    Graded and non-negative: 1 at an average bar, 2 for a bar with twice the average volume, near 0 for a very quiet
-    bar. With exclude_current 0 it is at most `period`; with exclude_current 1 it is unbounded above. No direction.
-    Warm-up: `period` rows (exclude_current 0) or `period + 1` rows (exclude_current 1), bar t included.
+    Defaults (short_period 1, centred 0) give volume[t] / mean volume, the original output.
+    Graded. With centred 0 it is non-negative and equals 1 at average volume. With exclude_current 0 it is at most
+    period / short_period; with exclude_current 1 it is unbounded above. With centred 1 the value is shifted down
+    by 1, so it is positive when recent volume is above the longer average and negative when that volume is thin.
+    No direction.
+    Warm-up: period + exclude_current rows, bar t included.
 
-    WHY THIS CANNOT LEAK: it reads only the `volume` column of the bars up to and including bar t (the last row of
-    data); a bar's volume is known at that bar's close.
+    WHY THIS CANNOT LEAK: it reads only the `volume` column of the rows up to and including bar t (the last row of
+    data), over at most the last period + exclude_current rows; a bar's volume is known at that bar's close.
 
-    NaN: a NaN volume at bar t or in the averaged bars, or an average of 0, gives NaN. A missing `volume` column
-    raises. A `period` below 2, or an `exclude_current` other than 0 or 1, raises when the component is built.
+    NaN: a NaN volume in either window, or an average of 0, gives NaN. A missing `volume` column raises.
+    Building the component raises for a period below 2, an exclude_current other than 0 or 1, a short_period
+    below 1 or above period, or a centred other than 0 or 1.
     """
 
     def __init__(self, name="VolumeRatio", weight=1.0, parameters=None):
@@ -2002,6 +2006,14 @@ class VolumeRatioComponent(SubStrategyComponent):
         if ex not in (0, 1):
             raise ValueError(f"VolumeRatioComponent: exclude_current must be 0 or 1, got {ex!r}")
         self.exclude_current = int(ex)
+        self.short_period = int(self.parameters.get("short_period", 1))
+        if self.short_period < 1 or self.short_period > self.period:
+            raise ValueError(
+                f"VolumeRatioComponent: short_period must be between 1 and period, got {self.short_period}")
+        c = self.parameters.get("centred", 0)
+        if c not in (0, 1):
+            raise ValueError(f"VolumeRatioComponent: centred must be 0 or 1, got {c!r}")
+        self.centred = int(c)
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -2011,15 +2023,18 @@ class VolumeRatioComponent(SubStrategyComponent):
         if not self.is_ready():
             return
         vol = data['volume'].astype(float)
-        last = float(vol.iloc[-1])
+        num = float(vol.iloc[-self.short_period:].mean(skipna=False))
         if self.exclude_current:
             base = vol.iloc[-(self.period + 1):-1]
         else:
             base = vol.iloc[-self.period:]
-        mean = float(base.mean(skipna=False))
-        self._raw_value = last / mean if mean > 0 else float("nan")
+        den = float(base.mean(skipna=False))
+        if np.isnan(num) or np.isnan(den) or not den > 0:
+            self._raw_value = float("nan")
+        else:
+            self._raw_value = float(num / den - self.centred)
         self.confidence = 1.0
-        self.debug_info = {'volume': last, 'mean_volume': mean}
+        self.debug_info = {'short_mean_volume': num, 'mean_volume': den}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()

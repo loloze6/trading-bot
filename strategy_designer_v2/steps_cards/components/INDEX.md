@@ -22,3 +22,4 @@ night_rsi_run | 010-06_rsi-below-share-reversal_1d | RsiTimeBelowMidlineComponen
 night_rsi_run | 010-07_rsi-above-streak-reversal_1d | RsiMidlineAgeComponent | exists: RsiMidlineAgeComponent {"max_bars": 60, "period": 14, "rsi_window": 100, "tie_side": "below"}
 night_rsi_run | 010-08_rsi-below-streak-reversal_1d | RsiSideAgeComponent | exists: RsiMidlineAgeComponent {"max_bars": 60, "period": 14, "rsi_window": 100, "tie_side": "below"}
 night_013_run | 013-01_nearness-to-high-predicts-gains.d1_gain-concentrated-at-the-high_1d | HighProximityMomentumComponent | built: HighProximityMomentumComponent {"period": 365, "power": 2.0, "return_period": 30}
+night_013_run | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g2_rising-volume-precedes-gains_1d | VolumeRatioComponent | built: VolumeRatioComponent {"centred": 1, "period": 30, "short_period": 5}
