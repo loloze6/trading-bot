@@ -41,3 +41,25 @@ show once tested?
 
 ## Reading
 (written after the run)
+
+**volume_run (11:00 to 12:20 UTC; 19 ideas, 12.64 USD, 65 minutes; no failure, no restart).**
+
+| Outcome | Count | Ideas |
+|---|---|---|
+| **A.** planned with `VolumeRatioComponent` | 11 of the 16 volume-only ideas | 012-02, 013-06, 003-01, 003-02, 003-04 and six of the lines' ideas |
+| **B.** still refused | 5 of 16 | a mean of several bars against a longer mean (2: `…g2_rising-volume-precedes-gains`, 013-04); the day's scaled move times its volume ratio, a product (2: 003-03, `…g1_high-volume-weekend-moves-reverse`); the volume against the median of the bars before it (1: `…g2_heavy-volume-fall-rebounds`) |
+| **C.** the 3 brief-012 ideas still refused | 3 of 3 | they now ask only for a wick or range component: the volume part is covered |
+| **D.** the 11 tested | 3 confirmed, 6 inconclusive, 1 mismatch, 1 not observable | **1 confirmed and profitable** |
+
+- **Confirmed:** `…g2_heavy-volume-falls-reverse` (t +4.95; Sharpe 0.92, +0.37 over holding, Calmar 0.81; fails only the
+  mean daily return, 0.042 % against 0.05 %); `…g1_short-high-break-on-volume` (t +4.17; fails the mean daily return and
+  Calmar); `…e1_heavy-volume-rising-follow-through` (t +2.75), **profitable**: "while a coin's 30-day return is positive,
+  the higher its daily volume against its 20-day average, the higher its return over the next 3 days"; Sharpe 0.91, +0.36
+  over holding, 0.064 % a day, lowest Sharpe with one window left out 0.77, Calmar 0.80 (bar 0.75: a thin margin). The
+  trend-following finding of night_013_run (rising month, long), with volume. In-sample, as the others.
+- **Brief 003's own theory** (volume separates a reversal from a continuation), tested at last: 003-01 inconclusive
+  (t -0.50), 003-02 not observable (5 events), 003-04 inconclusive (t -1.51), 003-03 still refused. Nothing shows.
+- **E.** No chain defect. One more step 5 mismatch (`…g1_heavy-volume-precedes-gains`), as parked.
+- **For the component card:** the 5 refusals are three kinds of wish: a parameter the component lacks (a mean of several
+  bars), a combination the config cannot express (a product of two components), and a near variant (median, bars
+  before t). They are its fixed inputs, with the components still wanted.
