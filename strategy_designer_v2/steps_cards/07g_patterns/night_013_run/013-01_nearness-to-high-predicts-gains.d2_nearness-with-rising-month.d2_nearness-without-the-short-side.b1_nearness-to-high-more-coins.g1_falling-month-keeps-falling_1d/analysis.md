@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g1_falling-month-keeps-falling_1d
+idea tested: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g1_falling-month-keeps-falling
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.4443 USD
+---
+## Findings
+- **F1:** The main deviation from the idea is that, in falling months (30-day return below 0), the deepest fifth of closes below the 60-day high was followed by a positive 7-day excess return (+0.0127, t 1.59, 369 cases), while the other four fifths ran from -0.012 to -0.025; the pooled slope of excess return on depth was negative (t -2.75, 1805 cases), which is the opposite of the tested direction, but it falls to t -1.19 once cases are clustered by date (247 dates) and its sign changes from year to year (2018 t -4.12, 2019 +0.54, 2021 +0.39, 2025 -0.50).
+- **F2:** In falling months, the fifth of grid bars with the lowest volume relative to the coin's 20-day average volume was followed by a mean 7-day excess return of -0.0285 (t -2.63 clustered by date, 352 cases), against -0.0093 (t -0.66, 1453 cases) for the rest.
+- **F3:** The low-volume gap in F2 is persistent but not graded: low-volume bars did worse than the rest in 6 of 8 years (2020 to 2025, for example 2021 -0.081 vs -0.003, 2024 -0.010 vs +0.007), were level in 2019 and better in 2018. The four higher volume fifths were flat at -0.008 to -0.010, so the slope on log relative volume reaches only t 1.11 clustered by date.
+- **F4:** The 30-day return as momentum carries no reliable information once clustered by date: the slope is t 1.27 over all bars (3619 cases, 315 dates), -1.35 in falling months and 0.31 in rising months, and by year it ranges from t -2.23 (2018) to 1.83 (2025).
+- **F5:** The weekday pattern in next-day excess returns (Friday +0.00256 at pooled t 4.20, Monday -0.00200 at t -2.83) is not a finding: no weekday clears |t| 1.91 once clustered by date, and the signs flip between years.
+- **F6:** The book's largest moves are mechanical results of the short: its worst 1 % of days (mean -0.099, 364 days) came on days the coin rose +0.135, and its best 1 % (+0.099) on days the coin fell -0.126. The book's Sharpe by coin ranges from -0.83 (TRX) to +0.78 (AVAX), with no group of coins that clearly carries it.
+
+## Ideas
+- No ideas: The only pattern close to the bar, weak 7-day returns after unusually quiet volume in a falling month (F2, F3), is a step in the lowest fifth rather than a graded effect, and at a date-clustered t of 2.6 it does not stand out enough after the roughly twenty angles examined (depth, 30-day and 7-day returns, volatility, volume, weekday, year, book extremes, coins), so it does not yet support a graded idea.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

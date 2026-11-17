@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of excess 7-bar return on forecast, falling-month regime grid bars",
+    "value": 0.0004535572468800364,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": 0.8605073155855579
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 (and timing gain > 0); reject: slope < 0 with t <= -2; at least 100 grid cases"
+  },
+  "supporting_check": {
+    "name": "mean of (forecast/10) x excess 7-bar return",
+    "value": 0.014966260819386665,
+    "passed": true
+  },
+  "counts": {
+    "grid cases in the regime": 2655
+  },
+  "decided_by": "The slope's t lies between -2 and 2 (inconclusive rule).",
+  "reading": "The falling month is the 30-day close-to-close return recomputed inside each window (the recorded regime is used on the first 30 rows where it cannot be recomputed), the depth below the high is the recorded depth raw value (< 0), the expected side is short, the coin's mean 7-bar return is taken over all its grid bars in all windows, and the minimum of 100 grid cases is applied as 'not observable'."
+}
