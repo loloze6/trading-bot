@@ -199,6 +199,18 @@ range 7. Nothing says which component would unblock the most ideas.
 Step 5 found that the config does not trade the plan's situation (57 % to 68 % of active bars on the plan's situation
 and side, 90 % needed). The idea's backtest is spent (about 1 USD each) and says nothing about the idea. Whether the
 fault is step 3's config or step 5's reading of the situation is not looked at.
+**Analysed (2026-11-17), 5 cases (4 in night_013_run, 1 in volume_run).** The positions follow the forecast's sign on 75 to
+96 % of active bars; the gap is between the forecast and step 5's reading of the plan's situation. One root, two forms:
+- **Step 5** (013-01, e2, volume g1): its check rebuilt "above its usual level" from the raw values
+  (`last_history_value`), guessing what `standardise` does ("if the recorded value is already standardised...", in its
+  own code): e2's check added the raw distance (-41) to the offset (+10) where the config adds the standardised one
+  (-13): a correct backtest judged a mismatch.
+- **Step 3** (d2): the plan says long, rarely short; its config averages a block always negative (the distance below the
+  high, standardised) with one always positive (the month's rise): short on about 40 % of active bars. A real mismatch.
+- **The root:** no shared definition of how a forecast is built from components (`standardise` divides by the past mean
+  size without centring; a one-sided measure stays one-sided; "above its usual level" needs a constant offset block;
+  the record's raw and standardised columns). **Proposed:** define it once in `common/` and give it to steps 3 and 5
+  (code only). Proof: step 5 again on the 5 cases (about 1 USD): 013-01, e2 and volume g1 no longer mismatch, d2 still.
 
 ## Parked: TAO has no data where `common/data_available.md` says it has (night, 2026-11-17)
 `data_available.md` lists TAO for fold D; the more-coins backtest got "No historical data for TAOUSD" in all 24
