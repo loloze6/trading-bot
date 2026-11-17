@@ -51,6 +51,15 @@ def synthetic_bars(n=400, seed=7):
                          "low": low, "close": close, "volume": rng.lognormal(10.0, 0.5, n)})
 
 
+def bars_for(cls, params, df=None):
+    """The data a check uses: the given data, else synthetic bars long enough for the component's warm-up (and for
+    the engine's standardise window after it)."""
+    if df is not None:
+        return df
+    req = cls(parameters=dict(params)).get_required_periods()
+    return synthetic_bars(max(400, 2 * req + 100))
+
+
 def value(cls, params, df):
     c = cls(parameters=dict(params))
     c.update(df)
@@ -64,7 +73,7 @@ def same(a, b):
 
 
 def check_warmup(cls, params, df=None):
-    df = synthetic_bars() if df is None else df
+    df = bars_for(cls, params, df)
     req = cls(parameters=dict(params)).get_required_periods()
     out = []
     if req > 1 and value(cls, params, df.iloc[:req - 1])[1].is_ready():
@@ -75,9 +84,10 @@ def check_warmup(cls, params, df=None):
 
 
 def check_hand(cls, settings, hand, df=None):
-    df = synthetic_bars() if df is None else df
     out = []
+    given = df
     for params in settings:
+        df = bars_for(cls, params, given)
         req = cls(parameters=dict(params)).get_required_periods()
         for t in sorted({req - 1, req + 36, len(df) - 1}):
             if t < 0 or t >= len(df):
@@ -101,7 +111,7 @@ def _strategy(cls_name, params):
 
 
 def check_engine(cls, params, df=None):
-    df = synthetic_bars() if df is None else df
+    df = bars_for(cls, params, df)
     name, out = cls.__name__, []
     req = cls(parameters=dict(params)).get_required_periods()
     eng = ConfigDrivenStrategyEngine(_strategy(name, params))
