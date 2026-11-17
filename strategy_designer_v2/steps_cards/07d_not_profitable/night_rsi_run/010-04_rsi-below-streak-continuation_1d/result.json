@@ -1,0 +1,46 @@
+{
+  "line": "7.d",
+  "backtest": "010-04_rsi-below-streak-continuation_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.2995273,
+  "findings": {
+    "F1": "The book barely earns because it is short 39% of bars in coins that mostly rose. Its mean daily return is 1.4e-05. Per bar, holding a short against the coin's own rise costs -0.000293, and timing adds only +0.000338. Over 648 trades the mean net result is -0.86%, with 32.9% winners.",
+    "F2": "The losses come from the longest runs below 50, which is also where the position is largest. On short bars with a run above 35 days, the mean gain per bar is -0.00334, the coin's next-day return is +0.00345, and the mean position is -1.09. On runs of 20\u201335 days the gain per bar is +0.00228.",
+    "F3": "The short loses when the coin has already fallen deep, measured at the bar's close:",
+    "F4": "On the 14-day grid, the deepest states rebound and the moderate ones continue:",
+    "F5": "The book's 20 worst 14-day stretches lose 10.5% on average. They start when the coin's 30-day return is -24.9%, against +3.6% on all grid bars, while the book holds a mean position of -0.83. These are short squeezes after deep falls, and they drive the failed Calmar.",
+    "F6": "The book trails holding in rising windows. In w11 the coin's mean daily return is +0.0099 and the book's is -0.00023. In w17 the coin returns +0.0062 and the book -0.00065. These windows drive the failed Sharpe-minus-holding and leave-one-out measures."
+  },
+  "ideas": [
+    {
+      "idea": "The longer a coin's 14-day RSI has stayed below 50 without a break, measured in days up to the current close, the lower the coin's return over the next 14 days. This holds only while the coin's close stands close to its 100-day average, so that its 30-day fall is still shallow, not after a deep fall.",
+      "consequence": "A trader would short a lengthening RSI-below-50 stretch only in a fresh, shallow decline, and would stand aside once the coin is far below its 100-day average, where these shorts were squeezed.",
+      "name": "RSI streak shallow-decline only",
+      "from": "F2, F3, F4, F5",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The deeper a coin's close lies below its 100-day average, the higher the coin's return over the next 14 days.",
+      "consequence": "A deep discount to the 100-day average is a reason to refuse new shorts and to consider a rebound long.",
+      "name": "Deep discount rebounds",
+      "from": "F3, F4, F5",
+      "refs": [
+        "F3",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "010-04_rsi-below-streak-continuation.d1_rsi-streak-shallow-decline-only",
+    "010-04_rsi-below-streak-continuation.d2_deep-discount-rebounds"
+  ],
+  "no_ideas": null
+}

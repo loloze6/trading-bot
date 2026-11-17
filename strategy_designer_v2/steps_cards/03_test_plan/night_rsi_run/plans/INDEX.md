@@ -3,7 +3,7 @@
 010-01_rsi-above-share-continuation_1d: plan (fit: exact) [BTC, ETH, BNB, 1d, folds A, B, C, D]
 010-02_rsi-below-share-continuation_1d: plan (fit: exact) [BTC, ETH, BNB, 1d, folds A, B, C, D]
 010-03_rsi-above-streak-continuation_1d: plan (fit: exact) [BTC, ETH, BNB, 1d, folds A, B, C, D]
-010-04_rsi-below-streak-continuation_1d: missing-components: The idea needs the length of the current unbroken run of 14-day RSI below 50, which comes from the coin's [BTC, ETH, BNB, 1d, folds A, B, C, D]
+010-04_rsi-below-streak-continuation_1d: plan (fit: exact) [BTC, ETH, BNB, 1d, folds A, B, C, D]
 010-05_rsi-above-share-reversal_1d: missing-components: The idea needs the fraction of the last 30 daily bars on which RSI(14) was above 50. No catalogue component [BTC, ETH, BNB, 1d, folds A, B, C, D]
 010-06_rsi-below-share-reversal_1d: missing-components: The 30-day share of RSI(14) below 50 can be computed from closes alone. No catalogue component outputs a count of [BTC, ETH, BNB, 1d, folds A, B, C, D]
 010-07_rsi-above-streak-reversal_1d: missing-components: The streak can be computed from each coin's own closes, and a graded forecast could hold it as a negated, [BTC, ETH, BNB, 1d, folds A, B, C, D]

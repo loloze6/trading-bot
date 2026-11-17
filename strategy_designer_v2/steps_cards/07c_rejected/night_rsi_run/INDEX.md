@@ -3,3 +3,4 @@
 010-01_rsi-above-share-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 010-02_rsi-below-share-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 010-03_rsi-above-streak-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
+010-04_rsi-below-streak-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
