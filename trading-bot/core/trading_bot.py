@@ -213,42 +213,6 @@ class TradingBot:
         
         self.logger.debug(f"🤖 Trading bot initialized │ Mode: {'TEST' if test_mode else 'LIVE'} │ Symbols: {self.symbols}")
 
-    def run(self) -> None:
-        """
-        Start the trading bot main loop on live mode.
-        
-        Initiates price fetching thread and begins candle processing.
-        Handles graceful shutdown on keyboard interrupt or errors.
-        """
-        self.logger.debug(f"{'='*70}")
-        self.logger.debug(f"🚀 STARTING TRADING BOT LIVE")
-        self.logger.debug(f"{'='*70}")
-        self.logger.debug(f"│ Candle Interval: {self.candle_interval_seconds}s")
-        self.logger.debug(f"│ Price Check: Every {self.price_fetch_interval}s")
-        self.logger.debug(f"└{'─'*68}")
-
-
-        self.running = True
-        self.data_manager.running = True
-        
-        try:
-            # Start price fetching in separate thread
-            price_thread = self.data_manager.initiate_start_thread()
-            if price_thread:
-                self.threads.append(price_thread)
-                self.logger.debug("✓ Price fetching thread started")
-            
-            # Start main candle processing loop (blocking)
-            self.logger.debug("✓ Entering main candle processing loop...\n")
-            self.data_manager.live_main_candle_processing_loop()
-            
-        except KeyboardInterrupt:
-            self.logger.debug("\n⚠ Bot stopped by user (Ctrl+C)")
-        except Exception as e:
-            self.logger.error(f"❌ Fatal error in main loop: {e}", exc_info=True)
-        finally:
-            self.stop()
-
     def _funding_rate_for_bar(self, symbol, data_time):
         """
         Daily funding rate to accrue for `symbol` on the bar dated `data_time`.

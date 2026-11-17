@@ -173,10 +173,12 @@ new block after the current V8). See §8 for what it does.
 aggregation engine, used identically by both paths — it "knows nothing about
 auxiliary feeds" (`data_manager.py`). It is fed differently per mode:
 
-- **Live:** `DataManager._rest_price_fetcher()` polls Binance REST
-  (`data_manager.py`) and pushes `PriceTick`s onto a queue;
-  `live_main_candle_processing_loop()` drains the queue and calls
-  `CandleBuilder.add_tick()` (`data_manager.py`).
+- **Live:** `live/runner.py` polls Kraken Futures for completed candles at
+  `fetch_interval_seconds` (`live/kraken.py`) and passes them to
+  `DataManager.ingest_completed_rows()`, which feeds them through the same
+  `CandleBuilder.add_row()` and closes a bar as soon as its last candle is in.
+  `tests/test_live_session_parity.py` proves a live session's record is
+  byte-identical to the backtest engine's on the same candles.
 - **Backtest:** `DataManager._process_backtest_tick()` feeds the historical
   DataFrame row at the current cursor into `CandleBuilder.add_row()`
   (`data_manager.py`) — it uses `close` as the ingested
@@ -779,8 +781,8 @@ derived, so whichever fires, the delta is computed consistently
 ## 9. Portfolio / Execution
 
 `BaseExecutionHandler` (`execution/execution_handler.py`) contains all
-orchestration shared by `ExecutionHandler` (live, Binance margin API) and
-`MockExecutionHandler` (backtest simulation) — subclasses implement only
+orchestration shared by every handler; today `MockExecutionHandler` (backtest
+simulation, and a live run's local book) is the only one — subclasses implement only
 three primitives: `open_long_position`, `open_short_position`,
 `close_position`, each returning `(success: bool, debug: dict)`. The call
 chain per rebalance:
@@ -826,7 +828,7 @@ keyed by `(exchange, market_type)` with a per-symbol `slippage_bps` map.
   0bps to BTCUSDT=1bps, moving the reference anchor from
   `net_pnl -231.758912` to `-238.279247` (trade count unchanged at 24).
 
-`MockPortfolioInfo`/`PortfolioInfo` (both extend `CommonPortfolioDef`,
+`MockPortfolioInfo` (extends `CommonPortfolioDef`,
 `execution/portfolio_info.py`) track balances as a flat
 `{asset: {free, locked}}` dict.
 

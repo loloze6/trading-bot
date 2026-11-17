@@ -57,7 +57,7 @@ adding a feed here does not make it available there.
 
 ### `data_manager.py` 🔴 DO NOT MODIFY
 The central orchestration layer. Contains:
-- **`PriceTick`** and **`Candle`** — core data structures consumed everywhere
+- **`Candle`** — the core data structure consumed everywhere
 - **`CandleBuilder`** — the single candle aggregation engine shared by live
   and backtest. All tick-to-candle logic lives here and nowhere else.
 - **`AuxFeedConfig`** — descriptor holding one registered auxiliary feed

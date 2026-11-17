@@ -38,8 +38,6 @@ the strategy never sees a future value.  In live mode each feed is polled
 on a separate background thread and the latest cached value is used.
 """
 
-from binance.client import Client
-from config.settings import API_KEY, API_SECRET, USE_TESTNET
 import pandas as pd
 import logging
 from typing import Callable, Dict, List, Optional
@@ -51,8 +49,6 @@ import time
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-import threading
-import queue
 from pathlib import Path
 
 # Fetchers are imported here so callers only need to import data_manager
@@ -213,23 +209,6 @@ def _assert_request_window_unsealed(start_date, end_date, symbol: str) -> None:
 # ===========================================================================
 
 @dataclass
-class PriceTick:
-    """
-    A single price observation for one symbol.
-
-    In live mode:     created by DataManager._rest_price_fetcher() from a
-                      Binance ticker response.
-    In backtest mode: created inside CandleBuilder.add_row() from a historical
-                      DataFrame row.
-    Volume is optional because get_symbol_ticker() does not return it.
-    """
-    symbol: str
-    price: float
-    timestamp: datetime.datetime
-    volume: Optional[float] = None
-
-
-@dataclass
 class Candle:
     """
     One completed OHLCV bar.
@@ -273,9 +252,8 @@ class Candle:
 #                       'last'  → most recent value (default, good for rates/indices)
 #                       'mean'  → average (good for noisy signals)
 #                       'sum'   → sum (good for counts/volumes)
-#   live_value      — the most recently fetched value, updated by the
-#                     background poll thread in live mode; used as the
-#                     enrichment value at candle close.
+#   live_value      — the latest value in live mode; nothing sets it yet
+#                     (aux feeds are not supported live yet).
 # ===========================================================================
 
 @dataclass
@@ -287,7 +265,7 @@ class AuxFeedConfig:
     agg:            str = "last"          # 'last' | 'mean' | 'sum'
     fill:           str = "none"          # 'none' | 'carry_forward' (CUL-355)
     delay_seconds:  float = 0.0           # publication delay (CUL-356)
-    live_value:     Optional[float] = None  # updated in live mode by poll thread
+    live_value:     Optional[float] = None  # live: not set yet (no live aux feeds)
     required:       bool = False          # see AuxFeedRequiredError
 
 
@@ -414,11 +392,9 @@ class CandleBuilder:
 
     Flow diagram
     ────────────
-    Live:
-        REST poll → PriceTick → add_tick() ──┐
-                                              ├─→ _ingest() → Candle (on close)
-    Backtest:                                 │               → callback → enrich
-        DataFrame row → add_row() ───────────┘
+    Backtest: historical DataFrame row ─┐
+                                        ├─→ add_row() → _ingest() → Candle (on close) → callback
+    Live:     completed fetched candle ─┘   (DataManager.ingest_completed_rows)
     """
 
     def __init__(
@@ -434,15 +410,6 @@ class CandleBuilder:
     # ------------------------------------------------------------------
     # Public entry points
     # ------------------------------------------------------------------
-
-    def add_tick(self, tick: PriceTick) -> Optional[Candle]:
-        """Live path: ingest a PriceTick, return completed Candle or None."""
-        return self._ingest(
-            symbol=tick.symbol,
-            price=tick.price,
-            volume=tick.volume or 0.0,
-            timestamp=tick.timestamp,
-        )
 
     def add_row(self, row: pd.Series, symbol: str) -> Optional[Candle]:
         """
@@ -701,12 +668,10 @@ class DataManager:
         # The strategy then receives a DataFrame with columns:
         #   timestamp, open, high, low, close, volume, fear_greed, funding_rate
 
-    Live mode aux feeds
-    ────────────────────
-    Each registered feed's fetcher.get_data() is called once at startup to
-    pre-load historical values.  A background thread then polls each feed's
-    fetcher at a configurable interval and updates AuxFeedConfig.live_value.
-    At candle close the latest cached value is used for enrichment.
+    Live mode
+    ─────────
+    The live runner (live/runner.py) fetches completed candles and passes them
+    to ingest_completed_rows(). Aux feeds are not supported live yet.
     """
 
     def __init__(
@@ -714,7 +679,6 @@ class DataManager:
         symbols: List[str],
         interval_seconds: int,
         mode: str = "live",
-        price_fetch_interval: int = 60,
         fetch_interval_seconds: Optional[int] = None,
         candle_completion_callback: Callable[[str, Candle], None] = None,
     ):
@@ -723,8 +687,7 @@ class DataManager:
             symbols:                    Trading pairs, e.g. ['BTCUSDT'].
             interval_seconds:           Candle duration in seconds.
             mode:                       'live' or 'backtest'.
-            price_fetch_interval:       Seconds between REST price polls (live only).
-            fetch_interval_seconds:     Backtest only (CUL-250). Historical OHLCV is
+            fetch_interval_seconds:     Backtest and live (CUL-250). OHLCV is
                                         fetched/cached at THIS resolution instead of
                                         interval_seconds, and CandleBuilder aggregates
                                         the finer rows up to interval_seconds during
@@ -747,7 +710,6 @@ class DataManager:
         self.symbols              = symbols
         self.interval_seconds     = interval_seconds
         self.mode                 = mode
-        self.price_fetch_interval = price_fetch_interval
 
         self.fetch_interval_seconds = (
             fetch_interval_seconds if fetch_interval_seconds is not None else interval_seconds
@@ -794,10 +756,8 @@ class DataManager:
         )
 
         # ── Live-only state ────────────────────────────────────────────────
-        if mode == "live":
-            self.client      = Client(API_KEY, API_SECRET, testnet=USE_TESTNET)
-            self.price_queue: queue.Queue = queue.Queue()
-            self.running     = False
+        # Start of the last fetched candle fed by ingest_completed_rows (live).
+        self._last_fed: Dict[str, pd.Timestamp] = {}
 
         # ── Backtest-only state ────────────────────────────────────────────
         self.historical_data: Dict[str, pd.DataFrame] = {}   # symbol → DataFrame
@@ -859,8 +819,8 @@ class DataManager:
                             a value known at its own timestamp; 86400 for
                             fear & greed (day D's value visible from D+1).
 
-        Can be called at any time before initialize() (backtest) or
-        initiate_start_thread() (live).
+        Must be called before initialize() (backtest). Live runs do not
+        support aux feeds yet (live/runner.py refuses a strategy needing one).
         """
         if agg not in ("last", "mean", "sum"):
             raise ValueError(f"agg must be 'last', 'mean', or 'sum' — got '{agg}'")
@@ -1156,15 +1116,12 @@ class DataManager:
 
     def process_next_tick(self, symbol: str) -> Optional[Candle]:
         """
-        Advance by one tick; return a completed Candle if the interval closed.
-
-        Live:     drains pending ticks from the price queue.
-        Backtest: feeds the row at the current cursor into CandleBuilder.
+        Backtest: feed the row at the current cursor into CandleBuilder; return
+        a completed Candle if the interval closed. Live uses ingest_completed_rows.
         """
         if self.mode == "live":
-            return self._process_live_tick(symbol)
-        else:
-            return self._process_backtest_tick(symbol)
+            raise RuntimeError("process_next_tick is backtest-only; live feeds ingest_completed_rows")
+        return self._process_backtest_tick(symbol)
 
     def has_more_data(self, symbol: str) -> bool:
         """False when backtest data is exhausted; always True in live mode."""
@@ -1343,41 +1300,50 @@ class DataManager:
             return pd.DataFrame()
 
     # -----------------------------------------------------------------------
-    # Live-mode threading
+    # Live mode
     # -----------------------------------------------------------------------
 
-    def initiate_start_thread(self) -> Optional[threading.Thread]:
+    def ingest_completed_rows(self, symbol: str, rows: pd.DataFrame) -> int:
         """
-        Start the background REST price-fetcher thread (live mode only).
+        Live: feed completed fetched candles (each fetch_interval_seconds long,
+        `timestamp` = candle start, naive UTC) through the backtest's own path,
+        CandleBuilder.add_row, in time order. Rows at or before the last one
+        already fed are skipped. Returns the number of rows fed.
 
-        Also starts one background poll thread per registered aux feed so that
-        live_value is kept up to date between candle closes.
+        A bar closes as soon as its last fetched candle is in (e.g. a daily bar
+        once its 23:00 hourly candle is complete), through the same close
+        sequence as CandleBuilder's end-of-data flush, instead of waiting for the
+        first candle of the next bar: the decision comes one poll after the bar
+        ends, not one fetch interval later. When that last candle never comes (no
+        trade in that hour), the bar closes the backtest's way, on the next bar's
+        first candle.
+
+        Why this can't leak: the caller passes only candles whose whole period
+        has passed; a bar is closed only once all of its period has passed.
         """
         if self.mode != "live":
-            logger.warning("initiate_start_thread called in backtest mode — ignored")
-            return None
-        self.running = True
-
-        # Price feed thread
-        price_thread = threading.Thread(target=self._rest_price_fetcher, daemon=True)
-        price_thread.start()
-
-        # One poll thread per aux feed
-        for name, feed in self._aux_feeds.items():
-            t = threading.Thread(
-                target=self._aux_feed_poll_loop,
-                args=(name, feed),
-                daemon=True,
-                name=f"aux_feed_{name}",
-            )
-            t.start()
-            logger.info(f"DataManager: started poll thread for aux feed '{name}'")
-
-        return price_thread
+            raise RuntimeError("ingest_completed_rows is live-only")
+        fed = 0
+        step = datetime.timedelta(seconds=self.fetch_interval_seconds)
+        for _, row in rows.sort_values("timestamp").iterrows():
+            ts = pd.Timestamp(row["timestamp"])
+            last = self._last_fed.get(symbol)
+            if last is not None and ts <= last:
+                continue
+            self.candle_builder.add_row(row, symbol)
+            self._last_fed[symbol] = ts
+            fed += 1
+            current = self.candle_builder.get_current_candle(symbol)
+            if current is not None and ts.to_pydatetime() + step >= current.end_time:
+                self.candle_builder.flush_final_candle(symbol)
+        return fed
 
     def _aux_feed_poll_loop(self, name: str, feed: AuxFeedConfig):
         """
-        Background thread: periodically refresh one aux feed's live_value.
+        Refresh one aux feed's live_value, once per candle interval, while
+        self.running. Kept for live aux feeds (not wired yet: live/runner.py
+        refuses a strategy needing one); its delay rule is tested in
+        tests/test_aux_feed_delay.py.
 
         Polls once per candle interval (no need to poll faster than the candle
         closes).  On each poll, calls fetcher.get_data() which returns from
@@ -1411,91 +1377,6 @@ class DataManager:
 
             time.sleep(self.interval_seconds)   # poll once per candle interval
 
-    def _rest_price_fetcher(self):
-        """
-        Background thread: poll Binance REST at price_fetch_interval seconds
-        and push PriceTicks onto price_queue.
-        """
-        while self.running:
-            try:
-                for symbol in self.symbols:
-                    if not self.running:
-                        break
-                    price_data = self._get_current_price(symbol)
-                    if price_data:
-                        tick = PriceTick(
-                            symbol=symbol,
-                            price=price_data["price"],
-                            timestamp=datetime.datetime.now(),
-                            volume=price_data.get("volume", 0),
-                        )
-                        self.price_queue.put(tick)
-                    else:
-                        logger.warning(f"Failed to fetch price for {symbol}")
-                if len(self.symbols) > 1:
-                    logger.debug(f"Fetched prices for {len(self.symbols)} symbols")
-                time.sleep(self.price_fetch_interval)
-            except Exception as e:
-                logger.error(f"REST price fetcher error: {e}", exc_info=True)
-                time.sleep(1)
-
-    def _get_current_price(self, symbol: str) -> Optional[dict]:
-        """Fetch the latest ticker price for one symbol via Binance REST."""
-        try:
-            ticker = self.client.get_symbol_ticker(symbol=symbol)
-            return {"price": float(ticker["price"]), "volume": 0}
-        except Exception as e:
-            logger.error(f"Error getting price for {symbol}: {e}")
-            return None
-
-    def live_main_candle_processing_loop(self):
-        """
-        Drain price_queue and feed ticks into CandleBuilder (live mode).
-
-        The candle_completion_callback (_enrich_and_notify) handles enrichment
-        and strategy notification when a candle closes.
-        """
-        while self.running:
-            try:
-                processed = 0
-                while not self.price_queue.empty():
-                    tick = self.price_queue.get_nowait()
-                    completed = self.candle_builder.add_tick(tick)
-                    if completed:
-                        logger.info(
-                            f"Candle: {tick.symbol} "
-                            f"O:{completed.open} H:{completed.high} "
-                            f"L:{completed.low} C:{completed.close}"
-                        )
-                    processed += 1
-                if processed > 0:
-                    logger.debug(f"Processed {processed} ticks")
-                time.sleep(0.1)
-            except queue.Empty:
-                continue
-            except Exception as e:
-                logger.error(f"Candle processing loop error: {e}", exc_info=True)
-
-    # -----------------------------------------------------------------------
-    # Internal helpers
-    # -----------------------------------------------------------------------
-
-    def _process_live_tick(self, symbol: str) -> Optional[Candle]:
-        """Drain all queued ticks and return any completed candle for `symbol`."""
-        try:
-            completed = None
-            while not self.price_queue.empty():
-                tick    = self.price_queue.get_nowait()
-                result  = self.candle_builder.add_tick(tick)
-                if result and result.symbol == symbol:
-                    completed = result
-            return completed
-        except queue.Empty:
-            return None
-        except Exception as e:
-            logger.error(f"Live tick error for {symbol}: {e}", exc_info=True)
-            return None
-
     def _process_backtest_tick(self, symbol: str) -> Optional[Candle]:
         """Feed the row at the current cursor to CandleBuilder."""
         if symbol not in self.historical_data:
@@ -1513,7 +1394,6 @@ class DataManager:
 # continues to work unchanged.
 # ===========================================================================
 __all__ = [
-    "PriceTick",
     "Candle",
     "CandleBuilder",
     "DataManager",

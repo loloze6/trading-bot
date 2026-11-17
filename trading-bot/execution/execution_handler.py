@@ -1,5 +1,3 @@
-from binance.client import Client
-from config.settings import API_KEY, API_SECRET, USE_TESTNET
 from config.cost_model import resolve_cost_model
 from time import time, sleep
 import logging
@@ -20,17 +18,17 @@ class PositionType(Enum):
 """
 Execution Handler Module
 ========================
-Manages order execution for both live trading (Binance API) and backtesting (mock).
+Order logic shared by every execution handler, and the simulated one used by backtests
+and by a live run's local book. Live orders to Kraken Futures: live/ (step 4).
 
 Classes:
     - PositionType: Enum for position types (LONG/SHORT/CLOSE)
-    - ExecutionHandler: Live trading execution with Binance margin API
     - MockExecutionHandler: Simulated execution for backtesting
 """
 
 class BaseExecutionHandler(ABC):
     """
-    Shared orchestration for live and mock execution.
+    Shared orchestration for every execution handler (mock today; Kraken live in live/).
     Subclasses implement open_long_position, open_short_position, close_position.
     All primitives must return (success: bool, debug: dict) where debug contains
     {symbol, price, quantity, trade_type}.
@@ -147,136 +145,6 @@ class BaseExecutionHandler(ABC):
     @abstractmethod
     def close_position(self, symbol, data, signal, total_portfolio_value,
                        balances, trade_type) -> tuple[bool, dict]: ...
-
-class ExecutionHandler(BaseExecutionHandler):
-
-    def __init__(self, test_mode=False, performance_tracker=None, portfolio_info=None):
-        super().__init__(performance_tracker=performance_tracker, portfolio_info=portfolio_info)
-        self.client = Client(API_KEY, API_SECRET, testnet=USE_TESTNET)
-        self.test_mode = test_mode
-        self.positions = {}
-        try:
-            self.client.enable_margin_account()
-            logger.debug(f"🔗 Live Execution Handler │ {'Testnet' if USE_TESTNET else 'Live'} │ Margin: Enabled")
-        except Exception as e:
-            logger.debug(f"🔗 Margin status: {e}")
-
-    def _get_free_margin_balance(self, asset: str) -> float:
-        """Get free margin balance for an asset — avoids unnecessary borrows."""
-        try:
-            account = self.client.get_margin_account()
-            for a in account['userAssets']:
-                if a['asset'] == asset:
-                    return float(a['free'])
-        except Exception:
-            pass
-        return 0.0
-
-    def open_long_position(self, symbol, quantity, trade_type, data=None, signal=None,
-                           total_portfolio_value=None, balances=None) -> tuple[bool, dict]:
-        try:
-            price = data['close'].iloc[-1] if hasattr(data['close'], 'iloc') else data['close']
-            quantity = self._round_quantity(symbol, quantity)
-            required_usdt = quantity * price
-
-            # Only borrow the shortfall, not the full amount
-            available_usdt = self._get_free_margin_balance('USDT')
-            shortfall = max(0.0, required_usdt - available_usdt)
-            if shortfall > 0:
-                self.client.create_margin_loan(asset='USDT', amount=shortfall)
-
-            order = self.client.create_margin_order(
-                symbol=symbol, side=Client.SIDE_BUY,
-                type=Client.ORDER_TYPE_MARKET, quantity=quantity
-            )
-            executed_qty = float(order.get('executedQty', quantity))
-            logger.debug(f"🟢 LIVE BUY │ {symbol} │ {executed_qty:.6f} @ ${price:.2f} │ Borrowed: ${shortfall:.2f}")
-
-            self.positions[symbol] = {
-                'type': PositionType.LONG, 'entry_price': price,
-                'quantity': executed_qty, 'borrowed_amount': shortfall, 'borrowed_asset': 'USDT'
-            }
-
-            if self.performance_tracker:
-                self.performance_tracker.record_trade(symbol, price, executed_qty, signal=signal, total_portfolio_value=total_portfolio_value)
-
-            return True, {'symbol': symbol, 'price': price, 'quantity': executed_qty, 'trade_type': trade_type}
-
-        except Exception as e:
-            logger.error(f"❌ LONG open failed │ {symbol}: {e}")
-            return False, {"error": str(e)}
-
-    def open_short_position(self, symbol, quantity, trade_type, data=None, signal=None,
-                            total_portfolio_value=None, balances=None) -> tuple[bool, dict]:
-        try:
-            price = data['close'].iloc[-1] if hasattr(data['close'], 'iloc') else data['close']
-            quantity = abs(quantity)
-            quantity = self._round_quantity(symbol, quantity)
-            base_asset = symbol.replace('USDT', '').replace('BUSD', '')
-
-            # Only borrow the shortfall
-            available_base = self._get_free_margin_balance(base_asset)
-            shortfall = max(0.0, quantity - available_base)
-            if shortfall > 0:
-                self.client.create_margin_loan(asset=base_asset, amount=shortfall)
-
-            order = self.client.create_margin_order(
-                symbol=symbol, side=Client.SIDE_SELL,
-                type=Client.ORDER_TYPE_MARKET, quantity=quantity
-            )
-            executed_qty = float(order.get('executedQty', quantity))
-            logger.debug(f"🔴 LIVE SELL │ {symbol} │ {executed_qty:.6f} @ ${price:.2f} │ Borrowed: {shortfall:.6f} {base_asset}")
-
-            self.positions[symbol] = {
-                'type': PositionType.SHORT, 'entry_price': price,
-                'quantity': executed_qty, 'borrowed_amount': shortfall, 'borrowed_asset': base_asset
-            }
-
-            if self.performance_tracker:
-                self.performance_tracker.record_trade(symbol, price, -executed_qty, signal=signal, total_portfolio_value=total_portfolio_value)
-
-            return True, {'symbol': symbol, 'price': price, 'quantity': executed_qty, 'trade_type': trade_type}
-
-        except Exception as e:
-            logger.error(f"❌ SHORT open failed │ {symbol}: {e}")
-            return False, {"error": str(e)}
-
-    def close_position(self, symbol, data=None, signal=None, total_portfolio_value=None,
-                       balances=None, trade_type='CLOSE') -> tuple[bool, dict]:
-        if symbol not in self.positions:
-            logger.error(f"❌ No position found for {symbol}")
-            return False, {'error': f'No position for {symbol}'}
-        try:
-            price = data['close'].iloc[-1] if hasattr(data['close'], 'iloc') else data['close']
-            position = self.positions[symbol]
-            quantity = position['quantity']
-            position_type = position['type']
-
-            if position_type == PositionType.LONG:
-                order = self.client.create_margin_order(symbol=symbol, side=Client.SIDE_SELL, type=Client.ORDER_TYPE_MARKET, quantity=quantity)
-                if position['borrowed_amount'] > 0:
-                    self.client.repay_margin_loan(asset='USDT', amount=position['borrowed_amount'])
-            else:
-                order = self.client.create_margin_order(symbol=symbol, side=Client.SIDE_BUY, type=Client.ORDER_TYPE_MARKET, quantity=quantity)
-                if position['borrowed_amount'] > 0:
-                    self.client.repay_margin_loan(asset=position['borrowed_asset'], amount=position['borrowed_amount'])
-
-            executed_qty = float(order.get('executedQty', quantity))
-            closed_quantity = executed_qty if position_type == PositionType.LONG else -executed_qty
-            logger.debug(f"⚪ LIVE CLOSE │ {symbol} │ {closed_quantity:.6f} @ ${price:.2f}")
-
-            if self.performance_tracker:
-                self.performance_tracker.record_trade(symbol, price, -closed_quantity, signal=signal, total_portfolio_value=total_portfolio_value)
-
-            del self.positions[symbol]
-            return True, {'symbol': symbol, 'price': price, 'quantity': closed_quantity, 'trade_type': trade_type}
-
-        except Exception as e:
-            logger.error(f"❌ CLOSE failed │ {symbol}: {e}")
-            return False, {"error": str(e)}
-
-    def _round_quantity(self, symbol, quantity): return round(quantity, 5)
-    def _round_price(self, symbol, price): return round(price, 2)
 
 class MockExecutionHandler(BaseExecutionHandler):
 

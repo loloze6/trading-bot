@@ -799,7 +799,8 @@ def test_build_mock_stack_hands_the_block_to_the_manager_builder(monkeypatch):
 
 def test_every_launcher_call_site_passes_strategy_sizing():
     """The four sites that hold an AdvancedStrategy (live, two backtest paths, run_backtest) each pass
-    strategy.sizing; a new site that forgot it would silently run unsized."""
+    strategy.sizing; a new site that forgot it would silently run unsized. Since 2026-11-17 the live site is
+    live/runner.py's build_book (the Binance run_bot was removed), checked at the end."""
     tree = ast.parse((PROJECT_ROOT / "core" / "launcher.py").read_text(encoding="utf-8"))
     sites = []
     for n in ast.walk(tree):
@@ -808,11 +809,15 @@ def test_every_launcher_call_site_passes_strategy_sizing():
             if name in ("_build_mock_stack", "_build_risk_and_forecast_managers"):
                 kw = {k.arg: k.value for k in n.keywords}
                 sites.append((name, kw))
-    assert len(sites) == 5                                        # four strategy sites + the stack's own call
+    assert len(sites) == 4                                        # three strategy sites + the stack's own call
     from_strategy = [kw for _, kw in sites if "sizing" in kw and isinstance(kw["sizing"], ast.Attribute)
                      and ast.unparse(kw["sizing"]) == "strategy.sizing"]
-    assert len(from_strategy) == 4
+    assert len(from_strategy) == 3
     assert [kw for name, kw in sites if "sizing" not in kw] == []
+    live = ast.parse((PROJECT_ROOT / "live" / "runner.py").read_text(encoding="utf-8"))
+    live_calls = [n for n in ast.walk(live) if isinstance(n, ast.Call)
+                  and getattr(n.func, "id", "") == "build_risk_and_forecast_managers"]
+    assert len(live_calls) == 1 and "strategy.sizing" in [ast.unparse(a) for a in live_calls[0].args]
 
 
 # --------------------------------------------------------------------------- V19: every volatility-dividing op

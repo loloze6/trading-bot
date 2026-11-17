@@ -1,21 +1,5 @@
 import os
-from dotenv import load_dotenv
-
 from risk.portfolio_risk_gate import validate_portfolio_controls
-
-load_dotenv(override = True)
-
-USE_TESTNET = os.getenv("USE_TESTNET", "True").lower() == "true"
-
-if USE_TESTNET:
-    API_KEY = os.getenv("BINANCE_API_KEY_TEST")
-    API_SECRET = os.getenv("BINANCE_API_SECRET_TEST")
-    BASE_URL = os.getenv("BASE_URL_TEST", "https://testnet.binance.vision/api")
-    
-else:
-    API_KEY = os.getenv("BINANCE_API_KEY")
-    API_SECRET = os.getenv("BINANCE_API_SECRET")
-    BASE_URL = os.getenv("BASE_URL", "https://api.binance.com")
 
 from typing import Dict, List, Optional, Union, Any
 import json

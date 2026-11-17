@@ -113,3 +113,18 @@ literal backtest, but it needs the Kraken Futures backtest (other session), and 
    PowerShell line (its history file keeps it in clear text), not in any file of the repository.
 4. Restart the terminal and Claude Code so they see the variables. The check prints "key found: yes/no" and the
    account value, never the key.
+
+## 7. Status (2026-11-17, after the operator's go for steps 0-3)
+Operator rulings since section 3: build A (both books in the live process) with one strategy update and forecast
+per bar shared by the books (a wrapper, step 4); live settings in each run's own folder, never in config.json
+(research backtests read config.json's fetch_interval_seconds).
+
+| Step | State | Proof |
+|---|---|---|
+| 0 Baseline | done: 3 fixed backtests (chosen strategy, BTCUSD Kraken, fold A windows 1-2 daily, window 1 from hourly) | two baseline runs identical on all 24 files (run time and id aside) |
+| 1 Kraken connection | done: `live/kraken.py`, `main.py live_check` | `tests/test_live_kraken.py` 5 passed; live_check on the real API: PF_XBTUSD, completed candles only |
+| 2 Live feed, Binance removed | done: `DataManager.ingest_completed_rows`; Binance classes, commands, settings and `python-binance`/`python-dotenv` removed | backtest rerun = baseline (24/24 files); `tests/test_live_session_parity.py`: 60 simulated days, no candle fed early, each day decided within one poll after midnight, live record byte-identical to the backtest engine's |
+| 3 First live run, orders off | built: `main.py run_live`, run folder `live_runs/<name>/`; smoke test on the real API: 21,910 hourly candles (912 days, none missing), strategy ready | waits for the read-only key (the local book starts at the real account's value) |
+
+Start the first run (after the key): `python main.py run_live --run first_paper --strategy <night_013_run config> --symbol BTCUSD`;
+proof after some bars: `python live/proof/replay_session.py live_runs/first_paper/session_01`.

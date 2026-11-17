@@ -19,9 +19,9 @@ from core.backtester import BacktestEngine
 from core.trading_bot import TradingBot
 from data.feed_registry import FEED_REGISTRY
 from data.data_manager import DataManager, HistoricalDataFetcher
-from execution.execution_handler import ExecutionHandler, MockExecutionHandler
+from execution.execution_handler import MockExecutionHandler
 from execution.forecast_manager import ForecastManager
-from execution.portfolio_info import MockPortfolioInfo, PortfolioInfo, PortfolioStateTracker, OtherPortfolioOperations
+from execution.portfolio_info import MockPortfolioInfo, PortfolioStateTracker
 from performance.metrics import EnhancedPerformanceTracker, DEFAULT_COMMISSION_RATE
 from risk.risk_manager import RiskManager
 from risk.portfolio_risk_gate import PortfolioRiskGate, validate_portfolio_controls
@@ -44,9 +44,8 @@ class TradingParams:
     fetch_interval: Optional[int] = None   # backtest OHLCV fetch resolution (CUL-250); None = interval
     # E-010 (2026-09-09): second axis alongside `exchange` for cost_model.json's
     # (exchange, market_type) lookup -- see config/cost_model.py. Default "margin"
-    # is byte-identical to today's actual behavior: execution_handler.py's live
-    # ExecutionHandler uses Binance's margin API exclusively, no plain-spot path
-    # exists. commission_rate above is resolved from this same lookup's fee_bps
+    # is the backtest's historical default (the removed Binance live handler was
+    # margin-only). commission_rate above is resolved from this same lookup's fee_bps
     # (both _read_trading_params and run_backtest do this) unless a caller passes
     # an explicit commission_rate override, which always wins (prior behavior).
     market_type: str = "margin"
@@ -143,6 +142,43 @@ def parse_date_safe(
         logger.warning(f"Using default date: {default_date.strftime('%Y-%m-%d')}")
         return default_date
 
+def build_risk_and_forecast_managers(
+    config,
+    min_allocation_change_override: Optional[float] = None,
+    sizing: Optional[dict] = None,
+):
+    """RiskManager, ForecastManager and the optional portfolio risk gate, from config.json's
+    risk_management section -- the same three for a backtest and for a live run."""
+    controls_cfg = config.get('risk_management', 'controls', {})
+    # E-055: a strategy's strategy_config.json may set strategies
+    # .min_allocation_change to override RiskManager's min_allocation_change
+    # threshold for its own runs. None (the default -- key absent) leaves
+    # controls_cfg untouched, byte-identical to before this override existed.
+    # Only the min_allocation_change sub-dict is replaced; any other configured
+    # control passes through unchanged.
+    if min_allocation_change_override is not None:
+        controls_cfg = {
+            **controls_cfg,
+            "min_allocation_change": {"threshold": min_allocation_change_override},
+        }
+    risk_manager = RiskManager(controls_cfg=controls_cfg)
+    # D-176: a strategy's strategy_config.json may set strategies.sizing
+    # (vol targeting in the allocation step), read the same way as E-055's
+    # override above (AdvancedStrategy.sizing). None (the default -- key
+    # absent) builds ForecastManager exactly as before.
+    forecast_manager = ForecastManager(sizing=sizing) if sizing is not None else ForecastManager(
+    )
+    # fix/risk-layer, PR-1: build the portfolio risk gate from config.json's
+    # risk_management.portfolio_controls when non-empty, else None. Absent block
+    # (the committed config) -> None -> no gate is threaded anywhere and every
+    # output is byte-identical. ConfigManager.validate has already vetted the
+    # block by the time this runs (launcher.py init path), so PortfolioRiskGate's
+    # own ctor validation is defense in depth here.
+    portfolio_controls = config.get('risk_management', 'portfolio_controls', {})
+    risk_gate = PortfolioRiskGate(portfolio_controls) if portfolio_controls else None
+    return risk_manager, forecast_manager, risk_gate
+
+
 class Launcher:
     def __init__(self):
         config, logger = initialize_config_and_logger()
@@ -156,34 +192,7 @@ class Launcher:
         min_allocation_change_override: Optional[float] = None,
         sizing: Optional[dict] = None,
     ):
-        controls_cfg = self.config.get('risk_management', 'controls', {})
-        # E-055: a strategy's strategy_config.json may set strategies
-        # .min_allocation_change to override RiskManager's min_allocation_change
-        # threshold for its own runs. None (the default -- key absent) leaves
-        # controls_cfg untouched, byte-identical to before this override existed.
-        # Only the min_allocation_change sub-dict is replaced; any other configured
-        # control passes through unchanged.
-        if min_allocation_change_override is not None:
-            controls_cfg = {
-                **controls_cfg,
-                "min_allocation_change": {"threshold": min_allocation_change_override},
-            }
-        risk_manager = RiskManager(controls_cfg=controls_cfg)
-        # D-176: a strategy's strategy_config.json may set strategies.sizing
-        # (vol targeting in the allocation step), read the same way as E-055's
-        # override above (AdvancedStrategy.sizing). None (the default -- key
-        # absent) builds ForecastManager exactly as before.
-        forecast_manager = ForecastManager(sizing=sizing) if sizing is not None else ForecastManager(
-        )
-        # fix/risk-layer, PR-1: build the portfolio risk gate from config.json's
-        # risk_management.portfolio_controls when non-empty, else None. Absent block
-        # (the committed config) -> None -> no gate is threaded anywhere and every
-        # output is byte-identical. ConfigManager.validate has already vetted the
-        # block by the time this runs (launcher.py init path), so PortfolioRiskGate's
-        # own ctor validation is defense in depth here.
-        portfolio_controls = self.config.get('risk_management', 'portfolio_controls', {})
-        risk_gate = PortfolioRiskGate(portfolio_controls) if portfolio_controls else None
-        return risk_manager, forecast_manager, risk_gate
+        return build_risk_and_forecast_managers(self.config, min_allocation_change_override, sizing)
 
     def _read_trading_params(
         self,
@@ -192,8 +201,7 @@ class Launcher:
     ) -> TradingParams:
         # Optional key. It names the venue whose PRICE CACHE the backtest engine
         # resolves (see CcxtFetcher.cache_key), not the venue orders would be
-        # sent to: run_bot reaches this validation, but the live DataManager it
-        # builds never reads the value.
+        # sent to (live runs read live/ and their own live_config.json).
         # Absent means 'binance', which is what every config
         # written before it existed implies. A bogus id would otherwise reach
         # CcxtFetcher, which logs, leaves its client None, and surfaces a whole
@@ -255,7 +263,7 @@ class Launcher:
             sizing=sizing,
         )
 
-        # Backtest DataManager — no thread, no Binance client
+        # Backtest DataManager
         data_manager = DataManager(
             symbols=params.symbols,
             interval_seconds=params.interval,
@@ -304,82 +312,6 @@ class Launcher:
             portfolio_state_tracker=portfolio_state_tracker,
             risk_gate=risk_gate,
         )
-
-    def run_bot(self):
-        """Run live trading bot."""
-        self.logger.debug("Starting live trading bot...")
-        self.logger.debug("-" * 80)
-
-        params = self._read_trading_params(interval_default=120, check_interval_default=10)
-
-        self.logger.debug(f"Mode: {'TEST' if params.test_mode else 'LIVE'}")
-        self.logger.debug(f"Symbols: {', '.join(params.symbols)}")
-        self.logger.debug(f"Candle interval: {params.interval}s, Check interval: {params.check_interval}s")
-
-        strategy = AdvancedStrategy()
-        risk_manager, forecast_manager, risk_gate = self._build_risk_and_forecast_managers(
-            min_allocation_change_override=strategy.min_allocation_change_override,
-            sizing=strategy.sizing,
-        )
-
-        # Live DataManager — owns REST thread and CandleBuilder internally
-        data_manager = DataManager(
-            symbols=params.symbols,
-            interval_seconds=params.interval,
-            mode="live",
-            price_fetch_interval=params.check_interval,
-        )
-
-        performance_tracker = EnhancedPerformanceTracker(DEFAULT_COMMISSION_RATE)
-        execution_handler = ExecutionHandler(performance_tracker)
-        portfolio_info = PortfolioInfo()
-
-        bot = TradingBot(
-            data_manager=data_manager,
-            strategy=strategy,
-            execution_handler=execution_handler,
-            logger=self.logger,
-            portfolio_info=portfolio_info,
-            forecast_manager=forecast_manager,
-            risk_manager=risk_manager,
-            price_fetch_interval=params.check_interval,
-            candle_interval_seconds=params.interval,
-            test_mode=params.test_mode,
-            symbols=params.symbols,
-            risk_gate=risk_gate,
-        )
-
-        # Wire candle callback now that bot exists
-        data_manager.candle_builder.candle_completion_callback = (
-            bot._process_symbol_candle_completion
-        )
-        self.logger.debug("Bot initialized successfully. Starting main loop...")
-        self.logger.debug("=" * 80)
-
-        # ORDERING CONSTRAINT (CUL-25): the line above sets
-        # candle_builder.candle_completion_callback for the first time in this
-        # method. The commented-out warmup TODO below is only safe BECAUSE it
-        # sits after that assignment. If a future implementation of this TODO
-        # feeds historical rows through candle_builder before the callback is
-        # wired -- e.g. by moving this block earlier, or by warming up before
-        # TradingBot/the callback wiring exist -- any candle completed during
-        # warmup calls a None callback, which raises TypeError. Whether that
-        # surfaces loudly depends entirely on what (if anything) catches it
-        # upstream; this method has no test coverage (run_bot() is the
-        # forbidden live-trading entry point, never exercised in CI), so
-        # nothing here would catch a silent regression. Keep any warmup
-        # implementation strictly after the callback assignment above.
-        # TODO: load historical warmup data before going live
-        # self._load_historical_warmup(bot, lookback_days=90)
-
-        try:
-            bot.run()
-        except KeyboardInterrupt:
-            self.logger.debug("Bot stopped by user (Ctrl+C)")
-        except Exception as e:
-            self.logger.error(f"Bot crashed with error: {e}", exc_info=True)
-            sys.exit(1)
-
 
     def simulate(self, feed_local_storage: bool = True):
         """Run backtest simulation.
@@ -582,18 +514,6 @@ class Launcher:
         except Exception as e:
             self.logger.error(f"Data visualization failed: {e}", exc_info=True)
             sys.exit(1)
-
-    def get_portfolio_converted(self):
-        """Print portfolio holdings converted to USDT."""
-        coin_values = OtherPortfolioOperations().get_portfolio_converted('USDT')
-        print(coin_values)
-
-    def get_value_portfolio(self):
-        """Print total portfolio value in USDT."""
-        coin_values = OtherPortfolioOperations().get_portfolio_converted('USDT')
-        grand_usdt_total = sum(map(lambda coin_usdt_value: coin_usdt_value[1], coin_values))
-        print(f"Total portfolio value: {grand_usdt_total:.2f} USDT")
-
 
 # ---------------------------------------------------------------------------
 # Standalone callable used by run_protocol.py
@@ -804,7 +724,7 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         Defaults to None, which resolves to config.json's trading.market_type (itself
         absent by default -> "margin") -- the same None-means-prior-behavior contract
         as exchange/commission_rate above. "margin" is byte-identical to today's actual
-        behavior (the live ExecutionHandler is margin-only). commission_rate above, when
+        behavior (the removed Binance live handler was margin-only). commission_rate above, when
         left at its own default of None, is resolved from this lookup's fee_bps/10000
         instead of always DEFAULT_COMMISSION_RATE; an explicit commission_rate argument
         still overrides it exactly as before (this parameter's own default-prior-behavior
