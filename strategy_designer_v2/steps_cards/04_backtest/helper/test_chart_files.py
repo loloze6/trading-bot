@@ -46,3 +46,23 @@ def test_only_a_backtest_worth_a_chart(tmp_path):
     v.write_text(json.dumps({"status": "confirmed"}))
     assert C.worth_a_chart(v, tmp_path / "none.json")
     assert C.write(tmp_path / "empty") == (0, 0)
+
+
+def test_each_column_lands_in_its_own_place_whatever_the_file_s_order(tmp_path):
+    """The engine writes postRebalance_total_value before postRebalance_current_allocation (found by the run viewer:
+    position and value were swapped in every chart file)."""
+    d = tmp_path / "rec" / "BTCUSD" / "w1"
+    d.mkdir(parents=True)
+    pd.DataFrame({"timestamp": ["2021-01-01"], "close": [100.0], "forecast": [0.0], "postRebalance_total_value": [1000.0],
+                  "postRebalance_current_allocation": [0.0]}).to_csv(d / "bars.csv.gz", index=False, compression="gzip")
+    C.write(tmp_path / "rec")
+    row = gzip.decompress((tmp_path / "rec" / "chart_bars.csv.gz").read_bytes()).decode().splitlines()[1].split(",")
+    assert row[5] == "0" and row[6] == "1000"               # position 0, value 1000
+
+
+def test_a_backtest_not_worth_a_chart_gets_the_local_names_and_one_pair_only(tmp_path):
+    rec = record(tmp_path)
+    C.write(rec, local=True)
+    assert sorted(p.name for p in rec.glob("chart_*")) == ["chart_bars.local.csv.gz", "chart_trades.local.csv.gz"]
+    C.write(rec)                                            # later worth a chart: the committed names replace them
+    assert sorted(p.name for p in rec.glob("chart_*")) == ["chart_bars.csv.gz", "chart_trades.csv.gz"]

@@ -235,9 +235,11 @@ def main():
     j.step("step6_check", [STEPS / "06_profitability/helper/check_profitability.py", record, "--checks-dir", f["checks"]],
            [f["checks"] / rid / "check.md"])
     rc = result(f["checks"] / rid / "result.json")
-    # The chart files (the run viewer's data), for a backtest worth a chart: confirmed or profitable enough (code only)
-    if chart_files.worth_a_chart(v, f["checks"] / rid / "result.json"):
-        j.step("chart_files", [STEPS / "04_backtest/helper/chart_files.py", record], [record / "chart_bars.csv.gz"])
+    # The chart files (the run viewer's data), for every backtest (code only): committed names for a backtest worth a
+    # chart (confirmed or profitable enough), local names, which git ignores, for any other
+    local = not chart_files.worth_a_chart(v, f["checks"] / rid / "result.json")
+    j.step("chart_files", [STEPS / "04_backtest/helper/chart_files.py", record] + (["--local"] if local else []),
+           [record / chart_files.NAMES[local][0]])
     if rc:
         failed = [m["label"] for m in rc["measures"] if not m["passed"]]
         row["step6"] = rc["status"] + (f" (failed: {', '.join(failed)})" if failed else "")
