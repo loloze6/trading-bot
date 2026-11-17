@@ -1,0 +1,132 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "vr",
+        "class": "strategies.strategy_components.VolumeRatioComponent",
+        "params": {
+          "period": 30
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "mean_reversion",
+        "any_of": [
+          [
+            {
+              "id": "vr",
+              "op": "lte",
+              "value": 0.5
+            }
+          ]
+        ]
+      },
+      {
+        "regime": "chop",
+        "any_of": [
+          [
+            {
+              "id": "vr",
+              "op": "between",
+              "low": 0.5,
+              "high": 0.75
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "rise",
+            "class": "strategies.strategy_components.VolatilityScaledReturnComponent",
+            "params": {
+              "period": 1,
+              "vol_period": 20
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0.0
+                }
+              },
+              {
+                "op": "signed_power",
+                "params": {
+                  "exponent": 3,
+                  "pivot": 10
+                }
+              },
+              {
+                "op": "negate"
+              }
+            ]
+          }
+        ]
+      },
+      "chop": {
+        "components": [
+          {
+            "id": "rise",
+            "class": "strategies.strategy_components.VolatilityScaledReturnComponent",
+            "params": {
+              "period": 1,
+              "vol_period": 20
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0.0
+                }
+              },
+              {
+                "op": "signed_power",
+                "params": {
+                  "exponent": 3,
+                  "pivot": 20
+                }
+              },
+              {
+                "op": "negate"
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 60,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 365,
+      "max_allocation": 2
+    }
+  }
+}

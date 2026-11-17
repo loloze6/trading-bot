@@ -15,19 +15,20 @@ One row per idea run; every status is read from the step's own result file. Each
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week | plan | confirmed (+4.17) | not profitable enough (failed: Mean daily return, Calmar) | 7.d: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume.d1_near-high-volume-in-uptrends, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume.d2_near-high-is-long-only; 7.g: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume.g1_next-day-rebound-after-selloffs, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume.g2_close-in-range-predicts-week, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume.g3_strong-day-on-volume-continues | 0.91 | 4.7 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side | plan | confirmed (+2.75) | profitable enough | 7.g: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through.g1_range-expansion-precedes-gains, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through.g2_weekly-return-momentum-continues | 0.53 | 3.4 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling | plan | mismatch | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.d: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains.d1_heavy-volume-selling-exhaustion, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains.d2_heavy-volume-rally-in-downtrend-fades; 7.g: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains.g1_heavy-volume-selloff-rebounds | 0.89 | 4.5 |
+| 003-01_thin-volume-rise-reverses | - | plan | inconclusive (-0.50) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: 003-01_thin-volume-rise-reverses.b1_thin-rise-reverses-in-downtrend, 003-01_thin-volume-rise-reverses.b2_heavy-volume-rise-continues; 7.d: 003-01_thin-volume-rise-reverses.d1_thin-rise-reverses-in-downtrend, 003-01_thin-volume-rise-reverses.d2_giveback-scales-with-thinness, 003-01_thin-volume-rise-reverses.d3_heavy-volume-rise-continues; 7.g: 003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on, 003-01_thin-volume-rise-reverses.g2_heavy-volume-rises-extend-further, 003-01_thin-volume-rise-reverses.g3_thin-volume-precedes-underperformance | 1.46 | 7.0 |
 
 ## Consumption
-11 ideas, 6.46 USD, 33.7 minutes in all.
+12 ideas, 7.92 USD, 40.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.88 | 4.5 |
-| step4_backtest | 0.00 | 10.1 |
-| step5_verdict | 0.77 | 3.8 |
-| step6_check | 0.00 | 0.2 |
+| step3_plan | 1.03 | 5.6 |
+| step4_backtest | 0.00 | 11.5 |
+| step5_verdict | 0.91 | 4.4 |
+| step6_check | 0.00 | 0.3 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 0.83 | 2.7 |
-| step7_7.d | 1.67 | 5.4 |
-| step7_7.g | 2.30 | 7.0 |
+| step7_7.b | 1.17 | 3.7 |
+| step7_7.d | 2.03 | 6.6 |
+| step7_7.g | 2.79 | 8.5 |
