@@ -29,19 +29,20 @@ One row per idea run; every status is read from the step's own result file. Each
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side | plan | confirmed (+3.90) | not profitable enough (failed: Mean daily return, Calmar) | 7.d: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls.d1_rebound-in-expanding-volatility, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls.d2_rebound-inside-strong-trends; 7.g: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls.g1_rebound-grows-with-volatility, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls.g2_high-volatility-one-day-reversal, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls.g3_heavy-volume-falls-rebound-more | 0.88 | 4.8 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side | plan | inconclusive (+1.29) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.b1_pullback-inside-rising-trend, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.b2_falling-month-more-coins; 7.d: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.d1_falling-month-in-rising-quarter, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.d2_month-lagging-quarter-falls; 7.g: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g2_heavy-volume-under-the-high | 1.13 | 5.0 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side | plan | confirmed (+3.77) | profitable enough | 7.g: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g1_falling-month-keeps-falling, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g2_gain-sits-at-the-high, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g3_nearness-to-60-day-high | 0.71 | 13.1 |
+| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades | plan | confirmed (+3.47) | profitable enough | 7.g: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum.g1_falling-month-depth-rebound, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum.g2_volatility-scaled-down-day-bounce, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum.g3_short-horizon-rise-continuation | 0.59 | 3.4 |
 
 ## Consumption
-25 ideas, 14.33 USD, 106.0 minutes in all.
+26 ideas, 14.92 USD, 109.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.60 | 12.1 |
-| step4_backtest | 0.00 | 48.0 |
-| step5_verdict | 1.82 | 8.9 |
-| step6_check | 0.00 | 0.4 |
+| step3_plan | 1.66 | 12.5 |
+| step4_backtest | 0.00 | 49.0 |
+| step5_verdict | 1.95 | 9.6 |
+| step6_check | 0.00 | 0.5 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.37 | 1.3 |
 | step7_7.b | 1.24 | 4.3 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.d | 3.54 | 12.5 |
-| step7_7.g | 5.76 | 18.5 |
+| step7_7.g | 6.15 | 19.8 |
