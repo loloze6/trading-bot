@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS t of the slope of excess 7-day return on run length below 50 (pooled grid bars, forecast < 0)",
+    "value": 0.0004205709476813723,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.1535777378232475
+    },
+    "threshold": "confirm if t <= -2 with supporting check passing; reject if t >= +2; otherwise inconclusive; at least 100 grid cases with forecast < 0"
+  },
+  "supporting_check": {
+    "name": "mean of forecast/10 x excess 7-day return on the same grid bars > 0",
+    "value": 0.005520964796455174,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast < 0": 406
+  },
+  "decided_by": "The slope's t (1.15) lies between -2 and +2.",
+  "reading": "The coin's mean 7-day return is taken over its non-overlapping 7-bar grid bars of all windows, grid bars without a full 7-bar return inside the window are dropped, the slope's t is the ordinary OLS t pooled over both coins, and the plan's 'fewer than 100 cases' rule is reported as not observable per the workflow."
+}

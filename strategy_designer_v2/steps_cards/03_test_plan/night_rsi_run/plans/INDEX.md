@@ -3,6 +3,7 @@
 010-01_rsi-above-share-continuation_1d: plan (fit: exact) [BTC, ETH, BNB, 1d, folds A, B, C, D]
 010-02_rsi-below-share-continuation_1d: plan (fit: exact) [BTC, ETH, BNB, 1d, folds A, B, C, D]
 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d: plan (fit: exact) [BTC, ETH, BNB, 1d, folds A, B, C, D]
+010-03_rsi-above-streak-continuation.e2_below-midline-streak-continues-down_1d: plan (fit: exact) [BTC, ETH, BNB, 1d, folds A, B, C, D]
 010-03_rsi-above-streak-continuation_1d: plan (fit: exact) [BTC, ETH, BNB, 1d, folds A, B, C, D]
 010-04_rsi-below-streak-continuation_1d: plan (fit: exact) [BTC, ETH, BNB, 1d, folds A, B, C, D]
 010-05_rsi-above-share-reversal_1d: plan (fit: exact) [BTC, ETH, BNB, 1d, folds A, B, C, D]

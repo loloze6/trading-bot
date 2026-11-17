@@ -1,0 +1,45 @@
+{
+  "line": "7.d",
+  "backtest": "010-03_rsi-above-streak-continuation.e2_below-midline-streak-continues-down_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3030713,
+  "findings": {
+    "F1": "The book barely earns and lags holding by a wide margin: its mean daily return is 0.000206 below zero in BTC and 0.000230 above zero in ETH, against the coins' own 0.00119 and 0.00138. The short side catches only part of the move, because the next-day coin return is -0.000354 while short against +0.002869 while flat, and the book is short 49 % of the bars.",
+    "F2": "The longest stretches give back what the shorter ones earn. On the 463 active bars with a run above 30 days, the position is at its largest (mean allocation -1.04) and loses 0.0018 per day, a total of -0.83. The 2428 bars with shorter runs gain 0.000446 per day, a total of +1.07 (Welch t of the difference -1.13).",
+    "F3": "On the plan's non-overlapping 7-day grid, the excess 7-day return falls as the stretch lengthens and then turns. It is -0.008 (n 93) for runs of 0\u20133 days, -0.024 (77) for 4\u20137 days and -0.025 (106) for 15\u201330 days, but +0.018 (67) once the run passes 30 days, which is why the pooled slope t is +1.15 and not negative.",
+    "F4": "The book rests on one window: w2 alone adds +0.99 of position gain and +0.49 of book return, with a mean run of 33 days and a mean allocation of -0.71. With w2 left out, the stretches above 30 days lose -1.36 against +0.62 for the shorter ones, which is why the lowest Sharpe with one window left out is -0.23.",
+    "F5": "Among active grid bars, the decline after a stretch is concentrated in moderate sell-offs and disappears in the deepest ones. By 30-day return, the excess 7-day return is -0.029 (n 77) for a fall of 11\u201321 % and -0.021 (77) for a fall of 2\u201311 %, but +0.001 (78) for falls deeper than 21 %. By 14-day return it is -0.039 (89) for a fall of 7\u201315 % against +0.003 (90) for falls deeper than 15 %."
+  },
+  "ideas": [
+    {
+      "idea": "The longer a coin's 14-day RSI has stayed below 50 without a break, counted in days up to the close, the lower its return over the next 7 days, by less the deeper the coin's 30-day fall at that close, until the deepest 30-day falls are followed by no further decline.",
+      "consequence": "A trader should press a short on a long seller-controlled stretch only while the coin's 30-day fall is moderate, and lighten it as that fall deepens, since that is where the book's losing late shorts sit.",
+      "name": "RSI stretch, moderate sell-offs",
+      "from": "F2, F3, F4, F5",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The longer a coin's 14-day RSI has stayed below 50 without a break beyond about four weeks, counted in days up to the close, the higher its return over the next 7 days.",
+      "consequence": "A very long unbroken stretch of seller control is a reason to cover shorts or lean long for the following week rather than add to the short.",
+      "name": "Exhausted seller stretch rebounds",
+      "from": "F2, F3, F4",
+      "refs": [
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "010-03_rsi-above-streak-continuation.e2_below-midline-streak-continues-down.d1_rsi-stretch-moderate-sell-offs",
+    "010-03_rsi-above-streak-continuation.e2_below-midline-streak-continues-down.d2_exhausted-seller-stretch-rebounds"
+  ],
+  "no_ideas": null
+}
