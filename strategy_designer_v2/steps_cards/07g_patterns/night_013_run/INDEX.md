@@ -18,3 +18,4 @@
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month_1d: 2 ideas (3 explorations)
 013-01_nearness-to-high-predicts-gains_1d: no ideas: The only pattern that stands out after this many looks is the Saturday effect (F3). It is a calendar condition with no gradation, so it cannot be written as a graded idea, and the graded candidates (F4, F5) disappear under rank or winsorised measures.
 013-02_follow-through-stronger-near-high_1d: 3 ideas (2 explorations)
+013-03_breakout-above-high-continues_1d: 2 ideas (2 explorations)

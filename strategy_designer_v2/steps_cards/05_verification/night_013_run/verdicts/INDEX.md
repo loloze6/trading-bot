@@ -18,3 +18,4 @@
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month_1d: mismatch: the test does not match its plan (agreement 0.568917) (fit: exact)
 013-01_nearness-to-high-predicts-gains_1d: mismatch: the test does not match its plan (agreement 0.612239) (fit: exact)
 013-02_follow-through-stronger-near-high_1d: inconclusive (fit: adapted) [main: 0.00207032; OLS slope t 0.130658; independent grid cases 526, above-median W cases 193, below-median W cases 193]
+013-03_breakout-above-high-continues_1d: not observable (fit: adapted) [main: 0.205492; OLS slope t 5.17955; grid bars where the forecast is above 0 10]

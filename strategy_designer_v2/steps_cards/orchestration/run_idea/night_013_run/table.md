@@ -12,7 +12,6 @@ One row per idea run; every status is read from the step's own result file. Each
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g2_volume-surge-precedes-gains | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends | missing-components | - | - | - | 0.08 | 0.6 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation | plan | confirmed (+2.79) | profitable enough | 7.g: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends.g1_uptrend-momentum-on-4h-bars | 0.72 | 3.7 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g2_break-of-30-day-high | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation | missing-components | - | - | - | 0.04 | 0.3 |
-| 013-03_breakout-above-high-continues | - | missing-components | - | - | - | 0.05 | 0.3 |
 | 013-04_heavy-volume-below-high-breakout | - | missing-components | - | - | - | 0.04 | 0.3 |
 | 013-05_longer-stall-bigger-breakout | - | missing-components | - | - | - | 0.04 | 0.3 |
 | 013-06_breakout-volume-drives-continuation | - | missing-components | - | - | - | 0.04 | 0.3 |
@@ -37,19 +36,20 @@ One row per idea run; every status is read from the step's own result file. Each
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g3_moderate-falls-keep-falling | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation | plan | inconclusive (+1.81) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.d: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g3_moderate-falls-keep-falling.d1_two-week-momentum-both-sides, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g3_moderate-falls-keep-falling.d2_falls-fall-rises-rise; 7.g: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g3_moderate-falls-keep-falling.g1_two-week-momentum-carries-a-week, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g3_moderate-falls-keep-falling.g2_one-day-overreaction-reversal | 0.98 | 4.9 |
 | 013-01_nearness-to-high-predicts-gains | - | plan | inconclusive (+0.95) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.d: 013-01_nearness-to-high-predicts-gains.d1_gain-concentrated-at-the-high, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month; 7.g: no ideas: The only pattern that stands out after this many looks is the Saturday effect (F3). It is a calendar condition with no gradation, so it cannot be written as a graded idea, and the graded candidates (F4, F5) disappear under rank or winsorised measures. | 0.88 | 8.6 |
 | 013-02_follow-through-stronger-near-high | - | plan | inconclusive (+0.13) | not profitable enough (failed: Mean daily return, Calmar) | 7.b: 013-02_follow-through-stronger-near-high.b1_momentum-only-near-52-week-high; 7.d: 013-02_follow-through-stronger-near-high.d1_upside-follow-through-near-high, 013-02_follow-through-stronger-near-high.d2_calm-follow-through-near-high; 7.g: 013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound, 013-02_follow-through-stronger-near-high.g2_short-term-five-day-momentum-carry, 013-02_follow-through-stronger-near-high.g3_volume-surge-predicts-gains | 1.31 | 10.9 |
+| 013-03_breakout-above-high-continues | - | plan | not observable (+5.18) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar, Trades per bar) | 7.a: no ideas: The plan needs at least 30 break grid cases. The default data gives 10 (F1), and adding every available coin on daily bars across all folds would give only about 21 to 27 (F6, F7). A finer bar size adds none, because the 30-day grid is fixed in calendar time (F4). So no available data can show this idea either way.; 7.d: 013-03_breakout-above-high-continues.d1_fresh-held-breaks-continue, 013-03_breakout-above-high-continues.d2_heavy-volume-breaks-continue-further; 7.g: 013-03_breakout-above-high-continues.g1_near-30-day-high-continuation, 013-03_breakout-above-high-continues.g2_volume-backed-near-high-continuation | 1.31 | 11.0 |
 
 ## Consumption
-33 ideas, 21.39 USD, 147.8 minutes in all.
+33 ideas, 22.65 USD, 158.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.11 | 15.6 |
-| step4_backtest | 0.00 | 64.2 |
-| step5_verdict | 2.58 | 12.4 |
+| step3_plan | 2.20 | 16.3 |
+| step4_backtest | 0.00 | 69.9 |
+| step5_verdict | 2.70 | 12.9 |
 | step6_check | 0.00 | 0.8 |
-| step7_7.a | 0.00 | 0.0 |
+| step7_7.a | 0.20 | 0.7 |
 | step7_7.e | 0.37 | 1.3 |
 | step7_7.b | 2.59 | 8.6 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.d | 5.50 | 18.8 |
-| step7_7.g | 8.24 | 26.2 |
+| step7_7.d | 6.00 | 20.5 |
+| step7_7.g | 8.60 | 27.5 |
