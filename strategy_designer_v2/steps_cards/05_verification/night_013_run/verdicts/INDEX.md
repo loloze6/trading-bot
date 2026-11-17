@@ -19,6 +19,7 @@
 013-01_nearness-to-high-predicts-gains_1d: mismatch: the test does not match its plan (agreement 0.612239) (fit: exact)
 013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound_1d: confirmed (fit: exact) [main: 3.90392; OLS slope t 3.90392; bars with forecast > 0 8514]
 013-02_follow-through-stronger-near-high_1d: inconclusive (fit: adapted) [main: 0.00207032; OLS slope t 0.130658; independent grid cases 526, above-median W cases 193, below-median W cases 193]
+013-03_breakout-above-high-continues.g1_near-30-day-high-continuation_1d: confirmed (fit: exact) [main: 0.00347844; OLS slope t 2.97652; independent 10-bar cases 1691]
 013-03_breakout-above-high-continues_1d: not observable (fit: adapted) [main: 0.205492; OLS slope t 5.17955; grid bars where the forecast is above 0 10]
 013-04_heavy-volume-below-high-breakout_1d: inconclusive (fit: adapted) [main: 0.273124; Welch t 1.98702; de-duplicated breakout events 50, top half events 25, bottom half events 25]
 013-05_longer-stall-bigger-breakout_1d: not observable (fit: adapted) [main: None; trending grid bars 18]

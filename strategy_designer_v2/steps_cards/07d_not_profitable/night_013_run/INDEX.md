@@ -19,6 +19,7 @@
 013-01_nearness-to-high-predicts-gains_1d: 2 ideas (2 explorations)
 013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound_1d: 2 ideas (2 explorations)
 013-02_follow-through-stronger-near-high_1d: 2 ideas (2 explorations)
+013-03_breakout-above-high-continues.g1_near-30-day-high-continuation_1d: 2 ideas (2 explorations)
 013-03_breakout-above-high-continues_1d: 2 ideas (3 explorations)
 013-04_heavy-volume-below-high-breakout_1d: 2 ideas (2 explorations)
 013-05_longer-stall-bigger-breakout_1d: 2 ideas (2 explorations)
