@@ -32,6 +32,10 @@ One backtest record per plan, or "not run", with the reason.
    - `trades.json.gz`, `metrics.json`, `manifest.json` (what ran: the config's hash, the data's hash, the costs, the engine's version), `forecast_distribution.csv`.
    - The wrapper call's `protocol_summary.json.gz`, `trade_diagnostics.json.gz` and `engine_log.txt`: in the coin's folder (one call per coin), or in the window's folder when the coin ran once per window.
    - For: the record itself.
+4. **The chart files** (operator, 2026-11-17), beside `run.md`, only for a backtest worth a chart (confirmed by step 5, or profitable enough by step 6; written by `run_idea` after step 6, with `helper/chart_files.py`): `chart_bars.csv.gz` (coin, window, timestamp, close, forecast, position, value: one row per bar) and `chart_trades.csv.gz` (coin, window, entry and exit time, direction, entry and exit price, net return). About 220 KB for a daily 6-coin record.
+   - For: the run viewer draws a backtest from them (price, trades, the book against holding, the forecast and position), from git, on a phone.
+   - Used by: the run viewer only; no step reads them (why they cannot leak).
+   - Without it: the viewer has nothing to draw, since the windows' files stay local.
    - Used by: step 5 (verification), step 6 (profitability).
    - Without it: there is nothing to judge.
 4. **The index line** (in `INDEX.md`): `<plan id>: ran: BTCUSD 6/6; ETHUSD 6/6; BNBUSD not run (reason) [bar, fold]`, or `not run: the plan is untestable`.
@@ -47,6 +51,7 @@ Modelled on the engine's own run folders, one folder per plan, named after the p
   card.md                      this card
   helper/
     run_backtest.py            one plan -> the engine, once per coin (once per window as fallback), the coins at the same time; stores the record; adds the index line
+    chart_files.py             the chart files of a record (called by run_idea; --backfill for the records already made)
   backtests/                   created by the helper when it runs (default):
     INDEX.md                   one line per plan
     REVIEW.md                  the review of a real run
@@ -54,6 +59,7 @@ Modelled on the engine's own run folders, one folder per plan, named after the p
     <plan id>/                 one record per plan (the plan id carries the bar size)
       run.md
       config.json
+      chart_bars.csv.gz, chart_trades.csv.gz   a backtest worth a chart only (committed)
       <SYMBOL>/                one folder per coin: the call's summaries and engine_log.txt (one call per coin)
       <SYMBOL>/wK/             one folder per coin and window, K in the folds' order
                                (committed: the summaries, metrics.json, manifest.json, engine_log.txt,

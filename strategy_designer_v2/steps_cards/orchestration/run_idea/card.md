@@ -20,9 +20,14 @@ visibility: nothing in it controls a step (operator, 2026-11-15).
 step before it, and recorded under one run name.**
 
 - **It calls; it decides nothing.** No step is changed, skipped by judgment, or given anything its card does not say.
+- **The chart files** (2026-11-17): after step 6, for a backtest confirmed by step 5 or profitable enough by step 6, it
+  writes the record's chart files (`04_backtest/helper/chart_files.py`, code only), for the run viewer; one journal
+  line (`chart_files`). The rule is steps 5 and 6's results, not a judgment.
 - **It stops where a step stops.** A plan that is untestable or misses a component ends the run of that idea (the
   component goes to step 3's wish list, as step 3 does).
-- **It can be resumed.** A step whose output for the idea already exists in the run is not called again.
+- **It can be resumed.** A step whose output for the idea already exists in the run is not called again, but step 3
+  for a missing-components refusal the components step has unblocked: it is called again, its new answer replaces the
+  refusal, and the run of the idea goes on from there (`../../components/card.md`, "Unblocking"; 2026-11-17).
 
 ## The fields of a run's row
 In `<name>_run/table.md` (and `table.json`, for code), one row per idea:

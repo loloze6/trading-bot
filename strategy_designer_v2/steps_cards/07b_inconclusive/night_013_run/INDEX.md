@@ -17,3 +17,10 @@
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends_1d: no ideas: The tested forecast shows no relation (t -0.37). The plain-depth effect it missed is driven by outliers and by 2018, is not graded across depth, and cannot be separated from the 30-day fall, so no part of the data shows the idea clearly enough to amend it to.
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
 013-01_nearness-to-high-predicts-gains_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
+013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+013-02_follow-through-stronger-near-high_1d: 1 ideas (2 explorations)
+013-03_breakout-above-high-continues.g1_near-30-day-high-continuation_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+013-03_breakout-above-high-continues_1d: not run: entry condition not met (step 5: not observable; step 6: not profitable enough)
+013-04_heavy-volume-below-high-breakout_1d: 1 ideas (1 explorations)
+013-05_longer-stall-bigger-breakout_1d: not run: entry condition not met (step 5: not observable; step 6: not profitable enough)
+013-06_breakout-volume-drives-continuation_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

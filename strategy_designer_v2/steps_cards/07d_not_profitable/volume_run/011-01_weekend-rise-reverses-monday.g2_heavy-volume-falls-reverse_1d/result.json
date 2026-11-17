@@ -1,0 +1,57 @@
+{
+  "line": "7.d",
+  "backtest": "011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3377571,
+  "findings": {
+    "F1": "The book fails only on size: its mean daily return is 0.000423 against the 0.0005 needed, because it is active on just 8.7 % of bars (1523 of about 17,500), holds a mean allocation of 0.64 there, and earns 0.0061 per active bar.",
+    "F2": "The rebound is graded by the day's volume ratio, not by the fall: across active-bar volume-ratio quartiles (mean ratio 1.54, 1.83, 2.24, 3.78) the next-day excess return is 0.0026, 0.0073, 0.0099 and 0.0159, and the 3-day excess return is -0.0074, 0.0148, 0.0116 and 0.0327; the Spearman correlation with the next day is 0.071 for volume ratio against 0.046 for the forecast.",
+    "F3": "Sizing by fall size starves the book: the lowest forecast quartile holds a mean allocation of only 0.014 yet rebounds 0.0055 the next day, and heavy-volume down days with falls under half a usual move still rebound 0.0059 the next day and 0.0119 over 3 days (n 319, 97 % active); falls of 2 to 3 usual moves rebound less (0.0079, n 178).",
+    "F4": "The effect belongs to heavy volume: down days on volume below 0.7 of the 60-day average are followed by -0.0020 the next day and -0.0089 over 5 days (n 3003), while those at 1.5 to 2, 2 to 3, and above 3 times average are followed by 0.0062, 0.0126 and 0.0141 the next day.",
+    "F5": "The rebound keeps going past the one day the book holds: excess returns on active bars are 0.0087 at 1 day (t 5.61), 0.0124 at 3 days and 0.0137 at 5 days (n 1488), with day 2 adding 0.0023 (t 1.55); on a non-overlapping 3-day grid, heavy-volume down days gain 0.0259 (t 4.84, n 397).",
+    "F6": "Over longer horizons the rebound is larger after a rising month: when the coin's 20-day return was positive, active bars gain 0.0179 over 3 days and 0.0261 over 5 days (n 606), against 0.0088 and 0.0054 after a falling 20 days (n 917), though the next day alone is 0.0061 against 0.0104."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's large one-day fall made on heavy volume compared with its 60-day average volume is partly undone over the next 1 day, and the heavier that day's volume, the larger the next day's rebound. The rebound carries on over the next 3 days and grows with the volume ratio, whatever the fall's size.",
+      "consequence": "A trader should size the rebound trade by how heavy the selling day's volume was, not by how far price fell, and hold it for about three days instead of one.",
+      "name": "volume-graded three-day rebound",
+      "from": "F1, F2, F3, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "A coin's large one-day fall made on heavy volume compared with its 60-day average volume is partly undone over the next 1 day, and the heavier that day's volume, the larger the next day's rebound. While the coin's 20-day return is positive, the rebound keeps growing over the next 5 days.",
+      "consequence": "A trader should hold heavy-volume dip buys longer when they occur inside a rising month, and treat such dips as entries into the trend rather than one-day bounces.",
+      "name": "heavy-volume dips in uptrends",
+      "from": "F5, F6",
+      "refs": [
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "Any one-day fall in a coin is followed over the next 3 days by a rise that grows with that day's volume compared with its 60-day average volume. The most heavily traded down days rebound the most.",
+      "consequence": "A trader can buy down days in proportion to their relative volume, and should avoid buying those made on thin volume.",
+      "name": "relative volume predicts rebounds",
+      "from": "F2, F3, F4",
+      "refs": [
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.d1_volume-graded-three-day-rebound",
+    "011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.d2_heavy-volume-dips-in-uptrends",
+    "011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.d3_relative-volume-predicts-rebounds"
+  ],
+  "no_ideas": null
+}

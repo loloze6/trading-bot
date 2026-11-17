@@ -1,6 +1,6 @@
 """
 strategy_designer_v2 components (operator, 2026-11-14): MovingAverageSlopeComponent, DistanceFromHighComponent and
-VolatilityScaledReturnComponent (graded, forecast sources),
+VolatilityScaledReturnComponent (graded, forecast sources), VolumeRatioComponent (graded, 2026-11-17),
 and three regime measures: MovingAverageAgeComponent, BarsSinceHighComponent, WeekdayComponent.
 
 Each output is checked against an independent hand computation on synthetic bars that uses only rows up to and
@@ -24,6 +24,7 @@ from strategies.strategy_components import (  # noqa: E402
     BarsSinceHighComponent,
     DistanceFromHighComponent,
     VolatilityScaledReturnComponent,
+    VolumeRatioComponent,
     MovingAverageAgeComponent,
     MovingAverageSlopeComponent,
     WeekdayComponent,
@@ -319,3 +320,109 @@ def test_validator_accepts_the_scaled_return_in_a_strategy():
                                   "default_regime": "unknown"},
               "strategies": {**_strategies("VolatilityScaledReturnComponent", {"period": 1, "vol_period": 20}), "warmup": 61}}
     assert validate(config) == []
+
+
+# ---------------------------------------------------------------------------
+# VolumeRatioComponent
+# ---------------------------------------------------------------------------
+
+def _vol_bars(n: int, seed: int = 11) -> pd.DataFrame:
+    df = _bars(n, seed)
+    df["volume"] = np.random.default_rng(seed).lognormal(10.0, 0.5, n)
+    return df
+
+
+@pytest.mark.parametrize("t,period", [(29, 30), (77, 30), (149, 10)])
+def test_volume_ratio_matches_the_hand_computation_using_rows_up_to_t(t, period):
+    df = _vol_bars(150)
+    v = df["volume"].to_numpy()[: t + 1]
+    expected = v[-1] / (sum(v[-period:]) / period)
+    got = _run(VolumeRatioComponent(parameters={"period": period}), df.iloc[: t + 1])
+    assert got == pytest.approx(expected, rel=1e-12)
+
+
+def test_volume_ratio_ignores_later_bars():
+    df = _vol_bars(150)
+    a = _run(VolumeRatioComponent(), df.iloc[:100])
+    later = df.copy()
+    later.loc[100:, "volume"] = 1e12
+    assert _run(VolumeRatioComponent(), later.iloc[:100]) == a
+
+
+def test_volume_ratio_is_one_at_average_and_grows_with_the_burst():
+    df = _bars(40).assign(volume=100.0)
+    assert _run(VolumeRatioComponent(parameters={"period": 10}), df) == pytest.approx(1.0)
+    burst = df.copy()
+    burst.loc[39, "volume"] = 300.0
+    big = burst.copy()
+    big.loc[39, "volume"] = 900.0
+    r3 = _run(VolumeRatioComponent(parameters={"period": 10}), burst)
+    r9 = _run(VolumeRatioComponent(parameters={"period": 10}), big)
+    assert r3 == pytest.approx(300 / ((9 * 100 + 300) / 10)) and r9 > r3 > 1.0
+    quiet = df.copy()
+    quiet.loc[39, "volume"] = 10.0
+    assert 0 < _run(VolumeRatioComponent(parameters={"period": 10}), quiet) < 1.0
+
+
+def test_volume_ratio_warmup_nan_zero_and_bad_params():
+    comp = VolumeRatioComponent(parameters={"period": 30})
+    assert comp.get_required_periods() == 30
+    assert _run(comp, _vol_bars(29)) == 0.0 and not comp.is_ready()
+    df = _vol_bars(60)
+    df.loc[45, "volume"] = np.nan
+    assert math.isnan(_run(VolumeRatioComponent(parameters={"period": 30}), df))
+    assert math.isnan(_run(VolumeRatioComponent(parameters={"period": 30}), _bars(40).assign(volume=0.0)))
+    assert VolumeRatioComponent().period == 30
+    with pytest.raises(ValueError, match="period"):
+        VolumeRatioComponent(parameters={"period": 1})
+
+
+def test_validator_accepts_the_volume_ratio_in_a_strategy_and_in_the_regime_detector():
+    config = {"regime_detector": {"mode": "threshold_rules", "components": [], "rules": [],
+                                  "default_regime": "unknown"},
+              "strategies": {**_strategies("VolumeRatioComponent", {"period": 30}), "warmup": 61}}
+    assert validate(config) == []
+    config = {"regime_detector": {"mode": "threshold_rules",
+                                  "components": [{"id": "vr", "class": SC + "VolumeRatioComponent",
+                                                  "params": {"period": 30}}],
+                                  "rules": [{"regime": "trending", "any_of": [[{"id": "vr", "op": "gt", "value": 1.5}]]}],
+                                  "default_regime": "unknown"},
+              "strategies": {**_strategies("DistanceFromHighComponent", {"period": 60}), "warmup": 61}}
+    assert validate(config) == []
+
+
+def test_engine_forecast_is_the_clipped_volume_ratio_once_warm():
+    params = {"period": 20}
+    eng = ConfigDrivenStrategyEngine(_strategies("VolumeRatioComponent", params))
+    df = _vol_bars(120)
+    for i in range(2, len(df) + 1):
+        eng.update(df.iloc[:i])
+        if i >= 40:
+            fc, dbg = eng.forecast(MarketRegime.UNKNOWN)
+            assert "not_ready_component" not in dbg, (i, dbg)
+            probe = _run(VolumeRatioComponent(parameters=params), df.iloc[:i])
+            assert fc == pytest.approx(float(np.clip(probe, -20, 20)), rel=1e-12) and fc > 0
+
+
+def test_a_one_bar_component_with_no_history_op_is_ready_in_the_engine():
+    """The engine's history holds at least the 2 values its forecast waits for (components step, 2026-11-17): a component
+    that needs one bar, with no history op, was never ready (its history was 1 long)."""
+    class OneBar(VolumeRatioComponent):
+        def get_required_periods(self):
+            return 1
+
+        def update(self, data):
+            self.data = data
+            self._raw_value = float(data["close"].iloc[-1]) / 100.0
+
+    import strategies.strategy_components as sc
+    sc.OneBarForTest = OneBar
+    try:
+        eng = ConfigDrivenStrategyEngine(_strategies("OneBarForTest", {}))
+        df = _bars(10)
+        for i in range(2, len(df) + 1):
+            eng.update(df.iloc[:i])
+        fc, dbg = eng.forecast(MarketRegime.UNKNOWN)
+        assert "not_ready_component" not in dbg and fc == pytest.approx(float(df["close"].iloc[-1]) / 100.0)
+    finally:
+        del sc.OneBarForTest

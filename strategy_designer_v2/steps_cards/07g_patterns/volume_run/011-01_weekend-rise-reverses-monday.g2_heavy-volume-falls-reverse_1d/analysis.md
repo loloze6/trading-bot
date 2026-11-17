@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d
+idea tested: 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3823 USD
+---
+## Findings
+- **F1:** Where a coin closes inside its own daily range predicts the next day, and the effect is graded. Across all 17,379 bars, the next-day excess return falls as the close moves from the day's low to its high (slope -0.0031, t -4.67). The slope holds in both halves of the windows: w1-12 gives t -2.97 and w13-24 gives t -3.60. Closes in the bottom fifth of the range are followed by +0.35% (n 3,454, t 4.04), and closes in the top fifth by -0.22% (n 3,487, t -2.65).
+- **F2:** Saturday's volatility-scaled move is partly undone on Sunday, and the effect is graded. The next-day excess return falls by 0.38% per usual daily move (n 2,256, t -4.08), with t -3.06 in w1-12 and t -2.73 in w13-24. The sign is negative in all six coins, ranging from t -0.50 for XRP to t -3.26 for LTC.
+- **F3:** Sunday's move also reverses on Monday (slope -0.45% per usual move, n 2,267, t -3.83). Wednesday and Thursday moves reverse about as much (t -4.05 and -4.08). Monday's own move instead continues into Tuesday (slope +0.26%, t +3.29). The two-day weekend move taken as a whole does not predict Monday (t -0.42).
+- **F4:** The volume grading behind the tested idea is not stable across periods. Among falls larger than one usual move, the next-day rebound rises with the volume ratio overall (slope 0.0059, t 5.15), but almost all of that comes from w13-24 (t 5.79); w1-12 shows nothing (t 0.48).
+- **F5:** The book's gain is spread evenly rather than concentrated anywhere. The mean daily return is positive in every year from 2018 to 2025, from 0.00014 in 2022 to 0.00074 in 2023. Across coins it runs from 0.00026 (ZEC) to 0.00060 (XMR). Active bars rebound in every year, with t between 0.75 and 3.04.
+- **F6:** A wide daily range relative to the coin's 20-day average predicts a higher next day overall (t 5.68), but only in w13-24 (t 7.24) and not in w1-12 (t -0.31). It is too unstable to count.
+
+## Ideas
+- `011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.g1_close-location-reverses-next-day` (from F1): A coin that closes near the low of its daily range rises over the next 1 day, and the closer the close sits to the day's low, the larger the next day's rise. Symmetrically, a close near the day's high is followed by a fall.
+- `011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.g2_weekend-daily-moves-fade-next` (from F2, F3): A coin's Saturday or Sunday move, measured in its usual daily moves, is partly undone over the next 1 day, and the larger that weekend day's move, the larger the reversal.
+- `011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.g3_monday-move-continues-tuesday` (from F3): A coin's Monday move, measured in its usual daily moves, continues over the next 1 day, and the larger Monday's move, the larger Tuesday's move in the same direction.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

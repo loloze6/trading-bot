@@ -156,6 +156,12 @@ left behind; a failed rename leaves the old bytes); the bot's suite passes (1,49
 today (the folds' data is already in the files), so no run was rerun for it.
 
 ## Parked: a relative-volume component (night_run, 2026-11-17)
+**Built (operator's go, 2026-11-17):** `VolumeRatioComponent` (`period` 30): volume[t] / the mean volume of the last
+`period` bars, bar t included; catalogue row in `03_test_plan/helper/reference/component_catalogue.md`. Proof: 6 tests (8 cases) in
+`trading-bot/tests/test_designer_v2_components.py` (hand computation on rows up to t, later bars ignored, warm-up, NaN,
+engine run, validator); the bot's suite passes (1,515); one backtest rerun on fixed inputs
+(`night_013_run`'s momentum idea, 6 coins, 24 windows): 588 files compared, identical but for the run ids, times and
+temporary paths in protocol_summary.json. It adds a class; nothing else in the engine changes.
 Brief 003 (volume separates reversal from continuation) cannot be tested: all four of its ideas need a graded measure
 of a bar's volume against its own recent average, and no component computes one (step 3: missing-components, four
 times). The four wish-list entries converge on one component: the bar's volume divided by the mean volume of the last
@@ -193,6 +199,25 @@ range 7. Nothing says which component would unblock the most ideas.
 Step 5 found that the config does not trade the plan's situation (57 % to 68 % of active bars on the plan's situation
 and side, 90 % needed). The idea's backtest is spent (about 1 USD each) and says nothing about the idea. Whether the
 fault is step 3's config or step 5's reading of the situation is not looked at.
+**Analysed (2026-11-17), 5 cases (4 in night_013_run, 1 in volume_run).** The positions follow the forecast's sign on 75 to
+96 % of active bars; the gap is between the forecast and step 5's reading of the plan's situation. One root, two forms:
+- **Step 5** (013-01, e2, volume g1): its check rebuilt "above its usual level" from the raw values
+  (`last_history_value`), guessing what `standardise` does ("if the recorded value is already standardised...", in its
+  own code): e2's check added the raw distance (-41) to the offset (+10) where the config adds the standardised one
+  (-13): a correct backtest judged a mismatch.
+- **Step 3** (d2): the plan says long, rarely short; its config averages a block always negative (the distance below the
+  high, standardised) with one always positive (the month's rise): short on about 40 % of active bars. A real mismatch.
+- **The root:** no shared definition of how a forecast is built from components (`standardise` divides by the past mean
+  size without centring; a one-sided measure stays one-sided; "above its usual level" needs a constant offset block;
+  the record's raw and standardised columns). **Proposed:** define it once in `common/` and give it to steps 3 and 5
+  (code only). Proof: step 5 again on the 5 cases (about 1 USD): 013-01, e2 and volume g1 no longer mismatch, d2 still.
+**Fixed (operator's go, 2026-11-17):** `common/forecast.md` (how a config turns its components into a forecast and a
+position), given to steps 3 and 5 (code only: one more shared text in their calls). Proof, step 5 again on the 5 cases
+(0.79 USD; the new verdicts in the session's scratch folder, the runs' records unchanged): 013-01, e2 and g3 now
+inconclusive, volume g1 confirmed, each with a situation check of 100 %; d2 still a mismatch (57 %): the real step 3
+error, as expected. **Written into their runs** (operator, 2026-11-17): the 4 verdicts copied in, their rows rebuilt by
+`run_idea` (step 6 again, code only; no model call). Their step 7 analyses are those written when they were mismatches
+(the lines' entry conditions read the old status): kept, not rerun.
 
 ## Parked: TAO has no data where `common/data_available.md` says it has (night, 2026-11-17)
 `data_available.md` lists TAO for fold D; the more-coins backtest got "No historical data for TAOUSD" in all 24
@@ -205,3 +230,32 @@ GitHub reports 1 critical vulnerability on the default branch (Dependabot alert 
 The operator's grouping: **result loop back** (a file next to the brief, not inside it, saying what its run found: its
 ideas' results, its blocked ideas, where the lines went), **brief archiving**, **brief reopening**. Seen tonight: the
 answer to "which of the theory's ideas are real and pay" was written by hand in NIGHT_RUN.md; no file holds it.
+
+## New topic: develop the live part of the trading bot (operator, 2026-11-17)
+Refactor the bot's live mode (not the research workflow) so that it runs live, connected to the Kraken API, for real
+trading. Today nothing in this repository trades live (CLAUDE.md). Not started: a picture of the current live code, then
+a plan, then the operator's go.
+
+## New topic: a visual of the runs (operator, 2026-11-17)
+A user-friendly HTML view of the runs done: brief, ideas, backtests, results, analyses (step 5, 6 and 7 readings), and
+how the ideas lead to one another. Not started.
+
+## New topic: a card for creating a component from the wish list (operator, 2026-11-17)
+A card (business objective, guideline, possibly a prompt, the implementation steps) for turning a wish-list block into
+a component, written from the expertise and the lessons of building `VolumeRatioComponent`. Lessons so far: group the
+wish-list blocks that ask for one measure under different names, and take the general form (volume_run: two ideas need
+a short average of several bars, not one bar, against the long one); a "why it cannot leak" note; tests that compute by
+hand on rows up to bar t, show later bars are ignored, and run the engine; the catalogue row (and its class count); the
+proof rerun on fixed inputs, file by file; the bot's tests run from its own folder. Not started.
+
+## Parked: the engine keeps too short a history for a one-bar component with no history op (components exercise 1, 2026-11-17)
+`ConfigDrivenStrategyEngine` sizes each component's history to the largest lookback its components and transforms
+need (`strategy_engine.py`, phase 2): a component that needs one bar, with no history op (`identity`, `clip`), gets a
+history of length 1, but `forecast` needs 2 values (`max(2, ...)`), so it is never ready. Not met by real configs (step
+3 writes `standardise` first, whose window sets the history); met by the components step's harness, which ran its
+engine check without `standardise` (fixed: it now uses step 3's form). Fix when approved: a history at least as long as
+the forecast needs (`max(2, lookback)`). A change to `trading-bot/`: the operator's go.
+**Fixed (operator's go, 2026-11-17):** the history holds at least the values the forecast waits for
+(`strategy_engine.py`, phase 3: `max(lookback, 2, the history ops' minimum)`). Proof: a test (a one-bar component with
+no history op is ready; it fails without the fix); the fixed backtest rerun with the fix, compared with its full record
+on disk: 588 files identical; the bot's suite passes.

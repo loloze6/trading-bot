@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 013-03_breakout-above-high-continues_1d
+idea tested: 013-03_breakout-above-high-continues
+step 5: not observable
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3588 USD
+---
+## Findings
+- **F1:** The pattern sits at a 30-day high, not a 52-week one. Bars in the top quintile of distance from the prior 30-day high (a mean of -1.0%, so almost at the high) beat the coin's average 10-day return by +3.34% (t 2.73, n 245 non-overlapping cases). The other four quintiles all came out between -0.56% and -1.02%.
+- **F2:** Inside the near-high zone the effect is graded. On bars closing within 5% of the prior 30-day high, the slope of 10-day excess return on that distance is 1.41 (t 5.31, n 244), the strongest result across both rounds.
+- **F3:** The top-quintile excess does not depend on the sampling grid. Across all 10 offsets of the 10-day grid it stays positive, between +1.77% and +3.34%, with top-quintile t from 1.38 to 2.83 and slope t from 0.59 to 2.92.
+- **F4:** The effect is short-lived and needs a short lookback.
+- **F5:** Closes above the prior 30-day high mostly continue. 65% were still above that level 10 days later, and they beat the coin's average 10-day return by +7.37% (t 2.37, n 69).
+- **F6:** The effect is uneven across coins and years.
+- **F7:** Heavier volume came with stronger near-high continuation, though I did not test whether the two groups differ. Top-quintile bars whose 5-day volume was above the median relative to the prior 30 days earned +4.30% excess (t 2.69, n 112), against +2.20% (t 1.30, n 112) for the rest.
+- **F8:** The tested book barely traded, so it says almost nothing about the idea.
+- **F9:** Returns differ by weekday, but this was one of many angles I looked at and has no graded mechanism, so I do not treat it as a finding to build on. Saturday's excess daily return was +0.31% (t 3.78, n 2416) and Thursday's -0.31% (t -2.84).
+
+## Ideas
+- `013-03_breakout-above-high-continues.g1_near-30-day-high-continuation` (from F1, F2, F3, F4, F5): The closer a coin's daily close is to the highest high of its prior 30 days, the larger the coin's return over the next 10 days. The effect continues, growing with the distance, for closes that clear that high.
+- `013-03_breakout-above-high-continues.g2_volume-backed-near-high-continuation` (from F1, F7): Among closes near a coin's 30-day high, the more the coin's recent 5-day volume exceeds its volume over the prior 30 days, the larger its return over the next 10 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

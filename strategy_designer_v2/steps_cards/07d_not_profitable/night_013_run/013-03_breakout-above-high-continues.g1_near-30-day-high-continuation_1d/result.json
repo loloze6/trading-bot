@@ -1,0 +1,45 @@
+{
+  "line": "7.d",
+  "backtest": "013-03_breakout-above-high-continues.g1_near-30-day-high-continuation_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.321061,
+  "findings": {
+    "F1": "The book barely holds the coin. Its mean position is +0.009 and its mean absolute position is about 0.14, it is short on 46% of days and flat on 8%. As a result its mean daily return is 0.000077, against 0.00119 for holding, and its daily standard deviation is 0.0079 against 0.049. Only 0.000011 of its gain comes from the market's own rise.",
+    "F2": "Longs carry the whole gain and shorts lose it back. Summed daily gains are +2.13 on 4,273 long bars (mean 0.000499) and \u22120.63 on 4,035 short bars (mean \u22120.000157).",
+    "F3": "The forecast's information sits only at the top of the distance range. On non-overlapping 10-day samples, the sextile within 4.5% of the 30-day high or above it has an excess 10-day return of +0.031 (282 cases, 56% up). The five lower sextiles are not graded: they range from \u22120.014 to +0.003. So the negative forecasts below the usual distance short a coin that does not fall in a graded way.",
+    "F4": "The effect holds only while the coin's 60-day return is positive. There, the slope of excess 10-day return on distance has t = 3.08 (423 independent cases), and the top tercile shows +0.030 excess against \u22120.029 for the bottom. When the 60-day return is negative, the slope has t = \u22121.30 (404 cases), and the near-high tercile shows \u22120.013 excess.",
+    "F5": "The book's losses concentrate where it bets against a rising coin. Shorts while the 60-day return is positive lose \u22120.545 summed (mean \u22120.000274 on 1,993 bars), while longs in that state earn +1.92 (mean 0.000843). Longs while the 60-day return is negative earn only +0.22.",
+    "F6": "The result is weak across windows. The pooled book's deepest fall is \u221222.7%, and 12 of the 24 windows lose money, including windows where holding gained +0.33 to +0.47 (w4, w24). This gives a Calmar of 0.106."
+  },
+  "ideas": [
+    {
+      "idea": "The closer a coin's daily close is to the highest high of its prior 30 days, the larger the coin's return over the next 10 days, and the effect keeps growing for closes that clear that high, only while the coin's own 60-day return is positive.",
+      "consequence": "A trader would lean long on a coin pressing against or through its 30-day high for about 10 days when the coin has risen over the past 60 days, and would refuse that lean when it has fallen over the past 60 days.",
+      "name": "near-high continuation in uptrends",
+      "from": "F2, F4, F5",
+      "refs": [
+        "F2",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "Among a coin's daily closes within a few percent of the highest high of its prior 30 days or above it, the further the close sits through that high, the larger the coin's return over the next 10 days.",
+      "consequence": "A trader would concentrate long exposure on coins at or breaking their 30-day high for a 10-day hold, instead of spreading the bet into shorts on coins below the high, where the next 10 days show no graded fall.",
+      "name": "breakout strength drives continuation",
+      "from": "F1, F3, F2",
+      "refs": [
+        "F1",
+        "F3",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "013-03_breakout-above-high-continues.g1_near-30-day-high-continuation.d1_near-high-continuation-in-uptrends",
+    "013-03_breakout-above-high-continues.g1_near-30-day-high-continuation.d2_breakout-strength-drives-continuation"
+  ],
+  "no_ideas": null
+}

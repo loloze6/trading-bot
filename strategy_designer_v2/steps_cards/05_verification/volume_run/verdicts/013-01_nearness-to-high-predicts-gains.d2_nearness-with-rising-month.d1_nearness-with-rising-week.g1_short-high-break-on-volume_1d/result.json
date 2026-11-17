@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9693025198385076,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 7-day excess return on forecast",
+    "value": 0.002445460528214256,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 4.170642260605272
+    },
+    "threshold": "slope t >= 2 confirms (with timing gain > 0); slope t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "timing gain (book mean daily return before costs minus market-rise gain)",
+    "value": 0.00033072722778666763,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping samples": 2443
+  },
+  "decided_by": "The slope t is 2 or more and the timing gain is above 0.",
+  "reading": "The graded situation is read as the sign of the equal-weight mean of the two raw components, each recomputed per window as value / mean |previous 60 values| x 10 capped at +/-20 (min 20 values), positive meaning the long side; active bars where it cannot be computed are left out; the regression is OLS with intercept on all non-overlapping samples whose 7-bar return stays in the window, the coin's mean being the mean of those samples over all its windows, and the book's before-cost daily gain is the previous bar's post-rebalance allocation x the coin's daily return, averaged over coins each day."
+}

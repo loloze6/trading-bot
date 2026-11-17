@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess next-14-bar return on forecast (grid bars, forecast > 0)",
+    "value": 0.0018562548791052295,
+    "statistic": {
+      "name": "OLS t of slope",
+      "value": 1.077617220742778
+    },
+    "threshold": "slope t >= +2 to confirm (with top-minus-bottom third > 0), t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "top-third minus bottom-third mean excess 14-bar return",
+    "value": 0.0373083199180758,
+    "passed": true
+  },
+  "counts": {
+    "independent grid bars with forecast > 0": 185
+  },
+  "decided_by": "The slope's t is between -2 and +2 (or undefined), so neither the confirm nor the reject rule is met.",
+  "reading": "Situation taken as the component's raw signed run length below zero, expected side long; each coin's mean 14-bar return is the mean over the same non-overlapping 14-bar grid of all its windows, the slope's t is the OLS t of excess return on forecast, and the thirds are the n//3 lowest and n//3 highest forecasts after a stable sort."
+}

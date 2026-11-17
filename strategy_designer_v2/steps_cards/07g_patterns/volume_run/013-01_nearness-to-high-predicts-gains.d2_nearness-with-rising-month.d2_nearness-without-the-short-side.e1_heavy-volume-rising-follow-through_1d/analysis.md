@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d
+idea tested: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through
+step 5: confirmed
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.3458 USD
+---
+## Findings
+- **F1:** Across all six coins, a wider daily range relative to its own 20-day average range comes before a higher demeaned 3-day return (slope 0.0056, t = 3.02, n = 4715 non-overlapping cases); the slope is positive in 5 of 6 coins (ZEC t = 2.39, XRP t = 1.72, BTC the only negative at t = -0.35), but it fades at 7 days (slope 0.0032, t = 0.63, n = 2011).
+- **F2:** The tested volume effect is confined to rising months: the volume-ratio slope on the demeaned 3-day return is 0.0076 (t = 3.15, n = 2187) when the 30-day return is positive, against 0.0012 (t = 0.53, n = 2096) when it is not, and the top volume quintile in rising months carries +1.29% (t = 2.63, n = 439).
+- **F3:** Momentum carries over: the 7-day return predicts the demeaned 7-day forward return (slope 0.056, t = 2.72, n = 2299) and the 30-day return does too (slope 0.025, t = 2.88, n = 1723), but by coin it is mixed (XRP t = 3.48 and ZEC t = 2.57 positive, XMR t = -0.92 to -1.65 and LTC t = -0.79 negative).
+- **F4:** Closeness to the 30-day high, the brief's own variable, carries no linear information about the next 3 days (slope t = 0.06 on all bars, t = -0.25 in rising months, n = 4283 and 2187); only its top quintile stands out (+0.62%, t = 2.24).
+- **F5:** Coins rose more on Thursdays and Fridays: the cross-coin mean on Fridays was +0.44% (t = 2.98, 414 days) in both halves of the sample, Thursday-plus-Friday beat the other days in all six coins (LTC t = 3.88), and the book's best weekdays were Friday and Saturday (t = 2.90 and 4.37). This is a fixed calendar condition, not a graded situation, so no idea is built on it.
+
+## Ideas
+- `013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through.g1_range-expansion-precedes-gains` (from F1, F2): The wider a coin's daily high-low range relative to its own average range over the past 20 days, the higher its return over the next 3 days.
+- `013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through.g2_weekly-return-momentum-continues` (from F3, F4): The higher a coin's 7-day return, the higher its return over the next 7 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

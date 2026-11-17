@@ -46,6 +46,23 @@ def call(model, system, request):
     return d["result"], d["total_cost_usd"]
 
 
+CATALOGUE = COMMON.parent / "03_test_plan" / "helper" / "reference" / "component_catalogue.md"
+
+
+def catalogue_version(path=CATALOGUE):
+    """The component catalogue's version: the first 12 hex digits of its SHA-256. Step 3 writes it in each plan's
+    header; the components step compares it to tell a refusal written before a component was added."""
+    import hashlib
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()[:12]
+
+
+def utc_now():
+    """The time a record line is written: a full UTC timestamp, YYYY-MM-DDTHH:MM:SSZ (the journals' "at"; operator,
+    2026-11-17: a run's dates come from its record, not from git)."""
+    import datetime
+    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def write_atomic(path, text):
     """Write a file whole or not at all."""
     tmp = path.with_suffix(path.suffix + ".tmp")

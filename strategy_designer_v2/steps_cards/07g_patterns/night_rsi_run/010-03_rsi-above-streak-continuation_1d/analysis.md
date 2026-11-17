@@ -1,0 +1,23 @@
+---
+line: 7.g patterns
+backtest: 010-03_rsi-above-streak-continuation_1d
+idea tested: 010-03_rsi-above-streak-continuation
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.3011 USD
+---
+## Findings
+- **F1:** Short-term momentum is the most consistent pattern in the bars, but it is weak. A coin's past return, scaled by its 30-day volatility, has a positive slope against its later excess return in 8 of 9 lookback and horizon pairs (1, 3 or 7 days against 3, 7 or 14 days). The t-values run from 1.58 to 2.40, with the strongest being t = 2.40 (7-day past return, next 3 days, n = 1427) and t = 2.32 (3-day past return, next 14 days, n = 240). The nine pairs reuse the same bars, so they are not independent evidence.
+- **F2:** That momentum appears only in the later half of the windows. For the 3-day past return against the 14-day forward return, the t-values are 2.04 in BTC and 2.10 in ETH over w13–w24 (n = 60 each), but −0.87 in BTC and 0.47 in ETH over w1–w12 (n = 60 each).
+- **F3:** The streak length the idea tested sorts later returns without a monotone pattern. Raw-age quintiles of the 14-day excess return go 0.0047, −0.0167, −0.0265, +0.0191, +0.0188 (Spearman 0.021, p = 0.68, n = 384). The RSI level itself sorts nothing either (Spearman 0.031, p = 0.58, n = 336).
+- **F4:** Wide-range days are followed by slightly lower 14-day excess returns. The top tercile of the day's high-low range has a mean of −0.0205 against +0.0155 in the bottom tercile (Spearman −0.105, p = 0.039, n = 384). Scaled to its own 30-day average, the range shows nothing (t = −1.05, n = 240).
+- **F5:** Grid points starting on a Friday show a 14-day excess return of +0.066 (t = 3.09, n = 48). This is one of seven weekday groups on few cases, and the book's own daily return by weekday shows no matching effect.
+- **F6:** The book takes slightly more of the coins' up days than of their down days. In the top quintile of coin daily returns it earns a mean of 0.0160 against the coin's 0.0549 (29%). In the bottom quintile it loses 0.0118 against the coin's 0.0508 (23%).
+- **F7:** The book's worst and best days both come after strong coin gains. Over the previous 5 days the coin had gained 0.040 before its worst 5% of days and 0.037 before its best 5%, against 0.002 before other days, so the book's large moves come while it is long after rallies.
+
+## Ideas
+- No ideas: I looked at the streak, RSI level, past returns, volatility, range, weekday and the book's extreme days. No pattern stands out from chance given that many looks: the strongest is momentum at t ≈ 2.3–2.4 on overlapping tests, and it is present only in the later half of the windows.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -4,11 +4,21 @@ brief: 010_rsi-midline-regime-direction
 data-instruments: BTC, ETH, BNB
 data-bar: 1d
 data-period: folds A, B, C, D
-outcome: missing-components
+outcome: plan
+fit: exact
+catalogue: 70a362722b07
 ---
 Fidelity:
-- Situation: the share of the past 30 days that the coin's 14-day RSI spent above 50 -> replaced: no component counts the bars with RSI above 50, and the only nearby measure is the current RSI level.
-- Comparison: a larger share against a smaller share -> kept: a graded forecast that grows with the share.
-- Outcome: a lower return over the next 14 days, so the higher the share, the more short -> kept: a 14-bar horizon on daily bars with the forecast negated.
-- Verdict transfer: no: the current RSI level, or a smoothed one, is a different quantity from the share of days above 50, so neither a confirm nor a reject would carry over to the idea.
-Reason: The idea needs the fraction of the last 30 daily bars on which RSI(14) was above 50. No catalogue component outputs it. The transforms cannot build it either: there is no sign or indicator op, and `standardise` must be the only history op, which rules out averaging an RSI history. Everything needed is in the coin's own closes, so only the component is missing.
+- Situation: share of the past 30 days that the 14-day RSI spent above 50 -> kept
+- Comparison: a larger share against a smaller share -> kept
+- Outcome: the coin's return over the next 14 days is lower -> kept
+- Verdict transfer: yes: the forecast is the negated 30-bar share of RSI(14) above 50, so its link to 14-bar forward returns is the idea's claim itself.
+Forecast: The forecast uses one indicator. It is the share of the last 30 daily bars on which the 14-day RSI was above 50, minus 0.5 (RsiAboveMidlineShareComponent: period 14, window 30, rsi_window 100, side "above"). It is standardised against its own past 60 values (20 minimum) and then negated. It is negative (short) when RSI held above 50 on more than half of the 30 bars. It is positive (long) when it held above 50 on fewer than half. It is zero at an even split. The size grows steadily with how far the share is from one half, capped at ±20.
+Config: 010-05_rsi-above-share-reversal_1d_config.json
+Criterion:
+- Horizon: 14 bars
+- Main measure: Take the bars on a non-overlapping 14-bar grid in each window, pooled over coins and windows. Regress each bar's 14-bar forward return, minus that coin's mean 14-bar return over all windows, on the bar's forecast, and test the slope with its t.
+- Supporting check: The book's mean daily return minus its gain from the market's own rise (the timing part) is above 0, before costs.
+- Confirm: The slope is positive with t ≥ 2 on at least 300 independent cases, and the supporting check passes.
+- Reject: The slope is negative with t ≤ -2 on at least 300 independent cases.
+- Inconclusive: Any of these is inconclusive: a slope t between -2 and 2; a positive slope with t ≥ 2 whose timing gain is not above 0; or fewer than 300 independent cases.

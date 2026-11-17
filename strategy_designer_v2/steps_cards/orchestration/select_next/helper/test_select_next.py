@@ -63,3 +63,26 @@ def test_ranking_candidates_duplicates_and_ties(tmp_path):
     # records: step 2 (0 of 1) = 1/3, generation 0 -> 0.333; 7.b none yet = 0.5, generation 1 -> 0.25
     assert cands == ["003-02_y", "003-01_x.b1_p", "003-01_x.b2_q"]
     assert rows[0]["score"] == round(1 / 3, 4)
+
+
+def test_an_unblocked_refusal_is_a_candidate_again(tmp_path, monkeypatch):
+    run = "u_run"
+    idea(tmp_path / "02_ideation" / run / "ideas", "003-01_x", "one")
+    plans = tmp_path / "03_test_plan" / run / "plans"
+    plans.mkdir(parents=True)
+    (plans / "003-01_x_1d.md").write_text("---\nidea: 003-01_x\noutcome: missing-components\n---\n")
+    assert [r["status"] for r in s.rank(run, tmp_path)] == ["tested"]
+    monkeypatch.setattr(s.wishes, "unblocked", lambda plan, root=None: plan.name == "003-01_x_1d.md")
+    assert [r["status"] for r in s.rank(run, tmp_path)] == ["candidate"]
+
+
+def test_a_brief_s_own_ideas_come_first(tmp_path):
+    run = "o_run"
+    idea(tmp_path / "02_ideation" / run / "ideas", "003-01_x", "one")
+    idea(tmp_path / "02_ideation" / run / "ideas", "003-02_y", "two")
+    mark_tested(tmp_path, run, "003-01_x", "confirmed", "profitable enough")
+    mark_tested(tmp_path, "p_run", "009-01_q.g1_w", "confirmed", "profitable enough")      # 7.g gets a high record
+    lines = tmp_path / "07g_patterns" / run / "003-01_x_1d" / "ideas"
+    idea(lines, "003-01_x.g1_child", "three")
+    cands = [r["idea"] for r in s.rank(run, tmp_path) if r["status"] == "candidate"]
+    assert cands == ["003-02_y", "003-01_x.g1_child"]                       # the brief's idea before a better-scored child

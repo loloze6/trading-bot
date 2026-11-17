@@ -1,0 +1,11 @@
+003-01_thin-volume-rise-reverses_1d: inconclusive (fit: adapted) [main: -0.00178307; t of the mean -0.501122; non-overlapping events 930, active bars 3838]
+003-02_thin-volume-drop-rebounds_1d: not observable (fit: adapted) [main: 0.0664532; one-sample t 1.27244; independent events 5, bars with forecast above 0 5]
+003-04_heavy-volume-drop-continues_1d: inconclusive (fit: adapted) [main: -0.00894038; t of the mean -1.50541; independent events 286]
+011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday_1d: inconclusive (fit: adapted) [main: 0.000338419; OLS slope t 3.16373; Sunday cases 2489, high-volume half 1242, low-volume half 1247]
+011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d: confirmed (fit: adapted) [main: 0.00996434; ordinary t of forecast/10 x excess return 4.9472; active bars 1514, high volume half 757, low volume half 757]
+012-02_volume-burst-fall-reversal_1d: inconclusive (fit: adapted) [main: 0.00431798; OLS t of slope 1.58575; kept sharp-fall cases 440]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume_1d: confirmed (fit: exact) [main: 0.00244546; OLS slope t 4.17064; non-overlapping samples 2443]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d: confirmed (fit: exact) [main: 0.00633208; OLS t of slope 2.74505; trending-regime grid cases 2840]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains_1d: mismatch: the test does not match its plan (agreement 0.625086) (fit: exact)
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g2_volume-surge-precedes-gains_1d: inconclusive (fit: adapted) [main: 1.95549; OLS slope t 1.95549; non-overlapping 7-bar cases pooled across coins 2443, coins with positive slope 4]
+013-06_breakout-volume-drives-continuation_1d: inconclusive (fit: adapted) [main: 0.195272; Welch t 1.65542; kept cases in total 60, high-volume group 30, low-volume group 30]

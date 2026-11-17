@@ -4,10 +4,13 @@
 
 It has no limit of its own: it stops when the operator stops it (it resumes from the run's files), when the optional
 budget is reached (an idea already started is finished), or when no candidate is left. It decides only which idea comes
-next (select_next's ranking); the steps judge. Visibility only: loop.jsonl (one line per turn), queue.md and queue.json
-(every idea written in the run and what happened to it, a reached goal marked).
+next (select_next's ranking); the steps judge. Between two ideas it calls the components step (components/card.md) on
+the run's open wishes: every 10 turns since its last call, and before stopping for "no candidate left"; what it builds
+unblocks ideas, which select_next counts as candidates again. Visibility only: loop.jsonl (one line per turn, per call
+of the components step, per stop), queue.md and queue.json (every idea written in the run and what happened to it, a
+reached goal marked).
 """
-import argparse, datetime, json, subprocess, sys
+import argparse, json, subprocess, sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -15,10 +18,14 @@ ORCH = HERE.parents[1]
 STEPS = ORCH.parent
 sys.path.insert(0, str(STEPS / "common"))
 sys.path.insert(0, str(ORCH / "select_next" / "helper"))
-from lib import write_atomic  # noqa: E402
+from lib import write_atomic, utc_now  # noqa: E402
 import select_next  # noqa: E402
+sys.path.insert(0, str(STEPS / "components" / "helper"))
+import wishes  # noqa: E402
 
 RUN_IDEA = ORCH / "run_idea" / "helper" / "run_idea.py"
+BUILDER = STEPS / "components" / "helper" / "build_component.py"
+COMPONENTS_EVERY = 10      # turns between two calls of the components step (operator, 2026-11-17)
 
 
 def table_rows(run, root=ORCH):
@@ -27,8 +34,11 @@ def table_rows(run, root=ORCH):
 
 
 def spent(run, root=ORCH):
-    """The run's USD so far: the ideas' costs in run_idea's table (from its journal)."""
-    return round(sum(r.get("cost", 0.0) for r in table_rows(run, root)), 4)
+    """The run's USD so far: the ideas' costs in run_idea's table (from its journal), and the components step's calls
+    for the run (from its journal)."""
+    p = root.parent / "components" / "journal.jsonl"
+    built = sum(e.get("usd", 0.0) for e in map(json.loads, p.read_text().splitlines()) if e.get("run") == run) if p.exists() else 0.0
+    return round(sum(r.get("cost", 0.0) for r in table_rows(run, root)) + built, 4)
 
 
 def turns(run, root=ORCH):
@@ -39,6 +49,35 @@ def turns(run, root=ORCH):
 def next_turn(run, root=ORCH):
     """The number of the next turn: the turns logged so far, not the stop or failure lines, plus one."""
     return sum("turn" in t for t in turns(run, root)) + 1
+
+
+def turns_since_components(run, root=ORCH):
+    """The turns logged since the components step was last called in the run (all the run's turns if never)."""
+    n = 0
+    for t in turns(run, root):
+        if "components" in t:
+            n = 0
+        elif "turn" in t:
+            n += 1
+    return n
+
+
+def call_components(args):
+    """The components step on the run's open wishes; its summary line."""
+    cmd = [sys.executable, str(BUILDER), "--runs", args.run, "--python", args.python] + (["--model", args.model] if args.model else [])
+    p = subprocess.run(cmd, capture_output=True, text=True)
+    out = p.stdout.strip().splitlines() or p.stderr.strip().splitlines()      # its summary is its last line on stdout
+    return p.returncode, (out[-1:] or [""])[0]
+
+
+def components_due(args, why_stop):
+    """Call the components step now? When the run has open wishes, and either 10 turns have passed since its last call,
+    or the loop would stop for no candidate left. Never twice without a turn between (a call that failed before
+    answering is not repeated in a row)."""
+    if not wishes.open_wishes([args.run], STEPS):
+        return False
+    n = turns_since_components(args.run, ORCH)
+    return n >= COMPONENTS_EVERY or (why_stop == "no candidate left" and n > 0)
 
 
 def failed(run, root=ORCH):
@@ -97,7 +136,7 @@ def write_queue(run, ranking, root=ORCH):
 def log_turn(run, entry, root=ORCH):
     d = root / "loop" / run
     d.mkdir(parents=True, exist_ok=True)
-    entry = {"at": datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M:%S UTC"), "run": run, **entry}
+    entry = {"at": utc_now(), "run": run, **entry}
     with open(d / "loop.jsonl", "a") as fh:
         fh.write(json.dumps(entry) + "\n")
 
@@ -144,10 +183,16 @@ def main():
             log_turn(args.run, {"idea": iid, "outcome": f"failed: {last[0][:300]}"})
     while True:
         ranking = select_next.rank(args.run, exclude=failed(args.run))
-        write_queue(args.run, ranking)
         cands = [r for r in ranking if r["status"] == "candidate"]
         used = spent(args.run)
         why = stop_reason(args.budget, used, cands)
+        if not (why or "").startswith("budget") and components_due(args, why):
+            code, last = call_components(args)
+            log_turn(args.run, {"components": last[:300], "outcome": "ok" if code == 0 else f"failed (exit {code})",
+                                "spent_before": used})
+            print(f"{args.run}: components: {last[:200]}")
+            continue
+        write_queue(args.run, ranking)
         if why:
             log_turn(args.run, {"stop": why, "spent": used})
             print(f"{args.run}: stopped: {why}")

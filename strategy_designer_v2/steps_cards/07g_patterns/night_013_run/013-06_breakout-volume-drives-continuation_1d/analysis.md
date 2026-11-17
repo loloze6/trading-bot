@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 013-06_breakout-volume-drives-continuation_1d
+idea tested: 013-06_breakout-volume-drives-continuation
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3576 USD
+---
+## Findings
+- **F1:** Each coin's daily return tends to reverse the next day. The pooled slope of the next day's excess return on the previous day's return has t = -8.20, and per-coin t is negative for all six coins (BTC -4.16, ETH -4.98, LTC -3.66, XMR -8.27, XRP -1.02, ZEC -2.21). Dropping days beyond 3 standard deviations still leaves t = -5.27.
+- **F2:** The reversal comes mostly after large falls. In the bottom decile of the previous day's return scaled by 20-day volatility (mean z -1.81), the next day's excess return is +0.57 % (t = 3.87, n = 1491). Deciles 7 and 8 are only -0.31 % and -0.23 %, and the top decile is -0.02 %.
+- **F3:** The one-day reversal fades over time. Its yearly t is -3.13, -1.76, -4.56, -2.43, -0.48 and -3.22 for 2018 to 2023, then +0.56 and +0.56 in 2024 and 2025. Over 3 days it turns into continuation: t = +3.05 on 4,759 non-overlapping cases.
+- **F4:** Volume predicts the next 7 days only after up days. The slope of the 7-day excess return on the log of the day's volume over its prior 30-day mean has t = 3.60 (n = 848) when the day closed up, against t = 0.14 (n = 938) when it closed down.
+- **F5:** The volume effect is not limited to the breakouts the strategy trades.
+- **F6:** Saturday has a positive excess return of +0.31 % (t = 3.84, n = 2433). It is positive for every coin (+0.04 % to +0.51 %) and in 6 of 8 years. It is a calendar effect with no grading.
+- **F7:** The past 7-day return predicts the next 7 days (slope t = 3.68, n = 1974), but Spearman is only 0.025. This is too outlier-driven to count after this many angles.
+
+## Ideas
+- `013-06_breakout-volume-drives-continuation.g1_up-day-volume-drives-continuation` (from F4, F5): On a day a coin closes higher, the larger that day's volume relative to its own 30-day average volume, the larger its return over the next 7 days.
+- `013-06_breakout-volume-drives-continuation.g2_sharp-drop-next-day-rebound` (from F1, F2, F3): The larger a coin's fall on a day relative to its own 20-day daily volatility, the larger its rebound over the next 1 day.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

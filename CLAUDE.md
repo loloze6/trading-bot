@@ -18,7 +18,8 @@ its conventions or write to it).
 Step 1 writes a brief, step 2 turns it into ideas, step 3 writes a test plan, step 4 runs the backtest, step 5 says
 whether the idea is real, step 6 whether its book pays, and the step 7 lines read the result and propose the next
 ideas. `orchestration/` chains them: `run_idea` (one idea through steps 3 to 7), `select_next` (which idea next, by one
-score), `loop` (run_idea on the next idea until stopped). Read first: `steps_cards/HOW_WE_DESIGN_A_CARD.md`, then the
+score), `loop` (run_idea on the next idea until stopped), `run_brief` (a brief's ideas, then the loop). The `components`
+step answers the measures step 3 lacked (exists, built, cannot build); `loop` calls it and its builds unblock ideas. Read first: `steps_cards/HOW_WE_DESIGN_A_CARD.md`, then the
 card of the step or function at hand, then `steps_cards/common/` (shared definitions). Open questions the operator
 has not ruled on are in `steps_cards/POTENTIAL_ADJUSTMENTS.md`.
 
@@ -28,7 +29,7 @@ python3 strategy_designer_v2/steps_cards/orchestration/run_idea/helper/run_idea.
 python3 strategy_designer_v2/steps_cards/orchestration/loop/helper/loop.py --run NAME_run --python VENV_PYTHON [IDEA_FILE] [--budget USD]
 python3 strategy_designer_v2/steps_cards/orchestration/select_next/helper/select_next.py --run NAME_run
 VENV_PYTHON -m pytest -q strategy_designer_v2/steps_cards     # the cards' tests
-VENV_PYTHON -m pytest -q trading-bot/tests                    # the bot's tests
+cd trading-bot && VENV_PYTHON -m pytest -q                   # the bot's tests (from its folder: 4 fail from the root)
 ```
 `VENV_PYTHON` is a virtual environment with `trading-bot/requirements.txt`. Each step's card says how to call its helper.
 
@@ -41,7 +42,9 @@ VENV_PYTHON -m pytest -q trading-bot/tests                    # the bot's tests
 - **No trial ledger.** Do not write to `research/TRIALS.csv` or any ledger. A run's own files are its record.
 - **Shared code needs the operator's go.** A change to `trading-bot/` or `strategy-research/` reaches the
   campaign too. Before it is merged: proof that what runs today gives the same files (a rerun on fixed inputs,
-  compared file by file, the allowed differences named), and what it changes elsewhere.
+  compared file by file, the allowed differences named), and what it changes elsewhere. Standing go (operator,
+  2026-11-17): a component the `components` step builds, its standard checks and its proof passed, may be added on the
+  working branch; merging it into master stays the operator's go, with its build record (`components/builds/`).
 - **Never merge into the working branch while a loop runs on it.**
 
 ## How we work (the operator's rules)

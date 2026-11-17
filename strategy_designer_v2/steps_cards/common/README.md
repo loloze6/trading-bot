@@ -9,4 +9,5 @@ One definition, one file: a step that needs it reads it here, so the steps canno
 | `backtest_record.md` | what a backtest records: its columns, their meaning, their limits | steps 3, 5, 7 |
 | `lib.py` | the code shared by the helpers: the closed-book model call, atomic writes, a file's header, the idea fields step 3 reads, reading a shared definition | every step's helper |
 | `idea_created_from.md` | what an idea is created from (a brief or another idea), and how its id carries the track: line, analysis, ideas written together, generation | step 7's code (it writes the ids), the orchestration |
+| `forecast.md` | how a config turns its components into a forecast and a position (`standardise` scales, it does not centre; the weighted mean; centring needs an offset; the recorded raw and transformed values) | steps 3, 5 |
 | `measures.md` | how the workflow measures (returns counted once, holding, the book, Sharpe, Calmar, t-statistics) | steps 3, 5, 7; step 6's code computes the book the same way |

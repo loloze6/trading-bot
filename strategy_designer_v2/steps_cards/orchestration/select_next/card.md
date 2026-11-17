@@ -18,7 +18,9 @@ by one score fixed in advance, computed from the workflow's own recorded results
 **A candidate is an idea written in the run, by step 2 from a brief or by a step 7 line from another idea, not yet
 tested in the run, and not a duplicate.**
 - **Written in the run:** in step 2's `02_ideation/<run>/ideas/`, or in a line's `<run>/<backtest>/ideas/`.
-- **Not tested:** no plan for it in the run (`03_test_plan/<run>/plans/`).
+- **Not tested:** no plan for it in the run (`03_test_plan/<run>/plans/`), or a missing-components refusal the
+  components step has unblocked (every wish answered built or exists, the catalogue changed since the refusal:
+  `../../components/card.md`, "Unblocking"; 2026-11-17).
 - **Not a duplicate:** its text and its data are not those of an idea already tested or already a candidate (the same
   text on other data, a `same-idea-on:` proposal, is not a duplicate). A duplicate is listed, with the idea it repeats.
 - The words (created from, line, analysis, generation) are those of `../../common/idea_created_from.md`.
@@ -32,6 +34,12 @@ In the words of `../../common/idea_created_from.md`.
 |---|---|---|
 | **record of the line** | the line is the step 7 line that wrote the idea (its last letter in the id), or step 2 for an idea created from a brief. Over every analysis of that line with at least one tested idea (tested: it has a verdict from step 5; an idea step 3 could not plan is not evidence about the line, 2026-11-17), in every run (the same idea read by the line in two runs is two analyses; for step 2, an analysis is one brief in one run): (s + 1) / (n + 2), n the number of these analyses, s the number of them with a **success**: at least one of their tested ideas confirmed or with a profitable book (operator, 2026-11-16) | how often that line's analyses moved an idea towards the goal; counted per analysis, because the ideas written together are not independent; the +1 / +2 (Laplace) keeps 1 of 1 from counting as certain, and puts a line with no analysis yet at 0.5 |
 | **1 + generation** | the generation is the number of analyses between the idea and its brief (0 for a brief's idea) | ideas close to the theory first; a deeper idea goes first only if its line's record is clearly better, so one thread does not take the run |
+
+**Order (operator, 2026-11-17): a brief's own ideas first.** The candidates of generation 0 (a brief's ideas) come
+first, ranked by the score among themselves; then every other candidate, by the score. Every idea of a theory is tested
+once before the workflow goes deep on one of them. Why: with the score alone, a brief's idea scored 0.09 (step 2's
+record) against 0.15 to 0.33 for the lines' children, so one lineage took 26 of 30 turns in night_run and 28 of 33 in
+night_013_run, and 7 unblocked RSI ideas waited behind 010-01's children (`ranking_discussion.md`).
 
 **Ties:** the lower number first (the order in which the brief or the line wrote them).
 

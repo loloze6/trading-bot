@@ -60,35 +60,40 @@ One test plan per idea, with one of three outcomes: **plan**, **untestable** or 
    - For: at a glance, whether the test is the idea exactly or an allowed adaptation.
    - Used by: the operator, step 5.
    - Without it: an adapted test can be read as the idea itself.
+5. **catalogue:** the component catalogue's version when the plan was written (the first 12 hex digits of its SHA-256,
+   `common/lib.py`; 2026-11-17).
+   - For: telling a refusal written before a component was added from one written with it.
+   - Used by: the components step's unblocking rule (`../components/card.md`).
+   - Without it: an idea refused for a component that exists would be unblocked and refused again without end.
 
 **Body, from the model:**
 
-5. **Fidelity** (always): one line each for the situation, the comparison and the outcome (the idea's part, then kept, adapted with how, or replaced with by what), and the verdict transfer (yes or no, with one sentence).
+6. **Fidelity** (always): one line each for the situation, the comparison and the outcome (the idea's part, then kept, adapted with how, or replaced with by what), and the verdict transfer (yes or no, with one sentence).
    - For: the proof that the test is the idea, or the part that stops it.
    - Used by: the operator, step 5; code checks that it agrees with the outcome.
    - Without it: a test of a different idea can pass as this one.
-6. **Reason** (refusals only): why it cannot be built, in one or two sentences.
+7. **Reason** (refusals only): why it cannot be built, in one or two sentences.
    - For: the refusal, explained.
    - Used by: the operator.
    - Without it: a refusal cannot be challenged.
-7. **Forecast** (plan only): the forecast the config computes, in plain words.
+8. **Forecast** (plan only): the forecast the config computes, in plain words.
    - For: the config, readable without JSON.
    - Used by: the operator, step 5 (which bars carry a position).
    - Without it: only the JSON says what is traded.
-8. **Config** (plan only): the file name of the strategy config.
+9. **Config** (plan only): the file name of the strategy config.
    - For: the test, in the engine's language.
    - Used by: step 4.
    - Without it: nothing to run.
    - **Sizing, added by code, the same for every plan** (operator, 2026-11-13; the engine's `strategies.sizing` block, as in v1): the forecast stays the signal, capped at ±20; the allocation is forecast ÷ 10 × target ÷ the coin's realised volatility over the last 60 days (in bars of the bar size), capped at 2×, the target being a 2 % daily move (0.382 a year). A more volatile coin gets a smaller position. The model does not write it.
-9. **Criterion** (plan only): horizon (bars: the idea's horizon in real time divided by the bar size; operator, 2026-11-15), main measure, supporting check (or none), confirm (with its number), reject, inconclusive (with the minimum count). The supporting check is part of the decision: confirmed needs the main measure to confirm and the check to pass (operator, 2026-11-14).
+10. **Criterion** (plan only): horizon (bars: the idea's horizon in real time divided by the bar size; operator, 2026-11-15), main measure, supporting check (or none), confirm (with its number), reject, inconclusive (with the minimum count). The supporting check is part of the decision: confirmed needs the main measure to confirm and the check to pass (operator, 2026-11-14).
    - For: the result that confirms or rejects, fixed before the data.
    - Used by: step 5.
    - Without it: any result can be read as a success.
 
 **Two more outputs:**
 
-10. **The index line** (`INDEX.md`): `<plan id>: plan (fit: exact|adapted) [data]`, or `<plan id>: untestable|missing-components: <reason, first words> [data]`.
-11. **The wish-list block** (`COMPONENT_WISHLIST.md`, missing-components only): `## <plan id>`, then one line per component: its short name, what it computes, from which bar columns, how its value grows, and which part of the idea it measures.
+11. **The index line** (`INDEX.md`): `<plan id>: plan (fit: exact|adapted) [data]`, or `<plan id>: untestable|missing-components: <reason, first words> [data]`.
+12. **The wish-list block** (`COMPONENT_WISHLIST.md`, missing-components only): `## <plan id>`, then one line per component: its short name, what it computes, from which bar columns, how its value grows, and which part of the idea it measures.
     - For: the components to add to the engine, with the ideas waiting for them.
     - Used by: the operator, to decide what to build.
     - Without it: missing components are lost in the plans.

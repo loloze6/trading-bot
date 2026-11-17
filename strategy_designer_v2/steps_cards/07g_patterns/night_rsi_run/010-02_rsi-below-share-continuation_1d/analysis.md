@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 010-02_rsi-below-share-continuation_1d
+idea tested: 010-02_rsi-below-share-continuation
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5342 USD
+---
+## Findings
+- **F1:** A coin's one-day move, scaled by its 30-day volatility, reverses on the next day, and the larger the move, the stronger the reversal. On every day's next-day excess return the Spearman is -0.073 (p = 0.000002, n = 4306). It holds in both coins: BTC -0.068 (slope t -1.96, n = 2153) and ETH -0.075 (slope t -2.44, n = 2153).
+- **F2:** The next-day reversal is negative in every year from 2018 to 2025, 8 of 8. Spearman runs from -0.015 in 2022 to -0.151 in 2018, with about 538 days per year.
+- **F3:** The reversal is about three times stronger when 30-day volatility is above its median. Spearman is BTC -0.095 and ETH -0.111 in that half, against -0.035 for both coins in the calmer half (about 1077 days in each cell).
+- **F4:** The reversal is graded at the extremes. After a day below -2 standard deviations, the next day's excess return averages +0.83% (t 1.72, n 125). After a day above +2, it averages -0.59% (t -1.84, n 157). The middle bins sit near zero.
+- **F5:** The reversal lasts one day only. Over the next 3 days on a non-overlapping grid the Spearman falls to -0.017 (p 0.52, n 1379). On the 3-day move scaled by volatility, the next 3 and 7 days turn slightly positive (0.021 and 0.028, p ≥ 0.44).
+- **F6:** Almost all of the book's gain comes from timing, not from the market's rise. For BTC the mean daily gain is 0.00105, of which 0.00100 is timing. For ETH it is 0.00099, of which 0.00098 is timing. The long side earns most of it: per day long against short, BTC 0.00213 against 0.00002 and ETH 0.00164 against 0.00043.
+- **F7:** The RSI-below share does not rank the next 14 days in a graded way. Quintile excess returns are +1.2%, +3.0%, -0.5%, -4.7% (t -2.44) and +1.0%. The per-coin Spearman is BTC -0.008 and ETH -0.039. The sign of the Spearman flips with volatility: -0.13/-0.08 in the low-volatility half, +0.14/+0.14 in the high-volatility half (n = 60 each).
+- **F8:** Momentum, 60-day drawdown and volatility level show no graded link to the next 7 or 14 days. All per-coin Spearmans lie between -0.06 and 0.09 and no quintile has |t| above 1.3. Saturday's daily coin return (t 2.77) and Wednesday's (t 2.46) are the strongest weekday results, but they are not distinctive given that seven days were tested.
+
+## Ideas
+- `010-02_rsi-below-share-continuation.g1_one-day-volatility-scaled-reversal` (from F1, F2, F3, F4, F5): The larger a coin's one-day return relative to its own 30-day volatility, the more its return over the next day runs the opposite way. The reversal grows as the coin's 30-day volatility rises.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

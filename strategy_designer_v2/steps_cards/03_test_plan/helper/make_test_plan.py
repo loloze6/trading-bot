@@ -17,7 +17,7 @@ working folder. This script reads no market data and runs no backtest.
 import argparse, datetime, json, os, re, subprocess, sys, tempfile
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "common"))
-from lib import call, write_atomic, header, idea_fields, common_text  # noqa: E402  (shared helpers, common/lib.py)
+from lib import call, write_atomic, header, idea_fields, common_text, catalogue_version  # noqa: E402  (shared helpers, common/lib.py)
 
 import yaml
 
@@ -183,6 +183,7 @@ def main():
               + f"\n\n[STRATEGY CONFIG GUIDE]\n{(ref / 'strategy_config_guide.md').read_text()}"
               + f"\n[COMPONENT CATALOGUE]\n{(ref / 'component_catalogue.md').read_text()}"
               + f"\n[WHAT A BACKTEST RECORDS]\n{common_text("backtest_record")}"
+              + f"\n[HOW A FORECAST IS BUILT]\n{common_text("forecast")}"
               + f"\n[HOW THE WORKFLOW MEASURES]\n{common_text("measures")}")
     request = (f"[DATA THE TEST RUNS ON]\ncoins: {data['instruments']}\nbar size: {data['bar']}\n"
                f"windows: {windows(data['period'], data['bar'])}\n\n"
@@ -207,7 +208,7 @@ def main():
     fit = ("exact" if all(v == "kept" for v in result["status"].values()) else "adapted") if out == "plan" else None
     head = ("---\n" + f"idea: {idea_id}\n" + f"brief: {fields['brief']}\n"
             + "".join(f"data-{k}: {v}\n" for k, v in data.items()) + f"outcome: {out}\n"
-            + (f"fit: {fit}\n" if fit else "") + "---\n")
+            + (f"fit: {fit}\n" if fit else "") + f"catalogue: {catalogue_version(REF / 'component_catalogue.md')}\n" + "---\n")
     fid = result["fidelity"]
     body = ("Fidelity:\n" + "".join(f"- {p.capitalize()}: {fid[p]}\n" for p in PARTS)
             + f"- Verdict transfer: {fid['verdict-transfer']}\n")

@@ -1,0 +1,42 @@
+{
+  "line": "7.b",
+  "backtest": "011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.35201119999999997,
+  "findings": {
+    "F1": "The main measure leans clearly toward the idea, with a slope of 0.000338 per forecast unit and t 3.16 over 2489 Sunday cases. The result is inconclusive only because of the volume clause: the high-volume minus low-volume slope difference has t \u22120.0001. My per-coin volume terciles agree, with slopes of 2.9, 4.2 and 3.4 bp per forecast unit (t 1.04, 1.95, 1.86, n \u2248 690 each), so there is no gradient with volume.",
+    "F2": "The reversal shows in the earlier years only. Sunday slopes in 2018\u20132021 are 4.5, 5.9, 11.0 and 6.3 bp per forecast unit (t 1.0, 2.7, 3.4, 1.2, about 258 cases each). In 2022\u20132025 they are \u22120.2, 0.5, \u22120.4 and \u22121.1 bp (all |t| < 0.4).",
+    "F3": "The effect is spread unevenly across coins. XMR carries the strongest slope at 6.2 bp (t 2.47, n 345), ZEC, LTC and ETH sit at 3.5\u20135.3 bp (t 1.2\u20131.6), and BTC is flat at \u22120.2 bp (t \u22120.07).",
+    "F4": "The reversal works by direction more than by size. After down Sundays the next-day excess mean is +60 bp, and after up Sundays it is \u221256 bp. Within the up side the slope runs the wrong way, at \u22125.8 bp (t \u22122.24, n 1099). Across forecast quintiles the next day reads \u221215, \u221296, \u221237, +74 and +66 bp, so the most extreme quintiles reverse less than the moderate ones.",
+    "F5": "Reversal of a day's scaled move into the next day is not specific to Sunday. The slope of next-day excess return on minus the 20-day z of the move is 45.9 bp per z unit for Saturday bars (t 4.13, n 2069) and 43.7 bp for Sunday bars (t 3.23, n 2069). Tuesday to Thursday bars give 22\u201334 bp (t 2.1\u20133.2), while Monday bars continue at \u221220.5 bp (t \u22122.27)."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin, Sunday's daily return, measured in its 20-day daily standard deviations, is reversed over the next 1 day: the larger Sunday's move, the larger Monday's move against it.",
+      "consequence": "After a Sunday move, lean against it into Monday, harder the larger the move, and do not count on Sunday volume to strengthen the trade.",
+      "name": "Sunday move reverses Monday",
+      "from": "F1, F4",
+      "refs": [
+        "F1",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a coin, Saturday's daily return, measured in its 20-day daily standard deviations, is reversed over the next 1 day: the larger Saturday's move, the larger Sunday's move against it.",
+      "consequence": "After a large Saturday move, lean against it through Sunday, harder the larger the move.",
+      "name": "Saturday move reverses Sunday",
+      "from": "F5, F2",
+      "refs": [
+        "F5",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.b1_sunday-move-reverses-monday",
+    "011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.b2_saturday-move-reverses-sunday"
+  ],
+  "no_ideas": null
+}

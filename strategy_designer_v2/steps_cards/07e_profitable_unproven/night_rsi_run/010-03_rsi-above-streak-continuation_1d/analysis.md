@@ -1,0 +1,24 @@
+---
+line: 7.e profitable but not proven
+backtest: 010-03_rsi-above-streak-continuation_1d
+idea tested: 010-03_rsi-above-streak-continuation
+step 5: inconclusive
+step 6: profitable enough
+mode: one call
+explorations: 2
+cost: 0.2994 USD
+---
+## Findings
+- **F1:** The book earns from RSI(14) being above 50, not from how long it has stayed there, and at horizons shorter than the plan's 14 days. On a non-overlapping grid, the coin's forward return is higher when RSI is above 50 than when it is at or below 50: 0.0029 vs -0.0004 at 1 day (t 3.03, 2929/2865 cases), 0.0081 vs -0.0004 at 3 days (t 2.67, 962/945), and 0.0195 vs -0.0006 at 7 days (t 2.58, 409/406). At 14 days the difference is no longer significant: 0.0249 vs 0.0118 (t 0.79, 199/185).
+- **F2:** Among bars above 50, the length of the run does not grade the excess return. The slope's t is -0.27 at 1 day (2929 cases), -0.07 at 3 days (962), -0.14 at 7 days (409) and 0.95 at 14 days (199). The forecast's slope reaches t 2.30 at 1 day only because it is zero below 50, so it carries the side split.
+- **F3:** The next-day return rises from 0.0019 (runs of 1–5 days) to 0.0036–0.0043 (runs of 5–40 days), then falls to 0.0004 for runs over 40 days. The book holds its largest position in that last bucket (mean 1.24), where it gains only 0.0010 a day against 0.0044 in the 20–40-day bucket.
+- **F4:** The side split holds in both coins on their own. At 1 day: BTC excess 0.0012 vs -0.0013 (t 1.89), ETH 0.0020 vs -0.0020 (t 2.38). At 7 days: BTC t 1.64, ETH t 1.99.
+- **F5:** Below 50, a longer run below the midpoint gives a slightly lower 7-day excess return (slope t -1.15, 406 cases). The below-50 bucket's 7-day excess mean is -0.0101 (t -1.90), so the information sits on both sides of the midpoint.
+- **F6:** The market's own rise is a minority of the gain. Per coin, the market part is 0.00043 of BTC's 0.00133 and 0.00030 of ETH's 0.00056; timing is 0.00091 (BTC) and 0.00026 (ETH).
+- **F7:** The book's gain is not one period or a few trades. Its daily mean is 0.00092 with t 2.93 over 2898 days, and 13 of 24 windows are positive. 2022 is the only clearly losing year (-0.00046 a day) and 2020 the strongest (0.00315). Its top 10 of 567 trades hold 40% of the summed trade returns (1408 of 3501), with a 41% win rate.
+
+## Ideas
+- `010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week` (from F1, F4, F5, F6, F7): The higher a coin's 14-day RSI sits above 50 at the close, the higher its return over the next 1 to 7 days. The lower it sits below 50, the lower that return.
+- `010-03_rsi-above-streak-continuation.e2_below-midline-streak-continues-down` (from F5, F1): The longer a coin's 14-day RSI has stayed below 50 without a break, counted in days up to the close, the lower its return over the next 7 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
