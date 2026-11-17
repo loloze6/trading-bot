@@ -7,3 +7,4 @@
 010-05_rsi-above-share-reversal_1d: 2 ideas (2 explorations)
 010-06_rsi-below-share-reversal_1d: 2 ideas (2 explorations)
 010-07_rsi-above-streak-reversal_1d: 1 ideas (2 explorations)
+010-08_rsi-below-streak-reversal_1d: 2 ideas (3 explorations)

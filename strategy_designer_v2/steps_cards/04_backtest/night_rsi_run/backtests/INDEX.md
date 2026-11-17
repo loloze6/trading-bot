@@ -7,3 +7,4 @@
 010-05_rsi-above-share-reversal_1d: ran: BTCUSD 24/24; ETHUSD 24/24; BNBUSD not run (no historical data on the venue) [1d, folds A, B, C, D]
 010-06_rsi-below-share-reversal_1d: ran: BTCUSD 24/24; ETHUSD 24/24; BNBUSD not run (no historical data on the venue) [1d, folds A, B, C, D]
 010-07_rsi-above-streak-reversal_1d: ran: BTCUSD 24/24; ETHUSD 24/24; BNBUSD not run (no historical data on the venue) [1d, folds A, B, C, D]
+010-08_rsi-below-streak-reversal_1d: ran: BTCUSD 24/24; ETHUSD 24/24; BNBUSD not run (no historical data on the venue) [1d, folds A, B, C, D]

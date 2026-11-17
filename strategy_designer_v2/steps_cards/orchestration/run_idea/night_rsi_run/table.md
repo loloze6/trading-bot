@@ -4,7 +4,6 @@ One row per idea run; every status is read from the step's own result file. Each
 
 | Idea | Parent | Step 3 | Step 5 | Step 6 | Step 7: ideas proposed | USD | Minutes |
 |---|---|---|---|---|---|---|---|
-| 010-08_rsi-below-streak-reversal | - | missing-components | - | - | - | 0.04 | 0.2 |
 | 010-01_rsi-above-share-continuation | - | plan | inconclusive (+1.65) | not profitable enough (failed: Calmar) | 7.b: 010-01_rsi-above-share-continuation.b1_rsi-share-more-coins; 7.d: 010-01_rsi-above-share-continuation.d1_rsi-above-share-long-side, 010-01_rsi-above-share-continuation.d2_rsi-share-with-trend-agreement; 7.g: 010-01_rsi-above-share-continuation.g1_rsi-share-continuation-calm-markets | 1.45 | 5.6 |
 | 010-01_rsi-above-share-continuation.b1_rsi-share-more-coins | 010-01_rsi-above-share-continuation | plan | inconclusive (-0.30) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.b: 010-01_rsi-above-share-continuation.b1_rsi-share-more-coins.b1_downtrend-rsi-below-share-rebound; 7.d: 010-01_rsi-above-share-continuation.b1_rsi-share-more-coins.d1_rsi-stretch-exhausts-within-trend, 010-01_rsi-above-share-continuation.b1_rsi-share-more-coins.d2_distance-above-100-day-average; 7.g: 010-01_rsi-above-share-continuation.b1_rsi-share-more-coins.g1_next-day-rebound-after-sharp-falls, 010-01_rsi-above-share-continuation.b1_rsi-share-more-coins.g2_seven-day-return-continuation | 1.39 | 6.8 |
 | 010-01_rsi-above-share-continuation.g1_rsi-share-continuation-calm-markets | 010-01_rsi-above-share-continuation | plan | inconclusive (+0.00) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | 7.b: 010-01_rsi-above-share-continuation.g1_rsi-share-continuation-calm-markets.b1_calm-market-rsi-level-continuation; 7.d: 010-01_rsi-above-share-continuation.g1_rsi-share-continuation-calm-markets.d1_rsi-share-agreeing-with-momentum, 010-01_rsi-above-share-continuation.g1_rsi-share-continuation-calm-markets.d2_thirty-day-return-continuation; 7.g: 010-01_rsi-above-share-continuation.g1_rsi-share-continuation-calm-markets.g1_calm-market-short-term-continuation, 010-01_rsi-above-share-continuation.g1_rsi-share-continuation-calm-markets.g2_volatile-market-next-day-reversal | 1.22 | 5.5 |
@@ -14,19 +13,20 @@ One row per idea run; every status is read from the step's own result file. Each
 | 010-05_rsi-above-share-reversal | - | plan | inconclusive (-1.43) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: no ideas: The result runs weakly against the predicted reversal (t -1.43), is not graded by the share, and flips sign across years and volatility regimes (F1–F5). No part of the data shows the reversal clearly enough to narrow the idea to it, and more data on the same idea would only sharpen an effect on the wrong side.; 7.d: 010-05_rsi-above-share-reversal.d1_rsi-share-reversal-in-downtrends, 010-05_rsi-above-share-reversal.d2_rsi-dominance-continues-in-uptrends; 7.g: 010-05_rsi-above-share-reversal.g1_high-volatility-one-day-reversal | 1.20 | 5.9 |
 | 010-06_rsi-below-share-reversal | - | plan | inconclusive (-1.65) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: no ideas: The result is on the side opposite to the idea, and the opposite (momentum) reading is not clear either. It comes from two years out of eight, is not graded across the forecast's quintiles, and shows clearly on no coin, side or regime, so no part of the data shows an effect that an amended idea could rest on.; 7.d: 010-06_rsi-below-share-reversal.d1_rsi-weakness-reverts-in-downtrends, 010-06_rsi-below-share-reversal.d2_rsi-strength-persists-in-uptrends; 7.g: 010-06_rsi-below-share-reversal.g1_volatile-one-day-move-reversal, 010-06_rsi-below-share-reversal.g2_sharp-daily-fall-rebound | 1.17 | 5.6 |
 | 010-07_rsi-above-streak-reversal | - | plan | inconclusive (+0.95) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: no ideas: The tested reversal shows as a weak, opposite-signed slope (F1). No coin, period, side or horizon shows a stable graded effect: the positive slopes at 28 and 56 days flip sign at 21 and 42 days and rest on BTC alone and a handful of the longest runs (F2–F5). So no amended idea would give a clear answer on this data.; 7.d: 010-07_rsi-above-streak-reversal.d1_rsi-midline-run-continuation; 7.g: 010-07_rsi-above-streak-reversal.g1_calm-market-short-momentum, 010-07_rsi-above-streak-reversal.g2_rsi-below-midline-downtrend-persistence | 1.19 | 6.1 |
+| 010-08_rsi-below-streak-reversal | - | plan | inconclusive (+1.08) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: 010-08_rsi-below-streak-reversal.b1_rsi-below-streak-reversal-more-coins, 010-08_rsi-below-streak-reversal.b2_long-slide-exhaustion-rebound; 7.d: 010-08_rsi-below-streak-reversal.d1_rsi-streak-reversal-deep-drawdown, 010-08_rsi-below-streak-reversal.d2_long-rsi-runs-reverse-up; 7.g: no ideas: I tested about 30 forecasts across horizons, weekdays and regimes, and none cleared a multiple-testing bar (the largest |t| was 2.69). The strongest, next-day reversal after a large daily move (F4), disappeared after 2021. The data also held only BTC and ETH, not BNB. | 1.24 | 6.1 |
 
 ## Consumption
-10 ideas, 11.25 USD, 52.5 minutes in all.
+10 ideas, 12.45 USD, 58.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.40 | 5.5 |
-| step4_backtest | 0.00 | 12.5 |
-| step5_verdict | 1.08 | 5.2 |
+| step3_plan | 1.46 | 5.9 |
+| step4_backtest | 0.00 | 14.0 |
+| step5_verdict | 1.20 | 5.7 |
 | step6_check | 0.00 | 0.2 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.30 | 0.9 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.b | 2.42 | 7.9 |
-| step7_7.g | 3.27 | 10.7 |
-| step7_7.d | 2.78 | 9.6 |
+| step7_7.b | 2.70 | 8.8 |
+| step7_7.g | 3.60 | 11.8 |
+| step7_7.d | 3.20 | 10.9 |

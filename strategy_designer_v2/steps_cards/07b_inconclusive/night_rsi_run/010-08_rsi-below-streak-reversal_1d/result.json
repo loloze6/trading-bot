@@ -1,0 +1,45 @@
+{
+  "line": "7.b",
+  "backtest": "010-08_rsi-below-streak-reversal_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.2787216,
+  "findings": {
+    "F1": "The tested effect points the way the idea predicts but is too small for 185 cases: the slope of the 14-day excess return on the forecast is +0.00186 (t 1.08); it is positive in both coins that ran (BTC t 0.82, n 89; ETH t 0.72, n 96); and the forecast thirds rise in order (-0.025, -0.005, +0.010 mean excess).",
+    "F2": "The data is too noisy for a gap that size: the 14-day excess returns have a standard deviation of about 0.14\u20130.19 in every run-length bin, while the bin means differ by only about 0.05; and only BTC and ETH ran (BNB is missing), giving 185 grid bars.",
+    "F3": "The gain sits in the longest runs. Runs of 30 days or more below 50 average +0.031 excess (n 32), against -0.015 for shorter runs (n 153; Welch t 1.28). With the longest runs left out, the slope's t falls to 0.17.",
+    "F4": "The effect shows only after deep falls. Among grid bars in the bottom third of 30-day return (mean -30.5%, n 38), the slope's t is 2.28. In the middle third it is -0.47 and in the top third -0.12 (n 37 and 38).",
+    "F5": "The effect varies across years. The slope's t is 2.56 in 2018 (n 37) but -1.23 in 2025 (n 22). The longest runs average +0.081 excess in 2018 (n 12) but -0.006 in 2022 (n 11).",
+    "F6": "The plan's 14-day horizon is not where a stronger effect hides. The slope's t is 0.94 at 7 days (n 406) and -0.38 at 28 days (n 95)."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC; bar: 1d; period: folds A, B, C, D",
+      "name": "RSI below-streak reversal, more coins",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ],
+      "idea": "The longer a coin's 14-day RSI has stayed below 50 without a break, measured in days up to the current close, the higher the coin's return over the next 14 days.",
+      "consequence": "The longer sellers have crowded in, the more positioning is exhausted, so the move reverses upward.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "The longer a coin's 14-day RSI has stayed below 50 without a break, measured in days up to the current close, the higher the coin's return over the next 14 days, and the more so the further the coin has fallen over its past 30 days.",
+      "consequence": "After a long, deep slide, a trader would lean long for the following two weeks, more firmly the longer RSI has stayed below 50 and the steeper the 30-day fall.",
+      "name": "long slide exhaustion rebound",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "010-08_rsi-below-streak-reversal.b1_rsi-below-streak-reversal-more-coins",
+    "010-08_rsi-below-streak-reversal.b2_long-slide-exhaustion-rebound"
+  ],
+  "no_ideas": null
+}
