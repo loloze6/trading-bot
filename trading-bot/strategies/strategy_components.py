@@ -2547,3 +2547,71 @@ class RsiMidlineAgeComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return self.max_bars + self.rsi_window
+
+
+class HighProximityMomentumComponent(SubStrategyComponent):
+    """
+    The recent return weighted by how close the close sits to its long closing high, on every bar:
+
+        H[t]  = max(close[t - period + 1 .. t])
+        D     = (H[t] - close[t]) / H[t] x 100                      (percent below the high, >= 0)
+        prox  = (1 / (1 + D)) raised to the power `power`           (in (0, 1], 1 at a new high)
+        ret   = (close[t] - close[t - return_period]) / close[t - return_period] x 100
+        raw_value = prox x ret
+
+    Graded and signed. It has the sign of the `return_period`-bar return, and its size is at most abs(ret): equal to it
+    at a new high and smaller the deeper the close sits below the high. Unbounded.
+    Warm-up: max(period, return_period + 1) rows, bar t included (365 at the defaults).
+
+    NaN: a NaN close among the last `period` rows or at close[t - return_period] gives NaN. A highest close that is
+    not above 0, or a base close that is not above 0, gives NaN. Invalid settings raise when the component is built.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max(period, return_period + 1) rows of data,
+    the last row being bar t. A close is known at its bar's close.
+    """
+
+    def __init__(self, name="HighProximityMomentum", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 365))
+        if self.period < 2:
+            raise ValueError(f"HighProximityMomentumComponent: period must be >= 2, got {self.period}")
+        self.power = float(self.parameters.get("power", 2.0))
+        if not self.power > 0:
+            raise ValueError(f"HighProximityMomentumComponent: power must be > 0, got {self.power}")
+        self.return_period = int(self.parameters.get("return_period", 30))
+        if self.return_period < 1:
+            raise ValueError(
+                f"HighProximityMomentumComponent: return_period must be >= 1, got {self.return_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        c = data['close'].astype(float).to_numpy()
+        win = c[-self.period:]
+        last = float(c[-1])
+        base = float(c[-(self.return_period + 1)])
+        if np.isnan(win).any() or np.isnan(base) or np.isnan(last):
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        high = float(np.max(win))
+        if not high > 0 or not base > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        depth = (high - last) / high * 100.0
+        proximity = float(np.power(1.0 / (1.0 + depth), self.power))
+        ret = (last - base) / base * 100.0
+        self._raw_value = float(proximity * ret)
+        self.confidence = 1.0
+        self.debug_info = {'high': high, 'depth_pct': depth, 'proximity': proximity, 'return_pct': ret}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.period, self.return_period + 1)
