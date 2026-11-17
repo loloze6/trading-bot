@@ -1,0 +1,46 @@
+{
+  "line": "7.g",
+  "backtest": "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.6783314,
+  "findings": {
+    "F1": "Across every weekday, a coin's large day moves, up or down, are followed by a rise. On a non-overlapping 2-day grid, the top fifth of |1-day return / 60-day volatility| is followed by a 2-day excess return of +0.0054 (t 3.64, n 3003), with +0.0053 after falls and +0.0055 after rises; the second-lowest fifth is followed by -0.0044 (t -3.52).",
+    "F2": "This rise after large moves belongs to each coin, not to the market's day. Comparing coins on the same date, the 2-day excess return regressed on |z| has slope 0.00266 (t 2.86, n 15013), while across whole dates the slope is only 0.00386 (t 1.25, n 1240); the slope is positive in 5 of 8 years (t 2.3 to 3.5 in 2019, 2020, 2021, 2023, 2024).",
+    "F3": "Larger day rises are followed by a larger 2-day excess return on Monday, Wednesday and Friday. The rise-only slopes are 0.0075 (t 4.33), 0.0079 (t 3.94) and 0.0060 (t 3.93), with about 2,150 cases per weekday at one per coin per week.",
+    "F4": "Larger day falls are followed by a larger 2-day rebound on weekdays but not on Sunday. The fall-only slopes are -0.0093 (t -4.54) on Monday, -0.0112 (t -2.78) on Wednesday and -0.0078 (t -4.04) on Thursday, against -0.00025 (t -0.09) on Sunday.",
+    "F5": "The Sunday reversal the idea relies on is a market-wide effect. Comparing coins on the same Sunday, the 2-day excess return regressed on the coin's Sunday z has slope -0.00017 (t -0.13, n 4328). Across Sunday dates, the market's mean z gives slope -0.0105 (t -2.18, n 339).",
+    "F6": "The Sunday-fall rebound is concentrated in a few years. The mean 2-day excess return after a Sunday fall is +0.031 (t 4.92) in 2020 and +0.018 (t 2.60) in 2021, against between -0.0067 and +0.0067 (all |t| < 1.8) in the other six years.",
+    "F7": "The brief predicts a stronger reversal when weekend volume is low, and the data show the opposite. Sunday falls in the lowest relative-volume tercile are followed by a 2-day excess return of +0.0058, against +0.0077 in the highest tercile (n about 709 each).",
+    "F8": "All of the book's gain comes on Mondays and does not beat holding. Its mean Monday return is +0.00082 (t 3.39), Sunday is -0.00021, and other days are about zero; Sharpe is 0.47, which is 0.14 below holding."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 1-day move relative to its own 60-day volatility, in either direction, the more that coin rises over the next 2 days.",
+      "consequence": "A coin's unusually large day move, up or down, is a reason to lean long for the next two days, more so the larger the move.",
+      "name": "large moves followed by rises",
+      "from": "F1, F2, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F4"
+      ]
+    },
+    {
+      "idea": "The larger a coin's 1-day rise relative to its own 60-day volatility, the more that coin keeps rising over the next 2 days.",
+      "consequence": "A strong day rise in a coin is a reason to hold or add long for two days rather than fade it.",
+      "name": "strong day rises continue",
+      "from": "F1, F3",
+      "refs": [
+        "F1",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.g1_large-moves-followed-by-rises",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday.g2_strong-day-rises-continue"
+  ],
+  "no_ideas": null
+}

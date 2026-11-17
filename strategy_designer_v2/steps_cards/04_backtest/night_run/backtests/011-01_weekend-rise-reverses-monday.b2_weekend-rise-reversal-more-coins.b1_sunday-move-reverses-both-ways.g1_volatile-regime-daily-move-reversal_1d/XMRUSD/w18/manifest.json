@@ -1,0 +1,92 @@
+{
+  "run_id": "20261117T021045Z_c81f4cd9",
+  "created_utc": "2026-11-17T02:10:45.871230+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [],
+      "rules": [],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "unknown": {
+          "components": [
+            {
+              "id": "fade_move",
+              "class": "strategies.strategy_components.PriceEvolutionComponent",
+              "params": {
+                "period": 1
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 500,
+                    "min_periods": 120
+                  }
+                },
+                {
+                  "op": "negate"
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "mean_reversion": null,
+        "chop": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 60,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 365,
+        "max_allocation": 2
+      }
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 3,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 7.5,
+        "BTCUSD": 2.5,
+        "ETHUSD": 4,
+        "AVAXUSD": 7.5,
+        "SOLUSD": 7.5
+      }
+    }
+  },
+  "config_sha256": "c81f4cd909b04a8cb426f85402d0639a0edf5a1059440bb823972e790729b426",
+  "data": {
+    "symbols": [
+      "XMRUSD"
+    ],
+    "timeframe": "86400s",
+    "start": "2020-08-30 00:00:00",
+    "end": "2021-08-31 00:00:00",
+    "bar_count": 367,
+    "data_sha256": "8d348f6d73438b92972c3e26d907c108ccacb799718111a813f6d1036102b11b"
+  },
+  "git_sha": "c156cbef937859f677606edcde93e27316823bbd-dirty",
+  "engine": {
+    "lookback": 501,
+    "warmup": 122
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

@@ -27,3 +27,7 @@ One block per idea that needs components the catalogue does not have.
 
 ## 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.b1_weekend-move-reverses-three-days_1d
 - Component: LaggedVolatilityScaledReturnComponent: the one-bar return of the bar `lag` bars before the current one (close[t-lag]/close[t-lag-1] - 1), divided by the standard deviation of the `vol_period` one-bar returns ending at that bar; read from closes only; signed, grows with the size of that past move in usual moves (lag 0, 1, 2 on the Sunday, Monday, Tuesday closes gives the weekend move) | measures: situation
+
+## 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday_1d
+- Component: VolumeWeightedScaledReturn: (close[t]/close[t-1] - 1) / std of the last 20 one-bar returns, times volume[t] / mean of the last 20 volumes. It is read from the close and volume columns. It is signed, and its size grows with both the move in usual-move units and the relative volume. | measures: comparison
+- Component: RelativeVolume: volume[t] / mean of the last `period` volumes, from the volume column. It is one-sided, about 1 at usual volume and grows as volume rises above its average. | measures: comparison

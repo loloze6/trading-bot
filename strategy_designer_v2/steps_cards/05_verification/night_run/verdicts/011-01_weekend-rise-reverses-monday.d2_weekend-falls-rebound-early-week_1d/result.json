@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9991742361684558,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess Sunday-to-Wednesday 3-bar return on forecast",
+    "value": 0.001362717519574639,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 4.217327157376193
+    },
+    "threshold": "t >= 2 with a positive supporting check confirms; t <= -2 rejects; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 3-bar return of Sunday bars with forecast > 0",
+    "value": 0.008562869935319193,
+    "passed": true
+  },
+  "counts": {
+    "Sunday bars with forecast > 0": 1176,
+    "Sunday bars in total": 2441
+  },
+  "decided_by": "The slope's t is 2 or more and the forecast-weighted mean excess return of Sunday bars with forecast > 0 is positive.",
+  "reading": "Sunday bars for the measure are the bars with regime 'trending' that have a full 3-bar return inside their window, the coin mean is over the non-overlapping 3-bar grid of all its windows, the regression includes zero-forecast Sunday bars, and the situation check takes Sunday as a bar starting on Sunday UTC with a negative raw wkd_fall value and a positive forecast."
+}

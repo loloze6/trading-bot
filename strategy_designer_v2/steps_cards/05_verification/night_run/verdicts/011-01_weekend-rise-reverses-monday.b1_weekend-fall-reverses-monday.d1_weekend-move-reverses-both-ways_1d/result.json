@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9976057462090981,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled mean of (forecast/10) x (r2 - m2) on Sunday-close active bars",
+    "value": 0.004290271399984504,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 2.7508914821200294
+    },
+    "threshold": "confirm: mean > 0 with t >= 2.0 and supporting check > 0; reject: mean < 0 with t <= -2.0; at least 300 Sunday cases"
+  },
+  "supporting_check": {
+    "name": "mean of -sign(weekend move) x (r2 - m2), top half of |forecast| minus bottom half",
+    "value": -0.000842908017070868,
+    "passed": false
+  },
+  "counts": {
+    "Sunday cases": 2464,
+    "larger |forecast| half": 1232,
+    "smaller |forecast| half": 1232
+  },
+  "decided_by": "t >= 2.0 but the supporting check is at or below 0 (or not computable), which the plan calls inconclusive.",
+  "reading": "Cases are bars starting on Sunday (UTC) with non-zero forecast and close[t+2] in the same window; m2 is each coin's mean 2-bar return on the grid 0,2,4,... of every window pooled over windows; the median split puts |forecast| above the median in the larger half and the rest in the smaller half; weekend move sign is the sign of the raw component value."
+}

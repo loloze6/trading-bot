@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of excess next-2-bar return on forecast",
+    "value": 0.00034864708179745574,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 4.020281247736696
+    },
+    "threshold": "slope > 0 with t >= 2 (confirm, with supporting check); slope < 0 with t <= -2 (reject)"
+  },
+  "supporting_check": {
+    "name": "mean excess 2-bar return in top fifth of forecast > 0",
+    "value": 0.004118012600332286,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases": 18386,
+    "cases in the top fifth": 3678
+  },
+  "decided_by": "The slope is positive with t >= 2 and the top-fifth mean excess return is above 0.",
+  "reading": "The coin's mean 2-bar return is the mean of its non-overlapping grid returns over all its windows; the OLS has an intercept; the top fifth is grid bars with forecast at or above the pooled 80th percentile of grid forecasts; the situation is a nonzero component value (or nonzero 1-day price move where it is not recorded) with a positive forecast."
+}

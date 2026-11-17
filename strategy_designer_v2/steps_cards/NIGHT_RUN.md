@@ -43,3 +43,21 @@ took them in score order; step 3 refused all four as missing-components, and the
   step 5 (`select_next`, test added). An idea that was never tested says nothing about the line that wrote it.
 - **run_brief:** steps 2 and the loop chained as the card says; the "done when" is not met yet (no line's idea was
   reached, as no idea could be tested). Next: a brief whose ideas the catalogue can express.
+
+**Stage 2 (00:16 to 02:27 UTC; brief 011 added; budget 25 USD; two machine restarts, resumed).** 23 ideas from brief 011
+and its lines, generations 0 to 3: **11 confirmed** (t +2.9 to +5.6), 7 inconclusive, 5 not testable
+(missing-components); **none profitable**. Run total: 27 ideas, 25.48 USD, about 4 to 5 minutes an idea.
+- **The books first.** The confirmed ideas are short reversals: after a weekend move, after a large or volatile fall,
+  the coin moves back over 1 to 3 days. Their books: Sharpe 0.1 to 0.9, mean daily return 0.01 % to 0.06 % (about 4 %
+  to 20 % a year), Calmar under 0.75; 4 of 11 beat holding the coin on Sharpe. The best: "high-volatility fall
+  reversal" (Sharpe 0.89, +0.34 over holding, Calmar 0.70). The ideas that trade most (0.8 trades a bar) lose: costs.
+- **Outcome B, again:** real effects, none pays. With demo_run: 17 confirmed ideas from two theories, none paying. The
+  limit is the book, not the theory. What a practitioner would change: not find more such effects one at a time, but
+  ask what makes small real effects pay (combine several into one book, hold them on fewer and stronger cases, cut
+  costs). That is the parked topic "proven and profitable, what next": the operator's to open.
+- **Missing components recur:** a bar's volume against its own average (7 ideas in all, briefs 003 and 011), the
+  close's place in the day's high-low range (1), a weekend move held as the forecast over the next days (2). Parked.
+- **Outcome E met:** `orchestration/run_brief/validation/reading.md`.
+- **Seen, not acted on:** two ideas from different parents gave the same t (+2.75) and the same failures, probably the
+  same test written twice in different words; `select_next`'s duplicate rule only catches identical text.
+

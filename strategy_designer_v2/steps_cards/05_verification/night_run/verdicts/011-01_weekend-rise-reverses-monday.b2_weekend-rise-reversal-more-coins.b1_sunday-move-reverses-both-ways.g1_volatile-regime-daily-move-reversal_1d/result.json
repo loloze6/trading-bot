@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9999724972497249,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled mean next-day timing gain: position x (next return - coin's mean daily return), before costs",
+    "value": 0.0004523971956587557,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 3.1118390328304497
+    },
+    "threshold": "confirm: mean > 0 with ordinary t >= 2 (and supporting check passes); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "per-unit-|position| timing gain, top third minus bottom third by |position|",
+    "value": 0.0008999154896052839,
+    "passed": true
+  },
+  "counts": {
+    "non-zero-position bars": 36021,
+    "bars in main measure": 36106
+  },
+  "decided_by": "The main mean is positive with t >= 2 and the top-minus-bottom per-unit gain is positive.",
+  "reading": "The main mean pools every bar with a position and a next close in the same window, zero positions included. The supporting check ranks only the non-zero-position bars into thirds by |position| and measures each third's gain per unit as sum(gain)/sum(|position|). The plan's 'else inconclusive' minimum of 1000 non-zero-position bars is applied as 'not observable', as the workflow requires."
+}

@@ -163,3 +163,14 @@ N bars (or its log), from the `volume` column (`03_test_plan/night_run/plans/COM
 leak: it reads the current bar's volume and the volumes before it, known at the bar's close. A change to `trading-bot/`
 (a new component and its tests), so it waits for the operator's go.
 
+## Parked: two more components asked for by night_run (2026-11-17)
+Besides relative volume (above): **the close's place in the day's high-low range** (1 idea), and **a move held as the
+forecast over the next N bars** (a weekend return carried through Monday and Tuesday, 2 ideas). Each is a change to
+`trading-bot/`, so each waits for the operator. Wish lists: `03_test_plan/night_run/plans/COMPONENT_WISHLIST.md`.
+
+## Parked: near-duplicate ideas (night_run, 2026-11-17)
+`select_next` finds a duplicate only when two ideas have the same text and data. Two ideas from different parents
+(`...d1_weekend-moves-reverse-both-ways` and `...b1_weekend-fall-reverses-monday.d1_weekend-moves-reverse-both-ways`)
+gave the same t (+2.75) and the same failures: probably one test written twice in other words (about 1 USD each).
+A rule on the plan (same config, same data) rather than on the text would catch it. Not built.
+

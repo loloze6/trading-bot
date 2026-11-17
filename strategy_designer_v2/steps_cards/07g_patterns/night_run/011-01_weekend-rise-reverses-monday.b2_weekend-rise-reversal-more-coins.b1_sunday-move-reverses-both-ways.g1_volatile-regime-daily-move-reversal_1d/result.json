@@ -1,0 +1,74 @@
+{
+  "line": "7.g",
+  "backtest": "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.g1_volatile-regime-daily-move-reversal_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4271098,
+  "findings": {
+    "F1": "The fade's next-day gain beyond the coin's mean daily return depends mostly on the day of the move: after Sunday moves it is 0.00424 (t 4.89, n 4304), after Saturday moves 0.00177 (t 2.60, n 4303), and after Tuesday moves 0.00307 (t 3.65, n 4314), while Wednesday, Thursday and Monday sit near zero (|t| \u2264 0.33).",
+    "F2": "Friday moves continue rather than reverse: the fade gain after a Friday move is \u22120.00189 (t \u22122.95, n 4301), the only weekday with a significantly negative value.",
+    "F3": "The reversal sits only where 20-day volatility is high against its 120-day level: in the top tercile of vol20/vol120 the fade gain is 0.00296 (t 4.04, n 6056), against \u22120.00023 (t \u22120.36) and 0.00026 (t 0.41) in the lower two terciles.",
+    "F4": "Moves made on heavy volume reverse more, which is the opposite of the brief's thin-book claim: in the top tercile of the day's volume over its 30-day median the fade gain is 0.00170 (t 2.66, n 9145), against 0.00005 (t 0.11) in the bottom tercile.",
+    "F5": "The edge is real before costs but smaller than the cost of trading it: mean timing gain is 0.000452 per bar against a mean fee of 0.000647 per bar, so the book's mean daily return is \u22122.7e-05 (Sharpe \u22120.03).",
+    "F6": "The reversal has faded in recent years: the fade gain is positive with t above 2 in 2018, 2020, 2021 and 2023 (0.0045, 0.0040, 0.0036, 0.0018), but negative in 2024 (\u22120.00126, t \u22121.79) and 2025 (\u22120.00094, t \u22121.42), and the book's daily mean is lowest in 2024 (\u22120.00177, t \u22121.89).",
+    "F7": "The fade works better in falling markets: when the coin's 20-day return is negative, the fade gain is 0.00160 (t 3.35, n 15538), against 0.00048 (t 1.11, n 14584) when it is positive."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's move over the weekend (Saturday and Sunday, UTC) is followed by a move the other way over the next day, and the larger the weekend move, the larger the move back.",
+      "consequence": "A trader would fade weekend moves into Monday only, sized by the size of the move, and trade far less often than a daily fade so fees no longer eat the edge.",
+      "name": "Weekend move fades Monday",
+      "from": "F1, F5",
+      "refs": [
+        "F1",
+        "F5"
+      ]
+    },
+    {
+      "idea": "A coin's Friday move continues in the same direction over the next day, and the larger the Friday move, the larger the continuation.",
+      "consequence": "A trader would follow rather than fade a coin's Friday move into Saturday, sizing with the move.",
+      "name": "Friday move continues Saturday",
+      "from": "F2",
+      "refs": [
+        "F2"
+      ]
+    },
+    {
+      "idea": "A coin's daily move is followed by a move the other way over the next day, and the higher its 20-day volatility relative to its 120-day volatility, the larger the move back.",
+      "consequence": "A trader would fade daily moves only in proportion to how far short-term volatility has risen above its longer-run level, and would leave most days untraded.",
+      "name": "Vol-spike daily move reversal",
+      "from": "F3, F5",
+      "refs": [
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "A coin's daily move is followed by a move the other way over the next day, and the higher that day's volume relative to its 30-day median, the larger the move back.",
+      "consequence": "A trader would fade moves made on heavy volume more strongly than moves on quiet days.",
+      "name": "High-volume move reverses",
+      "from": "F4",
+      "refs": [
+        "F4"
+      ]
+    },
+    {
+      "idea": "A coin's daily move is followed by a move the other way over the next day, and the more the coin has fallen over the past 20 days, the larger the move back.",
+      "consequence": "A trader would fade daily moves harder in coins that have been falling over the past 20 days.",
+      "name": "Downtrend daily move reversal",
+      "from": "F7",
+      "refs": [
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.g1_volatile-regime-daily-move-reversal.g1_weekend-move-fades-monday",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.g1_volatile-regime-daily-move-reversal.g2_friday-move-continues-saturday",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.g1_volatile-regime-daily-move-reversal.g3_vol-spike-daily-move-reversal",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.g1_volatile-regime-daily-move-reversal.g4_high-volume-move-reverses",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.g1_volatile-regime-daily-move-reversal.g5_downtrend-daily-move-reversal"
+  ],
+  "no_ideas": null
+}

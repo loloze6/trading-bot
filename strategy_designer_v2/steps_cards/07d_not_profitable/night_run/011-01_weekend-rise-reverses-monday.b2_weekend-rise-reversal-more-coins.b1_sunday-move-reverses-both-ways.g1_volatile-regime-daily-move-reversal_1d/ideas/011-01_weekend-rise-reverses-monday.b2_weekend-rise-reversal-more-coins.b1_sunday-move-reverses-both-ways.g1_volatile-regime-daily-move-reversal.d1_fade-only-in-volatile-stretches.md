@@ -1,0 +1,18 @@
+---
+brief: 011_weekend-moves-reverse-weekday
+source-idea: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.g1_volatile-regime-daily-move-reversal
+line: 7.d not profitable
+backtest: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.g1_volatile-regime-daily-move-reversal_1d
+instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO
+bar: 1d
+period: folds A, B, C, D
+---
+Idea: A coin's daily move is followed by a move the other way over the next day, and the larger the move and the higher the coin's 20-day volatility, the larger the move back, only while the coin's 20-day volatility is high relative to its own volatility over the past year.
+Consequence: A trader would fade daily moves only in a coin's volatile stretches, sizing with the move and the volatility, and would stay out of the fade in calm and ordinary stretches where it loses more than its fees.
+Why:
+- F1: The book's gain does not survive its fees. The position's mean next-day gain is 0.000428 per bar, all of it timing (0.000452; the market part is -0.000025). Fees average 0.000649 per bar from a mean turnover of 0.56 of the book per bar, which leaves -0.000221 per bar after costs.
+- F2: The fade only works when the coin's own 20-day volatility is high. In each coin's top tercile of 20-day volatility, timing is +0.001570 against fees of 0.000578, net +0.000971 (t 2.91, n 10049, Sharpe 0.56). In the bottom tercile, timing is -0.000611, net -0.001353 (t -5.89, n 10043, Sharpe -1.12). In the middle tercile, net is -0.000710 (t -2.73).
+- F3: Next-day reversal exists only in the volatile state. In the top 20-day-volatility tercile, the next day's vol-scaled return regressed on today's vol-scaled move has slope -0.070 (t -5.78). In the bottom tercile the slope is +0.049 (t 3.46) and the lag-1 correlation is +0.034, so in calm stretches a daily move continues and the fade loses.
+- F4: Volatility measured against the coin's own past year sorts the same way. The top quintile of 20-day vol over 250-day vol has timing +0.001457 and net +0.000562, with reversal slope -0.047 (t -2.85). The bottom quintile has net -0.000848 (t -2.76), with continuation slope +0.068 (t 2.90).
+- F5: The high-volatility tercile pays net in every year except 2024. Net returns were +0.0030 in 2018, +0.0017 in 2019, +0.0025 in 2020, +0.0008 in 2021, +0.0008 in 2022, +0.0013 in 2023, -0.0009 in 2024 and +0.0002 in 2025. The low-volatility tercile lost net in six of eight years, worst in 2024 (-0.0035) with n 2102. So the failure of the book's later years, and of its leave-one-window-out Sharpe, comes from calm-state bars.
+- F6: Bigger fades earn more but still barely clear their fees. In the top fifth by |forecast|, timing is 0.001583 against fees of 0.000980. The second fifth loses (timing -0.000118, fee 0.000485). The book's small positions are mostly fee-paying noise.
