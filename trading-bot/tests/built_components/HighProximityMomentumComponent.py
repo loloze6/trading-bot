@@ -1,28 +1,30 @@
 """Spec of HighProximityMomentumComponent for the standard checks (component_harness.py), written by the components step: its settings (the defaults first) and a hand computation that uses only the rows up to bar t."""
 CLASS = 'HighProximityMomentumComponent'
-SETTINGS = [{}, {"period": 365, "power": 2.0, "return_period": 30}]
+SETTINGS = [{}, {"period": 365, "power": 2.0, "return_period": 30}, {"period": 365, "power": 1.0, "return_period": 30, "proximity": "ratio"}]
 
 
 def hand(df, params):
     n = int(params.get("period", 365))
-    p = float(params.get("power", 2.0))
-    r = int(params.get("return_period", 30))
-    closes = [float(x) for x in list(df["close"])]
-    cur = closes[-1]
-    window = closes[len(closes) - n:]
-    for x in window:
+    pw = float(params.get("power", 2.0))
+    rp = int(params.get("return_period", 30))
+    prox = params.get("proximity", "convex")
+    c = [float(x) for x in list(df["close"])]
+    last = c[len(c) - 1]
+    base = c[len(c) - 1 - rp]
+    window = c[len(c) - n:]
+    for x in window + [base, last]:
         if x != x:
             return float("nan")
-    old = closes[len(closes) - 1 - r]
-    if old != old or cur != cur:
-        return float("nan")
-    high = window[0]
+    h = window[0]
     for x in window:
-        if x > high:
-            high = x
-    if not high > 0 or not old > 0:
+        if x > h:
+            h = x
+    if not h > 0 or not base > 0:
         return float("nan")
-    depth = (high - cur) / high * 100.0
-    closeness = pow(1.0 / (1.0 + depth), p)
-    change = (cur - old) / old * 100.0
-    return closeness * change
+    ret = (last / base - 1.0) * 100.0
+    if prox == "ratio":
+        w = pow(last / h, pw)
+    else:
+        d = (h - last) / h * 100.0
+        w = pow(1.0 / (1.0 + d), pw)
+    return w * ret

@@ -2603,23 +2603,24 @@ class RsiMidlineAgeComponent(SubStrategyComponent):
 
 class HighProximityMomentumComponent(SubStrategyComponent):
     """
-    The recent return weighted by how close the close sits to its long closing high, on every bar:
+    A return weighted by how close the close is to its recent high, on every bar:
 
-        H[t]  = max(close[t - period + 1 .. t])
-        D     = (H[t] - close[t]) / H[t] x 100                      (percent below the high, >= 0)
-        prox  = (1 / (1 + D)) raised to the power `power`           (in (0, 1], 1 at a new high)
-        ret   = (close[t] - close[t - return_period]) / close[t - return_period] x 100
-        raw_value = prox x ret
+        H[t]  = max(close[t - period + 1 .. t])                      (bar t included)
+        R     = (close[t] - close[t - return_period]) / close[t - return_period] x 100
+        proximity "convex" (default): W = (1 / (1 + D)) ^ power,  D = (H[t] - close[t]) / H[t] x 100
+        proximity "ratio":            W = (close[t] / H[t]) ^ power
+        raw_value = W x R
 
-    Graded and signed. It has the sign of the `return_period`-bar return, and its size is at most abs(ret): equal to it
-    at a new high and smaller the deeper the close sits below the high. Unbounded.
-    Warm-up: max(period, return_period + 1) rows, bar t included (365 at the defaults).
+    Range and sign: unbounded and signed, with the same sign as R. Since 0 < W <= 1 for positive closes, its size
+    is at most |R|. It equals R at a new high and shrinks the further the close sits below the high. Graded.
+    Warm-up: max(period, return_period + 1) rows, bar t included.
+    NaN: a NaN close in the last period rows or at close[t - return_period] gives NaN. A highest close or base
+    close not above 0 also gives NaN.
+    Building the component raises for a period below 2, a power not above 0, a return_period below 1, or a
+    proximity other than "convex" or "ratio".
 
-    NaN: a NaN close among the last `period` rows or at close[t - return_period] gives NaN. A highest close that is
-    not above 0, or a base close that is not above 0, gives NaN. Invalid settings raise when the component is built.
-
-    WHY THIS CANNOT LEAK: it reads only the `close` column of the last max(period, return_period + 1) rows of data,
-    the last row being bar t. A close is known at its bar's close.
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the rows up to and including bar t (the last row of
+    data): the last period closes and the close return_period rows before bar t.
     """
 
     def __init__(self, name="HighProximityMomentum", weight=1.0, parameters=None):
@@ -2634,6 +2635,10 @@ class HighProximityMomentumComponent(SubStrategyComponent):
         if self.return_period < 1:
             raise ValueError(
                 f"HighProximityMomentumComponent: return_period must be >= 1, got {self.return_period}")
+        self.proximity = self.parameters.get("proximity", "convex")
+        if self.proximity not in ("convex", "ratio"):
+            raise ValueError(
+                f"HighProximityMomentumComponent: proximity must be 'convex' or 'ratio', got {self.proximity!r}")
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -2644,23 +2649,24 @@ class HighProximityMomentumComponent(SubStrategyComponent):
             return
         c = data['close'].astype(float).to_numpy()
         win = c[-self.period:]
-        last = float(c[-1])
         base = float(c[-(self.return_period + 1)])
-        if np.isnan(win).any() or np.isnan(base) or np.isnan(last):
-            self._raw_value = float("nan")
-            self.confidence = 1.0
-            return
-        high = float(np.max(win))
-        if not high > 0 or not base > 0:
-            self._raw_value = float("nan")
-            self.confidence = 1.0
-            return
-        depth = (high - last) / high * 100.0
-        proximity = float(np.power(1.0 / (1.0 + depth), self.power))
-        ret = (last - base) / base * 100.0
-        self._raw_value = float(proximity * ret)
+        ct = float(c[-1])
         self.confidence = 1.0
-        self.debug_info = {'high': high, 'depth_pct': depth, 'proximity': proximity, 'return_pct': ret}
+        if np.isnan(win).any() or np.isnan(base) or np.isnan(ct):
+            self._raw_value = float("nan")
+            return
+        h = float(np.max(win))
+        if not h > 0 or not base > 0:
+            self._raw_value = float("nan")
+            return
+        if self.proximity == "convex":
+            d = (h - ct) / h * 100.0
+            w = float(np.power(1.0 / (1.0 + d), self.power))
+        else:
+            w = float(np.power(ct / h, self.power))
+        ret = (ct - base) / base * 100.0
+        self._raw_value = float(w * ret)
+        self.debug_info = {'high': h, 'weight': w, 'return_pct': ret}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
