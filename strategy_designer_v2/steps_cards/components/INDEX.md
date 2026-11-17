@@ -28,3 +28,7 @@ night_013_run | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-m
 night_013_run | 013-02_follow-through-stronger-near-high_1d | HighAnchoredMomentumComponent | built: HighProximityMomentumComponent {"period": 365, "power": 1.0, "proximity": "ratio", "return_period": 30}
 night_013_run | 013-03_breakout-above-high-continues_1d | DistanceAbovePriorHighComponent | exists: DistanceFromHighComponent {"exclude_current": 1, "period": 20, "source": "close"}
 night_013_run | 013-04_heavy-volume-below-high-breakout_1d | VolumeRatioComponent | exists: VolumeRatioComponent {"centred": 1, "period": 90, "short_period": 10}
+night_013_run | 013-05_longer-stall-bigger-breakout_1d | StallUnderHighCountComponent | cannot build: no answer passed the checks after 3 attempts
+night_013_run | 013-06_breakout-volume-drives-continuation_1d | VolumeRatio | exists: VolumeRatioComponent {"period": 90}
+night_013_run | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume_1d | VolumeRatioComponent | exists: VolumeRatioComponent {"centred": 1, "exclude_current": 0, "period": 30, "short_period": 1}
+night_013_run | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d | RelativeVolumeComponent | exists: VolumeRatioComponent {"centred": 1, "exclude_current": 0, "period": 20, "short_period": 1}
