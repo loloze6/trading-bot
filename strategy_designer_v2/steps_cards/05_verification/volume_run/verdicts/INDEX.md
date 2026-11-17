@@ -1,4 +1,5 @@
 012-02_volume-burst-fall-reversal_1d: inconclusive (fit: adapted) [main: 0.00431798; OLS t of slope 1.58575; kept sharp-fall cases 440]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume_1d: confirmed (fit: exact) [main: 0.00244546; OLS slope t 4.17064; non-overlapping samples 2443]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d: confirmed (fit: exact) [main: 0.00633208; OLS t of slope 2.74505; trending-regime grid cases 2840]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g2_volume-surge-precedes-gains_1d: inconclusive (fit: adapted) [main: 1.95549; OLS slope t 1.95549; non-overlapping 7-bar cases pooled across coins 2443, coins with positive slope 4]
 013-06_breakout-volume-drives-continuation_1d: inconclusive (fit: adapted) [main: 0.195272; Welch t 1.65542; kept cases in total 60, high-volume group 30, low-volume group 30]
