@@ -2322,3 +2322,46 @@ class CloseLocationInRangeComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return 1
+
+
+class OpenToLowDropComponent(SubStrategyComponent):
+    """
+    The depth of the bar's intrabar fall below its open, on every bar:
+
+        raw_value = (open[t] - low[t]) / open[t] x 100
+
+    Graded and non-negative on real bars (low <= open): 0 when the bar never traded below its open, larger the
+    deeper the fall from the open to the low, at most 100. It carries no direction. The unit is percent of the open.
+    Warm-up: 1 row (bar t only).
+
+    WHY THIS CANNOT LEAK: it reads only the `open` and `low` columns of the last row of data, which is bar t. Both
+    are known at that bar's close.
+
+    NaN: a NaN open or low at bar t gives NaN. An open that is not above 0, which never happens on real bars, also
+    gives NaN. A missing column raises.
+    """
+
+    def __init__(self, name="OpenToLowDrop", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        o = float(data['open'].iloc[-1])
+        lo = float(data['low'].iloc[-1])
+        if np.isnan(o) or np.isnan(lo) or not o > 0:
+            self._raw_value = float("nan")
+        else:
+            self._raw_value = float((o - lo) / o * 100.0)
+        self.confidence = 1.0
+        self.debug_info = {'open': o, 'low': lo}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return 1
