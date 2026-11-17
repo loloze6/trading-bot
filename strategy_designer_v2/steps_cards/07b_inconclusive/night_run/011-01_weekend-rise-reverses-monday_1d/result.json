@@ -1,0 +1,47 @@
+{
+  "line": "7.b",
+  "backtest": "011-01_weekend-rise-reverses-monday_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3453644,
+  "findings": {
+    "F1": "The main measure is positive (mean gain 0.00646, t 2.75, 1268 cases), but the supporting check fails because the size grading runs backwards. Sunday rises in the smallest-z quintile (mean z 0.11) are followed by a 2-day excess return of \u22120.0158. The largest-z quintile (mean z 2.21) is followed by only \u22120.0037, and the steps between are monotone (\u22120.0124, \u22120.0097, \u22120.0072). So the large-minus-small difference is +0.0035.",
+    "F2": "The reversal is specific to Sunday. Rises stamped Sunday are followed by a 2-day excess of \u22120.0098 (t \u22124.26, n 1083). Rises on other weekdays are followed by between \u22120.0025 and +0.0022 (|t| \u2264 1.2), except Thursday at +0.0088.",
+    "F3": "Sunday falls reverse as well (2-day excess +0.0065, t 2.84, n 967), and on the fall side the grading runs the right way. The Sunday sextiles with mean z of \u22121.64, \u22120.59 and \u22120.14 are followed by +0.0116, +0.0048 and +0.0009. Over all Sundays, the 2-day excess regressed on the clipped z has slope \u22120.0047 (t \u22123.30, n 2051).",
+    "F4": "Betting against the sign of the Sunday return alone earns 0.0082 per case (t 5.08, n 2051), about the same as the graded short-only measure but with far more certainty. This effect is positive in every year: strongest in 2018 (0.0167, t 2.99) and 2020 (0.0183, t 4.24), weakest in 2023 (0.0008, t 0.36).",
+    "F5": "The reversal after Sunday rises shows in four of six coins: ETH \u22120.0132 (t \u22122.84), LTC \u22120.0127 (t \u22122.16), XMR \u22120.0118 (t \u22122.57) and ZEC \u22120.0161 (t \u22122.42). It is nearly absent in BTC (\u22120.0013, t \u22120.30) and XRP (\u22120.0027, t \u22120.36).",
+    "F6": "Against the brief's volume clause, the reversal is strongest when weekend volume is high, not low. The sign-only gain is 0.0146 (t 3.90) in the top quartile of weekend volume relative to its 60-day mean and 0.0080 (t 2.87) in the bottom quartile. For Sunday rises, the excess is \u22120.0163 (t \u22123.35) in the top quartile versus \u22120.0106 in the bottom."
+  },
+  "ideas": [
+    {
+      "idea": "A coin that fell over the weekend (its Saturday-to-Sunday close-to-close return) rises over the next 2 days (Monday and Tuesday), and the larger the weekend fall relative to the coin's usual daily move, the larger the rise.",
+      "consequence": "A weekend fall is a reason to lean long into Monday and Tuesday, more so the deeper the fall, since it is partly undone once weekday liquidity returns.",
+      "name": "weekend fall reverses Monday",
+      "from": "F3, F2, F4",
+      "refs": [
+        "F3",
+        "F2",
+        "F4"
+      ]
+    },
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "weekend rise reversal, more coins",
+      "from": "F1, F2, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F5"
+      ],
+      "idea": "A coin that rose over the weekend (its Saturday-to-Sunday close-to-close return) falls over the next 2 days (Monday and Tuesday), and the larger the weekend rise, the larger the fall.",
+      "consequence": "Weekend rises are partly undone once weekday liquidity returns.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins"
+  ],
+  "no_ideas": null
+}

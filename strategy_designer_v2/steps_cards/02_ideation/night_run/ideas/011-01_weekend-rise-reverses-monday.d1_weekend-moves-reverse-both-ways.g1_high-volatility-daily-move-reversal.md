@@ -1,0 +1,18 @@
+---
+brief: 011_weekend-moves-reverse-weekday
+source-idea: 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways
+line: 7.g patterns
+backtest: 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways_1d
+instruments: BTC, ETH, LTC, XMR, XRP, ZEC
+bar: 1d
+period: folds A, B, C, D
+---
+Idea: When a coin's 20-day volatility is high relative to its own 120-day volatility, its last day's move reverses over the next 1 day. The larger that day's return measured in its 20-day volatility, the larger the move back, and the reversal is stronger after down days than after up days.
+Consequence: Fade daily moves in proportion to their volatility-scaled size only while the coin's volatility is elevated, and stay out of daily reversal trades in calm periods, where there is none.
+Why:
+- F1: Next-day reversal shows up only when volatility is high. Over all days and coins, the 1-day excess return faded against the bar's own move by 0.00537 (t 6.31, n≈4835) in each coin's top tercile of 20-day volatility. In the middle tercile it was 0.00025 (t 0.39) and in the bottom tercile -0.00077 (t -1.47). corr(z, next-day excess) was -0.100 in the top tercile and +0.026 in the bottom.
+- F2: The same split holds for volatility relative to its own longer level. In the top tercile of 20-day vol over 120-day vol, the fade was 0.00514 (t 5.34, n 2915). In the other two terciles it was -0.00068 (t -0.79) and 0.00008 (t 0.10).
+- F3: Inside the high-volatility tercile the reversal grows with the size of the move. By |z| tercile the fade was 0.0030 (t 2.19), then 0.0053 (t 3.72), then 0.0077 (t 4.85). By raw-return quintile the next-day excess ran from +0.0113 (t 5.16) after the largest falls to -0.0034/-0.0045 after the largest rises.
+- F4: In high volatility, falls are faded more than rises: 0.0071 (t 5.61, n 2354) against 0.0037 (t 3.25, n 2477). The fade is positive on every coin (0.0042 to 0.0078, t 1.70 to 3.86).
+- F5: The high-volatility fade is positive in 2018–2024, with t 1.9 to 5.2 in most years. It turned negative in 2025 at -0.0038 (t -1.14, n 417).
+- F6: The weekend is only a modest boost on top of the volatility effect. In high volatility, weekend bars faded 0.0077 (t 4.64, n 1356) against 0.0045 (t 4.51, n 3479) on weekdays.

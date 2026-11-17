@@ -1,0 +1,8 @@
+011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+011-01_weekend-rise-reverses-monday.g1_volatile-day-selloffs-bounce-next_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+011-01_weekend-rise-reverses-monday_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

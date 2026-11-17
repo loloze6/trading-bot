@@ -1,0 +1,43 @@
+{
+  "line": "7.g",
+  "backtest": "011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.357491,
+  "findings": {
+    "F1": "The next-day reversal depends on how high volatility is. Volatility here is the coin's 20-day volatility over its 60-day average. In the top third, the next day's excess return against the vol-scaled move has slope -0.063 (t -3.89, n 3682), and the signed reversal return averages +0.45% (t 5.19). In the bottom third, the slope is +0.048 (t 1.85) and the reversal return is -0.04% (t -0.47).",
+    "F2": "In that high-volatility third, nearly all the reversal follows down days. Down days have slope -0.088 (t -2.48, n 1758), while up days have +0.010 (t 0.34, n 1924). The lowest vol-scaled-return quintile is followed by a +1.02% next-day excess return (t 4.96, n 737), while the top quintile gives only -0.19% (t -0.89). So the idea's sign-only down-versus-up check misses a graded rebound after falls.",
+    "F3": "Saturday's vol-scaled move reverses on Sunday more than any other weekday's move does. Its slope is -0.150 (t -4.89, n 1578), against -0.068 (t -1.83) for Sunday and -0.053 to +0.010 for Tuesday to Friday. The Saturday slope is clearly negative in 2018, 2019, 2022 and 2024 (t -3.9, -4.9, -3.9, -3.8), near zero in 2020, 2021 and 2023, and positive in 2025 (+0.25, t 1.80).",
+    "F4": "Monday's vol-scaled move tends to continue into Tuesday, with slope +0.081 (t 2.77, n 1578). This is unstable by year: +0.43 in 2018 (t 6.5) and +0.43 in 2019 (t 2.9), but negative from 2022 to 2023. It is not strong enough, given seven weekdays examined, to stand on its own.",
+    "F5": "Relative volume gives no consistent answer. Within high volatility, low-volume moves reverse more (slope -0.142, t -3.18) than high-volume moves (-0.045, t -1.88). Among all moves with |z|>1, however, the high-volume third reverses most (+0.58%, t 3.37) and the low-volume third less (+0.26%, t 1.99). The brief's low-volume claim is therefore not supported.",
+    "F6": "The book is only weakly tied to the coins, with a daily correlation of 0.118. Its mean daily return is flat across weekdays, ranging from -0.0002 to +0.0011 with no weekday reaching |t| 2. So the strong Saturday reversal (F3) is not being captured separately by the strategy."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's 20-day volatility is high relative to its own 60-day average, a down day is followed by a rise over the next 1 day, and the larger that day's fall measured in its 20-day volatility, the larger the rebound.",
+      "consequence": "In elevated volatility, buy after falls in proportion to their vol-scaled size, rather than also shorting after rises, which carry no reversal.",
+      "name": "high-vol down-day rebound",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "A coin's Saturday (UTC) daily move reverses over the next 1 day, and the larger Saturday's return measured in its 20-day volatility, the larger the move back on Sunday.",
+      "consequence": "Fade Saturday's move into Sunday in proportion to its vol-scaled size, a weekend-specific reversal trade separate from weekday fades.",
+      "name": "Saturday move reverses Sunday",
+      "from": "F3, F6",
+      "refs": [
+        "F3",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal.g1_high-vol-down-day-rebound",
+    "011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal.g2_saturday-move-reverses-sunday"
+  ],
+  "no_ideas": null
+}

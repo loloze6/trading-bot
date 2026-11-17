@@ -1,0 +1,49 @@
+{
+  "line": "7.d",
+  "backtest": "011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 3.6183254999999996,
+  "findings": {
+    "F1": "Almost all of the book's edge sits in its deepest-fall bars. In the top forecast quintile (forecast 14.5\u201320, allocation 0.91) each active bar gains 0.0090, with next-day return 0.0120 and t 5.30. The middle three quintiles gain only 0.0005\u20130.0020 per bar.",
+    "F2": "Fees eat most of the shallow-fall positions. The lowest forecast quintile pays a fee of 0.00008 per bar against a gain of 0.00008. The second and third quintiles pay 0.00021 and 0.00030 against gains of 0.00050 and 0.00063. The 3366 trades average \u22120.11% before fees and \u22120.21% after. The book's mean daily return is 0.00045, against 0.00118 for holding the coins.",
+    "F3": "The reversal grows much faster than the fall's size. In the high-volatility regime, falls beyond 2 standard deviations are followed by 0.0201 next day (n 124), falls of 1\u20131.5 by 0.0106 (n 416), and falls of 0\u20131 by only 0.0034\u20130.0038.",
+    "F4": "The high-volatility regime is what makes falls reverse. The same falls beyond 2 standard deviations in the calm regime are followed by only 0.0013 (n 287), and falls of 1.5\u20132 by 0.0009 (n 278).",
+    "F5": "Among falls beyond 1 standard deviation, the reversal depends on the four days before the fall. After the steepest prior 4-day declines the next day returns 0.0168 (t 5.06, n 459). After a flat prior 4 days it returns \u22120.0038 (t \u22121.78, n 458).",
+    "F6": "The coin's 5-day return grades the next day across all active bars. The bottom 5-day-return quintile (\u221256% to \u221210%) gives a next-day return of 0.0110 (t 4.00). The flat quintile (\u22124% to 0%) gives \u22120.0005 (t \u22120.36), even though allocation there is a similar 0.39.",
+    "F7": "The book's losses come from big positions on mid-sized falls that keep going. The worst 5% of active bars carry allocation 0.78 against 0.39 overall, and a day's fall of \u22121.30 standard deviations against \u22120.55. All of them sit in the high-volatility regime, and the book's deepest fall is \u221222.6% (Calmar 0.70)."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose daily volatility over the past 20 days is high, a down day is followed by a rise over the next 1 day, and that rise grows more than in proportion to the fall measured in the coin's 20-day daily standard deviations, so shallow falls are followed by almost no rise. The rise is largest when the fall extends the coin's decline over the prior 4 days, and it grows with the depth of that 4-day decline.",
+      "consequence": "Put the long only behind deep falls that cap a multi-day slide in a volatile market, and leave shallow single-day dips alone, where the fees outweigh the rebound.",
+      "name": "deep capitulation fall reversal",
+      "from": "F1, F2, F3, F4, F5, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F7"
+      ]
+    },
+    {
+      "idea": "In a coin whose daily volatility over the past 20 days is high, the coin rises over the next 1 day, and the rise is larger the deeper the coin's 5-day fall.",
+      "consequence": "After a sharp multi-day sell-off in a volatile market, lean long for the next day, harder the deeper the 5-day fall.",
+      "name": "volatile five-day fall rebound",
+      "from": "F4, F5, F6",
+      "refs": [
+        "F4",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.d1_deep-capitulation-fall-reversal",
+    "011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.d2_volatile-five-day-fall-rebound"
+  ],
+  "no_ideas": null
+}

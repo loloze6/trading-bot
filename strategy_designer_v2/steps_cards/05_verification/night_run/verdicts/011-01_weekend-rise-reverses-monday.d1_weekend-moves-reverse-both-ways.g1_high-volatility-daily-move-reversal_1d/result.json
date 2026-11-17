@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of allocation x (next-bar return - coin mean daily return) on mean_reversion bars",
+    "value": 0.0012871396567530372,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 4.755860932239073
+    },
+    "threshold": "confirm: t >= 2 with positive mean; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "down-day minus up-day mean reversal return (Welch t)",
+    "value": 0.0015071092599211666,
+    "passed": false
+  },
+  "counts": {
+    "active bars": 8146,
+    "down-day bars": 3922,
+    "up-day bars": 4149
+  },
+  "decided_by": "Inconclusive rule: main measure confirms but the down-minus-up check does not reach Welch t >= 2 with a positive difference nor t <= -2.",
+  "reading": "Active bars are the mean_reversion-regime bars with a next close in the same window and a recorded allocation, down/up days are those with close[t]/close[t-1]-1 below/above zero inside the window (zero-return and window-first bars excluded), the coin mean is over all within-window daily returns, and the plan's 'below minimum, inconclusive' is reported as 'not observable' per the workflow."
+}

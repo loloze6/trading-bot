@@ -1,0 +1,48 @@
+{
+  "line": "7.b",
+  "backtest": "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4107501,
+  "findings": {
+    "F1": "The test fails on grading, not on direction. Among Sunday rises the next 2-day excess return is about the same at every size (bottom, middle and top thirds by |forecast|: \u22121.44%, \u22120.64%, \u22121.15%). The rank correlation of the rise's size with the 2-day excess is \u22120.008 over 2147 Sunday rises. So the top-minus-bottom check comes out at +0.0029 while the main t is 4.88 over 2574 cases.",
+    "F2": "The reversal after a Sunday rise acts as an on/off sign effect. All five rising Sunday deciles (mean Sunday return +0.4% to +8.7%) are followed by a 2-day excess between \u22120.96% and \u22121.46% (t \u22122.3 to \u22124.3). Pooled, Sunday rises give \u22121.16% over 2 days (t \u22126.74, n 2147) and \u22120.54% on Monday alone (t \u22124.46).",
+    "F3": "The other side of the weekend is graded. Sunday falls are followed by a 2-day excess of +0.57% (t 3.44, n 2086). It grows with the size of the fall: +1.25% after the largest falls (mean \u22127.5%, t 2.81), +1.03% after \u22123.4% (t 2.65), +0.83% after \u22122.0% (t 2.35), and about \u22120.14% after falls of \u22120.3% to \u22121.1%.",
+    "F4": "Over the full range of Sunday returns the 2-day move goes the other way and is graded. The rank correlation of the Sunday return with the next 2-day excess is \u22120.12 (n 4233). Rises minus falls give a Welch t of \u22127.24 at 2 days and \u22127.30 at 3 days.",
+    "F5": "The effect belongs to Sunday's own 1-day return, not the whole weekend. Deciles of the Saturday-plus-Sunday 2-day return show no ordering: the largest weekend rises are followed by \u22120.51% (t \u22121.09) and middle deciles by \u22120.98% (t \u22123.55).",
+    "F6": "The effect is concentrated around Sunday. Rises sized against the last 60 days are followed over 2 days by \u22121.00% when the day is Sunday (t \u22125.94), \u22120.30% on Monday (t \u22121.94), +0.44% on Thursday (t 2.72) and \u22120.03% on Saturday (t \u22120.22).",
+    "F7": "The effect does not depend on Sunday's relative volume. Among Sunday rise cases, the 2-day excess is \u22121.23%, \u22120.86% and \u22121.38% for low, middle and high volume against the 60-day average. So the brief's volume grading is not visible either."
+  },
+  "ideas": [
+    {
+      "idea": "A coin that moved over the weekend (its Saturday-to-Sunday close-to-close return) moves the other way over the next 2 days (Monday and Tuesday), and the larger the weekend move in either direction, the larger the move back.",
+      "consequence": "A trader would lean against Sunday's move, in either direction, at Sunday's close and size the trade by that move, rather than shorting rises alone.",
+      "name": "Sunday move reverses both ways",
+      "from": "F2, F3, F4, F5, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "A coin that fell over the weekend (its Saturday-to-Sunday close-to-close return) rises over the next 2 days (Monday and Tuesday), and the larger the weekend fall, the larger the rise.",
+      "consequence": "Weekend falls are a reason to buy at Sunday's close, sized by how far the coin fell.",
+      "name": "Weekend fall rebounds Monday-Tuesday",
+      "from": "F1, F3, F6",
+      "refs": [
+        "F1",
+        "F3",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways",
+    "011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b2_weekend-fall-rebounds-monday-tuesday"
+  ],
+  "no_ideas": null
+}
