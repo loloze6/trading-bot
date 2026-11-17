@@ -125,3 +125,32 @@ lineage that pays), 10 USD more (run total 20 USD), by `select_next`'s score as 
 among them this idea's own child on 4-hour bars (score 0.125, low in the queue: the score is the operator's, not
 changed). Outcomes: A to D, F as above; plus **G**: another confirmed and profitable idea, or the 4-hour child
 confirming the momentum effect on other bars.
+
+**Stage 6 (04:00 to 04:50 UTC; `night_013_run`, 9.65 USD; stopped on the budget, 20.14 USD in all).** 13 more ideas:
+4 confirmed, 4 inconclusive, 1 mismatch, 4 missing components. Outcome **G**: two more confirmed ideas with a
+profitable book. The run in all: 33 ideas, 8 confirmed, **3 confirmed and profitable**:
+
+| Idea (last part of its id) | Step 5 | Sharpe | Over holding | Mean a day | Calmar |
+|---|---|---|---|---|---|
+| `g1_momentum-continuation-in-uptrends` (6 coins) | confirmed, t +2.79 | 1.15 | +0.59 | 0.076 % | 1.53 |
+| `b1_nearness-to-high-more-coins` (19 coins) | confirmed, t +3.77 | 1.25 | +0.67 | 0.073 % | 1.68 |
+| `g1_rising-month-weekly-momentum` (6 coins) | confirmed, t +3.47 | 0.97 | +0.42 | 0.063 % | 0.88 |
+
+- **One effect, three wordings.** All three hold coins long while their recent trend is up, more so the stronger the
+  rise: trend following. They are not three findings.
+- **The first check on coins no analysis read** (`06_profitability/night_013_run/diagnosis/coin_groups.py`, no model
+  call): the more-coins idea's 19-coin backtest split by step 6's own code. On the 6 coins the lineage's analyses read:
+  Sharpe 1.01, +0.43 over holding, Calmar 0.97. On the 12 coins none read (TAO had no data): Sharpe 1.45, +0.40 over
+  holding, 0.106 % a day, lowest Sharpe with one window left out 1.19, Calmar 2.53. **Every bar passed on coins the
+  analysis never saw.**
+- **What it is not:** the same years. Coins move together, so new coins over the same years are not new market
+  conditions. The decisive test is on dates the analysis never saw: the parked topic "proven and profitable, what
+  next", the operator's. Not opened.
+- **Step back.** The lineage now mostly rewrites the same effect (8 of the 13 tested ideas in this stage were
+  variants of momentum or of the one-day rebound). More turns here would buy little. The runs stop for the night.
+
+## End of the night (04:50 UTC)
+Seven briefs tried in six runs; 77 ideas written, 51 tested, about 46 USD. Outcomes: **A** (3 confirmed and profitable,
+one effect: trend following, and it holds on 12 unseen coins); **B** for brief 011 (real reversals, none paying);
+**F** for 5 of 7 briefs (the catalogue lacks components: a bar's volume against its average, above all); **D** (two
+chain defects found and fixed: an untested idea counted in a line's record; an interrupted idea counted as tested).

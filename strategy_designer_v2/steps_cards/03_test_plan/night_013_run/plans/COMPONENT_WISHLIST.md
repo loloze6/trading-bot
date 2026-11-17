@@ -38,3 +38,9 @@ One block per idea that needs components the catalogue does not have.
 
 ## 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d3_nearness-strongest-when-calm_1d
 - Component: CalmScaledDistanceFromHigh: closeness to the 365-bar high close (100 + (close - max close) / max close x 100), times the ratio of the 365-bar mean of the 20-bar std of daily returns to the current 20-bar std, all from closes; it grows as the close nears its high and as daily moves get calmer than their past year | measures: comparison
+
+## 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains_1d
+- Component: RelativeVolumeComponent: log(volume[t] / mean of the last 30 bars' volume, bar t included), from the `volume` column; 0 at average volume, positive and growing as the day's volume gets heavier, negative on light days | measures: situation
+
+## 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls.g1_rebound-grows-with-volatility_1d
+- Component: VolRankedFallRebound: computes max(0, -(close[t]/close[t-1] - 1) / std of the last 20 daily returns) x (share of the last 120 values of 20-day return std that are at or below the current one), from closes only; it is zero on up days and grows with the depth of the fall and with how high volatility stands against its past 120 days | measures: comparison
