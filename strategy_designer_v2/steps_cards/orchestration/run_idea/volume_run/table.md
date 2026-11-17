@@ -19,19 +19,20 @@ One row per idea run; every status is read from the step's own result file. Each
 | 003-02_thin-volume-drop-rebounds | - | plan | not observable (+1.27) | not profitable enough (failed: Mean daily return, Trades per bar) | 7.a: no ideas: The plan needs at least 20 independent thin-volume sharp falls. The default data gave 4 over about 48 coin-years. All the available daily data comes to roughly 100 coin-years: the 6 default coins over 8 years, about 33 coin-years of ADA/DOGE/LINK/TRX/UNI/AAVE, about 12 of AVAX/SOL/INJ and about 8 of the fold-D coins. At the observed rate that would give about 8 cases, and even at the thin-coin rate of XMR and ZEC only about 17. Since only daily bars are available, no data available would reach the minimum of 20.; 7.d: 003-02_thin-volume-drop-rebounds.d1_heavy-volume-drop-rebounds; 7.g: 003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue | 1.11 | 5.5 |
 | 003-03_heavy-volume-rise-continues | - | missing-components | - | - | - | 0.07 | 0.5 |
 | 003-04_heavy-volume-drop-continues | - | plan | inconclusive (-1.51) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: 003-04_heavy-volume-drop-continues.b1_heavy-volume-drop-more-coins, 003-04_heavy-volume-drop-continues.b2_strongest-heavy-volume-drops-continue; 7.d: 003-04_heavy-volume-drop-continues.d1_heavy-volume-drop-continues-delayed, 003-04_heavy-volume-drop-continues.d2_heavy-drop-continues-outside-uptrends; 7.g: 003-04_heavy-volume-drop-continues.g1_heavy-volume-falls-rebound | 1.09 | 5.5 |
+| 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse | 011-01_weekend-rise-reverses-monday | plan | confirmed (+4.95) | not profitable enough (failed: Mean daily return) | 7.d: 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.d1_volume-graded-three-day-rebound, 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.d2_heavy-volume-dips-in-uptrends, 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.d3_relative-volume-predicts-rebounds; 7.g: 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.g1_close-location-reverses-next-day, 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.g2_weekend-daily-moves-fade-next, 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.g3_monday-move-continues-tuesday | 0.98 | 5.5 |
 
 ## Consumption
-15 ideas, 10.19 USD, 52.2 minutes in all.
+16 ideas, 11.17 USD, 57.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.33 | 8.0 |
-| step4_backtest | 0.00 | 14.0 |
-| step5_verdict | 1.18 | 5.7 |
+| step3_plan | 1.46 | 9.0 |
+| step4_backtest | 0.00 | 15.4 |
+| step5_verdict | 1.31 | 6.3 |
 | step6_check | 0.00 | 0.3 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.20 | 0.6 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 1.37 | 4.4 |
-| step7_7.d | 2.67 | 8.7 |
-| step7_7.g | 3.45 | 10.5 |
+| step7_7.d | 3.00 | 9.8 |
+| step7_7.g | 3.83 | 11.7 |

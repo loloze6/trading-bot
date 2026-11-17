@@ -1,6 +1,7 @@
 003-01_thin-volume-rise-reverses_1d: 3 ideas (3 explorations)
 003-02_thin-volume-drop-rebounds_1d: 1 ideas (2 explorations)
 003-04_heavy-volume-drop-continues_1d: 1 ideas (2 explorations)
+011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d: 3 ideas (2 explorations)
 012-02_volume-burst-fall-reversal_1d: 2 ideas (3 explorations)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume_1d: 3 ideas (2 explorations)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d: 2 ideas (2 explorations)
