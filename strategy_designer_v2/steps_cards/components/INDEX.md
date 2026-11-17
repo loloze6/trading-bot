@@ -7,3 +7,5 @@ night_006_run | 006-05_downside-squeeze-break-continuation_1d | RangeCompression
 night_012_run | 012-01_liquidation-flush-rebound_1d | VolumeRatioComponent | exists: VolumeRatioComponent {"period": 30}
 night_012_run | 012-01_liquidation-flush-rebound_1d | LowerWickComponent | cannot build: no answer passed the checks after 3 attempts
 night_012_run | 012-02_volume-burst-fall-reversal_1d | VolumeRatioComponent | exists: VolumeRatioComponent {"period": 30}
+night_012_run | 012-03_lower-wick-flush-recovery_1d | LowerWickShareComponent | cannot build: no answer passed the checks after 3 attempts
+night_012_run | 012-03_lower-wick-flush-recovery_1d | VolumeRatioComponent | exists: VolumeRatioComponent {"period": 30}
