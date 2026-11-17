@@ -35,3 +35,6 @@ One block per idea that needs components the catalogue does not have.
 
 ## 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d
 - Component: RelativeVolumeComponent: the latest bar's volume divided by the mean volume of the last 20 bars (current bar included), minus 1, from the `volume` column; it is 0 at average volume and grows as volume rises above its 20-day average | measures: situation
+
+## 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d3_nearness-strongest-when-calm_1d
+- Component: CalmScaledDistanceFromHigh: closeness to the 365-bar high close (100 + (close - max close) / max close x 100), times the ratio of the 365-bar mean of the 20-bar std of daily returns to the current 20-bar std, all from closes; it grows as the close nears its high and as daily moves get calmer than their past year | measures: comparison

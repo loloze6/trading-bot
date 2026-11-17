@@ -5,6 +5,7 @@
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week_1d: 3 ideas (3 explorations)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g1_falling-month-keeps-falling_1d: no ideas: The only pattern close to the bar, weak 7-day returns after unusually quiet volume in a falling month (F2, F3), is a step in the lowest fifth rather than a graded effect, and at a date-clustered t of 2.6 it does not stand out enough after the roughly twenty angles examined (depth, 30-day and 7-day returns, volatility, volume, weekday, year, book extremes, coins), so it does not yet support a graded idea.
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1d: 3 ideas (2 explorations)
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high.g1_rebound-after-scaled-sell-offs_1d: 2 ideas (2 explorations)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e2_pressing-the-yearly-high_1d: 2 ideas (3 explorations)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling_1d: 2 ideas (2 explorations)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.g1_next-day-rebound-after-sharp-falls_1d: 3 ideas (2 explorations)
