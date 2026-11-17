@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9976057462090981,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of Monday excess return on Sunday forecast",
+    "value": 0.00033841915040537903,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.1637294961820372
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and volume difference > 0 with t >= 2; reject: slope < 0 with t <= -2 or difference < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "high-volume minus low-volume slope, t",
+    "value": -0.00012050037573141549,
+    "passed": false,
+    "t": -0.5276785065499167
+  },
+  "counts": {
+    "Sunday cases": 2489,
+    "high-volume half": 1242,
+    "low-volume half": 1247
+  },
+  "decided_by": "the result meets neither the confirm rule nor the reject rule, so it is inconclusive",
+  "reading": "Sunday cases are the regime 'mean_reversion' bars with a next bar in the same window, the slope is OLS with intercept on the 'forecast' column, the volume split is per coin at the median of sunday_volume last_history_value over all its Sunday cases (high = above median, low = at or below), the difference t is (b_high - b_low)/sqrt(se_high^2 + se_low^2), and the situation side is taken from the sign of sunday_move last_history_value (price return if missing)."
+}

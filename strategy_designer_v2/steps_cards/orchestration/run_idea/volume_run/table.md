@@ -21,19 +21,20 @@ One row per idea run; every status is read from the step's own result file. Each
 | 003-04_heavy-volume-drop-continues | - | plan | inconclusive (-1.51) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: 003-04_heavy-volume-drop-continues.b1_heavy-volume-drop-more-coins, 003-04_heavy-volume-drop-continues.b2_strongest-heavy-volume-drops-continue; 7.d: 003-04_heavy-volume-drop-continues.d1_heavy-volume-drop-continues-delayed, 003-04_heavy-volume-drop-continues.d2_heavy-drop-continues-outside-uptrends; 7.g: 003-04_heavy-volume-drop-continues.g1_heavy-volume-falls-rebound | 1.09 | 5.5 |
 | 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse | 011-01_weekend-rise-reverses-monday | plan | confirmed (+4.95) | not profitable enough (failed: Mean daily return) | 7.d: 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.d1_volume-graded-three-day-rebound, 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.d2_heavy-volume-dips-in-uptrends, 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.d3_relative-volume-predicts-rebounds; 7.g: 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.g1_close-location-reverses-next-day, 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.g2_weekend-daily-moves-fade-next, 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.g3_monday-move-continues-tuesday | 0.98 | 5.5 |
 | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g2_heavy-volume-fall-rebounds | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday | missing-components | - | - | - | 0.04 | 0.3 |
+| 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal | plan | inconclusive (+3.16) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.b: 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.b1_sunday-move-reverses-monday, 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.b2_saturday-move-reverses-sunday; 7.d: 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.d1_daily-vol-scaled-move-reverses, 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.d2_sunday-reversal-weakens-in-uptrend, 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.d3_sunday-falls-reverse-more, 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.d4_sunday-reversal-grows-with-volatility; 7.g: 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.g1_saturday-move-reverses-sunday, 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.g2_sunday-move-reverses-midweek, 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.g3_light-volume-moves-reverse-in-turbulence, 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.g4_scaled-falls-rebound-next-day | 1.37 | 6.9 |
 
 ## Consumption
-17 ideas, 11.21 USD, 57.9 minutes in all.
+18 ideas, 12.58 USD, 64.8 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.49 | 9.3 |
-| step4_backtest | 0.00 | 15.4 |
-| step5_verdict | 1.31 | 6.3 |
-| step6_check | 0.00 | 0.3 |
+| step3_plan | 1.59 | 10.1 |
+| step4_backtest | 0.00 | 16.8 |
+| step5_verdict | 1.45 | 7.0 |
+| step6_check | 0.00 | 0.4 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.20 | 0.6 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 1.37 | 4.4 |
-| step7_7.d | 3.00 | 9.8 |
-| step7_7.g | 3.83 | 11.7 |
+| step7_7.b | 1.72 | 5.6 |
+| step7_7.d | 3.38 | 11.2 |
+| step7_7.g | 4.23 | 13.1 |

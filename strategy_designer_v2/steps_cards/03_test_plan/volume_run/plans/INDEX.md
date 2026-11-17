@@ -2,6 +2,7 @@
 003-02_thin-volume-drop-rebounds_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 003-03_heavy-volume-rise-continues_1d: missing-components: The forecast must grow with both the one-day rise and its volume ratio together, as an AND. The config can [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 003-04_heavy-volume-drop-continues_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g2_heavy-volume-fall-rebounds_1d: missing-components: The down day (a regime rule on a 1-bar PriceEvolutionComponent) and the next-day long are expressible. However, no catalogue component [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 012-01_liquidation-flush-rebound_1d: missing-components: The lower wick is the distance between the bar's low and its close. Only high/low-reading components exist (ADXDirectionalComponent, KeltnerBreakoutComponent, regime [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

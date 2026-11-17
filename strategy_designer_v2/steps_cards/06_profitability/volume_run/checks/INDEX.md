@@ -1,6 +1,7 @@
 003-01_thin-volume-rise-reverses_1d: not profitable enough [Sharpe -0.5809; Sharpe minus holding's Sharpe -1.135; Calmar -0.1061]
 003-02_thin-volume-drop-rebounds_1d: not profitable enough [Sharpe 0.5981; Sharpe minus holding's Sharpe 0.04394; Calmar 11.99]
 003-04_heavy-volume-drop-continues_1d: not profitable enough [Sharpe -0.4961; Sharpe minus holding's Sharpe -1.05; Calmar -0.1249]
+011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday_1d: not profitable enough [Sharpe 0.1599; Sharpe minus holding's Sharpe -0.3943; Calmar 0.06144]
 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d: not profitable enough [Sharpe 0.9228; Sharpe minus holding's Sharpe 0.3687; Calmar 0.8146]
 012-02_volume-burst-fall-reversal_1d: not profitable enough [Sharpe 0.2342; Sharpe minus holding's Sharpe -0.3199; Calmar 0.107]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume_1d: not profitable enough [Sharpe 0.6037; Sharpe minus holding's Sharpe 0.04949; Calmar 0.3868]
