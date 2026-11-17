@@ -2264,3 +2264,51 @@ class LowerWickPercentComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return 1
+
+
+class CloseLocationInRangeComponent(SubStrategyComponent):
+    """
+    Where the current bar's close sits inside that bar's own high-low range, on every bar:
+
+        raw_value = (close[t] - low[t]) / (high[t] - low[t])      (0.5 when high[t] == low[t])
+
+    Range: 0 to 1 on real bars (the close lies between the low and the high). It is never negative. 0 means the bar
+    closed at its low, 1 means it closed at its high, and 0.5 means mid-range. It has no sign; a larger value is a
+    stronger close. It is graded: it moves continuously with the distance of the close above the low. Warm-up: 1 bar
+    (bar t alone).
+
+    NaN: a NaN high, low or close on bar t gives NaN, never a fabricated reading. A zero range (high == low, a flat
+    bar) gives 0.5: there is no range to place the close in, so the close is neither high nor low in it. A missing
+    column raises.
+
+    WHY THIS CANNOT LEAK: it reads only the `high`, `low` and `close` of the last row of `data`, which is bar t. All
+    three are known at bar t's close. It reads no other row.
+    """
+
+    def __init__(self, name="CloseLocationInRange", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        high = float(data['high'].iloc[-1])
+        low = float(data['low'].iloc[-1])
+        close = float(data['close'].iloc[-1])
+        if np.isnan(high) or np.isnan(low) or np.isnan(close):
+            value = float("nan")
+        else:
+            rng = high - low
+            value = 0.5 if rng == 0 else (close - low) / rng
+        self._raw_value = float(value)
+        self.confidence = 1.0
+        self.debug_info = {'high': high, 'low': low, 'close': close}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return 1
