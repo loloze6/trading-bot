@@ -2017,21 +2017,25 @@ class VolumeRatioComponent(SubStrategyComponent):
         num = mean(volume[t - short_period + 1 .. t])                (bar t included)
         exclude_current = 0 (default): den = mean(volume[t - period + 1 .. t])
         exclude_current = 1:           den = mean(volume[t - period .. t - 1])
-        raw_value = num / den - centred
+        log = 0 (default): raw_value = num / den - centred
+        log = 1:           raw_value = ln(num / den)
 
-    Defaults (short_period 1, centred 0) give volume[t] / mean volume, the original output.
-    Graded. With centred 0 it is non-negative and equals 1 at average volume. With exclude_current 0 it is at most
-    period / short_period; with exclude_current 1 it is unbounded above. With centred 1 the value is shifted down
-    by 1, so it is positive when recent volume is above the longer average and negative when that volume is thin.
-    No direction.
+    Defaults (short_period 1, centred 0, log 0) give volume[t] / mean volume, the original output.
+    Graded. With log 0 and centred 0 the value is non-negative and equals 1 at average volume. With
+    exclude_current 0 it is at most period / short_period; with exclude_current 1 it is unbounded above.
+    With centred 1 the value is shifted down by 1, so it is positive when recent volume is above the longer
+    average and negative when that volume is thin. With log 1 it is the natural log of the ratio. That value
+    is 0 at average volume, positive and growing on heavy volume, negative on thin volume. It is at most
+    ln(period / short_period) with exclude_current 0, and unbounded below. No direction.
     Warm-up: period + exclude_current rows, bar t included.
 
     WHY THIS CANNOT LEAK: it reads only the `volume` column of the rows up to and including bar t (the last row of
     data), over at most the last period + exclude_current rows; a bar's volume is known at that bar's close.
 
-    NaN: a NaN volume in either window, or an average of 0, gives NaN. A missing `volume` column raises.
+    NaN: a NaN volume in either window, or an average of 0, gives NaN. With log 1, a recent mean of 0 gives NaN
+    (zero volume, never seen on real bars). A missing `volume` column raises.
     Building the component raises for a period below 2, an exclude_current other than 0 or 1, a short_period
-    below 1 or above period, or a centred other than 0 or 1.
+    below 1 or above period, a centred other than 0 or 1, a log other than 0 or 1, or log 1 with centred 1.
     """
 
     def __init__(self, name="VolumeRatio", weight=1.0, parameters=None):
@@ -2051,6 +2055,12 @@ class VolumeRatioComponent(SubStrategyComponent):
         if c not in (0, 1):
             raise ValueError(f"VolumeRatioComponent: centred must be 0 or 1, got {c!r}")
         self.centred = int(c)
+        lg = self.parameters.get("log", 0)
+        if lg not in (0, 1):
+            raise ValueError(f"VolumeRatioComponent: log must be 0 or 1, got {lg!r}")
+        self.log = int(lg)
+        if self.log == 1 and self.centred == 1:
+            raise ValueError("VolumeRatioComponent: log 1 cannot be combined with centred 1")
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -2068,6 +2078,11 @@ class VolumeRatioComponent(SubStrategyComponent):
         den = float(base.mean(skipna=False))
         if np.isnan(num) or np.isnan(den) or not den > 0:
             self._raw_value = float("nan")
+        elif self.log == 1:
+            if not num > 0:
+                self._raw_value = float("nan")
+            else:
+                self._raw_value = float(np.log(num / den))
         else:
             self._raw_value = float(num / den - self.centred)
         self.confidence = 1.0
