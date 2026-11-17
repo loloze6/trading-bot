@@ -5,10 +5,13 @@ One row per idea run; every status is read from the step's own result file. Each
 | Idea | Parent | Step 3 | Step 5 | Step 6 | Step 7: ideas proposed | USD | Minutes |
 |---|---|---|---|---|---|---|---|
 | 010-01_rsi-above-share-continuation | - | missing-components | - | - | - | 0.04 | 0.2 |
+| 010-02_rsi-below-share-continuation | - | missing-components | - | - | - | 0.03 | 0.2 |
+| 010-03_rsi-above-streak-continuation | - | missing-components | - | - | - | 0.04 | 0.2 |
+| 010-04_rsi-below-streak-continuation | - | missing-components | - | - | - | 0.04 | 0.3 |
 
 ## Consumption
-1 ideas, 0.04 USD, 0.2 minutes in all.
+4 ideas, 0.15 USD, 1.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.04 | 0.2 |
+| step3_plan | 0.15 | 1.0 |
