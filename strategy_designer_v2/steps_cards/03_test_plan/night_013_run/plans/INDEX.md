@@ -28,6 +28,6 @@
 013-01_nearness-to-high-predicts-gains_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 013-02_follow-through-stronger-near-high_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 013-03_breakout-above-high-continues_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
-013-04_heavy-volume-below-high-breakout_1d: missing-components: The 52-week-high break can be built as a regime from closes. The idea's graded strength cannot: heavier 10-day volume against [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+013-04_heavy-volume-below-high-breakout_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 013-05_longer-stall-bigger-breakout_1d: missing-components: The idea's grading is a count, over the last 60 bars, of closes that sat just below the prior 52-week [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 013-06_breakout-volume-drives-continuation_1d: missing-components: The idea's graded strength is the breakout bar's volume divided by its 90-day average volume. No catalogue component outputs a [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

@@ -19,3 +19,4 @@
 013-01_nearness-to-high-predicts-gains_1d: not profitable enough [Sharpe 0.5233; Sharpe minus holding's Sharpe -0.05834; Calmar 0.2338]
 013-02_follow-through-stronger-near-high_1d: not profitable enough [Sharpe 0.6761; Sharpe minus holding's Sharpe 0.09443; Calmar 0.2726]
 013-03_breakout-above-high-continues_1d: not profitable enough [Sharpe 0.08686; Sharpe minus holding's Sharpe -0.4948; Calmar 0.051]
+013-04_heavy-volume-below-high-breakout_1d: not profitable enough [Sharpe 0.5053; Sharpe minus holding's Sharpe -0.0643; Calmar 0.3163]

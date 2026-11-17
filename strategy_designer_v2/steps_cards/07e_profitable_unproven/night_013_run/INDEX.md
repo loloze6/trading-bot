@@ -19,3 +19,4 @@
 013-01_nearness-to-high-predicts-gains_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
 013-02_follow-through-stronger-near-high_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 013-03_breakout-above-high-continues_1d: not run: entry condition not met (step 5: not observable; step 6: not profitable enough)
+013-04_heavy-volume-below-high-breakout_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
