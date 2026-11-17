@@ -1,168 +1,154 @@
-# Step card: components (DRAFT 2026-11-17, for the operator's review; not validated, nothing built)
+# Step card: components (DRAFT 3, 2026-11-17, for the operator's review; not validated, nothing built)
 
-A step outside the chain of steps 1 to 7: it does not test an idea, it adds to the bot what step 3 lacked to test
-one. Its card has two sections a step card usually has not ("What a wish is", "The sequence"): it reads many runs' output
-and has two parts, as a function card has. It changes `trading-bot/` (shared code), so each component it builds needs the operator's go (CLAUDE.md).
+A step outside the chain of steps 1 to 7: it does not test an idea, it gives the bot the measures step 3 lacked to
+test one. `loop` calls it on its own (see "When it is called"). It changes `trading-bot/` (shared code) under the
+operator's standing go (2026-11-17): a component built through this card, its checks and its proof passed, may be added
+on the working branch; merging into master stays the operator's go, with the build record. (To be written in CLAUDE.md
+when this step is built.)
+
+Its card has sections a step card usually has not ("When it is called", "Unblocking"): like `loop`, it is called by
+another function and changes what that function does next.
 
 ## Business objective, one question
-Which strategy components does the bot lack to test the ideas waiting for them, and is each one built right?
+Which components must the bot gain so that the ideas waiting for them can be tested?
 
-**Establish, from the wish lists of past runs, the components the bot lacks, ranked by the ideas waiting for them, and
-add each one the operator chooses to the engine: computed exactly as specified, from data known at the bar's close,
-proven to change nothing else, so that the waiting ideas can be tested.**
+**Establish, for each wish step 3 wrote in a run, whether the bot already has the measure, can gain it, or cannot; add
+the component when it can; so that the blocked ideas are unblocked and the run goes on.**
 
 ## Input
-- **The wish lists of past runs:** every `03_test_plan/<run>/plans/COMPONENT_WISHLIST.md` block (one per idea step 3
-  refused as missing-components: the plan id, then one line per component asked for).
-- **The component catalogue** (`03_test_plan/helper/reference/component_catalogue.md`): what exists, so that a wish
-  an existing component (or a combination) already covers is not built twice.
-- **For a build:** one specification the operator chose (below), the component contract (the base class
-  `SubStrategyComponent`: `update`, `is_ready`, `get_required_periods`, `raw_value`) and one existing component as the
-  worked example, pasted into the call.
+One wish at a time, closed book:
+- **the wish:** one line of a run's `03_test_plan/<run>/plans/COMPONENT_WISHLIST.md` (its name, what it computes, from
+  which bar columns, how its value grows, which part of the idea it measures), with its plan id;
+- **the catalogue as it stands** (`03_test_plan/helper/reference/component_catalogue.md`), with the components built
+  earlier in the same call of the step;
+- **the component contract** (the base class `SubStrategyComponent`: `update`, `is_ready`, `get_required_periods`,
+  `raw_value`) and one existing component as the worked example.
 
 ## Output
-Two outputs, one per part of the step:
-1. **The wanted list** (`components/WANTED.md`): one row per component the bot lacks, with its specification and the
-   ideas waiting for it, ranked by that count.
-2. **A component**, once the operator chooses one row: the class in `trading-bot/strategies/strategy_components.py`,
-   its tests, its catalogue row, and its proof.
+One answer per wish: **built**, **exists** or **cannot build**. For built: the class (or the setting added to an
+existing class) in `trading-bot/strategies/strategy_components.py`, its hand computation test, its catalogue row. For
+every answer: one line in `components/INDEX.md`.
+
+## What a wish is
+**A wish is what step 3 wrote when it refused an idea as missing-components: one measure a part of the idea needs and
+the catalogue does not give.** An idea's refusal holds one wish or more (brief 012's ideas: a volume measure and a wick
+measure).
 
 ## What a component is
 **A component is one measure of the market, computed at a bar's close from the coin's own bars (or a feed) up to that
-bar, that a config can use as a forecast source or in a regime rule.**
+bar, that a config can use as a forecast source or in a regime rule.** Five rules:
+1. **One measure, named by what it measures**, never by the idea that asked for it. Two wishes for the same measure get
+   one component.
+2. **A setting is added only when a wish needs a value the component does not have**; its default keeps the
+   component's output as it was.
+3. **Graded**: its value grows with what it measures (step 3 refuses an on/off forecast).
+4. **A value on every bar of real data once warm**; no value (NaN) only where the data itself is missing.
+5. **No lookahead**: the value at bar t uses only rows up to t; its docstring carries the "why this can't leak" note.
 
-- **One measure, named by what it measures**, not by the idea that asked for it: "a bar's volume against its recent
-  average", not "volume burst". Several ideas asking for the same measure in other words want one component.
-- **Its parameters are the measure's settings** (a window, a horizon). A parameter is added only when two waiting
-  ideas need two different values of it (volume_run: one bar against 30 for some ideas, the mean of 5 or 10 bars
-  against 30 or 90 for others: one component with a short window, default 1). No parameter "in case".
-- **Graded where it is a forecast source** (step 3's hard rule: no on/off forecast); a regime measure is bounded or
-  scale-stable.
-- **Defined on every bar the data gives once warm.** NaN only when the data itself is missing; the engine refuses a NaN
-  loudly, so a value undefined on real data (a zero average volume, a zero range) would stop a run.
-- **No lookahead:** the value at bar t uses only rows up to t (CLAUDE.md's hard rule; its "why this can't leak" note
-  is in the class's docstring).
+## The three answers
+- **built:** no component gives the measure; the model writes it (a new class, or a setting on the class that gives the
+  nearest measure), and it passes every check in code.
+- **exists:** a component, with given settings, already gives exactly the measure. Nothing is built. It is also a
+  finding on step 3, which should have found it: recorded in the line; fixed in step 3 if it repeats.
+- **cannot build:** the measure needs data not in the coin's own bars or feeds, or the model does not know how, or its
+  code still fails the checks after three attempts. Nothing is added; the wish stays open, with the reason.
 
-## What a wish is, and its four kinds
-**A wish is what step 3 wrote when it refused an idea as missing-components: the measure a part of the idea needs and
-the catalogue does not give.** Each wish is one of four kinds, and the kind says what would answer it:
+A measure that combines components in a way the config cannot (the config averages components, it does not multiply
+them) is a measure like any other: built as one component.
 
-| Kind | What it is | What answers it |
-|---|---|---|
-| **new measure** | no component measures it | a new component |
-| **missing setting** | a component measures it, but lacks a setting the idea needs (a mean of several bars, not one) | a parameter on that component, whose default keeps today's output |
-| **missing combination** | existing components measure each part, but the config cannot combine them that way (a product; it averages) | a change to how the config combines components: an engine change, outside this step; the row says so |
-| **near variant** | a component measures nearly the same thing (a median for a mean, the bars before t for the bars up to t) | nothing, unless the waiting ideas need both forms: then a parameter, as a missing setting |
+## The index line
+`components/INDEX.md`, one line per wish answered, for every run:
+`<run> | <plan id> | <wish name> | built: <class> (<settings>) | exists: <class> (<settings>) | cannot build: <reason>`
+- For: what each wish became, and which wishes are still open.
+- Used by: `select_next` (which blocked ideas are unblocked), the operator.
+- Without it: a wish is answered twice, or a blocked idea is never unblocked.
 
-The kind is set by the measure, never by the idea's name (volume_run: the 5 volume ideas still refused were 2 missing
-settings, 2 missing combinations and 1 near variant, not 5 new components).
+**Still open** = the wishes in the runs' wish lists with no line in the index: computed by code when needed, never
+written by hand. The runs' wish lists are never changed: they are the runs' record.
 
-## The fields
-**A row of the wanted list** (written by the specification part):
-1. **name:** the class name, `<Measure>Component`.
-   - For: one name per measure, reused by every later wish.
-   - Used by: the operator, the build part, step 3 (once built).
-   - Without it: the same measure is wished under many names (the night runs: 11 "VolumeRatioComponent", 5 other
-     names for it) and nothing counts the ideas waiting.
-2. **specification:** the exact output on bar t (formula, columns read, parameters and defaults), range and sign,
-   kind (graded or regime measure), warm-up, what happens at a NaN or a zero denominator.
-   - For: what the build must compute, fixed before the code.
-   - Used by: the build part, its tests, the catalogue row.
-   - Without it: the code decides the measure, and the tests check the code against itself.
-3. **waiting ideas:** each idea's plan id and run, and which part of the idea the component measures (situation,
-   comparison, outcome); their count.
-   - For: the rank, and the ideas to rerun once built.
-   - Used by: the operator (what to build first), the end check.
-   - Without it: a component is built for nobody, or its ideas are never rerun.
-4. **kind and status:** the wish's kind (above); wanted, built (with its commit), outside this step (a missing
-   combination), or not buildable (with why: the data is not in the bars).
-   - For: what is left.
-   - Used by: the operator.
-   - Without it: a built component stays on the list.
+## When it is called
+**By `loop`, on its own**, between two ideas (after an idea's step 7, before `select_next` chooses the next one;
+nothing is running then):
+- **every 10 turns** of the run since the step was last called (counted from the run's own files, so restarts and
+  resumes count right);
+- **before the loop stops for "no candidate left"**, when the run has open wishes: what it builds can give the loop
+  candidates again.
 
-**A component** (written by the build part): the class with its docstring (the specification, the leak note), the
-standard tests, its catalogue row, its proof (below).
+It answers **the open wishes of the run in progress**: the wishes step 3 wrote for that run's ideas (the brief's ideas
+and the lines' ideas, every idea the run tested), not yet in the index. Its cost counts in the run's budget.
 
-## The sequence
-1. **Specification** (one model call, on demand or after a run): all wish blocks and the catalogue in; out: the wanted
-   list. The model groups the wishes by measure, gives each its kind, and writes one specification per measure (the
-   general form, parameters only where waiting ideas differ). Code counts the waiting ideas and
-   ranks.
-2. **The operator chooses** a row (the go for the shared-code change).
-3. **Build** (one model call): the specification, the contract and the worked example in; out: the class, one test
-   that computes the value by hand on rows up to t, and the catalogue row.
-4. **Checks in code, the same for every component** (a standard test harness, not written by the model):
-   - the value at bar t is unchanged when every row after t is changed (no lookahead);
-   - not ready before `get_required_periods()` rows, ready at it;
-   - the hand computation matches on several bars and parameters;
-   - on every cached coin's real data, no NaN once warm;
-   - the engine runs it in a config and the config validator accepts it, as a forecast source and in a regime rule;
-   - every class in the file has a catalogue row (the catalogue's class count is computed, not written by hand).
-5. **Proof** (code): one fixed backtest rerun with the new code, compared file by file with its record; allowed
-   differences named (run ids, times, temporary paths). The bot's whole suite passes.
-6. **End check:** the waiting ideas rerun through `run_idea` in a new run. Step 3 now plans them, or its new refusals
-   say what is still missing (a new wish, back to 1).
+**By the operator**, naming one or more runs: their open wishes.
+
+## Unblocking
+**An idea refused as missing-components is unblocked when every wish of its refusal is answered built or exists.**
+`select_next` then counts it as a candidate again, and `run_idea` calls step 3 again for it: its new answer replaces
+the refusal (the refusal stays in the journal). An idea with one wish still open stays blocked.
+
+## Checks in code (each build)
+The same for every component, by a standard harness the model does not write:
+- the value at bar t does not change when every row after t is changed (no lookahead);
+- not ready before `get_required_periods()` rows, ready at it;
+- the model's hand computation matches the class on several bars and settings;
+- on every cached coin's real data, a value on every bar once warm;
+- the engine runs it in a config, and the config validator accepts it, as a forecast source and in a regime rule;
+- every class in the file has one catalogue row;
+- **proof:** one fixed backtest rerun with the new code gives the same files as its record (allowed differences: run
+  ids, times, temporary paths); the bot's suite passes.
+
+A failed check goes back to the model with its output (up to three attempts); then the answer is "cannot build".
 
 ## Storage and naming
 ```
 components/
   card.md                this card
-  WANTED.md              the wanted list (one row per component, ranked)
+  INDEX.md               one line per wish answered, every run
   helper/
-    system_prompt_spec.md, system_prompt_build.md
-    make_wanted.py       the specification call; reads every run's COMPONENT_WISHLIST.md
-    build_component.py   the build call; writes the class, its test and its catalogue row
-    test_harness.py      the standard checks of step 4, for any component class
-  builds/<Name>/         per component: the call's answer, the checks' output, the proof's comparison
+    system_prompt.md     the instructions
+    build_component.py   one call per open wish; the checks; the index line
+    harness.py           the standard checks, for any component class
+  builds/<class>/        per component built: the call's answer, the checks' output, the proof's comparison
   validation/reading.md  once validated
-(the class: trading-bot/strategies/strategy_components.py; its tests: trading-bot/tests/; its row: step 3's catalogue)
+(the class: trading-bot/strategies/strategy_components.py; its test: trading-bot/tests/; its row: step 3's catalogue)
 ```
 
 ## The AI
-- **Closed book**, as every step: the wish blocks, the catalogue, the contract and the example are pasted into the call.
-- **Specification:** model judgment is needed to see that two wishes are one measure. Code does the rest (counts, rank).
-- **Build:** the model writes the class and one hand computation. Every other check is the standard harness, so the
-  model never writes the test that judges it (it cannot check its code against itself).
-- **Model:** Opus (code, exact formulas). **Cost:** to be measured.
+- **Closed book**, one call per wish: the wish, the catalogue, the contract and the example are pasted into the call.
+- **The model** reads the wish against the catalogue, gives one of the three answers, and for built writes the class
+  and one hand computation. Every other check is code, so the model never writes the test that judges it.
+- **Model:** Opus (exact formulas, code). **Cost:** to be measured (the catalogue is most of the input, cached).
 
 ## Quality criteria
-- One row per measure; no two rows the same measure; each row's kind is the one its wishes show.
-- A specification is exact enough to compute by hand, and covers every waiting idea's variant without a parameter
-  nobody asked for.
-- The built component passes every standard check, and the proof shows nothing else changed.
-- The end check: the ideas waiting for it are planned by step 3, or their new refusal names a different measure.
+- One component per measure: no two components for the same measure.
+- An answer the catalogue proves: exists names a class and settings that give exactly the measure; built adds what the
+  catalogue lacks.
+- A built component passes every check, and the proof shows nothing else changed.
+- A cannot build names what is missing.
 
 ## Fixed inputs for the iterations
-The wish blocks of the night runs and of volume_run, each kind present:
-- **new measures:** a past high or its break (13 ideas), RSI's time above or below its midline, a price-RSI divergence,
-  a bar's wick or place in its range (7, among them the 3 of brief 012), a move held over the next bars (2);
-- **missing setting:** a mean of several bars' volume against a longer mean (2, volume_run);
-- **missing combination:** a scaled move times its volume ratio (2, volume_run);
-- **near variant:** volume against the median of the bars before t (1, volume_run);
-- **already answered** (to check the card does not ask again): the 11 volume ideas `VolumeRatioComponent` unblocked.
+The open wishes after volume_run: a past high or its break, RSI's time above or below its midline, a price-RSI
+divergence, a bar's wick or place in its range, a move held over the next bars, a mean of several bars' volume against a
+longer mean, a scaled move times its volume ratio, volume against the median of the bars before t. And the wishes
+`VolumeRatioComponent` answered, which must come back as exists.
 
 ## Variants compared
-To set: specification and build in one call or two; Opus or Sonnet for the build.
+To set: Opus or Sonnet.
 
 ## Who judges the output
-The operator: the wanted list ("is this the measure these ideas need?") and the choice of what to build. Code judges the
-build (the harness, the proof). The waiting ideas' rerun judges the business result.
+Code judges each build (the checks). The operator judges the card's validation.
 
-## Done when
-On the fixed inputs: the wanted list groups the wishes and gives their kinds as the operator would, twice in a row;
-one new measure and one missing setting built through the card pass every check and the proof; and their waiting ideas
-get past step 3.
+## Validation (once, while the card is designed)
+On the fixed inputs, twice in a row:
+- **quality of the components:** every built component passes every check;
+- **standardization:** one component per measure, named by it; the same docstring and checks for every component; the
+  answered wishes come back as exists;
+- **unblocking:** the blocked ideas are rerun; count those step 3 now plans.
+Status: not started.
 
-## Open (for the operator)
-1. **One step or several?** Recommended: one step with two parts (specification, build), the operator's choice between
-   them. Two separate steps would duplicate the inputs; one call for both would build before the operator chooses.
-2. **When is it called, automatically?** Recommended: the specification after each run (cheap, changes nothing), the
-   build only on the operator's go (it changes shared code: never automatic).
-3. **One list of wanted components?** Recommended: yes, `WANTED.md`, rebuilt from every run's wish blocks. A further
-   option: give step 3 the wanted list, so it reuses a name already wanted (a change to a validated step: later).
-4. **Acceptance criteria:** "Done when" above.
-5. **Test:** with the components still wanted (fixed inputs): one new measure and one missing setting built through the card.
+## What it changes elsewhere (each in its own card, when built)
+- `loop`: the two calls (every 10 turns; before stopping for no candidate).
+- `select_next`: the unblocking rule.
+- `run_idea`: step 3 called again for an unblocked idea.
 
 ## What this step does not do
-It does not test an idea, decide which component to build, change an existing component's output at its defaults, or
-change how the config combines components.
+It does not test an idea, choose which ideas to run, change a component's output at its defaults, or change how the
+config combines components.
