@@ -42,3 +42,4 @@ night_run | 003-04_heavy-volume-drop-continues_1d | VolumeRatioComponent | exist
 night_run | 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d | volume_ratio | exists: VolumeRatioComponent {"period": 60}
 night_run | 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d | volume_weighted_fall | built: VolumeWeightedScaledReturnComponent {"vol_period": 20, "volume_period": 30}
 night_run | 011-01_weekend-rise-reverses-monday.g1_volatile-day-selloffs-bounce-next.g1_falls-closing-near-low-bounce_1d | CloseLocationComponent | built: CloseLocationInRangeComponent {"reference": "high"}
+night_run | 011-01_weekend-rise-reverses-monday.g1_volatile-day-selloffs-bounce-next.g1_falls-closing-near-low-bounce_1d | DownMoveCloseLocationComponent | built: FallCloseLocationComponent {"vol_period": 60}

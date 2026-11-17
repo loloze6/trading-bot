@@ -2908,3 +2908,69 @@ class VolumeWeightedScaledReturnComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return max(self.vol_period + 1, self.volume_period)
+
+
+class FallCloseLocationComponent(SubStrategyComponent):
+    """
+    The size of today's fall in usual moves, weighted by how near the close is to the bar's low:
+
+        r(j)  = close[j] / close[j-1] - 1
+        s     = std (ddof 1) of r(t - vol_period + 1) .. r(t)          (bar t's return included)
+        fall  = max(0, -r(t) / s)                                       (0 when s = 0)
+        loc   = (high[t] - close[t]) / (high[t] - low[t])               (0.5 when high[t] = low[t])
+        raw_value = fall x loc
+
+    Graded and one-sided. The value is 0 and up, unbounded above and never negative. It is 0 on up bars
+    and on flat bars. It grows with the depth of the fall in usual moves and as the close nears the bar's
+    low; loc is 0 to 1 on real bars. No direction.
+    Warm-up: vol_period + 1 rows, bar t included.
+
+    WHY THIS CANNOT LEAK: it reads the `close` column of the last vol_period + 1 rows up to and including bar t
+    (the last row of data), and the `high` and `low` of bar t only; all are known at bar t's close.
+
+    NaN: a NaN close in the last vol_period + 1 rows, or a NaN high or low on bar t, gives NaN. A base close
+    that is not above 0 also gives NaN. A flat return window (s = 0, never seen on real bars) gives 0.
+    Building the component raises for a vol_period below 2.
+    """
+
+    def __init__(self, name="FallCloseLocation", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.vol_period = int(self.parameters.get("vol_period", 60))
+        if self.vol_period < 2:
+            raise ValueError(f"FallCloseLocationComponent: vol_period must be >= 2, got {self.vol_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        close = data['close'].astype(float).iloc[-(self.vol_period + 1):].to_numpy()
+        high = float(data['high'].iloc[-1])
+        low = float(data['low'].iloc[-1])
+        if np.isnan(close).any() or np.isnan(high) or np.isnan(low):
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        prev = close[:-1]
+        if not (prev > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        rets = close[1:] / prev - 1.0
+        s = float(np.std(rets, ddof=1))
+        r = float(rets[-1])
+        z = -r / s if s > 0 else 0.0
+        fall = z if z > 0 else 0.0
+        rng = high - low
+        loc = 0.5 if rng == 0 else (high - float(close[-1])) / rng
+        self._raw_value = float(fall * loc)
+        self.confidence = 1.0
+        self.debug_info = {'return': r, 'std': s, 'fall_usual_moves': fall, 'close_location_from_high': loc}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.vol_period + 1
