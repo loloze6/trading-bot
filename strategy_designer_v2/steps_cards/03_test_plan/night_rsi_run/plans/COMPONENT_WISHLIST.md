@@ -2,9 +2,6 @@
 
 One block per idea that needs components the catalogue does not have.
 
-## 010-05_rsi-above-share-reversal_1d
-- Component: RsiTimeAboveMidlineComponent: from closes, compute the Wilder RSI(`rsi_period` 14) on each of the last `window` (30) bars and output the share of those bars with RSI above 50, minus 0.5. Range -0.5 to +0.5; it grows as RSI spends more of the window above 50. | measures: situation
-
 ## 010-06_rsi-below-share-reversal_1d
 - Component: RsiTimeBelowMidlineComponent: share of the last 30 bars on which the 14-bar Wilder RSI of the closes was below 50, re-centred as share - 0.5 (from -0.5 to +0.5); it grows as more of the window is spent below 50 | measures: situation
 
