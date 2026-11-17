@@ -53,3 +53,5 @@ volume_run | 012-03_lower-wick-flush-recovery_1d | LowerWickShareComponent | exi
 volume_run | 012-04_flush-depth-retracement-size_1d | LowerWickComponent | exists: LowerWickComponent {"relative_to": "range"}
 volume_run | 012-04_flush-depth-retracement-size_1d | OpenToLowDropComponent | exists: OpenToLowDropComponent {}
 volume_run | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g2_rising-volume-precedes-gains_1d | VolumeMeanRatio | exists: VolumeRatioComponent {"period": 30, "short_period": 5}
+volume_run | 013-04_heavy-volume-below-high-breakout_1d | VolumeMeanRatio | exists: VolumeRatioComponent {"period": 90, "short_period": 10}
+volume_run | 003-03_heavy-volume-rise-continues_1d | volume-weighted rise | exists: VolumeWeightedScaledReturnComponent {"vol_period": 20, "volume_period": 30}
