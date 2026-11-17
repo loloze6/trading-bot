@@ -20,13 +20,14 @@ One row per idea run; every status is read from the step's own result file. Each
 | 003-03_heavy-volume-rise-continues | - | missing-components | - | - | - | 0.07 | 0.5 |
 | 003-04_heavy-volume-drop-continues | - | plan | inconclusive (-1.51) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: 003-04_heavy-volume-drop-continues.b1_heavy-volume-drop-more-coins, 003-04_heavy-volume-drop-continues.b2_strongest-heavy-volume-drops-continue; 7.d: 003-04_heavy-volume-drop-continues.d1_heavy-volume-drop-continues-delayed, 003-04_heavy-volume-drop-continues.d2_heavy-drop-continues-outside-uptrends; 7.g: 003-04_heavy-volume-drop-continues.g1_heavy-volume-falls-rebound | 1.09 | 5.5 |
 | 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse | 011-01_weekend-rise-reverses-monday | plan | confirmed (+4.95) | not profitable enough (failed: Mean daily return) | 7.d: 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.d1_volume-graded-three-day-rebound, 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.d2_heavy-volume-dips-in-uptrends, 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.d3_relative-volume-predicts-rebounds; 7.g: 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.g1_close-location-reverses-next-day, 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.g2_weekend-daily-moves-fade-next, 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.g3_monday-move-continues-tuesday | 0.98 | 5.5 |
+| 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g2_heavy-volume-fall-rebounds | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday | missing-components | - | - | - | 0.04 | 0.3 |
 
 ## Consumption
-16 ideas, 11.17 USD, 57.6 minutes in all.
+17 ideas, 11.21 USD, 57.9 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.46 | 9.0 |
+| step3_plan | 1.49 | 9.3 |
 | step4_backtest | 0.00 | 15.4 |
 | step5_verdict | 1.31 | 6.3 |
 | step6_check | 0.00 | 0.3 |

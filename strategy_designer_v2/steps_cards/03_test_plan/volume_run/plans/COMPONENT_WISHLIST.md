@@ -20,3 +20,6 @@ One block per idea that needs components the catalogue does not have.
 
 ## 003-03_heavy-volume-rise-continues_1d
 - Component: volume-weighted rise: one-day return of the close over the 20-bar standard deviation of one-bar returns, times volume[t] / mean(volume over the last 30 bars), from close and volume; signed, zero for no move, and larger as the rise is larger and the volume heavier | measures: situation
+
+## 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g2_heavy-volume-fall-rebounds_1d
+- Component: VolumeToMedianRatio: volume[t] divided by the median of the `volume` column over the prior `period` bars (default 20, bar t excluded); 1 at a typical day, growing as the day's volume exceeds its recent median | measures: comparison
