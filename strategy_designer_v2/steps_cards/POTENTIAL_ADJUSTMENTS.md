@@ -156,6 +156,12 @@ left behind; a failed rename leaves the old bytes); the bot's suite passes (1,49
 today (the folds' data is already in the files), so no run was rerun for it.
 
 ## Parked: a relative-volume component (night_run, 2026-11-17)
+**Built (operator's go, 2026-11-17):** `VolumeRatioComponent` (`period` 30): volume[t] / the mean volume of the last
+`period` bars, bar t included; catalogue row in `03_test_plan/helper/reference/component_catalogue.md`. Proof: 7 tests in
+`trading-bot/tests/test_designer_v2_components.py` (hand computation on rows up to t, later bars ignored, warm-up, NaN,
+engine run, validator); the bot's suite passes (1,515); one backtest rerun on fixed inputs
+(`night_013_run`'s momentum idea, 6 coins, 24 windows): 588 files compared, identical but for the run ids, times and
+temporary paths in protocol_summary.json. It adds a class; nothing else in the engine changes.
 Brief 003 (volume separates reversal from continuation) cannot be tested: all four of its ideas need a graded measure
 of a bar's volume against its own recent average, and no component computes one (step 3: missing-components, four
 times). The four wish-list entries converge on one component: the bar's volume divided by the mean volume of the last

@@ -28,7 +28,7 @@ python3 strategy_designer_v2/steps_cards/orchestration/run_idea/helper/run_idea.
 python3 strategy_designer_v2/steps_cards/orchestration/loop/helper/loop.py --run NAME_run --python VENV_PYTHON [IDEA_FILE] [--budget USD]
 python3 strategy_designer_v2/steps_cards/orchestration/select_next/helper/select_next.py --run NAME_run
 VENV_PYTHON -m pytest -q strategy_designer_v2/steps_cards     # the cards' tests
-VENV_PYTHON -m pytest -q trading-bot/tests                    # the bot's tests
+cd trading-bot && VENV_PYTHON -m pytest -q                   # the bot's tests (from its folder: 4 fail from the root)
 ```
 `VENV_PYTHON` is a virtual environment with `trading-bot/requirements.txt`. Each step's card says how to call its helper.
 
