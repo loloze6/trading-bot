@@ -17,13 +17,14 @@ One row per idea run; every status is read from the step's own result file. Each
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling | plan | mismatch | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.d: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains.d1_heavy-volume-selling-exhaustion, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains.d2_heavy-volume-rally-in-downtrend-fades; 7.g: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains.g1_heavy-volume-selloff-rebounds | 0.89 | 4.5 |
 | 003-01_thin-volume-rise-reverses | - | plan | inconclusive (-0.50) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: 003-01_thin-volume-rise-reverses.b1_thin-rise-reverses-in-downtrend, 003-01_thin-volume-rise-reverses.b2_heavy-volume-rise-continues; 7.d: 003-01_thin-volume-rise-reverses.d1_thin-rise-reverses-in-downtrend, 003-01_thin-volume-rise-reverses.d2_giveback-scales-with-thinness, 003-01_thin-volume-rise-reverses.d3_heavy-volume-rise-continues; 7.g: 003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on, 003-01_thin-volume-rise-reverses.g2_heavy-volume-rises-extend-further, 003-01_thin-volume-rise-reverses.g3_thin-volume-precedes-underperformance | 1.46 | 7.0 |
 | 003-02_thin-volume-drop-rebounds | - | plan | not observable (+1.27) | not profitable enough (failed: Mean daily return, Trades per bar) | 7.a: no ideas: The plan needs at least 20 independent thin-volume sharp falls. The default data gave 4 over about 48 coin-years. All the available daily data comes to roughly 100 coin-years: the 6 default coins over 8 years, about 33 coin-years of ADA/DOGE/LINK/TRX/UNI/AAVE, about 12 of AVAX/SOL/INJ and about 8 of the fold-D coins. At the observed rate that would give about 8 cases, and even at the thin-coin rate of XMR and ZEC only about 17. Since only daily bars are available, no data available would reach the minimum of 20.; 7.d: 003-02_thin-volume-drop-rebounds.d1_heavy-volume-drop-rebounds; 7.g: 003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue | 1.11 | 5.5 |
+| 003-03_heavy-volume-rise-continues | - | missing-components | - | - | - | 0.07 | 0.5 |
 
 ## Consumption
-13 ideas, 9.03 USD, 46.2 minutes in all.
+14 ideas, 9.10 USD, 46.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.14 | 6.6 |
+| step3_plan | 1.21 | 7.1 |
 | step4_backtest | 0.00 | 12.7 |
 | step5_verdict | 1.04 | 5.1 |
 | step6_check | 0.00 | 0.3 |

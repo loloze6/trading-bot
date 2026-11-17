@@ -17,3 +17,6 @@ One block per idea that needs components the catalogue does not have.
 
 ## 013-04_heavy-volume-below-high-breakout_1d
 - Component: VolumeMeanRatio: the mean of `volume` over the last 10 bars divided by the mean of `volume` over the last 90 bars, both ending at the current bar; it is 1 at usual volume and grows as recent volume gets heavier | measures: comparison
+
+## 003-03_heavy-volume-rise-continues_1d
+- Component: volume-weighted rise: one-day return of the close over the 20-bar standard deviation of one-bar returns, times volume[t] / mean(volume over the last 30 bars), from close and volume; signed, zero for no move, and larger as the rise is larger and the volume heavier | measures: situation

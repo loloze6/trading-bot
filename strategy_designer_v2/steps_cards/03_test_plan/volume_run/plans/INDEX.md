@@ -1,5 +1,6 @@
 003-01_thin-volume-rise-reverses_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 003-02_thin-volume-drop-rebounds_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+003-03_heavy-volume-rise-continues_1d: missing-components: The forecast must grow with both the one-day rise and its volume ratio together, as an AND. The config can [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 012-01_liquidation-flush-rebound_1d: missing-components: The lower wick is the distance between the bar's low and its close. Only high/low-reading components exist (ADXDirectionalComponent, KeltnerBreakoutComponent, regime [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 012-02_volume-burst-fall-reversal_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 012-03_lower-wick-flush-recovery_1d: missing-components: The idea's graded variable is the lower wick as a share of the bar's range, (close - low) / (high [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
