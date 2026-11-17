@@ -1,0 +1,44 @@
+{
+  "line": "7.d",
+  "backtest": "010-01_rsi-above-share-continuation_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.34382270000000004,
+  "findings": {
+    "F1": "The book's chained daily returns fall at most -53.0% against a yearly return of 30.6% (Calmar 0.577, below the 0.75 needed), and the deepest fall runs 413 days across w2-w5, where short positions lose a summed -0.554 against -0.132 for long positions.",
+    "F2": "Short days barely earn and long days carry the book: long days average +0.00186 per day (n=2793) against +0.00019 on short days (n=2866), and short days average -0.00002 in BTC and +0.00039 in ETH.",
+    "F3": "The short side alone has a Sharpe of 0.113, a yearly return of -1.1% and a deepest fall of -67.7%; the long side alone has a Sharpe of 1.024, a yearly return of 31.9% and a deepest fall of only -35.4%, giving a Calmar of 0.902, above the 0.75 rule.",
+    "F4": "Almost all of the book's gain is timing rather than the market's own rise: the market part is 0.000033 of a mean daily return of 0.00099, and on long days the coin's 30-day return averages +17.3% against -10.0% on short days.",
+    "F5": "Both sides do better when the coin's own 90-day return agrees with them, though the 90-day sample covers only each window's late days: shorts average +0.00082 per day when the 90-day return is negative (n=563) and -0.00036 when it is positive (n=164); longs average +0.00269 when it is positive (n=626) and -0.00258 when it is negative (n=150); longs in the top 90-day-return fifth average +0.0059 (n=294) against -0.00596 in the bottom fifth (n=29)."
+  },
+  "ideas": [
+    {
+      "idea": "The larger the share of the past 30 days that a coin's 14-day RSI has spent above its midpoint of 50, the higher the coin's return over the next 14 days, only while that share is above one half.",
+      "consequence": "A trader should lean long more heavily the longer RSI has held above 50 and should not short when RSI has mostly sat below 50, since below the midline the signal carries the book's deepest falls and no gain.",
+      "name": "RSI above-share long side",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "The larger the share of the past 30 days that a coin's 14-day RSI has spent above its midpoint of 50, the higher the coin's return over the next 14 days, only while the coin's 90-day return has the same sign as that share's distance from one half.",
+      "consequence": "A trader should follow RSI's side only when the coin's 90-day trend points the same way, and should stand aside when the two disagree.",
+      "name": "RSI share with trend agreement",
+      "from": "F1, F5",
+      "refs": [
+        "F1",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "010-01_rsi-above-share-continuation.d1_rsi-above-share-long-side",
+    "010-01_rsi-above-share-continuation.d2_rsi-share-with-trend-agreement"
+  ],
+  "no_ideas": null
+}
