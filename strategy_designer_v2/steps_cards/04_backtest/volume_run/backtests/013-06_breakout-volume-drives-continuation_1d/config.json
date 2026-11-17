@@ -1,0 +1,65 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "newhigh",
+        "class": "strategies.strategy_components.BarsSinceHighComponent",
+        "params": {
+          "lookback": 364,
+          "max_bars": 1
+        }
+      }
+    ],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "newhigh",
+              "op": "gte",
+              "value": 1
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "volratio",
+            "class": "strategies.strategy_components.VolumeRatioComponent",
+            "params": {
+              "period": 90
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 90,
+                  "min_periods": 22
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "mean_reversion": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 60,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 365,
+      "max_allocation": 2
+    }
+  }
+}
