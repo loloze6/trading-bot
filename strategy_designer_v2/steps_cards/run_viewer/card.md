@@ -84,8 +84,9 @@ in order with one result per step, and the run's cost and time.**
    - For: which coins and periods carry or sink the book.
    - Used by: the operator.
    - Without it: one averaged line hides the coin that lost.
-   - Day by day, where the backtest has chart files (`chart_bars.csv.gz`, `chart_trades.csv.gz`, written by step 4
-     for backtests confirmed by step 5 or profitable enough by step 6): per coin, the price with each trade's entry and
+   - Day by day, from the backtest's chart files (step 4): the committed `chart_bars.csv.gz` / `chart_trades.csv.gz`
+     (backtests confirmed by step 5 or profitable enough by step 6) first, then `chart_*.local.csv.gz` (every other
+     backtest; ignored by git, only on the disk where the run happened); neither: "not in the record". Per coin, the price with each trade's entry and
      exit, the book against holding the coin (each window's values over its first, windows chained in time order, from
      1), the forecast and the position, on one time axis; zoom with + / - / All, a pinch or the mouse wheel, move by
      dragging, read a day by touching it. The files are fetched when the page opens, never embedded.
@@ -127,8 +128,8 @@ The operator, by opening the page.
 - [x] Day-by-day chart per coin (price and trades, book against holding, forecast, position), zoomable on a phone:
   checked at 390 px with touch (load, tap, +, pinch, drag, coin switch, no script error) on a corrected copy of one
   backtest's chart file. Real dates from the record.
-- [ ] The committed `chart_bars.csv.gz` files hold `position` and `value` swapped (step 4's `chart_files.py`); the
-  chart is right once they are rewritten (fix prompt given to the operator, 2026-11-17).
+- [x] The swapped `position` and `value` columns are fixed at step 4 (commit 2df7d7a2); the rewritten file of the
+  checked backtest is byte-identical to the corrected copy the chart was tested on.
 - [ ] Holding all the coins on the window chart: waits for the operator's ruling on the step 6 `curve.csv` proposal.
 
 ## Open (for the operator)

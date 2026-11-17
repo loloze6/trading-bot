@@ -66,6 +66,8 @@ Ruled and built (2026-11-17, commit c7045849): step 4 writes `chart_bars.csv.gz`
 confirmed by step 5 or profitable enough by step 6; 46 backtests backfilled, 14.4 MB. Found on reading them: in
 `chart_bars.csv.gz` the `position` and `value` columns are swapped (`pd.read_csv(usecols=...)` keeps the file's column
 order, and the bar file has the value before the position); `chart_trades.csv.gz` matches a local rebuild exactly.
+Fixed at step 4 (commit 2df7d7a2, 941,357 bars checked), and every backtest now has chart files: the committed names for
+one confirmed or profitable enough, `chart_*.local.csv.gz` (ignored by git) for any other.
 
 ## The v1 viewer (`strategy-research/tools/run_viewer/`), what is kept
 Kept: read-only, one JSON per view built from the files, phone width first, no network, dark mode.

@@ -119,7 +119,7 @@ const HELP = {
   "7.f": "7.f, real and profitable: what could break the idea and its book.",
   "7.g": "7.g, patterns: what patterns the bars and the book show, whatever the verdict.",
   cols: "Each row is one 4-month window on this coin. Ret %: its net return after fees. Trades: trades in the window. Win %: share of trades that gained after costs. Fall %: deepest fall of the book from a peak inside the window. Sharpe: the window's Sharpe, from the book's daily values. In %: share of the window's bars with a position open.",
-  day: "Day by day on this coin, windows in time order (each 4-month window is a separate test; its lines are chained so they read as one). Price: the coin's close, with each trade's entry (filled dot) and exit (hollow dot), green if the trade gained after fees, red if it lost. Book: the strategy's money on this coin; Holding: the coin bought and kept; both start at 1. Forecast: the strategy's view, -20 (strong short) to +20 (strong long). Position: the share of the book in the coin after each rebalance (negative = short). Pinch or use + / - to zoom, drag sideways to move, touch to read the values.",
+  day: "Day by day on this coin, windows in time order (each 4-month window is a separate test; its lines are chained so they read as one). Price: the coin's close, with each trade's entry (filled dot) and exit (hollow dot), green if the trade gained after fees, red if it lost. Book: the strategy's money on this coin; Holding: the coin bought and kept; both start at 1, from each window's first bar (after that bar's fee if it trades on it, the same basis as step 6). Forecast: the strategy's view, -20 (strong short) to +20 (strong long). Position: the share of the book in the coin after each rebalance (negative = short). Pinch or use + / - to zoom, drag sideways to move, touch to read the values.",
   ran: "When the backtest engine ran (UTC), from the backtest's own record.",
 };
 const help = k => HELP[k] ? `<span class="help"><button type="button" aria-label="explain">?</button><span class="hb">${esc(HELP[k])}</span></span>` : "";
@@ -321,7 +321,7 @@ function backtestPage(r, i, b){
     ${bookChart(b.id + "|" + coin, vals, bk.years, bk.windows, `${esc(coin)}'s own book, its windows chained in time order.`)}
     <div class="sub">Day by day${help("day")}</div>
     ${b.chart ? `<div id="day" data-path="${esc(b.chart)}" data-coin="${esc(coin)}"><p class="muted small">Loading the chart…</p></div>`
-      : `<p class="muted small">Not in the record: chart files are written for backtests confirmed by step 5 or profitable enough by step 6.</p>`}
+      : `<p class="muted small">Not in the record: no backtest folder.</p>`}
     <div class="sub">Window by window${help("cols")}</div>
     <div class="scroll"><table class="small"><tr><th>Window</th><th class="n">Ret %</th><th class="n">Trades</th><th class="n">Win %</th><th class="n">Fall %</th><th class="n">Sharpe</th><th class="n">In %</th></tr>
       ${bk.windows.map((w, k) => { const x = rows[k]; return x ? `<tr><td>${esc(w)}<br><span class="muted">${esc(bk.years[k])}</span></td><td class="n">${pct(x[0])}</td><td class="n">${num(x[1])}</td><td class="n">${pct(x[2])}</td><td class="n">${pct(x[3])}</td><td class="n">${pct(x[4])}</td><td class="n">${pct(x[5])}</td></tr>` : `<tr><td>${esc(w)}</td><td colspan="6" class="muted">not run on this coin</td></tr>`; }).join("")}
@@ -355,8 +355,11 @@ function drawChart(el){
 
 // ------------------------------------------------------------------ day by day (chart files, loaded on demand)
 const FILES = {};
+class Missing extends Error {}
 async function fetchText(url){
-  const r = await fetch(url); if (!r.ok) throw new Error(url.split("/").pop() + ": " + r.status);
+  const r = await fetch(url);
+  if (r.status === 404) throw new Missing(url.split("/").pop());
+  if (!r.ok) throw new Error(url.split("/").pop() + ": " + r.status);
   const buf = new Uint8Array(await r.arrayBuffer());
   if (buf[0] === 0x1f && buf[1] === 0x8b)
     return await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
@@ -366,9 +369,12 @@ function csv(text){
   const lines = text.trim().split("\n"), head = lines.shift().split(",");
   return lines.map(l => { const v = l.split(","), o = {}; head.forEach((h, k) => o[h] = v[k]); return o; });
 }
+// the committed names first (a backtest confirmed or profitable enough), then the .local ones (any other backtest, on
+// the disk where its run happened); neither: not in the record
 async function chartFiles(path){
-  if (!FILES[path]) FILES[path] = Promise.all(["chart_bars.csv.gz", "chart_trades.csv.gz"].map(f => fetchText("../" + path + f)))
-    .then(([b, t]) => ({bars: csv(b), trades: csv(t)}));
+  const pair = suffix => Promise.all(["chart_bars", "chart_trades"].map(f => fetchText("../" + path + f + suffix)))
+    .then(([b, t]) => ({bars: csv(b), trades: csv(t), local: suffix !== ".csv.gz"}));
+  if (!FILES[path]) FILES[path] = pair(".csv.gz").catch(e => { if (e instanceof Missing) return pair(".local.csv.gz"); throw e; });
   return FILES[path];
 }
 const toNum = x => x === "" || x == null ? null : +x;
@@ -400,13 +406,17 @@ function coinSeries(files, coin){
 async function dayChart(el){
   let files;
   try { files = await chartFiles(el.dataset.path); }
-  catch (e) { el.innerHTML = `<p class="muted small">Chart files could not be loaded (${esc(e.message)}). Open the page through a web server or the phone link, not as a local file.</p>`; return; }
+  catch (e) {
+    el.innerHTML = e instanceof Missing
+      ? `<p class="muted small">Not in the record: no chart files for this backtest here. Committed ones exist for backtests confirmed by step 5 or profitable enough by step 6; the others' files stay on the disk where the run happened.</p>`
+      : `<p class="muted small">Chart files could not be loaded (${esc(e.message)}). Open the page through a web server or the phone link, not as a local file.</p>`;
+    return; }
   if (!document.body.contains(el)) return;
   const S = coinSeries(files, el.dataset.coin);
   if (!S.n) { el.innerHTML = `<p class="muted small">No bars for this coin in the chart files.</p>`; return; }
   const st = {i0: 0, i1: S.n - 1, cur: null};
   el.innerHTML = `<div class="zoom"><button data-z="in" aria-label="zoom in">+</button><button data-z="out" aria-label="zoom out">−</button><button data-z="all">All</button>
-    <span class="muted small">${S.n} bars · ${S.trades} trades</span></div>
+    <span class="muted small">${S.n} bars · ${S.trades} trades${files.local ? " · local files (not in git)" : ""}</span></div>
     <div class="readout" id="dro"></div><div class="day" id="dsvg"></div>`;
   const box = el.querySelector("#dsvg"), ro = el.querySelector("#dro");
   const W = 360, L = 44, R = 6, PANELS = [

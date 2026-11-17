@@ -287,7 +287,8 @@ def build_run(cards, run, files):
         bt_dir = cards / f"04_backtest/{run}/backtests/{bid}"
         backtests[bid] = {
             "id": bid, "idea": idea, "step3": s3, "dated": sorted(dated),
-            "chart": f"04_backtest/{run}/backtests/{bid}/" if (bt_dir / "chart_bars.csv.gz").is_file() else None,
+            # where its chart files would be; the page reads the committed names, then the .local ones (step 4)
+            "chart": f"04_backtest/{run}/backtests/{bid}/" if bt_dir.is_dir() else None,
             "book": book_by_window(bt_dir) if bt_dir.is_dir() else None,
             "step5": step5(cards / f"05_verification/{run}/verdicts/{bid}/result.json"),
             "step6": step6(cards / f"06_profitability/{run}/checks/{bid}/result.json"),

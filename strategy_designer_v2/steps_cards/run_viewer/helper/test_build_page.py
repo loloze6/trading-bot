@@ -145,10 +145,11 @@ def test_dates_come_from_the_record(cards):
     assert bp.stamp("00:30:00 UTC") is None and bp.stamp("2026-11-17T05:10:00+00:00") == "2026-11-17 05:10"
 
 
-def test_chart_files_are_pointed_to_when_present(cards):
-    assert the_run(cards)["backtests"][f"{ROOT}_1d"]["chart"] is None
-    w(cards / f"04_backtest/x_run/backtests/{ROOT}_1d/chart_bars.csv.gz", "x")
-    assert the_run(cards)["backtests"][f"{ROOT}_1d"]["chart"] == f"04_backtest/x_run/backtests/{ROOT}_1d/"
+def test_a_backtest_folder_gives_where_its_chart_files_are(cards):
+    # the page reads the committed names there, then the .local ones; a plan without a backtest has no place to look
+    r = the_run(cards)
+    assert r["backtests"][f"{ROOT}_1d"]["chart"] == f"04_backtest/x_run/backtests/{ROOT}_1d/"
+    assert r["backtests"][f"{CHILD}_1d"]["chart"] is None
 
 
 def test_run_brief_and_purpose(cards):
