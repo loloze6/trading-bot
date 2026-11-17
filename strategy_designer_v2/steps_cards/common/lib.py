@@ -56,6 +56,13 @@ def catalogue_version(path=CATALOGUE):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()[:12]
 
 
+def utc_now():
+    """The time a record line is written: a full UTC timestamp, YYYY-MM-DDTHH:MM:SSZ (the journals' "at"; operator,
+    2026-11-17: a run's dates come from its record, not from git)."""
+    import datetime
+    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def write_atomic(path, text):
     """Write a file whole or not at all."""
     tmp = path.with_suffix(path.suffix + ".tmp")

@@ -20,6 +20,10 @@ visibility: nothing in it controls a step (operator, 2026-11-15).
 step before it, and recorded under one run name.**
 
 - **It calls; it decides nothing.** No step is changed, skipped by judgment, or given anything its card does not say.
+- **The chart files** (2026-11-17): after step 6 it writes the record's chart files (`04_backtest/helper/chart_files.py`,
+  code only), for the run viewer, for every backtest: under the committed names for a backtest confirmed by step 5 or
+  profitable enough by step 6, under the local names (ignored by git) for any other; one journal line (`chart_files`).
+  The rule is steps 5 and 6's results, not a judgment.
 - **It stops where a step stops.** A plan that is untestable or misses a component ends the run of that idea (the
   component goes to step 3's wish list, as step 3 does).
 - **It can be resumed.** A step whose output for the idea already exists in the run is not called again, but step 3

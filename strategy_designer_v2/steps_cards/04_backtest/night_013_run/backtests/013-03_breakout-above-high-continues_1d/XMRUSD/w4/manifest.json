@@ -1,0 +1,99 @@
+{
+  "run_id": "20261117T190406Z_dfc0925e",
+  "created_utc": "2026-11-17T19:04:06.865089+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [],
+      "rules": [],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "min_allocation_change": 0.05,
+      "regimes": {
+        "unknown": {
+          "components": [
+            {
+              "id": "break_dist",
+              "class": "strategies.strategy_components.DistanceFromHighComponent",
+              "params": {
+                "period": 365,
+                "source": "high",
+                "exclude_current": 1,
+                "form": "percent"
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 365,
+                    "min_periods": 91
+                  }
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "min": 0.0
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "mean_reversion": null,
+        "chop": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 60,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 365,
+        "max_allocation": 2
+      }
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 3,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 7.5,
+        "BTCUSD": 2.5,
+        "ETHUSD": 4,
+        "AVAXUSD": 7.5,
+        "SOLUSD": 7.5
+      }
+    }
+  },
+  "config_sha256": "dfc0925e826c3553a1a35c12a891246336fdf6e6705a01e0bf107d28d6d706df",
+  "data": {
+    "symbols": [
+      "XMRUSD"
+    ],
+    "timeframe": "86400s",
+    "start": "2020-07-01 00:00:00",
+    "end": "2023-04-30 00:00:00",
+    "bar_count": 1034,
+    "data_sha256": "62b8cc763ec460fbc9ec0c141b0586338f3ce155f0ac781903fa7f18841c344d"
+  },
+  "git_sha": "d098763057da886d8160a8eddc5d97ae295658ee",
+  "engine": {
+    "lookback": 366,
+    "warmup": 366
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

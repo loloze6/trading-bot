@@ -60,3 +60,9 @@ def test_the_line_a_model_call_prints():
     assert line == ("model call: 63.0 s; tokens: input 5, cache read 600, cache write 4000, output 9000 (thinking 7000); "
                     "0.4123 USD; stop: end_turn")
     assert "cost" not in line.split(";")[2]          # run_idea's "cost: X USD" pattern must not count it twice
+
+
+def test_utc_now_is_a_full_utc_timestamp():
+    import re
+    from lib import utc_now
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", utc_now())

@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 14-bar excess forward return on run length below 50 (grid bars with forecast < 0)",
+    "value": 0.0010505394435112092,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.2845452893177063
+    },
+    "threshold": "confirm if slope < 0 with t <= -2 and supporting check passes; reject if slope > 0 with t >= +2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean 14-bar gain before costs: position x (14-bar return - coin mean 14-bar return), > 0",
+    "value": -0.00011934888030913742,
+    "passed": false
+  },
+  "counts": {
+    "independent grid cases with forecast < 0": 185,
+    "grid cases with forecast < 0, BTCUSD": 89,
+    "grid cases with forecast < 0, ETHUSD": 96,
+    "grid cases in supporting check": 185
+  },
+  "decided_by": "The slope's t lies between -2 and +2 (inconclusive rule).",
+  "reading": "Grid bars are positions 0, 14, 28, ... of each window with close[t+14] inside the window; each coin's mean 14-bar return is the mean over all its grid bars in all windows (not only forecast < 0 ones); the slope's t is from one ordinary least-squares regression on the pooled bars of the coins present in the record (BTC and ETH; BNB is absent); the plan's 'fewer is inconclusive' minimum of 100 is applied as 'not observable' per the workflow rule."
+}

@@ -7,16 +7,18 @@ active step 7 line), skips a step whose output for the idea already exists in th
 plan that is not testable), and writes the idea's row in orchestration/run_idea/<run>/table.md and table.json.
 It decides nothing: each step's own rules, entry conditions included, are the steps'.
 """
-import argparse, datetime, json, re, shutil, subprocess, sys, time
+import argparse, json, re, shutil, subprocess, sys, time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[2]
 sys.path.insert(0, str(STEPS / "common"))
-from lib import header_fields, write_atomic  # noqa: E402  (shared helpers, common/lib.py)
+from lib import header_fields, write_atomic, utc_now  # noqa: E402  (shared helpers, common/lib.py)
 sys.path.insert(0, str(STEPS / "components" / "helper"))
 import wishes  # noqa: E402  (the components step: which refusals are unblocked)
+sys.path.insert(0, str(STEPS / "04_backtest" / "helper"))
+import chart_files  # noqa: E402  (step 4's chart files, for the run viewer)
 
 import yaml  # noqa: E402
 
@@ -105,7 +107,7 @@ class Journal:
         u = self.use.setdefault(name, {"usd": 0.0, "seconds": 0.0})
         u["usd"] += cost; u["seconds"] += secs
         rel = lambda x: str(Path(x).resolve().relative_to(STEPS)) if Path(x).exists() else f"{Path(x).name} (not written)"
-        entry = {"at": datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M:%S UTC"), "run": self.run,
+        entry = {"at": utc_now(), "run": self.run,
                  "backtest": self.rid, "step": name, "action": action, "usd": round(cost, 4), "seconds": secs,
                  "model_calls": len(calls), "longest_call_seconds": max((c["seconds"] for c in calls), default=0.0),
                  "outputs": [rel(o) for o in outputs],
@@ -233,6 +235,11 @@ def main():
     j.step("step6_check", [STEPS / "06_profitability/helper/check_profitability.py", record, "--checks-dir", f["checks"]],
            [f["checks"] / rid / "check.md"])
     rc = result(f["checks"] / rid / "result.json")
+    # The chart files (the run viewer's data), for every backtest (code only): committed names for a backtest worth a
+    # chart (confirmed or profitable enough), local names, which git ignores, for any other
+    local = not chart_files.worth_a_chart(v, f["checks"] / rid / "result.json")
+    j.step("chart_files", [STEPS / "04_backtest/helper/chart_files.py", record] + (["--local"] if local else []),
+           [record / chart_files.NAMES[local][0]])
     if rc:
         failed = [m["label"] for m in rc["measures"] if not m["passed"]]
         row["step6"] = rc["status"] + (f" (failed: {', '.join(failed)})" if failed else "")

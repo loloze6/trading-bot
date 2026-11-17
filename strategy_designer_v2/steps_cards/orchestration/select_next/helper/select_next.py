@@ -7,6 +7,8 @@ line in 07x_<line>/<run>/<backtest>/ideas/), not yet tested in the run (no plan 
 or a missing-components refusal the components step has unblocked: components/card.md), not duplicates (same Idea text
 and same data as an idea tested or listed before them).
 
+Order: a brief's own ideas (generation 0) first, by score among themselves; then the others, by score (operator,
+2026-11-17: every idea of a theory is tested once before the workflow goes deep on one of them).
 score = record of the line that wrote the idea / (1 + the idea's generation)
 record = (s + 1) / (n + 2) over every analysis of that line with a tested idea, in every named run (the same idea
 read by a line in two runs is two analyses); s the analyses with a
@@ -132,7 +134,9 @@ def rank(run, root=STEPS, exclude=()):
         if key[0]:
             seen.setdefault(key, iid)
         rows.append(row)
-    cands = sorted((r for r in rows if r["status"] == "candidate"), key=lambda r: (-r["score"], r["number"], r["idea"]))
+    # a brief's own ideas first (operator, 2026-11-17), then by score
+    cands = sorted((r for r in rows if r["status"] == "candidate"),
+                   key=lambda r: (r["generation"] != 0, -r["score"], r["number"], r["idea"]))
     return cands + [r for r in rows if r["status"] != "candidate"]
 
 

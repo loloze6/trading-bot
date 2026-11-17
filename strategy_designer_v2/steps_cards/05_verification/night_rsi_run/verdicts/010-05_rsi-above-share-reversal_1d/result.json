@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of coin-demeaned 14-bar forward return on forecast",
+    "value": -0.0010096015850850398,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -1.4336813182606651
+    },
+    "threshold": "confirm if slope > 0 with t >= 2, reject if slope < 0 with t <= -2, on at least 300 independent cases"
+  },
+  "supporting_check": {
+    "name": "book mean daily timing gain before costs (> 0)",
+    "value": -0.0009853720038171532,
+    "passed": false
+  },
+  "counts": {
+    "independent cases": 384
+  },
+  "decided_by": "The slope t is between -2 and 2.",
+  "reading": "Grid bars at positions 0, 14, 28, ... of each window with a full 14-bar forward return inside the window, coin mean = mean of those grid returns over all its windows, pooled OLS with intercept; the timing check uses the position held after each day's trade times the next day's close-to-close return (before costs) minus that position times the coin's all-window mean daily return, averaged over coins per day, then over days."
+}

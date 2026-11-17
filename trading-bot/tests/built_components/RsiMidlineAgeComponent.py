@@ -1,13 +1,12 @@
 """Spec of RsiMidlineAgeComponent for the standard checks (component_harness.py), written by the components step: its settings (the defaults first) and a hand computation that uses only the rows up to bar t."""
 CLASS = 'RsiMidlineAgeComponent'
-SETTINGS = [{}, {"period": 14, "max_bars": 60, "rsi_window": 100}, {"period": 14, "max_bars": 60, "rsi_window": 100, "tie_side": "above"}]
+SETTINGS = [{}, {"period": 14, "max_bars": 60, "rsi_window": 100}]
 
 
 def hand(df, params):
     p = int(params.get("period", 14))
     m = int(params.get("max_bars", 60))
     w = int(params.get("rsi_window", 100))
-    tie = params.get("tie_side", "below")
     c = [float(x) for x in list(df["close"])]
     c = c[-(m + w):]
     for x in c:
@@ -28,9 +27,7 @@ def hand(df, params):
             else:
                 G = (1.0 - a) * G + a * gain
                 L = (1.0 - a) * L + a * loss
-        # RSI > 50 is G > L; RSI >= 50 is G >= L (G + L = 0 is RSI 50)
-        if tie == "above":
-            return G >= L
+        # RSI > 50 is G > L (G + L = 0 is RSI 50, the lower side)
         return G > L
 
     last = len(c) - 1

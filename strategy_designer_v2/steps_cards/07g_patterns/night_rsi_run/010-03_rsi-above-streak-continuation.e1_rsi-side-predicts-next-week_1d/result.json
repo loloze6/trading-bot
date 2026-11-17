@@ -1,0 +1,43 @@
+{
+  "line": "7.g",
+  "backtest": "010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.45416900000000004,
+  "findings": {
+    "F1": "The day after a coin's daily move, its next-day return runs against that move, with a regression slope t of \u22123.62 in BTCUSD and \u22123.98 in ETHUSD (2,873 daily cases each); the lowest prior-day quintile is followed by +0.44% and the highest by \u22120.06% to \u22120.14% (Welch t 2.27 and 1.91).",
+    "F2": "This next-day reversal is concentrated in the highest 20-day-volatility tercile, with a slope of \u22120.0070 per standardised prior move (t \u22125.82, n 1,612); the middle tercile shows none (t \u22120.06) and the lowest tercile leans to slight continuation (+0.0015, t 2.15).",
+    "F3": "The reversal slope is negative in every year from 2018 to 2025, and is strongest in 2020 (t \u22125.19, n 720) and 2021 (t \u22122.13).",
+    "F4": "The book's gain comes almost entirely from days held long, which average +0.26% a day over 2,920 days against +0.003% over 2,864 days held short; short trades net only +0.27% (BTC) and +0.88% (ETH) per trade against +4.5% and +5.2% for long trades.",
+    "F5": "The tested 7-day continuation is weak beside the 1-day reversal. The forecast quintiles rise monotonically in 7-day excess return, from \u22121.33% to +1.54%, but no quintile reaches |t| 2, and the sign-weighted excess falls to +0.2% in 2023 and \u22120.35% in 2024 (about 102 cases each)."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's daily volatility is high, the larger its one-day return measured in units of its own 20-day daily volatility, the more its return over the next 1 day runs in the opposite direction.",
+      "consequence": "In volatile stretches a trader would refuse to chase a large daily move and would lean against it for the following day, more so the larger the move.",
+      "name": "high-volatility next-day reversal",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "The higher a coin's own 20-day daily volatility, the more strongly its return over the next 1 day runs opposite to its return over the past 1 day.",
+      "consequence": "A trader would let a coin's recent volatility set how hard to fade its last day's move, fading it most when volatility is highest.",
+      "name": "volatility-scaled daily reversal",
+      "from": "F2, F1",
+      "refs": [
+        "F2",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week.g1_high-volatility-next-day-reversal",
+    "010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week.g2_volatility-scaled-daily-reversal"
+  ],
+  "no_ideas": null
+}

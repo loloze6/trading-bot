@@ -1,0 +1,18 @@
+{
+  "line": "7.b",
+  "backtest": "010-07_rsi-above-streak-reversal_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.28071520000000005,
+  "findings": {
+    "F1": "The tested slope points the other way from the idea, but weakly: longer above-50 RSI runs come with slightly higher 14-day excess returns (slope +0.00067, t +0.95, 199 grid cases, BTC and ETH only since BNB is absent), and the book confirms there is no reversal to harvest (timing gain -0.00061 per day, Sharpe -1.10).",
+    "F2": "The 14-day result is small and mixed in every split: BTC +0.0012 (t +1.56, n 103) against ETH -0.0002 (t -0.19, n 96); 2018-2021 +0.0007 (t +0.62, n 103) and 2022-2025 +0.0004 (t +0.61, n 96); yearly slopes switch sign, from 2021 -0.0020 (t -0.97) to 2018 +0.0068 (t +2.50, n 11).",
+    "F3": "Slopes at longer horizons look positive (continuation, not reversal) at 28 days (+0.0032, t +2.13, n 97) and 56 days (+0.0095, t +2.95, n 46), but this does not hold together: the 21-day slope is -0.0003 (t -0.23, n 111), the 42-day slope is -0.0013 (t -0.42, n 42), and the 56-day effect is all BTC (t +3.93, n 24) against ETH (t -0.16, n 22).",
+    "F4": "At 28 days the excess return is not graded with run length: runs of 1-10 days average -0.014 (n 42), 10-30 days -0.003 (n 40), 30-61 days +0.062 (t +0.94, n 15), so any slope rests on a few of the longest runs.",
+    "F5": "On the below-50 side the 14-day slope is -0.0011 (t -1.28, n 185), only clear in 2018-2021 (t -2.06, n 89) and absent in 2022-2025 (t +0.31, n 96), so neither side shows a stable graded effect."
+  },
+  "ideas": [],
+  "idea_ids": [],
+  "no_ideas": "The tested reversal shows as a weak, opposite-signed slope (F1). No coin, period, side or horizon shows a stable graded effect: the positive slopes at 28 and 56 days flip sign at 21 and 42 days and rest on BTC alone and a handful of the longest runs (F2\u2013F5). So no amended idea would give a clear answer on this data."
+}
