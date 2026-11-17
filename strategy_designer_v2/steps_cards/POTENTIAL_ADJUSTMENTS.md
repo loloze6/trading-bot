@@ -200,3 +200,8 @@ windows. The other 18 coins ran.
 
 ## Parked: the GitHub security warning (2026-11-17)
 GitHub reports 1 critical vulnerability on the default branch (Dependabot alert 1). Not examined. The operator: park.
+
+## Parked, larger topic: brief management (2026-11-17)
+The operator's grouping: **result loop back** (a file next to the brief, not inside it, saying what its run found: its
+ideas' results, its blocked ideas, where the lines went), **brief archiving**, **brief reopening**. Seen tonight: the
+answer to "which of the theory's ideas are real and pay" was written by hand in NIGHT_RUN.md; no file holds it.
