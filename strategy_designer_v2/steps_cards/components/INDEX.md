@@ -28,7 +28,6 @@ night_013_run | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-m
 night_013_run | 013-02_follow-through-stronger-near-high_1d | HighAnchoredMomentumComponent | built: HighProximityMomentumComponent {"period": 365, "power": 1.0, "proximity": "ratio", "return_period": 30}
 night_013_run | 013-03_breakout-above-high-continues_1d | DistanceAbovePriorHighComponent | exists: DistanceFromHighComponent {"exclude_current": 1, "period": 20, "source": "close"}
 night_013_run | 013-04_heavy-volume-below-high-breakout_1d | VolumeRatioComponent | exists: VolumeRatioComponent {"centred": 1, "period": 90, "short_period": 10}
-night_013_run | 013-05_longer-stall-bigger-breakout_1d | StallUnderHighCountComponent | cannot build: no answer passed the checks after 3 attempts
 night_013_run | 013-06_breakout-volume-drives-continuation_1d | VolumeRatio | exists: VolumeRatioComponent {"period": 90}
 night_013_run | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume_1d | VolumeRatioComponent | exists: VolumeRatioComponent {"centred": 1, "exclude_current": 0, "period": 30, "short_period": 1}
 night_013_run | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d | RelativeVolumeComponent | exists: VolumeRatioComponent {"centred": 1, "exclude_current": 0, "period": 20, "short_period": 1}
@@ -57,3 +56,4 @@ volume_run | 013-04_heavy-volume-below-high-breakout_1d | VolumeMeanRatio | exis
 volume_run | 003-03_heavy-volume-rise-continues_1d | volume-weighted rise | exists: VolumeWeightedScaledReturnComponent {"vol_period": 20, "volume_period": 30}
 volume_run | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g2_heavy-volume-fall-rebounds_1d | VolumeToMedianRatio | exists: VolumeRatioComponent {"exclude_current": 1, "period": 20, "statistic": "median"}
 volume_run | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal.g1_high-volume-weekend-moves-reverse_1d | VolumeWeightedScaledReturnComponent | exists: VolumeWeightedScaledReturnComponent {"vol_period": 20, "volume_period": 20}
+night_013_run | 013-05_longer-stall-bigger-breakout_1d | StallUnderHighCountComponent | built: StallUnderHighCountComponent {"band": 10.0, "period": 365, "window": 60}
