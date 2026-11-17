@@ -159,3 +159,9 @@ def test_a_build_undone_keeps_its_answers_and_checks(tmp_path, monkeypatch):
     kept = tmp_path / "components" / "builds" / "not_built" / "x_run" / "p_1d" / "Lower_Wick" / "answer.md"
     assert "FAIL real data" in kept.read_text()
     assert "x_run | p_1d | Lower Wick | cannot build" in (tmp_path / "components" / "INDEX.md").read_text()
+
+
+def test_a_spec_s_settings_are_read_with_its_comments():
+    spec = (B.SPECS / "VolumeRatioComponent.py").read_text()
+    assert B.spec_settings(spec) == [{"period": 30}, {"period": 10}, {"period": 2}]
+    assert B.spec_settings('CLASS = "X"\nSETTINGS = [{}, {"n": 2}]  # a comment\n') == [{}, {"n": 2}]

@@ -96,6 +96,15 @@ def with_count(cat, n):
     return re.sub(r"There are \d+ classes", f"There are {n} classes", cat, count=1)
 
 
+def spec_settings(text):
+    """The SETTINGS list of a spec file, read as a Python literal (a spec written by hand may carry comments)."""
+    import ast
+    for node in ast.parse(text).body:
+        if isinstance(node, ast.Assign) and any(getattr(t, "id", None) == "SETTINGS" for t in node.targets):
+            return ast.literal_eval(node.value)
+    return []
+
+
 def spec_text(name, settings, hand, before=None):
     """The spec: the defaults first, then the settings checked before (a class given a new setting keeps them), then
     this wish's."""
@@ -269,8 +278,7 @@ def build(a, python):
         write_atomic(COMPONENTS_FILE, module)
         write_atomic(CATALOGUE, with_count(with_row(saved[CATALOGUE], name, a["table"], a["row"]), len(classes_in(module))))
         SPECS.mkdir(parents=True, exist_ok=True)
-        before = json.loads(re.search(r"^SETTINGS = (.+)$", saved[SPECS / f"{name}.py"], re.M).group(1)) \
-            if saved[SPECS / f"{name}.py"] else []
+        before = spec_settings(saved[SPECS / f"{name}.py"]) if saved[SPECS / f"{name}.py"] else []
         write_atomic(SPECS / f"{name}.py", spec_text(name, a["settings"], a["hand"], before))
         cmd = [python, HARNESS, SPECS / f"{name}.py", "--real-data", "--catalogue", CATALOGUE]
         with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as old:

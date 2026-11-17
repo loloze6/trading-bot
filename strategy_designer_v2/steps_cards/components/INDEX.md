@@ -5,7 +5,6 @@ night_005_run | 005-02_bullish-rsi-divergence-rebound_1d | RsiLowDivergence | bu
 night_006_run | 006-04_upside-squeeze-break-continuation_1d | RangeCompressionRatioComponent | built: RangeCompressionRatioComponent {"long_period": 100, "short_period": 20}
 night_006_run | 006-05_downside-squeeze-break-continuation_1d | RangeCompressionRatio | exists: RangeCompressionRatioComponent {"long_period": 100, "short_period": 20}
 night_012_run | 012-01_liquidation-flush-rebound_1d | VolumeRatioComponent | exists: VolumeRatioComponent {"period": 30}
-night_012_run | 012-01_liquidation-flush-rebound_1d | LowerWickComponent | cannot build: no answer passed the checks after 3 attempts
 night_012_run | 012-02_volume-burst-fall-reversal_1d | VolumeRatioComponent | exists: VolumeRatioComponent {"period": 30}
-night_012_run | 012-03_lower-wick-flush-recovery_1d | LowerWickShareComponent | cannot build: no answer passed the checks after 3 attempts
 night_012_run | 012-03_lower-wick-flush-recovery_1d | VolumeRatioComponent | exists: VolumeRatioComponent {"period": 30}
+night_012_run | 012-04_flush-depth-retracement-size_1d | LowerWickShareComponent | built: LowerWickShareComponent {}

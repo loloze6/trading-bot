@@ -2169,3 +2169,54 @@ class RangeCompressionRatioComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return self.long_period
+
+
+class LowerWickShareComponent(SubStrategyComponent):
+    """
+    The share of the current bar's range that is lower wick, on every bar:
+
+        raw_value = (min(open[t], close[t]) - low[t]) / (high[t] - low[t])
+        raw_value = 0.0 when high[t] == low[t]  (a zero range has no wick)
+
+    Graded, from 0 to 1, never negative, no direction. It is 0 when the bottom of the body is the bar's low (no lower
+    wick). It is 1 when the open and the close both sit at the high and the whole range lies below the body. It grows
+    continuously as the low sits further below the body. On real bars open and close lie in [low, high], so the value
+    stays in [0, 1].
+
+    Warm-up: 1 bar (bar t itself).
+
+    NaN: a NaN open, high, low or close on bar t gives NaN; it is never turned into a number. A missing column raises.
+
+    WHY THIS CANNOT LEAK: it reads only the `open`, `high`, `low` and `close` of the last row of the data (bar t). All
+    four are known at bar t's close. No earlier or later row is used.
+    """
+
+    def __init__(self, name="LowerWickShare", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        row = data.iloc[-1]
+        o = float(row['open'])
+        h = float(row['high'])
+        l = float(row['low'])
+        c = float(row['close'])
+        if np.isnan(o) or np.isnan(h) or np.isnan(l) or np.isnan(c):
+            value = float("nan")
+        else:
+            rng = h - l
+            value = (min(o, c) - l) / rng if rng > 0 else 0.0
+        self._raw_value = float(value)
+        self.confidence = 1.0
+        self.debug_info = {'open': o, 'high': h, 'low': l, 'close': c}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return 1
