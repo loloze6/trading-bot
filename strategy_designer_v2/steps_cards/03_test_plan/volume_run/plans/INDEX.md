@@ -2,3 +2,4 @@
 012-02_volume-burst-fall-reversal_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 012-03_lower-wick-flush-recovery_1d: missing-components: The idea's graded variable is the lower wick as a share of the bar's range, (close - low) / (high [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 012-04_flush-depth-retracement-size_1d: missing-components: Two parts of the idea need intrabar shape: the long lower wick and the bar's drop from open to low. [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g2_rising-volume-precedes-gains_1d: missing-components: The situation is mean(volume, last 5 bars) / mean(volume, last 30 bars). `VolumeRatioComponent` gives only the current bar's volume over [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
