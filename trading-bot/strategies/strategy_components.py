@@ -2478,16 +2478,16 @@ class RsiMidlineAgeComponent(SubStrategyComponent):
         RSI(i) = 100 x G(i) / (G(i) + L(i)); G(i), L(i) = EWM (alpha 1/period, adjust=False, seeded at the first
         change) of the gains max(d, 0) and losses max(-d, 0) of the `rsi_window` one-bar close changes d ending at
         bar i. G + L = 0 is RSI 50.
-        up(i) = G(i) > L(i)    (RSI > 50; tie_side "below", the default: RSI 50 counts on the lower side)
-        up(i) = G(i) >= L(i)   (RSI >= 50; tie_side "above": RSI 50 counts on the upper side)
+        up(i) = G(i) > L(i)    (RSI > 50; an RSI of exactly 50 counts on the lower side)
         n = length of the run of bars ending at t with the same up/down side as bar t, capped at max_bars
         raw_value = +n if up(t) else -n
 
     Range: -max_bars .. -1 and +1 .. +max_bars, integers, never 0. Positive on the upper side, negative on the lower
     side. The size grows by one for each further bar on the same side.
     Warm-up: max_bars + rsi_window rows, bar t included.
-    NaN: a NaN close anywhere in the last max_bars + rsi_window rows gives NaN. `period` < 1, `max_bars` < 1,
-    `rsi_window` < `period`, or a `tie_side` other than "below"/"above" raises when the component is built.
+    NaN: a NaN close anywhere in the last max_bars + rsi_window rows gives NaN. `period` < 1, `max_bars` < 1 or
+    `rsi_window` < `period` raises when the component is built. (A `tie_side` setting, added by the components step,
+    was removed on 2026-11-17: it changed nothing on real data, rule 2.)
 
     WHY THIS CANNOT LEAK: it reads only the `close` column of the last max_bars + rsi_window rows of data, the last
     being bar t; every RSI it uses ends at a bar i <= t.
@@ -2498,15 +2498,12 @@ class RsiMidlineAgeComponent(SubStrategyComponent):
         self.period = int(self.parameters.get("period", 14))
         self.max_bars = int(self.parameters.get("max_bars", 60))
         self.rsi_window = int(self.parameters.get("rsi_window", 100))
-        self.tie_side = self.parameters.get("tie_side", "below")
         if self.period < 1:
             raise ValueError(f"RsiMidlineAgeComponent: period must be >= 1, got {self.period}")
         if self.max_bars < 1:
             raise ValueError(f"RsiMidlineAgeComponent: max_bars must be >= 1, got {self.max_bars}")
         if self.rsi_window < self.period:
             raise ValueError(f"RsiMidlineAgeComponent: rsi_window must be >= period, got {self.rsi_window}")
-        if self.tie_side not in ("below", "above"):
-            raise ValueError(f"RsiMidlineAgeComponent: tie_side must be 'below' or 'above', got {self.tie_side!r}")
         self._raw_value = 0.0
 
     def _up(self, closes: np.ndarray) -> bool:
@@ -2519,8 +2516,6 @@ class RsiMidlineAgeComponent(SubStrategyComponent):
         for k in range(1, len(d)):
             g = (1.0 - a) * g + a * float(gains[k])
             l = (1.0 - a) * l + a * float(losses[k])
-        if self.tie_side == "above":
-            return g >= l
         return g > l
 
     def update(self, data: pd.DataFrame):
