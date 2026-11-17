@@ -1,0 +1,19 @@
+{
+  "status": "mismatch",
+  "situation_check": {
+    "agreement": 0.6122389110537433,
+    "passed": false
+  },
+  "main_measure": {
+    "name": "pooled slope of demeaned 30-bar forward return on forecast",
+    "value": null,
+    "statistic": null,
+    "threshold": "t >= 2 confirms (with timing gain > 0); t <= -2 rejects; otherwise inconclusive; at least 300 cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "active bars": 17044
+  },
+  "decided_by": "Fewer than 90% of active bars have a forecast sign equal to the sign of the standardised distance relative to its usual depth (closeness + offset), as the Fidelity's graded closer-than-usual long / farther short rule requires.",
+  "reading": "Expected side taken as sign(closeness + offset) from the recorded standardised values; samples at window positions 0,30,60,90 kept only when t+30 lies in the window; coin mean 30-bar return taken over the same non-overlapping samples of all its windows; OLS slope with intercept; timing gain computed before costs as position after bar t's trade x next-bar coin return, averaged across coins per day then over days."
+}

@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades_1d
+idea tested: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3245 USD
+---
+## Findings
+- **F1:** When the coin's 30-day return is positive, its 7-day return predicts its next 7-day excess return. The pooled slope is +0.0150 per standard deviation with t 3.33 over 888 non-overlapping cases. Quintiles of the 7-day return run from -0.011 in the weakest to +0.020 and then +0.040 (t 2.94) in the strongest, so the effect is graded and sits mostly in the top two fifths.
+- **F2:** This momentum inside rising months has a positive slope in all six coins, but only XRPUSD (t 2.29) and ZECUSD (t 2.65) are significant on their own. It is positive in 6 of 8 years (2022 t 3.08, 2024 t 2.71, 2025 t 4.99), and 2023 goes the other way (t -2.54).
+- **F3:** When the 30-day return is negative, the same 7-day return slope turns negative (-0.0081, t -1.93, n 789). Short-term moves tend to continue in rising months and partly reverse in falling months, which is a split the tested distance-from-high forecast does not capture.
+- **F4:** Inside falling months, distance from the 52-week high does not order the next 7 days. Its quintiles are +0.003, +0.005, -0.027 (t -3.69), -0.004 and -0.011, which is not a monotonic pattern, and the pooled slope is -0.0058 (t -1.61, n 1177). This agrees with the inconclusive verdict.
+- **F5:** The next day after a Thursday or Friday bar beats the next day after other bars in all six coins (LTCUSD t 3.88, the others t 0.78 to 1.66) and in 7 of 8 years (2019 t 5.82, 2018 t 2.42). Friday bars alone are followed by a mean of +0.0043 per day (t 5.27, n 2414). This is a calendar condition, not a graded situation.
+- **F6:** Over the next 7 days, high recent volume relative to its 20-day average is followed by higher returns, with pooled slope t 2.16 and the lowest quintile at -0.0157 (t -3.10). The effect is confined to 2024 (t 4.37) and 2025 (t 4.13) and is near zero or negative in the other six years, so I do not count it as robust after this many angles.
+- **F7:** The book's mean daily return is below holding in every coin (for example ETHUSD -0.00031 against +0.00137, and BTCUSD -0.00006 against +0.00118). It is also below holding in every year except 2018 and 2022, when the coins fell, so the book mostly gave up the market's rise.
+
+## Ideas
+- `013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum` (from F1, F2, F3): While a coin's 30-day return is positive, the larger its 7-day return, the higher its return over the next 7 days.
+- `013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g2_falling-month-weekly-reversal` (from F3, F1): While a coin's 30-day return is negative, the larger its 7-day return, the lower its return over the next 7 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

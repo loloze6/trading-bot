@@ -101,3 +101,27 @@ window left out 0.73: **it passes every bar of step 6's rule, where none of the 
 trading theory of your choice"; step 1's list of the 11 briefs already written keeps it from repeating one), each in
 its own run (`night_012_run`, `night_013_run`), 10 USD each. Outcomes: A to D, F as above.
 
+**Stage 5 (03:00 to 03:57 UTC; briefs 013 and 012, each in its own run).** **Outcome A, for the first time.**
+- **Brief 013** (anchoring to the recent high; `night_013_run`, 10.49 + 0.04 USD for step 2; stopped on the budget):
+  20 ideas, 10 tested: 4 confirmed, 3 inconclusive, 3 mismatch; 10 not testable (missing components: volume against
+  its average, breaking a past high). The lines walked away from the brief's theory (nearness to the high) to
+  momentum: in 5 generations, 7.d then 7.g turned "near the high, the coin gains" into "in a rising two months, the
+  larger the two-week rise, the larger the next week".
+- **The first confirmed idea with a profitable book:** `013-01…g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends`.
+  Idea: "Among coins whose 60-day return is positive, the larger a coin's 14-day rise, the higher its return over the
+  next 7 days" (long only). Step 5: confirmed, t +2.79 on 1,234 independent weekly cases, timing gain +0.06 % a day.
+  Step 6, every bar passed: Sharpe 1.15 (holding: 0.55 lower), mean 0.076 % a day (about 32 % a year), lowest Sharpe
+  with one window left out 0.99, Calmar 1.53, 0.15 trades a bar.
+- **Caveat, as for the combined book:** found on the same data it was tested on, as the 8th tested idea of one lineage,
+  each child written from what its parent's book showed. It is a well-known effect (trend following), which makes it
+  more plausible, not proven. What decides is data the analysis never saw: the parked topic "proven and profitable,
+  what next", the operator's to open. Not opened tonight.
+- **Brief 012** (liquidation flush and partial rebound; `night_012_run`, 0.21 + 0.05 USD): 4 ideas, all missing
+  components (volume against its average, the lower wick). Outcome F again: 5 of the 7 briefs tried tonight are
+  blocked by the catalogue.
+
+**Stage 6, written before it starts (04:00 UTC).** Purpose: let the loop go on in `night_013_run` (the only open
+lineage that pays), 10 USD more (run total 20 USD), by `select_next`'s score as is. Its queue holds 27 candidates,
+among them this idea's own child on 4-hour bars (score 0.125, low in the queue: the score is the operator's, not
+changed). Outcomes: A to D, F as above; plus **G**: another confirmed and profitable idea, or the 4-hour child
+confirming the momentum effect on other bars.

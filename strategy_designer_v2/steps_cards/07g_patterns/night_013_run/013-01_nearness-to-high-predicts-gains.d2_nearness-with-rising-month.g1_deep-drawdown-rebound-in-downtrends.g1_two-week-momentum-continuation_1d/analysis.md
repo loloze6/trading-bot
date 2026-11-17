@@ -1,0 +1,27 @@
+---
+line: 7.g patterns
+backtest: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation_1d
+idea tested: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3800 USD
+---
+## Findings
+- **F1:** The book's whole timing gain sits on its long side: long bars earn 0.00121 a day above the coin's mean drift (t 3.61, n 8559), while short bars earn 0.000025 (t 0.10, n 8762), and short bars lose 0.00048 a day in raw gain (t -1.87).
+- **F2:** In each coin the short side's raw bar gain is at or below zero (BTC -0.0003, LTC -0.0007, XMR -0.0011, XRP -0.0006, ZEC -0.0002, ETH +0.00007), while the long side's is positive in all six (from 0.00008 for LTC to 0.0040 for XRP).
+- **F3:** The forecast's edge does not rise steadily with the 14-day return. Coins in the 2nd and 3rd ret14 deciles (14-day falls of roughly 7–19 %) lose 3.0 % and 2.2 % more than their coin's mean over the next 7 days (t -3.14 and -2.82). That loss shows in all six coins (-1.9 % to -3.2 %). The deepest-fall decile is flat (+0.3 %, t 0.36, n 216). On the rising side, deciles 9–10 gain +1.9 % and +2.4 % (t 2.04 and 1.79).
+- **F4:** Among rising coins the 14-day return still sorts the next 7 days (slope 0.071, t 2.58, n 581). Among coins whose 60-day return is negative, the slope is weaker (0.060, t 1.63, n 566).
+- **F5:** Nearness to the 30-day high carries no information beyond the 14-day return: in a joint regression its t is -0.76, while ret14 keeps t 3.80 (n 1723).
+- **F6:** Closes above the prior 30-day high are followed by a 7-day return 4.5 % above the coin's mean (t 2.28, n 108), against -0.2 % for other bars (t -0.60, n 1615). The excess holds in the two highest volume quintiles (+5.9 %, t 1.61, n 30; +5.4 %, t 1.92, n 62). Given how many angles were checked, this is marginal.
+- **F7:** The forecast slope is the same across volatility terciles (t 2.63, 2.43, 2.01). It is uneven across years: only 2020 (t 2.75) and 2025 (t 2.35) clear 2, and 2018 is negative (t -0.77).
+- **F8:** The book earns less than holding the coins in 15 of 24 windows. It beats holding mainly in windows where the coins fell, for example w7 (book +0.0007 a day vs hold -0.0047), w14 (+0.0011 vs -0.0043) and w2 (+0.0014 vs -0.0038).
+- **F9:** Next-day coin returns on Thursdays and Fridays exceed the other days in every coin (LTC +0.76 %, t 3.88; XMR t 2.03). The gap comes from 2018–2019 (t 3.37 and 5.82) and is near zero from 2021 on (t -0.08 to 1.57). It is a calendar effect that fades over time, so no graded idea is drawn from it.
+
+## Ideas
+- `013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends` (from F1, F2, F3, F4): Among coins whose 60-day return is positive, the larger a coin's 14-day rise, the higher its return over the next 7 days.
+- `013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g2_break-of-30-day-high` (from F5, F6): The further a coin's close stands above its highest high of the previous 30 days, the higher its return over the next 7 days.
+- `013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g3_moderate-falls-keep-falling` (from F3, F2): The larger a coin's 14-day fall, up to the deepest falls, the lower its return over the next 7 days, while coins with the deepest 14-day falls rebound.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

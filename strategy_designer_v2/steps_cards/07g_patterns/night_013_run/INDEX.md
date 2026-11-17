@@ -1,0 +1,10 @@
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades_1d: 2 ideas (2 explorations)
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g3_strong-day-follow-through-in-uptrends_1d: 3 ideas (2 explorations)
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week_1d: 3 ideas (3 explorations)
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side_1d: 1 ideas (2 explorations)
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends_1d: 1 ideas (3 explorations)
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g3_moderate-falls-keep-falling_1d: 2 ideas (2 explorations)
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation_1d: 3 ideas (2 explorations)
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends_1d: 2 ideas (2 explorations)
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month_1d: 2 ideas (3 explorations)
+013-01_nearness-to-high-predicts-gains_1d: no ideas: The only pattern that stands out after this many looks is the Saturday effect (F3). It is a calendar condition with no gradation, so it cannot be written as a graded idea, and the graded candidates (F4, F5) disappear under rank or winsorised measures.

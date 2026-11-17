@@ -1,0 +1,22 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 7-bar excess forward return on forecast, trending grid bars",
+    "value": 0.0011019688412906928,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.0129388707763742
+    },
+    "threshold": "slope > 0 with t >= 2 confirms; slope < 0 with t <= -2 rejects; at least 100 grid cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "trending grid cases": 1215
+  },
+  "decided_by": "The slope is positive with t >= 2 on at least 100 grid cases (the confirm rule).",
+  "reading": "The coin's mean 7-bar return is taken over all non-overlapping grid bars of all its windows, whatever their regime. 'Trending' grid bars are read from the recorded regime column. In the situation check, the 30-bar return is recomputed from prices, falling back to the recorded regime on the first 30 bars of a window. The expected side there is the sign of the raw zday value, or of the 1-bar return where zday is not recorded."
+}

@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of coin-demeaned non-overlapping 7-bar forward return on forecast",
+    "value": 0.000791329958371967,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.262463916331115
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and timing gain > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "book mean daily gain before costs minus gain from market's own rise (timing)",
+    "value": 0.000617278255263165,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases": 2443
+  },
+  "decided_by": "Slope positive with t >= 2 and the timing part of the book's gain is above 0.",
+  "reading": "Each coin's mean 7-bar return is the mean of its non-overlapping grid returns over all windows; the book's gain before costs is the held allocation times the next close-to-close return, averaged over coins per day, and its market part uses each coin's mean daily return over all windows."
+}
