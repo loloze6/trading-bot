@@ -1,0 +1,22 @@
+---
+line: 7.d not profitable
+backtest: 010-07_rsi-above-streak-reversal_1d
+idea tested: 010-07_rsi-above-streak-reversal
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3170 USD
+---
+## Findings
+- **F1:** The book loses on both coins, and the timing part is a loss, not only the market part: Sharpe is -1.10 and the deepest fall is -97%. BTC's mean daily gain is -0.00132 (t -3.44), split into -0.00089 timing and -0.00042 market rise. ETH's is -0.00058 (t -1.73), split into -0.00028 timing and -0.00030 market rise.
+- **F2:** The loss sits where the short is largest, in RSI-above-50 runs of 5 to 40 days. There the daily gain is -0.0017, -0.0022 and -0.0044 at allocations of -0.30, -0.62 and -1.05. In the same runs the coin's next-day return beats its average by +0.0023 (t 1.31, n 467), +0.0030 (t 1.85, n 597) and +0.0024 (t 1.58, n 665). The coin keeps rising inside its above-50 runs instead of reversing.
+- **F3:** The reversal the idea bets on appears only in runs over 40 days, and it is tiny: excess next-day return is -0.00085 (t -0.34, n 348) and the timing gain is +0.0005. Over all above-50 bars, the slope of excess return on run length is flat (t -0.28 daily; the plan's 14-day slope t is +0.95).
+- **F4:** The mirror side follows its RSI too: in runs below 50 the coin's next-day excess return is -0.0013, -0.0016 and -0.0021 (t -0.86, -1.32, -1.44). On the 7-day grid, runs of 5 to 20 days below 50 show an excess of -0.0187 (t -2.28, n 174).
+- **F5:** Inside above-50 runs, the two middle quartiles of the coin's 60-day return carry the continuation and the book's largest losses: excess +0.0034 (t 2.11) and +0.0036 (t 2.14), book gain -0.0029 and -0.0048. The top 60-day quartile shows only -0.0006 (t -0.30).
+- **F6:** The book lost in the windows where the coin rose and gained only where it fell. Examples: w17 coin +0.0062 against book -0.0063, w11 +0.0099 against -0.0027, w21 +0.0038 against -0.0032. It gained in w14 (coin -0.0048, book +0.0001) and w2 (coin -0.0040, book +0.0001). So no single window carries the failure, and the Sharpe with one window left out stays at -1.17.
+
+## Ideas
+- `010-07_rsi-above-streak-reversal.d1_rsi-midline-run-continuation` (from F1, F2, F4, F6): The longer a coin's 14-day RSI has stayed on one side of 50 without a break, the more its return over the next 7 days follows that side: higher after long runs above 50, lower after long runs below 50.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

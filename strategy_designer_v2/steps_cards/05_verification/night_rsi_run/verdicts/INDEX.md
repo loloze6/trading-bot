@@ -6,3 +6,4 @@
 010-04_rsi-below-streak-continuation_1d: inconclusive (fit: exact) [main: 0.00105054; OLS slope t 1.28455; independent grid cases with forecast < 0 185, grid cases with forecast < 0, BTCUSD 89, grid cases with forecast < 0, ETHUSD 96, grid cases in supporting check 185]
 010-05_rsi-above-share-reversal_1d: inconclusive (fit: exact) [main: -0.0010096; OLS slope t -1.43368; independent cases 384]
 010-06_rsi-below-share-reversal_1d: inconclusive (fit: exact) [main: -0.00118394; OLS slope t -1.6513; non-overlapping cases with a non-zero forecast 373, active bars 5694]
+010-07_rsi-above-streak-reversal_1d: inconclusive (fit: adapted) [main: 0.000672987; OLS slope t 0.954735; grid cases with RSI above 50 199, grid cases with forecast below 0 (regression sample) 199]

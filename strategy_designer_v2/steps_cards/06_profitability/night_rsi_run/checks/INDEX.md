@@ -6,3 +6,4 @@
 010-04_rsi-below-streak-continuation_1d: not profitable enough [Sharpe 0.01853; Sharpe minus holding's Sharpe -0.621; Calmar -0.05278]
 010-05_rsi-above-share-reversal_1d: not profitable enough [Sharpe -0.839; Sharpe minus holding's Sharpe -1.479; Calmar -0.3893]
 010-06_rsi-below-share-reversal_1d: not profitable enough [Sharpe -0.8664; Sharpe minus holding's Sharpe -1.506; Calmar -0.3908]
+010-07_rsi-above-streak-reversal_1d: not profitable enough [Sharpe -1.102; Sharpe minus holding's Sharpe -1.741; Calmar -0.3449]
