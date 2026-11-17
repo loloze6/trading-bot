@@ -66,7 +66,8 @@ def call_components(args):
     """The components step on the run's open wishes; its summary line."""
     cmd = [sys.executable, str(BUILDER), "--runs", args.run, "--python", args.python] + (["--model", args.model] if args.model else [])
     p = subprocess.run(cmd, capture_output=True, text=True)
-    return p.returncode, ((p.stdout + p.stderr).strip().splitlines()[-1:] or [""])[0]
+    out = p.stdout.strip().splitlines() or p.stderr.strip().splitlines()      # its summary is its last line on stdout
+    return p.returncode, (out[-1:] or [""])[0]
 
 
 def components_due(args, why_stop):

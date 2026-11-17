@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of pooled slope of demeaned 14-bar forward return on forecast (non-overlapping grid, trending, non-zero forecast)",
+    "value": 3.3193890146145056e-06,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.0035439292193346662
+    },
+    "threshold": "confirm if t >= 2 with timing part > 0; reject if t <= -2; at least 100 independent grid cases"
+  },
+  "supporting_check": {
+    "name": "timing part of book mean daily return over trending-regime bars",
+    "value": 0.0010623262520137687,
+    "passed": true
+  },
+  "counts": {
+    "independent grid cases": 191,
+    "active bars": 2993
+  },
+  "decided_by": "The slope's t is between -2 and 2.",
+  "reading": "Low-volatility regime taken from the recorded `regime` == 'trending' (the detector's volrank <= 0.5 rule, not recomputable inside windows without warm-up), side from the raw RSI share against 0.5; coin mean 14-bar return taken over all grid bars of all its windows; a book daily return postRebalance_total_value[t+1]/postRebalance_total_value[t]-1 is attributed to bar t and kept when bar t is trending; fewer than 100 grid cases gives 'not observable'."
+}
