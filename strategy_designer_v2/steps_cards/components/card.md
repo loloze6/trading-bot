@@ -37,7 +37,9 @@ measure).
 **A component is one measure of the market, computed at a bar's close from the coin's own bars (or a feed) up to that
 bar, that a config can use as a forecast source or in a regime rule.** Five rules:
 1. **One measure, named by what it measures**, never by the idea that asked for it. Two wishes for the same measure get
-   one component.
+   one component. The same quantity against another base, window or statistic is the same measure: one component, the
+   base a setting (operator, 2026-11-17: the more standard and reusable, the better; exercise 1 built the lower wick
+   over the range and over the price as two classes, merged into `LowerWickComponent`).
 2. **A setting is added only when a wish needs a value the component does not have**; its default keeps the
    component's output as it was.
 3. **Graded**: its value grows with what it measures (step 3 refuses an on/off forecast).

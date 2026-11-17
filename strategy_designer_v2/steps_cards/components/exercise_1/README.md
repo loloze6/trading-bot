@@ -55,6 +55,11 @@ The run was stopped twice to load a fix, each time during a model call (no build
 **Findings for the operator:**
 - **Standardization, a rule to make precise:** the lower wick over the range and over the close were built as two
   classes. One measure with a setting (what it is divided by), or two measures? The card's rule 1 does not say.
+  **Ruled (operator):** "the more standard and reusable, the better": one measure, its base a setting. Rule 1 and the
+  prompt say so; the two classes merged into `LowerWickComponent` (`relative_to` "range" or "close"): every check
+  passes; 87,008 values on 19 coins identical to the two classes'; proof 588 files identical, bot suite 1,524 passed.
+  Their index lines keep the names built then (the record).
+- **Step 3's on/off wish:** the operator: not to act on unless it recurs.
 - **Step 3 wished an on/off measure** (the bearish divergence: 0 except at a new high). The step answered cannot build,
   rightly. The fault is in step 3's wish, not here: a graded form of the idea is step 3's to find.
 - **Cost:** about 0.15 USD a wish, 2 minutes; a build about 3 minutes (most of it the proof).

@@ -6,7 +6,8 @@ against the component catalogue and give one of three answers.
 A component is one measure of the market, computed at a bar's close from the coin's own bars up to that bar (the last
 row of the data it is given is bar t; it never sees a later row), that a strategy config uses as a forecast source or
 in a regime rule. Five rules:
-1. One measure, named by what it measures (`<Measure>Component`), never by the idea that asked for it.
+1. One measure, named by what it measures (`<Measure>Component`), never by the idea that asked for it. The same
+   quantity against another base, window or statistic is the same measure: one component, the base a setting.
 2. A setting (a parameter) is added only when the wish needs a value a component does not have; its default keeps the
    component's output exactly as it was.
 3. Graded: its value grows continuously with what it measures (never on/off).
