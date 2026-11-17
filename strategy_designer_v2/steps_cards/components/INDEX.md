@@ -50,3 +50,6 @@ night_run | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.
 night_run | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal.g1_high-volume-weekend-moves-reverse_1d | VolumeWeightedScaledReturn | exists: VolumeWeightedScaledReturnComponent {"vol_period": 20, "volume_period": 20}
 volume_run | 012-01_liquidation-flush-rebound_1d | LowerWickComponent | exists: LowerWickComponent {"relative_to": "range"}
 volume_run | 012-03_lower-wick-flush-recovery_1d | LowerWickShareComponent | exists: CloseLocationInRangeComponent {"reference": "low"}
+volume_run | 012-04_flush-depth-retracement-size_1d | LowerWickComponent | exists: LowerWickComponent {"relative_to": "range"}
+volume_run | 012-04_flush-depth-retracement-size_1d | OpenToLowDropComponent | exists: OpenToLowDropComponent {}
+volume_run | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g2_rising-volume-precedes-gains_1d | VolumeMeanRatio | exists: VolumeRatioComponent {"period": 30, "short_period": 5}
