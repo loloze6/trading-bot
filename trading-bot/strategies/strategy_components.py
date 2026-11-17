@@ -2389,27 +2389,36 @@ class ConvexHighProximityComponent(SubStrategyComponent):
 
 class RsiAboveMidlineShareComponent(SubStrategyComponent):
     """
-    The share of recent bars on which the Wilder RSI of the closes was above 50, centred on zero:
+    How persistently the RSI has held one side of its midline over the last `window` bars:
 
-        raw_value = #{ i in t-window+1 .. t : RSI(i) > 50 } / window - 0.5
+        raw_value = (number of bars i in t-window+1 .. t on the counted side) / window - 0.5
 
-    RSI(i) = 100 x G / (G + L). G and L are the EWMs (alpha 1/period, adjust=False, seeded at the first change)
-    of the gains max(d, 0) and losses max(-d, 0) of the rsi_window one-bar close changes d ending at bar i.
-    RSI(i) > 50 exactly when G > L. When G + L = 0 the RSI is 50, which is not above 50.
+        counted side: RSI(i) > 50, i.e. G(i) > L(i)   (side = "above", default, today's output)
+                      RSI(i) < 50, i.e. G(i) < L(i)   (side = "below")
 
-    Range: -0.5 (never above 50 in the window) to +0.5 (always above), in steps of 1/window; signed and graded.
-    Warm-up: window + rsi_window rows, bar t included.
-    NaN: a NaN close anywhere in the last window + rsi_window rows gives NaN.
+        RSI(i) = 100 x G / (G + L). G and L are the EWMs (alpha = 1/period, adjust=False, seeded at the first change)
+        of the gains max(d, 0) and losses max(-d, 0) of the rsi_window one-bar close changes d ending at bar i
+        (closes i-rsi_window .. i). When G + L = 0 the RSI is 50, which is neither above nor below 50.
 
-    WHY THIS CANNOT LEAK: it reads only the `close` column of the last window + rsi_window rows of data, the
-    last of which is bar t; each RSI(i) uses closes up to bar i <= t.
+    Range: -0.5 to +0.5 in steps of 1/window, signed. It is +0.5 when every bar of the window is on the counted side
+    and -0.5 when none is. Graded: it grows by 1/window for each further bar on the counted side.
+    Warm-up: window + rsi_window rows, bar t included (the oldest RSI needs rsi_window changes, so rsi_window + 1
+    closes).
+
+    NaN: a NaN close anywhere in the last window + rsi_window rows gives NaN. A missing `close` column raises.
+    These settings raise when the component is built: period < 1, window < 1, rsi_window < period, and a side other
+    than "above" or "below".
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last window + rsi_window rows of data, the last
+    row being bar t. Each RSI(i) uses closes up to bar i <= t.
     """
 
-    def __init__(self, name="RsiAboveMidlineShare", weight=1.0, parameters=None):
+    def __init__(self, name="RsiMidlineShare", weight=1.0, parameters=None):
         super().__init__(name, weight, parameters or {})
         self.period = int(self.parameters.get("period", 14))
         self.window = int(self.parameters.get("window", 30))
         self.rsi_window = int(self.parameters.get("rsi_window", 100))
+        self.side = self.parameters.get("side", "above")
         if self.period < 1:
             raise ValueError(f"RsiAboveMidlineShareComponent: period must be >= 1, got {self.period}")
         if self.window < 1:
@@ -2417,6 +2426,8 @@ class RsiAboveMidlineShareComponent(SubStrategyComponent):
         if self.rsi_window < self.period:
             raise ValueError(
                 f"RsiAboveMidlineShareComponent: rsi_window must be >= period, got {self.rsi_window} < {self.period}")
+        if self.side not in ("above", "below"):
+            raise ValueError(f"RsiAboveMidlineShareComponent: side must be 'above' or 'below', got {self.side!r}")
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -2425,24 +2436,33 @@ class RsiAboveMidlineShareComponent(SubStrategyComponent):
         self.debug_info = {}
         if not self.is_ready():
             return
-        n = self.get_required_periods()
-        closes = data['close'].astype(float).iloc[-n:].to_numpy()
+        n = self.window + self.rsi_window
+        closes = data['close'].astype(float).to_numpy()[-n:]
         if np.isnan(closes).any():
             self._raw_value = float("nan")
             self.confidence = 1.0
             return
         alpha = 1.0 / self.period
-        above = 0
+        count = 0
         for j in range(self.window):
             seg = closes[j:j + self.rsi_window + 1]
-            d = np.diff(seg)
-            g = pd.Series(np.where(d > 0, d, 0.0)).ewm(alpha=alpha, adjust=False).mean().iloc[-1]
-            l = pd.Series(np.where(d < 0, -d, 0.0)).ewm(alpha=alpha, adjust=False).mean().iloc[-1]
-            if g > l:
-                above += 1
-        self._raw_value = float(above / self.window - 0.5)
+            diffs = np.diff(seg)
+            gains = np.where(diffs > 0, diffs, 0.0)
+            losses = np.where(diffs < 0, -diffs, 0.0)
+            g = gains[0]
+            l = losses[0]
+            for k in range(1, len(diffs)):
+                g = (1.0 - alpha) * g + alpha * gains[k]
+                l = (1.0 - alpha) * l + alpha * losses[k]
+            if self.side == "above":
+                if g > l:
+                    count += 1
+            else:
+                if g < l:
+                    count += 1
+        self._raw_value = float(count) / self.window - 0.5
         self.confidence = 1.0
-        self.debug_info = {'bars_above_50': above, 'window': self.window}
+        self.debug_info = {'bars_on_side': count, 'window': self.window, 'side': self.side}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
