@@ -81,3 +81,19 @@ precede large moves) in `night_006_run`, then brief 005 (RSI divergence) in `nig
 Outcomes: as above (A to D); and **F**: their ideas are refused too, so the catalogue, not the theories, is the limit
 on new research until components are added.
 
+**Stage 4 (02:51 to 02:53 UTC; 0.29 USD).** Outcome **F**. Brief 006 (`night_006_run`): 3 ideas "untestable" (they
+predict a larger move without its direction, which a long/short book cannot trade) and 2 missing-components. Brief 005
+(`night_005_run`): 2 ideas, both missing-components (price-RSI divergence). With 003 and 010: **4 of the 5 briefs tried
+cannot be tested with today's catalogue**; only 011 could.
+
+**A diagnostic, no model call, no new backtest (02:55 UTC):** one book made of the 18 confirmed ideas' books (demo_run
+and night_run), equal weight, measured exactly as step 6 does (`06_profitability/night_run/diagnosis/`). The books
+move together little (mean correlation 0.20). The one book: Sharpe 0.90 (a single book: median 0.48), 0.34 above
+holding, Calmar 0.98, mean 0.027 % a day; sized to a single book's volatility (x2): 0.054 % a day, lowest Sharpe with one
+window left out 0.73: **it passes every bar of step 6's rule, where none of the 18 does alone.**
+- **Caveat, decisive:** these 18 ideas were chosen because they were confirmed on this same data, and several are
+  variants of one effect. This is in-sample: a direction, not a result. It must be judged on data the analysis never
+  saw (the parked unseen-data question) before anything is concluded.
+- **What it points to:** "what makes small real effects pay" has a first answer to test: combine them. That is the
+  parked topic "proven and profitable, what next": the operator's to open.
+
