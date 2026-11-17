@@ -1847,14 +1847,31 @@ class WeekdayComponent(SubStrategyComponent):
 
 class DistanceFromHighComponent(SubStrategyComponent):
     """
-    Percent distance of the close below its recent highest close, on every bar:
+    Percent distance of the close from a recent high, on every bar:
 
-        raw_value = (close[t] - H[t]) / H[t] x 100,   H[t] = the highest of the last `period` closes (bar t included)
+        exclude_current = 0 (default): H = max(src[t - period + 1 .. t])   (bar t included)
+        exclude_current = 1:           H = max(src[t - period .. t - 1])   (bar t excluded)
+        raw_value = (close[t] - H) / H x 100
 
-    Graded and one-sided: 0 at a new high, more negative the deeper the close sits below it. No lag: H includes bar t's
-    close. Closes only, no lookahead. No scaling_factor: the config's transforms scale it.
+    src is the `close` column (source "close", default) or the `high` column (source "high").
+    The defaults (source "close", exclude_current 0) give the original output.
 
-    NaN: a window that holds a NaN close gives NaN. A `period` below 2 raises when the component is built.
+    Range and sign:
+    - With exclude_current 0 the value is 0 to -100 and never positive: 0 at a new high, more negative the deeper
+      below it.
+    - With exclude_current 1 the value is -100 and up, unbounded above: positive and growing as the close clears
+      the prior high further, negative below it.
+    Graded.
+
+    Warm-up: period + exclude_current rows, bar t included.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column (and the `high` column with source "high") of the rows up
+    to and including bar t (the last row of data), over at most the last period + exclude_current rows. A bar's
+    close and high are known at that bar's close.
+
+    NaN: a NaN in the window, a NaN close[t], or an H not above 0 gives NaN.
+    Building the component raises for a period below 2, a source other than "close" or "high", or an
+    exclude_current other than 0 or 1.
     """
 
     def __init__(self, name="DistanceFromHigh", weight=1.0, parameters=None):
@@ -1862,6 +1879,14 @@ class DistanceFromHighComponent(SubStrategyComponent):
         self.period = int(self.parameters.get("period", 60))
         if self.period < 2:
             raise ValueError(f"DistanceFromHighComponent: period must be >= 2, got {self.period}")
+        src = self.parameters.get("source", "close")
+        if src not in ("close", "high"):
+            raise ValueError(f"DistanceFromHighComponent: source must be 'close' or 'high', got {src!r}")
+        self.source = src
+        ex = self.parameters.get("exclude_current", 0)
+        if ex not in (0, 1):
+            raise ValueError(f"DistanceFromHighComponent: exclude_current must be 0 or 1, got {ex!r}")
+        self.exclude_current = int(ex)
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -1870,18 +1895,30 @@ class DistanceFromHighComponent(SubStrategyComponent):
         self.debug_info = {}
         if not self.is_ready():
             return
-        window = data['close'].iloc[-self.period:].astype(float)
-        high = float(window.max(skipna=False))
-        last_close = float(window.iloc[-1])
-        self._raw_value = (last_close - high) / high * 100.0
+        close = data['close'].astype(float)
+        src = data[self.source].astype(float)
+        if self.exclude_current:
+            win = src.iloc[-(self.period + 1):-1]
+        else:
+            win = src.iloc[-self.period:]
+        last = float(close.iloc[-1])
+        if bool(win.isna().any()) or np.isnan(last):
+            self._raw_value = float("nan")
+            h = float("nan")
+        else:
+            h = float(win.max())
+            if not h > 0:
+                self._raw_value = float("nan")
+            else:
+                self._raw_value = float((last - h) / h * 100.0)
         self.confidence = 1.0
-        self.debug_info = {'recent_high': high, 'close': last_close}
+        self.debug_info = {'high_level': h, 'close': last}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
     def get_required_periods(self) -> int:
-        return self.period
+        return self.period + self.exclude_current
 
 
 class VolatilityScaledReturnComponent(SubStrategyComponent):
