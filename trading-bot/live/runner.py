@@ -110,7 +110,6 @@ class LiveSession:
         self.fetch_interval = int(cfg["fetch_interval_seconds"])
         n = 1 + len(list(self.run_dir.glob("session_*")))
         self.session_dir = self.run_dir / f"session_{n:02d}"
-        self.session_dir.mkdir()
 
         start_value = cfg["start_value"]
         snapshot = self._account_snapshot()
@@ -121,10 +120,12 @@ class LiveSession:
             start_value = snapshot["value"]
         start_value = float(start_value)
 
+        self.session_dir.mkdir()   # only once the start is possible: a refused start leaves no empty session
         self.parts = build_book(self.run_dir / "strategy_config.json", self.symbol, self.interval,
                                 self.fetch_interval, start_value, self.session_dir, mode="live")
         self.strategy = self.parts["strategy"]
         if self.strategy.required_feeds:
+            shutil.rmtree(self.session_dir)
             raise SystemExit(f"the strategy needs aux feeds {sorted(self.strategy.required_feeds)}; "
                              "live runs do not support aux feeds yet")
         self.data_manager = self.parts["data_manager"]
