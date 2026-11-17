@@ -2,6 +2,7 @@
 010-01_rsi-above-share-continuation.g1_rsi-share-continuation-calm-markets_1d: not profitable enough [Sharpe 0.6085; Sharpe minus holding's Sharpe -0.03103; Calmar 0.3365]
 010-01_rsi-above-share-continuation_1d: not profitable enough [Sharpe 0.8297; Sharpe minus holding's Sharpe 0.1901; Calmar 0.5774]
 010-02_rsi-below-share-continuation_1d: not profitable enough [Sharpe 0.8297; Sharpe minus holding's Sharpe 0.1901; Calmar 0.5774]
+010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d: profitable enough [Sharpe 1.03; Sharpe minus holding's Sharpe 0.39; Calmar 1.14]
 010-03_rsi-above-streak-continuation_1d: profitable enough [Sharpe 1.04; Sharpe minus holding's Sharpe 0.4007; Calmar 0.9158]
 010-04_rsi-below-streak-continuation_1d: not profitable enough [Sharpe 0.01853; Sharpe minus holding's Sharpe -0.621; Calmar -0.05278]
 010-05_rsi-above-share-reversal_1d: not profitable enough [Sharpe -0.839; Sharpe minus holding's Sharpe -1.479; Calmar -0.3893]

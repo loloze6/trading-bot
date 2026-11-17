@@ -2,6 +2,7 @@
 010-01_rsi-above-share-continuation.g1_rsi-share-continuation-calm-markets_1d: inconclusive (fit: exact) [main: 3.31939e-06; OLS slope t 0.00354393; independent grid cases 191, active bars 2993]
 010-01_rsi-above-share-continuation_1d: inconclusive (fit: exact) [main: 1.65376; OLS slope t 1.65376; independent 14-bar samples 384, samples with forecast > 0 187, samples with forecast < 0 186]
 010-02_rsi-below-share-continuation_1d: inconclusive (fit: exact) [main: 0.0156167; t of the mean 1.59469; independent grid cases in total 384, grid cases BTCUSD 192, grid cases ETHUSD 192, coins with negative Spearman 2]
+010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d: confirmed (fit: exact) [main: 0.0134365; ordinary t of the mean 2.92925; independent cases 815, cases BTCUSD 408, cases ETHUSD 407, cases forecast > 0 410, cases forecast < 0 405]
 010-03_rsi-above-streak-continuation_1d: inconclusive (fit: exact) [main: 1.48446; OLS slope t 1.48446; grid cases in total 384, cases with a forecast above 0 199]
 010-04_rsi-below-streak-continuation_1d: inconclusive (fit: exact) [main: 0.00105054; OLS slope t 1.28455; independent grid cases with forecast < 0 185, grid cases with forecast < 0, BTCUSD 89, grid cases with forecast < 0, ETHUSD 96, grid cases in supporting check 185]
 010-05_rsi-above-share-reversal_1d: inconclusive (fit: exact) [main: -0.0010096; OLS slope t -1.43368; independent cases 384]
