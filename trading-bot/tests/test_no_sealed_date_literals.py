@@ -67,7 +67,7 @@ import pytest
 import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-_POLICY = PROJECT_ROOT.parent / "strategy-research" / "config" / "campaign_data_policy.yaml"
+_POLICY = PROJECT_ROOT / "config" / "campaign_data_policy.yaml"
 
 EXCLUDED_PARTS = ("tests", "venv", ".venv", "__pycache__", "results", "local_data")
 # Positive control: the scan must at least reach the file where the incident

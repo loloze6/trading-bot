@@ -316,14 +316,20 @@ def test_engine_without_vol_target_matches_master_bar_for_bar(monkeypatch):
     df = _daily(300, seed=8)
     df["stddev_24"] = df["close"].rolling(24).std()
     n = 0
+    both_ready = 0
     for i in range(1, len(df) + 1):
         new.update(df.iloc[:i])
         old.update(df.iloc[:i])
         for regime in (MarketRegime.UNKNOWN, MarketRegime.TRENDING, MarketRegime.CHOP):
-            assert new.is_ready(regime) == old.is_ready(regime)
-            assert new.forecast(regime) == old.forecast(regime)
+            # Fix B (2026-11-16, operator: Option 1) makes the engine ready at the rows its config declares,
+            # so it can be ready before the old engine, never after; forecasts are compared where both are ready.
+            if old.is_ready(regime):
+                assert new.is_ready(regime)
+                assert new.forecast(regime) == old.forecast(regime)
+                both_ready += 1
             n += 1
     assert n == 900
+    assert both_ready > 0
 
 
 def test_shipped_strategy_config_required_bars_unchanged(monkeypatch):

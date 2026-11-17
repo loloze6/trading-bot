@@ -9,10 +9,10 @@ What it does, in order:
   1. Reads the plan's header: coins, bar size, fold, outcome. A plan whose outcome is untestable or missing-components
      is not run; its index line says so. A plan whose config and data are those of its stored record is not rerun.
   2. Maps each coin to the venue the engine can reach here (Kraken, USD-quoted: BTC -> BTCUSD) and builds the
-     protocol the pipeline's backtest wrapper reads: the fold's windows from strategy-research/tools/research_folds.py
+     protocol the pipeline's backtest wrapper reads: the fold's windows from trading-bot/backtest/research_folds.py
      (which refuses any window touching the sealed holdout), the bar size, and the venue keys from
-     strategy-research/tools/venue_resolver.py. The protocol is written to a temporary folder only: it holds dates.
-  3. Runs strategy-research/tools/run_protocol.py (the pipeline's wrapper around the bot's run_backtest, with warm-up
+     trading-bot/backtest/venue_resolver.py. The protocol is written to a temporary folder only: it holds dates.
+  3. Runs trading-bot/backtest/run_protocol.py (the pipeline's wrapper around the bot's run_backtest, with warm-up
      prefetch and the holdout guard) once per coin, on all the coin's windows, so Python and the bot load once per
      coin. That call is used only when every window got its own run folder. The engine names a run folder after the
      current second, so two windows finishing in the same second share one; and the wrapper stops at the first window
@@ -38,7 +38,7 @@ from lib import write_atomic  # noqa: E402  (shared helpers, common/lib.py)
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[3]
-SR = REPO / "strategy-research"
+BT = REPO / "trading-bot" / "backtest"   # the backtest wrapper and its helpers (moved from strategy-research/tools/, 2026-11-16)
 KEEP = ["metrics.json", "manifest.json", "forecast_distribution.csv"]
 KEEP_GZ = ["bars.csv", "trades.json"]   # the large ones, gzipped
 CATALOGUE = HERE.parents[1] / "03_test_plan" / "helper" / "reference" / "component_catalogue.md"
@@ -112,11 +112,11 @@ def protocol(python, symbol, bar, folds):
     """The protocol dict, built by the pipeline's own fold loader and venue resolver (run in the venv). Several folds:
     their windows one after the other, in the order given."""
     code = (
-        "import json, sys; sys.path.insert(0, 'tools'); sys.path.insert(0, '../trading-bot');"
+        "import json, sys; sys.path.insert(0, '.'); sys.path.insert(0, '..');"
         "import research_folds as rf, venue_resolver as vr;"
         f"p = {{'symbols': [{symbol!r}], 'timeframe': {bar!r}, 'windows': [w for f in {folds!r} for w in rf.fold_windows(rf.load_folds(), f)]}};"
         f"p.update(vr.resolve({VENUE[0]!r}, {VENUE[1]!r})); print(json.dumps(p))")
-    r = subprocess.run([python, "-c", code], cwd=SR, capture_output=True, text=True)
+    r = subprocess.run([python, "-c", code], cwd=BT, capture_output=True, text=True)
     if r.returncode:
         sys.exit(f"could not build the protocol: {r.stderr[-500:]}")
     return json.loads(r.stdout)
@@ -126,9 +126,9 @@ def call_protocol(python, config_path, proto, windows, tmp):
     """One call of the pipeline's wrapper on these windows, in its own temporary folder.
     Returns (exit code, log without dates, the call's output folder)."""
     (tmp / "protocol.json").write_text(json.dumps(dict(proto, windows=windows)))
-    r = subprocess.run([python, "tools/run_protocol.py", str(config_path), str(tmp / "protocol.json"),
+    r = subprocess.run([python, "run_protocol.py", str(config_path), str(tmp / "protocol.json"),
                         "--out-dir", str(tmp / "out"), "--legacy-verdict-retired", "--trades-file-in-out-dir"],
-                       cwd=SR, capture_output=True, text=True, timeout=6 * 3600)
+                       cwd=BT, capture_output=True, text=True, timeout=6 * 3600)
     return r.returncode, re.sub(r"20\d\d-\d\d(-\d\d)?", "<date>", (r.stdout + r.stderr)), tmp / "out"   # no dates stored
 
 
@@ -287,7 +287,7 @@ def main():
     write_atomic(dest / "run.md", f"# Backtest of {plan_id}\n\n"
                  f"- Plan: `{os.path.relpath(plan_path, dest)}`\n- Config: `config.json` (a copy of the plan's config)\n"
                  f"- Data: {h['data-instruments']} as {', '.join(f'{b}USD' for b in coins(h['data-instruments']))}; {bar} bars; {period}\n"
-                 f"- Venue: {venue}\n- Engine: strategy-research/tools/run_protocol.py around trading-bot's run_backtest, unchanged; warm-up loaded before each window\n\n"
+                 f"- Venue: {venue}\n- Engine: trading-bot/backtest/run_protocol.py around trading-bot's run_backtest, unchanged; warm-up loaded before each window\n\n"
                  + "\n".join(report) + "\n")
     ran = any(" not run" not in s for s in summary)
     index_line(index_path, plan_id, f"{plan_id}: {'ran' if ran else 'not run'}: {'; '.join(summary)} [{bar}, {period}]")

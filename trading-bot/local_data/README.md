@@ -12,7 +12,7 @@ mysterious.
 
 **The range `2026-01-01` → `2026-06-30` is a FROZEN, SINGLE-USE holdout.**
 
-Defined at `strategy-research/config/campaign_data_policy.yaml:18` (`holdout_range`),
+Defined at `trading-bot/config/campaign_data_policy.yaml:18` (`holdout_range`),
 governed by the rule at that file's lines 8–9 — *"no stage, tool, prescreen, or
 diagnostic may read candles inside this range except the (future) holdout_evaluation
 stage"* — and by `holdout_failure_is_terminal: true` (`:199`): if a strategy fails on
@@ -67,7 +67,7 @@ column read), **seven loose CSVs at this directory's root carry rows inside
 files" block); the three that were tracked were removed from the index with
 `git rm --cached`. Working copies are untouched — this changes what the repo *publishes*,
 not what is on your disk. Registered at
-`strategy-research/config/campaign_data_policy.yaml`
+`trading-bot/config/campaign_data_policy.yaml`
 (`binance_cache_holdout_contaminated`).
 
 **Repository HISTORY still contains them.** The three tracked files were committed from

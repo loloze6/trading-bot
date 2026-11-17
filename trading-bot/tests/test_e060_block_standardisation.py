@@ -149,16 +149,22 @@ def test_engine_without_block_keys_matches_pre_s3a_engine_bar_for_bar(monkeypatc
     new.set_indicators({"stddev_24": lambda df: df["close"].rolling(24).std()})  # stored, unused
     df = _ohlcv(400, seed=4)
     n_compared = 0
+    both_ready = 0
     for i in range(1, len(df) + 1):
         new.update(df.iloc[:i])
         old.update(df.iloc[:i])
         for regime in (MarketRegime.UNKNOWN, MarketRegime.TRENDING, MarketRegime.CHOP):
-            assert new.is_ready(regime) == old.is_ready(regime)
-            assert new.forecast(regime) == old.forecast(regime)
+            # Fix B (2026-11-16, operator: Option 1) makes the engine ready at the rows its config declares,
+            # so it can be ready before the old engine, never after; forecasts are compared where both are ready.
+            if old.is_ready(regime):
+                assert new.is_ready(regime)
+                assert new.forecast(regime) == old.forecast(regime)
+                both_ready += 1
             n_compared += 1
         assert new.get_required_periods() == old.get_required_periods()
         assert new.required_feeds() == old.required_feeds()
     assert n_compared == 1200
+    assert both_ready > 0
     assert new._block_regimes == {}
 
 

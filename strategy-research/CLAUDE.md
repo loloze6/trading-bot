@@ -5,6 +5,13 @@ ledger) and its rules on how we work apply here too and are not repeated. The
 current research workflow is `strategy_designer_v2/steps_cards/`; this folder's
 own workflow is the earlier campaign's.
 
+Since 2026-11-16 this folder is reading material, not running code: the backtest tools step 4
+uses (run_protocol.py and its helpers, the folds, the holdout guard, the venue and costs) moved to
+`trading-bot/backtest/` and `trading-bot/config/`, so the campaign's code that imports them no
+longer runs and its test suite is not run. Its last runnable state is commit `c534774`
+(`git checkout c534774` to run it as it was). Still live here: `tools/recorder/` and
+`tools/holdout_date_gate.sh`.
+
 ## 1. Objective and overview
 
 A research-only trading strategy factory: it generates, expands, validates,

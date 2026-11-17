@@ -42,7 +42,7 @@ from collections import defaultdict
 import sys
 import os
 
-_HERE = os.path.dirname(os.path.abspath(__file__))               # strategy-research/tools/
+_HERE = os.path.dirname(os.path.abspath(__file__))               # trading-bot/backtest/
 _REPO = os.path.dirname(os.path.dirname(_HERE))                    # repo root
 _TBOT = os.path.join(_REPO, "trading-bot")                         # trading-bot/
 for _p in (_HERE, _TBOT):

@@ -5,8 +5,14 @@ Why this exists
 ---------------
 This repository holds two independent pytest suites that share code:
 
-  * ``trading-bot/tests/``            — the bot engine
-  * ``strategy-research/``            — ``tests/`` + ``tools/recorder/tests/``
+  * ``trading-bot/tests/``                   — the bot engine and its backtest wrapper (``backtest/``)
+  * ``strategy-research/tools/recorder/``    — the Kraken recorder's tests
+  * ``strategy_designer_v2/steps_cards/``    — the research workflow's cards
+
+Since 2026-11-16 the earlier campaign's own suite (``strategy-research/tests/``) is not run: the
+backtest tools it imports moved to ``trading-bot/backtest/``, and the campaign is kept as reading
+material, not as running code (its last runnable state is recorded in ``strategy-research/CLAUDE.md``).
+The notes below describe the earlier two-suite setup.
 
 ``trading-bot/pytest.ini`` sets ``testpaths = tests``, so the habitual
 verification command (``cd trading-bot && python -m pytest``) never collects
@@ -84,7 +90,8 @@ REPO_ROOT = Path(__file__).resolve().parent
 #                       tests/-scoped run silently drops.
 SUITES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     ("trading-bot", "trading-bot", ()),
-    ("strategy-research", "strategy-research", ()),
+    ("recorder", "strategy-research/tools/recorder", ()),
+    ("cards", "strategy_designer_v2/steps_cards", ()),
 )
 
 # strategy-research has no pytest.ini, so it has no default marker filter;
