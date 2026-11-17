@@ -66,7 +66,7 @@ def utc_now():
 def write_atomic(path, text):
     """Write a file whole or not at all."""
     tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(text)
+    tmp.write_text(text, encoding="utf-8")
     os.replace(tmp, path)
 
 
@@ -86,7 +86,7 @@ def header_fields(text):
 
 def common_text(name):
     """A shared definition, common/<name>.md."""
-    return (COMMON / f"{name}.md").read_text()
+    return (COMMON / f"{name}.md").read_text(encoding="utf-8")
 
 
 # What step 3 reads of an idea file (operator, 2026-11-14): the same subset whatever step wrote it (step 2 or step 7).

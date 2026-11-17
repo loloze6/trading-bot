@@ -26,7 +26,7 @@ def wishes_of(run, root=STEPS):
     out = {}
     if not p.exists():
         return out
-    for block in re.split(r"^## ", p.read_text(), flags=re.M)[1:]:
+    for block in re.split(r"^## ", p.read_text(encoding="utf-8"), flags=re.M)[1:]:
         pid, _, body = block.partition("\n")
         out[pid.strip()] = [(wish_name(w), w.strip()) for w in WISH.findall(body)]
     return out
@@ -40,7 +40,7 @@ def answers(root=STEPS):
     """{(run, plan id, wish name): answer} from components/INDEX.md (the last line wins)."""
     p = index_path(root)
     out = {}
-    for l in (p.read_text().splitlines() if p.exists() else []):
+    for l in (p.read_text(encoding="utf-8").splitlines() if p.exists() else []):
         parts = [x.strip() for x in l.split(" | ", 3)]
         if len(parts) == 4 and parts[0].endswith("_run"):
             out[tuple(parts[:3])] = parts[3]
@@ -69,7 +69,7 @@ def unblocked(plan, root=STEPS, catalogue=CATALOGUE):
     """True when a missing-components plan's idea can be planned again: every wish of its refusal is answered built
     or exists, and the catalogue has changed since the refusal (a refusal written with today's catalogue would be the
     same refusal again: it stays blocked, a finding on step 3)."""
-    from_header = header_fields(Path(plan).read_text())
+    from_header = header_fields(Path(plan).read_text(encoding="utf-8"))
     if from_header.get("outcome") != "missing-components":
         return False
     if from_header.get("catalogue") == catalogue_version(catalogue):
