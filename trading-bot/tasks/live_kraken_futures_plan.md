@@ -64,31 +64,52 @@ which a loop is writing to; this branch is a separate worktree and never pushes 
 - Risks: real money (sign or size error), order timing (sent seconds after the bar close, the backtest fills at the
   close), Kraken's 720-candle limit for longer warm-ups, a restart loses the parallel book (first version).
 
-## 3. Plan (small steps; each ends with its proof)
+## 3. Operator's rulings (2026-11-17, first review)
+- Kraken only; Binance is dropped (its live code is removed in step 2).
+- The backtest on Kraken Futures candles is another session's work; not touched here.
+- No holdout in live: the live path reads any candle it needs.
+- Remaining risks (timing, spot/perp, funding, risk management) accepted for now.
+- 1: first run with orders off. 6: on stop, close the positions (today's behaviour, kept). 8: the local book starts at
+  the real account's value.
+- 2: candles from Kraken Futures. Instrument `PF_XBTUSD`: Kraken's BTC perpetual, linear (quoted and settled in USD,
+  1 contract = 1 BTC, step 0.0001 BTC). `PI_XBTUSD` is the inverse one (margined and settled in BTC), which the book's
+  USD arithmetic does not fit.
+- 3: fetch finer and aggregate. Measured: over the last 30 days, Kraken Futures' daily candle equals the 24 hourly
+  candles aggregated, on every field (0 differences). So 1h is fetched and aggregated to 1d. The day closes as soon
+  as its 23:00 hour is complete (not when the next row arrives), so the decision comes about one poll (60 s) after
+  midnight UTC.
+- 5: the strategy is `night_013_run / 013-01 ... b1_nearness-to-high-more-coins_1d` (step 5 confirmed, step 6
+  profitable; Sharpe 1.246, Calmar 1.675 in step 6's record). Long-only, daily, vol-target sizing (60 days, cap 2).
+  required_bars 456, so the warm-up is 2 x 456 = 912 days (Kraken Futures daily history starts 2022-03).
+  Run on BTC (`PF_XBTUSD`): the engine trades one coin.
+
+## 4. Plan (small steps; each ends with its proof)
 
 | # | Step | Files | Effort | Risk | Proof |
 |---|---|---|---|---|---|
-| 0 | Baseline: run fixed backtests on this branch's start commit and keep their files (regression fixture + one step-4 Kraken daily run) | none (a compare script) | S | low | the baseline itself |
-| 1 | Kraken connection: spot candles, futures account/positions/orders, target switch, keys from environment variables, truststore. Read-only command `main.py live_check` | new `trading-bot/live/` | S | low | unit tests on recorded replies; live_check prints the last complete bars (and the account, once keys exist) |
-| 2 | Live candle feed: poll every 60 s, keep completed candles only, feed them through `add_row` (the backtest's own path), close a bar when its last candle is in; warm-up replays history through the same callback with the backtest's warm-up cutoff. Replaces the Binance sampler in `DataManager`'s live branch | `live/`, `data/data_manager.py` (live branch only) | M | medium | replay test: recorded candles through the feed and through a backtest give identical bars and forecasts; backtest rerun = step 0 files |
-| 3 | **First live run, orders off**: real data, strategy, parallel book only (mock fills, as in a backtest), one row per bar written as it happens | `live/`, `core/launcher.py` (new command) | M | low (no money) | after N bars, a backtest over the same recorded candles gives the same portfolio files |
-| 4 | Real account: portfolio read from Kraken (shape above), orders to the perpetual (market; close = reduce-only of the real position), fills read back; real book and parallel book side by side; orders-off mode logs the orders it would send | `live/` | M | high | tests against a fake exchange (signs, sizes, rounding, failures); one orders-off day showing the would-be orders |
-| 5 | First run with real orders: demo if Kraken grants access (same switch), else a small real account sized by the operator; real vs parallel compared each day | none | S | high (money) | the daily comparison |
-| 6 | Clean-up list for the operator's go: remove Binance live code (`ExecutionHandler`, `PortfolioInfo`, `OtherPortfolioOperations`, two CLI commands, the price sampler, `python-binance`) | several | S | low | backtest rerun = step 0 files |
+| 0 | Baseline: run fixed backtests on the start commit and keep their files | a compare script | S | low | the baseline itself |
+| 1 | Kraken Futures connection (ccxt, truststore, target switch real / demo URL, keys from environment variables) and a read-only `main.py live_check` | new `trading-bot/live/` | S | low | unit tests on recorded replies; live_check prints the last complete candles and the account value |
+| 2 | Live candle feed: poll every 60 s, completed 1h candles only, fed through `add_row`, the day closed when its last hour is in; warm-up replays 912 days through the same callback with the backtest's warm-up cutoff. Binance live code removed | `live/`, `data/data_manager.py` (live branch), `execution/`, `core/launcher.py`, `requirements.txt` | M | medium | recorded candles through the feed and through a backtest give identical bars and forecasts; backtest rerun = step 0 files |
+| 3 | First live run, orders off: real account value read, local book (the backtest's own classes) started at that value, one row per bar written as it happens, candles recorded | `live/`, `core/launcher.py` | M | low | after N bars, a backtest over the recorded candles gives the same book |
+| 4 | Real book: account read from Kraken, orders to `PF_XBTUSD` (market; close = reduce-only of the real position), fills read back, next to the local book | `live/` | M | high | fake-exchange tests; one orders-off day showing the would-be orders |
+| 5 | First real orders on a small real account | none | S | money | daily real vs local comparison |
 
-Not touched: `strategies/strategy_components.py`, `strategies/strategy_engine.py`, the strategy configs, the research
-workflow.
+Not touched: `strategies/strategy_components.py`, `strategies/strategy_engine.py`, the configs, the research workflow,
+the backtest's Kraken Futures work.
 
-## 4. Decisions for the operator
-1. Demo retired: first runs with orders off (step 3), then real orders on a small real account? Or apply to Kraken
-   for test access first?
-2. Decisions on Kraken spot candles (what the backtest reads), orders on `PF_XBTUSD`?
-3. Granularity: fetch the completed bar at the bar's own interval (exactly the backtest's candle) by default, 1m as a
-   setting? (1m-built bars can differ when minutes are missing; at bar close they add nothing to the decision.)
-4. Warm-up and the seal: never read sealed-period candles; start on 1h bars (10-day warm-up); a daily strategy starts
-   only once enough post-seal history exists, else the bot refuses and says how many days are missing?
-5. Strategy and timeframe of the first run (config file, coin, bar)?
-6. On stop: keep positions (restart reads them back), instead of today's close-all?
-7. Keys: no credential form exists in a local session. The operator sets two Windows user environment variables
-   (names given at step 4); the key has trade permission, no withdrawal; Claude never sees it?
-8. Parallel book starting value: the real account's value at start, or 1000 as in backtests?
+## 5. Open: live book and backtest book
+Option A (recommended): both books inside the live process, one candle feed, two bots, each with its own strategy
+from the same config; the local book uses the backtest's own classes. Comparison at every bar; independent of the
+other session. Option B: live records its candles and the backtest engine reruns on them automatically. It is the
+literal backtest, but it needs the Kraken Futures backtest (other session), and the backtest's seal guard refuses a
+912-day warm-up reaching into the sealed period. B kept as a later check, fed by the candles step 3 records.
+
+## 6. API key (operator)
+1. Kraken Pro, Settings, Connections & API, Futures tab: create a key. General API: Read only (enough for steps 1
+   to 4); Withdrawal API: No access. A Full access key replaces it only at step 5.
+2. Copy the public and private keys (shown once).
+3. Windows: Start, type "environment variables", open "Edit environment variables for your account"; under User
+   variables, New: `KRAKEN_FUTURES_API_KEY` = public key; New: `KRAKEN_FUTURES_API_SECRET` = private key; OK. Not in a
+   PowerShell line (its history file keeps it in clear text), not in any file of the repository.
+4. Restart the terminal and Claude Code so they see the variables. The check prints "key found: yes/no" and the
+   account value, never the key.
