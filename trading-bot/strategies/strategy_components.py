@@ -2365,3 +2365,65 @@ class OpenToLowDropComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return 1
+
+
+class ConvexHighProximityComponent(SubStrategyComponent):
+    """
+    How close the close is to its recent high, made convex by a power, on every bar:
+
+        H[t] = max(close[t - period + 1 .. t])                  (bar t included)
+        D[t] = (H[t] - close[t]) / H[t] x 100                   (percent depth below the high, >= 0)
+        raw_value = (1 / (1 + D[t])) ^ power
+
+    Range: above 0, up to 1, never negative. It is 1 at a new high and smaller the deeper the close sits
+    below the high. For positive closes D <= 100, so the value is at least 101^(-power). There is no direction.
+    With power > 1 the value climbs faster the nearer the close is to the high.
+    Graded: the value moves continuously with the depth.
+    Warm-up: `period` rows, bar t included.
+
+    NaN: a NaN close anywhere in the last `period` rows gives NaN. A highest close not above 0 also gives NaN.
+    A missing `close` column raises. A `period` below 2, or a `power` not above 0, raises when the component
+    is built.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last `period` rows of data, the last row
+    being bar t; every close used is known at bar t's close.
+    """
+
+    def __init__(self, name="ConvexHighProximity", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 365))
+        if self.period < 2:
+            raise ValueError(f"ConvexHighProximityComponent: period must be >= 2, got {self.period}")
+        self.power = float(self.parameters.get("power", 2.0))
+        if not np.isfinite(self.power) or self.power <= 0:
+            raise ValueError(f"ConvexHighProximityComponent: power must be > 0, got {self.power}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        window = data['close'].astype(float).iloc[-self.period:]
+        if window.isna().any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        high = float(window.max())
+        close = float(window.iloc[-1])
+        if not high > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        depth = (high - close) / high * 100.0
+        base = 1.0 / (1.0 + depth)
+        self._raw_value = float(np.power(base, self.power))
+        self.confidence = 1.0
+        self.debug_info = {'high': high, 'close': close, 'depth_pct': depth}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period
