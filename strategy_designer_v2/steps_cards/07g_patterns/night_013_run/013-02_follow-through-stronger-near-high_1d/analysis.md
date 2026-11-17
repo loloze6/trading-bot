@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 013-02_follow-through-stronger-near-high_1d
+idea tested: 013-02_follow-through-stronger-near-high
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3863 USD
+---
+## Findings
+- **F1:** The day after a fall, coins tend to rebound, and the bigger the fall the bigger the rebound. A fall is measured against the coin's own previous 20-day volatility. On down days the next-day return falls with that z-score at slope -0.0033, t -4.6, over 7,530 cases. By bucket, the next-day mean is +0.48% after z between -1.5 and -0.5 (t 5.2, n 3,006), +0.44% after z between -2.5 and -1.5 (t 2.2, n 687) and +1.04% after z at or below -2.5 (t 2.5, n 289). Rises show no matching follow-on: the means sit near 0, with t between -0.2 and 0.7.
+- **F2:** The rebound after a fall of z at or below -1.5 is positive in all six coins, with t from 0.3 for BTC to 2.9 for XMR. It is strongest in 2020 (t 2.4) and 2021 (t 3.7), and near zero in 2019 and 2022–2025.
+- **F3:** A coin's 5-day return predicts its excess return over the next 10 days with slope 0.19, t 4.6, over 1,226 independent cases. This holds jointly with the volume ratio, and its slope against the 30-day return is t 3.6 on 386 cases.
+- **F4:** The ratio of a coin's 5-day to 30-day mean volume predicts its excess return over the next 5 days with slope 0.016, t 3.6 jointly with the 5-day return, over 2,486 independent cases. The lowest volume-ratio quintile averages -1.18% (t -2.7), against +0.66% for the highest. The effect is concentrated in XRP (t 3.0) and ZEC (t 3.4), and in 2020 (t 3.1) and 2024 (t 5.2).
+- **F5:** The raw proximity-weighted 30-day return predicts the 30-day excess return with slope t 3.0 (rank correlation 0.11, n 357–386). The standardised forecast built from it does not: t 0.13 on 526 cases. The raw signal's quartiles run from -4.1% (t -1.75) at the bottom to +2.6% to +4.8% at the top two. Most of it comes from ZEC (t 3.7) and BTC (t 2.5).
+- **F6:** Saturdays carry a positive coin return in all six coins, from +0.16% for BTC (t 1.4) to +0.57% for LTC (t 2.9), and +0.44% pooled (t 5.4). The book earns +0.14% on Saturdays (t 3.1), and the effect is present in 6 of 8 years.
+- **F7:** The book's mean daily return is below holding's in every coin: BTC 0.00109 vs 0.00118, LTC -0.00017 vs 0.00067, XMR -0.00015 vs 0.00112. It loses in 2022 (-0.00032) and 2023 (-0.00116), so the tested signal adds no timing over the coins' own rise.
+
+## Ideas
+- `013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound` (from F1, F2): A coin's fall on a day, measured against its own volatility over the previous 20 days, is followed by a rise over the next 1 day. The larger the volatility-scaled fall, the larger the next day's rise.
+- `013-02_follow-through-stronger-near-high.g2_short-term-five-day-momentum-carry` (from F3): A coin's 5-day return carries on in the same direction over the next 10 days, and the larger the 5-day move, the larger the follow-on move.
+- `013-02_follow-through-stronger-near-high.g3_volume-surge-predicts-gains` (from F4): A coin whose average volume over the last 5 days is high relative to its 30-day average rises more over the next 5 days. The higher that ratio, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

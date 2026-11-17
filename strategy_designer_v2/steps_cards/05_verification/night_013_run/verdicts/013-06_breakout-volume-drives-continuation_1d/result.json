@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 30-bar excess return on breakout volume ratio",
+    "value": 0.06397462936919564,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 4.71565086591336
+    },
+    "threshold": "t >= 2 with >= 30 cases (and top-third mean excess > 0) confirms; t <= -2 with >= 30 cases rejects"
+  },
+  "supporting_check": {
+    "name": "mean excess 30-bar return of top third by volume ratio > 0",
+    "value": 0.23737759672392258,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping breakout cases": 60,
+    "top-third cases": 20
+  },
+  "decided_by": "The slope's t is 2 or more with at least 30 cases and the top-third mean excess return is above zero.",
+  "reading": "Situation bars are bars whose close exceeds every prior in-window close (up to 365 back) and whose recorded regime is 'trending' (the 365-close high itself needs warm-up history not in the record), expected side long; breakout bars for cases are regime 'trending' with a recorded volratio, a selected bar without close[t+30] in its window is not a case; the coin's mean 30-bar return is pooled over the non-overlapping grid (positions 0, 30, 60, ...) of all its windows; the top third is the ceil(n/3) cases with the largest volume ratio; the OLS t uses the usual slope standard error with n-2 df; fewer than 30 cases is reported as 'not observable' per the workflow's minimum-count rule."
+}

@@ -78,3 +78,9 @@ def test_the_components_step_is_called_every_10_turns_and_before_stopping(tmp_pa
     for i in range(13, 25):
         loop.log_turn("x_run", {"turn": i, "idea": f"i{i}"}, root)
     assert not loop.components_due(args, None)                       # no open wish: nothing to call
+
+
+def test_a_turn_line_carries_a_full_utc_timestamp(tmp_path):
+    import re
+    loop.log_turn("x_run", {"turn": 1, "idea": "a"}, tmp_path)
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", loop.turns("x_run", tmp_path)[0]["at"])

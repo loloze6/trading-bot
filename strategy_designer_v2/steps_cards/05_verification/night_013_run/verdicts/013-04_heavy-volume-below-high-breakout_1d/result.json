@@ -1,0 +1,24 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "Welch t of mean 30-bar excess return, top half of forecast minus bottom half (breakout events)",
+    "value": 0.2731236614646605,
+    "statistic": {
+      "name": "Welch t",
+      "value": 1.987022452197934
+    },
+    "threshold": "confirm if Welch t >= 2.0 with top minus bottom positive; reject if Welch t <= -2.0 with top minus bottom negative; at least 30 events"
+  },
+  "supporting_check": null,
+  "counts": {
+    "de-duplicated breakout events": 50,
+    "top half events": 25,
+    "bottom half events": 25
+  },
+  "decided_by": "Welch t = 1.99 lies between -2.0 and 2.0 over 50 events (inconclusive rule).",
+  "reading": "The breakout situation is taken as regime 'trending' (the detector's recorded close-above-prior-365-bar-high decision) together with close above every earlier high in the window, since 365 bars of history are not in the record; events are chosen greedily from each window's first trending bar, the coin mean 30-bar return uses the non-overlapping grid 0, 30, 60, ... of each window pooled over all windows, and the halves are the lower and upper floor(n/2) events after sorting all events by forecast (middle one dropped when n is odd)."
+}

@@ -34,3 +34,20 @@ def test_the_harness_catches_a_wrong_hand_computation_and_a_wrong_warmup():
     assert H.check_hand(cls, [{"period": 10}], lambda df, p: 1.0)
     early = type("Early", (cls,), {"is_ready": lambda self: self.data is not None})   # says ready on any row
     assert H.check_warmup(early, {"period": 10})
+
+
+def test_a_new_setting_must_change_the_output():
+    import inspect
+    cls = H.SC.VolumeRatioComponent
+    src = "class VolumeRatioComponent(SubStrategyComponent):\n" + inspect.getsource(cls).split("\n", 1)[1]
+    assert H.old_params(src, "VolumeRatioComponent") >= {"period", "exclude_current"}
+    data = {"X": H.synthetic_bars(120)}
+    # a setting that changes the output passes; one that changes nothing fails
+    assert H.check_new_setting(cls, cls, {"period": 10, "exclude_current": True}, {"period"}, data) == []
+    assert H.check_new_setting(cls, cls, {"period": 10, "exclude_current": False}, {"period"}, data)
+
+
+def test_the_synthetic_data_is_long_enough_for_a_long_warmup():
+    cls = H.SC.DistanceFromHighComponent
+    assert H.check_warmup(cls, {"period": 450}) == []
+    assert len(H.bars_for(cls, {"period": 450})) >= 2 * 450 + 100

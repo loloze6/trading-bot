@@ -183,6 +183,7 @@ def main():
               + f"\n\n[STRATEGY CONFIG GUIDE]\n{(ref / 'strategy_config_guide.md').read_text()}"
               + f"\n[COMPONENT CATALOGUE]\n{(ref / 'component_catalogue.md').read_text()}"
               + f"\n[WHAT A BACKTEST RECORDS]\n{common_text("backtest_record")}"
+              + f"\n[HOW A FORECAST IS BUILT]\n{common_text("forecast")}"
               + f"\n[HOW THE WORKFLOW MEASURES]\n{common_text("measures")}")
     request = (f"[DATA THE TEST RUNS ON]\ncoins: {data['instruments']}\nbar size: {data['bar']}\n"
                f"windows: {windows(data['period'], data['bar'])}\n\n"

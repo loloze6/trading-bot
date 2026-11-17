@@ -1,19 +1,23 @@
 {
-  "status": "mismatch",
+  "status": "confirmed",
   "situation_check": {
-    "agreement": 0.6250855968956859,
-    "passed": false
+    "agreement": 1.0,
+    "passed": true
   },
   "main_measure": {
-    "name": "slope of demeaned 3-bar forward return on forecast (non-overlapping, pooled)",
-    "value": null,
-    "statistic": null,
-    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; else inconclusive; at least 300 non-overlapping cases"
+    "name": "OLS slope of coin-demeaned 3-bar forward return on forecast (non-overlapping grid, pooled)",
+    "value": 0.0017412536571687286,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 4.135037571645169
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; otherwise inconclusive; at least 300 non-overlapping cases"
   },
   "supporting_check": null,
   "counts": {
+    "non-overlapping cases": 5723,
     "active bars": 17524
   },
-  "decided_by": "The forecast's sign does not follow the plan's situation (long when the day's volume is above its usual ratio to the 30-day average, short when below) on at least 90% of active bars.",
-  "reading": "Usual volume level taken as the ratio's mean over its past 60 values (or 1 without enough history, or 10 if the recorded value is already standardised)."
+  "decided_by": "The slope is positive with t = 4.14 >= 2 over 5723 cases (confirm rule).",
+  "reading": "The coin's mean 3-bar return is taken over that coin's non-overlapping grid samples pooled over all its windows, the regression is OLS with an intercept, the 300-case minimum counts the pooled grid cases with a forecast and a return, and the situation check rebuilds standardise from raw values where the full 60-bar history is inside the window and uses the recorded post-pipeline values before that."
 }

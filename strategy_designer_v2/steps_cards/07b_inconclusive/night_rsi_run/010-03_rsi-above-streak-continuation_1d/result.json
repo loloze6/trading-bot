@@ -1,0 +1,46 @@
+{
+  "line": "7.b",
+  "backtest": "010-03_rsi-above-streak-continuation_1d",
+  "step5": "inconclusive",
+  "step6": "profitable enough",
+  "explorations": 1,
+  "cost": 0.1578433,
+  "findings": {
+    "F1": "The test's result points the way the idea predicts but falls short of the bar: the pooled 14-day slope t is 1.48 on 384 grid cases (199 with a forecast above 0); bars with a forecast above 0 average +0.0063 excess 14-day return against \u22120.0068 when flat, a gap whose Welch t is only 0.80.",
+    "F2": "Noise drowns the effect: the excess 14-day return's standard deviation is about 0.16 in every forecast bin, against a spread of about 0.05 between the bins' means (\u22120.024 to +0.027).",
+    "F3": "The effect is clearer at shorter horizons on the same bars. At 3 days the slope t is 2.14 on 1,907 non-overlapping cases (on-minus-off Welch t 2.67). At 7 days it is 1.92 on 815 cases (Welch t 2.59). At 21 and 28 days it is 0.94 and 1.73.",
+    "F4": "The gradient by stretch length is not monotone. Runs of 0\u20135 days average \u22120.0087 excess 14-day return (n 64), 5\u201315 days +0.0092 (n 53), 15\u201330 days +0.0237 (n 44) and 30\u201360 days +0.0076 (n 38), so the effect mostly appears in the middle of a stretch.",
+    "F5": "The effect is uneven. BTC has slope t 1.85 and ETH 0.42, on 192 cases each. Yearly slopes are positive in 2018\u20132020 and 2025 and negative in 2021\u20132024, all with |t| < 1.3 on 48 cases each. When the coin's 60-day return is positive the slope t is 1.55 (n 106), and \u22120.53 (n 86) when it is negative.",
+    "F6": "The test ran on only two coins, BTC and ETH, over 24 windows each; BNB was not run. The default data offers six coins (BTC, ETH, LTC, XMR, XRP, ZEC) over all four folds, so roughly three times the cases are available for a result that is on the predicted side but short of the bar."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC; bar: 1d; period: folds A, B, C, D",
+      "name": "RSI-above streak, six coins",
+      "from": "F1, F2, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F6"
+      ],
+      "idea": "The longer a coin's 14-day RSI has stayed above 50 without a break, measured in days up to the current close, the higher the coin's return over the next 14 days.",
+      "consequence": "A long unbroken stretch of buyer control means order flow keeps persisting, so the up move continues.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "The longer a coin's 14-day RSI has stayed above 50 without a break, measured in days up to the current close, the higher the coin's return over the next 7 days.",
+      "consequence": "A long unbroken stretch of RSI above 50 is a reason to hold the coin long for about a week, and a short or absent one is a reason not to.",
+      "name": "RSI-above streak, one-week continuation",
+      "from": "F3, F2",
+      "refs": [
+        "F3",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "010-03_rsi-above-streak-continuation.b1_rsi-above-streak-six-coins",
+    "010-03_rsi-above-streak-continuation.b2_rsi-above-streak-one-week-continuation"
+  ],
+  "no_ideas": null
+}

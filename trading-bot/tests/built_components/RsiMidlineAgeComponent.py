@@ -7,35 +7,32 @@ def hand(df, params):
     p = int(params.get("period", 14))
     m = int(params.get("max_bars", 60))
     w = int(params.get("rsi_window", 100))
-    closes = [float(x) for x in list(df["close"])]
-    last = len(closes) - 1
-    for x in closes[len(closes) - (m + w):]:
+    c = [float(x) for x in list(df["close"])]
+    c = c[-(m + w):]
+    for x in c:
         if x != x:
             return float("nan")
 
-    def rsi_above(i):
-        seg = closes[i - w:i + 1]
-        alpha = 1.0 / p
-        g = None
-        l = None
-        for k in range(1, len(seg)):
-            ch = seg[k] - seg[k - 1]
-            up = ch if ch > 0 else 0.0
-            dn = -ch if ch < 0 else 0.0
-            if g is None:
-                g = up
-                l = dn
+    def upper(i):
+        # bar i (index into c): the w changes ending at i use closes c[i-w] .. c[i]
+        a = 1.0 / p
+        G = None
+        L = None
+        for k in range(i - w + 1, i + 1):
+            ch = c[k] - c[k - 1]
+            gain = ch if ch > 0 else 0.0
+            loss = -ch if ch < 0 else 0.0
+            if G is None:
+                G, L = gain, loss
             else:
-                g = g + alpha * (up - g)
-                l = l + alpha * (dn - l)
-        if g + l == 0:
-            return False
-        return 100.0 * g / (g + l) > 50.0
+                G = (1.0 - a) * G + a * gain
+                L = (1.0 - a) * L + a * loss
+        # RSI > 50 is G > L (G + L = 0 is RSI 50, the lower side)
+        return G > L
 
-    now = rsi_above(last)
-    count = 0
-    i = last
-    while count < m and rsi_above(i) == now:
-        count = count + 1
-        i = i - 1
-    return float(count) if now else float(-count)
+    last = len(c) - 1
+    side = upper(last)
+    n = 1
+    while n < m and upper(last - n) == side:
+        n += 1
+    return float(n) if side else float(-n)

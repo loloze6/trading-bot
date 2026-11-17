@@ -1,0 +1,21 @@
+---
+line: 7.g patterns
+backtest: 013-05_longer-stall-bigger-breakout_1d
+idea tested: 013-05_longer-stall-bigger-breakout
+step 5: not observable
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.4713 USD
+---
+## Findings
+- **F1:** Saturday is the strongest pattern in the bars, unrelated to the idea: Saturday's mean daily coin return is 0.00445 against 0.00084 on other days (Welch t = 3.93, 2382 Saturdays), with 55.1% of Saturdays up against 50.1% of other days; it is the only weekday with t above 3.5 (t = 5.41 for its own mean), it points the same way in all six coins (t from 0.34 for BTC to 2.67 for LTC), and Saturday beats the other days in 7 of 8 years.
+- **F2:** Saturday's gain rises in steps with the coin's 7-day return at Friday's close: by quintile of that return the next-day mean goes -0.00025, 0.00069, 0.00330, 0.00736, 0.01173, and the slope on its rank has t = 5.88 on 2242 independent Fridays; it is the largest t of every angle examined.
+- **F3:** Friday's volume against its 20-day mean does not grade Saturday's return (quintile means 0.0050, 0.0043, 0.0021, 0.0055, 0.0023, with no order), so the Saturday move follows the price, not the volume.
+- **F4:** Closeness to the 30-day closing high grades the next 10 days, but not reliably: grid bars at that high have an excess 10-day return of 0.0476 against -0.0060 for the rest (136 against 1072 cases), and the slope on the distance rank has t = 2.70 (n = 1208); but this is one of 20 horizon and lookback pairs tried, its sign flips by year (t = -3.09 in 2018, -2.04 in 2022 and -2.50 in 2023, against +3.32 in 2020 and +2.60 in 2021), and among the coins only XRP clears t = 2 (t = 3.22), so it does not stand out from chance.
+- **F5:** The strategy is in the market so rarely that it cannot carry much: the trending regime (close above the prior 365-day high) covers 2.6% of the bars and the position is open on 1.0% to 4.8% of each coin's bars; the 10-day grid holds only 49 trending bars (mean excess 0.0525). As a result the book's mean daily return (0.00023) is below holding the coin for every coin, for example 0.00038 against 0.00118 for BTC.
+
+## Ideas
+- `013-05_longer-stall-bigger-breakout.g1_weekly-gain-carries-into-saturday` (from F2, F1, F3): The larger a coin's 7-day return at Friday's close, the larger its return over the following day, Saturday: the recent gain carries on into the weekend in proportion to its size.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

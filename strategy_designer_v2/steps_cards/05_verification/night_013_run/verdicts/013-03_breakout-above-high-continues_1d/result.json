@@ -1,0 +1,26 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 30-bar excess return on forecast (forecast > 0 grid bars)",
+    "value": 0.20549205486993086,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 5.179553792075867
+    },
+    "threshold": "slope t >= 2 with mean excess > 0 confirms; t <= -2 rejects; at least 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean excess 30-bar return on break bars (minus coin's mean 30-bar return) > 0",
+    "value": 0.22924507998291901,
+    "passed": true
+  },
+  "counts": {
+    "grid bars where the forecast is above 0": 10
+  },
+  "decided_by": "Only 10 grid bars with forecast above 0, fewer than the plan's minimum of 30 cases.",
+  "reading": "The coin's mean 30-bar return is the mean over all its windows' non-overlapping 30-bar grid returns (positions 0, 30, 60, ... with a full 30 bars ahead), and the plan's fewer-than-30-cases rule is reported as 'not observable' per the workflow's minimum-count rule."
+}

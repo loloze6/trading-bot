@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of coin-demeaned forward 14-bar return on forecast (pooled, non-overlapping grid, non-zero forecast)",
+    "value": -0.0011839421173979953,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -1.651302088575984
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and timing gain > 0; reject: slope < 0 with t <= -2; at least 100 cases"
+  },
+  "supporting_check": {
+    "name": "book timing gain before costs (mean daily book return minus position x coin mean daily return)",
+    "value": -0.0010294283918600444,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping cases with a non-zero forecast": 373,
+    "active bars": 5694
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "The coin's mean 14-bar return is the mean over all its non-overlapping grid returns in all windows (any forecast), the regression is OLS with an intercept on the raw forecast, and the book's daily return is the change of postRebalance_total_value per coin averaged across coins per day, with the market part as the previous day's position times the coin's mean daily close return."
+}

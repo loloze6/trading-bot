@@ -1,0 +1,35 @@
+{
+  "line": "7.b",
+  "backtest": "013-02_follow-through-stronger-near-high_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.30289659999999996,
+  "findings": {
+    "F1": "The main measure is close to zero rather than just below the bar: the pooled slope of the excess forward 30-day return on forecast/10 is 0.0021 with t 0.13 over 526 grid cases, and its sign varies by coin (BTC t +2.30, XRP t \u22122.03) and by year (2019 t +2.70, 2025 t +2.48, 2018 t \u22121.60, 2024 t \u22121.96).",
+    "F2": "The carry-on shows only in the third of cases closest to the 52-week high: there the slope of the excess forward 30-day return on the plain past 30-day return is +0.151 (t 2.50, n 129), against \u22120.111 (t \u22121.21, n 129) in the farthest third and \u22120.104 (t \u22120.85, n 128) in the middle third.",
+    "F3": "The near-high effect does not depend on how the 52-week weight is defined: closeness to the in-window running high gives the same picture, with a near-third slope of +0.126 (t 2.30, mean close/high 0.97) against \u22120.112 (t \u22121.04) in the far third.",
+    "F4": "The forecast blurs this split: it ranks almost exactly like the past return (Spearman 0.87 between the component value and the past return), and the convex weight still leaves it non-zero far below the high, where past moves reverse; so its slope is only +0.031 (t 1.19) even in the near third and is negative in the far (\u22120.018) and middle (\u22120.039) thirds.",
+    "F5": "Near the high, the effect sits mostly on the up side: cases with a positive past 30-day return have a mean excess forward return of +0.043 (se 0.031, n 99), against \u22120.031 (se 0.041, n 30) after a fall; far below the high, both sides are negative (\u22120.033 and \u22120.041).",
+    "F6": "The near-high carry-on is not steady over time or horizon: it is +0.248 (t 3.75, n 91) in the later years and \u22120.260 (t \u22122.20, n 38) in the earlier years, and its slope is +0.038 (t 1.99) at 10 days, +0.021 (t 0.58) at 20 days and +0.156 (t 2.58) at 30 days."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's past 30-day return carries on into the next 30 days, only while the coin closes within its top range near its 52-week high, and more strongly the closer its close is to that high.",
+      "consequence": "A trader would follow a coin's 30-day move only when it closes close to its 52-week high, and would size it by that closeness, rather than following 30-day moves everywhere.",
+      "name": "momentum only near 52-week high",
+      "from": "F2, F3, F4, F5, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "013-02_follow-through-stronger-near-high.b1_momentum-only-near-52-week-high"
+  ],
+  "no_ideas": null
+}

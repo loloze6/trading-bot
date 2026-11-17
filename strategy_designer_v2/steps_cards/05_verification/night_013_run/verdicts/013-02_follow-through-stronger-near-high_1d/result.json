@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of excess forward 30-bar return on forecast/10",
+    "value": 0.002070321445738202,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.13065782175467783
+    },
+    "threshold": "main slope t >= +2 confirms (with near-minus-far slope difference > 0); t <= -2 rejects; at least 300 independent grid cases"
+  },
+  "supporting_check": {
+    "name": "slope of excess forward return on past return, above-median W minus below-median W",
+    "value": 0.18146875069038415,
+    "passed": true
+  },
+  "counts": {
+    "independent grid cases": 526,
+    "above-median W cases": 193,
+    "below-median W cases": 193
+  },
+  "decided_by": "The main slope's t lies between -2 and +2.",
+  "reading": "Grid positions 0/30/60/90 are used only where the bar 30 rows later exists in the same window; the coin mean is the mean of that coin's grid forward returns over all windows; the regression has an intercept; the median split is pooled over all coins, with cases exactly at the median left out."
+}

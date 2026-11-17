@@ -1,19 +1,28 @@
 {
-  "status": "mismatch",
+  "status": "inconclusive",
   "situation_check": {
-    "agreement": 0.6790429974043561,
-    "passed": false
+    "agreement": 1.0,
+    "passed": true
   },
   "main_measure": {
-    "name": "OLS slope of excess 7-bar return on forecast, non-overlapping grid, pooled",
-    "value": null,
-    "statistic": null,
-    "threshold": "slope t >= +2 (with positive supporting difference) confirms; t <= -2 rejects"
+    "name": "OLS slope of excess 7-bar return on forecast (non-overlapping grid, forecast != 0, pooled)",
+    "value": 0.002256605083884865,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.813350255860755
+    },
+    "threshold": "t >= +2 confirms (with positive supporting difference); t <= -2 rejects; between is inconclusive"
   },
-  "supporting_check": null,
+  "supporting_check": {
+    "name": "mean excess 7-bar return at forecast > 0 minus at forecast < 0",
+    "value": 0.016546997507279212,
+    "passed": true
+  },
   "counts": {
-    "active bars": 8861
+    "non-zero grid points": 1253,
+    "grid points with forecast > 0": 153,
+    "grid points with forecast < 0": 1100
   },
-  "decided_by": "Fewer than 90% of non-zero forecasts are on 14-bar falls with short at moderate falls and long at the deepest falls, as the Fidelity states.",
-  "reading": "The situation is a negative recorded fall_short value (14-bar change, standardised); the side is short for s < 15, long for s > 20, and either side is accepted between 15 and 20 around the hump's crossing."
+  "decided_by": "The slope t lies between -2 and +2 (inconclusive rule).",
+  "reading": "Grid points at positions 0,7,14,... of each window with t+7 inside the window; the coin's mean 7-bar return is the mean over all its grid points in all windows; the minimum counts of the plan's inconclusive rule are applied as minimums (not observable)."
 }

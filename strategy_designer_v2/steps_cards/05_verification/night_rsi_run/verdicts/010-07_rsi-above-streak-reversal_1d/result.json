@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 14-bar excess return on RSI>50 run length",
+    "value": 0.0006729869535789519,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.9547347195539113
+    },
+    "threshold": "confirm if slope < 0 with t <= -2 (and timing gain > 0); reject if slope > 0 with t >= +2"
+  },
+  "supporting_check": {
+    "name": "book timing gain (mean daily return minus market-rise gain, before costs)",
+    "value": -0.0006084954244275828,
+    "passed": false
+  },
+  "counts": {
+    "grid cases with RSI above 50": 199,
+    "grid cases with forecast below 0 (regression sample)": 199
+  },
+  "decided_by": "The slope's t lies between -2 and +2 (inconclusive rule).",
+  "reading": "Pooled the coins present in the record (BNB absent), used grid bars at positions 0,14,28,... of each window with a full forward 14-bar return and forecast < 0, regressed excess return on last_history_value by OLS, counted 'grid cases with RSI above 50' as grid bars with last_history_value > 0, and treated a shortfall of that minimum as 'not observable'."
+}

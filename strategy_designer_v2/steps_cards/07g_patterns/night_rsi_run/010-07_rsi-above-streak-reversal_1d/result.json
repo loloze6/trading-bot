@@ -1,0 +1,43 @@
+{
+  "line": "7.g",
+  "backtest": "010-07_rsi-above-streak-reversal_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3541373,
+  "findings": {
+    "F1": "Among bars where 14-day RSI sat below 50, a longer unbroken run below 50 was followed by a lower 14-day excess return. Run length is entered as negative days, so a positive pooled slope means longer runs did worse. The pooled slope was +0.00357 per day (t = 3.21, n = 142 grid cases), with Spearman rho 0.19 (p = 0.027). It held in ETH (t = 3.17, n = 76) and in w13\u2013w24 (t = 3.86, n = 73), but was weak in BTC (t = 0.92, n = 66) and in w1\u2013w12 (t = 0.86, n = 69). The signs below are re-expressed from round 2, where the regression was run on the signed run length.",
+    "F2": "The below-50 run effect partly survives the coin's own 30-day return. With both in the regression, the run-length slope keeps t = 2.30 while the 30-day return has t = 0.04 (n = 110). Across horizons it is mixed: the 7-day slope is negative in the same sense (t = 2.38, n = 330) and the 28-day slope agrees with t = 1.70 (n = 65). The 21-day slope reverses sign (t = 1.09, n = 92), so the effect is not clean across horizons.",
+    "F3": "The tested reversal after long runs above 50 is not in the bars. The above-50 run-length slope on the 14-day excess return is +0.00093 (t = +1.20, n = 194), the opposite sign to the idea. The book lost on both coins: mean daily \u22120.00134 in BTC and \u22120.00060 in ETH, while holding the coins earned +0.00118 and +0.00137.",
+    "F4": "Short-term momentum is concentrated in calm markets. On a non-overlapping 3-day grid, the slope of the next 3-day return on the past 3-day return is 0.211 (t = 3.72, n = 524) in the lowest 20-day-volatility tercile. In the middle tercile it is 0.009 (t = 0.20), and in the highest it is \u22120.025 (t = \u22120.66).",
+    "F5": "The calm-market momentum has the same sign in every split I made. The low-volatility slope is 0.257 (t = 3.45) in ETH and 0.100 (t = 1.07) in BTC, and 0.155 (t = 1.91) in w1\u2013w12 and 0.270 (t = 3.41) in w13\u2013w24. A graded version, the vol-scaled 3-day return weighted by how low the volatility is, gives t = 2.59 (n = 1571). At 7 days the gradient is weaker: the low-volatility slope is 0.091 (t = 1.01) against \u22120.019 (t = \u22120.32) in the high-volatility tercile."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin, the lower its 20-day volatility of daily returns, the more its 3-day return continues in the same direction over the next 3 days.",
+      "consequence": "In quiet markets a trader can follow the last few days' move, and should refuse to chase short moves when volatility is high.",
+      "name": "calm-market short momentum",
+      "from": "F4, F5",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The longer a coin's 14-day RSI has stayed below 50 without a break, measured in days up to the current close, the lower the coin's return over the next 14 days.",
+      "consequence": "A long stay of RSI below 50 is a reason to stay short or out of the coin rather than to buy the dip.",
+      "name": "RSI below-midline downtrend persistence",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "010-07_rsi-above-streak-reversal.g1_calm-market-short-momentum",
+    "010-07_rsi-above-streak-reversal.g2_rsi-below-midline-downtrend-persistence"
+  ],
+  "no_ideas": null
+}

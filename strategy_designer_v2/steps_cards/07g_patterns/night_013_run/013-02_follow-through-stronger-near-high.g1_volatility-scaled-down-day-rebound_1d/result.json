@@ -1,0 +1,66 @@
+{
+  "line": "7.g",
+  "backtest": "013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3642485,
+  "findings": {
+    "F1": "The next-day rebound after a down day depends on volume as well as on the size of the fall. On down days (z<0), regressing the next-day excess return on the scaled fall, log volume ratio (day's volume over its prior 20-day mean) and their product gives an interaction slope of 0.00297 with t = 4.29. The fall alone then has t = \u22120.44.",
+    "F2": "The rebound is concentrated where both volatility and volume are high. Down days in a coin's top 20-day-volatility tercile and top volume-ratio tercile are followed by a mean next-day excess return of +0.0138 (t = 4.80, n = 649). In the bottom tercile of both the mean is \u22120.0021 (t = \u22121.21, n = 622).",
+    "F3": "The unscaled percentage fall predicts the next-day rise better than the volatility-scaled fall the idea uses. On down days the slope t is 9.37 for the raw fall against 4.58 for the scaled fall. Across raw-fall quintiles the mean next-day excess return rises from \u22120.0004 to +0.0069, and the top quintile has t = 4.17 (n = 1411).",
+    "F4": "The down-day rebound sits in high-volatility conditions in every coin and almost every year.",
+    "F5": "Volatility rising relative to its own longer level strengthens the rebound. Down days where 20-day volatility is high relative to 60-day volatility (top tercile) give +0.0054 (t = 3.77, n = 1417). The bottom tercile gives \u22120.0025 (t = \u22121.84).",
+    "F6": "High-volatility up days are followed by a small fall, and this is the mirror of the down-day rebound. The next-day excess after up days in the high-vol tercile is \u22120.0031 (t = \u22122.77), negative in five of six coins (XMR t = \u22122.88). The size of the rise itself carries no information (slope t = 0.21, n = 7286).",
+    "F7": "Next-day returns differ by weekday: Friday +0.0030 (t = 3.76) and Thursday +0.0025 (t = 2.63) against Wednesday \u22120.0030 (t = \u22122.70) and Monday \u22120.0024 (t = \u22122.53). The book's daily mean shows no matching pattern, and with many angles examined I treat this as unconfirmed."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's fall on a day on heavy volume, relative to its average daily volume over the previous 20 days, is followed by a rise over the next 1 day. The larger the fall multiplied by the volume surge, the larger the next day's rise.",
+      "consequence": "A trader has a reason to buy a high-volume sell-off day for a one-day rebound, and to give little weight to falls on thin volume.",
+      "name": "Volume-confirmed down-day rebound",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "A coin's percentage fall on a day, not scaled by its volatility, is followed by a rise over the next 1 day. The larger the fall in percent, the larger the next day's rise.",
+      "consequence": "A trader has a reason to size a one-day rebound buy by the raw depth of the day's fall rather than by the fall in usual moves.",
+      "name": "Raw-size down-day rebound",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "A coin's fall on a day is followed by a rise over the next 1 day that grows with how high its 20-day volatility stands against its 60-day volatility. The more volatility has expanded, the larger the next day's rise.",
+      "consequence": "A trader has a reason to buy down days mainly when volatility is expanding, and to refuse rebound trades in calm, contracting markets.",
+      "name": "Rebound grows with volatility expansion",
+      "from": "F4, F5",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "A coin's rise on a day is followed by a fall over the next 1 day that grows with the level of its 20-day volatility. The higher the volatility, the larger the next day's fall.",
+      "consequence": "A trader has a reason not to chase up days in turbulent markets, and to fade them for one day.",
+      "name": "High-volatility up-day giveback",
+      "from": "F6, F4",
+      "refs": [
+        "F6",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound.g1_volume-confirmed-down-day-rebound",
+    "013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound.g2_raw-size-down-day-rebound",
+    "013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound.g3_rebound-grows-with-volatility-expansion",
+    "013-02_follow-through-stronger-near-high.g1_volatility-scaled-down-day-rebound.g4_high-volatility-up-day-giveback"
+  ],
+  "no_ideas": null
+}

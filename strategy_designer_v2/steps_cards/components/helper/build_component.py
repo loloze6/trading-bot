@@ -16,7 +16,7 @@ Every answer is one line in components/INDEX.md, so a wish is not asked twice. V
 line per wish: run, plan, wish, answer, USD, seconds, attempts) and components/builds/<class>/ (the answers, the checks'
 output, the proof; a build undone: components/builds/not_built/<run>/<plan>/<wish>/). Card: ../card.md.
 """
-import argparse, datetime, gzip, json, re, subprocess, sys, tempfile, time
+import argparse, gzip, json, re, subprocess, sys, tempfile, time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -25,7 +25,7 @@ REPO = STEPS.parents[1]
 TBOT = REPO / "trading-bot"
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(STEPS / "common"))
-from lib import call, write_atomic, CATALOGUE  # noqa: E402  (shared helpers, common/lib.py)
+from lib import call, write_atomic, CATALOGUE, utc_now  # noqa: E402  (shared helpers, common/lib.py)
 import wishes as W  # noqa: E402
 
 COMPONENTS_FILE = TBOT / "strategies" / "strategy_components.py"
@@ -42,10 +42,6 @@ VOLATILE = {"protocol_run_id", "protocol_file", "run_id", "run_dir", "started_at
 TABLES = ("Regime measures", "Directional components", "Hedges and filters")
 ATTEMPTS = 3
 ROOT = HERE.parent
-
-
-def now():
-    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
 
 # ---- the files a build changes ----------------------------------------------------------------------------------
@@ -310,7 +306,7 @@ def record(wish, line, usd, seconds, attempts, log, built):
     with open(idx, "a") as fh:
         fh.write(head + f"{run_name} | {pid} | {name} | {line}\n")
     with open(ROOT / "journal.jsonl", "a") as fh:
-        fh.write(json.dumps({"at": now(), "run": run_name, "plan": pid, "wish": name, "answer": line,
+        fh.write(json.dumps({"at": utc_now(), "run": run_name, "plan": pid, "wish": name, "answer": line,
                              "usd": round(usd, 4), "seconds": round(seconds, 1), "attempts": attempts}) + "\n")
     if built or any(l.startswith("checks:") for l in log):      # every build tried, kept or undone: its answers and checks
         d = ROOT / "builds" / (built or f"not_built/{run_name}/{pid}/{re.sub(r'[^A-Za-z0-9_-]', '_', name)}")

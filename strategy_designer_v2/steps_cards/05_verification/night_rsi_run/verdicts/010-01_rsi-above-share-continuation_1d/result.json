@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t-statistic of the slope of next 14-bar excess return on forecast",
+    "value": 1.6537577856185754,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.6537577856185754
+    },
+    "threshold": "confirm if t >= +2 with the check passing; reject if t <= -2; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean excess 14-bar return, forecast > 0 minus forecast < 0",
+    "value": 0.028835536062297572,
+    "passed": true
+  },
+  "counts": {
+    "independent 14-bar samples": 384,
+    "samples with forecast > 0": 187,
+    "samples with forecast < 0": 186
+  },
+  "decided_by": "The slope t-statistic lies between -2 and +2, which the plan calls inconclusive.",
+  "reading": "Situation check uses debug_info.components.rsi_share.last_history_value read as value already centred at 0, expected side long when the share is above one half and short below; the coin's mean 14-bar return is taken over that coin's non-overlapping samples pooled across all its windows, the slope t is the OLS t of excess return on forecast over all pooled samples, and the plan's three-coin count is applied as written to the coins present in the record."
+}
