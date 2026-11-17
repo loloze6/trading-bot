@@ -47,3 +47,6 @@ night_run | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.
 night_run | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.b1_weekend-move-reverses-three-days_1d | LaggedVolatilityScaledReturnComponent | built: VolatilityScaledReturnComponent {"lag": 1, "period": 1, "vol_period": 20}
 night_run | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday_1d | VolumeWeightedScaledReturn | exists: VolumeWeightedScaledReturnComponent {"vol_period": 20, "volume_period": 20}
 night_run | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday_1d | RelativeVolume | exists: VolumeRatioComponent {"period": 30}
+night_run | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal.g1_high-volume-weekend-moves-reverse_1d | VolumeWeightedScaledReturn | exists: VolumeWeightedScaledReturnComponent {"vol_period": 20, "volume_period": 20}
+volume_run | 012-01_liquidation-flush-rebound_1d | LowerWickComponent | exists: LowerWickComponent {"relative_to": "range"}
+volume_run | 012-03_lower-wick-flush-recovery_1d | LowerWickShareComponent | exists: CloseLocationInRangeComponent {"reference": "low"}
