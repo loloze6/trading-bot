@@ -1,6 +1,6 @@
 """Spec of VolumeRatioComponent for the standard checks (component_harness.py), written by the components step: its settings (the defaults first) and a hand computation that uses only the rows up to bar t."""
 CLASS = 'VolumeRatioComponent'
-SETTINGS = [{}, {"period": 30}, {"period": 10}, {"period": 2}, {"period": 20, "exclude_current": 1}, {"period": 30, "short_period": 5, "centred": 1}, {"period": 30, "log": 1}, {"period": 20, "exclude_current": 1, "statistic": "median"}]
+SETTINGS = [{}, {"period": 30}, {"period": 10}, {"period": 2}, {"period": 20, "exclude_current": 1}, {"period": 30, "short_period": 5, "form": "centred"}, {"period": 30, "form": "log"}, {"period": 20, "exclude_current": 1, "statistic": "median"}]
 
 
 def hand(df, params):
@@ -8,8 +8,7 @@ def hand(df, params):
     n = int(params.get("period", 30))
     ex = int(params.get("exclude_current", 0))
     s = int(params.get("short_period", 1))
-    c = int(params.get("centred", 0))
-    lg = int(params.get("log", 0))
+    form = params.get("form", "ratio")
     st = params.get("statistic", "mean")
     v = [float(x) for x in list(df["volume"])]
     last = len(v) - 1
@@ -51,8 +50,8 @@ def hand(df, params):
     if not den > 0:
         return float("nan")
     ratio = num / den
-    if lg == 1:
+    if form == "log":
         if not ratio > 0:
             return float("nan")
         return math.log(ratio)
-    return ratio - c
+    return ratio - (1.0 if form == "centred" else 0.0)

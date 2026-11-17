@@ -1,6 +1,7 @@
-"""Spec of DistanceFromHighComponent for the standard checks (component_harness.py), written by the components step: its settings (the defaults first) and a hand computation that uses only the rows up to bar t."""
+"""Spec of DistanceFromHighComponent for the standard checks (component_harness.py), written by the components step (form "proximity" merged from ConvexHighProximityComponent, 2026-11-17): its settings (the defaults first) and a hand computation that uses only the rows up to bar t."""
 CLASS = 'DistanceFromHighComponent'
-SETTINGS = [{}, {"period": 30, "source": "high", "exclude_current": 1}]
+SETTINGS = [{}, {"period": 30, "source": "high", "exclude_current": 1}, {"period": 365, "form": "proximity", "power": 2.0},
+            {"period": 30, "source": "high", "exclude_current": 1, "form": "proximity", "power": 1.5}]
 
 
 def hand(df, params):
@@ -26,4 +27,9 @@ def hand(df, params):
             h = x
     if not h > 0:
         return float("nan")
+    if params.get("form", "percent") == "proximity":
+        depth = (h - c) / h * 100.0
+        if depth < 0:
+            depth = 0.0
+        return pow(1.0 / (1.0 + depth), float(params.get("power", 1.0)))
     return (c - h) / h * 100.0

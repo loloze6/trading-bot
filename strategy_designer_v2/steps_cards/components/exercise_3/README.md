@@ -56,6 +56,12 @@ wish was asked again and built.
   passed rule 2 (it changes the output), but two settings for one purpose is not simple. A rule to consider: one setting
   per purpose.
 
+**Ruled and done (operator):** the merge (`ConvexHighProximityComponent` is now `DistanceFromHighComponent` with `form`
+"proximity" and `power`) and the rule "one setting per purpose" (`VolumeRatioComponent`'s `centred` and `log` are now
+`form`: "ratio", "centred" or "log"; in the card's rule 2 and the prompt). Proof: every standard check passes on both
+classes; 336,271 values on 19 coins compared with the old classes, for every old setting: 0 differ; no plan used the old
+names. The index lines keep the names and settings as they were answered (the record).
+
 **The card's validation** (quality, standardization, unblocking, twice): exercises 1 and 3 on the fixed inputs (the
 night runs' wishes): every build passes every check (quality, met twice); standardization met with two findings above;
 unblocking: 46 of 49 ideas unblocked, of which one rerun so far (010-01, planned with its new component). Status:

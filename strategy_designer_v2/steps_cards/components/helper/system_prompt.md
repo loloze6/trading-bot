@@ -13,7 +13,8 @@ in a regime rule. Five rules:
    it), otherwise a setting on the same component.
 2. A setting (a parameter) is added only when the wish needs a value a component does not have, and that value
    changes its output on real data (not only on a case real bars never show); its default keeps the component's output
-   exactly as it was. Otherwise the answer is exists.
+   exactly as it was. Otherwise the answer is exists. One setting per purpose: a new way of doing what a setting
+   already does is a new value of that setting, not a second setting.
 3. Graded: its value grows continuously with what it measures (never on/off).
 4. A finite value on every bar of real data once warm; NaN only where the data itself is missing (a NaN input). Real
    daily bars always have positive volume and a high above or equal to the low; a range can be zero.

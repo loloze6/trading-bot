@@ -1854,7 +1854,11 @@ class DistanceFromHighComponent(SubStrategyComponent):
         raw_value = (close[t] - H) / H x 100
 
     src is the `close` column (source "close", default) or the `high` column (source "high").
-    The defaults (source "close", exclude_current 0) give the original output.
+    form "percent" (default): the value above. form "proximity": (1 / (1 + D)) ^ power, D = max(0, (H - close[t]) / H
+    x 100) the depth below the high in percent: 1 at the high (or above a prior high), smaller the deeper below it,
+    above 0; `power` (default 1.0, above 0) makes it convex (merged on 2026-11-17 from ConvexHighProximityComponent,
+    whose output is form "proximity", period 365, power 2.0: rule 1, one component per measure).
+    The defaults (source "close", exclude_current 0, form "percent") give the original output.
 
     Range and sign:
     - With exclude_current 0 the value is 0 to -100 and never positive: 0 at a new high, more negative the deeper
@@ -1870,8 +1874,8 @@ class DistanceFromHighComponent(SubStrategyComponent):
     close and high are known at that bar's close.
 
     NaN: a NaN in the window, a NaN close[t], or an H not above 0 gives NaN.
-    Building the component raises for a period below 2, a source other than "close" or "high", or an
-    exclude_current other than 0 or 1.
+    Building the component raises for a period below 2, a source other than "close" or "high", an
+    exclude_current other than 0 or 1, a form other than "percent" or "proximity", or a power not above 0.
     """
 
     def __init__(self, name="DistanceFromHigh", weight=1.0, parameters=None):
@@ -1887,6 +1891,12 @@ class DistanceFromHighComponent(SubStrategyComponent):
         if ex not in (0, 1):
             raise ValueError(f"DistanceFromHighComponent: exclude_current must be 0 or 1, got {ex!r}")
         self.exclude_current = int(ex)
+        self.form = self.parameters.get("form", "percent")
+        if self.form not in ("percent", "proximity"):
+            raise ValueError(f"DistanceFromHighComponent: form must be 'percent' or 'proximity', got {self.form!r}")
+        self.power = float(self.parameters.get("power", 1.0))
+        if not np.isfinite(self.power) or self.power <= 0:
+            raise ValueError(f"DistanceFromHighComponent: power must be > 0, got {self.power}")
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -1909,6 +1919,9 @@ class DistanceFromHighComponent(SubStrategyComponent):
             h = float(win.max())
             if not h > 0:
                 self._raw_value = float("nan")
+            elif self.form == "proximity":
+                depth = max(0.0, (h - last) / h * 100.0)
+                self._raw_value = float(np.power(1.0 / (1.0 + depth), self.power))
             else:
                 self._raw_value = float((last - h) / h * 100.0)
         self.confidence = 1.0
@@ -2039,26 +2052,28 @@ class VolumeRatioComponent(SubStrategyComponent):
         exclude_current = 1:           W = volume[t - period .. t - 1]
         statistic = "mean" (default):  den = mean(W)
         statistic = "median":          den = median(W)  (average of the two middle values for an even count)
-        log = 0 (default): raw_value = num / den - centred
-        log = 1:           raw_value = ln(num / den)
+        form = "ratio" (default):  raw_value = num / den
+        form = "centred":          raw_value = num / den - 1
+        form = "log":              raw_value = ln(num / den)
 
-    The defaults (short_period 1, centred 0, log 0, statistic "mean") give volume[t] / mean volume, the
-    original output, unchanged. With period 20, exclude_current 1 and statistic "median" the output is
+    One setting, `form`, for how the ratio is expressed (2026-11-17: it replaced two settings, `centred` and `log`,
+    which did one job: the operator's rule, one setting per purpose). The defaults (short_period 1, form "ratio",
+    statistic "mean") give volume[t] / mean volume, the original output, unchanged. With period 20, exclude_current 1 and statistic "median" the output is
     volume[t] / median(volume of the past 20 bars).
-    Graded, with no direction. With log 0 and centred 0 the value is non-negative and equals 1 when recent
+    Graded, with no direction. With form "ratio" the value is non-negative and equals 1 when recent
     volume equals the base. With "mean" and exclude_current 0 it is at most period / short_period. With
-    exclude_current 1, or with "median", it is unbounded above. centred 1 shifts the value down by 1. log 1
-    gives the natural log of the ratio: 0 at the base, positive on heavy volume, negative on thin volume.
+    exclude_current 1, or with "median", it is unbounded above. form "centred" shifts the value down by 1; form
+    "log" gives the natural log of the ratio: 0 at the base, positive on heavy volume, negative on thin volume.
     Warm-up: period + exclude_current rows, bar t included.
 
     WHY THIS CANNOT LEAK: it reads only the `volume` column of the rows up to and including bar t (the last row of
     data), over at most the last period + exclude_current rows; a bar's volume is known at that bar's close.
 
-    NaN: a NaN volume in either window, or a base of 0, gives NaN. With log 1, a recent mean of 0 gives NaN
+    NaN: a NaN volume in either window, or a base of 0, gives NaN. With form "log", a recent mean of 0 gives NaN
     (zero volume, never seen on real bars). A missing `volume` column raises.
     Building the component raises for a period below 2, an exclude_current other than 0 or 1, a short_period
-    below 1 or above period, a centred other than 0 or 1, a log other than 0 or 1, log 1 with centred 1, or
-    a statistic other than "mean" or "median".
+    below 1 or above period, a form other than "ratio", "centred" or "log", or a statistic other than "mean" or
+    "median".
     """
 
     def __init__(self, name="VolumeRatio", weight=1.0, parameters=None):
@@ -2074,16 +2089,9 @@ class VolumeRatioComponent(SubStrategyComponent):
         if self.short_period < 1 or self.short_period > self.period:
             raise ValueError(
                 f"VolumeRatioComponent: short_period must be between 1 and period, got {self.short_period}")
-        c = self.parameters.get("centred", 0)
-        if c not in (0, 1):
-            raise ValueError(f"VolumeRatioComponent: centred must be 0 or 1, got {c!r}")
-        self.centred = int(c)
-        lg = self.parameters.get("log", 0)
-        if lg not in (0, 1):
-            raise ValueError(f"VolumeRatioComponent: log must be 0 or 1, got {lg!r}")
-        self.log = int(lg)
-        if self.log == 1 and self.centred == 1:
-            raise ValueError("VolumeRatioComponent: log 1 cannot be combined with centred 1")
+        self.form = self.parameters.get("form", "ratio")
+        if self.form not in ("ratio", "centred", "log"):
+            raise ValueError(f"VolumeRatioComponent: form must be 'ratio', 'centred' or 'log', got {self.form!r}")
         st = self.parameters.get("statistic", "mean")
         if st not in ("mean", "median"):
             raise ValueError(f"VolumeRatioComponent: statistic must be 'mean' or 'median', got {st!r}")
@@ -2110,13 +2118,10 @@ class VolumeRatioComponent(SubStrategyComponent):
             den = float(base.mean(skipna=False))
         if np.isnan(num) or np.isnan(den) or not den > 0:
             self._raw_value = float("nan")
-        elif self.log == 1:
-            if not num > 0:
-                self._raw_value = float("nan")
-            else:
-                self._raw_value = float(np.log(num / den))
+        elif self.form == "log":
+            self._raw_value = float(np.log(num / den)) if num > 0 else float("nan")
         else:
-            self._raw_value = float(num / den - self.centred)
+            self._raw_value = float(num / den - (1.0 if self.form == "centred" else 0.0))
         self.confidence = 1.0
         self.debug_info = {'short_mean_volume': num, 'base_volume': den, 'statistic': self.statistic}
 
@@ -2435,68 +2440,6 @@ class OpenToLowDropComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return 1
-
-
-class ConvexHighProximityComponent(SubStrategyComponent):
-    """
-    How close the close is to its recent high, made convex by a power, on every bar:
-
-        H[t] = max(close[t - period + 1 .. t])                  (bar t included)
-        D[t] = (H[t] - close[t]) / H[t] x 100                   (percent depth below the high, >= 0)
-        raw_value = (1 / (1 + D[t])) ^ power
-
-    Range: above 0, up to 1, never negative. It is 1 at a new high and smaller the deeper the close sits
-    below the high. For positive closes D <= 100, so the value is at least 101^(-power). There is no direction.
-    With power > 1 the value climbs faster the nearer the close is to the high.
-    Graded: the value moves continuously with the depth.
-    Warm-up: `period` rows, bar t included.
-
-    NaN: a NaN close anywhere in the last `period` rows gives NaN. A highest close not above 0 also gives NaN.
-    A missing `close` column raises. A `period` below 2, or a `power` not above 0, raises when the component
-    is built.
-
-    WHY THIS CANNOT LEAK: it reads only the `close` column of the last `period` rows of data, the last row
-    being bar t; every close used is known at bar t's close.
-    """
-
-    def __init__(self, name="ConvexHighProximity", weight=1.0, parameters=None):
-        super().__init__(name, weight, parameters or {})
-        self.period = int(self.parameters.get("period", 365))
-        if self.period < 2:
-            raise ValueError(f"ConvexHighProximityComponent: period must be >= 2, got {self.period}")
-        self.power = float(self.parameters.get("power", 2.0))
-        if not np.isfinite(self.power) or self.power <= 0:
-            raise ValueError(f"ConvexHighProximityComponent: power must be > 0, got {self.power}")
-        self._raw_value = 0.0
-
-    def update(self, data: pd.DataFrame):
-        self.data = data
-        self._raw_value = 0.0
-        self.debug_info = {}
-        if not self.is_ready():
-            return
-        window = data['close'].astype(float).iloc[-self.period:]
-        if window.isna().any():
-            self._raw_value = float("nan")
-            self.confidence = 1.0
-            return
-        high = float(window.max())
-        close = float(window.iloc[-1])
-        if not high > 0:
-            self._raw_value = float("nan")
-            self.confidence = 1.0
-            return
-        depth = (high - close) / high * 100.0
-        base = 1.0 / (1.0 + depth)
-        self._raw_value = float(np.power(base, self.power))
-        self.confidence = 1.0
-        self.debug_info = {'high': high, 'close': close, 'depth_pct': depth}
-
-    def is_ready(self) -> bool:
-        return self.data is not None and len(self.data) >= self.get_required_periods()
-
-    def get_required_periods(self) -> int:
-        return self.period
 
 
 class RsiAboveMidlineShareComponent(SubStrategyComponent):

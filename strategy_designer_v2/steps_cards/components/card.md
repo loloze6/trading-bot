@@ -45,7 +45,9 @@ bar, that a config can use as a forecast source or in a regime rule.** Five rule
    setting on the same component (exercise 2: the share of bars with RSI below its midline, `side: below`).
 2. **A setting is added only when a wish needs a value the component does not have, and that value changes its
    output on real data**; its default keeps the component's output as it was. A setting that changes nothing on real
-   data is not added: the answer is exists (exercise 2: where an RSI of exactly 50 counts).
+   data is not added: the answer is exists (exercise 2: where an RSI of exactly 50 counts). One setting per purpose:
+   two ways of doing one job (two ways to centre a value) are one setting with one value per way (operator,
+   2026-11-17; exercise 3: `centred` and `log` on `VolumeRatioComponent` became `form`).
 3. **Graded**: its value grows with what it measures (step 3 refuses an on/off forecast).
 4. **A value on every bar of real data once warm**; no value (NaN) only where the data itself is missing.
 5. **No lookahead**: the value at bar t uses only rows up to t; its docstring carries the "why this can't leak" note.
