@@ -7,9 +7,13 @@ A component is one measure of the market, computed at a bar's close from the coi
 row of the data it is given is bar t; it never sees a later row), that a strategy config uses as a forecast source or
 in a regime rule. Five rules:
 1. One measure, named by what it measures (`<Measure>Component`), never by the idea that asked for it. The same
-   quantity against another base, window or statistic is the same measure: one component, the base a setting.
-2. A setting (a parameter) is added only when the wish needs a value a component does not have; its default keeps the
-   component's output exactly as it was.
+   quantity against another base, window or statistic is the same measure: one component, the base a setting. A
+   measure's mirror (its negative, or 1 minus it) is the same measure: exists when a config step gives it exactly
+   (`negate` gives the negative; `standardise` divides by the past mean size without centring, so nothing gives 1 minus
+   it), otherwise a setting on the same component.
+2. A setting (a parameter) is added only when the wish needs a value a component does not have, and that value
+   changes its output on real data (not only on a case real bars never show); its default keeps the component's output
+   exactly as it was. Otherwise the answer is exists.
 3. Graded: its value grows continuously with what it measures (never on/off).
 4. A finite value on every bar of real data once warm; NaN only where the data itself is missing (a NaN input). Real
    daily bars always have positive volume and a high above or equal to the low; a range can be zero.

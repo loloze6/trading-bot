@@ -39,9 +39,13 @@ bar, that a config can use as a forecast source or in a regime rule.** Five rule
 1. **One measure, named by what it measures**, never by the idea that asked for it. Two wishes for the same measure get
    one component. The same quantity against another base, window or statistic is the same measure: one component, the
    base a setting (operator, 2026-11-17: the more standard and reusable, the better; exercise 1 built the lower wick
-   over the range and over the price as two classes, merged into `LowerWickComponent`).
-2. **A setting is added only when a wish needs a value the component does not have**; its default keeps the
-   component's output as it was.
+   over the range and over the price as two classes, merged into `LowerWickComponent`). A measure's mirror (its
+   negative, or 1 minus it) is the same measure: exists when a config step gives it exactly (`negate` gives the
+   negative; `standardise` divides by the past mean size without centring, so nothing gives 1 minus it), otherwise a
+   setting on the same component (exercise 2: the share of bars with RSI below its midline, `side: below`).
+2. **A setting is added only when a wish needs a value the component does not have, and that value changes its
+   output on real data**; its default keeps the component's output as it was. A setting that changes nothing on real
+   data is not added: the answer is exists (exercise 2: where an RSI of exactly 50 counts).
 3. **Graded**: its value grows with what it measures (step 3 refuses an on/off forecast).
 4. **A value on every bar of real data once warm**; no value (NaN) only where the data itself is missing.
 5. **No lookahead**: the value at bar t uses only rows up to t; its docstring carries the "why this can't leak" note.
@@ -111,7 +115,8 @@ The same for every component, by a standard harness the model does not write (`t
 - on every cached coin's real data, a value on every bar once warm;
 - the engine runs it in a config, and the config validator accepts it, as a forecast source and in a regime rule;
 - every class in the file has one catalogue row, and the catalogue's class count is the file's;
-- a class given a new setting: its output at the old defaults is unchanged on real data;
+- a class given a new setting: its output at the old defaults is unchanged on real data, and its output at the wish's
+  settings differs, on real data, from the output without the new setting (rule 2);
 - **proof:** one fixed backtest rerun with the new code gives the same files as its record (allowed differences: run
   ids, times, temporary paths); the bot's suite passes.
 

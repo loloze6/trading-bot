@@ -9,6 +9,8 @@ judges it. Each check returns a list of failures (empty when it passes).
                    the config validator accepts it in a strategy and in a regime rule
   check_real_data  on every cached coin's daily bars, a finite value on every bar once warm
   check_defaults   (a class given a new setting) its output at the old defaults is unchanged on real data
+  check_new_setting (a class given a new setting) its output at the wish's settings differs on real data from the
+                   output without the new setting: a setting that changes nothing is not added
   check_catalogue  every class in strategy_components.py has one row in step 3's component catalogue
 
 No lookahead by construction: the engine hands a component the rows up to bar t only, so a component cannot read a
@@ -167,6 +169,27 @@ def check_defaults(old_cls, new_cls, params, data=None):
     return out
 
 
+def old_params(old_source, name):
+    """The settings an older version of a class reads (self.parameters.get("..."))."""
+    m = re.search(rf"^class {re.escape(name)}\(.*?(?=^class |\Z)", old_source, re.S | re.M)
+    return set(re.findall(r"parameters\.get\(\s*[\"'](\w+)[\"']", m.group(0))) if m else set()
+
+
+def check_new_setting(old_cls, new_cls, params, known, data=None):
+    """A setting the old class does not read must change the output somewhere on real data."""
+    new_keys = set(params) - set(known)
+    if not new_keys:
+        return []
+    data = real_data() if data is None else data
+    base = {k: v for k, v in params.items() if k in known}
+    for d in data.values():
+        a, b = values_on(old_cls, base, d), values_on(new_cls, params, d)
+        if len(a) != len(b) or not all(same(x, y) for x, y in zip(a, b)):
+            return []
+    return [f"new setting {sorted(new_keys)} {params}: the output equals the output without it on every bar of real "
+            f"data: it changes nothing (rule 2: the answer is exists)"]
+
+
 def check_catalogue(catalogue, components_file=COMPONENTS_FILE):
     classes = re.findall(r"^class (\w+)\(", Path(components_file).read_text(), re.M)
     cat = Path(catalogue).read_text()
@@ -212,8 +235,10 @@ def main():
         for p in spec.SETTINGS:
             fails += check_real_data(cls, p)
     if args.old_source:
-        old = load_class_from_source(args.old_source.read_text(), spec.CLASS)
+        old_text = args.old_source.read_text()
+        old = load_class_from_source(old_text, spec.CLASS)
         fails += check_defaults(old, cls, spec.SETTINGS[0])
+        fails += check_new_setting(old, cls, spec.SETTINGS[-1], old_params(old_text, spec.CLASS))
     if args.catalogue:
         fails += check_catalogue(args.catalogue)
     for f in fails:
