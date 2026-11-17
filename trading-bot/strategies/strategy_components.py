@@ -2303,25 +2303,34 @@ class LowerWickComponent(SubStrategyComponent):
 
 class CloseLocationInRangeComponent(SubStrategyComponent):
     """
-    Where the current bar's close sits inside that bar's own high-low range, on every bar:
+    Where the current bar's close sits inside the bar's own range, measured from one end:
 
-        raw_value = (close[t] - low[t]) / (high[t] - low[t])      (0.5 when high[t] == low[t])
+        reference = "low" (default): raw_value = (close[t] - low[t]) / (high[t] - low[t])
+        reference = "high":          raw_value = (high[t] - close[t]) / (high[t] - low[t])
+        high[t] == low[t] (zero range): raw_value = 0.5 with either reference
 
-    Range: 0 to 1 on real bars (the close lies between the low and the high). It is never negative. 0 means the bar
-    closed at its low, 1 means it closed at its high, and 0.5 means mid-range. It has no sign; a larger value is a
-    stronger close. It is graded: it moves continuously with the distance of the close above the low. Warm-up: 1 bar
-    (bar t alone).
+    The default "low" is the original output: 0 when the close is at the bar's low, 1 at its high.
+    Setting "high" gives 1 minus that: 0 when the close is at the bar's high, growing to 1 as the close
+    nears the bar's low.
+    Graded. The value lies in 0 to 1 and is never negative when the close lies inside [low, high], as it does
+    on real bars. It has no sign. It is 0.5 at mid-range.
+    Warm-up: 1 row (bar t only).
 
-    NaN: a NaN high, low or close on bar t gives NaN, never a fabricated reading. A zero range (high == low, a flat
-    bar) gives 0.5: there is no range to place the close in, so the close is neither high nor low in it. A missing
-    column raises.
+    WHY THIS CANNOT LEAK: it reads only the `high`, `low` and `close` values of the last row of data (bar t),
+    all of which are known at bar t's close; no earlier or later row is read.
 
-    WHY THIS CANNOT LEAK: it reads only the `high`, `low` and `close` of the last row of `data`, which is bar t. All
-    three are known at bar t's close. It reads no other row.
+    NaN: a NaN high, low or close on bar t gives NaN. A zero range gives 0.5, because there is no range to
+    place the close in. A missing column raises.
+    Building the component raises for a reference other than "low" or "high".
     """
 
-    def __init__(self, name="CloseLocationInRange", weight=1.0, parameters=None):
+    def __init__(self, name="CloseLocation", weight=1.0, parameters=None):
         super().__init__(name, weight, parameters or {})
+        ref = self.parameters.get("reference", "low")
+        if ref not in ("low", "high"):
+            raise ValueError(
+                f"CloseLocationInRangeComponent: reference must be 'low' or 'high', got {ref!r}")
+        self.reference = ref
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -2330,17 +2339,21 @@ class CloseLocationInRangeComponent(SubStrategyComponent):
         self.debug_info = {}
         if not self.is_ready():
             return
-        high = float(data['high'].iloc[-1])
-        low = float(data['low'].iloc[-1])
-        close = float(data['close'].iloc[-1])
-        if np.isnan(high) or np.isnan(low) or np.isnan(close):
-            value = float("nan")
+        h = float(data['high'].iloc[-1])
+        l = float(data['low'].iloc[-1])
+        c = float(data['close'].iloc[-1])
+        if np.isnan(h) or np.isnan(l) or np.isnan(c):
+            self._raw_value = float("nan")
         else:
-            rng = high - low
-            value = 0.5 if rng == 0 else (close - low) / rng
-        self._raw_value = float(value)
+            rng = h - l
+            if rng == 0:
+                self._raw_value = 0.5
+            elif self.reference == "high":
+                self._raw_value = float((h - c) / rng)
+            else:
+                self._raw_value = float((c - l) / rng)
         self.confidence = 1.0
-        self.debug_info = {'high': high, 'low': low, 'close': close}
+        self.debug_info = {'high': h, 'low': l, 'close': c, 'reference': self.reference}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
