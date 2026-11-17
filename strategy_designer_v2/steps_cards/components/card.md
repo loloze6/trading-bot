@@ -171,7 +171,9 @@ On the fixed inputs, twice in a row:
 - **standardization:** one component per measure, named by it; the same docstring and checks for every component; the
   answered wishes come back as exists;
 - **unblocking:** the blocked ideas are rerun; count those step 3 now plans.
-Status: not started (the 57 open wishes of the 11 runs, of which the volume wishes `VolumeRatioComponent` answers).
+Status: exercises 1 to 3 (`exercise_1/`, `exercise_2/`, `exercise_3/`): quality met (every build passes every check and
+the proof, twice); unblocking met (46 of 49 refused ideas unblocked; the automatic path proven on night_rsi_run);
+standardization: two findings for the operator (exercise 3).
 
 ## What it changes elsewhere (each in its own card)
 - `loop`: the two calls (every 10 turns; before stopping for no candidate; never twice without a turn between); its
