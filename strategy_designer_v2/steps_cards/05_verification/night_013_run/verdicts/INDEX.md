@@ -20,3 +20,4 @@
 013-02_follow-through-stronger-near-high_1d: inconclusive (fit: adapted) [main: 0.00207032; OLS slope t 0.130658; independent grid cases 526, above-median W cases 193, below-median W cases 193]
 013-03_breakout-above-high-continues_1d: not observable (fit: adapted) [main: 0.205492; OLS slope t 5.17955; grid bars where the forecast is above 0 10]
 013-04_heavy-volume-below-high-breakout_1d: inconclusive (fit: adapted) [main: 0.273124; Welch t 1.98702; de-duplicated breakout events 50, top half events 25, bottom half events 25]
+013-05_longer-stall-bigger-breakout_1d: not observable (fit: adapted) [main: None; trending grid bars 18]

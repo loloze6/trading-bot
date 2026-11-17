@@ -20,3 +20,4 @@
 013-02_follow-through-stronger-near-high_1d: 3 ideas (2 explorations)
 013-03_breakout-above-high-continues_1d: 2 ideas (2 explorations)
 013-04_heavy-volume-below-high-breakout_1d: 1 ideas (2 explorations)
+013-05_longer-stall-bigger-breakout_1d: 1 ideas (3 explorations)

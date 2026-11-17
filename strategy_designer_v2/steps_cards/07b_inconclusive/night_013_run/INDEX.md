@@ -20,3 +20,4 @@
 013-02_follow-through-stronger-near-high_1d: 1 ideas (2 explorations)
 013-03_breakout-above-high-continues_1d: not run: entry condition not met (step 5: not observable; step 6: not profitable enough)
 013-04_heavy-volume-below-high-breakout_1d: 1 ideas (1 explorations)
+013-05_longer-stall-bigger-breakout_1d: not run: entry condition not met (step 5: not observable; step 6: not profitable enough)

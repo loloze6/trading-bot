@@ -1,0 +1,19 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 30-bar forward return on stall post_pipeline_value",
+    "value": null,
+    "statistic": null,
+    "threshold": "slope > 0 with t >= 2 confirms; slope < 0 with t <= -2 rejects; on at least 30 cases"
+  },
+  "supporting_check": null,
+  "counts": {
+    "trending grid bars": 18
+  },
+  "decided_by": "Only 18 trending grid bars, fewer than the plan's minimum of 30 cases.",
+  "reading": "Situation taken as regime 'trending' plus an in-window price check, side long; the coin mean is over all its complete grid bars in all windows (trending or not); grid bars without a full 30-bar forward return inside the window or without a recorded stall value are left out; the slope's t is the ordinary OLS t pooled across coins."
+}

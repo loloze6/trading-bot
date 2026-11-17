@@ -20,3 +20,4 @@
 013-02_follow-through-stronger-near-high_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 23/24 (1 not run: the engine stopped); XRPUSD 22/24 (2 not run: the engine stopped); ZECUSD 23/24 (1 not run: the engine stopped) [1d, folds A, B, C, D]
 013-03_breakout-above-high-continues_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 23/24 (1 not run: the engine stopped); XRPUSD 22/24 (2 not run: the engine stopped); ZECUSD 23/24 (1 not run: the engine stopped) [1d, folds A, B, C, D]
 013-04_heavy-volume-below-high-breakout_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 23/24 (1 not run: the engine stopped); XRPUSD 22/24 (2 not run: the engine stopped); ZECUSD 24/24 [1d, folds A, B, C, D]
+013-05_longer-stall-bigger-breakout_1d: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 22/24 (2 not run: the engine stopped); XRPUSD 21/24 (3 not run: the engine stopped); ZECUSD 23/24 (1 not run: the engine stopped) [1d, folds A, B, C, D]
