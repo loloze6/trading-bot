@@ -1,3 +1,4 @@
 012-01_liquidation-flush-rebound_1d: missing-components: The lower wick is the distance between the bar's low and its close. Only high/low-reading components exist (ADXDirectionalComponent, KeltnerBreakoutComponent, regime [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 012-02_volume-burst-fall-reversal_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 012-03_lower-wick-flush-recovery_1d: missing-components: The idea's graded variable is the lower wick as a share of the bar's range, (close - low) / (high [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+012-04_flush-depth-retracement-size_1d: missing-components: Two parts of the idea need intrabar shape: the long lower wick and the bar's drop from open to low. [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
