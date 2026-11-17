@@ -3,14 +3,18 @@
 ## The runs
 A run is a `<name>_run` folder in a step's folder. 11 run names, measured:
 
-| run | briefs | ideas (step 2 folder) | plans (step 3) | backtests (step 4) | step 5 results | step 6 results | step 7 results | run_idea table / loop queue |
+| run | briefs | step 2 idea files | step 3 plans | backtests with windows | step 5 results | step 6 results | step 7 results | run_idea table / loop queue |
 |---|---|---|---|---|---|---|---|---|
-| demo_run | 1 | 12 | 13 | 13 | 12 | 12 | 30 | yes / yes |
-| night_run | 3 | 39 | 30 | 20 | 19 | 19 | 45 | yes / yes |
-| night_005_run, night_006_run, night_012_run, night_rsi_run | 1 each | 2 to 8 | all refused | 0 | 0 | 0 | 0 | yes / yes |
-| night_013_run | 1 | 33 | 34 | 20 | 19 | 19 | 42 | yes / yes |
-| volume_run | 4 | 19 | 20 | 12 | 11 | 11 | 28 | yes / no |
-| full_data_run, hourly_run, validation_run | 2 to 4 | 0 to 12 | 9 to 27 | 10 to 24 | 12 to 23 | 1 to 23 | 0 | no / no (steps called one by one) |
+| demo_run | 1 | 12 | 12 | 12 | 12 | 12 | 30 | yes / yes |
+| night_run | 3 | 39 | 29 | 19 | 19 | 19 | 45 | yes / yes |
+| night_013_run | 1 | 33 | 33 | 19 | 19 | 19 | 42 | yes / yes |
+| night_005_run, night_006_run, night_012_run, night_rsi_run | 1 each | 2, 5, 4, 8 | all refused | 0 | 0 | 0 | 0 | yes / yes |
+| volume_run | 4 | 19 | 19 | 11 | 11 | 11 | 28 | yes / no |
+| full_data_run | 3 | 6 | 6 | 6 | 6 | 6 | 0 | no / no |
+| hourly_run | 4 | 10 | 10 | 10 | 10 | 1 | 0 | no / no |
+| validation_run | 2 | 0 | 22 | 23 | 23 | 23 | 0 | no / no |
+
+The last three were called step by step, without the orchestration functions (counted by `helper/build_page.py`).
 
 ## Which file holds what
 | what the operator wants to see | file (all committed) |
