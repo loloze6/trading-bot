@@ -128,7 +128,7 @@ Use the archive (1.3). For the in-sample span the "backfill" is an ingest of fil
 - Rate: ccxt `enableRateLimit=True` plus at least 1 s between calls.
 - Errors: `EAPI:Rate limit exceeded` and network errors back off 2, 4, 8, 16 s. After 4 failures the loop stops with the checkpoint intact.
 - Writes are idempotent. Closed minutes are flushed to a per-day file through a temp file and an atomic rename. A minute is closed when a trade from a later minute is seen.
-- Stop rule: the cursor passes the exploration boundary. No trade at or after it is kept or printed.
+- Stop rule: the cursor passes the exploration boundary. The last page Kraken returns can still hold trades past it (a page is 1000 trades). They are dropped on arrival, before any counter, file or log line (the same rule the probe applies at its day end).
 - Cost: measured by the probe (2.6). Requests per day equal trades per day / 1000.
 
 ### 2.4 Storage (decision 2)
@@ -173,7 +173,7 @@ Staging: `C:\Users\alauz\Documents\Projects\data_staging\kraken_1m_probe\`, outs
 Archive, one file (`master_q4/XBTUSD_1.csv`, the local copy, read-only):
 - Whole file: 4,636,234 rows, 256,666,564 bytes, first bar 2013-10-06 21:34 UTC.
 - Last bar: the archive's in-sample cutoff.
-- Sealed rows: 0, counted through the policy helper.
+- Sealed rows: none present (checked through the policy helper; the tool records a yes/no, never a count).
 - Defects: 0 on every counter (grid, order, duplicates, OHLC, volume, trade count, NaN).
 - Missing minutes over its life: 1,799,272, all no-trade minutes. Mostly the early years.
   - Histogram: 1 min 145,763; 2-5 min 78,893; 6-60 min 33,967; 61-1440 min 4,489; more than 1440 min 27.
@@ -240,7 +240,23 @@ Two outputs:
 - campaign level: `campaign_record/data_census/census_<UTC>.yaml`, one per census run, never overwritten, read-only for the pipeline;
 - per run: `--run-dir <run>` writes `artifacts/variants/<v>/data_census.yaml` next to each variant's `data_availability_gate.yaml`. It is a CLI mode only. Wiring it into `run_phase1_research.py` behind a flag that is off by default waits for decision 5.
 
-Census result (tonight): pending; filled from the census hand-back.
+Census result (2026-10-23; branch `feat/census-audit`, file `campaign_record/data_census/census_20261023T074436Z.yaml`, 21 caches at 1d and 23 at 1h):
+- The 1d caches are clean inside their life.
+  - 0 duplicate and 0 unparseable timestamps.
+  - Kraken 1d within-life missing percentage is at most 0.3%, except LTCUSD at 4.2%.
+  - Fold windows that decline do so only because the coin was not yet listed.
+- The 1h Kraken caches are gappier over the whole life, mostly from the early years: BTCUSD 10.1%, LTCUSD 20.8% (a 392-bar gap in 2015), INJUSD 5.7%, DOGEUSD 5.0%, ZECUSD 4.9%.
+  - Most Kraken 1h fold-D windows grade `refine`.
+  - ZECUSD 1h falls under the D-042 60% reading on folds A, B and C.
+- Binance BTCUSDT/ETHUSDT 1h: every fold-C window grades `refine`, and so does every fold-B window, on the gate's pure 5% classification.
+  - The cause is 4-10-bar maintenance gaps.
+  - Under the gate's own small-gap rule (CUL-374, runs of at most 3 bars count as validate), fold B reaches 4 of 6 and fold C stays at 0 of 6.
+
+Each window carries two grades:
+- `classification`: the pure 5% rule;
+- `gate_outcome`: `check_price_window`'s CUL-374 promotion of all-small-run refines to validate (`data_availability_gate.py:731-744`).
+
+The D-042 reading counts `gate_outcome`.
 
 ---
 
