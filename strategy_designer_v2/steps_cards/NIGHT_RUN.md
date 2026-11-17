@@ -61,3 +61,12 @@ and its lines, generations 0 to 3: **11 confirmed** (t +2.9 to +5.6), 7 inconclu
 - **Seen, not acted on:** two ideas from different parents gave the same t (+2.75) and the same failures, probably the
   same test written twice in different words; `select_next`'s duplicate rule only catches identical text.
 
+**Stage 3 (02:28 to 02:38 UTC; brief 010 added to night_run; stopped after 2 ideas).** Step 2 wrote 4 RSI ideas, but
+they ranked below the 7.g line's generation-3 ideas (score 0.17 against 0.18): step 2's record is 0 of 4, 7.g's 10 of
+13. The two turns went to further variants of the same short reversal. Stage 3's purpose was a new theory, so it was
+stopped between two ideas (the last turn's idea had not reached a plan: nothing half-written) and brief 010 runs in its
+own run, `night_rsi_run` (budget 15 USD), under the same outcomes.
+- **Finding for the operator (the score is theirs, not changed):** 7.g's record is high because its ideas keep
+  confirming one effect in new words (a fall in a volatile day rebounds), so the score keeps choosing that effect's
+  variants over a new theory's ideas. A line's record rewards re-finding a known effect as much as finding a new one.
+

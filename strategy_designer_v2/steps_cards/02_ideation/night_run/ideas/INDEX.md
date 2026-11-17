@@ -8,3 +8,7 @@
 011-04_thin-weekend-drop-rebounds-more: Weekend drops on low volume versus the 30-day average rebound more over Monday–Tuesday, the thinner the weekend, the bigger the rebound.
 011-05_weekend-reverses-more-than-weekday: Per unit of size, a coin's weekend 2-day move reverses more over the next 2 days than its weekday 2-day moves.
 011-06_weekend-reversal-concentrated-monday: Reversal of a coin's weekend move is concentrated on Monday, larger than over Wednesday–Friday, and grows with weekend move size.
+010-01_rsi-above-midpoint-continues-up: The longer a coin's 14-day RSI has sat above its midpoint over 14 days, the larger its rise over the next 7 days. [instruments: BTC, ETH, BNB]
+010-02_rsi-below-midpoint-continues-down: The longer a coin's 14-day RSI has sat below its midpoint over 14 days, the larger its fall over the next 7 days. [instruments: BTC, ETH, BNB]
+010-03_rsi-above-midpoint-reverses-down: The longer a coin's 14-day RSI has sat above its midpoint over 14 days, the larger its fall over the next 7 days. [instruments: BTC, ETH, BNB]
+010-04_rsi-below-midpoint-reverses-up: The longer a coin's 14-day RSI has sat below its midpoint over 14 days, the larger its rise over the next 7 days. [instruments: BTC, ETH, BNB]

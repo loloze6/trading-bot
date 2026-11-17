@@ -31,3 +31,6 @@ One block per idea that needs components the catalogue does not have.
 ## 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday_1d
 - Component: VolumeWeightedScaledReturn: (close[t]/close[t-1] - 1) / std of the last 20 one-bar returns, times volume[t] / mean of the last 20 volumes. It is read from the close and volume columns. It is signed, and its size grows with both the move in usual-move units and the relative volume. | measures: comparison
 - Component: RelativeVolume: volume[t] / mean of the last `period` volumes, from the volume column. It is one-sided, about 1 at usual volume and grows as volume rises above its average. | measures: comparison
+
+## 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal.g1_high-volume-weekend-moves-reverse_1d
+- Component: VolumeWeightedScaledReturn: (close[t]/close[t-1] - 1) / std(last 20 one-bar returns) x volume[t] / mean(volume over the last 20 bars), from close and volume; signed, and its size grows with both the move in usual moves and the relative volume | measures: comparison
