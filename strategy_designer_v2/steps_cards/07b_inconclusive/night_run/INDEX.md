@@ -1,6 +1,8 @@
 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday_1d: 1 ideas (2 explorations)
+011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week_1d: 1 ideas (2 explorations)
 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins_1d: 2 ideas (2 explorations)
 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal_1d: 2 ideas (2 explorations)
 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways_1d: no ideas: The weekend reversal is present but only as a sign effect that peaks for moderate weekend moves and fades for the largest ones (F1, F2), and relative volume adds no grading either (F4). No graded version of the idea fits these results, and more data is unlikely to rescue the grading that the data already contradicts.

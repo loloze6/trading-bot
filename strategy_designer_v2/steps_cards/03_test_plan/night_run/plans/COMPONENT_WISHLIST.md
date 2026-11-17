@@ -24,3 +24,6 @@ One block per idea that needs components the catalogue does not have.
 
 ## 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g2_heavy-volume-fall-rebounds_1d
 - Component: RelativeVolumeToMedian: volume[t] / median(volume of the past 20 bars), from the volume column; it is 1 at usual volume and grows without bound as the day's volume gets heavier | measures: situation
+
+## 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.b1_weekend-move-reverses-three-days_1d
+- Component: LaggedVolatilityScaledReturnComponent: the one-bar return of the bar `lag` bars before the current one (close[t-lag]/close[t-lag-1] - 1), divided by the standard deviation of the `vol_period` one-bar returns ending at that bar; read from closes only; signed, grows with the size of that past move in usual moves (lag 0, 1, 2 on the Sunday, Monday, Tuesday closes gives the weekend move) | measures: situation

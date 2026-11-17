@@ -1,6 +1,8 @@
 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal_1d: confirmed (fit: adapted) [main: 0.00553164; t of the mean 5.09534; bars with forecast > 0 3982]
 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday_1d: inconclusive (fit: adapted) [main: 0.000103137; OLS slope t 0.285031; Sunday-fall cases 1196]
+011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways_1d: confirmed (fit: adapted) [main: 0.00639905; t of the mean 5.55442; cases 5238]
 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal_1d: confirmed (fit: exact) [main: 0.00103142; t of the mean 4.61315; weekend bars (main measure) 10535, weekend bars (supporting check) 8806, weekday bars (supporting check) 22022]
+011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week_1d: inconclusive (fit: adapted) [main: 0.000283662; OLS slope t 1.11911; Sunday-fall cases 2665]
 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins_1d: inconclusive (fit: adapted) [main: 0.0084513; ordinary t of the mean 4.87648; cases 2574]
 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal_1d: inconclusive (fit: exact) [main: 0.00128714; ordinary t of the mean 4.75586; active bars 8146, down-day bars 3922, up-day bars 4149]
 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways_1d: inconclusive (fit: adapted) [main: 0.00428853; ordinary t of the mean 2.75089; Sunday cases with a full 2-bar outcome 2465, active bars 2506]

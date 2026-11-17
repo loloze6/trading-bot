@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9988713318284425,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (forecast/10) x excess 2-bar return over coin mean, Sunday cases",
+    "value": 0.006399054602904421,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 5.554416101605671
+    },
+    "threshold": "confirm if t >= 2 with tercile check passing; reject if t <= -2; at least 300 cases"
+  },
+  "supporting_check": {
+    "name": "top minus bottom |forecast| tercile mean of sign(forecast) x excess 2-bar return",
+    "value": 0.0053795704193595585,
+    "passed": true
+  },
+  "counts": {
+    "cases": 5238
+  },
+  "decided_by": "The main-measure t is >= 2 and the top-minus-bottom tercile difference is > 0.",
+  "reading": "Sunday bar is the bar whose UTC start is a Sunday; side expected is opposite the sign of the Sunday 1-bar return (recorded last_history_value, else close/prev close); cases require Sunday, regime mean_reversion, non-zero forecast and t+2 in window; coin mean 2-bar return from the non-overlapping grid of all windows pooled; terciles are three near-equal groups of cases sorted by |forecast| (stable sort), and the 300-case minimum is treated as the not-observable minimum."
+}

@@ -19,19 +19,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal | 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways | plan | inconclusive (+4.76) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.b: 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal.b1_high-vol-down-day-rebound, 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal.b2_vol-regime-reversal-more-coins; 7.d: 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal.d1_high-volatility-down-day-rebound, 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal.d2_large-falls-rebound-next-day; 7.g: 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal.g1_high-vol-down-day-rebound, 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal.g2_saturday-move-reverses-sunday | 1.22 | 6.1 |
 | 011-01_weekend-rise-reverses-monday.g1_volatile-day-selloffs-bounce-next.g1_falls-closing-near-low-bounce | 011-01_weekend-rise-reverses-monday.g1_volatile-day-selloffs-bounce-next | missing-components | - | - | - | 0.04 | 0.3 |
 | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g2_heavy-volume-fall-rebounds | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday | missing-components | - | - | - | 0.04 | 0.2 |
+| 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins | plan | inconclusive (+1.12) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.b: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week.b1_sunday-move-reverses-midweek; 7.d: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week.d1_thin-weekend-sunday-move-reverses, 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week.d2_sunday-rise-fades-early-week, 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week.d3_sunday-fall-rebounds-when-volatile; 7.g: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week.g1_sunday-move-reverses-volatility-graded, 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week.g2_thin-volume-sunday-moves-fade, 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week.g3_high-volatility-daily-moves-reverse, 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week.g4_calm-period-daily-moves-continue | 1.47 | 13.3 |
+| 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.b1_weekend-move-reverses-three-days | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday | missing-components | - | - | - | 0.09 | 0.7 |
+| 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins | plan | confirmed (+5.55) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.d: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.d1_trend-extending-weekend-moves-reverse, 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.d2_daily-moves-reverse-next-day; 7.g: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.g1_volatile-regime-daily-move-reversal, 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.b1_sunday-move-reverses-both-ways.g2_saturday-move-reverses-sunday | 1.06 | 10.7 |
 
 ## Consumption
-15 ideas, 14.31 USD, 75.7 minutes in all.
+18 ideas, 16.93 USD, 100.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.28 | 7.7 |
-| step4_backtest | 0.00 | 21.6 |
-| step5_verdict | 1.04 | 4.6 |
-| step6_check | 0.00 | 0.3 |
+| step3_plan | 1.53 | 9.5 |
+| step4_backtest | 0.00 | 36.9 |
+| step5_verdict | 1.33 | 5.7 |
+| step6_check | 0.00 | 0.4 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 1.90 | 6.1 |
-| step7_7.d | 6.49 | 23.9 |
-| step7_7.g | 3.60 | 11.5 |
+| step7_7.b | 2.30 | 7.2 |
+| step7_7.d | 7.31 | 26.3 |
+| step7_7.g | 4.46 | 14.2 |
