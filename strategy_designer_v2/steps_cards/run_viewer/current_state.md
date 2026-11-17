@@ -62,6 +62,11 @@ With them, the backtest page draws per coin the price against the book (holding 
 the position, and marks the trades. The step 6 `curve.csv` above still gives "holding all the coins" as step 6
 measured it.
 
+Ruled and built (2026-11-17, commit c7045849): step 4 writes `chart_bars.csv.gz` and `chart_trades.csv.gz` for backtests
+confirmed by step 5 or profitable enough by step 6; 46 backtests backfilled, 14.4 MB. Found on reading them: in
+`chart_bars.csv.gz` the `position` and `value` columns are swapped (`pd.read_csv(usecols=...)` keeps the file's column
+order, and the bar file has the value before the position); `chart_trades.csv.gz` matches a local rebuild exactly.
+
 ## The v1 viewer (`strategy-research/tools/run_viewer/`), what is kept
 Kept: read-only, one JSON per view built from the files, phone width first, no network, dark mode.
 Dropped: the server, the four levels, the raw-file views, the date masking module (this page shows no date: it shows

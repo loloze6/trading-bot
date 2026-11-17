@@ -127,7 +127,28 @@ def test_briefs_are_found_by_the_idea_number(cards):
     assert data["briefs"]["001"]["title"] == "rises continue" and data["briefs"]["001"]["runs"] == ["x_run"]
     r = data["runs"][0]
     assert {i["brief"] for i in r["ideas"].values()} == {"001"}
-    assert r["dates"] is None                                    # no git history in the test folder
+
+
+def test_dates_come_from_the_record(cards):
+    # without dated journal lines: the backtest engine's own run times (manifest created_utc of w1 and w2)
+    r = the_run(cards)
+    assert r["dates"] == ["2026-11-17 01:00", "2026-11-17 02:00"]
+    assert r["ideas"][ROOT]["dated"] == "2026-11-17 01:00" and r["ideas"][CHILD]["dated"] is None
+    # a journal dated in full counts; a time without its day does not
+    w(cards / "orchestration/run_idea/x_run/journal.jsonl", "\n".join(json.dumps(j) for j in [
+        {"at": "00:30:00 UTC", "backtest": f"{ROOT}_1d", "step": "step3_plan", "action": "called"},
+        {"at": "2026-11-16T23:59:00Z", "backtest": f"{CHILD}_1d", "step": "step3_plan", "action": "called"},
+        {"at": "2026-11-17T05:10:00Z", "backtest": f"{ROOT}_1d", "step": "step5_verdict", "action": "called"}]))
+    r = the_run(cards)
+    assert r["dates"] == ["2026-11-16 23:59", "2026-11-17 05:10"]
+    assert r["ideas"][CHILD]["dated"] == "2026-11-16 23:59" and r["ideas"][ROOT]["dated"] == "2026-11-17 05:10"
+    assert bp.stamp("00:30:00 UTC") is None and bp.stamp("2026-11-17T05:10:00+00:00") == "2026-11-17 05:10"
+
+
+def test_chart_files_are_pointed_to_when_present(cards):
+    assert the_run(cards)["backtests"][f"{ROOT}_1d"]["chart"] is None
+    w(cards / f"04_backtest/x_run/backtests/{ROOT}_1d/chart_bars.csv.gz", "x")
+    assert the_run(cards)["backtests"][f"{ROOT}_1d"]["chart"] == f"04_backtest/x_run/backtests/{ROOT}_1d/"
 
 
 def test_run_brief_and_purpose(cards):

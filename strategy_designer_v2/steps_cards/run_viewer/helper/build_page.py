@@ -8,13 +8,18 @@ file, or a count, sum, mean or product of such fields (card: run_viewer/card.md)
 import argparse
 import json
 import re
-import subprocess
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 CARDS = HERE.parent.parent                      # steps_cards/
 IDEA_ID = re.compile(r"^\d{3}-\d{2}_[\w.-]+$")   # 011-01_weekend-rise-reverses-monday.b1_...
 BAR_SUFFIX = re.compile(r"_(\d+[smhdw])$")       # a backtest id is the idea id plus its bar: ..._1d
+FULL_DATE = re.compile(r"^\d{4}-\d\d-\d\dT\d\d:\d\d")  # a journal "at" with its day (journals before 2026-11-17: time only)
+
+
+def stamp(at):
+    """'2026-11-17T19:41:09Z' or '...+00:00' -> '2026-11-17 19:41'; None for a time without its day."""
+    return at[:16].replace("T", " ") if isinstance(at, str) and FULL_DATE.match(at) else None
 
 
 def read_text(p):
@@ -179,7 +184,8 @@ def book_by_window(bt_dir):
     per_coin = {c: [rows.get(w) for w in order] for c, rows in coins.items()}
     return {"windows": order, "values": values, "years": years, "coins": list(coins),
             "coin_windows": sum(len(per_window[w]["returns"]) for w in order),
-            "fields": list(WINDOW_FIELDS), "per_coin": per_coin, "ran": min(ran)[:16].replace("T", " ") if ran else None}
+            "fields": list(WINDOW_FIELDS), "per_coin": per_coin,
+            "ran": stamp(min(ran)) if ran else None, "ran_last": stamp(max(ran)) if ran else None}
 
 
 def step3(plan_path):
@@ -231,28 +237,6 @@ def step7(cards, run, bid):
     return out
 
 
-def git_dates(cards):
-    """path (relative to cards) -> [first, last] commit time (UTC, minutes), from the committed history. None without git."""
-    try:
-        out = subprocess.run(["git", "-C", str(cards), "log", "--name-only", "--format=@@%cI", "--relative", "--", "."],
-                             capture_output=True, text=True, encoding="utf-8", check=True).stdout
-    except (OSError, subprocess.CalledProcessError):
-        return {}
-    dates, when = {}, None
-    for line in out.splitlines():
-        if line.startswith("@@"):
-            when = line[2:18].replace("T", " ")
-        elif line.strip() and when:
-            d = dates.setdefault(line.strip(), [when, when])
-            d[0], d[1] = min(d[0], when), max(d[1], when)
-    return dates
-
-
-def span(dates, prefixes):
-    hits = [d for p, d in dates.items() if p.startswith(prefixes)]
-    return [min(d[0] for d in hits), max(d[1] for d in hits)] if hits else None
-
-
 def all_briefs(cards):
     """brief number ('011') -> {id, title, text, runs}, from every run's brief folder."""
     out = {}
@@ -266,7 +250,7 @@ def all_briefs(cards):
     return out
 
 
-def build_run(cards, run, files, dates):
+def build_run(cards, run, files):
     rb = run_brief_file(cards, run)
     rb_text = read_text(rb) if rb else None
     briefs = []
@@ -291,16 +275,19 @@ def build_run(cards, run, files, dates):
     for bid in sorted(bids):
         s3 = step3(plans[bid]) if bid in plans else None
         idea = (s3 or {}).get("idea") or idea_of_backtest(bid)
-        cost = {}
+        cost, dated = {}, []
         for j in journal:
             if j.get("backtest") == bid:
+                if stamp(j.get("at")):
+                    dated.append(stamp(j.get("at")))
                 c = cost.setdefault(j.get("step", "?"), {"usd": 0.0, "seconds": 0.0, "ran": False})
                 c["ran"] = c["ran"] or j.get("action") == "called"
                 c["usd"] += float(j.get("usd") or 0)
                 c["seconds"] += float(j.get("seconds") or 0)
         bt_dir = cards / f"04_backtest/{run}/backtests/{bid}"
         backtests[bid] = {
-            "id": bid, "idea": idea, "step3": s3,
+            "id": bid, "idea": idea, "step3": s3, "dated": sorted(dated),
+            "chart": f"04_backtest/{run}/backtests/{bid}/" if (bt_dir / "chart_bars.csv.gz").is_file() else None,
             "book": book_by_window(bt_dir) if bt_dir.is_dir() else None,
             "step5": step5(cards / f"05_verification/{run}/verdicts/{bid}/result.json"),
             "step6": step6(cards / f"06_profitability/{run}/checks/{bid}/result.json"),
@@ -321,10 +308,12 @@ def build_run(cards, run, files, dates):
     for i in sorted(ids):
         fm, body = front_matter(idea_text(files, i, run))
         q = q_by.get(i)
-        own = [f"03_test_plan/{run}/plans/{b}.md" for b in backtests if backtests[b]["idea"] == i]
-        first = [dates[x][0] for x in own + [f"02_ideation/{run}/ideas/{i}.md"] if x in dates]
+        mine = [b for b in backtests if backtests[b]["idea"] == i]
+        first = sorted(x for b in mine for x in backtests[b]["dated"])
+        if not first:
+            first = sorted(backtests[b]["book"]["ran"] for b in mine if backtests[b]["book"] and backtests[b]["book"]["ran"])
         ideas[i] = {"id": i, "title": words(i), "parent": parent_of(i), "line": line_of(i), "brief": i[:3],
-                    "recorded": min(first) if first else None,
+                    "dated": first[0] if first else None,
                     "text": body.strip() or None, "statement": labelled(body, "Idea:"),
                     "backtests": sorted(b for b in backtests if backtests[b]["idea"] == i),
                     "queue": {"status": q.get("status"), "score": q.get("score")} if q else None,
@@ -358,14 +347,22 @@ def build_run(cards, run, files, dates):
     return {
         "name": run, "run_brief": rb.name if rb else None, "run_brief_text": rb_text, "purpose": purpose(rb_text),
         "briefs": briefs, "ideas": ideas, "roots": roots, "backtests": backtests,
-        "dates": span(dates, tuple(f"{d.name}/{run}/" for d in cards.iterdir() if d.is_dir())
-                      + tuple(f"orchestration/{f}/{run}/" for f in ("loop", "run_brief", "run_idea"))),
+        "dates": run_dates(journal + brief_journal + turns, backtests),
         "totals": {"ideas": len(ideas), "backtests": len(tested), "idea_states": _count(i["state"] for i in ideas.values()),
                    "step3": _count((b["step3"] or {}).get("outcome") for b in backtests.values() if b["step3"]),
                    "step5": count("step5"), "step6": count("step6"),
                    "usd": round(usd, 2) if lines else None, "seconds": round(secs) if lines else None,
                    "turns": len(turns), "journal_lines": len(lines)},
     }
+
+
+def run_dates(lines, backtests):
+    """The earliest and latest full timestamps in the run's record: journal lines dated in full, backtests' engine runs."""
+    when = [stamp(j.get("at")) for j in lines if stamp(j.get("at"))]
+    for b in backtests.values():
+        if b["book"] and b["book"]["ran"]:
+            when += [b["book"]["ran"], b["book"]["ran_last"]]
+    return [min(when), max(when)] if when else None
 
 
 def _count(values):
@@ -376,8 +373,8 @@ def _count(values):
 
 
 def build(cards):
-    files, dates = idea_files(cards), git_dates(cards)
-    runs = [build_run(cards, r, files, dates) for r in run_names(cards)]
+    files = idea_files(cards)
+    runs = [build_run(cards, r, files) for r in run_names(cards)]
     runs.sort(key=lambda r: (r["dates"] or ["", ""])[1], reverse=True)   # last updated first
     # an idea whose parent sits in another run says which
     where = {}

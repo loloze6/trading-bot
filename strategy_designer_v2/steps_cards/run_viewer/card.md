@@ -28,8 +28,8 @@ in order with one result per step, and the run's cost and time.**
 - A backtest page: the book of all coins, then one coin at a time (its book and its windows' figures).
 - A "?" next to each notion that needs it: a plain-words explanation, written from the step cards and
   `common/measures.md`.
-- What the page never shows: an opinion, a score of its own, a date of its own (dates shown are commit times and the
-  engine's run time, read from the record).
+- What the page never shows: an opinion, a score of its own, a date of its own (dates shown are the record's own:
+  journal lines dated in full, the engine's run times).
 
 ## The fields of a view
 1. **Run line** (the list of runs, last updated first): name, first and last commit time of the run's files, ideas,
@@ -73,8 +73,9 @@ in order with one result per step, and the run's cost and time.**
    - For: the run's ideas accounted for, untested and blocked ones included.
    - Used by: the operator.
    - Without it: the untested majority is invisible (night_013_run: 56 of 91 ideas waiting).
-9. **Dates**: run: first and last commit of its files (git); idea: first commit of its plan or idea file; backtest:
-   the engine's run time (`manifest.json` `created_utc`). Commit times, never data dates.
+9. **Dates** (UTC): run: the earliest and latest full timestamps of its record (journal lines dated in full, written
+   since 2026-11-17; the backtests' `manifest.json` `created_utc`); idea: its first dated journal line, else its
+   backtest's `created_utc`; otherwise "date not recorded". Git commit times are not used (operator, 2026-11-17).
    - For: when a run happened, what is newest.
    - Used by: the operator.
    - Without it: runs with no order in time.
@@ -83,8 +84,11 @@ in order with one result per step, and the run's cost and time.**
    - For: which coins and periods carry or sink the book.
    - Used by: the operator.
    - Without it: one averaged line hides the coin that lost.
-   - Price, forecast, position and the book's value bar by bar, and the trades: not committed. Proposal in
-     `current_state.md`.
+   - Day by day, where the backtest has chart files (`chart_bars.csv.gz`, `chart_trades.csv.gz`, written by step 4
+     for backtests confirmed by step 5 or profitable enough by step 6): per coin, the price with each trade's entry and
+     exit, the book against holding the coin (each window's values over its first, windows chained in time order, from
+     1), the forecast and the position, on one time axis; zoom with + / - / All, a pinch or the mouse wheel, move by
+     dragging, read a day by touching it. The files are fetched when the page opens, never embedded.
 
 ## Storage and naming
 ```
@@ -120,13 +124,15 @@ The operator, by opening the page.
 - [x] The book by window is drawn for every idea with a backtest.
 - [x] The operator has opened it on a phone (2026-11-17). First feedback built: dates, purpose subtitle, idea states,
   briefs linked to their ideas, backtest page, help buttons, two generations under an idea.
-- [ ] Holding the coins on the chart: waits for the operator's ruling on the step 6 `curve.csv` proposal.
-- [ ] Price, forecast, position, book value bar by bar and the trades on the backtest page: waits for the operator's
-  ruling on the step 4 `chart.csv.gz` proposal.
+- [x] Day-by-day chart per coin (price and trades, book against holding, forecast, position), zoomable on a phone:
+  checked at 390 px with touch (load, tap, +, pinch, drag, coin switch, no script error) on a corrected copy of one
+  backtest's chart file. Real dates from the record.
+- [ ] The committed `chart_bars.csv.gz` files hold `position` and `value` swapped (step 4's `chart_files.py`); the
+  chart is right once they are rewritten (fix prompt given to the operator, 2026-11-17).
+- [ ] Holding all the coins on the window chart: waits for the operator's ruling on the step 6 `curve.csv` proposal.
 
 ## Open (for the operator)
 - The `curve.csv` proposal (`current_state.md`): one row per window, or one per week.
-- The `chart.csv.gz` proposal (`current_state.md`): about 185 KB per idea on six coins.
 - `verdicts_run2/` (full_data_run, hourly_run): a second set of verdicts on the same backtests. Not shown.
 
 ## What this function does not do
