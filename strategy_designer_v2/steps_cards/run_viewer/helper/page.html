@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research runs</title>
+<style>
+:root{--bg:#fcfcfb;--card:#ffffff;--ink:#0b0b0b;--ink2:#52514e;--line:#e4e3df;--accent:#2a78d6;
+  --good:#0a7d0a;--goodbg:#e3f3e3;--bad:#b42d2c;--badbg:#fbe6e6;--mid:#6a5a00;--midbg:#f6efcf;--nobg:#efeeea}
+@media (prefers-color-scheme:dark){:root{--bg:#1a1a19;--card:#232321;--ink:#f0efec;--ink2:#c3c2b7;--line:#383835;
+  --accent:#3987e5;--good:#7fd67f;--goodbg:#173317;--bad:#f09a99;--badbg:#3d1c1c;--mid:#e6cf6a;--midbg:#3a3415;--nobg:#2e2e2b}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:860px;overflow-wrap:anywhere;margin:0 auto;padding:12px 14px 60px}
+a{color:var(--accent);text-decoration:none}
+h1{font-size:1.35rem;margin:.3em 0 .2em;word-break:break-word}
+h2{font-size:1.1rem;margin:1.3em 0 .4em}
+h3{font-size:1rem;margin:1em 0 .3em}
+.top{position:sticky;top:0;background:var(--bg);padding:8px 0;border-bottom:1px solid var(--line);z-index:2;font-size:.95rem}
+.top a{display:inline-block;min-height:32px;padding:4px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0}
+.runlink{display:block;color:inherit}
+.muted{color:var(--ink2);font-size:.9rem}
+.small{font-size:.85rem}
+.chip{display:inline-block;border-radius:6px;padding:1px 7px;margin:2px 4px 2px 0;font-size:.82rem;background:var(--nobg);color:var(--ink);overflow-wrap:anywhere}
+.good{background:var(--goodbg);color:var(--good)}.bad{background:var(--badbg);color:var(--bad)}.mid{background:var(--midbg);color:var(--mid)}
+.tag{font-size:.75rem;color:var(--ink2);border:1px solid var(--line);border-radius:5px;padding:0 5px;margin-right:6px}
+ul.tree,ul.tree ul{list-style:none;margin:0;padding:0}
+ul.tree ul{margin-left:9px;padding-left:9px;border-left:2px solid var(--line)}
+ul.tree li{margin:6px 0}
+.node{display:block;padding:6px 8px;border-radius:8px;background:var(--card);border:1px solid var(--line);color:inherit}
+.node.untested{opacity:.6}
+.node .t{font-weight:600}
+details{margin:6px 0}
+summary{cursor:pointer;min-height:32px;padding:4px 0;color:var(--accent)}
+.md p{margin:.4em 0}.md ul{margin:.3em 0;padding-left:1.2em}.md h1,.md h2,.md h3{font-size:1rem}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+td,th{text-align:left;padding:4px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--ink2);font-weight:600}
+.scroll{overflow-x:auto}
+.kv td:first-child{color:var(--ink2);width:42%}
+.step{border-left:3px solid var(--line);padding-left:10px;margin:12px 0}
+.step>.h{font-weight:600;margin-bottom:2px}
+.readout{font-size:.85rem;color:var(--ink2);min-height:1.3em}
+svg text{fill:var(--ink2);font-size:11px}
+code{font-size:.85em;word-break:break-all}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+const DATA = /*DATA*/null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num = (x, d=2) => x == null || x === "" ? "–" : (typeof x === "number" ? (Math.abs(x) >= 1000 || Number.isInteger(x) ? String(x) : (+x.toPrecision(Math.max(d,3))).toString()) : esc(x));
+const runBy = n => DATA.runs.find(r => r.name === n);
+const href = (run, idea) => "#r=" + encodeURIComponent(run) + (idea ? "&i=" + encodeURIComponent(idea) : "");
+
+// the steps' own words, shown as written; the colour only groups them
+const TONE = {"plan":"good","confirmed":"good","profitable enough":"good",
+  "missing-components":"bad","untestable":"bad","rejected":"bad","not profitable enough":"bad",
+  "inconclusive":"mid","not observable":"mid","mismatch":"mid"};
+const chip = (text, status) => `<span class="chip ${TONE[status] || ""}">${esc(text)}</span>`;
+
+function md(t){                      // a small Markdown: headings, lists, bold, code, tables, paragraphs
+  if (!t) return "";
+  const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/`([^`]+)`/g,"<code>$1</code>");
+  const out = []; let list = false, table = [];
+  const flushT = () => { if (!table.length) return;
+    const rows = table.filter(r => !/^\|[\s|:-]+\|$/.test(r.trim())).map(r => r.trim().replace(/^\||\|$/g,"").split("|"));
+    out.push('<div class="scroll"><table>' + rows.map((r,k)=>"<tr>"+r.map(c=>(k?"<td>":"<th>")+inline(c.trim())+(k?"</td>":"</th>")).join("")+"</tr>").join("") + "</table></div>");
+    table = []; };
+  for (const raw of t.split("\n")) {
+    const l = raw.trimEnd();
+    if (l.trim().startsWith("|")) { table.push(l); continue; } else flushT();
+    const li = l.match(/^\s*(?:[-*]|\d+\.)\s+(.*)/);
+    if (li) { if (!list) { out.push("<ul>"); list = true; } out.push("<li>" + inline(li[1]) + "</li>"); continue; }
+    if (list && /^\s{2,}\S/.test(l)) { out[out.length-1] = out[out.length-1].replace(/<\/li>$/, " " + inline(l.trim()) + "</li>"); continue; }
+    if (list) { out.push("</ul>"); list = false; }
+    const h = l.match(/^(#{1,4})\s+(.*)/);
+    if (h) out.push(`<h3>${inline(h[2])}</h3>`);
+    else if (l.trim() && l.trim() !== "---") out.push("<p>" + inline(l) + "</p>");
+  }
+  flushT(); if (list) out.push("</ul>");
+  return '<div class="md">' + out.join("") + "</div>";
+}
+
+function dur(sec){ if (sec == null) return "–"; const m = Math.round(sec/60); return m < 60 ? m + " min" : Math.floor(m/60) + " h " + String(m%60).padStart(2,"0"); }
+function counts(o){ return Object.entries(o || {}).map(([k,v]) => chip(v + " " + k, k)).join(""); }
+
+function view(){
+  const p = new URLSearchParams(location.hash.slice(1));
+  const r = p.get("r") && runBy(p.get("r"));
+  $("#app").innerHTML = !r ? runList() : p.get("i") && r.ideas[p.get("i")] ? ideaView(r, r.ideas[p.get("i")]) : runView(r);
+  document.querySelectorAll("[data-chart]").forEach(drawChart);
+  window.scrollTo(0, 0);
+}
+
+function runList(){
+  return `<h1>Research runs</h1><p class="muted">${DATA.runs.length} runs, read from the committed files of <code>steps_cards/</code>. Tap a run.</p>` +
+    DATA.runs.map(r => { const t = r.totals; return `<a class="card runlink" href="${href(r.name)}">
+      <div><b>${esc(r.name)}</b> <span class="muted small">${esc(r.run_brief || "no run brief")}</span></div>
+      <div class="muted small">${t.ideas} ideas · ${t.backtests} with a plan or a backtest${t.usd != null ? " · " + t.usd.toFixed(2) + " USD" : ""}${t.seconds != null ? " · " + dur(t.seconds) + " of step time" : ""}</div>
+      <div>${counts(t.step5)}${counts(t.step6)}</div></a>`; }).join("");
+}
+
+function ideaChips(r, i){
+  if (!i.backtests.length) {
+    const q = i.queue ? `waiting in the queue (${esc(i.queue.status)}, score ${num(i.queue.score)})` : "not tested";
+    return chip(q, "");
+  }
+  return i.backtests.map(bid => { const b = r.backtests[bid]; let s = "";
+    if (b.step3) s += chip("3 " + (b.step3.outcome === "plan" ? "plan" : "refused: " + b.step3.outcome), b.step3.outcome);
+    if (b.step5) s += chip("5 " + b.step5.status + (b.step5.t != null ? " · t " + num(b.step5.t) : ""), b.step5.status);
+    if (b.step6) s += chip("6 " + b.step6.status, b.step6.status);
+    if (b.step7.length) s += chip("7 " + b.step7.map(x => x.line).join(" "), "");
+    return s; }).join("<br>");
+}
+
+function tested(r, id){ const i = r.ideas[id]; return i.backtests.length > 0 || i.children.some(c => tested(r, c)); }
+
+function node(r, id){ const i = r.ideas[id];
+  const from = i.root && i.parent ? `<div class="muted small">from ${esc(i.parent.split(".").pop())}${i.parent_runs && i.parent_runs.length ? " (" + esc(i.parent_runs.join(", ")) + ")" : " (not in the record)"}</div>` : "";
+  return `<li><a class="node ${i.backtests.length ? "" : "untested"}" href="${href(r.name, id)}">
+    <div>${i.line ? `<span class="tag">${esc(i.line)}</span>` : ""}<span class="t">${esc(i.title)}</span></div>${from}
+    <div>${ideaChips(r, i)}</div></a>${i.children.length ? tree(r, i.children) : ""}</li>`; }
+
+function tree(r, ids){            // ideas with a test in their branch first; the others folded in one line
+  const on = ids.filter(id => tested(r, id)), off = ids.filter(id => !tested(r, id));
+  return "<ul class='tree'>" + on.map(id => node(r, id)).join("") +
+    (off.length ? `<li><details><summary>${off.length} idea${off.length > 1 ? "s" : ""} not tested</summary><ul class="tree">${off.map(id => node(r, id)).join("")}</ul></details></li>` : "") + "</ul>";
+}
+
+function runView(r){
+  const t = r.totals;
+  const kv = [
+    ["Ideas", t.ideas], ["With a plan or a backtest", t.backtests],
+    ["Step 3", counts(t.step3) || "–"], ["Step 5", counts(t.step5) || "–"], ["Step 6", counts(t.step6) || "–"],
+    ["Cost (journals)", t.usd != null ? t.usd.toFixed(2) + " USD" : "not in the record"],
+    ["Step time (sum)", t.seconds != null ? dur(t.seconds) : "not in the record"],
+    ["Loop turns", t.turns || "–"]];
+  return `<div class="top"><a href="#">← Runs</a></div><h1>${esc(r.name)}</h1>
+    ${r.purpose ? md(r.purpose) : `<p class="muted">No purpose paragraph in the record.</p>`}
+    ${r.run_brief && r.run_brief.toLowerCase() !== r.name.replace(/_run$/, "_RUN.md").toLowerCase() ? `<p class="muted small">This run has no run brief of its own; shown: ${esc(r.run_brief)}, shared with the runs whose name starts the same.</p>` : ""}
+    ${r.run_brief_text ? `<details><summary>Run brief (${esc(r.run_brief)})</summary>${md(r.run_brief_text)}</details>` : ""}
+    <div class="card"><table class="kv">${kv.map(([k,v]) => `<tr><td>${k}</td><td>${typeof v === "string" && v.includes("<") ? v : esc(v)}</td></tr>`).join("")}</table></div>
+    <h2>Briefs (${r.briefs.length})</h2>
+    ${r.briefs.map(b => `<details><summary>${esc(b.id.split("_")[0])} · ${esc(b.title)}</summary>${md(b.text)}</details>`).join("") || `<p class="muted">None in the record.</p>`}
+    <h2>Ideas (${t.ideas})</h2>
+    <p class="muted small">Each idea under the one it came from; the tag is the step 7 line that wrote it. Chips: 3 = test plan, 5 = is it real (t), 6 = does its book pay, 7 = the lines that read it.</p>
+    ${tree(r, r.roots)}`;
+}
+
+function step(title, body){ return `<div class="step"><div class="h">${title}</div>${body}</div>`; }
+
+function backtestView(r, b){
+  let h = `<h3>${esc(b.id.match(/_(\d+[smhdw])$/)?.[1] || "")} backtest</h3>`;
+  if (b.step3) h += `<p class="muted small">${esc(b.step3.data)}</p>`;
+  const s3 = b.step3;
+  h += step("Step 3 · test plan", s3 ? chip(s3.outcome === "plan" ? "plan" : "refused: " + s3.outcome, s3.outcome) +
+    (s3.fit ? chip("fit: " + s3.fit, "") : "") + (s3.reason ? md(s3.reason) : "") : `<span class="muted">not in the record</span>`);
+  const bk = b.book;
+  h += step("Step 4 · backtest", bk ? `<div class="muted small">Book by window: value of 1, each window's net return averaged over ${bk.coins.length} coins (${esc(bk.coins.join(", "))}), windows in time order. Holding the coins: not in the committed files.</div>
+     <div class="readout" id="ro-${esc(b.id)}"></div><div data-chart="${esc(b.id)}" data-run="${esc(r.name)}"></div>` : `<span class="muted">no backtest in the record</span>`);
+  const s5 = b.step5;
+  h += step("Step 5 · is it real", s5 ? chip(s5.status, s5.status) + (s5.t != null ? chip(`${s5.t_name || "t"} ${num(s5.t)}`, "") : "") +
+    `<table class="kv small"><tr><td>Measure</td><td>${esc(s5.measure)}</td></tr><tr><td>Rule</td><td>${esc(s5.threshold)}</td></tr>
+     <tr><td>Decided by</td><td>${esc(s5.decided_by)}</td></tr>${s5.support ? `<tr><td>Supporting check</td><td>${esc(s5.support)}: ${s5.support_passed ? "passed" : "not passed"}</td></tr>` : ""}
+     ${s5.counts ? Object.entries(s5.counts).map(([k,v]) => `<tr><td>${esc(k)}</td><td>${num(v)}</td></tr>`).join("") : ""}</table>` : `<span class="muted">not in the record</span>`);
+  const s6 = b.step6;
+  h += step("Step 6 · does its book pay", s6 ? chip(s6.status, s6.status) +
+    `<div class="scroll"><table class="small"><tr><th>Measure</th><th>Value</th><th>Rule</th><th></th></tr>${s6.measures.map(m =>
+      `<tr><td>${esc(m.label)}</td><td>${num(m.value, 3)}</td><td>${esc(m.comparison)} ${num(m.threshold)}</td><td>${m.passed ? "yes" : "<b>no</b>"}</td></tr>`).join("")}</table></div>` : `<span class="muted">not in the record</span>`);
+  h += step("Step 7 · lines", b.step7.length ? b.step7.map(s => {
+    const f = Object.entries(s.findings);
+    return `<details><summary>${esc(s.line)} (${esc(s.folder.replace(/^07\w_/, "").replace(/_/g, " "))}): ${f.length} findings, ${s.ideas.length} ideas</summary>
+      ${f.map(([k,v]) => `<p class="small"><b>${esc(k)}</b> ${esc(v)}</p>`).join("")}
+      ${s.ideas.map(i => `<p>→ ${i.id && r.ideas[i.id] ? `<a href="${href(r.name, i.id)}">${esc(i.name || i.id)}</a>` : esc(i.name || i.id)}<br><span class="small">${esc(i.idea)}</span></p>`).join("")}
+      ${s.no_ideas ? `<p class="muted small">No idea: ${esc(typeof s.no_ideas === "string" ? s.no_ideas : JSON.stringify(s.no_ideas))}</p>` : ""}</details>`; }).join("")
+    : `<span class="muted">no line ran in the record</span>`);
+  const c = Object.entries(b.cost).filter(([k,v]) => v.usd || v.seconds);
+  if (c.length) h += step("Cost and time", `<table class="small">${c.map(([k,v]) => `<tr><td>${esc(k)}</td><td>${v.usd.toFixed(4)} USD</td><td>${dur(v.seconds)}</td></tr>`).join("")}</table>`);
+  return h;
+}
+
+function ideaView(r, i){
+  const chain = []; for (let p = i.parent; p && r.ideas[p]; p = r.ideas[p].parent) chain.unshift(p);
+  return `<div class="top"><a href="${href(r.name)}">← ${esc(r.name)}</a></div>
+    ${chain.length ? `<div class="muted small">${chain.map(p => `<a href="${href(r.name, p)}">${esc(r.ideas[p].title)}</a>`).join(" › ")} ›</div>` : ""}
+    <h1>${i.line ? `<span class="tag">${esc(i.line)}</span>` : ""}${esc(i.title)}</h1>
+    <div class="muted small"><code>${esc(i.id)}</code></div>
+    ${i.turn ? `<p class="muted small">Loop turn ${esc(i.turn.turn)}: ${esc(i.turn.why)}</p>` : ""}
+    ${i.statement ? `<p>${esc(i.statement)}</p>` : ""}
+    ${i.text ? `<details><summary>The whole idea</summary>${md(i.text)}</details>` : `<p class="muted">The idea's file is not in the record.</p>`}
+    ${i.backtests.length ? i.backtests.map(bid => backtestView(r, r.backtests[bid])).join("") :
+      `<p>${ideaChips(r, i)}</p>`}
+    ${i.children.length ? `<h2>Ideas from this one (${i.children.length})</h2>` + tree(r, i.children) : ""}`;
+}
+
+function drawChart(el){
+  const b = runBy(el.dataset.run).backtests[el.dataset.chart].book, v = b.values;
+  const W = 360, H = 190, L = 40, R = 8, T = 8, B = 24;
+  let lo = Math.min(1, ...v), hi = Math.max(1, ...v); const pad = (hi - lo) * .08 || .05; lo -= pad; hi += pad;
+  const x = k => L + k * (W - L - R) / (v.length - 1), y = val => T + (hi - val) * (H - T - B) / (hi - lo);
+  const ticks = [lo + pad, 1, hi - pad].filter((t, k, a) => a.findIndex(u => Math.abs(y(u) - y(t)) < 14) === k);
+  let s = ticks.map(t => `<line x1="${L}" x2="${W-R}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)" ${t === 1 ? "" : 'stroke-dasharray="3 3"'}/>
+    <text x="${L-4}" y="${y(t)+4}" text-anchor="end">${t.toFixed(2)}</text>`).join("");
+  let last = "";
+  b.years.forEach((yr, k) => { if (yr !== last) { s += `<text x="${x(k+1)}" y="${H-6}" text-anchor="middle">${yr}</text>`; last = yr; } });
+  s += `<polyline fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" points="${v.map((val,k) => x(k)+","+y(val)).join(" ")}"/>`;
+  s += `<line id="cx" y1="${T}" y2="${H-B}" stroke="var(--ink2)" stroke-width="1" visibility="hidden"/><circle id="cd" r="4" fill="var(--accent)" stroke="var(--card)" stroke-width="2" visibility="hidden"/>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Book value by window" style="touch-action:pan-y">${s}</svg>`;
+  const svg = el.firstChild, ro = document.getElementById("ro-" + el.dataset.chart);
+  const show = e => { const r = svg.getBoundingClientRect(), px = (e.clientX - r.left) * W / r.width;
+    const k = Math.max(0, Math.min(v.length - 1, Math.round((px - L) * (v.length - 1) / (W - L - R))));
+    const cx = svg.querySelector("#cx"), cd = svg.querySelector("#cd");
+    cx.setAttribute("x1", x(k)); cx.setAttribute("x2", x(k)); cd.setAttribute("cx", x(k)); cd.setAttribute("cy", y(v[k]));
+    cx.setAttribute("visibility", "visible"); cd.setAttribute("visibility", "visible");
+    ro.textContent = k === 0 ? "start: 1.00" : `after ${b.windows[k-1]} (${b.years[k-1]}): ${v[k].toFixed(3)} · this window ${((v[k]/v[k-1]-1)*100).toFixed(1)}%`; };
+  svg.addEventListener("pointermove", show); svg.addEventListener("pointerdown", show);
+  ro.textContent = `end: ${v[v.length-1].toFixed(3)} after ${v.length-1} windows (${b.coin_windows} coin-windows)`;
+}
+
+window.addEventListener("hashchange", view);
+view();
+</script>
+</body>
+</html>
