@@ -266,3 +266,7 @@ hours; step 2 wrote its ideas with no `bar` in their header, so step 3 planned t
 2-hour window cannot be seen: "untestable" (its fidelity: "a 2-hour intraday window cannot be seen on daily bars").
 Step 3 is right; the fault is upstream: step 2 should write the bar size (and the data) an idea's mechanism needs when it
 is not the default. A change to step 2's prompt (a validated step): the operator's go. Not changed during the night.
+**Fixed (operator's go, 2026-11-18):** an idea may state `bar: 1h` (the finest bar the data has) when its brief states no
+bar size and what it says we would see cannot be seen on daily bars; the brief's own bar size always wins (code).
+Proof: step 2 on brief 014: 6 of 6 ideas with `bar: 1h`; on brief 011 (daily): 0 of 6 (0.10 USD); step 3 on one 014 idea
+on hourly bars: no longer untestable, missing a component (the hour of the day), which the components step can build.

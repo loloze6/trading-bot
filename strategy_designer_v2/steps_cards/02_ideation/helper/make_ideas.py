@@ -42,7 +42,7 @@ def parse(text):
     ideas = []
     for raw in re.split(r"^\s*---\s*$", body, flags=re.M):
         fields = dict((k.lower(), " ".join(v.split())) for k, v in
-                      re.findall(r"^(idea|consequence|short-name|index-line):\s*(.*?)(?=^(?:idea|consequence|short-name|index-line):|\Z)",
+                      re.findall(r"^(idea|consequence|short-name|index-line|bar):\s*(.*?)(?=^(?:idea|consequence|short-name|index-line|bar):|\Z)",
                                  raw, re.M | re.S | re.I))
         if not fields:
             continue
@@ -52,7 +52,10 @@ def parse(text):
             if len(v.split()) > MAX_FIELD_WORDS:
                 raise ValueError(f"the {k} field has {len(v.split())} words; write one or two sentences")
         idea, consequence = fields["idea"], fields["consequence"]
-        ideas.append((idea, consequence, slug(fields.get("short-name") or idea), fields.get("index-line") or idea))
+        # The bar size an idea's observation needs (2026-11-18): only 1h, the finest the data has; anything else, or a
+        # text around it, is dropped (a minor deviation), and the brief's own bar size always wins (main()).
+        bar = "1h" if (fields.get("bar") or "").split()[:1] == ["1h"] else None
+        ideas.append((idea, consequence, slug(fields.get("short-name") or idea), fields.get("index-line") or idea, bar))
     if not ideas and not m:
         raise ValueError("the answer has no idea block and no already-indexed line")
     return ideas, already
@@ -95,11 +98,15 @@ def main():
     market = [l for l in header if l.split(":", 1)[0].strip() in MARKET_KEYS]
     bracket = "[" + ", ".join(market) + "]" if market else ""
     lines = []
-    for idea, consequence, short, line in ideas:
+    brief_bar = any(l.split(":", 1)[0].strip() == "bar" for l in header)
+    for idea, consequence, short, line, bar in ideas:
         kk += 1
         name = f"{nnn}-{kk:02d}_{short}"
-        write_atomic(ideas_dir / f"{name}.md", file_header + f"Idea: {idea}\nConsequence: {consequence}\n")
-        lines.append(f"{name}: {line} {bracket}".rstrip())
+        own = bar if bar and not brief_bar else None              # the brief's bar size, when it has one, wins
+        head = file_header if not own else file_header[:-4] + f"bar: {own}\n---\n"
+        write_atomic(ideas_dir / f"{name}.md", head + f"Idea: {idea}\nConsequence: {consequence}\n")
+        mk = market + ([f"bar: {own}"] if own else [])
+        lines.append(f"{name}: {line} {'[' + ', '.join(mk) + ']' if mk else ''}".rstrip())
         print(f"idea: {ideas_dir / (name + '.md')}")
     write_atomic(index_path, index + "".join(l + "\n" for l in lines))
     print(f"ideas written: {len(ideas)}")

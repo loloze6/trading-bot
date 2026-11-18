@@ -32,6 +32,8 @@ idea: <what we would see, one or two sentences of plain prose>
 consequence: <the consequence of the theory, or the answer to the brief's question, that the idea shows, one line>
 short-name: <three to five lowercase words joined by hyphens>
 index-line: <the idea in one short sentence, at most 25 words>
+bar: 1h   (only when the brief's header gives no bar size and what the idea says we would see cannot be seen on daily
+          bars: it names hours of the day, or a move within one day; otherwise leave this line out)
 
 If the brief gives no idea that meets these rules (for example, every consequence needs two
 coins at once), write no block, and one line before already-indexed:
