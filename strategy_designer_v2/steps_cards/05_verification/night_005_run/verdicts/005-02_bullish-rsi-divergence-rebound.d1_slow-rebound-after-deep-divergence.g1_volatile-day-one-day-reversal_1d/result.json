@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of next-bar excess return on forecast/10 (high-vol bars)",
+    "value": 0.0030301052984919134,
+    "statistic": {
+      "name": "OLS t of pooled slope",
+      "value": 3.663108483847945
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and >= 2 of 3 coins positive; reject: slope < 0 with t <= -2 and >= 2 of 3 coins negative"
+  },
+  "supporting_check": {
+    "name": "coins with per-coin slope of pooled sign (need >= 2)",
+    "value": 2,
+    "passed": true
+  },
+  "counts": {
+    "pooled high-volatility bars": 2571,
+    "high-volatility bars BTCUSD": 1238,
+    "high-volatility bars ETHUSD": 1333
+  },
+  "decided_by": "Pooled slope positive with t >= 2 and at least 2 coins with positive slopes.",
+  "reading": "The situation is rebuilt in each window as the 20-day std of daily returns at or above its 60-bar mean (falling back on regime == 'trending' where the window is too short to rebuild it), the expected side is opposite to the day's scaled move; the OLS includes an intercept; the per-coin minimum of 60 and the '2 of the 3 coins' rule are applied to the coins present in the record."
+}
