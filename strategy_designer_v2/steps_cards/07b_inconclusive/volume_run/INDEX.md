@@ -1,5 +1,6 @@
 003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 003-01_thin-volume-rise-reverses_1d: 2 ideas (2 explorations)
+003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 003-02_thin-volume-drop-rebounds_1d: not run: entry condition not met (step 5: not observable; step 6: not profitable enough)
 003-03_heavy-volume-rise-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 003-04_heavy-volume-drop-continues_1d: 2 ideas (1 explorations)

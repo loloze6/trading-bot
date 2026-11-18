@@ -1,5 +1,6 @@
 003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on_1d: 3 ideas (2 explorations)
 003-01_thin-volume-rise-reverses_1d: 3 ideas (2 explorations)
+003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue_1d: 2 ideas (2 explorations)
 003-02_thin-volume-drop-rebounds_1d: 1 ideas (2 explorations)
 003-03_heavy-volume-rise-continues_1d: 2 ideas (2 explorations)
 003-04_heavy-volume-drop-continues_1d: 2 ideas (2 explorations)

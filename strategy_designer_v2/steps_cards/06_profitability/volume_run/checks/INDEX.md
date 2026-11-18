@@ -1,5 +1,6 @@
 003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on_1d: not profitable enough [Sharpe -0.1665; Sharpe minus holding's Sharpe -0.7207; Calmar -0.1028]
 003-01_thin-volume-rise-reverses_1d: not profitable enough [Sharpe -0.5809; Sharpe minus holding's Sharpe -1.135; Calmar -0.1061]
+003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue_1d: not profitable enough [Sharpe 0.1019; Sharpe minus holding's Sharpe -0.4523; Calmar 0.005748]
 003-02_thin-volume-drop-rebounds_1d: not profitable enough [Sharpe 0.5981; Sharpe minus holding's Sharpe 0.04394; Calmar 11.99]
 003-03_heavy-volume-rise-continues_1d: not profitable enough [Sharpe 0.1019; Sharpe minus holding's Sharpe -0.4523; Calmar 0.005748]
 003-04_heavy-volume-drop-continues_1d: not profitable enough [Sharpe -0.4961; Sharpe minus holding's Sharpe -1.05; Calmar -0.1249]

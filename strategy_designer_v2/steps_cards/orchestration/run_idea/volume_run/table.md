@@ -24,20 +24,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 012-04_flush-depth-retracement-size | - | plan | inconclusive (-0.75) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar, Trades per bar) | 7.b: 012-04_flush-depth-retracement-size.b1_volume-burst-sharp-fall-rebound, 012-04_flush-depth-retracement-size.b2_sharp-fall-depth-retracement; 7.d: 012-04_flush-depth-retracement-size.d1_flush-depth-predicts-rebound, 012-04_flush-depth-retracement-size.d2_volume-burst-grades-rebound; 7.g: 012-04_flush-depth-retracement-size.g1_down-day-volume-burst-rebound, 012-04_flush-depth-retracement-size.g2_volume-graded-rebound-after-falls | 1.33 | 7.6 |
 | 013-04_heavy-volume-below-high-breakout | - | plan | confirmed (+2.46) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar, Trades per bar) | 7.d: 013-04_heavy-volume-below-high-breakout.d1_hold-the-whole-breakout-month, 013-04_heavy-volume-below-high-breakout.d2_heavy-volume-breaks-run-fast, 013-04_heavy-volume-below-high-breakout.d3_freshest-breaks-pay-most; 7.g: 013-04_heavy-volume-below-high-breakout.g1_rising-volume-short-continuation, 013-04_heavy-volume-below-high-breakout.g2_one-month-momentum-continuation | 1.09 | 8.6 |
 | 003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on | 003-01_thin-volume-rise-reverses | plan | confirmed (+3.44) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.d: 003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on.d1_heavy-volume-rises-carry-later, 003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on.d2_thin-volume-rises-reverse-next-day, 003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on.d3_sharp-rises-carry-in-uptrends; 7.g: 003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on.g1_sharp-falls-bounce-next-day, 003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on.g2_heavy-volume-falls-rebound-harder, 003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on.g3_sharp-rises-carry-on-later, 003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on.g4_small-rises-fade-afterwards | 0.86 | 4.7 |
+| 003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue | 003-02_thin-volume-drop-rebounds | plan | confirmed (+2.98) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.d: 003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue.d1_delayed-heavy-volume-continuation, 003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue.d2_continuation-inside-uptrends-only; 7.g: 003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue.g1_heavy-volume-drops-rebound, 003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue.g2_delayed-continuation-after-surges | 1.07 | 5.4 |
 
 ## Consumption
-20 ideas, 18.89 USD, 100.7 minutes in all.
+21 ideas, 19.96 USD, 106.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.13 | 13.9 |
-| step4_backtest | 0.00 | 28.1 |
-| step5_verdict | 2.22 | 10.5 |
+| step3_plan | 2.20 | 14.7 |
+| step4_backtest | 0.00 | 29.2 |
+| step5_verdict | 2.34 | 11.0 |
 | step6_check | 0.00 | 0.6 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.20 | 0.6 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 2.08 | 6.9 |
-| step7_7.d | 5.62 | 19.0 |
-| step7_7.g | 6.63 | 21.0 |
+| step7_7.d | 5.95 | 20.1 |
+| step7_7.g | 7.18 | 22.8 |
 | chart_files | 0.00 | 0.1 |
