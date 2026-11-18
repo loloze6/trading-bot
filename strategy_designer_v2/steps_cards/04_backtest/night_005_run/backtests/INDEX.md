@@ -7,6 +7,7 @@
 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling_1d: ran: BTCUSD 24/24; ETHUSD 24/24; BNBUSD not run (no historical data on the venue) [1d, folds A, B, C, D]
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation.g1_calm-up-day-continuation_1d: ran: BTCUSD 24/24; ETHUSD 24/24; BNBUSD not run (no historical data on the venue) [1d, folds A, B, C, D]
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation_1d: ran: BTCUSD 24/24; ETHUSD 24/24; BNBUSD not run (no historical data on the venue) [1d, folds A, B, C, D]
+005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly.g1_volatile-fall-next-day-rebound_1d: ran: BTCUSD 24/24; ETHUSD 24/24; BNBUSD not run (no historical data on the venue) [1d, folds A, B, C, D]
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly_1d: ran: BTCUSD 24/24; ETHUSD 24/24; BNBUSD not run (no historical data on the venue) [1d, folds A, B, C, D]
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal_1d: ran: BTCUSD 24/24; ETHUSD 24/24; BNBUSD not run (no historical data on the venue) [1d, folds A, B, C, D]
 005-02_bullish-rsi-divergence-rebound_1d: ran: BTCUSD 24/24; ETHUSD 24/24; BNBUSD not run (no historical data on the venue) [1d, folds A, B, C, D]

@@ -6,6 +6,7 @@
 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling_1d: 1 ideas (2 explorations)
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation.g1_calm-up-day-continuation_1d: no ideas: Across the scaled-move tails, absolute move size, volatility rank, prior 5- and 20-day returns, weekday, coin and year, no pattern held under a second definition or stood out enough from the many angles tested to count as more than chance.
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation_1d: 1 ideas (3 explorations)
+005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly.g1_volatile-fall-next-day-rebound_1d: 2 ideas (2 explorations)
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly_1d: 2 ideas (2 explorations)
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal_1d: 2 ideas (2 explorations)
 005-02_bullish-rsi-divergence-rebound_1d: 1 ideas (3 explorations)

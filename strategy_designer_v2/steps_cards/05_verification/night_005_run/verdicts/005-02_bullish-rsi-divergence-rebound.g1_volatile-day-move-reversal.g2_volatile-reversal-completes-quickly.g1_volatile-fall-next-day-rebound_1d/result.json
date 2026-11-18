@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (forecast/10) x next-day excess return on forecast > 0 bars",
+    "value": 0.004733865090964224,
+    "statistic": {
+      "name": "ordinary t",
+      "value": 2.4518175271619675
+    },
+    "threshold": "ordinary t >= 2.0 confirms (with top-minus-bottom > 0); t <= -2.0 rejects"
+  },
+  "supporting_check": {
+    "name": "top-half minus bottom-half mean excess next-day return (median forecast split)",
+    "value": 0.003375859529753431,
+    "passed": true
+  },
+  "counts": {
+    "bars with forecast > 0": 1192,
+    "top half bars": 596,
+    "bottom half bars": 596
+  },
+  "decided_by": "The main measure's t is >= 2.0 and the top-minus-bottom difference is above 0.",
+  "reading": "Situation = regime 'mean_reversion' (the detector's recorded decision, since its 20-day/100-day volatility ratio is not recorded and windows are too short to rebuild it) and a negative 1-day return, side long; supporting split puts forecasts >= the median in the top half and < the median in the bottom half, with unweighted mean excess returns; the minimum of 30 counts forecast > 0 bars with a next-day return in the same window."
+}
