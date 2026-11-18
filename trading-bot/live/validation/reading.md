@@ -64,5 +64,19 @@ recorded, same windows, warm-up and costs; days with a trade (script `tb-live-pr
 | uptrend momentum | 53 | 52 | 52 | research only: one day of window w1 |
 | high-RSI trend | 87 | 91 | 87 | futures only: 2026-10-08, 10-11, 10-12, 10-20 |
 
-Not yet explained: the 5 differing days. The likely cause is the spot-vs-perpetual price gap (0.02% at the median)
-near a threshold (the regime rule or the 0.2 minimum allocation change); unverified.
+The 5 differing days, explained (2026-11-18, `tb-live-proof/explain_differing_days.py`): the same engine on Kraken
+spot daily candles from the public API reproduces the research's trade days exactly (53 of 53, 87 of 87), so the
+set-up matches; then spot and futures runs compared day by day:
+- the regime is the same on all 321 days for both strategies; forecasts differ by a few hundredths (prices differ by
+  0.002% to 0.05%);
+- every differing day is the 0.2 minimum-allocation-change band (`RiskManager`), crossed on one side only:
+  uptrend momentum, one day of w1: change -0.2058 on spot (passes) vs -0.1976 on futures (refused);
+  high-RSI trend, 2026-10-08: -0.1979 on spot (refused) vs -0.2006 on futures (passes, sells to flat). That one
+  crossing then carries on: spot keeps a 0.17 residual position for 12 days (every later change below 0.2, so it can
+  neither close nor add) while futures is flat and trades on 10-11, 10-12 and 10-20 (+0.2001 on 10-20, again at
+  the edge);
+- book values at each window's end differ by at most 8.67 on 1000 (high-RSI, w3), partly from these days, partly
+  from the two price series themselves.
+So the live mechanism is not the cause: a live decision equals the backtest's on the same candles; the research
+backtest and live differ because their candles differ (spot vs perpetual), and the band amplifies tiny gaps on a few
+days. For the research (not live): the band keeps a small residual position open while the forecast is 0.

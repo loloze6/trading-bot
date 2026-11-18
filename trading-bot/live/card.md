@@ -106,8 +106,18 @@ The operator, from `live/validation/reading.md` and each run's `summary.md`.
 | 1 Kraken connection | completed candles only, account read, keys never shown | done |
 | 2 Live feed, Binance live code removed | parity test holds; backtest rerun = baseline | done |
 | 3 First live run, orders off | outcome A on `first_paper` (see validation) | running since 2026-11-17 23:19 UTC |
+| 3b Decision on the clock | poll 3 s after each bar's last candle ends, one retry 5 s later; the price at decision recorded beside the close; the decided candle re-read later and any change recorded | planned, built after `first_paper`'s reading (operator 2026-11-18) |
 | 4 Real book next to the local book, orders logged only | fake-exchange tests; one day of would-be orders | not started |
 | 5 First real orders, small account | daily real vs local comparison | not started |
+
+## Planned: decision on the clock (step 3b)
+Measured 2026-11-18 around 13:00 UTC: Kraken publishes an hour's finished candle within 2 s of the hour and does
+not change it afterwards (read until +132 s); in the first minute after a close the price moved up to 0.05%. Today a
+bar is decided 0 to 60 s after it ends (the poll runs every 60 s from the start's second; first bar: 55 s). Change:
+poll 3 s after each candle ends, one retry 5 s later if it is not there (1 to 2 requests an hour instead of 60);
+record the price and time at decision next to the close; re-read the decided candle a few minutes later and record
+whether Kraken changed it (record only, no rule). Built after `first_paper`'s reading so the code under the three
+runs does not change; needed before real orders, when a late decision costs money.
 
 ## Open (not ruled on)
 - Funding payments, the spot-versus-perpetual price gap, risk management: later, with the operator.
