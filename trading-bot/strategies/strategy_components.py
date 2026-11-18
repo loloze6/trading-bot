@@ -3041,3 +3041,68 @@ class StallUnderHighCountComponent(SubStrategyComponent):
 
     def get_required_periods(self) -> int:
         return self.window + self.period
+
+
+class VolatilityRatioToAverageComponent(SubStrategyComponent):
+    """
+    The current return volatility against its own recent average, on every bar:
+
+        r[j]  = close[j] / close[j-1] - 1
+        s(i)  = std (ddof 1) of r[i - vol_period + 1 .. i]       (vol_period returns ending at bar i, r[i] included)
+        raw_value = s(t) / mean(s(t - vol_lookback + 1) .. s(t))
+
+    Range: 0 and up, at most vol_lookback (the mean includes s(t)), never negative. There is no direction. The value is
+    1 when the current volatility equals its mean over the lookback, above 1 when it is higher and below 1 when it is
+    lower. It is graded: it grows continuously with the current volatility.
+    Warm-up: vol_lookback + vol_period rows, bar t included (80 at the defaults).
+
+    NaN: a NaN close anywhere in the last vol_lookback + vol_period rows gives NaN. A mean of s equal to 0 (every
+    return window flat, never seen on real bars) gives NaN. A missing `close` column raises.
+    Building the component raises for a vol_period below 2 or a vol_lookback below 1.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last vol_lookback + vol_period rows of data, the last
+    of which is bar t; a bar's close is known at that bar's close.
+    """
+
+    def __init__(self, name="VolRatioToAvg", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.vol_period = int(self.parameters.get("vol_period", 20))
+        if self.vol_period < 2:
+            raise ValueError(f"VolatilityRatioToAverageComponent: vol_period must be >= 2, got {self.vol_period}")
+        self.vol_lookback = int(self.parameters.get("vol_lookback", 60))
+        if self.vol_lookback < 1:
+            raise ValueError(f"VolatilityRatioToAverageComponent: vol_lookback must be >= 1, got {self.vol_lookback}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data['close'].astype(float).to_numpy()[-n:]
+        if np.isnan(c).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        r = c[1:] / c[:-1] - 1.0
+        m = len(r)
+        stds = []
+        for k in range(self.vol_lookback):
+            end = m - k
+            stds.append(float(np.std(r[end - self.vol_period:end], ddof=1)))
+        s_t = stds[0]
+        avg = float(np.mean(stds))
+        if np.isnan(s_t) or np.isnan(avg) or not avg > 0:
+            self._raw_value = float("nan")
+        else:
+            self._raw_value = float(s_t / avg)
+        self.confidence = 1.0
+        self.debug_info = {'current_std': s_t, 'mean_std': avg}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return self.vol_lookback + self.vol_period

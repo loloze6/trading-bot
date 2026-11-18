@@ -60,3 +60,4 @@ night_013_run | 013-05_longer-stall-bigger-breakout_1d | StallUnderHighCountComp
 night_006_run | 006-05_downside-squeeze-break-continuation_1d | DistanceBelowPriorLow | built: DistanceFromHighComponent {"exclude_current": 1, "extreme": "low", "form": "percent", "period": 20, "source": "high"}
 night_006_run | 006-05_downside-squeeze-break-continuation_1d | PriorRangeCompressionRatio | built: RangeCompressionRatioComponent {"exclude_current": 1, "long_period": 100, "short_period": 20}
 night_006_run | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation_1d | RangeWidthRatio | built: RangeCompressionRatioComponent {"form": "width", "long_period": 100, "short_period": 20}
+night_run | 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal.g1_high-vol-down-day-rebound_1d | VolatilityRatioToAverageComponent | built: VolatilityRatioToAverageComponent {"vol_lookback": 60, "vol_period": 20}
