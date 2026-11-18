@@ -3,6 +3,7 @@
 006-03_post-squeeze-volatility-overshoot_1d: untestable: The idea predicts how large moves will be, not which way they go. The config can only hold a long [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g2_volume-surge-widens-moves_1d: untestable: The idea predicts how large the next 3-day move will be, not which way it goes, so the position it [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
