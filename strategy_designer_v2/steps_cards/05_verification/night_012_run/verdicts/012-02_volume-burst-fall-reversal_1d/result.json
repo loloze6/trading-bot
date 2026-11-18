@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 3-bar excess return on forecast",
+    "value": 0.0005955453521660314,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.481777320889586
+    },
+    "threshold": "slope t >= 2 confirms (with positive volume-ratio coefficient); t <= -2 rejects; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "volume-ratio coefficient in excess ~ volume ratio + fall size",
+    "value": 0.014975654548379649,
+    "passed": true
+  },
+  "counts": {
+    "independent cases with forecast > 0 on the grid": 2683,
+    "cases in the supporting regression": 1999
+  },
+  "decided_by": "The slope t is 2 or more and the volume-ratio coefficient in the supporting regression is positive.",
+  "reading": "The coin's mean 3-bar return is the mean of its non-overlapping grid 3-bar returns over all windows; the volume ratio is the bar's volume over the mean of the last 30 volumes including it, and the fall size is minus the bar's return over the 20-bar standard deviation of daily returns including it, both computed within each window (bars without full history left out of the supporting regression, which has an intercept); fewer than 100 cases is reported as not observable."
+}

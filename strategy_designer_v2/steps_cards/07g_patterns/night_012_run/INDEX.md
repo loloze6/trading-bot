@@ -1,1 +1,2 @@
 012-01_liquidation-flush-rebound_1d: 1 ideas (3 explorations)
+012-02_volume-burst-fall-reversal_1d: 3 ideas (3 explorations)
