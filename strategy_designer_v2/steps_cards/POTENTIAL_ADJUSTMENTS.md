@@ -259,3 +259,10 @@ the forecast needs (`max(2, lookback)`). A change to `trading-bot/`: the operato
 (`strategy_engine.py`, phase 3: `max(lookback, 2, the history ops' minimum)`). Proof: a test (a one-bar component with
 no history op is ready; it fails without the fix); the fixed backtest rerun with the fix, compared with its full record
 on disk: 588 files identical; the bot's suite passes.
+
+## Parked: an idea does not state the bar size its theory needs (second night, 2026-11-18)
+Brief 014 (price pressure in the hours around the perpetual funding settlements, 00:00, 08:00, 16:00 UTC) is about
+hours; step 2 wrote its ideas with no `bar` in their header, so step 3 planned them on its default, daily bars, where a
+2-hour window cannot be seen: "untestable" (its fidelity: "a 2-hour intraday window cannot be seen on daily bars").
+Step 3 is right; the fault is upstream: step 2 should write the bar size (and the data) an idea's mechanism needs when it
+is not the default. A change to step 2's prompt (a validated step): the operator's go. Not changed during the night.
