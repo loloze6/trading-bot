@@ -2,9 +2,6 @@
 
 One block per idea that needs components the catalogue does not have.
 
-## 003-02_thin-volume-drop-rebounds_1d
-- Component: VolumeRatioComponent: log(mean volume over the last 30 bars, current bar included / volume[t]), from the `volume` column; positive and growing the thinner the bar's volume is against its 30-day average, negative on heavy-volume bars | measures: comparison
-
 ## 003-03_heavy-volume-rise-continues_1d
 - Component: VolumeRatioComponent: volume[t] divided by the mean of the last `period` (30) bars' volume, from the `volume` column; it is 1 at average volume and grows as the day's volume gets heavier against that average | measures: comparison
 

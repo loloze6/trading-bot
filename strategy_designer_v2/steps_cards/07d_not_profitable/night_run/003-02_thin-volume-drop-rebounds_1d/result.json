@@ -1,0 +1,45 @@
+{
+  "line": "7.d",
+  "backtest": "003-02_thin-volume-drop-rebounds_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3437249,
+  "findings": {
+    "F1": "The book barely earns: a mean daily return of 1.9e-5 and a Sharpe of 0.09, against holding Sharpes per coin of 0.26 to 0.65. Average exposure per window was only 3\u201310 %, and the mean gross trade P/L was negative on BTC (\u22120.40 %), ETH (\u22120.14 %), LTC (\u22120.09 %) and ZEC (\u22120.62 %).",
+    "F2": "Thin-volume down days give no rebound; they keep falling. On the 10-day grid they show an excess return of \u22120.70 % over 2 days (t \u22122.27, n 395) and \u22120.89 % over 5 days (t \u22121.84). Up days show +0.54 % over 5 days (t 1.26).",
+    "F3": "The loss comes almost entirely from coins trading below their 50-day average. There, thin-volume down days lead to an excess 5-day return of \u22123.12 % (t \u22125.04, n 170). Above the average the same days give +0.06 % (t 0.07, n 134), and heavy-volume down days below the average give \u22120.94 % (t \u22120.73, n 92).",
+    "F4": "The coin's 60-day return grades this. For thin-volume down days, the excess 5-day return is \u22123.89 % in the lowest 60-day-return tercile (t \u22124.48, n 81), \u22122.92 % in the middle tercile (t \u22123.30, n 84) and +1.23 % in the top tercile (t 1.05, n 86).",
+    "F5": "On the book's own 5-day grid, active cases below the 50-day average lost \u22121.06 % excess (t \u22122.21, n 372), while those above it made +0.06 % (n 271). Every forecast quartile was negative (\u22121.10 % to \u22120.50 %), so the forecast's size does not grade the outcome.",
+    "F6": "Active cases in the calmest 20-day volatility quartile lost \u22121.24 % excess over 5 days (t \u22122.39, n 228), while the most volatile quartile made +0.30 % (t 0.36, n 227)."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin falls sharply over one day on volume well below its own 30-day average daily volume, it wins back part of that fall over the next 5 days, only while its 60-day return is positive. The larger the fall, the thinner its volume and the higher its 60-day return, the larger the rebound.",
+      "consequence": "A trader would buy thin-volume drops only in coins that have risen over the past 60 days, and would refuse them in coins in a downtrend.",
+      "name": "thin drops rebound in uptrends",
+      "from": "F3, F4, F5",
+      "refs": [
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "When a coin whose 60-day return is negative falls over one day on volume below its own 30-day average daily volume, it keeps falling over the next 5 days. The further its 60-day return is below zero, the larger the further fall.",
+      "consequence": "A trader would treat a quiet down day in a falling coin as a sign that the decline continues, either to short it or to stay out of longs.",
+      "name": "quiet drops extend downtrends",
+      "from": "F2, F3, F4",
+      "refs": [
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "003-02_thin-volume-drop-rebounds.d1_thin-drops-rebound-in-uptrends",
+    "003-02_thin-volume-drop-rebounds.d2_quiet-drops-extend-downtrends"
+  ],
+  "no_ideas": null
+}

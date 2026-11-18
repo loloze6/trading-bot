@@ -1,4 +1,5 @@
 003-01_thin-volume-rise-reverses_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+003-02_thin-volume-drop-rebounds_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 010-01_rsi-above-midpoint-continues-up_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.d1_weekend-move-reverses-both-ways.g1_large-daily-fall-rebounds_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.d1_weekend-move-reverses-both-ways_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

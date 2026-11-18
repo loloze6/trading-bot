@@ -1,4 +1,5 @@
 003-01_thin-volume-rise-reverses_1d: 3 ideas (2 explorations)
+003-02_thin-volume-drop-rebounds_1d: 2 ideas (2 explorations)
 010-01_rsi-above-midpoint-continues-up_1d: 1 ideas (2 explorations)
 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.d1_weekend-move-reverses-both-ways.g1_large-daily-fall-rebounds_1d: 2 ideas (2 explorations)
 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.d1_weekend-move-reverses-both-ways_1d: 3 ideas (2 explorations)

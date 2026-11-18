@@ -4,7 +4,6 @@ One row per idea run; every status is read from the step's own result file. Each
 
 | Idea | Parent | Step 3 | Step 5 | Step 6 | Step 7: ideas proposed | USD | Minutes |
 |---|---|---|---|---|---|---|---|
-| 003-02_thin-volume-drop-rebounds | - | missing-components | - | - | - | 0.05 | 0.4 |
 | 003-03_heavy-volume-rise-continues | - | missing-components | - | - | - | 0.05 | 0.3 |
 | 003-04_heavy-volume-drop-continues | - | missing-components | - | - | - | 0.04 | 0.3 |
 | 011-01_weekend-rise-reverses-monday | - | plan | inconclusive (+2.75) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday, 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins; 7.d: 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways, 011-01_weekend-rise-reverses-monday.d2_weekend-falls-rebound-early-week; 7.g: 011-01_weekend-rise-reverses-monday.g1_volatile-day-selloffs-bounce-next, 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse | 1.33 | 6.3 |
@@ -35,20 +34,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal.g1_high-vol-down-day-rebound | 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal | missing-components | - | - | - | 0.08 | 0.6 |
 | 003-01_thin-volume-rise-reverses | - | plan | inconclusive (-0.30) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: 003-01_thin-volume-rise-reverses.b1_heavy-volume-falls-rebound; 7.d: 003-01_thin-volume-rise-reverses.d1_thin-rise-fades-in-downtrends, 003-01_thin-volume-rise-reverses.d2_heavy-volume-rise-continues, 003-01_thin-volume-rise-reverses.d3_thin-volume-fall-continues; 7.g: 003-01_thin-volume-rise-reverses.g1_heavy-volume-rises-keep-going, 003-01_thin-volume-rise-reverses.g2_large-daily-moves-continue, 003-01_thin-volume-rise-reverses.g3_relative-volume-leads-returns | 1.98 | 6.6 |
 | 010-01_rsi-above-midpoint-continues-up | - | plan | inconclusive (+1.82) | not profitable enough (failed: Calmar) | 7.b: 010-01_rsi-above-midpoint-continues-up.b1_rsi-share-more-coins; 7.d: 010-01_rsi-above-midpoint-continues-up.d1_rsi-above-share-long-side-only; 7.g: 010-01_rsi-above-midpoint-continues-up.g1_one-day-move-continues-weekly | 0.99 | 4.9 |
+| 003-02_thin-volume-drop-rebounds | - | plan | inconclusive (-1.91) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: 003-02_thin-volume-drop-rebounds.b1_heavy-volume-drop-rebounds, 003-02_thin-volume-drop-rebounds.b2_heavy-volume-rise-continues; 7.d: 003-02_thin-volume-drop-rebounds.d1_thin-drops-rebound-in-uptrends, 003-02_thin-volume-drop-rebounds.d2_quiet-drops-extend-downtrends; 7.g: 003-02_thin-volume-drop-rebounds.g1_volume-surge-precedes-gains, 003-02_thin-volume-drop-rebounds.g2_heavy-volume-rallies-continue | 1.30 | 6.1 |
 
 ## Consumption
-31 ideas, 29.42 USD, 178.4 minutes in all.
+31 ideas, 30.66 USD, 184.1 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.86 | 16.7 |
-| step4_backtest | 0.00 | 69.8 |
-| step5_verdict | 2.77 | 12.5 |
+| step3_plan | 2.97 | 17.5 |
+| step4_backtest | 0.00 | 71.0 |
+| step5_verdict | 2.89 | 13.0 |
 | step6_check | 0.00 | 1.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 3.12 | 10.1 |
-| step7_7.d | 11.44 | 39.2 |
-| step7_7.g | 9.23 | 29.0 |
+| step7_7.b | 3.47 | 11.1 |
+| step7_7.d | 11.78 | 40.3 |
+| step7_7.g | 9.55 | 30.0 |
 | chart_files | 0.00 | 0.0 |
