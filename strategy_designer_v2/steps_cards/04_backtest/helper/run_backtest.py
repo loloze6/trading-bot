@@ -207,7 +207,8 @@ def run_coin(python, config_path, symbol, bar, folds, cdir, windows=None):
             rc, log, out = call_protocol(python, config_path, proto, [window], Path(tmp))
             runs = list((out / "results").glob("*/metrics.json")) if (out / "results").exists() else []
             if rc or len(runs) != 1:
-                failed.append((k, "no historical data on the venue" if "No historical data" in log else "the engine stopped",
+                failed.append((k, "the dates were not fetched (run the data tool)" if "DataNotFetched" in log
+                               else "no historical data on the venue" if "No historical data" in log else "the engine stopped",
                                "\n".join(log.strip().splitlines()[-4:])))
                 continue
             wdir = cdir / f"w{k}"

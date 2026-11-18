@@ -3,7 +3,8 @@
 Kraken's public OHLC endpoint (https://api.kraken.com/0/public/OHLC?pair=<PAIR>&interval=1440, no key) serves the
 last 720 days. For each cached coin this appends the days after the cache's last row, up to yesterday (UTC), in the
 cache's own row format. Rows already in the cache are never changed; on the days both have, the prices must be
-equal or nothing is written for that coin.
+equal or nothing is written for that coin. The days added are recorded in local_data/coverage.yaml (data/coverage.py),
+which a backtest checks before reading.
 
   python tools/extend_kraken_daily.py [--until YYYY-MM-DD] [--dry-run]
 
@@ -12,6 +13,9 @@ the last day earlier); the engine hands each bar's decision the rows up to that 
 """
 import argparse, csv, datetime as dt, json, sys, time, urllib.request
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from data import coverage  # noqa: E402  (the days each file was fetched for)
 
 DATA = Path(__file__).resolve().parents[1] / "local_data"
 URL = "https://api.kraken.com/0/public/OHLC?pair={}&interval=1440"
@@ -49,6 +53,7 @@ def extend(path, until, dry_run=False):
     if add and not dry_run:
         with path.open("a", encoding="utf-8", newline="") as f:
             csv.writer(f, lineterminator="\n").writerows(add)
+        coverage.record(DATA, path.name, add[0][0], add[-1][0], "Kraken public OHLC API (tools/extend_kraken_daily.py)")
     span = f"{add[0][0]} to {add[-1][0]}" if add else "nothing to add"
     return (f"{coin}: {len(add)} days added ({span}); {len(set(have) & set(new))} overlapping days equal"
             + (f"; {len(gaps)} missing day(s) before {gaps[0]}" if gaps else ""))

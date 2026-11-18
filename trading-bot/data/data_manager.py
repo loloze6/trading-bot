@@ -58,6 +58,7 @@ from pathlib import Path
 # Fetchers are imported here so callers only need to import data_manager
 from data.fetchers.ccxt_fetcher import CcxtFetcher as HistoricalDataFetcher
 from data.fetchers.base_fetcher import BaseFetcher
+from data.coverage import DataNotFetched
 
 logger = logging.getLogger("trading_bot")
 
@@ -1282,6 +1283,9 @@ class DataManager:
         # the window rather than crashing the backtest on "No historical data".
         # Write/append callers construct fetchers directly and leave this off.
         fetcher.tolerate_fill_failure = True
+        # Operator 2026-11-18: a backtest reads the local file only, never the exchange; its days must be inside the
+        # file's coverage (data/coverage.py), else DataNotFetched. Fetching is the data tools' job.
+        fetcher.remote = False
         try:
             # Range-check seal guard (CUL-203): refuse a request whose window
             # reaches into the holdout BEFORE fetching, complementing the
@@ -1331,6 +1335,9 @@ class DataManager:
             else:
                 logger.warning(f"No OHLCV data available for {symbol}")
                 return pd.DataFrame()
+        except DataNotFetched:
+            # MUST propagate, like the seal guard below: days never fetched are not "no data".
+            raise
         except SealedDataError:
             # MUST propagate. The blanket handler below degrades every failure to
             # an empty DataFrame, which would silently defeat the seal guard

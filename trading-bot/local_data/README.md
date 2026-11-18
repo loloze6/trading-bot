@@ -8,79 +8,26 @@ mysterious.
 
 ---
 
-## ⛔ DO NOT DOWNLOAD 2026 H1 DATA
+## The holdout (updated 2026-11-18)
 
-**The range `2026-01-01` → `2026-06-30` is a FROZEN, SINGLE-USE holdout.**
+The sealed holdout is the range `holdout_range` in `trading-bot/config/campaign_data_policy.yaml`, read by every guard.
+Since 2026-11-18 it is 2027 H1: the 2026 H1 holdout was opened that day, on the operator's go, for the test of the
+research's paying ideas on unseen dates (`holdout_consumed_by: [unseen_run]`;
+`strategy_designer_v2/steps_cards/UNSEEN_RUN.md`). The daily Kraken files run to 2026-11-17; the hourly ones to
+2025-12-31. (The earlier warnings of this section, about 2026 H1, are in git history.)
 
-Defined at `trading-bot/config/campaign_data_policy.yaml:18` (`holdout_range`),
-governed by the rule at that file's lines 8–9 — *"no stage, tool, prescreen, or
-diagnostic may read candles inside this range except the (future) holdout_evaluation
-stage"* — and by `holdout_failure_is_terminal: true` (`:199`): if a strategy fails on
-this range, **no further promotion path exists for it.** The Q1-2026 Kraken tranche was
-physically moved out of the in-sample tree and sealed for exactly this reason
-(`:151-168`).
+## Coverage: which dates each file was fetched for (`coverage.yaml`)
 
-Its absence from this repo is **deliberate**, not an oversight.
-
-**Why this matters, concretely.** The whole campaign's claim to have measured anything
-honestly rests on one unspent out-of-sample window. That window is worth something only
-because *no decision anywhere in the campaign has been influenced by it.* Anyone who
-examines, downloads, plots, backtests on, or even eyeballs 2026 H1 data — from **any**
-venue, by **any** route (Kraken, Binance, a data vendor, a chart on a website, a
-notebook someone shares) — destroys that. Not degrades: destroys. The moment a human or
-model has seen how 2026 H1 played out, every subsequent design choice is contaminated by
-it, and there is no way to un-see it and no second window in reserve.
-
-The damage is **permanent and undetectable**. Nothing in a later result will look wrong.
-The backtest will still print a Sharpe ratio. It will simply no longer mean what it
-claims to mean, and no reviewer — including you — will be able to tell from the output
-that this happened.
-
-**This is a protocol rule, not a technical control.** Nothing in this repository can
-enforce it. `.gitignore` keeps the sealed bytes out of the published tree; it cannot stop
-anyone from typing a date range into an exchange API. The rule holds only because the
-people working on this campaign choose to hold it. If you need data for development or
-debugging, stop at **2025-12-31**.
-
-If you believe you have read 2026 H1 data — even accidentally, even briefly — **say so
-immediately**. A disclosed contamination can be reasoned about. An undisclosed one
-silently invalidates everything downstream of it.
-
-### ⚠️ This repository shipped 2026 H1 data while saying not to obtain it
-
-Stated plainly, because the section above was written as if the cache stopped at
-2025-12-31 and it did not. Measured 2026-07-26 (last-timestamp field only, no value
-column read), **seven loose CSVs at this directory's root carry rows inside
-`2026-01-01`..`2026-06-30`**:
-
-| File | Last timestamp | Rows in holdout range | Was committed? |
-|---|---|---:|---|
-| `BTCUSDT_1h.csv` | `2026-07-05 10:00:00` | 4,344 | **yes** |
-| `ETHUSDT_1h.csv` | `2026-07-05 10:00:00` | 4,344 | no |
-| `BTCUSDT_1d.csv` | `2026-03-19` | 78 | no |
-| `ETHUSDT_1d.csv` | `2026-03-19` | 78 | no |
-| `fear_greed_daily.csv` | `2026-07-05` | 181 | **yes** |
-| `BTCUSDT_funding_8h.csv` | `2026-07-05 08:00:00.001` | 542 | **yes** |
-| `ETHUSDT_funding_8h.csv` | `2026-07-05 08:00:00.001` | 542 | no |
-
-**All seven are now excluded from publication** (`.gitignore`, "holdout-carrying cache
-files" block); the three that were tracked were removed from the index with
-`git rm --cached`. Working copies are untouched — this changes what the repo *publishes*,
-not what is on your disk. Registered at
-`trading-bot/config/campaign_data_policy.yaml`
-(`binance_cache_holdout_contaminated`).
-
-**Repository HISTORY still contains them.** The three tracked files were committed from
-`ac27791` (2026-06-12) onward. `git rm --cached` removes a file from the current tree, not
-from prior commits, so **a clone of full history is not holdout-clean** — `git show` on any
-commit in that range still yields 2026 H1 bars. History rewrite is the operator's separate
-decision, filed alongside the same decision for `.env` at `fec0120`. Until then, treat full
-history as contaminated and do not check out or diff these paths at older commits.
-
-Two consequences for the rest of this README, noted here rather than by rewriting it:
-§3's "committed and published" no longer holds for the seven files above, and §3.5's
-funding-carry reproduction now requires re-fetching its two inputs (bounded at
-**2025-12-31**) rather than reading them from a clone.
+Data gathering and backtesting are separate (operator, 2026-11-18; `trading-bot/data/coverage.py`):
+- **A data tool** fetches from an exchange, writes a file here, and records in `coverage.yaml` the days it fetched:
+  `tools/extend_kraken_daily.py` (the latest daily bars), `tools/ingest_kraken_archive.py` (Kraken's archive files),
+  and any fetcher that saves what it fetched.
+- **A backtest reads the files here only, never an exchange.** Its days, warm-up included, must be inside the file's
+  coverage; otherwise it stops: "not fetched: run the data tool". Inside a covered range, a hole in the file is the
+  exchange's own (Kraken's hourly files leave out the hours without a trade) and is read as it is.
+- `start: null` means from the exchange's first data for the pair: the Kraken files come from Kraken's complete
+  archive, so before a file's first row the pair did not trade on Kraken.
+- Not covered by this rule: the auxiliary feeds (funding, fear and greed), read by their own loader.
 
 ---
 
