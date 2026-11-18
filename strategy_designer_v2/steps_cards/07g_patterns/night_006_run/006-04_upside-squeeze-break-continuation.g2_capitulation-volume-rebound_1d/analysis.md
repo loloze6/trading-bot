@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound_1d
+idea tested: 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3411 USD
+---
+## Findings
+- **F1:** Across all bars, not only after falls, the log of a coin's 5-day over 30-day average volume predicts its excess 3-day return. The pooled slope is 0.0124 with t 4.30 over 4283 non-overlapping cases. It still holds after controlling for the 5-day return (slope 0.0120, t 4.16; the 5-day return's own t is only 1.26). So the tested idea's volume effect is not limited to declines.
+- **F2:** The same volume ratio predicts more strongly over 7 days. On a sparser non-overlapping grid of 2064 cases the slope on the excess 7-day return is 0.0346, t 5.24.
+- **F3:** The effect is graded at both ends, and the thin-volume end is the sharper one. The lowest volume-ratio fifth (mean ratio 0.53) is followed by an excess 3-day return of -0.81% (t -3.05) and the highest fifth (ratio 1.74) by +0.87% (t 2.56). After a 5-day fall the lowest fifth gives -1.39% (t -3.63) and the highest +1.05% (t 2.00).
+- **F4:** The volume slope is positive in 7 of 8 years and largest in 2024 (t 5.01). It is positive in all six coins, but only XRP (t 3.75) and ZEC (t 2.36) are individually above 2; BTC, ETH, LTC and XMR are between 0.36 and 1.32.
+- **F5:** The book fails mainly because it is long only after falls. Those cases earn a mean 3-day return of 0.12%, against 0.63% after rises (Welch t -2.08). This leaves the book a mean daily return of 0.0074% and a Sharpe of 0.10, against 0.118% and 0.55 for holding. Its positions do grow with the volume ratio, from 0.24 to 0.82 of the book across fifths.
+- **F6:** Range compression does not precede larger moves, contrary to the brief. The 3-day move scaled by 20-day volatility is 0.76 and 0.75 in the two most compressed fifths (5-day range over 30-day range), against 0.87 to 0.88 in the two widest.
+
+## Ideas
+- `006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return` (from F1, F2, F4): For a coin, the higher its 5-day average volume against its 30-day average, the higher its return over the next 7 days, whatever the direction of its last 5 days.
+- `006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g2_thin-volume-declines-keep-falling` (from F3, F5): After a coin has fallen over the last 5 days, the lower its 5-day average volume against its 30-day average, the larger its further decline over the next 3 days.
+- `006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g3_compression-precedes-quieter-moves` (from F6): For a coin, the narrower its 5-day high-low range against its 30-day range, the smaller its move over the next 3 days relative to its 20-day volatility.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -10,20 +10,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 006-04_upside-squeeze-break-continuation | - | plan | inconclusive (-1.46) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.b: 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation; 7.d: 006-04_upside-squeeze-break-continuation.d1_momentum-break-ten-day-continuation, 006-04_upside-squeeze-break-continuation.d2_breakout-bar-ten-day-drift; 7.g: 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise, 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound | 1.21 | 5.8 |
 | 006-05_downside-squeeze-break-continuation | - | missing-components | - | - | - | 0.12 | 0.9 |
 | 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise | 006-04_upside-squeeze-break-continuation | plan | confirmed (+2.96) | not profitable enough (failed: Calmar) | 7.d: 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.d1_volume-surge-within-uptrend, 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.d2_volume-surge-after-down-day; 7.g: 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation, 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g2_volume-surge-widens-moves | 0.83 | 5.2 |
+| 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound | 006-04_upside-squeeze-break-continuation | plan | confirmed (+2.22) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.d: 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.d1_capitulation-rebound-within-uptrends, 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.d2_thin-volume-downtrend-continuation; 7.g: 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return, 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g2_thin-volume-declines-keep-falling, 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g3_compression-precedes-quieter-moves | 0.85 | 4.1 |
 
 ## Consumption
-6 ideas, 2.27 USD, 12.5 minutes in all.
+7 ideas, 3.11 USD, 16.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.40 | 2.9 |
-| step4_backtest | 0.00 | 3.5 |
-| step5_verdict | 0.23 | 0.9 |
-| step6_check | 0.00 | 0.0 |
+| step3_plan | 0.47 | 3.3 |
+| step4_backtest | 0.00 | 4.5 |
+| step5_verdict | 0.35 | 1.4 |
+| step6_check | 0.00 | 0.1 |
 | chart_files | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 0.30 | 1.0 |
-| step7_7.g | 0.67 | 2.2 |
-| step7_7.d | 0.66 | 2.1 |
+| step7_7.g | 1.01 | 3.2 |
+| step7_7.d | 0.97 | 3.1 |

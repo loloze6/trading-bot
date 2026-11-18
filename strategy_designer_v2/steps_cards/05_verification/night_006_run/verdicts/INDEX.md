@@ -1,2 +1,3 @@
 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise_1d: confirmed (fit: exact) [main: 0.000530903; OLS slope t 2.96046; grid cases with forecast > 0 2353, grid cases 5723]
+006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound_1d: confirmed (fit: exact) [main: 0.000859739; OLS slope t 2.2238; independent grid cases in the falling regime 2815]
 006-04_upside-squeeze-break-continuation_1d: inconclusive (fit: adapted) [main: -0.00203816; OLS slope t -1.45773; break-bar cases 299]
