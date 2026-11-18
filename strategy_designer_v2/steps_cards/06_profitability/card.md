@@ -35,7 +35,8 @@ One profitability check per backtest: **profitable enough** or **not profitable 
    - **Lowest Sharpe with one window left out:** not carried by one period.
    - **Calmar:** the yearly return against the deepest fall.
    - **Trades per day:** the book trades often enough to be judged (per day, not per bar, since 2026-11-18: the same
-     on daily bars, and the same meaning on any bar size).
+     on daily bars, and the same meaning on any bar size). Proof: step 6 rerun on all 174 records: 173 identical; the one hourly
+     record's trades per day changed, its status not.
    - For: the evidence, measure by measure.
    - Used by: the rule, the operator.
    - Without it: a bare word nobody can check.

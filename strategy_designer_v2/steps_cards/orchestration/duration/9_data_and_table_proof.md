@@ -1,4 +1,4 @@
-# Proof 9: the backtest reads local data only (point 4), and the history table built from columns (point 1) (2026-11-18)
+# Proof 9: the four speed points of measurement 8, proven, and the time before and after (2026-11-18)
 
 The two changes measurement 8 led to, each on the operator's go, in shared code (`trading-bot/`). Each was proven
 the same way: backtests rerun on fixed inputs and compared file by file with their records (the engine's files per
@@ -36,4 +36,24 @@ values (float, int, bool, a tz-naive Timestamp) with the same keys; any other ba
 | BTC 1h, RSI plan | 108 s | 32 s |
 | BTC 1h, trend idea with a one-year history (profiled) | 1,130 s | 194 s |
 
-Left (measurement 8): the warm-up replayed twice (point 2), writing the record (point 3), the idea's own calculations.
+## Point 2: the warm-up checked once
+**Change** (`core/trading_bot.py`, `core/backtester.py`, `core/launcher.py`): at the first bar after the warm-up, the
+readiness check runs on a copy of the real strategy (`is_ready()` classifies a bar); a strategy not ready stops the run
+as before. The throwaway strategy that replayed the whole warm-up a second time is removed.
+- Backtests: the same four, 192 + 24 + 4 + 1,036 files identical; the 19 coins' windows run and not run, and their
+  reasons, identical. Bot suite 1,547; 2 tests on real data (SOL: a warm-up too short stops the run, a long one runs).
+
+## Point 3: the record's nested details expanded per column
+**Change** (`execution/portfolio_info.flatten_dict_columns`): one construction per column; each row's single dtype (as
+`pd.Series(row)` gives it) reproduced, found once per kind of row. Measured without the profiler before the change:
+26% of a 1h window (8.2 s of 31.5 s).
+- Exactness: the 4 real frames of two windows identical to the former code; a test keeps the former code as reference.
+- Backtests: the same four, all identical. Bot suite 1,551.
+
+## Time, before and after (each run alone on the run machine, old code at 4a1af354, new code with all four points)
+| Run | Before | After | |
+|---|---|---|---|
+| 1h BTC, fold A (6 windows) | 329 s | 135 s | 2.4x |
+| 1h ZEC window 2023-09 (401 holes) | 446 s | 18 s | 25x |
+| 19 coins daily (24 windows) | 701 s | 458 s | 1.5x |
+| 1h window with a one-year history | 683 s | 57 s | 12x |
