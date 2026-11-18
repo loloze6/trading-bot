@@ -1,0 +1,48 @@
+{
+  "line": "7.g",
+  "backtest": "012-04_flush-depth-retracement-size_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3423014,
+  "findings": {
+    "F1": "On down days (bar return below zero), the log of volume over its prior 20-day median predicts the next-day excess return with slope +0.0045 (t 5.28, n 7056 non-overlapping cases); on up days the same slope is +0.0002 (t 0.25, n 7300), so the volume effect sits only on falling days.",
+    "F2": "The same down-day effect holds over the next 3 days: slope +0.0126 per log unit of volume ratio (t 4.72, n 2245), while up days show \u22120.0030 (t \u22121.35, n 2470).",
+    "F3": "Among down days, next-day excess return rises with the volume-ratio quintile: from \u22120.05% (bottom quintile, n 1391) to +0.70% (top quintile, n 1400); up days stay flat or negative in every quintile (\u22120.14% in the top quintile).",
+    "F4": "The pooled volume slope is positive in every coin at one day (t from 0.69 in BTC to 2.82 in ZEC) but uneven by period: t 1.22 in w1\u2013w12 and t 4.11 in w13\u2013w24, so the effect is stronger in the later windows.",
+    "F5": "The tested flush filter adds little: sharp falls (z \u2264 \u22122) with volume \u2265 2\u00d7 and a lower wick \u2265 0.3 average +1.88% excess over 3 days (t 1.78, n 31) against +0.11% for other sharp falls (n 139), and \u22120.62% over the next day (t \u22121.06, n 85). The wick shape does not carry the rebound; the volume does.",
+    "F6": "The lower-wick quintiles do not rank the 3-day excess return in order (\u22120.02%, +0.31%, \u22120.50%, \u22120.35%, +0.53%), so wick length on its own shows no graded pattern.",
+    "F7": "The book traded on only 1.0% of days (175 active days) with a mean daily return of \u22120.45% on those days (t \u22121.46), so the strategy barely sampled the broader down-day volume effect.",
+    "F8": "Next-day excess return by weekday ranges from \u22120.30% on Wednesday (t \u22122.70) to +0.30% on Friday (t 3.76, n about 2480 each), but this is one of many angles examined and has no mechanism behind it."
+  },
+  "ideas": [
+    {
+      "idea": "On a day a coin closes lower, the higher that day's volume relative to its median over the prior 20 days, the larger the coin's rise over the next day.",
+      "consequence": "Heavy-volume down days are a reason to buy for the next day rather than sell, and quiet down days are not.",
+      "name": "heavy-volume down-day rebound",
+      "from": "F1, F3, F4, F5",
+      "refs": [
+        "F1",
+        "F3",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "On a day a coin closes lower, the higher that day's volume relative to its median over the prior 20 days, the larger the coin's rise over the next 3 days.",
+      "consequence": "The rebound after heavy-volume selling lasts several days, so a long taken at the close of such a day can be held through it.",
+      "name": "volume-graded multi-day selloff reversal",
+      "from": "F2, F3, F5",
+      "refs": [
+        "F2",
+        "F3",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "012-04_flush-depth-retracement-size.g1_heavy-volume-down-day-rebound",
+    "012-04_flush-depth-retracement-size.g2_volume-graded-multi-day-selloff-reversal"
+  ],
+  "no_ideas": null
+}
