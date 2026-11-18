@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of OLS slope of excess 5-bar forward return on up_shock post_pipeline_value (non-overlapping grid)",
+    "value": 0.0005504792224688571,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.4389641880142623
+    },
+    "threshold": "confirm if slope t >= 2 and supporting check passes; reject if slope t <= -2; otherwise inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return on grid bars with forecast >= 10 is above 0",
+    "value": 0.011987169194912798,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast above 0": 1660,
+    "grid cases with forecast of 10 or more": 662,
+    "grid cases in regression": 3419
+  },
+  "decided_by": "Slope t is 2 or more and the mean excess return on grid bars with forecast >= 10 is above 0 (confirm rule).",
+  "reading": "The coin's mean 5-bar return is the mean of its grid forward returns pooled over all its windows, the regression is one pooled OLS over all coins' grid bars with the slope t = slope / its standard error, grid bars without a full 5-bar forward return inside the window are dropped, and the plan's 'fewer cases' rule is reported as not observable per the workflow."
+}

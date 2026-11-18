@@ -1,0 +1,66 @@
+{
+  "line": "7.g",
+  "backtest": "003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3573229,
+  "findings": {
+    "F1": "After a down day, the next day's excess return grows with the size of the fall in 20-day-volatility units: falls beyond 2 units are followed by +0.74% (t 2.32, n 425) and falls of 1 to 2 units by +0.55% (t 4.06, n 1511), against -0.13% (t -1.97, n 4487) after flat days. The slope of the next-day excess return on the downside move is negative in all six coins (t from -1.55 for BTC to -5.82 for XMR, about 2535 bars each), and it holds in both halves of the windows (w1-12: +0.50%, t 3.14, n 963; w13-24: +0.64%, t 3.28, n 973).",
+    "F2": "This next-day rebound after falls larger than one usual move comes mostly on heavy volume, the opposite of what the brief expects: heavy-volume falls (top tercile of volume over its 20-day mean) are followed by +0.73% (t 4.31, n 1225), against +0.38% (t 1.13, n 195) for thin-volume falls and +0.28% (t 1.25, n 516) for mid-volume falls.",
+    "F3": "The rebound after a fall does not last 5 days. On the 5-day grid, falls beyond 1 unit give only +0.14% to +0.23% excess (t 0.22 to 0.28, n 405), and after falls beyond 2 units the mean excess turns negative on days 3 and 4 (-0.66% and -0.58%).",
+    "F4": "After a sharp up day, the continuation the idea predicts does not show on the first day; it shows from the second day on. The next-day excess is -0.11% after rises of 1 to 2 units (n 1596) and -0.04% after rises beyond 2 units (n 501), while day 2 gives +0.44% and +0.74% and days 3 to 5 stay positive (+0.05% to +0.36%). On the 5-day grid this sums to +1.58% (t 2.51, n 295) and +2.69% (t 1.88, n 96).",
+    "F5": "Small up days of 0.3 to 1 unit are followed by weakness: -0.22% the next day (t -2.50, n 3366) and -0.44% on the 3-day grid (t -2.03, n 1187). The book holds a mean position of 0.37 after these days.",
+    "F6": "The book carries its gain only on its largest forecasts. Bars with a forecast of 10 or more gain +0.145% a day (n 3463, mean position 0.95), while bars with a forecast between 5 and 10 lose -0.046% a day (n 1211). The book holds only 19% to 30% of the book on average, against coin mean daily returns of +0.07% to +0.16%, which leaves it behind holding the coins in every coin.",
+    "F7": "A Friday effect (+0.25% next-day excess, t 2.97) was the only weekday standing out. Among the 7 weekdays and the many angles tested, it is not strong enough to count, and no idea rests on it."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin falls over one day, it rebounds over the next day, and the larger the fall in units of its 20-day volatility of daily returns, the larger the rebound.",
+      "consequence": "A sharp down day is a reason to lean long for the next day only, not to follow the fall, with conviction growing with the size of the fall.",
+      "name": "Sharp falls bounce next day",
+      "from": "F1, F3",
+      "refs": [
+        "F1",
+        "F3"
+      ]
+    },
+    {
+      "idea": "Among one-day falls, the heavier the day's volume relative to its 20-day average volume, the larger the coin's rebound over the next day.",
+      "consequence": "A heavy-volume sell-off is the stronger reason to buy for a one-day rebound, and a thin-volume one the weaker reason.",
+      "name": "Heavy-volume falls rebound harder",
+      "from": "F2, F1",
+      "refs": [
+        "F2",
+        "F1"
+      ]
+    },
+    {
+      "idea": "After a coin rises over one day by more than usual in units of its 20-day volatility, it keeps rising over the period from one to five days after that day. The larger the rise, the larger that later rise.",
+      "consequence": "Lean long after a sharp up day starting a day later, not at that day's close, with conviction growing with the size of the rise.",
+      "name": "Sharp rises carry on later",
+      "from": "F4, F6",
+      "refs": [
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "After a coin rises over one day by less than its usual daily move in units of its 20-day volatility, it falls over the next 3 days, and the closer the rise is to an ordinary small up day, the larger that fall.",
+      "consequence": "A modest up day is a reason to refuse a long, or to lean short, for the following few days.",
+      "name": "Small rises fade afterwards",
+      "from": "F5, F6",
+      "refs": [
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on.g1_sharp-falls-bounce-next-day",
+    "003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on.g2_heavy-volume-falls-rebound-harder",
+    "003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on.g3_sharp-rises-carry-on-later",
+    "003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on.g4_small-rises-fade-afterwards"
+  ],
+  "no_ideas": null
+}

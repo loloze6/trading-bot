@@ -1,3 +1,4 @@
+003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 003-01_thin-volume-rise-reverses_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 003-02_thin-volume-drop-rebounds_1d: not run: entry condition not met (step 5: not observable; step 6: not profitable enough)
 003-03_heavy-volume-rise-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

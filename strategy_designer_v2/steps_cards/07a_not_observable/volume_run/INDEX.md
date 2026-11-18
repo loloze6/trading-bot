@@ -1,3 +1,4 @@
+003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 003-01_thin-volume-rise-reverses_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 003-02_thin-volume-drop-rebounds_1d: no ideas: The plan needs at least 20 independent thin-volume sharp falls. The default data gave 4 over about 48 coin-years. All the available daily data comes to roughly 100 coin-years: the 6 default coins over 8 years, about 33 coin-years of ADA/DOGE/LINK/TRX/UNI/AAVE, about 12 of AVAX/SOL/INJ and about 8 of the fold-D coins. At the observed rate that would give about 8 cases, and even at the thin-coin rate of XMR and ZEC only about 17. Since only daily bars are available, no data available would reach the minimum of 20.
 003-03_heavy-volume-rise-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
