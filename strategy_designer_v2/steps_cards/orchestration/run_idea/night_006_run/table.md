@@ -14,20 +14,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation | 006-04_upside-squeeze-break-continuation | plan | inconclusive (+0.39) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.b: 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.b1_wide-range-breakout-more-coins, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.b2_volume-backed-breakout-continuation; 7.d: 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.d1_volume-surge-breakout-follow-through, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.d2_breakout-rise-lasts-days; 7.g: 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation | 1.27 | 7.0 |
 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation | plan | confirmed (+5.93) | not profitable enough (failed: Calmar) | 7.d: 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.d1_drop-rebound-in-expanded-volatility, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.d2_drop-rebound-in-wide-ranges, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.d3_drop-rebound-after-strong-trends; 7.g: 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.g1_drop-rebound-in-volatile-markets, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.g2_high-volume-capitulation-rebound, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.g3_volume-surge-next-day-drift, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.g4_range-expansion-persists-forward | 0.88 | 4.6 |
 | 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation | 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise | plan | confirmed (+3.00) | profitable enough | 7.g: 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation.g1_volume-ratio-predicts-drift, 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation.g2_quiet-decline-keeps-falling, 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation.g3_expanding-range-advance-continues | 0.56 | 3.3 |
+| 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound | plan | inconclusive (+1.94) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.b: 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return.b1_volume-surge-more-coins, 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return.b2_volume-surge-three-day-return; 7.d: 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return.d1_volume-surge-within-uptrend, 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return.d2_monthly-momentum-weekly-continuation; 7.g: 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return.g1_volatility-scaled-weekly-momentum | 1.11 | 5.3 |
 
 ## Consumption
-10 ideas, 5.82 USD, 31.5 minutes in all.
+11 ideas, 6.94 USD, 36.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.74 | 5.2 |
-| step4_backtest | 0.00 | 8.6 |
-| step5_verdict | 0.73 | 3.0 |
+| step3_plan | 0.80 | 5.6 |
+| step4_backtest | 0.00 | 9.7 |
+| step5_verdict | 0.85 | 3.5 |
 | step6_check | 0.00 | 0.2 |
 | chart_files | 0.00 | 0.1 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 0.62 | 2.0 |
-| step7_7.g | 2.08 | 7.0 |
-| step7_7.d | 1.66 | 5.4 |
+| step7_7.b | 0.90 | 2.9 |
+| step7_7.g | 2.41 | 8.0 |
+| step7_7.d | 1.98 | 6.7 |

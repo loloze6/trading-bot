@@ -2,5 +2,6 @@
 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation_1d: 2 ideas (2 explorations)
 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise_1d: 2 ideas (2 explorations)
+006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return_1d: 2 ideas (2 explorations)
 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound_1d: 2 ideas (2 explorations)
 006-04_upside-squeeze-break-continuation_1d: 2 ideas (2 explorations)

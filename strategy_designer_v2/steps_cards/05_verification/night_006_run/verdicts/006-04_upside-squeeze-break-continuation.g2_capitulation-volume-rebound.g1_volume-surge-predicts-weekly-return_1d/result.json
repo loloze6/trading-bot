@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 7-bar excess forward return on forecast",
+    "value": 0.00046179455765381973,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.9424642710617472
+    },
+    "threshold": "confirm if t >= 2 with top-minus-bottom tercile > 0; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "top-minus-bottom forecast tercile mean excess 7-bar return",
+    "value": 0.007543520518471035,
+    "passed": true
+  },
+  "counts": {
+    "independent non-overlapping cases": 2443,
+    "top tercile cases": 815,
+    "bottom tercile cases": 815
+  },
+  "decided_by": "The slope t lies between -2 and 2 (inconclusive rule).",
+  "reading": "The coin's mean 7-bar return is taken over its non-overlapping samples from all windows. The OLS includes an intercept and uses the ordinary OLS standard error. Terciles are cut at the pooled 1/3 and 2/3 forecast quantiles (bottom <= q1/3, top >= q2/3)."
+}
