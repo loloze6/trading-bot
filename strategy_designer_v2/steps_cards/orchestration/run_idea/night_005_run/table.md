@@ -14,20 +14,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal | 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling | plan | confirmed (+2.28) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.d: 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d1_rally-fade-only-downtrend, 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.d2_downtrend-bounce-gives-back; 7.g: 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.g1_high-volatility-one-day-reversal, 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.g2_calm-market-one-day-continuation | 4.11 | 17.5 |
 | 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation | 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal | plan | confirmed (+2.27) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.d: 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation.d1_persistent-calm-move-continuation, 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation.d2_calm-up-day-continuation; 7.g: 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation.g1_calm-up-day-continuation | 1.51 | 5.7 |
 | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal | 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal | plan | confirmed (+3.32) | not profitable enough (failed: Sharpe minus holding's Sharpe, Calmar) | 7.d: 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal.d1_volatility-excess-graded-fade, 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal.d2_stretched-trend-fade-strength; 7.g: 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal.g1_calm-spell-short-term-momentum | 0.92 | 4.8 |
+| 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.g1_high-volatility-one-day-reversal | 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal | plan | confirmed (+4.27) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.d: 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.g1_high-volatility-one-day-reversal.d1_high-vol-fall-one-day-rebound, 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.g1_high-volatility-one-day-reversal.d2_high-vol-fall-three-day-rebound; 7.g: 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.g1_high-volatility-one-day-reversal.g1_vol-expansion-one-day-reversal, 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.g1_high-volatility-one-day-reversal.g2_wide-range-up-day-giveback | 1.12 | 8.0 |
 
 ## Consumption
-10 ideas, 13.24 USD, 58.4 minutes in all.
+11 ideas, 14.36 USD, 66.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.56 | 6.7 |
-| step4_backtest | 0.00 | 9.4 |
-| step5_verdict | 1.10 | 5.1 |
-| step6_check | 0.00 | 0.1 |
+| step3_plan | 1.71 | 7.8 |
+| step4_backtest | 0.00 | 12.7 |
+| step5_verdict | 1.23 | 5.7 |
+| step6_check | 0.00 | 0.2 |
 | chart_files | 0.00 | 0.1 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.b | 0.67 | 2.1 |
-| step7_7.d | 5.95 | 22.8 |
-| step7_7.g | 3.96 | 12.1 |
+| step7_7.d | 6.29 | 24.0 |
+| step7_7.g | 4.46 | 13.8 |

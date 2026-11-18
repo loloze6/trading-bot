@@ -1,0 +1,44 @@
+{
+  "line": "7.d",
+  "backtest": "005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.g1_high-volatility-one-day-reversal_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3353075,
+  "findings": {
+    "F1": "The fade earns on the long side and not on the short side: bars held long earn 0.000670 per bar before fees and 0.000463 after, while bars held short earn 0.000021 before fees and \u22120.000195 after, so the short half (2952 of 5842 bars) loses money once fees are paid.",
+    "F2": "The next-day rebound after a fall is strongest when volatility is high, and the next day after a rise does not reverse. In the top tercile of the coin's sizing volatility, the next day after a fall gains 0.0060 (t 3.26, n 785). After rises the next day gains +0.0025 in the low tercile (t 2.49), then \u22120.0016 (t \u22121.17) and \u22120.0015 (t \u22121.01) in the middle and high terciles.",
+    "F3": "Within falls the rebound grows with the size of the fall times its volatility rank (slope 0.0208, t 3.44, n 249), but within rises it does not (slope \u22120.0017, t \u22120.43, n 265). Ranked by the 365-bar volatility rank, high-volatility falls give a next-day excess of +0.0172 (t 3.28, n 63) and a 3-day excess of +0.045 (t 2.11, n 17 non-overlapping).",
+    "F4": "Fees take most of the edge: gross gain is 0.000333 per bar against fees of 0.000209. Turnover is 0.256 per bar and the position barely persists (autocorrelation \u22120.04), so fees run from 0.000122 on the smallest moves to 0.000341 on the largest.",
+    "F5": "The book is nearly market-neutral and so forgoes the coins' rise. Its mean position is \u22120.012 and its gain from the market's rise is \u22120.000015 per day, while holding earns 0.00128 per day. As a result the book's mean daily return is 0.000121 against 0.00128 for holding, its Sharpe is 0.26 against 0.64, and its Calmar is 0.14 against a deepest fall of \u221221%. It trails holding in 14 of 24 windows."
+  },
+  "ideas": [
+    {
+      "idea": "The higher a coin's 20-day daily volatility stands against its own past year, the more strongly its next 1 day reverses a vol-scaled 1-day move, only after falls: the larger the day's fall in units of 20-day volatility, the more the coin rises over the next 1 day.",
+      "consequence": "A trader should buy outsized daily falls in high-volatility periods, sized by the fall and the volatility rank, and should not short outsized rises, since that side earns nothing and pays fees.",
+      "name": "high-vol fall one-day rebound",
+      "from": "F1, F2, F3, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The higher a coin's 20-day daily volatility stands against its own past year, the more strongly it reverses a vol-scaled 1-day fall over the next 3 days: the larger the day's fall in units of 20-day volatility, the more the coin rises over the next 3 days.",
+      "consequence": "A trader can hold the rebound after a high-volatility fall for several days, which cuts the daily turnover whose fees consume most of the one-day edge.",
+      "name": "high-vol fall three-day rebound",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.g1_high-volatility-one-day-reversal.d1_high-vol-fall-one-day-rebound",
+    "005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal.g1_high-volatility-one-day-reversal.d2_high-vol-fall-three-day-rebound"
+  ],
+  "no_ideas": null
+}
