@@ -1,0 +1,1 @@
+015-01_rallies-widen-later-range_1d: untestable: The idea's outcome is later volatility (the 7-day average high-low range), not a price direction. A spot long or short [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
