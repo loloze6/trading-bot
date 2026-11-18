@@ -4,7 +4,7 @@ on the record and saves the verdict.
 
   python make_verdict.py path/to/PLAN.md --python path/to/venv/bin/python
 Options: --records-root (default: ../../04_backtest/backtests), --verdicts-dir (default: ../verdicts next to this folder),
---model (default: the strongest).
+--model (default: the strongest), --measure (an earlier verdict's measure.py applied as it is: no model call).
 
 The model sees only the system prompt and the request (the plan, the config, the record description, and the coins,
 windows and columns of this record): no data, no tools, no files, an empty working folder. The runner executes the
@@ -141,6 +141,8 @@ def main():
     a.add_argument("--records-root", type=Path, default=HERE.parents[1] / "04_backtest" / "backtests")
     a.add_argument("--verdicts-dir", type=Path, default=HERE.parent / "verdicts")
     a.add_argument("--model", default="claude-opus-5-5")
+    a.add_argument("--measure", type=Path, help="an earlier verdict's measure.py, applied as it is to this record (the "
+                   "same criterion on other dates or coins): no model call")
     args = a.parse_args()
 
     plan_path = args.plan.resolve()
@@ -172,8 +174,8 @@ def main():
                f"Write measure(bars) for this plan.")
 
     cost, retry = 0.0, ""
-    for attempt in range(1, ATTEMPTS + 1):
-        text, c = call(args.model, system, request + retry)
+    for attempt in range(1, 1 + (1 if args.measure else ATTEMPTS)):
+        text, c = (args.measure.read_text(encoding="utf-8"), 0.0) if args.measure else call(args.model, system, request + retry)
         cost += c
         try:
             code = extract_code(text)

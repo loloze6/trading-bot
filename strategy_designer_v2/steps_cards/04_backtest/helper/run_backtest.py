@@ -3,7 +3,7 @@ engine's record in the backtests folder.
 
   python run_backtest.py path/to/PLAN.md --python path/to/venv/bin/python
 Options: --out-root (default: ../backtests next to this folder), --force (rerun even when nothing the engine reads
-has changed).
+has changed), --windows FILE (a JSON list of windows run in place of the plan's folds: the same plan on other dates).
 
 What it does, in order:
   1. Reads the plan's header: coins, bar size, fold, outcome. A plan whose outcome is untestable or missing-components
@@ -108,13 +108,15 @@ def coins(instruments):
     return out
 
 
-def protocol(python, symbol, bar, folds):
+def protocol(python, symbol, bar, folds, windows=None):
     """The protocol dict, built by the pipeline's own fold loader and venue resolver (run in the venv). Several folds:
-    their windows one after the other, in the order given."""
+    their windows one after the other, in the order given. Windows given (--windows): those, in place of the folds'."""
+    wins = (f"{windows!r}" if windows is not None
+            else f"[w for f in {folds!r} for w in rf.fold_windows(rf.load_folds(), f)]")
     code = (
         "import json, sys; sys.path.insert(0, '.'); sys.path.insert(0, '..');"
         "import research_folds as rf, venue_resolver as vr;"
-        f"p = {{'symbols': [{symbol!r}], 'timeframe': {bar!r}, 'windows': [w for f in {folds!r} for w in rf.fold_windows(rf.load_folds(), f)]}};"
+        f"p = {{'symbols': [{symbol!r}], 'timeframe': {bar!r}, 'windows': {wins}}};"
         f"p.update(vr.resolve({VENUE[0]!r}, {VENUE[1]!r})); print(json.dumps(p))")
     r = subprocess.run([python, "-c", code], cwd=BT, capture_output=True, text=True)
     if r.returncode:
@@ -180,9 +182,9 @@ def cores():
     return len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else (os.cpu_count() or 1)
 
 
-def run_coin(python, config_path, symbol, bar, folds, cdir):
+def run_coin(python, config_path, symbol, bar, folds, cdir, windows=None):
     """Runs one coin's windows into cdir. Returns (the protocol, the rows of the windows run, the windows not run)."""
-    proto = protocol(python, symbol, bar, folds)
+    proto = protocol(python, symbol, bar, folds, windows)
     windows = proto["windows"]
     rows, failed, folders = [], [], None
     # One wrapper call for all the coin's windows: Python and the bot are loaded once per coin, not once per
@@ -225,6 +227,8 @@ def main():
     a.add_argument("--python", required=True, help="the interpreter of a venv with trading-bot/requirements.txt")
     a.add_argument("--out-root", type=Path, default=HERE.parent / "backtests")
     a.add_argument("--force", action="store_true")
+    a.add_argument("--windows", type=Path, help="a JSON file of windows ([{label, test: {start, end}}, ...]) to run "
+                   "in place of the plan's folds (a test on other dates, the same plan and config)")
     args = a.parse_args()
 
     plan_path = args.plan.resolve()
@@ -235,6 +239,10 @@ def main():
     if not m:
         sys.exit(f"unreadable data-period: {period!r}")
     folds = m.group(1).split(", ")
+    windows = None
+    if args.windows:   # other dates than the plan's folds: the record names the windows file in place of the folds
+        windows = json.loads(args.windows.read_text(encoding="utf-8"))
+        period = f"windows {args.windows.stem}"
     out_root = args.out_root.resolve()
     out_root.mkdir(parents=True, exist_ok=True)
     index_path = out_root / "INDEX.md"
@@ -268,7 +276,7 @@ def main():
     # The coins at the same time: each coin's calls are separate processes with their own folders. The record is
     # written in the coins' order, as before.
     with ThreadPoolExecutor(max_workers=max(1, min(len(symbols), cores()))) as pool:
-        runs = [pool.submit(run_coin, args.python, config_path, symbol, bar, folds, dest / symbol) for symbol in symbols]
+        runs = [pool.submit(run_coin, args.python, config_path, symbol, bar, folds, dest / symbol, windows) for symbol in symbols]
         results = [r.result() for r in runs]
     for symbol, (proto, rows, failed) in zip(symbols, results):
         windows = proto["windows"]
