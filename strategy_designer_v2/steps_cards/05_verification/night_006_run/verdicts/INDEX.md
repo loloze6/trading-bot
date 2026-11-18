@@ -1,5 +1,6 @@
 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound_1d: confirmed (fit: exact) [main: 0.000497696; OLS slope t 5.93064; bars with forecast > 0 8514]
 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation_1d: inconclusive (fit: adapted) [main: 0.391598; OLS slope t 0.391598; non-overlapping breakout cases 404]
+006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1d: confirmed (fit: adapted) [main: 0.00896569; one-group t 3.00445; grid bars in the top group 1030, grid bars with forecast > 0 2922, grid bars with forecast 0 2801]
 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise_1d: confirmed (fit: exact) [main: 0.000530903; OLS slope t 2.96046; grid cases with forecast > 0 2353, grid cases 5723]
 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound_1d: confirmed (fit: exact) [main: 0.000859739; OLS slope t 2.2238; independent grid cases in the falling regime 2815]
 006-04_upside-squeeze-break-continuation_1d: inconclusive (fit: adapted) [main: -0.00203816; OLS slope t -1.45773; break-bar cases 299]
