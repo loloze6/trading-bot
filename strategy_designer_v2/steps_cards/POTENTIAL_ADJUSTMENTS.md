@@ -82,3 +82,16 @@ GitHub reports 1 critical vulnerability on the default branch (Dependabot alert 
 The operator's grouping: **result loop back** (a file next to the brief, not inside it, saying what its run found: its
 ideas' results, its blocked ideas, where the lines went), **brief archiving**, **brief reopening**. Seen tonight: the
 answer to "which of the theory's ideas are real and pay" was written by hand in NIGHT_RUN.md; no file holds it.
+
+## Parked: the operator's next topics (2026-11-18)
+Noted by the operator after the unseen run; each waits for its own plan and go. Where each lives: the live session
+(live), this session (research), the visualizer session (viewer).
+| Topic | Where | What |
+|---|---|---|
+| Several coins in one bot | live | one bot trading a few coins at once, each with its share of the account (the research tests one book per coin) |
+| Hosting the bot | live | the live bot runs on the operator's PC today |
+| Live operations | live | failure, stop, restart, crash, notification |
+| Finer bars | research | strategies on 4h, 1h or other bars: what the steps and the data need |
+| Research viewer, round 2 | viewer | improvements, hosting, access from the phone |
+| A viewer of the live bot | live / viewer | the live runs' books and decisions, day by day |
+| The parked list itself | research | review this file: what to keep, merge or drop |

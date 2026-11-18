@@ -108,5 +108,8 @@ minimum, as expected on a short period.)
 pass step 6 on 2026 (6). Recommended first: momentum in uptrends (night_013) and high-RSI trend continuation
 (validation; its uptrend twin is a near-duplicate): each confirmed on 2016-17 and profitable enough on 2026.
 
+**Made standard** (2026-11-18): `orchestration/unseen_test/`, which `run_idea` calls for every confirmed and profitable
+idea; it gives the same files as this run (its `validation/reading.md`).
+
 **Spent:** the 2026 H1 holdout (recorded in the policy; the holdout is now 2027 H1). The next unseen dates are the
 days after 2026-11-17 (`trading-bot/tools/extend_kraken_daily.py` adds them).
