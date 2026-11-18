@@ -58,6 +58,7 @@ from pathlib import Path
 # Fetchers are imported here so callers only need to import data_manager
 from data.fetchers.ccxt_fetcher import CcxtFetcher as HistoricalDataFetcher
 from data.fetchers.base_fetcher import BaseFetcher
+from data.coverage import DataNotFetched
 
 logger = logging.getLogger("trading_bot")
 
@@ -1235,7 +1236,7 @@ class DataManager:
                 logger.info(f"DataManager: {symbol} initialised ({len(df)} rows)")
 
     def fetch_historical_data(self, symbol: str, start_date, end_date, exchange: str = "binance",
-                              allow_sealed: bool = False, localStorage: bool = True) -> pd.DataFrame:
+                              allow_sealed: bool = False) -> pd.DataFrame:
         """
         Fetch raw OHLCV data for one symbol via CcxtFetcher and return it as
         a flat DataFrame.
@@ -1246,20 +1247,15 @@ class DataManager:
             )
         followed by self.data_manager.initialize().
 
-        `exchange` selects the CCXT exchange id used for both the remote
-        fetch and the local cache filename (see CcxtFetcher.cache_key());
+        `exchange` selects the CCXT exchange id that names the local cache
+        file (see CcxtFetcher.cache_key());
         defaults to "binance" so existing call sites are unaffected unless
         they opt in (e.g. exchange="kraken" to reach kraken_XBTUSD_1h etc.).
 
-        `localStorage` (default True — every existing caller, incl. the only
-        production one at core/backtester.py, passes nothing and is unaffected)
-        controls the on-disk cache. When True the fetcher loads the cache and
-        SAVES any gap-fill back to it — the historical write-through-on-read
-        behaviour. Pass False for a pure read: the SAVE side of
-        `_merge_and_store` is suppressed (`save=self.localStorage`,
-        base_fetcher.py), so a gapped-window read can no longer mutate a tracked
-        cache. It does NOT suppress the live `_fetch_remote` call itself — that
-        is a separate concern; this flag closes the cache-mutation-on-read only.
+        A backtest reads the local file only (operator 2026-11-18; data/coverage.py): no exchange call, no write.
+        The requested days must be inside the file's coverage, else DataNotFetched propagates ("run the data tool").
+        Holes inside the coverage are the exchange's own and are read as they are. (The former `localStorage`
+        parameter, which only stopped a gap-fill being written back, is gone with the gap-fill.)
 
         Returns an empty DataFrame on failure.
         """
@@ -1273,15 +1269,12 @@ class DataManager:
             start_date, end_date, [symbol],
             candle_interval_seconds=self.fetch_interval_seconds,
             exchange=exchange,
-            localStorage=localStorage,
+            localStorage=True,   # read the local file; a backtest never writes it (remote is off, below)
             data_dir = data_storage_dir
         )
-        # Read-only path: if an OPTIONAL gap-fill of an internal hole fails
-        # (offline / rate-limited fetch, or a non-connecting response the
-        # write-guard rejects), fall back to the cached rows that already cover
-        # the window rather than crashing the backtest on "No historical data".
-        # Write/append callers construct fetchers directly and leave this off.
-        fetcher.tolerate_fill_failure = True
+        # Operator 2026-11-18: a backtest reads the local file only, never the exchange; its days must be inside the
+        # file's coverage (data/coverage.py), else DataNotFetched. Fetching is the data tools' job.
+        fetcher.remote = False
         try:
             # Range-check seal guard (CUL-203): refuse a request whose window
             # reaches into the holdout BEFORE fetching, complementing the
@@ -1331,6 +1324,9 @@ class DataManager:
             else:
                 logger.warning(f"No OHLCV data available for {symbol}")
                 return pd.DataFrame()
+        except DataNotFetched:
+            # MUST propagate, like the seal guard below: days never fetched are not "no data".
+            raise
         except SealedDataError:
             # MUST propagate. The blanket handler below degrades every failure to
             # an empty DataFrame, which would silently defeat the seal guard

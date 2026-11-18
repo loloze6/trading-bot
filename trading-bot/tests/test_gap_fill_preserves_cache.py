@@ -233,11 +233,13 @@ def test_successful_fill_still_merges(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_fetch_historical_data_returns_window_when_gap_fill_raises(tmp_path, monkeypatch):
-    """The literal crash path: an interior-gap cache + a raising fill must return
-    the full cached window through DataManager.fetch_historical_data, not the
-    empty frame that launcher.py turns into 'No historical data'."""
+    """The literal crash path, under the local-only backtest read (2026-11-18): an interior-gap cache inside its
+    coverage returns the full cached window through DataManager.fetch_historical_data, with no exchange call at all
+    (the remote raises if it is ever called), not the empty frame launcher.py turns into 'No historical data'."""
     # CcxtFetcher (exchange=binance) resolves the cache slot to "<symbol>_<tf>".
     _write_cache(tmp_path, "BTCUSD_1h", _cache_with_interior_gap())
+    from data import coverage
+    coverage.record(tmp_path, "BTCUSD_1h.csv", None, "2020-06-02", "test")
 
     orig_init = ccxt_fetcher.CcxtFetcher.__init__
 

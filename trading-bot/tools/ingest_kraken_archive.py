@@ -68,6 +68,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from data.fetchers.ccxt_fetcher import CcxtFetcher  # noqa: E402
+from data import coverage  # noqa: E402  (the days each file was fetched for)
 
 # CUL-213: the emoji status prints in this module crash on a Windows cp1252
 # console (UnicodeEncodeError) the moment stdout is redirected/piped/captured
@@ -482,6 +483,9 @@ def ingest(asset: str, archive_dir: Path, data_dir: Path,
         tmp.unlink(missing_ok=True)
         raise
     os.replace(tmp, dest)
+    # The days this archive tranche holds: the file's coverage (data/coverage.py), which a backtest checks.
+    coverage.record(data_dir, dest.name, converted["timestamp"].min(), converted["timestamp"].max(),
+                    f"Kraken OHLCVT archive {src.name} (tools/ingest_kraken_archive.py)")
 
     # rows/first/last/gaps describe the WHOLE merged cache on disk, not the
     # tranche this call ingested. That is what the coverage table and the

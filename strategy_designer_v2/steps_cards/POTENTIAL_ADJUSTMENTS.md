@@ -95,3 +95,17 @@ Noted by the operator after the unseen run; each waits for its own plan and go. 
 | Research viewer, round 2 | viewer | improvements, hosting, access from the phone |
 | A viewer of the live bot | live / viewer | the live runs' books and decisions, day by day |
 | The parked list itself | research | review this file: what to keep, merge or drop |
+
+## Parked: a position left open while the forecast is 0 (the 0.2 rule; live session, 2026-11-18)
+The bot skips any allocation change smaller than 0.2 (`risk_management.controls.min_allocation_change`, judged on
+forecast / 10 with a sizing block), in every backtest and live: a position below 0.2 cannot close while the forecast
+stays at 0 (live: 0.17 held 12 days). Measured on the 12 confirmed and profitable ideas: 9.5% of bars hold such a
+position (up to 114 days in a row), of mean size 0.01 to 0.05, worth -1% to +1% of each book's gross return. Minimal:
+kept as it is (operator, 2026-11-18). The change, if ever wanted: a move to flat always executes.
+
+## Parked: futures candles for a pre-live check (live session's comparison, 2026-11-18)
+Live trades Kraken futures; the research backtests spot. Prices differ by 0.002% to 0.05%: 5 decisions in 321 days
+differ (the 0.2 rule on a knife edge), at most 8.67 per 1,000. Futures candles start 2022-03-23 (ZEC 2022-08-24), so
+they cannot replace spot for the folds (B and C are 2018 to 2021). Proposed when a topic opens: the data source as a
+backtest setting (spot by default) and a pre-live check of an idea going live on futures candles from 2022-03, with
+funding once modelled (funding is the larger spot vs futures difference).
