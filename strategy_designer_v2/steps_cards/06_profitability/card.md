@@ -34,7 +34,8 @@ One profitability check per backtest: **profitable enough** or **not profitable 
    - **Mean daily return:** large enough to matter.
    - **Lowest Sharpe with one window left out:** not carried by one period.
    - **Calmar:** the yearly return against the deepest fall.
-   - **Trades per bar:** the book trades often enough to be judged.
+   - **Trades per day:** the book trades often enough to be judged (per day, not per bar, since 2026-11-18: the same
+     on daily bars, and the same meaning on any bar size).
    - For: the evidence, measure by measure.
    - Used by: the rule, the operator.
    - Without it: a bare word nobody can check.
@@ -55,7 +56,7 @@ One profitability check per backtest: **profitable enough** or **not profitable 
 | Mean daily return | 0.05 % a day (about 20 % a year) | at least |
 | Lowest Sharpe, one window left out | 0 | strictly above |
 | Calmar | 0.75 | strictly above |
-| Trades per bar | 1 % | at least |
+| Trades per day | 1 % (one trade per 100 days) | at least |
 
 **Definitions, the same for every backtest** (the same as the workflow's shared definitions, `../common/measures.md`):
 - **The book of one coin in one window:** the backtest's value after each rebalance and its fees, at the last bar of each day. Daily returns stay inside a window.

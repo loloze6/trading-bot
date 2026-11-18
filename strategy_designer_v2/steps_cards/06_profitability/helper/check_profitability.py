@@ -15,8 +15,9 @@ Definitions (the same for every backtest):
   that chained curve. No fall and a positive return passes.
 - Leave one window out: the Sharpe without the days of one window (the same window number for every coin, so the
   same period); the lowest over all windows.
-- Trades per bar: the backtest's trades, without those closed on a window's last bar (a forced close), divided by
-  the number of bars, every coin and window together.
+- Trades per day: the backtest's trades, without those closed on a window's last bar (a forced close), divided by
+  the number of days its bars cover (the distinct UTC days of each coin and window), every coin and window together.
+  Per day, not per bar (2026-11-18): the same value on daily bars, and a rule that means the same on any bar size.
 """
 import argparse, gzip, json, math, os, re, sys
 from pathlib import Path
@@ -35,7 +36,7 @@ MEASURES = [  # (rule key, label, comparison)
     ("avg_daily_return_min", "Mean daily return", "at least"),
     ("leave_one_window_out_sharpe_min", "Lowest Sharpe, one window left out", "above"),
     ("calmar_min", "Calmar", "above"),
-    ("trade_frequency_min", "Trades per bar", "at least"),
+    ("trade_frequency_min", "Trades per day", "at least"),
 ]
 
 
@@ -54,8 +55,8 @@ def daily(series, ts):
 
 
 def load(record):
-    """Per window: the equal-weight daily returns of the book and of holding; and the trade and bar counts."""
-    book, hold, trades, bars, coins = {}, {}, 0, 0, []
+    """Per window: the equal-weight daily returns of the book and of holding; and the trade, bar and day counts."""
+    book, hold, trades, bars, days, coins = {}, {}, 0, 0, 0, []
     for coin in sorted(p for p in record.iterdir() if p.is_dir()):
         wins = sorted(coin.glob("w*/bars.csv.gz"), key=lambda p: int(p.parent.name[1:]))
         if not wins:
@@ -67,16 +68,17 @@ def load(record):
             book.setdefault(w, []).append(daily(d["postRebalance_total_value"], d["timestamp"]).rename(coin.name))
             hold.setdefault(w, []).append(daily(d["close"], d["timestamp"]).rename(coin.name))
             bars += len(d)
+            days += pd.to_datetime(d["timestamp"]).dt.normalize().nunique()
             last = pd.to_datetime(d["timestamp"].iloc[-1])
             with gzip.open(f.parent / "trades.json.gz", "rt") as g:
                 t = json.load(g)
             trades += sum(1 for x in t if pd.to_datetime(x["exit_time"]) != last)   # a close on the last bar is forced
     eq = lambda parts: {w: pd.concat(v, axis=1, sort=True).mean(axis=1) for w, v in parts.items()}
-    return eq(book), eq(hold), trades, bars, coins
+    return eq(book), eq(hold), trades, bars, days, coins
 
 
 def check(record, rule):
-    book, hold, trades, bars, coins = load(record)
+    book, hold, trades, bars, days, coins = load(record)
     windows = sorted(book)
     r = np.concatenate([book[w].to_numpy() for w in windows])
     h = np.concatenate([hold[w].to_numpy() for w in windows])
@@ -92,7 +94,7 @@ def check(record, rule):
         "avg_daily_return_min": float(r.mean()),
         "leave_one_window_out_sharpe_min": min(loo.values()),
         "calmar_min": calmar,
-        "trade_frequency_min": trades / bars if bars else 0.0,
+        "trade_frequency_min": trades / days if days else 0.0,
     }
     rows = []
     for key, label, cmp in MEASURES:
