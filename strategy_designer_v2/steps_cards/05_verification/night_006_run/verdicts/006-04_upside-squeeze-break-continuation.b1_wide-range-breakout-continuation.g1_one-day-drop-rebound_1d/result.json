@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-day excess return on forecast (forecast > 0 bars, pooled)",
+    "value": 0.0004976964847922527,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 5.9306413510896885
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and timing gain > 0; reject: slope < 0 with t <= -2; at least 300 bars with forecast > 0"
+  },
+  "supporting_check": {
+    "name": "timing gain (book mean daily return minus market-rise gain)",
+    "value": 0.0003198332206954032,
+    "passed": true
+  },
+  "counts": {
+    "bars with forecast > 0": 8514
+  },
+  "decided_by": "The slope is positive with t >= 2 and the timing gain is above 0 (confirm rule).",
+  "reading": "The slope is an ordinary least-squares fit with intercept of every forecast > 0 bar's next-day excess return (coin mean over all its within-window daily returns) on its forecast, its t being slope over the fit's standard error, and the plan's 'fewer than 300 is inconclusive' is reported as 'not observable' per the workflow's minimum-count rule."
+}

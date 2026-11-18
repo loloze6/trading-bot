@@ -12,20 +12,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise | 006-04_upside-squeeze-break-continuation | plan | confirmed (+2.96) | not profitable enough (failed: Calmar) | 7.d: 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.d1_volume-surge-within-uptrend, 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.d2_volume-surge-after-down-day; 7.g: 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation, 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g2_volume-surge-widens-moves | 0.83 | 5.2 |
 | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound | 006-04_upside-squeeze-break-continuation | plan | confirmed (+2.22) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.d: 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.d1_capitulation-rebound-within-uptrends, 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.d2_thin-volume-downtrend-continuation; 7.g: 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return, 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g2_thin-volume-declines-keep-falling, 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g3_compression-precedes-quieter-moves | 0.85 | 4.1 |
 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation | 006-04_upside-squeeze-break-continuation | plan | inconclusive (+0.39) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.b: 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.b1_wide-range-breakout-more-coins, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.b2_volume-backed-breakout-continuation; 7.d: 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.d1_volume-surge-breakout-follow-through, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.d2_breakout-rise-lasts-days; 7.g: 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation | 1.27 | 7.0 |
+| 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation | plan | confirmed (+5.93) | not profitable enough (failed: Calmar) | 7.d: 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.d1_drop-rebound-in-expanded-volatility, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.d2_drop-rebound-in-wide-ranges, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.d3_drop-rebound-after-strong-trends; 7.g: 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.g1_drop-rebound-in-volatile-markets, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.g2_high-volume-capitulation-rebound, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.g3_volume-surge-next-day-drift, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.g4_range-expansion-persists-forward | 0.88 | 4.6 |
 
 ## Consumption
-8 ideas, 4.38 USD, 23.6 minutes in all.
+9 ideas, 5.27 USD, 28.2 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.62 | 4.4 |
-| step4_backtest | 0.00 | 6.3 |
-| step5_verdict | 0.48 | 1.9 |
+| step3_plan | 0.68 | 4.8 |
+| step4_backtest | 0.00 | 7.4 |
+| step5_verdict | 0.61 | 2.5 |
 | step6_check | 0.00 | 0.1 |
 | chart_files | 0.00 | 0.1 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 0.62 | 2.0 |
-| step7_7.g | 1.36 | 4.5 |
-| step7_7.d | 1.31 | 4.2 |
+| step7_7.g | 1.71 | 5.8 |
+| step7_7.d | 1.66 | 5.4 |
