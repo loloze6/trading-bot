@@ -4,5 +4,6 @@
 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1d: profitable enough [Sharpe 0.9692; Sharpe minus holding's Sharpe 0.415; Calmar 0.8235]
 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise_1d: not profitable enough [Sharpe 0.7845; Sharpe minus holding's Sharpe 0.2304; Calmar 0.4537]
 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return_1d: not profitable enough [Sharpe 0.4535; Sharpe minus holding's Sharpe -0.1007; Calmar 0.1893]
+006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g2_thin-volume-declines-keep-falling_1d: not profitable enough [Sharpe 0.26; Sharpe minus holding's Sharpe -0.2942; Calmar 0.1034]
 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound_1d: not profitable enough [Sharpe 0.1014; Sharpe minus holding's Sharpe -0.4527; Calmar -0.01656]
 006-04_upside-squeeze-break-continuation_1d: not profitable enough [Sharpe 0.2306; Sharpe minus holding's Sharpe -0.3236; Calmar 0.135]

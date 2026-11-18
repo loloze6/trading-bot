@@ -4,5 +4,6 @@
 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g2_thin-volume-declines-keep-falling_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 006-04_upside-squeeze-break-continuation_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
