@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 3-bar excess return after flush bars (vs coin's grid mean)",
+    "value": 0.0163072869961454,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.1101967387491083
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases; reject: t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "Spearman(forecast, 3-bar excess return) > 0",
+    "value": -0.009496203077911642,
+    "passed": false
+  },
+  "counts": {
+    "flush cases": 158
+  },
+  "decided_by": "Confirming t >= 2 but the Spearman correlation is at or below 0 (supporting check failed).",
+  "reading": "A flush bar is dropped when it lies 1 to 3 bars after any earlier flush bar in the same window (the dedup is applied before dropping cases without a close 3 bars ahead in the window), and the coin's mean is over grid positions 0, 3, 6, ... of each window pooled across all its windows."
+}

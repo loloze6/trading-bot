@@ -2,10 +2,6 @@
 
 One block per idea that needs components the catalogue does not have.
 
-## 012-01_liquidation-flush-rebound_1d
-- Component: VolumeRatioComponent: volume[t] divided by the mean volume of the last 30 bars (`period` 30), from the volume column; it grows as the burst becomes more extreme | measures: situation
-- Component: LowerWickComponent: (min(open, close) - low) / close x 100, the lower wick as a percent of price, from the open, low and close columns; it grows as the wick below the close becomes longer | measures: situation
-
 ## 012-02_volume-burst-fall-reversal_1d
 - Component: VolumeRatioComponent: volume[t] divided by the mean of the last 30 bars' volume (bar t included), from the `volume` column; 1 at average volume, growing continuously as the bar's volume bursts above its 30-bar average | measures: comparison
 
