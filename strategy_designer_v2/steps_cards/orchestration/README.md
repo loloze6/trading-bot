@@ -15,7 +15,7 @@ model step needs (prompt, model variants) with what a function needs (its turn, 
 | `run_brief` | `run_brief/card.md` | a brief, a theme or a source | step 1 (theme or source only), step 2, then `loop` over one queue fed by step 2 and the step 7 lines | met on night_run (scope 3): `run_brief/validation/reading.md` |
 
 `duration/` is a study, not a function: how long one idea's run takes and how to make it faster (1 the picture, 2 the
-findings, 3 the plan, 4 and 5 measurements, 6 and 7 the proofs of changes 1 and 2, built in step 4).
+findings, 3 the plan, 4 and 5 measurements, 6 and 7 the proofs of changes 1 and 2, built in step 4; 8 where a finer-bar backtest spends its time, 2026-11-18).
 
 ## What the manual orchestration did that the next functions should keep (2026-11-15)
 From the overnight run and the step 7 validation loops, run by hand:
