@@ -43,3 +43,26 @@ First checks, 2026-11-18 about 11:00 UTC (one live bar), script `tb-live-proof/c
 
 Untested so far: a bar that trades live (none until the 30-day change turns positive), a restart, a missed poll.
 Reading of the run: pending (about a week).
+
+## Exercise 3: two more runs, orders off, beside `first_paper` (operator 2026-11-18, from the unseen run)
+
+Both strategies held on 2026 and on 2016-17 in the research's unseen run; configs unchanged, BTCUSD, orders off
+until `first_paper`'s week reads outcome A. Same criteria and checks as exercise 2.
+
+| Run | Strategy | required_bars, warm-up | Started (UTC) | First traded bar |
+|---|---|---|---|---|
+| `uptrend_momentum_paper` | night_013_run 013-01 ... g1_momentum-continuation-in-uptrends_1d | 61, 122 days | 2026-11-18 12:39 | 2026-11-18, decided ~00:00 on 11-19 |
+| `high_rsi_trend_paper` | validation_run 001-01 ... c1_high-rsi-trend-continuation_1d | 61, 122 days | 2026-11-18 12:39 | 2026-11-18, decided ~00:00 on 11-19 |
+
+Both warmed up and were ready within 2 s; local books start at the real account's value, 105.94.
+
+The research backtest on 2026 (Kraken spot, three windows) vs the same engine on the Kraken Futures candles live
+recorded, same windows, warm-up and costs; days with a trade (script `tb-live-proof/compare_research_2026.py`):
+
+| Strategy | Research (spot) | Engine on live futures candles | Same days | Only one side |
+|---|---|---|---|---|
+| uptrend momentum | 53 | 52 | 52 | research only: one day of window w1 |
+| high-RSI trend | 87 | 91 | 87 | futures only: 2026-10-08, 10-11, 10-12, 10-20 |
+
+Not yet explained: the 5 differing days. The likely cause is the spot-vs-perpetual price gap (0.02% at the median)
+near a threshold (the regime rule or the 0.2 minimum allocation change); unverified.
