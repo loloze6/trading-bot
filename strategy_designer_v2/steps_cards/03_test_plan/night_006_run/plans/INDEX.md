@@ -5,4 +5,4 @@
 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 006-04_upside-squeeze-break-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
-006-05_downside-squeeze-break-continuation_1d: missing-components: The break below the band's low and the band's narrowness before the break both come from the coin's own high, [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+006-05_downside-squeeze-break-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
