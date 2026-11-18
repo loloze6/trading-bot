@@ -1,0 +1,29 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast[t] x next-day excess return over coin mean, pooled",
+    "value": 0.008110372417469681,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.281640686606764
+    },
+    "threshold": "confirm t >= 2 with positive check; reject t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean next-day excess return, forecast>0 minus forecast<0",
+    "value": 0.0022419059859073573,
+    "passed": true
+  },
+  "counts": {
+    "bars_measured": 5794,
+    "bars_nonzero_forecast": 5794,
+    "bars_forecast_positive": 2832,
+    "bars_forecast_negative": 2962
+  },
+  "decided_by": "The main measure has t >= 2 and the supporting check is positive.",
+  "reading": "Down/up day is taken from the sign of the raw vol-scaled 1-day return (price return if missing), the long situation also requires a non-zero raw fall_low value; the main mean includes every bar with a next bar in its window (zero forecasts included), and the minimum counts are the bars with a non-zero forecast and a next-day return, by forecast sign."
+}
