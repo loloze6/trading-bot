@@ -12,4 +12,5 @@
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d: profitable enough [Sharpe 0.914; Sharpe minus holding's Sharpe 0.3599; Calmar 0.7994]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains_1d: not profitable enough [Sharpe 0.5016; Sharpe minus holding's Sharpe -0.05256; Calmar 0.2661]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g2_volume-surge-precedes-gains_1d: not profitable enough [Sharpe 0.6842; Sharpe minus holding's Sharpe 0.13; Calmar 0.4143]
+013-04_heavy-volume-below-high-breakout_1d: not profitable enough [Sharpe 0.5053; Sharpe minus holding's Sharpe -0.0643; Calmar 0.3163]
 013-06_breakout-volume-drives-continuation_1d: not profitable enough [Sharpe 0.8323; Sharpe minus holding's Sharpe 0.2627; Calmar 0.727]

@@ -5,9 +5,6 @@ One block per idea that needs components the catalogue does not have.
 ## 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g2_rising-volume-precedes-gains_1d
 - Component: VolumeMeanRatio: mean of `volume` over the last `short_period` bars (5) divided by mean of `volume` over the last `long_period` bars (30), current bar included; 1 at normal participation, rising above 1 as recent volume grows relative to its 30-day level, falling toward 0 when recent volume is thin | measures: situation
 
-## 013-04_heavy-volume-below-high-breakout_1d
-- Component: VolumeMeanRatio: the mean of `volume` over the last 10 bars divided by the mean of `volume` over the last 90 bars, both ending at the current bar; it is 1 at usual volume and grows as recent volume gets heavier | measures: comparison
-
 ## 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g2_heavy-volume-fall-rebounds_1d
 - Component: VolumeToMedianRatio: volume[t] divided by the median of the `volume` column over the prior `period` bars (default 20, bar t excluded); 1 at a typical day, growing as the day's volume exceeds its recent median | measures: comparison
 

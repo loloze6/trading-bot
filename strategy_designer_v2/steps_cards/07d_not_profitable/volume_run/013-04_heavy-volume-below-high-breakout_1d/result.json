@@ -1,0 +1,55 @@
+{
+  "line": "7.d",
+  "backtest": "013-04_heavy-volume-below-high-breakout_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.45394920000000005,
+  "findings": {
+    "F1": "The book is almost never in the market: it holds a position on only 1.38% of bars, across 152 entries with a median spell of 1 day (mean 1.56, max 5). Trades per bar are 0.0095 and the mean daily return is 5.9e-05, which explains why the size, trades and Calmar measures fail even though the bars it does hold gain 0.99% a day against 0.13% for all bars.",
+    "F2": "The book drops the break far too early: its position is lost as soon as the close slips back under the prior high, so it holds only 11.3% of the 30 days after each break. Over those 30 days the idea's own horizon pays, with a 30-day excess of +9.5% on 49 non-overlapping break cases (t 1.33) and a 6.4% excess on trending bars against -0.08% on the others.",
+    "F3": "The 30 days after a break pay as a whole. A unit position held on every one of those 1,531 days earns a mean 0.49% a day with an annualised Sharpe of 1.64, on 8.9% of all bars. The book's in-position days in that span earn 0.86% excess (t 2.03, n 237), and the days it sits out still earn 0.14% excess (t 1.01, n 1,869).",
+    "F4": "The post-break gain is front-loaded. Daily excess is 1.00% on the break day (t 1.92, n 152) and 0.88% over days 1\u20132 (t 2.13, n 285), then falls to between -0.19% and +0.18% over days 3\u201330. Measured from day 2 to day 30, the return is +8.9% on average but positive in only 47% of the 49 cases.",
+    "F5": "Heavy pre-break volume speeds the move up but does not carry it. After the heaviest-volume breaks (mean ratio 2.35), daily excess is 1.50% over days 0\u20132 and 0.83% over days 3\u201310, then -0.69% over days 11\u201329 (t -1.73). After middle-volume breaks (ratio 1.28), excess is still +0.61% over days 11\u201329 (t 2.01), and that tercile is the best over the whole 30 days (0.50%, t 2.44).",
+    "F6": "Holding the coin's 30 days after a break pays even when the price has fallen from its post-break peak. Daily excess is +0.47% on days 1\u201330 in the deepest drawdown quartile (mean -28% from the peak, t 1.26) and +0.47% near the peak (t 1.85). Falling back below the high therefore does not mark the move as over."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin closes above its prior 52-week high, the heavier its volume over the preceding 10 days, relative to its own 90-day average, the larger its return over the next 30 days, and this return keeps building on the days when its close has slipped back below that prior high within those 30 days.",
+      "consequence": "A trader keeps a break position for the 30 days after the close above the 52-week high instead of letting a dip back under the high end it, which multiplies the time in the market and the share of the move captured.",
+      "name": "hold the whole breakout month",
+      "from": "F1, F2, F3, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When a coin closes above its prior 52-week high, the heavier its volume over the preceding 10 days, relative to its own 90-day average, the larger its return over the next 10 days, with the move concentrated in the first days after the break.",
+      "consequence": "A trader leans hardest into heavy-volume breaks in their first days and expects their follow-through to fade by the second week, rather than pricing heavy volume as a month-long edge.",
+      "name": "heavy-volume breaks run fast",
+      "from": "F4, F5",
+      "refs": [
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The fewer days since a coin's close above its prior 52-week high, the larger its return over the next 2 days.",
+      "consequence": "A trader expects the strongest follow-through right at a fresh 52-week-high close and trims expectations as days pass since that break.",
+      "name": "freshest breaks pay most",
+      "from": "F4",
+      "refs": [
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "013-04_heavy-volume-below-high-breakout.d1_hold-the-whole-breakout-month",
+    "013-04_heavy-volume-below-high-breakout.d2_heavy-volume-breaks-run-fast",
+    "013-04_heavy-volume-below-high-breakout.d3_freshest-breaks-pay-most"
+  ],
+  "no_ideas": null
+}

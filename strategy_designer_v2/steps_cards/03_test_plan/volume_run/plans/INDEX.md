@@ -15,5 +15,5 @@
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g2_volume-surge-precedes-gains_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g2_rising-volume-precedes-gains_1d: missing-components: The situation is mean(volume, last 5 bars) / mean(volume, last 30 bars). `VolumeRatioComponent` gives only the current bar's volume over [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
-013-04_heavy-volume-below-high-breakout_1d: missing-components: `VolumeRatioComponent` gives only one bar's volume over a period mean. The config combines components only by weighted sums, so it [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+013-04_heavy-volume-below-high-breakout_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 013-06_breakout-volume-drives-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
