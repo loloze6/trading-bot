@@ -1,0 +1,2 @@
+014-01_settlement-hour-volume-excess_1d: untestable: The idea compares volume across hours of the same day, and its horizon is about two hours. Both are shorter [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+014-02_pre-settlement-drop-after-rise_1d: untestable: The outcome's horizon is 2 hours before each settlement time, shorter than one 1d bar, so it does not fit [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
