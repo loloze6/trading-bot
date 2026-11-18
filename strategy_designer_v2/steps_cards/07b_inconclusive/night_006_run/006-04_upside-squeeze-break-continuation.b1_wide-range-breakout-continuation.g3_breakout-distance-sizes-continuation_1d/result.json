@@ -1,0 +1,48 @@
+{
+  "line": "7.b",
+  "backtest": "006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.2978657,
+  "findings": {
+    "F1": "The test's slope t of +1.79 on 108 breakout cases rests on a few very large outcomes. Trimming the top and bottom 5 % of excess returns turns it to \u22121.45 (96 cases), dropping the 3 largest excess returns gives \u22121.47, and the rank correlation of forecast with excess return is \u22120.13 (p 0.18).",
+    "F2": "The slope is not shared across coins. ZEC alone carries it with t +4.07 on 21 cases; without ZEC it is \u22120.47 on 87 cases, LTC is \u22122.77, and ETH and XMR are negative.",
+    "F3": "The slope also flips between years: \u22121.58 in 2021, \u22121.16 in 2023, \u22121.10 in 2024 and +3.02 in 2025.",
+    "F4": "Breakouts as a group do rise more than usual, but without grading by distance. The mean excess 10-day return after any close above the prior 20-day high is +0.064 (t 2.78, 108 cases, 59 % positive, median +0.040), against \u22120.004 on the 1,583 cases without a breakout.",
+    "F5": "The forecast terciles show no grading. Mean excess returns are +0.079, +0.014 and +0.101 from lowest to highest, and the top 8 forecasts have a mean of +0.244 but a median of \u22120.012 with half positive, so the largest forecasts are a lottery.",
+    "F6": "The 10-day horizon is not a peak where a graded effect shows. On the forecast the slope t is +0.65 at 5 days and \u22120.44 at 20 days, and the mean excess is negative at 20 days (\u22120.033, 49 cases).",
+    "F7": "Among breakouts, the coin's own prior 10-day return grades the next 10-day excess return better than the distance does: slope t +3.14, rank correlation +0.15, 98 cases. Over all grid cases the same slope is t +3.39 (1,547 cases), but with a rank correlation of only +0.06."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D",
+      "name": "breakout distance, more coins",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ],
+      "idea": "The further a coin's close sits above the highest high of its prior 20 days, as a share of that high, the further its price rises over the next 10 days.",
+      "consequence": "A trader would size upside breakouts by how far price clears the prior high, not by how compressed the range was before it.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1d; period: folds A, B, C, D"
+    },
+    {
+      "idea": "While a coin's close sits above the highest high of its prior 20 days, the larger its own 10-day return, the further its price rises over the next 10 days.",
+      "consequence": "A trader would size upside breakouts by the strength of the run that carried price through the prior high, not by how far the close clears that high.",
+      "name": "breakout momentum sizes continuation",
+      "from": "F4, F5, F7",
+      "refs": [
+        "F4",
+        "F5",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation.b1_breakout-distance-more-coins",
+    "006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation.b2_breakout-momentum-sizes-continuation"
+  ],
+  "no_ideas": null
+}

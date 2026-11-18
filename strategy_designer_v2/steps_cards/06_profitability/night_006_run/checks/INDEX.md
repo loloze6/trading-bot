@@ -1,5 +1,6 @@
 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound_1d: not profitable enough [Sharpe 0.7464; Sharpe minus holding's Sharpe 0.1923; Calmar 0.6977]
 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation_1d: not profitable enough [Sharpe 0.3235; Sharpe minus holding's Sharpe -0.2306; Calmar 0.1079]
+006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation_1d: not profitable enough [Sharpe 0.1035; Sharpe minus holding's Sharpe -0.4507; Calmar 0.05635]
 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation_1d: not profitable enough [Sharpe 0.3965; Sharpe minus holding's Sharpe -0.1577; Calmar 0.264]
 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1d: profitable enough [Sharpe 0.9692; Sharpe minus holding's Sharpe 0.415; Calmar 0.8235]
 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise_1d: not profitable enough [Sharpe 0.7845; Sharpe minus holding's Sharpe 0.2304; Calmar 0.4537]

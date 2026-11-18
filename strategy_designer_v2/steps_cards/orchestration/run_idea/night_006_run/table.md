@@ -18,20 +18,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation | plan | confirmed (+2.58) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.d: 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation.d1_strength-continuation-inside-uptrends, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation.d2_strength-continuation-in-volatility; 7.g: 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation.g1_sharp-drop-next-day-rebound, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation.g2_breakout-distance-extends-rally, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation.g3_ten-day-momentum-alone-continues | 0.93 | 4.9 |
 | 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g2_volume-surge-widens-moves | 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise | untestable | - | - | - | 0.04 | 0.2 |
 | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g2_thin-volume-declines-keep-falling | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound | plan | confirmed (+2.74) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.d: 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g2_thin-volume-declines-keep-falling.d1_deep-thin-volume-falls-continue, 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g2_thin-volume-declines-keep-falling.d2_heavy-volume-dips-rebound-uptrend; 7.g: 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g2_thin-volume-declines-keep-falling.g1_heavy-volume-precedes-gains, 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g2_thin-volume-declines-keep-falling.g2_quiet-volume-momentum-continues, 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g2_thin-volume-declines-keep-falling.g3_range-expansion-keeps-expanding | 0.89 | 4.8 |
+| 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation | plan | inconclusive (+1.79) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation.b1_breakout-distance-more-coins, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation.b2_breakout-momentum-sizes-continuation; 7.d: 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation.d1_breakout-continuation-in-uptrends, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation.d2_trend-ranked-fresh-breakouts; 7.g: 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation.g1_compressed-range-enlarges-move, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation.g2_sharp-drops-rebound-next-day | 1.20 | 6.0 |
 
 ## Consumption
-14 ideas, 8.79 USD, 46.7 minutes in all.
+15 ideas, 9.99 USD, 52.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.97 | 6.8 |
-| step4_backtest | 0.00 | 12.1 |
-| step5_verdict | 1.13 | 4.8 |
+| step3_plan | 1.03 | 7.2 |
+| step4_backtest | 0.00 | 13.5 |
+| step5_verdict | 1.25 | 5.3 |
 | step6_check | 0.00 | 0.3 |
 | chart_files | 0.00 | 0.1 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 0.90 | 2.9 |
-| step7_7.g | 3.16 | 10.6 |
-| step7_7.d | 2.63 | 9.0 |
+| step7_7.b | 1.20 | 4.0 |
+| step7_7.g | 3.52 | 11.8 |
+| step7_7.d | 2.99 | 10.4 |

@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of OLS slope of excess 10-bar forward return on forecast (forecast > 0 grid samples)",
+    "value": 1.7940221093378839,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.7940221093378839
+    },
+    "threshold": "confirm if slope t >= +2 on >= 30 cases and mean excess > 0; reject if slope t <= -2 on >= 30 cases; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean excess 10-bar return over forecast > 0 samples above 0",
+    "value": 0.06430767111047449,
+    "passed": true
+  },
+  "counts": {
+    "forecast > 0 grid samples": 108
+  },
+  "decided_by": "The slope's t lies between -2 and +2.",
+  "reading": "The coin's mean 10-bar return is the mean of all its non-overlapping 10-bar grid returns over all windows (not only forecast > 0 samples), the slope t is the ordinary OLS t with intercept, and the situation is read from the raw component value > 0 (price-based prior 20-bar high where it is missing)."
+}

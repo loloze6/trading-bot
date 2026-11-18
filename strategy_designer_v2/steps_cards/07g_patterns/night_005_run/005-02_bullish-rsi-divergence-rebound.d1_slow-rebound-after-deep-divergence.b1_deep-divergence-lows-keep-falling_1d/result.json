@@ -1,0 +1,43 @@
+{
+  "line": "7.g",
+  "backtest": "005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.b1_deep-divergence-lows-keep-falling_1d",
+  "step5": "mismatch",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3694719,
+  "findings": {
+    "F1": "When a coin closed at a new 30-day high, its excess return over the next 20 days was positive: +4.1% mean, t = 2.25 over 72 spaced events, with 57% of them up. Grid bars without a new high averaged \u22120.2% (t = \u22120.16, n = 257). The effect was strongest in ETH (+7.3%, t = 2.59, n = 33) and in windows w13\u2013w24 (+7.7%, t = 2.35, n = 29), and weak in BTC (+1.4%, t = 0.61, n = 39).",
+    "F2": "The drift grew with the span of the high being broken. New 90-day highs were followed by +6.3% excess over 20 days (t = 2.22, n = 14), against +4.1% for new 30-day highs. On a 10-day horizon, new 30-day highs gave +2.2% (t = 1.97, n = 120).",
+    "F3": "Among new 30-day lows, a deeper 30-day decline went with a lower excess return over the next 20 days (r = \u22120.28, n = 61). The correlation was negative in all four coin-by-half subsets: BTC \u22120.28 and \u22120.44, ETH \u22120.07 and \u22120.32. Across all grid bars the 30-day return had no such link (r = \u22120.003, n = 179), so the effect is specific to new-low bars.",
+    "F4": "The RSI divergence added nothing at lows. Divergence lows averaged \u22124.4% excess (t = \u22121.03, n = 28) and non-divergence lows \u22123.3% (t = \u22121.12, n = 49), a difference with Welch t = \u22120.20.",
+    "F5": "The book's worst 2% of days came after the coin had fallen 4.6% over the prior 5 days (all days: +0.55%). On those days the coin itself rose 0.84% (all days: +0.13%). The short loses on rebound days that follow sharp drops.",
+    "F6": "Weekday and volatility patterns did not stand out once the number of angles is counted. Saturday's mean coin return was +0.28% (t = 2.78), but it held up only in ETH's first half (t = 2.21) and not in the other three subsets. Five-day returns by volatility quintile were all within |t| < 1.4."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin closes above its highest close of a past lookback, it rises more than its usual drift over the next 20 days, and the longer the lookback whose high it clears (30 days versus 90 days), the larger the rise.",
+      "consequence": "A close at a new multi-week high is a reason to hold or add a long rather than fade it, and more so the longer the high it breaks.",
+      "name": "new highs drift further up",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "When a coin closes at a new 30-day low, it falls further than its usual drift over the next 20 days, and the deeper its 30-day decline into that low, the larger the further fall, whatever its RSI shows.",
+      "consequence": "A deep new low is a reason to refuse to buy the turn, and the RSI divergence filter can be dropped.",
+      "name": "deep lows keep falling",
+      "from": "F3, F4",
+      "refs": [
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.b1_deep-divergence-lows-keep-falling.g1_new-highs-drift-further-up",
+    "005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.b1_deep-divergence-lows-keep-falling.g2_deep-lows-keep-falling"
+  ],
+  "no_ideas": null
+}
