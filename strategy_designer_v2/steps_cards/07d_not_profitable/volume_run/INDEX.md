@@ -1,5 +1,6 @@
 003-01_thin-volume-rise-reverses_1d: 3 ideas (2 explorations)
 003-02_thin-volume-drop-rebounds_1d: 1 ideas (2 explorations)
+003-03_heavy-volume-rise-continues_1d: 2 ideas (2 explorations)
 003-04_heavy-volume-drop-continues_1d: 2 ideas (2 explorations)
 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday_1d: 4 ideas (2 explorations)
 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d: 3 ideas (2 explorations)

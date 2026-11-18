@@ -15,7 +15,6 @@ One row per idea run; every status is read from the step's own result file. Each
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side | plan | confirmed (+2.75) | profitable enough | 7.g: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through.g1_range-expansion-precedes-gains, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through.g2_weekly-return-momentum-continues | 0.53 | 3.4 |
 | 003-01_thin-volume-rise-reverses | - | plan | inconclusive (-0.50) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: 003-01_thin-volume-rise-reverses.b1_thin-rise-reverses-in-downtrend, 003-01_thin-volume-rise-reverses.b2_heavy-volume-rise-continues; 7.d: 003-01_thin-volume-rise-reverses.d1_thin-rise-reverses-in-downtrend, 003-01_thin-volume-rise-reverses.d2_giveback-scales-with-thinness, 003-01_thin-volume-rise-reverses.d3_heavy-volume-rise-continues; 7.g: 003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on, 003-01_thin-volume-rise-reverses.g2_heavy-volume-rises-extend-further, 003-01_thin-volume-rise-reverses.g3_thin-volume-precedes-underperformance | 1.46 | 7.0 |
 | 003-02_thin-volume-drop-rebounds | - | plan | not observable (+1.27) | not profitable enough (failed: Mean daily return, Trades per bar) | 7.a: no ideas: The plan needs at least 20 independent thin-volume sharp falls. The default data gave 4 over about 48 coin-years. All the available daily data comes to roughly 100 coin-years: the 6 default coins over 8 years, about 33 coin-years of ADA/DOGE/LINK/TRX/UNI/AAVE, about 12 of AVAX/SOL/INJ and about 8 of the fold-D coins. At the observed rate that would give about 8 cases, and even at the thin-coin rate of XMR and ZEC only about 17. Since only daily bars are available, no data available would reach the minimum of 20.; 7.d: 003-02_thin-volume-drop-rebounds.d1_heavy-volume-drop-rebounds; 7.g: 003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue | 1.11 | 5.5 |
-| 003-03_heavy-volume-rise-continues | - | missing-components | - | - | - | 0.07 | 0.5 |
 | 003-04_heavy-volume-drop-continues | - | plan | inconclusive (-1.51) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: 003-04_heavy-volume-drop-continues.b1_heavy-volume-drop-more-coins, 003-04_heavy-volume-drop-continues.b2_strongest-heavy-volume-drops-continue; 7.d: 003-04_heavy-volume-drop-continues.d1_heavy-volume-drop-continues-delayed, 003-04_heavy-volume-drop-continues.d2_heavy-drop-continues-outside-uptrends; 7.g: 003-04_heavy-volume-drop-continues.g1_heavy-volume-falls-rebound | 1.09 | 5.5 |
 | 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse | 011-01_weekend-rise-reverses-monday | plan | confirmed (+4.95) | not profitable enough (failed: Mean daily return) | 7.d: 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.d1_volume-graded-three-day-rebound, 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.d2_heavy-volume-dips-in-uptrends, 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.d3_relative-volume-predicts-rebounds; 7.g: 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.g1_close-location-reverses-next-day, 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.g2_weekend-daily-moves-fade-next, 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse.g3_monday-move-continues-tuesday | 0.98 | 5.5 |
 | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g2_heavy-volume-fall-rebounds | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday | missing-components | - | - | - | 0.04 | 0.3 |
@@ -23,20 +22,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal.g1_high-volume-weekend-moves-reverse | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal | missing-components | - | - | - | 0.06 | 0.5 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling | plan | confirmed (+4.14) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.d: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains.d1_heavy-volume-selling-exhaustion, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains.d2_heavy-volume-rally-in-downtrend-fades; 7.g: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains.g1_heavy-volume-selloff-rebounds | 0.89 | 4.5 |
 | 012-01_liquidation-flush-rebound | - | plan | confirmed (+3.26) | not profitable enough (failed: Mean daily return, Calmar) | 7.d: 012-01_liquidation-flush-rebound.d1_repeated-flush-exhausts-cascade, 012-01_liquidation-flush-rebound.d2_flush-after-deep-weekly-fall; 7.g: 012-01_liquidation-flush-rebound.g1_volume-graded-fall-rebound, 012-01_liquidation-flush-rebound.g2_quiet-falls-keep-falling | 1.38 | 5.6 |
+| 003-03_heavy-volume-rise-continues | - | plan | confirmed (+2.98) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.d: 003-03_heavy-volume-rise-continues.d1_heavy-volume-rise-in-uptrend, 003-03_heavy-volume-rise-continues.d2_heavy-volume-rise-slow-continuation; 7.g: 003-03_heavy-volume-rise-continues.g1_delayed-heavy-volume-rise-drift | 1.07 | 5.6 |
 
 ## Consumption
-19 ideas, 13.73 USD, 70.7 minutes in all.
+19 ideas, 14.73 USD, 75.8 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.76 | 11.3 |
-| step4_backtest | 0.00 | 18.1 |
-| step5_verdict | 1.58 | 7.6 |
-| step6_check | 0.00 | 0.4 |
+| step3_plan | 1.83 | 11.8 |
+| step4_backtest | 0.00 | 19.3 |
+| step5_verdict | 1.70 | 8.1 |
+| step6_check | 0.00 | 0.5 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.20 | 0.6 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 1.72 | 5.6 |
-| step7_7.d | 3.87 | 12.8 |
-| step7_7.g | 4.59 | 14.2 |
+| step7_7.d | 4.20 | 14.0 |
+| step7_7.g | 5.09 | 15.8 |
 | chart_files | 0.00 | 0.0 |
