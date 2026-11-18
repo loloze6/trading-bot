@@ -24,6 +24,7 @@ built is removed from this list once done (git keeps it; each fix is in its card
 ## Parked: unseen-data tests and a limit of ideas per data set (orchestration)
 From the overnight run (2026-11-13), parked by the operator until the steps are final.
 - **What was seen:** of 8 ideas confirmed on the 6 default coins, 4 did not hold on 9 other coins, and step 7's own numbers are inflated by its search. About 32 ideas were tested on the same 6 coins in one night; the more ideas tried on one data set, the more a good result there can be luck.
+- **Done once, by hand (2026-11-18, `UNSEEN_RUN.md`):** the 12 confirmed and profitable ideas on 2026 and 2016-17 (step 4 `--windows`, step 5 `--measure`): 10 and 11 of 12 hold. Still open: making it a standard step after a profitable book.
 - **To discuss:** after a confirmation or a profitable book, test the same plan unchanged on coins step 7 never saw (the overnight tool `oos.py`, removed, in git history); and count the ideas tested on a data set, with a limit past which a result there counts only with an unseen-data test.
 
 ## Parked: record the regime detector's values in the backtest
@@ -37,6 +38,8 @@ profitable is not a result to diagnose but the end of the research, where a deci
 the final test on the sealed holdout, what could break the idea and its book, how several such books combine, paper
 trading, a small live test, and watching it once live. First inputs: 7.e's two confirmed and profitable ideas
 (002-03's e1, N2-04's e1, 2026-11-14).
+- **2026-11-18:** the unseen test is done (`UNSEEN_RUN.md`, outcome 1); next is paper trading of momentum in uptrends
+  (night_013) and high-RSI trend continuation (validation), via the live session.
 
 ## Parked: the regime line, folded into "proven and profitable, what next" (operator, 2026-11-15)
 Most of its problem is now covered by validated lines (7.d asks when a book should not be in the market; 7.b and 7.c propose an effect limited by a condition; the sizing cuts exposure in violent periods). What is left belongs with combining books: a regime shared by several strategies (one condition that switches books on and off), and pure regime findings (a condition with nothing graded inside, not an idea under the shared definition), as building blocks for that switch.

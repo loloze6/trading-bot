@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 10-bar forward return on forecast (trending, non-overlapping grid, pooled)",
+    "value": 0.0072680315606773625,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.771935593817509
+    },
+    "threshold": "slope t >= 2 confirms (with top-third mean excess > 0), t <= -2 rejects; at least 100 independent cases"
+  },
+  "supporting_check": {
+    "name": "mean excess 10-bar return of top third of forecasts",
+    "value": 0.07303554101961243,
+    "passed": true
+  },
+  "counts": {
+    "independent trending-grid cases": 210
+  },
+  "decided_by": "The slope's t is 2 or more with at least 100 independent cases and the top-third mean excess return is positive.",
+  "reading": "Situation = 60-bar return > 0 (recomputed from closes inside the window, falling back to the recorded regime where 60 prior bars are not in the window) and RSI above 50 (rsi_mom raw value below 0), long side; the coin's mean 10-bar return is taken on the same non-overlapping grid of all bars of all its windows; the top third is the n//3 grid cases with the highest forecasts (stable sort); fewer than 100 cases is reported as not observable."
+}

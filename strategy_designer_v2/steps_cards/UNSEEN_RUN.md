@@ -66,3 +66,47 @@ each bar's decision the rows up to that bar. The new bars go in a separate folde
 - **Risks:** the wrapper refuses windows in the holdout range today (a change to shared code: `trading-bot/backtest/`;
   proven by a fixed backtest rerun, files identical); once read, 2026 is no longer unseen for later ideas (the
   recorder's bars after today will be the next unseen period).
+
+## Reading (2026-11-18, run 09:14 to 09:41 UTC, 0 USD)
+Ran as planned: 12 ideas × 2 periods, every coin with data ran (BNB has none on Kraken, as in-sample; XMR, XRP and ZEC
+start in 2017). Step 5 applied each idea's own saved `measure.py` (no model call); step 6 its bars. Records:
+`04_backtest/unseen_run/`, `05_verification/unseen_run/`, `06_profitability/unseen_run/` (per period).
+
+| Idea (run) | In-sample t / Sharpe | 2026: t / Sharpe (holding) / step 6 | 2016-17: t / Sharpe (holding) / step 6 | Holds |
+|---|---|---|---|---|
+| volatile-day reversal (night_005) | +3.50 / 1.16 | −1.91 / −0.58 (−0.62) / no | +0.55 / −0.46 (3.71) / no | neither |
+| volatility-scaled momentum (night_006) | +3.00 / 0.97 | +0.23 / 0.40 (0.10) / no | +1.28 / 2.98 (3.75) / no | both |
+| rising-month weekly momentum (night_013) | +3.47 / 0.97 | −1.78 / 0.74 (0.10) / no | +0.25 / 2.95 (3.75) / no | 2016-17 only |
+| nearness to high, 19 coins (night_013) | +3.77 / 1.25 | +0.92 / 1.00 (0.07) / no | +0.82 / 2.97 (3.19) / no | both |
+| momentum in uptrends (night_013) | +2.79 / 1.15 | +0.52 / 1.34 (0.10) / **yes** | **+2.76** / 3.05 (3.75) / no | both |
+| RSI side, next week (night_rsi) | +2.93 / 1.03 | +1.15 / 1.76 (−0.62) / **yes** | +2.25 / 3.17 (3.71) / no | both |
+| high-RSI trend continuation (validation) | +3.48 / 1.02 | +3.36 / 1.26 (0.10) / **yes** | **+2.16** / 3.54 (3.75) / no | both |
+| high-RSI uptrend continuation (validation) | +3.17 / 1.05 | +2.59 / 1.52 (0.10) / **yes** | **+2.77** / 3.63 (3.75) / no | both |
+| momentum in golden-cross uptrends (validation) | +4.61 / 0.90 | +1.67 / 0.76 (−0.07) / no | +0.68 / 2.51 (3.12) / no | both |
+| uptrend momentum near highs (validation) | +2.20 / 0.95 | +1.56 / 1.65 (0.10) / **yes** | +1.77 / 3.03 (3.07) / no | both |
+| dual momentum (validation) | +2.22 / 1.06 | +1.12 / 1.49 (0.10) / **yes** | +1.37 / 3.31 (3.78) / no | both |
+| heavy-volume follow-through (volume) | +2.75 / 0.91 | **+2.30** / 0.45 (0.10) / no | +1.47 / 2.75 (3.75) / no | both |
+
+(Bold t: confirmed by the plan's own criterion. Some t ≥ 2 read "not observable": fewer cases than the plan's
+minimum, as expected on a short period.)
+
+**Outcome 1, as pre-registered:** 10 of 12 hold on 2026, 11 of 12 on 2016-17 (≥ 8 needed on each).
+
+**What it shows, stepping back:**
+- **2026 is the test that discriminates.** The coins fell (BTC −26%, ETH −39%, LTC −41%, XRP −47%; XMR +17%, ZEC
+  +89%); holding the 6 coins had a Sharpe of about 0.1. The trend ideas, long-only and in the market 30 to 60% of the
+  days, made 0.4 to 1.8: they stayed out of most of the falls and caught ZEC's and XMR's rises. 6 of 12 pass every
+  step 6 bar on 2026.
+- **2016-17 does not discriminate.** A bull market (BTC ×32): any idea that is long most of the time has a Sharpe
+  near 3, and none beats holding. It shows the ideas are not broken in another market, not that they add value there.
+- **The 10 are close to one result counted 10 times:** 9 are long-only "be in when the trend is up" ideas. "10 of 12"
+  is one family holding, not 10 independent confirmations.
+- **What fails:** the only reversal idea (night_005), on both periods; and rising-month weekly momentum, whose
+  measure turns negative in 2026 (its book still earns, from the trend filter, not from its measure).
+
+**Next, as pre-registered:** paper trading via the live session. Candidates: the ideas that hold on both periods and
+pass step 6 on 2026 (6). Recommended first: momentum in uptrends (night_013) and high-RSI trend continuation
+(validation; its uptrend twin is a near-duplicate): each confirmed on 2016-17 and profitable enough on 2026.
+
+**Spent:** the 2026 H1 holdout (recorded in the policy; the holdout is now 2027 H1). The next unseen dates are the
+days after 2026-11-17 (`trading-bot/tools/extend_kraken_daily.py` adds them).
