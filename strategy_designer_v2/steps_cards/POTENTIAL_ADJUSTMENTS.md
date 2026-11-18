@@ -24,7 +24,7 @@ built is removed from this list once done (git keeps it; each fix is in its card
 ## Parked: unseen-data tests and a limit of ideas per data set (orchestration)
 From the overnight run (2026-11-13), parked by the operator until the steps are final.
 - **What was seen:** of 8 ideas confirmed on the 6 default coins, 4 did not hold on 9 other coins, and step 7's own numbers are inflated by its search. About 32 ideas were tested on the same 6 coins in one night; the more ideas tried on one data set, the more a good result there can be luck.
-- **Done once, by hand (2026-11-18, `UNSEEN_RUN.md`):** the 12 confirmed and profitable ideas on 2026 and 2016-17 (step 4 `--windows`, step 5 `--measure`): 10 and 11 of 12 hold. Still open: making it a standard step after a profitable book.
+- **Done once, by hand (2026-11-18, `UNSEEN_RUN.md`):** the 12 confirmed and profitable ideas on 2026 and 2016-17 (step 4 `--windows`, step 5 `--measure`): 10 and 11 of 12 hold. Made standard the same day: `orchestration/unseen_test/`, called by `run_idea` for every confirmed and profitable idea.
 - **To discuss:** after a confirmation or a profitable book, test the same plan unchanged on coins step 7 never saw (the overnight tool `oos.py`, removed, in git history); and count the ideas tested on a data set, with a limit past which a result there counts only with an unseen-data test.
 
 ## Parked: record the regime detector's values in the backtest
@@ -82,3 +82,16 @@ GitHub reports 1 critical vulnerability on the default branch (Dependabot alert 
 The operator's grouping: **result loop back** (a file next to the brief, not inside it, saying what its run found: its
 ideas' results, its blocked ideas, where the lines went), **brief archiving**, **brief reopening**. Seen tonight: the
 answer to "which of the theory's ideas are real and pay" was written by hand in NIGHT_RUN.md; no file holds it.
+
+## Parked: the operator's next topics (2026-11-18)
+Noted by the operator after the unseen run; each waits for its own plan and go. Where each lives: the live session
+(live), this session (research), the visualizer session (viewer).
+| Topic | Where | What |
+|---|---|---|
+| Several coins in one bot | live | one bot trading a few coins at once, each with its share of the account (the research tests one book per coin) |
+| Hosting the bot | live | the live bot runs on the operator's PC today |
+| Live operations | live | failure, stop, restart, crash, notification |
+| Finer bars | research | strategies on 4h, 1h or other bars: what the steps and the data need |
+| Research viewer, round 2 | viewer | improvements, hosting, access from the phone |
+| A viewer of the live bot | live / viewer | the live runs' books and decisions, day by day |
+| The parked list itself | research | review this file: what to keep, merge or drop |

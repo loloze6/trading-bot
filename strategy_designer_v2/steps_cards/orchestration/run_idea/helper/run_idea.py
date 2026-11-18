@@ -144,10 +144,10 @@ def index_says(index, rid):
 
 
 def render(rows):
-    head = ("| Idea | Parent | Step 3 | Step 5 | Step 6 | Step 7: ideas proposed | USD | Minutes |\n"
-            "|---|---|---|---|---|---|---|---|\n")
+    head = ("| Idea | Parent | Step 3 | Step 5 | Step 6 | Unseen dates | Step 7: ideas proposed | USD | Minutes |\n"
+            "|---|---|---|---|---|---|---|---|---|\n")
     mins = lambda r: sum(u["seconds"] for u in r.get("consumption", {}).values()) / 60
-    body = "".join(f"| {r['idea']} | {r.get('parent') or '-'} | {r['step3']} | {r.get('step5') or '-'} | {r.get('step6') or '-'} | "
+    body = "".join(f"| {r['idea']} | {r.get('parent') or '-'} | {r['step3']} | {r.get('step5') or '-'} | {r.get('step6') or '-'} | {r.get('unseen') or '-'} | "
                    f"{'; '.join(f'{k}: {v}' for k, v in r.get('step7', {}).items()) or '-'} | {r['cost']:.2f} | {mins(r):.1f} |\n" for r in rows)
     steps = {}
     for r in rows:
@@ -272,8 +272,17 @@ def main():
         done = list(ex.map(run_line, active_lines()))
     row["step7"] = {lid: what for lid, what, _ in done if what is not None}
     row["cost"] += sum(c for _, _, c in done)
+
+    # The unseen test (code only, no model call): a confirmed idea whose book pays, its plan unchanged on every unseen
+    # period (common/unseen_dates.md). After step 7, which never reads its files. The rule is steps 5 and 6's results.
+    unseen = STEPS / "orchestration" / "unseen_test"
+    if (result(v) or {}).get("status") == "confirmed" and (rc or {}).get("status") == "profitable enough":
+        j.step("unseen_test", [unseen / "helper/unseen_test.py", plan, "--run", args.run, "--python", args.python],
+               [unseen / args.run / f"{rid}.json"], done=(unseen / args.run / f"{rid}.json").exists())
+        row["unseen"] = index_says(unseen / args.run / "INDEX.md", rid) or "no answer"
     write_row(f["table"], row)
     print(f"{rid}: step 3 {row['step3']}; step 5 {row['step5']}; step 6 {row['step6']}; "
+          + (f"unseen dates: {row['unseen']}; " if row.get("unseen") else "") +
           f"step 7: {', '.join(row['step7']) or 'no line ran'}; cost in this run {row['cost']:.2f} USD")
 
 
