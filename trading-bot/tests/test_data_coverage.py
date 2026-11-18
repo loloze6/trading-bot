@@ -99,3 +99,15 @@ def test_the_backtest_loader_lets_the_refusal_through(monkeypatch):
     mgr.fetch_interval_seconds = 3600
     with pytest.raises(DataNotFetched):                    # not degraded to an empty frame ("no data")
         dm.DataManager.fetch_historical_data(mgr, "BTCUSD", "2022-01-01", "2022-02-01", exchange="kraken")
+
+
+def test_the_data_bar_is_the_largest_file_bar_that_divides_the_trading_bar(tmp_path):
+    for f in ("kraken_X_1d.csv", "kraken_X_1h.csv", "kraken_Y_1h.csv", "X_1h.csv"):
+        coverage.record(tmp_path, f, None, "2025-12-31", "test")
+    assert coverage.data_bar(tmp_path, "kraken_X", 86400) is None          # 1d has its own file: read as it is
+    assert coverage.data_bar(tmp_path, "kraken_X", 3600) is None           # 1h too
+    assert coverage.data_bar(tmp_path, "kraken_X", 4 * 3600) == 3600       # 4h is built from 1h
+    assert coverage.data_bar(tmp_path, "kraken_X", 2 * 86400) == 86400     # 2d from 1d
+    assert coverage.data_bar(tmp_path, "kraken_Y", 12 * 3600) == 3600
+    assert coverage.data_bar(tmp_path, "kraken_X", 1800) is None           # nothing finer than 30m: no file fits
+    assert coverage.data_bar(tmp_path, "kraken_Z", 4 * 3600) is None       # no file for the coin

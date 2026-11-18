@@ -91,6 +91,12 @@ Modelled on the engine's own run folders, one folder per plan, named after the p
 "the dates were not fetched (run the data tool)": a data tool fetches them first and records them in
 `local_data/coverage.yaml`. A hole inside a fetched range (an hour without a trade) is read as it is.
 
+**Any bar size** (2026-11-18): the plan's bar is the trading bar (when decisions are made). The data's bar is deduced
+from the files, not set by the plan: the largest bar with a file for the coin that divides the trading bar
+(`trading-bot/data/coverage.py`, `data_bar`); the engine builds the trading bars from it, as the live bot builds them
+from hourly candles. A bar with its own file (1d, 1h) is read as it is. Checked on 4h: 4,380 bars equal the hourly
+data added up by hand (open, high, low, close exactly; volume within the record's 6-decimal rounding).
+
 **Other dates** (`--windows FILE`, 2026-11-18, `UNSEEN_RUN.md`): the same plan and config on the windows of a JSON file
 (`[{label, test: {start, end}}, ...]`, in `windows/`) in place of its folds; the record's data line names the file. Used
 to test an idea on dates the research never saw.

@@ -891,6 +891,14 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         resolved_fetch_interval = (
             parse_interval_seconds(_raw_fetch_interval) if _raw_fetch_interval is not None else None
         )
+    if resolved_fetch_interval is None:
+        # 2026-11-18 (operator): the data's bar is deduced from the files, not set by the strategy: the largest bar
+        # with a file for this coin that divides the trading bar (data/coverage.data_bar); CandleBuilder builds the
+        # trading bars from it, as live does from hourly candles. None (the trading bar has its own file): unchanged.
+        from data import coverage as _coverage
+        _key = ("" if resolved_exchange == "binance" else f"{resolved_exchange}_") + symbol
+        resolved_fetch_interval = _coverage.data_bar(
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "local_data"), _key, interval)
     params = TradingParams(
         symbols=[symbol],
         interval=interval,
