@@ -1,0 +1,55 @@
+{
+  "line": "7.g",
+  "backtest": "006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.38920699999999997,
+  "findings": {
+    "F1": "The coin's largest daily falls are followed by a one-day rebound. The next-day excess return in the bottom decile of the day's standardised return is +0.0076 (t=5.02, 1724 cases), then +0.0020 (t=1.61) in the second decile, and between -0.0010 and -0.0026 in every decile from the fourth up; at about five standard errors this survives the many angles examined.",
+    "F2": "Among grid bars whose close sits above the prior 20-day high, the 10-day excess return is +0.064 on average (t=2.40, 86 cases), and it grows with the size of the break (slope 1.98, t=4.30).",
+    "F3": "Range position adds nothing once the 10-day return is known. In a joint regression of 10-day excess return, the 10-day return has t=3.31 and the position in the 20-day range has t=-0.19 (about 1,690 cases).",
+    "F4": "The idea's edge is unstable over time. The forecast's slope t by year runs from -2.54 (2018) to +3.53 (2020), with negative t in 2021-2023 territory (0.52, -0.68, -0.81). The top range-position quintile beats the rest by -0.032 in 2023 (t=-2.23).",
+    "F5": "Against the brief, wider prior 20-day ranges are followed by larger 10-day absolute moves, not smaller ones (0.083 in the narrowest quintile vs 0.118 in the widest). A low 10/60-day volatility ratio gives no clear expansion either (0.120 lowest quintile vs 0.106 highest).",
+    "F6": "The book earns 0.000163 a day. Only 0.000033 of that comes from the market's rise; nearly all its gain sits in the most-long position quintile (book +0.00125 a day at mean allocation +0.47). The most-short quintile loses -0.00061 a day while coins rise +0.0010.",
+    "F7": "Saturdays are the strongest day. The cross-coin daily mean is +0.0045 (t=3.04, 414 days), and the Saturday-minus-other difference is positive in 5 of 6 coins and in 7 of 8 years. It is a calendar effect, not a graded one, so no idea is built on it here."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's fall over the last day, measured against its own usual daily move, the more it rises over the next day.",
+      "consequence": "A trader would lean toward buying, or would refuse to short, a coin right after its sharpest one-day drops, scaling with the drop's size.",
+      "name": "sharp-drop next-day rebound",
+      "from": "F1",
+      "refs": [
+        "F1"
+      ]
+    },
+    {
+      "idea": "The further a coin's close sits above the highest high of its prior 20 days, the more its price rises over the next 10 days.",
+      "consequence": "A trader would size breakout longs by how far price has cleared the prior 20-day top, not just by whether it broke out.",
+      "name": "breakout distance extends rally",
+      "from": "F2, F3",
+      "refs": [
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "The higher a coin's 10-day return, the further its price rises over the next 10 days.",
+      "consequence": "A trader would size longs by 10-day momentum alone and drop range position, and would hold shorts back since the short side lost in a rising market.",
+      "name": "ten-day momentum alone continues",
+      "from": "F3, F4, F6",
+      "refs": [
+        "F3",
+        "F4",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation.g1_sharp-drop-next-day-rebound",
+    "006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation.g2_breakout-distance-extends-rally",
+    "006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation.g3_ten-day-momentum-alone-continues"
+  ],
+  "no_ideas": null
+}

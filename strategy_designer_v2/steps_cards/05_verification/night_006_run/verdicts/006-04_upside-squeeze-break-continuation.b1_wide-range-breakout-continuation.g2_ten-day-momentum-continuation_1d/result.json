@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9864756904816252,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the pooled OLS slope of excess 10-bar forward return on forecast",
+    "value": 2.576454926274174,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.576454926274174
+    },
+    "threshold": "confirm: t >= 2 with top-minus-bottom quintile > 0; reject: t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "top minus bottom forecast quintile mean excess 10-bar return",
+    "value": 0.02408313872978303,
+    "passed": true
+  },
+  "counts": {
+    "independent grid cases": 1691,
+    "top quintile cases": 338,
+    "bottom quintile cases": 339
+  },
+  "decided_by": "Confirm rule met: slope t is 2 or more and the top-minus-bottom quintile difference is above 0.",
+  "reading": "Grid at positions 0,10,20,... of each window with forward return close[t+10]/close[t]-1 inside the window; excess over each coin's mean grid 10-bar return across all its windows; quintiles are of the pooled grid forecasts (ties broken by order)."
+}
