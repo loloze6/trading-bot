@@ -105,7 +105,7 @@ The operator, from `live/validation/reading.md` and each run's `summary.md`.
 | 0 Baseline | fixed backtests kept, a rerun identical | done |
 | 1 Kraken connection | completed candles only, account read, keys never shown | done |
 | 2 Live feed, Binance live code removed | parity test holds; backtest rerun = baseline | done |
-| 3 First live run, orders off | outcome A on `first_paper` (see validation) | running since 2026-11-17 23:19 UTC |
+| 3 First live run, orders off | outcome A on `first_paper` (see validation) | the three runs stopped abruptly about 2026-11-18 19:00 UTC (no stop line in run.log; windows probably closed): `first_paper` decided 1 bar, the two others none; restart needed |
 | 3b Decision on the clock | poll 3 s after each bar's last candle ends, one retry 5 s later; the price at decision recorded beside the close; the decided candle re-read later and any change recorded | planned, built after `first_paper`'s reading (operator 2026-11-18) |
 | 4 Real book next to the local book, orders logged only | fake-exchange tests; one day of would-be orders | not started |
 | 5 First real orders, small account | daily real vs local comparison | not started |
@@ -120,7 +120,11 @@ whether Kraken changed it (record only, no rule). Built after `first_paper`'s re
 runs does not change; needed before real orders, when a late decision costs money.
 
 ## Open (not ruled on)
-- Funding payments, the spot-versus-perpetual price gap, risk management: later, with the operator.
+- Funding payments, the spot-versus-perpetual price gap, risk management: later, with the operator. The research
+  stays on Kraken spot candles (futures candles start 2022-03, too late for its 2018-2025 folds; a pre-live check on
+  futures candles is parked in POTENTIAL_ADJUSTMENTS.md), so live (futures) and research (spot) keep a small gap.
+- The 0.2 minimum-allocation-change rule stays as it is (operator 2026-11-18): on the research's 12 ideas it holds a
+  position while the forecast is 0 on 9.5% of bars, of mean size 0.01 to 0.05, worth -1% to +1% of gross return.
 - Aux feeds live: refused at start for now (the poll method is kept, unwired).
 - A restart starts the local book again from the real account's value (stop closed its position).
 - Starting from a terminal opened before the key was set: the key must be loaded into that window first.

@@ -80,3 +80,9 @@ set-up matches; then spot and futures runs compared day by day:
 So the live mechanism is not the cause: a live decision equals the backtest's on the same candles; the research
 backtest and live differ because their candles differ (spot vs perpetual), and the band amplifies tiny gaps on a few
 days. For the research (not live): the band keeps a small residual position open while the forecast is 0.
+
+## State at the end of the session (2026-11-18 21:47 UTC)
+The three runs stopped abruptly about 2026-11-18 19:00 UTC: last candle written then, no 'stop requested' line, no
+python process left. `first_paper` decided one bar (2026-11-17, outcome A on that bar); `uptrend_momentum_paper` and
+`high_rsi_trend_paper` decided none. A restart (new session_02, warm-up again, local book from the real account's
+value) is needed before the week's reading.
