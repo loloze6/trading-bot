@@ -5,10 +5,11 @@ data-instruments: BTC, ETH, LTC, XMR, XRP, ZEC
 data-bar: 1d
 data-period: folds A, B, C, D
 outcome: missing-components
+catalogue: 70a362722b07
 ---
 Fidelity:
-- Situation: a close below the low of a tight 20-day band -> kept: a regime rule on DonchianBreakoutComponent(20) at its floor (-20) marks a close at the lowest of 20 closes.
-- Comparison: how narrow the 20-day band is against the coin's 100-day range -> replaced: no catalogue component computes this width ratio, alone or combined.
-- Outcome: price keeps falling past the band's bottom over the next 3 days, downward -> kept: a short whose size grows with narrowness, judged on 3-bar forward returns.
-- Verdict transfer: no: without the 20-day-to-100-day range ratio, the size could not follow the idea's narrowness, so neither a confirm nor a reject would carry over.
-Reason: The bars hold everything the idea needs, and a regime plus a graded short could carry it. No component measures the 20-day high-low width against the 100-day high-low width, and the config can only take weighted sums, not ratios. `standardise` on a 20-day width judges it against its own past, not against the 100-day range.
+- Situation: a close below the low of the prior 20-day band -> replaced: no component compares the close with the prior 20-bar low; Donchian uses closes, not lows.
+- Comparison: how narrow that 20-day band was against the 100-day range -> replaced: RangeCompressionRatio counts the breaking bar in its 20-bar band, not the band before the break.
+- Outcome: price keeps falling beyond the band's bottom over the next 3 days -> kept: a short forecast held while the break lasts, judged over 3 bars.
+- Verdict transfer: no: built from closes and a band that includes the break bar, the test would measure a different event, so neither result would settle the idea.
+Reason: The break below the band's low and the band's narrowness before the break both come from the coin's own high, low and close. A regime rule plus a graded short component could hold them. But no catalogue component computes the close against the prior 20-bar low, and none measures compression with the current bar left out. Donchian (closes only) and DistanceFromHigh (highs only) do not combine into either one.
