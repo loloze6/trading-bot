@@ -28,3 +28,15 @@ resumes from the run's files).
 
 ## Reading
 (written during and after the night)
+
+**Stages 1 and 2 (00:15 to 02:32 UTC; 29.56 USD; one container restart, resumed).** Stage 1: the 25 unblocked ideas of
+the five older runs tested, budgets reached. Stage 2: both new theories untestable as written: 014's 5 ideas planned
+on daily bars where its 2-hour windows cannot be seen (step 2 wrote no bar size: parked for the operator); 015's 4
+ideas predict volatility, not a direction. The full reading comes at the end of the night.
+
+**Stage 3, written before it starts (02:40 UTC).** The only new effect with a profitable book tonight is a reversal
+in volatile periods (night_005_run, `…g2_volatile-reversal-completes-quickly`: confirmed t +3.50, Sharpe 1.16, +0.52
+over holding, Calmar 1.05, 163 cases), outside the trend-following family. Purpose: follow its lineage (the lines'
+ideas from it, a 7.b on more coins among them) to see whether it holds; then night_006_run's 2 unblocked ideas.
+Budgets: night_005_run 15.83 (+12), night_006_run 11.21 (+6); 47.6 USD in all tonight. Outcomes: as above; plus **G**:
+the volatile-period reversal holds in its lineage (another confirmed and profitable variant, or more coins).
