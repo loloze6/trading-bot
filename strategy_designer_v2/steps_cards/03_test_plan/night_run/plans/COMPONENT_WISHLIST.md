@@ -2,9 +2,6 @@
 
 One block per idea that needs components the catalogue does not have.
 
-## 003-03_heavy-volume-rise-continues_1d
-- Component: VolumeRatioComponent: volume[t] divided by the mean of the last `period` (30) bars' volume, from the `volume` column; it is 1 at average volume and grows as the day's volume gets heavier against that average | measures: comparison
-
 ## 003-04_heavy-volume-drop-continues_1d
 - Component: VolumeRatioComponent: the current bar's volume divided by the mean volume of the prior `period` bars (period 30), from the `volume` column; it rises continuously as the day's volume grows against its own average (1 at the average, 3 at three times it) | measures: comparison
 

@@ -4,7 +4,6 @@ One row per idea run; every status is read from the step's own result file. Each
 
 | Idea | Parent | Step 3 | Step 5 | Step 6 | Step 7: ideas proposed | USD | Minutes |
 |---|---|---|---|---|---|---|---|
-| 003-03_heavy-volume-rise-continues | - | missing-components | - | - | - | 0.05 | 0.3 |
 | 003-04_heavy-volume-drop-continues | - | missing-components | - | - | - | 0.04 | 0.3 |
 | 011-01_weekend-rise-reverses-monday | - | plan | inconclusive (+2.75) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday, 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins; 7.d: 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways, 011-01_weekend-rise-reverses-monday.d2_weekend-falls-rebound-early-week; 7.g: 011-01_weekend-rise-reverses-monday.g1_volatile-day-selloffs-bounce-next, 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse | 1.33 | 6.3 |
 | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday | 011-01_weekend-rise-reverses-monday | plan | inconclusive (+0.29) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.b: 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.b1_weekend-move-reverses-three-days; 7.d: 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.d1_weekend-move-reverses-both-ways, 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.d2_weekend-fall-rebound-in-downtrend, 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.d3_deep-daily-fall-rebounds; 7.g: 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal, 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g2_heavy-volume-fall-rebounds | 1.31 | 6.6 |
@@ -37,20 +36,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 003-02_thin-volume-drop-rebounds | - | plan | inconclusive (-1.91) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: 003-02_thin-volume-drop-rebounds.b1_heavy-volume-drop-rebounds, 003-02_thin-volume-drop-rebounds.b2_heavy-volume-rise-continues; 7.d: 003-02_thin-volume-drop-rebounds.d1_thin-drops-rebound-in-uptrends, 003-02_thin-volume-drop-rebounds.d2_quiet-drops-extend-downtrends; 7.g: 003-02_thin-volume-drop-rebounds.g1_volume-surge-precedes-gains, 003-02_thin-volume-drop-rebounds.g2_heavy-volume-rallies-continue | 1.30 | 6.1 |
 | 010-02_rsi-below-midpoint-continues-down | - | plan | inconclusive (+1.82) | not profitable enough (failed: Calmar) | 7.b: 010-02_rsi-below-midpoint-continues-down.b1_rsi-below-share-more-coins, 010-02_rsi-below-midpoint-continues-down.b2_rsi-below-share-next-day; 7.d: 010-02_rsi-below-midpoint-continues-down.d1_rsi-downside-with-falling-month, 010-02_rsi-below-midpoint-continues-down.d2_rsi-downside-in-calm-markets; 7.g: 010-02_rsi-below-midpoint-continues-down.g1_high-volatility-one-day-reversal | 1.10 | 5.2 |
 | 011-02_weekend-drop-rebounds-monday | - | plan | inconclusive (+1.35) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.b: 011-02_weekend-drop-rebounds-monday.b1_weekend-drop-rebound-more-coins, 011-02_weekend-drop-rebounds-monday.b2_weekend-rise-fades-monday; 7.d: 011-02_weekend-drop-rebounds-monday.d1_weekend-drop-rebounds-in-downtrend, 011-02_weekend-drop-rebounds-monday.d2_sunday-move-reverses-monday; 7.g: 011-02_weekend-drop-rebounds-monday.g1_high-volume-drop-next-day-rebound, 011-02_weekend-drop-rebounds-monday.g2_weekend-rally-next-day-fade, 011-02_weekend-drop-rebounds-monday.g3_thin-volume-rise-gives-back, 011-02_weekend-drop-rebounds-monday.g4_weekend-two-day-move-continues | 1.54 | 7.2 |
+| 003-03_heavy-volume-rise-continues | - | plan | confirmed (+2.62) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.d: 003-03_heavy-volume-rise-continues.d1_heavy-rise-continues-later, 003-03_heavy-volume-rise-continues.d2_heavy-rise-within-uptrend, 003-03_heavy-volume-rise-continues.d3_strong-rise-extends-trend; 7.g: 003-03_heavy-volume-rise-continues.g1_rise-size-drives-continuation, 003-03_heavy-volume-rise-continues.g2_thin-volume-falls-keep-falling, 003-03_heavy-volume-rise-continues.g3_rises-continue-in-uptrends | 1.06 | 5.1 |
 
 ## Consumption
-33 ideas, 33.30 USD, 196.5 minutes in all.
+33 ideas, 34.31 USD, 201.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.12 | 18.6 |
-| step4_backtest | 0.00 | 73.3 |
-| step5_verdict | 3.19 | 14.5 |
+| step3_plan | 3.18 | 19.0 |
+| step4_backtest | 0.00 | 74.4 |
+| step5_verdict | 3.31 | 15.0 |
 | step6_check | 0.00 | 1.1 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.b | 4.07 | 13.0 |
-| step7_7.d | 12.49 | 42.8 |
-| step7_7.g | 10.44 | 33.0 |
+| step7_7.d | 12.79 | 43.8 |
+| step7_7.g | 10.96 | 34.7 |
 | chart_files | 0.00 | 0.1 |

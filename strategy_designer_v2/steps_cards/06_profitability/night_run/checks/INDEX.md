@@ -1,5 +1,6 @@
 003-01_thin-volume-rise-reverses_1d: not profitable enough [Sharpe -0.5361; Sharpe minus holding's Sharpe -1.09; Calmar -0.1696]
 003-02_thin-volume-drop-rebounds_1d: not profitable enough [Sharpe 0.09469; Sharpe minus holding's Sharpe -0.4595; Calmar 0.02685]
+003-03_heavy-volume-rise-continues_1d: not profitable enough [Sharpe 0.1019; Sharpe minus holding's Sharpe -0.4523; Calmar 0.005748]
 010-01_rsi-above-midpoint-continues-up_1d: not profitable enough [Sharpe 0.8172; Sharpe minus holding's Sharpe 0.1776; Calmar 0.4667]
 010-02_rsi-below-midpoint-continues-down_1d: not profitable enough [Sharpe 0.8172; Sharpe minus holding's Sharpe 0.1776; Calmar 0.4667]
 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.d1_weekend-move-reverses-both-ways.g1_large-daily-fall-rebounds_1d: not profitable enough [Sharpe 0.4806; Sharpe minus holding's Sharpe -0.07352; Calmar 0.3106]
