@@ -1,0 +1,90 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "lowdist",
+        "class": "strategies.strategy_components.DistanceFromHighComponent",
+        "params": {
+          "period": 30,
+          "source": "close",
+          "exclude_current": 1,
+          "form": "percent",
+          "extreme": "low"
+        }
+      },
+      {
+        "id": "rsidiv",
+        "class": "strategies.strategy_components.RsiChangeFromPriorLowComponent",
+        "params": {
+          "rsi_period": 14,
+          "lookback": 30,
+          "exclude": 3,
+          "rsi_window": 100
+        }
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "lowdist",
+              "op": "lt",
+              "value": 0.0
+            },
+            {
+              "id": "rsidiv",
+              "op": "gt",
+              "value": 0.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "depth",
+            "class": "strategies.strategy_components.PriceEvolutionComponent",
+            "params": {
+              "period": 30
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "max": 0.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "mean_reversion": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 60,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 365,
+      "max_allocation": 2
+    }
+  }
+}
