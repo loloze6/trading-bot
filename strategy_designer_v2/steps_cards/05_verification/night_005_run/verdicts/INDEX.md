@@ -1,0 +1,1 @@
+005-02_bullish-rsi-divergence-rebound_1d: inconclusive (fit: adapted) [main: -0.0087686; ordinary t of the mean -1.35407; independent cases 78, divergence cases (regime, forecast > 0) 78, new-low cases with forecast 0 98]

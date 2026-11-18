@@ -1,0 +1,1 @@
+005-02_bullish-rsi-divergence-rebound_1d: no ideas: The divergence result is on the opposite side of the idea, its size does not grade the following return (F2), and no coin, year, trend, volatility regime or horizon shows a clear rebound that new lows without a divergence lack (F3, F4), so no amended idea has support.
