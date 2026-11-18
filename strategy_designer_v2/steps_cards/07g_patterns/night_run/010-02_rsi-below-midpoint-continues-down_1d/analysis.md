@@ -1,0 +1,21 @@
+---
+line: 7.g patterns
+backtest: 010-02_rsi-below-midpoint-continues-down_1d
+idea tested: 010-02_rsi-below-midpoint-continues-down
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3158 USD
+---
+## Findings
+- **F1:** The next-day excess return runs against today's volatility-scaled return mainly when volatility is high: in the top tercile of 20-day volatility the slope is -0.0062 (t -4.91, n 1612), while the middle tercile shows no effect (t -0.73, n 1610) and the low tercile leans the other way (t +2.07, n 1612).
+- **F2:** Pooled over BTC and ETH, today's return points the opposite way to tomorrow's excess return, with slope -0.086 on the raw return (t -6.08, n 4834) and t -2.92 on the volatility-scaled return. This holds in both coins (BTC t -1.62, ETH t -2.44) and has a negative slope in 6 of 8 years (2020 t -2.98).
+- **F3:** The reversal does not last past a day: on 3-day non-overlapping samples, the slope of the 3-day excess return on today's scaled return is t -0.13 (n 1571).
+- **F4:** The book's gain comes from its long side alone. Long bars earn a mean of 0.00163 per bar (t 2.39) in BTC and 0.00226 (t 3.09) in ETH, while short bars earn 0.000015 (t 0.02) and 0.000125 (t 0.22).
+- **F5:** The tested below-midpoint share does not stand out on its own as a predictor. Its raw slope on the 7-day excess return is t -1.74 (n 815). The only sub-group past 2 is the middle volatility tercile (t -2.65, n 223), which is not distinct from chance given how many angles were tried. Its buckets are not monotone: the mostly-below bucket averages -0.0093 (t -1.36) and the mostly-above bucket +0.0092 (t 1.30).
+
+## Ideas
+- `010-02_rsi-below-midpoint-continues-down.g1_high-volatility-one-day-reversal` (from F1, F2, F3): In a coin whose 20-day volatility is high, the larger its 1-day return relative to that volatility, the larger the move the opposite way over the next 1 day, and the higher the volatility, the stronger this reversal.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

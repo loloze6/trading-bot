@@ -35,20 +35,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 003-01_thin-volume-rise-reverses | - | plan | inconclusive (-0.30) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: 003-01_thin-volume-rise-reverses.b1_heavy-volume-falls-rebound; 7.d: 003-01_thin-volume-rise-reverses.d1_thin-rise-fades-in-downtrends, 003-01_thin-volume-rise-reverses.d2_heavy-volume-rise-continues, 003-01_thin-volume-rise-reverses.d3_thin-volume-fall-continues; 7.g: 003-01_thin-volume-rise-reverses.g1_heavy-volume-rises-keep-going, 003-01_thin-volume-rise-reverses.g2_large-daily-moves-continue, 003-01_thin-volume-rise-reverses.g3_relative-volume-leads-returns | 1.98 | 6.6 |
 | 010-01_rsi-above-midpoint-continues-up | - | plan | inconclusive (+1.82) | not profitable enough (failed: Calmar) | 7.b: 010-01_rsi-above-midpoint-continues-up.b1_rsi-share-more-coins; 7.d: 010-01_rsi-above-midpoint-continues-up.d1_rsi-above-share-long-side-only; 7.g: 010-01_rsi-above-midpoint-continues-up.g1_one-day-move-continues-weekly | 0.99 | 4.9 |
 | 003-02_thin-volume-drop-rebounds | - | plan | inconclusive (-1.91) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: 003-02_thin-volume-drop-rebounds.b1_heavy-volume-drop-rebounds, 003-02_thin-volume-drop-rebounds.b2_heavy-volume-rise-continues; 7.d: 003-02_thin-volume-drop-rebounds.d1_thin-drops-rebound-in-uptrends, 003-02_thin-volume-drop-rebounds.d2_quiet-drops-extend-downtrends; 7.g: 003-02_thin-volume-drop-rebounds.g1_volume-surge-precedes-gains, 003-02_thin-volume-drop-rebounds.g2_heavy-volume-rallies-continue | 1.30 | 6.1 |
+| 010-02_rsi-below-midpoint-continues-down | - | plan | inconclusive (+1.82) | not profitable enough (failed: Calmar) | 7.b: 010-02_rsi-below-midpoint-continues-down.b1_rsi-below-share-more-coins, 010-02_rsi-below-midpoint-continues-down.b2_rsi-below-share-next-day; 7.d: 010-02_rsi-below-midpoint-continues-down.d1_rsi-downside-with-falling-month, 010-02_rsi-below-midpoint-continues-down.d2_rsi-downside-in-calm-markets; 7.g: 010-02_rsi-below-midpoint-continues-down.g1_high-volatility-one-day-reversal | 1.10 | 5.2 |
 
 ## Consumption
-31 ideas, 30.66 USD, 184.1 minutes in all.
+32 ideas, 31.76 USD, 189.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.97 | 17.5 |
-| step4_backtest | 0.00 | 71.0 |
-| step5_verdict | 2.89 | 13.0 |
+| step3_plan | 3.02 | 17.9 |
+| step4_backtest | 0.00 | 72.1 |
+| step5_verdict | 3.04 | 13.9 |
 | step6_check | 0.00 | 1.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 3.47 | 11.1 |
-| step7_7.d | 11.78 | 40.3 |
-| step7_7.g | 9.55 | 30.0 |
+| step7_7.b | 3.72 | 11.9 |
+| step7_7.d | 12.11 | 41.4 |
+| step7_7.g | 9.87 | 31.0 |
 | chart_files | 0.00 | 0.0 |

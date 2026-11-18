@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the slope of the 7-bar forward excess return on the forecast (pooled, non-overlapping)",
+    "value": 1.8233644118933758,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.8233644118933758
+    },
+    "threshold": "confirm if t >= 2 with timing gain > 0; reject if t <= -2; at least 300 non-overlapping cases"
+  },
+  "supporting_check": {
+    "name": "book mean daily timing gain before costs > 0",
+    "value": 0.0009242573518821076,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases pooled": 815
+  },
+  "decided_by": "The slope's t is between -2 and +2, which the plan calls inconclusive.",
+  "reading": "The raw value is read as share-0.5 when any raw value is negative, else as the plain share, with the situation's midpoint at a share of 0.5. Bars with a missing raw value count as disagreeing. The coin's mean 7-bar return is taken over its non-overlapping samples in all its windows. The minimum of 300 cases applies to the coins present in the record. The timing gain is measured before costs, from the position held times the next bar's close-to-close return minus the position times the coin's mean daily return, averaged over coins each day."
+}
