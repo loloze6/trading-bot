@@ -11,6 +11,7 @@ model step needs (prompt, model variants) with what a function needs (its turn, 
 | `run_idea` | `run_idea/card.md` | one idea | steps 3 to 7, once, with its journal, logs and consumption | met on its fixed input (scope 1) |
 | `loop` | `loop/card.md` | one idea | `run_idea`, then picks one of step 7's ideas and runs it again, until a stop rule | met on demo_run, budget 4 USD: 3 turns, stopped on the budget (scope 2) |
 | `select_next` | `select_next/card.md` | a run | ranks the ideas written in the run (by step 2 or a step 7 line) and not yet tested, by one score: the record of the line that wrote it / (1 + its generation) | met on demo_run (called by `loop`) |
+| `unseen_test` | `unseen_test/card.md` | an idea confirmed and profitable | its plan unchanged on every unseen period (steps 4, 5 with its own measure, 6); whether it holds (called by `run_idea` after step 7) | validated: `unseen_test/validation/reading.md` |
 | `run_brief` | `run_brief/card.md` | a brief, a theme or a source | step 1 (theme or source only), step 2, then `loop` over one queue fed by step 2 and the step 7 lines | met on night_run (scope 3): `run_brief/validation/reading.md` |
 
 `duration/` is a study, not a function: how long one idea's run takes and how to make it faster (1 the picture, 2 the
@@ -26,4 +27,4 @@ From the overnight run and the step 7 validation loops, run by hand:
 - **A result produced by an earlier version of a step is stale** (the sizing rule made earlier backtests outdated).
   To design.
 - **Test a confirmation or a profitable book on data the analysis never saw**: half the night's confirmations did not
-  hold on other coins. The parked data question (`../POTENTIAL_ADJUSTMENTS.md`).
+  hold on other coins. Kept (2026-11-18): `unseen_test`, on dates no fold covers.

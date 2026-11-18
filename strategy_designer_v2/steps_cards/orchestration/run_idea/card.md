@@ -24,6 +24,9 @@ step before it, and recorded under one run name.**
   code only), for the run viewer, for every backtest: under the committed names for a backtest confirmed by step 5 or
   profitable enough by step 6, under the local names (ignored by git) for any other; one journal line (`chart_files`).
   The rule is steps 5 and 6's results, not a judgment.
+- **The unseen test** (2026-11-18): after step 7, for an idea step 5 confirmed and step 6 found profitable enough, it
+  calls `orchestration/unseen_test/` (code only): the plan unchanged on every unseen period; one journal line
+  (`unseen_test`). Step 7 has run before it and never reads its files. The rule is steps 5 and 6's results.
 - **It stops where a step stops.** A plan that is untestable or misses a component ends the run of that idea (the
   component goes to step 3's wish list, as step 3 does).
 - **It can be resumed.** A step whose output for the idea already exists in the run is not called again, but step 3
@@ -44,6 +47,11 @@ In `<name>_run/table.md` (and `table.json`, for code), one row per idea:
    - For: the idea's two answers: is it real, does its book pay.
    - Used by: the operator; the selection of the next idea.
    - Without it: every result must be read in four folders.
+3b. **unseen dates** (2026-11-18): for a confirmed and profitable idea, whether it holds on each unseen period
+   (`unseen_test`'s index line); "-" for any other.
+   - For: whether a paying idea still holds on dates the research never used.
+   - Used by: the operator (no step reads it).
+   - Without it: an idea reaches live trading on the evidence of its own dates alone.
 4. **step 7:** the lines that ran, and the ideas each proposed (their ids), or "no ideas".
    - For: what the run proposes next.
    - Used by: the selection of the next idea (scope 2).
@@ -90,6 +98,8 @@ The steps' files for the run, in their usual named-run folders:
   05_verification/<name>_run/verdicts/     its verdict
   06_profitability/<name>_run/checks/      its check
   07x_<line>/<name>_run/<backtest>/        each line's analysis, with its ideas/
+  04_backtest, 05_verification, 06_profitability/<name>_run/unseen_*/   the unseen test's files (confirmed and profitable ideas)
+  orchestration/unseen_test/<name>_run/   the unseen test's results
 ```
 A run name ends in `_run` (for example `demo_run`).
 
