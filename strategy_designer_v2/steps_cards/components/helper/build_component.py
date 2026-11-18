@@ -139,7 +139,8 @@ def block(text, tag):
 def parse(text, catalogue_text):
     """The answer's fields; refuse only what cannot be used (a missing field, a class the catalogue does not list for
     exists, unreadable settings, a class block that is not one class of the given name)."""
-    text = text.replace("**", "")
+    code = {tag: block(text, tag) for tag in ("class", "hand")}            # the code as written (** is Python's power)
+    text = text.replace("**", "")                                         # markdown bold, in the fields only
     kind = field(text, "answer").lower().strip(".")
     if kind not in W.ANSWERS:
         raise ValueError("the answer line must be exists, built or cannot build")
@@ -172,7 +173,7 @@ def parse(text, catalogue_text):
     row = field(text, "row")
     if not row.startswith(f"| `{name}` |") or row.count("|") != 10:
         raise ValueError(f"the row must start with | `{name}` | and have the catalogue's nine columns")
-    src, hand = block(text, "class"), block(text, "hand")
+    src, hand = code["class"], code["hand"]
     if classes_in(src) != [name] or f"class {name}(SubStrategyComponent)" not in src:
         raise ValueError(f"the class block must hold exactly one class, {name}(SubStrategyComponent)")
     if "def hand(df, params)" not in hand:
@@ -198,11 +199,17 @@ def json_without(obj):
     return obj
 
 
+ENGINE_FILES = ("bars.csv.gz", "trades.json.gz", "metrics.json", "forecast_distribution.csv")
+
+
 def compare(record, rerun):
-    """The files of a backtest record that differ in a rerun (run ids, times and temporary paths aside)."""
+    """The engine's files of a backtest record, window by window (what it decided: bars, trades, metrics, forecast
+    distribution), that differ in a rerun. Not compared: the wrapper call's summaries (protocol_summary,
+    trade_diagnostics: where they land depends on how step 4 grouped the calls, which can change from run to run) and
+    the chart files (written from the record by run_idea, not by the engine)."""
     diffs, n = [], 0
-    for f in sorted(record.rglob("*")):
-        if not f.is_file() or not (f.suffix == ".gz" or f.name in ("metrics.json", "forecast_distribution.csv")):
+    for f in sorted(record.glob("*/w*/*")):
+        if not f.is_file() or f.name not in ENGINE_FILES:
             continue
         n += 1
         g = rerun / f.relative_to(record)

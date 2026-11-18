@@ -119,8 +119,9 @@ The same for every component, by a standard harness the model does not write (`t
 - every class in the file has one catalogue row, and the catalogue's class count is the file's;
 - a class given a new setting: its output at the old defaults is unchanged on real data, and its output at the wish's
   settings differs, on real data, from the output without the new setting (rule 2);
-- **proof:** one fixed backtest rerun with the new code gives the same files as its record (allowed differences: run
-  ids, times, temporary paths); the bot's suite passes.
+- **proof:** one fixed backtest rerun with the new code gives the same engine files as its record, window by window
+  (bars, trades, metrics, forecast distribution; the wrapper call's summaries and the chart files are not the engine's
+  decisions, and where the summaries land changes with how step 4 grouped its calls); the bot's suite passes.
 
 A failed check goes back to the model with its output (up to three attempts); then the answer is "cannot build".
 
