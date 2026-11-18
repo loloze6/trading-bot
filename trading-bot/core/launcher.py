@@ -1024,21 +1024,7 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
             f"be indistinguishable from a strategy that simply never traded."
         )
 
-    if warmup_prefetch:
-        # Verify the prefetch actually suffices -- fail loudly rather than silently
-        # score a not-yet-ready strategy. Uses a throwaway probe instance (NOT the
-        # real `strategy` object, which must stay untouched until the engine's own
-        # bar-by-bar loop feeds it -- double-feeding would corrupt its RollingBuffer).
-        probe = AdvancedStrategy(config_path=config_path)
-        prefetch_df = engine.historical_data[symbol]
-        prefetch_only = prefetch_df[prefetch_df['timestamp'] < warmup_cutoff_timestamp]
-        for i in range(len(prefetch_only)):
-            probe.update(prefetch_only.iloc[i:i + 1])
-        assert probe.is_ready(), (
-            f"warmup_prefetch: strategy not ready after {len(prefetch_only)} prefetch bars "
-            f"({fetch_start} to {start}) -- required_bars={strategy.required_bars}. "
-            f"2x-required_bars was insufficient for this config; investigate before proceeding."
-        )
-
+    # The warm-up is checked at the first bar after the cutoff, on a copy of the real strategy (TradingBot,
+    # 2026-11-18); the engine stops the run when it is not ready.
     engine.simulate_on_loaded_data()
     return engine._last_run_dir
