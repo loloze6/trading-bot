@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of slope of pooled coin-excess 3-bar return on forecast",
+    "value": 0.0005309029078205805,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.9604607719515994
+    },
+    "threshold": "confirm if t >= 2 with forecast-weighted mean excess > 0; reject if t <= -2; at least 300 grid cases with forecast > 0"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 3-bar return > 0",
+    "value": 0.005257902723860928,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast > 0": 2353,
+    "grid cases": 5723
+  },
+  "decided_by": "The slope's t is 2 or more, the forecast-weighted mean excess return is above 0, with at least 300 grid cases where forecast > 0.",
+  "reading": "The grid is positions 0, 3, 6, ... of each window, keeping only cases with a full 3-bar forward return inside the window. The coin's mean 3-bar return is taken over all its grid cases across windows. The slope's t is from ordinary least squares on all pooled grid cases, zero forecasts included. Fewer than 300 forecast > 0 cases is reported as 'not observable', following the workflow's rule for minimum counts rather than the plan's 'inconclusive'."
+}

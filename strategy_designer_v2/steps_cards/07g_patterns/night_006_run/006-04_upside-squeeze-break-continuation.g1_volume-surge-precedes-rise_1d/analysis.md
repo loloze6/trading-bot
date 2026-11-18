@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise_1d
+idea tested: 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3467 USD
+---
+## Findings
+- **F1:** The 10-day return scaled by 20-day volatility still predicts the 3-day excess return once the volume ratio is in the same regression. Pooled joint OLS gives t_vr = 3.90 and t_z10 = 2.24 on 4283 non-overlapping 3-day cases, and the two signals correlate only 0.162.
+- **F2:** The momentum effect sits in the strongest quintile. On the volatility-scaled 10-day return, the top quintile has a mean excess 3-day return of +1.04% (t 3.25, n 858). Quintiles 1 to 4 run from -0.68% to +0.02%. The raw 10-day return gives the same picture: top quintile +1.06% (t 3.32), the other four between -0.20% and -0.36%.
+- **F3:** The 5-, 10- and 20-day volatility-scaled return slopes all have the same sign pooled (t 2.41, 2.12, 2.03, n 4715). XRP is the strongest coin (t 2.20, 2.09, 2.00) and ZEC/ETH are next (t 0.78 to 1.62), but LTC and XMR slopes are negative (t -0.21 to -0.65). The effect is also uneven in time: t 3.09 in windows w13 to w24 and 0.70 in w1 to w12.
+- **F4:** The tested volume-ratio effect itself is spread unevenly across coins. Per-coin slope t is 3.75 for XRP and 2.36 for ZEC, but only 0.36 to 1.32 for BTC, ETH, LTC and XMR. Most of the pooled edge comes from the low-volume quintile (-0.81%, t -3.10) and the top quintile (+0.79%, t 2.35).
+- **F5:** The brief's compression premise does not show in the bars. The most compressed quintile of 5-day versus 30-day high-low range is followed by a mean absolute 3-day move of 6.07%, and the least compressed by 5.85%; the middle quintiles run 5.10% to 5.46%. Its excess-return gradient is flat (t -1.19 to 1.03).
+- **F6:** A volume surge goes with larger moves in either direction. The top volume-ratio quintile is followed by a 6.77% mean absolute 3-day move, against 4.99% to 5.44% in the other quintiles. This is not separated from the volatility level, whose top quintile is 7.66% against 4.02% in the bottom.
+- **F7:** The book's worst 2% of days come on coin falls of -8.97% and its best 2% on coin rises of +8.68%. That is the profile of a long-only book whose drawdowns are the coins' own falls, consistent with the failed Calmar (0.45).
+
+## Ideas
+- `006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation` (from F1, F2, F3): The stronger a coin's 10-day return relative to its own 20-day volatility, the more its price rises over the next 3 days relative to its usual 3-day return, with the extra rise concentrated after the strongest advances.
+- `006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g2_volume-surge-widens-moves` (from F6, F5): The higher a coin's 5-day average volume against its 30-day average, the larger its absolute price move over the next 3 days, in whichever direction it goes.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

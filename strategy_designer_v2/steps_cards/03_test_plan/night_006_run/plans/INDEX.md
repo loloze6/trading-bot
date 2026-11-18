@@ -1,5 +1,6 @@
 006-01_compression-precedes-larger-move_1d: untestable: The idea predicts the size of the next 5-day move, not its direction, but the config can only hold a [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 006-02_longer-squeeze-bigger-move_1d: untestable: The idea predicts how large the next 5-day move is, not which way it goes. The config only sets a [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 006-03_post-squeeze-volatility-overshoot_1d: untestable: The idea predicts how large moves will be, not which way they go. The config can only hold a long [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 006-04_upside-squeeze-break-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 006-05_downside-squeeze-break-continuation_1d: missing-components: The break below the band's low and the band's narrowness before the break both come from the coin's own high, [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
