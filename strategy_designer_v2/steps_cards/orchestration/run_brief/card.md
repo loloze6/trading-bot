@@ -1,4 +1,4 @@
-# Function card: run_brief (orchestration, 2026-11-17; built in the operator's absence, for review)
+# Function card: run_brief (orchestration, 2026-11-17; validated: `validation/reading.md`, the operator's ruling on the theme path, 2026-11-17)
 
 A function card, not a step card: no model of its own, so no prompt and no model variants. Like `loop`, it has what
 a step card has not: its sequence, its stop rules, failures, where its state lives.
