@@ -1,0 +1,165 @@
+{
+  "run_id": "20261118T023356Z_80472490",
+  "created_utc": "2026-11-18T02:33:56.974130+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "newlow",
+          "class": "strategies.strategy_components.DistanceFromHighComponent",
+          "params": {
+            "period": 30,
+            "source": "close",
+            "exclude_current": 1,
+            "form": "percent",
+            "extreme": "low"
+          }
+        },
+        {
+          "id": "rsigap",
+          "class": "strategies.strategy_components.RsiChangeFromPriorLowComponent",
+          "params": {
+            "rsi_period": 14,
+            "lookback": 30,
+            "exclude": 3,
+            "rsi_window": 100
+          }
+        }
+      ],
+      "vetoes": [],
+      "rules": [
+        {
+          "regime": "mean_reversion",
+          "any_of": [
+            [
+              {
+                "id": "newlow",
+                "op": "lt",
+                "value": 0.0
+              },
+              {
+                "id": "rsigap",
+                "op": "gt",
+                "value": 0.0
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "mean_reversion": {
+          "components": [
+            {
+              "id": "rsi_gap",
+              "class": "strategies.strategy_components.RsiChangeFromPriorLowComponent",
+              "params": {
+                "rsi_period": 14,
+                "lookback": 30,
+                "exclude": 3,
+                "rsi_window": 100
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "min": 0.0
+                  }
+                }
+              ]
+            },
+            {
+              "id": "fall30",
+              "class": "strategies.strategy_components.PriceEvolutionComponent",
+              "params": {
+                "period": 30
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 60,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "negate"
+                },
+                {
+                  "op": "clip",
+                  "params": {
+                    "min": 0.0
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "chop": null,
+        "unknown": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 60,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 365,
+        "max_allocation": 2
+      }
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 3,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 7.5,
+        "BTCUSD": 2.5,
+        "ETHUSD": 4,
+        "AVAXUSD": 7.5,
+        "SOLUSD": 7.5
+      }
+    }
+  },
+  "config_sha256": "804724905da4cd15831caabc82cbfd63496645a666050bd97681f2f24a503e17",
+  "data": {
+    "symbols": [
+      "BTCUSD"
+    ],
+    "timeframe": "86400s",
+    "start": "2022-07-03 00:00:00",
+    "end": "2023-08-31 00:00:00",
+    "bar_count": 425,
+    "data_sha256": "53d2d22b0e3a8dd26fabb179246d0b603adcc9eaa77b56aa7816e4a8bdfdce63"
+  },
+  "git_sha": "61aeac9a3a47e1f8db7ab568b02c76af818ec116-dirty",
+  "engine": {
+    "lookback": 131,
+    "warmup": 131
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

@@ -9,20 +9,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal | 005-02_bullish-rsi-divergence-rebound | plan | confirmed (+3.80) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.d: 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.d1_fade-rises-only-in-downtrends, 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.d2_volatile-sharp-fall-rebound; 7.g: 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation, 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly | 1.02 | 5.0 |
 | 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation | 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal | missing-components | - | - | - | 0.07 | 0.5 |
 | 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly | 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal | plan | confirmed (+3.50) | profitable enough | 7.g: 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly.g1_volatile-fall-next-day-rebound, 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly.g2_volatile-rise-slow-giveback | 0.69 | 3.7 |
+| 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence | 005-02_bullish-rsi-divergence-rebound | plan | inconclusive (-1.56) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.b1_deep-divergence-lows-keep-falling; 7.d: 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.d1_divergence-five-day-bounce, 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.d2_divergence-low-continues-falling; 7.g: 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal | 1.26 | 5.5 |
 
 ## Consumption
-5 ideas, 3.53 USD, 15.4 minutes in all.
+6 ideas, 4.79 USD, 21.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.73 | 2.9 |
-| step4_backtest | 0.00 | 3.2 |
-| step5_verdict | 0.36 | 1.7 |
-| step6_check | 0.00 | 0.0 |
+| step3_plan | 0.83 | 3.6 |
+| step4_backtest | 0.00 | 4.3 |
+| step5_verdict | 0.50 | 2.3 |
+| step6_check | 0.00 | 0.1 |
 | chart_files | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.b | 0.30 | 0.8 |
-| step7_7.d | 0.67 | 2.2 |
-| step7_7.g | 1.46 | 4.5 |
+| step7_7.b | 0.50 | 1.4 |
+| step7_7.d | 1.01 | 3.4 |
+| step7_7.g | 1.96 | 5.8 |
