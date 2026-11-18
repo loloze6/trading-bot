@@ -7,6 +7,7 @@
 012-01_liquidation-flush-rebound_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 012-02_volume-burst-fall-reversal_1d: 2 ideas (2 explorations)
 012-03_lower-wick-flush-recovery_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)
+012-04_flush-depth-retracement-size_1d: 2 ideas (2 explorations)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains_1d: not run: entry condition not met (step 5: mismatch; step 6: not profitable enough)

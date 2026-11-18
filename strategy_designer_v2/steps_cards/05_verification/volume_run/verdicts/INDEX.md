@@ -7,6 +7,7 @@
 012-01_liquidation-flush-rebound_1d: confirmed (fit: adapted) [main: 0.0101427; t of the mean 3.26461; qualifying grid bars 919]
 012-02_volume-burst-fall-reversal_1d: inconclusive (fit: adapted) [main: 0.00431798; OLS t of slope 1.58575; kept sharp-fall cases 440]
 012-03_lower-wick-flush-recovery_1d: mismatch: the test does not match its plan (agreement 0.822581) (fit: adapted)
+012-04_flush-depth-retracement-size_1d: inconclusive (fit: adapted) [main: -0.00310886; OLS slope t -0.746134; kept flush bars 73]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume_1d: confirmed (fit: exact) [main: 0.00244546; OLS slope t 4.17064; non-overlapping samples 2443]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d: confirmed (fit: exact) [main: 0.00633208; OLS t of slope 2.74505; trending-regime grid cases 2840]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains_1d: mismatch: the test does not match its plan (agreement 0.625086) (fit: exact)

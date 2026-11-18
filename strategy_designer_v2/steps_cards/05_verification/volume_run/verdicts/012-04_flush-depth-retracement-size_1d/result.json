@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 3-bar return on forecast, flush bars",
+    "value": -0.0031088564074754294,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.7461335865986912
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and mean excess > 0; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 3-bar return of flush bars",
+    "value": 0.0022364876769150836,
+    "passed": true
+  },
+  "counts": {
+    "kept flush bars": 73
+  },
+  "decided_by": "The slope t lies between -2 and 2.",
+  "reading": "Situation recomputed from prices (return over 20-bar std of 1-bar returns incl. current, volume over mean of prior 20, lower wick over range), active bars whose rule cannot be recomputed in-window excluded; flush bars within <=3 bars of a kept one dropped; coin mean 3-bar return from the non-overlapping 0,3,6,... grid of every window pooled; OLS slope t; fewer than 30 kept flush bars reported as not observable per the workflow's minimum-count rule."
+}
