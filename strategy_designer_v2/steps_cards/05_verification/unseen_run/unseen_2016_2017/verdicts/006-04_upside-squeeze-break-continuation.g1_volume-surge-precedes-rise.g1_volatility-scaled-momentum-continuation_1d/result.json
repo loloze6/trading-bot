@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 3-bar return of the top-20% forecast grid bars",
+    "value": 0.013242326903138186,
+    "statistic": {
+      "name": "one-group t",
+      "value": 1.2831138545468606
+    },
+    "threshold": "mean > 0 with t >= 2 (and supporting difference > 0) confirms; mean < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "top-group mean excess minus forecast-0 mean excess",
+    "value": 0.02334579697118913,
+    "passed": true
+  },
+  "counts": {
+    "grid bars in the top group": 253,
+    "grid bars with forecast > 0": 580,
+    "grid bars with forecast 0": 376
+  },
+  "decided_by": "The t of the top-group mean excess return lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "The top group is the grid bars with forecast > 0 (and a valid 3-bar return) whose forecast is at or above the 80th percentile of those bars pooled over coins, ties at the cut-off included; the coin's mean 3-bar return is the mean over its non-overlapping grid returns across all windows; the plan's 'fewer than 100 top-group bars' case is reported as not observable."
+}

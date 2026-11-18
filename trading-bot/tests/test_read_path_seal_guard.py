@@ -27,6 +27,11 @@ from data.data_manager import (  # noqa: E402
 )
 
 
+#: The seal as the policy gives it today: its first sealed instant and the first instant after it.
+_LO, _HI = _holdout_bounds()
+_INSIDE = _LO + pd.Timedelta(days=31)
+
+
 def _frame(*stamps):
     return pd.DataFrame({"timestamp": [pd.Timestamp(s) for s in stamps],
                          "close": [1.0] * len(stamps)})
@@ -81,21 +86,20 @@ def test_empty_and_columnless_frames_are_tolerated():
 
 
 def test_post_holdout_data_is_allowed():
-    """The seal has an END. holdout_range is closed ["2026-01-01","2026-06-30"]
-    and the policy declares data usable again afterwards
-    (era_2026_h2_forward_recorded, from 2026-07-26).
+    """The seal has an END. holdout_range is a closed range and the policy
+    declares data usable again afterwards.
 
     The first version of this guard keyed on the start alone, which refused
     every future candle forever -- not a seal but an expiry date on the bot.
     """
-    _assert_no_sealed_rows(_frame("2026-07-26", "2026-09-01"), "BTCUSDT")
+    _assert_no_sealed_rows(_frame(_HI + pd.Timedelta(days=25), _HI + pd.Timedelta(days=62)), "BTCUSDT")
 
 
 def test_the_last_sealed_day_is_still_refused():
-    """Upper bound is INCLUSIVE: bars ON 2026-06-30 are sealed, and a naive
+    """Upper bound is INCLUSIVE: bars ON the last sealed day are sealed, and a naive
     `< hi` against the bare date would let 23 hours of them through."""
     with pytest.raises(SealedDataError):
-        _assert_no_sealed_rows(_frame("2026-06-30 23:00"), "BTCUSDT")
+        _assert_no_sealed_rows(_frame(_HI - pd.Timedelta(hours=1)), "BTCUSDT")
 
 
 def test_the_guard_is_not_swallowed_by_the_fetch_error_handler(monkeypatch):
@@ -115,7 +119,7 @@ def test_the_guard_is_not_swallowed_by_the_fetch_error_handler(monkeypatch):
             pass
 
         def get_data(self):
-            return {"BTCUSDT": _frame("2026-02-01 00:00")}   # inside the seal
+            return {"BTCUSDT": _frame(_INSIDE)}   # inside the seal
 
         def validate_data_continuity(self, _symbol):
             return True, []
@@ -126,7 +130,7 @@ def test_the_guard_is_not_swallowed_by_the_fetch_error_handler(monkeypatch):
     mgr.fetch_interval_seconds = 3600  # CUL-250: DataManager.__new__ bypasses __init__, set explicitly
 
     with pytest.raises(SealedDataError):
-        dm.DataManager.fetch_historical_data(mgr, "BTCUSDT", "2026-01-01", "2026-02-28")
+        dm.DataManager.fetch_historical_data(mgr, "BTCUSDT", str(_LO.date()), str((_LO + pd.Timedelta(days=58)).date()))
 
 
 def test_allow_sealed_opt_in_still_returns_the_data(monkeypatch):
@@ -139,7 +143,7 @@ def test_allow_sealed_opt_in_still_returns_the_data(monkeypatch):
             pass
 
         def get_data(self):
-            return {"BTCUSDT": _frame("2026-02-01 00:00")}
+            return {"BTCUSDT": _frame(_INSIDE)}
 
         def validate_data_continuity(self, _symbol):
             return True, []
@@ -150,5 +154,5 @@ def test_allow_sealed_opt_in_still_returns_the_data(monkeypatch):
     mgr.fetch_interval_seconds = 3600  # CUL-250: DataManager.__new__ bypasses __init__, set explicitly
 
     got = dm.DataManager.fetch_historical_data(
-        mgr, "BTCUSDT", "2026-01-01", "2026-02-28", allow_sealed=True)
+        mgr, "BTCUSDT", str(_LO.date()), str((_LO + pd.Timedelta(days=58)).date()), allow_sealed=True)
     assert len(got) == 1

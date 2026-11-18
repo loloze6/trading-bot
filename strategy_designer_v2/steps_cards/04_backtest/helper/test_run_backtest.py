@@ -82,7 +82,7 @@ def run_main(monkeypatch, plan, out_root, wrapper):
         calls.append((proto["symbols"][0], [w["label"] for w in windows]))
         return wrapper(proto["symbols"][0], windows, tmp / "out")
 
-    monkeypatch.setattr(rb, "protocol", lambda python, symbol, bar, folds: {
+    monkeypatch.setattr(rb, "protocol", lambda python, symbol, bar, folds, windows=None: {
         "symbols": [symbol], "windows": WINDOWS, "venue": {"label": "Kraken spot"}})
     monkeypatch.setattr(rb, "call_protocol", call_protocol)
     monkeypatch.setattr(sys, "argv", ["run_backtest.py", str(plan), "--python", "py", "--out-root", str(out_root), "--force"])

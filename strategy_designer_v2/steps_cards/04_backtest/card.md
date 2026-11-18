@@ -52,6 +52,7 @@ Modelled on the engine's own run folders, one folder per plan, named after the p
   helper/
     run_backtest.py            one plan -> the engine, once per coin (once per window as fallback), the coins at the same time; stores the record; adds the index line
     chart_files.py             the chart files of a record (called by run_idea; --backfill for the records already made)
+  windows/                     windows files for --windows (other dates than the folds: unseen_2026, unseen_2016_2017)
   backtests/                   created by the helper when it runs (default):
     INDEX.md                   one line per plan
     REVIEW.md                  the review of a real run
@@ -84,6 +85,10 @@ Modelled on the engine's own run folders, one folder per plan, named after the p
    - **On the run machine (Linux container, 4 cores, 2026-11-16):** demo_run e1 (every window runs) took 559 s with one call per window and 288 s with one call per coin (−48%). The 144 windows match: bars, trades, metrics and forecast files byte for byte; the manifests differ only in run_id, created_utc and git_sha. With the coins at the same time (change 2; 4 cores, so 4 coins at once): 130 s (−77% from 559 s), the same 144 windows identical.
 5. Runs the coins at the same time, as many at once as the machine has cores (the count Python reports; 2026-11-16, `orchestration/duration/3_plan.md`, change 2). Each coin's calls are separate processes with their own output folders. The wrapper's `--trades-file-in-out-dir` gives each call its own interim trades file instead of the engine's one shared `trading-bot/results/trades.json`; the campaign does not pass it, so its runs are unchanged. `run.md` and `INDEX.md` list the coins in the plan's order, whichever finishes first.
    - **Why this can't leak:** the coins share no memory: each runs in its own processes, which read only that coin's bars and the aux feeds, as when they ran one after another. The shared files they touch: the interim trades file (now one per call; it only feeds `tradesxl.xlsx`, which this step drops), the bot's log, and a data file the fetcher rewrites only when a read adds rows the file lacked (see "Open"). Checked on 299 windows, twice: every window's files are identical to one coin after another, manifests aside from run_id, created_utc and git_sha; no data file changed (`orchestration/duration/7_change2_proof.md`).
+
+**Other dates** (`--windows FILE`, 2026-11-18, `UNSEEN_RUN.md`): the same plan and config on the windows of a JSON file
+(`[{label, test: {start, end}}, ...]`, in `windows/`) in place of its folds; the record's data line names the file. Used
+to test an idea on dates the research never saw.
 
 The helper never opens the price data: only the engine reads bars. It needs a Python environment with `trading-bot/requirements.txt` (`--python`). `helper/summarise_backtests.py` prints one table of a backtests folder from the engine's `metrics.json` files, for the readings.
 

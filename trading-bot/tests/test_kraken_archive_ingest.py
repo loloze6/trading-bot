@@ -767,7 +767,7 @@ def test_to_binance_schema_4h_close_time_geometry(tmp_path):
 # cover: a future bulk tranche extending past 2025-12-31 would have landed
 # sealed candles in the store with nothing objecting.
 
-_SEAL = int(pd.Timestamp("2026-01-01").timestamp())
+_SEAL = int(ing._holdout_bounds()[0].timestamp())   # the seal as the policy gives it today
 
 
 def test_ingest_refuses_a_tranche_carrying_sealed_rows(tmp_path):

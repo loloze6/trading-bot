@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of excess 10-bar return on forecast (trending grid bars)",
+    "value": 0.0017296378260167559,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.6736514046457256
+    },
+    "threshold": "slope > 0 with t >= 2 confirms; slope < 0 with t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean excess return top third minus bottom third of forecasts",
+    "value": 0.05914444791010734,
+    "passed": true
+  },
+  "counts": {
+    "independent trending cases": 135,
+    "cases per third": 45
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Situation read on the `regime` column (SMA50>SMA200 = `trending`), and an active bar is on the expected side when its forecast sign matches the 20-day return or that return minus its trailing 60-value mean (the standardisation may demean); the regression is OLS with intercept on all trending grid bars, the coin's mean 10-bar return is taken over the non-overlapping grid bars of all its windows, and thirds are the lowest and highest floor(n/3) cases sorted by forecast."
+}

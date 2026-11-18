@@ -20,7 +20,10 @@ burned_ranges:
 
 walk_forward_extension: ["2024-12-01", "2025-12-31"]
 
-holdout_range: ["2026-01-01", "2026-06-30"]
+# 2026-11-18 (operator's go, strategy_designer_v2 UNSEEN_RUN.md): the 2026 H1 holdout above was opened for the
+# unseen run (the paying ideas tested on every finished day of 2026). The next half-year nobody has seen yet is
+# the holdout now; every guard that reads holdout_range follows it.
+holdout_range: ["2027-01-01", "2027-06-30"]
 
 # P1b backward-extension pass (2026-07-05). Backfilled and verified (see
 # strategy-research/engineering/improvements/done/design_and_docs/p1b_fetch_manifest.md for the gap report and event
@@ -532,7 +535,7 @@ kraken_ws_forward_recorder:
     # by this entry, by the data existing on disk, or by the capture being configured.
     # Deny by default; see the *** banner at the head of this block.
 
-holdout_consumed_by: []
+holdout_consumed_by: [unseen_run]  # 2026-11-18: the 2026 H1 holdout, opened for the unseen run
 
 # Improvement 06: holdout enforcement rules
 # holdout_consumed_by: list of hypothesis_ids that have spent the single holdout evaluation.

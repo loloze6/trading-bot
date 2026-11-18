@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean forward 5-bar excess over holding the coin, active bars",
+    "value": 0.015048919878042364,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.368741809849676
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and supporting check > 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean 5-bar excess / 5 minus mean 20-bar excess / 20",
+    "value": 0.002536831489040344,
+    "passed": true
+  },
+  "counts": {
+    "active non-overlapping 5-bar cases": 310,
+    "active non-overlapping 20-bar cases": 74
+  },
+  "decided_by": "The t of the mean 5-bar excess lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Situation recomputed from closes (20- and 60-bar returns > 0) where the window holds 60 prior bars, otherwise taken from the detector's regime == 'trending' (the detector's own components are not recorded); active = forecast > 0 on each window's grid at positions 0, h, 2h, ... with a full h-bar forward return inside the window; holding-the-coin mean = the coin's mean h-bar return over all its grid bars in all windows; the plan's 'fewer than 100 cases' is reported as 'not observable' per the workflow."
+}

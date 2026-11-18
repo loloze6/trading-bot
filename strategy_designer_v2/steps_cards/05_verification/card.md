@@ -99,6 +99,10 @@ Aligned with the other steps.
 - no main measure value; a statistic that is not a dict with a value; no named counts;
 - no "decided by", no "reading".
 
+**The same criterion on another record** (`--measure FILE`, 2026-11-18, `UNSEEN_RUN.md`): an earlier verdict's
+`measure.py` is applied as it is to another record of the same plan (other dates, other coins). No model call, one
+attempt; the checks in code are the same.
+
 **Model.** Opus, as in steps 1 to 3. **Cost.** About 0.08 USD and 20 to 30 seconds per plan.
 
 **Prompt**: `helper/system_prompt.md`.
