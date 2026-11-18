@@ -4,7 +4,6 @@ One row per idea run; every status is read from the step's own result file. Each
 
 | Idea | Parent | Step 3 | Step 5 | Step 6 | Step 7: ideas proposed | USD | Minutes |
 |---|---|---|---|---|---|---|---|
-| 012-01_liquidation-flush-rebound | - | missing-components | - | - | - | 0.28 | 0.3 |
 | 012-02_volume-burst-fall-reversal | - | plan | inconclusive (+1.59) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.b: 012-02_volume-burst-fall-reversal.b1_volume-flush-next-day-rebound, 012-02_volume-burst-fall-reversal.b2_volume-burst-fall-reversal-broadened; 7.d: 012-02_volume-burst-fall-reversal.d1_one-day-volume-burst-rebound, 012-02_volume-burst-fall-reversal.d2_close-at-low-next-day-rebound, 012-02_volume-burst-fall-reversal.d3_volume-burst-dip-in-uptrend; 7.g: 012-02_volume-burst-fall-reversal.g1_heavy-volume-down-day-rebound, 012-02_volume-burst-fall-reversal.g2_calm-market-volume-flush-rebound | 1.45 | 6.1 |
 | 012-03_lower-wick-flush-recovery | - | missing-components | - | - | - | 0.04 | 0.3 |
 | 012-04_flush-depth-retracement-size | - | missing-components | - | - | - | 0.04 | 0.3 |
@@ -23,19 +22,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal | plan | inconclusive (+3.16) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.b: 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.b1_sunday-move-reverses-monday, 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.b2_saturday-move-reverses-sunday; 7.d: 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.d1_daily-vol-scaled-move-reverses, 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.d2_sunday-reversal-weakens-in-uptrend, 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.d3_sunday-falls-reverse-more, 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.d4_sunday-reversal-grows-with-volatility; 7.g: 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.g1_saturday-move-reverses-sunday, 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.g2_sunday-move-reverses-midweek, 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.g3_light-volume-moves-reverse-in-turbulence, 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday.g4_scaled-falls-rebound-next-day | 1.37 | 6.9 |
 | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal.g1_high-volume-weekend-moves-reverse | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal | missing-components | - | - | - | 0.06 | 0.5 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling | plan | confirmed (+4.14) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.d: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains.d1_heavy-volume-selling-exhaustion, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains.d2_heavy-volume-rally-in-downtrend-fades; 7.g: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains.g1_heavy-volume-selloff-rebounds | 0.89 | 4.5 |
+| 012-01_liquidation-flush-rebound | - | plan | confirmed (+3.26) | not profitable enough (failed: Mean daily return, Calmar) | 7.d: 012-01_liquidation-flush-rebound.d1_repeated-flush-exhausts-cascade, 012-01_liquidation-flush-rebound.d2_flush-after-deep-weekly-fall; 7.g: 012-01_liquidation-flush-rebound.g1_volume-graded-fall-rebound, 012-01_liquidation-flush-rebound.g2_quiet-falls-keep-falling | 1.38 | 5.6 |
 
 ## Consumption
-19 ideas, 12.64 USD, 65.3 minutes in all.
+19 ideas, 13.73 USD, 70.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.66 | 10.5 |
-| step4_backtest | 0.00 | 16.8 |
-| step5_verdict | 1.45 | 7.0 |
+| step3_plan | 1.76 | 11.3 |
+| step4_backtest | 0.00 | 18.1 |
+| step5_verdict | 1.58 | 7.6 |
 | step6_check | 0.00 | 0.4 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.20 | 0.6 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 1.72 | 5.6 |
-| step7_7.d | 3.38 | 11.2 |
-| step7_7.g | 4.23 | 13.1 |
+| step7_7.d | 3.87 | 12.8 |
+| step7_7.g | 4.59 | 14.2 |
+| chart_files | 0.00 | 0.0 |

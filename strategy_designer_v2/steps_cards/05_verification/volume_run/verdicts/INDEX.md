@@ -3,6 +3,7 @@
 003-04_heavy-volume-drop-continues_1d: inconclusive (fit: adapted) [main: -0.00894038; t of the mean -1.50541; independent events 286]
 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday_1d: inconclusive (fit: adapted) [main: 0.000338419; OLS slope t 3.16373; Sunday cases 2489, high-volume half 1242, low-volume half 1247]
 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d: confirmed (fit: adapted) [main: 0.00996434; ordinary t of forecast/10 x excess return 4.9472; active bars 1514, high volume half 757, low volume half 757]
+012-01_liquidation-flush-rebound_1d: confirmed (fit: adapted) [main: 0.0101427; t of the mean 3.26461; qualifying grid bars 919]
 012-02_volume-burst-fall-reversal_1d: inconclusive (fit: adapted) [main: 0.00431798; OLS t of slope 1.58575; kept sharp-fall cases 440]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume_1d: confirmed (fit: exact) [main: 0.00244546; OLS slope t 4.17064; non-overlapping samples 2443]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d: confirmed (fit: exact) [main: 0.00633208; OLS t of slope 2.74505; trending-regime grid cases 2840]

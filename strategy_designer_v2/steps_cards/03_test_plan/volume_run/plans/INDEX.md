@@ -6,7 +6,7 @@
 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g2_heavy-volume-fall-rebounds_1d: missing-components: The down day (a regime rule on a 1-bar PriceEvolutionComponent) and the next-day long are expressible. However, no catalogue component [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal.g1_high-volume-weekend-moves-reverse_1d: missing-components: The idea sizes the fade by the product of the vol-scaled weekend move and the day's volume ratio. The config [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
-012-01_liquidation-flush-rebound_1d: missing-components: The lower wick is the distance between the bar's low and its close. Only high/low-reading components exist (ADXDirectionalComponent, KeltnerBreakoutComponent, regime [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+012-01_liquidation-flush-rebound_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 012-02_volume-burst-fall-reversal_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 012-03_lower-wick-flush-recovery_1d: missing-components: The idea's graded variable is the lower wick as a share of the bar's range, (close - low) / (high [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 012-04_flush-depth-retracement-size_1d: missing-components: Two parts of the idea need intrabar shape: the long lower wick and the bar's drop from open to low. [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
