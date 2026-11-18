@@ -57,9 +57,12 @@ def reading(in_sample, verdict, check):
             "step6": (check or {}).get("status", "not checked"), "holds": holds}
 
 
-def call(cmd):
+def call(cmd, period):
+    """One step's helper. Its whole output is printed, headed by the period and the step, so the caller's log keeps
+    it (run_idea: logs/<backtest>/unseen_test.txt); a step that fails leaves its message there and no result file."""
     r = subprocess.run([sys.executable] + [str(c) for c in cmd], capture_output=True, text=True)
-    return (r.stdout + r.stderr).strip().splitlines()[-1:] or [""]
+    print(f"--- {period}: {Path(str(cmd[0])).name} (exit {r.returncode})\n{(r.stdout + r.stderr).strip()}", flush=True)
+    return r.returncode
 
 
 def main():
@@ -81,12 +84,12 @@ def main():
         ck = STEPS / "06_profitability" / run / p / "checks"
         if not (bt / rid / "run.md").exists():
             call([STEPS / "04_backtest/helper/run_backtest.py", plan, "--python", args.python, "--out-root", bt,
-                  "--windows", WINDOWS / f"{p}.json"])
+                  "--windows", WINDOWS / f"{p}.json"], p)
         if not (vd / rid / "result.json").exists():
             call([STEPS / "05_verification/helper/make_verdict.py", plan, "--python", args.python, "--records-root", bt,
-                  "--verdicts-dir", vd, "--measure", measure_py])
+                  "--verdicts-dir", vd, "--measure", measure_py], p)
         if (bt / rid).exists() and not (ck / rid / "result.json").exists():
-            call([STEPS / "06_profitability/helper/check_profitability.py", bt / rid, "--checks-dir", ck])
+            call([STEPS / "06_profitability/helper/check_profitability.py", bt / rid, "--checks-dir", ck], p)
         out["periods"][p] = reading(in_sample, load(vd / rid / "result.json"), load(ck / rid / "result.json"))
     d = HERE.parent / run
     d.mkdir(parents=True, exist_ok=True)

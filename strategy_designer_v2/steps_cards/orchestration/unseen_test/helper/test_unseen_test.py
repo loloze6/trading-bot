@@ -49,7 +49,7 @@ def test_files_in_the_run_and_resume(tmp_path, monkeypatch):
         (steps / "w" / f"{p}.json").write_text("[]")
     calls = []
 
-    def fake(cmd):
+    def fake(cmd, period):
         calls.append(Path(str(cmd[0])).name)
         name = Path(str(cmd[0])).name
         if name == "run_backtest.py":
@@ -64,7 +64,7 @@ def test_files_in_the_run_and_resume(tmp_path, monkeypatch):
             d = Path(str(cmd[cmd.index("--checks-dir") + 1])) / rid
             d.mkdir(parents=True)
             (d / "result.json").write_text(json.dumps(check(1.1, 1.0)))
-        return [""]
+        return 0
 
     monkeypatch.setattr(U, "STEPS", steps)
     monkeypatch.setattr(U, "WINDOWS", steps / "w")
