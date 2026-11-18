@@ -1,5 +1,6 @@
 003-01_thin-volume-rise-reverses_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 003-02_thin-volume-drop-rebounds_1d: not run: entry condition not met (step 5: not observable; step 6: not profitable enough)
+003-03_heavy-volume-rise-continues_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 003-04_heavy-volume-drop-continues_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

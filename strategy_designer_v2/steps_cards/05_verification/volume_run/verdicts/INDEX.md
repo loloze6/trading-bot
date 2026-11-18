@@ -1,5 +1,6 @@
 003-01_thin-volume-rise-reverses_1d: inconclusive (fit: adapted) [main: -0.00178307; t of the mean -0.501122; non-overlapping events 930, active bars 3838]
 003-02_thin-volume-drop-rebounds_1d: not observable (fit: adapted) [main: 0.0664532; one-sample t 1.27244; independent events 5, bars with forecast above 0 5]
+003-03_heavy-volume-rise-continues_1d: confirmed (fit: adapted) [main: 0.016876; ordinary t of the mean 2.97614; signal grid bars 511]
 003-04_heavy-volume-drop-continues_1d: inconclusive (fit: adapted) [main: -0.00894038; t of the mean -1.50541; independent events 286]
 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday_1d: inconclusive (fit: adapted) [main: 0.000338419; OLS slope t 3.16373; Sunday cases 2489, high-volume half 1242, low-volume half 1247]
 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d: confirmed (fit: adapted) [main: 0.00996434; ordinary t of forecast/10 x excess return 4.9472; active bars 1514, high volume half 757, low volume half 757]
