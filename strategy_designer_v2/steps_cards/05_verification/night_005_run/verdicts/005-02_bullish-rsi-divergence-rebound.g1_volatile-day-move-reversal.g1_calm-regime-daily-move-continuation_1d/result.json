@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean sign(forecast) x excess 5-bar return, top |forecast| quintile, pooled",
+    "value": 0.012683208773537838,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.268386747028914
+    },
+    "threshold": "confirm t >= 2, reject t <= -2, with at least 30 top-quintile cases"
+  },
+  "supporting_check": {
+    "name": "top-quintile mean minus other-four-quintiles mean of signed excess return",
+    "value": 0.01694288376246752,
+    "passed": true
+  },
+  "counts": {
+    "top-quintile cases": 228,
+    "other-quintile cases": 911
+  },
+  "decided_by": "Confirm: t >= 2 with at least 30 top-quintile cases and a positive top-minus-other difference.",
+  "reading": "The top quintile of each coin is the 20% of its grid cases with the largest |forecast| (ranked with ties broken by time order, cases with rank above 0.8 x n), zero forecasts included with sign 0, and fewer than 30 top-quintile cases is reported as not observable."
+}

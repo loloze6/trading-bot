@@ -1,0 +1,44 @@
+{
+  "line": "7.d",
+  "backtest": "005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.30197640000000003,
+  "findings": {
+    "F1": "The book earns almost nothing before fees and loses after them: its mean gain before costs is 0.000363 per bar against a mean fee of 0.000378, so its daily Sharpe is -0.016 against 0.64 for holding the coins.",
+    "F2": "The position is held only on the day after the signal and never through the continuation. After a top-quintile |forecast| bar (n = 1170), 99.2% of positions are on the signal's side on day 1 (mean signed position 1.15). By day 2 that falls to 45% (mean signed position 0.012), and it stays near 0.01\u20130.06 through day 7.",
+    "F3": "The continuation the verdict confirmed is not on the day the book holds. After top-quintile bars, the signed excess return is 0.00033 on day 1 (t = 0.29, n = 1170). It is 0.0042 on day 2 (t = 3.81), 0.0021 on day 3 (t = 1.96) and 0.0028 on day 5 (t = 2.43). So the book trades the one day without the effect and is out for the days that carry it.",
+    "F4": "The forecast is a one-day spike: its correlation with the previous bar's forecast is 0.013 and its sign changes on 54% of bars. In the top quintile the position changes by 1.15 of the book per bar, for a fee of 0.00094 per bar.",
+    "F5": "The book's gain sits on the long side. Long bars gain 0.000873 per bar and short bars lose 0.000134. After top-quintile up days the coin's raw 5-day return is +0.0225 (n = 625); after top-quintile down days it is +0.001 (n = 545), so it does not fall."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose 20-day volatility is low relative to its last 100 days, a large one-day move continues in the same direction over the next 3 to 7 days, with the continuation building from the second day after the move onward. The larger the sum of the coin's last 5 daily moves, each relative to its 60-day mean absolute daily move and each weighted by how low the 20-day volatility rank was on its day, the larger the move over the next 5 days.",
+      "consequence": "A trader should keep following a calm-regime sharp move for several days after it, rather than for the single next day, which carries none of the continuation.",
+      "name": "persistent calm move continuation",
+      "from": "F2, F3, F4, F1",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F1"
+      ]
+    },
+    {
+      "idea": "In a coin whose 20-day volatility is low relative to its last 100 days, a large one-day rise continues upward over the next 3 to 7 days. The larger the day's rise relative to the coin's 60-day mean absolute daily move, and the lower the 20-day volatility rank, the larger the further rise.",
+      "consequence": "In calm stretches a sharp up day is a reason to follow it, while a sharp down day gives no reason to short.",
+      "name": "calm up-day continuation",
+      "from": "F5, F3",
+      "refs": [
+        "F5",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation.d1_persistent-calm-move-continuation",
+    "005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation.d2_calm-up-day-continuation"
+  ],
+  "no_ideas": null
+}

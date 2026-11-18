@@ -2,6 +2,7 @@
 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence_1d: inconclusive (fit: adapted) [main: -0.0427527; ordinary t of the mean -1.55767; non-overlapping events 54, events BTCUSD 28, events ETHUSD 26]
 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal_1d: confirmed (fit: exact) [main: 0.00811037; t of the mean 2.28164; bars_measured 5794, bars_nonzero_forecast 5794, bars_forecast_positive 2832, bars_forecast_negative 2962]
 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling_1d: inconclusive (fit: adapted) [main: -0.0194432; Welch t -0.812324; cases in total 135, mild group cases 68, deep group cases 67]
+005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation_1d: confirmed (fit: adapted) [main: 0.0126832; t of the mean 2.26839; top-quintile cases 228, other-quintile cases 911]
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly_1d: confirmed (fit: adapted) [main: 0.020139; t of the mean 3.50166; qualifying cases across all coins and windows 163]
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal_1d: confirmed (fit: adapted) [main: 0.000786044; OLS slope t 3.7963; independent cases 913, cases in top-20% group 183]
 005-02_bullish-rsi-divergence-rebound_1d: inconclusive (fit: adapted) [main: -0.0087686; ordinary t of the mean -1.35407; independent cases 78, divergence cases (regime, forecast > 0) 78, new-low cases with forecast 0 98]
