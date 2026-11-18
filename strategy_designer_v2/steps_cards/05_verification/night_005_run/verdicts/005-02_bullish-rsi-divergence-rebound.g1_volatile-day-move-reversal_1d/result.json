@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS t of the slope of excess forward 3-bar return on forecast",
+    "value": 0.0007860439968814198,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.796297124280187
+    },
+    "threshold": "confirm: t >= 2 with supporting check > 0; reject: t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean sign(forecast) x excess 3-bar return over the top 20% |forecast| cases",
+    "value": 0.013236536845876015,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 913,
+    "cases in top-20% group": 183
+  },
+  "decided_by": "The slope's t is 2 or more and the top-20% mean of sign(forecast) x excess return is above 0.",
+  "reading": "Cases are grid bars (positions 0,3,6,... per window) with regime 'mean_reversion', non-zero forecast and a full 3-bar forward return in the window; the coin's mean 3-bar return is the mean over all grid bars of all its windows; the regression is pooled across coins; the top-20% group is the ceil(20% of cases) largest |forecast|."
+}
