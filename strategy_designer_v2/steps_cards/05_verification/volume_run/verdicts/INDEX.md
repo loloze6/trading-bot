@@ -1,11 +1,18 @@
+003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on_1d: confirmed (fit: adapted) [main: 0.000550479; OLS slope t 3.43896; grid cases with forecast above 0 1660, grid cases with forecast of 10 or more 662, grid cases in regression 3419]
 003-01_thin-volume-rise-reverses_1d: inconclusive (fit: adapted) [main: -0.00178307; t of the mean -0.501122; non-overlapping events 930, active bars 3838]
+003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue_1d: confirmed (fit: adapted) [main: 0.016876; t of the mean 2.97614; cases 511, cases above median forecast 255, cases below median forecast 255, active bars 8793]
 003-02_thin-volume-drop-rebounds_1d: not observable (fit: adapted) [main: 0.0664532; one-sample t 1.27244; independent events 5, bars with forecast above 0 5]
+003-03_heavy-volume-rise-continues_1d: confirmed (fit: adapted) [main: 0.016876; ordinary t of the mean 2.97614; signal grid bars 511]
 003-04_heavy-volume-drop-continues_1d: inconclusive (fit: adapted) [main: -0.00894038; t of the mean -1.50541; independent events 286]
 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal.g1_sunday-move-reverses-monday_1d: inconclusive (fit: adapted) [main: 0.000338419; OLS slope t 3.16373; Sunday cases 2489, high-volume half 1242, low-volume half 1247]
 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d: confirmed (fit: adapted) [main: 0.00996434; ordinary t of forecast/10 x excess return 4.9472; active bars 1514, high volume half 757, low volume half 757]
+012-01_liquidation-flush-rebound_1d: confirmed (fit: adapted) [main: 0.0101427; t of the mean 3.26461; qualifying grid bars 919]
 012-02_volume-burst-fall-reversal_1d: inconclusive (fit: adapted) [main: 0.00431798; OLS t of slope 1.58575; kept sharp-fall cases 440]
+012-03_lower-wick-flush-recovery_1d: mismatch: the test does not match its plan (agreement 0.822581) (fit: adapted)
+012-04_flush-depth-retracement-size_1d: inconclusive (fit: adapted) [main: -0.00310886; OLS slope t -0.746134; kept flush bars 73]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume_1d: confirmed (fit: exact) [main: 0.00244546; OLS slope t 4.17064; non-overlapping samples 2443]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d: confirmed (fit: exact) [main: 0.00633208; OLS t of slope 2.74505; trending-regime grid cases 2840]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains_1d: mismatch: the test does not match its plan (agreement 0.625086) (fit: exact)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g2_volume-surge-precedes-gains_1d: inconclusive (fit: adapted) [main: 1.95549; OLS slope t 1.95549; non-overlapping 7-bar cases pooled across coins 2443, coins with positive slope 4]
+013-04_heavy-volume-below-high-breakout_1d: confirmed (fit: adapted) [main: 0.0358023; OLS slope t 2.46463; cases 49]
 013-06_breakout-volume-drives-continuation_1d: inconclusive (fit: adapted) [main: 0.195272; Welch t 1.65542; kept cases in total 60, high-volume group 30, low-volume group 30]

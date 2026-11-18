@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 3-bar return on forecast, pooled",
+    "value": 0.0008597394200425964,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.223797336526832
+    },
+    "threshold": "confirm if slope t >= 2 with supporting check passing; reject if slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "top-third minus bottom-third forecast mean excess 3-bar return > 0",
+    "value": 0.00923223328022919,
+    "passed": true
+  },
+  "counts": {
+    "independent grid cases in the falling regime": 2815
+  },
+  "decided_by": "The slope's t is at least 2 and the top-minus-bottom-third excess return is above 0.",
+  "reading": "Cases are the bars at positions 0,3,6,... of each window with regime mean_reversion, a recorded forecast and a close 3 bars later in the same window (zero forecasts kept); the coin's mean 3-bar return is taken over the same grid on all its bars in all windows; top and bottom thirds are the n//3 highest and lowest forecasts by stable sort."
+}

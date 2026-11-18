@@ -1,0 +1,139 @@
+{
+  "core": {
+    "net_return_pct": 1.132,
+    "sharpe": 0.0,
+    "max_drawdown_pct": -0.808,
+    "trade_count": 2,
+    "win_rate": 50.0,
+    "avg_trade_net_pnl": 5.194142,
+    "fees_paid": 0.736525,
+    "gross_pnl": 11.124808,
+    "net_pnl": 10.388284,
+    "cost_drag_pct": 6.6206,
+    "forecast_return_corr": null,
+    "forecast_return_corr_pvalue": null,
+    "forecast_return_corr_pvalue_block_adjusted": null,
+    "forecast_return_corr_n_eff": null,
+    "forecast_return_corr_all_bars": 0.028518,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.75573,
+    "forecast_return_corr_all_bars_n_eff": 122,
+    "gap_skipped_pairs": 0,
+    "gap_skipped_pct": 0.0,
+    "avg_trade_duration_bars": 1.5,
+    "sigma_bar_bps": 519.0958,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": null,
+    "post_backtest_route": null,
+    "post_backtest_route_rationale": null,
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": 317.3751,
+    "post_backtest_cost_check_real": null,
+    "post_backtest_route_real": null,
+    "post_backtest_route_real_rationale": null,
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "mean_reversion": {
+      "bar_count": 2,
+      "avg_forecast": 14.782937,
+      "trade_count": 2,
+      "total_net_pnl": 10.388284
+    },
+    "unknown": {
+      "bar_count": 121,
+      "avg_forecast": 0.0
+    }
+  },
+  "forecast_bins": {
+    "10_to_15": {
+      "total_forecasts": 1,
+      "profitable_trades": 0,
+      "success_rate_pct": 0.0,
+      "total_net_pnl_usd": -8.0769,
+      "avg_pnl_per_trade_usd": -8.0769
+    },
+    "15_to_very_positive": {
+      "total_forecasts": 1,
+      "profitable_trades": 1,
+      "success_rate_pct": 100.0,
+      "total_net_pnl_usd": 18.4652,
+      "avg_pnl_per_trade_usd": 18.4652
+    }
+  },
+  "dynamic": {
+    "debug_info.components.wick.last_history_value": {
+      "mean_reversion": {
+        "mean": 0.341487,
+        "std": 0.097042
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.wick.post_pipeline_value": {
+      "mean_reversion": {
+        "mean": 14.782937,
+        "std": 4.171605
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.wick.weight_normalized": {
+      "mean_reversion": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.wick.weighted_contribution": {
+      "mean_reversion": {
+        "mean": 14.782937,
+        "std": 4.171605
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    }
+  },
+  "regime_validity": {
+    "mean_reversion": {
+      "forward_return_mean": -0.00343443,
+      "forward_return_std": 0.11865807,
+      "n_bars": 2,
+      "informative": true
+    },
+    "unknown": {
+      "forward_return_mean": 0.00174407,
+      "forward_return_std": 0.05119699,
+      "n_bars": 120,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -4.398,
+    "sharpe": 0.3098,
+    "sortino": 0.5127,
+    "exposure_pct": 1.626,
+    "turnover": 1.475744,
+    "n_bars_total": 123,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 122,
+    "n_downside_days": 2,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 0,
+    "events": []
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

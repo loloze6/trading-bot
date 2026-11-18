@@ -1,0 +1,35 @@
+{
+  "line": "7.g",
+  "backtest": "005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.49234669999999997,
+  "findings": {
+    "F1": "A coin's one-day return, scaled by its 20-day volatility, reverses on the next day. The Spearman correlation with the next day's excess return is -0.075 (p = 1.5e-7, n = 4834 non-overlapping days). It holds in each coin (BTC -0.070, p = 6e-4; ETH -0.079, p = 9e-5) and in each half of the windows (w1-12: -0.101; w13-24: -0.054, p = 0.008).",
+    "F2": "The one-day reversal sits almost entirely in the coin's most volatile third of days, by 20-day volatility. There the correlation is -0.166 (p = 2e-11, n = 1612) and the slope on the raw return is -0.149. In the low and middle volatility thirds it is only -0.027 and -0.027 (p \u2248 0.27\u20130.28).",
+    "F3": "The reversal lasts one day only.",
+    "F4": "The one-day reversal is stronger in some years than others. It is significant in 2018 (-0.137), 2019 (-0.086), 2020 (-0.155) and 2023 (-0.138). It is near zero in 2022, 2024 and 2025 (-0.016 to -0.027, p > 0.49), so it varies with the period. Its sign is negative in all 8 years.",
+    "F5": "The tested divergence adds nothing at the bar level. On new 30-day lows, the 20-day excess return is +4.2 % with the divergence (n = 5) and +2.5 % without it (n = 8), both with |t| < 0.3. At 5 days it is +0.65 % with (n = 20) and +0.55 % without (n = 29).",
+    "F6": "The book is almost never in the market, so it earns almost nothing.",
+    "F7": "Momentum over 30 days to the next 5 days is weak and unstable. The pooled correlation is +0.079 (p = 0.021, n = 851), but it is significant only in ETH (p = 0.03) and in the later half of the windows (p = 0.03). It has no significant year, and its sign is negative in 4 of 8 years. Across this many angles it does not stand apart from chance."
+  },
+  "ideas": [
+    {
+      "idea": "On a coin's high-volatility days, measured by its 20-day volatility, the next day's return runs against the day just closed. The larger that day's return relative to its 20-day volatility, the larger the move back over the next 1 day.",
+      "consequence": "After a large daily move in a volatile spell, a trader leans against it for one day and refuses to chase it, and does not carry that lean beyond the next day.",
+      "name": "Volatile-day one-day reversal",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal"
+  ],
+  "no_ideas": null
+}

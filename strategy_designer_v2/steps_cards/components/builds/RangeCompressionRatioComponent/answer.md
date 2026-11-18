@@ -1,36 +1,42 @@
-# RangeCompressionRatioComponent: night_006_run | 006-04_upside-squeeze-break-continuation_1d | RangeCompressionRatioComponent
+# RangeCompressionRatioComponent: night_006_run | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation_1d | RangeWidthRatio
 
 ## attempt 1
 
 answer: built
 class: RangeCompressionRatioComponent
-settings: {"short_period": 20, "long_period": 100}
-reason: No catalogue component compares a short high-low range with a longer one. The nearest ones are `DonchianBreakoutComponent`, which gives the close's position within a range of closes, and `VolatilityPercentileRegimeComponent`, which ranks a return std. So a new class computes 1 − (20-bar high-low range) / (100-bar high-low range) from the high and low columns.
+settings: {"short_period": 20, "long_period": 100, "form": "width"}
+reason: The wished ratio, short range / long range with both windows ending at bar t, is the exact mirror (1 minus) of `RangeCompressionRatioComponent`. No config step gives 1 minus a value, so it is a new setting `form` on that class: "width" gives the ratio, and the default "compression" keeps today's output unchanged.
 
 table: Regime measures
-row: | `RangeCompressionRatioComponent` | `short_period` (20), `long_period` (100) | 1 − (max(high) − min(low) over the last `short_period` bars) / (max(high) − min(low) over the last `long_period` bars), both windows ending at bar t inclusive; 0.0 when the long range is 0 | 0 to 1, never negative; no direction; 0 when the short range spans the whole long range, near 1 when the short band is very narrow against the long range | regime measure | dimensionless | `long_period` (100) | high, low. A NaN high or low anywhere in the last `long_period` rows gives NaN; `short_period` < 1 or `short_period` >= `long_period` raises | stateless; the short window is inside the long one, so the ratio never exceeds 1; graded, for regime rules ("the 20-bar band is in the narrowest part of its 100-bar range") or as a forecast source after transforms |
+row: | `RangeCompressionRatioComponent` | `short_period` (20), `long_period` (100), `exclude_current` (0), `form` ("compression") | ratio = (max(high) − min(low) over the last `short_period` bars) / (max(high) − min(low) over the last `long_period` bars). Both windows end at bar t inclusive (`exclude_current` 0) or at bar t-1 (`exclude_current` 1: bars t-`short_period` .. t-1 and t-`long_period` .. t-1). `form` "compression": 1 − ratio, 0.0 when the long range is 0. `form` "width": ratio, 1.0 when the long range is 0 | 0 to 1, never negative; no direction. "compression": 0 when the short range spans the whole long range, near 1 when the short band is very narrow. "width": near 0 when the short band is very narrow, 1 when the short range spans the whole long range | regime measure | dimensionless | `long_period` + `exclude_current` (100) | high, low. A NaN high or low anywhere in the long window gives NaN. These settings raise when the component is built: `short_period` < 1, `short_period` >= `long_period`, `exclude_current` not 0 or 1, `form` other than "compression" or "width" | stateless. The short window is inside the long one, so the ratio never exceeds 1. `form` "compression" (default) is the original output, unchanged. "width" is 1 minus it (no config step gives 1 minus a value, hence the setting); it grows as the short range widens toward the full long range. `exclude_current` 1 gives the band before bar t, which bar t's own move cannot alter |
 
 ```python class
 class RangeCompressionRatioComponent(SubStrategyComponent):
     """
-    How narrow the recent high-low band is against a longer high-low range, on every bar:
+    How narrow the recent high-low band is against a longer one, on every bar:
 
-        R_s = max(high[t-short_period+1 .. t]) - min(low[t-short_period+1 .. t])
-        R_l = max(high[t-long_period+1  .. t]) - min(low[t-long_period+1  .. t])
-        raw_value = 1 - R_s / R_l          (0.0 if R_l == 0)
+        exclude_current = 0 (default): end = t      (windows end at bar t, included)
+        exclude_current = 1:           end = t - 1  (windows end at bar t-1)
+        S = max(high[end-short_period+1 .. end]) - min(low[end-short_period+1 .. end])
+        L = max(high[end-long_period+1 .. end])  - min(low[end-long_period+1 .. end])
+        form = "compression" (default): raw_value = 1 - S / L   (0.0 when L is 0)
+        form = "width":                  raw_value = S / L       (1.0 when L is 0)
 
-    Range and sign: 0 to 1, never negative, no direction. The short window lies inside the long one, so
-    0 <= R_s <= R_l. The value is 0 when the short band spans the whole long range and grows continuously
-    towards 1 as the short band narrows. If every bar of the long window has the same high and low
-    (R_l == 0), there is no range to compare with. The short band then equals the long one, so the value is 0.0.
+    "width" is exactly 1 minus "compression". No config step gives 1 minus a value, so it is a setting.
+    The defaults (form "compression", exclude_current 0) give the original output, unchanged.
+    With short_period 20, long_period 100 and form "width", the output is
+    (max high - min low over the last 20 bars) / (max high - min low over the last 100 bars).
 
-    Warm-up: `long_period` bars (100 at the defaults), bar t included.
+    Range and sign: 0 to 1, never negative, no direction. The short window lies inside the long one, so S <= L.
+    Graded: the value moves continuously with the two ranges.
+    Warm-up: long_period + exclude_current rows, bar t included.
 
-    NaN: a NaN high or low anywhere in the last `long_period` rows gives NaN, never a fabricated value.
-    `short_period` < 1 or `short_period` >= `long_period` raises when the component is built.
+    NaN: a NaN high or low anywhere in the long window gives NaN. A missing high or low column raises.
+    Building the component raises for a short_period below 1, a short_period at or above long_period, an
+    exclude_current other than 0 or 1, or a form other than "compression" or "width".
 
-    WHY THIS CANNOT LEAK: it reads only the `high` and `low` columns of the last `long_period` rows of the data it
-    is given, bar t (the last row) included. A bar's high and low are known at that bar's close.
+    WHY THIS CANNOT LEAK: it reads only the high and low columns of the last long_period + exclude_current rows
+    of data, the last of which is bar t; a bar's high and low are known at that bar's close.
     """
 
     def __init__(self, name="RangeCompressionRatio", weight=1.0, parameters=None):
@@ -38,12 +44,20 @@ class RangeCompressionRatioComponent(SubStrategyComponent):
         self.short_period = int(self.parameters.get("short_period", 20))
         self.long_period = int(self.parameters.get("long_period", 100))
         if self.short_period < 1:
-            raise ValueError(
-                f"RangeCompressionRatioComponent: short_period must be >= 1, got {self.short_period}")
+            raise ValueError(f"RangeCompressionRatioComponent: short_period must be >= 1, got {self.short_period}")
         if self.short_period >= self.long_period:
             raise ValueError(
-                "RangeCompressionRatioComponent: short_period must be < long_period, got "
+                f"RangeCompressionRatioComponent: short_period must be below long_period, got "
                 f"{self.short_period} and {self.long_period}")
+        ex = self.parameters.get("exclude_current", 0)
+        if ex not in (0, 1):
+            raise ValueError(f"RangeCompressionRatioComponent: exclude_current must be 0 or 1, got {ex!r}")
+        self.exclude_current = int(ex)
+        form = self.parameters.get("form", "compression")
+        if form not in ("compression", "width"):
+            raise ValueError(
+                f"RangeCompressionRatioComponent: form must be 'compression' or 'width', got {form!r}")
+        self.form = form
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -52,64 +66,74 @@ class RangeCompressionRatioComponent(SubStrategyComponent):
         self.debug_info = {}
         if not self.is_ready():
             return
-        high_l = data['high'].iloc[-self.long_period:].astype(float).to_numpy()
-        low_l = data['low'].iloc[-self.long_period:].astype(float).to_numpy()
-        if np.isnan(high_l).any() or np.isnan(low_l).any():
+        high = data['high'].astype(float).to_numpy()
+        low = data['low'].astype(float).to_numpy()
+        end = len(high) - self.exclude_current
+        lh = high[end - self.long_period:end]
+        ll = low[end - self.long_period:end]
+        sh = high[end - self.short_period:end]
+        sl = low[end - self.short_period:end]
+        if np.isnan(lh).any() or np.isnan(ll).any():
             self._raw_value = float("nan")
-            self.confidence = 1.0
-            self.debug_info = {'nan_input': True}
-            return
-        high_s = high_l[-self.short_period:]
-        low_s = low_l[-self.short_period:]
-        r_long = float(high_l.max() - low_l.min())
-        r_short = float(high_s.max() - low_s.min())
-        if r_long > 0:
-            value = 1.0 - r_short / r_long
+            self.debug_info = {'short_range': float("nan"), 'long_range': float("nan")}
         else:
-            value = 0.0
-        self._raw_value = float(value)
+            long_range = float(lh.max() - ll.min())
+            short_range = float(sh.max() - sl.min())
+            if not long_range > 0:
+                compression = 0.0
+                width = 1.0
+            else:
+                ratio = short_range / long_range
+                compression = 1.0 - ratio
+                width = ratio
+            self._raw_value = float(width if self.form == "width" else compression)
+            self.debug_info = {'short_range': short_range, 'long_range': long_range, 'form': self.form}
         self.confidence = 1.0
-        self.debug_info = {'short_range': r_short, 'long_range': r_long}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
     def get_required_periods(self) -> int:
-        return self.long_period
+        return self.long_period + self.exclude_current
 ```
 
 ```python hand
 def hand(df, params):
-    s = params.get("short_period", 20)
-    n = params.get("long_period", 100)
-    highs = list(df["high"])
-    lows = list(df["low"])
-    hl = highs[len(highs) - n:]
-    ll = lows[len(lows) - n:]
-    for x in hl + ll:
-        if x != x:
+    sp = int(params.get("short_period", 20))
+    lp = int(params.get("long_period", 100))
+    ex = int(params.get("exclude_current", 0))
+    form = params.get("form", "compression")
+    h = [float(x) for x in list(df["high"])]
+    l = [float(x) for x in list(df["low"])]
+    last = len(h) - 1 - ex
+    for i in range(last - lp + 1, last + 1):
+        if h[i] != h[i] or l[i] != l[i]:
             return float("nan")
-    top_long = hl[0]
-    bottom_long = ll[0]
-    for i in range(n):
-        if hl[i] > top_long:
-            top_long = hl[i]
-        if ll[i] < bottom_long:
-            bottom_long = ll[i]
-    top_short = hl[n - s]
-    bottom_short = ll[n - s]
-    for i in range(n - s, n):
-        if hl[i] > top_short:
-            top_short = hl[i]
-        if ll[i] < bottom_short:
-            bottom_short = ll[i]
-    long_range = top_long - bottom_long
-    short_range = top_short - bottom_short
-    if long_range == 0:
+    hi_l = h[last - lp + 1]
+    lo_l = l[last - lp + 1]
+    for i in range(last - lp + 1, last + 1):
+        if h[i] > hi_l:
+            hi_l = h[i]
+        if l[i] < lo_l:
+            lo_l = l[i]
+    hi_s = h[last - sp + 1]
+    lo_s = l[last - sp + 1]
+    for i in range(last - sp + 1, last + 1):
+        if h[i] > hi_s:
+            hi_s = h[i]
+        if l[i] < lo_s:
+            lo_s = l[i]
+    long_range = hi_l - lo_l
+    short_range = hi_s - lo_s
+    if form == "width":
+        if not long_range > 0:
+            return 1.0
+        return short_range / long_range
+    if not long_range > 0:
         return 0.0
     return 1.0 - short_range / long_range
 ```
 
 checks:
 RangeCompressionRatioComponent: every check passed
-proof: 588 files compared, identical but for run ids, times and temporary paths; the bot's suite: ======== 1520 passed, 8 skipped, 74 deselected, 2170 warnings in 51.32s ========
+proof: 576 files compared, identical but for run ids, times and temporary paths; the bot's suite: ======== 1536 passed, 8 skipped, 74 deselected, 2170 warnings in 57.03s ========

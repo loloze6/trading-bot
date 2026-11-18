@@ -2,15 +2,6 @@
 
 One block per idea that needs components the catalogue does not have.
 
-## 003-01_thin-volume-rise-reverses_1d
-- Component: RelativeVolumeComponent: the bar's volume divided by the mean volume of the last `period` bars (30 here), from the `volume` column; above 1 on heavy days, below 1 on thin days, and it falls as the day gets thinner (a log form, signed around 0, would suit a graded forecast) | measures: comparison
-
-## 003-02_thin-volume-drop-rebounds_1d
-- Component: VolumeRatioComponent: log(mean volume over the last 30 bars, current bar included / volume[t]), from the `volume` column; positive and growing the thinner the bar's volume is against its 30-day average, negative on heavy-volume bars | measures: comparison
-
-## 003-03_heavy-volume-rise-continues_1d
-- Component: VolumeRatioComponent: volume[t] divided by the mean of the last `period` (30) bars' volume, from the `volume` column; it is 1 at average volume and grows as the day's volume gets heavier against that average | measures: comparison
-
 ## 003-04_heavy-volume-drop-continues_1d
 - Component: VolumeRatioComponent: the current bar's volume divided by the mean volume of the prior `period` bars (period 30), from the `volume` column; it rises continuously as the day's volume grows against its own average (1 at the average, 3 at three times it) | measures: comparison
 
@@ -34,3 +25,6 @@ One block per idea that needs components the catalogue does not have.
 
 ## 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal.g1_high-volume-weekend-moves-reverse_1d
 - Component: VolumeWeightedScaledReturn: (close[t]/close[t-1] - 1) / std(last 20 one-bar returns) x volume[t] / mean(volume over the last 20 bars), from close and volume; signed, and its size grows with both the move in usual moves and the relative volume | measures: comparison
+
+## 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal.g1_high-vol-down-day-rebound_1d
+- Component: VolatilityRatioToAverageComponent: the standard deviation of the last 20 one-bar close returns divided by the mean of that 20-bar standard deviation over the last 60 bars (bar t included), from closes; 1 at the average, it grows as the current volatility rises above its 60-day mean | measures: comparison

@@ -1,0 +1,46 @@
+{
+  "line": "7.b",
+  "backtest": "012-04_flush-depth-retracement-size_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3625199,
+  "findings": {
+    "F1": "The test's forecast barely grades the flush bars: 78% of kept flush bars sit at the cap of 20, and the middle and top forecast terciles both average exactly 20.0. Their mean excess 3-day returns run lo \u22120.0041, mid +0.0117, hi \u22120.0011, so the slope (t \u22120.65 recomputed, \u22120.75 in the verdict) has almost no spread to work on.",
+    "F2": "The flush bars show no rebound distinct from other sharp falls. Their mean excess 3-day return is +0.0022 (t 0.28, n 75), against +0.0012 for the 351 other sharp falls (Welch t 0.11). At 1 day the flush bars do worse: \u22120.0099 against +0.0092 (Welch t \u22122.53).",
+    "F3": "At longer horizons the tested slope turns against the idea: t \u22122.22 over 5 days and t \u22122.40 over 10 days (n 75 and 73). Deeper capped flushes keep falling rather than retracing.",
+    "F4": "The long-lower-wick condition works against the rebound. Among all 354 declustered sharp falls, the wick-over-range slope on the excess return is t \u22123.34 at 1 day and \u22121.96 at 3 days. The highest wick quartile averages \u22120.0112 over 3 days and the lowest +0.0131. Volume-burst falls without the wick average +0.0100 (n 119); those with it average \u22120.0026 (n 41).",
+    "F5": "Among all sharp falls, the volume ratio to its prior 20-day mean predicts the rebound in grade. Its slope is t 3.99 over 1 day, 3.24 over 2 days and 2.53 over 3 days (n 351\u2013354), and it fades by 5 days (t \u22120.52).",
+    "F6": "Among all sharp falls, the raw open-to-low drop in percent predicts the rebound strongly: t 5.74 at 1 day, 4.90 at 2 days, 4.41 at 3 days, and 1.12 at 5 days. Scaled by 20-day volatility, the same drop shows nothing (t \u22120.13 at 3 days), so part of this grading may come from high-volatility periods.",
+    "F7": "Flush outcomes swing by year rather than holding steadily. Mean excess 3-day return is +0.060 in 2020, \u22120.040 in 2021, \u22120.063 in 2022 and about +0.02 in 2023\u20132025, on 5\u201314 cases per year."
+  },
+  "ideas": [
+    {
+      "idea": "Among bars that fall sharply, the larger the bar's volume relative to its mean over the prior 20 days, the larger the price rise over the next 3 days.",
+      "consequence": "After a sharp daily fall, the heavier the volume burst, the stronger the case for buying the rebound over the following few days rather than selling into it.",
+      "name": "volume burst sharp fall rebound",
+      "from": "F5, F4, F2",
+      "refs": [
+        "F5",
+        "F4",
+        "F2"
+      ]
+    },
+    {
+      "idea": "Among bars that fall sharply, the larger the bar's drop from its open to its low, the larger the price rise over the next 3 days, as price drifts back toward where it traded before the fall.",
+      "consequence": "A deeper intraday plunge on a sharp down day leaves more to retrace over the following days, so a trader leans long in proportion to the depth of the plunge.",
+      "name": "sharp fall depth retracement",
+      "from": "F6, F4, F1",
+      "refs": [
+        "F6",
+        "F4",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "012-04_flush-depth-retracement-size.b1_volume-burst-sharp-fall-rebound",
+    "012-04_flush-depth-retracement-size.b2_sharp-fall-depth-retracement"
+  ],
+  "no_ideas": null
+}

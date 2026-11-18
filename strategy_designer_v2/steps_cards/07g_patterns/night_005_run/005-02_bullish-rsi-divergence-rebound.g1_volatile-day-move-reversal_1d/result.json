@@ -1,0 +1,44 @@
+{
+  "line": "7.g",
+  "backtest": "005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4657869,
+  "findings": {
+    "F1": "The direction of follow-through after a large daily move depends on the coin's 20-day volatility rank, and the rank works as a graded moderator: regressing the excess 3-day return on z \u00d7 (vol rank \u2212 0.5) gives slope \u22120.031 with t = \u22125.46 over 1091 non-overlapping 3-day cases. Here z is the day's return over its 60-day mean absolute daily return.",
+    "F2": "In low-volatility stretches (20-day vol rank below 0.5 of its last 100 days), a large daily move continues rather than reverses, which the tested idea does not explain. On 3 days the excess-return slope on z is +0.0052 (t = 2.60, n = 677), positive in both coins (BTC +0.0032, t 1.25; ETH +0.0069, t 2.27) and in both halves of the windows (t 2.34 and 1.27). On 7 days the slope is +0.0109 (t = 2.01, n = 305).",
+    "F3": "Fading the top 20% of daily moves loses when volatility is low and earns when it is high. In low volatility the fade loses \u22120.0077 after down days (t \u22121.09, n 79) and \u22120.0093 after up days (t \u22121.79, n 104). In high volatility it earns +0.0263 (t 2.10, n 50) and +0.0181 (t 2.56, n 81).",
+    "F4": "The high-volatility reversal the strategy trades is short-lived. Its 3-day slope is \u22120.0070 (t \u22123.99, n 414), positive... rather, still negative and significant, but the 7-day slope is +0.0007 (t 0.15, n 174), so the give-back is complete within about 3 days.",
+    "F5": "The book earns from timing, not from the market, yet trails holding. Its timing gain is 0.000712 per bar against a market gain of \u22120.000018, but its daily Sharpe is 0.43 against 0.64 for holding. Its long positions earn 0.00169 per bar against 0.00052 for its shorts."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose 20-day volatility is low relative to its last 100 days, a large one-day move continues in the same direction over the next 3 to 7 days. The larger the day's move relative to the coin's 60-day mean absolute daily move, and the lower the 20-day volatility rank, the larger the continuation.",
+      "consequence": "In calm stretches, a sharp daily move is a reason to follow it for several days, and a reason to refuse fading it.",
+      "name": "calm-regime daily move continuation",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "In a coin whose 20-day volatility is high relative to its last 100 days, the give-back after a large one-day move happens within the next 3 days. The larger the day's move relative to its 60-day mean absolute daily move, the larger the opposite move over those 3 days.",
+      "consequence": "A fade of a sharp move in a volatile stretch should be held for days, not a week, and a fade still held after about 3 days is a reason to close it.",
+      "name": "volatile reversal completes quickly",
+      "from": "F1, F4, F3",
+      "refs": [
+        "F1",
+        "F4",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation",
+    "005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly"
+  ],
+  "no_ideas": null
+}

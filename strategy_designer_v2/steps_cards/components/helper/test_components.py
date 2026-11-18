@@ -130,15 +130,22 @@ def test_the_files_a_build_writes():
     assert 'SETTINGS = [{}, {"n": 2}, {"n": 3}]' in spec
 
 
-def test_compare_leaves_out_run_ids_and_times(tmp_path):
-    a, b = tmp_path / "a" / "BTCUSD", tmp_path / "b" / "BTCUSD"
-    for d, rid in ((a, "r1"), (b, "r2")):
+def test_compare_reads_the_engine_s_window_files_only(tmp_path):
+    a, b = tmp_path / "a" / "BTCUSD" / "w1", tmp_path / "b" / "BTCUSD" / "w1"
+    for d in (a, b):
         d.mkdir(parents=True)
-        (d / "protocol_summary.json.gz").write_bytes(gzip.compress(json.dumps({"run_id": rid, "x": 1}).encode()))
         (d / "metrics.json").write_text('{"sharpe": 1}')
+        (d / "bars.csv.gz").write_bytes(gzip.compress(b"t,close\n1,2\n"))
+    (tmp_path / "a" / "BTCUSD" / "protocol_summary.json.gz").write_bytes(gzip.compress(b"{}"))   # a call summary
+    (tmp_path / "a" / "chart_bars.csv.gz").write_bytes(gzip.compress(b"x"))                     # a chart file
     assert B.compare(tmp_path / "a", tmp_path / "b") == (2, [])
     (b / "metrics.json").write_text('{"sharpe": 2}')
-    assert B.compare(tmp_path / "a", tmp_path / "b")[1] == ["differs: BTCUSD/metrics.json"]
+    assert B.compare(tmp_path / "a", tmp_path / "b")[1] == ["differs: BTCUSD/w1/metrics.json"]
+
+
+def test_python_s_power_operator_survives_the_reading():
+    a = B.parse(BUILT.replace("    pass", "    x = 2 ** 3"), CAT)
+    assert "2 ** 3" in a["source"]
 
 
 def test_answers_without_a_build(monkeypatch):

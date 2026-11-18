@@ -1,4 +1,4 @@
-# Step card: components (2026-11-17: built, not validated)
+# Step card: components (2026-11-17; validated 2026-11-18: `validation/reading.md`)
 
 A step outside the chain of steps 1 to 7: it does not test an idea, it gives the bot the measures step 3 lacked to
 test one. `loop` calls it on its own (see "When it is called"). It changes `trading-bot/` (shared code) under the
@@ -119,8 +119,9 @@ The same for every component, by a standard harness the model does not write (`t
 - every class in the file has one catalogue row, and the catalogue's class count is the file's;
 - a class given a new setting: its output at the old defaults is unchanged on real data, and its output at the wish's
   settings differs, on real data, from the output without the new setting (rule 2);
-- **proof:** one fixed backtest rerun with the new code gives the same files as its record (allowed differences: run
-  ids, times, temporary paths); the bot's suite passes.
+- **proof:** one fixed backtest rerun with the new code gives the same engine files as its record, window by window
+  (bars, trades, metrics, forecast distribution; the wrapper call's summaries and the chart files are not the engine's
+  decisions, and where the summaries land changes with how step 4 grouped its calls); the bot's suite passes.
 
 A failed check goes back to the model with its output (up to three attempts); then the answer is "cannot build".
 
@@ -136,7 +137,7 @@ components/
     wishes.py            the wishes, their answers, the open ones, the unblocking rule (used by select_next, run_idea)
     test_components.py   the tests of this code (a fake model call)
   builds/<class>/        per component built: the calls' answers, the checks' output, the proof
-  validation/reading.md  once validated
+  validation/reading.md  the validation (exercises 1 to 3 and the second night)
 (in trading-bot/: the class in strategies/strategy_components.py; its spec, the settings and the hand computation, in
  tests/built_components/<class>.py; the standard checks in tests/component_harness.py, run on every spec by
  tests/test_built_components.py; its row in step 3's catalogue)
@@ -146,7 +147,8 @@ components/
 - **Closed book**, one call per wish: the wish, the catalogue, the contract and the example are pasted into the call.
 - **The model** reads the wish against the catalogue, gives one of the three answers, and for built writes the class
   and one hand computation. Every other check is code, so the model never writes the test that judges it.
-- **Model:** Opus (exact formulas, code). **Cost:** to be measured (the catalogue is most of the input, cached).
+- **Model:** Opus (exact formulas, code). **Cost:** about 0.12 USD and a minute a wish; a build about 3 minutes, most of
+  it the proof (`validation/reading.md`).
 
 ## Quality criteria
 - One component per measure: no two components for the same measure.
@@ -162,7 +164,7 @@ longer mean, a scaled move times its volume ratio, volume against the median of 
 `VolumeRatioComponent` answered, which must come back as exists.
 
 ## Variants compared
-To set: Opus or Sonnet.
+Opus only; a Sonnet variant was not compared (not needed: every build passed its checks).
 
 ## Who judges the output
 Code judges each build (the checks). The operator judges the card's validation.
@@ -173,9 +175,8 @@ On the fixed inputs, twice in a row:
 - **standardization:** one component per measure, named by it; the same docstring and checks for every component; the
   answered wishes come back as exists;
 - **unblocking:** the blocked ideas are rerun; count those step 3 now plans.
-Status: exercises 1 to 3 (`exercise_1/`, `exercise_2/`, `exercise_3/`): quality met (every build passes every check and
-the proof, twice); unblocking met (46 of 49 refused ideas unblocked; the automatic path proven on night_rsi_run);
-standardization: two findings for the operator (exercise 3).
+Status: **validated** (`validation/reading.md`): quality, standardization and unblocking met over three exercises and the
+second night.
 
 ## What it changes elsewhere (each in its own card)
 - `loop`: the two calls (every 10 turns; before stopping for no candidate; never twice without a turn between); its

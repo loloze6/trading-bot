@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 3-bar excess return over the coin's mean, grid bars with forecast >= 2",
+    "value": 0.010142661439284115,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 3.2646113065073235
+    },
+    "threshold": "confirm if mean > 0 with t >= 2; reject if mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess minus unweighted mean excess",
+    "value": 0.00030630770570157576,
+    "passed": true
+  },
+  "counts": {
+    "qualifying grid bars": 919
+  },
+  "decided_by": "The mean excess 3-bar return is > 0 with t >= 2, and the forecast-weighted mean exceeds the unweighted mean.",
+  "reading": "The coin's mean 3-bar return is the mean over the same non-overlapping grid (positions 0, 3, 6, ... of each window) pooled over all its windows; the plan's 'fewer than 30 qualifying grid bars' is treated as a minimum count, so it gives 'not observable'; and the situation check rebuilds the fall, the 30-bar volume ratio (current bar included) and the wick from prices."
+}

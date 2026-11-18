@@ -127,6 +127,15 @@ def result(path):
     return json.loads(path.read_text()) if path.exists() else None
 
 
+def verdict_label(rv):
+    """Step 5's status and its statistic, for the row: "confirmed (+2.93)". A verdict without a main measure (a mismatch
+    or a not-observable: the criterion was not applied, recorded as null) is its status alone."""
+    if not rv:
+        return "no verdict"
+    st = (rv.get("main_measure") or {}).get("statistic") or {}
+    return f"{rv['status']}" + (f" ({st.get('value'):+.2f})" if isinstance(st.get("value"), (int, float)) else "")
+
+
 def index_says(index, rid):
     for l in (index.read_text().splitlines() if index.exists() else []):
         if l.startswith(rid + ":"):
@@ -227,9 +236,7 @@ def main():
                                     "--records-root", f["backtests"], "--verdicts-dir", f["verdicts"]] + model,
                   [v.with_name("verdict.md")], done=v.exists())
     row["cost"] += c
-    rv = result(v)
-    st = (rv or {}).get("main_measure", {}).get("statistic") or {}
-    row["step5"] = f"{rv['status']}" + (f" ({st.get('value'):+.2f})" if isinstance(st.get("value"), (int, float)) else "") if rv else "no verdict"
+    row["step5"] = verdict_label(result(v))
 
     # Step 6: the check (code only)
     j.step("step6_check", [STEPS / "06_profitability/helper/check_profitability.py", record, "--checks-dir", f["checks"]],

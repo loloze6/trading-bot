@@ -116,11 +116,11 @@ def spec_text(name, settings, hand, before=None):
 # ---- the call ---------------------------------------------------------------------------------------------------
 
 def system_prompt():
-    base = class_source(BASE_FILE.read_text(), "SubStrategyComponent")
-    example = class_source(COMPONENTS_FILE.read_text(), EXAMPLE)
-    spec = (SPECS / f"{EXAMPLE}.py").read_text()
-    return ((HERE / "system_prompt.md").read_text()
-            + f"\n\n[COMPONENT CATALOGUE]\n{CATALOGUE.read_text()}"
+    base = class_source(BASE_FILE.read_text(encoding="utf-8"), "SubStrategyComponent")
+    example = class_source(COMPONENTS_FILE.read_text(encoding="utf-8"), EXAMPLE)
+    spec = (SPECS / f"{EXAMPLE}.py").read_text(encoding="utf-8")
+    return ((HERE / "system_prompt.md").read_text(encoding="utf-8")
+            + f"\n\n[COMPONENT CATALOGUE]\n{CATALOGUE.read_text(encoding="utf-8")}"
             + f"\n[THE BASE CLASS]\n{base}"
             + f"\n[A WORKED EXAMPLE: A CLASS]\n{example}"
             + f"\n[A WORKED EXAMPLE: ITS SETTINGS AND HAND COMPUTATION]\n{spec}")
@@ -139,7 +139,8 @@ def block(text, tag):
 def parse(text, catalogue_text):
     """The answer's fields; refuse only what cannot be used (a missing field, a class the catalogue does not list for
     exists, unreadable settings, a class block that is not one class of the given name)."""
-    text = text.replace("**", "")
+    code = {tag: block(text, tag) for tag in ("class", "hand")}            # the code as written (** is Python's power)
+    text = text.replace("**", "")                                         # markdown bold, in the fields only
     kind = field(text, "answer").lower().strip(".")
     if kind not in W.ANSWERS:
         raise ValueError("the answer line must be exists, built or cannot build")
@@ -172,7 +173,7 @@ def parse(text, catalogue_text):
     row = field(text, "row")
     if not row.startswith(f"| `{name}` |") or row.count("|") != 10:
         raise ValueError(f"the row must start with | `{name}` | and have the catalogue's nine columns")
-    src, hand = block(text, "class"), block(text, "hand")
+    src, hand = code["class"], code["hand"]
     if classes_in(src) != [name] or f"class {name}(SubStrategyComponent)" not in src:
         raise ValueError(f"the class block must hold exactly one class, {name}(SubStrategyComponent)")
     if "def hand(df, params)" not in hand:
@@ -198,22 +199,28 @@ def json_without(obj):
     return obj
 
 
+ENGINE_FILES = ("bars.csv.gz", "trades.json.gz", "metrics.json", "forecast_distribution.csv")
+
+
 def compare(record, rerun):
-    """The files of a backtest record that differ in a rerun (run ids, times and temporary paths aside)."""
+    """The engine's files of a backtest record, window by window (what it decided: bars, trades, metrics, forecast
+    distribution), that differ in a rerun. Not compared: the wrapper call's summaries (protocol_summary,
+    trade_diagnostics: where they land depends on how step 4 grouped the calls, which can change from run to run) and
+    the chart files (written from the record by run_idea, not by the engine)."""
     diffs, n = [], 0
-    for f in sorted(record.rglob("*")):
-        if not f.is_file() or not (f.suffix == ".gz" or f.name in ("metrics.json", "forecast_distribution.csv")):
+    for f in sorted(record.glob("*/w*/*")):
+        if not f.is_file() or f.name not in ENGINE_FILES:
             continue
         n += 1
         g = rerun / f.relative_to(record)
         if not g.exists():
-            diffs.append(f"missing in the rerun: {f.relative_to(record)}")
+            diffs.append(f"missing in the rerun: {f.relative_to(record).as_posix()}")
             continue
         a, b = (gzip.decompress(x.read_bytes()) if x.suffix == ".gz" else x.read_bytes() for x in (f, g))
         if f.name.startswith("protocol_summary"):
             a, b = (json_without(json.loads(x)) for x in (a, b))
         if a != b:
-            diffs.append(f"differs: {f.relative_to(record)}")
+            diffs.append(f"differs: {f.relative_to(record).as_posix()}")
     return n, diffs
 
 
@@ -241,7 +248,7 @@ def answer_wish(wish, python, model):
     request = f"[WISH]\nrun: {run_name}\nplan: {pid}\n{text}\n\nGive your answer for this wish."
     cost, note, log = 0.0, "", []
     for attempt in range(1, ATTEMPTS + 1):
-        catalogue_text = CATALOGUE.read_text()
+        catalogue_text = CATALOGUE.read_text(encoding="utf-8")
         reply, c = call(model, system_prompt(), request + note)
         cost += c
         log.append(f"## attempt {attempt}\n\n{reply}\n")
@@ -267,7 +274,7 @@ def answer_wish(wish, python, model):
 def build(a, python):
     """Write the class, its row and its spec; run the checks and the proof; undo every file on a failure."""
     name = a["name"]
-    saved = {p: (p.read_text() if p.exists() else None) for p in (COMPONENTS_FILE, CATALOGUE, SPECS / f"{name}.py")}
+    saved = {p: (p.read_text(encoding="utf-8") if p.exists() else None) for p in (COMPONENTS_FILE, CATALOGUE, SPECS / f"{name}.py")}
     replaced = class_source(saved[COMPONENTS_FILE], name) is not None
     try:
         module = with_class(saved[COMPONENTS_FILE], name, a["source"])
@@ -303,9 +310,9 @@ def record(wish, line, usd, seconds, attempts, log, built):
     idx = W.index_path(ROOT.parent)
     idx.parent.mkdir(parents=True, exist_ok=True)
     head = "" if idx.exists() else "# Components: one line per wish answered (run | plan id | wish | answer)\n\n"
-    with open(idx, "a") as fh:
+    with open(idx, "a", encoding="utf-8") as fh:
         fh.write(head + f"{run_name} | {pid} | {name} | {line}\n")
-    with open(ROOT / "journal.jsonl", "a") as fh:
+    with open(ROOT / "journal.jsonl", "a", encoding="utf-8") as fh:
         fh.write(json.dumps({"at": utc_now(), "run": run_name, "plan": pid, "wish": name, "answer": line,
                              "usd": round(usd, 4), "seconds": round(seconds, 1), "attempts": attempts}) + "\n")
     if built or any(l.startswith("checks:") for l in log):      # every build tried, kept or undone: its answers and checks

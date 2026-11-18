@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (3-bar forward return minus coin mean), mean_reversion grid bars",
+    "value": 0.010149185115194727,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 3.3237648610760355
+    },
+    "threshold": "t >= +2 confirms (with supporting check), t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean product top third of |forecast| minus bottom third",
+    "value": 0.02560192223962887,
+    "passed": true
+  },
+  "counts": {
+    "grid cases pooled": 849,
+    "active bars": 2583
+  },
+  "decided_by": "The main measure's t is at least +2 and the top-minus-bottom third check is above 0.",
+  "reading": "The coin's mean 3-bar return is taken over all grid bars of all its windows, the grid bars whose 3-bar forward return leaves the window are dropped, the thirds are the N//3 smallest and N//3 largest |forecast| cases after a stable sort, and the 100-case minimum is applied as 'not observable'."
+}

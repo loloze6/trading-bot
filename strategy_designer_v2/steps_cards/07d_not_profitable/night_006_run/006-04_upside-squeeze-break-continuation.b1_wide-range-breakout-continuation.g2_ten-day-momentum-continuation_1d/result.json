@@ -1,0 +1,48 @@
+{
+  "line": "7.d",
+  "backtest": "006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3218517,
+  "findings": {
+    "F1": "The short side is where the book loses: on 8,255 short bars it lost 0.000244 a bar, and 0.000257 of that came from being short a coin that rises on average (the coin returned +0.000219 a day on those bars). The 8,967 long bars earned 0.000710 a bar, of which 0.000301 was drift and about 0.00041 was timing.",
+    "F2": "On the non-overlapping 10-day grid the forecast's information sits only at its top. The top quintile's excess 10-day return was +0.0247 (t 2.50, n=338) and the middle quintile's was -0.0209 (t -2.51). The bottom quintile, which the book shorts hardest, was +0.0006 (t 0.07, n=339), so a weak 10-day return and a close far below the 20-day top did not come before below-average returns.",
+    "F3": "Inside a rising 30-day trend the forecast ranks moves well at the top: the top quintile's excess 10-day return was +0.0352 (n=207). In the same trend the bottom quintile was +0.0275 (n=65), so shorting pullbacks inside uptrends lost.",
+    "F4": "Longs paid far more inside a rising 30-day trend than inside a falling one: 0.000990 a bar (n=4,602) against 0.000194 (n=2,298). Shorts lost in both trends: -0.000288 in up30 and -0.000335 in down30.",
+    "F5": "The book's mean daily return was about 0.000251 a bar against the coins' 0.0007 to 0.0016 a day from holding. Its mean absolute position was only 0.235 and it was short 47% of bars, so its Sharpe was 0.32 against 0.55 for holding, and its Calmar was 0.11.",
+    "F6": "In the high-volatility tercile, longs held a position of only 0.176 while the coin rose 0.003853 a day, earning 0.000547. Shorts there lost 0.000447 a bar while the coin rose 0.001759.",
+    "F7": "The deepest falls came from long stretches of the wrong side rather than from coin crashes: XMR w19 fell -35%, XRP w5 -27% and LTC w24 -25%. The correlation between a window's deepest fall and the coin's mean return in that window was only 0.13."
+  },
+  "ideas": [
+    {
+      "idea": "The higher a coin's 10-day return, and the closer its close sits to the top of its prior 20-day range, the further its price rises over the next 10 days, only while its 30-day return is positive, and the more so the larger that 30-day return.",
+      "consequence": "A trader would hold longs sized by strength and range position only inside a rising 30-day trend, and would not short weak coins, which in this data did not fall more than usual.",
+      "name": "strength continuation inside uptrends",
+      "from": "F1, F2, F3, F4, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F7"
+      ]
+    },
+    {
+      "idea": "The higher a coin's 10-day return, and the closer its close sits to the top of its prior 20-day range, the further its price rises over the next 10 days, and the higher its 20-day volatility, the larger that rise.",
+      "consequence": "A trader would keep, or enlarge, longs on strong coins in volatile stretches rather than cutting them by volatility, and would not short in those stretches.",
+      "name": "strength continuation in volatility",
+      "from": "F2, F5, F6",
+      "refs": [
+        "F2",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation.d1_strength-continuation-inside-uptrends",
+    "006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation.d2_strength-continuation-in-volatility"
+  ],
+  "no_ideas": null
+}

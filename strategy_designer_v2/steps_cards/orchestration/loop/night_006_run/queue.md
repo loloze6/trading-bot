@@ -1,11 +1,63 @@
 # Queue (loop)
 
-Every idea written in the run; candidates first, in select_next's order. Spent: 0.21 USD.
+Every idea written in the run; candidates first, in select_next's order. Spent: 12.01 USD.
 
 | Rank | Idea | Line | Generation | Record | Score | Status |
 |---|---|---|---|---|---|---|
-| - | 006-01_compression-precedes-larger-move | step 2 | 0 | 0.1667 | 0.1667 | tested: step 5 -; step 6 - |
-| - | 006-02_longer-squeeze-bigger-move | step 2 | 0 | 0.1667 | 0.1667 | tested: step 5 -; step 6 - |
-| - | 006-03_post-squeeze-volatility-overshoot | step 2 | 0 | 0.1667 | 0.1667 | tested: step 5 -; step 6 - |
-| - | 006-04_upside-squeeze-break-continuation | step 2 | 0 | 0.1667 | 0.1667 | tested: step 5 -; step 6 - |
-| - | 006-05_downside-squeeze-break-continuation | step 2 | 0 | 0.1667 | 0.1667 | tested: step 5 -; step 6 - |
+| 1 | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g3_compression-precedes-quieter-moves | 7.g | 2 | 0.7872 | 0.2624 | candidate |
+| 2 | 006-04_upside-squeeze-break-continuation.d1_momentum-break-ten-day-continuation | 7.d | 1 | 0.4167 | 0.2083 | candidate |
+| 3 | 006-04_upside-squeeze-break-continuation.d2_breakout-bar-ten-day-drift | 7.d | 1 | 0.4167 | 0.2083 | candidate |
+| 4 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.g1_drop-rebound-in-volatile-markets | 7.g | 3 | 0.7872 | 0.1968 | candidate |
+| 5 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation.g1_sharp-drop-next-day-rebound | 7.g | 3 | 0.7872 | 0.1968 | candidate |
+| 6 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation.g1_compressed-range-enlarges-move | 7.g | 3 | 0.7872 | 0.1968 | candidate |
+| 7 | 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation.g1_volume-ratio-predicts-drift | 7.g | 3 | 0.7872 | 0.1968 | candidate |
+| 8 | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return.g1_volatility-scaled-weekly-momentum | 7.g | 3 | 0.7872 | 0.1968 | candidate |
+| 9 | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g2_thin-volume-declines-keep-falling.g1_heavy-volume-precedes-gains | 7.g | 3 | 0.7872 | 0.1968 | candidate |
+| 10 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.g2_high-volume-capitulation-rebound | 7.g | 3 | 0.7872 | 0.1968 | candidate |
+| 11 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation.g2_breakout-distance-extends-rally | 7.g | 3 | 0.7872 | 0.1968 | candidate |
+| 12 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation.g2_sharp-drops-rebound-next-day | 7.g | 3 | 0.7872 | 0.1968 | candidate |
+| 13 | 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation.g2_quiet-decline-keeps-falling | 7.g | 3 | 0.7872 | 0.1968 | candidate |
+| 14 | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g2_thin-volume-declines-keep-falling.g2_quiet-volume-momentum-continues | 7.g | 3 | 0.7872 | 0.1968 | candidate |
+| 15 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.g3_volume-surge-next-day-drift | 7.g | 3 | 0.7872 | 0.1968 | candidate |
+| 16 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation.g3_ten-day-momentum-alone-continues | 7.g | 3 | 0.7872 | 0.1968 | candidate |
+| 17 | 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation.g3_expanding-range-advance-continues | 7.g | 3 | 0.7872 | 0.1968 | candidate |
+| 18 | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g2_thin-volume-declines-keep-falling.g3_range-expansion-keeps-expanding | 7.g | 3 | 0.7872 | 0.1968 | candidate |
+| 19 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.g4_range-expansion-persists-forward | 7.g | 3 | 0.7872 | 0.1968 | candidate |
+| 20 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.b1_wide-range-breakout-more-coins | 7.b | 2 | 0.5 | 0.1667 | candidate |
+| 21 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.b2_volume-backed-breakout-continuation | 7.b | 2 | 0.5 | 0.1667 | candidate |
+| 22 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.d1_volume-surge-breakout-follow-through | 7.d | 2 | 0.4167 | 0.1389 | candidate |
+| 23 | 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.d1_volume-surge-within-uptrend | 7.d | 2 | 0.4167 | 0.1389 | candidate |
+| 24 | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.d1_capitulation-rebound-within-uptrends | 7.d | 2 | 0.4167 | 0.1389 | candidate |
+| 25 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.d2_breakout-rise-lasts-days | 7.d | 2 | 0.4167 | 0.1389 | candidate |
+| 26 | 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.d2_volume-surge-after-down-day | 7.d | 2 | 0.4167 | 0.1389 | candidate |
+| 27 | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.d2_thin-volume-downtrend-continuation | 7.d | 2 | 0.4167 | 0.1389 | candidate |
+| 28 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation.b1_breakout-distance-more-coins | 7.b | 3 | 0.5 | 0.125 | candidate |
+| 29 | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return.b1_volume-surge-more-coins | 7.b | 3 | 0.5 | 0.125 | candidate |
+| 30 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation.b2_breakout-momentum-sizes-continuation | 7.b | 3 | 0.5 | 0.125 | candidate |
+| 31 | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return.b2_volume-surge-three-day-return | 7.b | 3 | 0.5 | 0.125 | candidate |
+| 32 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.d1_drop-rebound-in-expanded-volatility | 7.d | 3 | 0.4167 | 0.1042 | candidate |
+| 33 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation.d1_strength-continuation-inside-uptrends | 7.d | 3 | 0.4167 | 0.1042 | candidate |
+| 34 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation.d1_breakout-continuation-in-uptrends | 7.d | 3 | 0.4167 | 0.1042 | candidate |
+| 35 | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return.d1_volume-surge-within-uptrend | 7.d | 3 | 0.4167 | 0.1042 | candidate |
+| 36 | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g2_thin-volume-declines-keep-falling.d1_deep-thin-volume-falls-continue | 7.d | 3 | 0.4167 | 0.1042 | candidate |
+| 37 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.d2_drop-rebound-in-wide-ranges | 7.d | 3 | 0.4167 | 0.1042 | candidate |
+| 38 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation.d2_strength-continuation-in-volatility | 7.d | 3 | 0.4167 | 0.1042 | candidate |
+| 39 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation.d2_trend-ranked-fresh-breakouts | 7.d | 3 | 0.4167 | 0.1042 | candidate |
+| 40 | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return.d2_monthly-momentum-weekly-continuation | 7.d | 3 | 0.4167 | 0.1042 | candidate |
+| 41 | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g2_thin-volume-declines-keep-falling.d2_heavy-volume-dips-rebound-uptrend | 7.d | 3 | 0.4167 | 0.1042 | candidate |
+| 42 | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound.d3_drop-rebound-after-strong-trends | 7.d | 3 | 0.4167 | 0.1042 | candidate |
+| - | 006-01_compression-precedes-larger-move | step 2 | 0 | 0.5 | 0.5 | tested: step 5 -; step 6 - |
+| - | 006-02_longer-squeeze-bigger-move | step 2 | 0 | 0.5 | 0.5 | tested: step 5 -; step 6 - |
+| - | 006-03_post-squeeze-volatility-overshoot | step 2 | 0 | 0.5 | 0.5 | tested: step 5 -; step 6 - |
+| - | 006-04_upside-squeeze-break-continuation | step 2 | 0 | 0.5 | 0.5 | tested: step 5 inconclusive (-1.46); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) |
+| - | 006-05_downside-squeeze-break-continuation | step 2 | 0 | 0.5 | 0.5 | tested: step 5 -; step 6 - |
+| - | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation | 7.b | 1 | 0.5 | 0.25 | tested: step 5 inconclusive (+0.39); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) |
+| - | 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise | 7.g | 1 | 0.7872 | 0.3936 | tested: step 5 confirmed (+2.96); step 6 not profitable enough (failed: Calmar) |
+| - | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound | 7.g | 1 | 0.7872 | 0.3936 | tested: step 5 confirmed (+2.22); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) |
+| - | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound | 7.g | 2 | 0.7872 | 0.2624 | tested: step 5 confirmed (+5.93); step 6 not profitable enough (failed: Calmar) |
+| - | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation | 7.g | 2 | 0.7872 | 0.2624 | tested: step 5 confirmed (+2.58); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) |
+| - | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation | 7.g | 2 | 0.7872 | 0.2624 | tested: step 5 inconclusive (+1.79); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) |
+| - | 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation | 7.g | 2 | 0.7872 | 0.2624 | tested: step 5 confirmed (+3.00); step 6 profitable enough  GOAL REACHED |
+| - | 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g2_volume-surge-widens-moves | 7.g | 2 | 0.7872 | 0.2624 | tested: step 5 -; step 6 - |
+| - | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return | 7.g | 2 | 0.7872 | 0.2624 | tested: step 5 inconclusive (+1.94); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) |
+| - | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g2_thin-volume-declines-keep-falling | 7.g | 2 | 0.7872 | 0.2624 | tested: step 5 confirmed (+2.74); step 6 not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) |

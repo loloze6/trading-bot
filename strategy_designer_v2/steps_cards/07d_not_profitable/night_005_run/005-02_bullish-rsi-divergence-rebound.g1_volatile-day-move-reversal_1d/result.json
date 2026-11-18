@@ -1,0 +1,46 @@
+{
+  "line": "7.d",
+  "backtest": "005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal_1d",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.34011670000000005,
+  "findings": {
+    "F1": "The deepest falls come from shorting rising coins. In BTC's worst fall (\u221268%, 1171 days) and ETH's (\u221254%, 498 days), the coins rose 151% and 171%, and the short side lost 0.93 and 0.75 while the long side gained 0.33 and 0.25. The short side alone has a Sharpe of \u22120.04 and a deepest fall of \u221270% in BTC, against 0.90 and \u221233% for the long side.",
+    "F2": "Shorts held while the coin's 20-day return was positive lost on average (book \u22120.00168 per day, t \u22122.25, n 863). Shorts held while it was negative earned (+0.00228, t 3.52, n 780). Longs in a rising coin earned +0.00329 (t 4.10, n 697).",
+    "F3": "On the non-overlapping 3-bar grid in the active regime, the give-back after an up day is concentrated where the 20-day return is negative: excess 3-bar return \u22120.0117 (t \u22122.41, n 188). Where the 20-day return is positive it is \u22120.0010 (t \u22120.27, n 216).",
+    "F4": "The fade is graded in both directions. Excess 3-bar return runs from +0.0144 (t 1.98, n 124) after the largest vol-scaled falls (mean z \u22122.17) to \u22120.0134 (t \u22122.62, n 124) after the largest rises (mean z +2.41). The slope on up days has t \u22123.40 (n 404), and on down days t \u22121.29 (n 340).",
+    "F5": "Longs taken after a down day earned on bars in both trends: +0.00276 per bar (t 2.07, n 634) when the 20-day return was negative and +0.00185 (t 1.50, n 481) when it was positive. The book's weakness is on the short side, not the long side.",
+    "F6": "The book trails holding because it stays out or short through the coins' rises. Flat days missed a mean coin return of +0.00219 (n 2086) and short days earned only +0.00005. The book's market-rise gain is about zero (\u22120.00003 BTC, \u22120.00001 ETH) against coin means of 0.00118 and 0.00137. Fees take 0.00031 of the 0.00069 mean gain per bar, and the three smallest forecast quintiles earn less than their fees."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose 20-day volatility is high, a large one-day move is partly given back over the next 1 to 3 days, only when the move runs against the coin's 20-day return. A rise is given back while the coin's 20-day return is negative, and a fall is given back in any trend. The larger the day's move and the higher the coin's 20-day volatility relative to its usual level, the larger the opposite move that follows.",
+      "consequence": "Fade sharp up days only in coins already falling over 20 days, and keep buying sharp down days in volatile stretches. Shorting sharp rises in a rising coin is a trade to refuse.",
+      "name": "fade rises only in downtrends",
+      "from": "F1, F2, F3, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "In a coin whose 20-day volatility is high, a large one-day fall is followed by a rebound over the next 3 days. The larger the fall relative to the coin's usual daily move, the larger the rebound.",
+      "consequence": "Buying a volatile coin after a sharp down day captures a graded rebound without the losses of shorting its rallies.",
+      "name": "volatile sharp-fall rebound",
+      "from": "F4, F5, F6",
+      "refs": [
+        "F4",
+        "F5",
+        "F6"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.d1_fade-rises-only-in-downtrends",
+    "005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.d2_volatile-sharp-fall-rebound"
+  ],
+  "no_ideas": null
+}

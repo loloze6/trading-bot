@@ -1,0 +1,25 @@
+---
+line: 7.d not profitable
+backtest: 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence_1d
+idea tested: 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3371 USD
+---
+## Findings
+- **F1:** The book is almost never in the market. It held a position on only 3.2% of bars (188 held bars). Four windows (w4, w10, w11, w16) had no active book days while the coin summed +1.10, +1.12, +2.35 and +1.18 in them. This is why the mean daily return (4.0e-06) and the Sharpe against holding (-0.62) fail.
+- **F2:** Fees consume the gain. The 117 trades have a median duration of 1 day (mean 1.67 days). They earn +0.021% on average before fees and -0.079% after, so the book trades one-day holds and not the 20-day hold the idea describes.
+- **F3:** Most of the small gain comes from the market's own rise. Of the held bars' summed gain of 0.111, 0.092 is position × the coin's mean return and only 0.019 is timing.
+- **F4:** The 20-day rebound is not in the data. On 55 non-overlapping divergence events the mean 20-day return is -1.5%, or -4.1% against the coin's average. The mean 5-day return is +0.86%, so any bounce comes in the first days and is then given back.
+- **F5:** The bounce fades within the episode. Held bars in the first 2 days of the regime earn +0.27% per day above the coin's average (133 bars, summed gain +0.091). Bars more than 10 days in earn -0.91% per day (42 bars, summed gain -0.034).
+- **F6:** The proposed grading carries no information. The 30-day fall has Spearman -0.01 with the 20-day excess return across the events, and the step-5 forecast-vs-outcome Spearman is -0.11.
+- **F7:** Divergence lows sit inside downtrends, and the deeper the downtrend, the worse the outcome. 53 of 55 events closed below the coin's 100-day average. Their 20-day excess return has Spearman +0.15 with the distance to that average, so further below means a worse 20 days.
+- **F8:** The book's falls come from a few bear windows. The book summed -0.172 in w1 and -0.161 in w24, where the coin summed -0.41 and -0.50.
+
+## Ideas
+- `005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.d1_divergence-five-day-bounce` (from F2, F4, F5, F6): When a coin's close makes a new 30-day low while its 14-day RSI is above its reading at the previous low in that window, the price rebounds over the next 5 days. The rebound is larger the further the RSI stays above its earlier trough.
+- `005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.d2_divergence-low-continues-falling` (from F4, F7, F8): When a coin makes a new 30-day low with its 14-day RSI above its reading at the previous low, the coin keeps falling over the next 20 days. The fall is larger the further its close sits below its 100-day average.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

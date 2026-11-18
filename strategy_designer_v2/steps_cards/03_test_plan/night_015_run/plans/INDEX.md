@@ -1,0 +1,4 @@
+015-01_rallies-widen-later-range_1d: untestable: The idea's outcome is later volatility (the 7-day average high-low range), not a price direction. A spot long or short [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+015-02_rallies-enlarge-later-returns_1d: untestable: The idea predicts how large the next 7 days' moves will be, not which way they go. The config can [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+015-03_falls-widen-later-range_1d: untestable: The idea's outcome is later volatility (the 7-bar mean high-low range), and it predicts no price direction. The config can [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+015-04_falls-enlarge-later-returns_1d: untestable: The outcome is the absolute size of the next 7 daily returns, whichever way they go. A config can only [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

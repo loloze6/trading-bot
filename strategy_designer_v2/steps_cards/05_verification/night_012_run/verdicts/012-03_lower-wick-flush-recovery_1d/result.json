@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope t of excess 3-bar return on wick (post_pipeline_value), pooled",
+    "value": 0.0013491582050663934,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.7728841059960612
+    },
+    "threshold": "confirm if slope t >= 2 with supporting check passing; reject if slope t <= -2; at least 30 independent flush bars"
+  },
+  "supporting_check": {
+    "name": "mean excess 3-bar return of flush bars with wick above flush-bar median > 0",
+    "value": 0.005683977067651622,
+    "passed": true
+  },
+  "counts": {
+    "independent flush bars": 223
+  },
+  "decided_by": "The slope t is between -2 and 2.",
+  "reading": "Situation recomputed as 1-bar return / std (ddof 1) of the last 20 one-bar returns including the bar <= -2 and volume / mean of the prior 20 volumes >= 2, falling back to the recorded regime on bars without 20 bars of in-window history; the coin's mean 3-bar return is taken on the non-overlapping grid (positions 0,3,6,... of every window) pooled over all windows; flush bars are thinned before dropping those without close[t+3] in the window, and the median for the check is over the kept flush bars."
+}

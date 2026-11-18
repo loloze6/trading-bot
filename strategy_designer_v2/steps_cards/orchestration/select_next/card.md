@@ -39,7 +39,7 @@ In the words of `../../common/idea_created_from.md`.
 first, ranked by the score among themselves; then every other candidate, by the score. Every idea of a theory is tested
 once before the workflow goes deep on one of them. Why: with the score alone, a brief's idea scored 0.09 (step 2's
 record) against 0.15 to 0.33 for the lines' children, so one lineage took 26 of 30 turns in night_run and 28 of 33 in
-night_013_run, and 7 unblocked RSI ideas waited behind 010-01's children (`ranking_discussion.md`).
+night_013_run, and 7 unblocked RSI ideas waited behind 010-01's children (the operator's options A to D, 2026-11-17, in git: `ranking_discussion.md`, removed once ruled).
 
 **Ties:** the lower number first (the order in which the brief or the line wrote them).
 

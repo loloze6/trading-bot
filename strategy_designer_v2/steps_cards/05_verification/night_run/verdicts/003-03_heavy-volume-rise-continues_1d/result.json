@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the mean 5-bar excess return (vs the coin's mean 5-bar return) on grid bars with forecast >= 5",
+    "value": 0.016213180901576005,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.6199024061186633
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and Spearman > 0; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "Spearman(forecast, 5-bar excess) on grid bars with forecast > 0",
+    "value": 0.05775904634747115,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast >= 5": 389,
+    "grid bars with forecast > 0": 1642
+  },
+  "decided_by": "The mean excess is positive with t >= 2 over at least 30 cases and the Spearman correlation is above 0.",
+  "reading": "Grid bars are positions 0, 5, 10, ... of each window with t+5 inside the window. The coin's mean 5-bar return is the mean over all of that coin's grid samples in all windows. The plan's 'fewer than 30 cases' rule is reported as not observable."
+}

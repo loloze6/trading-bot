@@ -1,18 +1,5 @@
 [
   {
-    "idea": "012-01_liquidation-flush-rebound",
-    "backtest": "012-01_liquidation-flush-rebound_1d",
-    "parent": null,
-    "cost": 0.2844,
-    "step3": "missing-components",
-    "consumption": {
-      "step3_plan": {
-        "usd": 0.2844,
-        "seconds": 15.7
-      }
-    }
-  },
-  {
     "idea": "012-02_volume-burst-fall-reversal",
     "backtest": "012-02_volume-burst-fall-reversal_1d",
     "parent": null,
@@ -65,32 +52,6 @@
       "step7_7.g": {
         "usd": 0.5516,
         "seconds": 92.0
-      }
-    }
-  },
-  {
-    "idea": "012-03_lower-wick-flush-recovery",
-    "backtest": "012-03_lower-wick-flush-recovery_1d",
-    "parent": null,
-    "cost": 0.0432,
-    "step3": "missing-components",
-    "consumption": {
-      "step3_plan": {
-        "usd": 0.0432,
-        "seconds": 16.7
-      }
-    }
-  },
-  {
-    "idea": "012-04_flush-depth-retracement-size",
-    "backtest": "012-04_flush-depth-retracement-size_1d",
-    "parent": null,
-    "cost": 0.0444,
-    "step3": "missing-components",
-    "consumption": {
-      "step3_plan": {
-        "usd": 0.0444,
-        "seconds": 17.4
       }
     }
   },
@@ -160,19 +121,6 @@
       "step7_7.d": {
         "usd": 0.3588,
         "seconds": 70.3
-      }
-    }
-  },
-  {
-    "idea": "013-04_heavy-volume-below-high-breakout",
-    "backtest": "013-04_heavy-volume-below-high-breakout_1d",
-    "parent": null,
-    "cost": 0.0573,
-    "step3": "missing-components",
-    "consumption": {
-      "step3_plan": {
-        "usd": 0.0573,
-        "seconds": 24.8
       }
     }
   },
@@ -454,19 +402,6 @@
     }
   },
   {
-    "idea": "003-03_heavy-volume-rise-continues",
-    "backtest": "003-03_heavy-volume-rise-continues_1d",
-    "parent": null,
-    "cost": 0.0668,
-    "step3": "missing-components",
-    "consumption": {
-      "step3_plan": {
-        "usd": 0.0668,
-        "seconds": 31.9
-      }
-    }
-  },
-  {
     "idea": "003-04_heavy-volume-drop-continues",
     "backtest": "003-04_heavy-volume-drop-continues_1d",
     "parent": null,
@@ -711,6 +646,420 @@
       "step7_7.g": {
         "usd": 0.3499,
         "seconds": 64.4
+      }
+    }
+  },
+  {
+    "idea": "012-01_liquidation-flush-rebound",
+    "backtest": "012-01_liquidation-flush-rebound_1d",
+    "parent": null,
+    "cost": 1.375,
+    "step3": "plan",
+    "step5": "confirmed (+3.26)",
+    "step6": "not profitable enough (failed: Mean daily return, Calmar)",
+    "step7": {
+      "7.d": "012-01_liquidation-flush-rebound.d1_repeated-flush-exhausts-cascade, 012-01_liquidation-flush-rebound.d2_flush-after-deep-weekly-fall",
+      "7.g": "012-01_liquidation-flush-rebound.g1_volume-graded-fall-rebound, 012-01_liquidation-flush-rebound.g2_quiet-falls-keep-falling"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.3849,
+        "seconds": 59.900000000000006
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 79.6
+      },
+      "step5_verdict": {
+        "usd": 0.1332,
+        "seconds": 35.5
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 1.7
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 0.9
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.g": {
+        "usd": 0.3674,
+        "seconds": 67.2
+      },
+      "step7_7.d": {
+        "usd": 0.4895,
+        "seconds": 93.1
+      }
+    }
+  },
+  {
+    "idea": "003-03_heavy-volume-rise-continues",
+    "backtest": "003-03_heavy-volume-rise-continues_1d",
+    "parent": null,
+    "cost": 1.0712,
+    "step3": "plan",
+    "step5": "confirmed (+2.98)",
+    "step6": "not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.d": "003-03_heavy-volume-rise-continues.d1_heavy-volume-rise-in-uptrend, 003-03_heavy-volume-rise-continues.d2_heavy-volume-rise-slow-continuation",
+      "7.g": "003-03_heavy-volume-rise-continues.g1_delayed-heavy-volume-rise-drift"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.1426,
+        "seconds": 63.8
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 67.3
+      },
+      "step5_verdict": {
+        "usd": 0.1129,
+        "seconds": 28.5
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 1.8
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 0.9
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.d": {
+        "usd": 0.3234,
+        "seconds": 75.5
+      },
+      "step7_7.g": {
+        "usd": 0.4923,
+        "seconds": 99.0
+      }
+    }
+  },
+  {
+    "idea": "012-03_lower-wick-flush-recovery",
+    "backtest": "012-03_lower-wick-flush-recovery_1d",
+    "parent": null,
+    "cost": 1.0206,
+    "step3": "plan",
+    "step5": "mismatch",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.d": "012-03_lower-wick-flush-recovery.d1_flush-closing-at-low-rebounds, 012-03_lower-wick-flush-recovery.d2_flush-after-decline-rebounds, 012-03_lower-wick-flush-recovery.d3_volatile-flush-rebounds-harder",
+      "7.g": "012-03_lower-wick-flush-recovery.g1_high-volume-down-day-rebound, 012-03_lower-wick-flush-recovery.g2_volume-not-fall-size-drives-rebound"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.1189,
+        "seconds": 47.8
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 64.8
+      },
+      "step5_verdict": {
+        "usd": 0.137,
+        "seconds": 39.8
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 1.0
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 0.7
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.0
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.d": {
+        "usd": 0.3072,
+        "seconds": 63.1
+      },
+      "step7_7.g": {
+        "usd": 0.4575,
+        "seconds": 78.7
+      }
+    }
+  },
+  {
+    "idea": "012-04_flush-depth-retracement-size",
+    "backtest": "012-04_flush-depth-retracement-size_1d",
+    "parent": null,
+    "cost": 1.3327,
+    "step3": "plan",
+    "step5": "inconclusive (-0.75)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar, Trades per bar)",
+    "step7": {
+      "7.b": "012-04_flush-depth-retracement-size.b1_volume-burst-sharp-fall-rebound, 012-04_flush-depth-retracement-size.b2_sharp-fall-depth-retracement",
+      "7.d": "012-04_flush-depth-retracement-size.d1_flush-depth-predicts-rebound, 012-04_flush-depth-retracement-size.d2_volume-burst-grades-rebound",
+      "7.g": "012-04_flush-depth-retracement-size.g1_down-day-volume-burst-rebound, 012-04_flush-depth-retracement-size.g2_volume-graded-rebound-after-falls"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.12490000000000001,
+        "seconds": 48.9
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 148.2
+      },
+      "step5_verdict": {
+        "usd": 0.1333,
+        "seconds": 35.6
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 1.0
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 0.6
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.d": {
+        "usd": 0.3443,
+        "seconds": 68.6
+      },
+      "step7_7.b": {
+        "usd": 0.3625,
+        "seconds": 76.0
+      },
+      "step7_7.g": {
+        "usd": 0.3677,
+        "seconds": 78.5
+      }
+    }
+  },
+  {
+    "idea": "013-04_heavy-volume-below-high-breakout",
+    "backtest": "013-04_heavy-volume-below-high-breakout_1d",
+    "parent": null,
+    "cost": 1.0888,
+    "step3": "plan",
+    "step5": "confirmed (+2.46)",
+    "step6": "not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar, Trades per bar)",
+    "step7": {
+      "7.d": "013-04_heavy-volume-below-high-breakout.d1_hold-the-whole-breakout-month, 013-04_heavy-volume-below-high-breakout.d2_heavy-volume-breaks-run-fast, 013-04_heavy-volume-below-high-breakout.d3_freshest-breaks-pay-most",
+      "7.g": "013-04_heavy-volume-below-high-breakout.g1_rising-volume-short-continuation, 013-04_heavy-volume-below-high-breakout.g2_one-month-momentum-continuation"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.1357,
+        "seconds": 59.599999999999994
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 246.3
+      },
+      "step5_verdict": {
+        "usd": 0.1414,
+        "seconds": 39.0
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 0.9
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 0.6
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.g": {
+        "usd": 0.3578,
+        "seconds": 75.2
+      },
+      "step7_7.d": {
+        "usd": 0.4539,
+        "seconds": 95.3
+      }
+    }
+  },
+  {
+    "idea": "003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on",
+    "backtest": "003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on_1d",
+    "parent": "003-01_thin-volume-rise-reverses",
+    "cost": 0.8564,
+    "step3": "plan",
+    "step5": "confirmed (+3.44)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.d": "003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on.d1_heavy-volume-rises-carry-later, 003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on.d2_thin-volume-rises-reverse-next-day, 003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on.d3_sharp-rises-carry-in-uptrends",
+      "7.g": "003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on.g1_sharp-falls-bounce-next-day, 003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on.g2_heavy-volume-falls-rebound-harder, 003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on.g3_sharp-rises-carry-on-later, 003-01_thin-volume-rise-reverses.g1_sharp-rises-carry-on.g4_small-rises-fade-afterwards"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.0625,
+        "seconds": 29.1
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 71.8
+      },
+      "step5_verdict": {
+        "usd": 0.116,
+        "seconds": 29.9
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 2.5
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 1.0
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.d": {
+        "usd": 0.3206,
+        "seconds": 69.9
+      },
+      "step7_7.g": {
+        "usd": 0.3573,
+        "seconds": 76.5
+      }
+    }
+  },
+  {
+    "idea": "003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue",
+    "backtest": "003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue_1d",
+    "parent": "003-02_thin-volume-drop-rebounds",
+    "cost": 1.0702,
+    "step3": "plan",
+    "step5": "confirmed (+2.98)",
+    "step6": "not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.d": "003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue.d1_delayed-heavy-volume-continuation, 003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue.d2_continuation-inside-uptrends-only",
+      "7.g": "003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue.g1_heavy-volume-drops-rebound, 003-02_thin-volume-drop-rebounds.g1_heavy-volume-up-moves-continue.g2_delayed-continuation-after-surges"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.0748,
+        "seconds": 46.4
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 65.7
+      },
+      "step5_verdict": {
+        "usd": 0.1198,
+        "seconds": 30.9
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 1.7
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 0.9
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.d": {
+        "usd": 0.3268,
+        "seconds": 66.2
+      },
+      "step7_7.g": {
+        "usd": 0.5488,
+        "seconds": 109.4
       }
     }
   }

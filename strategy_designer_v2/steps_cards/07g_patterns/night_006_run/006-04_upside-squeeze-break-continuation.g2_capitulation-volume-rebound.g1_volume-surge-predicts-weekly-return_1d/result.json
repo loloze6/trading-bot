@@ -1,0 +1,34 @@
+{
+  "line": "7.g",
+  "backtest": "006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3306967,
+  "findings": {
+    "F1": "Across all coins and windows, a coin's 5-day return scaled by its 20-day daily volatility predicts its excess return over the next 7 days: pooled slope 0.0119 with t = 4.23 on 2011 non-overlapping 7-day cases, and the raw 5-day return gives slope 0.099 with t = 3.79.",
+    "F2": "The bottom two quintiles of the raw 5-day return are followed by excess 7-day returns of -1.25% (t = -1.98) and -1.20% (t = -2.20), against +0.98% (t = 1.96) in the middle quintile and +0.90% in the top quintile.",
+    "F3": "The 5-day momentum holds in every volatility tercile, slope t = 4.08 (n = 672) in the calmest, 1.39 (n = 667) in the middle and 2.14 (n = 672) in the most volatile; by year it is strongest in 2020 (t = 3.80) and 2022 (t = 4.00) and negative in 2018, 2019 and 2023 (t from -0.34 to -1.81).",
+    "F4": "The tested volume-ratio forecast itself is weak and uneven: its pooled quintiles are not monotone (-0.18%, -0.86%, -0.45%, +0.85%, +0.64% excess 7-day return), and its slope reaches t \u2265 2 only in XRPUSD (t = 2.90) and in 2024 (t = 3.90), with the other coins between t = -1.22 and 1.15.",
+    "F5": "Saturday daily returns beat the other days in all six coins (Saturday-minus-other t from 0.34 for BTC to 2.67 for LTC), in 79% of the 24 windows (t = 2.30 across windows), and in 7 of 8 years. But a weekday is a condition with no grade, and it is one of seven weekdays looked at, so it supports no idea here.",
+    "F6": "The range-compression and volume-ratio states do not mark larger moves that follow. Absolute excess 7-day return is +0.50% in the most compressed range quintile and +0.45% in the most expanded (t = 1.07 and 0.69), and +1.11% (t = 1.66) only in the top volume-ratio quintile."
+  },
+  "ideas": [
+    {
+      "idea": "For a coin, the larger its 5-day return relative to its own 20-day daily volatility, the higher its return over the next 7 days; a strong recent week is followed by further gains and a weak one by further losses.",
+      "consequence": "A trader would lean long a coin after a strong week measured against its own volatility, and would refuse to hold one after a weak week, before trusting any signal from volume.",
+      "name": "volatility-scaled weekly momentum",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return.g1_volatility-scaled-weekly-momentum"
+  ],
+  "no_ideas": null
+}

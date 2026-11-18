@@ -35,6 +35,12 @@ The ideas the theory gives. Their number follows from the theory, not from a quo
    - For: the context the idea holds in, readable without opening the brief.
    - Used by: the next steps, which check the idea where the brief says it applies.
    - Without it: the idea file looks unlimited when its brief is limited.
+2b. **bar** (header, the idea's own, 2026-11-18): `bar: 1h`, only when the brief states no bar size and what the idea
+   says we would see cannot be seen on daily bars (it names hours of the day, or a move within one day); 1h is the
+   finest bar the data has. The brief's own bar size, when it has one, always wins (code).
+   - For: a theory whose mechanism lives within the day is tested on bars that can see it.
+   - Used by: step 3, which plans on the idea's bar size (the default is daily).
+   - Without it: an hourly theory is planned on daily bars and refused as untestable (second night: brief 014, 5 of 5).
 3. **Idea** (body, mandatory): what we would see in the market, in one or two sentences of plain prose.
    - For: the idea itself.
    - Used by: the next steps, which confirm or reject it.

@@ -1,6 +1,6 @@
 How a strategy config turns its components into a forecast, and so into a position. Given to step 3 (which writes the
 config) and step 5 (which checks the backtest against its plan); written after step 5 judged correct backtests a
-mismatch by guessing what `standardise` does (`../POTENTIAL_ADJUSTMENTS.md`, step 5 mismatches). From the engine's code
+mismatch by guessing what `standardise` does (the step 5 mismatch analysis, 2026-11-17). From the engine's code
 (`trading-bot/strategies/strategy_engine.py`, `registry.py`), 2026-11-17.
 
 **In one line:** at each bar's close, each component gives a raw value; its transforms turn it into a value on the

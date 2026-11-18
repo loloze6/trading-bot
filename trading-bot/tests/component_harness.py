@@ -201,8 +201,8 @@ def check_new_setting(old_cls, new_cls, params, known, data=None):
 
 
 def check_catalogue(catalogue, components_file=COMPONENTS_FILE):
-    classes = re.findall(r"^class (\w+)\(", Path(components_file).read_text(), re.M)
-    cat = Path(catalogue).read_text()
+    classes = re.findall(r"^class (\w+)\(", Path(components_file).read_text(encoding="utf-8"), re.M)
+    cat = Path(catalogue).read_text(encoding="utf-8")
     rows = cat[cat.index("## Component rows"):cat.index("## Variant patterns")]
     listed = re.findall(r"^\| `(\w+)` \|", rows, re.M)
     out = [f"catalogue: no row for {c}" for c in classes if c not in listed]
@@ -245,7 +245,7 @@ def main():
         for p in spec.SETTINGS:
             fails += check_real_data(cls, p)
     if args.old_source:
-        old_text = args.old_source.read_text()
+        old_text = args.old_source.read_text(encoding="utf-8")
         old = load_class_from_source(old_text, spec.CLASS)
         fails += check_defaults(old, cls, spec.SETTINGS[0])
         fails += check_new_setting(old, cls, spec.SETTINGS[-1], old_params(old_text, spec.CLASS))

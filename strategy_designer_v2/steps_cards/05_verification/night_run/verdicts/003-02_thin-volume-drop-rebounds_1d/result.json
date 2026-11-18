@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x excess 5-bar return, non-overlapping grid, forecast > 0, pooled",
+    "value": -0.003537090876692324,
+    "statistic": {
+      "name": "t of the mean",
+      "value": -1.9080219527631757
+    },
+    "threshold": "t >= 2 to confirm (with check difference > 0), t <= -2 to reject"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return above minus below the median positive forecast",
+    "value": -0.0008438142186030662,
+    "passed": false
+  },
+  "counts": {
+    "grid cases with forecast > 0": 1067
+  },
+  "decided_by": "The main measure's t lies between -2 and 2.",
+  "reading": "The coin's mean 5-bar return is taken over the same non-overlapping grid (positions 0, 5, 10, ... of each window, with t+5 inside the window) across all its windows; the supporting check compares cases strictly above and strictly below the median positive forecast, ties left out; fewer than 30 cases gives 'not observable'."
+}

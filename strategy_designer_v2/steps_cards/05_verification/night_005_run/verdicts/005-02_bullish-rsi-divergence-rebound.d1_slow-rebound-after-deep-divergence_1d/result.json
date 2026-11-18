@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 20-bar forward return of non-overlapping positive-forecast events",
+    "value": -0.04275272408336149,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": -1.5576660646118772
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 events and Spearman > 0; reject: t <= -2 over >= 30 events"
+  },
+  "supporting_check": {
+    "name": "Spearman correlation of event forecast vs 20-bar excess return > 0",
+    "value": -0.1089003239946636,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping events": 54,
+    "events BTCUSD": 28,
+    "events ETHUSD": 26
+  },
+  "decided_by": "Inconclusive rule: t lies between -2 and 2.",
+  "reading": "Situation checked on active bars that have 30 prior closes inside their window (earlier active bars cannot be recomputed and are left out of the agreement share), using the recorded rsi_gap raw value for the RSI gap; the coin's mean 20-bar return is taken on the non-overlapping grid (positions 0, 20, 40, ... of each window) pooled over all its windows; an event at t skips positive bars t+1..t+20 within the same window; the Spearman correlation is between the event's recorded forecast and its excess return."
+}

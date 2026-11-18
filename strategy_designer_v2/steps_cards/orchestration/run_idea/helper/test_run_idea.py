@@ -82,3 +82,9 @@ def test_model_calls_are_read_and_a_killed_call_is_marked(tmp_path, monkeypatch)
     e = json.loads((tmp_path / "t" / "journal.jsonl").read_text())
     assert e["model_calls"] == 2 and e["longest_call_seconds"] == 900.0
     assert e["action"] == "called: 1 model call(s) killed after the timeout, cost unknown"
+
+
+def test_a_verdict_without_a_main_measure_is_its_status():
+    assert r.verdict_label({"status": "mismatch", "main_measure": None}) == "mismatch"
+    assert r.verdict_label({"status": "confirmed", "main_measure": {"statistic": {"value": 2.931}}}) == "confirmed (+2.93)"
+    assert r.verdict_label(None) == "no verdict"

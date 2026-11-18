@@ -1,0 +1,49 @@
+{
+  "line": "7.d",
+  "backtest": "011-02_weekend-drop-rebounds-monday_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.37934989999999996,
+  "findings": {
+    "F1": "The book barely earns because it is in the market on only 11.6 % of days: its mean daily return is 0.000112 against 0.00118 for holding the coins, and its Sharpe is 0.31 against holding's 0.55.",
+    "F2": "All of the book's timing gain comes from the Monday bar. A position held from Sunday's close gains 0.002468 a day, of which only 0.000543 is the market's own rise. A position held over Tuesday gains 0.000475, below its market part of 0.000545, so its timing is slightly negative.",
+    "F3": "Tuesday gives back part of the deepest Sunday drops: after a Sunday fall of more than 2 usual moves, Tuesday returns -0.0276 (t -3.96, n 40), while Monday returns +0.0142 (t 2.77).",
+    "F4": "Inside Sunday drops, the depth of the drop does not grade the Monday rebound. The correlation of drop size with Monday's return is 0.015 among drops. Monday rises after every drop bin from 0 to -1.5 usual moves (+0.0057 to +0.0174, t 2.2 to 2.7).",
+    "F5": "The Sunday move's sign carries the information. Monday returns +0.0073 after a Sunday drop (n 967) and -0.0040 after a Sunday rise (n 1084). After small rises of 0 to 0.5 usual moves Monday returns -0.0071 (t -3.15, n 544). Across all Sundays, the negated Sunday z correlates 0.069 with Monday's return.",
+    "F6": "Drop depth grades the rebound only when the coin was already falling. Among Sunday drops with a negative 20-day return, deep drops are followed by a 2-day excess of +0.0176 against +0.0042 for shallow ones (n 186/137). In flat or rising 20-day trends deep drops give only +0.0015 to +0.0026.",
+    "F7": "Sunday rises reverse on Monday mostly in a 20-day downtrend: Monday returns -0.0078 there (n 488) against -0.0009 in an uptrend (n 596).",
+    "F8": "The effect rests on 2020 and 2021. The 2-day excess after Sunday drops was +0.0306 (t 4.1) and +0.0231 (t 2.5) in those years, and between -0.0076 and +0.0062 in every other year."
+  },
+  "ideas": [
+    {
+      "idea": "A coin that fell over the weekend (its Saturday-to-Sunday close-to-close return) rises over the next 1 day (Monday only), and the larger the weekend drop the larger the rebound, only while the coin's 20-day return is negative, more so the deeper that 20-day fall.",
+      "consequence": "A trader would buy weekend drops only in coins already falling over 20 days, hold through Monday and be out before Tuesday, which removes the Tuesday give-back.",
+      "name": "Weekend drop rebounds in downtrend",
+      "from": "F2, F3, F4, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "A coin's Saturday-to-Sunday close-to-close return is reversed over the next 1 day (Monday): the larger the Sunday move in either direction, the larger the opposite Monday move, and the reversal is stronger the more negative the coin's 20-day return.",
+      "consequence": "Trading both sides of the Sunday move on Monday would roughly double the book's active days and the gain those days carry, against a long-only book that sits flat 88 % of the time.",
+      "name": "Sunday move reverses Monday",
+      "from": "F1, F2, F5, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F5",
+        "F7"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-02_weekend-drop-rebounds-monday.d1_weekend-drop-rebounds-in-downtrend",
+    "011-02_weekend-drop-rebounds-monday.d2_sunday-move-reverses-monday"
+  ],
+  "no_ideas": null
+}

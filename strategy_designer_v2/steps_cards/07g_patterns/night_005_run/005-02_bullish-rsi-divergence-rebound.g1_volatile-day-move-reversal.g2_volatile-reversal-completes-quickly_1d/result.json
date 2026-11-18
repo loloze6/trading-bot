@@ -1,0 +1,44 @@
+{
+  "line": "7.g",
+  "backtest": "005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly_1d",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.4968151,
+  "findings": {
+    "F1": "In the high-volatility regime (20-day volatility rank over 100 days \u2265 0.8), the next day's excess return falls with the day's move over its 60-day mean absolute move: slope \u22120.0034 (t \u22123.28, n 542) in BTC and \u22120.0058 (t \u22124.02, n 498) in ETH. Outside the regime the slope is flat (t \u22120.09 and \u22120.08, n 1851 and 1895).",
+    "F2": "The fade in the high-volatility regime lasts about 3 days, then fades out. The 3-day slopes on the move ratio are \u22120.0064 (t \u22122.47, n 181) in BTC and \u22120.0131 (t \u22123.75, n 167) in ETH. By 5 days they shrink to t \u22120.82 and \u22120.84 (n 101, 94). Outside the regime the 3-day slopes are slightly positive (t 0.32 and 1.57).",
+    "F3": "In the high-volatility regime, the reversal after down days is fast and the reversal after up days is slow. After down days, the slope of excess return on the size of the move is +0.0059 at 1 day (t 2.93, n 517) and +0.0107 at 3 days (t 2.05, n 157). After up days it is only \u22120.0023 at 1 day (t \u22121.44, n 523) but \u22120.0100 at 3 days (t \u22122.83, n 191).",
+    "F4": "The book's trades earn on quick turns and lose when held. Trades held \u22641.5 days average +1.86% net (n 597). Trades held 1.5\u20133.5 days average \u22121.77% (n 232), and 3.5\u20137.5 days \u22125.25% (n 80). BTC shorts lose \u22120.75% per trade (n 244) while BTC longs gain +0.63% (n 240).",
+    "F5": "Large down days outside the regime (ratio \u2264 \u22122) are followed by a +0.94% next-day excess return (t 2.35, n 152), but the sign changes by year. It is \u22121.05% in 2019, \u22121.25% in 2022 and \u22121.84% in 2024, so it does not stand out from chance.",
+    "F6": "The book's next-day return is highest after its own extreme days: +0.00305 after its worst decile and +0.00197 after its best, against about 0 in the middle deciles. Its day-to-day autocorrelation has opposite signs in the two coins (BTC +0.10, ETH \u22120.11), so this is volatility clustering rather than direction. No weekday effect stands out on the coins' next-day excess returns: every |t| is \u2264 1.58."
+  },
+  "ideas": [
+    {
+      "idea": "In a coin whose 20-day volatility is high relative to its last 100 days, a sharp one-day fall is followed by a rebound over the next day. The larger the fall relative to the coin's 60-day mean absolute daily move, the larger that next-day rise.",
+      "consequence": "A trader buying a sharp fall in a volatile stretch should expect most of the rebound on the next day and take it then, rather than wait for more.",
+      "name": "volatile fall next-day rebound",
+      "from": "F1, F3, F4",
+      "refs": [
+        "F1",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "In a coin whose 20-day volatility is high relative to its last 100 days, a sharp one-day rise gives back slowly, over the next 3 days rather than the next day. The larger the rise relative to the coin's 60-day mean absolute daily move, the larger the fall over those 3 days.",
+      "consequence": "A short against a sharp rise in a volatile stretch should be held for about 3 days and not judged on its first day.",
+      "name": "volatile rise slow giveback",
+      "from": "F2, F3",
+      "refs": [
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly.g1_volatile-fall-next-day-rebound",
+    "005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly.g2_volatile-rise-slow-giveback"
+  ],
+  "no_ideas": null
+}

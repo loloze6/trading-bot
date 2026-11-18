@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 5-bar forward return, forecast >= 2 minus all other grid bars",
+    "value": 0.020177995327077838,
+    "statistic": {
+      "name": "Welch t",
+      "value": 2.807734102674793
+    },
+    "threshold": "confirm: difference > 0 with Welch t >= 2 and >= 30 cases with forecast >= 2; reject: difference < 0 with Welch t <= -2"
+  },
+  "supporting_check": {
+    "name": "OLS slope of 5-bar forward return on forecast, grid bars with forecast > 0",
+    "value": 0.0017150896085886547,
+    "passed": true
+  },
+  "counts": {
+    "cases with forecast >= 2": 205,
+    "other grid bars": 934,
+    "grid bars with forecast > 0": 522
+  },
+  "decided_by": "The difference is positive with Welch t >= 2 from at least 30 cases with forecast >= 2, and the supporting slope is positive.",
+  "reading": "Situation taken as bars where the raw component is positive (and the day's in-window close-to-close return is up when computable), side long; grid is positions 0,5,10,... of each BTC and ETH window with grid bars lacking a 5-bar forward return in the window dropped, 'all other grid bars' means grid bars with forecast < 2, and the slope is undefined (not positive) with fewer than 2 positive-forecast cases."
+}

@@ -1,0 +1,16 @@
+---
+brief: 005_rsi-divergence-predicts-reversal
+source-idea: 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence
+line: 7.b inconclusive
+backtest: 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence_1d
+instruments: BTC, ETH, BNB
+bar: 1d
+period: folds A, B, C, D
+---
+Idea: When a coin's close makes a new 30-day low while its 14-day RSI is above its reading at the previous low in that window, the price keeps falling over the next 20 days, and the deeper the coin's 30-day decline into that low, the larger the further fall.
+Consequence: A deep-fall divergence low is a reason to refuse a long and to keep a short, not to buy the turn.
+Why:
+- F1: The predicted rebound does not appear at any horizon. The mean excess return of the 54 non-overlapping divergence-low events is negative at 1, 5, 10, 20 and 40 days (-0.5%, -0.8%, -1.3%, -4.3%, -3.9%; t -0.91, -0.53, -0.71, -1.56, -1.01). The plan's 20-day horizon is not hiding a rebound that shows elsewhere.
+- F3: The sign follows the market's year. The 20-day excess is positive in 2019 (+12.2%, t 2.84, 6 events), 2021 (+8.8%, 7) and 2024 (+11.8%, t 2.11, 5). It is negative in 2018 (-15.6%, t -4.07, 10), 2022 (-16.1%, t -2.52, 10), 2023 (-6.0%, 4) and 2025 (-7.9%, t -2.02, 11). The divergence low mostly takes on the direction of the broader trend rather than marking a turn.
+- F4: The strongest forecasts do the opposite of what the idea grades. The top forecast tercile has the worst 20-day excess (-8.8%, t -2.63, 18 events) and 40-day excess (-16.8%, t -4.86, 18 events, partly overlapping). The low and middle terciles are at -3.9% and -0.1%. The event Spearman is -0.11.
+- F5: Of the forecast's two parts, the depth of the fall is the one working against the idea. The deepest-fall tercile has a 20-day excess of -8.4% (t -1.33), against -3.5% for the shallowest, and the Spearman of the raw 30-day change against the excess is +0.17, so deeper falls go with lower excess. The RSI gap's Spearman is +0.21, but it is not monotonic across its terciles (-10.7%, +2.7%, -4.8%).

@@ -1,0 +1,44 @@
+{
+  "line": "7.d",
+  "backtest": "005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.b1_deep-divergence-lows-keep-falling_1d",
+  "step5": "mismatch",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3032085,
+  "findings": {
+    "F1": "The book loses on the few bars it acts on: it is short on only 2.3% of bars (136 of 5,842), and on those bars the coin rose +0.41% the next day on average, against +0.12% on all bars, so each short bar lost 0.19% before fees.",
+    "F2": "The short is gone almost as soon as it opens. Short runs last 1.24 bars on average, with a median of 1 and a maximum of 3, because the new-low condition holds only on the bar of the low. The result is 121 trades averaging 1.2 days, winning 31% of the time, with a mean net result of \u22120.74%. Fees took a further 0.146 of book value on top of a gross loss of \u22120.255.",
+    "F3": "The divergence carries no information. Over 32 spaced events the excess 20-bar return was \u22120.58% (t \u22120.16). Recomputed divergence lows (40) against non-divergence new lows (66) differ by Welch t between \u22121.26 and +0.03 at every horizon from 1 to 20 days.",
+    "F4": "The tested grading runs backwards: at divergence lows, the deeper the 30-day decline, the larger the next rise. The 30-day return correlates \u22120.37 with the 5-day forward return and \u22120.41 with the 10-day forward return. The deepest third (30-day return \u221233%, n 14) rose +2.1% over 5 days and +4.4% over 10 days. The mildest third (\u22128.6%, n 14) fell \u22123.6% over 5 days and \u22123.7% over 10 days.",
+    "F5": "The rebound after deep declines does not depend on the divergence. Non-divergence new lows in the deepest third (30-day return \u221229%, n 22) rose +5.9% over 5 days and +7.4% over 10 days. The middle and mild thirds rose \u22120.7% to +0.5% over 5 days."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin's close makes a new 30-day low, the deeper its 30-day decline into that low, the larger its rise over the next 10 days.",
+      "consequence": "A new low reached after a steep 30-day fall is a reason to refuse a short and to consider a long for about ten days.",
+      "name": "deep new lows rebound",
+      "from": "F4, F5, F1",
+      "refs": [
+        "F4",
+        "F5",
+        "F1"
+      ]
+    },
+    {
+      "idea": "When a coin's close makes a new 30-day low while its 14-day RSI is above its reading at the previous low in that window, the price keeps falling over the next 10 days, and the shallower the coin's 30-day decline into that low, the larger the further fall.",
+      "consequence": "A divergence low reached after only a mild 30-day slide is a reason to keep a short for days, while one reached after a steep slide is not.",
+      "name": "shallow divergence lows keep falling",
+      "from": "F4, F2, F3",
+      "refs": [
+        "F4",
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.b1_deep-divergence-lows-keep-falling.d1_deep-new-lows-rebound",
+    "005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.b1_deep-divergence-lows-keep-falling.d2_shallow-divergence-lows-keep-falling"
+  ],
+  "no_ideas": null
+}
