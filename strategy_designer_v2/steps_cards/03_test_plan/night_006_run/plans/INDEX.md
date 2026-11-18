@@ -1,5 +1,5 @@
 006-01_compression-precedes-larger-move_1d: untestable: The idea predicts the size of the next 5-day move, not its direction, but the config can only hold a [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 006-02_longer-squeeze-bigger-move_1d: untestable: The idea predicts how large the next 5-day move is, not which way it goes. The config only sets a [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 006-03_post-squeeze-volatility-overshoot_1d: untestable: The idea predicts how large moves will be, not which way they go. The config can only hold a long [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
-006-04_upside-squeeze-break-continuation_1d: missing-components: The idea sizes the bet by the width of the 20-day band divided by the width of the 100-day range, [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+006-04_upside-squeeze-break-continuation_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 006-05_downside-squeeze-break-continuation_1d: missing-components: The bars hold everything the idea needs, and a regime plus a graded short could carry it. No component measures [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

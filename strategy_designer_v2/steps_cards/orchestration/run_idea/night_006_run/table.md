@@ -7,12 +7,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 006-01_compression-precedes-larger-move | - | untestable | - | - | - | 0.03 | 0.2 |
 | 006-02_longer-squeeze-bigger-move | - | untestable | - | - | - | 0.04 | 0.3 |
 | 006-03_post-squeeze-volatility-overshoot | - | untestable | - | - | - | 0.04 | 0.2 |
-| 006-04_upside-squeeze-break-continuation | - | missing-components | - | - | - | 0.04 | 0.3 |
 | 006-05_downside-squeeze-break-continuation | - | missing-components | - | - | - | 0.06 | 0.5 |
+| 006-04_upside-squeeze-break-continuation | - | plan | inconclusive (-1.46) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.b: 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation; 7.d: 006-04_upside-squeeze-break-continuation.d1_momentum-break-ten-day-continuation, 006-04_upside-squeeze-break-continuation.d2_breakout-bar-ten-day-drift; 7.g: 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise, 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound | 1.21 | 5.8 |
 
 ## Consumption
-5 ideas, 0.21 USD, 1.5 minutes in all.
+5 ideas, 1.37 USD, 6.9 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.21 | 1.5 |
+| step3_plan | 0.29 | 2.1 |
+| step4_backtest | 0.00 | 1.2 |
+| step5_verdict | 0.11 | 0.4 |
+| step6_check | 0.00 | 0.0 |
+| chart_files | 0.00 | 0.0 |
+| step7_7.a | 0.00 | 0.0 |
+| step7_7.c | 0.00 | 0.0 |
+| step7_7.e | 0.00 | 0.0 |
+| step7_7.b | 0.30 | 1.0 |
+| step7_7.g | 0.32 | 1.1 |
+| step7_7.d | 0.34 | 1.1 |

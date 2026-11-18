@@ -1,0 +1,46 @@
+{
+  "line": "7.d",
+  "backtest": "006-04_upside-squeeze-break-continuation_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.34150309999999995,
+  "findings": {
+    "F1": "The book barely trades its edge. It holds a position on only 6.1% of bars, at a mean allocation of 0.44 when in, and its trades last 1.65 days on average. So its mean daily return is 0.0000378 (Sharpe 0.23) against 0.00118 (Sharpe 0.55) for holding the coins, while fees average only 0.00004 per bar.",
+    "F2": "The break itself carries a real rise that outlasts the 3-day window. On the non-overlapping grid, break bars' excess return over the coin's average is +0.0126 over 3 bars (t 2.15, n 244) and +0.064 over 10 bars (t 2.40, n 86), but \u22120.013 over 20 bars (t \u22120.41, n 39).",
+    "F3": "Holding each coin long for the 10 days after any break bar would have earned a mean daily return of 0.000824, a Sharpe of 0.97 and a Calmar of 0.83. Holding for 1 day earns 0.000117, Sharpe 0.34 and Calmar 0.18. Of the 10-day hold's gain, 0.000552 of 0.000824 is timing, not the market's own rise.",
+    "F4": "The excess 10-day return belongs to the break bar itself. It is +0.064 on break bars, but +0.007 on bars 1\u20135 days after a break and \u22120.021 on bars 6\u201310 days after, so entering on the later bars adds nothing.",
+    "F5": "Band narrowness, which sizes the book, does not grade the rise, and if anything works the wrong way. The slope of excess return on compression has t 0.09 at 3 bars and \u22121.31 at 10 bars. Across compression quartiles from widest to narrowest band, the 3-bar excess falls from +0.0247 to +0.0033 and the 20-bar excess from +0.067 to \u22120.003.",
+    "F6": "The coin's 20-day return into the break does grade the 10-day continuation, with a slope of 0.353 (t 2.36, n 86 grid cases). It does not grade the 3-day continuation (t \u22120.23)."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin closes above the high of its prior 20-day band, price keeps rising beyond the band's top over the next 10 days, and the larger the coin's 20-day return into that break, the further it rises.",
+      "consequence": "A break that comes after a strong 20-day climb is worth holding for about ten days, rather than a narrow band's break being worth holding for three.",
+      "name": "momentum break ten-day continuation",
+      "from": "F2, F3, F4, F6",
+      "refs": [
+        "F2",
+        "F3",
+        "F4",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When a coin closes above the high of its prior 20-day band, the higher that close sits above the band's top, the further price keeps rising over the next 10 days.",
+      "consequence": "The breakout bar is the moment to be long, and a firmer break is the reason to hold through the following ten days.",
+      "name": "breakout bar ten-day drift",
+      "from": "F2, F3, F4",
+      "refs": [
+        "F2",
+        "F3",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "006-04_upside-squeeze-break-continuation.d1_momentum-break-ten-day-continuation",
+    "006-04_upside-squeeze-break-continuation.d2_breakout-bar-ten-day-drift"
+  ],
+  "no_ideas": null
+}
