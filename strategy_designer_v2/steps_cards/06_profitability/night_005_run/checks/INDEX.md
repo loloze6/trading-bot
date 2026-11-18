@@ -1,3 +1,4 @@
+005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal_1d: not profitable enough [Sharpe 0.5791; Sharpe minus holding's Sharpe -0.06043; Calmar 0.4156]
 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal_1d: not profitable enough [Sharpe 0.4862; Sharpe minus holding's Sharpe -0.1534; Calmar 0.3026]
 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence_1d: not profitable enough [Sharpe 0.02401; Sharpe minus holding's Sharpe -0.6155; Calmar -0.004092]
 005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal_1d: not profitable enough [Sharpe -0.1934; Sharpe minus holding's Sharpe -0.8329; Calmar -0.16]
