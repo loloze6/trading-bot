@@ -1,0 +1,54 @@
+{
+  "line": "7.g",
+  "backtest": "003-01_thin-volume-rise-reverses_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.4615669,
+  "findings": {
+    "F1": "The tested short fought a continuation. The top quintile of one-day moves in 20-day volatility units was followed by a mean excess 5-day return of +0.0160 (t 3.31, n 598, non-overlapping 5-day grid). On up days only, the largest-rise quartile gave +0.0180 (t 2.91, n 356), and the rise's size ranked positively with the excess 5-day return (Spearman rho 0.080, p 0.0026, n 1422). The effect held in both halves: 2018-2021 gave +0.0261 (t 3.42, n 256) and 2022-2025 gave +0.0085 (t 1.36, n 342).",
+    "F2": "Heavy volume is what carries the continuation of large rises, and thin volume does not reverse them. Across the larger half of up days, by volume tercile against the prior 30-day mean:",
+    "F3": "The day's log volume ratio against its prior 30-day mean ranks positively with the coin's excess 5-day return on all days (rho 0.064, p 0.0005, n 2987). The relation appears on both day types: up days rho 0.070 (p 0.008) and down days rho 0.057 (p 0.023). By volume quintile the excess return runs \u22120.0073, \u22120.0052, \u22120.0044, +0.0060, +0.0058. It is uneven across time and coins:",
+    "F4": "The book sat short at a near-constant size, regardless of how large the rise was. Its mean position on active up days ran \u22120.40, \u22120.34, \u22120.36 and \u22120.33 across the rise quartiles, so it was fully exposed to the continuation in F1. Its daily mean return was negative or about zero on every coin (BTC \u22120.00050, ETH \u22120.00046, XMR \u22120.00044), and its Sharpe was \u22120.54.",
+    "F5": "Weekday effects looked strong when pooled but are unstable, so they are not counted as a finding. Pooled, Monday gave +0.0143 (t 2.89) and Sunday \u22120.0118 (t \u22122.19). Between halves, Wednesday went from \u22120.0229 (t \u22123.19) to \u22120.0014, and Sunday flipped from +0.0121 to \u22120.0263."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin rises sharply over one day on volume above its own 30-day average daily volume, it keeps rising over the next 5 days. The larger the rise in units of its 20-day volatility and the heavier the volume against that average, the larger the further gain.",
+      "consequence": "A large rise on heavy volume is a reason to be long the coin for the following days rather than to fade it.",
+      "name": "heavy-volume rises keep going",
+      "from": "F1, F2, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F4"
+      ]
+    },
+    {
+      "idea": "The larger a coin's one-day return in units of its 20-day return volatility, the higher its return over the next 5 days, in the direction of that day's move.",
+      "consequence": "A trader should avoid shorting a coin after its unusually large up days, since those days are followed by further gains.",
+      "name": "large daily moves continue",
+      "from": "F1, F4",
+      "refs": [
+        "F1",
+        "F4"
+      ]
+    },
+    {
+      "idea": "The heavier a day's volume against the coin's prior 30-day average daily volume, the higher the coin's return over the next 5 days, and the thinner that volume, the lower that return.",
+      "consequence": "A day's relative volume tilts a trader's next-week view of the coin: thin days lean short and heavy days lean long.",
+      "name": "relative volume leads returns",
+      "from": "F3, F2",
+      "refs": [
+        "F3",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "003-01_thin-volume-rise-reverses.g1_heavy-volume-rises-keep-going",
+    "003-01_thin-volume-rise-reverses.g2_large-daily-moves-continue",
+    "003-01_thin-volume-rise-reverses.g3_relative-volume-leads-returns"
+  ],
+  "no_ideas": null
+}

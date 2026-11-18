@@ -1,3 +1,4 @@
+003-01_thin-volume-rise-reverses_1d: inconclusive (fit: adapted) [main: -0.00141715; ordinary t of the mean -0.301137; active grid cases 999, top 20% cases 200]
 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.d1_weekend-move-reverses-both-ways.g1_large-daily-fall-rebounds_1d: confirmed (fit: adapted) [main: 0.000365649; t of the mean 3.33524; bars with a non-zero position 6725, bars in the top-10% group 1059, bars in the main measure 17380]
 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.d1_weekend-move-reverses-both-ways_1d: inconclusive (fit: adapted) [main: 0.00429027; ordinary t of the mean 2.75089; Sunday cases 2464, larger |forecast| half 1232, smaller |forecast| half 1232]
 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal_1d: confirmed (fit: adapted) [main: 0.00553164; t of the mean 5.09534; bars with forecast > 0 3982]

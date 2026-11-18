@@ -4,7 +4,6 @@ One row per idea run; every status is read from the step's own result file. Each
 
 | Idea | Parent | Step 3 | Step 5 | Step 6 | Step 7: ideas proposed | USD | Minutes |
 |---|---|---|---|---|---|---|---|
-| 003-01_thin-volume-rise-reverses | - | missing-components | - | - | - | 0.29 | 0.4 |
 | 003-02_thin-volume-drop-rebounds | - | missing-components | - | - | - | 0.05 | 0.4 |
 | 003-03_heavy-volume-rise-continues | - | missing-components | - | - | - | 0.05 | 0.3 |
 | 003-04_heavy-volume-drop-continues | - | missing-components | - | - | - | 0.04 | 0.3 |
@@ -34,19 +33,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal.g1_high-volume-weekend-moves-reverse | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal | missing-components | - | - | - | 0.05 | 0.3 |
 | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week.g1_sunday-move-reverses-volatility-graded | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week | plan | confirmed (+5.39) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.d: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week.g1_sunday-move-reverses-volatility-graded.d1_two-day-sunday-fade-high-vol, 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week.g1_sunday-move-reverses-volatility-graded.d2_extreme-sunday-moves-reverse-less; 7.g: 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week.g1_sunday-move-reverses-volatility-graded.g1_high-volatility-daily-moves-reverse, 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week.g1_sunday-move-reverses-volatility-graded.g2_volatile-period-falls-rebound, 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g2_sunday-fall-rebounds-early-week.g1_sunday-move-reverses-volatility-graded.g3_calm-period-moves-continue | 1.13 | 9.8 |
 | 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal.g1_high-vol-down-day-rebound | 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal | missing-components | - | - | - | 0.08 | 0.6 |
+| 003-01_thin-volume-rise-reverses | - | plan | inconclusive (-0.30) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: 003-01_thin-volume-rise-reverses.b1_heavy-volume-falls-rebound; 7.d: 003-01_thin-volume-rise-reverses.d1_thin-rise-fades-in-downtrends, 003-01_thin-volume-rise-reverses.d2_heavy-volume-rise-continues, 003-01_thin-volume-rise-reverses.d3_thin-volume-fall-continues; 7.g: 003-01_thin-volume-rise-reverses.g1_heavy-volume-rises-keep-going, 003-01_thin-volume-rise-reverses.g2_large-daily-moves-continue, 003-01_thin-volume-rise-reverses.g3_relative-volume-leads-returns | 1.98 | 6.6 |
 
 ## Consumption
-30 ideas, 26.73 USD, 167.3 minutes in all.
+30 ideas, 28.42 USD, 173.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.39 | 15.6 |
-| step4_backtest | 0.00 | 67.6 |
-| step5_verdict | 2.48 | 11.1 |
-| step6_check | 0.00 | 0.9 |
+| step3_plan | 2.81 | 16.4 |
+| step4_backtest | 0.00 | 68.8 |
+| step5_verdict | 2.61 | 11.7 |
+| step6_check | 0.00 | 1.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 2.63 | 8.4 |
-| step7_7.d | 10.80 | 37.1 |
-| step7_7.g | 8.44 | 26.5 |
+| step7_7.b | 2.97 | 9.5 |
+| step7_7.d | 11.14 | 38.2 |
+| step7_7.g | 8.90 | 27.9 |
+| chart_files | 0.00 | 0.0 |

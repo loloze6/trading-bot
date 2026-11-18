@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of -forecast/10 x (coin 5-bar return minus coin mean 5-bar return), active grid bars",
+    "value": -0.0014171484590905698,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": -0.30113697169366105
+    },
+    "threshold": "t >= 2 confirms (with supporting check), t <= -2 rejects, otherwise inconclusive; < 100 active grid cases not observable"
+  },
+  "supporting_check": {
+    "name": "mean excess 5-bar return of the 20% most negative-forecast active grid bars below 0",
+    "value": -0.002213438100350664,
+    "passed": true
+  },
+  "counts": {
+    "active grid cases": 999,
+    "top 20% cases": 200
+  },
+  "decided_by": "The main measure's t is strictly between -2 and 2.",
+  "reading": "The coin's mean 5-bar return is the mean over all its non-overlapping grid bars (positions 0,5,10,... with a full 5-bar return inside the window) in all windows, the top 20% is the ceiling of 0.2 x the active grid cases ranked by most negative forecast, and the plan's 'fewer than 100 active grid cases' is applied as the minimum count giving 'not observable'."
+}
