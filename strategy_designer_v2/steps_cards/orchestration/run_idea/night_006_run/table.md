@@ -11,21 +11,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 006-05_downside-squeeze-break-continuation | - | missing-components | - | - | - | 0.12 | 0.9 |
 | 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise | 006-04_upside-squeeze-break-continuation | plan | confirmed (+2.96) | not profitable enough (failed: Calmar) | 7.d: 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.d1_volume-surge-within-uptrend, 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.d2_volume-surge-after-down-day; 7.g: 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation, 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g2_volume-surge-widens-moves | 0.83 | 5.2 |
 | 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound | 006-04_upside-squeeze-break-continuation | plan | confirmed (+2.22) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.d: 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.d1_capitulation-rebound-within-uptrends, 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.d2_thin-volume-downtrend-continuation; 7.g: 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g1_volume-surge-predicts-weekly-return, 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g2_thin-volume-declines-keep-falling, 006-04_upside-squeeze-break-continuation.g2_capitulation-volume-rebound.g3_compression-precedes-quieter-moves | 0.85 | 4.1 |
-| 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation | 006-04_upside-squeeze-break-continuation | missing-components | - | - | - | 0.08 | 0.6 |
+| 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation | 006-04_upside-squeeze-break-continuation | plan | inconclusive (+0.39) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.b: 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.b1_wide-range-breakout-more-coins, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.b2_volume-backed-breakout-continuation; 7.d: 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.d1_volume-surge-breakout-follow-through, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.d2_breakout-rise-lasts-days; 7.g: 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g1_one-day-drop-rebound, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g2_ten-day-momentum-continuation, 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation.g3_breakout-distance-sizes-continuation | 1.27 | 7.0 |
 
 ## Consumption
-8 ideas, 3.19 USD, 17.2 minutes in all.
+8 ideas, 4.38 USD, 23.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.55 | 3.9 |
-| step4_backtest | 0.00 | 4.5 |
-| step5_verdict | 0.35 | 1.4 |
+| step3_plan | 0.62 | 4.4 |
+| step4_backtest | 0.00 | 6.3 |
+| step5_verdict | 0.48 | 1.9 |
 | step6_check | 0.00 | 0.1 |
-| chart_files | 0.00 | 0.0 |
+| chart_files | 0.00 | 0.1 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.b | 0.30 | 1.0 |
-| step7_7.g | 1.01 | 3.2 |
-| step7_7.d | 0.97 | 3.1 |
+| step7_7.b | 0.62 | 2.0 |
+| step7_7.g | 1.36 | 4.5 |
+| step7_7.d | 1.31 | 4.2 |

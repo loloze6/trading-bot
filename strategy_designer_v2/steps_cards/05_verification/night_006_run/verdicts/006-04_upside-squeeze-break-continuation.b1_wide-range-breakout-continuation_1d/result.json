@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of slope of excess 10-bar return on width forecast",
+    "value": 0.3915982590948294,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 0.3915982590948294
+    },
+    "threshold": "slope t >= 2 (with top-minus-bottom third > 0) confirms; slope t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "top minus bottom third mean excess 10-bar return (Welch t 0.36)",
+    "value": 0.009296378091439596,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping breakout cases": 404
+  },
+  "decided_by": "Slope t 0.39 lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "Situation recomputed as close above the highest high of the prior 20 rows within each window, active bars in a window's first 20 rows (no in-window history) left out of the agreement; breakout cases are regime 'trending' bars taken greedily (first, then next at least 10 bars later) per window, cases without a 10-bar forward return inside the window dropped; the coin's mean 10-bar return is taken on the non-overlapping grid (positions 0,10,20,...) of all its windows; thirds are the floor(n/3) lowest and highest forecasts; the plan's 'fewer than 60 cases' is reported as 'not observable'."
+}
