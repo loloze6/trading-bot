@@ -1,6 +1,6 @@
 # Proof 9: the four speed points of measurement 8, proven, and the time before and after (2026-11-18)
 
-The two changes measurement 8 led to, each on the operator's go, in shared code (`trading-bot/`). Each was proven
+The four changes measurement 8 led to, each on the operator's go, in shared code (`trading-bot/`). Each was proven
 the same way: backtests rerun on fixed inputs and compared file by file with their records (the engine's files per
 window: bars, trades, metrics, forecast distribution), and the bot's suite.
 
