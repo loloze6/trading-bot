@@ -1,0 +1,66 @@
+{
+  "line": "7.g",
+  "backtest": "011-02_weekend-drop-rebounds-monday_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.5707163,
+  "findings": {
+    "F1": "The day after a coin's largest falls it rebounds. Across all coins, bars in the lowest fifth of one-day return (in 20-day usual moves) are followed by a next-day excess return of +0.44 % (t 4.73, n 3188). The middle-upper fifth is followed by \u22120.25 % (t \u22123.01, n 3188), and the top fifth by \u22120.07 % (t \u22120.76).",
+    "F2": "The rebound after a fall is concentrated on high-volume days. Down days in the top third of relative volume (volume over its 20-day mean) are followed by +0.47 % excess the next day (t 4.31, n 2607). Down days in the low and middle thirds are followed by \u22120.04 % and +0.10 % (t \u22120.43 and 1.11). Up days on low and middle relative volume are followed by \u22120.21 % (t \u22122.52, n 2746) and \u22120.27 % (t \u22123.14, n 2661).",
+    "F3": "Weekend days show a two-sided, graded reversal that weekdays lack. On Saturdays and Sundays the next-day excess runs from +0.62 % (t 2.71, n 614) and +0.32 % (t 2.15) in the two lowest return fifths to \u22120.51 % (t \u22123.71, n 1044) and \u22120.50 % (t \u22122.56, n 732) in the two highest. On weekdays only the lowest fifth stands out (+0.40 %, t 3.92), and the top fifth is +0.06 % (t 0.57).",
+    "F4": "The tested idea's own situation shows no grading in any coin. Per-coin correlations of Sunday-drop size with the next 2-day excess return (scaled by volatility) range from \u22120.085 to +0.079, every t within \u00b11.15, with 150\u2013201 Sundays per coin.",
+    "F5": "A coin's whole weekend (Saturday plus Sunday) move continues rather than reverses. Its correlation with the next 2-day excess return (scaled by volatility) is +0.069 (t 3.30, n 2261), while the Sunday move alone gives \u22120.030 (t \u22121.44). The two-day move ending Thursday continues even more strongly (corr +0.086, t 4.08, n 2261).",
+    "F6": "The book's gain comes from the Monday bar. Its mean return is +0.10 % on Mondays (t 2.96, n 2484) and \u22120.001 % on Tuesdays (t \u22120.04), while holding the coins returned \u22120.009 % on Mondays. Sunday-held positions in the top allocation third were followed by +0.56 % excess (t 2.16, n 338).",
+    "F7": "A day-range effect matches F1. Days in the top fifth of relative high-low range (over its 20-day mean) are followed by +0.32 % excess the next day (t 3.06, n 3216)."
+  },
+  "ideas": [
+    {
+      "idea": "A coin that falls on a day of high trading volume relative to its own last 20 days rises over the next 1 day. The larger the fall in usual daily moves and the higher that relative volume, the larger the rise.",
+      "consequence": "Heavy-volume sell-offs are a reason to buy for a one-day rebound rather than to follow the move.",
+      "name": "high-volume drop next-day rebound",
+      "from": "F1, F2, F7",
+      "refs": [
+        "F1",
+        "F2",
+        "F7"
+      ]
+    },
+    {
+      "idea": "A coin that rises on a Saturday or a Sunday falls over the next 1 day, and the larger that day's rise in usual daily moves, the larger the fall.",
+      "consequence": "Sharp weekend rallies are a reason to fade or trim longs for the following day.",
+      "name": "weekend rally next-day fade",
+      "from": "F3",
+      "refs": [
+        "F3"
+      ]
+    },
+    {
+      "idea": "A coin that rises on a day of low trading volume relative to its own last 20 days falls over the next 1 day. The lower that relative volume and the larger the rise, the larger the fall.",
+      "consequence": "Thin-volume up days are a reason to refuse chasing and to expect a one-day giveback.",
+      "name": "thin-volume rise gives back",
+      "from": "F2, F1",
+      "refs": [
+        "F2",
+        "F1"
+      ]
+    },
+    {
+      "idea": "A coin's Saturday-plus-Sunday return continues over the next 2 days (Monday and Tuesday) in the same direction, and the larger the weekend move in usual moves, the larger the follow-through.",
+      "consequence": "A strong two-day weekend move is a reason to trade with it into Monday and Tuesday, not against it.",
+      "name": "weekend two-day move continues",
+      "from": "F5, F4",
+      "refs": [
+        "F5",
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "011-02_weekend-drop-rebounds-monday.g1_high-volume-drop-next-day-rebound",
+    "011-02_weekend-drop-rebounds-monday.g2_weekend-rally-next-day-fade",
+    "011-02_weekend-drop-rebounds-monday.g3_thin-volume-rise-gives-back",
+    "011-02_weekend-drop-rebounds-monday.g4_weekend-two-day-move-continues"
+  ],
+  "no_ideas": null
+}

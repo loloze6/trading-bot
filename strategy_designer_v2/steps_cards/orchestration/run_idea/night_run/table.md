@@ -36,20 +36,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 010-01_rsi-above-midpoint-continues-up | - | plan | inconclusive (+1.82) | not profitable enough (failed: Calmar) | 7.b: 010-01_rsi-above-midpoint-continues-up.b1_rsi-share-more-coins; 7.d: 010-01_rsi-above-midpoint-continues-up.d1_rsi-above-share-long-side-only; 7.g: 010-01_rsi-above-midpoint-continues-up.g1_one-day-move-continues-weekly | 0.99 | 4.9 |
 | 003-02_thin-volume-drop-rebounds | - | plan | inconclusive (-1.91) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.b: 003-02_thin-volume-drop-rebounds.b1_heavy-volume-drop-rebounds, 003-02_thin-volume-drop-rebounds.b2_heavy-volume-rise-continues; 7.d: 003-02_thin-volume-drop-rebounds.d1_thin-drops-rebound-in-uptrends, 003-02_thin-volume-drop-rebounds.d2_quiet-drops-extend-downtrends; 7.g: 003-02_thin-volume-drop-rebounds.g1_volume-surge-precedes-gains, 003-02_thin-volume-drop-rebounds.g2_heavy-volume-rallies-continue | 1.30 | 6.1 |
 | 010-02_rsi-below-midpoint-continues-down | - | plan | inconclusive (+1.82) | not profitable enough (failed: Calmar) | 7.b: 010-02_rsi-below-midpoint-continues-down.b1_rsi-below-share-more-coins, 010-02_rsi-below-midpoint-continues-down.b2_rsi-below-share-next-day; 7.d: 010-02_rsi-below-midpoint-continues-down.d1_rsi-downside-with-falling-month, 010-02_rsi-below-midpoint-continues-down.d2_rsi-downside-in-calm-markets; 7.g: 010-02_rsi-below-midpoint-continues-down.g1_high-volatility-one-day-reversal | 1.10 | 5.2 |
+| 011-02_weekend-drop-rebounds-monday | - | plan | inconclusive (+1.35) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.b: 011-02_weekend-drop-rebounds-monday.b1_weekend-drop-rebound-more-coins, 011-02_weekend-drop-rebounds-monday.b2_weekend-rise-fades-monday; 7.d: 011-02_weekend-drop-rebounds-monday.d1_weekend-drop-rebounds-in-downtrend, 011-02_weekend-drop-rebounds-monday.d2_sunday-move-reverses-monday; 7.g: 011-02_weekend-drop-rebounds-monday.g1_high-volume-drop-next-day-rebound, 011-02_weekend-drop-rebounds-monday.g2_weekend-rally-next-day-fade, 011-02_weekend-drop-rebounds-monday.g3_thin-volume-rise-gives-back, 011-02_weekend-drop-rebounds-monday.g4_weekend-two-day-move-continues | 1.54 | 7.2 |
 
 ## Consumption
-32 ideas, 31.76 USD, 189.3 minutes in all.
+33 ideas, 33.30 USD, 196.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 3.02 | 17.9 |
-| step4_backtest | 0.00 | 72.1 |
-| step5_verdict | 3.04 | 13.9 |
-| step6_check | 0.00 | 1.0 |
+| step3_plan | 3.12 | 18.6 |
+| step4_backtest | 0.00 | 73.3 |
+| step5_verdict | 3.19 | 14.5 |
+| step6_check | 0.00 | 1.1 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
-| step7_7.b | 3.72 | 11.9 |
-| step7_7.d | 12.11 | 41.4 |
-| step7_7.g | 9.87 | 31.0 |
-| chart_files | 0.00 | 0.0 |
+| step7_7.b | 4.07 | 13.0 |
+| step7_7.d | 12.49 | 42.8 |
+| step7_7.g | 10.44 | 33.0 |
+| chart_files | 0.00 | 0.1 |

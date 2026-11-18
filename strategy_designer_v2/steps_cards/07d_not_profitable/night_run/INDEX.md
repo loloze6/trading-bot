@@ -21,3 +21,4 @@
 011-01_weekend-rise-reverses-monday.d2_weekend-falls-rebound-early-week_1d: 2 ideas (2 explorations)
 011-01_weekend-rise-reverses-monday.g1_volatile-day-selloffs-bounce-next_1d: 2 ideas (3 explorations)
 011-01_weekend-rise-reverses-monday_1d: 2 ideas (2 explorations)
+011-02_weekend-drop-rebounds-monday_1d: 2 ideas (2 explorations)

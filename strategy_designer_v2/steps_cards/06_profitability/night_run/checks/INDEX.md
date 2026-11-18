@@ -21,3 +21,4 @@
 011-01_weekend-rise-reverses-monday.d2_weekend-falls-rebound-early-week_1d: not profitable enough [Sharpe 0.3202; Sharpe minus holding's Sharpe -0.2339; Calmar 0.1516]
 011-01_weekend-rise-reverses-monday.g1_volatile-day-selloffs-bounce-next_1d: not profitable enough [Sharpe 0.7317; Sharpe minus holding's Sharpe 0.1775; Calmar 0.5963]
 011-01_weekend-rise-reverses-monday_1d: not profitable enough [Sharpe -0.01342; Sharpe minus holding's Sharpe -0.5676; Calmar -0.02905]
+011-02_weekend-drop-rebounds-monday_1d: not profitable enough [Sharpe 0.3124; Sharpe minus holding's Sharpe -0.2418; Calmar 0.1329]

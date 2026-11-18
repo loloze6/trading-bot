@@ -30,3 +30,4 @@
 011-01_weekend-rise-reverses-monday.g1_volatile-day-selloffs-bounce-next_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d: missing-components: The idea's core is volume relative to its 60-bar average, which sits in the coin's own bars, but no catalogue [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 011-01_weekend-rise-reverses-monday_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+011-02_weekend-drop-rebounds-monday_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]

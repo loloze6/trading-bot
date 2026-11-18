@@ -21,3 +21,4 @@
 011-01_weekend-rise-reverses-monday.d2_weekend-falls-rebound-early-week_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 011-01_weekend-rise-reverses-monday.g1_volatile-day-selloffs-bounce-next_1d: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 011-01_weekend-rise-reverses-monday_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+011-02_weekend-drop-rebounds-monday_1d: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)

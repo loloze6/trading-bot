@@ -21,3 +21,4 @@
 011-01_weekend-rise-reverses-monday.d2_weekend-falls-rebound-early-week_1d: confirmed (fit: adapted) [main: 0.00136272; OLS slope t 4.21733; Sunday bars with forecast > 0 1176, Sunday bars in total 2441]
 011-01_weekend-rise-reverses-monday.g1_volatile-day-selloffs-bounce-next_1d: confirmed (fit: adapted) [main: 0.006223; ordinary t of the mean (n=2295) 5.53155; cases with forecast >= 5 2295, high-volatility half cases 585, low-volatility half cases 586]
 011-01_weekend-rise-reverses-monday_1d: inconclusive (fit: adapted) [main: 0.00645658; ordinary t of the mean 2.7527; cases pooled 1268, large-forecast half 634, small-forecast half 634]
+011-02_weekend-drop-rebounds-monday_1d: inconclusive (fit: adapted) [main: 0.00273526; t of the mean 1.34532; cases with forecast > 0 1197]
