@@ -57,3 +57,6 @@ volume_run | 003-03_heavy-volume-rise-continues_1d | volume-weighted rise | exis
 volume_run | 011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g2_heavy-volume-fall-rebounds_1d | VolumeToMedianRatio | exists: VolumeRatioComponent {"exclude_current": 1, "period": 20, "statistic": "median"}
 volume_run | 011-01_weekend-rise-reverses-monday.b2_weekend-rise-reversal-more-coins.g1_weekend-day-one-day-reversal.g1_high-volume-weekend-moves-reverse_1d | VolumeWeightedScaledReturnComponent | exists: VolumeWeightedScaledReturnComponent {"vol_period": 20, "volume_period": 20}
 night_013_run | 013-05_longer-stall-bigger-breakout_1d | StallUnderHighCountComponent | built: StallUnderHighCountComponent {"band": 10.0, "period": 365, "window": 60}
+night_006_run | 006-05_downside-squeeze-break-continuation_1d | DistanceBelowPriorLow | built: DistanceFromHighComponent {"exclude_current": 1, "extreme": "low", "form": "percent", "period": 20, "source": "high"}
+night_006_run | 006-05_downside-squeeze-break-continuation_1d | PriorRangeCompressionRatio | built: RangeCompressionRatioComponent {"exclude_current": 1, "long_period": 100, "short_period": 20}
+night_006_run | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation_1d | RangeWidthRatio | built: RangeCompressionRatioComponent {"form": "width", "long_period": 100, "short_period": 20}

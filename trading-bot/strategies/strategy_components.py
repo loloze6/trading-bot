@@ -1847,35 +1847,35 @@ class WeekdayComponent(SubStrategyComponent):
 
 class DistanceFromHighComponent(SubStrategyComponent):
     """
-    Percent distance of the close from a recent high, on every bar:
+    The close's percent distance from the extreme of a recent window, on every bar:
 
-        exclude_current = 0 (default): H = max(src[t - period + 1 .. t])   (bar t included)
-        exclude_current = 1:           H = max(src[t - period .. t - 1])   (bar t excluded)
-        raw_value = (close[t] - H) / H x 100
+        W = the last `period` rows, bar t included (exclude_current 0),
+            or rows t-period .. t-1, bar t excluded (exclude_current 1)
+        column: "close" with source "close"; with source "high", the bar's extreme on the
+                `extreme` side: the `high` column (extreme "high") or the `low` column (extreme "low")
+        R = max(column over W) with extreme "high" (default), min(column over W) with extreme "low"
+        form "percent" (default):  raw_value = (close[t] - R) / R x 100
+        form "proximity":          raw_value = (1 / (1 + D)) ** power,
+                                   D = max(0, (R - close[t]) / R x 100)  (extreme "high")
+                                   D = max(0, (close[t] - R) / R x 100)  (extreme "low")
 
-    src is the `close` column (source "close", default) or the `high` column (source "high").
-    form "percent" (default): the value above. form "proximity": (1 / (1 + D)) ^ power, D = max(0, (H - close[t]) / H
-    x 100) the depth below the high in percent: 1 at the high (or above a prior high), smaller the deeper below it,
-    above 0; `power` (default 1.0, above 0) makes it convex (merged on 2026-11-17 from ConvexHighProximityComponent,
-    whose output is form "proximity", period 365, power 2.0: rule 1, one component per measure).
-    The defaults (source "close", exclude_current 0, form "percent") give the original output.
+    The defaults (extreme "high") give the original output, unchanged. With period 20, source "high",
+    exclude_current 1 and extreme "low", the output is
+    (close[t] - min(low[t-20..t-1])) / min(low[t-20..t-1]) x 100.
 
-    Range and sign:
-    - With exclude_current 0 the value is 0 to -100 and never positive: 0 at a new high, more negative the deeper
-      below it.
-    - With exclude_current 1 the value is -100 and up, unbounded above: positive and growing as the close clears
-      the prior high further, negative below it.
-    Graded.
-
+    Range and sign: graded. "high", "percent": 0 to -100 with exclude_current 0; -100 and up, signed,
+    with exclude_current 1. "low", "percent": 0 and up with exclude_current 0 (the close is never below
+    its own bar's low); -100 and up, signed, with exclude_current 1: negative and larger in size the
+    further the close falls below the prior low. "proximity": above 0, up to 1.
     Warm-up: period + exclude_current rows, bar t included.
 
-    WHY THIS CANNOT LEAK: it reads only the `close` column (and the `high` column with source "high") of the rows up
-    to and including bar t (the last row of data), over at most the last period + exclude_current rows. A bar's
-    close and high are known at that bar's close.
+    NaN: a NaN in the window, a NaN close[t], or an R not above 0 gives NaN. Building the component
+    raises for a period below 2, a source other than "close" or "high", an exclude_current other than
+    0 or 1, a form other than "percent" or "proximity", a power not above 0, or an extreme other than
+    "high" or "low".
 
-    NaN: a NaN in the window, a NaN close[t], or an H not above 0 gives NaN.
-    Building the component raises for a period below 2, a source other than "close" or "high", an
-    exclude_current other than 0 or 1, a form other than "percent" or "proximity", or a power not above 0.
+    WHY THIS CANNOT LEAK: it reads only the close of the last row (bar t) and the close, high or low of
+    the last period + exclude_current rows, all known at bar t's close; no later row is read.
     """
 
     def __init__(self, name="DistanceFromHigh", weight=1.0, parameters=None):
@@ -1883,10 +1883,9 @@ class DistanceFromHighComponent(SubStrategyComponent):
         self.period = int(self.parameters.get("period", 60))
         if self.period < 2:
             raise ValueError(f"DistanceFromHighComponent: period must be >= 2, got {self.period}")
-        src = self.parameters.get("source", "close")
-        if src not in ("close", "high"):
-            raise ValueError(f"DistanceFromHighComponent: source must be 'close' or 'high', got {src!r}")
-        self.source = src
+        self.source = self.parameters.get("source", "close")
+        if self.source not in ("close", "high"):
+            raise ValueError(f"DistanceFromHighComponent: source must be 'close' or 'high', got {self.source!r}")
         ex = self.parameters.get("exclude_current", 0)
         if ex not in (0, 1):
             raise ValueError(f"DistanceFromHighComponent: exclude_current must be 0 or 1, got {ex!r}")
@@ -1895,8 +1894,11 @@ class DistanceFromHighComponent(SubStrategyComponent):
         if self.form not in ("percent", "proximity"):
             raise ValueError(f"DistanceFromHighComponent: form must be 'percent' or 'proximity', got {self.form!r}")
         self.power = float(self.parameters.get("power", 1.0))
-        if not np.isfinite(self.power) or self.power <= 0:
-            raise ValueError(f"DistanceFromHighComponent: power must be > 0, got {self.power}")
+        if not self.power > 0:
+            raise ValueError(f"DistanceFromHighComponent: power must be above 0, got {self.power}")
+        self.extreme = self.parameters.get("extreme", "high")
+        if self.extreme not in ("high", "low"):
+            raise ValueError(f"DistanceFromHighComponent: extreme must be 'high' or 'low', got {self.extreme!r}")
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -1905,27 +1907,30 @@ class DistanceFromHighComponent(SubStrategyComponent):
         self.debug_info = {}
         if not self.is_ready():
             return
-        close = data['close'].astype(float)
-        src = data[self.source].astype(float)
+        col = "close" if self.source == "close" else self.extreme
+        values = data[col].astype(float)
         if self.exclude_current:
-            win = src.iloc[-(self.period + 1):-1]
+            win = values.iloc[-(self.period + 1):-1]
         else:
-            win = src.iloc[-self.period:]
-        last = float(close.iloc[-1])
-        if bool(win.isna().any()) or np.isnan(last):
+            win = values.iloc[-self.period:]
+        c = float(data["close"].astype(float).iloc[-1])
+        if win.isna().any() or np.isnan(c):
             self._raw_value = float("nan")
-            h = float("nan")
+            self.confidence = 1.0
+            return
+        ref = float(win.max()) if self.extreme == "high" else float(win.min())
+        if not ref > 0:
+            self._raw_value = float("nan")
+        elif self.form == "percent":
+            self._raw_value = float((c - ref) / ref * 100.0)
         else:
-            h = float(win.max())
-            if not h > 0:
-                self._raw_value = float("nan")
-            elif self.form == "proximity":
-                depth = max(0.0, (h - last) / h * 100.0)
-                self._raw_value = float(np.power(1.0 / (1.0 + depth), self.power))
+            if self.extreme == "high":
+                d = max(0.0, (ref - c) / ref * 100.0)
             else:
-                self._raw_value = float((last - h) / h * 100.0)
+                d = max(0.0, (c - ref) / ref * 100.0)
+            self._raw_value = float((1.0 / (1.0 + d)) ** self.power)
         self.confidence = 1.0
-        self.debug_info = {'high_level': h, 'close': last}
+        self.debug_info = {'reference': ref, 'extreme': self.extreme, 'column': col}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
@@ -2220,24 +2225,30 @@ class RsiChangeFromPriorLowComponent(SubStrategyComponent):
 
 class RangeCompressionRatioComponent(SubStrategyComponent):
     """
-    How narrow the recent high-low band is against a longer high-low range, on every bar:
+    How narrow the recent high-low band is against a longer one, on every bar:
 
-        R_s = max(high[t-short_period+1 .. t]) - min(low[t-short_period+1 .. t])
-        R_l = max(high[t-long_period+1  .. t]) - min(low[t-long_period+1  .. t])
-        raw_value = 1 - R_s / R_l          (0.0 if R_l == 0)
+        exclude_current = 0 (default): end = t      (windows end at bar t, included)
+        exclude_current = 1:           end = t - 1  (windows end at bar t-1)
+        S = max(high[end-short_period+1 .. end]) - min(low[end-short_period+1 .. end])
+        L = max(high[end-long_period+1 .. end])  - min(low[end-long_period+1 .. end])
+        form = "compression" (default): raw_value = 1 - S / L   (0.0 when L is 0)
+        form = "width":                  raw_value = S / L       (1.0 when L is 0)
 
-    Range and sign: 0 to 1, never negative, no direction. The short window lies inside the long one, so
-    0 <= R_s <= R_l. The value is 0 when the short band spans the whole long range and grows continuously
-    towards 1 as the short band narrows. If every bar of the long window has the same high and low
-    (R_l == 0), there is no range to compare with. The short band then equals the long one, so the value is 0.0.
+    "width" is exactly 1 minus "compression". No config step gives 1 minus a value, so it is a setting.
+    The defaults (form "compression", exclude_current 0) give the original output, unchanged.
+    With short_period 20, long_period 100 and form "width", the output is
+    (max high - min low over the last 20 bars) / (max high - min low over the last 100 bars).
 
-    Warm-up: `long_period` bars (100 at the defaults), bar t included.
+    Range and sign: 0 to 1, never negative, no direction. The short window lies inside the long one, so S <= L.
+    Graded: the value moves continuously with the two ranges.
+    Warm-up: long_period + exclude_current rows, bar t included.
 
-    NaN: a NaN high or low anywhere in the last `long_period` rows gives NaN, never a fabricated value.
-    `short_period` < 1 or `short_period` >= `long_period` raises when the component is built.
+    NaN: a NaN high or low anywhere in the long window gives NaN. A missing high or low column raises.
+    Building the component raises for a short_period below 1, a short_period at or above long_period, an
+    exclude_current other than 0 or 1, or a form other than "compression" or "width".
 
-    WHY THIS CANNOT LEAK: it reads only the `high` and `low` columns of the last `long_period` rows of the data it
-    is given, bar t (the last row) included. A bar's high and low are known at that bar's close.
+    WHY THIS CANNOT LEAK: it reads only the high and low columns of the last long_period + exclude_current rows
+    of data, the last of which is bar t; a bar's high and low are known at that bar's close.
     """
 
     def __init__(self, name="RangeCompressionRatio", weight=1.0, parameters=None):
@@ -2245,12 +2256,20 @@ class RangeCompressionRatioComponent(SubStrategyComponent):
         self.short_period = int(self.parameters.get("short_period", 20))
         self.long_period = int(self.parameters.get("long_period", 100))
         if self.short_period < 1:
-            raise ValueError(
-                f"RangeCompressionRatioComponent: short_period must be >= 1, got {self.short_period}")
+            raise ValueError(f"RangeCompressionRatioComponent: short_period must be >= 1, got {self.short_period}")
         if self.short_period >= self.long_period:
             raise ValueError(
-                "RangeCompressionRatioComponent: short_period must be < long_period, got "
+                f"RangeCompressionRatioComponent: short_period must be below long_period, got "
                 f"{self.short_period} and {self.long_period}")
+        ex = self.parameters.get("exclude_current", 0)
+        if ex not in (0, 1):
+            raise ValueError(f"RangeCompressionRatioComponent: exclude_current must be 0 or 1, got {ex!r}")
+        self.exclude_current = int(ex)
+        form = self.parameters.get("form", "compression")
+        if form not in ("compression", "width"):
+            raise ValueError(
+                f"RangeCompressionRatioComponent: form must be 'compression' or 'width', got {form!r}")
+        self.form = form
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -2259,30 +2278,35 @@ class RangeCompressionRatioComponent(SubStrategyComponent):
         self.debug_info = {}
         if not self.is_ready():
             return
-        high_l = data['high'].iloc[-self.long_period:].astype(float).to_numpy()
-        low_l = data['low'].iloc[-self.long_period:].astype(float).to_numpy()
-        if np.isnan(high_l).any() or np.isnan(low_l).any():
+        high = data['high'].astype(float).to_numpy()
+        low = data['low'].astype(float).to_numpy()
+        end = len(high) - self.exclude_current
+        lh = high[end - self.long_period:end]
+        ll = low[end - self.long_period:end]
+        sh = high[end - self.short_period:end]
+        sl = low[end - self.short_period:end]
+        if np.isnan(lh).any() or np.isnan(ll).any():
             self._raw_value = float("nan")
-            self.confidence = 1.0
-            self.debug_info = {'nan_input': True}
-            return
-        high_s = high_l[-self.short_period:]
-        low_s = low_l[-self.short_period:]
-        r_long = float(high_l.max() - low_l.min())
-        r_short = float(high_s.max() - low_s.min())
-        if r_long > 0:
-            value = 1.0 - r_short / r_long
+            self.debug_info = {'short_range': float("nan"), 'long_range': float("nan")}
         else:
-            value = 0.0
-        self._raw_value = float(value)
+            long_range = float(lh.max() - ll.min())
+            short_range = float(sh.max() - sl.min())
+            if not long_range > 0:
+                compression = 0.0
+                width = 1.0
+            else:
+                ratio = short_range / long_range
+                compression = 1.0 - ratio
+                width = ratio
+            self._raw_value = float(width if self.form == "width" else compression)
+            self.debug_info = {'short_range': short_range, 'long_range': long_range, 'form': self.form}
         self.confidence = 1.0
-        self.debug_info = {'short_range': r_short, 'long_range': r_long}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
     def get_required_periods(self) -> int:
-        return self.long_period
+        return self.long_period + self.exclude_current
 
 
 class LowerWickComponent(SubStrategyComponent):
