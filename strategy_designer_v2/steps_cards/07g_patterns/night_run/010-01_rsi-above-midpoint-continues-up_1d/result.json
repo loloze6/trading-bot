@@ -1,0 +1,31 @@
+{
+  "line": "7.g",
+  "backtest": "010-01_rsi-above-midpoint-continues-up_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.32939300000000005,
+  "findings": {
+    "F1": "The coin's last one-day return predicts the next 7 days in the same direction. The pooled OLS slope of the 7-day forward return minus the coin's mean, on the per-coin standardised 1-day return, is 0.0107 per standard deviation (t = 2.79, n = 767 non-overlapping cases, BTC and ETH). By quintile, the lowest 1-day return quintile is followed by \u22122.01% (t = \u22122.29) and the top two quintiles by +1.16% and +1.17%. The same return scaled by its own 60-day volatility keeps the sign (slope 0.0082, t = 2.02, n = 671).",
+    "F2": "The tested RSI-above-midline share gives a graded but weaker version of this momentum. Its quintiles run from \u22120.66% to +1.15% excess 7-day return, with pooled t = 1.73 (n = 815). The 14-day return gives t = 1.60 (n = 719), the 3-day return t = 0.72, and the 60-day return t = \u22120.13 (n = 383). The information sits in the most recent moves, not in long trends.",
+    "F3": "The book's gain comes from being long in coins whose 60-day return is positive. The mean daily gain there is 0.00305 (t = 3.71, n = 1231). Longs in falling coins earn \u22120.00218 (t = \u22121.43, n = 226) and shorts earn about nothing overall (0.000071 per day, n = 2784). Since the 60-day return does not predict excess 7-day returns (t = \u22120.13), this is the coins' own rise, not timing.",
+    "F4": "Inside 60-day up and down trends, the share's slope on the excess 7-day return has opposite signs and is not significant either way: +0.021 (t = 0.92, n = 208) and \u22120.020 (t = \u22120.63, n = 175). The trend regime does not sharpen the RSI effect.",
+    "F5": "The weekday effects do not hold across the two halves of the years. Thursday and Friday next-day returns have t = 2.41 and 2.72 in the earlier years but t = \u22120.10 and 0.47 in the later ones. Only Tuesday is positive in both halves (t = 1.44 and 2.16). Volatility level (14-day vol quintiles, all |t| < 0.9) and bar range show no graded link to later returns."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's one-day return relative to its own recent 60-day daily volatility, the larger its move in the same direction over the next 7 days.",
+      "consequence": "A trader would lean with the most recent day's outsized move for the following week rather than wait for a multi-week RSI regime to form.",
+      "name": "one-day move continues weekly",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "010-01_rsi-above-midpoint-continues-up.g1_one-day-move-continues-weekly"
+  ],
+  "no_ideas": null
+}
