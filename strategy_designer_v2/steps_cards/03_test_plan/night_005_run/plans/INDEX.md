@@ -1,6 +1,7 @@
 005-01_bearish-rsi-divergence-giveback_1d: missing-components: Everything the idea needs comes from one coin's own closes, and a regime plus a graded component could hold it. [BTC, ETH, BNB, 1d, folds A, B, C, D]
 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal_1d: plan (fit: exact) [BTC, ETH, BNB, 1d, folds A, B, C, D]
 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence_1d: plan (fit: adapted) [BTC, ETH, BNB, 1d, folds A, B, C, D]
+005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling_1d: plan (fit: adapted) [BTC, ETH, BNB, 1d, folds A, B, C, D]
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation_1d: missing-components: The forecast must be the signed day's move, in 60-day mean absolute moves, multiplied by how low the 20-day volatility [BTC, ETH, BNB, 1d, folds A, B, C, D]
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly_1d: plan (fit: adapted) [BTC, ETH, BNB, 1d, folds A, B, C, D]
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal_1d: plan (fit: adapted) [BTC, ETH, BNB, 1d, folds A, B, C, D]

@@ -1,5 +1,6 @@
 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal_1d: ran: BTCUSD 24/24; ETHUSD 24/24; BNBUSD not run (no historical data on the venue) [1d, folds A, B, C, D]
 005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence_1d: ran: BTCUSD 24/24; ETHUSD 24/24; BNBUSD not run (no historical data on the venue) [1d, folds A, B, C, D]
+005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling_1d: ran: BTCUSD 24/24; ETHUSD 24/24; BNBUSD not run (no historical data on the venue) [1d, folds A, B, C, D]
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly_1d: ran: BTCUSD 24/24; ETHUSD 24/24; BNBUSD not run (no historical data on the venue) [1d, folds A, B, C, D]
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal_1d: ran: BTCUSD 24/24; ETHUSD 24/24; BNBUSD not run (no historical data on the venue) [1d, folds A, B, C, D]
 005-02_bullish-rsi-divergence-rebound_1d: ran: BTCUSD 24/24; ETHUSD 24/24; BNBUSD not run (no historical data on the venue) [1d, folds A, B, C, D]

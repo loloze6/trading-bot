@@ -1,0 +1,34 @@
+{
+  "line": "7.g",
+  "backtest": "005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling_1d",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.35992179999999996,
+  "findings": {
+    "F1": "The day after a large vol-scaled move tends to reverse it: regressing each coin's next-day excess return on the percentile rank of its 1-day return over its 20-day volatility gives a pooled slope of -0.0056, t -2.84 over 4786 days (BTC t -1.67, ETH t -2.30, Spearman -0.07 and -0.08). In raw 1-day-return quintiles, the bottom quintile is followed by next-day excess of +0.34% for BTC (t 2.01, 58% up days, n 575) and +0.32% for ETH (t 1.34, 58% up, n 575), and the top quintile by -0.17% (BTC, t -1.15) and -0.26% (ETH, t -1.39).",
+    "F2": "Where the close sits in the day's range points the same way: a close near the day's low is followed by a higher next-day return than a close near its high, pooled slope -0.0035, t -1.91 over 5793 days (BTC t -1.38, ETH t -1.34).",
+    "F3": "The reversal does not last. On a 3-day non-overlapping grid, the vol-scaled 1-day return has no slope (pooled t -0.30, n 1571), the raw 1-day return has none (t -0.80), and the 3-day return has none (t +1.65), so the effect fades after about one day.",
+    "F4": "New 30-day lows were not followed by further falls. On the 10-day grid, new-low bars had a 10-day excess of +3.3% for BTC (t 1.22, n 17) and +1.2% for ETH (t 0.30, n 19). That runs against the tested continuation idea, although the samples are small.",
+    "F5": "The book barely traded and earned nothing. It held a position on 4.8% (BTC) and 5.5% (ETH) of bars, and its mean daily return was -0.0013% (BTC) and +0.0038% (ETH), against 0.118% and 0.137% for holding the coin. Its trades lasted 1.6 to 1.9 days and won only 30% to 36% of the time.",
+    "F6": "Inside the book, trades in the most negative forecast tercile (mildest falls into the low) averaged +1.84% after fees, against -1.15% in the least negative tercile (60 or 61 trades each). The direction matches the tested idea, but no t-statistic was computed, so this is not established.",
+    "F7": "Most other angles showed nothing that stands out once the number of looks is counted: 20-day volatility (pooled t -0.03), short-to-long volatility ratio (t -0.71), the day's range (t 0.47 and 0.49), and the 30-day return against 10-day outcomes (pooled t 1.78). Across weekdays, the largest t was 2.40 (ETH Saturday) among 14 cells. The 5-day-return quintiles for ETH had two adjacent cells with t +2.56 and -2.58, which is not a graded pattern."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 1-day fall relative to its own 20-day daily volatility, and the nearer its close to the day's low, the more it rises over the next 1 day; the larger its vol-scaled 1-day rise, the more it gives back over the next 1 day.",
+      "consequence": "A trader should lean against a sharp volatility-scaled daily move for one day only, buying after outsized down days and refusing to chase outsized up days.",
+      "name": "one-day vol-scaled reversal",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "005-02_bullish-rsi-divergence-rebound.d2_shallow-new-lows-keep-falling.g1_one-day-vol-scaled-reversal"
+  ],
+  "no_ideas": null
+}
