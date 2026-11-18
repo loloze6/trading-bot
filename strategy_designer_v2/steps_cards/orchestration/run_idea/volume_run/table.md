@@ -5,7 +5,6 @@ One row per idea run; every status is read from the step's own result file. Each
 | Idea | Parent | Step 3 | Step 5 | Step 6 | Step 7: ideas proposed | USD | Minutes |
 |---|---|---|---|---|---|---|---|
 | 012-02_volume-burst-fall-reversal | - | plan | inconclusive (+1.59) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.b: 012-02_volume-burst-fall-reversal.b1_volume-flush-next-day-rebound, 012-02_volume-burst-fall-reversal.b2_volume-burst-fall-reversal-broadened; 7.d: 012-02_volume-burst-fall-reversal.d1_one-day-volume-burst-rebound, 012-02_volume-burst-fall-reversal.d2_close-at-low-next-day-rebound, 012-02_volume-burst-fall-reversal.d3_volume-burst-dip-in-uptrend; 7.g: 012-02_volume-burst-fall-reversal.g1_heavy-volume-down-day-rebound, 012-02_volume-burst-fall-reversal.g2_calm-market-volume-flush-rebound | 1.45 | 6.1 |
-| 012-03_lower-wick-flush-recovery | - | missing-components | - | - | - | 0.04 | 0.3 |
 | 012-04_flush-depth-retracement-size | - | missing-components | - | - | - | 0.04 | 0.3 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g2_rising-volume-precedes-gains | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month | missing-components | - | - | - | 0.04 | 0.3 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g2_volume-surge-precedes-gains | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends | plan | inconclusive (+1.96) | not profitable enough (failed: Calmar) | 7.b: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g2_volume-surge-precedes-gains.b1_volume-surge-more-coins, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g2_volume-surge-precedes-gains.b2_heavy-volume-on-up-days, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g2_volume-surge-precedes-gains.b3_direction-signed-volume-surge; 7.d: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g2_volume-surge-precedes-gains.d1_volume-surge-in-uptrends, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g2_volume-surge-precedes-gains.d2_volume-surge-on-up-days, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g2_volume-surge-precedes-gains.d3_volume-surge-near-high; 7.g: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g2_volume-surge-precedes-gains.g1_volatility-scaled-daily-move-continues, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g2_volume-surge-precedes-gains.g2_thin-volume-precedes-weakness | 1.18 | 5.4 |
@@ -23,20 +22,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling | plan | confirmed (+4.14) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | 7.d: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains.d1_heavy-volume-selling-exhaustion, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains.d2_heavy-volume-rally-in-downtrend-fades; 7.g: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains.g1_heavy-volume-selloff-rebounds | 0.89 | 4.5 |
 | 012-01_liquidation-flush-rebound | - | plan | confirmed (+3.26) | not profitable enough (failed: Mean daily return, Calmar) | 7.d: 012-01_liquidation-flush-rebound.d1_repeated-flush-exhausts-cascade, 012-01_liquidation-flush-rebound.d2_flush-after-deep-weekly-fall; 7.g: 012-01_liquidation-flush-rebound.g1_volume-graded-fall-rebound, 012-01_liquidation-flush-rebound.g2_quiet-falls-keep-falling | 1.38 | 5.6 |
 | 003-03_heavy-volume-rise-continues | - | plan | confirmed (+2.98) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.d: 003-03_heavy-volume-rise-continues.d1_heavy-volume-rise-in-uptrend, 003-03_heavy-volume-rise-continues.d2_heavy-volume-rise-slow-continuation; 7.g: 003-03_heavy-volume-rise-continues.g1_delayed-heavy-volume-rise-drift | 1.07 | 5.6 |
+| 012-03_lower-wick-flush-recovery | - | plan | mismatch | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | 7.d: 012-03_lower-wick-flush-recovery.d1_flush-closing-at-low-rebounds, 012-03_lower-wick-flush-recovery.d2_flush-after-decline-rebounds, 012-03_lower-wick-flush-recovery.d3_volatile-flush-rebounds-harder; 7.g: 012-03_lower-wick-flush-recovery.g1_high-volume-down-day-rebound, 012-03_lower-wick-flush-recovery.g2_volume-not-fall-size-drives-rebound | 1.02 | 4.9 |
 
 ## Consumption
-19 ideas, 14.73 USD, 75.8 minutes in all.
+19 ideas, 15.71 USD, 80.4 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.83 | 11.8 |
-| step4_backtest | 0.00 | 19.3 |
-| step5_verdict | 1.70 | 8.1 |
+| step3_plan | 1.91 | 12.3 |
+| step4_backtest | 0.00 | 20.3 |
+| step5_verdict | 1.83 | 8.7 |
 | step6_check | 0.00 | 0.5 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.20 | 0.6 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 1.72 | 5.6 |
-| step7_7.d | 4.20 | 14.0 |
-| step7_7.g | 5.09 | 15.8 |
+| step7_7.d | 4.50 | 15.1 |
+| step7_7.g | 5.54 | 17.1 |
 | chart_files | 0.00 | 0.0 |

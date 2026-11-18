@@ -6,6 +6,7 @@
 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d: not profitable enough [Sharpe 0.9228; Sharpe minus holding's Sharpe 0.3687; Calmar 0.8146]
 012-01_liquidation-flush-rebound_1d: not profitable enough [Sharpe 0.5572; Sharpe minus holding's Sharpe 0.003018; Calmar 0.4029]
 012-02_volume-burst-fall-reversal_1d: not profitable enough [Sharpe 0.2342; Sharpe minus holding's Sharpe -0.3199; Calmar 0.107]
+012-03_lower-wick-flush-recovery_1d: not profitable enough [Sharpe -0.03042; Sharpe minus holding's Sharpe -0.5846; Calmar -0.02152]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume_1d: not profitable enough [Sharpe 0.6037; Sharpe minus holding's Sharpe 0.04949; Calmar 0.3868]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d: profitable enough [Sharpe 0.914; Sharpe minus holding's Sharpe 0.3599; Calmar 0.7994]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains_1d: not profitable enough [Sharpe 0.5016; Sharpe minus holding's Sharpe -0.05256; Calmar 0.2661]

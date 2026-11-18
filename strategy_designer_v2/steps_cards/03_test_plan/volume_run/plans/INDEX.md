@@ -8,7 +8,7 @@
 011-01_weekend-rise-reverses-monday.g2_heavy-volume-falls-reverse_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 012-01_liquidation-flush-rebound_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 012-02_volume-burst-fall-reversal_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
-012-03_lower-wick-flush-recovery_1d: missing-components: The idea's graded variable is the lower wick as a share of the bar's range, (close - low) / (high [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+012-03_lower-wick-flush-recovery_1d: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 012-04_flush-depth-retracement-size_1d: missing-components: Two parts of the idea need intrabar shape: the long lower wick and the bar's drop from open to low. [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g1_short-high-break-on-volume_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
