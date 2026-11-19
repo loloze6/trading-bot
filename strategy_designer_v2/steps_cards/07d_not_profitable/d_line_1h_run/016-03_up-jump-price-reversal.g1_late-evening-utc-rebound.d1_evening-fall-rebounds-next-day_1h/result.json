@@ -1,0 +1,46 @@
+{
+  "line": "7.d",
+  "backtest": "016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-rebounds-next-day_1h",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3185164,
+  "findings": {
+    "F1": "The book holds each position for only about one hour while the idea needs a day. There were 7238 trades, all long, with a median duration of 60 minutes. The mean allocation on forecast>0 bars is 0.45, and one bar later it is only 0.001. Each trade loses 0.095% gross (t -7.18) and 0.195% net after a fee of about 0.10% per trade. The book's mean daily return is -0.00041, against the coin's +0.00119.",
+    "F2": "The rebound the idea bets on is real and graded but arrives after the first hour. On forecast>0 bars (n 8661) the first-hour return is only +0.000274. The full 24-hour return is +0.001993, of which +0.001698 comes from hour 2 to hour 24. The excess 24-hour return rises across forecast quartiles: -0.000865, -0.000345, +0.001315, +0.002063.",
+    "F3": "Holding the same allocation for the full 24 hours instead of one bar, with a 0.1% fee per trade, would earn +0.001048 per case. That is t 3.65 over 8128 non-overlapping daily cases, with a rough annualised Sharpe of 0.77, against the book's actual -2.24.",
+    "F4": "The 24-hour rebound is concentrated where the coin's 7-day hourly volatility is high. In the high-volatility tercile the excess return is +0.003269 (t 2.50, n 2709). In the low and middle terciles it is negative: -0.000654 (t -0.97) and -0.000842 (t -1.02).",
+    "F5": "The rebound also appears mostly when the preceding week was up. After an up week the excess 24-hour return is +0.001264 (t 1.78, n 4193). After a down week it is -0.000126 (t -0.14, n 3935).",
+    "F6": "How the 24-hour fall was built does not separate the rebounds. This was measured by the largest hour's share of the summed absolute hourly moves. The grind tercile has an excess return of +0.000903 and the jump tercile +0.000842, both with t below 1."
+  },
+  "ideas": [
+    {
+      "idea": "The more a coin has fallen over the 24 hours up to the 20:00 UTC close, the more it rises over the next 24 hours, only while its hourly volatility over the past 7 days is high, and the more so the higher that volatility.",
+      "consequence": "A late-evening long after a deep daily fall should be held through the whole next day and taken mainly when the coin has been volatile all week; in calm weeks it should be refused.",
+      "name": "evening rebound in volatile weeks",
+      "from": "F1, F2, F3, F4",
+      "refs": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    {
+      "idea": "The more a coin has fallen over the 24 hours up to the 20:00 UTC close, the more it rises over the next 24 hours, except when its 7-day return before that fall is also negative.",
+      "consequence": "A trader buying the evening dip should hold it for the following day when the dip interrupts a rising week, and refuse it when the dip extends a falling week.",
+      "name": "evening dip in rising week",
+      "from": "F2, F3, F5",
+      "refs": [
+        "F2",
+        "F3",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-rebounds-next-day.d1_evening-rebound-in-volatile-weeks",
+    "016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-rebounds-next-day.d2_evening-dip-in-rising-week"
+  ],
+  "no_ideas": null
+}

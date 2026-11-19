@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9951506754416349,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 24-bar return on forecast (regime bars, pooled)",
+    "value": 0.00014887089536770346,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.68288589617512
+    },
+    "threshold": "confirm: t >= 2 and mean excess on forecast>0 bars > 0; reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 24-bar return on forecast > 0 bars",
+    "value": 0.0005397430651354848,
+    "passed": true
+  },
+  "counts": {
+    "regime bars with a full 24-bar forward return": 17280,
+    "regime bars with forecast > 0": 8580
+  },
+  "decided_by": "The slope's t is 2 or more and the mean excess return on forecast > 0 bars is above 0.",
+  "reading": "Situation bars are those whose close (timestamp + 1h) is at 20:00 UTC with a negative 24-bar return (recorded raw value, else recomputed from closes), expected side long; regime bars are those with regime == 'mean_reversion'; forward returns use row offsets inside each window; the coin's mean 24-bar return uses the non-overlapping grid 0, 24, 48, ... of each window pooled over all windows; t is the OLS slope over its standard error; the plan's minimum counts lead to 'not observable'."
+}

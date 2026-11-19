@@ -1,0 +1,76 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "hour",
+        "class": "strategies.strategy_components.HourOfDayComponent",
+        "params": {}
+      }
+    ],
+    "vetoes": [],
+    "rules": [
+      {
+        "regime": "mean_reversion",
+        "any_of": [
+          [
+            {
+              "id": "hour",
+              "op": "between",
+              "low": 20.5,
+              "high": 22.5
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "fall24",
+            "class": "strategies.strategy_components.VolatilityScaledReturnComponent",
+            "params": {
+              "period": 24,
+              "vol_period": 168,
+              "lag": 0,
+              "vol_lookback": 1
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 168,
+                  "min_periods": 42
+                }
+              },
+              {
+                "op": "negate"
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 1440,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 8760,
+      "max_allocation": 2
+    }
+  }
+}

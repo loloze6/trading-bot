@@ -1,0 +1,47 @@
+{
+  "line": "7.d",
+  "backtest": "016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift.d2_evening-bounce-after-drops_1h",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3301755,
+  "findings": {
+    "F1": "Fees remove the whole gain: the book earns 1.30e-5 per bar before fees but pays 2.10e-5 per bar in fees, so the 10,709 trades (all long) average +0.083% before fees and -0.017% after, about 0.10% of cost per round trip.",
+    "F2": "The loss is the same in every period, not one bad stretch: the book's mean daily return is negative in 16 of 24 windows (for example w3 -0.00143, w1 -0.00072), including windows where holding the coin gained (w4 coin +0.0028, book -0.00043; w21 coin +0.0057, book -0.00016).",
+    "F3": "The two-hour forward move the book trades is about the size of one round-trip fee: on 20:00 UTC bars with forecast > 0 the excess 2-hour return is +0.0006 to +0.0018 by forecast quintile (t 7.39, n 8,613), against roughly 0.0010 of fees per trade.",
+    "F4": "The traded forecast is barely graded: its quintiles give excess 2-hour returns of +0.0013, +0.0006, +0.0009, +0.0018 and +0.0013 from smallest to largest forecast, and bars with forecast 0 still give +0.0005.",
+    "F5": "The raw volatility-scaled 24-hour fall is graded where the standardised forecast is not: among falls, the two deepest quintiles (mean z -1.71 and -0.86) give excess 2-hour returns of +0.0019 and +0.0022, against +0.0003 to +0.0012 for the shallower three.",
+    "F6": "After the deepest raw falls the rise carries on over a full day and grows past the fee: the excess 24-hour return is +0.0018 and +0.0026 for the two deepest z quintiles, against -0.0001, -0.0010 and -0.0017 for the shallower three (n about 1,630 each).",
+    "F7": "The second hour of the hold loses money: trades held at most 60 minutes average +0.28% before fees (n 3,926), while trades held 60 to 120 minutes average -0.06% (n 6,451); the hour-22 bars carry 2.2e-4 of fees per bar against a gain of -1.3e-6."
+  },
+  "ideas": [
+    {
+      "idea": "Each coin rises over the 24 hours after 21:00 UTC, and the larger its fall over the past 24 hours measured in units of its 7-day hourly volatility (the raw scaled fall, not that fall ranked against its own recent values), the larger that rise.",
+      "consequence": "A trader would hold the evening rebound for a day instead of two hours, so that a move several times one round-trip cost pays for a single fee, and would size it by the raw volatility-scaled fall.",
+      "name": "evening drop day-long rebound",
+      "from": "F1, F3, F5, F6",
+      "refs": [
+        "F1",
+        "F3",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "Each coin rises over the two hours after 21:00 UTC, and the larger its fall over the past 24 hours measured in units of its 7-day hourly volatility, the larger that rise, with the rise concentrated in the first hour after 21:00 UTC.",
+      "consequence": "A trader would keep only the first hour of the evening rebound, the hour that carries the gain, and would stop paying for a second hour that loses.",
+      "name": "first-hour evening drop bounce",
+      "from": "F1, F7, F5",
+      "refs": [
+        "F1",
+        "F7",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift.d2_evening-bounce-after-drops.d1_evening-drop-day-long-rebound",
+    "016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift.d2_evening-bounce-after-drops.d2_first-hour-evening-drop-bounce"
+  ],
+  "no_ideas": null
+}
