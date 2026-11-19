@@ -5,65 +5,70 @@ Criteria, in the operator's order: 1 cost, 2 simplicity, 3 performance, 4 flexib
 
 ## Executive summary
 
-**Decision.** Try these in order:
-1. **1blu VPS Eco** (Germany), if its order page confirms the deal;
-2. otherwise **OVH VPS-1** in an EU data centre (not London, not Singapore);
-3. otherwise **netcup VPS nano** (Germany), if it is under about €4.50 a month.
+**Decision** (2026-11-19, after the operator's rulings: cheap, monthly, English or French service, any EU country).
+Try these in order:
+1. **Webdock VPS Essential** (Denmark), if its order page confirms about €2.15 a month before VAT with an IPv4;
+2. otherwise **netcup VPS nano** (Germany), if it is under about €4.50 a month;
+3. otherwise **OVH VPS-1** once its EU stock returns. On 2026-11-19 only Singapore was offered, which is to avoid
+   (section 4).
 
-All three are in the EU, have a fixed IPv4 for locking the Kraken key, and run the bot's 3 runs today.
+All three are in the EU, have a fixed IPv4 for locking the Kraken key, run the bot's 3 runs today, and serve
+customers in English.
 
-**Price difference** (with VAT; 1blu's price includes German VAT, French VAT adds about 1%):
+**Price difference** (with French VAT; Webdock's €2.15 is before VAT):
 
-| | 1blu VPS Eco | OVH VPS-1 | netcup VPS nano |
+| | Webdock VPS Essential | netcup VPS nano | OVH VPS-1 |
 |---|---|---|---|
-| Per month, first 12 months | **€1** (deal) | €5.39 | €3.72, or about €4.43 after the Sept. 2026 rise |
-| Per month, after 12 months | **€3.99** | €5.39 | same |
-| Year 1 | **€12** | €64.68 | €44.64 – €53.16 |
-| Year 2 | **€47.88** | €64.68 | €44.64 – €53.16 |
-| Two years | **€59.88** | €129.36 | €89.28 – €106.32 |
-| Saving against OVH over two years | **€69.48** | — | €23.04 – €40.08 |
-| Billing | every 3 months, renews by itself | monthly, no commitment | 6-month minimum term |
+| Per month | **about €2.58** | €3.72, or about €4.43 after the Sept. 2026 rise | €5.39 |
+| Year 1 | **about €30.96** | €44.64 – €53.16 | €64.68 |
+| Two years | **about €61.92** | €89.28 – €106.32 | €129.36 |
+| Saving against OVH over two years | **about €67.44** | €23.04 – €40.08 | — |
+| Billing | monthly available (yearly at the same price) | 6-month minimum term | monthly, no commitment |
 
 **Feature difference:**
 
-| | 1blu VPS Eco | OVH VPS-1 | netcup VPS nano |
+| | Webdock VPS Essential | netcup VPS nano | OVH VPS-1 |
 |---|---|---|---|
-| Memory | 4 GB (about 13 runs) | 4 GB (about 13 runs) | 2 GB (about 6 runs) |
-| Processor, disk | 2 vCores, 64 GB SSD | 2 vCores, 40 GB NVMe | 2 vCores, 60 GB |
-| Fixed IPv4 | yes | yes | yes |
-| Backup | 2 GB of backup space | **daily automatic backup** | snapshots |
-| Where | Germany | France (Gravelines, Strasbourg) or other EU | Germany |
-| User reviews | **too few** (3 reviews, 1/10) | many, mixed: stable for long-term users; support split | many, mixed: good uptime; slow ticket support; maintenance up to an hour |
-| The host | Berlin, since 2003–2005; over 200,000 customer contracts by its own account; own Frankfurt data centre (2007); reportedly part of the your.online group since 2024 (unverified) | French group, very large | German group, large |
-| Main risk | the deal may be gone; a French resident may not be able to order; Docker only in its "KVM" mode; website and support in German (weekdays 8:00–20:00; email support reported slow); cancellation complaints (Trustpilot, April 2026); renews by itself, so set a reminder before month 12 | stock comes and goes (only Singapore shown on 2026-11-19) | the price after the September rise is not confirmed |
+| Memory | 2 GB (about 6 runs) | 2 GB (about 6 runs) | 4 GB (about 13 runs) |
+| Processor, disk | 1 vCPU, 15 GB NVMe | 2 vCores, 60 GB | 2 vCores, 40 GB NVMe |
+| Fixed IPv4 | included | included | included |
+| Backup | I do not know | snapshots | daily automatic backup |
+| Where | Denmark | Germany | France or other EU; **EU stock unavailable on 2026-11-19** |
+| Language of service | English | English and German (official) | English, French |
+| The host | Danish, founded 2017 (third-party) | large, long-running | French group, very large |
+| User reviews | few found (an aggregator cites about 280, not read) | many, mixed: good uptime; slow ticket support | many, mixed |
+| Main risk | price and terms read from extracts; disk only 15 GB (enough: about 5 GB needed) | price after the September rise not confirmed | stock comes and goes |
 
-**Others, for reference** (details in section 3, "Every option found"):
-- **Big clouds, paid** (AWS Lightsail 2 GB about €12.40; Vultr, DigitalOcean, Linode about €10–12): 2–3 times the price.
-- **Big clouds, free:**
-  - AWS: credits for 6 months;
-  - Azure: 12 months, 1 GB;
-  - Google: US only, 1 GB;
-  - Oracle: reclaims idle machines, and accounts have been closed without warning.
-- **Hetzner:** €7.19 and not orderable.
-- **Home laptop:** often switched off.
+2 GB holds about 6 runs. At one more run a month, it is full in about 3 months; then take a bigger plan, or put
+several coins in one program (the card's plan).
 
-**On 1blu being small and local** (operator's concern, 2026-11-19):
-- **Size and Germany: not a real risk.** 1blu is a long-running mid-sized host, and Germany is in the EU.
-- **German-only service and cancellation handling: real.** Take 1blu if browser translation is acceptable; switch to
-  KVM first; set a reminder before the 12 months end.
-- **Otherwise OVH:** about €4.40 a month more in year 1, €1.40 after.
-
-Sources:
-- linkedin.com/company/1blu-ag
-- webhosting.today/market-insights/company/1blu/
-- hostlist.io/host/1blu-berlin-germany
-- erfahrungen.com/mit/1blu/
-- trustpilot.com/review/1blu.de
-- l-iz.de/vpn/erfahrungen/1blu/
+**Ruled out:**
+- **1blu VPS Eco:** €1 a month for a year, then €3.99; but website and support in German only, and the operator
+  does not speak German.
+- **Big clouds:**
+  - paid plans (AWS Lightsail 2 GB about €12.40; Vultr, DigitalOcean, Linode about €10–12) cost 3–5 times
+    Webdock;
+  - free plans: AWS 6 months; Azure 12 months, 1 GB; Google US only, 1 GB; Oracle reclaims idle machines and has
+    closed accounts without warning.
+- **Others:**
+  - Hetzner: €7.19 and not orderable;
+  - Time4VPS: 2 GB €6.49–7.49 before VAT;
+  - Alwyzon: 2 GB €9.49;
+  - the home laptop: often switched off.
 
 **Before real orders, whichever host:**
-- Set `KillSignal=SIGINT` in the service. Without it the bot dies on a server stop without saving its local book (section 5, step 10).
+- Set `KillSignal=SIGINT` in the service. Without it the bot dies on a server stop without saving its local book
+  (section 5, step 10).
 - Ask Kraken support whether a server in another EU country is fine (section 4).
+
+Sources added for this summary:
+- webdock.io/pricing
+- webdock.io/ovhcloud
+- stackrates.ai/vps/2gb-ram/
+- hostdean.com/provider/webdock/
+- netcup.com/en/helpcenter/support
+- vpsbenchmarks.com/hosters/time4vps
+- vpsbenchmarks.com/hosters/alwyzon
 
 **Words used below.**
 - **Server**: a computer that stays on in a data centre. You reach it from your PC over the internet.
@@ -199,10 +204,12 @@ locked to the bot's address.
 
 ### Decision (final, 2026-11-19)
 
-Try these in order:
-1. **1blu VPS Eco** (Germany), deal confirmed on the order page: €1 a month for 12 months, then €3.99.
-2. **OVH VPS-1** in an EU data centre: €5.39 a month.
-3. **netcup VPS nano**, if under about €4.50 a month.
+Try these in order (see the executive summary):
+1. **Webdock VPS Essential** (Denmark): about €2.58 a month.
+2. **netcup VPS nano**: if under about €4.50 a month.
+3. **OVH VPS-1**: €5.39 a month, once its EU stock returns.
+
+1blu VPS Eco was the first choice for a while; it is out because its service is in German only.
 
 The steps that led here are below: the operator's rulings, the deals, every option compared.
 
@@ -275,7 +282,7 @@ A deal qualifies if **all** of these hold:
 
 | Offer | Price | Verdict |
 |---|---|---|
-| **1blu VPS Eco** (German host; 2 vCores, 4 GB, 64 GB SSD, own IPv4, 2 GB backup space, traffic included) | **€1 a month for 12 months (€12 the first year), then €3.99 a month**; billed every 3 months; renews automatically [3] mydealz / monsterdealz, 2026 | **Qualifies, and beats OVH**: €12 against about €65 in year 1, then €3.99 against €5.39. To check on the order page: is it still offered (re-released after a promotion ended in October); can a French resident order it; is it a full virtual machine (a deal note says Docker works reliably only after switching it to "KVM"); the language of its panel. Reviews: 1 of 10 from only 3 reviews, too few to judge |
+| **1blu VPS Eco** (German host; 2 vCores, 4 GB, 64 GB SSD, own IPv4, 2 GB backup space, traffic included) | **€1 a month for 12 months (€12 the first year), then €3.99 a month**; billed every 3 months; renews automatically [3] mydealz / monsterdealz, 2026 | **Out (operator, 2026-11-19): website and support in German only.** Otherwise it would beat OVH: €12 against about €65 in year 1, then €3.99 against €5.39. To check on the order page: is it still offered (re-released after a promotion ended in October); can a French resident order it; is it a full virtual machine (a deal note says Docker works reliably only after switching it to "KVM"); the language of its panel. Reviews: 1 of 10 from only 3 reviews, too few to judge |
 | HostDZire (LowEndTalk thread 222164, "since 2013" according to one aggregator) | from €18 a year; a 4 GB, 2-core plan at €21 a year; locations India, France, Netherlands, USA | **Maybe**: about €1.75 a month. Plan, location and terms not seen; reputation not checked independently |
 | Contabo Cloud VPS 4 | $5.28 a month for 24 months (20% off) | no: 24-month term; reliability complaints |
 | Hostinger KVM 2 | $8.79 a month in the sale, long prepay | no: costs more than OVH |
@@ -322,7 +329,7 @@ reports (weight in section 6).
 |---|---|---|---|---|
 | 1 | Oracle Always Free ARM (2 OCPU / 12 GB) **upgraded to pay-as-you-go**, Paris or Marseille | €0 if kept within the free limits | accounts closed without warning (fewer reports on paid accounts, still some); Oracle does not confirm that pay-as-you-go protects an idle machine from reclaiming; some unexpected charges (a $0.01 budget alert is the usual guard); free limits halved without notice in 2026; the free ARM machine often hard to get | **no** for real orders: a sudden closure leaves a position unwatched. Possible for paper runs only, if €0 matters more than stability |
 | 2 | A laptop or NAS you already own, at home | about €2.5 (electricity) | power and internet cuts, sleep, a swelling battery | **no**: the operator's laptop will often be switched off |
-| 3 | **1blu VPS Eco, 4 GB, Germany** (deal) | **€1 for 12 months, then €3.99** | too few reviews to judge (3); deal availability and order conditions unconfirmed | **yes: first choice if the order page confirms it** |
+| 3 | **Webdock VPS Essential, 2 GB, Denmark** | **about €2.58** | few reviews found; price from extracts | **yes: first choice** (1blu VPS Eco, €1 then €3.99, is out: German only) |
 | 4 | netcup VPS nano, 2 GB, Germany | €3.72, or about €4.43 after the September 2026 rise | support by ticket, slow; maintenance of up to an hour called normal; 6-month minimum term | **yes if under about €4.50** on its order page |
 | 5 | Used mini PC at home | about €4–6 over 3 years | home risks as #2 | no: not cheaper than #6, less stable |
 | 6 | **OVH VPS-1, 4 GB** | **€5.39** | support split; renewal price rises on its older range; 2021 fire (backups now included) | **yes: the default choice** |
@@ -351,9 +358,7 @@ reports (weight in section 6).
 | Keeping Oracle's free machine artificially busy | against the purpose of the idle rule; account risk |
 | A Claude Code cloud session | reclaimed after inactivity |
 
-**Result: 1blu VPS Eco (#3)** if its order page confirms the deal and the checks above; otherwise **OVH VPS-1 (#6)** in an EU data centre (not London, not Singapore; OVH stock "goes in and out pretty often" [LowEndTalk], so retry), , unless:
-- a qualifying deal (section 3, "Deals") appears by about 2026-11-30;
-- **#4** netcup nano under about €4.50 on its order page;
+**Result: Webdock VPS Essential (#3)**; otherwise netcup nano (#4) if under about €4.50; otherwise **OVH VPS-1 (#6)** in an EU data centre (not London, not Singapore; OVH stock "goes in and out pretty often" [LowEndTalk], so retry). A qualifying deal (section 3, "Deals") may still appear by about 2026-11-30.
 
 Sources added for Oracle pay-as-you-go:
 - docs.oracle.com/en-us/iaas/Content/FreeTier/resourceref.htm
