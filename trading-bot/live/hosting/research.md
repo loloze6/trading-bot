@@ -3,6 +3,53 @@
 Research only: nothing bought, no account created, no secret stored, no code of the bot changed.
 Criteria, in the operator's order: 1 cost, 2 simplicity, 3 performance, 4 flexibility.
 
+## Executive summary
+
+**Decision.** Try these in order:
+1. **1blu VPS Eco** (Germany), if its order page confirms the deal;
+2. otherwise **OVH VPS-1** in an EU data centre (not London, not Singapore);
+3. otherwise **netcup VPS nano** (Germany), if it is under about €4.50 a month.
+
+All three are in the EU, have a fixed IPv4 for locking the Kraken key, and run the bot's 3 runs today.
+
+**Price difference** (with VAT; 1blu's price includes German VAT, French VAT adds about 1%):
+
+| | 1blu VPS Eco | OVH VPS-1 | netcup VPS nano |
+|---|---|---|---|
+| Per month, first 12 months | **€1** (deal) | €5.39 | €3.72, or about €4.43 after the Sept. 2026 rise |
+| Per month, after 12 months | **€3.99** | €5.39 | same |
+| Year 1 | **€12** | €64.68 | €44.64 – €53.16 |
+| Year 2 | **€47.88** | €64.68 | €44.64 – €53.16 |
+| Two years | **€59.88** | €129.36 | €89.28 – €106.32 |
+| Saving against OVH over two years | **€69.48** | — | €23.04 – €40.08 |
+| Billing | every 3 months, renews by itself | monthly, no commitment | 6-month minimum term |
+
+**Feature difference:**
+
+| | 1blu VPS Eco | OVH VPS-1 | netcup VPS nano |
+|---|---|---|---|
+| Memory | 4 GB (about 13 runs) | 4 GB (about 13 runs) | 2 GB (about 6 runs) |
+| Processor, disk | 2 vCores, 64 GB SSD | 2 vCores, 40 GB NVMe | 2 vCores, 60 GB |
+| Fixed IPv4 | yes | yes | yes |
+| Backup | 2 GB of backup space | **daily automatic backup** | snapshots |
+| Where | Germany | France (Gravelines, Strasbourg) or other EU | Germany |
+| User reviews | **too few** (3 reviews, 1/10) | many, mixed: stable for long-term users; support split | many, mixed: good uptime; slow ticket support; maintenance up to an hour |
+| Main risk | the deal may be gone; a French resident may not be able to order; Docker only in its "KVM" mode; panel probably in German | stock comes and goes (only Singapore shown on 2026-11-19) | the price after the September rise is not confirmed |
+
+**Others, for reference** (details in section 3, "Every option found"):
+- **Big clouds, paid** (AWS Lightsail 2 GB about €12.40; Vultr, DigitalOcean, Linode about €10–12): 2–3 times the price.
+- **Big clouds, free:**
+  - AWS: credits for 6 months;
+  - Azure: 12 months, 1 GB;
+  - Google: US only, 1 GB;
+  - Oracle: reclaims idle machines, and accounts have been closed without warning.
+- **Hetzner:** €7.19 and not orderable.
+- **Home laptop:** often switched off.
+
+**Before real orders, whichever host:**
+- Set `KillSignal=SIGINT` in the service. Without it the bot dies on a server stop without saving its local book (section 5, step 10).
+- Ask Kraken support whether a server in another EU country is fine (section 4).
+
 **Words used below.**
 - **Server**: a computer that stays on in a data centre. You reach it from your PC over the internet.
 - **VPS** (virtual private server): a slice of a big server, rented by the month. It behaves like a small
@@ -135,7 +182,16 @@ locked to the bot's address.
 
 ## 3. Recommendation
 
-### Recommended: OVHcloud VPS-1, datacentre in France, Debian 13, paid monthly: €5.39 a month (€4.49 HT)
+### Decision (final, 2026-11-19)
+
+Try these in order:
+1. **1blu VPS Eco** (Germany), deal confirmed on the order page: €1 a month for 12 months, then €3.99.
+2. **OVH VPS-1** in an EU data centre: €5.39 a month.
+3. **netcup VPS nano**, if under about €4.50 a month.
+
+The steps that led here are below: the operator's rulings, the deals, every option compared.
+
+### Why OVH VPS-1 is the reference (first written as the recommendation, before the deals were found)
 
 | Criterion | Why |
 |---|---|
@@ -316,7 +372,15 @@ extracts and press articles. **Read them once by hand, or ask Kraken support, be
 
 ---
 
-## 5. Setup plan for OVH VPS-1, step by step, for a first server
+## 5. Setup plan, step by step, for a first server
+
+Written for OVH VPS-1. From step 3 on, it is the same on any Debian server (1blu, netcup). For **1blu**, in its
+customer centre:
+- switch the server to its **KVM** mode (a full virtual machine; a deal note says Docker works reliably only there);
+- choose **Debian 13** if offered (else the Python fallback in step 5);
+- use the user name its email gives.
+
+I do not know 1blu's panel beyond that.
 
 **Nothing below has been run on a real server.** The service file is a draft: prove it on the server (step 10)
 before trusting it.
@@ -496,7 +560,7 @@ Not found:
 
 ---
 
-## 7. Second pass (2026-11-19): what it changed
+## 7. How the choice evolved: second pass (2026-11-19)
 
 A second round of searches on the gaps the first one left. The providers' and Kraken's own pages were still
 blocked, so these are search extracts too.
