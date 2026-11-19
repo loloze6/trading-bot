@@ -142,3 +142,7 @@ components, 1 untestable), turn 8 (017-02) cut mid-turn, resumes. Slow 25.55 USD
 - 11:28: check-in, no restart (up 1h35). 017-03.g1 (a one-hour move reverses the next hour): inconclusive although its main
   t is +10.23 (417k bars): the plan's supporting check (stronger when volatility is high) is t +1.69, below 2; the gain
   is 0.8 bps an hour before costs, against 15 to 25 bps a round trip; not profitable. Turn 15 (017-04.c1) backtesting.
+- 11:53: stretch 3 ended on its budget (13.61 USD, 3 turns, 48 min). 017-03.g1 inconclusive t +10.23 (above); 017-04.c1
+  (post-settlement decline over four hours): confirmed t +4.85; 017-04.c2 (rebound after falls, off settlement hours):
+  confirmed t +4.08; none profitable (6 of 6 failed each). Run so far: 13 ideas tested, 3 confirmed, 0 profitable.
+  Stretch 4 launched (--budget 16.61).
