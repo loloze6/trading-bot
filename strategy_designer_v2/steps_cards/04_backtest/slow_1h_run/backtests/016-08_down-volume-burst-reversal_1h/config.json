@@ -1,0 +1,65 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "ret72",
+        "class": "strategies.strategy_components.PriceEvolutionOnPeriodComponent",
+        "params": {
+          "comparison_period": 72
+        }
+      }
+    ],
+    "rules": [
+      {
+        "regime": "mean_reversion",
+        "any_of": [
+          [
+            {
+              "id": "ret72",
+              "op": "lt",
+              "value": 0.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "topvol",
+            "class": "strategies.strategy_components.TopVolumesShareComponent",
+            "params": {
+              "period": 72,
+              "top_k": 3
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 72,
+                  "min_periods": 20
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "unknown": null,
+      "trending": null,
+      "chop": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 1440,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 8760,
+      "max_allocation": 2
+    }
+  }
+}
