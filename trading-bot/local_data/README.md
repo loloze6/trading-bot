@@ -13,7 +13,7 @@ mysterious.
 The sealed holdout is the range `holdout_range` in `trading-bot/config/campaign_data_policy.yaml`, read by every guard.
 Since 2026-11-18 it is 2027 H1: the 2026 H1 holdout was opened that day, on the operator's go, for the test of the
 research's paying ideas on unseen dates (`holdout_consumed_by: [unseen_run]`;
-`strategy_designer_v2/steps_cards/UNSEEN_RUN.md`). The daily Kraken files run to 2026-11-17; the hourly ones to
+`strategy_designer_v2/steps_cards/runs/UNSEEN_RUN.md`). The daily Kraken files run to 2026-11-17; the hourly ones to
 2025-12-31. (The earlier warnings of this section, about 2026 H1, are in git history.)
 
 ## Coverage: which dates each file was fetched for (`coverage.yaml`)

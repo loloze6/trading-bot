@@ -99,7 +99,7 @@ Aligned with the other steps.
 - no main measure value; a statistic that is not a dict with a value; no named counts;
 - no "decided by", no "reading".
 
-**The same criterion on another record** (`--measure FILE`, 2026-11-18, `UNSEEN_RUN.md`): an earlier verdict's
+**The same criterion on another record** (`--measure FILE`, 2026-11-18, `runs/UNSEEN_RUN.md`): an earlier verdict's
 `measure.py` is applied as it is to another record of the same plan (other dates, other coins). No model call, one
 attempt; the checks in code are the same.
 
@@ -126,7 +126,7 @@ The 15 daily plans of `03_test_plan/plans/` whose outcome is `plan` (13 with a b
 - **Exercise 8 and `verdicts/`:** the rewritten plans, run twice. 13 of 13 statuses agree (all inconclusive); every situation check passes.
 - **The planted test:** step 5 confirms (t 5.5) and rejects (t -4.1) a planted gain, in the right direction; a realistic gain on one fold stays inconclusive (`planted_test/reading.md`).
 - **Exercises 9 to 11:** "not observable" split from "inconclusive" by the plan's minimum counts. 13 of 13 statuses agree on the fixed inputs (all inconclusive: every minimum reached); two records cut to one window give "not observable" twice.
-- **The full-data run:** 5 "rejected" verdicts came from the plans' per-window holding reference, a bias fixed in step 3; rerun, 6 of 6 inconclusive (`../FULL_DATA_RUN.md`).
+- **The full-data run:** 5 "rejected" verdicts came from the plans' per-window holding reference, a bias fixed in step 3; rerun, 6 of 6 inconclusive (`../runs/FULL_DATA_RUN.md`).
 
 ## Who judges the output
 The operator: "does this verdict apply my plan's rule, and would I accept it?". Code checks the shape of the result. Each exercise has a one-page reading: the functions are read against their plans, and the two runs are compared.

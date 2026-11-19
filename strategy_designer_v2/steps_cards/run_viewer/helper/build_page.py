@@ -95,11 +95,11 @@ def labelled(text, label):
 
 
 def run_brief_file(cards, run):
-    """The run brief is steps_cards/<NAME>_RUN.md; the longest such name that the run's name starts with
+    """The run brief is steps_cards/runs/<NAME>_RUN.md; the longest such name that the run's name starts with
     (night_005_run -> NIGHT_RUN.md)."""
     stem = run[: -len("_run")].upper()
     best = None
-    for p in cards.glob("*_RUN.md"):
+    for p in (cards / "runs").glob("*_RUN.md"):
         name = p.name[: -len("_RUN.md")]
         if (stem == name or stem.startswith(name + "_")) and (best is None or len(name) > len(best[0])):
             best = (name, p)

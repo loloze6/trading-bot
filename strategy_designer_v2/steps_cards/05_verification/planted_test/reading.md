@@ -23,4 +23,4 @@
 
 **Why hourly bars did not help.** For an edge of steady size, the t-statistic is about the annual Sharpe ratio times the square root of the years covered; the number of bars does not enter. Fold A is 2 years: t = 2 needs an annual Sharpe of about 1.4 before costs. With 8 years it needs about 0.7.
 
-**Conclusion.** Not a bug, and the threshold (t of 2) is the usual one. The sample is too small: 2 years and 1 or 2 coins. The next run widens it (`../../FULL_DATA_RUN.md`).
+**Conclusion.** Not a bug, and the threshold (t of 2) is the usual one. The sample is too small: 2 years and 1 or 2 coins. The next run widens it (`../../runs/FULL_DATA_RUN.md`).
