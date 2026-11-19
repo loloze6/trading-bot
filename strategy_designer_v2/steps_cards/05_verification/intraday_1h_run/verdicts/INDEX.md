@@ -6,5 +6,6 @@
 017-03_postsettle-recovery-after-uptrend_1h: inconclusive (fit: adapted) [main: 1.96278e-05; OLS slope t 1.38867; cases pooled across coins and windows 26465]
 017-04_postsettle-decline-after-downtrend.c1_post-settlement-decline-four-hours_1h: confirmed (fit: adapted) [main: 0.000849507; t of the mean 4.84689; episodes with a negative forecast 24787, episodes per third 8262]
 017-04_postsettle-decline-after-downtrend.c2_off-settlement-rebound-after-falls_1h: confirmed (fit: adapted) [main: 0.000423841; ordinary t of the mean 4.07692; cases 50986]
+017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls_1h: confirmed (fit: adapted) [main: 0.0010792; ordinary t of the mean 4.05505; cases 8382]
 017-04_postsettle-decline-after-downtrend_1h: rejected (fit: adapted) [main: -0.000865296; ordinary t of the mean -5.88589; events with forecast below 0 25389]
 017-05_settlement-move-reverses-after_1h: confirmed (fit: adapted) [main: 0.000434249; ordinary t of the mean 5.09841; settlement bars 51746, top third 17248, middle third 17250, bottom third 17248]

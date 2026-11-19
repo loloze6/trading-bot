@@ -146,3 +146,7 @@ components, 1 untestable), turn 8 (017-02) cut mid-turn, resumes. Slow 25.55 USD
   (post-settlement decline over four hours): confirmed t +4.85; 017-04.c2 (rebound after falls, off settlement hours):
   confirmed t +4.08; none profitable (6 of 6 failed each). Run so far: 13 ideas tested, 3 confirmed, 0 profitable.
   Stretch 4 launched (--budget 16.61).
+- 12:16: check-in, no restart (up 2h23). 017-04.g1 (rebound at the US open after falls): confirmed t +4.06, not profitable
+  (6 of 6). 017-05.g1 refused by step 3 (missing component); the loop called the components step (turn 18, 10 turns since
+  its last call): built `MeanAbsoluteMoveRankComponent` (lookback 720, period 168), 0.33 USD; 017-05.g1 unblocked and
+  re-planned at once (turn 19, backtesting). Build committed on the working branch (standing go). 14.9 USD.

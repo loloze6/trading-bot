@@ -3694,3 +3694,64 @@ class HourOfDayComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return 2
+
+
+class MeanAbsoluteMoveRankComponent(SubStrategyComponent):
+    """
+    Rank of the mean absolute one-bar move within its own recent past, on every bar:
+
+        r[j]  = close[j] / close[j-1] - 1
+        m(i)  = mean(abs(r[j]) for j = i - period + 1 .. i)        (bar i's return included)
+        raw_value = (number of i in t - lookback + 1 .. t with m(i) <= m(t)) / lookback
+
+    Range: above 0, up to 1, in steps of 1/lookback. It is never negative and has no direction. It is 1 when
+    today's mean absolute move is the highest of the lookback. It is 1/lookback when it is the lowest, because
+    the count includes m(t) itself. It grows as the mean absolute move rises above its usual level. Stateless
+    and unsmoothed.
+    Warm-up: period + lookback rows, bar t included.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last period + lookback rows of data, the last
+    of which is bar t; every m(i) ends at a bar i <= t.
+
+    NaN: a NaN close in the last period + lookback rows gives NaN. A close not above 0 there gives NaN (never on
+    real bars).
+    Building the component raises for a period below 1 or a lookback below 2.
+    """
+
+    def __init__(self, name="MeanAbsMoveRank", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 168))
+        if self.period < 1:
+            raise ValueError(f"MeanAbsoluteMoveRankComponent: period must be >= 1, got {self.period}")
+        self.lookback = int(self.parameters.get("lookback", 720))
+        if self.lookback < 2:
+            raise ValueError(f"MeanAbsoluteMoveRankComponent: lookback must be >= 2, got {self.lookback}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data['close'].astype(float).to_numpy()[-n:]
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        a = np.abs(c[1:] / c[:-1] - 1.0)          # n - 1 = period + lookback - 1 returns
+        m = np.empty(self.lookback)
+        for k in range(self.lookback):
+            m[k] = float(np.sum(a[k:k + self.period])) / self.period
+        cur = m[-1]
+        rank = float(np.sum(m <= cur)) / self.lookback
+        self._raw_value = float(rank)
+        self.confidence = 1.0
+        self.debug_info = {'mean_abs_move': float(cur), 'rank': rank}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period + self.lookback

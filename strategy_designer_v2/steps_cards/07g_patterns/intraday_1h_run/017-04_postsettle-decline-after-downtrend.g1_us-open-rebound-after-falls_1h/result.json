@@ -1,0 +1,51 @@
+{
+  "line": "7.g",
+  "backtest": "017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls_1h",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.35585600000000006,
+  "findings": {
+    "F1": "The tested rebound is real but the fees eat it. Gross position gain is 0.000227 a day and fees are 0.000527 a day, so the book loses 0.00030 a day. Almost all fees are paid on the 11:00 and 13:00 bars, about 2.4 bp each, which is one full round trip every day.",
+    "F2": "From 16:00 UTC the coin continues its 3-day move rather than reversing it. The 2-hour return from the close of the 15:00 bar rises with the signed 72-hour return (pooled slope 0.0105, t = 7.3, n = 17018). It goes from \u221213.0 bp (t = \u22123.5) in the lowest quintile of 72-hour return to +20.3 bp (t = 6.4) in the highest. The slope is positive in 5 of 6 coins (t from 2.1 to 6.4; XRP \u22120.6) and holds from the 16:00 decision too (t = 4.5). It is weak from 2021 to 2024 (t between \u22120.1 and 1.8).",
+    "F3": "There is an unconditional rise from 20:00 to 22:00 UTC: the 20:00 bar averages +5.5 bp (t = 6.7) and the 21:00 bar +4.4 bp (t = 5.7). Every coin is positive (+2.7 to +8.8 bp; t = 2.4 to 2.6 for BTC, ETH, XRP and ZEC). The rise grows with the 3-day hourly volatility: +1.0 bp (t = 0.9) in the calmest quartile and +12.3 bp (t = 3.4) in the most volatile.",
+    "F4": "Outside the tested 11:00\u201313:00 hours, there is a second window where the coin runs against its 3-day move. The 2-hour return from the close of the 18:00 bar has slope \u22120.0094 on the signed 72-hour return (t = \u22126.9, n \u2248 17000), and from the 19:00 bar the slope is \u22120.0072 (t = \u22125.2). This is as strong as the tested hours (t of \u22127.8 and \u22129.0 at the 11:00 and 12:00 decisions).",
+    "F5": "I looked at about 24 hours across several tests, so I treat |t| below about 4 as possible chance. The hourly means near 13:00 (\u22123.6 bp, t = \u22123.8) and 02:00 (\u22122.8 bp, t = \u22123.8), the weekday split of the evening rise, and the year splits do not stand out enough to count."
+  },
+  "ideas": [
+    {
+      "idea": "For a coin, the return over the 2 hours from 16:00 UTC follows the direction of its 3-day return, and the larger its 3-day move, the larger that 2-hour move in the same direction.",
+      "consequence": "In the late US afternoon a trader could side with a coin's 3-day trend, sized by the trend's size, rather than fade it.",
+      "name": "US afternoon trend continuation",
+      "from": "F2",
+      "refs": [
+        "F2"
+      ]
+    },
+    {
+      "idea": "For a coin, the return over the 2 hours from 20:00 UTC is positive, and the higher the coin's hourly volatility over the past 3 days, the larger that rise.",
+      "consequence": "The early-evening hours give a long bias that is worth taking mainly when the coin has been volatile.",
+      "name": "evening drift in volatile coins",
+      "from": "F3",
+      "refs": [
+        "F3"
+      ]
+    },
+    {
+      "idea": "For a coin, the return over the 2 hours from 19:00 UTC runs against its 3-day return: the larger its 3-day rise, the lower that return, and the larger its 3-day fall, the higher it is.",
+      "consequence": "A second daily fade window could be stacked with the 12:00 rebound, so that each round trip's fee is set against more of the move.",
+      "name": "evening fade of 3-day moves",
+      "from": "F4, F1",
+      "refs": [
+        "F4",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls.g1_us-afternoon-trend-continuation",
+    "017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls.g2_evening-drift-in-volatile-coins",
+    "017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls.g3_evening-fade-of-3-day-moves"
+  ],
+  "no_ideas": null
+}
