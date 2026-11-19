@@ -1,0 +1,6 @@
+016-01_up-grind-price-continuation_1h: missing-components: The idea needs, for one coin's closes over the last 72 hourly bars, the share of the 3-day rise made [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+016-02_down-grind-price-continuation_1h: missing-components: The idea's grind-versus-jump split needs the share of a 72-bar fall made by its few largest hourly losses. No component, [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+016-03_up-jump-price-reversal_1h: missing-components: The 72-bar rise is available (`PriceEvolutionComponent`, period 72), but no component computes the share of that rise carried by its [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+016-04_down-jump-price-reversal_1h: missing-components: The idea needs the share of a 72-hour fall that came from its few largest hourly losses. That uses only [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+016-05_up-even-volume-continuation_1h: missing-components: The rise maps to a regime rule (`PriceEvolutionComponent` at period 72, raw value at least 0). The forecast inside that [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+016-06_down-even-volume-continuation_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]

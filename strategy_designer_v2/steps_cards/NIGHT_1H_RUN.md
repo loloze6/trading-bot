@@ -41,3 +41,13 @@ gets the unseen test on 2016-17 (no hourly 2026 data yet: that period reads "not
 
 ## What is not done
 No merge into master; no change to a step during the run; nothing is tuned to the night's results.
+
+## Journal of the night
+- 00:12 UTC: the three tracks started.
+- 00:26: the container restarted (every process stopped). Found then: the two briefs' first ideas mostly refused by
+  step 3 as missing components (slow 5 of 5, intraday 4 of 6, 1 untestable); the intraday loop had called the
+  components step, cut mid-build (`HoursToSettlementComponent`: its class and catalogue row written, its checks and
+  proof not run, no index line). Undone (git), as the card says for an unfinished build: the wish stays open and is
+  answered again.
+- 00:28: restarted, the two briefs one after the other (two loops at once could build components into the same
+  shared file together), the retest beside them.
