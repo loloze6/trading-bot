@@ -1,0 +1,74 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "ma_age",
+        "class": "strategies.strategy_components.MovingAverageAgeComponent",
+        "params": {
+          "period": 200,
+          "max_bars": 120
+        }
+      }
+    ],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "ma_age",
+              "op": "gte",
+              "value": 1
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "prox_mom",
+            "class": "strategies.strategy_components.HighProximityMomentumComponent",
+            "params": {
+              "period": 20,
+              "return_period": 20,
+              "power": 2.0,
+              "proximity": "convex"
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 60,
+                  "min_periods": 20
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "min": 0.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "mean_reversion": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 1440,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 8760,
+      "max_allocation": 2
+    }
+  }
+}
