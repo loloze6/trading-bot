@@ -1,4 +1,5 @@
 017-01_presettle-drop-after-uptrend.g1_midday-fade-of-3-day-trend_1h: inconclusive (fit: exact) [main: 1.8562e-05; ordinary t of the mean 0.422582; hour-12 cases with a nonzero position 15082, trending bars in sample 17347, coins with positive mean excess gain 3, coins measured 6]
+017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h: confirmed (fit: exact) [main: 1.83357e-05; OLS slope t 12.2761; bars with a non-zero forecast 414008, bars in the regression 416645]
 017-01_presettle-drop-after-uptrend_1h: inconclusive (fit: adapted) [main: 9.45878e-05; ordinary t 0.845984; episodes with forecast < 0 26436]
 017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall_1h: rejected (fit: adapted) [main: -6.27455e-05; OLS slope t -3.72518; days with forecast > 0 across coins 8587, 21:00 cases 17415]
 017-02_presettle-rise-after-downtrend_1h: inconclusive (fit: adapted) [main: 1.29763; OLS t of slope 1.29763; cases pooled 25569, cases BTCUSD 4178, cases ETHUSD 4199, cases LTCUSD 4321, cases XMRUSD 4063, cases XRPUSD 4593, cases ZECUSD 4215]
@@ -8,4 +9,5 @@
 017-04_postsettle-decline-after-downtrend.c2_off-settlement-rebound-after-falls_1h: confirmed (fit: adapted) [main: 0.000423841; ordinary t of the mean 4.07692; cases 50986]
 017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls_1h: confirmed (fit: adapted) [main: 0.0010792; ordinary t of the mean 4.05505; cases 8382]
 017-04_postsettle-decline-after-downtrend_1h: rejected (fit: adapted) [main: -0.000865296; ordinary t of the mean -5.88589; events with forecast below 0 25389]
+017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound_1h: confirmed (fit: adapted) [main: 0.000128789; OLS slope t 13.8026; grid bars where forecast > 0 47568, grid bars in mean_reversion regime 97120, top-quintile grid bars 9514]
 017-05_settlement-move-reverses-after_1h: confirmed (fit: adapted) [main: 0.000434249; ordinary t of the mean 5.09841; settlement bars 51746, top third 17248, middle third 17250, bottom third 17248]

@@ -150,3 +150,7 @@ components, 1 untestable), turn 8 (017-02) cut mid-turn, resumes. Slow 25.55 USD
   (6 of 6). 017-05.g1 refused by step 3 (missing component); the loop called the components step (turn 18, 10 turns since
   its last call): built `MeanAbsoluteMoveRankComponent` (lookback 720, period 168), 0.33 USD; 017-05.g1 unblocked and
   re-planned at once (turn 19, backtesting). Build committed on the working branch (standing go). 14.9 USD.
+- 12:51: stretch 4 ended on its budget (16.99 USD, 4 turns and a components call, 58 min). 017-05.g1 (volatile coins' short
+  dip rebounds): confirmed t +13.80; 017-01.g2 (an hour's move reverses, by volatility): confirmed t +12.28; neither
+  profitable. Example of why: 017-05.g1's book trades 3.9 times a day and loses 0.11 % a day after costs (Sharpe -2.20).
+  Run so far: 16 ideas tested, 6 confirmed, 0 profitable. Stretch 5 launched (--budget 19.99).

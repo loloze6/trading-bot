@@ -1,4 +1,5 @@
 017-01_presettle-drop-after-uptrend.g1_midday-fade-of-3-day-trend_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 017-01_presettle-drop-after-uptrend_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 017-02_presettle-rise-after-downtrend_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]

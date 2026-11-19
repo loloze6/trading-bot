@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess 2-bar forward return on forecast (mean_reversion grid bars, pooled)",
+    "value": 0.0001287885137029089,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 13.80263190270664
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; at least 300 grid bars with forecast > 0"
+  },
+  "supporting_check": {
+    "name": "mean excess 2-bar return over top quintile of positive forecasts > 0",
+    "value": 0.002118778203183957,
+    "passed": true
+  },
+  "counts": {
+    "grid bars where forecast > 0": 47568,
+    "grid bars in mean_reversion regime": 97120,
+    "top-quintile grid bars": 9514
+  },
+  "decided_by": "The slope is positive with t >= 2, the top-quintile mean excess return is above 0, and there are at least 300 grid bars with forecast > 0.",
+  "reading": "The coin's mean 2-bar return is taken over the non-overlapping 2-bar grid of all its bars in all windows, the regression is OLS with an intercept, the top quintile is positive-forecast grid bars at or above their 80th percentile, and the regime is read from the recorded `regime` column."
+}

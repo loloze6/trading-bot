@@ -1,0 +1,23 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of next-bar excess return on forecast, pooled",
+    "value": 1.833567497214269e-05,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 12.276144535689275
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; otherwise inconclusive"
+  },
+  "supporting_check": null,
+  "counts": {
+    "bars with a non-zero forecast": 414008,
+    "bars in the regression": 416645
+  },
+  "decided_by": "The slope is positive with t >= 2 (confirm rule).",
+  "reading": "Every bar with a forecast and a next-bar return inside its window enters the pooled OLS (with intercept), the coin mean is over all its windows' 1-bar returns, and the minimum count is of those bars with a non-zero forecast."
+}
