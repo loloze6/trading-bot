@@ -4,3 +4,4 @@
 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_short-horizon-uptrend-momentum-near-highs_1h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1h, folds A, B, C, D]
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly_1h: ran: BTCUSD 24/24; ETHUSD 24/24; BNBUSD not run (the dates were not fetched (run the data tool)) [1h, folds A, B, C, D]
 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1h, folds A, B, C, D]
+010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1h: ran: BTCUSD 24/24; ETHUSD 24/24; BNBUSD not run (the dates were not fetched (run the data tool)) [1h, folds A, B, C, D]

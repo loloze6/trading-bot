@@ -4,3 +4,4 @@
 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_short-horizon-uptrend-momentum-near-highs_1h: 2 ideas (3 explorations)
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly_1h: 2 ideas (2 explorations)
 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1h: 4 ideas (2 explorations)
+010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1h: 2 ideas (2 explorations)

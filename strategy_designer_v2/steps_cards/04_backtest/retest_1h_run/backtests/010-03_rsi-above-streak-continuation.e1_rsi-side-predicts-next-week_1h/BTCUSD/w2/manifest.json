@@ -1,0 +1,93 @@
+{
+  "run_id": "20261119T044808Z_e4197a62",
+  "created_utc": "2026-11-19T04:48:08.451030+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [],
+      "rules": [],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "unknown": {
+          "components": [
+            {
+              "id": "rsi_mid",
+              "class": "strategies.strategy_components.RSIPullbackComponent",
+              "params": {
+                "period": 336,
+                "long_only": false
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 337,
+                    "min_periods": 84
+                  }
+                },
+                {
+                  "op": "negate"
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "mean_reversion": null,
+        "chop": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 1440,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 8760,
+        "max_allocation": 2
+      }
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 24,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 7.5,
+        "BTCUSD": 2.5,
+        "ETHUSD": 4,
+        "AVAXUSD": 7.5,
+        "SOLUSD": 7.5
+      }
+    }
+  },
+  "config_sha256": "e4197a625be60dfead597107abbff3e2ad31e4f4230c39e25823df1591636a4e",
+  "data": {
+    "symbols": [
+      "BTCUSD"
+    ],
+    "timeframe": "3600s",
+    "start": "2021-12-31 00:00:00",
+    "end": "2022-08-31 23:00:00",
+    "bar_count": 5856,
+    "data_sha256": "78c2d8c38acdd5e73f731851999c8e87bb906764085312876139227909c23566"
+  },
+  "git_sha": "bc98e911944e9d1ba5f21ae224d5d06493663da2-dirty",
+  "engine": {
+    "lookback": 338,
+    "warmup": 338
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}
