@@ -61,12 +61,12 @@ never used a server. "Fit" says whether 3 runs (about 820 MB) fit.
 
 | Option | Exact plan | Cost / month | Simp. | Fit (3 runs) | Flexibility | Main risk |
 |---|---|---|---|---|---|---|
-| **OVHcloud VPS-1** (France) | 2 vCores, 4 GB, 40 GB NVMe, unlimited traffic at 500 Mbit/s, **daily backup and IPv4 included**, 99.9% uptime promise. Datacentres in France | **€4.57** with a 12-month commitment (€3.81 HT); **€5.39** with none (€4.49 HT) [O] OVH blog "VPS 2027" + [3] dev.to, Nov 2026 | 4 | yes, with room | good: bigger plans in one click | OVH raised its previous range by 45% in April 2026 [3] next.ink; the renewal price after the commitment is not known |
-| netcup VPS nano G11.5s (Germany) | 2 vCores, 2 GB, 60 GB, IPv4 included | **€3.69** with German VAT, about €3.72 with French VAT [calc]; **6-month contract** [O] netcup.com/en/server/vps-lite (extract) | 3 | yes, without much room | medium | German company, English/German panel; backups: I do not know |
+| **OVHcloud VPS-1** (France) | 2 vCores, 4 GB, 40 GB NVMe, unlimited traffic at 500 Mbit/s, **daily backup and IPv4 included**, 99.9% uptime promise. Datacentres in France: Gravelines, Strasbourg [3] | **€4.57** with a 12-month commitment, **paid upfront: about €54.86 at once** (€3.81 HT) [calc]; **€5.39** with none (€4.49 HT) [O] OVH blog "VPS 2027" + [3] dev.to, 2026-11-13 | 4 | yes, with room | good: bigger plans in one click | the renewal price after the commitment is not known; OVH raised its previous range by 45% in April 2026 [3] next.ink; a 2021 fire in Strasbourg cost data to VPS customers without backups (section 7) |
+| netcup VPS nano G11.5s (Germany) | 2 vCores, 2 GB, 60 GB, IPv4 included | **€3.69** with German VAT, about €3.72 with French VAT [calc]; **6-month contract** [O] netcup.com/en/server/vps-lite (extract; the nano price was cut off in round 2, so it is not re-confirmed) | 3 | yes, without much room | medium | German company, English/German panel; **snapshots included** [O] same page, one free snapshot download, more are paid [3] |
 | netcup VPS pico G11.5s | 1 vCore, 1 GB, 30 GB | €2.21 with VAT, 12-month contract [O] same page | 3 | **no** (1 run only) | low | too small for 3 runs |
 | IONOS VPS XS (France/Germany) | 1 vCore, 1 GB, 10 GB | €1.20 [calc from €1 HT] **+ €12 setup fee**, probably a long commitment [3] experte.com/whtop 2026 | 3 | **no** | low | promotional price; renewal unclear |
 | Contabo Cloud VPS 10 (Germany) | 3 vCPU, 8 GB, 75 GB [M] | €4.40 first term, then €5.50 (VAT unclear) **+ a setup fee of unknown amount** [3] pricingsaas Jun 2026 + [O] Contabo support | 3 | yes | high (8 GB) | many reports of slow, overloaded CPUs and of new servers getting IP addresses blacklisted for earlier abuse (r/VPS 2024–25, many users) |
-| Hetzner CX23 (Germany/Finland) | 2 vCPU, 4 GB, 40 GB, 20 TB [M] | **€7.19** [calc: €5.49 + €0.50 IPv4 HT, since 15 June 2026] [3] northflank/bitdoze 2026 | 4 | yes | good | **reported impossible to order on several dates in Sept–Oct 2026** [3] bitdoze; sign-up asks for an ID document plus a selfie, and some sign-ups are refused without reason [O] Hetzner FAQ + many users |
+| Hetzner CX23 (Germany/Finland) | 2 vCPU, 4 GB, 40 GB, 20 TB [M] | **€7.19** [calc: €5.49 + €0.50 IPv4 HT, since 15 June 2026] [3] northflank/bitdoze 2026 | 4 | yes | good | **reported impossible to order on every check from September to 2026-10-20**, no restock date; Hetzner says capacity is limited and restocks depend on cancellations [3] bitdoze + [O] Hetzner order-processing doc; sign-up asks for an ID document plus a selfie, and some sign-ups are refused without reason [O] Hetzner FAQ + many users |
 | Vultr Regular (Paris) | 1 vCPU, 1 GB, 25 GB, 1 TB | about €5.2 [calc from $5 + VAT] [3] costbench 2026 | 4 | **no** (2 GB plan needed, price not checked) | good | billed in USD |
 | Linode/Akamai Nanode (Paris) | 1 vCPU, 1 GB, 25 GB, 1 TB | about €5.2 [calc from $5] [3] activepieces Nov 2026 | 4 | **no** | good | billed in USD |
 | DigitalOcean Basic (Frankfurt/Amsterdam) | 1 vCPU, 1 GB, 25 GB, 1 TB | about €6.2 [calc from $6] [3] costbench Oct 2026; backups +20% [M] | 4 | **no** | good | no Paris datacentre [M] |
@@ -77,7 +77,7 @@ never used a server. "Fit" says whether 3 runs (about 820 MB) fit.
 
 | Option | What is free, for how long | Cost / month | Simp. | Fit | Main risk |
 |---|---|---|---|---|---|
-| Oracle Cloud Always Free | ARM machine up to **2 OCPU / 12 GB** (halved from 4/24 on 2026-06-15), no end date; only in the region chosen at sign-up (France has Paris and Marseille [M]) | **€0** | **1–2** (complex console; often "out of capacity") | yes | Oracle **reclaims idle free machines**: under 20% CPU, network and memory over 7 days [O] Oracle docs. This bot is far below all three, so it would be reclaimed unless the account is upgraded to pay-as-you-go (card, billing risk). Many reports of whole accounts closed without warning [many users, 2024–26]. The free allowance was cut without notice in 2026 [3] InfoQ July 2026 |
+| Oracle Cloud Always Free | ARM machine up to **2 OCPU / 12 GB** (halved from 4/24 on 2026-06-15), no end date; only in the region chosen at sign-up (France has Paris `eu-paris-1` and Marseille `eu-marseille-1` [O] Oracle region list; whether free ARM capacity is available there: I do not know) | **€0** | **1–2** (complex console; often "out of capacity") | yes | Oracle **reclaims idle free machines**: under 20% CPU, network and memory over 7 days [O] Oracle docs. This bot is far below all three, so it would be reclaimed unless the account is upgraded to pay-as-you-go (card, billing risk). Many reports of whole accounts closed without warning [many users, 2024–26]. The free allowance was cut without notice in 2026 [3] InfoQ July 2026 |
 | AWS Lightsail (Paris region exists [M]) | free plan = $100–200 of credits for 6 months, then the account closes unless upgraded [O] AWS, 2025-07-15 | after credits: about €7.2 for 1 GB (**$7**), about €12.4 for 2 GB ($12), IPv4 included [O] Lightsail docs (extract) | 3 | 2 GB plan | not free for long; English console |
 | Google Cloud e2-micro | free with no end date, **in US regions only** (us-west1, us-central1, us-east1) [O] | €0 (a user reports a network charge) | 2 | **no** (1 GB) | **US server: Kraken's EU perpetuals are not offered in the US** (see section 4) |
 | Azure free account | B1s 750 h/month for **12 months**, then about $8.7 in France Central [3] | €0, then about €9 | 2 | **no** (1 GB) | ends after 12 months |
@@ -163,7 +163,7 @@ What I recommend against, and why:
 The cheapest plan with enough memory for 3 runs, IPv4 included, inside the EU. It is behind OVH because:
 - 2 GB leaves little room for more coins or the viewer;
 - its panel and support are in German/English;
-- whether backups are included: I do not know;
+- snapshots are included, but daily automatic backups as at OVH: I do not know;
 - it has a contract term.
 
 ### Questions only the operator can answer (each would change the choice)
@@ -171,7 +171,7 @@ The cheapest plan with enough memory for 3 runs, IPv4 included, inside the EU. I
 | Question | If yes | If no |
 |---|---|---|
 | Do you already own a laptop or NAS you can leave on at home, with a fixed internet address? | It is about €2/month cheaper than OVH. Accept power cuts, internet cuts and sleep as the risks; a Healthchecks alert (below) still warns you | OVH |
-| Are you ready to commit 12 months? | €4.57/month | €5.39/month. I do not know whether a running VPS can move to the commitment price later |
+| Are you ready to pay 12 months upfront (about €55)? | €4.57/month | €5.39/month. I do not know whether a running VPS can move to the commitment price later, nor the price after the 12 months |
 | Will you run more than about 5 runs at once, or the research viewer on the server? | OVH VPS-1 (4 GB) | netcup nano (2 GB) is enough |
 
 ---
@@ -183,13 +183,14 @@ extracts and press articles. **Read them once by hand, or ask Kraken support, be
 
 | Question | Finding | How sure |
 |---|---|---|
+| **Your own account** | **You already hold a Kraken Futures account read by the bot with a key** (value 105.94 USD on 2026-11-17, `live/validation/reading.md`). So access as a French resident is already granted. Whether real orders need one more step (the appropriateness test for derivatives) depends on your account: I do not know | the repository's own record |
 | Who offers the perpetuals to a French resident? | Payward Europe Digital Solutions (CY) Ltd, a Cyprus investment firm (CySEC licence 342/17, EU MiFID II rules). EEA launch 2025-05-20 | press: CoinDesk and Cointelegraph, 2025-05-20 |
 | Conditions | identity verification, tax number, retail or professional classification, an appropriateness test; leverage at most 10x for EEA clients (less for some contracts) | Kraken pages "derivatives eligibility requirements (EEA)" and "margin schedule (EEA)" (extracts, undated) |
 | Is France excluded? | not in any extract of the restricted list (which names e.g. the UK, Canada, Australia). I did not see the full list, so the answer is "probably not", not "no" | extracts; a third-party site says the list was updated in July 2026 |
 | Spot (separate) | Payward Europe Solutions Ltd (Ireland), on the AMF's white list since 2025-07-03 | [O] amf-france.org |
 | Does the server's country matter? | Kraken's EU terms expect the client "located in an EEA jurisdiction"; the perpetuals are **not offered to the US**, which has its own Kraken product; its promotion rules treat a VPN as abuse. **A server in France or the EU is the safe case; a US server (Google's free machine, GitHub Actions) is the risky one.** Whether Kraken blocks US addresses on the API: I do not know | extracts and inference; no official statement on servers found |
 | Kraken blocking data-centre addresses (like Binance's 451) | no report found for Kraken | none found |
-| Can a key be locked to fixed addresses? | **Yes**: the futures API key form takes a list of allowed IPv4/IPv6 addresses; Kraken's docs recommend it and have a call that returns a key's allowed ranges | [O] docs.kraken.com "check v3 API key" + a third-party guide |
+| Can a key be locked to fixed addresses? | **Yes**: the futures API key form takes a list of allowed IPv4/IPv6 addresses; Kraken's docs recommend it and have a call that returns a key's allowed ranges | [O] docs.kraken.com "check v3 API key" + two independent setup guides (Tealstreet, HaasOnline) that describe the field: "comma delimited list of IPv4 or IPv6 IP addresses or ranges" |
 | Key access levels | general API: read-only or full; withdrawals: can be "No access" | third-party guide + Kraken help (extract) |
 | Request limits | one candle request a minute is far below any limit found (private calls: 500 cost units per 10 s) | [O] docs.kraken.com "futures rate limits" |
 
@@ -209,13 +210,14 @@ before trusting it.
    - Then type `type $HOME\.ssh\id_ed25519.pub` and copy the single line it shows. That line is the public half;
      it is safe to share.
 2. **Order (10 min).** On ovhcloud.com/fr/vps, choose **VPS-1**, then:
-   - a datacentre in **France**;
+   - a datacentre in **France** (Gravelines or Strasbourg; not Beauharnois, which is in Canada);
    - the image **Debian 13**;
    - paste the public line from step 1 where it asks for an SSH key;
    - no paid options (the daily backup is included).
 
    Note the **IPv4 address** shown in the OVH panel, and the user name in the delivery email (for Debian images it
-   is usually `debian` [M]).
+   is `debian` for a Debian image: OVH's guide says the user name matches the system chosen [3] mirror of OVH's
+   "starting with a VPS" guide; check it in the email).
 3. **Connect.** Type in PowerShell `ssh debian@YOUR_IP` and answer `yes` the first time. You are now "on the
    server". To leave, type `exit`.
 4. **Mask any sleep.** A server should not sleep, but check once on the server:
@@ -226,7 +228,11 @@ before trusting it.
      fixes by itself.
    - `sudo ufw allow OpenSSH && sudo ufw enable`. The firewall now accepts only your logins; the bot needs nothing
      else, since it only calls out.
-   - `python3 --version` must say 3.13.
+   - `python3 --version` must say 3.13. Whether OVH offers a Debian 13 image I could not confirm. If only Debian 12
+     or Ubuntu 24.04 is offered (Python 3.11 or 3.12), install Python 3.13 with uv, a Python installer:
+     `curl -LsSf https://astral.sh/uv/install.sh | sh`, then in step 7 use
+     `~/.local/bin/uv venv --python 3.13 ~/venv` and
+     `~/.local/bin/uv pip install --python ~/venv/bin/python -r ~/trading-bot/trading-bot/requirements.txt`.
 6. **Get the code (10 min).** The server needs read-only access to the repository: a **deploy key**, an SSH key that
    can read this one repository and nothing else.
    - On the server: `ssh-keygen -t ed25519 -f ~/.ssh/github_deploy -N ""` then `cat ~/.ssh/github_deploy.pub`.
@@ -260,7 +266,8 @@ before trusting it.
    - **ntfy**: install the ntfy app on the phone and subscribe to a long, random topic name, e.g. 30 random
      letters. Anyone who knows the name can read the alerts, so treat it like a password. The service file below
      sends a message at every start and every stop: a crash, a reboot, or a stop by hand.
-   - **Healthchecks.io**, the free "Hobbyist" plan with 20 checks [O]: it alerts you when the server goes *silent*.
+   - **Healthchecks.io**, the free "Hobbyist" plan with 20 checks [O], with Telegram and ntfy among its alert
+     channels on the free plan [3] comparison article + a user report: it alerts you when the server goes *silent*.
      A message sent by the bot cannot cover a dead server; this can.
      - Create one check per run, with a period of 1 hour and a grace time of 1 hour.
      - Add your phone through its Telegram or email integration.
@@ -369,28 +376,66 @@ Not found:
 
 ---
 
-## 7. What I could not verify ("I do not know")
+## 7. Second pass (2026-11-19): what it changed
+
+A second round of searches on the gaps the first one left. The providers' and Kraken's own pages were still
+blocked, so these are search extracts too.
+
+| Gap | Found | Changes the choice? |
+|---|---|---|
+| Can a French resident use Kraken Futures? | No official list of eligible EEA countries found. **You already have a Kraken Futures account read by the bot**, so access is granted | no |
+| Locking the key to the server's address | confirmed by two independent setup guides; IPv4 or IPv6 | no: it confirms the fixed-address need |
+| OVH commitment | the €3.81 HT price is **12 months paid upfront** (about €54.86 with VAT, at once); about 18% more without commitment; no source gives the price after 12 months | no; it is a question for you (section 3) |
+| OVH data centres | France: Gravelines, Strasbourg; Beauharnois is in Canada | no |
+| OVH reliability | March 2021: a fire destroyed one Strasbourg data centre (SBG2); VPS customers without a backup lost data, and some backups were in the same building. OVH then promised backups for all; a March 2026 review says the new range's daily backups are stored in separate buildings (not confirmed on OVH's page) | no, but it makes step 13 (a copy at home) a rule: never rely on the provider's backup alone |
+| Hetzner cheap plans | still unavailable at every check up to 2026-10-20; no restock date | no |
+| netcup nano | snapshots included; the price was cut off in the extract | no |
+| Oracle's free machine in France | Paris and Marseille regions exist; free ARM capacity there unknown | no: the idle-reclaim rule remains |
+| Healthchecks free plan | Telegram and ntfy reported available | no |
+| Latency to Kraken | matters for fast trading, not for one decision per day: any EU server is enough | no |
+
+Sources of round 2:
+- dev.to/neurau_tech/vps-pas-cher-en-novembre-2026-8-hebergeurs-compares-au-prix-officiel-25k6 (2026-11-13)
+- ovhcloud.com/en/vps/vps-france/
+- datacenterdynamics.com/en/opinions/lessons-ovh-fire-disaster-recovery-plans-are-not-work-fiction
+- techradar.com/news/ovh-says-it-doesnt-hold-backups-for-some-systems-affected-by-data-center-fire
+- docs.ovhcloud.com/en/guides/bare-metal-cloud/virtual-private-servers/starting-with-a-vps
+- docs.tealstreet.io/docs/connect/kraken-futures
+- help.haasonline.com/usage/exchanges/kraken-futures/
+- docs.kraken.com/exchange/guides/rest/api-keys
+- bitdoze.com/hetzner-cloud-cost-optimized-plans/
+- docs.hetzner.com/general/infrastructure-and-availability/order-processing
+- netcup.com/en/server/vps-lite
+- docs.oracle.com/iaas/Content/General/Concepts/regions.htm
+- dev.to/urtuba/drumbeats-vs-healthchecksio-an-honest-comparison-2026-1in9
+- cybernews.com/vps/best-vps-for-trading-bots/
+
+## 8. What I could not verify ("I do not know")
 
 **Prices**
 - **No price was read on a provider's own page**: this session's network blocked them, and all come from search
   extracts or third-party pages.
-- OVH: the renewal price after the 12-month commitment, and whether a running VPS can move to it later.
-- netcup: whether backups are included. Contabo: the setup fee. Hetzner: whether the cheap plans can be ordered
-  today.
+- OVH: the renewal price after the 12-month commitment, and whether a running VPS can move to it later; whether a
+  Debian 13 image is offered.
+- netcup: the nano price, re-checked in round 2 but cut off; whether daily automatic backups exist besides
+  snapshots. Contabo: the setup fee. Hetzner: whether the cheap plans can be ordered today (unavailable at every
+  check up to 2026-10-20).
 - The USD-to-EUR rate.
 
 **Kraken**
-- Whether France is absent from the **full** restricted list. Kraken's support pages could not be opened.
+- Whether France is absent from the **full** restricted list. Kraken's support pages could not be opened, and a
+  second search found no official list of eligible EEA countries. Your existing Futures account answers the access
+  question; whether real orders need more steps on it is for Kraken support or your account page.
 - Whether Kraken blocks US or data-centre addresses on the futures API.
-- Whether IPv6 works for key restriction.
 - Whether the server's country is checked at all.
 
 **Home and monitoring**
 - Whether your internet provider gives a fixed address at home.
-- Whether Healthchecks.io's free plan sends to ntfy (Telegram and email are listed).
+- Healthchecks.io's free-plan channels are confirmed only by a comparison article and a user report, not by its own
+  page.
 
 **The server itself**
-- The OVH Debian image's default user name. I wrote `debian` from memory.
+- The OVH Debian image's default user name: `debian`, according to a copy of OVH's guide; not seen on OVH's own page.
 - The service file and the alerts **have not been run** on any server.
 - The memory figure comes from Linux in this container with synthetic candles. It has not been measured on the VPS.
 
