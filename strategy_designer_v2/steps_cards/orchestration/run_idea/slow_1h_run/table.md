@@ -21,13 +21,14 @@ One row per idea run; every status is read from the step's own result file. Each
 | 016-05_up-even-volume-continuation.g1_evening-utc-hour-drift | 016-05_up-even-volume-continuation | plan | confirmed (+4.42) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d1_evening-drift-in-turbulent-weeks, 016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d2_evening-drift-outpaces-volatility; 7.g: 016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.g1_late-evening-utc-drift, 016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.g2_volatility-scaled-one-day-fall-rebound | 0.93 | 12.7 |
 | 016-07_up-volume-burst-reversal.g1_efficient-rises-keep-rising | 016-07_up-volume-burst-reversal | plan | inconclusive (+1.19) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 016-07_up-volume-burst-reversal.g1_efficient-rises-keep-rising.b1_efficient-rises-more-coins, 016-07_up-volume-burst-reversal.g1_efficient-rises-keep-rising.b2_smooth-rises-keep-rising; 7.d: 016-07_up-volume-burst-reversal.g1_efficient-rises-keep-rising.d1_day-persistent-smooth-rises-continue, 016-07_up-volume-burst-reversal.g1_efficient-rises-keep-rising.d2_established-smooth-rises-continue; 7.g: 016-07_up-volume-burst-reversal.g1_efficient-rises-keep-rising.g1_one-day-volatility-scaled-reversal, 016-07_up-volume-burst-reversal.g1_efficient-rises-keep-rising.g2_hourly-crash-bounce | 1.45 | 17.4 |
 | 016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls | 016-08_down-volume-burst-reversal | plan | confirmed (+2.65) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls.d1_daily-fall-multi-day-rebound, 016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls.d2_grinding-falls-rebound-more; 7.g: 016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls.g1_late-evening-drift-scaled-by-volatility, 016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls.g2_volatility-scaled-daily-fall-rebound, 016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls.g3_turbulent-falls-rebound-harder, 016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls.g4_spread-out-falls-rebound-more | 0.91 | 12.0 |
+| 016-01_up-grind-price-continuation.g2_persistent-hour-of-day-drift | 016-01_up-grind-price-continuation | missing-components | - | - | - | - | 0.06 | 0.4 |
 
 ## Consumption
-17 ideas, 20.73 USD, 360.2 minutes in all.
+18 ideas, 20.79 USD, 360.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.80 | 12.9 |
+| step3_plan | 2.86 | 13.3 |
 | step4_backtest | 0.00 | 272.1 |
 | step5_verdict | 2.20 | 10.3 |
 | step6_check | 0.00 | 3.3 |
