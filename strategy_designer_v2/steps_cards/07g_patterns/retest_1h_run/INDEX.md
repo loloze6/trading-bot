@@ -6,3 +6,4 @@
 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1h: 3 ideas (2 explorations)
 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1h: 2 ideas (2 explorations)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum_1h: 2 ideas (2 explorations)
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1h: 3 ideas (3 explorations)

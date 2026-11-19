@@ -1,3 +1,4 @@
+016-01_up-grind-price-continuation.g1_big-moves-precede-rises_1h: inconclusive (fit: exact) [main: 0.0012984; OLS slope t 3.66688; independent sampled cases 5683]
 016-01_up-grind-price-continuation_1h: inconclusive (fit: exact) [main: -0.00427184; Welch t -0.569328; grid cases in top third 316, grid cases in bottom third 316, grid cases with forecast above 0 947]
 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift_1h: confirmed (fit: exact) [main: 0.000961003; t of the mean 7.67712; slot cases 17257]
 016-02_down-grind-price-continuation_1h: inconclusive (fit: exact) [main: 0.00151387; t of the mean 0.948179; grid bars with a negative forecast 2762, grid bars below median forecast 1381, grid bars above median forecast 1381]

@@ -80,6 +80,8 @@ Nothing stops: the other periods go on, and the result says what each step gave.
 - **Step 5 refuses** (the measure fails on the record, or returns a result its checks refuse): one attempt only (no
   model to ask again); no `result.json`, so "no verdict" and "does not hold".
 - **Step 6 fails:** "not checked", and "does not hold".
+- **No data for the period** (no verdict and no check, e.g. the hourly bars of 2026 not fetched): "no data", not "does
+  not hold" (`holds` null): the idea was not judged there (night 1h, 2026-11-19).
 - A failed step leaves no output, so the next call tries it again (after a fix, for example).
 
 ## Checks in code

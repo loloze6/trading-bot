@@ -12,21 +12,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation | 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise | plan | confirmed (+2.33) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | - | 7.d: 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation.d1_buy-pullbacks-in-advances, 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation.d2_advance-with-one-day-dip, 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation.d3_persistent-volatility-scaled-advance, 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation.d4_advance-with-awakening-volatility; 7.g: 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation.g1_late-utc-hour-drift, 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation.g2_large-daily-move-rebound, 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation.g3_relative-volume-predicts-rise | 0.98 | 19.5 |
 | 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week | 010-03_rsi-above-streak-continuation | plan | confirmed (+2.28) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week.d1_smoothed-rsi-side-slow-lean, 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week.d2_rsi-weekly-change-continuation; 7.g: 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week.g1_high-volatility-one-day-reversal, 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week.g2_three-day-volatility-scaled-continuation | 0.78 | 11.9 |
 | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades | plan | confirmed (+3.65) | not profitable enough (failed: Mean daily return, Calmar) | - | 7.d: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum.d1_follow-through-after-strongest-weeks, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum.d2_weekly-momentum-near-monthly-high; 7.g: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum.g1_high-volatility-daily-reversal, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum.g2_volatility-spike-sharpens-reversal | 0.89 | 17.8 |
+| 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins | 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side | plan | confirmed (+5.29) | profitable enough | unseen_2016_2017: does not hold; unseen_2026: does not hold | 7.g: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g1_late-evening-utc-rise, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g2_daily-strength-in-rising-months, 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins.g3_bounces-fade-in-falling-months | 0.92 | 102.4 |
 
 ## Consumption
-8 ideas, 9.09 USD, 238.2 minutes in all.
+9 ideas, 10.00 USD, 340.6 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.58 | 4.4 |
-| step4_backtest | 0.00 | 197.3 |
-| step5_verdict | 1.06 | 5.1 |
-| step6_check | 0.00 | 2.0 |
-| chart_files | 0.00 | 0.9 |
+| step3_plan | 1.67 | 5.0 |
+| step4_backtest | 0.00 | 289.8 |
+| step5_verdict | 1.22 | 5.7 |
+| step6_check | 0.00 | 2.2 |
+| chart_files | 0.00 | 1.1 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.b | 0.93 | 3.3 |
 | step7_7.d | 2.35 | 8.8 |
-| step7_7.g | 3.17 | 11.6 |
-| unseen_test | 0.00 | 4.8 |
+| step7_7.g | 3.84 | 13.6 |
+| unseen_test | 0.00 | 11.0 |

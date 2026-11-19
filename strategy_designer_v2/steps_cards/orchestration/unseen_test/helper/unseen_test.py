@@ -46,12 +46,15 @@ def main_values(result):
 
 def reading(in_sample, verdict, check):
     """One period's reading: step 5 and 6 as they say, and whether the idea holds (common/unseen_dates.md: the main
-    measure has its in-sample sign AND the book's Sharpe after costs is above 0)."""
+    measure has its in-sample sign AND the book's Sharpe after costs is above 0). holds is None when the period could
+    not be judged at all (no verdict and no check: no data for these dates, e.g. hourly bars not fetched)."""
     ins, _ = main_values(in_sample)
     value, stat = main_values(verdict)
     sharpe, vs_hold = measure(check, "sharpe_min"), measure(check, "sharpe_vs_hold_min")
     holds = (value is not None and ins is not None and sharpe is not None
              and (value > 0) == (ins > 0) and value != 0 and sharpe > 0)
+    if verdict is None and check is None:
+        holds = None
     return {"step5": (verdict or {}).get("status", "no verdict"), "main": value, "statistic": stat,
             "sharpe": sharpe, "holding_sharpe": None if sharpe is None or vs_hold is None else sharpe - vs_hold,
             "step6": (check or {}).get("status", "not checked"), "holds": holds}
@@ -94,7 +97,8 @@ def main():
     d = HERE.parent / run
     d.mkdir(parents=True, exist_ok=True)
     write_atomic(d / f"{rid}.json", json.dumps(out, indent=2) + "\n")
-    line = "; ".join(f"{p}: {'holds' if r['holds'] else 'does not hold'}" for p, r in out["periods"].items())
+    said = {True: "holds", False: "does not hold", None: "no data"}
+    line = "; ".join(f"{p}: {said[r['holds']]}" for p, r in out["periods"].items())
     index = d / "INDEX.md"
     lines = [l for l in (index.read_text(encoding="utf-8").splitlines() if index.exists() else [])
              if not l.startswith(rid + ":")]
