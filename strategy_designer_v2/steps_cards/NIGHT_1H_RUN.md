@@ -72,3 +72,30 @@ No merge into master; no change to a step during the run; nothing is tuned to th
 - 06:50: retest idea 9 (the 19-coin nearness idea, the live bot's) on 1h: confirmed (t +5.29), profitable enough; on 2016-17 it does not hold (measure ~0, t -0.06; Sharpe 2.88 below holding's 4.14). Found: the unseen test read a period with no data (no hourly 2026 bars) as 'does not hold'; fixed to 'no data' (test, card), the two results recomputed (golden-cross: 2016-17 holds, 2026 no data; nearness: 2016-17 does not hold, 2026 no data). The run table's two rows are refreshed after the retest ends (no write beside a running idea).
 - 06:57: no restart. Retest 9 of 12: 6 confirmed, 2 profitable (golden-cross momentum: holds on 2016-17; 19-coin nearness: does not). Slow brief 14 ideas: 4 confirmed, 0 profitable. About 27 USD spent.
 - 07:44: retest 11 of 12: 7 confirmed, 2 profitable (11: momentum in uptrends confirmed t +3.83, failing only Calmar). Slow brief on turn 23 (a long-history backtest, 51 min so far). About 29 USD spent.
+
+## Reading: retest (finished 07:55 UTC, 12 of 12, 15.3 USD)
+| Idea (on daily bars: confirmed and profitable) | 1h: step 5 | 1h: step 6 (bars failed) | 2016-17 (new dates) |
+|---|---|---|---|
+| c1_high-rsi-trend-continuation | inconclusive (+4.74) | no (5 of 6: Sharpe; Sharpe minus holding's Sharpe; Mean daily return; Lowest Sharpe, one window left out; Calmar) | - |
+| c1_high-rsi-uptrend-continuation | confirmed (+3.40) | no (5 of 6: Sharpe; Sharpe minus holding's Sharpe; Mean daily return; Lowest Sharpe, one window left out; Calmar) | - |
+| b1_momentum-inside-golden-cross-uptrends-more-co | confirmed (+7.19) | profitable enough | holds |
+| e1_short-horizon-uptrend-momentum-near-highs | inconclusive (+2.18) | no (5 of 6: Sharpe; Sharpe minus holding's Sharpe; Mean daily return; Lowest Sharpe, one window left out; Calmar) | - |
+| g2_volatile-reversal-completes-quickly | inconclusive (+1.35) | no (5 of 6: Sharpe; Sharpe minus holding's Sharpe; Mean daily return; Lowest Sharpe, one window left out; Calmar) | - |
+| g1_volatility-scaled-momentum-continuation | confirmed (+2.33) | no (3 of 6: Sharpe minus holding's Sharpe; Mean daily return; Calmar) | - |
+| e1_rsi-side-predicts-next-week | confirmed (+2.28) | no (5 of 6: Sharpe; Sharpe minus holding's Sharpe; Mean daily return; Lowest Sharpe, one window left out; Calmar) | - |
+| g1_rising-month-weekly-momentum | confirmed (+3.65) | no (2 of 6: Mean daily return; Calmar) | - |
+| b1_nearness-to-high-more-coins | confirmed (+5.29) | profitable enough | does not hold |
+| e1_heavy-volume-rising-follow-through | inconclusive (+1.90) | no (2 of 6: Mean daily return; Calmar) | - |
+| g1_momentum-continuation-in-uptrends | confirmed (+3.83) | no (1 of 6: Calmar) | - |
+| e1_short-horizon-dual-momentum-continuation | inconclusive (+1.66) | profitable enough | - |
+(2026: no hourly data for any idea: "no data". The new-dates test runs only for ideas confirmed AND profitable.)
+
+**Outcome B, as pre-registered:** most confirmed (7 of 12), few profitable (3 of 12), 2 both (outcome A needed 8).
+- **The effects survive on hourly bars; the books do not pay.** 5 of 12 fail 5 of the 6 bars, Sharpe included: the
+  same idea read on hourly bars trades more (costs) without more edge.
+- **What pays on hourly bars is the slowest trend ideas** (golden-cross uptrends, nearness to the high, slow and fast
+  momentum); momentum in uptrends misses only Calmar.
+- **Only one holds on new dates:** momentum inside golden-cross uptrends (confirmed t +7.19, profitable, holds on
+  2016-17). The live bot's strategy (19-coin nearness) is confirmed and profitable on 1h but does not hold on 2016-17.
+- Stepping back: for these ideas hourly bars add costs, not edge; their daily versions are the ones to keep. Hourly
+  bars are worth it where the effect itself is hourly (the time-of-day signals of the slow brief).

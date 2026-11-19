@@ -4,6 +4,7 @@
 016-02_down-grind-price-continuation_1h: inconclusive (fit: exact) [main: 0.00151387; t of the mean 0.948179; grid bars with a negative forecast 2762, grid bars below median forecast 1381, grid bars above median forecast 1381]
 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound_1h: confirmed (fit: adapted) [main: 0.00623997; ordinary t 5.27297; decision bars with a forecast above 0 8652, decision bars 17404, top-fifth decision bars 1731, zero-forecast decision bars 8752]
 016-03_up-jump-price-reversal_1h: confirmed (fit: exact) [main: 0.000968346; OLS t of slope 2.73615; grid cases 2916, giveback cases 2865]
+016-04_down-jump-price-reversal.g1_volatile-regime-daily-move-reversal_1h: confirmed (fit: exact) [main: 0.00226274; ordinary t of the mean 4.88902; independent cases 17246, top fifth cases 3452, bottom fifth cases 3447]
 016-04_down-jump-price-reversal_1h: inconclusive (fit: exact) [main: -0.000448957; OLS slope t -1.91619; fallen grid cases 2762, top tercile cases 921]
 016-05_up-even-volume-continuation_1h: inconclusive (fit: exact) [main: 0.00265188; Welch t 0.676444; grid cases (trending, forecast > 0) 2916, top third grid cases 972, bottom third grid cases 972]
 016-06_down-even-volume-continuation.g1_fresh-drop-rebound_1h: confirmed (fit: adapted) [main: 0.000551441; OLS slope t 2.74545; grid bars in mean_reversion 2762, grid bars in mean_reversion with forecast above 0 1891]

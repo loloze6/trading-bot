@@ -9,3 +9,4 @@
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1h: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1h: 3 ideas (2 explorations)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends_1h: 1 ideas (2 explorations)
+N2-04_slow-and-fast-momentum.e1_short-horizon-dual-momentum-continuation_1h: not run: entry condition not met (step 5: inconclusive; step 6: profitable enough)
