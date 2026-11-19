@@ -22,11 +22,12 @@ in order with one result per step, and the run's cost and time.**
   step 3 only when it refused, step 5's verdict with its t, step 6's with its Sharpe (operator, 2026-11-19). Tap it:
   the detail.
 - The detail of a tested idea: its text; step 3's reason; step 5's measure, t and "decided by"; step 6's measures with the
-  failed ones marked; the step 7 lines with their findings and the ideas they proposed (links into the tree); the book
-  by window; cost and time per step.
+  failed ones marked; under step 7, each line with its findings folded and the ideas it wrote as cards (two generations
+  open); the book by window; cost and time per step, last (operator, 2026-11-19).
 - Ideas not tested are in the tree too, greyed, with their place in the queue when the loop holds one; in the run's tree
   a branch's untested ideas fold into one line; under an idea, two generations show and deeper ones fold.
-- A backtest page: the book of all coins, then one coin at a time (its book and its windows' figures).
+- A backtest page: the idea in one sentence, the book of all coins, then one coin at a time (its book by window and day
+  by day); each coin's button green or red by the Sharpe of its own book.
 - A "?" next to each notion that needs it: a plain-words explanation, written from the step cards and
   `common/measures.md`.
 - What the page never shows: an opinion, a score of its own, a date of its own (dates shown are the record's own:
@@ -81,8 +82,10 @@ in order with one result per step, and the run's cost and time.**
    - For: when a run happened, what is newest.
    - Used by: the operator.
    - Without it: runs with no order in time.
-10. **Backtest page**: per coin and window, from `metrics.json`: net return, trades, win rate, deepest fall, Sharpe,
-   share of bars in a position; the coin's own book by window.
+10. **Backtest page**: per coin, its own book by window (`metrics.json` net returns, chained) and its Sharpe on the
+   coin's button, green above 0, red at or below: step 6's definition (`common/measures.md`: mean of the daily returns
+   over their standard deviation, times the square root of 365) on the coin's own book from the chart files, a day's
+   value being its last bar's; no chart files, no colour. The window-by-window table was removed (operator, 2026-11-19).
    - For: which coins and periods carry or sink the book.
    - Used by: the operator.
    - Without it: one averaged line hides the coin that lost.
@@ -94,8 +97,8 @@ in order with one result per step, and the run's cost and time.**
      dragging, read a day by touching it. The files are fetched when the page opens, never embedded.
 
 11. **Depth**: per level below the brief (1: the brief's own ideas, 2: written from a level 1 idea, and so on; the
-   number of segments in the idea's id), the ideas, those backtested, confirmed by step 5, profitable enough by step 6.
-   On the run line in one sentence (levels, the deepest tested, the levels with a profitable idea).
+   number of segments in the idea's id), the ideas backtested of the ideas written: "L1 6 of 6 · L2 3 of 24 ...", on
+   the run line.
    - For: how far each brief was explored, and at which depth what pays was found.
    - Used by: the operator.
    - Without it: no way to tell a brief tried once from one followed five generations down.

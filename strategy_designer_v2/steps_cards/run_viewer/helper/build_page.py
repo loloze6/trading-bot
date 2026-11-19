@@ -354,7 +354,7 @@ def build_run(cards, run, files):
                    "step3": _count((b["step3"] or {}).get("outcome") for b in backtests.values() if b["step3"]),
                    "step5": count("step5"), "step6": count("step6"),
                    "best_t": best(backtests, "step5", "t"), "best_sharpe": best(backtests, "step6", "sharpe"),
-                   "levels": levels(ideas, backtests),
+                   "levels": levels(ideas),
                    "usd": round(usd, 2) if lines else None, "seconds": round(secs) if lines else None,
                    "turns": len(turns), "journal_lines": len(lines)},
     }
@@ -385,16 +385,13 @@ def level_of(idea):
     return idea.count(".") + 1
 
 
-def levels(ideas, backtests):
-    """Per level: the ideas, those backtested, those confirmed by step 5, those profitable enough by step 6."""
+def levels(ideas):
+    """Per level: the ideas, and those backtested."""
     out = {}
     for iid, i in ideas.items():
-        n = out.setdefault(level_of(iid), {"level": level_of(iid), "ideas": 0, "tested": 0, "confirmed": 0, "profitable": 0})
-        bs = [backtests[b] for b in i["backtests"]]
+        n = out.setdefault(level_of(iid), {"level": level_of(iid), "ideas": 0, "tested": 0})
         n["ideas"] += 1
         n["tested"] += i["state"] == "backtested"
-        n["confirmed"] += any((b["step5"] or {}).get("status") == "confirmed" for b in bs)
-        n["profitable"] += any((b["step6"] or {}).get("status") == "profitable enough" for b in bs)
     return [out[k] for k in sorted(out)]
 
 

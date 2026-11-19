@@ -121,8 +121,7 @@ def test_key_figures_and_depth(cards):
     assert r["backtests"][f"{ROOT}_1d"]["step6"]["sharpe"] == 0.5          # the measure sharpe_min, by its id
     assert t["best_t"] == {"confirmed": 3.1} and t["best_sharpe"] == {"not profitable enough": 0.5}
     # level = generations below the brief, from the id; ideas counted once, whatever their backtests
-    assert t["levels"] == [{"level": 1, "ideas": 1, "tested": 1, "confirmed": 1, "profitable": 0},
-                           {"level": 2, "ideas": 2, "tested": 0, "confirmed": 0, "profitable": 0}]
+    assert t["levels"] == [{"level": 1, "ideas": 1, "tested": 1}, {"level": 2, "ideas": 2, "tested": 0}]
     assert data["lines"] == {"7.d": "not profitable"}                      # from the folder 07d_not_profitable
 
 
