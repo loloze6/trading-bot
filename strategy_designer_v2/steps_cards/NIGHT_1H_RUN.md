@@ -51,3 +51,8 @@ No merge into master; no change to a step during the run; nothing is tuned to th
   answered again.
 - 00:28: restarted, the two briefs one after the other (two loops at once could build components into the same
   shared file together), the retest beside them.
+- 01:14: the container had restarted again (up for less than a minute at the check-in; no activity after 00:28).
+  Memory is not the cause (one coin's hourly step 4 call peaks at 368 MB, the machine has 15 GB). Both restarts came
+  while the session was idle, with the night started detached (not a task the session tracks), while the day's tracked
+  background tasks (an hour of timing, the proofs) ran through idle periods. Relaunched 01:16 as a tracked task (capped
+  at 2 hours a launch; relaunched each time, every run resuming from its files).
