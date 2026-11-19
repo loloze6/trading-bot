@@ -62,3 +62,15 @@ night_006_run | 006-05_downside-squeeze-break-continuation_1d | PriorRangeCompre
 night_006_run | 006-04_upside-squeeze-break-continuation.b1_wide-range-breakout-continuation_1d | RangeWidthRatio | built: RangeCompressionRatioComponent {"form": "width", "long_period": 100, "short_period": 20}
 night_run | 011-01_weekend-rise-reverses-monday.d1_weekend-moves-reverse-both-ways.g1_high-volatility-daily-move-reversal.g1_high-vol-down-day-rebound_1d | VolatilityRatioToAverageComponent | built: VolatilityRatioToAverageComponent {"vol_lookback": 60, "vol_period": 20}
 night_005_run | 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g1_calm-regime-daily-move-continuation_1d | RankWeightedScaledMoveComponent | built: RankWeightedScaledMoveComponent {"abs_period": 60, "lookback": 100, "vol_period": 20}
+slow_1h_run | 016-01_up-grind-price-continuation_1h | grind-share-of-rise | built: RiseBeyondLargestMovesComponent {"k": 3, "period": 72}
+slow_1h_run | 016-02_down-grind-price-continuation_1h | GrindShareOfFallComponent | built: LossShareBeyondLargestComponent {"k": 3, "period": 72}
+slow_1h_run | 016-03_up-jump-price-reversal_1h | TopGainsShareOfRiseComponent | built: TopGainsShareOfRiseComponent {"k": 3, "period": 72}
+slow_1h_run | 016-04_down-jump-price-reversal_1h | FallConcentrationShare | built: TopLossesShareOfFallComponent {"form": "share", "k": 3, "period": 72}
+slow_1h_run | 016-05_up-even-volume-continuation_1h | VolumeEvenness | built: VolumeRatioComponent {"period": 72, "short_period": 72, "short_statistic": "median"}
+slow_1h_run | 016-07_up-volume-burst-reversal_1h | VolumeConcentrationComponent | built: TopVolumesShareComponent {"period": 72, "top_k": 3}
+slow_1h_run | 016-08_down-volume-burst-reversal_1h | VolumeTopShareComponent | exists: TopVolumesShareComponent {"period": 72, "top_k": 3}
+intraday_1h_run | 017-01_presettle-drop-after-uptrend_1h | settlement clock | built: HoursToSettlementComponent {}
+intraday_1h_run | 017-02_presettle-rise-after-downtrend_1h | HourOfDayComponent | built: HourOfDayComponent {}
+intraday_1h_run | 017-03_postsettle-recovery-after-uptrend_1h | HourOfDayComponent | exists: HourOfDayComponent {}
+intraday_1h_run | 017-04_postsettle-decline-after-downtrend_1h | HourOfDayComponent | exists: HourOfDayComponent {}
+intraday_1h_run | 017-05_settlement-move-reverses-after_1h | HourOfDayComponent | exists: HourOfDayComponent {}

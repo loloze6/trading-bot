@@ -65,3 +65,4 @@ No merge into master; no change to a step during the run; nothing is tuned to th
   failure (`failed()` read that line as an idea's turn); fixed, with a test. The two briefs paused; the components step
   run by hand on their 12 open wishes (operator's go), then the briefs resume.
 - 03:16: the night's tracked task stopped at its 2-hour cap (the tool's limit; not to be relaunched as is), mid retest idea 4. From now on one tracked task per retest idea (each well under the cap); the briefs resume after the components step. Retest idea 3 (momentum inside golden-cross uptrends) on 1h: confirmed (t +7.19), profitable enough, holds on 2016-17.
+- 03:5x: components step done on the 12 wishes: 8 built (HoursToSettlement, HourOfDay, five move/volume concentration classes, a VolumeRatio setting), 4 exist; 2.96 USD. Four of the five concentration classes are one measure (parked). Committed; the briefs resume.

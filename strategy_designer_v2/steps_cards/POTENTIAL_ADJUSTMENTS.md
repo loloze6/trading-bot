@@ -116,3 +116,10 @@ and spec in the shared files (found 00:26, undone by hand). Proposed: at its sta
 `strategy_components.py`, the catalogue and `tests/built_components/` to their committed state when a class there has
 no index line. Also: two loops calling the step at the same time would build into the same files (tonight the briefs
 run one after the other).
+
+## Parked: four near-duplicate components built in the night (2026-11-19)
+For brief 016 the components step built `RiseBeyondLargestMovesComponent`, `LossShareBeyondLargestComponent`,
+`TopGainsShareOfRiseComponent` and `TopLossesShareOfFallComponent`: one measure (how much of a move its `k` largest bars
+make) on rises and on falls, as a share or as what is left, from simple or log returns. By the card's rule 1 (one
+measure, one component; another base or side is a setting) they should be one component with settings (side, form).
+Not merged during the night (plans in flight use them); to review and merge on the operator's go, with the proof.

@@ -1,0 +1,75 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "volratio",
+        "class": "strategies.strategy_components.VolatilityRatioToAverageComponent",
+        "params": {
+          "vol_period": 480,
+          "vol_lookback": 2400
+        }
+      }
+    ],
+    "rules": [
+      {
+        "regime": "mean_reversion",
+        "any_of": [
+          [
+            {
+              "id": "volratio",
+              "op": "gte",
+              "value": 1.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "mean_reversion": {
+        "components": [
+          {
+            "id": "day_move_fade",
+            "class": "strategies.strategy_components.PriceEvolutionComponent",
+            "params": {
+              "period": 24
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 1440,
+                  "min_periods": 1440
+                }
+              },
+              {
+                "op": "negate"
+              },
+              {
+                "op": "signed_power",
+                "params": {
+                  "exponent": 3,
+                  "pivot": 20
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "trending": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 1440,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 8760,
+      "max_allocation": 2
+    }
+  }
+}

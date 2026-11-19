@@ -2052,7 +2052,9 @@ class VolumeRatioComponent(SubStrategyComponent):
     """
     Recent volume against its own longer base, on every bar:
 
-        num = mean(volume[t - short_period + 1 .. t])                     (bar t included)
+        R = volume[t - short_period + 1 .. t]                             (bar t included)
+        short_statistic = "mean" (default): num = mean(R)
+        short_statistic = "median":         num = median(R)  (average of the two middle values for an even count)
         exclude_current = 0 (default): W = volume[t - period + 1 .. t]
         exclude_current = 1:           W = volume[t - period .. t - 1]
         statistic = "mean" (default):  den = mean(W)
@@ -2061,24 +2063,25 @@ class VolumeRatioComponent(SubStrategyComponent):
         form = "centred":          raw_value = num / den - 1
         form = "log":              raw_value = ln(num / den)
 
-    One setting, `form`, for how the ratio is expressed (2026-11-17: it replaced two settings, `centred` and `log`,
-    which did one job: the operator's rule, one setting per purpose). The defaults (short_period 1, form "ratio",
-    statistic "mean") give volume[t] / mean volume, the original output, unchanged. With period 20, exclude_current 1 and statistic "median" the output is
-    volume[t] / median(volume of the past 20 bars).
-    Graded, with no direction. With form "ratio" the value is non-negative and equals 1 when recent
-    volume equals the base. With "mean" and exclude_current 0 it is at most period / short_period. With
-    exclude_current 1, or with "median", it is unbounded above. form "centred" shifts the value down by 1; form
-    "log" gives the natural log of the ratio: 0 at the base, positive on heavy volume, negative on thin volume.
+    The defaults (short_period 1, form "ratio", statistic "mean", short_statistic "mean") give
+    volume[t] / mean volume, the original output, unchanged. `statistic` sets the base and `short_statistic` sets
+    the numerator. With period 72, short_period 72 and short_statistic "median" the output is
+    median / mean of the last 72 volumes. That is the evenness of the volume: it runs 0 to 2 (at least half the
+    values are >= the median, so the mean is at least median / 2), sits below 1 when a few heavy bars inflate the
+    mean, and nears 1 as the volume spreads evenly.
+    Graded, with no direction. With form "ratio" the value is non-negative and equals 1 when the numerator equals
+    the base. With both statistics "mean" and exclude_current 0 it is at most period / short_period. form
+    "centred" shifts the value down by 1, and form "log" gives the natural log of the ratio.
     Warm-up: period + exclude_current rows, bar t included.
 
     WHY THIS CANNOT LEAK: it reads only the `volume` column of the rows up to and including bar t (the last row of
     data), over at most the last period + exclude_current rows; a bar's volume is known at that bar's close.
 
-    NaN: a NaN volume in either window, or a base of 0, gives NaN. With form "log", a recent mean of 0 gives NaN
-    (zero volume, never seen on real bars). A missing `volume` column raises.
+    NaN: a NaN volume in either window, or a base of 0, gives NaN. With form "log", a recent statistic of 0 gives
+    NaN (zero volume, never seen on real bars). A missing `volume` column raises.
     Building the component raises for a period below 2, an exclude_current other than 0 or 1, a short_period
-    below 1 or above period, a form other than "ratio", "centred" or "log", or a statistic other than "mean" or
-    "median".
+    below 1 or above period, a form other than "ratio", "centred" or "log", or a statistic or short_statistic
+    other than "mean" or "median".
     """
 
     def __init__(self, name="VolumeRatio", weight=1.0, parameters=None):
@@ -2101,6 +2104,10 @@ class VolumeRatioComponent(SubStrategyComponent):
         if st not in ("mean", "median"):
             raise ValueError(f"VolumeRatioComponent: statistic must be 'mean' or 'median', got {st!r}")
         self.statistic = st
+        sst = self.parameters.get("short_statistic", "mean")
+        if sst not in ("mean", "median"):
+            raise ValueError(f"VolumeRatioComponent: short_statistic must be 'mean' or 'median', got {sst!r}")
+        self.short_statistic = sst
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -2110,7 +2117,13 @@ class VolumeRatioComponent(SubStrategyComponent):
         if not self.is_ready():
             return
         vol = data['volume'].astype(float)
-        num = float(vol.iloc[-self.short_period:].mean(skipna=False))
+        recent = vol.iloc[-self.short_period:]
+        if recent.isna().any():
+            num = float("nan")
+        elif self.short_statistic == "median":
+            num = float(np.median(recent.to_numpy()))
+        else:
+            num = float(recent.mean(skipna=False))
         if self.exclude_current:
             base = vol.iloc[-(self.period + 1):-1]
         else:
@@ -2128,7 +2141,8 @@ class VolumeRatioComponent(SubStrategyComponent):
         else:
             self._raw_value = float(num / den - (1.0 if self.form == "centred" else 0.0))
         self.confidence = 1.0
-        self.debug_info = {'short_mean_volume': num, 'base_volume': den, 'statistic': self.statistic}
+        self.debug_info = {'recent_volume': num, 'base_volume': den, 'statistic': self.statistic,
+                           'short_statistic': self.short_statistic}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
@@ -3177,3 +3191,480 @@ class RankWeightedScaledMoveComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return max(self.lookback + self.vol_period, self.abs_period + 1)
+
+
+class RiseBeyondLargestMovesComponent(SubStrategyComponent):
+    """
+    The part of a window's log rise that its k largest up-bars do not account for, on every bar:
+
+        R = ln(close[t]) - ln(close[t - period])                      (the period-bar log return)
+        r_j = ln(close[j]) - ln(close[j - 1]),  j = t - period + 1 .. t
+        T = sum of the k largest positive r_j (all positive r_j if fewer than k are positive; 0 if none)
+        raw_value = max(0, R - T)
+
+    This is the same value as max(R, 0) x (1 - min(T / R, 1)) for R > 0, and 0 for R <= 0, because T >= 0.
+    Graded, no direction: 0 and up, never negative, at most R. It is 0 when the window did not rise or when
+    its k biggest up-bars carry all of the rise. It grows as the rise gets larger and less of it sits in those bars.
+    Units: natural-log return.
+    Warm-up: period + 1 rows, bar t included.
+
+    NaN: a NaN close in the last period + 1 rows gives NaN. A close that is not above 0 there gives NaN
+    (never seen on real bars). A missing `close` column raises.
+    Building the component raises for a period below 2, a k below 1, or a k of period or more (with every bar
+    counted, T >= R and the output would be 0 on every bar).
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last period + 1 rows of data, bar t (the last
+    row) included. No later row exists in the data it is given.
+    """
+
+    def __init__(self, name="RiseBeyondLargestMoves", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 72))
+        if self.period < 2:
+            raise ValueError(f"RiseBeyondLargestMovesComponent: period must be >= 2, got {self.period}")
+        self.k = int(self.parameters.get("k", 3))
+        if self.k < 1 or self.k >= self.period:
+            raise ValueError(
+                f"RiseBeyondLargestMovesComponent: k must be between 1 and period - 1, got {self.k}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        c = data['close'].astype(float).to_numpy()[-(self.period + 1):]
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        logc = np.log(c)
+        lr = np.diff(logc)
+        total_rise = float(logc[-1] - logc[0])
+        pos = np.sort(lr[lr > 0])[::-1][:self.k]
+        top = float(pos.sum()) if pos.size else 0.0
+        self._raw_value = float(max(0.0, total_rise - top))
+        self.confidence = 1.0
+        self.debug_info = {'log_rise': total_rise, 'top_k_up_sum': top}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period + 1
+
+
+class LossShareBeyondLargestComponent(SubStrategyComponent):
+    """
+    Share of a window's summed one-bar losses not carried by its k largest losses, signed by the window's net return:
+
+        r[j] = close[j] / close[j-1] - 1,                 j = t-period+1 .. t
+        losses = { -r[j] : r[j] < 0 }
+        L = sum(losses)
+        T = sum of the k largest losses (all of them if there are k or fewer)
+        S = 1 - T / L    (S = 0 when there are k or fewer losses, which includes L = 0)
+        raw_value = sign(close[t] / close[t-period] - 1) x S
+
+    Range: -1 to +1, exclusive. The value is negative over a net fall, positive over a net rise and 0 when the net
+    return is 0. Its size is 0 when the k biggest losing bars carry all the losses. It grows towards 1 as the
+    losses spread over many small bars.
+    Graded: S is continuous in the closes. The sign flips where the net return crosses 0.
+    Warm-up: period + 1 rows, bar t included.
+    NaN: a NaN close in the last period + 1 rows gives NaN. A close not above 0 there also gives NaN (never on
+    real bars).
+    Building the component raises for period < 2, k < 1, or k >= period (every return counted: always 0).
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last period + 1 rows of data, which end at bar t
+    (the last row); a bar's close is known at that bar's close.
+    """
+
+    def __init__(self, name="LossShareBeyondLargest", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 72))
+        if self.period < 2:
+            raise ValueError(f"LossShareBeyondLargestComponent: period must be >= 2, got {self.period}")
+        self.k = int(self.parameters.get("k", 3))
+        if self.k < 1:
+            raise ValueError(f"LossShareBeyondLargestComponent: k must be >= 1, got {self.k}")
+        if self.k >= self.period:
+            raise ValueError(
+                f"LossShareBeyondLargestComponent: k must be below period, got k={self.k}, period={self.period}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        c = data["close"].astype(float).to_numpy()[-(self.period + 1):]
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        r = c[1:] / c[:-1] - 1.0
+        losses = -r[r < 0]
+        if len(losses) <= self.k:
+            share = 0.0
+        else:
+            total = float(losses.sum())
+            top = float(np.sort(losses)[::-1][:self.k].sum())
+            share = max(0.0, 1.0 - top / total) if total > 0 else 0.0
+        net = c[-1] / c[0] - 1.0
+        self._raw_value = float(np.sign(net) * share)
+        self.confidence = 1.0
+        self.debug_info = {"loss_count": int(len(losses)), "share": share, "net_return": float(net)}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return self.period + 1
+
+
+class TopGainsShareOfRiseComponent(SubStrategyComponent):
+    """
+    The share of the window's net rise carried by its k largest one-bar gains, on every bar:
+
+        R = close[t] / close[t - period] - 1                          (net simple rise of the window)
+        r[j] = close[j] / close[j-1] - 1, j = t - period + 1 .. t     (the period one-bar returns, bar t's included)
+        T = sum of the k largest positive r[j] (all the positive ones if there are fewer than k)
+        raw_value = min(T / R, 1.0) if R > 0, else 0.0
+
+    Range 0 to 1, never negative, no direction. Near 0 when the rise is a grind of many small up-bars. It grows
+    toward 1 as the rise comes from fewer, bigger bars. It is 1 when the k largest gains carry the whole rise or
+    more, and 0 when the window did not rise. Graded while the window rose. It jumps from 1 to 0 where the net
+    return crosses 0 (a tiny positive rise is capped at 1).
+    Warm-up: period + 1 rows, bar t included.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last period + 1 rows of data (bars
+    t - period .. t, the last row being bar t); a bar's close is known at that bar's close.
+
+    NaN: a NaN close in the last period + 1 rows gives NaN; a close not above 0 there gives NaN (never on real
+    bars). A missing `close` column raises.
+    Building the component raises for a period below 2, a k below 1, or a k of period or more.
+    """
+
+    def __init__(self, name="TopGainsShareOfRise", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 72))
+        if self.period < 2:
+            raise ValueError(f"TopGainsShareOfRiseComponent: period must be >= 2, got {self.period}")
+        self.k = int(self.parameters.get("k", 3))
+        if self.k < 1 or self.k >= self.period:
+            raise ValueError(
+                f"TopGainsShareOfRiseComponent: k must be between 1 and period - 1, got {self.k}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        c = data['close'].astype(float).iloc[-(self.period + 1):].to_numpy()
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        r = c[1:] / c[:-1] - 1.0
+        net = float(c[-1] / c[0] - 1.0)
+        if not net > 0:
+            share = 0.0
+            top = 0.0
+        else:
+            pos = np.sort(r[r > 0])[::-1]
+            top = float(pos[:self.k].sum())
+            share = float(min(top / net, 1.0))
+        self._raw_value = share
+        self.confidence = 1.0
+        self.debug_info = {'net_rise': net, 'top_k_gains': top}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period + 1
+
+
+class TopLossesShareOfFallComponent(SubStrategyComponent):
+    """
+    How much of the window's net fall its k largest one-bar losses make up, on every bar:
+
+        F = close[t - period] - close[t]                                (the net fall, price units)
+        losses = close[j-1] - close[j] for j = t-period+1 .. t where that change is > 0
+        T = sum of the k largest losses (all of them if there are fewer than k)
+        form = "share" (default):  raw_value = T / F                          if F > 0, else 0.0
+        form = "weighted":         raw_value = (T / F) * (F / close[t-period] * 100)   if F > 0, else 0.0
+
+    Graded, never negative, no direction (a long-only rebound reading). "share" is near k / period for a fall
+    spread evenly over many bars. It reaches 1 or more when a few bars carry the whole fall, or when gains offset
+    part of it. It is 0 when the window did not fall, and it grows without bound as a falling window's net fall
+    nears 0. "weighted" adds the size of the fall: it is the top losses as a percent of the window's first close.
+    Warm-up: period + 1 rows, bar t included.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last period + 1 rows of data (bars t-period .. t),
+    the last row being bar t; each close is known at its bar's close.
+
+    NaN: a NaN close in the last period + 1 rows gives NaN. With "weighted", a close[t-period] not above 0 gives NaN
+    (never on real bars). A missing `close` column raises.
+    Building the component raises for a period below 2, a k below 1, or a form other than "share" or "weighted".
+    """
+
+    def __init__(self, name="TopLossesShareOfFall", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 72))
+        if self.period < 2:
+            raise ValueError(f"TopLossesShareOfFallComponent: period must be >= 2, got {self.period}")
+        self.k = int(self.parameters.get("k", 3))
+        if self.k < 1:
+            raise ValueError(f"TopLossesShareOfFallComponent: k must be >= 1, got {self.k}")
+        self.form = self.parameters.get("form", "share")
+        if self.form not in ("share", "weighted"):
+            raise ValueError(f"TopLossesShareOfFallComponent: form must be 'share' or 'weighted', got {self.form!r}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        c = data['close'].astype(float).to_numpy()[-(self.period + 1):]
+        if np.isnan(c).any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        fall = float(c[0] - c[-1])
+        if not fall > 0:
+            self._raw_value = 0.0
+            self.confidence = 1.0
+            self.debug_info = {'net_fall': fall, 'top_losses': 0.0}
+            return
+        d = np.diff(c)
+        losses = -d[d < 0]
+        top = float(np.sort(losses)[::-1][:self.k].sum())
+        share = top / fall
+        if self.form == "weighted":
+            if not c[0] > 0:
+                self._raw_value = float("nan")
+            else:
+                self._raw_value = float(share * (fall / c[0] * 100.0))
+        else:
+            self._raw_value = float(share)
+        self.confidence = 1.0
+        self.debug_info = {'net_fall': fall, 'top_losses': top, 'share': share}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period + 1
+
+
+class TopVolumesShareComponent(SubStrategyComponent):
+    """
+    Share of the window's volume carried by its heaviest bars, on every bar:
+
+        W = volume[t - period + 1 .. t]                     (bar t included)
+        T = sum of the top_k largest values of W
+        raw_value = T / sum(W)
+
+    Range: top_k / period (every bar the same volume) up to 1 (all the volume in top_k bars); never negative;
+    no direction. Graded: continuous in the volumes, growing as the volume bunches into a few bars.
+    Warm-up: period rows, bar t included.
+
+    NaN: a NaN volume anywhere in W gives NaN; a sum(W) not above 0 gives NaN (never on real bars, whose volume
+    is positive). A missing `volume` column raises.
+    Building the component raises for period < 2, top_k < 1, or top_k >= period.
+
+    WHY THIS CANNOT LEAK: it reads only the `volume` column of the last `period` rows of data, the last row being
+    bar t; a bar's volume is known at that bar's close.
+    """
+
+    def __init__(self, name="TopVolumesShare", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 72))
+        if self.period < 2:
+            raise ValueError(f"TopVolumesShareComponent: period must be >= 2, got {self.period}")
+        self.top_k = int(self.parameters.get("top_k", 3))
+        if self.top_k < 1:
+            raise ValueError(f"TopVolumesShareComponent: top_k must be >= 1, got {self.top_k}")
+        if self.top_k >= self.period:
+            raise ValueError(
+                f"TopVolumesShareComponent: top_k must be below period, got top_k={self.top_k}, "
+                f"period={self.period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        w = data['volume'].astype(float).iloc[-self.period:].to_numpy()
+        if np.isnan(w).any():
+            self._raw_value = float("nan")
+        else:
+            total = float(np.sum(w))
+            if not total > 0:
+                self._raw_value = float("nan")
+            else:
+                top = float(np.sum(np.sort(w)[-self.top_k:]))
+                self._raw_value = float(top / total)
+                self.debug_info = {'top_volume_sum': top, 'total_volume': total}
+        self.confidence = 1.0
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return self.period
+
+
+class HoursToSettlementComponent(SubStrategyComponent):
+    """
+    The hours from the coming bar's start to the next funding settlement (00:00, 08:00, 16:00 UTC):
+
+        spacing = timestamp[t] - timestamp[t-1]
+        coming  = timestamp[t] + spacing                (the start of the coming bar)
+        h       = UTC hour of coming
+        raw_value = 8 - (h mod 8)
+
+    Range: 1 to 8, integers, never negative, with no direction. It is 1 when the coming bar starts one hour
+    before a settlement and 8 when it starts on a settlement. It grows the further the coming bar is from the
+    next settlement.
+    Warm-up: 2 rows (bar t and bar t-1, for the spacing).
+    NaN: a NaN/NaT timestamp on bar t or t-1 gives NaN; a spacing not above 0 gives NaN (never on real bars).
+    Naive timestamps are read as UTC. Numeric timestamps are read as epoch seconds, ms, us or ns by their size.
+
+    WHY THIS CANNOT LEAK: it reads only the `timestamp` column of the last two rows (bar t-1 and bar t); the
+    coming bar's start is bar t's stamp plus the spacing already seen, known at bar t's close.
+    """
+
+    def __init__(self, name="HoursToSettlement", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self._raw_value = 0.0
+
+    @staticmethod
+    def _seconds(x):
+        if x is None:
+            return float("nan")
+        if isinstance(x, (bool, np.bool_)):
+            return float("nan")
+        if isinstance(x, (int, float, np.integer, np.floating)):
+            v = float(x)
+            if v != v:
+                return float("nan")
+            a = abs(v)
+            if a > 1e17:
+                return v / 1e9
+            if a > 1e14:
+                return v / 1e6
+            if a > 1e11:
+                return v / 1e3
+            return v
+        ts = pd.Timestamp(x)
+        if pd.isna(ts):
+            return float("nan")
+        if ts.tzinfo is None:
+            ts = ts.tz_localize("UTC")
+        else:
+            ts = ts.tz_convert("UTC")
+        return ts.value / 1e9
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        s_prev = self._seconds(data["timestamp"].iloc[-2])
+        s_now = self._seconds(data["timestamp"].iloc[-1])
+        if np.isnan(s_prev) or np.isnan(s_now) or not (s_now - s_prev) > 0:
+            self._raw_value = float("nan")
+        else:
+            coming = s_now + (s_now - s_prev)
+            hour = int(np.floor(coming / 3600.0)) % 24
+            self._raw_value = float(8 - (hour % 8))
+            self.debug_info = {"coming_hour_utc": hour, "spacing_seconds": s_now - s_prev}
+        self.confidence = 1.0
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return 2
+
+
+class HourOfDayComponent(SubStrategyComponent):
+    """
+    The UTC hour of the coming bar's start:
+
+        spacing = timestamp[t] - timestamp[t-1]
+        next    = timestamp[t] + spacing
+        raw_value = hour of `next` in UTC, 0 .. 23
+
+    Range: integers 0 to 23, never negative. It carries no direction. It rises by one each hour and
+    returns from 23 to 0 at midnight UTC. It is a calendar regime measure for a rule such as
+    `between` 21.5 and 23.5 (coming bars stamped 22:00 and 23:00). It is not a bet in itself.
+    On 1d bars stamped at hour 0 it reads 0 on every bar.
+    Warm-up: 2 rows (bars t-1 and t).
+    NaN: a NaN/NaT timestamp on bar t or t-1 gives NaN. A spacing not above 0 gives NaN (never on real bars).
+    Naive timestamps are read as UTC. Numeric timestamps are read as epoch seconds, ms, µs or ns by size.
+
+    WHY THIS CANNOT LEAK: it reads only the `timestamp` column of the last two rows (bars t-1 and t). Both are
+    known at bar t's close, and the coming bar's start is extrapolated from them without reading any later row.
+    """
+
+    _NS_PER_HOUR = 3_600_000_000_000
+
+    def __init__(self, name="HourOfDay", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self._raw_value = 0.0
+
+    @staticmethod
+    def _to_ns(x):
+        if x is None:
+            return None
+        if isinstance(x, (int, float, np.integer, np.floating)) and not isinstance(x, bool):
+            v = float(x)
+            if v != v:
+                return None
+            a = abs(v)
+            if a < 1e11:
+                return int(round(v * 1e9))
+            if a < 1e14:
+                return int(round(v * 1e6))
+            if a < 1e17:
+                return int(round(v * 1e3))
+            return int(v)
+        ts = pd.Timestamp(x)
+        if pd.isna(ts):
+            return None
+        if ts.tz is None:
+            ts = ts.tz_localize("UTC")
+        return int(ts.value)
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n0 = self._to_ns(data['timestamp'].iloc[-2])
+        n1 = self._to_ns(data['timestamp'].iloc[-1])
+        if n0 is None or n1 is None or not (n1 - n0) > 0:
+            self._raw_value = float("nan")
+        else:
+            nxt = n1 + (n1 - n0)
+            self._raw_value = float((nxt // self._NS_PER_HOUR) % 24)
+        self.confidence = 1.0
+        self.debug_info = {'hour_of_coming_bar': self._raw_value}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return 2
