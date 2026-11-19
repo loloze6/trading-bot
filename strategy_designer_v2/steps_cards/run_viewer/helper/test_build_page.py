@@ -1,4 +1,4 @@
-"""Run viewer: every figure on the page is a field of a file, or a count, sum, mean or product of them."""
+"""Run viewer: every figure on the page is a field of a file, or a count, sum, mean, product or largest of them."""
 import json
 import sys
 from pathlib import Path
@@ -47,7 +47,7 @@ def cards(tmp_path):
        "decided_by": "t >= 2", "situation_check": {"agreement": 0.97, "passed": True}, "supporting_check": {"name": "mean > 0", "passed": True}, "counts": {"cases": 300}})
     w(c / f"06_profitability/x_run/checks/{ROOT}_1d/result.json",
       {"status": "not profitable enough", "decided_by": "failed: Calmar",
-       "measures": [{"label": "Sharpe", "value": 0.5, "threshold": 0, "comparison": "above", "passed": True},
+       "measures": [{"measure": "sharpe_min", "label": "Sharpe", "value": 0.5, "threshold": 0, "comparison": "above", "passed": True},
                     {"label": "Calmar", "value": 0.2, "threshold": 0.75, "comparison": "above", "passed": False}]})
     w(c / f"07d_not_profitable/x_run/{ROOT}_1d/result.json",
       {"line": "7.d", "findings": {"F1": "a finding"}, "ideas": [{"name": "Fall rebounds", "idea": "A fall rebounds."}],
@@ -112,6 +112,25 @@ def test_counts_and_sums(cards):
                     "step7_7.a": {"usd": 0.0, "seconds": 0.5, "ran": False}}
     # every idea in exactly one state
     assert t["idea_states"] == {"backtested": 1, "blocked at step 3": 1, "waiting in the queue": 1}
+
+
+def test_key_figures_and_depth(cards):
+    data = bp.build(cards)
+    r = data["runs"][0]
+    t = r["totals"]
+    assert r["backtests"][f"{ROOT}_1d"]["step6"]["sharpe"] == 0.5          # the measure sharpe_min, by its id
+    assert t["best_t"] == {"confirmed": 3.1} and t["best_sharpe"] == {"not profitable enough": 0.5}
+    # level = generations below the brief, from the id; ideas counted once, whatever their backtests
+    assert t["levels"] == [{"level": 1, "ideas": 1, "tested": 1, "confirmed": 1, "profitable": 0},
+                           {"level": 2, "ideas": 2, "tested": 0, "confirmed": 0, "profitable": 0}]
+    assert data["lines"] == {"7.d": "not profitable"}                      # from the folder 07d_not_profitable
+
+
+def test_best_is_the_largest_per_status():
+    bts = {"a": {"step5": {"status": "confirmed", "t": 2.5}}, "b": {"step5": {"status": "confirmed", "t": 4.0}},
+           "c": {"step5": {"status": "rejected", "t": -3.0}}, "d": {"step5": {"status": "mismatch", "t": None}},
+           "e": {"step5": None}}
+    assert bp.best(bts, "step5", "t") == {"confirmed": 4.0, "rejected": -3.0}
 
 
 def test_per_coin_rows_and_when_it_ran(cards):

@@ -25,13 +25,13 @@ h3{font-size:1rem;margin:1em 0 .3em}
 .small{font-size:.85rem}
 .chip{display:inline-block;border-radius:6px;padding:1px 7px;margin:2px 4px 2px 0;font-size:.82rem;background:var(--nobg);color:var(--ink);overflow-wrap:anywhere}
 .good{background:var(--goodbg);color:var(--good)}.bad{background:var(--badbg);color:var(--bad)}.mid{background:var(--midbg);color:var(--mid)}
-.tag{font-size:.75rem;color:var(--ink2);border:1px solid var(--line);border-radius:5px;padding:0 5px;margin-right:6px}
 ul.tree,ul.tree ul{list-style:none;margin:0;padding:0}
 ul.tree ul{margin-left:9px;padding-left:9px;border-left:2px solid var(--line)}
 ul.tree li{margin:6px 0}
 .node{display:block;padding:6px 8px;border-radius:8px;background:var(--card);border:1px solid var(--line);color:inherit}
 .node.untested{opacity:.6}
 .node .t{font-weight:600}
+.node .stmt{color:var(--ink2);margin:2px 0 3px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 details{margin:6px 0}
 summary{cursor:pointer;min-height:32px;padding:4px 0;color:var(--accent)}
 .help>button{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;padding:0;margin-left:4px;
@@ -91,7 +91,7 @@ const HELP = {
   dated: "When this idea's test was first run, in UTC: its first dated journal line, else the backtest engine's own run time.",
   turns: "How many ideas the loop picked and ran, one per turn.",
   brief: "A brief is one theory about how the market behaves, written before any data is seen. Step 2 turns it into ideas that can be tested; step 7 lines then propose new ideas from each result, which is how the family tree grows.",
-  tree: "Each idea sits under the idea it came from. The name says it: '011-01_x.b1_y' is the first idea line 7.b wrote after testing '011-01_x'. The number at the start (011) is the brief.",
+  depth: "How far the briefs were explored. Level 1: the brief's own ideas. Level 2: an idea a step 7 line wrote after testing a level 1 idea, and so on. The idea's name holds its lineage: '011-01_x.b1_y' is level 2, written from '011-01_x'. An idea taken from another run keeps its level. Tested: backtested. Confirmed: step 5 found the effect real. Profitable: step 6 found the book pays enough.",
   s3: "Step 3 writes the test plan before seeing any data. 'plan': the idea can be tested. 'missing-components': the bot lacks a building block. 'untestable': it needs data or logic outside one coin's own bars.",
   fit: "'exact': the test measures the idea as stated. 'adapted': the same thing in the only form the bot allows (e.g. an on/off rule made graded, a holding period dropped).",
   book: "The book is what the strategy's money becomes, starting from 1. Each 4-month window is run separately on each coin; the window's return is averaged over the coins, and windows are chained in time order. Not the price of a coin.",
@@ -156,6 +156,21 @@ function md(t){                      // a small Markdown: headings, lists, bold,
 
 function dur(sec){ if (sec == null) return "–"; if (sec < 60) return Math.round(sec) + " s"; const m = Math.round(sec/60); return m < 60 ? m + " min" : Math.floor(m/60) + " h " + String(m%60).padStart(2,"0"); }
 function counts(o){ return Object.entries(o || {}).map(([k,v]) => chip(v + " " + k, k)).join(""); }
+// step 5's and step 6's statuses in one fixed order (any other status after them); each with the best of its key figure
+const S5 = ["confirmed", "inconclusive", "rejected", "mismatch", "not observable"], S6 = ["profitable enough", "not profitable enough"];
+const short = s => String(s).replace(/ enough$/, "");
+const fig = x => typeof x === "number" ? x.toFixed(2) : "–";          // t and Sharpe: always two decimals
+function results(o, order, best, name){ const rank = k => order.includes(k) ? order.indexOf(k) : order.length;
+  return Object.keys(o || {}).sort((a, b) => rank(a) - rank(b)).map(k =>
+    chip(`${o[k]} ${short(k)}${best && best[k] != null ? ` · best ${name} ${fig(best[k])}` : ""}`, k)).join(""); }
+function depth(t){ const L = t.levels || []; if (!L.length) return "";
+  const tested = L.filter(x => x.tested).map(x => x.level), prof = L.filter(x => x.profitable).map(x => x.level);
+  return `Depth: level${L.length > 1 ? `s ${L[0].level} to ${L[L.length - 1].level}` : " " + L[0].level}` +
+    ` · ${tested.length ? "tested down to level " + tested[tested.length - 1] : "nothing tested"}` +
+    ` · ${prof.length ? "profitable at level" + (prof.length > 1 ? "s " : " ") + prof.join(", ") : "profitable: none"}`; }
+function depthTable(t){ const L = t.levels || []; if (!L.length) return "";
+  return `<h2>Depth${help("depth")}</h2><div class="card"><table class="small"><tr><th>Level</th><th class="n">Ideas</th><th class="n">Tested</th><th class="n">Confirmed</th><th class="n">Profitable</th></tr>${L.map(x =>
+    `<tr><td>${x.level}${x.level === 1 ? " · the brief's own" : ""}</td><td class="n">${x.ideas}</td><td class="n">${x.tested}</td><td class="n">${x.confirmed}</td><td class="n">${x.profitable}</td></tr>`).join("")}</table></div>`; }
 function when(d){ if (!d) return "date not recorded"; return d[0].slice(0,10) === d[1].slice(0,10) ? `${d[0]} to ${d[1].slice(11)} UTC` : `${d[0]} to ${d[1]} UTC`; }
 const briefOf = id => DATA.briefs[id] || {title: "brief not in the record", text: null, runs: []};
 
@@ -175,7 +190,9 @@ function runList(){
       <div><b>${esc(r.name)}</b></div>
       <div class="muted small">${esc(when(r.dates))}</div>
       <div class="muted small">${t.ideas} ideas · ${(t.idea_states || {})["backtested"] || 0} backtested${t.usd != null ? " · " + t.usd.toFixed(2) + " USD" : ""}${t.seconds != null ? " · " + dur(t.seconds) + " of step time" : ""}</div>
-      <div>${counts(t.step5)}${counts(t.step6)}</div></a>`; }).join("");
+      <div class="small">Is it real: ${results(t.step5, S5, t.best_t, "t") || "–"}</div>
+      <div class="small">Does it pay: ${results(t.step6, S6, t.best_sharpe, "Sharpe") || "–"}</div>
+      <div class="muted small">${depth(t)}</div></a>`; }).join("");
 }
 
 function ideaChips(r, i){
@@ -184,10 +201,10 @@ function ideaChips(r, i){
     return chip(q, "");
   }
   return i.backtests.map(bid => { const b = r.backtests[bid]; let s = "";
-    if (b.step3) s += chip("3 " + (b.step3.outcome === "plan" ? "plan" : "refused: " + b.step3.outcome), b.step3.outcome);
-    if (b.step5) s += chip("5 " + b.step5.status + (b.step5.t != null ? " · t " + num(b.step5.t) : ""), b.step5.status);
-    if (b.step6) s += chip("6 " + b.step6.status, b.step6.status);
-    if (b.step7.length) s += chip("7 " + b.step7.map(x => x.line).join(" "), "");
+    if (b.step3 && !(b.step3.outcome === "plan" && (b.step5 || b.step6)))      // a plan shows only until a later step answers
+      s += chip(b.step3.outcome === "plan" ? "plan" : "refused: " + b.step3.outcome.replace(/-/g, " "), b.step3.outcome);
+    if (b.step5) s += chip(b.step5.status + (b.step5.t != null ? " · t " + fig(b.step5.t) : ""), b.step5.status);
+    if (b.step6) s += chip(short(b.step6.status) + (b.step6.sharpe != null ? " · Sharpe " + fig(b.step6.sharpe) : ""), b.step6.status);
     return s; }).join("<br>");
 }
 
@@ -195,13 +212,12 @@ function tested(r, id){ const i = r.ideas[id]; return i.backtests.length > 0 || 
 function below(r, id){ return r.ideas[id].children.reduce((n, c) => n + 1 + below(r, c), 0); }
 
 function node(r, id, depth, maxDepth){ const i = r.ideas[id];
-  const from = i.root && i.parent ? `<div class="muted small">from ${esc(i.parent.split(".").pop())}${i.parent_runs && i.parent_runs.length ? " (" + esc(i.parent_runs.join(", ")) + ")" : " (not in the record)"}</div>` : "";
   let kids = "";
   if (i.children.length) kids = maxDepth && depth >= maxDepth
     ? `<details><summary>${below(r, id)} more ideas below</summary>${tree(r, i.children, depth + 1, 0)}</details>`
     : tree(r, i.children, depth + 1, maxDepth);
   return `<li><a class="node ${i.backtests.length ? "" : "untested"}" href="${href(r.name, id)}">
-    <div>${i.line ? `<span class="tag">${esc(i.line)}</span>` : ""}<span class="t">${esc(i.title)}</span></div>${from}
+    <div><span class="t">${esc(i.title)}</span></div>${i.statement ? `<div class="small stmt">${esc(i.statement)}</div>` : ""}
     <div>${ideaChips(r, i)}</div></a>${kids}</li>`; }
 
 // maxDepth 0: ideas with a test in their branch first, the others folded; maxDepth n: n levels open, deeper folded
@@ -216,7 +232,7 @@ function runView(r){
   const t = r.totals, st = t.idea_states || {};
   const order = ["backtested", "blocked at step 3", "planned, not backtested", "waiting in the queue", "duplicate", "not tested"];
   const kv = [[`Ideas`, t.ideas]].concat(order.filter(k => st[k]).map(k => [`&nbsp;&nbsp;${esc(k)}${help(k)}`, st[k]]),
-    [["Step 3 plans" + help("s3"), counts(t.step3) || "–"], ["Step 5 verdicts" + help("s5"), counts(t.step5) || "–"], ["Step 6 checks" + help("s6"), counts(t.step6) || "–"],
+    [["Step 3 plans" + help("s3"), counts(t.step3) || "–"], ["Step 5 verdicts" + help("s5"), results(t.step5, S5, t.best_t, "t") || "–"], ["Step 6 checks" + help("s6"), results(t.step6, S6, t.best_sharpe, "Sharpe") || "–"],
      ["Cost" + help("cost"), t.usd != null ? t.usd.toFixed(2) + " USD" : "not in the record"],
      ["Step time" + help("time"), t.seconds != null ? dur(t.seconds) : "not in the record"],
      ["Loop turns" + help("turns"), t.turns || "–"],
@@ -229,8 +245,8 @@ function runView(r){
     ${r.purpose ? md(r.purpose) : `<p class="muted">No purpose paragraph in the record.</p>`}
     ${r.run_brief_text ? `<details><summary>The whole run brief</summary>${md(r.run_brief_text)}</details>` : ""}
     <div class="card"><table class="kv">${kv.map(([k,v]) => `<tr><td>${k}</td><td>${typeof v === "string" && v.includes("<") ? v : esc(v)}</td></tr>`).join("")}</table></div>
+    ${depthTable(t)}
     <h2>Briefs and their ideas${help("brief")}</h2>
-    <p class="muted small">Under each brief, its ideas as a family tree${help("tree")}. Chips: 3 = test plan, 5 = is it real (t), 6 = does its book pay, 7 = the lines that read it.</p>
     ${nums.map(n => { const b = briefOf(n), roots = r.roots.filter(id => r.ideas[id].brief === n);
       const own = r.briefs.some(x => x.id.startsWith(n + "_"));
       return `<h3>Brief ${n} · ${esc(b.title)}</h3>
@@ -291,8 +307,9 @@ function crumbs(r, i, self){
 function ideaView(r, i){
   return `<div class="top"><a href="${href(r.name)}">← ${esc(r.name)}</a></div>
     ${crumbs(r, i, false)}
-    <h1>${i.line ? `<span class="tag">${esc(i.line)}</span>` : ""}${esc(i.title)}${i.line ? help(i.line) : ""}</h1>
+    <h1>${esc(i.title)}</h1>
     <div class="muted small"><code>${esc(i.id)}</code></div>
+    ${i.line ? `<div class="muted small">Written by step 7's ${esc((DATA.lines || {})[i.line] || i.line)} line${help(i.line)}</div>` : ""}
     <div class="muted small">${chip(i.state, i.state)}${help(i.state)}${i.dated ? ` tested ${esc(i.dated)} UTC${help("dated")}` : ""}</div>
     ${i.turn ? `<p class="muted small">Loop turn ${esc(i.turn.turn)}: ${esc(i.turn.why)}</p>` : ""}
     <div class="sub">The idea</div>

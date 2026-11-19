@@ -18,8 +18,9 @@ a PC or a phone.
 **A view of a run is the run's purpose, its briefs, and its ideas as a family tree, each tested idea showing its steps
 in order with one result per step, and the run's cost and time.**
 
-- One idea's line in the tree, left to right: step 3 (plan, or refused), step 5 (confirmed, inconclusive, rejected,
-  not observable, with its t), step 6 (pays or not). Tap it: the detail.
+- One idea's card in the tree: its title, the idea in one sentence (three lines at most), then its results in words:
+  step 3 only when it refused, step 5's verdict with its t, step 6's with its Sharpe (operator, 2026-11-19). Tap it:
+  the detail.
 - The detail of a tested idea: its text; step 3's reason; step 5's measure, t and "decided by"; step 6's measures with the
   failed ones marked; the step 7 lines with their findings and the ideas they proposed (links into the tree); the book
   by window; cost and time per step.
@@ -32,8 +33,10 @@ in order with one result per step, and the run's cost and time.**
   journal lines dated in full, the engine's run times).
 
 ## The fields of a view
-1. **Run line** (the list of runs, last updated first): name, first and last commit time of the run's files, ideas,
-   backtested ideas, step 5 and step 6 counts, cost, step time.
+1. **Run line** (the list of runs, last updated first): name, dates, ideas, backtested ideas, cost, step time; "Is it
+   real": step 5's counts, "Does it pay": step 6's, each in one fixed order (confirmed, inconclusive, rejected,
+   mismatch, not observable; profitable, not profitable) with the best of its key figure (step 5: t; step 6: Sharpe);
+   the depth in one line (field 11).
    - For: choosing which run to open.
    - Used by: the operator.
    - Without it: one opens runs blind.
@@ -46,9 +49,8 @@ in order with one result per step, and the run's cost and time.**
    - For: the theory the ideas come from, and which ideas come from which theory.
    - Used by: the operator.
    - Without it: ideas with no theory.
-4. **Idea tree**: one node per idea, under the idea it came from (its id without the last segment). The line letter
-   (b, d, g...) of the step 7 line that wrote it shown on the node; an idea whose parent is in another run is a root, and
-   says where it came from.
+4. **Idea tree**: one node per idea, under the idea it came from (its id without the last segment); an idea whose
+   parent is in another run is a root. The step 7 line that wrote an idea is named in words on the idea's page.
    - For: how ideas lead to one another.
    - Used by: the operator.
    - Without it: a flat list of 40 ids that look alike.
@@ -91,6 +93,13 @@ in order with one result per step, and the run's cost and time.**
      1), the forecast and the position, on one time axis; zoom with + / - / All, a pinch or the mouse wheel, move by
      dragging, read a day by touching it. The files are fetched when the page opens, never embedded.
 
+11. **Depth**: per level below the brief (1: the brief's own ideas, 2: written from a level 1 idea, and so on; the
+   number of segments in the idea's id), the ideas, those backtested, confirmed by step 5, profitable enough by step 6.
+   On the run line in one sentence (levels, the deepest tested, the levels with a profitable idea).
+   - For: how far each brief was explored, and at which depth what pays was found.
+   - Used by: the operator.
+   - Without it: no way to tell a brief tried once from one followed five generations down.
+
 ## Storage and naming
 ```
 steps_cards/run_viewer/
@@ -110,8 +119,8 @@ rebuilt in seconds, never edited by hand.
 None: this function reads files and writes one page. No model call.
 
 ## Quality criteria
-- Every figure on the page is a field of a committed file, or a count, sum, mean or product of such fields; the tests
-  check this on a small built-in run.
+- Every figure on the page is a field of a committed file, or a count, sum, mean, product or largest of such fields;
+  the tests check this on a small built-in run.
 - Readable at 390 px width with no horizontal page scroll.
 - Writes nothing but `runs.html`; reads nothing outside `steps_cards/`.
 - A missing or unreadable file shows as "not in the record", never as a failure of the page.
