@@ -1,0 +1,55 @@
+{
+  "line": "7.d",
+  "backtest": "017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal_1h",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 3,
+  "cost": 0.3846991,
+  "findings": {
+    "F1": "The book makes almost nothing before fees and loses to fees. Its gross gain is 0.000073 a day, while its fees cost 0.00284 a day. Turnover is 2.63 times the book a day, trades last a median of 5 hours, and there are 195,067 trades averaging -0.31% before fees and -0.41% after. So the book's mean daily return is -0.00274 (sd 0.0252, n 17381), against +0.00119 for holding.",
+    "F2": "The reversal is real only at the one-day horizon, and the book rebalances every hour. On non-overlapping grids, forecast/10 times the forward return earns 0.000026 per hour at 1 bar, 0.000014 per hour at 4 bars and 0.000070 per hour at 24 bars (0.00167 per case). Meanwhile the forecast's autocorrelation is 0.94 at 1 hour, 0.70 at 6 hours and -0.05 at 24 hours. The book therefore trades the hour-to-hour drift of a rolling 24-hour return that carries almost no hourly gain.",
+    "F3": "The whole edge sits in high-volatility periods. The 24-hour product is 0.00599 (t 6.61, n 5463) when the coin's 168-hour volatility ranks in the top third of its past 720 hours. It is 0.000037 (t 0.04, n 4232) in the middle third and -0.00066 (t -0.97, n 6255) in the bottom third. So most cases carry no edge but still pay full fees.",
+    "F4": "The edge also needs a strong 7-day move. The 24-hour product is 0.00546 (t 5.11, n 5317) in the third of cases with the largest |7-day return|, against 0.000094 (t 0.15) and -0.00015 (t -0.22) in the weak and middle thirds.",
+    "F5": "Forecast size alone does not separate the gain enough to beat fees. The product is -0.00009 (t -0.50), 0.00188 (t 3.23) and 0.00362 (t 2.86) across the low, mid and high |forecast| thirds. Days that run against the 7-day trend give 0.0023 (t 4.42) and days with it give 0.0015 (t 2.11), so the trend's direction matters less than its size (F4)."
+  },
+  "ideas": [
+    {
+      "idea": "A coin's return over the next 1 day runs against its own 1-day return, and the larger the past day's move relative to the coin's recent volatility, the larger the move back, only while the coin's 7-day volatility is high relative to its own past month, and the higher that volatility the larger the move back.",
+      "consequence": "Lean against outsized daily moves only in volatile stretches, when the move back is large enough to pay the fees, and stay out in calm stretches where the reversal is absent.",
+      "name": "Daily reversal in high volatility",
+      "from": "F1, F3, F5",
+      "refs": [
+        "F1",
+        "F3",
+        "F5"
+      ]
+    },
+    {
+      "idea": "A coin's return over the next 1 day runs against its own 1-day return, and the larger the past day's move relative to the coin's recent volatility, the larger the move back, only while the coin's 7-day return is large in absolute size, and the larger that 7-day move the larger the move back.",
+      "consequence": "Fade outsized daily moves only after a large week's move, where the reversal carries enough size to cover costs.",
+      "name": "Daily reversal after big weeks",
+      "from": "F1, F4, F5",
+      "refs": [
+        "F1",
+        "F4",
+        "F5"
+      ]
+    },
+    {
+      "idea": "A coin's return over the next 1 day runs against its own 1-day return measured once a day at the same hour, and the larger that day's move relative to the coin's recent volatility, the larger the move back over the following day.",
+      "consequence": "The reversal is a day-to-day effect, so a position reset once a day captures it, while hour-to-hour changes in the rolling daily return carry no gain and only cost fees.",
+      "name": "Once-daily move reversal",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal.d1_daily-reversal-in-high-volatility",
+    "017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal.d2_daily-reversal-after-big-weeks",
+    "017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal.d3_once-daily-move-reversal"
+  ],
+  "no_ideas": null
+}

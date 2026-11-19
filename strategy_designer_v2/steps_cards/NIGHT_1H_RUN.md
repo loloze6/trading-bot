@@ -156,3 +156,6 @@ components, 1 untestable), turn 8 (017-02) cut mid-turn, resumes. Slow 25.55 USD
   Run so far: 16 ideas tested, 6 confirmed, 0 profitable. Stretch 5 launched (--budget 19.99).
 - 13:03: check-in, no restart (up 3h10). Stretch 5 on turn 21 (017-02.g2, hourly reversal in volatile periods), backtesting. 17.1 USD.
 - 13:50: check-in, no restart (up 3h57). 017-02.g2 (hourly reversal in volatile periods): confirmed t +10.25, not profitable; its backtest took 47 min. Turn 22 (017-03.g2, daily move reversal) backtesting. 17.9 USD. The design session asked (13:20, 13:34) to merge master (PR #570 and the fix of the 017-02 resume defect) between two stretches: verified on origin/master; to merge when stretch 5 ends.
+- 14:26: stretch 5 ended on its budget (20.42 USD, 4 turns, 94 min). All 4 confirmed, none profitable: 017-02.g2 t +10.25,
+  017-03.g2 (daily move reversal) t +3.80, 017-04.g2 (late-evening rebound after falls) t +4.78, 017-05.g2
+  (volatility-scaled two-hour reversal) t +13.79. Run so far: 20 ideas tested, 10 confirmed, 0 profitable.
