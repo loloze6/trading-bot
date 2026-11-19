@@ -7,7 +7,7 @@ operator's topics). Where = the session or part of the workflow it belongs to.
 
 | # | Improvement | Where | Status |
 |---|---|---|---|
-| 1 | [Recent ideas rarely take a short position](#1-recent-ideas-rarely-take-a-short-position) | research: steps 2, 3, components | investigated: one-sided ideas, mostly step 7's; a rule to consider |
+| 1 | [Recent ideas rarely take a short position](#1-recent-ideas-rarely-take-a-short-position) | research: steps 2, 3, components | investigated: one-sided ideas pay most (11 of 13 profitable books are long only); no change recommended |
 | 2 | [Step 3: the noise from writing a test freely](#2-step-3-the-noise-from-writing-a-test-freely) | research: step 3 | parked |
 | 3 | [Duplicate ideas: a rule on the plan](#3-duplicate-ideas-a-rule-on-the-plan) | research: select_next | parked |
 | 4 | [Ideas tested on data step 7 did not see](#4-ideas-tested-on-data-step-7-did-not-see) | research: orchestration | unseen dates done; unseen coins and a limit per data set parked |
@@ -44,8 +44,17 @@ one side only (13 long only, 4 short only, 1 both). Step 3 is faithful: each con
   (7 configs). The other 4 are negated, so short only.
 - **Not known:** why step 7 proposes rises: plausibly because the coins rose over the folds (2018 to 2025), so the
   effects it finds in the records are rises. Its ideas were confirmed 6 times out of 9, none profitable.
-- **A change to consider:** a rule in the shared definition of an idea (`common/`): an idea states the side it bets on,
-  and when its mechanism is symmetric it claims both sides (one two-sided idea), so the short side gets tested.
+- **What one-sidedness costs** (every backtest with a run_idea verdict, 153 in 12 runs; the side read on BTC, every
+  window):
+  | Side traded | Backtests | Confirmed | Confirmed and profitable | Not confirmed but profitable |
+  |---|---|---|---|---|
+  | long only | 83 | 43 | 7 | 4 |
+  | short only | 19 | 2 | 0 | 0 |
+  | both | 50 | 26 | 2 | 0 |
+  11 of the 13 profitable books are long only; short-only ideas almost never confirm and never pay; two-sided ideas
+  confirm as often as long-only ones but pay 2 times in 50. So step 7 leaning to rises follows what pays in the folds.
+- **No change recommended** (2026-11-19): a rule forcing two-sided ideas would add the side that does not pay here.
+  To revisit if the unseen periods (2026, a falling market) show long-only books failing there.
 Also seen: `forecast_distribution.csv` puts a forecast of exactly 0 in the bin "-5_0" (bins closed on the right), so
 its "negative" bins count the flat bars.
 
