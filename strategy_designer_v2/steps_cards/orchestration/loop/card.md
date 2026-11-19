@@ -62,6 +62,11 @@ An idea whose turn started but whose `run_idea` call did not finish (the operato
 restarted) is finished first when the loop resumes: `run_idea` is called on it again and skips the steps already done.
 Without this, its plan would make it count as tested and it would never get its backtest and verdict (found by
 night_run, 2026-11-17). The resumed call is written in `loop.jsonl` ("resumed").
+**Finished** = the idea's row in `run_idea`'s table was written after its latest turn started (the row's `finished_at`).
+So an idea turned again after a row, a refusal the components step unblocked, is unfinished until `run_idea` writes its
+row again (2026-11-19: 017-02 was read as finished from its old refusal row, and finished by hand). A row written before
+rows carried their end time counts as finished, as before. Proof: the unfinished ideas of all 12 runs, old rule against
+new, identical; a test of the 017-02 sequence.
 
 ## Where its state lives
 Nothing of its own but the queue's rendering: the ideas tested are `run_idea`'s table; the ideas proposed are the step 7

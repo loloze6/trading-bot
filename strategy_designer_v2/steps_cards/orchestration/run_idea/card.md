@@ -61,6 +61,12 @@ In `<name>_run/table.md` (and `table.json`, for code), one row per idea:
    - For: what a run costs, and where.
    - Used by: the operator; the stop rules (scope 2).
    - Without it: a run's cost is unknown.
+5b. **finished at** (`finished_at`, in `table.json` only, 2026-11-19): the UTC time this call of `run_idea` wrote the
+   row, at its end (a refusal at step 3, or the whole run of the idea).
+   - For: telling a finished idea from one whose latest turn was cut.
+   - Used by: `loop` (its resume rule).
+   - Without it: an idea turned again after a row (a refusal the components step unblocked) and cut before its end
+     reads as finished, and is never backtested (017-02, intraday_1h_run, 2026-11-19).
 
 **Next to the table:**
 

@@ -92,3 +92,23 @@ def test_a_failed_components_call_is_not_a_failed_idea(tmp_path):
     loop.log_turn("x_run", {"components": "x_run | p | W | cannot build", "outcome": "failed (exit -15)"}, tmp_path)
     loop.log_turn("x_run", {"idea": "c", "outcome": "failed: step 3 wrote no plan"}, tmp_path)
     assert loop.failed("x_run", tmp_path) == {"c"}
+
+
+def test_an_idea_turned_again_after_its_row_is_unfinished_until_its_row_is_written_again(tmp_path):
+    """017-02 (intraday_1h_run, 2026-11-19): refused at step 3 (a row), unblocked by the components step, turned again,
+    cut before its backtest: unfinished, though it has a row. A row without its end time (written before) counts as
+    finished, as before."""
+    d = tmp_path / "run_idea" / "x_run"
+    d.mkdir(parents=True)
+    log = tmp_path / "loop" / "x_run"
+    log.mkdir(parents=True)
+    turns = [{"at": "2026-11-19T00:10:00Z", "turn": 1, "idea": "a"}, {"at": "2026-11-19T00:20:00Z", "turn": 2, "idea": "b"},
+             {"at": "2026-11-19T08:50:00Z", "turn": 3, "idea": "a"}]
+    (log / "loop.jsonl").write_text("".join(json.dumps(x) + "\n" for x in turns))
+    rows = [{"idea": "a", "finished_at": "2026-11-19T00:13:00Z"}, {"idea": "b"}]
+    (d / "table.json").write_text(json.dumps(rows))
+    assert loop.unfinished("x_run", tmp_path) == ["a"]
+    rows[0]["finished_at"] = "2026-11-19T09:30:00Z"                   # run_idea finished it: its row written again
+    (d / "table.json").write_text(json.dumps(rows))
+    assert loop.unfinished("x_run", tmp_path) == []
+
