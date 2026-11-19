@@ -154,3 +154,4 @@ components, 1 untestable), turn 8 (017-02) cut mid-turn, resumes. Slow 25.55 USD
   dip rebounds): confirmed t +13.80; 017-01.g2 (an hour's move reverses, by volatility): confirmed t +12.28; neither
   profitable. Example of why: 017-05.g1's book trades 3.9 times a day and loses 0.11 % a day after costs (Sharpe -2.20).
   Run so far: 16 ideas tested, 6 confirmed, 0 profitable. Stretch 5 launched (--budget 19.99).
+- 13:03: check-in, no restart (up 3h10). Stretch 5 on turn 21 (017-02.g2, hourly reversal in volatile periods), backtesting. 17.1 USD.
