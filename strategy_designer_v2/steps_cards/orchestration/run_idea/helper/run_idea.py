@@ -173,7 +173,10 @@ def consumption(table_dir, rid):
 
 
 def write_row(table_dir, row):
+    """The idea's row, written when this call of run_idea ends (a refusal at step 3, or the whole run of the idea), with
+    the time it ends: loop reads it to tell an idea finished from one whose latest turn was cut (loop.unfinished)."""
     table_dir.mkdir(parents=True, exist_ok=True)
+    row["finished_at"] = utc_now()
     if row.get("backtest"):
         row["consumption"] = consumption(table_dir, row["backtest"])
         row["cost"] = round(sum(u["usd"] for u in row["consumption"].values()), 4)

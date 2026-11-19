@@ -86,16 +86,18 @@ def failed(run, root=ORCH):
 
 
 def unfinished(run, root=ORCH):
-    """Ideas a turn started whose run_idea call did not finish (no row in run_idea's table, not marked failed): the loop
-    was stopped mid-idea (the operator, a restart). Their plan exists, so select_next counts them as tested; they are
-    finished first when the loop resumes (run_idea skips the steps already done)."""
-    rows = {r["idea"] for r in table_rows(run, root)}
-    seen, out = set(), []
+    """Ideas whose latest turn did not finish: no row in run_idea's table written after that turn started, and not
+    marked failed. The loop was stopped mid-idea (the operator, a restart). Their plan exists, so select_next counts them
+    as tested; they are finished first when the loop resumes (run_idea skips the steps already done). An idea turned
+    again after a row (a refusal the components step unblocked) is unfinished until run_idea writes its row again
+    (2026-11-19: 017-02 was read as finished from its old refusal row). A row written before rows carried their end
+    time (`finished_at`) counts as finished, as before."""
+    ended = {r["idea"]: r.get("finished_at", "") for r in table_rows(run, root)}
+    latest = {}
     for t in turns(run, root):
-        i = t.get("idea")
-        if "turn" in t and i not in rows and i not in seen:
-            seen.add(i)
-            out.append(i)
+        if "turn" in t:
+            latest[t.get("idea")] = t.get("at", "")
+    out = [i for i, at in latest.items() if i not in ended or (ended[i] and ended[i] < at)]
     return [i for i in out if i not in failed(run, root)]
 
 
