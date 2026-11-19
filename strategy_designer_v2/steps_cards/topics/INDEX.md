@@ -1,0 +1,36 @@
+# Topics: the one list
+
+One line per topic (`README.md`: what a topic is, its shape and its life). Open topics wait for the operator's go;
+closed ones keep their decisions and reasons. Numbers are fixed: a new topic takes the next one.
+
+| # | Topic | Where | Status |
+|---|---|---|---|
+| 01 | [Step 3: the noise from writing a test freely](01_step3-noise-from-writing-a-test-freely.md) | research: step 3 | open |
+| 02 | [Duplicate ideas: a rule on the plan](02_duplicate-ideas-a-rule-on-the-plan.md) | research: select_next | open |
+| 03 | [Ideas tested on data step 7 did not see](03_ideas-tested-on-data-step-7-did-not-see.md) | research: orchestration | open (in part done) |
+| 04 | [Record the regime detector's values in the backtest](04_backtest-record-regime-values.md) | research: engine | open |
+| 05 | [Coins without data on the reachable venue](05_coins-without-data-on-the-venue.md) | research: data | open |
+| 06 | [Brief management](06_brief-management.md) | research: briefs | open (larger topic) |
+| 07 | [Two loops calling the components step at the same time](07_two-loops-on-the-components-step.md) | research: components | open |
+| 08 | [An idea proven and profitable: what next](08_proven-and-profitable-what-next.md) | research and live | open (larger topic) |
+| 09 | [Futures candles for a pre-live check, and the short side](09_futures-candles-and-the-short-side.md) | research and live | open |
+| 10 | [Several coins in one bot](10_several-coins-in-one-bot.md) | live session | open |
+| 11 | [Hosting the bot](11_hosting-the-bot.md) | hosting research session | open |
+| 12 | [Live operations](12_live-operations.md) | live session | open |
+| 13 | [Research viewer, round 2](13_research-viewer-round-2.md) | visualizer session | open |
+| 14 | [A viewer of the live bot](14_a-viewer-of-the-live-bot.md) | live and visualizer sessions | open |
+| 15 | [The GitHub security warning](15_github-security-warning.md) | operator | open |
+| 16 | [Data gathering separate from the backtest](16_data-gathering-separate-from-the-backtest.md) | research: data and engine | closed (2026-11-18) |
+| 17 | [The data's bar deduced from the trading bar](17_data-bar-from-the-trading-bar.md) | research: step 4 | closed (2026-11-18) |
+| 18 | [Holes of up to one day ignored](18_holes-up-to-one-day-ignored.md) | research: engine | closed (2026-11-19) |
+| 19 | [The 0.2 rule kept](19_the-0-2-rule-kept.md) | engine and live | closed (2026-11-18) |
+| 20 | [The unseen-dates test made standard](20_unseen-dates-test-made-standard.md) | research: orchestration | closed (2026-11-18) |
+| 21 | [Speed fixes of the engine](21_engine-speed-fixes.md) | engine | closed (2026-11-18) |
+| 22 | [Run briefs in one folder](22_run-briefs-in-one-folder.md) | research: repository | closed (2026-11-19) |
+| 23 | [Built components not merged afterwards](23_built-components-not-merged-afterwards.md) | research: components | closed (2026-11-19) |
+| 24 | [Components step: a cut build undone; the proof backtest removed](24_components-step-cut-build-and-proof.md) | research: components | closed (2026-11-19) |
+| 25 | [Loop: when an idea is finished](25_loop-when-an-idea-is-finished.md) | research: loop | closed (2026-11-19) |
+| 26 | [Ideas stay free: no forced long and short](26_ideas-stay-free-long-and-short.md) | research: steps 2, 7 | closed (2026-11-19) |
+| 27 | [Dropped or solved in the review of 2026-11-19](27_dropped-or-solved-in-the-review.md) | research | closed (2026-11-19) |
+| 28 | [Topics kept as cards](28_topics-as-cards.md) | research: repository | closed (2026-11-19) |
+| 29 | [A model call ran away again](29_a-model-call-ran-away-again.md) | research: step 7, `common/lib.py` | open |
