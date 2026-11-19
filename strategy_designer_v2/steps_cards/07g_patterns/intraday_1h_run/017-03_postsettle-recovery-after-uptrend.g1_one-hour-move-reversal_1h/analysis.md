@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal_1h
+idea tested: 017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3559 USD
+---
+## Findings
+- **F1:** The fade's gross edge is real but fees swamp it: the book's mean daily gain before fees is 19.3 bp (t 11.0, 17,525 coin-days), fees average 156 bp per day, and turnover runs about 14.6 times the book per day, which explains the -16.35 Sharpe.
+- **F2:** Over a 1-day horizon the reversal is much larger per trade and sits in high volatility. On the non-overlapping 24h grid, the vol-scaled graded fade earns 19.3 bp per case (t 4.44, n 16,526). In the coin's upper half of 720-hour volatility it earns 37.2 bp (t 4.65, n 6,465), against -4.2 bp (t -0.78) in the lower half. 68% of the 144 coin-windows are positive.
+- **F3:** The 1-day reversal is lopsided toward falls. After the lowest quintile of vol-scaled 24h returns, the next 24h beats the coin's mean by 40.6 bp (t 4.17, n 3,312). After the highest quintile it trails by 19.8 bp (t -2.25), and the middle quintiles are not significant.
+- **F4:** The same pattern holds on the 4h grid. The graded fade earns 4.9 bp (t 3.48) in the high-volatility half against 0.7 bp (t 0.70) in the low half. After the lowest quintile of 4h moves the next 4h gains 7.1 bp (t 4.22), after the highest it loses 5.7 bp (t -3.75). The effect is carried by XMR (t 4.22), ZEC (t 3.55) and XRP (t 2.35), with BTC and ETH near zero (t 0.30 and 0.19).
+- **F5:** The 1h reversal grows steadily with 720-hour volatility quartile: 0.89, 1.06, 2.19 and 3.24 bp per bar, with t from 3.7 to 6.4 and about 78k bars each.
+- **F6:** The 1h reversal also grows with the bar's volume relative to its last-week median. It is 3.14 bp (t 6.33) in the top quintile against 1.32 to 1.53 bp in the other four (t about 4 to 4.8).
+- **F7:** The brief's funding-clock pattern does not show. At the hours before the 0/8/16 UTC settlements, the return against the 24h trend is mixed: hour 7 is +2.3 bp (t 2.9), hour 15 is -4.3 bp (t -4.7) and hour 23 is +0.2 bp (t 0.2). The largest against-trend effect is at the non-settlement hour 22, at -5.0 bp (t -6.2).
+
+## Ideas
+- `017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal.g1_daily-vol-scaled-move-reversal` (from F1, F2, F3, F5): A coin's return over the next 1 day runs against its own 1-day return measured in units of its recent hourly volatility, and the sharper that move, the larger the reversal. The effect is strong when the coin's 30-day volatility is high and larger after falls than after rises.
+- `017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal.g2_four-hour-reversal-volatile-regimes` (from F1, F4, F5): A coin's return over the next 4 hours runs against its own 4-hour return measured in units of its recent hourly volatility, and the reversal grows with the size of that move when the coin's 30-day volatility is high.
+- `017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal.g3_high-volume-hour-reversal` (from F1, F6): A coin's return over the next 1 hour runs against its last-hour return, and the reversal is larger the higher that hour's volume is relative to the coin's median hourly volume over the past 7 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
