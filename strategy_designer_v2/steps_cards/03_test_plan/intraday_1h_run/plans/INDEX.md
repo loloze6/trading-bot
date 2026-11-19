@@ -1,5 +1,5 @@
-017-01_presettle-drop-after-uptrend_1h: missing-components: The idea is active only in the 2 hourly bars before 00:00, 08:00 and 16:00 UTC. The timestamp is in [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
-017-02_presettle-rise-after-downtrend_1h: missing-components: The idea is active only in the 2 bars before each 00:00, 08:00 and 16:00 UTC settlement, and nothing in [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+017-01_presettle-drop-after-uptrend_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+017-02_presettle-rise-after-downtrend_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 017-03_postsettle-recovery-after-uptrend_1h: missing-components: The idea needs the bar's UTC clock hour, which is in each bar's own timestamp, and a regime rule could [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 017-04_postsettle-decline-after-downtrend_1h: missing-components: The 3-day fall is in the catalogue (`PriceEvolutionComponent`, period 72), but no component reads the hour of day from `timestamp`, [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 017-05_settlement-move-reverses-after_1h: missing-components: The idea's situation and its 2-hour window depend on the UTC hour of the bar. The hour is in the [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
