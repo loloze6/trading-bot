@@ -20,6 +20,14 @@ other limit: an hourly idea takes about 15 minutes to an hour alone (more with a
 Components: the loop calls the components step on its own; the operator also allows building one by hand when ideas
 wait for it (the same step, its checks and proof).
 
+## Before the run: the changes it relies on, proven (2026-11-18)
+| Change | Proof |
+|---|---|
+| Speed (data read locally, table by columns, warm-up checked once, record per column) | identical files on 4 reruns each; 1h fold A 329 s -> 135 s alone (`orchestration/duration/9_data_and_table_proof.md`) |
+| Step 4 on any bar size | the 4h probe runs; 4,380 bars equal the hourly data added by hand |
+| Step 6 trades per day | 174 records rerun: 173 identical, the hourly one's trades per day changed, its status not |
+| Gap rule: holes up to one day ignored | daily identical except XRP's 2-day hole of 2022-05 (w2 to w5 of a 19-coin record; w2 net return -0.55% -> 0); ZEC 1h fold A: 0% of hours blocked (was 47%) |
+
 ## Expected outcomes, fixed now
 **Retest (12 ideas):**
 - **A. Most hold** (8 or more confirmed by step 5 AND profitable by step 6): the daily edge holds on hourly bars.
