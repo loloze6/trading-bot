@@ -1,6 +1,5 @@
 """Tests of the components step's code: the wishes and their answers, the unblocking rule, the answer's parsing, the
-files a build writes, the proof's comparison. No model call, no backtest (a fake call stands in for the model)."""
-import gzip
+files a build writes, a build undone (failed or cut short). No model call, no backtest (a fake call stands in for the model)."""
 import json
 import sys
 from pathlib import Path
@@ -130,17 +129,60 @@ def test_the_files_a_build_writes():
     assert 'SETTINGS = [{}, {"n": 2}, {"n": 3}]' in spec
 
 
-def test_compare_reads_the_engine_s_window_files_only(tmp_path):
-    a, b = tmp_path / "a" / "BTCUSD" / "w1", tmp_path / "b" / "BTCUSD" / "w1"
-    for d in (a, b):
-        d.mkdir(parents=True)
-        (d / "metrics.json").write_text('{"sharpe": 1}')
-        (d / "bars.csv.gz").write_bytes(gzip.compress(b"t,close\n1,2\n"))
-    (tmp_path / "a" / "BTCUSD" / "protocol_summary.json.gz").write_bytes(gzip.compress(b"{}"))   # a call summary
-    (tmp_path / "a" / "chart_bars.csv.gz").write_bytes(gzip.compress(b"x"))                     # a chart file
-    assert B.compare(tmp_path / "a", tmp_path / "b") == (2, [])
-    (b / "metrics.json").write_text('{"sharpe": 2}')
-    assert B.compare(tmp_path / "a", tmp_path / "b")[1] == ["differs: BTCUSD/w1/metrics.json"]
+def fake_files(tmp_path, monkeypatch):
+    """The three files a build writes, in a fake repository; the journal and the note in a fake components folder."""
+    repo = tmp_path / "repo"
+    comp, cat, specs = repo / "c.py", repo / "catalogue.md", repo / "specs"
+    specs.mkdir(parents=True)
+    comp.write_text("x = 1\n\n\nclass AComponent(Base):\n    a = 1\n")
+    cat.write_text(CAT)
+    for k, v in {"REPO": repo, "COMPONENTS_FILE": comp, "CATALOGUE": cat, "SPECS": specs,
+                 "ROOT": tmp_path / "components", "PENDING": tmp_path / "components" / "build_in_progress.json"}.items():
+        monkeypatch.setattr(B, k, v)
+    (tmp_path / "components").mkdir()
+    return comp, cat, specs
+
+
+ANSWER = {"name": "CComponent", "table": "Regime measures", "row": "| `CComponent` | `n` (2) | x | x | x | x | x | x | x |",
+          "source": "class CComponent(Base):\n    c = 1\n", "settings": {"n": 2}, "hand": "def hand(df, params):\n    return 0.0"}
+WISH = {"run": "x_run", "plan": "p_1h", "wish": "C", "usd": 0.3}
+
+
+def test_a_failed_build_is_undone_and_leaves_no_note(tmp_path, monkeypatch):
+    comp, cat, specs = fake_files(tmp_path, monkeypatch)
+    before = comp.read_text(), cat.read_text()
+    monkeypatch.setattr(B, "run", lambda cmd, cwd=None, timeout=0: (1, "FAIL hand computation"))
+    ok, text = B.build(ANSWER, "python", WISH)
+    assert not ok and "FAIL hand computation" in text
+    assert (comp.read_text(), cat.read_text()) == before and not (specs / "CComponent.py").exists()
+    assert not B.PENDING.exists()
+
+
+def test_a_kept_build_leaves_no_note(tmp_path, monkeypatch):
+    comp, cat, specs = fake_files(tmp_path, monkeypatch)
+    monkeypatch.setattr(B, "run", lambda cmd, cwd=None, timeout=0: (0, "ok\n1 passed"))
+    ok, _ = B.build(ANSWER, "python", WISH)
+    assert ok and "class CComponent" in comp.read_text() and (specs / "CComponent.py").exists()
+    assert not B.PENDING.exists()
+
+
+def test_a_build_cut_short_is_undone_at_the_next_start(tmp_path, monkeypatch):
+    comp, cat, specs = fake_files(tmp_path, monkeypatch)
+    before = comp.read_text(), cat.read_text()
+
+    def cut(cmd, cwd=None, timeout=0):          # the process stops during the checks (a restart)
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(B, "run", cut)
+    with pytest.raises(KeyboardInterrupt):
+        B.build(ANSWER, "python", WISH)
+    assert "class CComponent" in comp.read_text() and B.PENDING.exists()      # left half-built, with its note
+    line = B.undo_cut_build()
+    assert (comp.read_text(), cat.read_text()) == before and not (specs / "CComponent.py").exists()
+    assert not B.PENDING.exists() and B.undo_cut_build() is None
+    assert line["answer"].startswith("a build cut short: undone (CComponent") and line["usd"] == 0.3
+    logged = json.loads((tmp_path / "components" / "journal.jsonl").read_text().splitlines()[-1])
+    assert logged["plan"] == "p_1h" and logged["run"] == "x_run"
 
 
 def test_python_s_power_operator_survives_the_reading():

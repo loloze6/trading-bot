@@ -8,15 +8,17 @@ reads it against the component catalogue as it stands (with what this call built
 - exists: the class and settings are checked against the catalogue; nothing is written but the index line;
 - built: the class is written in trading-bot/strategies/strategy_components.py (appended, or replacing the class it
   gives a new setting), its row in step 3's catalogue, its spec (settings and hand computation) in
-  trading-bot/tests/built_components/; then the standard checks (trading-bot/tests/component_harness.py, on real data)
-  and the proof (one fixed backtest rerun, compared file by file; the bot's suite). A failure undoes the files and goes
-  back to the model with its output; after three attempts: cannot build;
+  trading-bot/tests/built_components/; then the standard checks (trading-bot/tests/component_harness.py, on real data;
+  for a class given a new setting, its output at the old defaults unchanged) and the bot's suite. A failure undoes the
+  files and goes back to the model with its output; after three attempts: cannot build;
 - cannot build: the reason, in the index line.
 Every answer is one line in components/INDEX.md, so a wish is not asked twice. Visibility: components/journal.jsonl (one
 line per wish: run, plan, wish, answer, USD, seconds, attempts) and components/builds/<class>/ (the answers, the checks'
-output, the proof; a build undone: components/builds/not_built/<run>/<plan>/<wish>/). Card: ../card.md.
+output; a build undone: components/builds/not_built/<run>/<plan>/<wish>/). Card: ../card.md.
+A build in progress keeps the three files as they were in components/build_in_progress.json (not committed): a build cut
+short (a restart) is undone at the step's next start, from that note, with one journal line; its wish is asked again.
 """
-import argparse, gzip, json, re, subprocess, sys, tempfile, time
+import argparse, json, re, subprocess, sys, tempfile, time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -33,15 +35,10 @@ BASE_FILE = TBOT / "strategies" / "strategy_base.py"
 SPECS = TBOT / "tests" / "built_components"
 HARNESS = TBOT / "tests" / "component_harness.py"
 EXAMPLE = "VolumeRatioComponent"     # the worked example pasted into the call: its class and its spec
-# The proof: a backtest rerun on fixed inputs (night_013_run, 6 coins, 24 windows), compared with its record.
-PROOF_ID = ("013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends"
-            ".g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends_1d")
-PROOF_PLAN = STEPS / "03_test_plan" / "night_013_run" / "plans" / f"{PROOF_ID}.md"
-PROOF_RECORD = STEPS / "04_backtest" / "night_013_run" / "backtests" / PROOF_ID
-VOLATILE = {"protocol_run_id", "protocol_file", "run_id", "run_dir", "started_at", "finished_at", "output_dir"}
 TABLES = ("Regime measures", "Directional components", "Hedges and filters")
 ATTEMPTS = 3
 ROOT = HERE.parent
+PENDING = ROOT / "build_in_progress.json"   # the files as they were, while a build runs (not committed)
 
 
 # ---- the files a build changes ----------------------------------------------------------------------------------
@@ -184,60 +181,43 @@ def parse(text, catalogue_text):
     return out
 
 
-# ---- the checks and the proof -----------------------------------------------------------------------------------
+# ---- the checks -------------------------------------------------------------------------------------------------
 
 def run(cmd, cwd=None, timeout=1800):
     p = subprocess.run([str(c) for c in cmd], cwd=cwd, capture_output=True, text=True, timeout=timeout)
     return p.returncode, (p.stdout + p.stderr)
 
 
-def json_without(obj):
-    if isinstance(obj, dict):
-        return {k: json_without(v) for k, v in obj.items() if k not in VOLATILE}
-    if isinstance(obj, list):
-        return [json_without(v) for v in obj]
-    return obj
-
-
-ENGINE_FILES = ("bars.csv.gz", "trades.json.gz", "metrics.json", "forecast_distribution.csv")
-
-
-def compare(record, rerun):
-    """The engine's files of a backtest record, window by window (what it decided: bars, trades, metrics, forecast
-    distribution), that differ in a rerun. Not compared: the wrapper call's summaries (protocol_summary,
-    trade_diagnostics: where they land depends on how step 4 grouped the calls, which can change from run to run) and
-    the chart files (written from the record by run_idea, not by the engine)."""
-    diffs, n = [], 0
-    for f in sorted(record.glob("*/w*/*")):
-        if not f.is_file() or f.name not in ENGINE_FILES:
-            continue
-        n += 1
-        g = rerun / f.relative_to(record)
-        if not g.exists():
-            diffs.append(f"missing in the rerun: {f.relative_to(record).as_posix()}")
-            continue
-        a, b = (gzip.decompress(x.read_bytes()) if x.suffix == ".gz" else x.read_bytes() for x in (f, g))
-        if f.name.startswith("protocol_summary"):
-            a, b = (json_without(json.loads(x)) for x in (a, b))
-        if a != b:
-            diffs.append(f"differs: {f.relative_to(record).as_posix()}")
-    return n, diffs
-
-
-def proof(python):
-    """The fixed backtest rerun with the code as it now stands, compared file by file; then the bot's suite."""
-    with tempfile.TemporaryDirectory() as tmp:
-        code, out = run([sys.executable, STEPS / "04_backtest/helper/run_backtest.py", PROOF_PLAN, "--python", python,
-                         "--out-root", tmp, "--force"])
-        if code:
-            return False, f"the proof backtest failed:\n{out[-1500:]}"
-        n, diffs = compare(PROOF_RECORD, Path(tmp) / PROOF_ID)
-    if diffs or not n:
-        return False, f"proof: {n} files compared, {len(diffs)} differ:\n" + "\n".join(diffs[:20])
+def suite(python):
+    """The bot's suite, after the standard checks: every existing component's and the engine's tests still pass."""
     code, out = run([python, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider"], cwd=TBOT, timeout=3600)
     if code:
-        return False, f"proof: {n} files identical; the bot's suite fails:\n{out[-1500:]}"
-    return True, f"proof: {n} files compared, identical but for run ids, times and temporary paths; the bot's suite: {out.strip().splitlines()[-1]}"
+        return False, f"the bot's suite fails:\n{out[-1500:]}"
+    return True, f"the bot's suite: {out.strip().splitlines()[-1]}"
+
+
+def restore(saved):
+    """The files as they were: {path: text, or None for a file that did not exist}."""
+    for p, text in saved.items():
+        if text is None:
+            p.unlink(missing_ok=True)
+        else:
+            write_atomic(p, text)
+
+
+def undo_cut_build():
+    """A build cut short (the process stopped between writing the files and keeping or undoing them) left its note:
+    the files are put back from it, one journal line says so, and the note is removed. Returns the journal line."""
+    if not PENDING.exists():
+        return None
+    note = json.loads(PENDING.read_text(encoding="utf-8"))
+    restore({REPO / k: v for k, v in note["files"].items()})
+    line = {"at": utc_now(), "run": note["run"], "plan": note["plan"], "wish": note["wish"],
+            "answer": f"a build cut short: undone ({note['class']}, started {note['started']})", "usd": note["usd"]}
+    with open(ROOT / "journal.jsonl", "a", encoding="utf-8") as fh:
+        fh.write(json.dumps(line) + "\n")
+    PENDING.unlink()
+    return line
 
 
 # ---- one wish ---------------------------------------------------------------------------------------------------
@@ -263,7 +243,7 @@ def answer_wish(wish, python, model):
         settings = json.dumps(a["settings"], sort_keys=True)
         if a["answer"] == "exists":
             return f"exists: {a['name']} {settings}", cost, attempt, log, None
-        ok, checks = build(a, python)
+        ok, checks = build(a, python, {"run": run_name, "plan": pid, "wish": name, "usd": round(cost, 4)})
         log.append(f"checks:\n{checks}\n")
         if ok:
             return f"built: {a['name']} {settings}", cost, attempt, log, a["name"]
@@ -271,11 +251,14 @@ def answer_wish(wish, python, model):
     return f"cannot build: no answer passed the checks after {ATTEMPTS} attempts", cost, ATTEMPTS, log, None
 
 
-def build(a, python):
-    """Write the class, its row and its spec; run the checks and the proof; undo every file on a failure."""
+def build(a, python, wish):
+    """Write the class, its row and its spec; run the checks and the bot's suite; undo every file on a failure. While it
+    runs, the files as they were are in PENDING, so a build cut short is undone at the next start (undo_cut_build)."""
     name = a["name"]
     saved = {p: (p.read_text(encoding="utf-8") if p.exists() else None) for p in (COMPONENTS_FILE, CATALOGUE, SPECS / f"{name}.py")}
     replaced = class_source(saved[COMPONENTS_FILE], name) is not None
+    write_atomic(PENDING, json.dumps({**wish, "class": name, "started": utc_now(),
+                                      "files": {p.relative_to(REPO).as_posix(): v for p, v in saved.items()}}))
     try:
         module = with_class(saved[COMPONENTS_FILE], name, a["source"])
         write_atomic(COMPONENTS_FILE, module)
@@ -292,17 +275,15 @@ def build(a, python):
         Path(old.name).unlink()
         if code:
             raise RuntimeError(f"the standard checks:\n{out.strip()}")
-        ok, text = proof(python)
+        ok, text = suite(python)
         if not ok:
             raise RuntimeError(text)
-        return True, out.strip() + "\n" + text
     except Exception as e:                       # undo: the files as they were
-        for p, t in saved.items():
-            if t is None:
-                p.unlink(missing_ok=True)
-            else:
-                write_atomic(p, t)
+        restore(saved)
+        PENDING.unlink(missing_ok=True)
         return False, str(e)
+    PENDING.unlink(missing_ok=True)              # kept: the files are final (an interruption leaves the note)
+    return True, out.strip() + "\n" + text
 
 
 def record(wish, line, usd, seconds, attempts, log, built):
@@ -341,6 +322,10 @@ def main():
         return
     if not args.python:
         sys.exit("--python is needed to answer wishes (the checks run in the venv)")
+    cut = undo_cut_build()
+    if cut:
+        print(f"{cut['run']} | {cut['plan']} | {cut['wish']} | {cut['answer']}")
+        todo = W.open_wishes(args.runs)
     total = 0.0
     for wish in todo:
         if wish[:3] not in {w[:3] for w in W.open_wishes([wish[0]])}:
