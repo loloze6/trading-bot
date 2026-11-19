@@ -163,6 +163,16 @@ def add_sizing(config, bar):
     return config
 
 
+# The holding period (operator, 2026-11-19; common/forecast.md, 7): the book holds what it takes for the idea's horizon.
+# Added by code from the plan's horizon line, never by the model, like the sizing.
+def add_holding(config, horizon):
+    m = re.search(r"\d+", horizon or "")
+    if not m or int(m.group()) < 1:
+        raise ValueError(f"the horizon line gives no number of bars: {horizon!r}")
+    config.setdefault("strategies", {})["min_holding_bars"] = int(m.group())
+    return config
+
+
 def main():
     a = argparse.ArgumentParser()
     a.add_argument("idea", type=Path)
@@ -222,7 +232,8 @@ def main():
     bracket = f"[{data['instruments']}, {data['bar']}, {data['period']}]"
     stale = args.plans_dir / f"{plan_id}_config.json"
     if out == "plan":
-        write_atomic(stale, json.dumps(add_sizing(result["config"], data["bar"]), indent=2) + "\n")
+        write_atomic(stale, json.dumps(add_holding(add_sizing(result["config"], data["bar"]), result["horizon"]),
+                                       indent=2) + "\n")
         body += (f"Forecast: {result['forecast']}\nConfig: {plan_id}_config.json\nCriterion:\n"
                  + "".join(f"- {k.replace('-', ' ').capitalize()}: {result[k]}\n" for k in PLAN_FIELDS[1:]))
         line = f"{plan_id}: plan (fit: {fit}) {bracket}"

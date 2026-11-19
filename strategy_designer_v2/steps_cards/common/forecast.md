@@ -34,3 +34,10 @@ forecast divided by 10, scaled by the coin's volatility.
 6. **The position** (`postRebalance_current_allocation`) = forecast / 10 x (the target volatility / the coin's realised
    volatility), capped; a trade too small to matter is skipped, so the position can keep its previous sign for a few
    bars after the forecast changes sign.
+7. **The holding period** (2026-11-19, operator; `topics/30_why-hourly-ideas-rarely-pay.md`). An idea claims a move
+   over its horizon ("it rises over the next 24 hours"), so its book holds the position it takes for that horizon:
+   `strategies.min_holding_bars` = the idea's horizon in bars. After the book trades, it does not trade again for that
+   many bars, whatever the forecast does meanwhile; then it follows the forecast again. The horizon is the idea's own,
+   never a value chosen from the data (a longer hold also collects the market's drift). Why: on hourly bars, books that
+   followed the forecast every hour held a 24-hour idea for 1 hour, or re-sized every hour, and paid their costs
+   without earning the move (topic 30: 0.3 to 4.6 bps earned per unit traded, against about 10 of cost).

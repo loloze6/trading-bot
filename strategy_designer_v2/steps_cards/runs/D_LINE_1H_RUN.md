@@ -57,3 +57,18 @@ cost per unit traded, `topics/30_review/frictionless.py`), next to its parent's;
 
 **Who runs it:** the run session, between its own stretches (the operator's split: this session designs, the run
 session runs), after merging master.
+
+## Reading (2026-11-19; stopped at 8 of 17 by the operator, 7.76 USD)
+**Between B and C, and the cause found is upstream of the analyst.** 0 of 8 profitable; 7 backtested, 1 refused by step 3
+(a component missing). Earned per unit traded 0.9 to 6.7 bps against 10.0 to 11.0 of cost (parents: −6.6 to 5.5).
+- **The analyst (7.d) points the right way:** its ideas say trade less, hold longer, on bigger moves.
+- **Step 3 dropped every holding period:** its instructions listed "a holding period dropped" as an allowed adaptation,
+  since a config could not hold a position. So `evening-fall-rebounds-next-day` (a rise "over the next 24 hours") was
+  held 1 hour per position, `slow-three-day-rebound-hold` gave its parent's book exactly, and the continuous ideas
+  re-sized every hour (up to 72 % of their trading). The forecast moving, not the sizing, made 97 to 100 % of it.
+- **A replay of the books with a hold of each idea's horizon** (no backtest): net after costs positive for 6 of 7, earned
+  per unit 22 to 59 bps; a wider band (0.5) stays negative everywhere; shorter holds lose the gain, and longer holds
+  than the idea's horizon pay the market's drift, not the idea.
+- **Why stopped:** the 9 ideas left would meet the same gap; the fix comes first (operator).
+**Next:** the holding period (`strategies.min_holding_bars` = the horizon, set by step 3's code; topic 30), then the same
+8 ideas again: `runs/D_LINE_1H_V2_RUN.md`.

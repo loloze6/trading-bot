@@ -204,6 +204,10 @@ class TradingBot:
         # (0.0 = flat, the start). The min_allocation_change band judges the
         # signal's move away from it. Never read or written without a block.
         self._held_signal_allocation: Dict[str, float] = {}
+        # 2026-11-19 (topics/30): strategies.min_holding_bars. The decision bars seen per symbol, and the bar of the
+        # last executed trade; after a trade, none for min_holding_bars bars. Never read without the key.
+        self._decision_bars: Dict[str, int] = {}
+        self._last_trade_bar: Dict[str, int] = {}
 
         # Trading state
         self.open_trades: Dict[str, CompletedTrade] = {}
@@ -558,6 +562,18 @@ class TradingBot:
                 band_signal_change = signal_allocation - self._held_signal_allocation.get(symbol, 0.0)
                 sizing_extras["sizing_signal_change"] = band_signal_change
 
+            # 2026-11-19 (topics/30): strategies.min_holding_bars. None (key absent): holding is False, nothing below
+            # changes. Forced flats (risk gate, large gap) are not held.
+            min_holding = getattr(self.strategy, "min_holding_bars", None)
+            if isinstance(min_holding, bool) or not isinstance(min_holding, int):
+                min_holding = None              # absent (or not an integer: a test double); validate_config's V20
+            holding, bars_since_trade = False, None
+            if min_holding is not None:
+                self._decision_bars[symbol] = self._decision_bars.get(symbol, 0) + 1
+                if symbol in self._last_trade_bar:
+                    bars_since_trade = self._decision_bars[symbol] - self._last_trade_bar[symbol]
+                    holding = bars_since_trade < min_holding
+
             #Init variables
             approved_rebalance = None
             debug_approve_allocation_change = {}
@@ -596,10 +612,20 @@ class TradingBot:
                     )
                     if success_execute_portfolio_rebalance:
                         self.logger.debug("   ✓ RISK FLATTEN executed successfully")
+                        if min_holding is not None:
+                            self._last_trade_bar[symbol] = self._decision_bars[symbol]
                         if sizing_active:
                             self._held_signal_allocation[symbol] = 0.0
                     else:
                         self.logger.error(f"   ✗ RISK FLATTEN execution failed. Debug info: {debug_execute_portfolio_rebalance}")
+
+            elif abs(allocation_change) != 0.0 and holding:
+                # 2026-11-19 (topics/30): strategies.min_holding_bars -- the position taken at the last trade is held
+                # for that many bars, whatever the forecast does meanwhile (only earlier trades are read: no lookahead).
+                approved_rebalance = False
+                debug_approve_allocation_change = {"min_holding_bars": {
+                    "passed": False, "bars_since_trade": bars_since_trade, "required": min_holding}}
+                self.logger.debug(f"   ⏸ HOLDING │ {bars_since_trade} of {min_holding} bars since the last trade")
 
             elif abs(allocation_change) != 0.0:
                 # Check if rebalance is ok from risk management perspective
@@ -627,6 +653,8 @@ class TradingBot:
 
                     if success_execute_portfolio_rebalance: 
                         self.logger.debug("   ✓ REBALANCE executed successfully")
+                        if min_holding is not None:
+                            self._last_trade_bar[symbol] = self._decision_bars[symbol]
                         if band_signal_change is not None:
                             # D-176: the signal this position was set from,
                             # whichever band path passed. When the sizing step

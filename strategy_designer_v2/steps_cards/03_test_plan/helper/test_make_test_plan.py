@@ -1,4 +1,5 @@
-"""Tests of step 3's code rules: the sizing block every config gets, and the windows of a period."""
+"""Tests of step 3's code rules: the sizing block and the holding period every config gets, and the windows of a
+period."""
 import math
 import sys
 from pathlib import Path
@@ -23,6 +24,18 @@ def test_sizing_overwrites_a_block_the_model_wrote():
     cfg = {"strategies": {"regimes": {}, "sizing": {"kind": "vol_target", "window": 5, "target_annual_vol": 9,
                                                     "periods_per_year": 365}}}
     assert m.add_sizing(cfg, "1d")["strategies"]["sizing"]["window"] == 60
+
+
+def test_the_holding_period_is_the_plan_s_horizon():
+    assert m.add_holding({"strategies": {"regimes": {}}}, "24 bars")["strategies"]["min_holding_bars"] == 24
+    cfg = {"strategies": {"regimes": {}, "min_holding_bars": 3}}                 # the model's value is replaced
+    assert m.add_holding(cfg, "72")["strategies"]["min_holding_bars"] == 72
+    for bad in ("", "about a day", "0 bars"):
+        try:
+            m.add_holding({"strategies": {}}, bad)
+            assert False, bad
+        except ValueError:
+            pass
 
 
 def test_the_prompt_has_no_placeholder_left():
