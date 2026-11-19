@@ -191,23 +191,38 @@ Plans paid monthly with at least 2 GB in the EU [from section 2a]:
 - in a near-tie (netcup about €4.43), OVH, for its included daily backups and no minimum term;
 - if the $1 was meant for each of the two, the threshold is about €3.70 and OVH almost surely wins.
 
-### Second choice, only if it appears: a yearly deal under €20
+### Deals (monthly or yearly), checked 2026-11-19
 
-Black Friday is 2026-11-27; deals run to about 2026-11-30 (LowEndTalk "Offers"; vpsbenchmarks.com/black_friday_vps).
-Take one only if **all** of these hold:
-- **cost:** under €20 for the year;
-- **memory:** 4 GB or more (2 GB would be full in about 3 months);
+The operator's rule, clarified: a cheap monthly price counts as much as a cheap year. Black Friday is 2026-11-27;
+most deals run to about 2026-11-30.
+
+A deal qualifies if **all** of these hold:
+- **cost:** cheaper than OVH's €5.39 a month, over the first and the following years;
+- **memory:** 4 GB or more (worth about $1; 2 GB would fill in about 3 months);
 - **place:** a data centre in the EU, not the UK (on Kraken's derivatives restricted list) or the US;
 - **host:** one that has existed for several years.
 
-Under €20 a year, losing the year if the host closes costs less than 4 months of OVH, and the weekly copy to the PC keeps the data. Seen so far, none qualifies:
+| Offer | Price | Verdict |
+|---|---|---|
+| **1blu VPS Eco** (German host; 2 vCores, 4 GB, 64 GB SSD, own IPv4, 2 GB backup space, traffic included) | **€1 a month for 12 months (€12 the first year), then €3.99 a month**; billed every 3 months; renews automatically [3] mydealz / monsterdealz, 2026 | **Qualifies, and beats OVH**: €12 against about €65 in year 1, then €3.99 against €5.39. To check on the order page: is it still offered (re-released after a promotion ended in October); can a French resident order it; is it a full virtual machine (a deal note says Docker works reliably only after switching it to "KVM"); the language of its panel. Reviews: 1 of 10 from only 3 reviews, too few to judge |
+| HostDZire (LowEndTalk thread 222164, "since 2013" according to one aggregator) | from €18 a year; a 4 GB, 2-core plan at €21 a year; locations India, France, Netherlands, USA | **Maybe**: about €1.75 a month. Plan, location and terms not seen; reputation not checked independently |
+| Contabo Cloud VPS 4 | $5.28 a month for 24 months (20% off) | no: 24-month term; reliability complaints |
+| Hostinger KVM 2 | $8.79 a month in the sale, long prepay | no: costs more than OVH |
+| IONOS VPS S+ | $2 a month for 3 months, then €5 HT + setup | no: about €6.1 a month over the first year |
+| Hetzner, netcup, OVH | no Black Friday VPS sale found (a tracker on 2026-11-03) | — |
+| A new provider in Marseille, 1 GB at €10 a year | €10 a year | no: 1 GB, new provider |
+| LiteServer (NL), Eurohoster (NL) | 50% and 80% offers seen in earlier years; no 2026 offer found | check their pages by hand |
+| UK EPYC 4 GB £27 a year; DediRock 8 GB $24.99 a year; PetroSky France €4.89 a month | — | no: UK; location not seen; memory not seen |
 
-| Offer | Why not |
-|---|---|
-| UK EPYC, 4 GB, £27 a year | UK, and over €20 |
-| DediRock, 8 GB, $24.99 a year | over €20; location not seen |
-| PetroSky, France | €4.89 a month; memory not seen |
-| A Paris 4 GB plan at $27.74 a year | last year's offer |
+Sources:
+- mydealz.de/deals/1blu-vps-eco-4gb-ram-64gb-ssd-2-cores-amd-epyc-top-de-cix-anbindung-top-fur-n8n-vpn-kleine-ki-agenten-hermesopenclaw-2867639
+- monsterdealz.de/shopping/1blu-vps-eco-vserver-12-euro-jahr/1585033
+- whtop.com/plans/1blu.de/160066
+- lowendtalk.com/discussion/222164/early-black-friday-sale-vps-dedicated-server-deals-starting-at-just-18-year
+- cybernews.com/best-web-hosting/vps-black-friday-deals/
+- vpsledger.com/black-friday-vps-deals-2026/
+- vpsbenchmarks.com/black_friday_vps
+- lowendbox.com/blog/new-provider-new-location-dirt-cheap-pricing-e10-yr-for-a-1gb-vps-in-marseille-france/
 
 ### Question only the operator can answer (answered 2026-11-19)
 
@@ -236,7 +251,7 @@ reports (weight in section 6).
 |---|---|---|---|---|
 | 1 | Oracle Always Free ARM (2 OCPU / 12 GB) **upgraded to pay-as-you-go**, Paris or Marseille | €0 if kept within the free limits | accounts closed without warning (fewer reports on paid accounts, still some); Oracle does not confirm that pay-as-you-go protects an idle machine from reclaiming; some unexpected charges (a $0.01 budget alert is the usual guard); free limits halved without notice in 2026; the free ARM machine often hard to get | **no** for real orders: a sudden closure leaves a position unwatched. Possible for paper runs only, if €0 matters more than stability |
 | 2 | A laptop or NAS you already own, at home | about €2.5 (electricity) | power and internet cuts, sleep, a swelling battery | **no**: the operator's laptop will often be switched off |
-| 3 | Black Friday yearly deal, ≥4 GB, EU, established host | under €1.7 (under €20 a year) | small hosts sometimes close with the prepaid year | **yes, if one appears by about 2026-11-30**; none seen yet |
+| 3 | **1blu VPS Eco, 4 GB, Germany** (deal) | **€1 for 12 months, then €3.99** | too few reviews to judge (3); deal availability and order conditions unconfirmed | **yes: first choice if the order page confirms it** |
 | 4 | netcup VPS nano, 2 GB, Germany | €3.72, or about €4.43 after the September 2026 rise | support by ticket, slow; maintenance of up to an hour called normal; 6-month minimum term | **yes if under about €4.50** on its order page |
 | 5 | Used mini PC at home | about €4–6 over 3 years | home risks as #2 | no: not cheaper than #6, less stable |
 | 6 | **OVH VPS-1, 4 GB** | **€5.39** | support split; renewal price rises on its older range; 2021 fire (backups now included) | **yes: the default choice** |
@@ -265,8 +280,8 @@ reports (weight in section 6).
 | Keeping Oracle's free machine artificially busy | against the purpose of the idle rule; account risk |
 | A Claude Code cloud session | reclaimed after inactivity |
 
-**Result: OVH VPS-1 (#6)**, unless one of these applies first:
-- **#3** a qualifying Black Friday deal by about 2026-11-30;
+**Result: 1blu VPS Eco (#3)** if its order page confirms the deal and the checks above; otherwise **OVH VPS-1 (#6)**, unless:
+- a qualifying deal (section 3, "Deals") appears by about 2026-11-30;
 - **#4** netcup nano under about €4.50 on its order page;
 
 Sources added for Oracle pay-as-you-go:
