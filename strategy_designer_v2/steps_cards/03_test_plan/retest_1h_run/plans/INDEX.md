@@ -9,3 +9,4 @@
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1h, folds A, B, C, D]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+N2-04_slow-and-fast-momentum.e1_short-horizon-dual-momentum-continuation_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
