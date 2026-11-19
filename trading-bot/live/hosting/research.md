@@ -215,6 +215,67 @@ Under €20 a year, losing the year if the host closes costs less than 4 months 
 |---|---|---|
 | Do you already own a laptop or NAS you can leave on at home, with a fixed internet address? | About €2.5/month of electricity instead of €5.39. The risks are power cuts, internet cuts and sleep; a Healthchecks alert (below) still warns you | OVH |
 
+
+### Every option found, compared by the operator's rules (2026-11-19)
+
+Rules:
+- cost first, while viable and stable;
+- monthly payment, unless a whole year costs under €20;
+- an EU location (France not required; not the UK or the US);
+- extra memory worth about $1 a month;
+- today 3 runs, so at least 2 GB.
+
+Cost is per month with VAT. "Feedback" is what users report: forums, review sites, and press when it relays user
+reports (weight in section 6).
+
+**Viable**, cheapest first:
+
+| # | Option | Cost / month | Main risk users report | Verdict |
+|---|---|---|---|---|
+| 1 | Oracle Always Free ARM (2 OCPU / 12 GB) **upgraded to pay-as-you-go**, Paris or Marseille | €0 if kept within the free limits | accounts closed without warning (fewer reports on paid accounts, still some); Oracle does not confirm that pay-as-you-go protects an idle machine from reclaiming; some unexpected charges (a $0.01 budget alert is the usual guard); free limits halved without notice in 2026; the free ARM machine often hard to get | **no** for real orders: a sudden closure leaves a position unwatched. Possible for paper runs only, if €0 matters more than stability |
+| 2 | A laptop or NAS you already own, at home | about €2.5 (electricity) | power and internet cuts, sleep, a swelling battery | open question for the operator (section 3) |
+| 3 | Black Friday yearly deal, ≥4 GB, EU, established host | under €1.7 (under €20 a year) | small hosts sometimes close with the prepaid year | **yes, if one appears by about 2026-11-30**; none seen yet |
+| 4 | netcup VPS nano, 2 GB, Germany | €3.72, or about €4.43 after the September 2026 rise | support by ticket, slow; maintenance of up to an hour called normal; 6-month minimum term | **yes if under about €4.50** on its order page |
+| 5 | Used mini PC at home | about €4–6 over 3 years | home risks as #2 | no: not cheaper than #6, less stable |
+| 6 | **OVH VPS-1, 4 GB** | **€5.39** | support split; renewal price rises on its older range; 2021 fire (backups now included) | **yes: the default choice** |
+| 7 | Contabo Cloud VPS 10, 8 GB | €5.50 + a setup fee | CPU taken by other customers ("steal") 20–80%; recycled IP addresses already blacklisted | no: costs more than #6, more reliability complaints |
+| 8 | IONOS VPS S, 2 GB | €2.40 for 3 months, then €6, + €12 setup | promotional entry price | no: about €6.1 a month over the first year |
+| 9 | Hetzner CX23, 4 GB | €7.19 | not orderable at every check up to 2026-10-20; strict sign-up | no |
+| 10 | Fly.io, Railway (1 GB) | about €9–12 | bills by usage; fixed address costs extra | no: about twice #6 |
+| 11 | Vultr, DigitalOcean, Linode (2 GB); Scaleway DEV1-S; AWS Lightsail (2 GB) | about €10–12.4 | none notable | no: about twice #6 |
+| 12 | PythonAnywhere | €10, 1 always-on task | — | no: 1 run only |
+| 13 | Render (one 512 MB worker per run) | about €22–23 for 3 runs | — | no |
+
+**Not suitable for this bot:**
+
+| Option | Why |
+|---|---|
+| Google free machine | US only, 1 GB |
+| Azure free | 12 months, then about €9; 1 GB |
+| AWS free plan | 6 months of credits |
+| GitHub Actions and other timer jobs | the bot needs a rewrite; no fixed address; US addresses; late starts |
+| Heroku | files wiped at every restart |
+| Koyeb | free tier closed to new users |
+| Hostinger | 24 months prepaid, then €11.99 |
+| netcup pico, IONOS XS (1 GB) | only 1–2 runs; later, once several coins run in one program |
+| Old Android phone | background programs killed; the pinned libraries cannot be installed directly |
+| Freqtrade bot hosting | built for another bot |
+| Keeping Oracle's free machine artificially busy | against the purpose of the idle rule; account risk |
+| A Claude Code cloud session | reclaimed after inactivity |
+
+**Result: OVH VPS-1 (#6)**, unless one of these applies first:
+- **#3** a qualifying Black Friday deal by about 2026-11-30;
+- **#4** netcup nano under about €4.50 on its order page;
+- **#2** you own a home machine and accept its risks.
+
+Sources added for Oracle pay-as-you-go:
+- docs.oracle.com/en-us/iaas/Content/FreeTier/resourceref.htm
+- bestusavps.com/reviews/oracle-cloud/ (2026)
+- news.ycombinator.com/item?id=36010572 (2023)
+- redlib mirror of r/oraclecloud "account terminated without warning" (2024-09)
+- trustpilot.com/review/cloud.oracle.com
+- infoq.com/news/2026/07/oracle-cloud-free-tier-limits/
+
 ---
 
 ## 4. Kraken Futures from France: what the server's location changes
