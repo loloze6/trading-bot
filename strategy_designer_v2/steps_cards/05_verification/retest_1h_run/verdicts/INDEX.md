@@ -1,1 +1,3 @@
 001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1h: inconclusive (fit: adapted) [main: 0.00279828; OLS slope t 4.73955; grid cases with forecast above 0 821, trending grid cases with forecast above 0 574, unknown grid cases with forecast above 0 247, grid cases 1674]
+001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-uptrend-continuation_1h: confirmed (fit: exact) [main: 3.39753; OLS slope t 3.39753; independent trending cases 841]
+002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1h: confirmed (fit: exact) [main: 0.00520582; OLS slope t 7.18992; grid cases in trending 1562, cases at forecast 0 772, cases with forecast > 0 790]

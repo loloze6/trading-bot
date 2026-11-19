@@ -57,3 +57,10 @@ No merge into master; no change to a step during the run; nothing is tuned to th
   background tasks (an hour of timing, the proofs) ran through idle periods. Relaunched 01:16 as a tracked task (capped
   at 2 hours a launch; relaunched each time, every run resuming from its files).
 - 02:09: running since 01:16 without a restart. Retest 1 of 12 done (inconclusive, not profitable); slow brief 9 ideas (7 of its 8 own ideas wait for components; 1 step 7 idea confirmed, not profitable); about 5 USD spent.
+- 03:01: found that every components build of the night failed its proof (4 wishes "cannot build" after 3 attempts
+  each): the proof's reference record (night_013 momentum in uptrends) was made before the 1-day gap rule, which
+  changes the hole's label in 2 of its files (XRP w2, w3 metrics; bars and trades identical). Builds stopped, the bot's
+  files restored; reference refreshed with the current code (exactly those 2 files changed); the 4 wrong answers
+  removed from the index (the wishes open again). Also found: the loop crashed after a components call ended in
+  failure (`failed()` read that line as an idea's turn); fixed, with a test. The two briefs paused; the components step
+  run by hand on their 12 open wishes (operator's go), then the briefs resume.
