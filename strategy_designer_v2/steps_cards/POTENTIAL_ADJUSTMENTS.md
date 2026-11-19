@@ -123,3 +123,14 @@ For brief 016 the components step built `RiseBeyondLargestMovesComponent`, `Loss
 make) on rises and on falls, as a share or as what is left, from simple or log returns. By the card's rule 1 (one
 measure, one component; another base or side is a setting) they should be one component with settings (side, form).
 Not merged during the night (plans in flight use them); to review and merge on the operator's go, with the proof.
+
+## Parked: an unblocked idea cut mid-run is never finished (run session, 2026-11-19)
+- **What was seen:** `intraday_1h_run` 017-02 was refused at 00:13 (missing-components; a row in run_idea's table),
+  unblocked, re-planned by step 3 at 08:55 (plan index: "plan"), then cut before its backtest when the night's runs were
+  stopped. On resume (09:54) the loop did not finish it: `loop.unfinished()` counts an idea as finished when it has any row
+  in the table, and the old refusal row was still there; `select_next` counts it as tested (its plan exists). The queue
+  read "tested: step 5 -; step 6 -" and nothing would ever run its backtest. Checked: the only such idea in both 1h runs.
+- **Workaround taken (no code changed):** `run_idea` called by hand on 017-02 in the same run, the loop stopped (step 3
+  skipped, steps 4 to 7 run), which is what the loop's resume rule should have done.
+- **Fix to consider (design session):** read "finished" from the turn, not the table: an idea is unfinished when its
+  latest turn has no finished `run_idea` call after it (e.g. the table row older than the turn, or a "done" line per turn).

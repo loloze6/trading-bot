@@ -1,0 +1,24 @@
+---
+line: 7.c rejected
+backtest: 017-04_postsettle-decline-after-downtrend_1h
+idea tested: 017-04_postsettle-decline-after-downtrend
+step 5: rejected
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3919 USD
+---
+## Findings
+- **F1:** The rejection comes from a sign error in the measure, not from the market: the per-event gain was taken as -(forecast/10) × excess return, which counts a short as winning when the coin rises. On the actual short position, the gross gain per active bar is positive at every settlement holding hour: +2.04 bp at the 01:00 close (t 2.57), +1.31 bp at 09:00 (t 2.08), +2.06 bp at 16:00 (t 2.45) and +2.42 bp at 17:00 (t 3.36), and the summed gross gain is +6.19.
+- **F2:** After a 3-day fall, the coin did decline over the 2 hours after settlement, and the decline grows with the fall. The mean excess 2-bar return is -8.54 bp for a standardised 3-day change below -2 (n 3275), -5.14 bp for -2 to -1 (n 10399), -2.97 bp for -1 to -0.5 and -0.67 bp for -0.5 to 0. The step-5 supporting check agrees: largest third minus smallest third is -0.000988.
+- **F3:** At hours with no settlement, the same deep 3-day fall is followed by a bounce rather than a decline: the excess 2-bar return is +4.86 bp for a standardised change below -2 (n 23280), against -8.54 bp at settlements. Down-trend settlement events minus down-trend other hours give a Welch t of -4.1.
+- **F4:** The post-settlement decline lasts beyond 2 hours and stays graded at 4 hours. At settlements the excess 4-bar return is -6.96 / -6.94 / -5.01 / -3.19 bp from the deepest to the mildest down bin. At other hours it is +5.22 / -0.38 / -1.76 / -2.15 bp. By 8 hours it is gone (+0.41 bp in the deepest bin).
+- **F5:** Fees, not direction, sank the book. Total fees were 28.07 against a gross gain of 6.19, because every settlement brings an entry and an exit (about 0.71 per coin at the 00, 02, 08, 10, 16 and 18 closes). The result is a mean daily book return of -0.00124 and a Sharpe of -2.79.
+- **F6:** The effect sits in falling markets and is spread across coins. The down-trend settlement excess 2-bar return is -16.7 bp in 2018 (t -4.04) and -11.4 bp in 2022 (t -5.04), but +3.0 bp in 2025 (t 1.18). By coin it is negative everywhere, from -2.1 bp for XMR to -7.7 bp for ETH (t -3.49).
+- **F7:** Settlement hours carry somewhat raised volume, at 1.062 times the 24-hour mean against 1.026 at other hours.
+
+## Ideas
+- `017-04_postsettle-decline-after-downtrend.c1_post-settlement-decline-four-hours` (from F1, F2, F4, F5, F6): For a coin with a strong 3-day run down, the return over the 4 hours after each funding settlement time (00:00, 08:00 and 16:00 UTC) is negative, and the stronger the 3-day fall, the larger that post-settlement decline.
+- `017-04_postsettle-decline-after-downtrend.c2_off-settlement-rebound-after-falls` (from F3, F2): For a coin with a strong 3-day run down, the return over the next 2 hours from closes away from the funding settlement times is positive, and the deeper the 3-day fall, the larger that rebound.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

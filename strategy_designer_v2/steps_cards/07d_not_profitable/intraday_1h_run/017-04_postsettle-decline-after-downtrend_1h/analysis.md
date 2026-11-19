@@ -1,0 +1,22 @@
+---
+line: 7.d not profitable
+backtest: 017-04_postsettle-decline-after-downtrend_1h
+idea tested: 017-04_postsettle-decline-after-downtrend
+step 5: rejected
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5054 USD
+---
+## Findings
+- **F1:** The book loses because fees swamp a real but tiny edge. Over all bars, gross gain is 0.000015 per bar against fees of 0.000067 per bar (totals 6.19 against 28.07). Each of the 26,855 short trades pays about 0.10% in fee, so the mean trade goes from -0.18% gross to -0.28% net. The book's mean daily return is -0.0012 on every coin (from -0.00084 on ETH to -0.0016 on XMR).
+- **F2:** The effect the trades bet on is there, but it is far smaller than the fee. On the 25,720 settlement events with a negative 3-day z, the excess return is -0.000405 over 2 hours (t -4.1) and -0.000564 over 4 hours (t -4.4), about 4 to 6 bp against roughly 10 bp of fee per trade.
+- **F3:** The step-5 rejection comes from a sign error in the plan, not from the market. The plan's gain -(forecast/10) × excess turns a short that gains, when the coin falls after settlements (F2), into a "negative gain" of -0.000865 (t -5.9). On held bars the short actually earns gross, up to 0.00020 to 0.00024 per bar at close hours 1, 16 and 17.
+- **F4:** Grading by the 3-day fall holds only at 2 hours and turns over at longer horizons. At 2 hours the deep third falls -0.000628 against -0.000145 for the mild third. At 24 hours the deep third gains +0.00113 while the mild third loses -0.00121. After the 00:00 settlement, the mild third falls more than the deep third over 6 hours (-0.00146 against -0.00048).
+- **F5:** The only move large enough to approach the fee has faded over time. That move is the 6 hours after 00:00 UTC (-0.00102, 8,550 events), and it is strong in 2018 (-0.0050, t -5.6), 2019 (-0.0021) and 2022 (-0.0021). From 2023 to 2025 it is near zero or positive (+0.00037, +0.00115, +0.00005).
+- **F6:** The clock pattern is not specific to settlements. Negative-z hours that are not settlement closes show moves as large as the settlement hours: close hour 2 is -0.00070 (t -4.0), close hour 3 is -0.00055 (t -3.7), close hour 21 is +0.00088 (t +5.7) and close hour 12 is +0.00059 (t +3.2). Settlement hours 8 and 16 show -0.00048 and -0.00058.
+
+## Ideas
+- No ideas: The after-settlement decline the book bets on is real but too small to pay. It is about 4 to 6 bp over 2 hours against roughly 10 bp of fee per trade (F1, F2). Its only larger form, after 00:00 UTC over 6 hours, loses its grading by the 3-day fall (F4) and has faded since 2023 (F5). Its clock pattern also appears at non-settlement hours (F6). So no amendment of this idea, and no idea the findings support, would lift the book's gain above its fees.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

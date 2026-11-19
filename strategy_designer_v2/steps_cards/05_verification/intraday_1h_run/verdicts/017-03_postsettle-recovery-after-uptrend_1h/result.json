@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9966310321463525,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope t of excess 2-bar return on forecast at settlement entry bars",
+    "value": 1.9627759751228655e-05,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.3886741810314889
+    },
+    "threshold": "confirm if slope t >= 2 with forecast-weighted mean excess > 0; reject if slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "forecast-weighted mean excess 2-bar return",
+    "value": 0.00035782413166698886,
+    "passed": true
+  },
+  "counts": {
+    "cases pooled across coins and windows": 26465
+  },
+  "decided_by": "The slope t is between -2 and 2.",
+  "reading": "Situation bars are those stamped 23:00, 00:00, 07:00, 08:00, 15:00, 16:00 UTC with a positive raw 72-bar rise (recorded last_history_value, else recomputed from closes), expected side long; t+2 is two rows later in the same window; the coin's mean 2-bar return is pooled over all windows on the non-overlapping grid 0,2,4,...; the slope t is the ordinary OLS slope t of excess return on forecast, pooled over all coins and windows."
+}

@@ -128,3 +128,9 @@ components, 1 untestable), turn 8 (017-02) cut mid-turn, resumes. Slow 25.55 USD
 ## Journal of the day (run session)
 - 09:53 UTC: container fresh (up 0 min); working tree clean, so no build was cut. Venv created. Intraday resumes first.
 - 09:54: intraday stretch 1 launched (tracked task, --budget 5.73). Check-ins every 45 minutes.
+- 10:19: intraday stretch 1 ended on its budget (5.70 USD, 2 turns, 25 min). 017-03 (recovery after settlement, after an
+  uptrend): inconclusive t +1.39, not profitable (6 of 6 failed). 017-04 (decline after settlement, after a downtrend):
+  rejected t -5.89 (the opposite of the claim, strongly), not profitable (6 of 6).
+- 10:2x: found that 017-02 (re-planned 08:55 once unblocked, cut before its backtest) was not finished on resume: the loop
+  reads it as finished because its old refusal row is in the table (POTENTIAL_ADJUSTMENTS.md, "an unblocked idea cut
+  mid-run"). The only such idea in both runs. Workaround: `run_idea` on 017-02 by hand, the loop stopped; then the loop resumes.
