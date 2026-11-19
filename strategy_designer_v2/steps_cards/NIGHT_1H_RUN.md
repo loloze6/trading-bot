@@ -98,4 +98,4 @@ No merge into master; no change to a step during the run; nothing is tuned to th
 - **Only one holds on new dates:** momentum inside golden-cross uptrends (confirmed t +7.19, profitable, holds on
   2016-17). The live bot's strategy (19-coin nearness) is confirmed and profitable on 1h but does not hold on 2016-17.
 - Stepping back: for these ideas hourly bars add costs, not edge; their daily versions are the ones to keep. Hourly
-  bars are worth it where the effect itself is hourly (the time-of-day signals of the slow brief).
+  bars are worth testing where the effect itself is hourly (the time-of-day signals of the slow brief: confirmed, not yet profitable).
