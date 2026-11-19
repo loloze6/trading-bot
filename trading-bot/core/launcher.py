@@ -431,7 +431,7 @@ class Launcher:
             execution_handler=stack.execution_handler,
             logger=self.logger,
             gap_detection=True,
-            gap_policy=dict(DEFAULT_GAP_POLICY),
+            gap_policy=default_gap_policy(params.interval),
             portfolio_info=stack.portfolio_info,
             portfolio_state_tracker=stack.portfolio_state_tracker,
             forecast_manager=stack.forecast_manager,
@@ -601,8 +601,12 @@ class Launcher:
 
 # Gap rule ON by default for every backtest (operator 2026-10-01, option B).
 # A missing stretch of candles is classified by bars actually missed:
-#   ignore (<= 3)            -- nothing special (most are no-trade hours on
-#                               Kraken 1h, which omits candles without trades);
+#   ignore (up to one day)   -- nothing special (most are no-trade hours on
+#                               Kraken 1h, which omits candles without trades).
+#                               One day in bars of the bar size: 1 on daily bars,
+#                               6 on 4h, 24 on 1h (operator 2026-11-18: a duration,
+#                               the same on any bar size; it was 3 bars, i.e. 3
+#                               hours on 1h, which blocked 47% of ZEC's 1h hours);
 #   middle (4 .. warmup - 1) -- keep any position, block a NEW entry until a
 #                               full warmup of real bars has passed;
 #   large  (>= warmup)       -- force flat, restart the strategy's warmup, and
@@ -612,7 +616,14 @@ class Launcher:
 # switch the rule off, or your own gap_policy dict. The indicator fill (the
 # strategy buffer's reindex) is a SEPARATE switch, indicator_fill, OFF by default
 # (operator 2026-10-01; turning it on is E-029 / CUL-361).
-DEFAULT_GAP_POLICY = {"ignore_max_bars": 3, "on_large_gap": "flatten"}
+GAP_IGNORE_SECONDS = 86400   # a hole of up to one day is ignored, on any bar size
+
+
+def default_gap_policy(interval_seconds: int) -> dict:
+    """The default gap rule for a bar size: holes of up to GAP_IGNORE_SECONDS ignored (in whole bars)."""
+    return {"ignore_max_bars": GAP_IGNORE_SECONDS // int(interval_seconds), "on_large_gap": "flatten"}
+
+
 _USE_DEFAULT_GAP_POLICY = object()
 
 
@@ -794,7 +805,7 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         immediate flatten AND resets the strategy's accumulated history (a real
         segment split), after which the engine's own pre-existing readiness gate
         naturally withholds new entries until re-warmed. Omitted (default):
-        DEFAULT_GAP_POLICY when gap_detection is True, None when it is False.
+        default_gap_policy(interval) when gap_detection is True, None when it is False.
         None explicitly with gap_detection=True: gaps are recorded but no tier
         acts. See
         core/trading_bot.py's constructor docstring for why a per-indicator
@@ -827,9 +838,7 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         SYMBOL at fill time, not upfront. Never used by production callers. See
         tests/test_cost_model.py.
     """
-    if gap_policy is _USE_DEFAULT_GAP_POLICY:
-        gap_policy = dict(DEFAULT_GAP_POLICY) if gap_detection else None
-    if gap_policy is not None and not gap_detection:
+    if gap_policy is not None and gap_policy is not _USE_DEFAULT_GAP_POLICY and not gap_detection:
         # CUL-359: refuse before any data is fetched (TradingBot raises the
         # same error, but only after the data load)
         raise ValueError("gap_policy requires gap_detection=True -- pass "
@@ -855,6 +864,8 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         interval = interval_seconds
     else:
         interval = parse_interval_seconds(launcher.config.get('trading', 'interval', 3600))
+    if gap_policy is _USE_DEFAULT_GAP_POLICY:   # one day of bars of this bar size (default_gap_policy)
+        gap_policy = default_gap_policy(interval) if gap_detection else None
     resolved_exchange = _validated_exchange(
         exchange if exchange is not None
         else launcher.config.get('trading', 'exchange', 'binance'),
