@@ -43,6 +43,9 @@ bar, that a config can use as a forecast source or in a regime rule.** Five rule
    negative, or 1 minus it) is the same measure: exists when a config step gives it exactly (`negate` gives the
    negative; `standardise` divides by the past mean size without centring, so nothing gives 1 minus it), otherwise a
    setting on the same component (exercise 2: the share of bars with RSI below its midline, `side: below`).
+   The rule applies when a component is built; components already built are not merged afterwards (operator,
+   2026-11-19: three fewer catalogue rows did not pay for rewriting shared code and finished plans; the four
+   "share of a move made by its largest bars" components of brief 016 stay as built).
 2. **A setting is added only when a wish needs a value the component does not have, and that value changes its
    output on real data**; its default keeps the component's output as it was. A setting that changes nothing on real
    data is not added: the answer is exists (exercise 2: where an RSI of exactly 50 counts). One setting per purpose:
