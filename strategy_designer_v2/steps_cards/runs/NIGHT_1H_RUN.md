@@ -171,3 +171,35 @@ components, 1 untestable), turn 8 (017-02) cut mid-turn, resumes. Slow 25.55 USD
 - 15:33: stretch 7 ended on its budget (27.67 USD, 3 turns, 35 min). 017-03.g4 (midday trend giveback): confirmed t +4.38,
   not profitable. Run so far: 24 ideas tested, 14 confirmed, 0 profitable; every tested book fails Sharpe after costs.
   Stretch 8 launched (--budget 30.67).
+- 15:39: operator: stop. The intraday loop stopped mid turn 29 (017-01.b1: plan written, backtest cut; its partial
+  backtest left out of git; a resume finishes it). slow_1h_run not started (waiting for the operator).
+  Correction: the counts "tested" in the lines from 15:22 included turns refused by step 3; the reading below counts
+  ideas with a verdict.
+
+## Reading: intraday_1h_run (stopped by the operator at 15:39 UTC, 27.67 of 90 USD, 29 turns)
+| | Brief 017's own ideas (step 2) | Ideas from the step 7 lines | All |
+|---|---|---|---|
+| verdict given (step 5) | 5 | 16 | 21 |
+| confirmed | 1 (017-05, t +5.10) | 13 (t +3.80 to +13.80) | 14 |
+| inconclusive / rejected | 3 / 1 | 2 / 1 | 5 / 2 |
+| profitable (step 6) | 0 | 0 | 0 |
+(also: 1 untestable, 017-06; 1 component built, `MeanAbsoluteMoveRankComponent`.)
+
+**Outcome I-B, as pre-registered:** clock effects confirmed, none profitable. Against the brief's own theory:
+- **The theory as written does not hold.** Its claim, a move against the recent trend in the hours before a settlement
+  and given back after, gets 3 inconclusive (t +0.85, +1.39, +1.30) and one strong rejection (017-04, t -5.89: after a
+  downtrend the hours after settlement keep falling). The one settlement idea confirmed is simpler: the move into a
+  settlement reverses after it (017-05, t +5.10).
+- **The lines drifted to short reversals and time of day.** 13 of the 16 line ideas are confirmed, the strongest being
+  plain one- and two-hour reversals (t +13.80, +13.79, +12.28, +10.25), unrelated to settlements.
+- **No book pays: costs.** Every tested book fails Sharpe after costs (21 of 21). Example: 017-05.g1 (t +13.80) trades
+  3.9 times a day and loses 0.11 % a day after costs (Sharpe -2.20); 017-03.g1's reversal earns 0.8 bps an hour before
+  costs, against 15 to 25 bps a round trip.
+- **Last night's expectation, "the slow brief should do better than the intraday one":** neither has a profitable
+  idea (slow 0 of 18, intraday 0 of 21); intraday has more confirmed (14 of 21 against 9 of 18).
+
+**Stepping back.** On hourly bars the workflow finds real effects easily and books that pay never: 0 of 39 ideas across
+the two briefs, every one failing Sharpe after costs. The edges are a few bps per hour; costs are 15 to 25 bps per round
+trip. The one change a practitioner would make: stop asking hourly ideas to trade often. Either the engine trades an
+hourly signal only when its expected move clears the round-trip cost (a cost-aware entry), or hourly signals are used
+only as timing inside slow positions. More hourly briefs as they stand would add confirmed, unprofitable rows.
