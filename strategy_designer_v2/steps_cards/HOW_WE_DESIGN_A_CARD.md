@@ -50,7 +50,7 @@ steps_cards/NN_step/
                    exercise folders are then removed (git keeps them), so every step has the same layout
   <name>_run/      a named run the operator asked for, through several steps: in each step's folder, the step's
                    outputs for that run, with INDEX.md, REVIEW.md and run_log*.txt; its run brief (purpose,
-                   pre-registered outcomes, review) is steps_cards/<NAME>_RUN.md
+                   pre-registered outcomes, review) is steps_cards/runs/<NAME>_RUN.md
 ```
 
 ## How to talk to the operator

@@ -161,8 +161,8 @@ def _gap_rule_provenance_fold():
     gap rule is ON by default for run_backtest() since 2026-10-01 (operator,
     declared change), so every default run's config_sha256 includes it, with
     the indicator fill off (no indicator_fill key)."""
-    from core.launcher import DEFAULT_GAP_POLICY
-    return {"gap_detection": True, "gap_policy": dict(DEFAULT_GAP_POLICY)}
+    from core.launcher import default_gap_policy
+    return {"gap_detection": True, "gap_policy": default_gap_policy(3600)}   # the bot config's default interval, 1h
 
 
 def _cost_model_provenance_fold(exchange="binance", market_type="margin"):

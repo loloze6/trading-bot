@@ -1,0 +1,23 @@
+---
+line: 7.d not profitable
+backtest: 016-03_up-jump-price-reversal_1h
+idea tested: 016-03_up-jump-price-reversal
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3108 USD
+---
+## Findings
+- **F1:** The book is short on about half of all bars and never long (share_short 0.46–0.52, share_long 0.0 on every coin), so it loses as the coins rise, with mean daily returns from -0.0015 (XMR) to -0.0027 (ETH) while holding the coins earned +0.0007 to +0.0016 a day.
+- **F2:** After a 3-day rise the coin kept rising in absolute terms at every forecast level on the 72-bar grid: +0.39% when the forecast was -10 to -20 (n=2489) and +1.49% when it was -5 to -10 (n=408). The confirmed slope is a difference in how much the coin rises, not a fall that a short can collect.
+- **F3:** The forecast is close to saturated, so the short is close to a fixed full position on every rising bar. On trending bars its mean is -14.5 and its median -13.8, a quarter of them sit at the -20 cap, and 2489 of 2916 grid cases fall in the -10 to -20 bucket. The share's grading is therefore almost absent from the position size.
+- **F4:** The short loses more than the market's rise alone explains. For BTC the gross position gain is -0.000061 per bar, of which only -0.000028 comes from the market's own drift. Timing is also negative on every coin except XMR, whose gross is +0.000008 per bar against -0.000021 from drift.
+- **F5:** Fees are as large as the gross loss: 0.000046–0.000071 per bar, against a gross of -0.000028 to -0.000070. This comes from 26549 short trades lasting 23.7 hours on average (mean gross -2.03%, net -2.13%), because the position switches on and off with the sign of the 72-hour return.
+- **F6:** Rises that were the most grind-like were followed by the largest further gains. Grid cases with forecast near 0 rose +3.06% over the next 72 bars (n=12, a thin sample), against +1.49% for -5 to -10 and +0.39% for -10 to -20, so forward returns fall steadily as the jump share grows.
+
+## Ideas
+- `016-03_up-jump-price-reversal.d1_grinding-rises-keep-rising` (from F2, F6, F1): When a coin has risen over the past 3 days, the smaller the share of that rise that came from its few biggest hourly gains (a grind of many small hourly steps), the more the coin keeps rising over the next 3 days.
+- `016-03_up-jump-price-reversal.d2_jump-rises-continue-less` (from F2, F3, F4): When a coin has risen over the past 3 days, the larger the share of that rise that came from its few biggest hourly gains, the smaller the coin's further rise over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

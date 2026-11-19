@@ -1,6 +1,6 @@
 """Spec of VolumeRatioComponent for the standard checks (component_harness.py), written by the components step: its settings (the defaults first) and a hand computation that uses only the rows up to bar t."""
 CLASS = 'VolumeRatioComponent'
-SETTINGS = [{}, {"period": 30}, {"period": 10}, {"period": 2}, {"period": 20, "exclude_current": 1}, {"period": 30, "short_period": 5, "form": "centred"}, {"period": 30, "form": "log"}, {"period": 20, "exclude_current": 1, "statistic": "median"}]
+SETTINGS = [{}, {"period": 30}, {"period": 10}, {"period": 2}, {"period": 20, "exclude_current": 1}, {"period": 30, "short_period": 5, "form": "centred"}, {"period": 30, "form": "log"}, {"period": 20, "exclude_current": 1, "statistic": "median"}, {"period": 72, "short_period": 72, "short_statistic": "median"}]
 
 
 def hand(df, params):
@@ -10,8 +10,23 @@ def hand(df, params):
     s = int(params.get("short_period", 1))
     form = params.get("form", "ratio")
     st = params.get("statistic", "mean")
+    sst = params.get("short_statistic", "mean")
     v = [float(x) for x in list(df["volume"])]
     last = len(v) - 1
+
+    def median_of(xs):
+        srt = sorted(xs)
+        m = len(srt)
+        if m % 2 == 1:
+            return srt[m // 2]
+        return (srt[m // 2 - 1] + srt[m // 2]) / 2.0
+
+    def mean_of(xs):
+        total = 0.0
+        for x in xs:
+            total = total + x
+        return total / len(xs)
+
     recent = []
     i = last - s + 1
     while i <= last:
@@ -31,22 +46,8 @@ def hand(df, params):
     for x in recent + base:
         if x != x:
             return float("nan")
-    total = 0.0
-    for x in recent:
-        total = total + x
-    num = total / s
-    if st == "median":
-        srt = sorted(base)
-        m = len(srt)
-        if m % 2 == 1:
-            den = srt[m // 2]
-        else:
-            den = (srt[m // 2 - 1] + srt[m // 2]) / 2.0
-    else:
-        total = 0.0
-        for x in base:
-            total = total + x
-        den = total / n
+    num = median_of(recent) if sst == "median" else mean_of(recent)
+    den = median_of(base) if st == "median" else mean_of(base)
     if not den > 0:
         return float("nan")
     ratio = num / den

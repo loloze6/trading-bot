@@ -417,6 +417,13 @@ class RollingBuffer:
         call after any `add_data()`, then cached until the next `add_data()`.
       - `add_data()` is O(1); a full rebuild costs one O(n) DataFrame construction
         per tick regardless of how many components read from the buffer.
+      - The construction is columnar (2026-11-18, operator's go; measured: building the frame from the list of bar
+        dicts took 34% of a 1h window and 89% with a one-year history, `orchestration/duration/8_finer_bars_measure.md`).
+        Each column is kept in its own typed array as bars arrive (one value written per bar; the arrays hold twice
+        `max_size` and slide back when full), and the frame is built from the last `max_size` values. Only for bars
+        whose every value is a float, an int, a bool or a tz-naive nanosecond Timestamp, with the same keys in the same
+        order on every bar, and each column one kind throughout: exactly the frame `pd.DataFrame(list of dicts)` gives
+        for such bars. Any other bar switches this buffer back to that construction until `clear()`.
     """
 
     def __init__(self, max_size: int = 500, candle_interval_seconds: Optional[int] = None,
@@ -425,6 +432,11 @@ class RollingBuffer:
         self.bars: deque = deque(maxlen=max_size)
         self.indicators: Dict[str, Any] = {}
         self._cached_df: Optional[pd.DataFrame] = None
+        self._cols: Dict[str, np.ndarray] = {}  # the columnar copy of `bars`, one typed array per key (docstring)
+        self._kinds: Dict[str, str] = {}
+        self._start = 0                          # the arrays' first live row
+        self._n = 0                              # the live rows: len(bars) while columnar
+        self._columnar = True
         # CUL-273 (E-039 count-indexed gap audit). Both None (default): get_df()
         # is byte-identical to before this ticket -- no reindex is attempted at
         # all. This is the actual time-axis fix the count-indexing investigation
@@ -438,6 +450,66 @@ class RollingBuffer:
     def add_data(self, data_dict: dict):
         self.bars.append(data_dict)
         self._cached_df = None  # invalidate cache
+        if self._columnar:
+            self._add_columnar(data_dict)
+
+    @staticmethod
+    def _kind(v) -> Optional[str]:
+        if isinstance(v, (bool, np.bool_)):
+            return "bool"
+        if isinstance(v, (int, np.integer)):
+            return "int"
+        if isinstance(v, (float, np.floating)):
+            return "float"
+        if isinstance(v, pd.Timestamp) and v.tz is None and getattr(v, "unit", "ns") == "ns":
+            return "ts"
+        return None
+
+    def _add_columnar(self, data_dict: dict):
+        if not self._cols:
+            if self.bars and len(self.bars) > 1:     # bars came before the columns could follow: not columnar
+                self._columnar = False
+                return
+            self._kinds = {}
+            for k, v in data_dict.items():
+                kind = self._kind(v)
+                if kind is None:
+                    self._stop_columnar()
+                    return
+                self._kinds[k] = kind
+            self._cols = {k: np.empty(2 * self.max_size, dtype=self._DTYPES[kind]) for k, kind in self._kinds.items()}
+            self._start, self._n = 0, 0
+        if list(data_dict) != list(self._cols):
+            self._stop_columnar()
+            return
+        for k, v in data_dict.items():
+            if self._kind(v) != self._kinds[k]:
+                self._stop_columnar()
+                return
+        # Live rows are [_start, _start + _n). This bar goes at _start + _n; when the buffer is full, the oldest
+        # row drops (as the `bars` deque drops it). When the arrays' end is reached, the rows kept slide to the front.
+        keep_from = self._start + (1 if self._n == self.max_size else 0)
+        write = self._start + self._n
+        if write == len(next(iter(self._cols.values()))):
+            kept = write - keep_from
+            for a in self._cols.values():
+                a[:kept] = a[keep_from:write]
+            keep_from, write = 0, kept
+        for k, v in data_dict.items():
+            self._cols[k][write] = v.value if self._kinds[k] == "ts" else v
+        self._start, self._n = keep_from, write + 1 - keep_from
+
+    def _stop_columnar(self):
+        self._columnar = False
+        self._cols, self._kinds = {}, {}
+
+    _DTYPES = {"float": np.float64, "int": np.int64, "bool": np.bool_, "ts": np.int64}
+
+    def _columnar_frame(self) -> pd.DataFrame:
+        lo, hi = self._start, self._start + self._n
+        # a dict of arrays is copied by pd.DataFrame: the frame never shares memory with the arrays
+        return pd.DataFrame({k: (a[lo:hi].view("M8[ns]") if self._kinds[k] == "ts" else a[lo:hi])
+                             for k, a in self._cols.items()})
 
     def register_calculated_column(self, name: str, func):
         self.indicators[name] = func
@@ -447,7 +519,7 @@ class RollingBuffer:
         if self._cached_df is None:
             if not self.bars:
                 return pd.DataFrame()
-            df = pd.DataFrame(self.bars)
+            df = self._columnar_frame() if self._columnar and self._cols else pd.DataFrame(self.bars)
             if (self._candle_interval_seconds is not None and self._ignore_max_bars is not None
                     and "timestamp" in df.columns and len(df) >= 2):
                 df = self._reindex_to_expected_grid(df)
@@ -530,4 +602,5 @@ class RollingBuffer:
         Indicator registrations survive; only accumulated data is dropped."""
         self.bars.clear()
         self._cached_df = None
+        self._cols, self._kinds, self._columnar, self._start, self._n = {}, {}, True, 0, 0
 

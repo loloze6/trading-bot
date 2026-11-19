@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of pooled slope of demeaned forward 168-bar return on forecast (trending grid bars)",
+    "value": 3.8262342391990374,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.8262342391990374
+    },
+    "threshold": "confirm if t >= 2 and slope positive in >= 4 of 6 coins; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "coins with positive slope (need at least 4 of 6)",
+    "value": 5,
+    "passed": true
+  },
+  "counts": {
+    "independent trending grid bars": 1227,
+    "trending grid bars with forecast above 0": 750,
+    "coins with positive slope": 5
+  },
+  "decided_by": "The slope t is at least 2 and the slope is positive in at least 4 of the 6 coins.",
+  "reading": "Grid bars are positions 0,168,... of each window kept when the recorded regime is trending and the forward return stays inside the window; the coin mean is the mean of its grid 168-bar returns over all windows; the pooled OLS includes an intercept; a coin with no computable slope counts as not positive; the plan's 'inconclusive' for too few cases is reported as 'not observable' per the workflow."
+}

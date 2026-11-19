@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9999927687145667,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "slope of 336-bar excess return on forecast, pooled, trending grid bars",
+    "value": 0.00265406823240159,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 2.1812672381071723
+    },
+    "threshold": "confirm if t >= 2 (with positive timing part); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "timing part of book daily returns",
+    "value": -0.001974809176426771,
+    "passed": false
+  },
+  "counts": {
+    "grid cases in the regime": 576,
+    "grid cases in the regime with a forecast above 0": 361
+  },
+  "decided_by": "The slope's t is 2 or more but the timing part is not positive.",
+  "reading": "The regression uses all trending grid bars (forecast zero included) with an intercept, each coin's mean 336-bar return is taken over the non-overlapping grids of all its windows, the regime is the recorded 'regime' column, and the daily position held is the mean allocation over the bars spanning each day's return."
+}

@@ -5,7 +5,7 @@ Does an idea that is real and pays still hold on dates the research never used?
 
 **Establish, for every idea step 5 confirmed and step 6 found profitable enough, whether it holds on each unseen
 period, its plan, config and criterion unchanged, so that no idea reaches live trading on the evidence of the dates it
-was found and judged on alone** (operator, 2026-11-18). Why: in `UNSEEN_RUN.md`, 8 of the first 12 such ideas failed
+was found and judged on alone** (operator, 2026-11-18). Why: in `runs/UNSEEN_RUN.md`, 8 of the first 12 such ideas failed
 step 6 on at least one unseen period, and 2 did not hold at all.
 
 ## Input
@@ -80,6 +80,8 @@ Nothing stops: the other periods go on, and the result says what each step gave.
 - **Step 5 refuses** (the measure fails on the record, or returns a result its checks refuse): one attempt only (no
   model to ask again); no `result.json`, so "no verdict" and "does not hold".
 - **Step 6 fails:** "not checked", and "does not hold".
+- **No data for the period** (no verdict and no check, e.g. the hourly bars of 2026 not fetched): "no data", not "does
+  not hold" (`holds` null): the idea was not judged there (night 1h, 2026-11-19).
 - A failed step leaves no output, so the next call tries it again (after a fix, for example).
 
 ## Checks in code
@@ -106,7 +108,7 @@ None: code only. Step 5 is called with `--measure`, so it makes no model call. C
 - **No step reads its files** (step 7 runs before it; `select_next` reads the folds' results only).
 
 ## Fixed inputs for the iterations
-`night_rsi_run` 010-03 e1 (confirmed, profitable enough), whose unseen periods were run by hand in `UNSEEN_RUN.md`.
+`night_rsi_run` 010-03 e1 (confirmed, profitable enough), whose unseen periods were run by hand in `runs/UNSEEN_RUN.md`.
 
 ## Variants compared
 None.

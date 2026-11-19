@@ -28,7 +28,7 @@ def window(cards, bid, coin, k, ret, end):
 @pytest.fixture
 def cards(tmp_path):
     c = tmp_path
-    w(c / "X_RUN.md", "# Run brief: x_run\n\n**Purpose.** See whether rises continue.\n\n**Scope.** one coin.\n")
+    w(c / "runs" / "X_RUN.md", "# Run brief: x_run\n\n**Purpose.** See whether rises continue.\n\n**Scope.** one coin.\n")
     w(c / "01_brief/x_run/briefs/001_rises-continue.md", "---\n---\nRises continue.\n")
     w(c / "01_brief/x_run/briefs/INDEX.md", "001: rises continue\n")
     w(c / f"02_ideation/x_run/ideas/{ROOT}.md", "---\nbrief: 001\n---\nIdea: A rise continues.\nConsequence: lean long.\n")

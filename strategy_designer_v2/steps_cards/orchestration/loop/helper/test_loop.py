@@ -84,3 +84,11 @@ def test_a_turn_line_carries_a_full_utc_timestamp(tmp_path):
     import re
     loop.log_turn("x_run", {"turn": 1, "idea": "a"}, tmp_path)
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", loop.turns("x_run", tmp_path)[0]["at"])
+
+
+def test_a_failed_components_call_is_not_a_failed_idea(tmp_path):
+    """Night 1h (2026-11-19): a components call that ended in failure is a line with no idea; failed() read it as one."""
+    loop.log_turn("x_run", {"turn": 1, "idea": "a"}, tmp_path)
+    loop.log_turn("x_run", {"components": "x_run | p | W | cannot build", "outcome": "failed (exit -15)"}, tmp_path)
+    loop.log_turn("x_run", {"idea": "c", "outcome": "failed: step 3 wrote no plan"}, tmp_path)
+    assert loop.failed("x_run", tmp_path) == {"c"}

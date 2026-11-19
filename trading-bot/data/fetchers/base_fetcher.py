@@ -36,6 +36,8 @@ from typing import List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
+from data import coverage
+
 logger = logging.getLogger("trading_bot")
 
 
@@ -110,6 +112,12 @@ class BaseFetcher(ABC):
     # tools) keep failing loud; the read-only backtest path opts in via
     # DataManager.fetch_historical_data. See _load_all.
     tolerate_fill_failure: bool = False
+
+    # When False (the backtest loader, DataManager.fetch_historical_data; operator 2026-11-18), the exchange is never
+    # called: the requested days must be inside the file's coverage (data/coverage.py), else DataNotFetched; the file
+    # is read as it is, its holes included (inside a covered range they are the exchange's own). True (the default):
+    # missing periods are fetched, and a saved fetch records its days in the coverage, as every data tool does.
+    remote: bool = True
 
     def __init__(
         self,
@@ -233,22 +241,32 @@ class BaseFetcher(ABC):
             # per-period instead is not possible -- a type-1 end computed as
             # `earliest - 1ms` can equal end_date by coincidence, and then no
             # value comparison can tell a derived bound from the caller's.
-            missing  = self._identify_missing_periods(existing, self.start_date, window_end)
+            if self.remote:
+                missing = self._identify_missing_periods(existing, self.start_date, window_end)
+            else:
+                coverage.check(self.data_dir, os.path.basename(self._csv_path(symbol)), self.start_date, window_end)
+                missing = []
 
             if missing:
                 logger.info(f"[{self.__class__.__name__}] {len(missing)} missing period(s) for {symbol}")
                 try:
                     pieces = [] if existing.empty else [existing]
+                    fetched = []   # (first, last) timestamp of each non-empty chunk the exchange returned
                     for ps, pe in missing:
                         logger.info(f"  Fetching {symbol}  {ps} → {pe}")
                         chunk = self._trim_to_period(self._fetch_remote(symbol, ps, pe), pe)
                         if not chunk.empty:
                             pieces.append(chunk)
+                            fetched.append((chunk["timestamp"].min(), chunk["timestamp"].max()))
                         else:
                             logger.warning(f"  No data returned for {symbol} {ps} → {pe}")
                     if pieces:
                         self._merge_and_store(symbol, pieces, save=self.localStorage,
                                               existing=existing)
+                        if self.localStorage:   # the days the exchange returned and that were stored: coverage
+                            for first, last in fetched:
+                                coverage.record(self.data_dir, os.path.basename(self._csv_path(symbol)), first, last,
+                                                f"{self.__class__.__name__} fetch")
                     else:
                         logger.warning(f"  No valid data assembled for {symbol}")
                         self.data_cache[symbol] = pd.DataFrame()

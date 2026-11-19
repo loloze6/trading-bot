@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 016-03_up-jump-price-reversal_1h
+idea tested: 016-03_up-jump-price-reversal
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5357 USD
+---
+## Findings
+- **F1:** Every coin rises in the two hours from 21:00 to 23:00 UTC: the mean hourly return is 0.00043 to 0.00056 per coin (t 3.0 to 4.6), against all other hours Welch t = 8.16, and it is positive in 7 of 8 years (2022: -0.00022, t -1.46). Measured from the 20:00 UTC close, the next 2 hours return 0.000966 (t 9.03, n 17261), while the same 2-hour span from the 08:00 close returns -0.000086 (t -0.82).
+- **F2:** That late-evening rise grows with the coin's fall over the 24 hours to the 20:00 UTC close. In the lowest 24-hour-return quintile the next 2 hours return 0.00217 (t 6.65, n 3455), against 0.00068 and 0.00066 in the next two quintiles and -0.000006 in the fourth. The top quintile also returns 0.00132 (t 4.81), so the gradient is clean only on the falling side.
+- **F3:** Large down hours reverse over the next day. On the non-overlapping 24-hour grid, the lowest septile of the hour's return scaled by its 168-hour volatility is followed by +0.00692 over 24 hours (t 6.13, n 2320), against -0.0016 after the top septile. Inside down hours the 24-hour rise falls from 0.00677 to 0.00344 to 0.00142 across the first three quintiles, and the pooled slope is -0.0018 (t -2.60, n 8177). This is clear in XRP (t -2.55) and ZEC (t -2.83) only.
+- **F4:** Three-day rises built as a grind keep going.
+- **F5:** The book's confirmed slope comes from grinds rising, not from jumps falling, so the short loses everywhere.
+- **F6:** Two other hours fall reliably: 03:00 to 04:00 UTC (mean -0.00028, t -3.89) and 14:00 to 15:00 UTC (-0.00035, t -3.77). These two are the strongest negatives out of 24 hours tested.
+
+## Ideas
+- `016-03_up-jump-price-reversal.g1_late-evening-utc-rebound` (from F1, F2): The more a coin has fallen over the 24 hours up to the 20:00 UTC close, the more it rises over the next 2 hours.
+- `016-03_up-jump-price-reversal.g2_violent-down-hour-reversal` (from F3): The larger a coin's latest hourly fall relative to its past week's typical hourly move, the more the coin rises over the next 24 hours.
+- `016-03_up-jump-price-reversal.g3_grinding-rise-continues` (from F4, F5): When a coin has risen over the past 3 days, the larger the share of those hours that closed up, the more the coin rises over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

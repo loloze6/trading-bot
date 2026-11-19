@@ -431,7 +431,7 @@ class Launcher:
             execution_handler=stack.execution_handler,
             logger=self.logger,
             gap_detection=True,
-            gap_policy=dict(DEFAULT_GAP_POLICY),
+            gap_policy=default_gap_policy(params.interval),
             portfolio_info=stack.portfolio_info,
             portfolio_state_tracker=stack.portfolio_state_tracker,
             forecast_manager=stack.forecast_manager,
@@ -601,8 +601,12 @@ class Launcher:
 
 # Gap rule ON by default for every backtest (operator 2026-10-01, option B).
 # A missing stretch of candles is classified by bars actually missed:
-#   ignore (<= 3)            -- nothing special (most are no-trade hours on
-#                               Kraken 1h, which omits candles without trades);
+#   ignore (up to one day)   -- nothing special (most are no-trade hours on
+#                               Kraken 1h, which omits candles without trades).
+#                               One day in bars of the bar size: 1 on daily bars,
+#                               6 on 4h, 24 on 1h (operator 2026-11-18: a duration,
+#                               the same on any bar size; it was 3 bars, i.e. 3
+#                               hours on 1h, which blocked 47% of ZEC's 1h hours);
 #   middle (4 .. warmup - 1) -- keep any position, block a NEW entry until a
 #                               full warmup of real bars has passed;
 #   large  (>= warmup)       -- force flat, restart the strategy's warmup, and
@@ -612,7 +616,14 @@ class Launcher:
 # switch the rule off, or your own gap_policy dict. The indicator fill (the
 # strategy buffer's reindex) is a SEPARATE switch, indicator_fill, OFF by default
 # (operator 2026-10-01; turning it on is E-029 / CUL-361).
-DEFAULT_GAP_POLICY = {"ignore_max_bars": 3, "on_large_gap": "flatten"}
+GAP_IGNORE_SECONDS = 86400   # a hole of up to one day is ignored, on any bar size
+
+
+def default_gap_policy(interval_seconds: int) -> dict:
+    """The default gap rule for a bar size: holes of up to GAP_IGNORE_SECONDS ignored (in whole bars)."""
+    return {"ignore_max_bars": GAP_IGNORE_SECONDS // int(interval_seconds), "on_large_gap": "flatten"}
+
+
 _USE_DEFAULT_GAP_POLICY = object()
 
 
@@ -794,7 +805,7 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         immediate flatten AND resets the strategy's accumulated history (a real
         segment split), after which the engine's own pre-existing readiness gate
         naturally withholds new entries until re-warmed. Omitted (default):
-        DEFAULT_GAP_POLICY when gap_detection is True, None when it is False.
+        default_gap_policy(interval) when gap_detection is True, None when it is False.
         None explicitly with gap_detection=True: gaps are recorded but no tier
         acts. See
         core/trading_bot.py's constructor docstring for why a per-indicator
@@ -827,9 +838,7 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         SYMBOL at fill time, not upfront. Never used by production callers. See
         tests/test_cost_model.py.
     """
-    if gap_policy is _USE_DEFAULT_GAP_POLICY:
-        gap_policy = dict(DEFAULT_GAP_POLICY) if gap_detection else None
-    if gap_policy is not None and not gap_detection:
+    if gap_policy is not None and gap_policy is not _USE_DEFAULT_GAP_POLICY and not gap_detection:
         # CUL-359: refuse before any data is fetched (TradingBot raises the
         # same error, but only after the data load)
         raise ValueError("gap_policy requires gap_detection=True -- pass "
@@ -855,6 +864,8 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         interval = interval_seconds
     else:
         interval = parse_interval_seconds(launcher.config.get('trading', 'interval', 3600))
+    if gap_policy is _USE_DEFAULT_GAP_POLICY:   # one day of bars of this bar size (default_gap_policy)
+        gap_policy = default_gap_policy(interval) if gap_detection else None
     resolved_exchange = _validated_exchange(
         exchange if exchange is not None
         else launcher.config.get('trading', 'exchange', 'binance'),
@@ -891,6 +902,14 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
         resolved_fetch_interval = (
             parse_interval_seconds(_raw_fetch_interval) if _raw_fetch_interval is not None else None
         )
+    if resolved_fetch_interval is None:
+        # 2026-11-18 (operator): the data's bar is deduced from the files, not set by the strategy: the largest bar
+        # with a file for this coin that divides the trading bar (data/coverage.data_bar); CandleBuilder builds the
+        # trading bars from it, as live does from hourly candles. None (the trading bar has its own file): unchanged.
+        from data import coverage as _coverage
+        _key = ("" if resolved_exchange == "binance" else f"{resolved_exchange}_") + symbol
+        resolved_fetch_interval = _coverage.data_bar(
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "local_data"), _key, interval)
     params = TradingParams(
         symbols=[symbol],
         interval=interval,
@@ -1024,21 +1043,7 @@ def run_backtest(config_path: str, symbol: str, start: str, end: str, results_ro
             f"be indistinguishable from a strategy that simply never traded."
         )
 
-    if warmup_prefetch:
-        # Verify the prefetch actually suffices -- fail loudly rather than silently
-        # score a not-yet-ready strategy. Uses a throwaway probe instance (NOT the
-        # real `strategy` object, which must stay untouched until the engine's own
-        # bar-by-bar loop feeds it -- double-feeding would corrupt its RollingBuffer).
-        probe = AdvancedStrategy(config_path=config_path)
-        prefetch_df = engine.historical_data[symbol]
-        prefetch_only = prefetch_df[prefetch_df['timestamp'] < warmup_cutoff_timestamp]
-        for i in range(len(prefetch_only)):
-            probe.update(prefetch_only.iloc[i:i + 1])
-        assert probe.is_ready(), (
-            f"warmup_prefetch: strategy not ready after {len(prefetch_only)} prefetch bars "
-            f"({fetch_start} to {start}) -- required_bars={strategy.required_bars}. "
-            f"2x-required_bars was insufficient for this config; investigate before proceeding."
-        )
-
+    # The warm-up is checked at the first bar after the cutoff, on a copy of the real strategy (TradingBot,
+    # 2026-11-18); the engine stops the run when it is not ready.
     engine.simulate_on_loaded_data()
     return engine._last_run_dir

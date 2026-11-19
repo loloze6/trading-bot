@@ -24,7 +24,7 @@ def test_holds_needs_the_in_sample_sign_and_a_positive_sharpe():
     assert r["holds"] and r["statistic"] == 0.9 and abs(r["holding_sharpe"] - 0.1) < 1e-12
     assert not U.reading(IN_SAMPLE, verdict(-0.01, -1.9), check(0.8, 0.7))["holds"]    # the measure turned
     assert not U.reading(IN_SAMPLE, verdict(0.01, 0.9), check(-0.2, 0.1))["holds"]     # the book lost
-    assert not U.reading(IN_SAMPLE, None, None)["holds"]                               # no verdict, no check
+    assert U.reading(IN_SAMPLE, None, None)["holds"] is None                           # no data: not judged
     negative = {"main_measure": {"value": -0.03}}                                      # an idea measured below 0
     assert U.reading(negative, verdict(-0.01, -0.5), check(0.3, 0.1))["holds"]
     assert not U.reading(negative, verdict(0.0, 0.0), check(0.3, 0.1))["holds"]        # 0 has no sign

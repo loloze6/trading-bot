@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the mean of forecast/10 x 168-bar excess return (non-overlapping, pooled)",
+    "value": 0.011280115849117566,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 2.276703565854186
+    },
+    "threshold": "confirm: mean > 0 with t >= 2.0 and coin check passes; reject: mean < 0 with t <= -2.0; at least 300 cases"
+  },
+  "supporting_check": {
+    "name": "coins with mean product > 0 (need 2 of 3, of those present)",
+    "value": 2.0,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases": 814,
+    "cases BTCUSD": 407,
+    "cases ETHUSD": 407
+  },
+  "decided_by": "Pooled mean product is above 0 with t >= 2.0 and the coin check passes.",
+  "reading": "The supporting check '2 of the 3 coins' is applied to the coins present in the record, requiring at least 2 coins with a positive mean product (all coins when only 2 are present); the coin's mean 168-bar return is the mean over its non-overlapping grid cases across all its windows; cases with forecast 0 are kept (product 0); the 300-case minimum, if unmet, gives 'not observable'."
+}

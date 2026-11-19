@@ -1,0 +1,86 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "fall",
+        "class": "strategies.strategy_components.PriceEvolutionComponent",
+        "params": {
+          "period": 72
+        }
+      }
+    ],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "fall",
+              "op": "lt",
+              "value": 0.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "vol_conc",
+            "class": "strategies.strategy_components.VolumeRatioComponent",
+            "params": {
+              "period": 72,
+              "short_period": 72,
+              "exclude_current": 0,
+              "statistic": "median",
+              "form": "log"
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 72,
+                  "min_periods": 20
+                }
+              }
+            ]
+          },
+          {
+            "id": "offset",
+            "class": "strategies.strategy_components.BuyAndHoldStrategy",
+            "params": {},
+            "weight": 2.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 72,
+                  "min_periods": 20
+                }
+              },
+              {
+                "op": "negate"
+              }
+            ]
+          }
+        ]
+      },
+      "mean_reversion": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 1440,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 8760,
+      "max_allocation": 2
+    }
+  }
+}

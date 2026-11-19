@@ -1,0 +1,24 @@
+---
+line: 7.d not profitable
+backtest: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1h
+idea tested: 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3816 USD
+---
+## Findings
+- **F1:** Fees take a large share of the book's gain: summed over bars and coins, the position's gain before costs is 11.50 and fees are 4.70, or 41 % of it. The forecast changes 4.12 times per coin-day, and the book trades 0.92 times per day. The book's mean daily return is 0.000367, against 0.001179 for holding the coins.
+- **F2:** Nearly all the net gain comes from bars where volatility has expanded. In the top quartile of 7-day over 30-day hourly volatility (1.14 to 1.97), the position nets 6.38 of the total 6.80, with the coin rising 2.43 bp per hour. In the bottom quartile (0.30 to 0.81), it nets 0.02, with the coin rising 0.36 bp per hour.
+- **F3:** On the book's days, the lowest quartile of that volatility ratio (mean 0.70) loses 0.000119 per day net, and 44 % of those days sit more than 10 % below the book's peak. The highest quartile (mean 1.26) earns 0.001059 per day, and 34 % of its days are in such a fall.
+- **F4:** The book's deepest fall is -24.1 %, and windows w8 to w17 hold falls of -18 % to -24 %. The 1105 days spent more than 10 % below the peak average a gross return of -0.000181 per day and fees of 0.000222. The other 1817 days average a gross return of +0.001166.
+- **F5:** The forecast's size is not graded within positive forecasts. On the 72-bar grid, its quartiles give mean excess returns of 0.0138, 0.0012, 0.0043 and 0.0147. Grid cases with any positive forecast average 0.0085 (n=1190), and cases with a zero forecast average -0.0001 (n=1647). The slope's t is 1.90.
+- **F6:** While in position, bars whose past 3-day return is in the top quartile (above +5.6 %) net 6.13. Bars whose 3-day return is in the second quartile (-3.1 % to +0.9 %) net -0.48, with the coin falling 0.27 bp per hour.
+
+## Ideas
+- `013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through.d1_heavy-volume-with-expanding-volatility` (from F2, F3, F4): While a coin's 30-day return is positive, the higher its daily volume relative to its own 20-day average volume, the higher its return over the next 3 days, only while its 7-day volatility of hourly returns is high against its 30-day volatility, and the more so the higher that ratio.
+- `013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through.d2_slow-volume-excess-follow-through` (from F1, F5): While a coin's 30-day return is positive, the higher its average daily volume over the last 3 days relative to its own 20-day average volume, the higher its return over the next 3 days.
+- `013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through.d3_heavy-volume-on-fresh-rise` (from F6, F1): While a coin's 30-day return is positive, the higher its daily volume relative to its own 20-day average volume, the higher its return over the next 3 days, only while its 3-day return is positive, and the more so the larger that 3-day return.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

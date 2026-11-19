@@ -1,20 +1,13 @@
 """
-CUL-26 — a pure read must not mutate a tracked cache.
+CUL-26, then the local-only backtest read (operator 2026-11-18, data/coverage.py): a backtest read never mutates a
+tracked cache and never calls the exchange. A gapped cache inside its coverage is read as it is (the gap included);
+days outside the coverage are refused (DataNotFetched), still without a call or a write. (CUL-26's localStorage flag,
+which only stopped a gap-fill being written back, is gone with the gap-fill.)
 
-`DataManager.fetch_historical_data(..., localStorage=False)` must suppress the
-SAVE side of the read path: a gapped-window read may still reach the (mocked)
-remote, but it must NOT write the on-disk cache. The default (localStorage
-omitted → True) keeps the historical write-through-on-read behaviour, so the
-same gapped read DOES rewrite the cache — the differential proves the new
-parameter actually gates persistence, per the reviewed CUL-26 plan.
-
-NO NETWORK: `CcxtFetcher._fetch_remote` is monkeypatched to a fixture-returning
-tripwire; a `fired` list records that the mock — never a real socket — is what
-served every remote call. `fetch_historical_data` hardcodes the real
-`local_data` dir, so the fetcher class is swapped for a data_dir-injecting
-subclass to keep every write inside tmp_path.
+NO NETWORK: `CcxtFetcher._fetch_remote` is monkeypatched to a tripwire that records any call; `fetch_historical_data`
+hardcodes the real `local_data` dir, so the fetcher class is swapped for a data_dir-injecting subclass to keep every
+read inside tmp_path.
 """
-
 import sys
 from pathlib import Path
 
@@ -79,45 +72,30 @@ def _install_fetcher(monkeypatch, tmp_path, fired):
     monkeypatch.setattr(CcxtFetcher, "_fetch_remote", _remote)
 
 
-def test_localstorage_false_does_not_write_cache(tmp_path, monkeypatch):
+def test_the_backtest_read_never_fetches_nor_writes(tmp_path, monkeypatch):
+    from data import coverage
     cache = tmp_path / "kraken_BTCUSD_1h.csv"
     _seed_gapped_cache(cache)
+    coverage.record(tmp_path, cache.name, None, "2020-01-01", "test")
     before = cache.read_bytes()
-
     fired: list = []
     _install_fetcher(monkeypatch, tmp_path, fired)
-
     dm = DataManager(symbols=["BTCUSD"], interval_seconds=H, mode="backtest")
-    df = dm.fetch_historical_data(
-        "BTCUSD",
-        T0,
-        T0 + pd.Timedelta(7, unit="h"),
-        exchange="kraken",
-        localStorage=False,
-    )
-
-    assert fired, "tripwire: the mocked remote never fired — real network path?"
-    assert not df.empty
-    assert cache.read_bytes() == before, "localStorage=False rewrote the on-disk cache — the SAVE was not suppressed"
+    df = dm.fetch_historical_data("BTCUSD", T0, T0 + pd.Timedelta(7, unit="h"), exchange="kraken")
+    assert fired == [], "a backtest read called the exchange"
+    assert len(df) == 6, "the gapped cache is read as it is"
+    assert cache.read_bytes() == before, "a backtest read rewrote the on-disk cache"
 
 
-def test_localstorage_default_true_does_write_cache(tmp_path, monkeypatch):
-    """Differential control: the default (write-through) path DOES rewrite."""
+def test_the_backtest_read_refuses_days_not_fetched(tmp_path, monkeypatch):
+    import pytest
+    from data.coverage import DataNotFetched
     cache = tmp_path / "kraken_BTCUSD_1h.csv"
-    _seed_gapped_cache(cache)
+    _seed_gapped_cache(cache)                                  # no coverage recorded: these days were never fetched
     before = cache.read_bytes()
-
     fired: list = []
     _install_fetcher(monkeypatch, tmp_path, fired)
-
     dm = DataManager(symbols=["BTCUSD"], interval_seconds=H, mode="backtest")
-    df = dm.fetch_historical_data(
-        "BTCUSD",
-        T0,
-        T0 + pd.Timedelta(7, unit="h"),
-        exchange="kraken",  # localStorage omitted → default True
-    )
-
-    assert fired, "tripwire: the mocked remote never fired — real network path?"
-    assert not df.empty
-    assert cache.read_bytes() != before, "default write-through path did not rewrite the gap-filled cache"
+    with pytest.raises(DataNotFetched):
+        dm.fetch_historical_data("BTCUSD", T0, T0 + pd.Timedelta(7, unit="h"), exchange="kraken")
+    assert fired == [] and cache.read_bytes() == before

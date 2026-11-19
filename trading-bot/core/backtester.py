@@ -364,6 +364,8 @@ class BacktestEngine:
                 all_symbols_finished = False
 
                 completed_candle = self.data_manager.process_next_tick(symbol)
+                if bot.warmup_not_ready:   # the warm-up did not make the strategy ready (TradingBot): stop
+                    raise AssertionError(bot.warmup_not_ready)
 
                 if not self.data_manager.advance(symbol):
                     continue
@@ -378,6 +380,8 @@ class BacktestEngine:
         # other bar. Backtest-only -- flush_final_candle raises in live mode.
         for symbol in self.symbols:
             self.data_manager.flush_final_candle(symbol)
+        if bot.warmup_not_ready:
+            raise AssertionError(bot.warmup_not_ready)
 
         return self._end_of_backtest(bot)
 

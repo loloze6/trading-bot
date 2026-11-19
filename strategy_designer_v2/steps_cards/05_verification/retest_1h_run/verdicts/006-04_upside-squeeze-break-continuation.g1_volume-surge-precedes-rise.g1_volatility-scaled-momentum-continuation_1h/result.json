@@ -1,0 +1,33 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 72-bar return of top-quintile forecast>0 cases",
+    "value": 0.006820832630290225,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 2.3333026595183206
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and check passes); reject: t <= -2"
+  },
+  "supporting_check": {
+    "name": "Welch difference top quintile minus other forecast>0 cases (Welch t=2.192)",
+    "value": 0.007769528357387135,
+    "passed": true
+  },
+  "counts": {
+    "top-quintile cases pooled": 1068,
+    "top-quintile cases BTCUSD": 199,
+    "top-quintile cases ETHUSD": 182,
+    "top-quintile cases LTCUSD": 177,
+    "top-quintile cases XMRUSD": 184,
+    "top-quintile cases XRPUSD": 164,
+    "top-quintile cases ZECUSD": 162,
+    "other forecast>0 cases": 1766
+  },
+  "decided_by": "Mean excess > 0 with t >= 2, and the Welch difference is > 0 with t >= 1 (confirm rule).",
+  "reading": "Top quintile = forecast>0 grid cases (pooled over coins) with forecast >= the pooled 80th percentile (ties at the cutoff included); the coin's mean 72-bar return is the mean over all its non-overlapping grid cases of all windows; the per-coin minimum of 15 applies to every coin in the record; the plan's 'inconclusive' for too few cases is reported as 'not observable'."
+}

@@ -82,7 +82,7 @@ def components_due(args, why_stop):
 
 def failed(run, root=ORCH):
     """Ideas whose run_idea call failed: not picked again (they are not retried)."""
-    return {t["idea"] for t in turns(run, root) if t.get("outcome", "").startswith("failed")}
+    return {t["idea"] for t in turns(run, root) if "idea" in t and t.get("outcome", "").startswith("failed")}
 
 
 def unfinished(run, root=ORCH):

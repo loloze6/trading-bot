@@ -179,8 +179,10 @@ def test_rows_added_are_written_whole_by_a_rename(tmp_path, monkeypatch):
     f, _ = _fetcher(tmp_path, remote)
     f.get_data("fear_greed")
 
-    assert len(replaced) == 1 and replaced[0][1] == str(path) and replaced[0][0].endswith(".tmp")
-    assert [p.name for p in tmp_path.iterdir()] == [path.name]
+    cache = [r for r in replaced if r[1] == str(path)]                  # the cache's own write: one rename
+    assert len(cache) == 1 and cache[0][0].endswith(".tmp")
+    # beside it, only the coverage record the fetch wrote (data/coverage.py, 2026-11-18): no temporary file
+    assert sorted(p.name for p in tmp_path.iterdir()) == sorted([path.name, "coverage.yaml"])
     assert path.read_bytes() == real_to_csv(written[-1], index=False).encode()   # the bytes to_csv writes
 
 

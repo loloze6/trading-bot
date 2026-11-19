@@ -19,7 +19,7 @@ The last three were called step by step, without the orchestration functions (co
 ## Which file holds what
 | what the operator wants to see | file (all committed) |
 |---|---|
-| the run's purpose, outcomes, reading | `steps_cards/<NAME>_RUN.md` (the six night runs share `NIGHT_RUN.md`) |
+| the run's purpose, outcomes, reading | `steps_cards/runs/<NAME>_RUN.md` (the six night runs share `NIGHT_RUN.md`) |
 | the brief | `01_brief/<run>/briefs/<id>.md` |
 | the ideas, and how they lead to one another | `02_ideation/<run>/ideas/<id>.md`; the id is the lineage: `011-01_x.b1_y` is the first idea line 7.b wrote from `011-01_x` |
 | step 3: plan or refused, and why | `03_test_plan/<run>/plans/<backtest>.md`: front matter `outcome:` (plan, missing-components, untestable), `fit:`, and the `Reason:` paragraph |

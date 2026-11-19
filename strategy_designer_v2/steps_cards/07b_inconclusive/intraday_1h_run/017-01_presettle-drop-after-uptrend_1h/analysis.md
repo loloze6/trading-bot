@@ -1,0 +1,23 @@
+---
+line: 7.b inconclusive
+backtest: 017-01_presettle-drop-after-uptrend_1h
+idea tested: 017-01_presettle-drop-after-uptrend
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3730 USD
+---
+## Findings
+- **F1:** The pooled result is near zero because the three settlements point opposite ways: after a 3-day rise, the excess 2-hour return before the 16:00 UTC settlement is -7.5 bp (t -4.27, n 8,592), before 00:00 it is +6.6 bp (t +4.38, n 8,552) and before 08:00 it is +1.5 bp (t +1.11, n 8,569), which nets to the plan's main measure of 9.5e-05 (t 0.85, 26,436 episodes).
+- **F2:** Only before the 16:00 settlement is the effect graded the way the idea predicts: the slope of the 2-hour return on the 72-bar return has t -5.69 (rho -0.031, n 16,985), it is negative in all six coins (t from -0.70 to -4.05), and it is negative in 6 of 8 years (positive only in 2020 at t +3.30 and 2023 at t +1.89).
+- **F3:** Across the three settlements pooled the effect is not graded: the top decile of the 3-day rise gains +4.7 bp before settlement against -0.3 bp in the ninth decile, the plan's top-third-minus-bottom-third check is +2.7 bp (failed), and no coin's mean after a rise reaches |t| 1.4 (range -3.6 to +3.5 bp).
+- **F4:** Before the 16:00 settlement the move reverses afterward: after a 3-day rise the next 2 hours return +8.9 bp, against -3.9 bp after the 08:00 settlement and +3.4 bp after 00:00.
+- **F5:** An equally large drop after a rise appears at hours with no settlement, which points to a session effect rather than funding: the 2 hours from the 13:00 UTC close fall -8.4 bp (t -4.85) and those from the 02:00 close fall -7.2 bp (t -4.90). The 13:00 slope on the 3-day rise has t -9.56 on weekdays but only -0.44 on weekends (n 4,835), even though funding is paid every day.
+- **F6:** The 13:00 UTC drop after a rise is broad: its slope is negative in all six coins (t -1.01 to -7.73), and its mean after a rise is negative in 7 of 8 years (-7.4 to -15.2 bp; only 2020 is +11.2 bp).
+
+## Ideas
+- `017-01_presettle-drop-after-uptrend.b1_pre-16-00-settlement-drop` (from F1, F2, F3, F4): For a coin with a strong 3-day run up, the return over the 2 hours before the 16:00 UTC funding settlement is negative, and the stronger the 3-day rise, the larger that pre-settlement decline.
+- `017-01_presettle-drop-after-uptrend.b2_weekday-us-open-uptrend-fade` (from F5, F6): On weekdays, for a coin with a strong 3-day run up, the return over the 2 hours after the 13:00 UTC close is negative, and the stronger the 3-day rise, the larger that decline.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
