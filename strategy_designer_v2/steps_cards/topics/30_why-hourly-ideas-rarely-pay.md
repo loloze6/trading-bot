@@ -75,10 +75,25 @@ runs' rates for comparison. Code only, no model call.
 Spread and slippage cost about as much as the fees. intraday_1h_run's bars are not committed (records stay small), so
 its at-close book is not computed; its 14 confirmed ideas trade 10,000 to 360,000 times and all lose after costs.
 
+**intraday_1h_run, rebuilt** (its bars were not committed): its confirmed ideas rerun here, same plans, data and engine
+(13 of 14; 017-05.g1 uses a component built on the run session's branch). First 5: every window's net result equals the
+committed one (144 of 144 each); all 5 earn at closes; 0.4 to 4.6 bps per unit traded against 5.7 to 10.6 bps of cost.
+
+**The analyst saw it first.** Line 7.d's first finding names costs in 38 of 39 analyses (17 of 18, 21 of 21), with the
+numbers (016-02.g1: "Fees, not the forecast, sink the book: gains before costs 7.77, fees 18.24"; "the slot effect is
+real but too small for its cost"). Its ideas aim where the move is larger (the same slot: 0.25 % in the most volatile
+weeks, 0.23 % after a sharp fall, against 0.10 % on average). None was tested (C).
+
 **C. Search-bound: select_next follows confirmation, which is cheap on 1h.** select_next counts a line's analysis as a
 success when a tested idea is confirmed OR profitable. With 24 times more bars, small effects reach t +8 to +13.8, so
 line 7.g (patterns) kept succeeding: 21 of its ideas tested, many confirmed, none profitable. Line 7.d (not
 profitable: why, and what would pay) wrote 80 ideas in the two runs (39 and 41); **none was tested**.
+
+**Why confirmation is cheap on 1h:** a short horizon's random move is small (about ±1 % over 2 hours against ±3.5 % over
+a day), so a small effect stands out clearly: 0.10 % over 2 hours gives t 9 over 16,256 coin-days. t says the effect is
+real, not that it pays. A higher t threshold for 1h was weighed and not recommended: it holds no cost, so a 0.10 % effect
+at t 50 would pass and lose, and a 0.5 % one at t 3 would fail and could pay. **Caveat:** 7.g picks the best hour of
+the day in the record and step 5 judges it on the same years, which flatters its t (topic 31).
 
 **Not D (the briefs):** brief ideas are confirmed as often on 1h as on daily bars (2 of 13, against 6 of 37).
 **Not E (luck):** at the daily rate (10 of 56 confirmed ideas profitable, 18 %), 0 of 22 has a 1.3 % chance.
