@@ -63,7 +63,7 @@ never used a server. "Fit" says whether 3 runs (about 820 MB) fit.
 |---|---|---|---|---|---|---|
 | **OVHcloud VPS-1** (France) | 2 vCores, 4 GB, 40 GB NVMe, unlimited traffic at 500 Mbit/s, **daily backup and IPv4 included**, 99.9% uptime promise. Datacentres in France: Gravelines, Strasbourg [3] | **€4.57** with a 12-month commitment, **paid upfront: about €54.86 at once** (€3.81 HT) [calc]; **€5.39** with none (€4.49 HT) [O] OVH blog "VPS 2027" + [3] dev.to, 2026-11-13 | 4 | yes, with room | good: bigger plans in one click | the renewal price after the commitment is not known; OVH raised its previous range by 45% in April 2026 [3] next.ink; a 2021 fire in Strasbourg cost data to VPS customers without backups (section 7) |
 | netcup VPS nano G11.5s (Germany) | 2 vCores, 2 GB, 60 GB, IPv4 included | **€3.69** with German VAT, about €3.72 with French VAT [calc]; **6-month contract** [O] netcup.com/en/server/vps-lite (extract; the nano price was cut off in round 2, so it is not re-confirmed) | 4 | yes, with room for 2–3 more runs | medium | **snapshots included** [O] same page, one free snapshot download, more are paid [3] |
-| netcup VPS pico G11.5s | 1 vCore, 1 GB, 30 GB | €2.21 with VAT, 12-month contract [O] same page | 3 | **no** (1 run only) | low | too small for 3 runs |
+| netcup VPS pico G11.5s | 1 vCore, 1 GB, 30 GB | €2.21 with VAT, 12-month contract [O] same page | 3 | **no** (1–2 runs) | low | too small for 3 runs |
 | IONOS VPS XS (France/Germany) | 1 vCore, 1 GB, 10 GB | €1.20 [calc from €1 HT] **+ €12 setup fee**, probably a long commitment [3] experte.com/whtop 2026 | 3 | **no** | low | promotional price; renewal unclear |
 | Contabo Cloud VPS 10 (Germany) | 3 vCPU, 8 GB, 75 GB [M] | €4.40 first term, then €5.50 (VAT unclear) **+ a setup fee of unknown amount** [3] pricingsaas Jun 2026 + [O] Contabo support | 3 | yes | high (8 GB) | many reports of slow, overloaded CPUs and of new servers getting IP addresses blacklisted for earlier abuse (r/VPS 2024–25, many users) |
 | Hetzner CX23 (Germany/Finland) | 2 vCPU, 4 GB, 40 GB, 20 TB [M] | **€7.19** [calc: €5.49 + €0.50 IPv4 HT, since 15 June 2026] [3] northflank/bitdoze 2026 | 4 | yes | good | **reported impossible to order on every check from September to 2026-10-20**, no restock date; Hetzner says capacity is limited and restocks depend on cancellations [3] bitdoze + [O] Hetzner order-processing doc; sign-up asks for an ID document plus a selfie, and some sign-ups are refused without reason [O] Hetzner FAQ + many users |
@@ -135,11 +135,11 @@ locked to the bot's address.
 
 ## 3. Recommendation
 
-### Recommended: OVHcloud VPS-1, datacentre in France, Debian 13. €4.57 a month (12 months) or €5.39 (no commitment)
+### Recommended: OVHcloud VPS-1, datacentre in France, Debian 13, paid monthly: €5.39 a month (€4.49 HT)
 
 | Criterion | Why |
 |---|---|
-| 1 Cost | Among the cheapest options that are viable for 3 runs. Only netcup nano (€3.72, 2 GB, Germany, 6-month contract) and an old laptop you already own (about €2.5 of electricity) cost less, and both give up stability or room |
+| 1 Cost | The cheapest monthly option in France with room to grow (see the operator's rulings below). Cheaper ones give up room (netcup nano, 2 GB, 6-month contract), stability (an old laptop at home, about €2.5 of electricity), or are not monthly |
 | | **Everything is included**: fixed IPv4, daily automatic backup, unlimited traffic. Hetzner and Scaleway bill the IPv4 apart; DigitalOcean and Vultr bill backups apart |
 | 2 Simplicity | Billed in euros with French VAT; month-to-month possible (€5.39) to try it before committing |
 | | A web console in the browser for when the connection from the PC fails |
@@ -158,23 +158,50 @@ What I recommend against, and why:
 - **Hetzner.** It used to be the usual cheap pick. In 2026 it is pricier (€7.19), sign-up is strict, and its cheap
   plans were often not orderable.
 
-### Second choice: netcup VPS nano (Germany), about €3.72 a month, 6-month contract
+### The operator's rulings (2026-11-19) and what they decide
 
-The cheapest plan with enough memory for 3 runs, IPv4 included, inside the EU: about €10 a year less than OVH.
-The two are close (language is not a criterion: the operator reads English). It is behind OVH because:
-- 2 GB fits 3 runs and about 2–3 more, but leaves less room for more coins or the viewer;
-- snapshots are included, but daily automatic backups as at OVH: I do not know;
-- it has a 6-month contract, so there is no month-to-month trial.
+| Ruling | Effect |
+|---|---|
+| **Pay monthly**, unless a whole year costs **less than €20** | OVH's 12-month price is paid upfront (about €55), so: **OVH monthly, €5.39** (€4.49 HT). netcup nano's 6-month contract does not fit |
+| **A French IP address preferred** | OVH Gravelines or Strasbourg. I found no evidence that Kraken treats a French address better than another EU one; as a tie-breaker it costs nothing here |
+| **Room to add about 1 run a month** | Decides between 2 GB and 4 GB (table below) |
 
-If the lowest cost matters more than backups and room, netcup is a sound choice.
+How long the memory lasts, one run per program as today (273 MB each, about 400 MB for the system) [calc]:
 
-### Questions only the operator can answer (each would change the choice)
+| Server | Runs that fit | Today 3; +1 a month: full in about |
+|---|---|---|
+| 2 GB (netcup nano) | about 6 | **3 months** |
+| 4 GB (OVH VPS-1) | about 13 | **10 months** |
+
+After that, two ways on:
+- a bigger plan: OVH VPS-2, whose price I did not check;
+- several coins in one program, the card's plan ("later several coins in one bot"): the libraries' 250 MB would be loaded once instead of once per run, so an added coin would cost far less memory. Not measured.
+
+**Result: OVH VPS-1, France, paid monthly, €5.39 with VAT.**
+
+### Second choice, only if it appears: a yearly deal under €20
+
+Black Friday is 2026-11-27; deals run to about 2026-11-30 (LowEndTalk "Offers"; vpsbenchmarks.com/black_friday_vps).
+Take one only if **all** of these hold:
+- **cost:** under €20 for the year;
+- **memory:** 4 GB or more (2 GB would be full in about 3 months);
+- **place:** a data centre in France, or at least in the EU, not the UK (on Kraken's derivatives restricted list);
+- **host:** one that has existed for several years.
+
+Under €20 a year, losing the year if the host closes costs less than 4 months of OVH, and the weekly copy to the PC keeps the data. Seen so far, none qualifies:
+
+| Offer | Why not |
+|---|---|
+| UK EPYC, 4 GB, £27 a year | UK, and over €20 |
+| DediRock, 8 GB, $24.99 a year | over €20; location not seen |
+| PetroSky, France | €4.89 a month; memory not seen |
+| A Paris 4 GB plan at $27.74 a year | last year's offer |
+
+### Question only the operator can answer
 
 | Question | If yes | If no |
 |---|---|---|
-| Do you already own a laptop or NAS you can leave on at home, with a fixed internet address? | It is about €2/month cheaper than OVH. Accept power cuts, internet cuts and sleep as the risks; a Healthchecks alert (below) still warns you | OVH |
-| Are you ready to pay 12 months upfront (about €55)? | €4.57/month | €5.39/month. I do not know whether a running VPS can move to the commitment price later, nor the price after the 12 months |
-| Will you run more than about 5 runs at once, or the research viewer on the server? | OVH VPS-1 (4 GB) | netcup nano (2 GB) is enough |
+| Do you already own a laptop or NAS you can leave on at home, with a fixed internet address? | About €2.5/month of electricity instead of €5.39. The risks are power cuts, internet cuts and sleep; a Healthchecks alert (below) still warns you | OVH |
 
 ---
 
@@ -411,6 +438,40 @@ Sources of round 2:
 - docs.oracle.com/iaas/Content/General/Concepts/regions.htm
 - dev.to/urtuba/drumbeats-vs-healthchecksio-an-honest-comparison-2026-1in9
 - cybernews.com/vps/best-vps-for-trading-bots/
+
+### Third pass: new ideas from recent user discussions (2026-11-19)
+
+| Idea | Cost | Verdict |
+|---|---|---|
+| Black Friday yearly deals (LowEndTalk, LowEndBox) | can be €10–30 a year | second choice, under the conditions in section 3 |
+| A 1 GB plan once few programs run (IONOS about €1.20/month + €12 setup; netcup pico €2.21/month, 12 months) | €1–2.5 a month | later, if several coins run in one program; not with one run per program and +1 a month |
+| Used mini PC at home (e.g. ThinkCentre Tiny M720q/M920q), a popular homelab choice | $90–150 used + 6–15 W, about €11–26 a year | better than a laptop (no battery), same home risks; about €4–6 a month over 3 years, so no cheaper than OVH |
+| Old Android phone with Termux | €0, a few watts | no: Android kills background programs unless set up carefully; PyPI's ready-made library files are for normal Linux, not Android, so the exact pinned versions cannot be installed directly |
+| Ready-made bot hosting (VolatiCloud, RackWorks one-click) | from about $7/month | no: built for freqtrade, not for this bot |
+| Keeping Oracle's free machine artificially busy | €0 | no: against the purpose of Oracle's idle rule; account risk |
+
+What recent reviews add about the two finalists (Trustpilot, G2, hosttest, LowEndTalk; low to moderate weight):
+- **netcup:** good uptime for many; support by ticket only, often slow (faster in German); maintenance of "a few minutes
+  to an hour" called normal by netcup itself; VPS Lite prices up to +20% for new orders in September 2026.
+- **OVH:** stable for long-term users; support split; CPU rated "fair" (irrelevant for one decision a day); price rises
+  at renewal on its previous range from 2026-10-01.
+- A maintenance reboot means a restart, so a new session with a new warm-up. The setup plan's alerts report it; near
+  00:00 UTC it would delay that day's decision.
+
+Sources of round 3:
+- lowendtalk.com/discussion/221336/netcup-price-increase-september-2026
+- trustpilot.com/review/netcup.com
+- hosttest.co.uk/reviews/netcup-vps
+- g2.com/products/ovhcloud
+- capitalandcompute.net/blog/ovhcloud-price-increase-2026/
+- us.ovhcloud.com/lp/new-services-repricing/
+- lowendbox.com/tag/black-friday-vps-deals/
+- vpsbenchmarks.com/black_friday_vps
+- lowendtalk.com/discussion/223377/petrosky-black-friday-sale-30-off-kvm-vps-in-canada-france-from-4-89-mo
+- budgethomelab.pages.dev/articles/used-mini-pc-homelab-under-200/
+- idlewatt.vercel.app/models/lenovo-thinkcentre-m920q-tiny
+- dev.to/shaktitiwari/how-to-use-termux-for-nse-algorithmic-trading-a-complete-guide-2026-a2d
+- volaticloud.com/crypto-trading-bot-hosting
 
 ## 8. What I could not verify ("I do not know")
 
