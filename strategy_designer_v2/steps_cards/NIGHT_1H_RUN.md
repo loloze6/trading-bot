@@ -64,3 +64,4 @@ No merge into master; no change to a step during the run; nothing is tuned to th
   removed from the index (the wishes open again). Also found: the loop crashed after a components call ended in
   failure (`failed()` read that line as an idea's turn); fixed, with a test. The two briefs paused; the components step
   run by hand on their 12 open wishes (operator's go), then the briefs resume.
+- 03:16: the night's tracked task stopped at its 2-hour cap (the tool's limit; not to be relaunched as is), mid retest idea 4. From now on one tracked task per retest idea (each well under the cap); the briefs resume after the components step. Retest idea 3 (momentum inside golden-cross uptrends) on 1h: confirmed (t +7.19), profitable enough, holds on 2016-17.
