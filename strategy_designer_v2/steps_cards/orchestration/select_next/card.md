@@ -32,7 +32,7 @@ In the words of `../../common/idea_created_from.md`.
 
 | Part | What it is | Why |
 |---|---|---|
-| **record of the line** | the line is the step 7 line that wrote the idea (its last letter in the id), or step 2 for an idea created from a brief. Over every analysis of that line with at least one tested idea (tested: it has a verdict from step 5; an idea step 3 could not plan is not evidence about the line, 2026-11-17), in every run (the same idea read by the line in two runs is two analyses; for step 2, an analysis is one brief in one run): (s + 1) / (n + 2), n the number of these analyses, s the number of them with a **success**: at least one of their tested ideas confirmed or with a profitable book (operator, 2026-11-16) | how often that line's analyses moved an idea towards the goal; counted per analysis, because the ideas written together are not independent; the +1 / +2 (Laplace) keeps 1 of 1 from counting as certain, and puts a line with no analysis yet at 0.5 |
+| **record of the line** | the line is the step 7 line that wrote the idea (its last letter in the id), or step 2 for an idea created from a brief. Over every analysis of that line with at least one tested idea (tested: it has a verdict from step 5; an idea step 3 could not plan is not evidence about the line, 2026-11-17), in every run (the same idea read by the line in two runs is two analyses; for step 2, an analysis is one brief in one run): (s + 1) / (n + 2), n the number of these analyses, s the number of them with a **success**: at least one of their tested ideas with a profitable book (step 6's "profitable enough"; operator, 2026-11-19; until then confirmed or profitable, 2026-11-16) | how often that line's analyses moved an idea towards the goal; counted per analysis, because the ideas written together are not independent; the +1 / +2 (Laplace) keeps 1 of 1 from counting as certain, and puts a line with no analysis yet at 0.5 |
 | **1 + generation** | the generation is the number of analyses between the idea and its brief (0 for a brief's idea) | ideas close to the theory first; a deeper idea goes first only if its line's record is clearly better, so one thread does not take the run |
 
 **Order (operator, 2026-11-17): a brief's own ideas first.** The candidates of generation 0 (a brief's ideas) come
@@ -42,6 +42,26 @@ record) against 0.15 to 0.33 for the lines' children, so one lineage took 26 of 
 night_013_run, and 7 unblocked RSI ideas waited behind 010-01's children (the operator's options A to D, 2026-11-17, in git: `ranking_discussion.md`, removed once ruled).
 
 **Ties:** the lower number first (the order in which the brief or the line wrote them).
+
+**Why a success is a book that pays, not a confirmation (operator, 2026-11-19; `topics/30_why-hourly-ideas-rarely-pay.md`).**
+The goal is an idea that is real and pays. On hourly bars a small effect is confirmed easily (a short horizon's random
+move is small) and is too small to pay its costs: in slow_1h_run and intraday_1h_run, 7.g's ideas were often confirmed
+and never profitable, so its record rose to 0.80 and it took the runs, while line 7.d's 80 ideas (why a book does not
+pay, and what would) were never tested. Under the new rule, every run's records and rankings compared with the old
+(2026-11-19, every named run and intraday_1h_run):
+
+| Line | Analyses | Successes before | Record before | Successes after | Record after |
+|---|---|---|---|---|---|
+| 7.g | 62 | 50 | 0.797 | 4 | 0.078 |
+| 7.e | 10 | 7 | 0.667 | 5 | 0.500 |
+| 7.c | 3 | 3 | 0.800 | 1 | 0.400 |
+| 7.b | 12 | 7 | 0.571 | 4 | 0.357 |
+| 7.d | 10 | 4 | 0.417 | 3 | 0.333 |
+| 7.a | 2 | 0 | 0.250 | 0 | 0.250 |
+| step 2 | 16 | 9 | 0.556 | 1 | 0.111 |
+
+The next 10 candidates of each run: before, mostly 7.g in 10 of 11 runs; after, 7.d and 7.b (slow_1h_run: 10 of 7.b;
+intraday_1h_run's next 20: 10 of 7.b, 8 of 7.d, 2 of 7.c). The first candidate changes in 9 of 11 runs.
 
 **Where the numbers come from:** the ids, and each tested idea's verdict and check, in every named run; computed
 afresh at every call, so the records grow with every run and the order adapts by itself.

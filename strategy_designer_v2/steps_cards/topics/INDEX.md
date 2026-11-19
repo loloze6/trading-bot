@@ -34,5 +34,5 @@ closed ones keep their decisions and reasons. Numbers are fixed: a new topic tak
 | 27 | [Dropped or solved in the review of 2026-11-19](27_dropped-or-solved-in-the-review.md) | research | closed (2026-11-19) |
 | 28 | [Topics kept as cards](28_topics-as-cards.md) | research: repository | closed (2026-11-19) |
 | 29 | [A model call ran away again](29_a-model-call-ran-away-again.md) | research: step 7, `common/lib.py` | open |
-| 30 | [Why hourly ideas rarely pay: a critical review of the 1h runs](30_why-hourly-ideas-rarely-pay.md) | research: the whole workflow | reviewed: cost-bound effects; select_next follows confirmation; changes wait |
+| 30 | [Why hourly ideas rarely pay: a critical review of the 1h runs](30_why-hourly-ideas-rarely-pay.md) | research: the whole workflow | reviewed; change 1 built (select_next: success = a profitable book); change 2 waits |
 | 31 | [Choosing and judging an idea on different data (folds)](31_choosing-and-judging-on-different-data.md) | research: step 7, step 5, folds | open |

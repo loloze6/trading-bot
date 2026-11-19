@@ -108,10 +108,14 @@ the day in the record and step 5 judges it on the same years, which flatters its
    steps 3 and 7 read.
 
 ## Decisions
-None yet.
+| Date | Decision | By | Why | Rejected, and why |
+|---|---|---|---|---|
+| 2026-11-19 | 1h is not closed: the outcome is what to change | operator | profitability reached on 1d can logically be reached on 1h | closing 1h research |
+| 2026-11-19 | Change 1: in select_next, a success is a profitable book, not a confirmation | operator's go, on the design session's proposal | the goal is real and pays; on 1h confirmation is cheap and did not tell ideas apart (7.g record 0.80, none profitable); 7.d's 80 ideas were never tested | a t threshold scaled to the bar (holds no cost); fewer folds on 1h (topic 31) |
 
 ## Status and next
-Reviewed. The three changes above wait for the operator's go, one at a time.
+Change 1 built (`orchestration/select_next/card.md`: the rule, the records and rankings before and after). Next: change 2,
+a short run on 7.d's waiting ideas, on the operator's go. Change 3 only if change 2 shows it is needed.
 
 ## Links
 `runs/NIGHT_1H_RUN.md`; topics 8, 26; `06_profitability/helper/rule.yaml`; `trading-bot/config/cost_model.yaml`.
