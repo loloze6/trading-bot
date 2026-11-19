@@ -1,0 +1,3 @@
+016-03_up-jump-price-reversal.d1_grinding-rises-keep-rising_1h: inconclusive (fit: adapted) [main: 1.50087; OLS t of forecast coefficient 1.50087; rising grid cases pooled over the coins 2865]
+016-06_down-even-volume-continuation.g1_fresh-drop-rebound.d1_deep-decline-fresh-drop-rebound_1h: confirmed (fit: adapted) [main: 0.000588102; OLS slope t 2.62733; independent grid cases with a positive forecast 2762, top third cases 921]
+016-06_down-even-volume-continuation.g1_fresh-drop-rebound.d2_slow-three-day-rebound-hold_1h: inconclusive (fit: adapted) [main: 3.92865; OLS slope t 3.92865; grid cases with forecast > 0 1891]
