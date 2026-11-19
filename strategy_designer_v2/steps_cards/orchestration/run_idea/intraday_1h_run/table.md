@@ -23,20 +23,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 017-04_postsettle-decline-after-downtrend.g2_late-evening-rebound-after-falls | 017-04_postsettle-decline-after-downtrend | plan | confirmed (+4.78) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 017-04_postsettle-decline-after-downtrend.g2_late-evening-rebound-after-falls.d1_deep-fall-late-evening-four-hour-rebound, 017-04_postsettle-decline-after-downtrend.g2_late-evening-rebound-after-falls.d2_overnight-rebound-after-deep-falls; 7.g: 017-04_postsettle-decline-after-downtrend.g2_late-evening-rebound-after-falls.g1_volatile-hourly-move-reversal, 017-04_postsettle-decline-after-downtrend.g2_late-evening-rebound-after-falls.g2_late-evening-rebound-after-down-hour | 0.73 | 11.9 |
 | 017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal | 017-05_settlement-move-reverses-after | plan | confirmed (+13.79) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal.d1_high-volatility-two-hour-reversal, 017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal.d2_daily-reversal-in-volatile-weeks; 7.g: 017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal.g1_sharp-falls-rebound-fast, 017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal.g2_fade-strength-follows-vol-regime, 017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal.g3_exhaustion-spikes-after-stretched-runs, 017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal.g4_midday-european-move-reversal | 0.89 | 20.9 |
 | 017-02_presettle-rise-after-downtrend.g3_daily-move-reversal | 017-02_presettle-rise-after-downtrend | plan | confirmed (+3.90) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 017-02_presettle-rise-after-downtrend.g3_daily-move-reversal.d1_reversal-in-volatility-spikes, 017-02_presettle-rise-after-downtrend.g3_daily-move-reversal.d2_slow-rebound-after-volatile-drops; 7.g: 017-02_presettle-rise-after-downtrend.g3_daily-move-reversal.g1_volatile-drop-next-day-rebound, 017-02_presettle-rise-after-downtrend.g3_daily-move-reversal.g2_volatility-weighted-daily-reversal, 017-02_presettle-rise-after-downtrend.g3_daily-move-reversal.g3_late-evening-utc-drift | 4.28 | 32.3 |
+| 017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation | 017-03_postsettle-recovery-after-uptrend | plan | confirmed (+9.14) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation.d1_post-settlement-twelve-hour-trend-continuation; 7.g: 017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation.g1_high-volatility-hourly-spike-reversal, 017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation.g2_midday-3-day-trend-reversal, 017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation.g3_late-evening-trend-continuation | 1.01 | 12.8 |
+| 017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend | 017-04_postsettle-decline-after-downtrend | plan | confirmed (+8.07) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.d1_volatile-afternoon-trend-continuation, 017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.d2_wider-afternoon-trend-window; 7.g: 017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.g1_midday-fade-of-3-day-trend, 017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.g2_daily-rebound-after-falls, 017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.g3_hourly-move-reversal, 017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.g4_late-evening-rebound-drift, 017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.g5_late-evening-3-day-continuation | 1.10 | 13.1 |
 
 ## Consumption
-19 ideas, 23.38 USD, 341.8 minutes in all.
+21 ideas, 25.49 USD, 367.7 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.23 | 12.9 |
-| step4_backtest | 0.00 | 230.0 |
-| step5_verdict | 2.40 | 11.1 |
-| step6_check | 0.00 | 9.3 |
-| chart_files | 0.00 | 2.8 |
+| step3_plan | 2.37 | 13.8 |
+| step4_backtest | 0.00 | 247.2 |
+| step5_verdict | 2.67 | 12.4 |
+| step6_check | 0.00 | 9.6 |
+| chart_files | 0.00 | 3.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.73 | 2.7 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.d | 9.60 | 39.6 |
-| step7_7.g | 6.67 | 26.5 |
+| step7_7.d | 10.22 | 41.9 |
+| step7_7.g | 7.76 | 30.2 |
 | step7_7.b | 1.74 | 6.8 |

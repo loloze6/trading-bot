@@ -165,3 +165,6 @@ components, 1 untestable), turn 8 (017-02) cut mid-turn, resumes. Slow 25.55 USD
   t +3.90, not profitable. The turn cost 4.28 USD: one 7.d call wrote 129k output tokens in 866 s, 3.38 USD (usual: about
   0.10); it ended normally and its answer was used. Recorded (POTENTIAL_ADJUSTMENTS.md, 17); nothing changed. Run so far:
   21 ideas tested, 11 confirmed, 0 profitable. Stretch 7 launched (--budget 27.71).
+- 15:22: check-in, no restart (up 5h29). 017-03.g3 (trend continues after settlement): confirmed t +9.14; 017-04.g3
+  (afternoon continuation of a 3-day trend): confirmed t +8.07; neither profitable. Turn 28 (017-03.g4, midday trend
+  giveback) in step 3. Run so far: 23 ideas tested, 13 confirmed, 0 profitable.
