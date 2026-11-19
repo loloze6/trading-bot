@@ -12,7 +12,7 @@ Order: a brief's own ideas (generation 0) first, by score among themselves; then
 score = record of the line that wrote the idea / (1 + the idea's generation)
 record = (s + 1) / (n + 2) over every analysis of that line with a tested idea, in every named run (the same idea
 read by a line in two runs is two analyses); s the analyses with a
-success (at least one tested idea confirmed, or with a profitable book). Words and id convention:
+success (at least one tested idea with a profitable book: step 6's "profitable enough"; operator, 2026-11-19). Words and id convention:
 common/idea_created_from.md. It writes nothing; it returns (and prints) the ranking.
 """
 import argparse, json, re, sys
@@ -58,8 +58,9 @@ def records(root=STEPS):
         c = root / "06_profitability" / run / "checks" / rid / "result.json"
         if not v.exists():
             continue                     # not tested: no plan could be built (step 3), or no backtest; no evidence about the line
-        ok = (v.exists() and json.loads(v.read_text()).get("status") == "confirmed") or \
-             (c.exists() and json.loads(c.read_text()).get("status") == "profitable enough")
+        # a success is a book that pays (step 6), not a confirmation: on finer bars a small effect is confirmed
+        # easily and never pays (topic 30, 2026-11-19)
+        ok = c.exists() and json.loads(c.read_text()).get("status") == "profitable enough"
         key = (run, line, created_from)                    # each run's reading is its own analysis
         analyses[key] = analyses.get(key, False) or bool(ok)
     out = {}
