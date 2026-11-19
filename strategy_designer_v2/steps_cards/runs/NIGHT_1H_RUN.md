@@ -159,3 +159,4 @@ components, 1 untestable), turn 8 (017-02) cut mid-turn, resumes. Slow 25.55 USD
 - 14:26: stretch 5 ended on its budget (20.42 USD, 4 turns, 94 min). All 4 confirmed, none profitable: 017-02.g2 t +10.25,
   017-03.g2 (daily move reversal) t +3.80, 017-04.g2 (late-evening rebound after falls) t +4.78, 017-05.g2
   (volatility-scaled two-hour reversal) t +13.79. Run so far: 20 ideas tested, 10 confirmed, 0 profitable.
+- 14:3x: master merged between stretches (PR #570 to #572: run briefs in runs/, components step changes, the loop's resume fix); one conflict, POTENTIAL_ADJUSTMENTS.md, kept as master's. Cards' tests: 88 passed. Under the new rule no idea of either run is unfinished. Stretch 6 launched (--budget 23.42).
