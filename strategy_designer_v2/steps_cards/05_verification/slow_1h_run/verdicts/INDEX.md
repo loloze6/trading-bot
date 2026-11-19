@@ -1,6 +1,7 @@
 016-01_up-grind-price-continuation.g1_big-moves-precede-rises_1h: inconclusive (fit: exact) [main: 0.0012984; OLS slope t 3.66688; independent sampled cases 5683]
 016-01_up-grind-price-continuation_1h: inconclusive (fit: exact) [main: -0.00427184; Welch t -0.569328; grid cases in top third 316, grid cases in bottom third 316, grid cases with forecast above 0 947]
 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift_1h: confirmed (fit: exact) [main: 0.000961003; t of the mean 7.67712; slot cases 17257]
+016-02_down-grind-price-continuation.g2_evening-rebound-after-daily-drop_1h: confirmed (fit: adapted) [main: 4.54146e-05; OLS slope t 2.77703; decision bars 17403, decision bars with a positive forecast 8613, decision bars above the median positive forecast 4306]
 016-02_down-grind-price-continuation_1h: inconclusive (fit: exact) [main: 0.00151387; t of the mean 0.948179; grid bars with a negative forecast 2762, grid bars below median forecast 1381, grid bars above median forecast 1381]
 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound_1h: confirmed (fit: adapted) [main: 0.00623997; ordinary t 5.27297; decision bars with a forecast above 0 8652, decision bars 17404, top-fifth decision bars 1731, zero-forecast decision bars 8752]
 016-03_up-jump-price-reversal_1h: confirmed (fit: exact) [main: 0.000968346; OLS t of slope 2.73615; grid cases 2916, giveback cases 2865]

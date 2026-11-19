@@ -1,6 +1,7 @@
 016-01_up-grind-price-continuation.g1_big-moves-precede-rises_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 016-01_up-grind-price-continuation_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+016-02_down-grind-price-continuation.g2_evening-rebound-after-daily-drop_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 016-02_down-grind-price-continuation_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 016-03_up-jump-price-reversal_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

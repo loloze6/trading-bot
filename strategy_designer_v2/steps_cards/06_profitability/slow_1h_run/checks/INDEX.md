@@ -1,6 +1,7 @@
 016-01_up-grind-price-continuation.g1_big-moves-precede-rises_1h: not profitable enough [Sharpe -0.3773; Sharpe minus holding's Sharpe -0.931; Calmar -0.1438]
 016-01_up-grind-price-continuation_1h: not profitable enough [Sharpe -1.016; Sharpe minus holding's Sharpe -1.57; Calmar -0.2294]
 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift_1h: not profitable enough [Sharpe -2.115; Sharpe minus holding's Sharpe -2.669; Calmar -0.24]
+016-02_down-grind-price-continuation.g2_evening-rebound-after-daily-drop_1h: not profitable enough [Sharpe -1.11; Sharpe minus holding's Sharpe -1.664; Calmar -0.1603]
 016-02_down-grind-price-continuation_1h: not profitable enough [Sharpe -1.312; Sharpe minus holding's Sharpe -1.865; Calmar -0.2753]
 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound_1h: not profitable enough [Sharpe -1.079; Sharpe minus holding's Sharpe -1.633; Calmar -0.1694]
 016-03_up-jump-price-reversal_1h: not profitable enough [Sharpe -2.77; Sharpe minus holding's Sharpe -3.323; Calmar -0.5577]

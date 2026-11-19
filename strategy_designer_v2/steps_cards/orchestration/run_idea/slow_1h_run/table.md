@@ -22,20 +22,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 016-07_up-volume-burst-reversal.g1_efficient-rises-keep-rising | 016-07_up-volume-burst-reversal | plan | inconclusive (+1.19) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 016-07_up-volume-burst-reversal.g1_efficient-rises-keep-rising.b1_efficient-rises-more-coins, 016-07_up-volume-burst-reversal.g1_efficient-rises-keep-rising.b2_smooth-rises-keep-rising; 7.d: 016-07_up-volume-burst-reversal.g1_efficient-rises-keep-rising.d1_day-persistent-smooth-rises-continue, 016-07_up-volume-burst-reversal.g1_efficient-rises-keep-rising.d2_established-smooth-rises-continue; 7.g: 016-07_up-volume-burst-reversal.g1_efficient-rises-keep-rising.g1_one-day-volatility-scaled-reversal, 016-07_up-volume-burst-reversal.g1_efficient-rises-keep-rising.g2_hourly-crash-bounce | 1.45 | 17.4 |
 | 016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls | 016-08_down-volume-burst-reversal | plan | confirmed (+2.65) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls.d1_daily-fall-multi-day-rebound, 016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls.d2_grinding-falls-rebound-more; 7.g: 016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls.g1_late-evening-drift-scaled-by-volatility, 016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls.g2_volatility-scaled-daily-fall-rebound, 016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls.g3_turbulent-falls-rebound-harder, 016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls.g4_spread-out-falls-rebound-more | 0.91 | 12.0 |
 | 016-01_up-grind-price-continuation.g2_persistent-hour-of-day-drift | 016-01_up-grind-price-continuation | missing-components | - | - | - | - | 0.06 | 0.4 |
+| 016-02_down-grind-price-continuation.g2_evening-rebound-after-daily-drop | 016-02_down-grind-price-continuation | plan | confirmed (+2.78) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 016-02_down-grind-price-continuation.g2_evening-rebound-after-daily-drop.d1_daily-drop-rebound-over-day, 016-02_down-grind-price-continuation.g2_evening-rebound-after-daily-drop.d2_evening-rebound-in-turbulence; 7.g: 016-02_down-grind-price-continuation.g2_evening-rebound-after-daily-drop.g1_six-hour-move-partly-reverses, 016-02_down-grind-price-continuation.g2_evening-rebound-after-daily-drop.g2_midday-reversal-of-daily-move, 016-02_down-grind-price-continuation.g2_evening-rebound-after-daily-drop.g3_afternoon-continuation-of-daily-move, 016-02_down-grind-price-continuation.g2_evening-rebound-after-daily-drop.g4_evening-fade-of-daily-rise | 0.89 | 13.2 |
 
 ## Consumption
-18 ideas, 20.79 USD, 360.7 minutes in all.
+19 ideas, 21.68 USD, 373.8 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.86 | 13.3 |
-| step4_backtest | 0.00 | 272.1 |
-| step5_verdict | 2.20 | 10.3 |
-| step6_check | 0.00 | 3.3 |
-| chart_files | 0.00 | 1.9 |
+| step3_plan | 2.93 | 13.8 |
+| step4_backtest | 0.00 | 281.4 |
+| step5_verdict | 2.34 | 10.9 |
+| step6_check | 0.00 | 3.4 |
+| chart_files | 0.00 | 2.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.d | 5.53 | 21.8 |
+| step7_7.d | 5.83 | 22.9 |
 | step7_7.b | 3.30 | 12.5 |
-| step7_7.g | 6.90 | 25.3 |
+| step7_7.g | 7.28 | 26.7 |
