@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9999951539117624,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "excess fwd 72-bar return, top third minus bottom third of |post_pipeline_value|",
+    "value": -0.004395641339377639,
+    "statistic": {
+      "name": "Welch t",
+      "value": -1.0994701580066255
+    },
+    "threshold": "confirm t <= -2 (with top-third mean < 0); reject t >= +2"
+  },
+  "supporting_check": {
+    "name": "top third mean excess fwd 72-bar return < 0",
+    "value": 0.00070290859763633,
+    "passed": false
+  },
+  "counts": {
+    "grid samples in top third": 972,
+    "grid samples in middle third": 972,
+    "grid samples in bottom third": 972
+  },
+  "decided_by": "Welch t lies between -2 and +2.",
+  "reading": "Risen-regime bars are grid bars with regime 'mean_reversion' and a recorded post_pipeline_value; the coin's mean 72-bar return is the mean of its forward returns on all grid bars of all windows; thirds are cut by rank of |post_pipeline_value| pooled over coins and windows (N//3 lowest and highest); situation-check bars in a window's first 72 rows are left out."
+}

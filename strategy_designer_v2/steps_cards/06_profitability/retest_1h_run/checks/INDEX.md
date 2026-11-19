@@ -5,3 +5,4 @@
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly_1h: not profitable enough [Sharpe -0.7197; Sharpe minus holding's Sharpe -1.356; Calmar -0.2618]
 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1h: not profitable enough [Sharpe 0.5453; Sharpe minus holding's Sharpe -0.008421; Calmar 0.2304]
 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1h: not profitable enough [Sharpe -1.504; Sharpe minus holding's Sharpe -2.14; Calmar -0.5886]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum_1h: not profitable enough [Sharpe 0.7273; Sharpe minus holding's Sharpe 0.1735; Calmar 0.4219]
