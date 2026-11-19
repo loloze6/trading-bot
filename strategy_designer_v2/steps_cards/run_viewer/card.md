@@ -92,8 +92,8 @@ in order with one result per step, and the run's cost and time.**
    - Day by day, from the backtest's chart files (step 4): the committed `chart_bars.csv.gz` / `chart_trades.csv.gz`
      (backtests confirmed by step 5 or profitable enough by step 6) first, then `chart_*.local.csv.gz` (every other
      backtest; ignored by git, only on the disk where the run happened); neither: "not in the record". Per coin, the price with each trade's entry and
-     exit, the book against holding the coin (each window's values over its first, windows chained in time order, from
-     1), the forecast and the position, on one time axis; zoom with + / - / All, a pinch or the mouse wheel, move by
+     exit, "1 invested": the strategy against holding the coin (each window's values over its first, windows chained in
+     time order, from 1; log scale, the line at 1 marked "start"; operator, 2026-11-19), the forecast and the position, on one time axis; zoom with + / - / All, a pinch or the mouse wheel, move by
      dragging, read a day by touching it. The files are fetched when the page opens, never embedded.
 
 11. **Depth**: per level below the brief (1: the brief's own ideas, 2: written from a level 1 idea, and so on; the

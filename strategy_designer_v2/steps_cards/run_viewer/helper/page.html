@@ -121,7 +121,7 @@ const HELP = {
   "7.e": "7.e, profitable but not proven: what the book really earns from.",
   "7.f": "7.f, real and profitable: what could break the idea and its book.",
   "7.g": "7.g, patterns: what patterns the bars and the book show, whatever the verdict.",
-  day: "Day by day on this coin, windows in time order (each 4-month window is a separate test; its lines are chained so they read as one). Price: the coin's close, with each trade's entry (filled dot) and exit (hollow dot), green if the trade gained after fees, red if it lost. Book: the strategy's money on this coin; Holding: the coin bought and kept; both start at 1, from each window's first bar (after that bar's fee if it trades on it, the same basis as step 6). Forecast: the strategy's view, -20 (strong short) to +20 (strong long). Position: the share of the book in the coin after each rebalance (negative = short). Pinch or use + / - to zoom, drag sideways to move, touch to read the values.",
+  day: "Day by day on this coin, windows in time order (each 4-month window is a separate test; its lines are chained so they read as one). Price: the coin's close, with each trade's entry (filled dot) and exit (hollow dot), green if the trade gained after fees, red if it lost. 1 invested: what 1 becomes in the strategy on this coin (blue) and in the coin bought and kept (orange), on a log scale so a halving and a doubling take the same height; both start at 1, from each window's first bar (after that bar's fee if it trades on it, the same basis as step 6). Forecast: the strategy's view, -20 (strong short) to +20 (strong long). Position: the share of the book in the coin after each rebalance (negative = short). Pinch or use + / - to zoom, drag sideways to move, touch to read the values.",
   ran: "When the backtest engine ran (UTC), from the backtest's own record.",
 };
 const help = k => HELP[k] ? `<span class="help"><button type="button" aria-label="explain">?</button><span class="hb">${esc(HELP[k])}</span></span>` : "";
@@ -448,7 +448,8 @@ async function dayChart(el){
   const box = el.querySelector("#dsvg"), ro = el.querySelector("#dro");
   const W = 360, L = 44, R = 6, PANELS = [
     {h: 170, title: "Price", lines: [["price", "var(--ink2)"]], marks: true},
-    {h: 150, title: "Book and holding (from 1)", lines: [["book", "var(--accent)"], ["hold", "#eb6834"]], one: true},
+    {h: 150, title: `1 invested in ${String(S.t[0]).slice(0, 4)}`, lines: [["book", "var(--accent)"], ["hold", "#eb6834"]], one: true, log: true,
+     legend: ["strategy", "holding the coin"]},
     {h: 80, title: "Forecast", lines: [["fc", "var(--accent)"]], zero: true},
     {h: 80, title: "Position", lines: [["pos", "var(--accent)"]], zero: true}];
   const GAP = 22, H = PANELS.reduce((a, p) => a + p.h + GAP, 0) + 16;
@@ -464,14 +465,18 @@ async function dayChart(el){
       y0 += GAP;
       const vals = []; p.lines.forEach(([key]) => { for (let k = i0; k <= i1; k++) if (S[key][k] != null) vals.push(S[key][k]); });
       if (p.one) vals.push(1); if (p.zero) vals.push(0);
-      let lo = Infinity, hi = -Infinity; for (const v of vals) { if (v < lo) lo = v; if (v > hi) hi = v; } if (hi === lo) { hi += 1; lo -= 1; } const pad = (hi - lo) * .06; lo -= pad; hi += pad;
-      const Y = v => y0 + (hi - v) * p.h / (hi - lo);
+      // a log scale for values of 1 invested: a fall to 0.1 and a rise to 10 take the same height
+      const tf = p.log ? v => Math.log10(Math.max(v, 1e-9)) : v => v, back = p.log ? u => 10 ** u : u => u;
+      let lo = Infinity, hi = -Infinity; for (const v of vals) { const u = tf(v); if (u < lo) lo = u; if (u > hi) hi = u; } if (hi === lo) { hi += 1; lo -= 1; } const pad = (hi - lo) * .06; lo -= pad; hi += pad;
+      const Y = v => y0 + (hi - tf(v)) * p.h / (hi - lo);
       s += `<text x="${L}" y="${y0 - 6}" style="font-weight:600">${p.title}</text>`;
       s += `<line x1="${L}" x2="${W - R}" y1="${y0 + p.h}" y2="${y0 + p.h}" stroke="var(--line)"/>`;
       S.win.forEach(k => { if (k > i0 && k <= i1) s += `<line x1="${X(k)}" x2="${X(k)}" y1="${y0}" y2="${y0 + p.h}" stroke="var(--line)" stroke-dasharray="2 3"/>`; });
       const ref = p.one ? 1 : p.zero ? 0 : null;
       if (ref != null) s += `<line x1="${L}" x2="${W - R}" y1="${Y(ref)}" y2="${Y(ref)}" stroke="var(--ink2)" stroke-width=".6"/>`;
-      [hi - pad, lo + pad].forEach(v => s += `<text x="${L - 4}" y="${Y(v) + 4}" text-anchor="end">${fmtAxis(v)}</text>`);
+      if (p.one) s += `<text x="${L - 4}" y="${Y(1) + 4}" text-anchor="end">start 1</text>`;
+      [back(hi - pad), back(lo + pad)].filter(v => !p.one || Math.abs(Y(v) - Y(1)) > 12)
+        .forEach(v => s += `<text x="${L - 4}" y="${Y(v) + 4}" text-anchor="end">${fmtAxis(v)}</text>`);
       p.lines.forEach(([key, col]) => {
         let d = "", pen = false;
         for (let k = i0; k <= i1; k += step) { const v = S[key][k]; if (v == null) { pen = false; continue; }
@@ -484,7 +489,7 @@ async function dayChart(el){
           s += `<circle cx="${X(m.k)}" cy="${Y(m.p)}" r="4" fill="${m.entry ? c : "var(--card)"}" stroke="${c}" stroke-width="1.6"/>`; });
         else s += `<text x="${W - R}" y="${y0 + 12}" text-anchor="end">zoom in to see the ${vis.length} trade marks</text>`;
       }
-      if (p.lines.length > 1) s += `<text x="${W - R}" y="${y0 - 6}" text-anchor="end"><tspan fill="var(--accent)">— book</tspan>  <tspan fill="#eb6834">— holding</tspan></text>`;
+      if (p.legend) s += `<text x="${W - R}" y="${y0 - 6}" text-anchor="end">${p.legend.map((n, k) => `<tspan fill="${p.lines[k][1]}">— ${n}</tspan>`).join("  ")}</text>`;
       y0 += p.h;
     });
     if (st.cur != null && st.cur >= i0 && st.cur <= i1) s += `<line x1="${X(st.cur)}" x2="${X(st.cur)}" y1="${GAP}" y2="${H - 16}" stroke="var(--ink)" stroke-width=".8"/>`;
@@ -496,7 +501,7 @@ async function dayChart(el){
     const k = st.cur;
     if (k == null) { ro.textContent = `${day10(S.t[st.i0])} to ${day10(S.t[st.i1])} · touch the chart to read a day`; return; }
     const tr = S.marks.filter(m => m.k === k).map(m => `${m.entry ? "entry" : "exit"} ${m.r.direction} ${num(toNum(m.r.realized_return), 3)} %`).join(", ");
-    ro.textContent = `${day10(S.t[k])} · price ${num(S.price[k], 4)} · book ${num(S.book[k], 4)} · holding ${num(S.hold[k], 4)} · forecast ${num(S.fc[k])} · position ${num(S.pos[k], 3)}${tr ? " · " + tr : ""}`;
+    ro.textContent = `${day10(S.t[k])} · price ${num(S.price[k], 4)} · strategy ${num(S.book[k], 4)} · holding ${num(S.hold[k], 4)} · forecast ${num(S.fc[k])} · position ${num(S.pos[k], 3)}${tr ? " · " + tr : ""}`;
   }
   const idx = clientX => { const r = box.getBoundingClientRect(), x = (clientX - r.left) * W / r.width;
     return Math.max(st.i0, Math.min(st.i1, Math.round(st.i0 + (x - L) * (st.i1 - st.i0) / (W - L - R)))); };
