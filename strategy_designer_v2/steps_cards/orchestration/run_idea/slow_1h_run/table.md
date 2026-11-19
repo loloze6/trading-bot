@@ -14,20 +14,23 @@ One row per idea run; every status is read from the step's own result file. Each
 | 016-05_up-even-volume-continuation | - | plan | inconclusive (+0.68) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 016-05_up-even-volume-continuation.b1_even-volume-continuation-more-coins, 016-05_up-even-volume-continuation.b2_efficient-path-up-move-continuation, 016-05_up-even-volume-continuation.b3_low-jump-share-modest-rise-continuation; 7.d: 016-05_up-even-volume-continuation.d1_large-rise-even-volume-continuation, 016-05_up-even-volume-continuation.d2_3-day-rise-size-continuation, 016-05_up-even-volume-continuation.d3_3-day-fall-continuation; 7.g: 016-05_up-even-volume-continuation.g1_evening-utc-hour-drift, 016-05_up-even-volume-continuation.g2_up-move-path-efficiency-continuation, 016-05_up-even-volume-continuation.g3_big-swing-then-rise, 016-05_up-even-volume-continuation.g4_friday-hourly-up-drift | 1.28 | 18.1 |
 | 016-07_up-volume-burst-reversal | - | plan | inconclusive (-1.10) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 016-07_up-volume-burst-reversal.b1_volume-burst-rise-reversal-more-coins, 016-07_up-volume-burst-reversal.b2_volume-burst-fall-rebound; 7.d: 016-07_up-volume-burst-reversal.d1_strong-rises-keep-rising, 016-07_up-volume-burst-reversal.d2_grinding-rises-continue; 7.g: 016-07_up-volume-burst-reversal.g1_efficient-rises-keep-rising | 1.49 | 19.4 |
 | 016-08_down-volume-burst-reversal | - | plan | inconclusive (+1.05) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 016-08_down-volume-burst-reversal.b1_volume-burst-reversal-more-coins; 7.d: 016-08_down-volume-burst-reversal.d1_burst-reversal-in-uptrends, 016-08_down-volume-burst-reversal.d2_deep-dips-rebound-uptrend; 7.g: 016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls, 016-08_down-volume-burst-reversal.g2_efficient-grind-up-continues | 1.37 | 21.5 |
+| 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift | 016-02_down-grind-price-continuation | plan | confirmed (+7.68) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift.d1_late-utc-rebound-after-falls, 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift.d2_evening-bounce-after-drops; 7.g: 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift.g1_one-day-crash-rebounds, 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift.g2_three-day-move-continuation, 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift.g3_evening-slot-drift-strength | 0.82 | 16.2 |
+| 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound | 016-03_up-jump-price-reversal | plan | confirmed (+5.27) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-rebounds-next-day, 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d2_volatile-evening-fall-rebound; 7.g: 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.g1_daily-fall-day-long-rebound, 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.g2_turbulent-fall-day-rebound | 0.92 | 16.2 |
+| 016-04_down-jump-price-reversal.g1_volatile-regime-daily-move-reversal | 016-04_down-jump-price-reversal | missing-components | - | - | - | - | 0.05 | 0.4 |
 
 ## Consumption
-10 ideas, 11.93 USD, 183.5 minutes in all.
+13 ideas, 13.71 USD, 216.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.81 | 8.4 |
-| step4_backtest | 0.00 | 133.7 |
-| step5_verdict | 1.09 | 4.8 |
-| step6_check | 0.00 | 1.5 |
-| chart_files | 0.00 | 1.0 |
+| step3_plan | 2.01 | 9.8 |
+| step4_backtest | 0.00 | 158.6 |
+| step5_verdict | 1.37 | 6.3 |
+| step6_check | 0.00 | 1.7 |
+| chart_files | 0.00 | 1.2 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
-| step7_7.d | 2.98 | 11.8 |
+| step7_7.d | 3.58 | 13.9 |
 | step7_7.b | 2.19 | 8.2 |
-| step7_7.g | 3.85 | 14.1 |
+| step7_7.g | 4.56 | 16.6 |

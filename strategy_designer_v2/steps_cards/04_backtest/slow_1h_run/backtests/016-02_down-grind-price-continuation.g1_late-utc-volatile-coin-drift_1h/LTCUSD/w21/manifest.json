@@ -1,0 +1,109 @@
+{
+  "run_id": "20261119T054145Z_6bb868d9",
+  "created_utc": "2026-11-19T05:41:45.825641+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "hour",
+          "class": "strategies.strategy_components.HourOfDayComponent",
+          "params": {}
+        }
+      ],
+      "rules": [
+        {
+          "regime": "trending",
+          "any_of": [
+            [
+              {
+                "id": "hour",
+                "op": "between",
+                "low": 20.5,
+                "high": 22.5
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "trending": {
+          "components": [
+            {
+              "id": "vol7d",
+              "class": "strategies.strategy_components.VolatilityFromStdDevComponent",
+              "params": {
+                "vol_period": 169
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 169,
+                    "min_periods": 42
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "mean_reversion": null,
+        "chop": null,
+        "unknown": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 1440,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 8760,
+        "max_allocation": 2
+      }
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 24,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 7.5,
+        "BTCUSD": 2.5,
+        "ETHUSD": 4,
+        "AVAXUSD": 7.5,
+        "SOLUSD": 7.5
+      }
+    }
+  },
+  "config_sha256": "6bb868d9b16fbdff4eb1b6143613ca74a6f32e491678e1fbece3dc26d1669942",
+  "data": {
+    "symbols": [
+      "LTCUSD"
+    ],
+    "timeframe": "3600s",
+    "start": "2024-05-03 00:00:00",
+    "end": "2024-12-31 23:00:00",
+    "bar_count": 5832,
+    "data_sha256": "ea200ef41d4a07c7dcb07e3a0565cd2cfda439d895670f6c32577039ccb9db36"
+  },
+  "git_sha": "c29d6ac771778b6429085b098fcb49298f23b224-dirty",
+  "engine": {
+    "lookback": 170,
+    "warmup": 170
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}
