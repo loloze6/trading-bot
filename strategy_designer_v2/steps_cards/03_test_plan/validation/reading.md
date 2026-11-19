@@ -1,7 +1,7 @@
 # Exercises 27 and 28: the holding reference, and the new default data
 
 **Changes** (approved: "Go").
-- **Prompt:** "Holding is the coin's mean return over all the test's windows together, never a mean over a single window: such a mean contains the price moves that set the forecast, and biases the result." Found by the full-data run: the per-window mean gives t = -2.60 on random walks (`../../FULL_DATA_RUN.md`).
+- **Prompt:** "Holding is the coin's mean return over all the test's windows together, never a mean over a single window: such a mean contains the price moves that set the forecast, and biases the result." Found by the full-data run: the per-window mean gives t = -2.60 on random walks (`../../runs/FULL_DATA_RUN.md`).
 - **Default data:** BTC, ETH, LTC, XMR, XRP, ZEC (the cached coins with data in all four folds), daily bars, folds A to D (24 windows). A brief's header still overrides it (brief 001 keeps BTC, ETH, BNB).
 
 The 13 fixed ideas, opus, two runs side by side. Cost 0.83 and 0.78 USD. No code retry.
@@ -22,7 +22,7 @@ The 13 fixed ideas, opus, two runs side by side. Cost 0.83 and 0.78 USD. No code
 # Exercises 27 and 28 (the same file is in exercise_27)
 
 **Changes** (approved: "Go").
-- **Prompt:** "Holding is the coin's mean return over all the test's windows together, never a mean over a single window: such a mean contains the price moves that set the forecast, and biases the result." Found by the full-data run: the per-window mean gives t = -2.60 on random walks (`../../FULL_DATA_RUN.md`).
+- **Prompt:** "Holding is the coin's mean return over all the test's windows together, never a mean over a single window: such a mean contains the price moves that set the forecast, and biases the result." Found by the full-data run: the per-window mean gives t = -2.60 on random walks (`../../runs/FULL_DATA_RUN.md`).
 - **Default data:** BTC, ETH, LTC, XMR, XRP, ZEC (the cached coins with data in all four folds), daily bars, folds A to D (24 windows). A brief's header still overrides it (brief 001 keeps BTC, ETH, BNB).
 
 The 13 fixed ideas, opus, two runs side by side. Cost 0.83 and 0.78 USD. No code retry.

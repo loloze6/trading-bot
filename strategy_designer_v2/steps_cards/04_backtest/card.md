@@ -97,7 +97,7 @@ from the files, not set by the plan: the largest bar with a file for the coin th
 from hourly candles. A bar with its own file (1d, 1h) is read as it is. Checked on 4h: 4,380 bars equal the hourly
 data added up by hand (open, high, low, close exactly; volume within the record's 6-decimal rounding).
 
-**Other dates** (`--windows FILE`, 2026-11-18, `UNSEEN_RUN.md`): the same plan and config on the windows of a JSON file
+**Other dates** (`--windows FILE`, 2026-11-18, `runs/UNSEEN_RUN.md`): the same plan and config on the windows of a JSON file
 (`[{label, test: {start, end}}, ...]`, in `windows/`) in place of its folds; the record's data line names the file. Used
 to test an idea on dates the research never saw.
 

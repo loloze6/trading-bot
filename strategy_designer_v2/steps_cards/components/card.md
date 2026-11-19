@@ -43,6 +43,9 @@ bar, that a config can use as a forecast source or in a regime rule.** Five rule
    negative, or 1 minus it) is the same measure: exists when a config step gives it exactly (`negate` gives the
    negative; `standardise` divides by the past mean size without centring, so nothing gives 1 minus it), otherwise a
    setting on the same component (exercise 2: the share of bars with RSI below its midline, `side: below`).
+   The rule applies when a component is built; components already built are not merged afterwards (operator,
+   2026-11-19: three fewer catalogue rows did not pay for rewriting shared code and finished plans; the four
+   "share of a move made by its largest bars" components of brief 016 stay as built).
 2. **A setting is added only when a wish needs a value the component does not have, and that value changes its
    output on real data**; its default keeps the component's output as it was. A setting that changes nothing on real
    data is not added: the answer is exists (exercise 2: where an RSI of exactly 50 counts). One setting per purpose:
@@ -95,7 +98,7 @@ python3 components/helper/build_component.py --runs NAME_run [NAME_run ...] --py
 python3 components/helper/build_component.py --runs NAME_run [NAME_run ...] --list
 ```
 - `--runs`: the runs whose open wishes are answered (`loop` passes the run in progress).
-- `--python`: the venv that runs the checks and the proof.
+- `--python`: the venv that runs the checks.
 - `--list`: prints the open wishes of those runs (run, plan id, wish name), with no model call and nothing built.
 Called again, it answers only the wishes still open: a wish with a line in the index is not asked twice.
 
@@ -119,24 +122,36 @@ The same for every component, by a standard harness the model does not write (`t
 - every class in the file has one catalogue row, and the catalogue's class count is the file's;
 - a class given a new setting: its output at the old defaults is unchanged on real data, and its output at the wish's
   settings differs, on real data, from the output without the new setting (rule 2);
-- **proof:** one fixed backtest rerun with the new code gives the same engine files as its record, window by window
-  (bars, trades, metrics, forecast distribution; the wrapper call's summaries and the chart files are not the engine's
-  decisions, and where the summaries land changes with how step 4 grouped its calls); the bot's suite passes.
+- **the bot's suite passes** (every existing component's and the engine's tests).
+
+**The proof that nothing that runs today changes** is these checks: a new class is used by no plan, and the build
+changes no other class (it appends its own class, or replaces it); a class given a new setting keeps its output at its
+old defaults on every coin's real data (the check above), so the plans that use it give the same files. No backtest is
+rerun: a fixed backtest uses none of the classes a build touches, so it showed only that the module loads and the engine
+runs (the harness shows both), and its stored record went stale with every engine change the operator made (2026-11-19:
+after the 1-day hole rule, every build failed it and 4 wishes were wrongly answered cannot build; the operator: removed).
 
 A failed check goes back to the model with its output (up to three attempts); then the answer is "cannot build".
+
+**A build cut short** (a restart while its checks run) is undone at the step's next start: before writing, a build saves
+the three files as they were in `components/build_in_progress.json` (not committed), removed once the build is kept or
+undone. A note found at the start puts the files back, adds a journal line "a build cut short: undone (<class>, started
+<time>)" with the cost spent so far, and is removed; the wish has no index line, so it is answered again (2026-11-19,
+after a restart left a class, its row and its spec in the shared files).
 
 ## Storage and naming
 ```
 components/
   card.md                this card
   INDEX.md               one line per wish answered, every run
-  journal.jsonl          one line per wish: run, plan, wish, answer, USD, seconds, attempts
+  journal.jsonl          one line per wish: run, plan, wish, answer, USD, seconds, attempts (and per build cut short)
+  build_in_progress.json while a build runs only: the three files as they were (not committed)
   helper/
     system_prompt.md     the instructions
-    build_component.py   one call per open wish; writes, checks, proves or undoes; the index and journal lines
+    build_component.py   one call per open wish; writes, checks, keeps or undoes; the index and journal lines
     wishes.py            the wishes, their answers, the open ones, the unblocking rule (used by select_next, run_idea)
     test_components.py   the tests of this code (a fake model call)
-  builds/<class>/        per component built: the calls' answers, the checks' output, the proof
+  builds/<class>/        per component built: the calls' answers, the checks' output
   validation/reading.md  the validation (exercises 1 to 3 and the second night)
 (in trading-bot/: the class in strategies/strategy_components.py; its spec, the settings and the hand computation, in
  tests/built_components/<class>.py; the standard checks in tests/component_harness.py, run on every spec by
@@ -147,14 +162,14 @@ components/
 - **Closed book**, one call per wish: the wish, the catalogue, the contract and the example are pasted into the call.
 - **The model** reads the wish against the catalogue, gives one of the three answers, and for built writes the class
   and one hand computation. Every other check is code, so the model never writes the test that judges it.
-- **Model:** Opus (exact formulas, code). **Cost:** about 0.12 USD and a minute a wish; a build about 3 minutes, most of
-  it the proof (`validation/reading.md`).
+- **Model:** Opus (exact formulas, code). **Cost:** about 0.12 USD and a minute a wish; a build about 1.5 minutes, most of
+  it the bot's suite (86 s measured, 2026-11-19; about 3 minutes before the proof backtest was removed that day).
 
 ## Quality criteria
 - One component per measure: no two components for the same measure.
 - An answer the catalogue proves: exists names a class and settings that give exactly the measure; built adds what the
   catalogue lacks.
-- A built component passes every check, and the proof shows nothing else changed.
+- A built component passes every check, so nothing that runs today changes (see Checks in code).
 - A cannot build names what is missing.
 
 ## Fixed inputs for the iterations
@@ -192,6 +207,15 @@ second night.
 - Nothing that runs today changes: `select_next`'s ranking of all 11 runs, old code against new, is identical (426
   lines); the proof machinery run once: 588 files identical, the bot's suite passes (2 minutes).
 - Not run yet: a real call of the step (its validation, on the 57 open wishes of the 11 runs).
+
+## Change of 2026-11-19: a build cut short; no proof backtest (operator's go)
+- Tests: 3 new (a failed build undone with no note left; a kept build with no note left; a build cut short undone at
+  the next start, with its journal line), the proof's comparison test removed; the cards' suite passes (87).
+- Real builds on the real shared files: `TopGainsShareOfRiseComponent` rebuilt as it is: kept (every check, the bot's
+  suite 1,559 passed), 86 s, files identical to git; the same class with its default changed: refused by the defaults
+  check (output changed on every coin), 15 s, files put back; a new class killed during its checks: the class, its row
+  and its spec left in the shared files with the note; the step's next start: files identical to git, the note
+  removed, one journal line.
 
 ## What this step does not do
 It does not test an idea, choose which ideas to run, change a component's output at its defaults, or change how the

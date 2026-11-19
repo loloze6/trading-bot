@@ -1,5 +1,5 @@
 What "unseen dates" are, for the test of an idea on dates the research never used (operator, 2026-11-18;
-`UNSEEN_RUN.md`). Read by `orchestration/unseen_test/` (its code) and the operator.
+`runs/UNSEEN_RUN.md`). Read by `orchestration/unseen_test/` (its code) and the operator.
 
 **Unseen dates are dates no fold covers.** Steps 1 to 7 see only the folds' windows (A to D, 2018 to 2025,
 `trading-bot/config/folds.yaml`): no step designs, plans, judges or analyses an idea on any other date. So a date

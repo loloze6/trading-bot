@@ -1,6 +1,6 @@
 # Review of the backtests in this folder
 
-Step 4, unchanged helper and engine, on the 10 hourly plans, fold A: every plan ran 6 of 6 windows per coin (BTC and ETH for brief 001; BNB has no data on the venue; BTC for brief 002). About 45 minutes. The run and its review, with the books' exposure: `../../../HOURLY_RUN.md`.
+Step 4, unchanged helper and engine, on the 10 hourly plans, fold A: every plan ran 6 of 6 windows per coin (BTC and ETH for brief 001; BNB has no data on the venue; BTC for brief 002). About 45 minutes. The run and its review, with the books' exposure: `../../../runs/HOURLY_RUN.md`.
 
 The engine's own figures (not a verdict):
 
