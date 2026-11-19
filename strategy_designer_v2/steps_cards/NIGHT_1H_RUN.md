@@ -101,3 +101,4 @@ No merge into master; no change to a step during the run; nothing is tuned to th
   bars are worth testing where the effect itself is hourly (the time-of-day signals of the slow brief: confirmed, not yet profitable).
 - 08:30: retest done (reading above). Slow brief 17 ideas, 7 confirmed, 0 profitable (three of the confirmed are time-of-day ideas: t +7.68, +5.27, +4.42). About 35 USD spent.
 - 08:3x: operator's go: the intraday brief after the current slow stretch (the slow brief pauses).
+- 09:1x: runs stopped in this session (operator: the design session and a new run session split). intraday_1h_run stopped mid turn 8 (017-02; resumes from its files); slow_1h_run paused at 25.55 USD. The run session continues both from master.
