@@ -76,8 +76,9 @@ Spread and slippage cost about as much as the fees. intraday_1h_run's bars are n
 its at-close book is not computed; its 14 confirmed ideas trade 10,000 to 360,000 times and all lose after costs.
 
 **intraday_1h_run, rebuilt** (its bars were not committed): its confirmed ideas rerun here, same plans, data and engine
-(13 of 14; 017-05.g1 uses a component built on the run session's branch). First 5: every window's net result equals the
-committed one (144 of 144 each); all 5 earn at closes; 0.4 to 4.6 bps per unit traded against 5.7 to 10.6 bps of cost.
+(13 of 14 started; 017-05.g1 uses a component built on the run session's branch). 7 finished before the background
+task's 2-hour limit stopped it; the other 6 were not rerun. In all 7: every window's net result equals the committed one
+(144 of 144 each); all 7 earn at closes; 0.3 to 4.6 bps per unit traded against 5.7 to 10.6 bps of cost.
 
 **The analyst saw it first.** Line 7.d's first finding names costs in 38 of 39 analyses (17 of 18, 21 of 21), with the
 numbers (016-02.g1: "Fees, not the forecast, sink the book: gains before costs 7.77, fees 18.24"; "the slot effect is
