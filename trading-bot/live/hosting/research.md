@@ -209,11 +209,13 @@ Under €20 a year, losing the year if the host closes costs less than 4 months 
 | PetroSky, France | €4.89 a month; memory not seen |
 | A Paris 4 GB plan at $27.74 a year | last year's offer |
 
-### Question only the operator can answer
+### Question only the operator can answer (answered 2026-11-19)
 
 | Question | If yes | If no |
 |---|---|---|
 | Do you already own a laptop or NAS you can leave on at home, with a fixed internet address? | About €2.5/month of electricity instead of €5.39. The risks are power cuts, internet cuts and sleep; a Healthchecks alert (below) still warns you | OVH |
+
+**Answer:** the operator has a laptop, but it will often be switched off, so it cannot host the bot. Option #2 is out.
 
 
 ### Every option found, compared by the operator's rules (2026-11-19)
@@ -233,7 +235,7 @@ reports (weight in section 6).
 | # | Option | Cost / month | Main risk users report | Verdict |
 |---|---|---|---|---|
 | 1 | Oracle Always Free ARM (2 OCPU / 12 GB) **upgraded to pay-as-you-go**, Paris or Marseille | €0 if kept within the free limits | accounts closed without warning (fewer reports on paid accounts, still some); Oracle does not confirm that pay-as-you-go protects an idle machine from reclaiming; some unexpected charges (a $0.01 budget alert is the usual guard); free limits halved without notice in 2026; the free ARM machine often hard to get | **no** for real orders: a sudden closure leaves a position unwatched. Possible for paper runs only, if €0 matters more than stability |
-| 2 | A laptop or NAS you already own, at home | about €2.5 (electricity) | power and internet cuts, sleep, a swelling battery | open question for the operator (section 3) |
+| 2 | A laptop or NAS you already own, at home | about €2.5 (electricity) | power and internet cuts, sleep, a swelling battery | **no**: the operator's laptop will often be switched off |
 | 3 | Black Friday yearly deal, ≥4 GB, EU, established host | under €1.7 (under €20 a year) | small hosts sometimes close with the prepaid year | **yes, if one appears by about 2026-11-30**; none seen yet |
 | 4 | netcup VPS nano, 2 GB, Germany | €3.72, or about €4.43 after the September 2026 rise | support by ticket, slow; maintenance of up to an hour called normal; 6-month minimum term | **yes if under about €4.50** on its order page |
 | 5 | Used mini PC at home | about €4–6 over 3 years | home risks as #2 | no: not cheaper than #6, less stable |
@@ -266,7 +268,6 @@ reports (weight in section 6).
 **Result: OVH VPS-1 (#6)**, unless one of these applies first:
 - **#3** a qualifying Black Friday deal by about 2026-11-30;
 - **#4** netcup nano under about €4.50 on its order page;
-- **#2** you own a home machine and accept its risks.
 
 Sources added for Oracle pay-as-you-go:
 - docs.oracle.com/en-us/iaas/Content/FreeTier/resourceref.htm
