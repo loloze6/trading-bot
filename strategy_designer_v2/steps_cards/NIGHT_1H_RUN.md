@@ -134,3 +134,4 @@ components, 1 untestable), turn 8 (017-02) cut mid-turn, resumes. Slow 25.55 USD
 - 10:2x: found that 017-02 (re-planned 08:55 once unblocked, cut before its backtest) was not finished on resume: the loop
   reads it as finished because its old refusal row is in the table (POTENTIAL_ADJUSTMENTS.md, "an unblocked idea cut
   mid-run"). The only such idea in both runs. Workaround: `run_idea` on 017-02 by hand, the loop stopped; then the loop resumes.
+- 10:31: 017-02 finished by hand: inconclusive t +1.30, not profitable (6 of 6), lines 7.b, 7.d, 7.g proposed ideas; 1.35 USD. Run at 7.00 USD.

@@ -1,3 +1,4 @@
 017-01_presettle-drop-after-uptrend_1h: 2 ideas (2 explorations)
+017-02_presettle-rise-after-downtrend_1h: 2 ideas (2 explorations)
 017-03_postsettle-recovery-after-uptrend_1h: 2 ideas (3 explorations)
 017-04_postsettle-decline-after-downtrend_1h: no ideas: The after-settlement decline the book bets on is real but too small to pay. It is about 4 to 6 bp over 2 hours against roughly 10 bp of fee per trade (F1, F2). Its only larger form, after 00:00 UTC over 6 hours, loses its grading by the 3-day fall (F4) and has faded since 2023 (F5). Its clock pattern also appears at non-settlement hours (F6). So no amendment of this idea, and no idea the findings support, would lift the book's gain above its fees.
