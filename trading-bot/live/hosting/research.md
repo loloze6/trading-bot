@@ -280,7 +280,7 @@ reports (weight in section 6).
 | Keeping Oracle's free machine artificially busy | against the purpose of the idle rule; account risk |
 | A Claude Code cloud session | reclaimed after inactivity |
 
-**Result: 1blu VPS Eco (#3)** if its order page confirms the deal and the checks above; otherwise **OVH VPS-1 (#6)**, unless:
+**Result: 1blu VPS Eco (#3)** if its order page confirms the deal and the checks above; otherwise **OVH VPS-1 (#6)** in an EU data centre (not London, not Singapore; OVH stock "goes in and out pretty often" [LowEndTalk], so retry), , unless:
 - a qualifying deal (section 3, "Deals") appears by about 2026-11-30;
 - **#4** netcup nano under about €4.50 on its order page;
 
@@ -307,6 +307,7 @@ extracts and press articles. **Read them once by hand, or ask Kraken support, be
 | Is France excluded? | not in any extract of the restricted list (which names e.g. the UK, Canada, Australia). I did not see the full list, so the answer is "probably not", not "no" | extracts; a third-party site says the list was updated in July 2026 |
 | Spot (separate) | Payward Europe Solutions Ltd (Ireland), on the AMF's white list since 2025-07-03 | [O] amf-france.org |
 | Does the server's country matter? | Kraken's EU terms expect the client "located in an EEA jurisdiction"; the perpetuals are **not offered to the US**, which has its own Kraken product; its promotion rules treat a VPN as abuse. **A server in France or the EU is the safe case; a US server (Google's free machine, GitHub Actions) is the risky one.** Whether Kraken blocks US addresses on the API: I do not know | extracts and inference; no official statement on servers found |
+| A server in Singapore (OVH showed VPS-1 stock only there, 2026-11-19) | **avoid**. Since 2025-06-19 Singapore's regulator reportedly forbids offering crypto derivatives to retail customers [3] comparison site, not checked against MAS; Kraken says it is not licensed in Singapore [3]. Every request would come from outside the EEA, where Kraken's EU terms expect the client to be. Whether Kraken checks: I do not know | secondary sources: bitget.com/academy/singapore-crypto-exc, moneysense.gov.sg, asiaforexmentor.com/kraken-review |
 | Kraken blocking data-centre addresses (like Binance's 451) | no report found for Kraken | none found |
 | Can a key be locked to fixed addresses? | **Yes**: the futures API key form takes a list of allowed IPv4/IPv6 addresses; Kraken's docs recommend it and have a call that returns a key's allowed ranges | [O] docs.kraken.com "check v3 API key" + two independent setup guides (Tealstreet, HaasOnline) that describe the field: "comma delimited list of IPv4 or IPv6 IP addresses or ranges" |
 | Key access levels | general API: read-only or full; withdrawals: can be "No access" | third-party guide + Kraken help (extract) |
