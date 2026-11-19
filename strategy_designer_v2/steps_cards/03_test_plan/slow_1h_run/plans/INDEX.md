@@ -1,4 +1,4 @@
-016-01_up-grind-price-continuation_1h: missing-components: The idea needs, for one coin's closes over the last 72 hourly bars, the share of the 3-day rise made [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+016-01_up-grind-price-continuation_1h: missing-components: `TopGainsShareOfRiseComponent` gives the share carried by the top hours, but its complement (1 minus that share) needs a constant offset. [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 016-02_down-grind-price-continuation_1h: missing-components: The idea's grind-versus-jump split needs the share of a 72-bar fall made by its few largest hourly losses. No component, [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 016-03_up-jump-price-reversal_1h: missing-components: The 72-bar rise is available (`PriceEvolutionComponent`, period 72), but no component computes the share of that rise carried by its [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 016-04_down-jump-price-reversal_1h: missing-components: The idea needs the share of a 72-hour fall that came from its few largest hourly losses. That uses only [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]

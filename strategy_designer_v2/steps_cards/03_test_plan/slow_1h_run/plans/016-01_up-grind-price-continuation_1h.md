@@ -5,11 +5,11 @@ data-instruments: BTC, ETH, LTC, XMR, XRP, ZEC
 data-bar: 1h
 data-period: folds A, B, C, D
 outcome: missing-components
-catalogue: 4e6cc97f57e5
+catalogue: 1f000a7ba652
 ---
 Fidelity:
-- Situation: the coin has risen over the past 3 days, and many small hourly gains made a larger share of that rise than its few biggest hours -> replaced: no catalogue component measures how much of a rise its biggest hours made; R-squared or efficiency ratio would measure path straightness or choppiness instead.
-- Comparison: the share of the rise from many small gains against the share from the few biggest hours -> replaced: neither part of the split can be computed from catalogue components.
-- Outcome: the coin keeps rising over the next 3 days (72 bars) -> kept.
-- Verdict transfer: no: a test built on R-squared or efficiency ratio would judge path smoothness, not how much of the rise came from the biggest hours, so its verdict would not carry to the idea.
-Reason: The idea needs, for one coin's closes over the last 72 hourly bars, the share of the 3-day rise made by its few largest hourly gains. No catalogue component, alone or combined by weights, offsets or transforms, splits a window's return by the size rank of its one-bar moves. Efficiency ratio, R-squared and variance ratio measure other properties of the path. A jump in an otherwise quiet window still gives a high efficiency ratio, and a high R-squared when the jump comes early or late.
+- Situation: coin has risen over the past 3 days (72 bars) -> kept: a regime rule on the 72-bar return above 0, or a component that is 0 when the window did not rise.
+- Comparison: share of the rise made by many small hourly gains rather than its few biggest hours -> replaced: no catalogue component grades this share.
+- Outcome: the coin keeps rising more over the next 3 days (72 bars) -> kept.
+- Verdict transfer: no: the only graded stand-ins measure something else, so a result would not say whether the share itself predicts continuation.
+Reason: `TopGainsShareOfRiseComponent` gives the share carried by the top hours, but its complement (1 minus that share) needs a constant offset. A constant inside the "risen" regime makes the position jump, and without the regime the not-risen bars become longs. `RiseBeyondLargestMovesComponent` is the rise times the grind share, which mixes in the rise's size, and the brief says size must be kept apart from how the move was built.
