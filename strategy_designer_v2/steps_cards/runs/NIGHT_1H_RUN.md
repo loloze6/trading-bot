@@ -203,3 +203,4 @@ the two briefs, every one failing Sharpe after costs. The edges are a few bps pe
 trip. The one change a practitioner would make: stop asking hourly ideas to trade often. Either the engine trades an
 hourly signal only when its expected move clears the round-trip cost (a cost-aware entry), or hourly signals are used
 only as timing inside slow positions. More hourly briefs as they stand would add confirmed, unprofitable rows.
+- 15:4x: master merged with no loop running (PR #573, #574: improvements are topic cards in topics/; POTENTIAL_ADJUSTMENTS.md removed, its item 17 is topic 29, checked: every fact carried over). Cards' tests: 88 passed. Waiting for the operator: finish 017-01.b1 or leave intraday stopped; slow_1h_run not started.
