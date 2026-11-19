@@ -2,6 +2,7 @@
 016-01_up-grind-price-continuation.g2_persistent-hour-of-day-drift_1h: missing-components: The idea needs the mean of the one-bar returns ending at the same UTC hour on each of the past [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 016-01_up-grind-price-continuation_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+016-02_down-grind-price-continuation.g2_evening-rebound-after-daily-drop_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 016-02_down-grind-price-continuation_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 016-03_up-jump-price-reversal_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
