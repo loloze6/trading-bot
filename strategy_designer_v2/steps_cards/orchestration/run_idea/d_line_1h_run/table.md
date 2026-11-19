@@ -11,20 +11,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift.d1_late-utc-rebound-after-falls | 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift | missing-components | - | - | - | - | 0.07 | 0.5 |
 | 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift.d2_evening-bounce-after-drops | 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift | plan | confirmed (+6.17) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift.d2_evening-bounce-after-drops.d1_evening-drop-day-long-rebound, 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift.d2_evening-bounce-after-drops.d2_first-hour-evening-drop-bounce; 7.g: 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift.d2_evening-bounce-after-drops.g1_daily-rebound-after-scaled-falls, 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift.d2_evening-bounce-after-drops.g2_even-volume-falls-rebound-more, 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift.d2_evening-bounce-after-drops.g3_efficient-moves-partly-reverse | 0.90 | 12.5 |
 | 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-rebounds-next-day | 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound | plan | confirmed (+2.68) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-rebounds-next-day.d1_evening-rebound-in-volatile-weeks, 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-rebounds-next-day.d2_evening-dip-in-rising-week; 7.g: 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-rebounds-next-day.g1_high-volatility-daily-reversal, 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-rebounds-next-day.g2_even-volume-moves-reverse-more | 0.90 | 11.9 |
+| 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d2_volatile-evening-fall-rebound | 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound | plan | confirmed (+6.52) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d2_volatile-evening-fall-rebound.d1_evening-fall-rebound-over-day; 7.g: 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d2_volatile-evening-fall-rebound.g1_volatility-graded-all-hours-rebound, 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d2_volatile-evening-fall-rebound.g2_calm-market-fall-continuation | 1.02 | 14.6 |
 
 ## Consumption
-7 ideas, 6.73 USD, 86.9 minutes in all.
+8 ideas, 7.76 USD, 101.5 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 0.84 | 3.5 |
-| step4_backtest | 0.00 | 59.5 |
-| step5_verdict | 0.76 | 3.3 |
-| step6_check | 0.00 | 1.0 |
-| chart_files | 0.00 | 0.7 |
+| step3_plan | 1.04 | 5.0 |
+| step4_backtest | 0.00 | 69.3 |
+| step5_verdict | 0.91 | 4.0 |
+| step6_check | 0.00 | 1.1 |
+| chart_files | 0.00 | 0.8 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.b | 0.71 | 2.7 |
-| step7_7.d | 2.00 | 7.3 |
-| step7_7.g | 2.42 | 8.9 |
+| step7_7.d | 2.32 | 8.5 |
+| step7_7.g | 2.77 | 10.2 |
