@@ -7,3 +7,4 @@
 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1h: not profitable enough [Sharpe -1.504; Sharpe minus holding's Sharpe -2.14; Calmar -0.5886]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum_1h: not profitable enough [Sharpe 0.7273; Sharpe minus holding's Sharpe 0.1735; Calmar 0.4219]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1h: profitable enough [Sharpe 1.048; Sharpe minus holding's Sharpe 0.4986; Calmar 1.011]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1h: not profitable enough [Sharpe 0.7213; Sharpe minus holding's Sharpe 0.1675; Calmar 0.514]

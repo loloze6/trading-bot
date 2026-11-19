@@ -7,3 +7,4 @@
 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1h: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
