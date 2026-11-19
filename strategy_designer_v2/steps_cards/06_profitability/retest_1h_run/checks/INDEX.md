@@ -3,3 +3,4 @@
 002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1h: profitable enough [Sharpe 1.117; Sharpe minus holding's Sharpe 0.5217; Calmar 1.05]
 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_short-horizon-uptrend-momentum-near-highs_1h: not profitable enough [Sharpe -3.21; Sharpe minus holding's Sharpe -3.763; Calmar -0.4871]
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly_1h: not profitable enough [Sharpe -0.7197; Sharpe minus holding's Sharpe -1.356; Calmar -0.2618]
+006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1h: not profitable enough [Sharpe 0.5453; Sharpe minus holding's Sharpe -0.008421; Calmar 0.2304]
