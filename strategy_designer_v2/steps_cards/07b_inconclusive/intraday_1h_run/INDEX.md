@@ -8,6 +8,7 @@
 017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal_1h: 2 ideas (2 explorations)
 017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 017-03_postsettle-recovery-after-uptrend_1h: 3 ideas (2 explorations)
 017-04_postsettle-decline-after-downtrend.c1_post-settlement-decline-four-hours_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 017-04_postsettle-decline-after-downtrend.c2_off-settlement-rebound-after-falls_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

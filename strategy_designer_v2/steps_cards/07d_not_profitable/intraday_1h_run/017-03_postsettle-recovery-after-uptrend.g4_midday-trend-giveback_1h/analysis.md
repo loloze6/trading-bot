@@ -1,0 +1,23 @@
+---
+line: 7.d not profitable
+backtest: 017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback_1h
+idea tested: 017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.2902 USD
+---
+## Findings
+- **F1:** The forecast's edge is real but smaller than the cost of trading it: trades earn +0.065% before fees (t 5.98, n 26111, 53% winners) but pay a 0.100% fee gap each, leaving −0.035% per trade, and per coin-day the book makes 0.028% gross against 0.117% in fees.
+- **F2:** The fee comes from the daily round trip: the position is opened on the 10:00 bar (mean change 0.48 of the book, fee 0.051%) and closed on the 13:00 bar (change 0.48, fee 0.051%). That is about 1.49 trades per day, and it pushes the book below zero in every year from 2018 to 2025 (daily −0.028% to −0.12%).
+- **F3:** The 3-hour countermove at the 10:00 bar averages 0.059% (t 4.39, n 16907), and it fades with a longer hold: 0.060% over 6 hours (t 2.96), −0.013% over 12 hours, −0.066% over 24 hours and −0.122% over 48 hours (t −2.26). So the move is too small to carry a 0.1% round trip.
+- **F4:** Almost all of the gain is on the long side. Longs after a 3-day fall earn +0.107% gross per trade (net +0.007%) and a +0.113% 3-hour move. Shorts after a 3-day rise earn +0.025% (net −0.075%) and +0.008%, and over 12 and 24 hours the coin keeps rising against the short (−0.17% signed).
+- **F5:** The move grows with the coin's recent volatility. The 3-hour signed move is 0.005%, 0.054% and 0.113% across low, middle and high volatility terciles (10-day hourly volatility), with n of about 5590 each.
+- **F6:** The trend's size matters only at the bottom. The weakest forecast quintile loses gross (−0.037% per trade). The top two quintiles earn 0.127% and 0.107% gross, the only ones near or above the fee (net +0.027%, +0.007%).
+
+## Ideas
+- `017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback.d1_midday-rebound-after-falls` (from F1, F3, F4, F5, F6): Over the 3 hours from 11:00 UTC, a coin moves against its own 3-day return, and the larger that 3-day return, the larger the move against it, only while that 3-day return is a fall. The move is larger the higher the coin's hourly volatility over the past 10 days.
+- `017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback.d2_half-day-rebound-after-falls` (from F1, F2, F4): After a 3-day fall, a coin rises over the 12 hours from 11:00 UTC, and the larger the 3-day fall, the larger that rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

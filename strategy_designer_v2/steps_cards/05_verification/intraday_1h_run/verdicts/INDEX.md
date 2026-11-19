@@ -8,6 +8,7 @@
 017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal_1h: inconclusive (fit: exact) [main: 8.14985e-05; t of the mean 10.2279; bars pooled 416645, high-volatility group bars 156480, low-volatility group bars 156480]
 017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal_1h: confirmed (fit: exact) [main: 0.00170974; ordinary t of the mean 3.80116; non-overlapping cases 17246, active bars 416370]
 017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation_1h: confirmed (fit: exact) [main: 9.10877e-05; ordinary OLS slope t 9.13935; cases 17452]
+017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback_1h: confirmed (fit: exact) [main: 4.37928; OLS slope t 4.37928; daily cases 17334, supporting check bars 52100]
 017-03_postsettle-recovery-after-uptrend_1h: inconclusive (fit: adapted) [main: 1.96278e-05; OLS slope t 1.38867; cases pooled across coins and windows 26465]
 017-04_postsettle-decline-after-downtrend.c1_post-settlement-decline-four-hours_1h: confirmed (fit: adapted) [main: 0.000849507; t of the mean 4.84689; episodes with a negative forecast 24787, episodes per third 8262]
 017-04_postsettle-decline-after-downtrend.c2_off-settlement-rebound-after-falls_1h: confirmed (fit: adapted) [main: 0.000423841; ordinary t of the mean 4.07692; cases 50986]

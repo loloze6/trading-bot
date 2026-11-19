@@ -168,3 +168,6 @@ components, 1 untestable), turn 8 (017-02) cut mid-turn, resumes. Slow 25.55 USD
 - 15:22: check-in, no restart (up 5h29). 017-03.g3 (trend continues after settlement): confirmed t +9.14; 017-04.g3
   (afternoon continuation of a 3-day trend): confirmed t +8.07; neither profitable. Turn 28 (017-03.g4, midday trend
   giveback) in step 3. Run so far: 23 ideas tested, 13 confirmed, 0 profitable.
+- 15:33: stretch 7 ended on its budget (27.67 USD, 3 turns, 35 min). 017-03.g4 (midday trend giveback): confirmed t +4.38,
+  not profitable. Run so far: 24 ideas tested, 14 confirmed, 0 profitable; every tested book fails Sharpe after costs.
+  Stretch 8 launched (--budget 30.67).

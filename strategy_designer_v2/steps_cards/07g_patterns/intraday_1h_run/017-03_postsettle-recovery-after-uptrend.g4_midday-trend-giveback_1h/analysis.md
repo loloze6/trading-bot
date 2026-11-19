@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback_1h
+idea tested: 017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3547 USD
+---
+## Findings
+- **F1:** In the hours from 15:00 UTC a coin carries on with its 3-day trend instead of reversing it. One case per day per coin, about 16,860 cases per hour, regressed on the minus-3-day-return signal: the bar stamped 14:00 gives a slope of -7.6 bp (t -6.0), the bar stamped 15:00 gives -10.5 bp (t -8.9) and the bar stamped 16:00 gives -4.7 bp (t -4.1). At the 14:00 bar, the strongest-uptrend fifth then gains +13.7 bp over 3 hours and the strongest-downtrend fifth loses -14.6 bp.
+- **F2:** This afternoon continuation is broad but fading. At the 14:00 bar the slope is negative in all six coins, with t between -2.7 and -4.0 in BTC, ETH, LTC and ZEC. It is significant in every year from 2018 to 2021 (t -2.4 to -5.3) but not in 2022 to 2025 (t +1.6 to -1.0). It grows with the past 24-hour volatility tercile: -4.8, -7.2 and -10.1 bp, with t -2.8, -3.8 and -3.7.
+- **F3:** The tested midday reversal is confined to the bars stamped 10:00 to 12:00 (slope t 4.5, 4.5 and 5.2) and flips sign from 13:00. It is also uneven by coin: at the 10:00 bar XMR has t 4.3, BTC has t -0.4 and the rest are between 1.3 and 1.9. By year, only 2020, 2022 and 2023 have t above 2.
+- **F4:** The hour ending 13:00 UTC reverses in the next hour, the strongest one-hour reversal of the day. The slope of the next hour's return on that hour's return is -0.150 (t -18.6, about 16,800 cases), against -0.03 to -0.09 at most other hours. Measured on that hour's move scaled by its usual size, the slope is negative in all six coins (t -2.6 to -4.2) and in every year from 2020 to 2024 (t -2.6 to -6.3).
+- **F5:** The book is eaten by trading costs. Over all windows, the sum of position times next-bar return is 4.9, while fees come to about 20.3 measured the same way. With about 1.5 trades per day, that explains a Sharpe of -2.73 despite a confirmed signal (t 4.38).
+- **F6:** Late in the evening the trend also continues. At the bars stamped 20:00 to 23:00 the slopes are -3.6, -4.7, -7.4 and -3.5 bp (t -3.2, -3.9, -6.0, -3.0). At the 21:00 bar, though, it is significant only in 2020, 2021 and 2025, so it is less stable than F1.
+
+## Ideas
+- `017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback.g1_afternoon-trend-continuation` (from F1, F2, F3): Over the 3 hours from 15:00 UTC, a coin moves in the direction of its own 3-day return, and the larger that 3-day return, the larger the move in its direction.
+- `017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback.g2_early-afternoon-hourly-reversal` (from F4): Over the hour from 13:00 UTC, a coin moves against its own return over the hour from 12:00 UTC, and the larger that hourly move relative to its usual hourly size, the larger the move back.
+- `017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback.g3_volatility-scaled-afternoon-continuation` (from F1, F2, F5): Over the 3 hours from 15:00 UTC, a coin moves in the direction of its own 3-day return, and the larger its 1-day volatility, the larger that move in the direction of its 3-day return.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
