@@ -2,7 +2,8 @@
 
 Items noted while designing and running the steps, not started: each waits for the operator's go. What was fixed or
 built is removed from this list once done (git keeps it; each fix is in its card and its commit). Reviewed with the
-operator 2026-11-19 (20 items to 11, plus the operator's new item on short positions).
+operator 2026-11-19: 20 items to 11, plus the operator's new item on short positions and the run session's defect on
+an unblocked idea.
 
 ## Parked: recent ideas rarely take a short position (operator, 2026-11-19)
 The operator: investigate why the recent ideas did not reach a negative forecast. Measured on BTC, every window of every
@@ -18,6 +19,17 @@ To find out where it comes from: the briefs and step 2 (ideas written as long-on
 one-sided: a component that is never negative, a clip at 0, a rule that only opens longs), or the components (many built
 "never negative, no direction"). Also seen: `forecast_distribution.csv` puts a forecast of exactly 0 in the bin "-5_0"
 (bins closed on the right), so its "negative" bins count the flat bars.
+
+## Parked: an unblocked idea cut mid-run is never finished (run session, 2026-11-19)
+- **What was seen:** `intraday_1h_run` 017-02 was refused at 00:13 (missing-components; a row in run_idea's table),
+  unblocked, re-planned by step 3 at 08:55 (plan index: "plan"), then cut before its backtest when the night's runs were
+  stopped. On resume (09:54) the loop did not finish it: `loop.unfinished()` counts an idea as finished when it has any row
+  in the table, and the old refusal row was still there; `select_next` counts it as tested (its plan exists). The queue
+  read "tested: step 5 -; step 6 -" and nothing would ever run its backtest. Checked: the only such idea in both 1h runs.
+- **Workaround taken (no code changed):** `run_idea` called by hand on 017-02 in the same run, the loop stopped (step 3
+  skipped, steps 4 to 7 run), which is what the loop's resume rule should have done.
+- **Fix to consider (design session):** read "finished" from the turn, not the table: an idea is unfinished when its
+  latest turn has no finished `run_idea` call after it (e.g. the table row older than the turn, or a "done" line per turn).
 
 ## Parked: step 3, the noise from writing a test freely
 - **Details only a plan can settle:** how its non-overlapping samples are drawn, which test it uses, and what each case
