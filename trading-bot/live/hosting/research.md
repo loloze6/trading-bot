@@ -7,47 +7,52 @@ Criteria, in the operator's order: 1 cost, 2 simplicity, 3 performance, 4 flexib
 
 **Decision** (2026-11-19, after the operator's rulings: cheap, monthly, English or French service, any EU country).
 Try these in order:
-1. **Webdock VPS Essential** (Denmark), if its order page confirms about €2.15 a month before VAT with an IPv4;
-2. otherwise **netcup VPS nano** (Germany), if it is under about €4.50 a month;
+1. **Webdock VPS Essential** (Denmark);
+2. otherwise **netcup VPS nano** (Germany);
 3. otherwise **OVH VPS-1** once its EU stock returns. On 2026-11-19 only Singapore was offered, which is to avoid
    (section 4).
 
 All three are in the EU, have a fixed IPv4 for locking the Kraken key, run the bot's 3 runs today, and serve
 customers in English.
 
-**Price difference** (with French VAT; Webdock's €2.15 is before VAT):
+**Checked on the providers' own pages on 2026-11-19** (the session's network was opened to webdock.io,
+www.netcup.com, www.ovhcloud.com and support.kraken.com for this): Webdock's and netcup's plans below, and Kraken's
+derivatives eligibility page (section 4).
+
+**Price difference** (per month, with French VAT unless stated):
 
 | | Webdock VPS Essential | netcup VPS nano | OVH VPS-1 |
 |---|---|---|---|
-| Per month | **about €2.58** | €3.72, or about €4.43 after the Sept. 2026 rise | €5.39 |
-| Year 1 | **about €30.96** | €44.64 – €53.16 | €64.68 |
-| Two years | **about €61.92** | €89.28 – €106.32 | €129.36 |
-| Saving against OVH over two years | **about €67.44** | €23.04 – €40.08 | — |
-| Billing | monthly available (yearly at the same price) | 6-month minimum term | monthly, no commitment |
+| Price on the provider's page | **€2.15** (VAT not shown) | €3.69 with German VAT | €4.49 before VAT [3] |
+| With French VAT (20%) | **about €2.58** [calc] | about €3.72 [calc] | €5.39 |
+| Year 1 | **about €30.96** | about €44.64 | €64.68 |
+| Two years | **about €61.92** | about €89.28 | €129.36 |
+| Saving against OVH over two years | **about €67.44** | about €40.08 | — |
+| Billing | **monthly or yearly at the same price, paid upfront; no contract, cancel anytime** [O] | monthly, **6-month contract** [O] | monthly, no commitment [3] |
 
 **Feature difference:**
 
 | | Webdock VPS Essential | netcup VPS nano | OVH VPS-1 |
 |---|---|---|---|
 | Memory | 2 GB (about 6 runs) | 2 GB (about 6 runs) | 4 GB (about 13 runs) |
-| Processor, disk | 1 vCPU, 15 GB NVMe | 2 vCores, 60 GB | 2 vCores, 40 GB NVMe |
-| Fixed IPv4 | included | included | included |
-| Backup | I do not know | snapshots | daily automatic backup |
-| Where | Denmark | Germany | France or other EU; **EU stock unavailable on 2026-11-19** |
-| Language of service | English | English and German (official) | English, French |
-| The host | Danish, founded 2017 (third-party) | large, long-running | French group, very large |
-| User reviews | few found (an aggregator cites about 280, not read) | many, mixed: good uptime; slow ticket support | many, mixed |
-| Main risk | price and terms read from extracts; disk only 15 GB (enough: about 5 GB needed) | price after the September rise not confirmed | stock comes and goes |
+| Processor, disk | 1 vCPU (Xeon Gold), 15 GB NVMe [O] | 2 vCores, 60 GB SSD [O] | 2 vCores, 40 GB NVMe [3] |
+| Fixed IPv4 | dedicated IPv4 + IPv6 [O] | included | included |
+| Backup | **daily backups included** [O] | snapshots [O] | daily automatic backup [3] |
+| Where | Denmark (Nørre Aaby, its own data centre) [O] | Germany (Nuremberg only) [O] | France or other EU; **EU stock unavailable on 2026-11-19** |
+| Service | English; engineers by chat and email, 24/7 monitoring [O] | English and German [O] | English, French |
+| Systems offered | Ubuntu, Debian, AlmaLinux, CentOS [O] | Debian and others [M] | Debian and others [3] |
+| Growing later | one-click upgrade, prorated; the disk can only grow [O] | other plans, e.g. VPS Lite 1 G12.5s 4 GB at €5.86 with German VAT, 6-month contract [O] | VPS-2 (price not checked) |
+| User reviews | **Trustpilot 5/5 from 339 reviews** [3]; one complaint of a server billed for a whole period after a few hours of use; reviews.io 3.2/5 from 13 | many, mixed: good uptime; slow ticket support | many, mixed |
+| Main risk | the smallest machine of the three (1 vCPU, 15 GB): enough for one daily decision; about 5 GB of disk needed | 6-month contract | stock comes and goes |
 
-2 GB holds about 6 runs. At one more run a month, it is full in about 3 months; then take a bigger plan, or put
-several coins in one program (the card's plan).
+2 GB holds about 6 runs. At one more run a month, it is full in about 3 months; then upgrade in one click (Webdock),
+or put several coins in one program (the card's plan).
 
 **Ruled out:**
 - **1blu VPS Eco:** €1 a month for a year, then €3.99; but website and support in German only, and the operator
   does not speak German.
 - **Big clouds:**
-  - paid plans (AWS Lightsail 2 GB about €12.40; Vultr, DigitalOcean, Linode about €10–12) cost 3–5 times
-    Webdock;
+  - paid plans (AWS Lightsail 2 GB about €12.40; Vultr, DigitalOcean, Linode about €10–12) cost 4–5 times Webdock;
   - free plans: AWS 6 months; Azure 12 months, 1 GB; Google US only, 1 GB; Oracle reclaims idle machines and has
     closed accounts without warning.
 - **Others:**
@@ -59,16 +64,19 @@ several coins in one program (the card's plan).
 **Before real orders, whichever host:**
 - Set `KillSignal=SIGINT` in the service. Without it the bot dies on a server stop without saving its local book
   (section 5, step 10).
-- Ask Kraken support whether a server in another EU country is fine (section 4).
+- On Kraken, complete what new EEA Futures clients must provide: a questionnaire on derivatives knowledge and a tax
+  number (section 4).
 
-Sources added for this summary:
-- webdock.io/pricing
-- webdock.io/ovhcloud
-- stackrates.ai/vps/2gb-ram/
-- hostdean.com/provider/webdock/
-- netcup.com/en/helpcenter/support
-- vpsbenchmarks.com/hosters/time4vps
-- vpsbenchmarks.com/hosters/alwyzon
+**Sources of this summary:**
+- **Read today on the providers' own pages:**
+  - webdock.io/pricing
+  - netcup.com/en/server/vps-lite
+  - support.kraken.com/articles/derivatives-eligibility-requirements-eea
+- **Search extracts:**
+  - trustpilot.com/review/webdock.io
+  - reviews.io/company-reviews/store/webdock-io
+  - vpsbenchmarks.com/hosters/time4vps
+  - vpsbenchmarks.com/hosters/alwyzon
 
 **Words used below.**
 - **Server**: a computer that stays on in a data centre. You reach it from your PC over the internet.
@@ -205,8 +213,8 @@ locked to the bot's address.
 ### Decision (final, 2026-11-19)
 
 Try these in order (see the executive summary):
-1. **Webdock VPS Essential** (Denmark): about €2.58 a month.
-2. **netcup VPS nano**: if under about €4.50 a month.
+1. **Webdock VPS Essential** (Denmark): about €2.58 a month with French VAT. Checked on its own page.
+2. **netcup VPS nano**: about €3.72 a month, 6-month contract. Checked on its own page.
 3. **OVH VPS-1**: €5.39 a month, once its EU stock returns.
 
 1blu VPS Eco was the first choice for a while; it is out because its service is in German only.
@@ -378,6 +386,7 @@ extracts and press articles. **Read them once by hand, or ask Kraken support, be
 | Question | Finding | How sure |
 |---|---|---|
 | **Your own account** | **You already hold a Kraken Futures account read by the bot with a key** (value 105.94 USD on 2026-11-17, `live/validation/reading.md`). So access as a French resident is already granted. Whether real orders need one more step (the appropriateness test for derivatives) depends on your account: I do not know | the repository's own record |
+| **Kraken's own eligibility page** (read 2026-11-19; last updated 2025-12-10) | For clients **residing in the EEA** (France is). An account must meet both the verification and the geographic requirements. Personal clients: fully verified. New Futures EEA clients must also complete an on-platform questionnaire on their derivatives knowledge and give their tax number; existing clients are contacted by email for the move to the new regulated company. Derivatives are provided by Payward Europe Digital Solutions (CY) Ltd, CySEC licence 342/17. Nothing on servers; clients "located outside of the EEA" are sent to other articles | [O] support.kraken.com/articles/derivatives-eligibility-requirements-eea |
 | Who offers the perpetuals to a French resident? | Payward Europe Digital Solutions (CY) Ltd, a Cyprus investment firm (CySEC licence 342/17, EU MiFID II rules). EEA launch 2025-05-20 | press: CoinDesk and Cointelegraph, 2025-05-20 |
 | Conditions | identity verification, tax number, retail or professional classification, an appropriateness test; leverage at most 10x for EEA clients (less for some contracts) | Kraken pages "derivatives eligibility requirements (EEA)" and "margin schedule (EEA)" (extracts, undated) |
 | Is France excluded? | not in any extract of the restricted list (which names e.g. the UK, Canada, Australia). I did not see the full list, so the answer is "probably not", not "no" | extracts; a third-party site says the list was updated in July 2026 |
@@ -651,8 +660,10 @@ Sources of round 3:
 ## 8. What I could not verify ("I do not know")
 
 **Prices**
-- **No price was read on a provider's own page**: this session's network blocked them, and all come from search
-  extracts or third-party pages.
+- Until late on 2026-11-19 no provider page could be read. Then the network was opened to four sites; Webdock's
+  and netcup's prices and Kraken's eligibility page were read on their own pages. All other prices still come from
+  search extracts or third-party pages.
+- Webdock: whether its €2.15 includes VAT; its Debian version.
 - OVH: the renewal price after the 12-month commitment, and whether a running VPS can move to it later; whether a
   Debian 13 image is offered.
 - netcup: the nano price, re-checked in round 2 but cut off; whether daily automatic backups exist besides
