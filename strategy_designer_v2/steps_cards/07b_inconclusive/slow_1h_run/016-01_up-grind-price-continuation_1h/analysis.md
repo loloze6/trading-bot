@@ -1,0 +1,22 @@
+---
+line: 7.b inconclusive
+backtest: 016-01_up-grind-price-continuation_1h
+idea tested: 016-01_up-grind-price-continuation
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3387 USD
+---
+## Findings
+- **F1:** The test's forecast does not sort the next 3 days. Among the 938 risen grid cases with forecast above 0, the top third minus the bottom third of forecast is -0.0040 (Welch t -0.54). Ranking the same cases by the raw grind share instead gives only +0.0051 (t 0.75). Both agree with the verdict's -0.0043 (t -0.57).
+- **F2:** Across all 2,865 risen grid cases, the raw residual share does split the next 72-bar return: 0.0126 for the top third against -0.0010 for the bottom third, a difference of 0.0136 (Welch t 3.50). But the share has a rank correlation of 0.84 with the size of the past 3-day rise, and the past rise averages 0.112 in the top third against 0.015 in the bottom third. The split is mostly a split by rise size.
+- **F3:** In a regression of the next 72-bar return on the grind share, the past rise and hourly volatility (2,865 cases), the share adds nothing (coefficient 0.000049, t 0.51) while the past rise carries the effect (coefficient 0.078, t 2.64). This is the brief's own failure case: the way the move was built adds nothing beyond its size.
+- **F4:** The test's forecast is not the raw share. It is standardised against its own past 72 values, so its rank correlation with the raw share is only 0.35, and it is positive on only 33% of risen cases. Even so, F3 shows that the raw share carries no effect beyond size either.
+- **F5:** No subset shows a clean grind effect. By coin, the raw-share top-minus-bottom t ranges from 0.89 to 2.61; by year it ranges from 0.35 to 1.97. Within past-size thirds it is 1.64, 1.72 and 0.39, and the spread shrinks for the largest rises (0.0031).
+- **F6:** The size effect behind F2 is itself fragile across horizons. Ranking by the past 3-day rise gives a top-minus-bottom t of 2.79 over the next 72 bars, but -0.50 over the next 24 bars and 1.24 over the next 144 bars. It does not support a separate idea either.
+
+## Ideas
+- No ideas: The grind share shows no effect beyond the size of the rise anywhere in the data (share t 0.51 with size controlled, F3), and the test's own forecast is slightly on the wrong side (F1). That is a clear answer against the idea: no condition, side or horizon would rescue it, and the leftover size effect is too unstable across horizons to propose on its own (F6).
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

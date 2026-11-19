@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "next-72-bar return, top third minus bottom third of forecast (>0) on the 72-bar grid",
+    "value": -0.0042718353504933165,
+    "statistic": {
+      "name": "Welch t",
+      "value": -0.5693278371484161
+    },
+    "threshold": "Welch t >= 2 confirms (with supporting check), Welch t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "top third mean next-72-bar return minus holding-the-coin mean 72-bar return",
+    "value": 0.008447395913598036,
+    "passed": true
+  },
+  "counts": {
+    "grid cases in top third": 316,
+    "grid cases in bottom third": 316,
+    "grid cases with forecast above 0": 947
+  },
+  "decided_by": "The top-minus-bottom Welch t lies between -2 and 2.",
+  "reading": "Thirds are equal-size splits of the pooled grid cases sorted by forecast (ties kept in coin/window/time order), and the holding benchmark for the pooled top third is the mean, over its cases, of each case's coin mean 72-bar grid return over all windows; the situation is a positive raw residual share on the long side."
+}

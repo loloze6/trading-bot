@@ -1,3 +1,4 @@
+016-01_up-grind-price-continuation_1h: 2 ideas (2 explorations)
 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift_1h: 2 ideas (2 explorations)
 016-02_down-grind-price-continuation_1h: 2 ideas (2 explorations)
 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound_1h: 2 ideas (2 explorations)

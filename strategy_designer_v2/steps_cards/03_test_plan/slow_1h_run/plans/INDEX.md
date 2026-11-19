@@ -1,4 +1,4 @@
-016-01_up-grind-price-continuation_1h: missing-components: `TopGainsShareOfRiseComponent` gives the share carried by the top hours, but its complement (1 minus that share) needs a constant offset. [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+016-01_up-grind-price-continuation_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 016-02_down-grind-price-continuation_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]

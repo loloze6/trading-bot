@@ -1,3 +1,4 @@
+016-01_up-grind-price-continuation_1h: no ideas: The grind share shows no effect beyond the size of the rise anywhere in the data (share t 0.51 with size controlled, F3), and the test's own forecast is slightly on the wrong side (F1). That is a clear answer against the idea: no condition, side or horizon would rescue it, and the leftover size effect is too unstable across horizons to propose on its own (F6).
 016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 016-02_down-grind-price-continuation_1h: 2 ideas (2 explorations)
 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
