@@ -7,7 +7,7 @@ operator's topics). Where = the session or part of the workflow it belongs to.
 
 | # | Improvement | Where | Status |
 |---|---|---|---|
-| 1 | [Recent ideas rarely take a short position](#1-recent-ideas-rarely-take-a-short-position) | research: steps 2, 3, components | to investigate (operator, 2026-11-19) |
+| 1 | [Recent ideas rarely take a short position](#1-recent-ideas-rarely-take-a-short-position) | research: steps 2, 3, components | investigated: one-sided ideas, mostly step 7's; a rule to consider |
 | 2 | [Step 3: the noise from writing a test freely](#2-step-3-the-noise-from-writing-a-test-freely) | research: step 3 | parked |
 | 3 | [Duplicate ideas: a rule on the plan](#3-duplicate-ideas-a-rule-on-the-plan) | research: select_next | parked |
 | 4 | [Ideas tested on data step 7 did not see](#4-ideas-tested-on-data-step-7-did-not-see) | research: orchestration | unseen dates done; unseen coins and a limit per data set parked |
@@ -34,10 +34,20 @@ backtest (a forecast below 0 on at least one bar; a short position follows it in
 | night_013_run | 26 | 14 |
 | volume_run | 18 | 13 |
 | night_rsi_run (earlier) | 12 | 2 |
-To find out where it comes from: the briefs and step 2 (ideas written as long-only bets), step 3 (configs built
-one-sided: a component that is never negative, a clip at 0, a rule that only opens longs), or the components (many built
-"never negative, no direction"). Also seen: `forecast_distribution.csv` puts a forecast of exactly 0 in the bin "-5_0"
-(bins closed on the right), so its "negative" bins count the flat bars.
+**Where it comes from** (slow_1h_run, all 18 backtests, every coin and window, 2026-11-19): 17 of 18 configs trade
+one side only (13 long only, 4 short only, 1 both). Step 3 is faithful: each config trades the side its idea claims.
+- **Brief 016's 8 ideas** are a grid (rise or fall, grind or jump, price or volume): 4 bet on a rise, 4 on a fall.
+- **Step 7's 10 ideas** (g1, g2): 9 claim a rise only ("the more it has fallen, the more it rises over the next 2
+  hours"; "each coin rises from 21:00 to 23:00 UTC"), 1 both ways (016-04 g1, the only two-sided config).
+- **How a one-sided claim becomes a one-sided config:** a signed component with `clip` `min` 0 (6 configs), or a
+  never-negative component (a share, a volatility, a volume ratio) after `standardise`, which scales without centring
+  (7 configs). The other 4 are negated, so short only.
+- **Not known:** why step 7 proposes rises: plausibly because the coins rose over the folds (2018 to 2025), so the
+  effects it finds in the records are rises. Its ideas were confirmed 6 times out of 9, none profitable.
+- **A change to consider:** a rule in the shared definition of an idea (`common/`): an idea states the side it bets on,
+  and when its mechanism is symmetric it claims both sides (one two-sided idea), so the short side gets tested.
+Also seen: `forecast_distribution.csv` puts a forecast of exactly 0 in the bin "-5_0" (bins closed on the right), so
+its "negative" bins count the flat bars.
 
 ## 2. Step 3: the noise from writing a test freely
 - **Details only a plan can settle:** how its non-overlapping samples are drawn, which test it uses, and what each case
