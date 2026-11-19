@@ -155,3 +155,4 @@ components, 1 untestable), turn 8 (017-02) cut mid-turn, resumes. Slow 25.55 USD
   profitable. Example of why: 017-05.g1's book trades 3.9 times a day and loses 0.11 % a day after costs (Sharpe -2.20).
   Run so far: 16 ideas tested, 6 confirmed, 0 profitable. Stretch 5 launched (--budget 19.99).
 - 13:03: check-in, no restart (up 3h10). Stretch 5 on turn 21 (017-02.g2, hourly reversal in volatile periods), backtesting. 17.1 USD.
+- 13:50: check-in, no restart (up 3h57). 017-02.g2 (hourly reversal in volatile periods): confirmed t +10.25, not profitable; its backtest took 47 min. Turn 22 (017-03.g2, daily move reversal) backtesting. 17.9 USD. The design session asked (13:20, 13:34) to merge master (PR #570 and the fix of the 017-02 resume defect) between two stretches: verified on origin/master; to merge when stretch 5 ends.

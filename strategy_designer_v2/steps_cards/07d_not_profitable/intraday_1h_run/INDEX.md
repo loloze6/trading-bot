@@ -2,6 +2,7 @@
 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h: 2 ideas (2 explorations)
 017-01_presettle-drop-after-uptrend_1h: 2 ideas (2 explorations)
 017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall_1h: 2 ideas (2 explorations)
+017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h: 2 ideas (2 explorations)
 017-02_presettle-rise-after-downtrend_1h: 2 ideas (2 explorations)
 017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal_1h: 2 ideas (2 explorations)
 017-03_postsettle-recovery-after-uptrend_1h: 2 ideas (3 explorations)

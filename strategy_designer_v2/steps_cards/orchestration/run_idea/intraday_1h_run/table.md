@@ -18,20 +18,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls | 017-04_postsettle-decline-after-downtrend | plan | confirmed (+4.06) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls.d1_us-open-rebound-after-double-fall, 017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls.d2_us-session-rebound-after-falls, 017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls.d3_post-open-hour-rebound-after-falls; 7.g: 017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls.g1_us-afternoon-trend-continuation, 017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls.g2_evening-drift-in-volatile-coins, 017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls.g3_evening-fade-of-3-day-moves | 0.87 | 11.9 |
 | 017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound | 017-05_settlement-move-reverses-after | plan | confirmed (+13.80) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound.d1_volatile-dip-day-long-rebound, 017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound.d2_dip-rebound-scales-with-volatility; 7.g: 017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound.g1_volatile-coin-daily-dip-rebound, 017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound.g2_rebound-grows-with-volatility, 017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound.g3_volatile-coin-spike-fade | 1.43 | 20.8 |
 | 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility | 017-01_presettle-drop-after-uptrend | plan | confirmed (+12.28) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-fades-over-day, 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d2_daily-vol-scaled-move-reversal; 7.g: 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.g1_high-vol-daily-move-reversal, 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.g2_turbulent-sell-off-rebound | 0.75 | 21.9 |
+| 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods | 017-02_presettle-rise-after-downtrend | plan | confirmed (+10.25) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.d: 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d1_day-long-fade-of-sharp-hours, 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_day-long-rebound-after-falls; 7.g: 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.g1_four-hour-move-daily-reversal, 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.g2_volatile-period-drop-rebound, 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.g3_daily-sell-off-next-day-rebound | 0.87 | 48.9 |
 
 ## Consumption
-14 ideas, 15.67 USD, 210.1 minutes in all.
+15 ideas, 16.54 USD, 259.0 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.87 | 10.4 |
-| step4_backtest | 0.00 | 139.2 |
-| step5_verdict | 1.73 | 7.9 |
-| step6_check | 0.00 | 4.8 |
-| chart_files | 0.00 | 1.8 |
+| step3_plan | 1.94 | 10.9 |
+| step4_backtest | 0.00 | 181.9 |
+| step5_verdict | 1.85 | 8.5 |
+| step6_check | 0.00 | 6.3 |
+| chart_files | 0.00 | 2.1 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.73 | 2.7 |
 | step7_7.a | 0.00 | 0.0 |
-| step7_7.d | 4.77 | 18.3 |
-| step7_7.g | 4.83 | 18.2 |
+| step7_7.d | 5.07 | 19.8 |
+| step7_7.g | 5.20 | 20.0 |
 | step7_7.b | 1.74 | 6.8 |
