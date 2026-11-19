@@ -34,7 +34,8 @@ All three are in the EU, have a fixed IPv4 for locking the Kraken key, and run t
 | Backup | 2 GB of backup space | **daily automatic backup** | snapshots |
 | Where | Germany | France (Gravelines, Strasbourg) or other EU | Germany |
 | User reviews | **too few** (3 reviews, 1/10) | many, mixed: stable for long-term users; support split | many, mixed: good uptime; slow ticket support; maintenance up to an hour |
-| Main risk | the deal may be gone; a French resident may not be able to order; Docker only in its "KVM" mode; panel probably in German | stock comes and goes (only Singapore shown on 2026-11-19) | the price after the September rise is not confirmed |
+| The host | Berlin, since 2003–2005; over 200,000 customer contracts by its own account; own Frankfurt data centre (2007); reportedly part of the your.online group since 2024 (unverified) | French group, very large | German group, large |
+| Main risk | the deal may be gone; a French resident may not be able to order; Docker only in its "KVM" mode; website and support in German (weekdays 8:00–20:00; email support reported slow); cancellation complaints (Trustpilot, April 2026); renews by itself, so set a reminder before month 12 | stock comes and goes (only Singapore shown on 2026-11-19) | the price after the September rise is not confirmed |
 
 **Others, for reference** (details in section 3, "Every option found"):
 - **Big clouds, paid** (AWS Lightsail 2 GB about €12.40; Vultr, DigitalOcean, Linode about €10–12): 2–3 times the price.
@@ -45,6 +46,20 @@ All three are in the EU, have a fixed IPv4 for locking the Kraken key, and run t
   - Oracle: reclaims idle machines, and accounts have been closed without warning.
 - **Hetzner:** €7.19 and not orderable.
 - **Home laptop:** often switched off.
+
+**On 1blu being small and local** (operator's concern, 2026-11-19):
+- **Size and Germany: not a real risk.** 1blu is a long-running mid-sized host, and Germany is in the EU.
+- **German-only service and cancellation handling: real.** Take 1blu if browser translation is acceptable; switch to
+  KVM first; set a reminder before the 12 months end.
+- **Otherwise OVH:** about €4.40 a month more in year 1, €1.40 after.
+
+Sources:
+- linkedin.com/company/1blu-ag
+- webhosting.today/market-insights/company/1blu/
+- hostlist.io/host/1blu-berlin-germany
+- erfahrungen.com/mit/1blu/
+- trustpilot.com/review/1blu.de
+- l-iz.de/vpn/erfahrungen/1blu/
 
 **Before real orders, whichever host:**
 - Set `KillSignal=SIGINT` in the service. Without it the bot dies on a server stop without saving its local book (section 5, step 10).
