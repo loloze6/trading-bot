@@ -102,3 +102,29 @@ No merge into master; no change to a step during the run; nothing is tuned to th
 - 08:30: retest done (reading above). Slow brief 17 ideas, 7 confirmed, 0 profitable (three of the confirmed are time-of-day ideas: t +7.68, +5.27, +4.42). About 35 USD spent.
 - 08:3x: operator's go: the intraday brief after the current slow stretch (the slow brief pauses).
 - 09:1x: runs stopped in this session (operator: the design session and a new run session split). intraday_1h_run stopped mid turn 8 (017-02; resumes from its files); slow_1h_run paused at 25.55 USD. The run session continues both from master.
+
+## Day continuation by the run session (brief written 2026-11-19 09:54 UTC, before the run)
+**Purpose:** finish the two hourly briefs within the operator's budget: `intraday_1h_run` (brief 017, funding-settlement
+clock) up to 90 USD in all, then `slow_1h_run` (brief 016, grind versus jump) up to 90 USD in all. One loop at a time
+(both call the components step, which writes the shared components file). Each stretch is a tracked task bounded by the
+run's spend + 3 USD; the next stretch is launched when one ends.
+
+**State at the start (measured):** intraday 2.73 USD, 6 ideas (1 tested: inconclusive t +0.85, not profitable; 4 wait for
+components, 1 untestable), turn 8 (017-02) cut mid-turn, resumes. Slow 25.55 USD, 19 ideas: 18 planned, 9 confirmed
+(t +2.65 to +7.68), 0 profitable: all 18 books fail all 6 measures of step 6, Sharpe included.
+
+**Expected outcomes, fixed now:**
+- **Intraday:**
+  - **I-A.** At least one idea confirmed AND profitable (it gets the unseen test on 2016-17).
+  - **I-B. (expected)** Some clock effects confirmed, none profitable: a few hours a day of edge does not pay 15 to
+    25 bps a round trip, as with the slow brief's time-of-day ideas.
+  - **I-C.** Few or none confirmed: the settlement clock leaves no trace in spot hourly returns.
+- **Slow:** **S-A** one or more profitable; **S-B (expected)** more confirmed ideas, still 0 profitable, its lines
+  drifting further to time-of-day signals; **S-C** the lines run dry (no candidate left).
+- **Time, not money, is the likely limit:** about 1 USD and 15 to 60 minutes a turn, so 87 USD is far more turns than
+  a day holds. The reading says how far each run got.
+- **Pre-registered last night, checked here:** the slow brief should do better than the intraday one.
+
+## Journal of the day (run session)
+- 09:53 UTC: container fresh (up 0 min); working tree clean, so no build was cut. Venv created. Intraday resumes first.
+- 09:54: intraday stretch 1 launched (tracked task, --budget 5.73). Check-ins every 45 minutes.
