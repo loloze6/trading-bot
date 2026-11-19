@@ -81,7 +81,6 @@ class _RecordingFetcher:
     def __init__(self, start_date, end_date, symbols, candle_interval_seconds,
                  exchange="binance", localStorage=True, data_dir=None):
         type(self).captured_candle_interval_seconds = candle_interval_seconds
-        self.tolerate_fill_failure = False
 
     def get_data(self):
         return {}

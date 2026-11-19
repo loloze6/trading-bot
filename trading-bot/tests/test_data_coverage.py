@@ -85,8 +85,6 @@ def test_the_backtest_loader_lets_the_refusal_through(monkeypatch):
     import data.data_manager as dm
 
     class Refusing:
-        tolerate_fill_failure = False
-
         def __init__(self, *a, **k):
             pass
 
