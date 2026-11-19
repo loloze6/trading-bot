@@ -1,0 +1,1 @@
+001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1h, folds A, B, C, D]

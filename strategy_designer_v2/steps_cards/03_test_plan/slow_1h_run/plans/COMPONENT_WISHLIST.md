@@ -16,3 +16,9 @@ One block per idea that needs components the catalogue does not have.
 
 ## 016-05_up-even-volume-continuation_1h
 - Component: VolumeEvenness: the median of the last `period` (72) bar volumes divided by their mean (or 1 minus their Gini coefficient), from the volume column; it runs from 0 to 1 and rises toward 1 as the hourly volume is spread more evenly. | measures: situation
+
+## 016-07_up-volume-burst-reversal_1h
+- Component: VolumeConcentrationComponent: the sum of the `top_k` largest hourly volumes among the last `period` bars (for example 72 and 3), divided by the total volume of those bars, read from the volume column; it grows from `top_k`/`period` (even volume) towards 1 as the volume bunches into a few hours | measures: situation
+
+## 016-08_down-volume-burst-reversal_1h
+- Component: VolumeTopShareComponent: over the last `period` bars (72), the sum of the `top_k` largest hourly volumes (for example 3) divided by the sum of all `period` volumes, read from the volume column; ranges from top_k/period (volume spread evenly) up to 1, and grows as the period's volume concentrates in fewer hours | measures: comparison

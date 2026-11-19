@@ -1,0 +1,1 @@
+001-01_rsi-high-extreme-reversal.a1_rsi-high-reversal-wider-sample.c1_high-rsi-trend-continuation_1h: inconclusive (fit: adapted) [main: 0.00279828; OLS slope t 4.73955; grid cases with forecast above 0 821, trending grid cases with forecast above 0 574, unknown grid cases with forecast above 0 247, grid cases 1674]

@@ -56,3 +56,4 @@ No merge into master; no change to a step during the run; nothing is tuned to th
   while the session was idle, with the night started detached (not a task the session tracks), while the day's tracked
   background tasks (an hour of timing, the proofs) ran through idle periods. Relaunched 01:16 as a tracked task (capped
   at 2 hours a launch; relaunched each time, every run resuming from its files).
+- 02:09: running since 01:16 without a restart. Retest 1 of 12 done (inconclusive, not profitable); slow brief 9 ideas (7 of its 8 own ideas wait for components; 1 step 7 idea confirmed, not profitable); about 5 USD spent.

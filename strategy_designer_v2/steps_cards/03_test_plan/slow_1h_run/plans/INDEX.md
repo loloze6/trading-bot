@@ -3,4 +3,8 @@
 016-03_up-jump-price-reversal_1h: missing-components: The 72-bar rise is available (`PriceEvolutionComponent`, period 72), but no component computes the share of that rise carried by its [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 016-04_down-jump-price-reversal_1h: missing-components: The idea needs the share of a 72-hour fall that came from its few largest hourly losses. That uses only [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 016-05_up-even-volume-continuation_1h: missing-components: The rise maps to a regime rule (`PriceEvolutionComponent` at period 72, raw value at least 0). The forecast inside that [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+016-06_down-even-volume-continuation.g1_fresh-drop-rebound_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+016-06_down-even-volume-continuation.g2_smooth-climb-continuation_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 016-06_down-even-volume-continuation_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+016-07_up-volume-burst-reversal_1h: missing-components: The "has risen over 72 bars" condition is available: it is `PriceEvolutionComponent` with period 72, used in a regime rule. [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+016-08_down-volume-burst-reversal_1h: missing-components: The idea needs the share of the last 72 hours' volume that sits in its few busiest hours, a top-k [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
