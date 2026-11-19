@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean case gain (forecast/10 x excess 72-bar forward return), non-overlapping grid, forecast < 0",
+    "value": 0.0015138671118491544,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 0.9481791467454936
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and supporting difference < 0); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "excess 72-bar return, forecast below median minus above median (Welch t)",
+    "value": -4.609802174130261e-05,
+    "passed": true,
+    "welch_t": -0.014614176757734397
+  },
+  "counts": {
+    "grid bars with a negative forecast": 2762,
+    "grid bars below median forecast": 1381,
+    "grid bars above median forecast": 1381
+  },
+  "decided_by": "The main t is between -2 and 2 (inconclusive rule).",
+  "reading": "Grid bars are at positions 0, 72, 144, ... of each window and need an in-window forward return; each coin's mean 72-bar return is taken over all its grid bars in all windows; bars equal to the median forecast are left out of both groups of the supporting check; the plan's 'fewer than 300 grid bars' minimum is treated as 'not observable'."
+}

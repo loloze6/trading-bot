@@ -97,7 +97,9 @@ def test_the_indicator_fill_is_off_by_default_even_with_the_gap_rule_on(monkeypa
 
 def test_indicator_fill_true_wires_the_policy_threshold(monkeypatch, tmp_path):
     kw = _strategy_kwargs_of_run_backtest(monkeypatch, tmp_path, indicator_fill=True)
-    assert kw["ignore_max_bars"] == 3
+    from core.launcher import default_gap_policy
+    # 2026-11-18: one day of bars of the run's bar size (the bot config's default interval, 1h: 24); it was 3
+    assert kw["ignore_max_bars"] == default_gap_policy(3600)["ignore_max_bars"] == 24
 
 
 def test_indicator_fill_without_the_gap_rule_is_refused(monkeypatch, tmp_path):

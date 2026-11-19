@@ -1,0 +1,8 @@
+016-01_up-grind-price-continuation: After a 3-day rise, the more evenly it spread across many small up hours, the larger the further rise over the next 3 days. [bar: 1h]
+016-02_down-grind-price-continuation: After a 3-day fall, the more evenly it spread across many small down hours, the larger the further fall over the next 3 days. [bar: 1h]
+016-03_up-jump-price-reversal: After a 3-day rise, the more it came from a few big up hours, the larger the pullback over the next 3 days. [bar: 1h]
+016-04_down-jump-price-reversal: After a 3-day fall, the more it came from a few big down hours, the larger the rebound over the next 3 days. [bar: 1h]
+016-05_up-even-volume-continuation: After a 3-day rise, the more evenly hourly volume was spread across it, the larger the further rise over the next 3 days. [bar: 1h]
+016-06_down-even-volume-continuation: After a 3-day fall, the more evenly hourly volume was spread across it, the larger the further fall over the next 3 days. [bar: 1h]
+016-07_up-volume-burst-reversal: After a 3-day rise, the more its volume was packed into a few hours, the larger the pullback over the next 3 days. [bar: 1h]
+016-08_down-volume-burst-reversal: After a 3-day fall, the more its volume was packed into a few hours, the larger the rebound over the next 3 days. [bar: 1h]

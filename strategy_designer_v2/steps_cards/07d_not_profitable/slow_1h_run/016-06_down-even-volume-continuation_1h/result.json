@@ -1,0 +1,43 @@
+{
+  "line": "7.d",
+  "backtest": "016-06_down-even-volume-continuation_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.34938400000000003,
+  "findings": {
+    "F1": "The book loses because it is short in a rising market and pays more in fees than it gains: its allocation averaged -0.073 while the coins rose 0.00119 per day. Its pre-fee gain was -9.7e-7 per bar, against fees of 9.8e-6 per bar. The market's own rise cost it -4.4e-6 per bar, which its timing (+3.5e-6 per bar) did not make up, so the book earned -0.000244 per day.",
+    "F2": "The fees come from the shallowest falls, where the 3-day return hovers near zero and the regime keeps switching on and off. On active bars in the shallowest quintile of the volatility-scaled fall, turnover was 0.033 and fees were 3.6e-5 per bar. In the deepest quintile they were 0.0014 and 1.0e-6.",
+    "F3": "Among fallen coins, only the shallow falls continue; deep falls do not. On the non-overlapping 72-bar grid, the shallowest raw-fall quintile had a 72-bar excess return of -0.0115 (t -3.81, n 534) and the deepest +0.0060 (t 1.30, n 534). By volatility-scaled fall, the shallowest quintile was -0.0091 (t -2.51) and the deepest +0.0002 (t 0.04).",
+    "F4": "Even volume predicts continuation only inside shallow falls. Shallow falls with even volume had an excess of -0.0107 (t -3.65, n 690), while deep falls with even volume had +0.0099 (t 1.79, n 378). This opposite sign in deep falls cancels the pooled evenness slope (t 0.94 over 2762 cases). Among shallow falls, the most even volume tercile had -0.0081 (t -1.99) against -0.0012 (t -0.38) for the most bursty.",
+    "F5": "The fallen-state continuation is not stable across years, so the leave-one-window-out Sharpe fails (-1.52). The fallen grid's excess return was -0.0255 in 2018 (t -5.35) but positive in 2019, 2020, 2021 and 2025, for example +0.0085 in 2021 (t 1.35)."
+  },
+  "ideas": [
+    {
+      "idea": "When a coin has fallen over the past 3 days, the more evenly its hourly volume was spread across those hours, the more the coin keeps falling over the next 3 days, only while that 3-day fall is small next to the coin's usual 3-day swing in its hourly volatility.",
+      "consequence": "A trader should press the short only on gentle, evenly traded declines and stand aside from steep 3-day falls, where even volume is followed by a rebound rather than continuation.",
+      "name": "even volume gentle falls",
+      "from": "F3, F4, F1",
+      "refs": [
+        "F3",
+        "F4",
+        "F1"
+      ]
+    },
+    {
+      "idea": "When a coin has fallen over the past 3 days, the smaller that fall is next to the coin's 3-day volatility, the more the coin keeps falling over the next 3 days.",
+      "consequence": "Gentle declines are the ones to short, while large volatility-scaled falls carry no continuation and should be refused.",
+      "name": "gentle falls keep falling",
+      "from": "F3, F2",
+      "refs": [
+        "F3",
+        "F2"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "016-06_down-even-volume-continuation.d1_even-volume-gentle-falls",
+    "016-06_down-even-volume-continuation.d2_gentle-falls-keep-falling"
+  ],
+  "no_ideas": null
+}

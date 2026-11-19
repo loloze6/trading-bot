@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of excess 72-bar return on forecast, trending grid bars",
+    "value": 0.0004691278438349505,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.9015188114930626
+    },
+    "threshold": "confirm if t >= 2 with the supporting check passing; reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess return, top third of positive forecasts minus forecast 0",
+    "value": 0.00978564270071556,
+    "passed": true
+  },
+  "counts": {
+    "pooled trending-regime grid cases": 2837,
+    "grid cases with a positive forecast": 1190,
+    "grid cases with forecast 0": 1647
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Trending-regime grid bars are those whose recorded regime is 'trending' at grid positions 0, 72, 144, ... of each window with a full 72-bar forward return inside the window, the coin's mean 72-bar return is the mean over all its grid bars of all windows, the top third of positive forecasts is the ceil(n/3) largest positive grid forecasts pooled over coins, and the situation check uses the 720-bar return from prices (the recorded regime where the window lacks 720 bars of history) with the recorded relvol raw value."
+}

@@ -1,0 +1,115 @@
+{
+  "run_id": "20261119T050521Z_0ff7e5a4",
+  "created_utc": "2026-11-19T05:05:21.958678+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "rise",
+          "class": "strategies.strategy_components.PriceEvolutionComponent",
+          "params": {
+            "period": 72
+          }
+        }
+      ],
+      "vetoes": [],
+      "rules": [
+        {
+          "regime": "mean_reversion",
+          "any_of": [
+            [
+              {
+                "id": "rise",
+                "op": "gt",
+                "value": 0.0
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "mean_reversion": {
+          "components": [
+            {
+              "id": "vol_share",
+              "class": "strategies.strategy_components.TopVolumesShareComponent",
+              "params": {
+                "period": 72,
+                "top_k": 3
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 72,
+                    "min_periods": 20
+                  }
+                },
+                {
+                  "op": "negate"
+                }
+              ]
+            }
+          ]
+        },
+        "trending": null,
+        "chop": null,
+        "unknown": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 1440,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 8760,
+        "max_allocation": 2
+      }
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 24,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 7.5,
+        "BTCUSD": 2.5,
+        "ETHUSD": 4,
+        "AVAXUSD": 7.5,
+        "SOLUSD": 7.5
+      }
+    }
+  },
+  "config_sha256": "0ff7e5a4b59f25e8435377b20602df4f16f0c4e6b0d4e793f02e64345ef52f52",
+  "data": {
+    "symbols": [
+      "BTCUSD"
+    ],
+    "timeframe": "3600s",
+    "start": "2023-09-02 00:00:00",
+    "end": "2024-04-30 23:00:00",
+    "bar_count": 5796,
+    "data_sha256": "30b37cb86a8c7f1464ae86a3fb2e6f0e29a102efa3d91f75ef3899a6c0a139c9"
+  },
+  "git_sha": "06e13143f8306d51329b491f469d1ff619c9a74e-dirty",
+  "engine": {
+    "lookback": 73,
+    "warmup": 73
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

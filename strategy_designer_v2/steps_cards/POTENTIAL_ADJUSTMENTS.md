@@ -109,3 +109,17 @@ differ (the 0.2 rule on a knife edge), at most 8.67 per 1,000. Futures candles s
 they cannot replace spot for the folds (B and C are 2018 to 2021). Proposed when a topic opens: the data source as a
 backtest setting (spot by default) and a pre-live check of an idea going live on futures candles from 2022-03, with
 funding once modelled (funding is the larger spot vs futures difference).
+
+## Parked: a components build cut by a container restart (night 1h, 2026-11-19)
+The components step undoes a build that fails its checks, but a build cut by a restart leaves its class, catalogue row
+and spec in the shared files (found 00:26, undone by hand). Proposed: at its start, the step restores
+`strategy_components.py`, the catalogue and `tests/built_components/` to their committed state when a class there has
+no index line. Also: two loops calling the step at the same time would build into the same files (tonight the briefs
+run one after the other).
+
+## Parked: four near-duplicate components built in the night (2026-11-19)
+For brief 016 the components step built `RiseBeyondLargestMovesComponent`, `LossShareBeyondLargestComponent`,
+`TopGainsShareOfRiseComponent` and `TopLossesShareOfFallComponent`: one measure (how much of a move its `k` largest bars
+make) on rises and on falls, as a share or as what is left, from simple or log returns. By the card's rule 1 (one
+measure, one component; another base or side is a setting) they should be one component with settings (side, form).
+Not merged during the night (plans in flight use them); to review and merge on the operator's go, with the proof.

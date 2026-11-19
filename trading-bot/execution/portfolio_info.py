@@ -397,17 +397,37 @@ class MockPortfolioInfo(CommonPortfolioDef):
         logger.debug(f"🧪 Mock Portfolio initialized │ Balance: {self.local_balance} │ Commission: {commission_rate*100:.2f}%")
         super().__init__(commission_rate)
     
+def _as_row(x: dict, dtypes: dict) -> dict:
+    """The values `pd.Series(x)` holds, its single dtype applied, without building a Series for every row: the dtype
+    is found once per kind of row (its keys and the types of its values, in order) and kept in `dtypes`."""
+    sig = tuple((k, type(v)) for k, v in x.items())
+    dtype = dtypes.get(sig)
+    if dtype is None:
+        dtype = dtypes[sig] = pd.Series(x).dtype
+    if dtype == object:
+        return x
+    if dtype.kind in "fiub":
+        cast = float if dtype.kind == "f" else int if dtype.kind in "iu" else bool
+        return {k: float("nan") if v is None else cast(v) for k, v in x.items()}
+    return dict(pd.Series(x, dtype=dtype).items())
+
+
 def flatten_dict_columns(df):
-    """Recursively expand dict-valued columns into dot-separated scalar columns."""
+    """Recursively expand dict-valued columns into dot-separated scalar columns.
+
+    The same frame as expanding each row with `pd.Series(x)` (each row one dtype, then the column's), built with one
+    construction per column (2026-11-18, operator's go: the row-by-row expansion was 26% of a 1h backtest window,
+    `strategy_designer_v2/steps_cards/orchestration/duration/`)."""
     changed = True
     while changed:
         changed = False
         for col in df.columns:
-            if df[col].apply(lambda x: isinstance(x, dict) and len(x) > 0).any():
-                df = df.drop(columns=[col]).join(
-                    df[col].apply(lambda x: pd.Series(x) if isinstance(x, dict) else pd.Series(dtype=object))
-                        .add_prefix(f"{col}.")
-                )
+            vals = df[col].tolist()
+            if any(isinstance(x, dict) and len(x) > 0 for x in vals):
+                dtypes: dict = {}
+                expanded = pd.DataFrame([_as_row(x, dtypes) if isinstance(x, dict) else {} for x in vals],
+                                        index=df.index)
+                df = df.drop(columns=[col]).join(expanded.add_prefix(f"{col}."))
                 changed = True
     return df
 

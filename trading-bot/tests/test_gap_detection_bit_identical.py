@@ -363,9 +363,9 @@ def gap_on(tmp_path_factory):
 
 @pytest.fixture(scope="module")
 def gap_explicit_default_policy(tmp_path_factory):
-    from core.launcher import DEFAULT_GAP_POLICY
+    from core.launcher import default_gap_policy
     return _run(tmp_path_factory.mktemp("gap_default_policy"), gap_detection=True,
-                gap_policy=dict(DEFAULT_GAP_POLICY))
+                gap_policy=default_gap_policy(3600))   # the run's bar: the bot config's default interval, 1h
 
 
 @pytest.mark.slow
@@ -417,16 +417,19 @@ def test_gap_policy_without_gap_detection_raises_through_run_backtest(tmp_path_f
 
 
 def test_the_backtest_default_gap_policy():
-    """Option B (operator 2026-10-01): ignore <= 3 missing bars; 'large' left to
+    """Option B (operator 2026-10-01; 2026-11-18: up to one day of bars): ignore small holes; 'large' left to
     the strategy's own required_bars; large gaps flatten. run_backtest() and
     Launcher.simulate() both turn the engine tiers on; neither turns the
     indicator fill on (simulate's strategy is built without ignore_max_bars)."""
     import inspect
     from core import launcher
-    assert launcher.DEFAULT_GAP_POLICY == {"ignore_max_bars": 3, "on_large_gap": "flatten"}
+    # 2026-11-18: holes of up to one day ignored, in bars of the bar size
+    assert launcher.default_gap_policy(86400) == {"ignore_max_bars": 1, "on_large_gap": "flatten"}
+    assert launcher.default_gap_policy(14400)["ignore_max_bars"] == 6
+    assert launcher.default_gap_policy(3600)["ignore_max_bars"] == 24
     params = inspect.signature(launcher.run_backtest).parameters
     assert params["gap_detection"].default is True
     assert params["indicator_fill"].default is False
     sim = inspect.getsource(launcher.Launcher.simulate)
-    assert "gap_detection=True" in sim and "gap_policy=dict(DEFAULT_GAP_POLICY)" in sim
+    assert "gap_detection=True" in sim and "gap_policy=default_gap_policy(params.interval)" in sim
     assert "ignore_max_bars" not in sim

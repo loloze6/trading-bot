@@ -25,17 +25,25 @@ HERE = Path(__file__).resolve().parent
 REF = HERE / "reference"   # the two references: the strategy config guide and the component catalogue
 DEFAULT_DATA = {"instruments": "BTC, ETH, LTC, XMR, XRP, ZEC", "bar": "1d", "period": "folds A, B, C, D"}   # the cached coins with data in all four folds
 FOLDS = HERE.parents[3] / "trading-bot" / "config" / "folds.yaml"
-BARS_PER_DAY = {"1d": 1, "4h": 6, "1h": 24}
+UNIT_SECONDS = {"m": 60, "h": 3600, "d": 86400, "w": 604800}
+
+
+def bars_per_day(bar):
+    """Bars in a day for a bar size ('1d' 1, '4h' 6, '1h' 24, '15m' 96); None when the bar does not divide a day."""
+    if len(bar) < 2 or bar[-1] not in UNIT_SECONDS or not bar[:-1].isdigit() or not int(bar[:-1]):
+        return None
+    seconds = int(bar[:-1]) * UNIT_SECONDS[bar[-1]]
+    return 86400 // seconds if 86400 % seconds == 0 else None
 ATTEMPTS, MAX_FIELD_WORDS = 3, 300   # 300 words: a guard against a runaway answer, not a length rule
 def windows(period, bar):
     """'N separate windows of about M bars each' for a fold id; no date is returned or printed."""
     m = re.fullmatch(r"folds? ([A-Z](?:, [A-Z])*)", period.strip())   # "fold A", or "folds A, B, C, D"
-    if not m or bar not in BARS_PER_DAY:
+    if not m or not bars_per_day(bar):
         return f"period {period}"
     folds = yaml.safe_load(FOLDS.read_text())["folds"]
     fold = [w for f in m.group(1).split(", ") for w in folds[f]]
     days = [(datetime.date.fromisoformat(str(w["end"])) - datetime.date.fromisoformat(str(w["start"]))).days + 1 for w in fold]
-    return (f"{len(days)} separate windows of about {round(sum(days) / len(days)) * BARS_PER_DAY[bar]} bars each, per coin; "
+    return (f"{len(days)} separate windows of about {round(sum(days) / len(days)) * bars_per_day(bar)} bars each, per coin; "
             "the bars a config needs for its warm-up are loaded before each window, so every bar of the window is tested")
 
 
@@ -145,14 +153,13 @@ def parse(text):
 # same in real time on any bar size), capped at 2: a more volatile coin gets a smaller position, each coin aiming
 # at a 2 % daily move at a forecast of 10.
 DAILY_VOL_TARGET, SIZING_DAYS, MAX_ALLOCATION = 0.02, 60, 2
-PERIODS_PER_YEAR = {"1d": 365, "4h": 2190, "1h": 8760}
 
 
 def add_sizing(config, bar):
     config.setdefault("strategies", {})["sizing"] = {
-        "kind": "vol_target", "window": SIZING_DAYS * PERIODS_PER_YEAR[bar] // 365,
+        "kind": "vol_target", "window": SIZING_DAYS * bars_per_day(bar),
         "target_annual_vol": round(DAILY_VOL_TARGET * 365 ** 0.5, 6),
-        "periods_per_year": PERIODS_PER_YEAR[bar], "max_allocation": MAX_ALLOCATION}
+        "periods_per_year": 365 * bars_per_day(bar), "max_allocation": MAX_ALLOCATION}
     return config
 
 

@@ -5,6 +5,7 @@ and portfolio rebalancing based on forecast allocations.
 """
 
 import time
+import copy
 import datetime
 import logging
 import math
@@ -72,6 +73,12 @@ class TradingBot:
         # 2026-07-07: see BacktestEngine.warmup_cutoff_timestamp docstring. Default
         # None preserves exact prior behavior (every candle always trades).
         self.warmup_cutoff_timestamp = warmup_cutoff_timestamp
+        # 2026-11-18 (operator's go; orchestration/duration/8_finer_bars_measure.md, point 2): the warm-up is checked
+        # once, on a copy of THIS strategy, at the first bar after the cutoff (is_ready() classifies a bar, so the
+        # real strategy is not asked). It replaces launcher.run_backtest's throwaway probe, which replayed the whole
+        # warm-up a second time. A strategy not ready is recorded here; BacktestEngine stops the run on it.
+        self.warmup_not_ready: Optional[str] = None
+        self._warmup_checked: set = set()
         self.risk_manager = risk_manager
         self.performance_tracker = performance_tracker
         
@@ -349,6 +356,16 @@ class TradingBot:
                 return
             close = data['close'].iloc[-1]
             data_time = data['timestamp'].iloc[-1]
+
+            if (self.warmup_cutoff_timestamp is not None and data_time >= self.warmup_cutoff_timestamp
+                    and symbol not in self._warmup_checked):
+                self._warmup_checked.add(symbol)
+                if not copy.deepcopy(self.strategy).is_ready():
+                    self.warmup_not_ready = (
+                        f"warmup_prefetch: strategy not ready after {self.strategy.data_buffer.size} warm-up bars "
+                        f"-- required_bars={self.strategy.required_bars}. 2x-required_bars was insufficient for this "
+                        f"config; investigate before proceeding.")
+                    return
 
             # CUL-261 / E-039: off-by-default gap detection, checked BEFORE the
             # warmup-cutoff return below so a gap during warmup is recorded too --

@@ -1,0 +1,51 @@
+{
+  "line": "7.g",
+  "backtest": "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.38915130000000003,
+  "findings": {
+    "F1": "Past day's return predicts the next day in reverse, measured on the 24-hour grid with each return scaled by its own 20-day volatility. The weakest quintile is followed by a next-day excess return of +0.00472 (t 4.53, n 2874), and the strongest quintile by -0.00242 (t -2.57, n 2873). The pooled slope is -0.00237 (t -5.65, n 14366) and is negative in 6 of 8 years.",
+    "F2": "Falls within a single hour are partly bought back in the next hour, and the bigger the fall the bigger the rebound. After hours below -3 volatility units, the next hour averages +0.00125 (t 3.16, n 2930); after hours between -3 and -1.5 units, +0.00067 (t 5.47, n 14021). Among all falling hours the slope is -0.000349 (t -10.78, n 171063). Hourly rises show no matching reversal: -0.00017 (t -1.43) and -0.00014 (t -0.34).",
+    "F3": "The hours starting 21:00 and 22:00 UTC carry most of the coins' drift, at +0.00044 and +0.00046 per hour (t 5.12 and 5.55, about 14,500 bars each). This is positive in 7 of 8 years (t 1.9 to 5.7, only 2022 negative) and in all six coins (t 3.0 to 4.6). The other hours average between -0.00017 and +0.00012 per year.",
+    "F4": "Heavy relative volume predicts the 3-day return about as well outside the rising-month regime as inside it.",
+    "F5": "How near the coin is to its 30-day high says nothing about its 3-day return over all bars (pearson t -0.49, n 4243) or within the trending regime (t 0.06, n 2177). This contradicts the brief's core claim."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's fall over the past 1 day, measured in units of its own 20-day volatility, the higher its return over the next 1 day; the larger its rise, the lower that return.",
+      "consequence": "A coin that has just fallen hard over a day is a reason to be long for the next day, and one that has just surged is a reason to refuse a new long.",
+      "name": "daily volatility-scaled reversal",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "The larger a coin's fall over the past 1 hour, measured in units of its own 20-day hourly volatility, the higher its return over the next 1 hour.",
+      "consequence": "A sharp one-hour drop is a reason to buy for a quick rebound over the following hour rather than to sell into it.",
+      "name": "hourly fall rebound",
+      "from": "F2",
+      "refs": [
+        "F2"
+      ]
+    },
+    {
+      "idea": "The higher a coin's volume over the past 1 day relative to its own 20-day average volume, the higher its return over the next 3 days, whatever the sign of its 30-day return.",
+      "consequence": "Unusually heavy volume is a reason to lean long for the next few days even in a falling month, and unusually thin volume is a reason to refuse longs.",
+      "name": "relative volume predicts gains",
+      "from": "F4",
+      "refs": [
+        "F4"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through.g1_daily-volatility-scaled-reversal",
+    "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through.g2_hourly-fall-rebound",
+    "013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through.g3_relative-volume-predicts-gains"
+  ],
+  "no_ideas": null
+}

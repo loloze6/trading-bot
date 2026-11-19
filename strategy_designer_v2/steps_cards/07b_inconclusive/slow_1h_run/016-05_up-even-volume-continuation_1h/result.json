@@ -1,0 +1,59 @@
+{
+  "line": "7.b",
+  "backtest": "016-05_up-even-volume-continuation_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3061157,
+  "findings": {
+    "F1": "The tested volume-evenness forecast barely separates outcomes: top-minus-bottom third excess 72h return is +0.00265 (Welch t 0.68, 972 vs 972 cases of 2916). The raw median/mean evenness ratio gives +0.0032 (t 0.80, n 2865). Its rank correlation with the 72h excess return is 0.017.",
+    "F2": "The volume-evenness effect is mixed across coins and years rather than concentrated anywhere. By coin it runs from +0.0205 (ZEC, t 1.71) to -0.0047 (ETH, t -0.54), and 3 of 6 coins are negative. By year only 2019 clears t 2 (t 2.26), against 2022 at -0.0127 (t -1.39).",
+    "F3": "The volume-evenness effect does not hold at nearby horizons. The forecast's top-minus-bottom is -0.0018 at 24h (t -0.77) and -0.0059 at 144h (t -1.04).",
+    "F4": "Within the small and mid thirds of 3-day rises, volume evenness turns slightly negative: -0.0028 (t -0.67, n 1910).",
+    "F5": "Over all 3-day up moves, the price path's grind separates 72h outcomes where volume does not. The efficiency ratio (net 72h change over the sum of hourly absolute moves) gives a top-minus-bottom third excess 72h return of +0.0116 (Welch t 2.89, n 2865). Its top third is +0.0081 and its bottom third -0.0036.",
+    "F6": "The share of the 72h hourly absolute move made in the 3 largest hours (lower means more grind) is weaker over all up moves. Low-minus-high concentration is +0.0064 (t 1.64, n 2865).",
+    "F7": "That concentration effect lives in small and mid rises and vanishes in large ones. It is +0.0118 (t 2.76, n 1910) on small and mid rises together, +0.0135 (t 2.26) on small, +0.0106 (t 1.71) on mid and -0.0001 (t -0.01) on large. Within small and mid rises it is positive in 5 of 6 coins (LTC +0.0217, t 2.07; ETH -0.0039).",
+    "F8": "Volume evenness and price-path grind are largely different measures. The tested forecast has a rank correlation of only -0.135 with the top-3-hour concentration. So the test measured the brief's \"grind\" through volume, while the effect shows through the shape of the price path."
+  },
+  "ideas": [
+    {
+      "same-idea-on": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1h; period: folds A, B, C, D",
+      "name": "even-volume continuation, more coins",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ],
+      "idea": "When a coin has risen over the past 3 days, the more evenly its hourly volume was spread across those hours, the more the coin keeps rising over the next 3 days.",
+      "consequence": "Up moves made with modest, even volume reflect a hidden split buy order that is still working, so they continue.",
+      "data": "instruments: BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO; bar: 1h; period: folds A, B, C, D"
+    },
+    {
+      "idea": "When a coin has risen over the past 3 days, the larger the share of its hourly price movement over those 3 days that went into the net rise, the more the coin keeps rising over the next 3 days.",
+      "consequence": "An up move built from many small same-direction hourly steps is a reason to stay long for the next few days, and a choppy one of the same size is a reason not to.",
+      "name": "efficient-path up-move continuation",
+      "from": "F5, F8",
+      "refs": [
+        "F5",
+        "F8"
+      ]
+    },
+    {
+      "idea": "When a coin has risen modestly over the past 3 days, the smaller the share of its 3-day hourly price movement made in its three largest hours, the more the coin keeps rising over the next 3 days.",
+      "consequence": "A modest rise spread over many hours, rather than one made in a few violent hours, is a reason to hold a long for several days.",
+      "name": "low-jump-share modest-rise continuation",
+      "from": "F6, F7, F8",
+      "refs": [
+        "F6",
+        "F7",
+        "F8"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "016-05_up-even-volume-continuation.b1_even-volume-continuation-more-coins",
+    "016-05_up-even-volume-continuation.b2_efficient-path-up-move-continuation",
+    "016-05_up-even-volume-continuation.b3_low-jump-share-modest-rise-continuation"
+  ],
+  "no_ideas": null
+}

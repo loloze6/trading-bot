@@ -89,6 +89,27 @@ def check(data_dir, file_name: str, start, end) -> None:
                              f"local data only; fetch these days first with the data tool, {DATA_TOOL}")
 
 
+_UNIT = {"m": 60, "h": 3600, "d": 86400, "w": 604800}
+
+
+def bar_seconds(bar: str) -> int:
+    """'1h' -> 3600, '4h' -> 14400, '1d' -> 86400 (minutes, hours, days, weeks)."""
+    return int(bar[:-1]) * _UNIT[bar[-1]]
+
+
+def data_bar(data_dir, key: str, trading_seconds: int):
+    """The bar of the data a backtest builds its trading bars from (operator 2026-11-18): the largest bar with a file
+    for this coin (`<key>_<bar>.csv` in the coverage, key as the fetcher names files, e.g. 'kraken_BTCUSD') that divides
+    the trading bar evenly. None when the trading bar has a file of its own (it is read as it is) or no file fits."""
+    bars = sorted(bar_seconds(f[len(key) + 1:-4]) for f in load(data_dir)
+                  if f.startswith(key + "_") and f.endswith(".csv") and f[len(key) + 1:-4][:-1].isdigit()
+                  and f[len(key) + 1:-4][-1] in _UNIT)
+    fits = [s for s in bars if s <= trading_seconds and trading_seconds % s == 0]
+    if not fits or fits[-1] == trading_seconds:
+        return None
+    return fits[-1]
+
+
 def record(data_dir, file_name: str, start, end, source: str) -> None:
     """Add a fetched range to the file's coverage (start None: from the exchange's first data). Written atomically."""
     files = load(data_dir)

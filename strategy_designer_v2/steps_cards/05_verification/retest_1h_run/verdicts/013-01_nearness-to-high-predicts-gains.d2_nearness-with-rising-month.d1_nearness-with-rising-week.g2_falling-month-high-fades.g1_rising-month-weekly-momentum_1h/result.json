@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of excess forward 168-bar return on raw 7-day return, trending grid bars",
+    "value": 0.000526811492698276,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.6453002475952645
+    },
+    "threshold": "confirm if slope t >= 2 (and supporting difference > 0); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess forward return, forecast > 0 minus forecast = 0",
+    "value": 0.019743612173321906,
+    "passed": true
+  },
+  "counts": {
+    "trending grid cases": 1196,
+    "forecast > 0 cases": 776,
+    "forecast = 0 cases": 420
+  },
+  "decided_by": "The slope's t is 2 or more and the supporting difference is above 0.",
+  "reading": "The 720-bar return is recomputed from closes inside each window (bars without 720 prior bars in the window are left out of the agreement); trending = regime column 'trending'; a coin's mean 168-bar return is the mean of its non-overlapping grid forward returns over all windows and all bars; the minimum counts are applied to grid cases with a forward return and a raw week value."
+}

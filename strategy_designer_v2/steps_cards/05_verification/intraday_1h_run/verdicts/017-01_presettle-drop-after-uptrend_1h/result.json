@@ -1,0 +1,26 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9964015222879535,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (-forecast/10) x excess 2-bar return over settlement episodes",
+    "value": 9.458782387858425e-05,
+    "statistic": {
+      "name": "ordinary t",
+      "value": 0.8459840988613712
+    },
+    "threshold": "confirm if t >= 2 (with check difference < 0); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 2-bar return, top third minus bottom third by |forecast|",
+    "value": 0.00026734084533286363,
+    "passed": false
+  },
+  "counts": {
+    "episodes with forecast < 0": 26436
+  },
+  "decided_by": "The main-measure t lies between -2 and 2.",
+  "reading": "The situation is a pre-settlement clock bar (hour mod 8 in {5,6} or in {6,7}, the better of the two stamp conventions), a positive raw 72-bar rise and a negative forecast; cases are the bars stamped 21:00/05:00/13:00 with forecast < 0 whose t+2 close lies in the same window, the coin mean is over its non-overlapping 2-bar grid across all windows, and the thirds are the n//3 largest and n//3 smallest |forecast| cases."
+}

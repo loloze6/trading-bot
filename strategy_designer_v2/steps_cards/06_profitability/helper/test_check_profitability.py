@@ -90,3 +90,19 @@ def test_too_few_trades_fails_the_frequency_bar(tmp_path):
     write_record(tmp_path, books, closes, trades_per_window=0)
     rows, _ = m.check(tmp_path, RULE)
     assert not {x["measure"]: x["passed"] for x in rows}["trade_frequency_min"]
+
+
+def test_trades_are_counted_per_day_on_any_bar_size(tmp_path):
+    """Hourly bars: 10 days of 24 bars per window, 5 trades per window (the forced close aside): 5 / 10 a day."""
+    for k in (1, 2):
+        d = tmp_path / "AUSD" / f"w{k}"
+        d.mkdir(parents=True)
+        ts = pd.date_range(f"2001-0{k}-01", periods=240, freq="h")
+        v = np.linspace(1.0, 1.1, 240)
+        pd.DataFrame({"timestamp": ts.strftime("%Y-%m-%d %H:%M:%S"), "close": v, "postRebalance_total_value": v}).to_csv(
+            d / "bars.csv.gz", index=False, compression="gzip")
+        with gzip.open(d / "trades.json.gz", "wt") as g:
+            json.dump([{"exit_time": ts[i].isoformat()} for i in (5, 50, 100, 150, 200)] + [{"exit_time": ts[-1].isoformat()}], g)
+    rows, facts = m.check(tmp_path, RULE)
+    v = {x["measure"]: x["value"] for x in rows}
+    assert v["trade_frequency_min"] == pytest.approx(10 / 20) and facts["bars"] == 480

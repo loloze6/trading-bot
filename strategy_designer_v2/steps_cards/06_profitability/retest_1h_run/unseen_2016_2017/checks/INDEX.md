@@ -1,0 +1,2 @@
+002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1h: not profitable enough [Sharpe 2.954; Sharpe minus holding's Sharpe -0.3809; Calmar 12.37]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1h: not profitable enough [Sharpe 2.883; Sharpe minus holding's Sharpe -1.26; Calmar 10.26]

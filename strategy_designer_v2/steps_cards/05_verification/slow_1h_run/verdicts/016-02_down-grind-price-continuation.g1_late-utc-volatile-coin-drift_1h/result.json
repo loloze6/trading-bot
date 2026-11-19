@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9978152130167308,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of vol-sized excess slot return (excess 2-bar return x forecast/10)",
+    "value": 0.0009610027732736196,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 7.677116143683499
+    },
+    "threshold": "mean > 0 with t >= 2 to confirm; t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "OLS slope t of excess slot return on forecast at 20:00 bar",
+    "value": 3.7430755915167433,
+    "passed": true
+  },
+  "counts": {
+    "slot cases": 17257
+  },
+  "decided_by": "Main mean > 0 with t = 7.68 >= 2 and supporting slope t = 3.74 >= 2.",
+  "reading": "Cases are every bar stamped 20:00 UTC whose 22:00 bar exists in the same window, including cases with forecast 0; the coin mean 2-bar return uses non-overlapping positions 0,2,4,... of each window pooled over all windows; all coins are pooled into one set of cases for the mean and the regression."
+}

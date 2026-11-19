@@ -1,0 +1,6 @@
+017-01_presettle-drop-after-uptrend: After a strong 3-day rise, spot falls in the 2 hours before funding settlement, more so the stronger the rise. [bar: 1h]
+017-02_presettle-rise-after-downtrend: After a strong 3-day fall, spot rises in the 2 hours before funding settlement, more so the stronger the fall. [bar: 1h]
+017-03_postsettle-recovery-after-uptrend: After a strong 3-day rise, spot rises in the 2 hours after funding settlement, more so the stronger the rise. [bar: 1h]
+017-04_postsettle-decline-after-downtrend: After a strong 3-day fall, spot falls in the 2 hours after funding settlement, more so the stronger the fall. [bar: 1h]
+017-05_settlement-move-reverses-after: The move in the 2 hours after funding settlement reverses the move in the 2 hours before it, in proportion to its size. [bar: 1h]
+017-06_settlement-volume-rises-with-trend: Spot volume rises around funding settlement hours, more so the larger the coin's absolute 3-day return. [bar: 1h]

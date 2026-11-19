@@ -1,0 +1,2 @@
+002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1h: not observable (fit: exact) [main: 0.0050392; OLS slope t 1.70188; grid cases in trending 121, cases at forecast 0 29, cases with forecast > 0 92]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1h: not observable (fit: adapted) [main: -0.000207294; OLS slope t -0.0594014; non-overlapping grid cases with forecast > 0 110, non-overlapping grid cases (all) 135]

@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of slope of excess 240-bar forward return on forecast, trending grid bars pooled",
+    "value": 3.3975280862863397,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 3.3975280862863397
+    },
+    "threshold": "confirm: slope > 0 with t >= 2 and top-third check passes; reject: slope < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 240-bar return of top-third forecast cases > 0",
+    "value": 0.03213488106553581,
+    "passed": true
+  },
+  "counts": {
+    "independent trending cases": 841
+  },
+  "decided_by": "The slope is positive with t >= 2 and the top-third mean excess return is above 0.",
+  "reading": "Cases are rows at positions 0, 240, 480, ... of each window with regime 'trending' and a full 240-bar forward return inside the window; the coin's mean 240-bar return is the mean over all such grid bars of all its windows; the top third is the n//3 cases with the largest forecast; the plan's 'fewer than 100 cases' is reported as not observable; the situation check reads RSI as 50 minus the raw component value."
+}

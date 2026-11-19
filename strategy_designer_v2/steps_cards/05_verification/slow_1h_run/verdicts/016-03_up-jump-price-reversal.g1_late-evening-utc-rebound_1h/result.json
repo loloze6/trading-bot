@@ -1,0 +1,29 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9974528192659489,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast x 2-bar excess return on 19:00 UTC decision bars",
+    "value": 0.00623996743916991,
+    "statistic": {
+      "name": "ordinary t",
+      "value": 5.272973624445849
+    },
+    "threshold": "confirm if positive with t >= 2 (and supporting difference > 0); reject if negative with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess return, top fifth of positive forecasts minus zero forecasts",
+    "value": 0.0011932926701389054,
+    "passed": true
+  },
+  "counts": {
+    "decision bars with a forecast above 0": 8652,
+    "decision bars": 17404,
+    "top-fifth decision bars": 1731,
+    "zero-forecast decision bars": 8752
+  },
+  "decided_by": "The forecast-weighted mean excess return is positive with t >= 2 and the top-fifth minus zero difference is above 0.",
+  "reading": "The coin's mean 2-bar return is taken on the workflow's non-overlapping grid (positions 0, 2, 4, ... of each window) pooled over all windows, the mean of forecast x excess uses all decision bars including zero forecasts, and the top fifth is the positive decision-bar forecasts at or above their pooled 80th percentile."
+}

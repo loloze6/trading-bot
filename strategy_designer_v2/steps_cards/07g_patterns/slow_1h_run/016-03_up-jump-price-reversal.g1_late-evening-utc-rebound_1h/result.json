@@ -1,0 +1,45 @@
+{
+  "line": "7.g",
+  "backtest": "016-03_up-jump-price-reversal.g1_late-evening-utc-rebound_1h",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3832839,
+  "findings": {
+    "F1": "The book loses because of fees, not because the forecast is wrong: the position's gain averages 0.116 bps per bar against 0.225 bps per bar of fees. The fee hits 2.39 bps on the 19:00 bar and 2.38 bps on the 21:00 bar, and each of the roughly 1,800\u20131,900 two-hour trades per coin nets \u22120.09 % to +0.05 % after costs, with four of six coins negative.",
+    "F2": "Coins rise at 20:00\u201322:00 UTC whatever came before. The 20:00 and 21:00 hourly bars average +5.45 bps (t 6.75, n 17,403) and +4.36 bps (t 5.66, n 17,417). The 2-hour return from the 20:00 close is +9.13 bps (t 7.38, n 12,600), the highest of all 24 start hours, positive in all six coins and in six of eight years.",
+    "F3": "The 24-hour reversal behind the idea holds over a full day, not only 2 hours. On a non-overlapping 24-bar grid, the slope of the next 24-hour return on the past 24-hour return is negative in every coin (\u22120.064 to \u22120.129, t \u22123.4 to \u22126.9, about 2,800 cases each) and in seven of eight years. The deepest-fall fifth gains +58.5 bps over the next 24 hours (t 5.69, n 3,423), while the 72-hour version is not significant (slope +0.016, t 1.16, n 5,539).",
+    "F4": "The 24-hour reversal is strongest when recent volatility is high against the week's. In the top fifth of 24-hour versus 168-hour volatility, the slope is \u22120.107 (t \u22128.47, n 3,249) against \u22120.065 (t \u22122.41) in the bottom fifth, and that top fifth also gains +34.4 bps over the next 24 hours on average (t 3.40).",
+    "F5": "How the 24-hour move was built changes nothing, which goes against the brief's grind-versus-jump split. Sorted into terciles by the largest hourly move's share of the day's total movement, the reversal slopes are \u22120.072, \u22120.097 and \u22120.081 (t \u22124.7, \u22127.0, \u22127.3, about 5,700 cases each).",
+    "F6": "The evening makes the reversal steeper. At the 20:00 close, the slope of the 2-hour return on the 24-hour return is \u22120.0189 (t \u22128.12, n 17,261), against \u22120.0062 (t \u22124.75, n 52,412) at the other odd hours. At 20:00 the deepest-fall fifth gains +21.3 bps over 2 hours (t 5.70), while the top fifth gains only +1.3 bps."
+  },
+  "ideas": [
+    {
+      "idea": "The more a coin has fallen over its last 24 hours, the more it rises over the next 24 hours.",
+      "consequence": "A dip-buying long held for a day collects the reversal with one round trip instead of twelve 2-hour round trips, so it has a chance to clear its cost.",
+      "name": "daily fall day-long rebound",
+      "from": "F3, F1, F5, F6",
+      "refs": [
+        "F3",
+        "F1",
+        "F5",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When a coin's 24-hour volatility is high relative to its 7-day volatility, the more it has fallen over its last 24 hours, the more it rises over the next 24 hours.",
+      "consequence": "Lean harder into buying 24-hour falls when the coin's recent hours have been unusually turbulent, and less in calm stretches.",
+      "name": "turbulent fall day rebound",
+      "from": "F4, F3",
+      "refs": [
+        "F4",
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.g1_daily-fall-day-long-rebound",
+    "016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.g2_turbulent-fall-day-rebound"
+  ],
+  "no_ideas": null
+}

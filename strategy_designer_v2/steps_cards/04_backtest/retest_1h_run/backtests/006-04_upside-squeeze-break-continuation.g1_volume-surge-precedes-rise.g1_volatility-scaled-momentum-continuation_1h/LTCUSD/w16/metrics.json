@@ -1,0 +1,213 @@
+{
+  "core": {
+    "net_return_pct": 23.297,
+    "sharpe": 2.016,
+    "max_drawdown_pct": -8.672,
+    "trade_count": 215,
+    "win_rate": 42.33,
+    "avg_trade_net_pnl": 1.079749,
+    "fees_paid": 22.185793,
+    "gross_pnl": 254.331795,
+    "net_pnl": 232.146003,
+    "cost_drag_pct": 8.7232,
+    "forecast_return_corr": 0.014755,
+    "forecast_return_corr_pvalue": 0.540847,
+    "forecast_return_corr_pvalue_block_adjusted": 0.904584,
+    "forecast_return_corr_n_eff": 69,
+    "forecast_return_corr_all_bars": 0.008022,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.931742,
+    "forecast_return_corr_all_bars_n_eff": 117,
+    "gap_skipped_pairs": 5,
+    "gap_skipped_pct": 0.1726,
+    "avg_trade_duration_bars": 108.52,
+    "sigma_bar_bps": 132.238,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 20.3259,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 1.0987,
+      "safety_factor_required": 2.0,
+      "pass": false
+    },
+    "post_backtest_route": "kill_no_ic",
+    "post_backtest_route_rationale": "Active-bar IC=0.0148, p=0.9046 >= 0.1. Signal has no detectable directional content.",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": 250.6521,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": 250.6521,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 25.0652,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "kill_no_ic",
+    "post_backtest_route_real_rationale": "Active-bar IC=0.0148, p=0.9046 >= 0.1. Signal has no detectable directional content.",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "unknown": {
+      "bar_count": 2898,
+      "avg_forecast": 6.152559,
+      "trade_count": 215,
+      "total_net_pnl": 232.146001
+    }
+  },
+  "forecast_bins": {
+    "0_to_5": {
+      "total_forecasts": 53,
+      "profitable_trades": 28,
+      "success_rate_pct": 52.83,
+      "total_net_pnl_usd": 38.7814,
+      "avg_pnl_per_trade_usd": 0.7317
+    },
+    "5_to_10": {
+      "total_forecasts": 52,
+      "profitable_trades": 19,
+      "success_rate_pct": 36.54,
+      "total_net_pnl_usd": 22.0262,
+      "avg_pnl_per_trade_usd": 0.4236
+    },
+    "10_to_15": {
+      "total_forecasts": 36,
+      "profitable_trades": 13,
+      "success_rate_pct": 36.11,
+      "total_net_pnl_usd": -7.3395,
+      "avg_pnl_per_trade_usd": -0.2039
+    },
+    "15_to_very_positive": {
+      "total_forecasts": 74,
+      "profitable_trades": 31,
+      "success_rate_pct": 41.89,
+      "total_net_pnl_usd": 178.6779,
+      "avg_pnl_per_trade_usd": 2.4146
+    }
+  },
+  "dynamic": {
+    "debug_info.components.scaled_adv.last_history_value": {
+      "unknown": {
+        "mean": 0.271869,
+        "std": 0.958431
+      }
+    },
+    "debug_info.components.scaled_adv.post_pipeline_value": {
+      "unknown": {
+        "mean": 15.090097,
+        "std": 26.198493
+      }
+    },
+    "debug_info.components.scaled_adv.weight_normalized": {
+      "unknown": {
+        "mean": 1.0,
+        "std": 0.0
+      }
+    },
+    "debug_info.components.scaled_adv.weighted_contribution": {
+      "unknown": {
+        "mean": 15.090097,
+        "std": 26.198493
+      }
+    }
+  },
+  "regime_validity": {
+    "unknown": {
+      "forward_return_mean": 0.00012886,
+      "forward_return_std": 0.01321325,
+      "n_bars": 2897,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -14.1545,
+    "sharpe": 1.5688,
+    "sortino": 3.8517,
+    "exposure_pct": 99.8965,
+    "turnover": 37.013454,
+    "n_bars_total": 2898,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 120,
+    "n_downside_days": 66,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 8,
+    "events": [
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2019-11-30 07:00:00",
+        "previous_timestamp": "2019-11-30 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2019-11-30 09:00:00",
+        "previous_timestamp": "2019-11-30 07:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2019-12-09 04:00:00",
+        "previous_timestamp": "2019-12-09 02:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2020-01-01 08:00:00",
+        "previous_timestamp": "2020-01-01 06:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2020-01-02 06:00:00",
+        "previous_timestamp": "2020-01-02 04:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2020-01-04 09:00:00",
+        "previous_timestamp": "2020-01-04 07:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2020-04-04 08:00:00",
+        "previous_timestamp": "2020-04-04 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2020-04-22 03:00:00",
+        "previous_timestamp": "2020-04-22 01:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

@@ -13,7 +13,7 @@ from strategies.registry import sizing_block_errors  # noqa: E402
 def test_sizing_is_60_days_and_2_percent_a_day_on_any_bar_size():
     for bar, window in (("1d", 60), ("4h", 360), ("1h", 1440)):
         s = m.add_sizing({"strategies": {"regimes": {}}}, bar)["strategies"]["sizing"]
-        assert s["window"] == window and s["periods_per_year"] == m.PERIODS_PER_YEAR[bar]
+        assert s["window"] == window and s["periods_per_year"] == 365 * m.bars_per_day(bar)
         assert math.isclose(s["target_annual_vol"], 0.02 * math.sqrt(365), rel_tol=1e-5)
         assert s["kind"] == "vol_target" and s["max_allocation"] == 2
         assert sizing_block_errors(s) == []
