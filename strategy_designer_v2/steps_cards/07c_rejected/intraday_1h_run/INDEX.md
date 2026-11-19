@@ -3,6 +3,7 @@
 017-01_presettle-drop-after-uptrend_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall_1h: 2 ideas (2 explorations)
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
+017-02_presettle-rise-after-downtrend.g3_daily-move-reversal_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)
 017-02_presettle-rise-after-downtrend_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal_1h: not run: entry condition not met (step 5: confirmed; step 6: not profitable enough)

@@ -3,6 +3,7 @@
 017-01_presettle-drop-after-uptrend_1h: inconclusive (fit: adapted) [main: 9.45878e-05; ordinary t 0.845984; episodes with forecast < 0 26436]
 017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall_1h: rejected (fit: adapted) [main: -6.27455e-05; OLS slope t -3.72518; days with forecast > 0 across coins 8587, 21:00 cases 17415]
 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h: confirmed (fit: exact) [main: 8.8691e-05; ordinary t of the mean 10.2539; bars with a non-zero position across all coins and windows 409052, bars in the main measure 416645]
+017-02_presettle-rise-after-downtrend.g3_daily-move-reversal_1h: confirmed (fit: exact) [main: 3.90177; OLS slope t 3.90177; independent 24-bar cases 17246, days in timing check 2898]
 017-02_presettle-rise-after-downtrend_1h: inconclusive (fit: adapted) [main: 1.29763; OLS t of slope 1.29763; cases pooled 25569, cases BTCUSD 4178, cases ETHUSD 4199, cases LTCUSD 4321, cases XMRUSD 4063, cases XRPUSD 4593, cases ZECUSD 4215]
 017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal_1h: inconclusive (fit: exact) [main: 8.14985e-05; t of the mean 10.2279; bars pooled 416645, high-volatility group bars 156480, low-volatility group bars 156480]
 017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal_1h: confirmed (fit: exact) [main: 0.00170974; ordinary t of the mean 3.80116; non-overlapping cases 17246, active bars 416370]

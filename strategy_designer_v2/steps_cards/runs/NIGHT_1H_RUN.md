@@ -161,3 +161,7 @@ components, 1 untestable), turn 8 (017-02) cut mid-turn, resumes. Slow 25.55 USD
   (volatility-scaled two-hour reversal) t +13.79. Run so far: 20 ideas tested, 10 confirmed, 0 profitable.
 - 14:3x: master merged between stretches (PR #570 to #572: run briefs in runs/, components step changes, the loop's resume fix); one conflict, POTENTIAL_ADJUSTMENTS.md, kept as master's. Cards' tests: 88 passed. Under the new rule no idea of either run is unfinished. Stretch 6 launched (--budget 23.42).
 - 14:36: check-in, no restart (up 4h44). Stretch 6 on turn 25 (017-02.g3, daily move reversal), backtesting. 20.5 USD.
+- 14:58: stretch 6 ended on its budget after one turn (24.71 USD, 31 min). 017-02.g3 (daily move reversal): confirmed
+  t +3.90, not profitable. The turn cost 4.28 USD: one 7.d call wrote 129k output tokens in 866 s, 3.38 USD (usual: about
+  0.10); it ended normally and its answer was used. Recorded (POTENTIAL_ADJUSTMENTS.md, 17); nothing changed. Run so far:
+  21 ideas tested, 11 confirmed, 0 profitable. Stretch 7 launched (--budget 27.71).

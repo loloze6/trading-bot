@@ -23,6 +23,7 @@ operator's topics). Where = the session or part of the workflow it belongs to.
 | 14 | [Research viewer, round 2](#14-research-viewer-round-2) | visualizer session | in progress (hourly runs shown); a brief-link fix waits for the operator |
 | 15 | [A viewer of the live bot](#15-a-viewer-of-the-live-bot) | live and visualizer sessions | not started |
 | 16 | [The GitHub security warning](#16-the-github-security-warning) | operator | not examined |
+| 17 | [One model call ran away: 129k output tokens, 3.38 USD](#17-one-model-call-ran-away-129k-output-tokens-338-usd) | research: step 7 (7.d), common/lib.py | seen once (run session, 2026-11-19) |
 
 ## 1. Recent ideas rarely take a short position
 The operator: investigate why the recent ideas did not reach a negative forecast. Measured on BTC, every window of every
@@ -119,3 +120,11 @@ The live runs' books and decisions, day by day. The operator's topic (2026-11-18
 
 ## 16. The GitHub security warning
 GitHub reports 1 critical vulnerability on the default branch (Dependabot alert 1). Not examined. The operator: park.
+
+## 17. One model call ran away: 129k output tokens, 3.38 USD
+Seen by the run session (2026-11-19, `intraday_1h_run`, 017-02.g3, line 7.d): one call wrote 129,173 output tokens in 866 s
+(just under the 15-minute timeout) and cost 3.38 USD; the other three calls of that line cost about 0.10 USD each, and a
+usual 7.d line costs about 0.30 USD. It ended normally (end_turn) and its answer was used (6 findings, 2 ideas, 3
+explorations). The run stays correct; the cost is in the journal and the log (`logs/<backtest>/step7_7.d.txt`). A cost
+limit per model call was parked earlier "only if it happens again"; this is the first such call seen in the 1h runs. No
+limit added (the operator's rule: no limit not asked for).
