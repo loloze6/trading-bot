@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled slope of 72-bar excess return on forecast (fallen grid bars)",
+    "value": -0.0004489568369406296,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -1.9161944046726098
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; at least 300 fallen grid cases"
+  },
+  "supporting_check": {
+    "name": "top forecast tercile mean excess 72-bar return > 0",
+    "value": -0.004287734379471085,
+    "passed": false
+  },
+  "counts": {
+    "fallen grid cases": 2762,
+    "top tercile cases": 921
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "The situation is taken as a 72-bar close-to-close fall inside the window with a positive raw top-3-losses share, on the long side, and active bars within a window's first 72 rows (where the fall cannot be recomputed) are left out of the check; the coin's mean 72-bar return is the mean over all its grid bars in all windows, the regression is pooled OLS of excess return on forecast with its ordinary t, and terciles are equal-count thirds of the fallen cases ranked by forecast (ties broken by order)."
+}
