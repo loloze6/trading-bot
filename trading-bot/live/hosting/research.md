@@ -200,7 +200,7 @@ extracts and press articles. **Read them once by hand, or ask Kraken support, be
 **Nothing below has been run on a real server.** The service file is a draft: prove it on the server (step 10)
 before trusting it.
 - "Type in PowerShell" means on your Windows PC (Start menu → PowerShell).
-- "On the server" means in the window that step 4 opens.
+- "On the server" means in the window that step 3 opens.
 - Never paste the Kraken key anywhere except the one file in step 8.
 
 1. **Make a login key on the PC (5 min).** An SSH key is a pair of files that replaces a password. The private
