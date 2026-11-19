@@ -1,8 +1,10 @@
-"""strategies.min_holding_bars (2026-11-19, strategy_designer_v2 topics/30): after the book trades, it does not trade
-again for that many bars, so a position is held over the horizon its idea claims. Absent (every earlier config):
+"""strategies.min_holding_bars (2026-11-19, strategy_designer_v2 topics/30): a trade that leaves a position starts a
+hold of that many bars, renewed when the forecast asks the held position again; a close to flat starts none. So a
+position is held over the horizon its idea claims. Absent (every earlier config):
 nothing changes (proof: fixed backtests rerun, files identical; topics/30).
 
-Fast tests: the key is read and validated. Slow test: on real bars, no two trades closer than the holding time.
+Fast tests: the key is read and validated. Slow test: on real bars, no trade within the hold after a trade that
+leaves a position.
   pytest tests/test_min_holding_bars.py -m slow --timeout=0
 """
 import json
@@ -71,9 +73,15 @@ def test_no_two_trades_closer_than_the_holding_time(tmp_path):
                                     results_root=str(d), trades_log_file=str(d / "interim_trades.json"),
                                     exchange="kraken", market_type="futures", interval_seconds=3600))
         bars = pd.read_csv(run_dir / "bars.csv")
-        return bars.index[bars["approved_rebalance"].infer_objects(copy=False).fillna(False).astype(bool)].tolist()
+        traded = bars["approved_rebalance"].infer_objects(copy=False).fillna(False).astype(bool)
+        return bars.index[traded].tolist(), bars["postRebalance_current_allocation"].tolist()
 
-    free, held = run(None), run(24)
+    free, _ = run(None)
+    held, alloc = run(24)
     assert held, "the held book traded at least once"
-    assert all(b - a >= 24 for a, b in zip(held, held[1:]))
+    # a trade that leaves a position starts a hold: the next trade comes 24 bars later at the earliest
+    # (a close to flat starts none, so the next entry may follow at once)
+    for a, b in zip(held, held[1:]):
+        if alloc[a] != 0.0:
+            assert b - a >= 24, (a, b)
     assert len(held) <= len(free)

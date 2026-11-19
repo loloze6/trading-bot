@@ -36,8 +36,12 @@ forecast divided by 10, scaled by the coin's volatility.
    bars after the forecast changes sign.
 7. **The holding period** (2026-11-19, operator; `topics/30_why-hourly-ideas-rarely-pay.md`). An idea claims a move
    over its horizon ("it rises over the next 24 hours"), so its book holds the position it takes for that horizon:
-   `strategies.min_holding_bars` = the idea's horizon in bars. After the book trades, it does not trade again for that
-   many bars, whatever the forecast does meanwhile; then it follows the forecast again. The horizon is the idea's own,
+   `strategies.min_holding_bars` = the idea's horizon in bars. A trade that leaves a position starts a hold: no trade
+   for that many bars, whatever the forecast does meanwhile; then the book follows the forecast again, and a forecast
+   asking the held position again (same side, no trade needed) renews the hold. A close to flat, or a forced flat (the
+   risk gate, a large data gap), starts none: the book holds positions, not flat. Cases, with what it costs (a lag on a
+   steady drift; up to the horizon on the side a reversal or a regime turning off left): the operator's page "Holding
+   Period Cases" (2026-11-19). The horizon is the idea's own,
    never a value chosen from the data (a longer hold also collects the market's drift). Why: on hourly bars, books that
    followed the forecast every hour held a 24-hour idea for 1 hour, or re-sized every hour, and paid their costs
    without earning the move (topic 30: 0.3 to 4.6 bps earned per unit traded, against about 10 of cost).

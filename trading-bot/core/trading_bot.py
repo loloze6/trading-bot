@@ -204,8 +204,8 @@ class TradingBot:
         # (0.0 = flat, the start). The min_allocation_change band judges the
         # signal's move away from it. Never read or written without a block.
         self._held_signal_allocation: Dict[str, float] = {}
-        # 2026-11-19 (topics/30): strategies.min_holding_bars. The decision bars seen per symbol, and the bar of the
-        # last executed trade; after a trade, none for min_holding_bars bars. Never read without the key.
+        # 2026-11-19 (topics/30): strategies.min_holding_bars. The decision bars seen per symbol, and the bar the
+        # current hold started (a trade that left a position, or a forecast asking it again). Never read without the key.
         self._decision_bars: Dict[str, int] = {}
         self._last_trade_bar: Dict[str, int] = {}
 
@@ -612,8 +612,6 @@ class TradingBot:
                     )
                     if success_execute_portfolio_rebalance:
                         self.logger.debug("   ✓ RISK FLATTEN executed successfully")
-                        if min_holding is not None:
-                            self._last_trade_bar[symbol] = self._decision_bars[symbol]
                         if sizing_active:
                             self._held_signal_allocation[symbol] = 0.0
                     else:
@@ -653,8 +651,6 @@ class TradingBot:
 
                     if success_execute_portfolio_rebalance: 
                         self.logger.debug("   ✓ REBALANCE executed successfully")
-                        if min_holding is not None:
-                            self._last_trade_bar[symbol] = self._decision_bars[symbol]
                         if band_signal_change is not None:
                             # D-176: the signal this position was set from,
                             # whichever band path passed. When the sizing step
@@ -669,6 +665,19 @@ class TradingBot:
 
                 else:
                     self.logger.debug(f"   X🔄X No rebalance performed (rejected) │ Actual allocation: {previous_allocation:+.4f} | Δ (rejected): {allocation_change:+.4f}")
+
+            # 2026-11-19 (topics/30): the holding period's clock, once the bar's decision is made. A trade that leaves a
+            # position starts a hold; a close to flat, or a forced flat, starts none (the book holds positions, not
+            # flat). Outside a hold, a forecast asking the held position again (no trade needed, same side) renews it.
+            if min_holding is not None and not holding:
+                if success_execute_portfolio_rebalance:
+                    if target_allocation != 0.0 and not risk_forced_flat:
+                        self._last_trade_bar[symbol] = self._decision_bars[symbol]
+                    else:
+                        self._last_trade_bar.pop(symbol, None)
+                elif (not risk_forced_flat and previous_allocation != 0.0 and target_allocation != 0.0
+                      and (target_allocation > 0) == (previous_allocation > 0)):
+                    self._last_trade_bar[symbol] = self._decision_bars[symbol]
                 
             # Retrieve portfolio information after rebalance 
             postRebalance_balances = self.portfolio_info.get_account_balance() if success_execute_portfolio_rebalance else balances
