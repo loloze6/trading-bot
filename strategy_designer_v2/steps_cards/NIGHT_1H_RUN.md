@@ -136,3 +136,6 @@ components, 1 untestable), turn 8 (017-02) cut mid-turn, resumes. Slow 25.55 USD
   mid-run"). The only such idea in both runs. Workaround: `run_idea` on 017-02 by hand, the loop stopped; then the loop resumes.
 - 10:31: 017-02 finished by hand: inconclusive t +1.30, not profitable (6 of 6), lines 7.b, 7.d, 7.g proposed ideas; 1.35 USD. Run at 7.00 USD.
 - 10:41: check-in, no restart (up 48 min). Stretch 2 on turn 11: 017-05 (settlement move reverses), unblocked, now planned by step 3; backtest running. 7.10 USD.
+- 11:05: stretch 2 ended on its budget (10.50 USD, 3 turns, 33 min). 017-05 (the move into a settlement reverses after it):
+  confirmed t +5.10, not profitable (6 of 6). 017-01.g1 (midday fade of a 3-day trend): inconclusive t +0.42. 017-02.g1
+  (late-evening rise after a daily fall): rejected t -3.73. None profitable. Stretch 3 launched (--budget 13.50).

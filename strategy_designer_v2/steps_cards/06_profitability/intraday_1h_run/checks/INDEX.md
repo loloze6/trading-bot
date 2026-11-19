@@ -1,4 +1,7 @@
+017-01_presettle-drop-after-uptrend.g1_midday-fade-of-3-day-trend_1h: not profitable enough [Sharpe -4.279; Sharpe minus holding's Sharpe -4.833; Calmar -0.326]
 017-01_presettle-drop-after-uptrend_1h: not profitable enough [Sharpe -5.032; Sharpe minus holding's Sharpe -5.586; Calmar -0.4912]
+017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall_1h: not profitable enough [Sharpe -2.549; Sharpe minus holding's Sharpe -3.103; Calmar -0.2442]
 017-02_presettle-rise-after-downtrend_1h: not profitable enough [Sharpe -3.485; Sharpe minus holding's Sharpe -4.039; Calmar -0.43]
 017-03_postsettle-recovery-after-uptrend_1h: not profitable enough [Sharpe -3.538; Sharpe minus holding's Sharpe -4.092; Calmar -0.3831]
 017-04_postsettle-decline-after-downtrend_1h: not profitable enough [Sharpe -2.793; Sharpe minus holding's Sharpe -3.347; Calmar -0.3807]
+017-05_settlement-move-reverses-after_1h: not profitable enough [Sharpe -6.967; Sharpe minus holding's Sharpe -7.521; Calmar -0.6182]

@@ -1,4 +1,7 @@
+017-01_presettle-drop-after-uptrend.g1_midday-fade-of-3-day-trend_1h: inconclusive (fit: exact) [main: 1.8562e-05; ordinary t of the mean 0.422582; hour-12 cases with a nonzero position 15082, trending bars in sample 17347, coins with positive mean excess gain 3, coins measured 6]
 017-01_presettle-drop-after-uptrend_1h: inconclusive (fit: adapted) [main: 9.45878e-05; ordinary t 0.845984; episodes with forecast < 0 26436]
+017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall_1h: rejected (fit: adapted) [main: -6.27455e-05; OLS slope t -3.72518; days with forecast > 0 across coins 8587, 21:00 cases 17415]
 017-02_presettle-rise-after-downtrend_1h: inconclusive (fit: adapted) [main: 1.29763; OLS t of slope 1.29763; cases pooled 25569, cases BTCUSD 4178, cases ETHUSD 4199, cases LTCUSD 4321, cases XMRUSD 4063, cases XRPUSD 4593, cases ZECUSD 4215]
 017-03_postsettle-recovery-after-uptrend_1h: inconclusive (fit: adapted) [main: 1.96278e-05; OLS slope t 1.38867; cases pooled across coins and windows 26465]
 017-04_postsettle-decline-after-downtrend_1h: rejected (fit: adapted) [main: -0.000865296; ordinary t of the mean -5.88589; events with forecast below 0 25389]
+017-05_settlement-move-reverses-after_1h: confirmed (fit: adapted) [main: 0.000434249; ordinary t of the mean 5.09841; settlement bars 51746, top third 17248, middle third 17250, bottom third 17248]

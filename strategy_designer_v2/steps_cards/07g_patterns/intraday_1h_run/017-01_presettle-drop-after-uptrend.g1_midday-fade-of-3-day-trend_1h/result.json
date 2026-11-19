@@ -1,0 +1,41 @@
+{
+  "line": "7.g",
+  "backtest": "017-01_presettle-drop-after-uptrend.g1_midday-fade-of-3-day-trend_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.36909290000000006,
+  "findings": {
+    "F1": "Over non-overlapping 1-day steps, a coin's past 1-day return correlates \u22120.087 with its next 1-day excess return (n = 16,814). The correlation is negative in all 6 coins (\u22120.066 to \u22120.126) and in 7 of 8 years (2024 is +0.011). Across quintiles of the vol-scaled 1-day return, the lowest quintile gains +42.8 bp (t = 4.33, n = 3,251) and the highest loses \u221218.9 bp (t = \u22122.13, n = 3,249).",
+    "F2": "This 1-day reversal sits almost entirely in the coin's highest tercile of 7-day hourly volatility. There the correlation is \u22120.110 (n = 5,413), against +0.031 and +0.014 in the low and middle terciles.",
+    "F3": "The next hour's excess return falls steadily across deciles of the last hour's return scaled by 1-day volatility. It runs from +4.6 bp (t = 7.1, n = 41,310) after the sharpest falls to \u22123.2 bp (t = \u22126.5) in decile 9 and \u22121.6 bp (t = \u22122.6) in decile 10. This t is not clustered by day, so it is likely overstated. The rebound after sharp falls is positive in all 6 coins and largest in the smaller coins (ZEC +9.1 bp, XRP +6.1 bp, BTC +2.8 bp). Over the next 6 hours, the lowest quintile keeps only +4.6 bp (t = 2.0), so most of the effect is in the first hour.",
+    "F4": "The tested signal is close to zero. At 11:00 UTC the 3-day return correlates only \u22120.030 with the next hour's vol-scaled return, and the book loses: gross trade mean \u22120.116 %, net \u22120.216 %, daily book mean \u22120.001, Sharpe \u22124.28. Fees are about as large as the gross loss.",
+    "F5": "Hour-of-day drift is the same sign in all 6 coins for two hours, but it does not survive 24 hours tested and changes sign across years. The hour from 20:00 to 21:00 UTC averages +4.8 bp (day-clustered t = 2.93); the year 2022 is \u22125.5 bp. The hour from 13:00 to 14:00 UTC averages \u22124.2 bp (t = \u22122.16). I do not count it as an idea."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 1-day return, the lower its return over the next 1 day. The effect is strongest, and still graded by the size of the 1-day move, when the coin's 7-day volatility is high.",
+      "consequence": "In a high-volatility period, a trader would lean against the coin's last day's move over the following day, more heavily the larger that move was.",
+      "name": "daily reversal in volatile regimes",
+      "from": "F1, F2",
+      "refs": [
+        "F1",
+        "F2"
+      ]
+    },
+    {
+      "idea": "The larger a coin's fall over the last hour, measured against its 1-day volatility, the larger its rise over the next 1 hour.",
+      "consequence": "A trader would buy into a sharp hourly drop for the following hour, sized to how sharp the drop was, and refuse the trade if the rebound proves absent.",
+      "name": "hourly rebound after sharp falls",
+      "from": "F3",
+      "refs": [
+        "F3"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "017-01_presettle-drop-after-uptrend.g1_midday-fade-of-3-day-trend.g1_daily-reversal-in-volatile-regimes",
+    "017-01_presettle-drop-after-uptrend.g1_midday-fade-of-3-day-trend.g2_hourly-rebound-after-sharp-falls"
+  ],
+  "no_ideas": null
+}
