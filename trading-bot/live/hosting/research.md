@@ -163,8 +163,8 @@ What I recommend against, and why:
 | Ruling | Effect |
 |---|---|
 | **Pay monthly**, unless a whole year costs **less than €20** | OVH's 12-month price is paid upfront (about €55), so: **OVH monthly, €5.39** (€4.49 HT). netcup nano's 6-month contract does not fit |
-| **A French IP address preferred** | OVH Gravelines or Strasbourg. I found no evidence that Kraken treats a French address better than another EU one; as a tie-breaker it costs nothing here |
-| **Room to add about 1 run a month** | Decides between 2 GB and 4 GB (table below) |
+| **France is not a requirement** (operator: an unjustified concern) | Any EU data centre will do; not the UK or the US (section 4) |
+| **Extra memory is nice to have, worth about $1 a month** (read as $1 for France and memory together) | OVH's 4 GB counts as about €0.86 a month against a 2 GB plan; the table below shows what it buys |
 
 How long the memory lasts, one run per program as today (273 MB each, about 400 MB for the system) [calc]:
 
@@ -177,7 +177,19 @@ After that, two ways on:
 - a bigger plan: OVH VPS-2, whose price I did not check;
 - several coins in one program, the card's plan ("later several coins in one bot"): the libraries' 250 MB would be loaded once instead of once per run, so an added coin would cost far less memory. Not measured.
 
-**Result: OVH VPS-1, France, paid monthly, €5.39 with VAT.**
+Plans paid monthly with at least 2 GB in the EU [from section 2a]:
+- **OVH VPS-1**, 4 GB: €5.39.
+- **netcup nano**, 2 GB: €3.72 at the price found, about €4.43 if September 2026's rise of up to 20% applies; 6-month
+  minimum term.
+- **More expensive:** Contabo (€5.50 + setup fee), IONOS VPS S (€6 after 3 months + €12 setup), Hetzner CX23
+  (€7.19, not orderable), Vultr, DigitalOcean and Linode 2 GB (about $10–12), Scaleway DEV1-S (about €11.5).
+
+**Result, by the operator's own values:**
+- take **netcup nano** if its order page shows it **under about €4.50 a month with VAT** (OVH's €5.39 minus the
+  $1), and the 6-month minimum term is acceptable;
+- otherwise take **OVH VPS-1, paid monthly, €5.39 with VAT**;
+- in a near-tie (netcup about €4.43), OVH, for its included daily backups and no minimum term;
+- if the $1 was meant for each of the two, the threshold is about €3.70 and OVH almost surely wins.
 
 ### Second choice, only if it appears: a yearly deal under €20
 
@@ -185,7 +197,7 @@ Black Friday is 2026-11-27; deals run to about 2026-11-30 (LowEndTalk "Offers"; 
 Take one only if **all** of these hold:
 - **cost:** under €20 for the year;
 - **memory:** 4 GB or more (2 GB would be full in about 3 months);
-- **place:** a data centre in France, or at least in the EU, not the UK (on Kraken's derivatives restricted list);
+- **place:** a data centre in the EU, not the UK (on Kraken's derivatives restricted list) or the US;
 - **host:** one that has existed for several years.
 
 Under €20 a year, losing the year if the host closes costs less than 4 months of OVH, and the weekly copy to the PC keeps the data. Seen so far, none qualifies:
