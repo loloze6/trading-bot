@@ -437,7 +437,7 @@ async function dayChart(el){
       y0 += GAP;
       const vals = []; p.lines.forEach(([key]) => { for (let k = i0; k <= i1; k++) if (S[key][k] != null) vals.push(S[key][k]); });
       if (p.one) vals.push(1); if (p.zero) vals.push(0);
-      let lo = Math.min(...vals), hi = Math.max(...vals); if (hi === lo) { hi += 1; lo -= 1; } const pad = (hi - lo) * .06; lo -= pad; hi += pad;
+      let lo = Infinity, hi = -Infinity; for (const v of vals) { if (v < lo) lo = v; if (v > hi) hi = v; } if (hi === lo) { hi += 1; lo -= 1; } const pad = (hi - lo) * .06; lo -= pad; hi += pad;
       const Y = v => y0 + (hi - v) * p.h / (hi - lo);
       s += `<text x="${L}" y="${y0 - 6}" style="font-weight:600">${p.title}</text>`;
       s += `<line x1="${L}" x2="${W - R}" y1="${y0 + p.h}" y2="${y0 + p.h}" stroke="var(--line)"/>`;
