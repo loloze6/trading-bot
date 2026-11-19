@@ -11,5 +11,7 @@
 016-06_down-even-volume-continuation.g1_fresh-drop-rebound_1h: 2 ideas (3 explorations)
 016-06_down-even-volume-continuation.g2_smooth-climb-continuation_1h: 2 ideas (2 explorations)
 016-06_down-even-volume-continuation_1h: 2 ideas (2 explorations)
+016-07_up-volume-burst-reversal.g1_efficient-rises-keep-rising_1h: 2 ideas (2 explorations)
 016-07_up-volume-burst-reversal_1h: 2 ideas (2 explorations)
+016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls_1h: 2 ideas (2 explorations)
 016-08_down-volume-burst-reversal_1h: 2 ideas (2 explorations)

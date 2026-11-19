@@ -11,5 +11,7 @@
 016-06_down-even-volume-continuation.g1_fresh-drop-rebound_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 016-06_down-even-volume-continuation.g2_smooth-climb-continuation_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 016-06_down-even-volume-continuation_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+016-07_up-volume-burst-reversal.g1_efficient-rises-keep-rising_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 016-07_up-volume-burst-reversal_1h: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 016-08_down-volume-burst-reversal_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]

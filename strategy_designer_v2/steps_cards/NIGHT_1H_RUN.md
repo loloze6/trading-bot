@@ -99,3 +99,4 @@ No merge into master; no change to a step during the run; nothing is tuned to th
   2016-17). The live bot's strategy (19-coin nearness) is confirmed and profitable on 1h but does not hold on 2016-17.
 - Stepping back: for these ideas hourly bars add costs, not edge; their daily versions are the ones to keep. Hourly
   bars are worth testing where the effect itself is hourly (the time-of-day signals of the slow brief: confirmed, not yet profitable).
+- 08:30: retest done (reading above). Slow brief 17 ideas, 7 confirmed, 0 profitable (three of the confirmed are time-of-day ideas: t +7.68, +5.27, +4.42). About 35 USD spent.
