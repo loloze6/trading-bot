@@ -6,3 +6,4 @@
 016-06_down-even-volume-continuation.g2_smooth-climb-continuation_1h: inconclusive (fit: exact) [main: 0.000320248; OLS slope t 1.25049; independent trending grid cases 2916, top third cases 972, bottom third cases 972]
 016-06_down-even-volume-continuation_1h: inconclusive (fit: adapted) [main: 0.00133669; OLS slope t 0.936593; grid cases in the fallen regime 2762]
 016-07_up-volume-burst-reversal_1h: inconclusive (fit: exact) [main: -0.00439564; Welch t -1.09947; grid samples in top third 972, grid samples in middle third 972, grid samples in bottom third 972]
+016-08_down-volume-burst-reversal_1h: inconclusive (fit: adapted) [main: 0.00330914; Welch t 1.04929; grid cases in top half 1381, grid cases in bottom half 1381, active bars 199840]

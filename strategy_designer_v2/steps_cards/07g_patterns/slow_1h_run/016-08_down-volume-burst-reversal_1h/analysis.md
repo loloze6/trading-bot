@@ -1,0 +1,22 @@
+---
+line: 7.g patterns
+backtest: 016-08_down-volume-burst-reversal_1h
+idea tested: 016-08_down-volume-burst-reversal
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5153 USD
+---
+## Findings
+- **F1:** Hourly returns are strongly positive at 21 and 22 UTC: mean 5.5e-4 (t 6.87) and 4.4e-4 (t 5.76) per bar, about 17,400 bars each. Every coin is positive over these two hours (t 3.0 to 4.6 across all six), and 7 of 8 years are positive (2022 is -2.2e-4, t -1.46). No other hour reaches t 3.9 in absolute value.
+- **F2:** The 2-hour return from the 20 UTC close grows with the coin's prior 24-hour fall. The lowest prior-24-hour-return quintile earns 2.29e-3 (t 7.03); the fourth quintile earns 0.0 (t 0.02). Low half minus high half is 7.8e-4 (Welch t 3.64, n 17,052). The Spearman rho is negative in all six coins (-0.056 to -0.083, all p < 0.005). Outside hours 21 and 22, the same prior-20-hour quintiles show no such gradient. The effect is short-lived: at 6 hours the low-minus-high difference turns to -8.0e-4 (t -2.14).
+- **F3:** After 3-day rises, the more one-directional the 72-hour path, the more the coin keeps rising over the next 72 hours. Path efficiency is |net log move| / sum of |hourly log moves|. The top-quintile mean excess return is 0.0113 (t 2.78) and the bottom quintile is -0.0044. Top half minus bottom half is 0.0071 (Welch t 2.22, about 1,432 non-overlapping cases per half). The sign is positive in 5 of 6 coins and 6 of 8 years. Given the many angles examined, this is only marginally distinct from chance.
+- **F4:** The tested signal shows no gradient. After 3-day falls, the excess 72-hour return across top-3-volume-share quintiles is flat and noisy (-0.0059 to +0.0019, all |t| < 1.8). Correspondingly, the book loses -7.5e-4 per day. Every coin's book return is negative (-2.3e-4 to -1.18e-3) while holding each coin was positive (6.7e-4 to 1.55e-3). This happens despite a mean long allocation of 0.18 to 0.33, and the per-bar timing gain is about zero (-2e-5 to +3e-5).
+- **F5:** After 3-day falls, the least efficient (choppiest) quintile underperforms over the next 72 hours: excess -0.0089 (t -2.47, n 536). Bars in the middle quintile of 72-hour past return also lag: -0.0077 (t -3.55, n 1,107). Neither result is backed by a consistent split by coin or year.
+
+## Ideas
+- `016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls` (from F1, F2): In the late-UTC-evening hours, the more a coin has fallen over its past 24 hours as of the 20:00 UTC close, the more it rises over the next 2 hours.
+- `016-08_down-volume-burst-reversal.g2_efficient-grind-up-continues` (from F3): When a coin has risen over the past 3 days, the larger the share of its hourly movement over that period that went in the net direction, the more it rises over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

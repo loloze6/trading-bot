@@ -6,3 +6,4 @@
 016-06_down-even-volume-continuation.g2_smooth-climb-continuation_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 016-06_down-even-volume-continuation_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
 016-07_up-volume-burst-reversal_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
+016-08_down-volume-burst-reversal_1h: not run: entry condition not met (step 5: inconclusive; step 6: not profitable enough)
