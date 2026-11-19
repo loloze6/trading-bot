@@ -1,3 +1,5 @@
+016-02_down-grind-price-continuation_1h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1h, folds A, B, C, D]
+016-03_up-jump-price-reversal_1h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1h, folds A, B, C, D]
 016-06_down-even-volume-continuation.g1_fresh-drop-rebound_1h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1h, folds A, B, C, D]
 016-06_down-even-volume-continuation.g2_smooth-climb-continuation_1h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1h, folds A, B, C, D]
 016-06_down-even-volume-continuation_1h: ran: BTCUSD 24/24; ETHUSD 24/24; LTCUSD 24/24; XMRUSD 24/24; XRPUSD 24/24; ZECUSD 24/24 [1h, folds A, B, C, D]

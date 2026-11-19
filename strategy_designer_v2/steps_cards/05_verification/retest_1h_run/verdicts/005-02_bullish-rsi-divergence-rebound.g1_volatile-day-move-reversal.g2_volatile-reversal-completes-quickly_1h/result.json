@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean signed 72-bar excess return on grid bars with |forecast| >= 10 in mean_reversion",
+    "value": 0.007463663183106772,
+    "statistic": {
+      "name": "ordinary t",
+      "value": 1.3525791030871024
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "slope of signed excess return on |forecast|, grid bars in regime with forecast != 0",
+    "value": 0.0004093661933931311,
+    "passed": true
+  },
+  "counts": {
+    "independent cases pooled": 195,
+    "cases on BTCUSD": 96,
+    "cases on ETHUSD": 99,
+    "grid bars in regime with forecast != 0 (supporting)": 813
+  },
+  "decided_by": "t lies between -2 and 2.",
+  "reading": "The coin's mean 72-bar return is the mean over all its non-overlapping grid returns across all windows, grid bars without a bar t+72 in the same window are dropped, and the plan's minimum counts are applied as 'not observable' per the workflow."
+}

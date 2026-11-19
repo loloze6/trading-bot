@@ -2,15 +2,6 @@
 
 One block per idea that needs components the catalogue does not have.
 
-## 016-02_down-grind-price-continuation_1h
-- Component: GrindShareOfFallComponent: over the last `period` (72) one-bar close returns, 1 minus (the sum of the `k` largest hourly losses, e.g. k = 3) / (the sum of all hourly losses), signed by the period's net return so a fall reads negative; it grows toward 1 in size as the fall is spread over many small losses and shrinks toward 0 as the few biggest hours carry it | measures: comparison
-
-## 016-03_up-jump-price-reversal_1h
-- Component: TopGainsShareOfRiseComponent: over the last `period` (72) one-bar close returns close[j]/close[j-1]-1, the sum of the `k` (e.g. 3) largest positive returns divided by the net rise close[t]/close[t-72]-1 (0 when the net move is not above 0, capped at 1). It is computed from closes, and its value grows from near 0 for a grind toward 1 as the rise comes from fewer, bigger hours. | measures: situation
-
-## 016-04_down-jump-price-reversal_1h
-- Component: FallConcentrationShare: over the last `period` (72) one-bar close changes, the sum of the `k` (3) largest one-bar losses divided by the net fall close[t-period] - close[t], when that net fall is above 0, else 0. It reads closes only, is never negative, and grows from near 0 (a grind spread over many hours) towards 1 and above (a fall made by a few violent hours). A variant times the net fall in percent, so that size and concentration combine into one graded long-only reading. | measures: comparison
-
 ## 016-05_up-even-volume-continuation_1h
 - Component: VolumeEvenness: the median of the last `period` (72) bar volumes divided by their mean (or 1 minus their Gini coefficient), from the volume column; it runs from 0 to 1 and rises toward 1 as the hourly volume is spread more evenly. | measures: situation
 

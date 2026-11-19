@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 016-02_down-grind-price-continuation_1h
+idea tested: 016-02_down-grind-price-continuation
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5476 USD
+---
+## Findings
+- **F1:** Every coin rises in the two hours from 21:00 to 23:00 UTC. The coin-average return per timestamp is +0.055% in hour 21 (t 3.38, n 2920) and +0.045% in hour 22 (t 2.97, n 2918), and no other hour reaches |t| 2.1 once averaged across coins. On a non-overlapping daily sample of the 2-hour return taken at the 20:00 close, each coin is positive on its own: BTC +0.082% (t 4.39), ETH +0.114% (t 4.73), LTC +0.101% (t 3.83), XMR +0.096% (t 3.47), XRP +0.098% (t 3.14) and ZEC +0.107% (t 3.31), with about 2,700 days each. The effect is positive in 7 of 8 years; 2022 is the exception at −0.022% (t −0.68).
+- **F2:** The 21:00–23:00 UTC rise grows with the coin's 7-day hourly volatility. By volatility quartile it is +0.029% (t 2.29), +0.079% (t 4.82), +0.079% (t 3.64) and +0.212% (t 6.53), with about 4,100 days per quartile. Scaled by that volatility, it is still largest in the top quartile: 0.124 against 0.078 in the bottom quartile.
+- **F3:** The 21:00–23:00 UTC rise is largest after the coin's steepest falls over the past 24 hours, measured relative to its volatility. In the lowest quintile of that move it is +0.207% (t 6.92, n 3282), against +0.07% to +0.11% in the other four quintiles.
+- **F4:** The tested down-grind pattern is absent. After 3-day falls, the excess 72-hour forward return by grind quartile is −0.14%, −0.45%, −0.36% and +0.18%, none with |t| above 1.7. The main measure's t was 0.95. The book's Sharpe is −1.31, its mean daily return is negative in 6 of 8 years, and the coins' own mean daily return is positive in 6 of those 8 years.
+- **F5:** After 3-day rises the brief's mirror holds, though weakly. Rises in the upper half of grind share have an excess 72-hour return 0.71% higher than the lower half (Welch t 2.21, n 2865), and the difference is positive for all 6 coins (+0.41% to +1.20%) and in 7 of 8 years. Once the size of the rise in volatility units is controlled for, the grind term falls to t 1.20, while size keeps t 3.32. Across the whole grid, the rise's size in volatility units does not predict the next 3 days (Spearman ρ −0.0002, n 5539).
+- **F6:** When 3-day volatility is high relative to 30-day volatility, the next 72 hours have a higher excess return. The top quartile shows +0.76% (t 2.61, n 1063) against −0.11% to +0.11% in the other quartiles. The effect is inconsistent across years, for example 2018 at −1.83% (t −2.55).
+
+## Ideas
+- `016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift` (from F1, F2): Each coin rises over the two hours from 21:00 to 23:00 UTC, and the higher its hourly volatility over the past 7 days, the larger that rise.
+- `016-02_down-grind-price-continuation.g2_evening-rebound-after-daily-drop` (from F1, F3): The more a coin has fallen over the past 24 hours relative to its own volatility, the more it rises over the two hours from 21:00 to 23:00 UTC that follow.
+- `016-02_down-grind-price-continuation.g3_up-grind-price-continuation` (from F5, F4): When a coin has risen over the past 3 days, the larger the share of that rise made by many small hourly gains rather than by its few biggest hours, the more the coin keeps rising over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
