@@ -1,6 +1,7 @@
 016-02_down-grind-price-continuation_1h: 2 ideas (2 explorations)
 016-03_up-jump-price-reversal_1h: 2 ideas (2 explorations)
 016-04_down-jump-price-reversal_1h: 3 ideas (2 explorations)
+016-05_up-even-volume-continuation_1h: 3 ideas (2 explorations)
 016-06_down-even-volume-continuation.g1_fresh-drop-rebound_1h: 2 ideas (3 explorations)
 016-06_down-even-volume-continuation.g2_smooth-climb-continuation_1h: 2 ideas (2 explorations)
 016-06_down-even-volume-continuation_1h: 2 ideas (2 explorations)
