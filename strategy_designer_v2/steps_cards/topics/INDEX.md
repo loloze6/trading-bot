@@ -33,3 +33,4 @@ closed ones keep their decisions and reasons. Numbers are fixed: a new topic tak
 | 26 | [Ideas stay free: no forced long and short](26_ideas-stay-free-long-and-short.md) | research: steps 2, 7 | closed (2026-11-19) |
 | 27 | [Dropped or solved in the review of 2026-11-19](27_dropped-or-solved-in-the-review.md) | research | closed (2026-11-19) |
 | 28 | [Topics kept as cards](28_topics-as-cards.md) | research: repository | closed (2026-11-19) |
+| 29 | [A model call ran away again](29_a-model-call-ran-away-again.md) | research: step 7, `common/lib.py` | open |

@@ -32,7 +32,7 @@ Recommended: drop them.
 | 2026-11-19 | Closed: TAO | design session | its data loads | - |
 
 ## Status and next
-Closed.
+Closed. The cost-limit item's condition ("if it happens again") was met the same day: reopened as topic 29.
 
 ## Links
 Commit eaf5baaa.
