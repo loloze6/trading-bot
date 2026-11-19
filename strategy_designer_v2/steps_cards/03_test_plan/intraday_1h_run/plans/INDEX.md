@@ -2,5 +2,5 @@
 017-02_presettle-rise-after-downtrend_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 017-03_postsettle-recovery-after-uptrend_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 017-04_postsettle-decline-after-downtrend_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
-017-05_settlement-move-reverses-after_1h: missing-components: The idea's situation and its 2-hour window depend on the UTC hour of the bar. The hour is in the [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
+017-05_settlement-move-reverses-after_1h: plan (fit: adapted) [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
 017-06_settlement-volume-rises-with-trend_1h: untestable: The idea predicts a rise in volume, not a price move in any direction. A forecast sets a long or [BTC, ETH, LTC, XMR, XRP, ZEC, 1h, folds A, B, C, D]
