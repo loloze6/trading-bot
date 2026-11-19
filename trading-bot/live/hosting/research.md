@@ -62,7 +62,7 @@ never used a server. "Fit" says whether 3 runs (about 820 MB) fit.
 | Option | Exact plan | Cost / month | Simp. | Fit (3 runs) | Flexibility | Main risk |
 |---|---|---|---|---|---|---|
 | **OVHcloud VPS-1** (France) | 2 vCores, 4 GB, 40 GB NVMe, unlimited traffic at 500 Mbit/s, **daily backup and IPv4 included**, 99.9% uptime promise. Datacentres in France: Gravelines, Strasbourg [3] | **€4.57** with a 12-month commitment, **paid upfront: about €54.86 at once** (€3.81 HT) [calc]; **€5.39** with none (€4.49 HT) [O] OVH blog "VPS 2027" + [3] dev.to, 2026-11-13 | 4 | yes, with room | good: bigger plans in one click | the renewal price after the commitment is not known; OVH raised its previous range by 45% in April 2026 [3] next.ink; a 2021 fire in Strasbourg cost data to VPS customers without backups (section 7) |
-| netcup VPS nano G11.5s (Germany) | 2 vCores, 2 GB, 60 GB, IPv4 included | **€3.69** with German VAT, about €3.72 with French VAT [calc]; **6-month contract** [O] netcup.com/en/server/vps-lite (extract; the nano price was cut off in round 2, so it is not re-confirmed) | 3 | yes, without much room | medium | German company, English/German panel; **snapshots included** [O] same page, one free snapshot download, more are paid [3] |
+| netcup VPS nano G11.5s (Germany) | 2 vCores, 2 GB, 60 GB, IPv4 included | **€3.69** with German VAT, about €3.72 with French VAT [calc]; **6-month contract** [O] netcup.com/en/server/vps-lite (extract; the nano price was cut off in round 2, so it is not re-confirmed) | 4 | yes, with room for 2–3 more runs | medium | **snapshots included** [O] same page, one free snapshot download, more are paid [3] |
 | netcup VPS pico G11.5s | 1 vCore, 1 GB, 30 GB | €2.21 with VAT, 12-month contract [O] same page | 3 | **no** (1 run only) | low | too small for 3 runs |
 | IONOS VPS XS (France/Germany) | 1 vCore, 1 GB, 10 GB | €1.20 [calc from €1 HT] **+ €12 setup fee**, probably a long commitment [3] experte.com/whtop 2026 | 3 | **no** | low | promotional price; renewal unclear |
 | Contabo Cloud VPS 10 (Germany) | 3 vCPU, 8 GB, 75 GB [M] | €4.40 first term, then €5.50 (VAT unclear) **+ a setup fee of unknown amount** [3] pricingsaas Jun 2026 + [O] Contabo support | 3 | yes | high (8 GB) | many reports of slow, overloaded CPUs and of new servers getting IP addresses blacklisted for earlier abuse (r/VPS 2024–25, many users) |
@@ -78,7 +78,7 @@ never used a server. "Fit" says whether 3 runs (about 820 MB) fit.
 | Option | What is free, for how long | Cost / month | Simp. | Fit | Main risk |
 |---|---|---|---|---|---|
 | Oracle Cloud Always Free | ARM machine up to **2 OCPU / 12 GB** (halved from 4/24 on 2026-06-15), no end date; only in the region chosen at sign-up (France has Paris `eu-paris-1` and Marseille `eu-marseille-1` [O] Oracle region list; whether free ARM capacity is available there: I do not know) | **€0** | **1–2** (complex console; often "out of capacity") | yes | Oracle **reclaims idle free machines**: under 20% CPU, network and memory over 7 days [O] Oracle docs. This bot is far below all three, so it would be reclaimed unless the account is upgraded to pay-as-you-go (card, billing risk). Many reports of whole accounts closed without warning [many users, 2024–26]. The free allowance was cut without notice in 2026 [3] InfoQ July 2026 |
-| AWS Lightsail (Paris region exists [M]) | free plan = $100–200 of credits for 6 months, then the account closes unless upgraded [O] AWS, 2025-07-15 | after credits: about €7.2 for 1 GB (**$7**), about €12.4 for 2 GB ($12), IPv4 included [O] Lightsail docs (extract) | 3 | 2 GB plan | not free for long; English console |
+| AWS Lightsail (Paris region exists [M]) | free plan = $100–200 of credits for 6 months, then the account closes unless upgraded [O] AWS, 2025-07-15 | after credits: about €7.2 for 1 GB (**$7**), about €12.4 for 2 GB ($12), IPv4 included [O] Lightsail docs (extract) | 3 | 2 GB plan | not free for long |
 | Google Cloud e2-micro | free with no end date, **in US regions only** (us-west1, us-central1, us-east1) [O] | €0 (a user reports a network charge) | 2 | **no** (1 GB) | **US server: Kraken's EU perpetuals are not offered in the US** (see section 4) |
 | Azure free account | B1s 750 h/month for **12 months**, then about $8.7 in France Central [3] | €0, then about €9 | 2 | **no** (1 GB) | ends after 12 months |
 
@@ -141,7 +141,7 @@ locked to the bot's address.
 |---|---|
 | 1 Cost | Among the cheapest options that are viable for 3 runs. Only netcup nano (€3.72, 2 GB, Germany, 6-month contract) and an old laptop you already own (about €2.5 of electricity) cost less, and both give up stability or room |
 | | **Everything is included**: fixed IPv4, daily automatic backup, unlimited traffic. Hetzner and Scaleway bill the IPv4 apart; DigitalOcean and Vultr bill backups apart |
-| 2 Simplicity | French company, French console and support, billed in euros with French VAT |
+| 2 Simplicity | Billed in euros with French VAT; month-to-month possible (€5.39) to try it before committing |
 | | A web console in the browser for when the connection from the PC fails |
 | | A standard Debian image that already has Python 3.13 (Debian 13 ships it [O] Debian release notes) |
 | 3 Performance | 4 GB for about 820 MB of need; 2 vCores for one decision a day |
@@ -160,11 +160,13 @@ What I recommend against, and why:
 
 ### Second choice: netcup VPS nano (Germany), about €3.72 a month, 6-month contract
 
-The cheapest plan with enough memory for 3 runs, IPv4 included, inside the EU. It is behind OVH because:
-- 2 GB leaves little room for more coins or the viewer;
-- its panel and support are in German/English;
+The cheapest plan with enough memory for 3 runs, IPv4 included, inside the EU: about €10 a year less than OVH.
+The two are close (language is not a criterion: the operator reads English). It is behind OVH because:
+- 2 GB fits 3 runs and about 2–3 more, but leaves less room for more coins or the viewer;
 - snapshots are included, but daily automatic backups as at OVH: I do not know;
-- it has a contract term.
+- it has a 6-month contract, so there is no month-to-month trial.
+
+If the lowest cost matters more than backups and room, netcup is a sound choice.
 
 ### Questions only the operator can answer (each would change the choice)
 
