@@ -1,0 +1,109 @@
+{
+  "run_id": "20261119T080208Z_ff85f34f",
+  "created_utc": "2026-11-19T08:02:08.437409+00:00",
+  "config": {
+    "regime_detector": {
+      "mode": "threshold_rules",
+      "components": [
+        {
+          "id": "hour",
+          "class": "strategies.strategy_components.HourOfDayComponent",
+          "params": {}
+        }
+      ],
+      "rules": [
+        {
+          "regime": "trending",
+          "any_of": [
+            [
+              {
+                "id": "hour",
+                "op": "between",
+                "low": 19.5,
+                "high": 21.5
+              }
+            ]
+          ]
+        }
+      ],
+      "default_regime": "unknown"
+    },
+    "strategies": {
+      "regimes": {
+        "trending": {
+          "components": [
+            {
+              "id": "vol7d",
+              "class": "strategies.strategy_components.VolatilityFromStdDevComponent",
+              "params": {
+                "vol_period": 169
+              },
+              "weight": 1.0,
+              "transforms": [
+                {
+                  "op": "standardise",
+                  "params": {
+                    "window": 169,
+                    "min_periods": 42
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "mean_reversion": null,
+        "chop": null,
+        "unknown": null
+      },
+      "sizing": {
+        "kind": "vol_target",
+        "window": 1440,
+        "target_annual_vol": 0.382099,
+        "periods_per_year": 8760,
+        "max_allocation": 2
+      }
+    },
+    "gap_rule": {
+      "gap_detection": true,
+      "gap_policy": {
+        "ignore_max_bars": 24,
+        "on_large_gap": "flatten"
+      }
+    },
+    "cost_model": {
+      "exchange": "kraken",
+      "market_type": "futures",
+      "fee_bps": 5.0,
+      "slippage_bps": {
+        "default": 7.5,
+        "BTCUSD": 2.5,
+        "ETHUSD": 4,
+        "AVAXUSD": 7.5,
+        "SOLUSD": 7.5
+      }
+    }
+  },
+  "config_sha256": "ff85f34f7a025a5c652790b9c154d863d327d5bc4fa0a2e878bfcac65d6e0187",
+  "data": {
+    "symbols": [
+      "XRPUSD"
+    ],
+    "timeframe": "3600s",
+    "start": "2025-05-03 00:00:00",
+    "end": "2025-12-31 23:00:00",
+    "bar_count": 5826,
+    "data_sha256": "d8009f466b0eb148915d504b9f6fe4d28406c5dcd7793d45fd7e0e0dc816ca6b"
+  },
+  "git_sha": "ae73fe33d0a42c4bfb4540a789321735dffe685d",
+  "engine": {
+    "lookback": 170,
+    "warmup": 170
+  },
+  "feeds": {
+    "registered": [],
+    "dropped": [
+      "funding_rate"
+    ],
+    "required": []
+  }
+}

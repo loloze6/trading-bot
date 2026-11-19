@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9974136444623254,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean 20:00-22:00 2-bar return minus mean other-hour 2-bar return",
+    "value": 0.0005261145263977584,
+    "statistic": {
+      "name": "Welch t",
+      "value": 4.419495220747535
+    },
+    "threshold": "confirm: difference > 0 with Welch t >= 2 (and slope t >= 2); reject: Welch t <= -2 or slope t <= -2"
+  },
+  "supporting_check": {
+    "name": "t of slope of 20:00-22:00 return on vol7d at 19:00 bar (must be >= 2)",
+    "value": 9.345574142095346,
+    "passed": true
+  },
+  "counts": {
+    "daily 20:00-22:00 cases": 17241,
+    "other-hour cases": 188355,
+    "regression cases": 17233
+  },
+  "decided_by": "Confirm rule met: the main difference is positive with Welch t >= 2 and the volatility slope has t >= 2.",
+  "reading": "Cases are 2-bar returns on bars starting at odd UTC hours (closes on even hours) within each window with exactly 2 hours between the two closes, the bar starting at 19:00 giving the 20:00-22:00 case and all other such blocks the other-hour cases; vol7d is the recorded last_history_value at the 19:00 bar (recomputed as the std of 168 hourly returns only if it is not recorded on most of those bars, rows missing it left out). Recorded vol7d used."
+}
