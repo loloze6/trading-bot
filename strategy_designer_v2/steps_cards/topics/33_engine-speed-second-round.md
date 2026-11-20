@@ -1,6 +1,6 @@
 # Topic 33: A second round of engine speed work
 
-Status: open (unparked 2026-11-20)  
+Status: built 2026-11-20 on `engine-speed-round2` (A to D, files identical, `orchestration/duration/14_round2_proof.md`); merge: designer session, master: operator's go  
 Where: engine (`trading-bot/`), shared code  
 Opened: 2026-11-19 (operator, during d_line_1h_run)
 
@@ -43,6 +43,10 @@ then each change proven by identical files on fixed inputs (as in round 1, `orch
 into the working branch while a run is going, and nothing into master without the operator's go. Meanwhile, without the
 engine: the replay of topic 36 (`36_review/book_sim.py`, 10 s a book, where a component is computed on every bar) and
 rerunning only the books whose step 6 could change.
+
+2026-11-20, round 2 session (branch `engine-speed-round2`): measurement `orchestration/duration/11_round2_measure.md`,
+plan `12_round2_plan.md` (A: bootstrap only where read; B: volatility components reuse the previous bar's stds; C: one
+call per coin and fold; D: per-bar glue). Waiting for the operator's go; no engine change made.
 
 ## Links
 Topic 21; `orchestration/duration/`; `runs/D_LINE_1H_RUN.md`.

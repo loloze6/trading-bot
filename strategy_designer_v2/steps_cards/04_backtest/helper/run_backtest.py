@@ -13,19 +13,22 @@ What it does, in order:
      (which refuses any window touching the sealed holdout), the bar size, and the venue keys from
      trading-bot/backtest/venue_resolver.py. The protocol is written to a temporary folder only: it holds dates.
   3. Runs trading-bot/backtest/run_protocol.py (the pipeline's wrapper around the bot's run_backtest, with warm-up
-     prefetch and the holdout guard) once per coin, on all the coin's windows, so Python and the bot load once per
-     coin. That call is used only when every window got its own run folder. The engine names a run folder after the
-     current second, so two windows finishing in the same second share one; and the wrapper stops at the first window
-     that fails. In either case the coin is run again once per window, each in its own folder (the way every coin ran
-     before 2026-11-16). A coin or window without data does not stop the others.
-     The coins run at the same time, as many at once as the machine has cores (2026-11-16, change 2 of
-     orchestration/duration/3_plan.md). Each coin's calls are separate processes with their own output folders, and
+     prefetch and the holdout guard) once per coin and fold, on the fold's windows (with --windows: once per coin), so
+     Python and the bot load once per call. That call is used only when every window got its own run folder. The
+     engine names a run folder after the current second, so two windows finishing in the same second share one; and
+     the wrapper stops at the first window that fails. In either case the call's windows are run again once per
+     window, each in its own folder (the way every coin ran before 2026-11-16). A coin or window without data does
+     not stop the others.
+     The calls run at the same time, as many at once as the machine has cores (2026-11-16, change 2 of
+     orchestration/duration/3_plan.md; one call per coin and fold since 2026-11-20, change C of 12_round2_plan.md, so
+     6 coins no longer run in two waves on 4 cores). Each call is a separate process with its own output folder, and
      the wrapper gives each call its own interim trades file (--trades-file-in-out-dir).
   4. Keeps the engine's files per coin and window (metrics.json, manifest.json, forecast_distribution.csv, and
      bars.csv and trades.json gzipped). The wrapper call's own protocol_summary.json and trade_diagnostics.json
-     (gzipped) and its log (engine_log.txt) go in the coin's folder, or in the window's folder when the coin ran once
-     per window. It drops tradesxl.xlsx and portfolio_states.csv, which repeat what bars.csv and trades.json hold.
-     Windows are named w1..wN in the fold's order.
+     (gzipped) and its log (engine_log.txt) go in the call's folder (<coin>/fold_<X>/, or <coin>/windows/ with
+     --windows), or in the window's folder when its windows ran once per window. It drops tradesxl.xlsx and
+     portfolio_states.csv, which repeat what bars.csv and trades.json hold.
+     Windows are named w1..wN in the folds' order.
   5. Writes run.md for the plan and its line in the backtests folder's INDEX.md.
 
 This script does not open the price data itself: only the engine reads bars.
@@ -182,27 +185,39 @@ def cores():
     return len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else (os.cpu_count() or 1)
 
 
-def run_coin(python, config_path, symbol, bar, folds, cdir, windows=None):
-    """Runs one coin's windows into cdir. Returns (the protocol, the rows of the windows run, the windows not run)."""
-    proto = protocol(python, symbol, bar, folds, windows)
+def parts(python, symbol, bar, folds, windows=None):
+    """The coin's windows, split into the wrapper calls that run them: one call per fold (2026-11-20, topic 33,
+    `orchestration/duration/12_round2_plan.md`, change C), or one call on the windows of --windows.
+    Returns [(part name, its protocol, the number of the coin's windows before it)]."""
+    out, before = [], 0
+    for name, fs in ([("windows", folds)] if windows is not None else [(f"fold_{f}", [f]) for f in folds]):
+        proto = protocol(python, symbol, bar, fs, windows)
+        out.append((name, proto, before))
+        before += len(proto["windows"])
+    return out
+
+
+def run_part(python, config_path, proto, before, cdir, pdir):
+    """Runs one call's windows into cdir (windows numbered after the coin's `before` earlier ones); the call's own
+    files go in pdir. Returns (the rows of the windows run, the windows not run)."""
     windows = proto["windows"]
     rows, failed, folders = [], [], None
-    # One wrapper call for all the coin's windows: Python and the bot are loaded once per coin, not once per
-    # window. Its record is used only when every window has its own run folder (coin_runs); otherwise the coin
-    # is run again one window at a time, below.
+    # One wrapper call for the part's windows: Python and the bot load once per call. Its record is used only when
+    # every window has its own run folder (coin_runs); otherwise the part is run again one window at a time, below.
     if windows:
         with tempfile.TemporaryDirectory() as tmp:
             rc, log, out = call_protocol(python, config_path, proto, windows, Path(tmp))
             folders = coin_runs(rc, out, windows)
             if folders:
-                for k, src in enumerate(folders, 1):
+                for k, src in enumerate(folders, before + 1):
                     rows.append(keep_window(src, cdir / f"w{k}", k))
-                keep_call(out, log, cdir)
+                pdir.mkdir(parents=True, exist_ok=True)
+                keep_call(out, log, pdir)
     # One wrapper call per window, each in its own folder (the way every coin ran before 2026-11-16). Used
-    # when the coin's call failed (the wrapper stops at the first window that fails, so the later ones would be
-    # lost) or two of its windows shared one run folder. The coin's record is then exactly that of a run made
+    # when the part's call failed (the wrapper stops at the first window that fails, so the later ones would be
+    # lost) or two of its windows shared one run folder. The record is then exactly that of a run made
     # this way from the start.
-    for k, window in enumerate([] if folders else windows, 1):
+    for k, window in enumerate([] if folders else windows, before + 1):
         with tempfile.TemporaryDirectory() as tmp:
             rc, log, out = call_protocol(python, config_path, proto, [window], Path(tmp))
             runs = list((out / "results").glob("*/metrics.json")) if (out / "results").exists() else []
@@ -214,7 +229,7 @@ def run_coin(python, config_path, symbol, bar, folds, cdir, windows=None):
             wdir = cdir / f"w{k}"
             rows.append(keep_window(runs[0].parent, wdir, k))
             keep_call(out, log, wdir)
-    return proto, rows, failed
+    return rows, failed
 
 
 def index_line(index_path, plan_id, line):
@@ -274,11 +289,21 @@ def main():
     shutil.copy(config_path, dest / "config.json")
     report, summary, proto = [], [], None
     symbols = [f"{base}USD" for base in coins(h["data-instruments"])]
-    # The coins at the same time: each coin's calls are separate processes with their own folders. The record is
-    # written in the coins' order, as before.
+    # The calls at the same time, as many as the machine has cores: one call per coin and fold (change C, 2026-11-20:
+    # 6 coins on 4 cores ran in two waves when a call held a whole coin). Each call is a separate process with its own
+    # folders. The record is written in the coins' and windows' order, whichever call finishes first.
     with ThreadPoolExecutor(max_workers=max(1, min(len(symbols), cores()))) as pool:
-        runs = [pool.submit(run_coin, args.python, config_path, symbol, bar, folds, dest / symbol, windows) for symbol in symbols]
-        results = [r.result() for r in runs]
+        coin_parts = list(pool.map(lambda sym: parts(args.python, sym, bar, folds, windows), symbols))
+    calls = [(symbol, name, proto, before) for symbol, ps in zip(symbols, coin_parts) for name, proto, before in ps]
+    with ThreadPoolExecutor(max_workers=max(1, min(len(calls), cores()))) as pool:
+        runs = [pool.submit(run_part, args.python, config_path, proto, before, dest / symbol, dest / symbol / name)
+                for symbol, name, proto, before in calls]
+        done = [r.result() for r in runs]
+    results = []
+    for symbol, ps in zip(symbols, coin_parts):
+        mine = [d for (sym, *_), d in zip(calls, done) if sym == symbol]
+        results.append(({**ps[0][1], "windows": [w for _, p, _ in ps for w in p["windows"]]} if ps else None,
+                        [r for rows, _ in mine for r in rows], [f for _, failed in mine for f in failed]))
     for symbol, (proto, rows, failed) in zip(symbols, results):
         windows = proto["windows"]
         part = f"- {symbol}: {len(rows)} of {len(windows)} windows run."

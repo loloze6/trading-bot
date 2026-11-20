@@ -452,17 +452,27 @@ class CandleBuilder:
         Uses 'close' as the price to avoid look-ahead bias on entries decided
         at bar close.  Converts pd.Timestamp → datetime for timedelta arithmetic.
         """
-        timestamp = pd.to_datetime(row["timestamp"])
+        return self._ingest(symbol=symbol, **self.row_values(row.__getitem__, lambda k: k in row.index))
+
+    def add_values(self, symbol: str, values: dict) -> Optional[Candle]:
+        """Backtest path: ingest one historical row already read by row_values (DataManager reads a window's rows
+        once, topic 33)."""
+        return self._ingest(symbol=symbol, **values)
+
+    @staticmethod
+    def row_values(get, has) -> dict:
+        """The values one historical row feeds to _ingest: get(column) reads the row, has(column) says whether the
+        row has that column. One conversion for add_row and for DataManager's rows read once per window."""
+        timestamp = pd.to_datetime(get("timestamp"))
         if hasattr(timestamp, "to_pydatetime"):
             timestamp = timestamp.to_pydatetime()
-        return self._ingest(
-            symbol=symbol,
-            price=float(row["close"]),
-            volume=float(row.get("volume", 0.0)),
+        return dict(
+            price=float(get("close")),
+            volume=float(get("volume") if has("volume") else 0.0),
             timestamp=timestamp,
-            open=float(row["open"])  if "open"  in row.index else None,
-            high=float(row["high"])  if "high"  in row.index else None,
-            low=float(row["low"])    if "low"   in row.index else None,
+            open=float(get("open"))  if has("open")  else None,
+            high=float(get("high"))  if has("high")  else None,
+            low=float(get("low"))    if has("low")   else None,
         )
 
     def get_candle_history(self, symbol: str, count: int = 1) -> pd.DataFrame:
@@ -475,6 +485,19 @@ class CandleBuilder:
         
         if not candles:
             return pd.DataFrame()
+        # topic 33 (2026-11-20; this table, built on every bar, was 14 % of an hourly backtest): the same table from
+        # typed arrays when every value is plain (a naive datetime, floats), which is what the list of dicts below
+        # gives for them: datetime64[ns] and float64 columns, in this order. Any other value takes the list of dicts.
+        if all(type(c.start_time) is datetime.datetime and c.start_time.tzinfo is None
+               and all(type(v) is float for v in (c.open, c.high, c.low, c.close, c.volume)) for c in candles):
+            return pd.DataFrame({
+                "timestamp": np.array([np.datetime64(c.start_time, "ns") for c in candles]),
+                "open":      np.array([c.open for c in candles], dtype=np.float64),
+                "high":      np.array([c.high for c in candles], dtype=np.float64),
+                "low":       np.array([c.low for c in candles], dtype=np.float64),
+                "close":     np.array([c.close for c in candles], dtype=np.float64),
+                "volume":    np.array([c.volume for c in candles], dtype=np.float64),
+            })
         return pd.DataFrame([
             {
                 "timestamp": c.start_time,
@@ -803,6 +826,9 @@ class DataManager:
         # ── Backtest-only state ────────────────────────────────────────────
         self.historical_data: Dict[str, pd.DataFrame] = {}   # symbol → DataFrame
         self._cursor: Dict[str, int] = {}
+        # topic 33: each historical frame's rows, read once (symbol -> (the frame, its rows' values)); see
+        # _process_backtest_tick
+        self._backtest_rows: Dict[str, tuple] = {}
 
     # -----------------------------------------------------------------------
     # Feed registration
@@ -1500,7 +1526,15 @@ class DataManager:
         idx = self._cursor.get(symbol, 0)
         if idx >= len(df):
             return None
-        return self.candle_builder.add_row(df.iloc[idx], symbol)
+        # The frame's rows are read once (topic 33, 2026-11-20: reading one row per bar as a pandas Series was 7 % of
+        # an hourly backtest), with add_row's own conversion (CandleBuilder.row_values), from the same cells. A frame
+        # replaced in historical_data is read again.
+        cached = self._backtest_rows.get(symbol)
+        if cached is None or cached[0] is not df:
+            cols = {c: df[c].tolist() for c in ("timestamp", "open", "high", "low", "close", "volume") if c in df.columns}
+            rows = [CandleBuilder.row_values(lambda k, i=i: cols[k][i], cols.__contains__) for i in range(len(df))]
+            cached = self._backtest_rows[symbol] = (df, rows)
+        return self.candle_builder.add_values(symbol, cached[1][idx])
 
 
 # ===========================================================================
