@@ -53,6 +53,30 @@ derivatives eligibility page (section 4).
 2 GB holds about 6 runs. At one more run a month, it is full in about 3 months; then upgrade in one click (Webdock),
 or put several coins in one program (the card's plan).
 
+**Every remaining option, checked on its own website on 2026-11-20** (pages read directly, or in a browser where the
+site requires one; Contabo blocks automated browsers and stays from search extracts):
+
+| Option | Price per month on its page | With French VAT [calc] | Billing and commitment | Memory | Backup | Crypto in its terms | Available? |
+|---|---|---|---|---|---|---|---|
+| **Webdock VPS Essential** | €2.15 before VAT | about €2.58 | **monthly**, paid in advance, no contract, non-refundable | 2 GB | daily, included | crypto workloads forbidden unless approved in writing | yes (order page reachable) |
+| **netcup VPS nano G11.5s** | €3.69 with German VAT | about €3.72 | **billed every 6 months** (about €22.32 each time); 6-month minimum, then one month's notice to the end of a month [O] terms §6 | 2 GB | snapshots | only mining forbidden | yes, "slight delay in provisioning"; one per customer; Nuremberg |
+| **OVH VPS-1** | €3.81 before VAT (€4.57 with VAT) "from", with 12-month commitment; €4.49 before VAT without [3] | €4.57 – €5.39 | monthly without commitment | 4 GB | daily, included | mining forbidden (forum); terms PDF not read | **only Singapore offered on 2026-11-19** (operator); configurator not readable here |
+| **OVH VPS-2 in a Local Zone** | €4.66 before VAT | €5.59 | not stated on the page | **8 GB**, 4 vCores | **not included** in Local Zones | as above | 28 cities; which ones and stock: not readable here |
+| IONOS VPS S+ | €5 before VAT | €6 + €12 setup fee | cancel anytime; 30-day money-back | 2 GB | — | not checked | yes |
+| Hetzner CX23 | €5.99 before VAT | about €7.19 | monthly | 4 GB | — | mining forbidden [3] | **"currently unavailable"** on its page |
+| Hetzner CPX12 (next 2 GB plan) | €9.99 before VAT | about €11.99 | monthly | 2 GB | — | — | yes |
+| Scaleway DEV1-S | €6.55 before VAT | about €7.86, + IPv4 and disk | hourly | 2 GB | — | not checked | Paris |
+
+**What the checks change:**
+- **netcup is not monthly:** it bills 6 months at a time. Under the operator's rule (monthly, unless a year costs
+  under €20), this is a question for the operator; about €22 every 6 months.
+- **On strictly monthly payment**, the order becomes:
+  1. Webdock (after a written yes);
+  2. OVH VPS-1 without commitment, once EU stock returns;
+  3. OVH VPS-2 in an EU Local Zone (8 GB, no backup);
+  4. IONOS VPS S+.
+- **Hetzner, Scaleway and IONOS** all cost more than OVH, and Hetzner's cheap plan cannot be ordered.
+
 **Ruled out:**
 - **1blu VPS Eco:** €1 a month for a year, then €3.99; but website and support in German only, and the operator
   does not speak German.
