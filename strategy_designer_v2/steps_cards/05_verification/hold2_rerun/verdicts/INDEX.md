@@ -1,2 +1,5 @@
+002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs_1d: not observable (fit: adapted) [main: 1.22072; OLS slope t 1.22072; grid cases with forecast above 0 284, grid cases in total 827]
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly_1d: confirmed (fit: adapted) [main: 0.020139; t of the mean 3.50166; qualifying cases across all coins and windows 163]
 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d: confirmed (fit: exact) [main: 0.0134365; ordinary t of the mean 2.92925; independent cases 815, cases BTCUSD 408, cases ETHUSD 407, cases forecast > 0 410, cases forecast < 0 405]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d: confirmed (fit: exact) [main: 0.00633208; OLS t of slope 2.74505; trending-regime grid cases 2840]
+N2-04_slow-and-fast-momentum.e1_short-horizon-dual-momentum-continuation_1h: inconclusive (fit: adapted) [main: 0.00370984; t of the mean 1.66123; non-overlapping in-situation cases 1858, trending days in the timing check 2050, active bars 136850]

@@ -1,1 +1,2 @@
 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d: not observable (fit: exact) [main: 0.0397942; ordinary t of the mean 2.24779; independent cases 204, cases BTCUSD 102, cases ETHUSD 102, cases forecast > 0 142, cases forecast < 0 62]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d: inconclusive (fit: exact) [main: 0.00992107; OLS t of slope 1.47365; trending-regime grid cases 644]

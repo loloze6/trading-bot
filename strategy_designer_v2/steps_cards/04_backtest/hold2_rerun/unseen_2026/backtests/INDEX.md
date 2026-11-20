@@ -1,1 +1,2 @@
 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d: ran: BTCUSD 3/3; ETHUSD 3/3; BNBUSD not run (the dates were not fetched (run the data tool)) [1d, windows unseen_2026]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d: ran: BTCUSD 3/3; ETHUSD 3/3; LTCUSD 3/3; XMRUSD 3/3; XRPUSD 3/3; ZECUSD 3/3 [1d, windows unseen_2026]
