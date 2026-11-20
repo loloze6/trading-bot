@@ -28,3 +28,27 @@ whether any idea breaks the definition of an idea (a level, a threshold, a cost 
 | S3. It distorts | B's ideas state costs or levels, or B stops proposing ideas | the rule's wording is wrong: rework it |
 
 **Limits:** one analysis per case and version, so a difference of one idea is noise; only clear differences count.
+
+## Reading (2026-11-21; A 3.01 USD, B 2.76 USD; the analyses and ideas in `runs/step7_size_ab/`)
+
+| Case | A (today's step 7): ideas, horizons | B (with the size and the cost): ideas, horizons |
+|---|---|---|
+| one-day volatility-scaled reversal (1d) | 2: 1 day, 1 day | 3: 1 day, 3 days, 10 days |
+| late-evening rebound (1h, 2 h) | 2: 2 days, 24 hours | 3: 3 days, 24 hours, 3 days |
+| evening-hour drift (1h, 2 h) | 1: 2 hours | 2: 3 days, 7 days |
+| settlement move reverses (1h, 2 h) | **no ideas** ("the move is well under the round-trip cost") | 3: 24 hours, 24 hours, 24 hours |
+| **All** | **5 ideas; 4 of a day or more; 0 of 3 days or more** | **11 ideas; 11 of a day or more; 6 of 3 days or more** |
+
+- Both versions name the cost in all 4 analyses: line 7.d already looks at it. B states it per case against the idea's
+  size ("the idea's own size is +0.05 % per case, 0.2 times the 0.21 % round trip").
+- No idea in either version names a level, a cost or a percentage: the definition of an idea holds.
+
+**Outcome S1: it works, with one thing to watch.** With the size against the cost, the line stops proposing ideas of a
+few hours and moves to horizons of days (the median from about 1 day to 3 days), and where A gave up (the settlement
+idea) B proposes ideas whose move can be larger. **To watch:** several of B's ideas move away from the tested idea's own
+situation towards general multi-day momentum and reversal ("the more a coin has risen over its last 7 days, the more it
+rises over the next 3 days", from the evening-hour case). They are ideas, but less tied to the brief's theory, and some
+may repeat daily ideas already tested. Whether that matters is what testing them says (steps 3 to 6), the next step.
+
+**Not yet shown:** whether B's ideas pay. That is the end-to-end run (step 3 of the plan agreed): the ideas through
+steps 3 to 6 with the holding period, on the faster engine.
