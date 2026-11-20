@@ -1,4 +1,5 @@
-**Draft for the operator's review (topic 34). No step reads it yet.**
+**Draft for the operator's review (topic 34). No step reads it yet.** Code: `book_diagnosis.py` (tests:
+`test_book_diagnosis.py`), which writes `diagnosis.json` and `diagnosis.md` into a backtest record.
 
 Why a book does or does not pay: the diagnosis of a backtest's book. It is an observation, not a check: it refuses
 nothing, and step 6 stays the profitability check (topic 08). It is read the same way for every timeframe, and for

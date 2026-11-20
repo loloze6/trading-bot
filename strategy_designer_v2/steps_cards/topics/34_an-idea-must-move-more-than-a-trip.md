@@ -89,6 +89,13 @@ Review 2 (operator): opening time and closing time as a pair; the per-bet move a
 enough"; "book stays in" renamed "holding past the bets" (the book's real positions, not the coin after a signal).
 Review 3 (operator): "big enough" compares the price move over the horizon with the cost rate of a round trip;
 quantity does not enter (profit and cost both scale with it). The book-level per-unit version is dropped.
+2026-11-20, step 2 built (operator's go): `common/book_diagnosis.py`, next to its definition until the observe-and-advise
+stage exists; 8 tests on records whose answers are known by construction (bets, a known fee, a known path, overlap,
+holding past the bets, a book that is all market, the horizon read from the plan); all pass. Proof: a rerun on the same
+record gives an identical `diagnosis.json`. The 3 open points are applied as proposed until decided. First real record
+(grinding-rises held, H 72): move over the horizon 38.9 bps against a round trip of 21.4; signal bar +58.1; peak 44.6 at
+bar 78; 30 % of the time in a position past its bets (earning −0.6 bps a bar against +0.4 covered); market 73 % of the
+book's daily gain.
 1. Review: define the four readings in `common/` (business definition first, then the formula), and settle the open
    points: drift removal, log or simple moves, the cost of a round trip read from the venue config, overlapping
    signals, and renewed or stale positions (trace each position to the signal that holds it).
