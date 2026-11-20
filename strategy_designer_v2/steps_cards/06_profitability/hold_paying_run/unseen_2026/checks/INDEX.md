@@ -1,3 +1,4 @@
+002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1h: not checked: the record holds no window that ran
 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1d: not profitable enough [Sharpe 0.2495; Sharpe minus holding's Sharpe 0.1514; Calmar 0.1226]
 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d: not profitable enough [Sharpe -0.1645; Sharpe minus holding's Sharpe 0.4574; Calmar -0.3479]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum_1d: not profitable enough [Sharpe 0.4916; Sharpe minus holding's Sharpe 0.3935; Calmar 0.5491]

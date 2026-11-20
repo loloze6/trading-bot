@@ -1,3 +1,4 @@
+002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1h: no verdict: no backtest record
 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1d: inconclusive (fit: adapted) [main: 0.00209092; one-group t 0.231186; grid bars in the top group 106, grid bars with forecast > 0 285, grid bars with forecast 0 339]
 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d: not observable (fit: exact) [main: 0.0141339; ordinary t of the mean 1.15233; independent cases 90, cases BTCUSD 45, cases ETHUSD 45, cases forecast > 0 44, cases forecast < 0 46]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d1_nearness-with-rising-week.g2_falling-month-high-fades.g1_rising-month-weekly-momentum_1d: inconclusive (fit: exact) [main: -0.000703271; OLS slope t -1.77974; independent grid cases in the regime 142]

@@ -1,0 +1,24 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of next 240-bar excess return on forecast, trending grid bars",
+    "value": 0.005039197038919489,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.7018756413992582
+    },
+    "threshold": "confirm: slope > 0 with t >= 2; reject: slope < 0 with t <= -2; otherwise inconclusive"
+  },
+  "supporting_check": null,
+  "counts": {
+    "grid cases in trending": 121,
+    "cases at forecast 0": 29,
+    "cases with forecast > 0": 92
+  },
+  "decided_by": "fewer than 200 grid cases in trending (121).",
+  "reading": "the 4800-bar SMA cannot be rebuilt inside windows shorter than 4800 bars, so on those bars the situation is read from the recorded regime 'trending' (SMAs recomputed from prices on 0 bars), with long (forecast > 0) as the expected side; the coin's mean 240-bar return is the mean over all its windows' non-overlapping grid bars (all regimes), the regression has an intercept, and the plan's minimum counts are applied as 'not observable'."
+}
