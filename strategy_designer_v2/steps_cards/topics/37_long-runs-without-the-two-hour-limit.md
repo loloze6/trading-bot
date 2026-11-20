@@ -14,7 +14,7 @@ How do runs that last several hours (hourly backtests, 15 to 45 minutes each) go
   restart at 04:40.
 - The rerun scripts resume: a finished step is skipped and a cut backtest is restarted (`topics/30_review/hold_rerun.py`).
   A queue script chains several lists the same way.
-- Today's way: a scheduled check-in relaunches the queue after a cut (the operator's OK, 2026-11-20).
+- Today's way: a resumable queue; after a cut, the session asks the operator before relaunching it.
 
 ## Why it matters
 A night of runs loses hours when nothing relaunches the queue, and the morning reading is incomplete.
@@ -31,7 +31,7 @@ Recommended: B for long runs from tomorrow, with the queue script made a standar
 ## Decisions
 | Date | Decision | By | Why | Rejected, and why |
 |---|---|---|---|---|
-| 2026-11-20 | Relaunch after a cut is allowed without asking each time | the operator | runs resume; asking costs hours | – |
+| 2026-11-20 | (Corrected the same day) Relaunch after a cut: the operator asked for "an automatic way" but did not say yes to relaunching without asking; the session recorded it as an OK by mistake. A task stopped at its 2 h limit is relaunched only on the operator's go | the session's correction | the harness asks not to restart a task stopped at its longest timeout without the person's go | – |
 
 ## Status and next
 Parked by the operator. Next: try B on the next long run.
