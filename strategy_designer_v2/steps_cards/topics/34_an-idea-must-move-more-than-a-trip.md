@@ -78,6 +78,7 @@ are designed together.
 | 2026-11-20 | Take the night's readings as a draft approach: review it, standardize it, go further, and test it | the operator | the readings tell why a proven idea does not pay | – |
 
 ## Status and next
+2026-11-20: step 1 drafted, `common/book_diagnosis.md`, for the operator's review (three open points at its end).
 1. Review: define the four readings in `common/` (business definition first, then the formula), and settle the open
    points: drift removal, log or simple moves, the cost of a round trip read from the venue config, overlapping
    signals, and renewed or stale positions (trace each position to the signal that holds it).
