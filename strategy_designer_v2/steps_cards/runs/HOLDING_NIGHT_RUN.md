@@ -131,3 +131,15 @@ positive long-horizon books (Sharpe 0.32 and 0.45), and set 3's one book that st
 decision (2026-11-20): an event is a rise of the forecast itself, on its own side, sized at its bar. On the other books
 the corrected rule, replayed from the records (`topics/30_review/opt2_event_replay.py`), changes almost nothing
 (grinding-rises: units traded 3,031 → 3,036, book without costs 20,363 → 20,301), so they are not rerun.
+
+**Option 2, case by case (2026-11-20, the operator: "check there is no other case to fix").** 11 cases written from the
+definition, each with the position expected bar by bar, run through a copy of the engine's block with the band as coded
+(`topics/30_review/opt2_cases.py`). Today's engine fails 3:
+1. an old short against +20 while volatility drifts: kept short forever (the defect above);
+2. a side switch: the book goes flat for one bar before turning (the floor `max(target, min(position, held))` floors
+   at 0 when nothing is held: an extra trade and a lost bar), on every two-sided book;
+3. slow rises of 0.5 forecast point: each counted as a bet, so a 0.1 position is left held after the forecast goes to 0
+   (noise counted as events).
+The corrected rule passes all 11: an event is a rise of the forecast on its side of at least the band (2 points, the
+same `min_allocation_change` as trades), measured from its lowest level since its last event, sized at its bar; the
+floor applies only when a bet is held.
