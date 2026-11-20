@@ -156,7 +156,7 @@ its model use was small (about 0.4 USD each at start), and merging back took 2 m
 merged row by row (10 files each, no row in conflict). The longest part sets the time: a better split balances by
 expected time (hourly books with more coins first).
 
-## Step back: hourly bars, where we are (2026-11-20, 17:30 Paris)
+## Step back: hourly bars, where we are (2026-11-20, 16:20 Paris)
 
 **1. Hourly books that pay exist: 3, all hourly versions of daily ideas with horizons of days.** On the corrected rule:
 | Idea | Daily (its own record) | Hourly, held |
