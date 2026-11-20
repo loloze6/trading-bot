@@ -106,3 +106,28 @@ less than 0.4) and none reaches 0.
 **So the vision is half proven.** Holding is necessary: without it no hourly book could pay. It is not sufficient: what
 is still missing is ideas whose move over their horizon is well above the cost of a trip. The ideas the workflow found
 on hourly bars are mostly 1-to-4-bar ideas, and the long ones have an edge of 20 to 60 bps per unit, close to the bar.
+
+## Correction (2026-11-20, 09:00 UTC): a defect of option 2 on books that trade both sides
+
+Asked by the operator whether option 2 was checked case by case, I replayed it from the recorded bars
+(`topics/30_review/opt2_replay_check.py`: the engine matches its rule on every bar, within fill rounding). The replay
+showed the rule itself is wrong in business terms on books that trade both long and short. An event was any move
+of the sized target, so a long target drifting down by a hair with volatility (1.304 → 1.302) counted as a "fall",
+and falls hold a short. An old short was kept against a forecast of +20 for 24 bars and more.
+(`topics/30_review/opt2_against_forecast.py`: the share of the time in a position held on the other side of the
+forecast.)
+
+| Book | Set | Held against the forecast |
+|---|---|---|
+| volatile-regime reversal | 2 | 50 % of bars in position |
+| daily-move reversal g2 = g3 | 2 | 50 % |
+| volatility-scaled two-hour reversal | 2 | 18 % |
+| volatile reversal completes quickly | 3 | 19 % |
+| rsi side predicts next week | 3 | 41 % |
+| every other book (long-only or nearly) | 1, 2, 3 | 0 to 0.8 % |
+
+So the results of these 5 books are not option 2 as defined and are not read until rerun. That includes 2 of set 2's 3
+positive long-horizon books (Sharpe 0.32 and 0.45), and set 3's one book that stopped paying. The operator's
+decision (2026-11-20): an event is a rise of the forecast itself, on its own side, sized at its bar. On the other books
+the corrected rule, replayed from the records (`topics/30_review/opt2_event_replay.py`), changes almost nothing
+(grinding-rises: units traded 3,031 → 3,036, book without costs 20,363 → 20,301), so they are not rerun.
