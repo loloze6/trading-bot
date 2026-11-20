@@ -8,8 +8,8 @@ all windows; never across two windows) and `forecast.md` 7 (a bet and its holdin
 **Business definition.** An idea predicts a move: when its condition is seen, the coin moves by some amount over the
 idea's horizon. The book pays when the move it captures, from the moment it can act, is larger than what the trades
 cost, and is not just the coin's own rise. The diagnosis says, from the backtest's own record, which of these went
-wrong: the trades cost more than they capture, the move left once the bot can act is smaller than a round trip, the
-idea's horizon is not where its move ends, the book stayed in after the idea's horizon, or the book earned the market's rise rather than the idea's move.
+wrong: the move captured is smaller than its trades cost, the move started before the bot could open, the idea's
+horizon is not where its move ends, the book stayed in after its bets ended, or the book earned the market's rise rather than the idea's move.
 
 **Terms**
 - **Unit traded:** a change of 1 in the position, as a share of the book (`postRebalance_current_allocation` minus
@@ -23,24 +23,24 @@ idea's horizon is not where its move ends, the book stayed in after the idea's h
   position for the idea's horizon H (`forecast.md` 7, option 2). **A bet's age:** bars since that rise.
 
 **The five readings**, each for the whole book (all coins and windows) and per coin:
-1. **Big enough: does each unit traded earn what it costs?** The book without costs per unit traded, against the cost per
-   unit traded. Earned below the cost: the book's trades cost more than the moves they capture. A book-level reading:
-   it counts every unit, the resizes included.
-2. **Move left: once the bot can act, is the move left larger than a round trip?** For each bet, the coin's move in
-   the bet's direction, minus the drift, from the close of the bar that fires it (bar 0, where the bot acts) to H
-   bars later. This is set against a round trip (2 x the cost per unit traded). Bets are read non-overlapping
-   (`measures.md`): the first bet of each grid cell of H bars. Next to it, the move on bar 0 itself, in the bet's
-   direction: it describes the trigger and is not counted as captured. In the bet's direction (a continuation), part
-   of the move happened before the bot could act. Against it (a reversal's trigger), it is the condition, not
-   lateness. This reading does not tell when a move started before bar 0.
+1. **Big enough: is the move captured larger than what its trades cost?** Per bet: the coin's move in the bet's
+   direction, minus the drift, from the close of the bar that fires it (bar 0, where the bot opens) to H bars later,
+   against a round trip (2 x the cost per unit traded). For the book: the book without costs per unit traded, against
+   the cost per unit traded (every unit, the resizes included). Bets are read non-overlapping (`measures.md`): the
+   first bet of each grid cell of H bars.
+2. **Opening time: does the move start before the bot can open?** For the same bets, the move on bar 0 itself, in the
+   bet's direction, minus the drift. It is not counted as captured. In the bet's direction (a continuation), part of
+   the move happened before the bot could open. Against it (a reversal's trigger), it is the condition, not a late
+   opening. It does not tell whether a move started inside bar 0 or before it.
 3. **Closing time: does the move end at the idea's horizon?** For the same bets, the cumulative move (in the bet's
    direction, minus the drift) from bar 0's close, bar by bar up to 2H: the bar where it peaks, its value at the peak,
    at H and at 2H. A peak well before H, given back by H: the idea closes too late. Still rising at 2H: it closes too
    early. A peak near H: the horizon is right.
-4. **Book stays in: did the book stay in after its bets?** The bars in a position where no bet is younger than H (no rise
+4. **Holding past the bets: does the book close when its bets end?** Readings 1 to 3 measure the coin after each
+   signal; this one measures the book's real positions. The bars in a position where no bet is younger than H (no rise
    of the forecast in the last H bars), as a share of the bars in a position, and the book without costs, minus the
-   drift, earned on them per bar, against the bars covered by a bet. A large share earning little: the book takes the
-   coin's risk after the idea's horizon.
+   drift, earned on them per bar, against the bars covered by a bet. A large share earning little: the book keeps the
+   coin's risk after its bets have ended.
 5. **Trend: is the gain the market's rise?** The book's gain from the market's own rise (`measures.md`), as a share
    of the book's mean daily gain; the rest is timing.
 
@@ -51,6 +51,6 @@ measured, not traded on.
 - **Reading 4 counts a forecast that stays on, with no new rise, as after its bets.** That follows option 2, where
   each rise is the event that asks for a hold. The alternative: each bar the condition holds is a new prediction. If
   so, a book that stays in while the forecast stays on is never "late".
-- **Readings 2 and 3 read the first bet of each H-bar cell.** A bet inside another's horizon is not counted twice.
+- **Readings 1 to 3 read the first bet of each H-bar cell.** A bet inside another's horizon is not counted twice.
 - **Whether a reading should also give a threshold** (e.g. "earned per unit below the cost: too small"), or only the
   numbers for step 7 to read. Proposed: only the numbers. No threshold was asked for.
