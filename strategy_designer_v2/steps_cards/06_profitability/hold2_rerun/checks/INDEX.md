@@ -1,1 +1,3 @@
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly_1d: not profitable enough [Sharpe 0.4409; Sharpe minus holding's Sharpe -0.1986; Calmar 0.2134]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1h: profitable enough [Sharpe 1.244; Sharpe minus holding's Sharpe 0.6951; Calmar 1.489]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side_1d: profitable enough [Sharpe 1.049; Sharpe minus holding's Sharpe 0.467; Calmar 1.042]

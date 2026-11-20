@@ -1,0 +1,27 @@
+{
+  "status": "not observable",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope t of excess 168-bar forward return on forecast (non-overlapping grid)",
+    "value": -0.00020729370842810017,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -0.05940142910638986
+    },
+    "threshold": "confirm if t >= 2 and supporting check passes; reject if t <= -2; else inconclusive; needs >= 300 grid cases with forecast > 0"
+  },
+  "supporting_check": {
+    "name": "mean excess 168-bar forward return on grid bars with forecast > 0 above 0",
+    "value": -0.0007705984133825243,
+    "passed": false
+  },
+  "counts": {
+    "non-overlapping grid cases with forecast > 0": 110,
+    "non-overlapping grid cases (all)": 135
+  },
+  "decided_by": "Only 110 non-overlapping grid cases with forecast > 0, below the plan's minimum of 300.",
+  "reading": "The 720-bar return is recomputed from each window's closes and, on bars without 720 bars of history in the window, its sign is taken from the raw HPM value; the coin's benchmark is the mean of all its non-overlapping 168-bar grid returns over all its windows; the slope's t is the ordinary OLS t with an intercept; the plan's 'fewer than 300 cases' rule is reported as not observable per the workflow."
+}

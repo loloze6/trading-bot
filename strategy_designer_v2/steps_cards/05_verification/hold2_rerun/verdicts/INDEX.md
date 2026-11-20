@@ -1,1 +1,3 @@
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly_1d: confirmed (fit: adapted) [main: 0.020139; t of the mean 3.50166; qualifying cases across all coins and windows 163]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1h: confirmed (fit: adapted) [main: 0.00172898; OLS slope t 5.2926; non-overlapping grid cases with forecast > 0 2201, non-overlapping grid cases (all) 4530]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side_1d: inconclusive (fit: adapted) [main: 0.00690425; t of the mean 1.71472; independent forecast > 0 cases 1199, upper half cases 599, lower half cases 600]

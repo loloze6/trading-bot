@@ -1,0 +1,1 @@
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1h: not profitable enough [Sharpe 3.696; Sharpe minus holding's Sharpe -0.4478; Calmar 13.76]
