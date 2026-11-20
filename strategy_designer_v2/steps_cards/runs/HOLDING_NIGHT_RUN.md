@@ -34,7 +34,7 @@ gives a reason.
 Sharpe after costs above 0 for 5 of 6 (0.09 to 0.88; the 2-hour idea −0.67), above holding's for 1. Without hold
 (d_line_1h_run): 0 of 7, Sharpe −0.88 to −2.24.
 
-## Reading, set 1 (`hold_ideas_1h_run`, 6 of 7 done at 02:50 UTC; slow-3day running)
+## Reading, set 1 (`hold_ideas_1h_run`, 7 of 7, done 03:00 UTC)
 
 Sharpe after costs; "units" = sum of the allocation changes over coins and windows (one unit costs about 10 bps);
 "per unit" = the book at the bars' closes without costs, divided by the units traded.
@@ -47,10 +47,12 @@ Sharpe after costs; "units" = sum of the allocation changes over coins and windo
 | evening-fall d1 (24) | confirmed | −2.24 / **0.50** / 0.42 | 0.19 / 0.14 | 7,810 / 6,004 / 5,866 | 1.7 / 21.7 / 20.5 | fails vs holding, mean return, Calmar |
 | volatile evening-fall d2 (24) | confirmed (new measure) | −1.19 / – / **1.14** | – / 0.64 | 3,571 / – / 2,604 | 1.8 / – / 53.2 | fails Calmar only |
 | deep-decline (72) | confirmed | −1.04 / 0.09 / **0.24** | −0.02 / −0.01 | 14,109 / 2,558 / 2,942 | 1.6 / 18.3 / 33.4 | fails vs holding, mean return, Calmar |
+| slow-3day d2 (72) | inconclusive | −1.44 / 0.14 / **0.24** | 0.00 / −0.02 | 19,201 / 3,461 / 3,310 | 0.9 / 18.3 / 31.9 | fails vs holding, mean return, Calmar |
 
-**Counts.** With option 2: Sharpe after costs above 0 for 4 of 5 distinct books (all 5 without hold were below 0),
+**Counts.** slow-3day d2 is its parent's config (fresh-drop-rebound, in set 2) with an empty veto list added: the same book
+again. With option 2: Sharpe after costs above 0 for 5 of 6 distinct books (all 6 without hold were below 0),
 above holding the coin for 2 (grinding/jump, volatile evening-fall), step 6 passed by 0 (block: 1 book). Against the
-block, on the 4 books both ran: Sharpe higher on 2, lower on 2, by 0.01 to 0.28; Calmar lower on the book that passed.
+block, on the 5 books both ran: Sharpe higher on 3, lower on 2, by 0.01 to 0.28; Calmar lower on the book that passed.
 
 **What it shows.**
 1. **Holding is what turns these books positive**, whichever form: Sharpe moves by +1.3 to +2.7 on every idea

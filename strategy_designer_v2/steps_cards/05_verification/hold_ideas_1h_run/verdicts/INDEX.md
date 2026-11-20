@@ -4,3 +4,4 @@
 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-rebounds-next-day_1h: confirmed (fit: exact) [main: 0.000150032; OLS slope t 2.69808; bars at 20:00 with forecast > 0 8538, bars at 20:00 in regression 17196]
 016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d2_volatile-evening-fall-rebound_1h: confirmed (fit: adapted) [main: 0.00827514; t of the mean 6.94624; cases 3592]
 016-06_down-even-volume-continuation.g1_fresh-drop-rebound.d1_deep-decline-fresh-drop-rebound_1h: confirmed (fit: adapted) [main: 0.000588102; OLS slope t 2.62733; independent grid cases with a positive forecast 2762, top third cases 921]
+016-06_down-even-volume-continuation.g1_fresh-drop-rebound.d2_slow-three-day-rebound-hold_1h: inconclusive (fit: adapted) [main: 3.92865; OLS slope t 3.92865; grid cases with forecast > 0 1891]
