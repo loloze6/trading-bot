@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of next 2-bar excess return on forecast",
+    "value": 4.198353444458766e-05,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 13.788862349024471
+    },
+    "threshold": "slope t >= 2 to confirm (t <= -2 to reject) on at least 5000 independent cases"
+  },
+  "supporting_check": {
+    "name": "top minus bottom |forecast| quintile mean of sign(forecast) x excess 2-bar return, Welch t >= 2",
+    "value": 7.212400243733734,
+    "passed": true
+  },
+  "counts": {
+    "pooled cases": 208278,
+    "top quintile cases": 41656,
+    "bottom quintile cases": 41656
+  },
+  "decided_by": "The slope is positive with t >= 2 on at least 5000 independent cases, and the supporting check passes.",
+  "reading": "Each coin's mean 2-bar return is taken over its non-overlapping grid in all windows; the regression is OLS with an intercept on all grid bars, zero forecasts included; the quintiles are pooled over coins (|f| >= 80th percentile and |f| <= 20th percentile, ties included); the check passes when top minus bottom is positive with Welch t >= 2."
+}

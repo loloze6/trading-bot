@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean per-bar timing gain of the position vs holding the coin, 1 bar",
+    "value": 8.102549669603496e-05,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 11.212756891999202
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 (and supporting check passes); reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean timing gain, top minus bottom quintile of abs(forecast)",
+    "value": 0.00025155057934588335,
+    "passed": true
+  },
+  "counts": {
+    "bars with a non-zero position across all coins and windows": 257864,
+    "bars in the main measure": 416645
+  },
+  "decided_by": "Mean timing gain positive with t >= 2 and top-minus-bottom quintile difference above 0.",
+  "reading": "Quintiles of abs(forecast) are cut on the pooled bars of the main measure by rank (ties broken by row order); the coin's mean hourly return is the mean of all its within-window 1-bar returns; the 10,000-bar minimum counts bars with a non-zero postRebalance_current_allocation and a next-bar return inside the window, and is treated as 'not observable' when unmet."
+}

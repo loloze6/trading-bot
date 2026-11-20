@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (next-24-bar return minus coin's mean 24-bar return), non-overlapping",
+    "value": 0.0017097402818791684,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 3.8011642442342404
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passes; reject: mean < 0 with t <= -2; at least 500 non-overlapping cases"
+  },
+  "supporting_check": {
+    "name": "mean product, top third |forecast| minus bottom third",
+    "value": 0.0037539119013709744,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases": 17246,
+    "active bars": 416370
+  },
+  "decided_by": "The mean is positive with t >= 2, and the largest-|forecast| third beats the smallest third.",
+  "reading": "The coin's mean 24-bar return is taken over its non-overlapping grid samples in all windows; the thirds are the floor(n/3) cases with the largest and smallest |forecast| (stable sort); fewer than 500 cases is reported as 'not observable' as instructed; the situation side uses the in-window price 24-bar return, and the raw component value where the window has fewer than 24 prior bars."
+}

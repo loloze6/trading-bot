@@ -70,3 +70,34 @@ block, on the 5 books both ran: Sharpe higher on 3, lower on 2, by 0.01 to 0.28;
 
 **Decision for set 2:** continue as written, with option 2 (the definition). Set 1 shows the lever works on
 7.d's ideas; set 2 checks it on the 21 ideas already found real.
+
+## Reading, set 2 (`hold_confirmed_1h_run`, 17 of 21 done; stopped 06:42 UTC)
+
+The run's task was stopped at the 2-hour limit of a background task (after a container restart at 04:40 had already cut
+one backtest), and was not restarted. Not run: `daily-move-reversal` g3 of 017-02 (24 bars; its backtest was cut, its
+partial folder removed), and 3 ideas of 1 to 3 bars (017-03 g3, 017-01 g3, 017-03 g4). Set 3 was not run.
+
+Every idea confirmed at step 5 both before and after (the hold does not change the verdict's measure). Sharpe after costs,
+before (each idea's own run, no hold) and held; "per unit" = the held book at the closes without costs per unit traded.
+
+| Horizon (bars held) | Ideas | Sharpe before → held | Per unit, held (bps) | Beats holding the coin | Step 6 |
+|---|---|---|---|---|---|
+| 24 to 72 | 4 | fresh-drop-rebound −1.44 → **0.24**; volatile-regime reversal −2.30 → **0.32**; daily-move reversal g2 −2.81 → **0.45**; up-jump reversal −2.77 → −0.90 | 31.9; 20.5; 25.1; −30.5 | 0 of 4 (−0.10 to −0.31 below it, the 3 positive) | 0 |
+| 1 to 4 | 13 | all stay below 0: −1.08 → −0.81 at best, −16.35 → −12.09 at worst | 0.8 to 7.0 | 0 | 0 |
+
+**Counts.** 0 of 17 profitable enough. Median Sharpe −2.30 → −1.05 (+1.25). **Outcome V2 (partly):** the median
+rises by more than 0.5, but fewer than 3 pass step 6.
+
+**What it shows.**
+1. **The horizon decides.** 16 of the 21 confirmed hourly ideas have a horizon of 1 to 4 bars. Before costs they earn
+   0.8 to 7 bps per unit traded; a unit costs about 10 bps. No holding rule can make them pay: the move they predict
+   is smaller than one round trip.
+2. **Long-horizon ideas are lifted from about −2.5 to about +0.3**, 3 of 4 (the fourth points the wrong way: held, it
+   loses more, −30.5 bps per unit). They earn 20 to 32 bps per unit, enough to clear costs, not enough to beat holding
+   the coin over the same years.
+3. **Together with set 1** (24 to 72 bars, 5 of 6 distinct books positive, 2 failing only Calmar): of 10 distinct
+   long-horizon books held, 8 have a positive Sharpe after costs (0 of 10 without hold), 0 pass step 6.
+
+**So the vision is half proven.** Holding is necessary: without it no hourly book could pay. It is not sufficient: what
+is still missing is ideas whose move over their horizon is well above the cost of a trip. The ideas the workflow found
+on hourly bars are mostly 1-to-4-bar ideas, and the long ones have an edge of 20 to 60 bps per unit, close to the bar.
