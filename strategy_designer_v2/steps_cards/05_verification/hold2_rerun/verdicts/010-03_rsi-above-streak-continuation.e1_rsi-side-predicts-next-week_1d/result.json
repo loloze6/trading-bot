@@ -1,0 +1,31 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of forecast/10 x (coin 7-bar return - coin mean 7-bar return), non-overlapping cases",
+    "value": 0.013436517025799176,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 2.929249115346124
+    },
+    "threshold": "confirm: positive with t >= 2 and supporting difference positive; reject: negative with t <= -2 and supporting difference negative"
+  },
+  "supporting_check": {
+    "name": "mean excess 7-bar return forecast>0 minus forecast<0 (Welch t), same sign as main",
+    "value": 0.020056461986944572,
+    "passed": true,
+    "welch_t": 2.580435814659419
+  },
+  "counts": {
+    "independent cases": 815,
+    "cases BTCUSD": 408,
+    "cases ETHUSD": 407,
+    "cases forecast > 0": 410,
+    "cases forecast < 0": 405
+  },
+  "decided_by": "The main measure is positive with t >= 2 and the supporting difference is positive.",
+  "reading": "Non-overlapping cases are positions 0,7,14,... of each window with close[t+7] inside the window; each coin's mean 7-bar return is taken over these same cases in all its windows; cases with forecast 0 stay in the main measure (product 0) and are left out of both groups of the supporting check; the 300-case minimum counts all cases across coins."
+}

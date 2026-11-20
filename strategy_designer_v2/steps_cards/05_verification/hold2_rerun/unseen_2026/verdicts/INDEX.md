@@ -1,0 +1,1 @@
+010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d: not observable (fit: exact) [main: 0.0141339; ordinary t of the mean 1.15233; independent cases 90, cases BTCUSD 45, cases ETHUSD 45, cases forecast > 0 44, cases forecast < 0 46]

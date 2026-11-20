@@ -1,1 +1,2 @@
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly_1d: confirmed (fit: adapted) [main: 0.020139; t of the mean 3.50166; qualifying cases across all coins and windows 163]
+010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d: confirmed (fit: exact) [main: 0.0134365; ordinary t of the mean 2.92925; independent cases 815, cases BTCUSD 408, cases ETHUSD 407, cases forecast > 0 410, cases forecast < 0 405]
