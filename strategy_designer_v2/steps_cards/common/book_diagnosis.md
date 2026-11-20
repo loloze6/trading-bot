@@ -50,9 +50,7 @@ horizon is not where its move ends, the book stayed in after its bets ended, or 
 measured, not traded on.
 
 **Open, for the operator's review**
-- **Reading 4 counts a forecast that stays on, with no new rise, as after its bets.** That follows option 2, where
-  each rise is the event that asks for a hold. The alternative: each bar the condition holds is a new prediction. If
-  so, a book that stays in while the forecast stays on is never "late".
+- Decided (operator, 2026-11-20): a forecast that stays on with no new rise counts as past its bets (reading 4).
 - **Readings 1 to 3 read the first bet of each H-bar cell.** A bet inside another's horizon is not counted twice.
 - **Whether a reading should also give a threshold** (e.g. "earned per unit below the cost: too small"), or only the
   numbers for step 7 to read. Proposed: only the numbers. No threshold was asked for.

@@ -80,6 +80,8 @@ are designed together.
 |---|---|---|---|---|
 | 2026-11-20 | Holding means holding for the horizon the idea states, never longer to rescue a book | the operator | holding longer bets on a trending market | "hold longer when net profit is missing" |
 | 2026-11-20 | Take the night's readings as a draft approach: review it, standardize it, go further, and test it | the operator | the readings tell why a proven idea does not pay | – |
+| 2026-11-20 | A forecast that stays on with no new rise counts as past its bets | the operator | option 2: each rise is the event that asks for a hold | each bar the condition holds is a new prediction |
+| 2026-11-20 | Long term, the diagnosis is part of the analysts' work (step 7), around profitability; the helper in `common/` is temporary, for this test | the operator | the analysts read why a confirmed idea does not pay | a separate stage |
 
 ## Status and next
 2026-11-20: step 1 drafted, `common/book_diagnosis.md`, for the operator's review (three open points at its end).
