@@ -34,6 +34,7 @@ Recommended: the profiling round, when hourly research is the main track.
 |---|---|---|---|---|
 | 2026-11-19 | Parked | operator | the run's speed is as measured; not needed for this run | - |
 | 2026-11-20 | Unparked: find time for it, maybe in another session | operator | "one backtest per hour is really slowing us down while we are continuously enhancing" | - |
+| 2026-11-20 | A session of its own (`session_012maTgTnbCc9ZEaRY48QDd1`, "Engine speed, round 2"), with the brief `orchestration/duration/10_round2_brief.md`; research-changing options only proposed | operator ("yes; ensure knowledge transfer, especially on the options that would impact our research process (folds etc.)") | the backtest is about 80 % of an idea's time | – |
 
 ## Status and next
 2026-11-20: proposed, a session of its own (its own container, so the running queue is not slowed), on its own branch:
