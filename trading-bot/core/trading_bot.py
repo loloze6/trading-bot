@@ -430,7 +430,9 @@ class TradingBot:
                 self.strategy.update(data)
                 return
 
-            self.logger.debug(f"🕯 CANDLE │ {symbol} │ {data_time} │ Close: ${close:.2f} ")
+            debug_on = self.logger.isEnabledFor(logging.DEBUG)   # topic 33: per-bar messages formatted only when kept
+            if debug_on:
+                self.logger.debug(f"🕯 CANDLE │ {symbol} │ {data_time} │ Close: ${close:.2f} ")
 
             # Retrieve portfolio information
             balances = self.portfolio_info.get_account_balance()
@@ -448,7 +450,8 @@ class TradingBot:
                     self.portfolio_info.apply_funding(symbol, close, f_bar)
 
             total_portfolio_value = self.portfolio_info._calculate_total_portfolio_value(balances, close)
-            self.logger.debug(f"   💼 Portfolio: ${total_portfolio_value:.2f}")
+            if debug_on:
+                self.logger.debug(f"   💼 Portfolio: ${total_portfolio_value:.2f}")
 
             # 2026-08-29 (fix/risk-layer, PR-2): fold this bar's decision-time equity
             # into the stateful controls (drawdown peak, Paris-day loss anchor) BEFORE
@@ -660,7 +663,8 @@ class TradingBot:
                         self.logger.error(f"   ✗ REBALANCE execution failed. Debug info: {debug_execute_portfolio_rebalance}")
 
                 else:
-                    self.logger.debug(f"   X🔄X No rebalance performed (rejected) │ Actual allocation: {previous_allocation:+.4f} | Δ (rejected): {allocation_change:+.4f}")
+                    if debug_on:
+                        self.logger.debug(f"   X🔄X No rebalance performed (rejected) │ Actual allocation: {previous_allocation:+.4f} | Δ (rejected): {allocation_change:+.4f}")
 
             # Retrieve portfolio information after rebalance 
             postRebalance_balances = self.portfolio_info.get_account_balance() if success_execute_portfolio_rebalance else balances
