@@ -128,3 +128,17 @@ So an idea of ordinary strength cannot pay on a few hours (it would need about 3
 limit around a day, and pays room to spare over several days. That is the whole hourly story in one line, and it can be
 known **before** any idea is written or tested: from the horizon a theory works on, the coins' typical move over it,
 and the venue's cost, without guessing any move.
+
+**Correction (operator, 2026-11-20): the cost is paid by the whole move in the trade's direction, the coin's normal
+drift plus the idea's extra move, not by the extra move alone.** Measured per trade on the confirmed ideas (median
+share of long trades: 100 %):
+| Horizon | Normal drift in the trade's direction | Extra move from the idea | Total per trade | Cost (buy + sell) | Pay |
+|---|---|---|---|---|---|
+| 1 to 4 hours | 0.01 % | 0.08 % | 0.08 % | 0.21 % | 0 of 24 |
+| 5 to 48 hours | 0.12 % | 0.19 % | 0.31 % | 0.22 % | 0 of 31 |
+| 2 to 10 days | 0.41 % | 0.61 % | 0.85 % | 0.21 % | 20 of 65 |
+(medians, which do not add exactly). Two questions, two comparisons: whether a trade covers its cost at all depends on
+the total; whether the book beats holding the coin (step 6 asks both) depends on the extra move alone, since holding
+also earns the drift without repeated costs. Between 5 and 48 hours the total covers the cost but the extra does not:
+the books earn about what holding earns, minus their costs, and none passes step 6. The drift helps long trades only; a
+short trade has it against it.
