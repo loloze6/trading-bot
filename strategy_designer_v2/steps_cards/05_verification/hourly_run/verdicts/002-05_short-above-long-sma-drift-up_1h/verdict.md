@@ -11,6 +11,7 @@ Evidence:
 - Counts: non-overlapping in-zone 24-bar blocks pooled: 348, windows with positive excess: 4, windows with in-zone blocks: 6
 - Decided by: Inconclusive: t lies strictly between -2 and +2 (or sign and t disagree).
 - Reading: Blocks start at positions 0, 24, 48, ... of each window and are in-zone when forecast > 0 at the block start; each in-zone return is reduced by the mean of all blocks of its window, and the pooled excesses are tested with the ordinary t of the mean; a window counts as positive if its mean excess is > 0; the supporting check passes at a difference >= 0 and does not decide the status.
+- Size: unusual move -0.23 % per case over 24 bars, -0.080 of the coin's usual move (2.89 %); normal drift in its direction +0.04 %, total -0.20 %; 134 cases
 Plan: `steps_cards/03_test_plan/hourly_run/plans/002-05_short-above-long-sma-drift-up_1h.md`
 Record: `steps_cards/04_backtest/hourly_run/backtests/002-05_short-above-long-sma-drift-up_1h`
 Measure: `measure.py`

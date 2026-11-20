@@ -11,6 +11,7 @@ Evidence:
 - Counts: top-decile drop bars high-volatility: 992, top-decile drop bars quiet: 749
 - Decided by: z lies between -2 and 2.
 - Reading: Drop day = close below the previous close in the same window (raw drop component value < 0 on a window's first bar), expected side long; top 10 percent = forecast at or above the 90th percentile of all non-missing forecasts pooled over coins and windows, and positive; high volatility = regime 'trending' (the detector's volp >= 0.5 rule), quiet = 'unknown'; each bar's up indicator is netted by its coin's up-day share over all windows, the z uses the difference of net shares over the pooled raw-proportion standard error; the supporting check passes when its one-sample t >= 2; the plan's 'fewer than 30 in either group' is treated as the minimum count (not observable).
+- Size: unusual move +0.39 % per case over 1 bars, 0.078 of the coin's usual move (4.78 %); normal drift in its direction +0.12 %, total +0.50 %; 2935 cases
 Plan: `steps_cards/03_test_plan/plans/N2-06_rebound-in-high-volatility_1d.md`
 Record: `steps_cards/04_backtest/backtests/N2-06_rebound-in-high-volatility_1d`
 Measure: `measure.py`

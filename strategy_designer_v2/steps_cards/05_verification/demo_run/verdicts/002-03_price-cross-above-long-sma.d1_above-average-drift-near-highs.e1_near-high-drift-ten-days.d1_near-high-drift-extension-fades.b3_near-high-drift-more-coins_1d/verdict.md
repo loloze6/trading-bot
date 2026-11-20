@@ -11,6 +11,7 @@ Evidence:
 - Counts: trending-regime grid cases: 1547, extended cases: 513
 - Decided by: Main slope t lies between -2 and +2.
 - Reading: Situation taken as the 'trending' regime (close >= 200-day SMA, which cannot be recomputed from windows shorter than 200 bars) with the expected side the sign of the graded idea (mean of range20 and ext30 post values, ext30 never positive); the coin's mean 10-bar return is the mean over all its grid bars in all windows and regimes; regressions are OLS with intercept; the 100 trending grid cases is treated as the plan's minimum count, while the 30 extended cases is part of the supporting check as the plan writes it (fewer gives inconclusive).
+- Size: unusual move +0.62 % per case over 10 bars, 0.030 of the coin's usual move (16.13 %); normal drift in its direction -0.43 %, total +0.20 %; 1625 cases
 Plan: `steps_cards/03_test_plan/demo_run/plans/002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d1_near-high-drift-extension-fades.b3_near-high-drift-more-coins_1d.md`
 Record: `steps_cards/04_backtest/demo_run/backtests/002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d1_near-high-drift-extension-fades.b3_near-high-drift-more-coins_1d`
 Measure: `measure.py`

@@ -11,6 +11,7 @@ Evidence:
 - Counts: independent cases: 833
 - Decided by: The slope's t is between -2 and 2.
 - Reading: Trending bars are those with regime 'trending' at grid positions 0,10,20,... of each window with a full 10-bar forward return inside the window; the coin's mean 10-bar return is the mean over the same non-overlapping grid of all bars in all windows; the slope's t is the OLS t with an intercept on pooled coins; the side check uses the sign of range20 - 0.5*ext30 on trending bars.
+- Size: unusual move -0.04 % per case over 10 bars, -0.022 of the coin's usual move (14.49 %); normal drift in its direction -0.20 %, total -0.23 %; 799 cases
 Plan: `steps_cards/03_test_plan/demo_run/plans/002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d1_near-high-drift-extension-fades_1d.md`
 Record: `steps_cards/04_backtest/demo_run/backtests/002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs.e1_near-high-drift-ten-days.d1_near-high-drift-extension-fades_1d`
 Measure: `measure.py`

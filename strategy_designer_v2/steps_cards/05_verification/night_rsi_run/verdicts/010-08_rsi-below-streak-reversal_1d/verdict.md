@@ -11,6 +11,7 @@ Evidence:
 - Counts: independent grid bars with forecast > 0: 185
 - Decided by: The slope's t is between -2 and +2 (or undefined), so neither the confirm nor the reject rule is met.
 - Reading: Situation taken as the component's raw signed run length below zero, expected side long; each coin's mean 14-bar return is the mean over the same non-overlapping 14-bar grid of all its windows, the slope's t is the OLS t of excess return on forecast, and the thirds are the n//3 lowest and n//3 highest forecasts after a stable sort.
+- Size: unusual move -1.40 % per case over 14 bars, -0.088 of the coin's usual move (16.04 %); normal drift in its direction +1.86 %, total +0.46 %; 213 cases
 Plan: `steps_cards/03_test_plan/night_rsi_run/plans/010-08_rsi-below-streak-reversal_1d.md`
 Record: `steps_cards/04_backtest/night_rsi_run/backtests/010-08_rsi-below-streak-reversal_1d`
 Measure: `measure.py`

@@ -11,6 +11,7 @@ Evidence:
 - Counts: bars with a non-zero position across all coins and windows: 257864, bars in the main measure: 416645
 - Decided by: Mean timing gain positive with t >= 2 and top-minus-bottom quintile difference above 0.
 - Reading: Quintiles of abs(forecast) are cut on the pooled bars of the main measure by rank (ties broken by row order); the coin's mean hourly return is the mean of all its within-window 1-bar returns; the 10,000-bar minimum counts bars with a non-zero postRebalance_current_allocation and a next-bar return inside the window, and is treated as 'not observable' when unmet.
+- Size: unusual move +0.01 % per case over 1 bars, 0.013 of the coin's usual move (1.05 %); normal drift in its direction -0.00 %, total +0.01 %; 263630 cases
 Plan: `steps_cards/03_test_plan/hold_confirmed_1h_run/plans/017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h.md`
 Record: `steps_cards/04_backtest/hold_confirmed_1h_run/backtests/017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h`
 Measure: `measure.py`

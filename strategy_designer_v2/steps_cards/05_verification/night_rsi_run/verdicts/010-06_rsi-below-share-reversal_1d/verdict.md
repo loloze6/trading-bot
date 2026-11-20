@@ -11,6 +11,7 @@ Evidence:
 - Counts: non-overlapping cases with a non-zero forecast: 373, active bars: 5694
 - Decided by: The slope's t lies between -2 and 2.
 - Reading: The coin's mean 14-bar return is the mean over all its non-overlapping grid returns in all windows (any forecast), the regression is OLS with an intercept on the raw forecast, and the book's daily return is the change of postRebalance_total_value per coin averaged across coins per day, with the market part as the previous day's position times the coin's mean daily close return.
+- Size: unusual move -2.44 % per case over 14 bars, -0.145 of the coin's usual move (16.04 %); normal drift in its direction +0.02 %, total -2.42 %; 217 cases
 Plan: `steps_cards/03_test_plan/night_rsi_run/plans/010-06_rsi-below-share-reversal_1d.md`
 Record: `steps_cards/04_backtest/night_rsi_run/backtests/010-06_rsi-below-share-reversal_1d`
 Measure: `measure.py`

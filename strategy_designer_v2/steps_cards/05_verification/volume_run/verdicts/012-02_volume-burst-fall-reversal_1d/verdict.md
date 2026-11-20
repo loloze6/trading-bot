@@ -11,6 +11,7 @@ Evidence:
 - Counts: kept sharp-fall cases: 440
 - Decided by: The slope's t lies between -2 and 2.
 - Reading: Kept bars are thinned greedily per window on regime bars before dropping those without a 3-bar forward return inside the window, the coin's mean 3-bar return uses the non-overlapping grid 0,3,6,... pooled over all windows, and the top third is the floor(n/3) cases with the largest volume ratio.
+- Size: unusual move -0.41 % per case over 3 bars, -0.042 of the coin's usual move (7.96 %); normal drift in its direction +0.35 %, total -0.05 %; 451 cases
 Plan: `steps_cards/03_test_plan/volume_run/plans/012-02_volume-burst-fall-reversal_1d.md`
 Record: `steps_cards/04_backtest/volume_run/backtests/012-02_volume-burst-fall-reversal_1d`
 Measure: `measure.py`

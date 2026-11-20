@@ -11,6 +11,7 @@ Evidence:
 - Counts: independent 14-bar samples: 384, samples with forecast > 0: 187, samples with forecast < 0: 186
 - Decided by: The slope t-statistic lies between -2 and +2, which the plan calls inconclusive.
 - Reading: Situation check uses debug_info.components.rsi_share.last_history_value read as value already centred at 0, expected side long when the share is above one half and short below; the coin's mean 14-bar return is taken over that coin's non-overlapping samples pooled across all its windows, the slope t is the OLS t of excess return on forecast over all pooled samples, and the plan's three-coin count is applied as written to the coins present in the record.
+- Size: unusual move +2.44 % per case over 14 bars, 0.145 of the coin's usual move (16.04 %); normal drift in its direction -0.02 %, total +2.42 %; 217 cases
 Plan: `steps_cards/03_test_plan/night_rsi_run/plans/010-01_rsi-above-share-continuation_1d.md`
 Record: `steps_cards/04_backtest/night_rsi_run/backtests/010-01_rsi-above-share-continuation_1d`
 Measure: `measure.py`

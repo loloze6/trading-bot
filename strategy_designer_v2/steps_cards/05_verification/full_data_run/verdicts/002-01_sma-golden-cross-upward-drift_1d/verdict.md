@@ -11,6 +11,7 @@ Evidence:
 - Counts: non-overlapping blocks with forecast > 0: 832, non-overlapping blocks (all): 1657
 - Decided by: The t of the slope lies between -2 and 2 (inconclusive rule).
 - Reading: Non-overlapping samples are positions 0,10,20,... of each window; holding is the coin's mean of those samples over all its windows; the regression is OLS with intercept on the pooled samples; the supporting check is pooled as the mean over forecast>0 samples of (positive indicator minus that coin's all-sample positive share) and passes if above zero; fewer than 100 forecast>0 blocks gives 'not observable'.
+- Size: unusual move +1.28 % per case over 10 bars, 0.063 of the coin's usual move (14.49 %); normal drift in its direction +1.31 %, total +2.59 %; 281 cases
 Plan: `steps_cards/03_test_plan/full_data_run/plans/002-01_sma-golden-cross-upward-drift_1d.md`
 Record: `steps_cards/04_backtest/full_data_run/backtests/002-01_sma-golden-cross-upward-drift_1d`
 Measure: `measure.py`

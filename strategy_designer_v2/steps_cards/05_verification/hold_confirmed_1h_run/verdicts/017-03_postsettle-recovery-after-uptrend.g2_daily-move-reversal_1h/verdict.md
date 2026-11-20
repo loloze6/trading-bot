@@ -11,6 +11,7 @@ Evidence:
 - Counts: non-overlapping cases: 17246, active bars: 416370
 - Decided by: The mean is positive with t >= 2, and the largest-|forecast| third beats the smallest third.
 - Reading: The coin's mean 24-bar return is taken over its non-overlapping grid samples in all windows; the thirds are the floor(n/3) cases with the largest and smallest |forecast| (stable sort); fewer than 500 cases is reported as 'not observable' as instructed; the situation side uses the in-window price 24-bar return, and the raw component value where the window has fewer than 24 prior bars.
+- Size: unusual move +0.12 % per case over 24 bars, 0.023 of the coin's usual move (4.87 %); normal drift in its direction -0.00 %, total +0.11 %; 17056 cases
 Plan: `steps_cards/03_test_plan/hold_confirmed_1h_run/plans/017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal_1h.md`
 Record: `steps_cards/04_backtest/hold_confirmed_1h_run/backtests/017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal_1h`
 Measure: `measure.py`

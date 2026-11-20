@@ -11,6 +11,7 @@ Evidence:
 - Counts: cases pooled: 1268, large-forecast half: 634, small-forecast half: 634
 - Decided by: t >= 2 but the supporting check fails, which the plan calls inconclusive.
 - Reading: Cases are Sunday-stamped (UTC) bars with forecast < 0 that have close[t+2] in the same window; m per coin from the 0,2,4,... grid of each window pooled over all windows; the median split puts |forecast| above the median in the large half and the rest in the small half; the plan's 'fewer than 100 cases' minimum is reported as not observable.
+- Size: unusual move +1.02 % per case over 2 bars, 0.150 of the coin's usual move (6.58 %); normal drift in its direction -0.24 %, total +0.79 %; 1048 cases
 Plan: `steps_cards/03_test_plan/night_run/plans/011-01_weekend-rise-reverses-monday_1d.md`
 Record: `steps_cards/04_backtest/night_run/backtests/011-01_weekend-rise-reverses-monday_1d`
 Measure: `measure.py`

@@ -11,6 +11,7 @@ Evidence:
 - Counts: slot cases: 17257
 - Decided by: Main mean > 0 with t = 7.68 >= 2 and supporting slope t = 3.74 >= 2.
 - Reading: Cases are every bar stamped 20:00 UTC whose 22:00 bar exists in the same window, including cases with forecast 0; the coin mean 2-bar return uses non-overlapping positions 0,2,4,... of each window pooled over all windows; all coins are pooled into one set of cases for the mean and the regression.
+- Size: unusual move +0.09 % per case over 2 bars, 0.061 of the coin's usual move (1.47 %); normal drift in its direction +0.01 %, total +0.10 %; 17430 cases
 Plan: `steps_cards/03_test_plan/hold_confirmed_1h_run/plans/016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift_1h.md`
 Record: `steps_cards/04_backtest/hold_confirmed_1h_run/backtests/016-02_down-grind-price-continuation.g1_late-utc-volatile-coin-drift_1h`
 Measure: `measure.py`

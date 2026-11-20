@@ -11,6 +11,7 @@ Evidence:
 - Counts: cases: 8382
 - Decided by: The main measure has a mean above 0 with t >= 2 and the slope is above 0.
 - Reading: The 2-bar return runs from the close of the bar stamped 11:00 to the close of the bar stamped 13:00 of the same window (cases without that bar are dropped), the coin's mean 2-bar return is taken on the non-overlapping grid 0, 2, 4, ... of each window pooled over all windows, and fewer than 300 cases is reported as not observable.
+- Size: unusual move +0.07 % per case over 2 bars, 0.047 of the coin's usual move (1.47 %); normal drift in its direction +0.01 %, total +0.08 %; 8748 cases
 Plan: `steps_cards/03_test_plan/hold_confirmed_1h_run/plans/017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls_1h.md`
 Record: `steps_cards/04_backtest/hold_confirmed_1h_run/backtests/017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls_1h`
 Measure: `measure.py`

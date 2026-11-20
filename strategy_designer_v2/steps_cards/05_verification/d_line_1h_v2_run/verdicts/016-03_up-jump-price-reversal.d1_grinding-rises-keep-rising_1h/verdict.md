@@ -11,6 +11,7 @@ Evidence:
 - Counts: rising grid cases pooled over the coins: 2865
 - Decided by: The forecast coefficient's t lies between -2 and +2 (inconclusive rule).
 - Reading: Grid at positions 0,72,144,... of each window; rising cases need a past 72-bar close and a next-72-bar close inside the window; the coin's mean 72-bar return is the mean of the forward returns of all its grid bars over all windows; OLS with an intercept and the ordinary coefficient t.
+- Size: unusual move +0.43 % per case over 72 bars, 0.049 of the coin's usual move (8.23 %); normal drift in its direction +0.41 %, total +0.83 %; 2862 cases
 Plan: `steps_cards/03_test_plan/d_line_1h_v2_run/plans/016-03_up-jump-price-reversal.d1_grinding-rises-keep-rising_1h.md`
 Record: `steps_cards/04_backtest/d_line_1h_v2_run/backtests/016-03_up-jump-price-reversal.d1_grinding-rises-keep-rising_1h`
 Measure: `measure.py`

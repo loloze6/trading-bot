@@ -11,6 +11,7 @@ Evidence:
 - Counts: grid cases with forecast < 0: 406
 - Decided by: The slope's t (1.15) lies between -2 and +2.
 - Reading: The coin's mean 7-day return is taken over its non-overlapping 7-bar grid bars of all windows, grid bars without a full 7-bar return inside the window are dropped, the slope's t is the ordinary OLS t pooled over both coins, and the plan's 'fewer than 100 cases' rule is reported as not observable per the workflow.
+- Size: unusual move +1.33 % per case over 7 bars, 0.127 of the coin's usual move (11.06 %); normal drift in its direction -0.95 %, total +0.38 %; 345 cases
 Plan: `steps_cards/03_test_plan/night_rsi_run/plans/010-03_rsi-above-streak-continuation.e2_below-midline-streak-continues-down_1d.md`
 Record: `steps_cards/04_backtest/night_rsi_run/backtests/010-03_rsi-above-streak-continuation.e2_below-midline-streak-continues-down_1d`
 Measure: `measure.py`

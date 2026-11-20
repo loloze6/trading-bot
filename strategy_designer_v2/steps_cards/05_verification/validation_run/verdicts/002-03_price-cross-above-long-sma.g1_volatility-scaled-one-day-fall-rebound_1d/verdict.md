@@ -11,6 +11,7 @@ Evidence:
 - Counts: cases with a positive forecast: 2718, cases in the top quintile: 544
 - Decided by: The slope's t lies between -2 and 2.
 - Reading: Cases are pooled over all coins and windows on the 0,3,6,... grid of each window; the coin's mean 3-bar return is the mean over all its grid bars in all windows; the top quintile is cases with forecast at or above the pooled 80th percentile; the plan's 'fewer cases -> inconclusive' minimums are reported as 'not observable' per the workflow; a fall is a negative raw component value (price 1-bar return where the raw value is missing).
+- Size: unusual move +0.07 % per case over 3 bars, 0.008 of the coin's usual move (7.96 %); normal drift in its direction +0.36 %, total +0.42 %; 4452 cases
 Plan: `steps_cards/03_test_plan/plans/002-03_price-cross-above-long-sma.g1_volatility-scaled-one-day-fall-rebound_1d.md`
 Record: `steps_cards/04_backtest/backtests/002-03_price-cross-above-long-sma.g1_volatility-scaled-one-day-fall-rebound_1d`
 Measure: `measure.py`

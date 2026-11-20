@@ -11,6 +11,7 @@ Evidence:
 - Counts: daily 20:00-22:00 cases: 17241, other-hour cases: 188355, regression cases: 17233
 - Decided by: Confirm rule met: the main difference is positive with Welch t >= 2 and the volatility slope has t >= 2.
 - Reading: Cases are 2-bar returns on bars starting at odd UTC hours (closes on even hours) within each window with exactly 2 hours between the two closes, the bar starting at 19:00 giving the 20:00-22:00 case and all other such blocks the other-hour cases; vol7d is the recorded last_history_value at the 19:00 bar (recomputed as the std of 168 hourly returns only if it is not recorded on most of those bars, rows missing it left out). Recorded vol7d used.
+- Size: unusual move +0.05 % per case over 2 bars, 0.032 of the coin's usual move (1.47 %); normal drift in its direction +0.01 %, total +0.06 %; 17424 cases
 Plan: `steps_cards/03_test_plan/hold_confirmed_1h_run/plans/016-05_up-even-volume-continuation.g1_evening-utc-hour-drift_1h.md`
 Record: `steps_cards/04_backtest/hold_confirmed_1h_run/backtests/016-05_up-even-volume-continuation.g1_evening-utc-hour-drift_1h`
 Measure: `measure.py`

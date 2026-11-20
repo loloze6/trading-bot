@@ -11,6 +11,7 @@ Evidence:
 - Counts: independent cases: 17246, top fifth cases: 3452, bottom fifth cases: 3447
 - Decided by: Pooled mean positive with t >= 2 over at least 1,000 cases, and the top-fifth minus bottom-fifth Welch t is >= 2.
 - Reading: The coin's mean 24-bar return is the mean of its grid returns over all windows; the top and bottom fifths are the rank-based top and bottom 20% of grid bars by |forecast| within each coin, pooled across coins; the supporting check passes when that difference is positive with Welch t >= 2; too few cases are reported as not observable.
+- Size: unusual move +0.05 % per case over 24 bars, 0.012 of the coin's usual move (4.87 %); normal drift in its direction -0.00 %, total +0.05 %; 17043 cases
 Plan: `steps_cards/03_test_plan/hold_confirmed_1h_run/plans/016-04_down-jump-price-reversal.g1_volatile-regime-daily-move-reversal_1h.md`
 Record: `steps_cards/04_backtest/hold_confirmed_1h_run/backtests/016-04_down-jump-price-reversal.g1_volatile-regime-daily-move-reversal_1h`
 Measure: `measure.py`

@@ -11,6 +11,7 @@ Evidence:
 - Counts: non-zero grid points: 1253, grid points with forecast > 0: 153, grid points with forecast < 0: 1100
 - Decided by: The slope t lies between -2 and +2 (inconclusive rule).
 - Reading: Grid points at positions 0,7,14,... of each window with t+7 inside the window; the coin's mean 7-bar return is the mean over all its grid points in all windows; the minimum counts of the plan's inconclusive rule are applied as minimums (not observable).
+- Size: unusual move +0.91 % per case over 7 bars, 0.070 of the coin's usual move (12.44 %); normal drift in its direction -0.72 %, total +0.19 %; 1191 cases
 Plan: `steps_cards/03_test_plan/night_013_run/plans/013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g3_moderate-falls-keep-falling_1d.md`
 Record: `steps_cards/04_backtest/night_013_run/backtests/013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g3_moderate-falls-keep-falling_1d`
 Measure: `measure.py`

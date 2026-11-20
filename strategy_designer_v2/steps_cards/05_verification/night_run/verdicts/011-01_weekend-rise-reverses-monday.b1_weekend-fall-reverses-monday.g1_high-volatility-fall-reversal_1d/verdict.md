@@ -11,6 +11,7 @@ Evidence:
 - Counts: bars with forecast > 0: 3982
 - Decided by: t = 5.10 >= 2 and the rank correlation 0.062 > 0: the confirm rule.
 - Reading: The plan's situation (a down day in the high-volatility regime) is taken as regime == 'mean_reversion' (the volatility-percentile regime, which is not recorded and cannot be rebuilt inside ~120-bar windows) and a negative close-to-close return from the prices, falling back to the sign of fall_vol's raw value on a window's first bar; the expected side is long; the coin's mean daily return is the mean of all its next-day returns over all windows; the 'fewer than 100 bars with forecast > 0' rule is applied as a minimum count, counting only bars that have a next-day return.
+- Size: unusual move +0.34 % per case over 1 bars, 0.072 of the coin's usual move (4.78 %); normal drift in its direction +0.12 %, total +0.46 %; 2706 cases
 Plan: `steps_cards/03_test_plan/night_run/plans/011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal_1d.md`
 Record: `steps_cards/04_backtest/night_run/backtests/011-01_weekend-rise-reverses-monday.b1_weekend-fall-reverses-monday.g1_high-volatility-fall-reversal_1d`
 Measure: `measure.py`

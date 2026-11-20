@@ -11,6 +11,7 @@ Evidence:
 - Counts: independent events: 5, bars with forecast above 0: 5
 - Decided by: Only 5 independent events, fewer than the plan's minimum of 20.
 - Reading: Raw fall size and volume ratio are read from the recorded 'fall' and 'volume' components' last_history_value (recomputed from prices only if missing); the coin's mean 5-bar return is taken on the non-overlapping grid (positions 0,5,10,... of each window) pooled over all windows; an event is dropped when it lies fewer than 5 bars after the previous counted event in the same window, and events without a full 5-bar forward return inside their window are left out.
+- Size: unusual move +6.65 % per case over 5 bars, 0.589 of the coin's usual move (10.60 %); normal drift in its direction +0.70 %, total +7.35 %; 5 cases
 Plan: `steps_cards/03_test_plan/volume_run/plans/003-02_thin-volume-drop-rebounds_1d.md`
 Record: `steps_cards/04_backtest/volume_run/backtests/003-02_thin-volume-drop-rebounds_1d`
 Measure: `measure.py`

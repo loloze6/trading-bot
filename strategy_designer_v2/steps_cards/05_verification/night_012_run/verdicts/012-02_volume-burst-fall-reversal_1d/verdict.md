@@ -11,6 +11,7 @@ Evidence:
 - Counts: independent cases with forecast > 0 on the grid: 2683, cases in the supporting regression: 1999
 - Decided by: The slope t is 2 or more and the volume-ratio coefficient in the supporting regression is positive.
 - Reading: The coin's mean 3-bar return is the mean of its non-overlapping grid 3-bar returns over all windows; the volume ratio is the bar's volume over the mean of the last 30 volumes including it, and the fall size is minus the bar's return over the 20-bar standard deviation of daily returns including it, both computed within each window (bars without full history left out of the supporting regression, which has an intercept); fewer than 100 cases is reported as not observable.
+- Size: unusual move +0.75 % per case over 3 bars, 0.085 of the coin's usual move (7.96 %); normal drift in its direction +0.36 %, total +1.11 %; 1913 cases
 Plan: `steps_cards/03_test_plan/night_012_run/plans/012-02_volume-burst-fall-reversal_1d.md`
 Record: `steps_cards/04_backtest/night_012_run/backtests/012-02_volume-burst-fall-reversal_1d`
 Measure: `measure.py`

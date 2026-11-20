@@ -11,6 +11,7 @@ Evidence:
 - Counts: independent cases: 384
 - Decided by: The slope t is between -2 and 2.
 - Reading: Grid bars at positions 0, 14, 28, ... of each window with a full 14-bar forward return inside the window, coin mean = mean of those grid returns over all its windows, pooled OLS with intercept; the timing check uses the position held after each day's trade times the next day's close-to-close return (before costs) minus that position times the coin's all-window mean daily return, averaged over coins per day, then over days.
+- Size: unusual move -1.95 % per case over 14 bars, -0.107 of the coin's usual move (16.04 %); normal drift in its direction +0.04 %, total -1.91 %; 212 cases
 Plan: `steps_cards/03_test_plan/night_rsi_run/plans/010-05_rsi-above-share-reversal_1d.md`
 Record: `steps_cards/04_backtest/night_rsi_run/backtests/010-05_rsi-above-share-reversal_1d`
 Measure: `measure.py`

@@ -11,6 +11,7 @@ Evidence:
 - Counts: non-overlapping events: 54, events BTCUSD: 28, events ETHUSD: 26
 - Decided by: Inconclusive rule: t lies between -2 and 2.
 - Reading: Situation checked on active bars that have 30 prior closes inside their window (earlier active bars cannot be recomputed and are left out of the agreement share), using the recorded rsi_gap raw value for the RSI gap; the coin's mean 20-bar return is taken on the non-overlapping grid (positions 0, 20, 40, ... of each window) pooled over all its windows; an event at t skips positive bars t+1..t+20 within the same window; the Spearman correlation is between the event's recorded forecast and its excess return.
+- Size: unusual move -4.16 % per case over 20 bars, -0.223 of the coin's usual move (19.61 %); normal drift in its direction +2.55 %, total -1.61 %; 60 cases
 Plan: `steps_cards/03_test_plan/night_005_run/plans/005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence_1d.md`
 Record: `steps_cards/04_backtest/night_005_run/backtests/005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence_1d`
 Measure: `measure.py`

@@ -11,6 +11,7 @@ Evidence:
 - Counts: kept cases in total: 60, high-volume group: 30, low-volume group: 30
 - Decided by: the Welch t lies between -2 and 2, which the plan calls inconclusive
 - Reading: the situation is checked as regime 'trending', forecast > 0 and a close above every earlier close of the same window, since the 364 prior closes are not all in the record and windows are never joined; the median is taken over all kept cases pooled across coins and windows, kept bars are chosen greedily in time order within each window, and the coin mean is the mean of the non-overlapping 30-bar returns at window positions 0, 30, 60, ... over all its windows.
+- Size: unusual move +8.91 % per case over 30 bars, 0.290 of the coin's usual move (25.51 %); normal drift in its direction +3.46 %, total +12.36 %; 70 cases
 Plan: `steps_cards/03_test_plan/volume_run/plans/013-06_breakout-volume-drives-continuation_1d.md`
 Record: `steps_cards/04_backtest/volume_run/backtests/013-06_breakout-volume-drives-continuation_1d`
 Measure: `measure.py`

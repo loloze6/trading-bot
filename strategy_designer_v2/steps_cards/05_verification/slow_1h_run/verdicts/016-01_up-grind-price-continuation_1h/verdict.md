@@ -11,6 +11,7 @@ Evidence:
 - Counts: grid cases in top third: 316, grid cases in bottom third: 316, grid cases with forecast above 0: 947
 - Decided by: The top-minus-bottom Welch t lies between -2 and 2.
 - Reading: Thirds are equal-size splits of the pooled grid cases sorted by forecast (ties kept in coin/window/time order), and the holding benchmark for the pooled top third is the mean, over its cases, of each case's coin mean 72-bar grid return over all windows; the situation is a positive raw residual share on the long side.
+- Size: unusual move +0.43 % per case over 72 bars, 0.049 of the coin's usual move (8.23 %); normal drift in its direction +0.41 %, total +0.83 %; 2862 cases
 Plan: `steps_cards/03_test_plan/slow_1h_run/plans/016-01_up-grind-price-continuation_1h.md`
 Record: `steps_cards/04_backtest/slow_1h_run/backtests/016-01_up-grind-price-continuation_1h`
 Measure: `measure.py`

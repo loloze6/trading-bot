@@ -11,6 +11,7 @@ Evidence:
 - Counts: cases: 8626, top third: 2875, bottom third: 2875
 - Decided by: Slope t = 2.65 >= 2 and top-minus-bottom third excess return 0.00108 > 0.
 - Reading: Decision bars are those whose timestamp + 1h has hour 20 with a negative 24-bar raw change; one case per coin per UTC day (first such bar), cases without a full 2-bar return inside the window dropped; the coin mean uses non-overlapping 2-bar returns on each window's grid from its first row; thirds are the n//3 lowest and n//3 highest forecasts after a stable sort.
+- Size: unusual move +0.11 % per case over 2 bars, 0.078 of the coin's usual move (1.47 %); normal drift in its direction +0.01 %, total +0.12 %; 7404 cases
 Plan: `steps_cards/03_test_plan/hold_confirmed_1h_run/plans/016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls_1h.md`
 Record: `steps_cards/04_backtest/hold_confirmed_1h_run/backtests/016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls_1h`
 Measure: `measure.py`

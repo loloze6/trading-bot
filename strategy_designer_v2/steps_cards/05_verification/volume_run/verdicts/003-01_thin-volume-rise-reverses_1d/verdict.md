@@ -11,6 +11,7 @@ Evidence:
 - Counts: non-overlapping events: 930, active bars: 3838
 - Decided by: t lies between -2 and +2, which the plan calls inconclusive.
 - Reading: Thin volume is recomputed as volume over its 30-bar mean including the current bar (the regime column where 30 bars are not yet available in the window), a rise is the recorded raw vol-scaled return > 0 (else the bar's return); events are de-overlapped before dropping those without a 5-bar return inside the window; the larger half is |forecast| strictly above the median and the smaller half at or below it, and an empty half fails the check.
+- Size: unusual move +0.28 % per case over 5 bars, 0.015 of the coin's usual move (10.60 %); normal drift in its direction -0.60 %, total -0.32 %; 1041 cases
 Plan: `steps_cards/03_test_plan/volume_run/plans/003-01_thin-volume-rise-reverses_1d.md`
 Record: `steps_cards/04_backtest/volume_run/backtests/003-01_thin-volume-rise-reverses_1d`
 Measure: `measure.py`

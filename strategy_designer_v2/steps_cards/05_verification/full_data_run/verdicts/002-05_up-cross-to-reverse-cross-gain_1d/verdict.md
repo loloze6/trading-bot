@@ -11,6 +11,7 @@ Evidence:
 - Counts: distinct up-cross spans pooled across coins: 92, bars with a positive forecast: 8569, all bars (next-bar returns): 17022
 - Decided by: The Newey-West t of the excess mean return lies between -2 and 2.
 - Reading: Situation is sma_cross raw value > 0 with a positive forecast; next-bar returns stay inside each window and the all-bars baseline pools every coin and window; Newey-West autocovariances use only pairs of positive-forecast bars in the same window; an up-cross span is a run of positive forecast, merged across time-contiguous windows; the binomial z sums each coin's expected up count from its own pooled up share; unmet minimum counts give 'not observable' as the workflow requires.
+- Size: unusual move +0.55 % per case over 1 bars, 0.114 of the coin's usual move (4.73 %); normal drift in its direction +0.13 %, total +0.68 %; 463 cases
 Plan: `steps_cards/03_test_plan/full_data_run/plans/002-05_up-cross-to-reverse-cross-gain_1d.md`
 Record: `steps_cards/04_backtest/full_data_run/backtests/002-05_up-cross-to-reverse-cross-gain_1d`
 Measure: `measure.py`

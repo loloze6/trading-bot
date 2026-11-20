@@ -11,6 +11,7 @@ Evidence:
 - Counts: non-overlapping 24-bar blocks with forecast above 0: 377
 - Decided by: The main measure and the supporting check disagree in sign, so the result is inconclusive.
 - Reading: The measure's value is the pooled mean excess over all forecast>0 bars (each demeaned by its own window's mean over all bars), its t is the ordinary one-sample t of that excess on greedy non-overlapping blocks that each start at the next forecast>0 bar after the previous block ends within a window, and the hit-rate shares are pooled across windows.
+- Size: unusual move -0.23 % per case over 24 bars, -0.080 of the coin's usual move (2.89 %); normal drift in its direction +0.04 %, total -0.20 %; 134 cases
 Plan: `steps_cards/03_test_plan/hourly_run/plans/002-01_sma-cross-up-drift-up_1h.md`
 Record: `steps_cards/04_backtest/hourly_run/backtests/002-01_sma-cross-up-drift-up_1h`
 Measure: `measure.py`

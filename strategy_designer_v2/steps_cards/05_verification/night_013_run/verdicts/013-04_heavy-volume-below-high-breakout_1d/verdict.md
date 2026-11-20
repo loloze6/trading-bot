@@ -11,6 +11,7 @@ Evidence:
 - Counts: de-duplicated breakout events: 50, top half events: 25, bottom half events: 25
 - Decided by: Welch t = 1.99 lies between -2.0 and 2.0 over 50 events (inconclusive rule).
 - Reading: The breakout situation is taken as regime 'trending' (the detector's recorded close-above-prior-365-bar-high decision) together with close above every earlier high in the window, since 365 bars of history are not in the record; events are chosen greedily from each window's first trending bar, the coin mean 30-bar return uses the non-overlapping grid 0, 30, 60, ... of each window pooled over all windows, and the halves are the lower and upper floor(n/2) events after sorting all events by forecast (middle one dropped when n is odd).
+- Size: unusual move +9.53 % per case over 30 bars, 0.295 of the coin's usual move (25.51 %); normal drift in its direction +3.63 %, total +13.16 %; 58 cases
 Plan: `steps_cards/03_test_plan/night_013_run/plans/013-04_heavy-volume-below-high-breakout_1d.md`
 Record: `steps_cards/04_backtest/night_013_run/backtests/013-04_heavy-volume-below-high-breakout_1d`
 Measure: `measure.py`

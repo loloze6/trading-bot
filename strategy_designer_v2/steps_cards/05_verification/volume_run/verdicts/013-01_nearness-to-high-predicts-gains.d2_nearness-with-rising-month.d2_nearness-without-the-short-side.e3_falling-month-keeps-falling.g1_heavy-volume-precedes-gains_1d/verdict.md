@@ -11,6 +11,7 @@ Evidence:
 - Counts: non-overlapping cases: 5723, active bars: 17524
 - Decided by: The slope is positive with t = 4.14 >= 2 over 5723 cases (confirm rule).
 - Reading: The coin's mean 3-bar return is taken over that coin's non-overlapping grid samples pooled over all its windows, the regression is OLS with an intercept, the 300-case minimum counts the pooled grid cases with a forecast and a return, and the situation check rebuilds standardise from raw values where the full 60-bar history is inside the window and uses the recorded post-pipeline values before that.
+- Size: unusual move +0.38 % per case over 3 bars, 0.040 of the coin's usual move (7.96 %); normal drift in its direction -0.03 %, total +0.35 %; 3483 cases
 Plan: `steps_cards/03_test_plan/volume_run/plans/013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains_1d.md`
 Record: `steps_cards/04_backtest/volume_run/backtests/013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e3_falling-month-keeps-falling.g1_heavy-volume-precedes-gains_1d`
 Measure: `measure.py`

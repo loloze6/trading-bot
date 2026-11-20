@@ -11,6 +11,7 @@ Evidence:
 - Counts: independent grid cases with a positive forecast: 2762, top third cases: 921
 - Decided by: The slope's t is 3.00 (>= 2) and the top third's mean excess return is above 0.
 - Reading: Grid is positions 0, 72, 144, ... of each window; the coin's mean 72-bar return is the mean over all its grid bars in all windows; top third is forecast at or above its 2/3 quantile among the positive-forecast samples.
+- Size: unusual move -0.31 % per case over 72 bars, -0.038 of the coin's usual move (8.23 %); normal drift in its direction +0.41 %, total +0.10 %; 4608 cases
 Plan: `steps_cards/03_test_plan/std_time_pilot_run/plans/016-06_down-even-volume-continuation.g1_fresh-drop-rebound.d1_deep-decline-fresh-drop-rebound_1h.md`
 Record: `steps_cards/04_backtest/std_time_pilot_run/backtests/016-06_down-even-volume-continuation.g1_fresh-drop-rebound.d1_deep-decline-fresh-drop-rebound_1h`
 Measure: `measure.py`

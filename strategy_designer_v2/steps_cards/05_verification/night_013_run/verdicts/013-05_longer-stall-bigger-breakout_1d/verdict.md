@@ -11,6 +11,7 @@ Evidence:
 - Counts: trending grid bars: 18
 - Decided by: Only 18 trending grid bars, fewer than the plan's minimum of 30 cases.
 - Reading: Situation taken as regime 'trending' plus an in-window price check, side long; the coin mean is over all its complete grid bars in all windows (trending or not); grid bars without a full 30-bar forward return inside the window or without a recorded stall value are left out; the slope's t is the ordinary OLS t pooled across coins.
+- Size: unusual move +9.32 % per case over 30 bars, 0.290 of the coin's usual move (25.51 %); normal drift in its direction +3.70 %, total +13.02 %; 69 cases
 Plan: `steps_cards/03_test_plan/night_013_run/plans/013-05_longer-stall-bigger-breakout_1d.md`
 Record: `steps_cards/04_backtest/night_013_run/backtests/013-05_longer-stall-bigger-breakout_1d`
 Measure: `measure.py`

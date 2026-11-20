@@ -11,6 +11,7 @@ Evidence:
 - Counts: non-overlapping 20-bar active blocks pooled across coins and windows: 269
 - Decided by: The t-statistic lies between -2 and 2.
 - Reading: Situation checked on the regime label 'trending' plus both 60- and 20-bar close returns > 0 where computable inside the window, long side = forecast > 0; the coin's mean 20-bar return and the active samples use the same non-overlapping grid (positions 0, 20, 40, ... of each window), an active block is a grid bar with forecast > 0 and a full 20-bar forward return, and the supporting slope is an OLS of excess return on forecast over those same blocks.
+- Size: unusual move +3.54 % per case over 20 bars, 0.127 of the coin's usual move (21.24 %); normal drift in its direction +2.44 %, total +5.98 %; 430 cases
 Plan: `steps_cards/03_test_plan/plans/N2-04_slow-and-fast-momentum_1d.md`
 Record: `steps_cards/04_backtest/backtests/N2-04_slow-and-fast-momentum_1d`
 Measure: `measure.py`

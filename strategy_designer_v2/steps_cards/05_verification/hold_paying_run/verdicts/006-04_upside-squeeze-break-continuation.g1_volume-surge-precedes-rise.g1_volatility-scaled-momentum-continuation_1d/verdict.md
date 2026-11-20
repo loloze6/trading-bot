@@ -11,6 +11,7 @@ Evidence:
 - Counts: grid bars in the top group: 1030, grid bars with forecast > 0: 2922, grid bars with forecast 0: 2801
 - Decided by: The top-group mean excess return is above 0 with t >= 2 and the supporting difference is above 0.
 - Reading: The top group is the grid bars with forecast > 0 (and a valid 3-bar return) whose forecast is at or above the 80th percentile of those bars pooled over coins, ties at the cut-off included; the coin's mean 3-bar return is the mean over its non-overlapping grid returns across all windows; the plan's 'fewer than 100 top-group bars' case is reported as not observable.
+- Size: unusual move +0.44 % per case over 3 bars, 0.051 of the coin's usual move (7.96 %); normal drift in its direction +0.36 %, total +0.79 %; 1568 cases
 Plan: `steps_cards/03_test_plan/hold_paying_run/plans/006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1d.md`
 Record: `steps_cards/04_backtest/hold_paying_run/backtests/006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1d`
 Measure: `measure.py`

@@ -11,6 +11,7 @@ Evidence:
 - Counts: grid cases pooled: 849, active bars: 2583
 - Decided by: The main measure's t is at least +2 and the top-minus-bottom third check is above 0.
 - Reading: The coin's mean 3-bar return is taken over all grid bars of all its windows, the grid bars whose 3-bar forward return leaves the window are dropped, the thirds are the N//3 smallest and N//3 largest |forecast| cases after a stable sort, and the 100-case minimum is applied as 'not observable'.
+- Size: unusual move +0.39 % per case over 3 bars, 0.065 of the coin's usual move (6.82 %); normal drift in its direction -0.04 %, total +0.35 %; 903 cases
 Plan: `steps_cards/03_test_plan/night_005_run/plans/005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal_1d.md`
 Record: `steps_cards/04_backtest/night_005_run/backtests/005-02_bullish-rsi-divergence-rebound.d1_slow-rebound-after-deep-divergence.g1_volatile-day-one-day-reversal.g1_volatile-spell-three-day-reversal_1d`
 Measure: `measure.py`

@@ -11,6 +11,7 @@ Evidence:
 - Counts: independent grid cases in total: 384, grid cases BTCUSD: 192, grid cases ETHUSD: 192, coins with negative Spearman: 2
 - Decided by: t lies between -2.0 and 2.0, which the plan calls inconclusive.
 - Reading: Grid bars are positions 0, 14, 28, ... of each window with t+14 inside the window; the coin's mean 14-bar return is the mean of its grid returns over all its windows; the supporting check keeps the plan's literal 'at least 2 coins negative' even though only the coins present in the record are tested.
+- Size: unusual move +2.44 % per case over 14 bars, 0.145 of the coin's usual move (16.04 %); normal drift in its direction -0.02 %, total +2.42 %; 217 cases
 Plan: `steps_cards/03_test_plan/night_rsi_run/plans/010-02_rsi-below-share-continuation_1d.md`
 Record: `steps_cards/04_backtest/night_rsi_run/backtests/010-02_rsi-below-share-continuation_1d`
 Measure: `measure.py`
