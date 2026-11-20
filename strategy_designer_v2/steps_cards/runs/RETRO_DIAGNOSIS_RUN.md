@@ -20,7 +20,7 @@ round trip the backtest paid (the "edge ratio"); the market's share of the book'
 **Limits known in advance:** books of the same idea appear several times (reruns, holding variants): counted per
 record, and the duplicates named. In-sample: these are the folds the ideas were chosen on.
 
-## Reading (2026-11-20, 20:40 Paris)
+## Reading (2026-11-20, 20:19 Paris)
 
 248 records diagnosed, 0 errors; 238 with a step 6 result (192 distinct ideas; reruns and holding variants counted per
 record). Table: `topics/30_review/retro_diagnosis.csv`; script: `topics/30_review/retro_diagnosis.py`.
@@ -47,8 +47,9 @@ market's share explains individual books (grinding-rises), not the step 6 result
 check already carries what it would add.
 
 **R4, step 5 and the bets: they disagree often.** Of 123 confirmed books, **53 (43 %) have a move per bet that does not
-cover a round trip**, and **11 (9 %) have bets that lose against the drift**. Those 11 are 4 ideas (deep-decline and
-fresh-drop-rebound in several runs, up-jump reversal, one daily capitulation rebound). Step 5 confirms that an effect
+cover a round trip**, and **11 (9 %) have bets that lose against the drift**. Those 11 are 5 ideas (deep-decline and
+fresh-drop-rebound in several runs, up-jump reversal, and two daily ones: a large rise continuing five days, a
+capitulation-volume rebound). Step 5 confirms that an effect
 exists, not that the book's bets capture it.
 
 **What it means for the improvements.**
