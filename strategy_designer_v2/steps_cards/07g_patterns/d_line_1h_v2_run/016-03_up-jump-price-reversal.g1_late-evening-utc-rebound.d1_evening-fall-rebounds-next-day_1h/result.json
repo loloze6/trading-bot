@@ -1,0 +1,53 @@
+{
+  "line": "7.g",
+  "backtest": "016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-rebounds-next-day_1h",
+  "step5": "confirmed",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.3825408,
+  "findings": {
+    "F1": "Measured on the 30-day-volatility-scaled 24-hour return at every bar (non-overlapping grid, 15,950 cases), the 24-hour reversal is three times stronger in the top tercile of volatility relative to its own 90-day median (\u221260.6 bp of next-24h excess return per unit z, t \u22128.2) than in the middle tercile (\u221222.7 bp, t \u22123.1), and absent in the bottom tercile (\u22122.0 bp, t \u22120.3); the top-tercile slope is negative in all 8 years, with t at or below \u22122.1 in 6 of them.",
+    "F2": "The reversal depends on when the 24-hour move is read: per-hour slopes of next-24h excess return on the fall are largest at the 00:00\u201305:00 UTC closes (25\u201335 bp per z, t 6.1\u20138.9) and vanish at 13:00\u201315:00 UTC (t \u22121.5 to \u22120.2), while the tested 19:00-stamped bar sits in between (12.4 bp, t 3.2); at the 01:00 bar the slope is significant on every coin (t \u22122.3 for XRP to \u22126.4 for XMR) and in 6 of 8 years.",
+    "F3": "Against the brief, moves made with volume spread evenly across the 24 hours reverse more than moves made in a volume burst: the grid slope is \u221249.0 bp per z (t \u22126.0) in the lowest tercile of max-hour volume share versus \u221214.2 bp (t \u22122.3) in the highest, and the z \u00d7 volume-concentration interaction is positive on all 6 coins (t 0.5 to 2.7, 4 of 6 above 1.8).",
+    "F4": "The hours after the 20:00 and 21:00 UTC closes carry a steady drift of +4.2 to +5.5 bp per hour on every coin (t 3.0 to 4.4), positive in 7 of 8 years, against a typical hour near zero.",
+    "F5": "The book fails mainly because it holds too little of the market's rise rather than because the signal is wrong: Sharpe 0.50 sits 0.057 below holding, and its mean daily return of 0.000368 is under the 0.0005 bar, while the reversal it trades is only a mid-strength slice (F2) of a broader effect that is strongest in high-volatility stretches (F1)."
+  },
+  "ideas": [
+    {
+      "idea": "The higher a coin's 30-day hourly volatility stands above its own 90-day norm, the more of its last 24 hours' move, scaled by that volatility, it gives back over the next 24 hours.",
+      "consequence": "A trader fading a coin's daily move should do it mainly when the coin is unusually volatile for itself, and leave it alone in calm stretches.",
+      "name": "Volatility-scaled daily move reversal",
+      "from": "F1, F5",
+      "refs": [
+        "F1",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The more a coin has fallen over the 24 hours up to the 01:00 UTC close, the more it rises over the next 24 hours.",
+      "consequence": "A daily rebound long reads its signal more profitably just after midnight UTC than in the late evening.",
+      "name": "Post-midnight daily fall rebound",
+      "from": "F2, F5",
+      "refs": [
+        "F2",
+        "F5"
+      ]
+    },
+    {
+      "idea": "The more evenly a coin's volume was spread across the hours of its last 24 hours, the larger the share of that 24-hour move it gives back over the next 24 hours.",
+      "consequence": "A steady, evenly traded daily move is a stronger reason to lean against it than a move made in one volume burst.",
+      "name": "Evenly traded moves revert",
+      "from": "F3, F1",
+      "refs": [
+        "F3",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-rebounds-next-day.g1_volatility-scaled-daily-move-reversal",
+    "016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-rebounds-next-day.g2_post-midnight-daily-fall-rebound",
+    "016-03_up-jump-price-reversal.g1_late-evening-utc-rebound.d1_evening-fall-rebounds-next-day.g3_evenly-traded-moves-revert"
+  ],
+  "no_ideas": null
+}
