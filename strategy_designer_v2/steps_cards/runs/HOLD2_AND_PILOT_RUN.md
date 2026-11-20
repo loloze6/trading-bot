@@ -155,3 +155,33 @@ The 9 books took 72 minutes side by side, against about 149 minutes one after an
 its model use was small (about 0.4 USD each at start), and merging back took 2 merges in which the INDEX files were
 merged row by row (10 files each, no row in conflict). The longest part sets the time: a better split balances by
 expected time (hourly books with more coins first).
+
+## Step back: hourly bars, where we are (2026-11-20, 17:30 Paris)
+
+**1. Hourly books that pay exist: 3, all hourly versions of daily ideas with horizons of days.** On the corrected rule:
+| Idea | Daily (its own record) | Hourly, held |
+|---|---|---|
+| nearness to highs, more coins | 1.25 / 1.67 | 1.24 / 1.49 (168 bars) |
+| golden-cross momentum, more coins | 0.90 / 0.88 | 1.06 / 0.80 (240 bars) |
+| dual momentum | 1.06 / 1.22 | 1.05 / 1.19 (72 bars) |
+
+(Sharpe / Calmar after costs.) An idea that pays on daily bars pays about as well on hourly bars when each bet is held
+for its horizon (the operator's premise). Hourly bars add no edge yet: the same idea, about the same result.
+
+**2. The hourly-native ideas (the intraday briefs) do not pay, for 3 reasons the diagnosis shows** (`common/book_diagnosis.md`;
+move over the horizon after the bot can act, against a round trip of about 21 bps measured):
+| Kind | Books | Move / round trip | Market's share of the gain | Why it does not pay |
+|---|---|---|---|---|
+| short horizon (2 to 4 bars) | settlement-move, late-evening rebound, post-settlement decline | 4 to 13 / 21 bps | – (the books lose) | the move is smaller than a trip |
+| long horizon, wrong timing | deep-decline, fresh-drop-rebound (72) | −25 and −40 / 21 bps | 252 %, 211 % | the bets lose against the coin's drift; the small gain is the market's (step 5 confirmed them: its measure and the book's bets do not agree) |
+| long horizon, a real edge | volatile evening-fall (24) | **56 / 21 bps** | 27 % | fails Calmar only (0.694 against 0.75), on 6 coins |
+| long horizon, trend | grinding-rises (72) | 42 / 21 bps | 73 % | the gain is mostly the market; fails Calmar |
+| (paying, for comparison) dual momentum (72) | | 37 / 21 bps | 49 % | – |
+
+**3. Levers tried and set aside:** the `standardise` window (pilot: flat); closing leftovers below the trade band
+(`topics/30_review/close_rule_replay.py`: the leftovers are 52 % of volatile evening-fall's time in a position, all
+under 0.2, but closing them adds +0.01 to +0.02 of Sharpe).
+
+**4. What the 3 paying books have that the others lack:** a move per bet well above a trip and from the idea's timing
+(market share under half), and two of the three are "more coins" versions (step 7.b, an idea on more data):
+diversification over 15 to 20 coins lowers the book's deepest fall, which is what Calmar reads.
