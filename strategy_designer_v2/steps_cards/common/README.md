@@ -13,3 +13,4 @@ One definition, one file: a step that needs it reads it here, so the steps canno
 | `unseen_dates.md` | the dates no fold covers, the unseen periods (one windows file each) and the rule "holds" | `orchestration/unseen_test`, the operator |
 | `measures.md` | how the workflow measures (returns counted once, holding, the book, Sharpe, Calmar, t-statistics) | steps 3, 5, 7; step 6's code computes the book the same way |
 | `book_diagnosis.md` | **draft, topic 34:** why a book does or does not pay (big enough, opening time, closing time, holding past the bets, trend), read from a backtest's record | none yet (proposed: the observe-and-advise stage, step 7); code `book_diagnosis.py` |
+| `findings.md` | **draft, I2:** what the runs have measured about what pays (short statements with their evidence and date); a finding is not a rule | none yet (proposed: steps 1, 2, 7) |
