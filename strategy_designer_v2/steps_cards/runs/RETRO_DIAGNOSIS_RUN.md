@@ -143,7 +143,7 @@ also earns the drift without repeated costs. Between 5 and 48 hours the total co
 the books earn about what holding earns, minus their costs, and none passes step 6. The drift helps long trades only; a
 short trade has it against it.
 
-## The operator's question: are the confirmed ideas that do not pay too small? (2026-11-20, 21:30 Paris)
+## The operator's question: are the confirmed ideas that do not pay too small? (2026-11-20, 23:40 Paris)
 
 Each confirmed idea (123) by the size of its cases against the cost of a buy and a sell (`common/measures.md`, "The
 size of an idea"):
