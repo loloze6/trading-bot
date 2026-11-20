@@ -24,7 +24,6 @@ import yaml
 HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[1]
 sys.path.insert(0, str(STEPS / "common"))
-from idea_size import size as idea_size, trade_cost  # noqa: E402  (common/measures.md, "The size of an idea")
 from lib import call, write_atomic, header_fields as header, idea_fields  # noqa: E402  (shared helpers, common/lib.py)
 
 ATTEMPTS, MAX_WORDS, ROW_CAP, CHAR_CAP = 3, 300, 40, 15000
@@ -139,24 +138,39 @@ COMMON = HERE.parents[1] / "common"   # the workflow's shared definitions (measu
 IDEA_DEFINITION = (COMMON / "idea_definition.md").read_text()
 
 
-def size_and_cost(size_file, record, plan_text):
-    """The idea's size (step 5's size.json, or measured the same way when the verdict predates it) and what one trade
-    cost this backtest, in words, for every line (common/measures.md, "The size of an idea")."""
-    if size_file.exists():
-        s = json.loads(size_file.read_text())
-    else:
-        h = re.search(r"Horizon:\s*(\d+)", plan_text)
-        s = idea_size(record, int(h.group(1))) if h else {"cases": 0}
-    cost = trade_cost(record)
+def recorded_cost(record):
+    """The cost of a trade (common/measures.md): twice the fee plus the coin's slippage, from each coin's first window
+    manifest (config.cost_model), as a share of the value traded; the mean over the record's coins. None if not recorded."""
+    costs = []
+    for coin in sorted(p for p in Path(record).iterdir() if p.is_dir()):
+        m = next(iter(sorted(coin.glob("w*/manifest.json"))), None)
+        cm = (json.loads(m.read_text()).get("config") or {}).get("cost_model") if m else None
+        if not cm or "fee_bps" not in cm:
+            continue
+        slip = cm.get("slippage_bps") or {}
+        s = slip.get(coin.name, slip.get("default", 0.0)) if isinstance(slip, dict) else float(slip)
+        costs.append(2 * (float(cm["fee_bps"]) + float(s)) / 1e4)
+    return sum(costs) / len(costs) if costs else None
+
+
+def size_and_cost(size_file, record):
+    """The idea's size (step 5's size.json) and the cost of a trade the backtest applied, in words, for every line
+    (common/measures.md: "The size of an idea", "The cost of a trade")."""
+    s = json.loads(size_file.read_text()) if size_file.exists() else None
+    cost = recorded_cost(record)
+    cost_line = (f"One trade (a buy and a sell) cost this backtest {100 * cost:.2f} % of the value traded (fees and slippage as "
+                 f"the backtest applied them)." if cost else "The cost of a trade is not recorded for this backtest.")
+    if not s:
+        return "The idea's size is not measured for this verdict.\n" + cost_line
     if not s.get("cases"):
-        return "The idea's size: no case to measure." + (f" One trade (a buy and a sell) cost this backtest {100 * cost:.2f} %." if cost else "")
+        return "The idea's size: no case to measure.\n" + cost_line
     p = lambda v: f"{100 * v:+.2f} %"
     lines = [f"The idea's size: per case, over its horizon of {s['horizon_bars']} bars, the unusual move is {p(s['unusual_move'])} "
              f"({s['strength']:.3f} of the coin's usual move over that horizon, {100 * s['usual_move']:.2f} %); the coin's normal "
-             f"drift in the case's direction is {p(s['normal_drift'])}; the total move is {p(s['total_move'])}; {s['cases']} cases."]
+             f"drift in the case's direction is {p(s['normal_drift'])}; the total move is {p(s['total_move'])}; {s['cases']} cases.",
+             cost_line]
     if cost:
-        lines.append(f"One trade (a buy and a sell) cost this backtest {100 * cost:.2f} % of the value traded (fees and slippage, as it paid "
-                     f"them). Per case, the total move is {s['total_move'] / cost:.1f} times that cost and the unusual move "
+        lines.append(f"Per case, the total move is {s['total_move'] / cost:.1f} times that cost and the unusual move "
                      f"{s['unusual_move'] / cost:.1f} times.")
     return "\n".join(lines)
 
@@ -272,7 +286,7 @@ def main():
     context = (f"[THE BRIEF]\n{brief}\n[THE IDEA THAT WAS TESTED]\n{idea_text}\n[THE TEST PLAN]\n{plan_text}\n[ITS CONFIG]\n{config.read_text() if config.exists() else '(none)'}\n"
                f"[THE VERDICT ON THE IDEA (step 5)]\n{no_paths(verdict) if verdict.exists() else s5}\n"
                f"[THE CHECK OF THE BOOK (step 6)]\n{no_paths(check) if check.exists() else s6}\n"
-               f"[THE SIZE OF THE IDEA AND THE COST OF A TRADE]\n{size_and_cost(args.verdicts_dir / rid / 'size.json', record, plan_text)}\n"
+               f"[THE SIZE OF THE IDEA AND THE COST OF A TRADE]\n{size_and_cost(args.verdicts_dir / rid / 'size.json', record)}\n"
                f"[THE DATA]\n{(HERE / 'data_description.md').read_text()}\n[WHAT A BACKTEST RECORDS]\n{(COMMON / 'backtest_record.md').read_text()}\nThis backtest holds:\n{data_summary(record)}\n")
     line_prompt = with_common((line_dir / "helper" / "line_prompt.md").read_text())
     system = ((HERE / "common_rules.md").read_text() + "\n[HOW THE WORKFLOW MEASURES]\n" + MEASURES + "\n" + line_prompt + "\n"

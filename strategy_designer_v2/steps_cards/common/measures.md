@@ -36,3 +36,9 @@ the book the same way). A plan's own words come first; these apply wherever it s
   Example: over 3 days a coin usually moves about 10 % up or down; an idea whose cases end 0.5 % higher than the coin's
   normal drift has a strength of 0.05. Real ideas measured so far have a strength of about 0.05 whatever their horizon
   (`findings.md`, F10).
+- **The cost of a trade** (operator, 2026-11-20): what the backtest applied to a buy and a sell, as its record states it
+  (each window's `manifest.json`, `config.cost_model`: the fee per trade and the slippage per trade for the coin, or the
+  table's default): twice the fee plus the slippage, as a share of the value traded. For a record of several coins, the
+  mean over its coins. Its values come from `trading-bot/config/cost_model.json` (taker execution); they are the venue's
+  assumptions, not measured fills.
+

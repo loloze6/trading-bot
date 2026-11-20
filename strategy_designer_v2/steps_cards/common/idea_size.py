@@ -43,16 +43,3 @@ def size(record, H):
     mean = lambda x: float(np.mean(x))
     return {"horizon_bars": H, "cases": len(unusual), "unusual_move": mean(unusual), "normal_drift": mean(drift_part),
             "total_move": mean(total), "usual_move": float(np.median(usual)), "strength": mean(strength)}
-
-
-def trade_cost(record):
-    """What one trade (a buy and a sell) cost this backtest, as a share of the value traded: twice its cost per unit
-    traded (the book without costs minus the backtest's own book, over the units traded; common/book_diagnosis.md)."""
-    free = real = units = 0.0
-    for coin in sorted(p for p in pathlib.Path(record).iterdir() if p.is_dir()):
-        for f in sorted(coin.glob("w*/bars.csv.gz")):
-            b = pd.read_csv(f, usecols=["close", "previous_allocation", "postRebalance_current_allocation", "postRebalance_total_value"])
-            a = b["postRebalance_current_allocation"].fillna(0).to_numpy(float); prev = b["previous_allocation"].fillna(0).to_numpy(float)
-            c = b["close"].to_numpy(float); v = b["postRebalance_total_value"].to_numpy(float)
-            units += float(np.abs(a - prev).sum()); free += float((a[:-1] * (c[1:] / c[:-1] - 1)).sum()); real += float((v[1:] / v[:-1] - 1).sum())
-    return 2 * (free - real) / units if units else None

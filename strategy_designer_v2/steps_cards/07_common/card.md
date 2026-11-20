@@ -14,8 +14,8 @@ Step 7 is a set of analysis lines, each with its own objective and its own card:
 
 ## Input (every line)
 One backtest record (its bars, its trades, its book day by day), the idea it tested (the fields step 3 reads: brief, data lines, Idea, Consequence; found by the plan's idea id, or `--idea`; operator, 2026-11-15), the plan it ran and its brief, step 5's verdict on the idea and step 6's check of the book, **the idea's size and what one
-trade cost the backtest** (operator, 2026-11-20): step 5's `size.json`, or the size measured the same way
-(`../common/idea_size.py`) when the verdict predates it, and the cost of a buy and a sell measured on the record. Why:
+trade cost the backtest** (operator, 2026-11-20): step 5's `size.json` ("not measured" when the verdict has none), and
+the cost of a trade the backtest applied, read from its record (`../common/measures.md`, "The cost of a trade"). Why:
 of 103 confirmed ideas that did not pay, 53 had a move per case smaller than the cost of a trade, and none of those
 paid (`../runs/RETRO_DIAGNOSIS_RUN.md`); a line that does not see it proposes more ideas of the same small kind. And the
 findings register (`../common/findings.md`): what earlier runs measured, as evidence, not rules.
