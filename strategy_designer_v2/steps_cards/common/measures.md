@@ -39,6 +39,7 @@ the book the same way). A plan's own words come first; these apply wherever it s
 - **The cost of a trade** (operator, 2026-11-20): what the backtest applied to a buy and a sell, as its record states it
   (each window's `manifest.json`, `config.cost_model`: the fee per trade and the slippage per trade for the coin, or the
   table's default): twice the fee plus the slippage, as a share of the value traded. For a record of several coins, the
-  mean over its coins. Its values come from `trading-bot/config/cost_model.json` (taker execution); they are the venue's
-  assumptions, not measured fills.
+  mean over its coins. Its values come from `trading-bot/config/cost_model.json` (taker execution): the fee is Kraken
+  futures' taker fee; the slippage was a guess until 2026-11-20, then measured once on the venue's order books (topic 38).
+  They are estimates, not the bot's own fills.
 

@@ -174,17 +174,21 @@ def test_invalid_cost_model_error_is_a_value_error():
 
 
 def test_committed_cost_model_json_resolves_the_ship_time_entries():
-    """The real, tracked config/cost_model.json (no path override) -- pins the
-    2026-09-10 ratified S3 real-calibration ship-time values so an accidental
-    edit is caught here, not only by the slow bit-identity backtest."""
+    """The real, tracked config/cost_model.json (no path override) -- pins its
+    values so an accidental edit is caught here, not only by the slow
+    bit-identity backtest. Binance: the 2026-09-10 S3 values. Kraken futures:
+    the slippage measured on Kraken futures' public order books (2026-11-20,
+    a taker order of 10k USD; default = the highest measured, INJUSD), see
+    strategy_designer_v2/steps_cards/topics/38_cost-of-a-trade-against-kraken-futures.md."""
     assert resolve_cost_model("binance", "margin", symbol="BTCUSDT") == (10.0, 1.0, False)
     assert resolve_cost_model("binance", "margin", symbol="ETHUSDT") == (10.0, 1.5, False)
     assert resolve_cost_model("binance", "margin", symbol="SOMECOIN") == (10.0, 1.5, True)
-    assert resolve_cost_model("kraken", "futures", symbol="BTCUSD") == (5.0, 2.5, False)
-    assert resolve_cost_model("kraken", "futures", symbol="ETHUSD") == (5.0, 4.0, False)
-    assert resolve_cost_model("kraken", "futures", symbol="AVAXUSD") == (5.0, 7.5, False)
-    assert resolve_cost_model("kraken", "futures", symbol="SOLUSD") == (5.0, 7.5, False)
-    assert resolve_cost_model("kraken", "futures", symbol="SOMECOIN") == (5.0, 7.5, True)
+    assert resolve_cost_model("kraken", "futures", symbol="BTCUSD") == (5.0, 0.1, False)
+    assert resolve_cost_model("kraken", "futures", symbol="ETHUSD") == (5.0, 0.5, False)
+    assert resolve_cost_model("kraken", "futures", symbol="XMRUSD") == (5.0, 10.7, False)
+    assert resolve_cost_model("kraken", "futures", symbol="AVAXUSD") == (5.0, 6.5, False)
+    assert resolve_cost_model("kraken", "futures", symbol="SOLUSD") == (5.0, 1.1, False)
+    assert resolve_cost_model("kraken", "futures", symbol="SOMECOIN") == (5.0, 18.2, True)
 
 
 # ---------------------------------------------------------------------------

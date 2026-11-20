@@ -1,6 +1,6 @@
 # Topic 38: the backtest's cost of a trade against real Kraken futures
 
-Status: designing (values only; the logic stays)  
+Status: built 2026-11-20 on the working branch (the estimate); its refinement parked  
 Where: engine settings (`trading-bot/config/cost_model.json`, shared config)  
 Opened: 2026-11-20, the operator: "yes to ensure we have cost reflecting reality as close as we can (keeping same
 logic, but different value). So far the bot would be taker. Let's park if we should do it maker."
@@ -56,10 +56,33 @@ costs and what they move: returns, Sharpe, step 6's checks), and the counts of v
 |---|---|---|---|---|
 | 2026-11-20 | The bot is a taker: the cost is the taker fee plus crossing the book | the operator | how the bot would trade today | maker: parked (below) |
 | 2026-11-20 | Maker execution is parked | the operator | to decide later whether the bot should place limit orders | — |
+| 2026-11-20 | Use a better estimate now (option B, at a 10k USD order); park the refinement (option A) | the operator: "use a better estimate and park a point to refine slippage" | the guess was wrong in a known direction; a few days of sampling can come later | C: keeps a known error |
 
 ## Status and next
-Waiting on the operator: the order size to calibrate at, and the go for option A. Shared config: the values change
-only with the proof and the operator's go. Parked: maker (fee 0.02 %, no spread crossed, but orders may not fill).
+**Built (2026-11-20, on the working branch; merging into master is the operator's go).** `cost_model.json`, Kraken
+futures: the fee stays 5 bps; the slippage per coin is tonight's measure for a taker order of 10k USD (the column above;
+BTC 0.1, ETH 0.5, XRP 3.0, LTC 6.4, ZEC 7.2, XMR 10.7, the 13 other coins 1.1 to 18.2). The default, for a coin not in
+the table, is the highest measured (INJ, 18.2), as the file's rule says ("the highest known figure for that venue").
+Why 10k USD: the backtest's balance is 1,000 USD, where the cost is about half the spread; one quiet hour understates
+it, and the 10k figure, 2 to 3 times higher, leaves room for wider spreads. Why this can't leak: the cost does not
+enter any decision (the proof below: forecasts and targets identical); it is the venue's price for a trade, measured
+once and applied to every year, which is optimistic for the early years (above).
+
+**Proof** (the near-highs daily book, `hold_paying_run`, 6 coins, 24 windows each, rerun on today's engine with the
+old values and with the new, compared file by file): 169 of 794 files identical; the others differ only where the
+cost enters. On 17,524 bars, forecast, regime and target allocation identical on every bar; the trades' times and
+sides identical in every window (1,197 trades); the held allocation differs by at most 0.13 % of the balance, and 7
+bars of 17,524 cross the rebalance band the other way. The manifests differ only in the cost model and the run's own
+provenance (run id, time, config hash, git sha). The sum of the window returns moves in the direction of the cost
+change: BTC +2.4 points, ETH +2.2, XRP +2.8, LTC +0.5, ZEC +0.1, XMR −2.3. Tests: the bot's 1,586 pass (the one
+that pins the committed values was updated with them), the cards' 100 pass.
+
+**What it changes elsewhere:** every backtest from now on. Records made before keep their own cost in their
+manifests (step 7 reads it there), so past verdicts and books are not changed; a past book judged again on the new
+cost needs its backtest rerun. The campaign (`strategy-research/`) no longer runs.
+
+**Parked: the refinement (option A).** Sample Kraken futures' public order books over several days and hours, set the
+order size the bot would trade, write the median per coin. Also parked: maker execution.
 
 ## Links
 `trading-bot/config/cost_model.json`, `trading-bot/config/cost_model.py`, `common/measures.md` ("The cost of a trade"),
