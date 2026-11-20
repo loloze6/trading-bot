@@ -107,3 +107,51 @@ moves these books by up to about 5 % (replay), so the changes are within what th
 state it in time anyway (one rule for every timeframe) is for the operator: no result asks for it. The levers left are
 the ideas' edge (topic 34: a move that pays for its trip; topic 35: a horizon in price), and, for volatile evening-fall,
 what makes its deepest fall (its diagnosis by window), before anything is changed.
+
+## Reading, B. the corrected rule on paying books (`hold2_rerun`, 10 books, done 15:56 Paris)
+
+The last 9 ran in 3 parts side by side (topic 37, option D: `runs/hold2_parts/`). Sharpe and Calmar after costs; step 6:
+"pro" profitable enough.
+
+| Book (bars held) | Sides | Without hold | Old rule | Corrected rule | Unseen dates 2016-17 / 2026 (corrected) |
+|---|---|---|---|---|---|
+| nearness to highs more coins, 1h (168) | long | pro 1.05 / 1.01 | – | **pro 1.24 / 1.49** | not profitable / no verdict |
+| golden-cross momentum more coins, 1h (240) | long | pro 1.12 / 1.05 | pro 1.04 / 0.78 | pro 1.06 / 0.80 | profitable / no verdict |
+| dual momentum, 1h (72) | long | pro 0.98 / 1.03 | pro 1.07 / 1.10 | pro 1.05 / 1.19 | not run (step 5 inconclusive) |
+| nearness to highs more coins, 1d (7) | long | pro 1.25 / 1.67 | pro 1.20 / 1.49 | pro 1.22 / 1.53 | profitable / not profitable |
+| nearness without the short side, 1d (7) | long | pro 1.01 / 0.96 | pro 1.05 / 1.08 | pro 1.05 / 1.04 | not run (inconclusive) |
+| rsi above streak, 1d (14) | long | pro 1.04 / 0.92 | pro 1.00 / 0.84 | pro 0.98 / 0.79 | not run (inconclusive) |
+| above-average drift, 1d (20) | long | pro 0.95 / 0.92 | pro 0.91 / 0.79 | pro 0.93 / 0.86 | not run (not observable) |
+| heavy-volume follow-through, 1d (3) | long | pro 0.91 / 0.80 | – | pro 0.99 / 0.81 | not profitable / not profitable |
+| rsi side predicts next week, 1d (7) | both | pro 1.03 / 1.14 | pro 0.99 / 0.90 | pro 0.97 / 0.87 | not profitable / profitable |
+| volatile reversal completes quickly, 1d (3) | both | pro 1.16 / 1.05 | not −0.03 / −0.07 | **not 0.44 / 0.21** | – |
+
+**Counts.** 9 of 10 stay profitable. Against their records without hold, Sharpe moves −0.06 to +0.19 on those 9 (8 within
+±0.15). The one that stops paying is the 3-day two-sided reversal: 1.16 → 0.44 (the old rule's defect had it at −0.03).
+
+**Outcome: B1 on 9 of 10, B2 on 1.** The hold is neutral on books that already pay, one-sided and two-sided alike (rsi
+side: 1.03 → 0.97), and it lifts the longest hourly one (nearness to highs, 168 bars: 1.05 → 1.24). It costs the
+quick two-sided reversal its quick reversals: a 3-day bet held while the forecast turns the other way. Its closing
+time is the next thing to read (topic 34's diagnosis) before anything is changed.
+
+**Check C passed** (`topics/30_review/opt2_check_c.py`, on the 10 books and the 4 pilot books):
+- the engine's position equals `core/holding_period.py` replayed from the recorded forecast and target, with the
+  engine's own trade approvals: 0 bars differ on about 2.1 million;
+- positions on the other side of the forecast: within their bets' horizon, as defined (a long bet held through a turn
+  of the forecast). After their bets: 76 bars on the 2 two-sided books, all tiny leftovers (−0.01 to −0.07) that the
+  trade band refuses to close (both changes below 0.2), the band's rule from before the hold. The brief's "0 % held
+  against the forecast" was too strict: it contradicted the side-switch case of the definition.
+
+## Reading, the parallel test (topic 37, option D)
+
+| Part | Where | Books | Start → end (Paris) | Time |
+|---|---|---|---|---|
+| A | this session | 1 hourly, 3 daily | 14:43 → 15:03 | 20 min |
+| B | its own session | 1 hourly (240 bars, with unseen dates), 2 daily | 14:44 → 15:41 | 57 min |
+| C | its own session | 1 hourly (168 bars, more coins, with unseen dates), 1 daily | 14:44 → 15:56 | 72 min |
+
+The 9 books took 72 minutes side by side, against about 149 minutes one after another (the sum of the 3 parts): about
+2 times faster, with no result changed (one engine, one commit). The cost: each new session built its venv (under 1 min),
+its model use was small (about 0.4 USD each at start), and merging back took 2 merges in which the INDEX files were
+merged row by row (10 files each, no row in conflict). The longest part sets the time: a better split balances by
+expected time (hourly books with more coins first).
