@@ -24,9 +24,11 @@ def write_window(path, close, fc, alloc, value=None):
     df.to_csv(path / "bars.csv.gz", index=False)
 
 
-def test_bets_are_rises_in_size_in_their_direction():
-    fc = np.array([0, 2, 2, 5, 3, 0, -1, -1, 4, 0], float)
-    assert bets(fc).tolist() == [1, 3, 6, 8]       # turn from 0, rise, turn to short, change of side
+def test_bets_are_rises_of_at_least_the_band_on_their_side():
+    fc = np.array([0, 2, 2, 5, 3, 0, -1, -3, 4, 4.5, 6, 0], float)
+    # 2 from 0: a bet; 5 (3 above 2): a bet; -1 is below the band, -3: a bet; 4 after a change of side: a bet;
+    # 4.5 is noise; 6 (2 above 4): a bet
+    assert bets(fc).tolist() == [1, 3, 7, 8, 10]
 
 
 def test_no_cost_when_the_book_is_the_book_without_costs(tmp_path):
@@ -68,7 +70,7 @@ def test_move_opening_and_closing_on_a_known_path(tmp_path):
 
 def test_every_bet_is_read_even_when_bets_overlap(tmp_path):
     n, H = 100, 10; close = np.full(n, 100.0); fc = np.zeros(n)
-    fc[20], fc[21], fc[22] = 1, 2, 3        # three rises inside one horizon: three bets, all read
+    fc[20], fc[21], fc[22] = 2, 4, 6        # three rises of the band inside one horizon: three bets, all read
     write_window(tmp_path / "rec" / "BTCUSD" / "w1", close, fc, np.zeros(n))
     assert diagnose(tmp_path / "rec", H)["whole_book"]["bets_read"] == 3
 

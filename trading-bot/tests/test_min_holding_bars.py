@@ -55,7 +55,7 @@ START, END, SYMBOL = "2024-04-01", "2024-05-30", "BTCUSD"     # Kraken hourly ba
 
 
 @pytest.mark.slow
-def test_no_two_trades_closer_than_the_holding_time(tmp_path):
+def test_a_held_book_trades_no_more_than_a_free_one(tmp_path):
     from _cache_guard import cache_skip_reason
     reason = cache_skip_reason(PROJECT_ROOT / "local_data", ("kraken_BTCUSD_1h.csv",), START, END)
     if reason:

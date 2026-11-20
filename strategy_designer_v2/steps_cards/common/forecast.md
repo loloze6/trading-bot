@@ -34,13 +34,17 @@ forecast divided by 10, scaled by the coin's volatility.
 6. **The position** (`postRebalance_current_allocation`) = forecast / 10 x (the target volatility / the coin's realised
    volatility), capped; a trade too small to matter is skipped, so the position can keep its previous sign for a few
    bars after the forecast changes sign.
-7. **The holding period** (operator, 2026-11-19 and 20; `topics/30_why-hourly-ideas-rarely-pay.md`). An idea claims a
-   move over its horizon ("it rises over the next 24 hours"), so each bet it makes is held for that horizon:
-   `strategies.min_holding_bars` = the idea's horizon in bars. **Each rise of the position the forecast asks is an
-   event that holds its own size for that many bars:** a long book does not go below the sum of those rises over the
-   last horizon (at most its position); a short book, symmetrically, with the falls. A rise, or a new position, is
-   bought at once; a fall is sold only as far as the rises still within their horizon allow. Example (horizon 3 bars):
-   asked 10, 5, 15, then 0: holds 10, 10, 15, then 10 (the rise of 10 at the third bar is still held). A forced flat
+7. **The holding period** (operator, 2026-11-19 and 20; topics 30 and 34; code `trading-bot/core/holding_period.py`). An
+   idea claims a move over its horizon ("it rises over the next 24 hours"), so each bet it makes is held for that
+   horizon: `strategies.min_holding_bars` = the idea's horizon in bars. **A bet is a rise of the forecast itself, on its
+   own side, of at least the band** (`min_allocation_change`, 2 forecast points by default: a smaller rise is noise),
+   measured from the forecast's lowest level on that side since its last bet (from 0 after a flat or a change of side).
+   Its size is the rise's share of that bar's sized position; the sizing alone (volatility) never makes a bet. A long
+   book does not go below the sum of its long bets still within their horizon (at most its position); a short book,
+   symmetrically; with no bet held on its side, nothing is held, so a book can turn from long to short in one bar. A
+   rise, or a new position, is bought at once; a fall is sold only as far as the bets still within their horizon allow.
+   Example (horizon 3 bars): asked 10, 5, 15, then 0: holds 10, 10, 15, then 10 (the rise of 10 at the third bar is
+   still held). A forced flat
    (the risk gate, a large data gap) is never held. The horizon is the idea's own, never a value chosen from the data
    (a longer hold also collects the market's drift). Why: on hourly bars, books that followed the forecast every hour
    held a 24-hour idea for 1 hour, or re-sized every hour, and paid their costs without earning the move (topic 30: 0.3 to 4.6 bps earned per unit traded, against about 10 of cost).

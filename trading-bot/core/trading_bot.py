@@ -9,7 +9,7 @@ import copy
 import datetime
 import logging
 import math
-from collections import deque
+from core.holding_period import HoldingPeriod
 from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
 from performance.metrics import EnhancedPerformanceTracker, CompletedTrade
@@ -205,11 +205,9 @@ class TradingBot:
         # (0.0 = flat, the start). The min_allocation_change band judges the
         # signal's move away from it. Never read or written without a block.
         self._held_signal_allocation: Dict[str, float] = {}
-        # 2026-11-20 (topics/30, the operator's option 2): strategies.min_holding_bars. Per symbol, the target asked on
-        # the previous bar and the target's moves over the last min_holding_bars bars (each rise, each fall: an event
-        # held for its horizon). Never read without the key.
-        self._holding_prev_target: Dict[str, float] = {}
-        self._holding_moves: Dict[str, Any] = {}
+        # 2026-11-20 (the operator's option 2; topics/30, 34): strategies.min_holding_bars. All of its logic and state is
+        # in core/holding_period.py; created at the first bar, None without the key (nothing below changes).
+        self._holding = None
 
         # Trading state
         self.open_trades: Dict[str, CompletedTrade] = {}
@@ -513,27 +511,21 @@ class TradingBot:
                 )
                 target_allocation = previous_allocation
 
-            # 2026-11-20 (topics/30, the operator's option 2): strategies.min_holding_bars, the idea's horizon in bars.
-            # Each rise of the target is an event that holds its own size for that many bars: a long book does not go
-            # below the sum of the target's rises over the last min_holding_bars bars (at most its position); a short
-            # book, symmetrically, not above minus the sum of its falls. Rises and new positions are bought at once.
-            # Only this bar's and earlier targets are read: no lookahead. The risk gate and the gap tiers below still
-            # override it (a forced flat is never held). Absent (None): nothing below changes.
+            # 2026-11-20 (the operator's option 2; topics/30, 34): strategies.min_holding_bars, the idea's horizon in
+            # bars. Each bet (a rise of the forecast of at least the band) is held for that many bars: see
+            # core/holding_period.py, where all of the rule is. The risk gate and the gap tiers below still override it
+            # (a forced flat is never held). Absent (None): nothing below changes.
             min_holding = getattr(self.strategy, "min_holding_bars", None)
             if isinstance(min_holding, bool) or not isinstance(min_holding, int):
                 min_holding = None              # absent (or not an integer: a test double); validate_config's V20
             if min_holding is not None:
-                moves = self._holding_moves.get(symbol)
-                if moves is None:
-                    moves = self._holding_moves[symbol] = deque(maxlen=min_holding)
-                moves.append(target_allocation - self._holding_prev_target.get(symbol, 0.0))
-                self._holding_prev_target[symbol] = target_allocation
-                if previous_allocation > 0.0 and target_allocation < previous_allocation:
-                    held = sum(m for m in moves if m > 0.0)
-                    target_allocation = max(target_allocation, min(previous_allocation, held))
-                elif previous_allocation < 0.0 and target_allocation > previous_allocation:
-                    held = sum(-m for m in moves if m < 0.0)
-                    target_allocation = min(target_allocation, max(previous_allocation, -held))
+                if self._holding is None:
+                    controls = getattr(self.risk_manager, "controls", None)
+                    band = ((controls.get("min_allocation_change") or {}).get("threshold", 0.0)
+                            if isinstance(controls, dict) else 0.0)   # the band that decides a trade decides a bet
+                    self._holding = HoldingPeriod(min_holding, band)
+                target_allocation = self._holding.apply(
+                    symbol, None if nan_forecast_bar else signal.forecast, target_allocation, previous_allocation)
 
             # 2026-08-29 (fix/risk-layer): off-by-default portfolio risk gate.
             # Gate None (default) -> risk_extras stays {} and record_state below adds
