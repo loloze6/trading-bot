@@ -25,3 +25,22 @@ of ideas of 4 hours or less (F2: they cannot pay); whether the ideas stay within
 | T3. It distorts | B's ideas leave the brief's theory (horizons stretched by force, the claim changed) | the wording is wrong: rework it before use |
 
 **Limits:** one call per brief and version, so differences of one or two ideas are noise; read only clear differences.
+
+## Reading (2026-11-20, 20:45 Paris; 4 model calls, 0.23 USD; the definition restored after, checked)
+
+The ideas are kept in `runs/i1_step2_ab/` (A: today's definition; B: with the line).
+| Brief | A | B |
+|---|---|---|
+| 016, grind versus jump | 8 ideas, all 3-day horizons | 6 ideas, all 3-day horizons |
+| 017, funding settlement clock | 6 ideas of 2 hours (and 1 on volume, 2 hours around the settlement) | 6 ideas of 4 hours |
+
+**Outcome T2 (no real effect), with one nuance.** Brief 016 already gives 3-day ideas, A and B alike. On brief 017 the
+line stretched the horizon from 2 to 4 hours and the ideas kept the brief's theory (no T3), but 4 hours stays in the
+range where a move does not cover a round trip (F2). The horizon is set by **the brief's theory**: a theory about the
+hours around a settlement gives ideas of a few hours, whatever the definition says.
+
+**What it means.** The lever for "large enough to trade" is first at **step 1, the brief**: whether its theory can give
+moves of several round trips (for hourly bars, horizons of a day or more, unless the move is large). The line in the
+idea definition is still worth having for step 7 (whose ideas come from records, not from a brief's theory), but it is
+not enough alone. Proposed, for the operator's review: step 1 reads the findings register (F1, F2) and a brief states
+the horizon its theory works on, before ideas are written. Not built.
