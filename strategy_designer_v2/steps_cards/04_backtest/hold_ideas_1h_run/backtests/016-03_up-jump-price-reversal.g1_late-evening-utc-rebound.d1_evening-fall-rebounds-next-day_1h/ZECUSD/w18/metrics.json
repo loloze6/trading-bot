@@ -1,0 +1,266 @@
+{
+  "core": {
+    "net_return_pct": 33.452,
+    "sharpe": 3.805,
+    "max_drawdown_pct": -5.682,
+    "trade_count": 115,
+    "win_rate": 55.65,
+    "avg_trade_net_pnl": 2.907182,
+    "fees_paid": 10.596155,
+    "gross_pnl": 344.922043,
+    "net_pnl": 334.325888,
+    "cost_drag_pct": 3.072,
+    "forecast_return_corr": 0.130288,
+    "forecast_return_corr_pvalue": 0.300925,
+    "forecast_return_corr_pvalue_block_adjusted": 0.896338,
+    "forecast_return_corr_n_eff": 1,
+    "forecast_return_corr_all_bars": 0.021987,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.814394,
+    "forecast_return_corr_all_bars_n_eff": 117,
+    "gap_skipped_pairs": 10,
+    "gap_skipped_pct": 0.3404,
+    "avg_trade_duration_bars": 60.07,
+    "sigma_bar_bps": 187.2365,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 189.0705,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 10.22,
+      "safety_factor_required": 2.0,
+      "pass": true
+    },
+    "post_backtest_route": "inconclusive_insufficient_data",
+    "post_backtest_route_rationale": "Insufficient data to reach a verdict: n_eff=1 < min_n_eff=5 (block-adjusted effective sample size is below the floor needed to trust the significance test).",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": 20.5056,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": 20.5056,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 2.0506,
+      "safety_factor_required": 2.0,
+      "pass": true,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "inconclusive_insufficient_data",
+    "post_backtest_route_real_rationale": "Insufficient data to reach a verdict: n_eff=1 < min_n_eff=5 (block-adjusted effective sample size is below the floor needed to trust the significance test).",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "mean_reversion": {
+      "bar_count": 123,
+      "avg_forecast": 4.758025,
+      "trade_count": 115,
+      "total_net_pnl": 334.325886
+    },
+    "unknown": {
+      "bar_count": 2816,
+      "avg_forecast": 0.0
+    }
+  },
+  "forecast_bins": {
+    "0_to_5": {
+      "total_forecasts": 8,
+      "profitable_trades": 5,
+      "success_rate_pct": 62.5,
+      "total_net_pnl_usd": 5.0477,
+      "avg_pnl_per_trade_usd": 0.631
+    },
+    "5_to_10": {
+      "total_forecasts": 51,
+      "profitable_trades": 25,
+      "success_rate_pct": 49.02,
+      "total_net_pnl_usd": 56.7726,
+      "avg_pnl_per_trade_usd": 1.1132
+    },
+    "10_to_15": {
+      "total_forecasts": 18,
+      "profitable_trades": 15,
+      "success_rate_pct": 83.33,
+      "total_net_pnl_usd": 56.9545,
+      "avg_pnl_per_trade_usd": 3.1641
+    },
+    "15_to_very_positive": {
+      "total_forecasts": 38,
+      "profitable_trades": 19,
+      "success_rate_pct": 50.0,
+      "total_net_pnl_usd": 215.551,
+      "avg_pnl_per_trade_usd": 5.6724
+    }
+  },
+  "dynamic": {
+    "debug_info.components.fall24.last_history_value": {
+      "mean_reversion": {
+        "mean": -0.045621,
+        "std": 17.358904
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.fall24.post_pipeline_value": {
+      "mean_reversion": {
+        "mean": 4.758025,
+        "std": 6.269776
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.fall24.weight_normalized": {
+      "mean_reversion": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.fall24.weighted_contribution": {
+      "mean_reversion": {
+        "mean": 4.758025,
+        "std": 6.269776
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    }
+  },
+  "regime_validity": {
+    "mean_reversion": {
+      "forward_return_mean": 0.00035028,
+      "forward_return_std": 0.01603613,
+      "n_bars": 123,
+      "informative": true
+    },
+    "unknown": {
+      "forward_return_mean": -1.66e-05,
+      "forward_return_std": 0.01881146,
+      "n_bars": 2815,
+      "informative": false
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -9.1113,
+    "sharpe": 3.1173,
+    "sortino": 6.9756,
+    "exposure_pct": 71.3168,
+    "turnover": 17.626355,
+    "n_bars_total": 2939,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 122,
+    "n_downside_days": 44,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 11,
+    "events": [
+      {
+        "symbol": "ZECUSD",
+        "timestamp": "2021-01-29 17:00:00",
+        "previous_timestamp": "2021-01-29 14:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 10800.0,
+        "bars_missing": 2,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ZECUSD",
+        "timestamp": "2021-06-07 12:00:00",
+        "previous_timestamp": "2021-06-07 10:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ZECUSD",
+        "timestamp": "2021-06-13 06:00:00",
+        "previous_timestamp": "2021-06-13 04:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ZECUSD",
+        "timestamp": "2021-06-17 22:00:00",
+        "previous_timestamp": "2021-06-17 20:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ZECUSD",
+        "timestamp": "2021-06-18 07:00:00",
+        "previous_timestamp": "2021-06-18 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ZECUSD",
+        "timestamp": "2021-07-03 14:00:00",
+        "previous_timestamp": "2021-07-03 12:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ZECUSD",
+        "timestamp": "2021-07-11 07:00:00",
+        "previous_timestamp": "2021-07-11 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ZECUSD",
+        "timestamp": "2021-07-12 00:00:00",
+        "previous_timestamp": "2021-07-11 22:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ZECUSD",
+        "timestamp": "2021-07-22 09:00:00",
+        "previous_timestamp": "2021-07-22 07:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ZECUSD",
+        "timestamp": "2021-07-23 02:00:00",
+        "previous_timestamp": "2021-07-22 21:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 18000.0,
+        "bars_missing": 4,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "ZECUSD",
+        "timestamp": "2021-07-23 14:00:00",
+        "previous_timestamp": "2021-07-23 12:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}

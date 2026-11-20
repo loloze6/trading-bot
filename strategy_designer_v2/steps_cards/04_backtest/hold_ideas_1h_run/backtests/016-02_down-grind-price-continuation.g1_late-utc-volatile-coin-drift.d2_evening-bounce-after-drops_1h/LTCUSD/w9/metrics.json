@@ -1,0 +1,203 @@
+{
+  "core": {
+    "net_return_pct": 0.116,
+    "sharpe": 0.038,
+    "max_drawdown_pct": -2.907,
+    "trade_count": 101,
+    "win_rate": 55.45,
+    "avg_trade_net_pnl": 0.00124,
+    "fees_paid": 30.418519,
+    "gross_pnl": 30.543742,
+    "net_pnl": 0.125223,
+    "cost_drag_pct": 99.59,
+    "forecast_return_corr": 0.086067,
+    "forecast_return_corr_pvalue": 0.492003,
+    "forecast_return_corr_pvalue_block_adjusted": 0.931413,
+    "forecast_return_corr_n_eff": 1,
+    "forecast_return_corr_all_bars": 0.026293,
+    "forecast_return_corr_all_bars_pvalue_block_adjusted": 0.776099,
+    "forecast_return_corr_all_bars_n_eff": 120,
+    "gap_skipped_pairs": 3,
+    "gap_skipped_pct": 0.1026,
+    "avg_trade_duration_bars": 3.0,
+    "sigma_bar_bps": 79.9465,
+    "sigma_bar_bps_is_placeholder": false,
+    "post_backtest_cost_check": {
+      "estimated_gross_edge_bps_per_trade": 11.9178,
+      "cost_bps_per_trade": 18.5,
+      "edge_to_cost_ratio": 0.6442,
+      "safety_factor_required": 2.0,
+      "pass": false
+    },
+    "post_backtest_route": "inconclusive_insufficient_data",
+    "post_backtest_route_rationale": "Insufficient data to reach a verdict: n_eff=1 < min_n_eff=5 (block-adjusted effective sample size is below the floor needed to trust the significance test).",
+    "real_round_trip_cost_bps": 10.0,
+    "real_gross_edge_bps_per_trade": 14.7283,
+    "post_backtest_cost_check_real": {
+      "estimated_gross_edge_bps_per_trade": 14.7283,
+      "cost_bps_per_trade": 10.0,
+      "edge_to_cost_ratio": 1.4728,
+      "safety_factor_required": 2.0,
+      "pass": false,
+      "basis": "real"
+    },
+    "post_backtest_route_real": "inconclusive_insufficient_data",
+    "post_backtest_route_real_rationale": "Insufficient data to reach a verdict: n_eff=1 < min_n_eff=5 (block-adjusted effective sample size is below the floor needed to trust the significance test).",
+    "sharpe_annualization": "sqrt(365) for daily Sharpe (crypto, 365 days/year)"
+  },
+  "per_regime": {
+    "mean_reversion": {
+      "bar_count": 122,
+      "avg_forecast": 5.284465,
+      "trade_count": 101,
+      "total_net_pnl": 0.12522
+    },
+    "unknown": {
+      "bar_count": 2803,
+      "avg_forecast": 0.0
+    }
+  },
+  "forecast_bins": {
+    "0_to_5": {
+      "total_forecasts": 18,
+      "profitable_trades": 11,
+      "success_rate_pct": 61.11,
+      "total_net_pnl_usd": 0.5735,
+      "avg_pnl_per_trade_usd": 0.0319
+    },
+    "5_to_10": {
+      "total_forecasts": 24,
+      "profitable_trades": 9,
+      "success_rate_pct": 37.5,
+      "total_net_pnl_usd": 2.2406,
+      "avg_pnl_per_trade_usd": 0.0934
+    },
+    "10_to_15": {
+      "total_forecasts": 29,
+      "profitable_trades": 18,
+      "success_rate_pct": 62.07,
+      "total_net_pnl_usd": 14.0719,
+      "avg_pnl_per_trade_usd": 0.4852
+    },
+    "15_to_very_positive": {
+      "total_forecasts": 30,
+      "profitable_trades": 18,
+      "success_rate_pct": 60.0,
+      "total_net_pnl_usd": -16.7608,
+      "avg_pnl_per_trade_usd": -0.5587
+    }
+  },
+  "dynamic": {
+    "debug_info.components.fall.last_history_value": {
+      "mean_reversion": {
+        "mean": -0.081834,
+        "std": 1.020105
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.fall.post_pipeline_value": {
+      "mean_reversion": {
+        "mean": 5.284465,
+        "std": 6.84432
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.fall.weight_normalized": {
+      "mean_reversion": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    },
+    "debug_info.components.fall.weighted_contribution": {
+      "mean_reversion": {
+        "mean": 5.284465,
+        "std": 6.84432
+      },
+      "unknown": {
+        "mean": null,
+        "std": null
+      }
+    }
+  },
+  "regime_validity": {
+    "mean_reversion": {
+      "forward_return_mean": 0.00036407,
+      "forward_return_std": 0.00584963,
+      "n_bars": 122,
+      "informative": true
+    },
+    "unknown": {
+      "forward_return_mean": -0.0001441,
+      "forward_return_std": 0.00807338,
+      "n_bars": 2802,
+      "informative": true
+    }
+  },
+  "bar_equity": {
+    "max_drawdown_pct": -3.0488,
+    "sharpe": 0.0375,
+    "sortino": 0.0512,
+    "exposure_pct": 8.6838,
+    "turnover": 61.122909,
+    "n_bars_total": 2925,
+    "n_bars_warmup_excluded": 0,
+    "n_daily_returns": 121,
+    "n_downside_days": 27,
+    "basis": "postRebalance_total_value, post-warmup (regime != 'NOT_READY', normalized); sharpe: daily-resampled closes (resample('D').last()), annualized sqrt(365); sortino: same daily basis, downside deviation = sqrt(mean(min(r,0)^2)) over ALL daily returns (target 0), not the sample std of negative days alone"
+  },
+  "data_quality": {
+    "gaps_detected": 4,
+    "events": [
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2019-07-15 01:00:00",
+        "previous_timestamp": "2019-07-14 21:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 14400.0,
+        "bars_missing": 3,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2019-11-30 07:00:00",
+        "previous_timestamp": "2019-11-30 05:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2019-11-30 09:00:00",
+        "previous_timestamp": "2019-11-30 07:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      },
+      {
+        "symbol": "LTCUSD",
+        "timestamp": "2019-12-09 04:00:00",
+        "previous_timestamp": "2019-12-09 02:00:00",
+        "expected_step_seconds": 3600,
+        "actual_delta_seconds": 7200.0,
+        "bars_missing": 1,
+        "tier": "ignore"
+      }
+    ]
+  },
+  "component_errors": {
+    "count": 0,
+    "samples": []
+  }
+}
