@@ -142,3 +142,23 @@ the total; whether the book beats holding the coin (step 6 asks both) depends on
 also earns the drift without repeated costs. Between 5 and 48 hours the total covers the cost but the extra does not:
 the books earn about what holding earns, minus their costs, and none passes step 6. The drift helps long trades only; a
 short trade has it against it.
+
+## The operator's question: are the confirmed ideas that do not pay too small? (2026-11-20, 21:30 Paris)
+
+Each confirmed idea (123) by the size of its cases against the cost of a buy and a sell (`common/measures.md`, "The
+size of an idea"):
+| Group | Not profitable | Profitable |
+|---|---|---|
+| 1. The total move per case (drift included) is below the cost | 40 | 0 |
+| 2. The total covers the cost, the unusual move alone does not (holding the coin does as well) | 13 | 1 |
+| 3. The unusual move alone is above the cost | 50 | 19 |
+**Yes, for about half: 53 of the 103 confirmed ideas that do not pay (51 %) are too small for their trades**, and none of
+group 1 pays. The other 50 are large enough per case but fail on their deepest fall (48) or on too small a daily
+return (41): too few cases, or losses that come in streaks (one breakout idea: +8.6 % per case, one case every 50 days).
+19 of the 20 paying ideas are in group 3.
+
+**Built on the operator's go: step 5 reports the idea's size** next to its verdict (`common/idea_size.py`,
+`05_verification/card.md`): `size.json` and one line in `verdict.md`. Proof: step 5 rerun with the saved measures on 3
+records whose bars are here (volatile evening-fall, grinding-rises, nearness without the short side, daily):
+`result.json`, `measure.py` and the INDEX line identical; `verdict.md` identical but for the added "Size" line. The
+definition added to `common/measures.md` is part of what steps 3 and 5's model calls read.

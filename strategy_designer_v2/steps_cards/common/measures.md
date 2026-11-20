@@ -22,3 +22,17 @@ the book the same way). A plan's own words come first; these apply wherever it s
 - A difference is "A minus B" in the order named, so its sign keeps its meaning. A mean "weighted by" X is
   sum(value x X) / sum(X).
 - Rows with a missing value in a column a measure needs are left out of that measure.
+- **The size of an idea** (operator, 2026-11-20; `runs/RETRO_DIAGNOSIS_RUN.md`). Whether an idea is real (step 5) says
+  that its effect exists, not how large it is. Its size says how large, with no cost in it:
+  - a **case** is a signal of the idea: a rise of the forecast on its side of at least the band (the holding period's
+    bet, `forecast.md` 7), read once per grid cell of the horizon, so no move is counted twice;
+  - the **coin's usual move** over the horizon: the standard deviation of its returns over the horizon, on
+    non-overlapping stretches of all its windows; its **normal drift**: their mean (holding the coin);
+  - the **unusual move**: per case, the coin's return from the close of the signal's bar over the horizon, minus its
+    normal drift, in the signal's direction; its mean over the cases;
+  - the **total move**: the same without removing the drift (what a trade on the signal earns before costs);
+  - the **strength**: the unusual move divided by the coin's usual move, per case, then averaged: a pure number (0.05
+    means the idea predicts 5 % of a usual move).
+  Example: over 3 days a coin usually moves about 10 % up or down; an idea whose cases end 0.5 % higher than the coin's
+  normal drift has a strength of 0.05. Real ideas measured so far have a strength of about 0.05 whatever their horizon
+  (`findings.md`, F10).
