@@ -21,8 +21,9 @@ horizon is not where its move ends, the book stayed in after its bets ended, or 
   paid (fees, spread, slippage) as a share of the value traded, read from its record. No cost is assumed or read from a
   config.
 - **Drift:** the coin's mean return per bar over all its windows together (`measures.md`, the coin's average).
-- **A bet:** a rise in the forecast's size, in its direction (a turn from 0 counts as a rise). It asks for the
-  position for the idea's horizon H (`forecast.md` 7, option 2). **A bet's age:** bars since that rise.
+- **A bet:** a rise of the forecast on its own side of at least the band (`min_allocation_change`), from its lowest
+  level since its last bet: the same rule as the engine's holding period (`forecast.md` 7). It asks for the position
+  for the idea's horizon H. **A bet's age:** bars since that rise.
 
 **The five readings**, each for the whole book (all coins and windows) and per coin:
 1. **Big enough: can the price move over the horizon cover the cost of a trade?** Per bet: the coin's price move in

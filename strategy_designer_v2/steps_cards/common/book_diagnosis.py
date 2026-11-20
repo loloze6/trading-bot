@@ -10,7 +10,7 @@ Decided (operator, 2026-11-20): a forecast that stays on with no new rise counts
 
 Why this can't leak: it reads a finished backtest after the fact and changes nothing the strategy decided.
 """
-import argparse, json, re, sys
+import argparse, json, math, re, sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import write_atomic  # noqa: E402
@@ -35,11 +35,35 @@ def horizon_of(record):
     return int(h.group(1))
 
 
-def bets(fc):
-    """Bars where the forecast rises in size in its direction (a turn from 0, or a change of side, counts): the bets."""
-    s = np.sign(fc)
-    before = np.concatenate([[0.0], fc[:-1]])
-    return np.where((s != 0) & (s * fc > np.maximum(0.0, s * before)))[0]
+def bets(fc, band=0.2):
+    """The bars where a bet is made: the forecast rises on its own side by at least the band (on the signal scale,
+    forecast / 10) from its lowest level on that side since its last bet (from 0 after a flat or a change of side).
+    The same rule as the engine's holding period (trading-bot/core/holding_period.py; common/forecast.md 7)."""
+    out, prev, low = [], 0.0, 0.0
+    for t, f in enumerate((np.asarray(fc, float) / 10.0).tolist()):
+        if not math.isfinite(f):
+            continue
+        side = (f > 0) - (f < 0)
+        if side == 0 or (prev > 0) != (f > 0) or (prev < 0) != (f < 0):
+            low = 0.0
+        prev = f
+        if side == 0:
+            continue
+        size = side * f
+        if size > 0 and size - low >= band - 1e-9:
+            out.append(t); low = size
+        elif low > 0:
+            low = min(low, size)
+    return np.array(out, dtype=int)
+
+
+def band_of(record):
+    """The band the record's config traded with: strategies.min_allocation_change, else the risk layer's 0.2."""
+    try:
+        v = json.loads((record / "config.json").read_text())["strategies"].get("min_allocation_change")
+        return float(v) if v is not None else 0.2
+    except (OSError, KeyError, ValueError):
+        return 0.2
 
 
 def read_coin(coin_dir):
@@ -50,7 +74,7 @@ def read_coin(coin_dir):
     return frames, (float(rets.mean()) if len(rets) else 0.0)
 
 
-def diagnose_coin(frames, d, H):
+def diagnose_coin(frames, d, H, band=0.2):
     """The sums one coin gives; the readings are formed from them (per coin, and over all coins together)."""
     acc = {"bets": 0, "move": [], "bar0": [], "path": [], "units": 0.0, "free": 0.0, "real": 0.0,
            "in_bars": 0, "past_bars": 0, "earn_cov": 0.0, "pos_cov": 0.0, "earn_past": 0.0, "pos_past": 0.0}
@@ -67,7 +91,7 @@ def diagnose_coin(frames, d, H):
         acc["free"] += float((a[:-1] * nxt[:-1]).sum())
         acc["real"] += float((v[1:] / v[:-1] - 1).sum())
         # every bet with 2H bars after it in the window (bets overlap; each is a bet the book takes; averages only)
-        b = bets(fc)
+        b = bets(fc, band)
         for t in b:
             if t < 1 or t + 2 * H >= n:
                 continue
@@ -144,7 +168,7 @@ def diagnose(record, H):
         frames, d = read_coin(coin_dir)
         if not frames:
             continue
-        acc = diagnose_coin(frames, d, H)
+        acc = diagnose_coin(frames, d, H, band_of(record))
         accs.append(acc)
         coins[coin_dir.name] = readings(acc, H)
         dp = daily_parts(frames, d); dp["coin"] = coin_dir.name; parts.append(dp)
