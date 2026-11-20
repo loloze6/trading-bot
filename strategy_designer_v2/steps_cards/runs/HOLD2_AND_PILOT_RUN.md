@@ -182,6 +182,12 @@ move over the horizon after the bot can act, against a round trip of about 21 bp
 (`topics/30_review/close_rule_replay.py`: the leftovers are 52 % of volatile evening-fall's time in a position, all
 under 0.2, but closing them adds +0.01 to +0.02 of Sharpe).
 
+**The paying books' own diagnosis** (the two "more coins" books were read in the sessions that ran them, where their
+bar files are): golden-cross more coins (240): move 233 against a trip of 22 bps (10.6 times), market's share 52 %,
+still rising at twice its horizon (468 bps at bar 480); nearness more coins (168): 121 against 22 (5.5 times), 47 %,
+still rising at twice its horizon (175 at bar 336); dual momentum (72): 37 against 21 (1.8 times), 49 %, still rising at
+twice its horizon (63 at bar 143). Their moves run longer than their horizon: they close early, not late.
+
 **4. What the 3 paying books have that the others lack:** a move per bet well above a trip and from the idea's timing
 (market share under half), and two of the three are "more coins" versions (step 7.b, an idea on more data):
 diversification over 15 to 20 coins lowers the book's deepest fall, which is what Calmar reads.
