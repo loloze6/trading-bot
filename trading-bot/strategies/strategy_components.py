@@ -1939,6 +1939,32 @@ class DistanceFromHighComponent(SubStrategyComponent):
         return self.period + self.exclude_current
 
 
+
+def trailing_return_stds(owner, r, vol_period: int, count: int) -> list:
+    """The std (ddof 1) of each of the last `count` windows of `vol_period` returns, newest first:
+
+        stds[k] = np.std(r[m - k - vol_period : m - k], ddof=1),  k = 0 .. count - 1,  m = len(r)
+
+    Topic 33 (2026-11-20; measured: 82 % of a book whose components average 720 such stds, recomputed on every
+    bar). The values of the previous call are reused when this call's returns are the previous call's shifted by one
+    (the same values, compared byte for byte): stds[k] for k >= 1 is then the previous stds[k - 1], np.std on the same
+    returns. Only stds[0] is computed. Otherwise all are computed. The list is the one the loop gives, value for value.
+    `owner` (the component) keeps the previous call's returns and stds.
+
+    WHY THIS CANNOT LEAK: it reads only `r`, which the caller builds from closes at or before bar t; a reused std
+    was computed from the same returns.
+    """
+    m = len(r)
+    prev = getattr(owner, "_trailing_stds_memo", None)
+    if (prev is not None and prev[1] == (vol_period, count) and len(prev[0]) == m
+            and prev[0][1:].tobytes() == r[:-1].tobytes()):
+        stds = [float(np.std(r[m - vol_period:m], ddof=1))] + prev[2][:-1]
+    else:
+        stds = [float(np.std(r[m - k - vol_period:m - k], ddof=1)) for k in range(count)]
+    owner._trailing_stds_memo = (np.array(r, dtype=float, copy=True), (vol_period, count), stds)
+    return stds
+
+
 class VolatilityScaledReturnComponent(SubStrategyComponent):
     """
     A past move against the coin's usual move, on every bar:
@@ -1996,12 +2022,8 @@ class VolatilityScaledReturnComponent(SubStrategyComponent):
             return
         e = n - 1 - self.lag
         ret = c[e] / c[e - self.period] - 1.0
-        sds = []
-        for k in range(self.vol_lookback):
-            i = e - k
-            w = c[i - self.vol_period:i + 1]
-            r = w[1:] / w[:-1] - 1.0
-            sds.append(float(np.std(r, ddof=1)))
+        span = c[e - self.vol_lookback + 1 - self.vol_period:e + 1]   # the closes of the vol_lookback windows
+        sds = trailing_return_stds(self, span[1:] / span[:-1] - 1.0, self.vol_period, self.vol_lookback)
         m = float(np.mean(sds))
         if not m > 0:
             self._raw_value = 0.0
@@ -2848,10 +2870,7 @@ class VolatilityRankedFallComponent(SubStrategyComponent):
             self._raw_value = float("nan")
             return
         r = c[1:] / c[:-1] - 1.0
-        stds = []
-        for k in range(self.lookback):
-            end = self.vol_period + k
-            stds.append(float(np.std(r[end - self.vol_period:end], ddof=1)))
+        stds = trailing_return_stds(self, r, self.vol_period, self.lookback)[::-1]   # oldest first
         s_t = stds[-1]
         if not s_t > 0:
             self._raw_value = float("nan")
@@ -3114,11 +3133,7 @@ class VolatilityRatioToAverageComponent(SubStrategyComponent):
             self.confidence = 1.0
             return
         r = c[1:] / c[:-1] - 1.0
-        m = len(r)
-        stds = []
-        for k in range(self.vol_lookback):
-            end = m - k
-            stds.append(float(np.std(r[end - self.vol_period:end], ddof=1)))
+        stds = trailing_return_stds(self, r, self.vol_period, self.vol_lookback)
         s_t = stds[0]
         avg = float(np.mean(stds))
         if np.isnan(s_t) or np.isnan(avg) or not avg > 0:
@@ -3188,12 +3203,7 @@ class RankWeightedScaledMoveComponent(SubStrategyComponent):
         r_t = float(r[-1])
         m = float(np.mean(np.abs(r[-self.abs_period:])))
         move = 0.0 if m == 0 else r_t / m
-        last = len(r) - 1
-        stds = []
-        for k in range(self.lookback):
-            end = last - k
-            w = r[end - self.vol_period + 1:end + 1]
-            stds.append(float(np.std(w, ddof=1)))
+        stds = trailing_return_stds(self, r, self.vol_period, self.lookback)
         s_t = stds[0]
         rank = float(sum(1 for s in stds if s <= s_t)) / self.lookback
         self._raw_value = float(move * (1.0 - rank))
