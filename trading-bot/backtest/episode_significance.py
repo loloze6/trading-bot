@@ -253,11 +253,16 @@ def compute_a851a_significance(
     n_resamples: int = _DEFAULT_N_RESAMPLES,
     seed: int | None = None,
     expected_step=None,
+    method_only: bool = False,
 ) -> dict:
     """
     A8.5.1a dispatcher. Returns a dict always containing at least:
       method, pooled_ic, p_value, n_episodes, density_pct, significant
     plus method-specific fields (ci_low/ci_high for the bootstrap path).
+
+    method_only (topic 33, 2026-11-20): return {"method": ...} only, the path chosen, without computing its
+    numbers (the pooled IC, and for the bootstrap path its n_resamples resamples). For a caller that reads the
+    method alone: the path is decided before any number is computed, so the label is the one the full call gives.
 
     `block_size` is required (no silent default): a wrong block size mislabels
     and misdivides the dense-fallback path. Derive it from the timeframe via
@@ -275,6 +280,8 @@ def compute_a851a_significance(
     density_pct = (n_active / n_total * 100.0) if n_total else 0.0
 
     if density_pct >= density_fallback_pct:
+        if method_only:
+            return {"method": f"block_{block_size}_dense_fallback"}
         ic_active = _pooled_ic(records, active_idx_all)
         ic_values_for_sig = [ic_active] if ic_active is not None else []
         sig = _block_adjusted_significance(ic_values_for_sig, n_active, block_size)
@@ -293,6 +300,8 @@ def compute_a851a_significance(
     n_episodes = len(episodes)
 
     if n_episodes < min_n_episodes:
+        if method_only:
+            return {"method": "episode_bootstrap_insufficient_n"}
         ic_active = _pooled_ic(records, active_idx_all)
         return {
             "method": "episode_bootstrap_insufficient_n",
@@ -305,6 +314,8 @@ def compute_a851a_significance(
             "disposition_note": "insufficient_sample_inconclusive",
         }
 
+    if method_only:
+        return {"method": "episode_block_bootstrap"}
     result = episode_block_bootstrap(records, episodes, n_resamples=n_resamples, seed=seed)
     result["density_pct"] = round(density_pct, 2)
     return result
