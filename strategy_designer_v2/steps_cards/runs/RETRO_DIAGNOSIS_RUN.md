@@ -162,3 +162,11 @@ return (41): too few cases, or losses that come in streaks (one breakout idea: +
 records whose bars are here (volatile evening-fall, grinding-rises, nearness without the short side, daily):
 `result.json`, `measure.py` and the INDEX line identical; `verdict.md` identical but for the added "Size" line. The
 definition added to `common/measures.md` is part of what steps 3 and 5's model calls read.
+
+**And the opposite (operator): do all confirmed ideas that pay cover the cost by their size? Yes.** Of the 20, 19 have an
+unusual move above the cost of a buy and a sell (median 3.8 times it); the 20th (heavy-volume follow-through, daily) is
+on the line (0.20 % against 0.21 %) and is carried over by the coin's drift (+0.36 %). None pays with a total move below
+the cost. **Held or not:** the size does not depend on how the book held its position (prices and signals only), but its
+comparison with one buy and one sell assumes the book holds each signal for its horizon. Among ideas large enough, 6 of
+11 held books pay (55 %) against 13 of 58 books without the holding period (22 %); among ideas too small, 0 pay either
+way. Since step 3 now sets the holding period for every plan, the comparison holds from now on.
