@@ -1,0 +1,2 @@
+006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1d: not profitable enough [Sharpe 0.2495; Sharpe minus holding's Sharpe 0.1514; Calmar 0.1226]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends_1d: profitable enough [Sharpe 1.039; Sharpe minus holding's Sharpe 0.9411; Calmar 1.886]
