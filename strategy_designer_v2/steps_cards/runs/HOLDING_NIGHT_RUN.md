@@ -95,8 +95,9 @@ rises by more than 0.5, but fewer than 3 pass step 6.
 2. **Long-horizon ideas are lifted from about −2.5 to about +0.3**, 3 of 4 (the fourth points the wrong way: held, it
    loses more, −30.5 bps per unit). They earn 20 to 32 bps per unit, enough to clear costs, not enough to beat holding
    the coin over the same years.
-3. **Together with set 1** (24 to 72 bars, 5 of 6 distinct books positive, 2 failing only Calmar): of 10 distinct
-   long-horizon books held, 8 have a positive Sharpe after costs (0 of 10 without hold), 0 pass step 6.
+3. **Together with set 1** (its 5 books of 24 to 72 bars all positive, 2 failing only Calmar; slow-3day there is
+   fresh-drop-rebound here): of 8 distinct long-horizon books held, 7 have a positive Sharpe after costs (0.24 to 1.14;
+   0 of 8 without hold), 2 beat holding the coin, 0 pass step 6.
 
 **So the vision is half proven.** Holding is necessary: without it no hourly book could pay. It is not sufficient: what
 is still missing is ideas whose move over their horizon is well above the cost of a trip. The ideas the workflow found
