@@ -78,3 +78,25 @@ Per bet, the daily version captures more 10 times out of 12 (for example nearnes
 hourly rise of its forecast, many of them late in a move already made. **I3 as framed ("hourly bars catch the move
 earlier") is not supported by the records.** Its real test would be a different plan, one entry when the daily
 condition first holds during the day, which none of these books did. Not run: it needs its own plan design (step 3).
+
+## A third question: candidate D, step 5 measured on the book's own bets
+
+On the 230 judged records: the t of the move per bet (the holding period's bets: a rise of the forecast of at least
+the band; one bet per grid cell of the horizon, so no move counted twice; from the signal bar's close over the
+horizon, net of the coin's mean move over all its windows; median 1,807 bets per record), against step 5's verdict and
+step 6. Script: `topics/30_review/retro_bet_t.py`; columns added to `retro_diagnosis.csv`.
+
+| Rule for "the idea is real" | Books passing | Of which pay | Paying books caught (of 30) |
+|---|---|---|---|
+| Step 5 today: confirmed | 123 | 20 (16 %) | 20 |
+| The book's bets: t ≥ 2 | 117 | 18 (15 %) | 18 |
+| Bets t ≥ 2 and a move per bet of at least 1 round trip | 84 | 18 (21 %) | 18 |
+| **Bets t ≥ 2 and a move per bet of at least 2 round trips** | **69** | **18 (26 %)** | **18** |
+
+- Of the 123 books step 5 confirms, **45 show no reliable move on their own bets** (t below 2).
+- Measured on the bets with the move covering 2 round trips, a confirmed idea pays one time in four (26 %) instead of
+  one in six (16 %), and 18 of the 30 paying books are still caught (20 today). The 12 paying books neither rule
+  catches are mostly step 5 "inconclusive" ones (10).
+- **Candidate D is supported in this form:** step 5's verdict on the book's own bets, with the move per bet against a
+  round trip, says "real and large enough to trade" with fewer false alarms, at almost the same catch.
+- In-sample, the same folds: a design to propose with its proof (rerun past verdicts), not a rule yet.
