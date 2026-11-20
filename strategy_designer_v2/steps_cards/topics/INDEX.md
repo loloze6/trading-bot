@@ -39,3 +39,4 @@ closed ones keep their decisions and reasons. Numbers are fixed: a new topic tak
 | 32 | [How select_next weighs a step 7 line](32_how-select-next-weighs-a-line.md) | research: select_next | open (parked) |
 | 33 | [A second round of engine speed work](33_engine-speed-second-round.md) | engine (shared code) | open (parked) |
 | 34 | [Why a real idea does not pay, and an idea that pays for its trip](34_an-idea-must-move-more-than-a-trip.md) | research: common, observe-and-advise (08), steps 2, 7 | designing: review, standardize, test the diagnosis |
+| 35 | [A horizon in price, not only in time](35_price-horizon.md) | research: common, steps 2, 3; engine | open (after topic 34 step 3) |
