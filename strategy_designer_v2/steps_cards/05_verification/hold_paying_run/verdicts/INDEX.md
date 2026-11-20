@@ -1,3 +1,4 @@
+002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1h: confirmed (fit: exact) [main: 0.00520582; OLS slope t 7.18992; grid cases in trending 1562, cases at forecast 0 772, cases with forecast > 0 790]
 002-03_price-cross-above-long-sma.d1_above-average-drift-near-highs_1d: not observable (fit: adapted) [main: 1.22072; OLS slope t 1.22072; grid cases with forecast above 0 284, grid cases in total 827]
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly_1d: confirmed (fit: adapted) [main: 0.020139; t of the mean 3.50166; qualifying cases across all coins and windows 163]
 006-04_upside-squeeze-break-continuation.g1_volume-surge-precedes-rise.g1_volatility-scaled-momentum-continuation_1d: confirmed (fit: adapted) [main: 0.00896569; one-group t 3.00445; grid bars in the top group 1030, grid bars with forecast > 0 2922, grid bars with forecast 0 2801]
