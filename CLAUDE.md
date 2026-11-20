@@ -93,3 +93,5 @@ cd trading-bot && VENV_PYTHON -m pytest -q                   # the bot's tests (
 - Explain with a concrete example from the real files and real numbers. If the operator did not get it, say it again
   more simply, not at more length.
 - Report faithfully: counts, not impressions; say what failed, what was skipped, what is untested.
+- Times: give them in Paris time when they concern the operator (when a run ends, when to look, a deadline), e.g.
+  "about 14:30 Paris"; UTC stays for files, logs and schedules (operator, 2026-11-20).
