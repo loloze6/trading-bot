@@ -87,6 +87,8 @@ are designed together.
 time (does the move end at the horizon) added as its own reading, distinct from the book staying in after its bets.
 Review 2 (operator): opening time and closing time as a pair; the per-bet move against a round trip joins "big
 enough"; "book stays in" renamed "holding past the bets" (the book's real positions, not the coin after a signal).
+Review 3 (operator): "big enough" compares the price move over the horizon with the cost rate of a round trip;
+quantity does not enter (profit and cost both scale with it). The book-level per-unit version is dropped.
 1. Review: define the four readings in `common/` (business definition first, then the formula), and settle the open
    points: drift removal, log or simple moves, the cost of a round trip read from the venue config, overlapping
    signals, and renewed or stale positions (trace each position to the signal that holds it).
