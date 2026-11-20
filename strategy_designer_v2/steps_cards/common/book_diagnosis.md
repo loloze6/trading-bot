@@ -29,7 +29,8 @@ horizon is not where its move ends, the book stayed in after its bets ended, or 
    the bet's direction, minus the drift, from the close of the bar that fires it (bar 0, where the bot opens) to H bars
    later, as a share of the price, against the cost of a round trip as a share of the value traded (2 x the cost per
    unit traded). Both are rates, so the quantity traded does not enter: a larger position earns more and pays more in
-   the same proportion. Bets are read non-overlapping (`measures.md`): the first bet of each grid cell of H bars.
+   the same proportion. Every bet is read: bets overlap, and each is a bet the book takes; only averages
+   are given, no count of independent cases.
 2. **Opening time: does the move start before the bot can open?** For the same bets, the move on bar 0 itself, in the
    bet's direction, minus the drift. It is not counted as captured. In the bet's direction (a continuation), part of
    the move happened before the bot could open. Against it (a reversal's trigger), it is the condition, not a late
@@ -49,8 +50,8 @@ horizon is not where its move ends, the book stayed in after its bets ended, or 
 **Why this can't leak:** it reads a finished backtest after the fact and changes no decision; bar 0's move is
 measured, not traded on.
 
-**Open, for the operator's review**
-- Decided (operator, 2026-11-20): a forecast that stays on with no new rise counts as past its bets (reading 4).
-- **Readings 1 to 3 read the first bet of each H-bar cell.** A bet inside another's horizon is not counted twice.
-- **Whether a reading should also give a threshold** (e.g. "earned per unit below the cost: too small"), or only the
-  numbers for step 7 to read. Proposed: only the numbers. No threshold was asked for.
+**Decided (operator, 2026-11-20)**
+- A forecast that stays on with no new rise counts as past its bets (reading 4).
+- Every bet is read (readings 1 to 3): bets overlap, and each is a bet the book takes.
+- Numbers only, no threshold: the analyst reads them and judges.
+- Long term, the diagnosis is part of the analysts' work (step 7); `book_diagnosis.py` sits here for the test.

@@ -66,11 +66,11 @@ def test_move_opening_and_closing_on_a_known_path(tmp_path):
     assert res["2_opening_time"]["move_on_bar_0"] == pytest.approx(0.02 - d, abs=1e-9)
 
 
-def test_bets_are_read_non_overlapping(tmp_path):
+def test_every_bet_is_read_even_when_bets_overlap(tmp_path):
     n, H = 100, 10; close = np.full(n, 100.0); fc = np.zeros(n)
-    fc[20], fc[21], fc[22] = 1, 2, 3        # three rises in one cell of 10 bars: one bet read
+    fc[20], fc[21], fc[22] = 1, 2, 3        # three rises inside one horizon: three bets, all read
     write_window(tmp_path / "rec" / "BTCUSD" / "w1", close, fc, np.zeros(n))
-    assert diagnose(tmp_path / "rec", H)["whole_book"]["bets_read"] == 1
+    assert diagnose(tmp_path / "rec", H)["whole_book"]["bets_read"] == 3
 
 
 def test_holding_past_the_bets(tmp_path):

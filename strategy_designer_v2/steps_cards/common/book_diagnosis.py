@@ -5,8 +5,8 @@ An observation: it refuses nothing, it changes no decision, no model call.
   python book_diagnosis.py path/to/04_backtest/<run>/backtests/<record> [--horizon H]
 
 The horizon is the plan's "Horizon: N" line (the plan named in the record's run.md), unless --horizon is given.
-Open points, as proposed until the operator decides (book_diagnosis.md, Open): a forecast that stays on with no new rise
-counts as past its bets; bets are read non-overlapping; numbers only, no threshold.
+Decided (operator, 2026-11-20): a forecast that stays on with no new rise counts as past its bets; every bet is read
+(bets overlap, only averages are given); numbers only, no threshold.
 
 Why this can't leak: it reads a finished backtest after the fact and changes nothing the strategy decided.
 """
@@ -66,13 +66,12 @@ def diagnose_coin(frames, d, H):
         acc["units"] += float(np.abs(a - prev).sum())
         acc["free"] += float((a[:-1] * nxt[:-1]).sum())
         acc["real"] += float((v[1:] / v[:-1] - 1).sum())
-        # bets, read non-overlapping: the first bet of each grid cell of H bars, with 2H bars after it in the window
-        b = bets(fc); seen = set()
+        # every bet with 2H bars after it in the window (bets overlap; each is a bet the book takes; averages only)
+        b = bets(fc)
         for t in b:
-            cell = t // H
-            if cell in seen or t < 1 or t + 2 * H >= n:
+            if t < 1 or t + 2 * H >= n:
                 continue
-            seen.add(cell); s = np.sign(fc[t])
+            s = np.sign(fc[t])
             acc["bets"] += 1
             acc["move"].append(s * (c[t + H] / c[t] - 1 - drift(H)))
             acc["bar0"].append(s * (c[t] / c[t - 1] - 1 - d))
@@ -180,7 +179,7 @@ def main():
                                                                "4_holding_past_the_bets", "5_trend"))
     share = lambda x: "–" if x is None else f"{x * 100:.0f} %"
     lines = [f"# Diagnosis of {record.name}", "",
-             f"Horizon {H} bars; {w['bets_read']} bets read (non-overlapping). Definition: `common/book_diagnosis.md`.",
+             f"Horizon {H} bars; {w['bets_read']} bets read. Definition: `common/book_diagnosis.md`.",
              "Moves are in the bet's direction, minus the coin's drift, in bps of the price.", "",
              "| Reading | Value |", "|---|---|",
              f"| 1. Big enough: move over the horizon / round trip cost | {bps(r1['move_over_horizon'])} / {bps(r1['round_trip_cost'])} bps |",
