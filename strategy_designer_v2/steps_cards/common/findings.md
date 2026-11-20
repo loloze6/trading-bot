@@ -1,9 +1,8 @@
-**Draft for the operator's review (improvement I2, `topics/30_review/WORKFLOW_REVIEW.md`). No step reads it yet.**
+**Read by step 7 (every line; operator's go, 2026-11-20). Still a draft for the operator's review: which other steps read it, and who adds entries.**
 
 Findings: what the runs have measured about the market and about what pays, in short statements, each with its evidence.
 They are what a researcher would know before writing the next brief or idea. A finding is not a rule: it refuses
-nothing, it is open to new evidence, and a later run can change or withdraw it. Proposed readers: step 1 (briefs), step
-2 (ideas), step 7 (the next ideas). An entry is added by a run's reading, on the operator's go, with its date and source.
+nothing, it is open to new evidence, and a later run can change or withdraw it. Readers: step 7 (the next ideas); proposed: step 1 (briefs), step 2 (ideas). An entry is added by a run's reading, on the operator's go, with its date and source.
 
 | # | Finding | Evidence | Date |
 |---|---|---|---|

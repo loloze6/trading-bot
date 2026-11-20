@@ -24,6 +24,7 @@ import yaml
 HERE = Path(__file__).resolve().parent
 STEPS = HERE.parents[1]
 sys.path.insert(0, str(STEPS / "common"))
+from idea_size import size as idea_size, trade_cost  # noqa: E402  (common/measures.md, "The size of an idea")
 from lib import call, write_atomic, header_fields as header, idea_fields  # noqa: E402  (shared helpers, common/lib.py)
 
 ATTEMPTS, MAX_WORDS, ROW_CAP, CHAR_CAP = 3, 300, 40, 15000
@@ -138,6 +139,28 @@ COMMON = HERE.parents[1] / "common"   # the workflow's shared definitions (measu
 IDEA_DEFINITION = (COMMON / "idea_definition.md").read_text()
 
 
+def size_and_cost(size_file, record, plan_text):
+    """The idea's size (step 5's size.json, or measured the same way when the verdict predates it) and what one trade
+    cost this backtest, in words, for every line (common/measures.md, "The size of an idea")."""
+    if size_file.exists():
+        s = json.loads(size_file.read_text())
+    else:
+        h = re.search(r"Horizon:\s*(\d+)", plan_text)
+        s = idea_size(record, int(h.group(1))) if h else {"cases": 0}
+    cost = trade_cost(record)
+    if not s.get("cases"):
+        return "The idea's size: no case to measure." + (f" One trade (a buy and a sell) cost this backtest {100 * cost:.2f} %." if cost else "")
+    p = lambda v: f"{100 * v:+.2f} %"
+    lines = [f"The idea's size: per case, over its horizon of {s['horizon_bars']} bars, the unusual move is {p(s['unusual_move'])} "
+             f"({s['strength']:.3f} of the coin's usual move over that horizon, {100 * s['usual_move']:.2f} %); the coin's normal "
+             f"drift in the case's direction is {p(s['normal_drift'])}; the total move is {p(s['total_move'])}; {s['cases']} cases."]
+    if cost:
+        lines.append(f"One trade (a buy and a sell) cost this backtest {100 * cost:.2f} % of the value traded (fees and slippage, as it paid "
+                     f"them). Per case, the total move is {s['total_move'] / cost:.1f} times that cost and the unusual move "
+                     f"{s['unusual_move'] / cost:.1f} times.")
+    return "\n".join(lines)
+
+
 def with_common(text):
     """A prompt with each {{NAME}} replaced by the shared file common/name.md (for example {{DATA_AVAILABLE}})."""
     return re.sub(r"\{\{([A-Z_]+)\}\}", lambda m: (COMMON / f"{m.group(1).lower()}.md").read_text(), text)
@@ -249,6 +272,7 @@ def main():
     context = (f"[THE BRIEF]\n{brief}\n[THE IDEA THAT WAS TESTED]\n{idea_text}\n[THE TEST PLAN]\n{plan_text}\n[ITS CONFIG]\n{config.read_text() if config.exists() else '(none)'}\n"
                f"[THE VERDICT ON THE IDEA (step 5)]\n{no_paths(verdict) if verdict.exists() else s5}\n"
                f"[THE CHECK OF THE BOOK (step 6)]\n{no_paths(check) if check.exists() else s6}\n"
+               f"[THE SIZE OF THE IDEA AND THE COST OF A TRADE]\n{size_and_cost(args.verdicts_dir / rid / 'size.json', record, plan_text)}\n"
                f"[THE DATA]\n{(HERE / 'data_description.md').read_text()}\n[WHAT A BACKTEST RECORDS]\n{(COMMON / 'backtest_record.md').read_text()}\nThis backtest holds:\n{data_summary(record)}\n")
     line_prompt = with_common((line_dir / "helper" / "line_prompt.md").read_text())
     system = ((HERE / "common_rules.md").read_text() + "\n[HOW THE WORKFLOW MEASURES]\n" + MEASURES + "\n" + line_prompt + "\n"
