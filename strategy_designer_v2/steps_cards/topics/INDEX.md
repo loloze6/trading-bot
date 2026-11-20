@@ -41,3 +41,4 @@ closed ones keep their decisions and reasons. Numbers are fixed: a new topic tak
 | 34 | [Why a real idea does not pay, and an idea that pays for its trip](34_an-idea-must-move-more-than-a-trip.md) | research: common, observe-and-advise (08), steps 2, 7 | designing: review, standardize, test the diagnosis |
 | 35 | [A horizon in price, not only in time](35_price-horizon.md) | research: common, steps 2, 3; engine | open (after topic 34 step 3) |
 | 36 | [Settings counted in bars, carried from daily to finer timeframes](36_fixed-bar-counts-across-timeframes.md) | research: step 3 guide; engine defaults | open |
+| 37 | [Long runs without the two-hour limit](37_long-runs-without-the-two-hour-limit.md) | research: how runs are launched | open (parked) |
