@@ -2,7 +2,7 @@
 Reads one backtest record and the idea's horizon from its plan; writes diagnosis.json and diagnosis.md into the record.
 An observation: it refuses nothing, it changes no decision, no model call.
 
-  python book_diagnosis.py path/to/04_backtest/<run>/backtests/<record> [--horizon H]
+  python book_diagnosis.py path/to/04_backtest/<run>/backtests/<record> [--horizon H] [--out-dir DIR]
 
 The horizon is the plan's "Horizon: N" line (the plan named in the record's run.md), unless --horizon is given.
 Decided (operator, 2026-11-20): a forecast that stays on with no new rise counts as past its bets; every bet is read
@@ -194,11 +194,14 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("record", type=Path)
     p.add_argument("--horizon", type=int)
+    p.add_argument("--out-dir", type=Path, help="write diagnosis.json and .md here instead of into the record")
     args = p.parse_args()
     record = args.record.resolve()
     H = args.horizon or horizon_of(record)
     res = diagnose(record, H)
-    write_atomic(record / "diagnosis.json", json.dumps(res, indent=1) + "\n")
+    out = args.out_dir.resolve() if args.out_dir else record
+    out.mkdir(parents=True, exist_ok=True)
+    write_atomic(out / "diagnosis.json", json.dumps(res, indent=1) + "\n")
     w = res["whole_book"]; r1, r2, r3, r4, r5 = (w[k] for k in ("1_big_enough", "2_opening_time", "3_closing_time",
                                                                "4_holding_past_the_bets", "5_trend"))
     share = lambda x: "–" if x is None else f"{x * 100:.0f} %"
@@ -212,7 +215,7 @@ def main():
              f"| 4. Holding past the bets: share of the time in a position / earned per bar, covered vs past | {share(r4['share_past_the_bets'])} / {bps(r4['earned_per_bar_per_unit_covered'])} vs {bps(r4['earned_per_bar_per_unit_past'])} bps |",
              f"| 5. Trend: the market's share of the book's mean daily gain | {share(r5['market_share'])} (book {bps(r5['book_mean_daily_gain'])} bps a day, market {bps(r5['market_part'])}) |",
              ""]
-    write_atomic(record / "diagnosis.md", "\n".join(lines))
+    write_atomic(out / "diagnosis.md", "\n".join(lines))
     print(f"{record.name}: H={H} bets={w['bets_read']} move={bps(r1['move_over_horizon'])} trip={bps(r1['round_trip_cost'])} "
           f"bar0={bps(r2['move_on_bar_0'])} peak={bps(r3['move_at_peak'])}@{r3['peak_bar']} atH={bps(r3['move_at_H'])} "
           f"at2H={bps(r3['move_at_2H'])} past={share(r4['share_past_the_bets'])} market={share(r5['market_share'])}")
