@@ -12,4 +12,4 @@ One definition, one file: a step that needs it reads it here, so the steps canno
 | `forecast.md` | how a config turns its components into a forecast and a position (`standardise` scales, it does not centre; the weighted mean; centring needs an offset; the recorded raw and transformed values) | steps 3, 5 |
 | `unseen_dates.md` | the dates no fold covers, the unseen periods (one windows file each) and the rule "holds" | `orchestration/unseen_test`, the operator |
 | `measures.md` | how the workflow measures (returns counted once, holding, the book, Sharpe, Calmar, t-statistics) | steps 3, 5, 7; step 6's code computes the book the same way |
-| `book_diagnosis.md` | **draft, topic 34:** why a book does or does not pay (size, timing, closing, trend), read from a backtest's record | none yet (proposed: the observe-and-advise stage, step 7) |
+| `book_diagnosis.md` | **draft, topic 34:** why a book does or does not pay (big enough, move left, closing time, book stays in, trend), read from a backtest's record | none yet (proposed: the observe-and-advise stage, step 7) |
