@@ -164,7 +164,7 @@ against its own record without hold; step 6 says "pro" for profitable enough.
 | *volatile reversal completes quickly, 1d (3)* | confirmed | pro → **not** | 1.16 → −0.03 | 1.05 → −0.07 |
 | *rsi side predicts next week, 1d (7)* | confirmed | pro → pro | 1.03 → 0.99 | 1.14 → 0.90 |
 
-**Counts.** The 9 one-sided books: 9 of 9 stay profitable; Sharpe moves by −0.08 to +0.09 (median +0.04); Calmar
+**Counts.** The 9 one-sided books: 9 of 9 stay profitable; Sharpe moves by −0.08 to +0.09 (median +0.01); Calmar
 moves both ways (−0.36 to +0.26). The 2 two-sided books (in italics) are not read: the old rule's defect held them
 against the forecast 19 % and 41 % of the time in position (Correction above). The one paying book that stopped
 paying is one of them. Both are rerun in wave A on the corrected rule.
