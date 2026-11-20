@@ -26,7 +26,7 @@ of ideas of 4 hours or less (F2: they cannot pay); whether the ideas stay within
 
 **Limits:** one call per brief and version, so differences of one or two ideas are noise; read only clear differences.
 
-## Reading (2026-11-20, 20:45 Paris; 4 model calls, 0.23 USD; the definition restored after, checked)
+## Reading (2026-11-20, 20:25 Paris; 4 model calls, 0.23 USD; the definition restored after, checked)
 
 The ideas are kept in `runs/i1_step2_ab/` (A: today's definition; B: with the line).
 | Brief | A | B |

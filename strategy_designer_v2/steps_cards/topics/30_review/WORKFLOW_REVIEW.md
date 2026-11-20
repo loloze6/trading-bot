@@ -108,3 +108,19 @@ single books trustworthy (I1, I6).
 
 Not recommended now: a lower Calmar threshold for 1h, a minimum horizon on 1h, tuning horizons from the data (patches or
 look-ahead in disguise; story line 1.4, 1.5, 2.5).
+
+## Tests run on the improvements (2026-11-20 evening, the operator: "test and try; I review after")
+| Improvement | Test | Result | What it changes in the proposal |
+|---|---|---|---|
+| I1, "large enough to trade" | The diagnosis on 248 past records (`runs/RETRO_DIAGNOSIS_RUN.md`) | **0 of 91 books whose move per bet does not cover a round trip pays.** Above 4 trips, 32 % pay; 1 to 4 trips, about 10 % | Supported as a **necessary** condition (not a promise). "Several" ≈ 2 to 4 trips |
+| I1, a second notion | Same records: what stops a large edge | Of 53 books above 4 trips that do not pay, 50 fail Calmar and 42 the mean daily return | Add **"enough of it"**: the edge times how often the idea bets, and how deep its falls go |
+| I1, the market's share | Same records | Does not separate paying from non-paying books | Keep it as a diagnosis reading only, not a notion for the steps |
+| D, step 5 on the book's bets | The t of the move per bet on 230 judged records (`retro_bet_t.py`) | Bets t ≥ 2 and a move of at least 2 trips: 69 books, **26 % pay** (step 5 today: 123 books, 16 %), 18 of 30 paying books caught (20 today); 45 of step 5's 123 confirmations show no reliable move on their own bets | **Strongly supported:** the first change to design (step 5's measure; its proof a rerun of past verdicts) |
+| I1 in step 2's definition | A/B on two hourly briefs (`runs/I1_STEP2_AB_RUN.md`, 0.23 USD) | Barely steers: brief 017's ideas go from 2 to 4 hours, still too short; brief 016 already gives 3-day ideas | The lever is **step 1, the brief** (its theory sets the horizon); the definition line is kept for step 7 |
+| I2, findings register | Drafted (`common/findings.md`, 9 findings with evidence) | Not wired to any step | For review: which steps read it, who adds entries |
+| I3, hourly bars catch the move earlier | 12 daily ideas also run on 1h (same records) | Not supported as framed: the daily version captures more per bet 10 of 12 times | Needs its own plan design (one entry when the daily condition first holds) before any claim |
+| E, more coins early | Volatile evening-fall on 19 coins (`runs/MORE_COINS_1H_RUN.md`) | All 19 coins earn, but the deepest fall is the same market-wide 35 %; Calmar 0.49 | Not supported as a general move |
+
+**Revised order after the tests:** (1) **D**: step 5 judges the idea on the book's own bets with the move per bet
+against a round trip; (2) **step 1** states the horizon its theory works on and reads the findings (F1, F2); (3) the
+"enough of it" notion for steps 2 and 7; (4) I2's register wired to steps 1, 2 and 7; then I4 to I7 as before.
