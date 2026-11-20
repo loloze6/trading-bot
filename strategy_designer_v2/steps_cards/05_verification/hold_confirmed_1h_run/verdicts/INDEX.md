@@ -6,3 +6,8 @@
 016-05_up-even-volume-continuation.g1_evening-utc-hour-drift_1h: confirmed (fit: exact) [main: 0.000526115; Welch t 4.4195; daily 20:00-22:00 cases 17241, other-hour cases 188355, regression cases 17233]
 016-06_down-even-volume-continuation.g1_fresh-drop-rebound_1h: confirmed (fit: adapted) [main: 0.000551441; OLS slope t 2.74545; grid bars in mean_reversion 2762, grid bars in mean_reversion with forecast above 0 1891]
 016-08_down-volume-burst-reversal.g1_late-evening-rebound-after-daily-falls_1h: confirmed (fit: adapted) [main: 7.14565e-05; OLS slope t 2.6491; cases 8626, top third 2875, bottom third 2875]
+017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h: confirmed (fit: exact) [main: 1.83357e-05; OLS slope t 12.2761; bars with a non-zero forecast 414008, bars in the regression 416645]
+017-04_postsettle-decline-after-downtrend.c1_post-settlement-decline-four-hours_1h: confirmed (fit: adapted) [main: 0.000849507; t of the mean 4.84689; episodes with a negative forecast 24787, episodes per third 8262]
+017-04_postsettle-decline-after-downtrend.c2_off-settlement-rebound-after-falls_1h: confirmed (fit: adapted) [main: 0.000423841; ordinary t of the mean 4.07692; cases 50986]
+017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls_1h: confirmed (fit: adapted) [main: 0.0010792; ordinary t of the mean 4.05505; cases 8382]
+017-05_settlement-move-reverses-after_1h: confirmed (fit: adapted) [main: 0.000434249; ordinary t of the mean 5.09841; settlement bars 51746, top third 17248, middle third 17250, bottom third 17248]

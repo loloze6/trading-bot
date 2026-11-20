@@ -1,0 +1,26 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9941568789470577,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (forecast/10) x excess 2-bar return from the 11:00 bar's close, pooled over coins",
+    "value": 0.0010791951047509575,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 4.055046909952969
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and slope > 0; reject: mean < 0 with t <= -2; at least 300 cases"
+  },
+  "supporting_check": {
+    "name": "OLS slope of excess 2-bar return on forecast",
+    "value": 0.0001405731086756453,
+    "passed": true
+  },
+  "counts": {
+    "cases": 8382
+  },
+  "decided_by": "The main measure has a mean above 0 with t >= 2 and the slope is above 0.",
+  "reading": "The 2-bar return runs from the close of the bar stamped 11:00 to the close of the bar stamped 13:00 of the same window (cases without that bar are dropped), the coin's mean 2-bar return is taken on the non-overlapping grid 0, 2, 4, ... of each window pooled over all windows, and fewer than 300 cases is reported as not observable."
+}
