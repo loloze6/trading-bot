@@ -48,6 +48,10 @@ to trade, the way the book will trade it?** Most of what went wrong on hourly ba
   finding steers many runs, so each entry carries its evidence and date and can be withdrawn.
 
 ### I3. Use finer bars for what they are good at (answers W1, a new direction)
+**Tested on the records (2026-11-20, `runs/RETRO_DIAGNOSIS_RUN.md`): not supported as it stands.** On 12 daily ideas also
+run on hourly bars, the daily version captured more per bet 10 times out of 12. A real test needs a plan that enters
+once, when the daily condition first holds during the day; none of the records did that.
+
 The story shows two things hourly bars do well:
 - **They time the entry of a daily idea.** Paying continuation books move 100 to 120 bps on the signal's own bar
   (opening time), and their move runs past the horizon.

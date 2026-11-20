@@ -62,3 +62,19 @@ exists, not that the book's bets capture it.
 - **The market's share stays a diagnosis reading**, not a notion for the steps.
 - **Candidate D is supported:** 43 % of confirmed books cannot pay a trip. Step 5 measuring on the book's bets would
   have said so at the verdict.
+
+## A second question on the same table: I3, do hourly bars catch more of a daily idea's move?
+
+The 12 daily ideas retested on hourly bars (`retest_1h_run`, without the holding period), each against its daily record
+(the same idea text; horizon in the same days):
+| | Count of 12 |
+|---|---|
+| The hourly version's move per bet is larger than the daily one's | 2 |
+| The hourly version's Sharpe is higher | 1 |
+| Both pay / only the daily one / only the hourly one | 3 / 8 / 0 |
+
+Per bet, the daily version captures more 10 times out of 12 (for example nearness to highs, more coins: 168 against
+121 bps; dual momentum: 106 against 37). The hourly version computes the daily idea on hourly closes and bets on every
+hourly rise of its forecast, many of them late in a move already made. **I3 as framed ("hourly bars catch the move
+earlier") is not supported by the records.** Its real test would be a different plan, one entry when the daily
+condition first holds during the day, which none of these books did. Not run: it needs its own plan design (step 3).
