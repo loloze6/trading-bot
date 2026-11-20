@@ -7,3 +7,4 @@
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1d: profitable enough [Sharpe 1.195; Sharpe minus holding's Sharpe 0.6149; Calmar 1.492]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side_1d: profitable enough [Sharpe 1.048; Sharpe minus holding's Sharpe 0.4667; Calmar 1.08]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.g1_deep-drawdown-rebound-in-downtrends.g1_two-week-momentum-continuation.g1_momentum-continuation-in-uptrends_1d: profitable enough [Sharpe 1.155; Sharpe minus holding's Sharpe 0.6013; Calmar 1.175]
+N2-04_slow-and-fast-momentum.e1_short-horizon-dual-momentum-continuation_1h: profitable enough [Sharpe 1.068; Sharpe minus holding's Sharpe 0.514; Calmar 1.1]

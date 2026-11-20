@@ -1,0 +1,17 @@
+---
+backtest: N2-04_slow-and-fast-momentum.e1_short-horizon-dual-momentum-continuation_1h
+data: BTC, ETH, LTC, XMR, XRP, ZEC as BTCUSD, ETHUSD, LTCUSD, XMRUSD, XRPUSD, ZECUSD; 1h bars; folds A, B, C, D
+status: profitable enough
+---
+| Measure | Value | Rule | Passed |
+|---|---|---|---|
+| Sharpe | 1.068 | above 0 | yes |
+| Sharpe minus holding's Sharpe | 0.514 | above 0 | yes |
+| Mean daily return | 0.0008543 | at least 0.0005 | yes |
+| Lowest Sharpe, one window left out | 0.919 | above 0 | yes |
+| Calmar | 1.1 | above 0.75 | yes |
+| Trades per day | 0.2491 | at least 0.01 | yes |
+
+- Decided by: every measure passed
+Record: `steps_cards/04_backtest/hold_paying_run/backtests/N2-04_slow-and-fast-momentum.e1_short-horizon-dual-momentum-continuation_1h`
+Rule: `steps_cards/06_profitability/helper/rule.yaml`
