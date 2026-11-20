@@ -9,6 +9,7 @@ import copy
 import datetime
 import logging
 import math
+from collections import deque
 from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
 from performance.metrics import EnhancedPerformanceTracker, CompletedTrade
@@ -204,10 +205,11 @@ class TradingBot:
         # (0.0 = flat, the start). The min_allocation_change band judges the
         # signal's move away from it. Never read or written without a block.
         self._held_signal_allocation: Dict[str, float] = {}
-        # 2026-11-19 (topics/30): strategies.min_holding_bars. The decision bars seen per symbol, and the bar the
-        # current hold started (a trade that left a position, or a forecast asking it again). Never read without the key.
-        self._decision_bars: Dict[str, int] = {}
-        self._last_trade_bar: Dict[str, int] = {}
+        # 2026-11-20 (topics/30, the operator's option 2): strategies.min_holding_bars. Per symbol, the target asked on
+        # the previous bar and the target's moves over the last min_holding_bars bars (each rise, each fall: an event
+        # held for its horizon). Never read without the key.
+        self._holding_prev_target: Dict[str, float] = {}
+        self._holding_moves: Dict[str, Any] = {}
 
         # Trading state
         self.open_trades: Dict[str, CompletedTrade] = {}
@@ -511,6 +513,28 @@ class TradingBot:
                 )
                 target_allocation = previous_allocation
 
+            # 2026-11-20 (topics/30, the operator's option 2): strategies.min_holding_bars, the idea's horizon in bars.
+            # Each rise of the target is an event that holds its own size for that many bars: a long book does not go
+            # below the sum of the target's rises over the last min_holding_bars bars (at most its position); a short
+            # book, symmetrically, not above minus the sum of its falls. Rises and new positions are bought at once.
+            # Only this bar's and earlier targets are read: no lookahead. The risk gate and the gap tiers below still
+            # override it (a forced flat is never held). Absent (None): nothing below changes.
+            min_holding = getattr(self.strategy, "min_holding_bars", None)
+            if isinstance(min_holding, bool) or not isinstance(min_holding, int):
+                min_holding = None              # absent (or not an integer: a test double); validate_config's V20
+            if min_holding is not None:
+                moves = self._holding_moves.get(symbol)
+                if moves is None:
+                    moves = self._holding_moves[symbol] = deque(maxlen=min_holding)
+                moves.append(target_allocation - self._holding_prev_target.get(symbol, 0.0))
+                self._holding_prev_target[symbol] = target_allocation
+                if previous_allocation > 0.0 and target_allocation < previous_allocation:
+                    held = sum(m for m in moves if m > 0.0)
+                    target_allocation = max(target_allocation, min(previous_allocation, held))
+                elif previous_allocation < 0.0 and target_allocation > previous_allocation:
+                    held = sum(-m for m in moves if m < 0.0)
+                    target_allocation = min(target_allocation, max(previous_allocation, -held))
+
             # 2026-08-29 (fix/risk-layer): off-by-default portfolio risk gate.
             # Gate None (default) -> risk_extras stays {} and record_state below adds
             # no columns, so output is byte-identical. Gate set -> the target is
@@ -562,18 +586,6 @@ class TradingBot:
                 band_signal_change = signal_allocation - self._held_signal_allocation.get(symbol, 0.0)
                 sizing_extras["sizing_signal_change"] = band_signal_change
 
-            # 2026-11-19 (topics/30): strategies.min_holding_bars. None (key absent): holding is False, nothing below
-            # changes. Forced flats (risk gate, large gap) are not held.
-            min_holding = getattr(self.strategy, "min_holding_bars", None)
-            if isinstance(min_holding, bool) or not isinstance(min_holding, int):
-                min_holding = None              # absent (or not an integer: a test double); validate_config's V20
-            holding, bars_since_trade = False, None
-            if min_holding is not None:
-                self._decision_bars[symbol] = self._decision_bars.get(symbol, 0) + 1
-                if symbol in self._last_trade_bar:
-                    bars_since_trade = self._decision_bars[symbol] - self._last_trade_bar[symbol]
-                    holding = bars_since_trade < min_holding
-
             #Init variables
             approved_rebalance = None
             debug_approve_allocation_change = {}
@@ -617,14 +629,6 @@ class TradingBot:
                     else:
                         self.logger.error(f"   ✗ RISK FLATTEN execution failed. Debug info: {debug_execute_portfolio_rebalance}")
 
-            elif abs(allocation_change) != 0.0 and holding:
-                # 2026-11-19 (topics/30): strategies.min_holding_bars -- the position taken at the last trade is held
-                # for that many bars, whatever the forecast does meanwhile (only earlier trades are read: no lookahead).
-                approved_rebalance = False
-                debug_approve_allocation_change = {"min_holding_bars": {
-                    "passed": False, "bars_since_trade": bars_since_trade, "required": min_holding}}
-                self.logger.debug(f"   ⏸ HOLDING │ {bars_since_trade} of {min_holding} bars since the last trade")
-
             elif abs(allocation_change) != 0.0:
                 # Check if rebalance is ok from risk management perspective
                 if band_signal_change is None:
@@ -666,19 +670,6 @@ class TradingBot:
                 else:
                     self.logger.debug(f"   X🔄X No rebalance performed (rejected) │ Actual allocation: {previous_allocation:+.4f} | Δ (rejected): {allocation_change:+.4f}")
 
-            # 2026-11-19 (topics/30): the holding period's clock, once the bar's decision is made. A trade that leaves a
-            # position starts a hold; a close to flat, or a forced flat, starts none (the book holds positions, not
-            # flat). Outside a hold, a forecast asking the held position again (no trade needed, same side) renews it.
-            if min_holding is not None and not holding:
-                if success_execute_portfolio_rebalance:
-                    if target_allocation != 0.0 and not risk_forced_flat:
-                        self._last_trade_bar[symbol] = self._decision_bars[symbol]
-                    else:
-                        self._last_trade_bar.pop(symbol, None)
-                elif (not risk_forced_flat and previous_allocation != 0.0 and target_allocation != 0.0
-                      and (target_allocation > 0) == (previous_allocation > 0)):
-                    self._last_trade_bar[symbol] = self._decision_bars[symbol]
-                
             # Retrieve portfolio information after rebalance 
             postRebalance_balances = self.portfolio_info.get_account_balance() if success_execute_portfolio_rebalance else balances
             postRebalance_total_portfolio_value = self.portfolio_info._calculate_total_portfolio_value(postRebalance_balances, close) if success_execute_portfolio_rebalance else total_portfolio_value
