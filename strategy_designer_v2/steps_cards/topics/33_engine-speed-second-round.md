@@ -1,6 +1,6 @@
 # Topic 33: A second round of engine speed work
 
-Status: open (unparked 2026-11-20)  
+Status: built 2026-11-20 on `engine-speed-round2` (A to D, files identical, `orchestration/duration/14_round2_proof.md`); merge: designer session, master: operator's go  
 Where: engine (`trading-bot/`), shared code  
 Opened: 2026-11-19 (operator, during d_line_1h_run)
 
