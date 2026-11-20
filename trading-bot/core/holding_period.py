@@ -50,10 +50,11 @@ class HoldingPeriod:
         bets = self._bets.get(symbol)
         if bets is None:
             bets = self._bets[symbol] = deque(maxlen=self.bars)
-        if forecast is None or not math.isfinite(forecast):
+        target, position = float(target), float(position)        # plain floats (numpy values come in too)
+        if forecast is None or not math.isfinite(float(forecast)):
             bets.append(0.0)
         else:
-            bets.append(self._bet(symbol, forecast / 10.0, target))
+            bets.append(self._bet(symbol, float(forecast) / 10.0, target))
         if position > 0.0 and target < position:
             held = sum(b for b in bets if b > 0.0)
             if held > 0.0:

@@ -53,3 +53,11 @@ def test_symbols_are_independent():
     assert hp.apply("A", 10, 1.0, 0.0) == 1.0
     assert hp.apply("B", 0, 0.0, 0.0) == 0.0
     assert hp.apply("A", 0, 0.0, 1.0) == 1.0          # A's bet is held; B's bar did not touch it
+
+
+def test_numpy_values_are_accepted():
+    import numpy as np
+    hp = HoldingPeriod(3, BAND)
+    assert hp.apply("X", np.float64(10.0), np.float64(1.0), np.float64(0.0)) == 1.0
+    assert hp.apply("X", np.float64(0.0), np.float64(0.0), np.float64(1.0)) == 1.0
+    assert isinstance(hp.apply("X", np.float64(0.0), np.float64(0.0), np.float64(1.0)), float)
