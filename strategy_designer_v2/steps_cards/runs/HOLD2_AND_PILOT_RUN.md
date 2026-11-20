@@ -77,3 +77,33 @@ forecast, is a defect. It is read first, and the runs are not read until it is f
 - The pilot's references are old-rule records. The rule change alone moves these 4 books' earnings before costs by
   at most about 5 % (replay), so the comparison holds within that.
 - In-sample: these books and folds were already looked at. One pass in 4 is not a proof until its unseen dates hold.
+
+## Reading, A. the pilot (`std_time_pilot_run`, 4 of 4, done 13:00 Paris)
+
+`standardise` window 1,440 bars (60 days), minimum history 480, the corrected holding rule; against the same books'
+night records (window 60 to 500 bars, old rule).
+
+| Book (bars held) | Forecast changes per bar: night → pilot | Forecast at 0 | Units: night → pilot | Earned per unit before costs (bps) | Sharpe night → pilot | Calmar night → pilot | Step 6, pilot |
+|---|---|---|---|---|---|---|---|
+| grinding-rises (72) | 9.9 % → 6.4 % | 84 % | 3,301 → 3,566 | 60.5 → 57.7 | 0.875 → 0.877 | 0.645 → 0.634 | fails Calmar |
+| volatile evening-fall d2 (24) | 1.7 % → 1.7 % | 99 % | 2,604 → 2,793 | 53.2 → 53.7 | 1.14 → 1.175 | 0.64 → 0.694 | fails Calmar only |
+| deep-decline (72) | 43.9 % → 45.0 % | 51 % | 2,982 → 3,054 | 33.0 → 31.9 | 0.24 → 0.251 | −0.01 → 0.008 | fails vs holding, mean return, Calmar |
+| fresh-drop-rebound (72) | 30.7 % → 32.0 % | 67 % | 3,347 → 3,211 | 31.5 → 37.4 | 0.24 → 0.314 | −0.02 → 0.036 | fails vs holding, mean return, Calmar |
+
+**Counts.** Sharpe changes +0.00 to +0.07 on 4 of 4; Calmar −0.01 to +0.06; 0 of 4 pass step 6. The corrected rule alone
+moves these books by up to about 5 % (replay), so the changes are within what the rule itself explains.
+
+**Outcome: A2 on grinding-rises, A4 on the other 3. The window is not the lever.**
+- grinding-rises (A2): the forecast changes a third less often, and nothing else moves. A replay of the window from 3
+  days to 1 year (topic 36, `36_review/book_sim.py`, exact on its forecast) gives Sharpe 0.88 to 0.95: flat.
+- deep-decline and fresh-drop-rebound (A4): the forecast changes as often as before (31 to 45 % of bars). Their
+  frequent changes come from the components themselves (price changes over 1 and 3 days, recomputed every hour), not
+  from the scaling.
+- volatile evening-fall (A4): its forecast is 0 on 99 % of bars, a one-moment signal held 24 bars, so the scaling
+  window has almost nothing to act on. It stays the best hourly book: Sharpe 1.175, beats holding the coin by 0.62,
+  about 0 % of its gain is the market's (night diagnosis). It fails only Calmar: 0.694 against 0.75.
+
+**What follows.** The `standardise` window is not why hourly books do not pay; leave it as it is for now. Whether to
+state it in time anyway (one rule for every timeframe) is for the operator: no result asks for it. The levers left are
+the ideas' edge (topic 34: a move that pays for its trip; topic 35: a horizon in price), and, for volatile evening-fall,
+what makes its deepest fall (its diagnosis by window), before anything is changed.

@@ -52,12 +52,19 @@ is within 0.06 of Sharpe and 10 % of units of the record. Scanning the window fr
 (volatile evening-fall, deep-decline) is not recorded on its inactive bars, so its history cannot be rebuilt from the
 record (55 % of active bars match).
 
+**2026-11-20, the pilot, 4 books (`runs/HOLD2_AND_PILOT_RUN.md`).** With the window at 60 days: Sharpe +0.00 to +0.07,
+Calmar −0.01 to +0.06, 0 of 4 pass step 6; within what the corrected holding rule alone explains. The forecast changes
+less often only on grinding-rises (9.9 → 6.4 % of bars); on the others its changes come from the components themselves
+(31 to 45 % of bars) or it is almost always 0 (99 %). The window is not the lever.
+
 ## Decisions
 | Date | Decision | By | Why | Rejected, and why |
 |---|---|---|---|---|
 
 ## Status and next
-Waits for the operator's go. The sets of the holding night all used the bar rules.
+Pilot read (2026-11-20): the window is not the lever. Open for the operator: state the window in time anyway (one
+rule for every timeframe), or leave it. Next, if wanted: the other bar-counted settings (C), only where a run shows an
+effect.
 
 ## Links
 Topic 34 (the book's diagnosis), topic 30 (why hourly ideas rarely pay), `common/forecast.md`,
