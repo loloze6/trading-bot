@@ -19,3 +19,45 @@ round trip the backtest paid (the "edge ratio"); the market's share of the book'
 
 **Limits known in advance:** books of the same idea appear several times (reruns, holding variants): counted per
 record, and the duplicates named. In-sample: these are the folds the ideas were chosen on.
+
+## Reading (2026-11-20, 20:40 Paris)
+
+248 records diagnosed, 0 errors; 238 with a step 6 result (192 distinct ideas; reruns and holding variants counted per
+record). Table: `topics/30_review/retro_diagnosis.csv`; script: `topics/30_review/retro_diagnosis.py`.
+
+**R1, the edge ratio: partly. It is necessary, not sufficient.**
+| Edge ratio | Books | Pay | Daily | Hourly |
+|---|---|---|---|---|
+| ≤ 0 (the bets lose against the drift) | 38 | 0 | 20 | 18 |
+| 0 to 1 (the move does not cover a trip) | 53 | 0 | 17 | 36 |
+| 1 to 2 | 25 | 3 (12 %) | 22 | 3 |
+| 2 to 4 | 44 | 4 (9 %) | 27 | 17 |
+| > 4 | 78 | 25 (32 %) | 72 | 6 |
+**0 of the 91 books whose move does not cover a round trip pays**: none, daily or hourly. Above 4 trips, one book in
+three pays. Hourly books sit mostly below 1 (54 of 80), daily books mostly above 4 (72 of 158).
+
+**What stops a large edge from paying** (53 books with a ratio above 4 that do not pay, 50 of them daily): Calmar fails
+for 50, the mean daily return for 42, beating holding for 29; 10 fail Calmar alone. Their median Sharpe is 0.52, against
+1.04 for the paying ones. Step 5 called 34 of them inconclusive. So a large move per bet is not enough: there must be
+enough of it (bets often enough to earn a daily return) and its falls must stay shallow.
+
+**R2, the market's share: does not separate** (outcome R3 for this reading). Among books above 1 trip, the paying ones
+have a median share of 39 % and the others 24 %, the opposite of the expected direction, and the ranges overlap. The
+market's share explains individual books (grinding-rises), not the step 6 result across books. Step 6's "beats holding"
+check already carries what it would add.
+
+**R4, step 5 and the bets: they disagree often.** Of 123 confirmed books, **53 (43 %) have a move per bet that does not
+cover a round trip**, and **11 (9 %) have bets that lose against the drift**. Those 11 are 4 ideas (deep-decline and
+fresh-drop-rebound in several runs, up-jump reversal, one daily capitulation rebound). Step 5 confirms that an effect
+exists, not that the book's bets capture it.
+
+**What it means for the improvements.**
+- **I1 is supported, in this form:** "the move per bet, once a trader can act, covers several round trips" is a
+  necessary condition (0 of 91 below 1 pays), not a promise. An idea below it cannot pay however it is held or sized.
+  The data puts "several" at about 2 to 4 (12 % pay between 1 and 2, 9 % between 2 and 4, 32 % above 4).
+- **A second notion is needed: enough of it.** The edge per bet times how often the idea bets, against step 6's daily
+  return, and the depth of its falls. That is a book's yield, which step 2 and step 7 can reason about from an idea's
+  frequency (how often its situation occurs).
+- **The market's share stays a diagnosis reading**, not a notion for the steps.
+- **Candidate D is supported:** 43 % of confirmed books cannot pay a trip. Step 5 measuring on the book's bets would
+  have said so at the verdict.
