@@ -31,15 +31,15 @@ D, `7826ad81`). Steps 4, 5 (the idea's saved measure: no model call), 6, and the
 | Move per bet over 24 bars / round trip | 56 / 21 bps | 60 / 23 bps |
 | Market's share of the gain | 27 % | 34 % |
 | Coins earning (Sharpe above 0) | 6 of 6 | **19 of 19** (0.19 to 1.45) |
-| Deepest fall | 35.6 %, windows 12 to 16 (fold C), worst window 14 | 35.3 %, the same windows, worst window 14 |
+| Deepest fall | 35.6 %, windows 12 to 16 (end of fold B into fold C), worst window 14 | 35.3 %, the same windows, worst window 14 |
 | Yearly return | 24.7 % | 17.1 % |
 
 **Outcome M2.** The edge travels: every one of the 13 new coins earns, and the move per bet is the same size. But the
-deepest fall is the same 35 % over the same stretch of fold C. The coins fall together there, so spreading over more of
+deepest fall is the same 35 % over the same stretch (end of fold B into fold C). The coins fall together there, so spreading over more of
 them does not shrink it. The new coins earn less each, so the yearly return falls, and Calmar falls with it.
 
 **What it shows.** More coins is not the lever for this idea: its weak point is one market-wide stretch, not one coin.
-The idea buys an evening fall in volatile times to sell 24 hours later. In fold C's long decline the falls keep
+The idea buys an evening fall in volatile times to sell 24 hours later. In that long decline the falls keep
 falling. A practitioner would read that stretch first (does the idea lose on most of its bets there, or on a few large
 ones?). Then a version that knows the market's direction would be **a new idea for step 7**, not a tuning of this one
 (for example: rebounds only while the coin's longer trend is not down). Candidate E ("more coins early") is not

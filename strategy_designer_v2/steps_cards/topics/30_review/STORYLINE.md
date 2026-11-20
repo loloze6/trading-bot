@@ -53,7 +53,7 @@ topic 36)
 | Candidate lever | Finding | Decision |
 |---|---|---|
 | (Seen) 3 hourly books pay: daily ideas with horizons of days, about as well as on daily bars; move 1.8 to 10.6 times a trip; about half their gain timing; 2 of 3 are "more coins" versions | – | – |
-| The near-miss (volatile evening-fall) on more coins (step 7.b): spreading over 19 coins lowers the deepest fall | Not run yet | **Taken, next run:** waits for the engine's speed change B (3 h today, about 30 min after) |
+| The near-miss (volatile evening-fall) on more coins (step 7.b): spreading over 19 coins lowers the deepest fall | Run (`MORE_COINS_1H_RUN`, 24 min on the faster engine): the edge travels (19 of 19 coins earn, the same move per bet), but the deepest fall is the same 35 % over the same market-wide stretch, and Calmar falls to 0.49 | **Taken, not the lever.** Next for this idea: read that stretch; a version that knows the market's direction is a new idea for step 7 |
 | Close the leftover positions below the band | Replay: +0.01 Sharpe | Rejected (not a lever) |
 | A longer horizon (its move peaks just after its 24 bars) | The horizon is the idea's own, not chosen from the data | Rejected as a tuning; a longer-horizon idea is a new idea for step 7 |
 | A horizon in price, not only in time | – | **Parked** (topic 35) |
@@ -160,7 +160,7 @@ working branch. Two "positive" hourly books from the defect set aside; the payin
 | B | An idea predicts a move worth several round trips once the bot can act | `common/idea_definition.md`, steps 2 and 7 | 1.3, 2.5 | Topic 34: to design |
 | C | Step 7's analysts read the book's diagnosis | step 7 | 2.6 | Decided long term; to design |
 | D | Step 5's measure agrees with the move the book captures | step 5, `common/measures.md` | 2.7 | Open |
-| E | An hourly idea with a real edge goes to more coins early | step 7, select_next | 1.5 | Next run tests it |
+| E | An hourly idea with a real edge goes to more coins early | step 7, select_next | 1.5 | Tested once: not supported (the fall was market-wide) |
 | F | Longer-horizon ideas when a move outlasts its horizon; a horizon in price | step 7; topic 35 | 1.5 | Open, parked |
 | G | Faster engine, parallel sessions, the CLI, "rerun only what can change", replays before backtests | engine, orchestration | thread 4 | Topics 33, 37 |
 
