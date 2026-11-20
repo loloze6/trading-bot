@@ -1,1 +1,4 @@
+002-01_sma-golden-cross-upward-drift.b1_momentum-inside-golden-cross-uptrends-more-coins_1h: confirmed (fit: exact) [main: 0.00520582; OLS slope t 7.18992; grid cases in trending 1562, cases at forecast 0 772, cases with forecast > 0 790]
 005-02_bullish-rsi-divergence-rebound.g1_volatile-day-move-reversal.g2_volatile-reversal-completes-quickly_1d: confirmed (fit: adapted) [main: 0.020139; t of the mean 3.50166; qualifying cases across all coins and windows 163]
+010-03_rsi-above-streak-continuation_1d: inconclusive (fit: exact) [main: 1.48446; OLS slope t 1.48446; grid cases in total 384, cases with a forecast above 0 199]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1d: confirmed (fit: adapted) [main: 0.0136618; t of the mean 3.76544; non-overlapping cases with forecast above 0 2157]
