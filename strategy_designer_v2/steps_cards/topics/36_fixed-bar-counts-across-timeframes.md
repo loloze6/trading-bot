@@ -43,6 +43,15 @@ the same idea would on daily bars. One rule should mean the same span of time on
 Recommended: B first, tested by rerunning a few hourly books with the window in time and comparing them file by file
 with the same books today. Then C, setting by setting, only where a run shows an effect.
 
+**2026-11-20, pilot book 1 (grinding-rises) and a replay.** The pilot's real backtest (window 1,440 bars, 60 days):
+the forecast changes on 6.4 % of bars instead of 9.9 %, but Sharpe 0.877 (0.875 at 72 bars), Calmar 0.634 (0.645). A
+replay from the recorded raw values (`36_review/book_sim.py`): the forecast is exact on every bar, and the whole book
+is within 0.06 of Sharpe and 10 % of units of the record. Scanning the window from 3 days to 1 year gives Sharpe 0.88 to
+0.95 and Calmar 0.60 to 0.67: flat. For this book the window is not the lever. Its forecast is 0 on 84 % of bars, and
+73 % of its gain is the market's. The replay is exact only for a component computed on every bar: a regime-gated one
+(volatile evening-fall, deep-decline) is not recorded on its inactive bars, so its history cannot be rebuilt from the
+record (55 % of active bars match).
+
 ## Decisions
 | Date | Decision | By | Why | Rejected, and why |
 |---|---|---|---|---|
