@@ -20,7 +20,7 @@ Scripts: `<scratchpad>/night/trend_timing.py`, `path.py`, `closure.py`; to be st
 | 1 to 4 bars | 14 | 0.8 to 7 bps | 0 above 0 |
 | 24 to 72 bars | 8 | 20 to 60 bps | 7 above 0 (0.24 to 1.14), 2 beat holding the coin, 0 pass step 6 |
 
-**2. Timing: identified too late?** This is the average move per bar in the idea's direction around the bar whose
+**2. Move left once the bot can act (first read as "identified too late?", see below).** This is the average move per bar in the idea's direction around the bar whose
 close fires the signal (bar 0). The bot earns from bar +1 on.
 | Idea (horizon) | Bar −1 | Bar 0 | Bars +1 to +2 | Peak after the signal |
 |---|---|---|---|---|
@@ -30,8 +30,12 @@ close fires the signal (bar 0). The bot earns from bar +1 on.
 | grinding-rises (72) | +7 | **+69** | 0 | +14 at +24 |
 | volatile evening-fall (24) | −15 | −15 | +18 | +58 at +27, still rising |
 
-All values are in bps. The big move is the trigger bar itself, and an hourly bot cannot act before its close. What is
-left after the signal is 4 to 13 bps on the short ideas.
+All values are in bps. What is left once the bot can act is 4 to 13 bps on the short ideas, below a round trip (about
+20 bps). The trigger bar's move does not show lateness on its own (corrected the same day, operator: "the wording
+differs from the measurement"). On the reversal ideas (settlement-move, hourly reversal, the evening ideas), the trigger
+bar moves against the bet: it is the fall that sets the idea off, not a move already spent. Only on a continuation
+(grinding-rises, +69 bps on bar 0 in the bet's direction) did part of the move happen before the bot could act.
+Whether a reversal's rebound started inside the trigger bar is not measured by these bars.
 
 **3. Closing: closed too late?** Measured on the book's real positions: their length against the horizon, and the
 earnings per bar within and after it.
