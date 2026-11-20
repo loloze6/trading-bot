@@ -7,8 +7,10 @@ Criteria, in the operator's order: 1 cost, 2 simplicity, 3 performance, 4 flexib
 
 **Decision** (2026-11-19, after the operator's rulings: cheap, monthly, English or French service, any EU country).
 Try these in order:
-1. **Webdock VPS Essential** (Denmark);
-2. otherwise **netcup VPS nano** (Germany);
+1. **Webdock VPS Essential** (Denmark), **once its support confirms in writing that the bot is allowed**. Its terms
+   (section 5, "Prohibited usage") forbid "crypto, blockchain or testnet workloads" unless approved in writing, and a
+   crypto trading bot may count as one;
+2. otherwise **netcup VPS nano** (Germany). Its terms forbid only crypto *mining*, which the bot does not do;
 3. otherwise **OVH VPS-1** once its EU stock returns. On 2026-11-19 only Singapore was offered, which is to avoid
    (section 4).
 
@@ -23,7 +25,7 @@ derivatives eligibility page (section 4).
 
 | | Webdock VPS Essential | netcup VPS nano | OVH VPS-1 |
 |---|---|---|---|
-| Price on the provider's page | **€2.15** (VAT not shown) | €3.69 with German VAT | €4.49 before VAT [3] |
+| Price on the provider's page | **€2.15** before VAT (Webdock charges VAT to EU customers without a VAT number [3] its VAT article) | €3.69 with German VAT | €4.49 before VAT [3] |
 | With French VAT (20%) | **about €2.58** [calc] | about €3.72 [calc] | €5.39 |
 | Year 1 | **about €30.96** | about €44.64 | €64.68 |
 | Two years | **about €61.92** | about €89.28 | €129.36 |
@@ -43,7 +45,10 @@ derivatives eligibility page (section 4).
 | Systems offered | Ubuntu, Debian, AlmaLinux, CentOS [O] | Debian and others [M] | Debian and others [3] |
 | Growing later | one-click upgrade, prorated; the disk can only grow [O] | other plans, e.g. VPS Lite 1 G12.5s 4 GB at €5.86 with German VAT, 6-month contract [O] | VPS-2 (price not checked) |
 | User reviews | **Trustpilot 5/5 from 339 reviews** [3]; one complaint of a server billed for a whole period after a few hours of use; reviews.io 3.2/5 from 13 | many, mixed: good uptime; slow ticket support | many, mixed |
-| Main risk | the smallest machine of the three (1 vCPU, 15 GB): enough for one daily decision; about 5 GB of disk needed | 6-month contract | stock comes and goes |
+| Crypto in the provider's terms | **"crypto, blockchain or testnet workloads" prohibited unless approved in writing** (section 5; search extract of docs.webdock.io, updated 2026-09-29) | only crypto **mining** prohibited [O] netcup terms | mining prohibited (user forum); VPS terms PDF not read |
+| Refunds | **payments non-refundable**; cancel anytime, the server runs to the end of the paid period [O] | — | — |
+| Uptime record | Denmark infrastructure 99.48% in January 2026 (a 7 h 13 min outage), 99.88–99.92% March to May 2026 [3] status.webdock.io (extract) | about 99.6% a year [3] hosttest | — |
+| Main risk | the smallest machine of the three (1 vCPU, 15 GB): enough for one daily decision; about 5 GB of disk needed | 6-month contract; Nuremberg only | stock comes and goes |
 
 2 GB holds about 6 runs. At one more run a month, it is full in about 3 months; then upgrade in one click (Webdock),
 or put several coins in one program (the card's plan).
@@ -60,6 +65,10 @@ or put several coins in one program (the card's plan).
   - Time4VPS: 2 GB €6.49–7.49 before VAT;
   - Alwyzon: 2 GB €9.49;
   - the home laptop: often switched off.
+
+**Before ordering Webdock:** write to its support (chat or email): *"I want to run a small Python program that reads
+prices from the Kraken Futures exchange API and places a few orders a day; no mining, no blockchain node. Is this
+allowed under section 5 of your terms? Please confirm in writing."* Order only on a written yes; otherwise netcup.
 
 **Before real orders, whichever host:**
 - Set `KillSignal=SIGINT` in the service. Without it the bot dies on a server stop without saving its local book
@@ -446,7 +455,8 @@ before trusting it.
      `curl -LsSf https://astral.sh/uv/install.sh | sh`, then in step 7 use
      `~/.local/bin/uv venv --python 3.13 ~/venv` and
      `~/.local/bin/uv pip install --python ~/venv/bin/python -r ~/trading-bot/trading-bot/requirements.txt`.
-6. **Get the code (10 min).** The server needs read-only access to the repository: a **deploy key**, an SSH key that
+6. **Get the code (10 min).** Clone the **whole** repository: the live bot imports `strategy-research/tools/recorder`
+   (found in the rehearsal, below), so the `trading-bot/` folder alone does not start. The server needs read-only access to the repository: a **deploy key**, an SSH key that
    can read this one repository and nothing else.
    - On the server: `ssh-keygen -t ed25519 -f ~/.ssh/github_deploy -N ""` then `cat ~/.ssh/github_deploy.pub`.
    - On GitHub: repository Settings → Deploy keys → Add. Paste the line and leave "Allow write access" unticked.
@@ -553,6 +563,54 @@ before trusting it.
     `scp -r debian@YOUR_IP:trading-bot/trading-bot/live_runs C:\path\to\copy`.
 
 ---
+
+### Rehearsal of the setup plan (2026-11-20)
+
+**Purpose.** Prove steps 5 to 10 before renting anything.
+
+**Expected outcomes:**
+- **A**, all as written: Python 3.13, the libraries install, the service starts the bot, restarts it after a crash,
+  stops it cleanly (the "stop requested" line and `local_book.csv`), starts it at boot, the alerts run;
+- **B**, a step fails and the plan is fixed.
+
+**How:**
+- a Docker test machine with systemd, here in the research session;
+- **Ubuntu 24.04** instead of Debian 13: only Ubuntu's package mirrors are reachable from here, and Webdock also
+  offers Ubuntu;
+- Python 3.13.18 copied from the official Python image, since Ubuntu 24.04 ships 3.12 (on a real server: Debian 13,
+  or the uv fallback in step 5);
+- the code copied from this branch, not cloned from GitHub (the deploy-key step was not tested);
+- **Kraken replaced** by synthetic hourly candles up to the real clock, because Kraken is blocked here. The swap is
+  a test file in the test machine only; no bot code changed;
+- ntfy and Healthchecks replaced by a local listener;
+- the run used `first_paper`'s strategy, with a start value of 1000 (no key).
+
+| Test | Result |
+|---|---|
+| Install (step 7) | libraries installed in 50 s, 672 MB; imports OK |
+| Key file (step 8) | the service passed the file's variables to the bot (checked in the running process) |
+| Start (step 10) | service active and enabled at boot; warm-up of 912 days in 5 s; **269 MB** in memory; "started" alert received |
+| Clean stop (`systemctl stop`) | "stop requested" logged; `local_book.csv` and `real_book.csv` written (with an hourly-bar run, so that a bar was decided at 12:00:00 UTC); alert "stopped: success 0" |
+| Crash (`kill -9`) | alert "stopped: signal KILL"; restarted by itself after 60 s (restart count 1); new session folder; "started" alert |
+| Reboot (`systemctl poweroff`, then start) | both runs logged "stop requested" on the way down and were running again on the way up, each in a new session |
+| Alert service down | the bot kept running (the `-` before `curl` works) |
+| Healthchecks line (step 9) | pings while `summary.md` is fresh; silent (exit 1) once it is 27 h old |
+
+**Outcome: A, with two findings:**
+1. **The whole repository is needed.** The live bot imports `strategy-research/tools/recorder`; with only
+   `trading-bot/`, it fails at import. The plan already clones the whole repository; step 6 now says why.
+2. **`local_book.csv` exists only after a first decided bar.** A run stopped before its first bar has none. This is
+   the bot's normal behaviour (`PortfolioStateTracker.to_csv` writes nothing when empty), not a fault.
+
+**Also seen:** `docker restart` kills the test machine after 10 s without a clean stop. That is a property of the test
+tool, not of a real server, where `sudo reboot` behaves like `systemctl poweroff` above.
+
+**Not tested here:**
+- Debian 13 itself;
+- the GitHub deploy key;
+- real Kraken candles and the account read;
+- ntfy.sh and Healthchecks.io themselves;
+- days of continuous running.
 
 ## 6. What other people running small bots report
 
@@ -685,7 +743,8 @@ Sources of round 3:
 
 **The server itself**
 - The OVH Debian image's default user name: `debian`, according to a copy of OVH's guide; not seen on OVH's own page.
-- The service file and the alerts **have not been run** on any server.
+- The service file and the alerts were rehearsed on an Ubuntu 24.04 test machine with fake Kraken candles (section 5,
+  "Rehearsal"), not yet on a real server with Debian 13 and real Kraken.
 - The memory figure comes from Linux in this container with synthetic candles. It has not been measured on the VPS.
 
 ## Sources (read through search extracts on 2026-11-19 unless stated)
