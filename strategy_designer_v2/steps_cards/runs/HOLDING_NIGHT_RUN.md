@@ -143,3 +143,32 @@ definition, each with the position expected bar by bar, run through a copy of th
 The corrected rule passes all 11: an event is a rise of the forecast on its side of at least the band (2 points, the
 same `min_allocation_change` as trades), measured from its lowest level since its last event, sized at its bar; the
 floor applies only when a bet is held.
+
+## Reading, set 3 (`hold_paying_run`, 11 of 13; stopped 09:30 UTC)
+
+Run on the old rule (events = moves of the sized target). Stopped before its last 2 books (nearness-to-high on more
+coins hourly, heavy-volume follow-through daily), which run on the corrected rule in `hold2_rerun` (wave A). Each book
+against its own record without hold; step 6 says "pro" for profitable enough.
+
+| Book (bars held) | Step 5 | Step 6 before → held | Sharpe before → held | Calmar before → held |
+|---|---|---|---|---|
+| above-average drift near highs, 1d (20) | not observable | pro → pro | 0.95 → 0.91 | 0.92 → 0.79 |
+| volatility-scaled momentum, 1d (3) | confirmed | pro → pro | 0.97 → 1.01 | 0.82 → 0.91 |
+| momentum in uptrends, 1d (7) | confirmed | pro → pro | 1.15 → 1.16 | 1.53 → 1.17 |
+| nearness without the short side, 1d (7) | inconclusive | pro → pro | 1.01 → 1.05 | 0.96 → 1.08 |
+| nearness to highs, more coins, 1d (7) | confirmed | pro → pro | 1.25 → 1.20 | 1.67 → 1.49 |
+| rising-month weekly momentum, 1d (7) | confirmed | pro → pro | 0.97 → 1.03 | 0.88 → 1.14 |
+| rsi above streak, 1d (14) | inconclusive | pro → pro | 1.04 → 1.00 | 0.92 → 0.84 |
+| dual momentum, 1h | inconclusive | pro → pro | 0.98 → 1.07 | 1.03 → 1.10 |
+| golden-cross momentum, more coins, 1h | confirmed | pro → pro | 1.12 → 1.04 | 1.05 → 0.78 |
+| *volatile reversal completes quickly, 1d (3)* | confirmed | pro → **not** | 1.16 → −0.03 | 1.05 → −0.07 |
+| *rsi side predicts next week, 1d (7)* | confirmed | pro → pro | 1.03 → 0.99 | 1.14 → 0.90 |
+
+**Counts.** The 9 one-sided books: 9 of 9 stay profitable; Sharpe moves by −0.08 to +0.09 (median +0.04); Calmar
+moves both ways (−0.36 to +0.26). The 2 two-sided books (in italics) are not read: the old rule's defect held them
+against the forecast 19 % and 41 % of the time in position (Correction above). The one paying book that stopped
+paying is one of them. Both are rerun in wave A on the corrected rule.
+
+**What it shows.** On books that already pay (daily, and two hourly ones), holding for the idea's horizon is about
+neutral: it neither breaks them nor improves them. As expected from the definition, it changes little where a book
+already holds its bets for days. So the rule can be the default, not a special case for hourly bars.
