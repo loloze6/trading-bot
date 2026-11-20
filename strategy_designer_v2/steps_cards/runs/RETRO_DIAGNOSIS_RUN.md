@@ -100,3 +100,31 @@ step 6. Script: `topics/30_review/retro_bet_t.py`; columns added to `retro_diagn
 - **Candidate D is supported in this form:** step 5's verdict on the book's own bets, with the move per bet against a
   round trip, says "real and large enough to trade" with fewer false alarms, at almost the same catch.
 - In-sample, the same folds: a design to propose with its proof (rerun past verdicts), not a rule yet.
+
+## The operator's remarks (2026-11-20, 21:00 Paris) and a fourth question: an idea's size, measured, not guessed
+
+**Remarks.** (1) The cost: Kraken futures fees are 0.05 % taker, 0.02 % maker per trade. The backtest charges the taker
+fee plus an assumed slippage per trade (`trading-bot/config/cost_model.json`: 2.5 bps BTC, 4 ETH, 7.5 for other coins,
+a default the engine itself logs as "not a calibrated number"): 0.15 % to 0.25 % for a buy and a sell. (2) Beating the
+cost does not prove an idea is real: the gain of the "two round trips" rule above came from the cost, which is step 6's
+question, not step 5's (on the bets alone, without the cost, 15 % pay against 16 % today: no better). (3) An idea cannot
+guess the size of its move; is "size" a concept that can be measured instead?
+
+**The measure: an idea's strength.** For each confirmed idea, its average move after its signal over its horizon (net
+of the coin's drift) divided by the coin's typical move over that same horizon (the spread of its moves over that
+length of time). A pure number with no cost in it: 0.05 means the idea predicts 5 % of a typical move.
+Script: `topics/30_review/retro_strength.py`; columns added to `retro_diagnosis.csv`.
+
+| Horizon | Confirmed ideas | Their strength (median) | Typical move over that horizon (median) | Strength needed for the move to cover a buy and a sell | Pay |
+|---|---|---|---|---|---|
+| 1 to 4 hours | 24 | 0.056 | 1.5 % | 0.145 | 0 |
+| 5 to 48 hours | 31 | 0.047 | 4.9 % | 0.044 | 0 |
+| 2 to 10 days | 65 | 0.051 | 10.5 % | 0.020 | 20 |
+| over 10 days | 3 | 0.277 | 24 % | 0.010 | 0 |
+
+**What it shows.** Real ideas have about the same strength, about 5 % of a typical move, whatever their horizon (the
+correlation of strength with the horizon is 0.1). The typical move grows with the horizon; the cost of a trade does not.
+So an idea of ordinary strength cannot pay on a few hours (it would need about 3 times the usual strength), is at the
+limit around a day, and pays room to spare over several days. That is the whole hourly story in one line, and it can be
+known **before** any idea is written or tested: from the horizon a theory works on, the coins' typical move over it,
+and the venue's cost, without guessing any move.
