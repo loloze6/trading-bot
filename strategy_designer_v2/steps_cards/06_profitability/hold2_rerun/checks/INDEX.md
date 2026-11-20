@@ -4,5 +4,7 @@
 010-03_rsi-above-streak-continuation.e1_rsi-side-predicts-next-week_1d: profitable enough [Sharpe 0.9672; Sharpe minus holding's Sharpe 0.3277; Calmar 0.866]
 010-03_rsi-above-streak-continuation_1d: profitable enough [Sharpe 0.9804; Sharpe minus holding's Sharpe 0.3408; Calmar 0.7893]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1d: profitable enough [Sharpe 1.218; Sharpe minus holding's Sharpe 0.6372; Calmar 1.527]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.b1_nearness-to-high-more-coins_1h: profitable enough [Sharpe 1.244; Sharpe minus holding's Sharpe 0.6951; Calmar 1.489]
 013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side.e1_heavy-volume-rising-follow-through_1d: profitable enough [Sharpe 0.9915; Sharpe minus holding's Sharpe 0.4374; Calmar 0.806]
+013-01_nearness-to-high-predicts-gains.d2_nearness-with-rising-month.d2_nearness-without-the-short-side_1d: profitable enough [Sharpe 1.049; Sharpe minus holding's Sharpe 0.467; Calmar 1.042]
 N2-04_slow-and-fast-momentum.e1_short-horizon-dual-momentum-continuation_1h: profitable enough [Sharpe 1.048; Sharpe minus holding's Sharpe 0.4941; Calmar 1.193]
