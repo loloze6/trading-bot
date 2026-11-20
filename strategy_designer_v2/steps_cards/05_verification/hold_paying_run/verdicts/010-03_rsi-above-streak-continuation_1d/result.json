@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of the pooled slope of excess 14-bar forward return on forecast",
+    "value": 1.4844623440482592,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.4844623440482592
+    },
+    "threshold": "confirm if t >= 2 (with the check passing), reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "timing part of the book's mean daily return before costs > 0",
+    "value": 0.00048650377164110366,
+    "passed": true
+  },
+  "counts": {
+    "grid cases in total": 384,
+    "cases with a forecast above 0": 199
+  },
+  "decided_by": "The slope's t is 1.48, between -2 and 2.",
+  "reading": "Grid bars at positions 0, 14, 28, ... of each window with a full 14-bar forward return inside it; each coin's mean 14-bar return is the mean over its grid cases across all windows; the slope is one pooled OLS of excess return on forecast with the OLS standard error; the book before costs is the daily mean over coins of position after the trade x next-bar return, and its market part uses each coin's mean daily return over all windows."
+}
