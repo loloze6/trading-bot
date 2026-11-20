@@ -15,5 +15,6 @@
 017-04_postsettle-decline-after-downtrend.c2_off-settlement-rebound-after-falls_1h: not profitable enough [Sharpe -1.985; Sharpe minus holding's Sharpe -2.539; Calmar -0.4098]
 017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls_1h: not profitable enough [Sharpe -1.05; Sharpe minus holding's Sharpe -1.604; Calmar -0.1701]
 017-04_postsettle-decline-after-downtrend.g2_late-evening-rebound-after-falls_1h: not profitable enough [Sharpe -0.9701; Sharpe minus holding's Sharpe -1.524; Calmar -0.1537]
+017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend_1h: not profitable enough [Sharpe -1.817; Sharpe minus holding's Sharpe -2.371; Calmar -0.2317]
 017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal_1h: not profitable enough [Sharpe -6.737; Sharpe minus holding's Sharpe -7.291; Calmar -0.8619]
 017-05_settlement-move-reverses-after_1h: not profitable enough [Sharpe -4.783; Sharpe minus holding's Sharpe -5.337; Calmar -0.5753]

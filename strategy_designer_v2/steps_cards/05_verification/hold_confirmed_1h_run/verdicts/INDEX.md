@@ -15,5 +15,6 @@
 017-04_postsettle-decline-after-downtrend.c2_off-settlement-rebound-after-falls_1h: confirmed (fit: adapted) [main: 0.000423841; ordinary t of the mean 4.07692; cases 50986]
 017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls_1h: confirmed (fit: adapted) [main: 0.0010792; ordinary t of the mean 4.05505; cases 8382]
 017-04_postsettle-decline-after-downtrend.g2_late-evening-rebound-after-falls_1h: confirmed (fit: adapted) [main: 0.0100759; ordinary t 4.77665; cases overall 8553, cases in top tercile 2851, cases in bottom tercile 2851]
+017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend_1h: confirmed (fit: exact) [main: 0.00126971; ordinary t of the mean 8.07009; independent cases 17452]
 017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal_1h: confirmed (fit: exact) [main: 4.19835e-05; OLS slope t 13.7889; pooled cases 208278, top quintile cases 41656, bottom quintile cases 41656]
 017-05_settlement-move-reverses-after_1h: confirmed (fit: adapted) [main: 0.000434249; ordinary t of the mean 5.09841; settlement bars 51746, top third 17248, middle third 17250, bottom third 17248]
