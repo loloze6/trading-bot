@@ -71,22 +71,26 @@ block, on the 5 books both ran: Sharpe higher on 3, lower on 2, by 0.01 to 0.28;
 **Decision for set 2:** continue as written, with option 2 (the definition). Set 1 shows the lever works on
 7.d's ideas; set 2 checks it on the 21 ideas already found real.
 
-## Reading, set 2 (`hold_confirmed_1h_run`, 17 of 21 done; stopped 06:42 UTC)
+## Reading, set 2 (`hold_confirmed_1h_run`, 21 of 21, done 08:05 UTC)
 
-The run's task was stopped at the 2-hour limit of a background task (after a container restart at 04:40 had already cut
-one backtest), and was not restarted. Not run: `daily-move-reversal` g3 of 017-02 (24 bars; its backtest was cut, its
-partial folder removed), and 3 ideas of 1 to 3 bars (017-03 g3, 017-01 g3, 017-03 g4). Set 3 was not run.
+The run's task was stopped at 06:42 UTC by the 2-hour limit of a background task (after a container restart at 04:40
+had already cut one backtest); the last 4 ideas ran on the operator's go at 07:08. Two pairs are one book each (their
+configs differ only by component ids or an empty list): the daily-move reversals g2 and g3, and post-settlement trend
+continuation and afternoon continuation. So 21 ideas, 19 distinct books.
 
 Every idea confirmed at step 5 both before and after (the hold does not change the verdict's measure). Sharpe after costs,
 before (each idea's own run, no hold) and held; "per unit" = the held book at the closes without costs per unit traded.
 
 | Horizon (bars held) | Ideas | Sharpe before → held | Per unit, held (bps) | Beats holding the coin | Step 6 |
 |---|---|---|---|---|---|
-| 24 to 72 | 4 | fresh-drop-rebound −1.44 → **0.24**; volatile-regime reversal −2.30 → **0.32**; daily-move reversal g2 −2.81 → **0.45**; up-jump reversal −2.77 → −0.90 | 31.9; 20.5; 25.1; −30.5 | 0 of 4 (−0.10 to −0.31 below it, the 3 positive) | 0 |
-| 1 to 4 | 13 | all stay below 0: −1.08 → −0.81 at best, −16.35 → −12.09 at worst | 0.8 to 7.0 | 0 | 0 |
+| 24 to 72 | 5 (4 books) | fresh-drop-rebound −1.44 → **0.24**; volatile-regime reversal −2.30 → **0.32**; daily-move reversal g2 = g3 −2.81 → **0.45**; up-jump reversal −2.77 → −0.90 | 31.9; 20.5; 25.1; −30.5 | 0 of 4 (−0.10 to −0.31 below it, the 3 positive) | 0 |
+| 1 to 4 | 16 (15 books) | all stay below 0: −1.08 → −0.81 at best, −16.35 → −12.09 at worst | 0.8 to 7.0 | 0 | 0 |
 
-**Counts.** 0 of 17 profitable enough. Median Sharpe −2.30 → −1.05 (+1.25). **Outcome V2 (partly):** the median
-rises by more than 0.5, but fewer than 3 pass step 6.
+**Counts.** 0 of 21 profitable enough. Median Sharpe of the 21: −2.30 → −1.82 (+0.48). **By the outcomes written before
+the run, this is V3 ("about unchanged"), just under V2's line of +0.5.** At 06:42, on 17 ideas, I read +1.25 and V2; the
+last 4 ideas (3 short-horizon ones and one repeat) brought the median down. The median mixes two groups the hold treats
+differently: the 4 long-horizon books rise by +1.7 to +3.3, the 15 short ones by +0.0 to +4.3 from very low (most by
+less than 0.4) and none reaches 0.
 
 **What it shows.**
 1. **The horizon decides.** 16 of the 21 confirmed hourly ideas have a horizon of 1 to 4 bars. Before costs they earn
