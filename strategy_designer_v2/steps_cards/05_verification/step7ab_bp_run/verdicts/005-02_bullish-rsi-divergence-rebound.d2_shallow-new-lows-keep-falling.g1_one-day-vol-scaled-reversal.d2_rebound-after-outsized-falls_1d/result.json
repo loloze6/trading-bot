@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "one-sample t of mean excess next-day return on bars with forecast >= 5",
+    "value": 0.0024588466527395375,
+    "statistic": {
+      "name": "one-sample t of the mean",
+      "value": 1.5075227539016918
+    },
+    "threshold": "confirm if t >= 2 with >= 30 cases and convexity check passes; reject if t <= -2 with >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "per-unit-forecast mean excess return, group >= 5 minus group 0 < f < 5",
+    "value": -0.0005008533419445456,
+    "passed": false
+  },
+  "counts": {
+    "bars with forecast >= 5": 780,
+    "bars with forecast between 0 and 5": 2041
+  },
+  "decided_by": "The main t is between -2 and 2.",
+  "reading": "The per-unit-forecast return of each group is taken as the group's mean excess return divided by its mean forecast; 'between 0 and 5' is read as 0 < forecast < 5; every bar is a case, since the 1-bar horizon grid holds every bar; and the coin's mean is that of all its within-window daily returns."
+}

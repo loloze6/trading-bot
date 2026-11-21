@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 8-bar move of cases, signed in the forecast's direction",
+    "value": 0.0013471738002606404,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 5.891600392065212
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passed; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean unusual move above minus below median |forecast|",
+    "value": 0.0003067010278411887,
+    "passed": true
+  },
+  "counts": {
+    "independent cases": 22346,
+    "cases above median |forecast|": 11173,
+    "cases below median |forecast|": 11173
+  },
+  "decided_by": "Mean unusual move > 0 with t >= 2, and the supporting check passes.",
+  "reading": "A case is the first bet (forecast rise of >= 2 points on its side from its lowest level since the last bet) in each 8-bar grid cell counted from each window's first row, with its 8-bar return inside the window; normal drift is the coin's mean grid 8-bar return over all its windows; the supporting check splits cases strictly above versus strictly below the median |forecast|; the plan's 'fewer than 100 independent cases' is applied as the minimum count (not observable)."
+}

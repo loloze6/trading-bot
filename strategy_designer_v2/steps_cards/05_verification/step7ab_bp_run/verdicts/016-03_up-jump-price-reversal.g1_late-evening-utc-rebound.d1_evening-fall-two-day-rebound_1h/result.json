@@ -1,0 +1,27 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9951506754416349,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled OLS slope of 48-bar excess return on forecast, 20:00-close cases",
+    "value": 0.00027991436907343217,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": 1.6976069177556017
+    },
+    "threshold": "confirm if slope t >= 2 (with top-third mean excess > 0); reject if t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 48-bar return, top third of forecast",
+    "value": 0.00344678123891583,
+    "passed": true
+  },
+  "counts": {
+    "non-overlapping cases": 4236,
+    "top-third cases": 1412
+  },
+  "decided_by": "The slope's t lies between -2 and 2.",
+  "reading": "Non-overlap is taken as every other calendar day of 20:00-close bars per window, counted from the window's first one; the coin's mean is over its non-overlapping 48-bar grid across all windows; the top third is the pooled cases with forecast at or above the pooled 2/3 quantile; fewer than 100 cases is reported as not observable."
+}
