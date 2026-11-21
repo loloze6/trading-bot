@@ -1,0 +1,25 @@
+---
+line: 7.d not profitable
+backtest: 016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d1_efficient-rise-keeps-rising_1h
+idea tested: 016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d1_efficient-rise-keeps-rising
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3786 USD
+---
+## Findings
+- **F1:** The Calmar failure comes from the book's falls riding the coins' own declines. The chained book returns 26.8 % a year, but its deepest fall is 48.1 %. Its five deepest falls (48 %, 44 %, 42 %, 35 %, 34 %) each last 157 to 611 days. In each, the coins' own chained return to the trough is -37 % to -81 % (-81 % in the deepest, troughing in w14).
+- **F2:** The book is almost always long: 91 % of all bars. It is long on 98 % of "trending" bars and still on 83 % of "unknown" bars, where the 3-day return is not positive and the forecast is 0. The 72-bar minimum hold keeps it long there, so it carries most of each coin decline.
+- **F3:** The book's hourly gain is concentrated in coins whose 30-day return is positive.
+- **F4:** On the 72-bar grid, the idea's effect appears only with a positive 30-day return.
+- **F5:** Across all positive-forecast cases, the efficiency effect is graded only at its top. Excess 72-bar returns by efficiency quintile run -0.51 %, -0.22 %, -0.10 %, +0.20 %, +1.16 % (top t 2.87, 573 cases each). The idea's overall unusual move is -0.13 % per case, so most of the forecast range sizes the book on noise.
+- **F6:** Efficient rises close to the 30-day high continue most. In the top third of efficiency and the nearest third to the 30-day high, the excess 72-bar move is +1.44 % (t 2.80, 369 cases). Far from the high it is +0.43 % (t 0.70, 168 cases).
+- **F7:** The 30-day return grades the next 72-bar move among positive-forecast cases. Excess returns by 30-day-return quintile are -0.11 %, +0.13 %, +0.12 %, +0.40 %, +0.62 %. In the lowest quintile, 26 % of cases fall more than 5 % over the next 72 bars, against 15 % in the middle quintiles.
+
+## Ideas
+- `016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d1_efficient-rise-keeps-rising.d1_efficient-rise-within-uptrend` (from F1, F2, F3, F4, F5): The more efficiently a coin has risen over its past 3 days (its 3-day rise large relative to the sum of its absolute hourly moves), the more it keeps rising over the next 3 days, only while its 30-day return is positive.
+- `016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d1_efficient-rise-keeps-rising.d2_efficient-rise-near-highs` (from F4, F5, F6): The more efficiently a coin has risen over its past 3 days, the more it keeps rising over the next 3 days, the more so the closer its price stands to its highest close of the past 30 days.
+- `016-05_up-even-volume-continuation.g1_evening-utc-hour-drift.d1_efficient-rise-keeps-rising.d3_thirty-day-trend-continuation` (from F3, F7): The larger a coin's 30-day rise, the more it rises over the next 3 days.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean forecast-signed drift-adjusted 24-bar forward return on extreme grid bars",
+    "value": 0.0020430739409573856,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 3.3451284465358833
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases (and supporting difference > 0); reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "extreme minus other non-zero grid bars, mean signed drift-adjusted 24-bar return",
+    "value": 0.0014823877927672994,
+    "passed": true
+  },
+  "counts": {
+    "extreme grid cases": 7079,
+    "other non-zero grid cases": 10121
+  },
+  "decided_by": "Main mean above 0 with t >= 2 over at least 30 cases and supporting difference (extreme minus rest) above 0.",
+  "reading": "The grid is positions 0, 24, 48, ... of each window with a full 24-bar forward return inside the window, the coin's mean 24-bar return is the mean of these grid returns over all its windows, and the situation check takes every non-zero volatility-scaled run as the situation with the expected side opposite to its sign."
+}

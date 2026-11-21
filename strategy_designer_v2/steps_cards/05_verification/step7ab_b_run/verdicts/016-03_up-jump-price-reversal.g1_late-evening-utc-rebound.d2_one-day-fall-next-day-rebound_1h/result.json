@@ -1,0 +1,28 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "t of mean of (forecast/10) x (24-bar forward return minus coin's normal 24-bar drift), grid cases with forecast > 0",
+    "value": 0.0022159684896978235,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 3.1144265007633565
+    },
+    "threshold": "confirm if t >= 2 (with upper-minus-lower half difference > 0); reject if t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "mean excess 24-bar forward return, upper half minus lower half at median forecast",
+    "value": 0.002898078622117828,
+    "passed": true
+  },
+  "counts": {
+    "grid cases with forecast > 0": 8432,
+    "upper half cases": 4216,
+    "lower half cases": 4216
+  },
+  "decided_by": "The main measure's t is 2 or more and the upper-half minus lower-half difference is positive.",
+  "reading": "Cases are bars at positions 0, 24, 48, ... of each window with forecast > 0 and a forward return inside the window; the coin's normal drift is the mean 24-bar return over all grid bars of all its windows; the upper half is forecast > median and the lower half forecast <= median; the plan's 200-case minimum, when not reached, gives 'not observable' as the workflow requires."
+}
