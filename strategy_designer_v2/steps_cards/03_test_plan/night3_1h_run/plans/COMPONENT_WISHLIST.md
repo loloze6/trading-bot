@@ -2,9 +2,6 @@
 
 One block per idea that needs components the catalogue does not have.
 
-## 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds_1h
-- Component: DropInMeanAbsDailyMoves: (close[t] / close[t-24] - 1) / mean over the last 720 bars of abs(close[i] / close[i-24] - 1), from closes; signed, and more negative the deeper the 24-hour fall in multiples of the 30-day average absolute daily return | measures: situation
-
 ## 018-04_hourly-surge-multiday-continuation.d2_post-selloff-surge-fades_1h
 - Component: ReturnToMeanAbsReturnRatio: (close[t] / close[t-24] - 1) / mean over the last 720 bars of abs(close[i] / close[i-24] - 1), from closes only; it is signed and grows as the 24-bar rise becomes a larger multiple of the coin's usual daily move | measures: situation
 

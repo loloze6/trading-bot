@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 120-bar move of long cases (return minus coin's normal 120-bar drift)",
+    "value": 0.003505473289633241,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.845955542837965
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 over >= 30 cases and supporting check passes; reject: mean < 0 with t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "upper-half minus lower-half mean unusual move (by signal forecast)",
+    "value": 0.004967792429124465,
+    "passed": true
+  },
+  "counts": {
+    "cases": 4984,
+    "upper_half_cases": 2492,
+    "lower_half_cases": 2492
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2.",
+  "reading": "A case is the first long bet (forecast rise >= 2 points from its lowest level since the last bet) in each 120-bar grid cell counted from each window's first row, kept only if its 120-bar return lies inside the window; the halves are the forecast-sorted lower and upper n//2 cases (middle case dropped when n is odd); the situation is a positive raw component value (upside surge)."
+}

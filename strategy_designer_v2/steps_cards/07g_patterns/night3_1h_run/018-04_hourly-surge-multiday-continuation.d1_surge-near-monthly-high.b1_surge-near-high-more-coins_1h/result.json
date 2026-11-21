@@ -1,0 +1,47 @@
+{
+  "line": "7.g",
+  "backtest": "018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high.b1_surge-near-high-more-coins_1h",
+  "step5": "inconclusive",
+  "step6": "not profitable enough",
+  "explorations": 2,
+  "cost": 0.4564774,
+  "findings": {
+    "F1": "The 5-day move rises step by step with the coin's own 30-day return at an hourly close. On non-overlapping 120-hour cells, the top fifth of 30-day returns is followed by an unusual move of +1.26 % (t 2.95, 1076 cases, strength 0.107) and the fourth fifth by +0.52 % (t 1.29). The three lower fifths are followed by \u22120.55 %, \u22120.99 % and \u22120.67 % (t \u22121.57, \u22123.28, \u22122.14). The t's pool 19 coins over shared dates, so they overstate independence.",
+    "F2": "The book earns almost only while the coin's 30-day return is high. Its hourly position gain is 1.59 and 1.55 bps in the top two fifths of 30-day return, against 0.15, \u22120.74 and 0.25 bps in the three lower fifths (about 107,500 position-hours each).",
+    "F3": "Nearness to the 30-day high carries the move only at the very top. Cells closest to the high (about 2 % below on average) are followed by +1.25 % unusual over 5 days (t 2.86, 1137 cases). The next three fifths give +0.17 %, \u22120.10 % and \u22121.33 % (t \u22124.32, about 27 % below the high), and the farthest fifth gives \u22120.02 %. The relation is not monotone.",
+    "F4": "Near the 30-day high, an upside 24-hour return adds to the move:",
+    "F5": "The size of the 24-hour surge, on its own, does not grade the 5-day move. By surge decile the unusual move runs +0.35 %, +0.70 %, \u22120.03 %, \u22121.11 %, \u22121.35 %, \u22120.15 %, +0.22 %, +0.23 %, \u22120.33 % and +1.43 % (top decile t 1.90). It is not monotone, which matches the tested idea's t of 1.85.",
+    "F6": "The book is mostly the coins' own direction:",
+    "F7": "Next-24-hour unusual returns differ by weekday:"
+  },
+  "ideas": [
+    {
+      "idea": "The higher a coin's 30-day return at an hourly close, the more its price rises over the next 5 days beyond its usual 5-day return.",
+      "consequence": "A trader would hold a coin long for days in proportion to how strongly it has risen over the past month, and refuse longs in coins whose month has been flat or falling.",
+      "name": "monthly return five-day continuation",
+      "from": "F1, F2, F6",
+      "refs": [
+        "F1",
+        "F2",
+        "F6"
+      ]
+    },
+    {
+      "idea": "When a coin's 24-hour return, read at an hourly close, is positive, the price rises over the next 5 days by more than the coin's usual 5-day return, and the larger the coin's 30-day return at that hour, the larger the rise.",
+      "consequence": "A trader would act on hourly upside surges only in proportion to the month's prior rise, and refuse surges that come after a month-long decline.",
+      "name": "surge graded by monthly return",
+      "from": "F1, F2, F4, F5",
+      "refs": [
+        "F1",
+        "F2",
+        "F4",
+        "F5"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high.b1_surge-near-high-more-coins.g1_monthly-return-five-day-continuation",
+    "018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-high.b1_surge-near-high-more-coins.g2_surge-graded-by-monthly-return"
+  ],
+  "no_ideas": null
+}
