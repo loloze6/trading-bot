@@ -43,3 +43,4 @@ closed ones keep their decisions and reasons. Numbers are fixed: a new topic tak
 | 36 | [Settings counted in bars, carried from daily to finer timeframes](36_fixed-bar-counts-across-timeframes.md) | research: step 3 guide; engine defaults | open |
 | 37 | [Long runs without the two-hour limit](37_long-runs-without-the-two-hour-limit.md) | research: how runs are launched | open (parked) |
 | 38 | [The backtest's cost of a trade against real Kraken futures](38_cost-of-a-trade-against-kraken-futures.md) | engine settings (shared config) | built 2026-11-20 (an estimate at a 10k USD order); refinement and maker parked |
+| 39 | [The idea's size against the cost, coin by coin](39_size-against-cost-per-coin.md) | research: steps 5, 7 | open (parked: about 2 points of accuracy gained; reopen with topic 31) |
