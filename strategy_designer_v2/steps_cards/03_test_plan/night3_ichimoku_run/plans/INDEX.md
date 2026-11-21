@@ -1,5 +1,6 @@
 021-01_above-rising-cloud-continues-up.b1_above-rising-cloud-all-coins_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, ADA, DOGE, LINK, TRX, UNI, AAVE, AVAX, SOL, INJ, NEAR, SUI, TAO, ONDO, 1d, folds A, B, C, D]
 021-01_above-rising-cloud-continues-up_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
+021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues_1d: missing-components: The gradient needs a short that is largest when the cloud's slope is near zero and shrinks as the fall [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 021-02_below-falling-cloud-continues-down_1d: plan (fit: exact) [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 021-03_thin-cloud-upward-breakout_1d: missing-components: The cross needs the side of the cloud the close was on before it entered or jumped the cloud. That [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
 021-04_thin-cloud-downward-breakdown_1d: missing-components: The forecast must grow, inside the below-cloud regime, as the cloud thins, and every combination tried fails. `IchimokuCloudWidthComponent` standardised grows [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
