@@ -15,20 +15,21 @@ One row per idea run; every status is read from the step's own result file. Each
 | 021-04_thin-cloud-downward-breakdown | - | plan | inconclusive (-0.10) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: no ideas: The downward cross through the cloud shows no move beyond the coin's normal drift: about zero overall (t -0.10), no grading by thinness (rank correlation 0.01), no coin or period where it holds clearly, and opposite signs across years (2018 t 3.26, 2021 t -2.16). This is a clear rejection in substance, and neither an amended version nor more data is supported (F1, F2, F3, F6).; 7.d: 021-04_thin-cloud-downward-breakdown.d1_cloud-breakdown-after-deep-fall, 021-04_thin-cloud-downward-breakdown.d2_falling-coin-under-cloud, 021-04_thin-cloud-downward-breakdown.d3_distance-above-cloud-rises, 021-04_thin-cloud-downward-breakdown.d4_thick-cloud-supports-rise; 7.g: 021-04_thin-cloud-downward-breakdown.g1_two-week-momentum-one-week-follow-through, 021-04_thin-cloud-downward-breakdown.g2_large-day-shock-continues-weekly | 1.52 | 9.4 |
 | 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues | 021-02_below-falling-cloud-continues-down | plan | inconclusive (+0.69) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.b1_slow-cloud-fall-more-coins, 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.b2_gentle-cloud-fall-underperforms; 7.d: 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.d1_slow-cloud-fall-shallow-decline, 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.d2_collapsed-cloud-rebounds-up, 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.d3_slow-fall-still-falling; 7.g: 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.g1_next-day-rebound-after-falls, 021-02_below-falling-cloud-continues-down.b1_slow-cloud-fall-continues.g2_next-day-giveback-after-rises | 1.45 | 7.4 |
 | 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins | 021-03_thin-cloud-upward-breakout | plan | inconclusive (+1.59) | not profitable enough (failed: Calmar) | - | 7.b: 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins.b1_thin-cloud-after-strong-run, 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins.b2_exhausted-thick-cloud-breakout; 7.d: 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins.d1_calm-thin-cloud-upward-breakout, 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins.d2_unextended-thin-cloud-breakout; 7.g: 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins.g1_extended-cloud-breakouts-fade, 021-03_thin-cloud-upward-breakout.b1_cloud-breakout-all-coins.g2_calm-coins-outrun-drift | 1.69 | 12.5 |
+| 021-03_thin-cloud-upward-breakout.b2_cloud-breakout-after-a-fall | 021-03_thin-cloud-upward-breakout | plan | not observable (+0.69) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar, Trades per day) | - | 7.a: 021-03_thin-cloud-upward-breakout.b2_cloud-breakout-after-a-fall.a1_cloud-breakout-after-fall-all-coins, 021-03_thin-cloud-upward-breakout.b2_cloud-breakout-after-a-fall.a2_cloud-breakout-after-fall-4h; 7.d: 021-03_thin-cloud-upward-breakout.b2_cloud-breakout-after-a-fall.d1_cloud-cross-not-overextended; 7.g: 021-03_thin-cloud-upward-breakout.b2_cloud-breakout-after-a-fall.g1_next-day-rebound-after-sharp-falls | 1.24 | 6.7 |
 
 ## Consumption
-11 ideas, 19.66 USD, 102.6 minutes in all.
+12 ideas, 20.89 USD, 109.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.17 | 10.0 |
-| step4_backtest | 0.00 | 30.1 |
-| step5_verdict | 1.76 | 7.7 |
-| step6_check | 0.00 | 0.2 |
+| step3_plan | 2.26 | 10.7 |
+| step4_backtest | 0.00 | 32.0 |
+| step5_verdict | 1.93 | 8.5 |
+| step6_check | 0.00 | 0.3 |
 | chart_files | 0.00 | 0.1 |
-| step7_7.a | 0.00 | 0.0 |
+| step7_7.a | 0.25 | 0.8 |
 | step7_7.e | 0.00 | 0.0 |
 | step7_7.c | 0.00 | 0.0 |
 | step7_7.b | 3.82 | 12.1 |
-| step7_7.g | 4.26 | 14.1 |
-| step7_7.d | 7.64 | 28.1 |
+| step7_7.g | 4.64 | 15.4 |
+| step7_7.d | 7.99 | 29.3 |
