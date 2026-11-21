@@ -47,3 +47,4 @@ closed ones keep their decisions and reasons. Numbers are fixed: a new topic tak
 | 40 | [Repository clean-up, night 3](40_repository-clean-up-night-3.md) | the repository | part done (bets in `common/`, the diagnosis in `34_review/`); 3 changes proposed |
 | 41 | [Is a paying book a new source of profit, or one we already have?](41_does-the-idea-add-beyond-its-filter.md) | research: a function next to the unseen test; line 7.f; common | designing: definitions agreed; nothing built |
 | 42 | [Two more measures for step 6: standard deviation and total profit](42_two-more-measures-for-step-6.md) | research: step 6 | open (parked) |
+| 43 | [The findings register](43_the-findings-register.md) | research: common, step 7 | closed 2026-11-21: switched off and deleted |

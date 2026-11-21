@@ -17,8 +17,7 @@ One backtest record (its bars, its trades, its book day by day), the idea it tes
 trade cost the backtest** (operator, 2026-11-20): step 5's `size.json` ("not measured" when the verdict has none), and
 the cost of a trade the backtest applied, read from its record (`../common/measures.md`, "The cost of a trade"). Why:
 of 103 confirmed ideas that did not pay, 53 had a move per case smaller than the cost of a trade, and none of those
-paid (`../runs/RETRO_DIAGNOSIS_RUN.md`); a line that does not see it proposes more ideas of the same small kind. And the
-findings register (`../common/findings.md`): what earlier runs measured, as evidence, not rules.
+paid (`../runs/RETRO_DIAGNOSIS_RUN.md`); a line that does not see it proposes more ideas of the same small kind.
 
 ## Output (every line)
 One analysis per backtest: findings, then ideas, each idea in step 2's format, or "no ideas" with the reason.
@@ -90,7 +89,7 @@ One analysis per backtest: findings, then ideas, each idea in step 2's format, o
 
 **Model.** Opus. **Cost.** About 0.3 USD and 1 to 2 minutes per analysis.
 
-**Prompts.** `helper/common_rules.md` (with the findings register, `../common/findings.md`, pasted at `{{FINDINGS}}`) + the workflow's measuring definitions (`../common/measures.md`) + the line's `line_prompt.md` + `helper/output_one_call.md`, with the definition of an idea (`../common/idea_definition.md`); shared files are pasted where a prompt names them (`{{NAME}}`).
+**Prompts.** `helper/common_rules.md` + the workflow's measuring definitions (`../common/measures.md`) + the line's `line_prompt.md` + `helper/output_one_call.md`, with the definition of an idea (`../common/idea_definition.md`); shared files are pasted where a prompt names them (`{{NAME}}`).
 
 ## Quality criteria (every line)
 - **Every finding states its numbers,** and they are in its exploration results.
