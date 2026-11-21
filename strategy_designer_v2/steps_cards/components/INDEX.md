@@ -82,3 +82,4 @@ night3_learned_run | 022-02_combination-beats-best-single_1d | PastBestSingleSig
 night3_learned_run | 022-03_combined-extremes-larger-moves_1d | PerformanceWeightedSignal | built: PastPredictivePowerWeightedCompositeComponent {"signal": "momentum", "weighting": "single"}
 night3_learned_run | 022-04_signal-weights-carry-forward_1d | PastPredictivePowerWeightedSignal | exists: PastPredictivePowerWeightedCompositeComponent {"signal": "momentum", "weighting": "single"}
 night3_learned_run | 022-04_signal-weights-carry-forward_1d | TrailingPredictivePower | built: SignalPredictivePowerComponent {"corr_lookback": 365, "horizon": 5, "signal": "momentum"}
+night3_learned_run | 022-04_signal-weights-carry-forward.b1_nearness-power-turns-around_1d | centred-power counter-bet | built: ExcessPredictivePowerZComponent {"corr_lookback": 365, "high_period": 90, "horizon": 5, "mean_window": 365, "z_window": 365}

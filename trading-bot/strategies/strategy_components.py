@@ -3968,3 +3968,92 @@ class SignalPredictivePowerComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return self.corr_lookback + self._lag() + 1
+
+
+class ExcessPredictivePowerZComponent(SubStrategyComponent):
+    """
+    Excess past predictive power of nearness to the high, times that nearness's z-score:
+
+        s(i)    = close[i] / max(close[i - high_period + 1 .. i]) - 1
+        y(i)    = close[i + horizon] / close[i] - 1
+        w(u)    = Pearson corr of s(i) with y(i), i = u - corr_lookback .. u - horizon
+                  (0 when s or y is flat over those rows)
+        wbar(t) = mean of w(t - mean_window) .. w(t - 1)
+        z(t)    = (s(t) - mean(S)) / std(S, ddof 1), S = s(t - z_window + 1 .. t)  (0 when std is 0)
+        raw_value = (w(t) - wbar(t)) * z(t)
+
+    Range and sign: signed. abs(w - wbar) <= 2 and abs(z) <= (z_window - 1) / sqrt(z_window), so the value is
+    at most about 38.1 in size at the defaults. It is positive when the power is above its usual level and s is
+    above its mean. `negate` gives the counter-bet -(w - wbar) * z.
+    Warm-up: max(mean_window + corr_lookback, z_window - 1) + high_period rows, bar t included (820 at defaults).
+    NaN: a NaN close, or a close not above 0, in those rows gives NaN.
+    Building raises for high_period < 2, horizon < 1, corr_lookback - horizon < 2, z_window < 2 or
+    mean_window < 1.
+
+    WHY THIS CANNOT LEAK: it reads only the `close` column of the last get_required_periods() rows up to and
+    including bar t. Each y(i) used by w(u), u <= t, ends at close[i + horizon] with i + horizon <= u <= t.
+    """
+
+    def __init__(self, name="ExcessPredictivePowerZ", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.high_period = int(self.parameters.get("high_period", 90))
+        self.corr_lookback = int(self.parameters.get("corr_lookback", 365))
+        self.horizon = int(self.parameters.get("horizon", 5))
+        self.z_window = int(self.parameters.get("z_window", 365))
+        self.mean_window = int(self.parameters.get("mean_window", 365))
+        if self.high_period < 2:
+            raise ValueError(f"ExcessPredictivePowerZComponent: high_period must be >= 2, got {self.high_period}")
+        if self.horizon < 1:
+            raise ValueError(f"ExcessPredictivePowerZComponent: horizon must be >= 1, got {self.horizon}")
+        if self.corr_lookback - self.horizon < 2:
+            raise ValueError("ExcessPredictivePowerZComponent: corr_lookback - horizon must be >= 2")
+        if self.z_window < 2:
+            raise ValueError(f"ExcessPredictivePowerZComponent: z_window must be >= 2, got {self.z_window}")
+        if self.mean_window < 1:
+            raise ValueError(f"ExcessPredictivePowerZComponent: mean_window must be >= 1, got {self.mean_window}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        n = self.get_required_periods()
+        c = data['close'].astype(float).to_numpy()[-n:]
+        self.confidence = 1.0
+        if np.isnan(c).any() or not (c > 0).all():
+            self._raw_value = float("nan")
+            return
+        h, L, H, Z, M = self.high_period, self.corr_lookback, self.horizon, self.z_window, self.mean_window
+        t = n - 1
+        rmax = pd.Series(c).rolling(h).max().to_numpy()
+        s = c / rmax - 1.0
+        y = np.full(n, np.nan)
+        y[:n - H] = c[H:] / c[:n - H] - 1.0
+
+        def corr_at(u):
+            xs = s[u - L:u - H + 1]
+            ys = y[u - L:u - H + 1]
+            dx = xs - xs.mean()
+            dy = ys - ys.mean()
+            sxx = float(np.dot(dx, dx))
+            syy = float(np.dot(dy, dy))
+            if not (sxx > 0 and syy > 0):
+                return 0.0
+            return float(np.dot(dx, dy) / np.sqrt(sxx * syy))
+
+        w_now = corr_at(t)
+        w_past = [corr_at(u) for u in range(t - M, t)]
+        wbar = float(np.mean(w_past))
+        win = s[t - Z + 1:t + 1]
+        sd = float(np.std(win, ddof=1))
+        z = float((s[t] - win.mean()) / sd) if sd > 0 else 0.0
+        self._raw_value = float((w_now - wbar) * z)
+        self.debug_info = {'w': w_now, 'w_mean': wbar, 'z': z}
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.mean_window + self.corr_lookback, self.z_window - 1) + self.high_period
