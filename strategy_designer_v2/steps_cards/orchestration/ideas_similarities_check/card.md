@@ -68,7 +68,7 @@ orchestration/ideas_similarities_check/
     comparisons/<run>__<id>.json and .md   its comparison with every other book and with holding
     COMPARISONS.md             one line per book: its nearest relative, share explained, who leads, what is left (t)
 ```
-The bar returns are committed (a few hundred kilobytes per hourly book): the records' bars are kept local only, and a
+The bar returns are committed (about 1.3 MB per hourly book, 7 significant digits): the records' bars are kept local only, and a
 new session must find the register whole.
 
 ## Who calls it, and when
@@ -121,8 +121,8 @@ Code: the numbers. The operator: what a book adds, which to keep.
 ## Done when
 The tests pass; daily returns equal step 6's on 3 records; the register holds every paying book on today's engine; the
 comparisons on night 3's books agree with the hand checks.
-Status: **built, not yet proven** (2026-11-21): the function and its 9 tests (they pass); daily returns identical to step 6's on 3
-records. Next: the register filled with the paying books rerun on today's engine, then the proof on night 3's books.
+Status: **met** (`validation/reading.md`, 2026-11-22): 35 paying books in the register; the comparisons agree with night 3's
+hand checks.
 
 ## What it changes elsewhere (each in its own card)
 - None yet (`run_idea`'s call is open: topic 41).

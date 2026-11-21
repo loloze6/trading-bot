@@ -89,7 +89,7 @@ def returns_file(k, root=REGISTER):
 def series(k, timeframe, root=REGISTER, column="book"):
     d = pd.read_csv(returns_file(k, root))
     d = d[d["timeframe"] == timeframe]
-    return pd.Series(d[column].to_numpy(float), index=pd.to_datetime(d["period"], utc=True)).sort_index()
+    return pd.Series(d[column].to_numpy(float), index=pd.to_datetime(d["period"], unit="s", utc=True)).sort_index().dropna()
 
 
 def books(root=REGISTER):
@@ -118,7 +118,10 @@ def add(record, run, root=REGISTER, steps=STEPS):
     bar = bar_of(record)
     frames = []
     for tf in timeframes_from(bar):
-        d = book_returns(record, tf); d.insert(0, "timeframe", tf); frames.append(d)
+        d = book_returns(record, tf); d.insert(0, "timeframe", tf)
+        if tf != bar:
+            d["hold"] = float("nan")          # holding is compared on the book's own bar size only
+        frames.append(d)
     m = json.loads(next(record.glob("*/w*/manifest.json")).read_text())
     row = {"key": key(run, rid), "run": run, "id": rid, "bar": bar,
            "coins": sorted(p.name for p in record.iterdir() if p.is_dir()),
@@ -129,8 +132,8 @@ def add(record, run, root=REGISTER, steps=STEPS):
         return None
     (root / "returns").mkdir(parents=True, exist_ok=True)
     out = pd.concat(frames, ignore_index=True)
-    out["period"] = out["period"].astype(str)
-    out.to_csv(returns_file(row["key"], root), index=False, float_format="%.10g", compression="gzip")
+    out["period"] = pd.to_datetime(out["period"], utc=True).astype("int64") // 10**9   # UTC seconds
+    out.to_csv(returns_file(row["key"], root), index=False, float_format="%.7g", compression="gzip")   # 7 digits: far below what a share explained shows
     write_books(rows + [row], root)
     return row
 

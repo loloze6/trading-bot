@@ -1,6 +1,6 @@
 # Topic 41: is a paying book a new source of profit, or one we already have?
 
-Status: open (built, not yet proven: `orchestration/ideas_similarities_check/`; its reader and its call by `run_idea` to decide)  
+Status: open (built and proven 2026-11-22: `orchestration/ideas_similarities_check/`, `validation/reading.md`; its reader and its call by `run_idea` to decide)  
 Where: research: a function of its own in `orchestration/` (next to `unseen_test`), read by the operator (other readers open);
 shared definitions in `common/measures.md`  
 Opened: 2026-11-21, the designer session, from night 3 (`runs/NIGHT3_RUN.md`, the "Check" sections); designed the same
