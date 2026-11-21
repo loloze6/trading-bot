@@ -3704,3 +3704,82 @@ class HourOfDayComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return 2
+
+
+class IchimokuCloudPositionComponent(SubStrategyComponent):
+    """
+    Percent distance of the close from the top of the Ichimoku cloud plotted at bar t:
+
+        e = t - displacement
+        M(p) = (max(high[e-p+1 .. e]) + min(low[e-p+1 .. e])) / 2
+        span A = (M(tenkan_period) + M(kijun_period)) / 2
+        span B = M(senkou_period)
+        top = max(span A, span B)
+        raw_value = (close[t] - top) / top x 100
+
+    Range & sign: -100 and up, unbounded above, signed. It is positive when the close is above the cloud top and
+    negative at or below it. It grows continuously as the close sits further above the cloud. Units: percent of
+    the cloud top.
+    Warm-up: max(tenkan_period, kijun_period, senkou_period) + displacement rows, bar t included (78 at the
+    defaults).
+    NaN: a NaN high or low in any span window, or a NaN close[t], gives NaN. A top not above 0 gives NaN (never
+    on real bars).
+    Building the component raises for any period below 1 or a displacement below 0.
+
+    WHY THIS CANNOT LEAK: it reads high and low only on rows up to t - displacement, and the close only on row t
+    (the last row of data). Every row it reads is known at bar t's close.
+    """
+
+    def __init__(self, name="IchimokuCloudPosition", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.tenkan_period = int(self.parameters.get("tenkan_period", 9))
+        self.kijun_period = int(self.parameters.get("kijun_period", 26))
+        self.senkou_period = int(self.parameters.get("senkou_period", 52))
+        self.displacement = int(self.parameters.get("displacement", 26))
+        for nm, v in (("tenkan_period", self.tenkan_period), ("kijun_period", self.kijun_period),
+                      ("senkou_period", self.senkou_period)):
+            if v < 1:
+                raise ValueError(f"IchimokuCloudPositionComponent: {nm} must be >= 1, got {v}")
+        if self.displacement < 0:
+            raise ValueError(
+                f"IchimokuCloudPositionComponent: displacement must be >= 0, got {self.displacement}")
+        self._raw_value = 0.0
+
+    def update(self, data):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        h = data['high'].astype(float).to_numpy()
+        lo = data['low'].astype(float).to_numpy()
+        c = data['close'].astype(float).to_numpy()
+        last = len(c) - 1
+        end = last - self.displacement
+
+        def mid(p):
+            hw = h[end - p + 1:end + 1]
+            lw = lo[end - p + 1:end + 1]
+            if np.isnan(hw).any() or np.isnan(lw).any():
+                return float("nan")
+            return (float(hw.max()) + float(lw.min())) / 2.0
+
+        span_a = (mid(self.tenkan_period) + mid(self.kijun_period)) / 2.0
+        span_b = mid(self.senkou_period)
+        close_t = float(c[last])
+        if np.isnan(span_a) or np.isnan(span_b) or np.isnan(close_t):
+            self._raw_value = float("nan")
+        else:
+            top = max(span_a, span_b)
+            if not top > 0:
+                self._raw_value = float("nan")
+            else:
+                self._raw_value = float((close_t - top) / top * 100.0)
+            self.debug_info = {'span_a': span_a, 'span_b': span_b, 'cloud_top': top}
+        self.confidence = 1.0
+
+    def is_ready(self):
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self):
+        return max(self.tenkan_period, self.kijun_period, self.senkou_period) + self.displacement
