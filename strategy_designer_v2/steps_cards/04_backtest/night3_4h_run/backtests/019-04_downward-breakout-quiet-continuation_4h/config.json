@@ -1,0 +1,91 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "brk",
+        "class": "strategies.strategy_components.DistanceFromHighComponent",
+        "params": {
+          "period": 12,
+          "source": "high",
+          "exclude_current": 1,
+          "form": "percent",
+          "extreme": "low"
+        }
+      }
+    ],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "brk",
+              "op": "lt",
+              "value": 0.0
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "width",
+            "class": "strategies.strategy_components.RangeCompressionRatioComponent",
+            "params": {
+              "short_period": 12,
+              "long_period": 180,
+              "exclude_current": 2,
+              "form": "width",
+              "base": "mean_bar_range"
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 180,
+                  "min_periods": 45
+                }
+              }
+            ]
+          },
+          {
+            "id": "offset",
+            "class": "strategies.strategy_components.BuyAndHoldStrategy",
+            "params": {},
+            "weight": 2.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 180,
+                  "min_periods": 45
+                }
+              },
+              {
+                "op": "negate"
+              }
+            ]
+          }
+        ]
+      },
+      "unknown": null,
+      "mean_reversion": null,
+      "chop": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 360,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 2190,
+      "max_allocation": 2
+    },
+    "min_holding_bars": 18
+  }
+}
