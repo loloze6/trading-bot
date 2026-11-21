@@ -16,21 +16,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 019-03_upward-breakout-quiet-continuation.d1_breakout-after-quiet-week | 019-03_upward-breakout-quiet-continuation | missing-components | - | - | - | - | 0.05 | 0.4 |
 | 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend | 019-04_downward-breakout-quiet-continuation | plan | inconclusive (+1.74) | not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar) | - | 7.b: 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b1_quiet-breakdown-more-coins, 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.b2_wide-breakdown-rebound-uptrend; 7.d: 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.d1_wide-dip-rebound-in-uptrend, 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.d2_narrow-breakdown-three-days-only, 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.d3_deep-drawdown-low-rebound; 7.g: 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.g1_sharp-drop-rebound-uptrend, 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.g2_one-day-fall-next-day-rebound, 019-04_downward-breakout-quiet-continuation.d1_quiet-breakdown-in-uptrend.g3_uptrend-breakdown-snaps-back | 1.61 | 8.5 |
 | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week | 019-03_upward-breakout-quiet-continuation | plan | inconclusive (+2.31) | profitable enough | - | 7.b: 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b1_break-size-in-ranges, 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.b2_large-breakout-six-day-continuation; 7.e: 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation, 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e2_pullback-inside-rising-week, 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e3_weekly-momentum-over-twelve-days; 7.g: 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.g1_wide-range-breakdown-rebound, 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.g2_failed-breakout-after-falling-week | 1.78 | 7.2 |
+| 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation | 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week | plan | confirmed (+3.34) | not profitable enough (failed: Sharpe minus holding's Sharpe, Mean daily return, Calmar) | - | 7.d: 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation.d1_vol-scaled-week-rising-month, 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation.d2_extreme-weeks-carry-momentum; 7.g: 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation.g1_vol-scaled-momentum-twelve-day-hold, 019-03_upward-breakout-quiet-continuation.b2_large-breakout-in-rising-week.e1_volatility-scaled-weekly-momentum-continuation.g2_weak-week-downside-continuation | 1.02 | 5.7 |
 
 ## Consumption
-12 ideas, 12.07 USD, 85.1 minutes in all.
+13 ideas, 13.09 USD, 90.8 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 1.78 | 7.3 |
-| step4_backtest | 0.00 | 37.0 |
-| step5_verdict | 1.41 | 5.4 |
-| step6_check | 0.00 | 0.6 |
+| step3_plan | 1.83 | 7.6 |
+| step4_backtest | 0.00 | 38.8 |
+| step5_verdict | 1.56 | 6.1 |
+| step6_check | 0.00 | 0.7 |
 | chart_files | 0.00 | 0.4 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.10 | 0.4 |
 | step7_7.e | 0.89 | 3.0 |
-| step7_7.d | 2.03 | 6.7 |
+| step7_7.d | 2.41 | 8.1 |
 | step7_7.b | 1.52 | 5.1 |
-| step7_7.g | 4.35 | 14.6 |
+| step7_7.g | 4.78 | 16.1 |
 | unseen_test | 0.00 | 4.7 |
