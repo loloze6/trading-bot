@@ -102,3 +102,106 @@ No merge into master; no change to a step during the run; nothing is tuned to th
 - 08:30: retest done (reading above). Slow brief 17 ideas, 7 confirmed, 0 profitable (three of the confirmed are time-of-day ideas: t +7.68, +5.27, +4.42). About 35 USD spent.
 - 08:3x: operator's go: the intraday brief after the current slow stretch (the slow brief pauses).
 - 09:1x: runs stopped in this session (operator: the design session and a new run session split). intraday_1h_run stopped mid turn 8 (017-02; resumes from its files); slow_1h_run paused at 25.55 USD. The run session continues both from master.
+
+## Day continuation by the run session (brief written 2026-11-19 09:54 UTC, before the run)
+**Purpose:** finish the two hourly briefs within the operator's budget: `intraday_1h_run` (brief 017, funding-settlement
+clock) up to 90 USD in all, then `slow_1h_run` (brief 016, grind versus jump) up to 90 USD in all. One loop at a time
+(both call the components step, which writes the shared components file). Each stretch is a tracked task bounded by the
+run's spend + 3 USD; the next stretch is launched when one ends.
+
+**State at the start (measured):** intraday 2.73 USD, 6 ideas (1 tested: inconclusive t +0.85, not profitable; 4 wait for
+components, 1 untestable), turn 8 (017-02) cut mid-turn, resumes. Slow 25.55 USD, 19 ideas: 18 planned, 9 confirmed
+(t +2.65 to +7.68), 0 profitable: all 18 books fail all 6 measures of step 6, Sharpe included.
+
+**Expected outcomes, fixed now:**
+- **Intraday:**
+  - **I-A.** At least one idea confirmed AND profitable (it gets the unseen test on 2016-17).
+  - **I-B. (expected)** Some clock effects confirmed, none profitable: a few hours a day of edge does not pay 15 to
+    25 bps a round trip, as with the slow brief's time-of-day ideas.
+  - **I-C.** Few or none confirmed: the settlement clock leaves no trace in spot hourly returns.
+- **Slow:** **S-A** one or more profitable; **S-B (expected)** more confirmed ideas, still 0 profitable, its lines
+  drifting further to time-of-day signals; **S-C** the lines run dry (no candidate left).
+- **Time, not money, is the likely limit:** about 1 USD and 15 to 60 minutes a turn, so 87 USD is far more turns than
+  a day holds. The reading says how far each run got.
+- **Pre-registered last night, checked here:** the slow brief should do better than the intraday one.
+
+## Journal of the day (run session)
+- 09:53 UTC: container fresh (up 0 min); working tree clean, so no build was cut. Venv created. Intraday resumes first.
+- 09:54: intraday stretch 1 launched (tracked task, --budget 5.73). Check-ins every 45 minutes.
+- 10:19: intraday stretch 1 ended on its budget (5.70 USD, 2 turns, 25 min). 017-03 (recovery after settlement, after an
+  uptrend): inconclusive t +1.39, not profitable (6 of 6 failed). 017-04 (decline after settlement, after a downtrend):
+  rejected t -5.89 (the opposite of the claim, strongly), not profitable (6 of 6).
+- 10:2x: found that 017-02 (re-planned 08:55 once unblocked, cut before its backtest) was not finished on resume: the loop
+  reads it as finished because its old refusal row is in the table (POTENTIAL_ADJUSTMENTS.md, "an unblocked idea cut
+  mid-run"). The only such idea in both runs. Workaround: `run_idea` on 017-02 by hand, the loop stopped; then the loop resumes.
+- 10:31: 017-02 finished by hand: inconclusive t +1.30, not profitable (6 of 6), lines 7.b, 7.d, 7.g proposed ideas; 1.35 USD. Run at 7.00 USD.
+- 10:41: check-in, no restart (up 48 min). Stretch 2 on turn 11: 017-05 (settlement move reverses), unblocked, now planned by step 3; backtest running. 7.10 USD.
+- 11:05: stretch 2 ended on its budget (10.50 USD, 3 turns, 33 min). 017-05 (the move into a settlement reverses after it):
+  confirmed t +5.10, not profitable (6 of 6). 017-01.g1 (midday fade of a 3-day trend): inconclusive t +0.42. 017-02.g1
+  (late-evening rise after a daily fall): rejected t -3.73. None profitable. Stretch 3 launched (--budget 13.50).
+- 11:28: check-in, no restart (up 1h35). 017-03.g1 (a one-hour move reverses the next hour): inconclusive although its main
+  t is +10.23 (417k bars): the plan's supporting check (stronger when volatility is high) is t +1.69, below 2; the gain
+  is 0.8 bps an hour before costs, against 15 to 25 bps a round trip; not profitable. Turn 15 (017-04.c1) backtesting.
+- 11:53: stretch 3 ended on its budget (13.61 USD, 3 turns, 48 min). 017-03.g1 inconclusive t +10.23 (above); 017-04.c1
+  (post-settlement decline over four hours): confirmed t +4.85; 017-04.c2 (rebound after falls, off settlement hours):
+  confirmed t +4.08; none profitable (6 of 6 failed each). Run so far: 13 ideas tested, 3 confirmed, 0 profitable.
+  Stretch 4 launched (--budget 16.61).
+- 12:16: check-in, no restart (up 2h23). 017-04.g1 (rebound at the US open after falls): confirmed t +4.06, not profitable
+  (6 of 6). 017-05.g1 refused by step 3 (missing component); the loop called the components step (turn 18, 10 turns since
+  its last call): built `MeanAbsoluteMoveRankComponent` (lookback 720, period 168), 0.33 USD; 017-05.g1 unblocked and
+  re-planned at once (turn 19, backtesting). Build committed on the working branch (standing go). 14.9 USD.
+- 12:51: stretch 4 ended on its budget (16.99 USD, 4 turns and a components call, 58 min). 017-05.g1 (volatile coins' short
+  dip rebounds): confirmed t +13.80; 017-01.g2 (an hour's move reverses, by volatility): confirmed t +12.28; neither
+  profitable. Example of why: 017-05.g1's book trades 3.9 times a day and loses 0.11 % a day after costs (Sharpe -2.20).
+  Run so far: 16 ideas tested, 6 confirmed, 0 profitable. Stretch 5 launched (--budget 19.99).
+- 13:03: check-in, no restart (up 3h10). Stretch 5 on turn 21 (017-02.g2, hourly reversal in volatile periods), backtesting. 17.1 USD.
+- 13:50: check-in, no restart (up 3h57). 017-02.g2 (hourly reversal in volatile periods): confirmed t +10.25, not profitable; its backtest took 47 min. Turn 22 (017-03.g2, daily move reversal) backtesting. 17.9 USD. The design session asked (13:20, 13:34) to merge master (PR #570 and the fix of the 017-02 resume defect) between two stretches: verified on origin/master; to merge when stretch 5 ends.
+- 14:26: stretch 5 ended on its budget (20.42 USD, 4 turns, 94 min). All 4 confirmed, none profitable: 017-02.g2 t +10.25,
+  017-03.g2 (daily move reversal) t +3.80, 017-04.g2 (late-evening rebound after falls) t +4.78, 017-05.g2
+  (volatility-scaled two-hour reversal) t +13.79. Run so far: 20 ideas tested, 10 confirmed, 0 profitable.
+- 14:3x: master merged between stretches (PR #570 to #572: run briefs in runs/, components step changes, the loop's resume fix); one conflict, POTENTIAL_ADJUSTMENTS.md, kept as master's. Cards' tests: 88 passed. Under the new rule no idea of either run is unfinished. Stretch 6 launched (--budget 23.42).
+- 14:36: check-in, no restart (up 4h44). Stretch 6 on turn 25 (017-02.g3, daily move reversal), backtesting. 20.5 USD.
+- 14:58: stretch 6 ended on its budget after one turn (24.71 USD, 31 min). 017-02.g3 (daily move reversal): confirmed
+  t +3.90, not profitable. The turn cost 4.28 USD: one 7.d call wrote 129k output tokens in 866 s, 3.38 USD (usual: about
+  0.10); it ended normally and its answer was used. Recorded (POTENTIAL_ADJUSTMENTS.md, 17); nothing changed. Run so far:
+  21 ideas tested, 11 confirmed, 0 profitable. Stretch 7 launched (--budget 27.71).
+- 15:22: check-in, no restart (up 5h29). 017-03.g3 (trend continues after settlement): confirmed t +9.14; 017-04.g3
+  (afternoon continuation of a 3-day trend): confirmed t +8.07; neither profitable. Turn 28 (017-03.g4, midday trend
+  giveback) in step 3. Run so far: 23 ideas tested, 13 confirmed, 0 profitable.
+- 15:33: stretch 7 ended on its budget (27.67 USD, 3 turns, 35 min). 017-03.g4 (midday trend giveback): confirmed t +4.38,
+  not profitable. Run so far: 24 ideas tested, 14 confirmed, 0 profitable; every tested book fails Sharpe after costs.
+  Stretch 8 launched (--budget 30.67).
+- 15:39: operator: stop. The intraday loop stopped mid turn 29 (017-01.b1: plan written, backtest cut; its partial
+  backtest left out of git; a resume finishes it). slow_1h_run not started (waiting for the operator).
+  Correction: the counts "tested" in the lines from 15:22 included turns refused by step 3; the reading below counts
+  ideas with a verdict.
+
+## Reading: intraday_1h_run (stopped by the operator at 15:39 UTC, 27.67 of 90 USD, 29 turns)
+| | Brief 017's own ideas (step 2) | Ideas from the step 7 lines | All |
+|---|---|---|---|
+| verdict given (step 5) | 5 | 16 | 21 |
+| confirmed | 1 (017-05, t +5.10) | 13 (t +3.80 to +13.80) | 14 |
+| inconclusive / rejected | 3 / 1 | 2 / 1 | 5 / 2 |
+| profitable (step 6) | 0 | 0 | 0 |
+(also: 1 untestable, 017-06; 1 component built, `MeanAbsoluteMoveRankComponent`.)
+
+**Outcome I-B, as pre-registered:** clock effects confirmed, none profitable. Against the brief's own theory:
+- **The theory as written does not hold.** Its claim, a move against the recent trend in the hours before a settlement
+  and given back after, gets 3 inconclusive (t +0.85, +1.39, +1.30) and one strong rejection (017-04, t -5.89: after a
+  downtrend the hours after settlement keep falling). The one settlement idea confirmed is simpler: the move into a
+  settlement reverses after it (017-05, t +5.10).
+- **The lines drifted to short reversals and time of day.** 13 of the 16 line ideas are confirmed, the strongest being
+  plain one- and two-hour reversals (t +13.80, +13.79, +12.28, +10.25), unrelated to settlements.
+- **No book pays: costs.** Every tested book fails Sharpe after costs (21 of 21). Example: 017-05.g1 (t +13.80) trades
+  3.9 times a day and loses 0.11 % a day after costs (Sharpe -2.20); 017-03.g1's reversal earns 0.8 bps an hour before
+  costs, against 15 to 25 bps a round trip.
+- **Last night's expectation, "the slow brief should do better than the intraday one":** neither has a profitable
+  idea (slow 0 of 18, intraday 0 of 21); intraday has more confirmed (14 of 21 against 9 of 18).
+
+**Stepping back.** On hourly bars the workflow finds real effects easily and books that pay never: 0 of 39 ideas across
+the two briefs, every one failing Sharpe after costs. The edges are a few bps per hour; costs are 15 to 25 bps per round
+trip. The one change a practitioner would make: stop asking hourly ideas to trade often. Either the engine trades an
+hourly signal only when its expected move clears the round-trip cost (a cost-aware entry), or hourly signals are used
+only as timing inside slow positions. More hourly briefs as they stand would add confirmed, unprofitable rows.
+- 15:4x: master merged with no loop running (PR #573, #574: improvements are topic cards in topics/; POTENTIAL_ADJUSTMENTS.md removed, its item 17 is topic 29, checked: every fact carried over). Cards' tests: 88 passed. Waiting for the operator: finish 017-01.b1 or leave intraday stopped; slow_1h_run not started.
+- 18:25: container restarted while idle (files intact, no build cut, nothing running). Master merged (PR #575: select_next counts a line's success only on a profitable book; topic 30). Cards' tests: 88 passed. Under the new rule the intraday run's next picks move from 7.g to 7.b ideas (first: 017-02.b1, pre-settlement rise on more coins). Still waiting for the operator: finish 017-01.b1 or leave intraday stopped; slow_1h_run not started.

@@ -1,0 +1,29 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 0.9921559580113046,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled mean of position x (next 1-bar return - coin mean 1-bar return) on trending bars",
+    "value": 1.856199669423029e-05,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": 0.42258163653565645
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and >= 4 of 6 coins positive; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "coins with positive mean excess gain (need >= 4 of 6)",
+    "value": 3,
+    "passed": false
+  },
+  "counts": {
+    "hour-12 cases with a nonzero position": 15082,
+    "trending bars in sample": 17347,
+    "coins with positive mean excess gain": 3,
+    "coins measured": 6
+  },
+  "decided_by": "The t of the pooled mean excess gain lies between -2 and 2.",
+  "reading": "Situation bars are those whose next bar starts at 12:00 UTC (bar timestamp 11:00 UTC); the main sample includes every 'trending' bar with a next bar in its window (zero positions included), the coin's mean 1-bar return is over all bars of all its windows, the 500 minimum counts trending bars with a nonzero position, and the coin check needs at least 4 coins with a positive mean whatever the number of coins present."
+}

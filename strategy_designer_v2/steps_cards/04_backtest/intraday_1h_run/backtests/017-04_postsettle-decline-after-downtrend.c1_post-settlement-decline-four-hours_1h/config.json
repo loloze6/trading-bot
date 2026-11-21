@@ -1,0 +1,69 @@
+{
+  "regime_detector": {
+    "mode": "threshold_rules",
+    "components": [
+      {
+        "id": "hts",
+        "class": "strategies.strategy_components.HoursToSettlementComponent",
+        "params": {}
+      }
+    ],
+    "rules": [
+      {
+        "regime": "trending",
+        "any_of": [
+          [
+            {
+              "id": "hts",
+              "op": "between",
+              "low": 4.5,
+              "high": 8.5
+            }
+          ]
+        ]
+      }
+    ],
+    "default_regime": "unknown"
+  },
+  "strategies": {
+    "regimes": {
+      "trending": {
+        "components": [
+          {
+            "id": "fall72",
+            "class": "strategies.strategy_components.PriceEvolutionComponent",
+            "params": {
+              "period": 72
+            },
+            "weight": 1.0,
+            "transforms": [
+              {
+                "op": "standardise",
+                "params": {
+                  "window": 72,
+                  "min_periods": 20
+                }
+              },
+              {
+                "op": "clip",
+                "params": {
+                  "max": 0.0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "mean_reversion": null,
+      "chop": null,
+      "unknown": null
+    },
+    "sizing": {
+      "kind": "vol_target",
+      "window": 1440,
+      "target_annual_vol": 0.382099,
+      "periods_per_year": 8760,
+      "max_allocation": 2
+    }
+  }
+}

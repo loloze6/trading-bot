@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "pooled mean per-bar excess gain: allocation x (next 1h return - coin's mean hourly return), before costs",
+    "value": 8.149849823805621e-05,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 10.227888454463827
+    },
+    "threshold": "confirm if t >= 2 and the supporting check passes; reject if t <= -2; else inconclusive"
+  },
+  "supporting_check": {
+    "name": "Welch t of mean excess gain, bars above minus below the coin's median 720-bar volatility",
+    "value": 1.6890500151023857,
+    "passed": false
+  },
+  "counts": {
+    "bars pooled": 416645,
+    "high-volatility group bars": 156480,
+    "low-volatility group bars": 156480
+  },
+  "decided_by": "The main t is >= 2 but the supporting check's Welch t is below 2 (inconclusive rule).",
+  "reading": "Every bar with a next in-window close counts (flat bars give zero excess), the coin mean is its pooled in-window hourly return, the 720-bar volatility uses the 720 in-window hourly returns up to the bar (sample std), the median is per coin over bars with that volatility, bars exactly at the median are left out of both groups, and the groups are pooled across coins for the Welch t and the 2,000 minimum."
+}

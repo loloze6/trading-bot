@@ -1,0 +1,26 @@
+{
+  "status": "rejected",
+  "situation_check": {
+    "agreement": 0.9954354895584375,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean per-event gain -(forecast/10) x excess 2-bar return after settlements, forecast < 0",
+    "value": -0.0008652961696043185,
+    "statistic": {
+      "name": "ordinary t of the mean",
+      "value": -5.885889842345045
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passing; reject: mean < 0 with t <= -2"
+  },
+  "supporting_check": {
+    "name": "mean excess 2-bar return, largest third of |forecast| minus smallest third",
+    "value": -0.0009879692253061028,
+    "passed": true
+  },
+  "counts": {
+    "events with forecast below 0": 25389
+  },
+  "decided_by": "The mean gain is negative with t <= -2.",
+  "reading": "Events are the bars whose close (timestamp + 1h) is at 00:00, 08:00 or 16:00 UTC with a 2-bar forward return inside the window, pooled over all coins and windows, each coin's excess taken against its own all-window mean on the non-overlapping 2-bar grid, and thirds formed by rank of |forecast| over the pooled events; the situation is a negative 72-bar change on the held bars two hours after a settlement."
+}

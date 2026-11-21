@@ -1,0 +1,27 @@
+{
+  "status": "confirmed",
+  "situation_check": {
+    "agreement": 0.9975612144955925,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean of (forecast/10) x excess 4-bar return after settlement",
+    "value": 0.0008495068370434957,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 4.84688999872474
+    },
+    "threshold": "confirm: mean product > 0 with t >= 2 and supporting check passes; reject: mean product < 0 with t <= -2; at least 300 episodes"
+  },
+  "supporting_check": {
+    "name": "excess 4-bar return, largest-|forecast| third minus smallest third",
+    "value": -0.0005596918839973967,
+    "passed": true
+  },
+  "counts": {
+    "episodes with a negative forecast": 24787,
+    "episodes per third": 8262
+  },
+  "decided_by": "the mean product is above 0 with t >= 2 and the top-minus-bottom third difference is below 0",
+  "reading": "Entry bars are those stamped 23:00, 07:00 or 15:00 with forecast < 0 whose bar 4 rows later is exactly 4 h later in the same window; the coin's mean 4-bar return uses the non-overlapping grid of each window pooled over all windows; thirds are n//3 episodes by |forecast| pooled over coins and windows."
+}

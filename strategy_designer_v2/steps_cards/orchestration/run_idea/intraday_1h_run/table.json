@@ -1,57 +1,5 @@
 [
   {
-    "idea": "017-02_presettle-rise-after-downtrend",
-    "backtest": "017-02_presettle-rise-after-downtrend_1h",
-    "parent": null,
-    "cost": 0.0476,
-    "step3": "missing-components",
-    "consumption": {
-      "step3_plan": {
-        "usd": 0.0476,
-        "seconds": 17.8
-      }
-    }
-  },
-  {
-    "idea": "017-03_postsettle-recovery-after-uptrend",
-    "backtest": "017-03_postsettle-recovery-after-uptrend_1h",
-    "parent": null,
-    "cost": 0.1158,
-    "step3": "missing-components",
-    "consumption": {
-      "step3_plan": {
-        "usd": 0.1158,
-        "seconds": 46.9
-      }
-    }
-  },
-  {
-    "idea": "017-04_postsettle-decline-after-downtrend",
-    "backtest": "017-04_postsettle-decline-after-downtrend_1h",
-    "parent": null,
-    "cost": 0.0572,
-    "step3": "missing-components",
-    "consumption": {
-      "step3_plan": {
-        "usd": 0.0572,
-        "seconds": 23.5
-      }
-    }
-  },
-  {
-    "idea": "017-05_settlement-move-reverses-after",
-    "backtest": "017-05_settlement-move-reverses-after_1h",
-    "parent": null,
-    "cost": 0.1342,
-    "step3": "missing-components",
-    "consumption": {
-      "step3_plan": {
-        "usd": 0.1342,
-        "seconds": 58.4
-      }
-    }
-  },
-  {
     "idea": "017-06_settlement-volume-rises-with-trend",
     "backtest": "017-06_settlement-volume-rises-with-trend_1h",
     "parent": null,
@@ -121,6 +69,1196 @@
       "step7_7.b": {
         "usd": 0.373,
         "seconds": 89.8
+      }
+    }
+  },
+  {
+    "idea": "017-03_postsettle-recovery-after-uptrend",
+    "backtest": "017-03_postsettle-recovery-after-uptrend_1h",
+    "parent": null,
+    "cost": 1.6058,
+    "step3": "plan",
+    "step5": "inconclusive (+1.39)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.b": "017-03_postsettle-recovery-after-uptrend.b1_post-settlement-recovery-more-coins, 017-03_postsettle-recovery-after-uptrend.b2_16-00-settlement-recovery-after-rise, 017-03_postsettle-recovery-after-uptrend.b3_post-settlement-recovery-8-hours",
+      "7.d": "017-03_postsettle-recovery-after-uptrend.d1_16-00-settlement-eight-hour-recovery, 017-03_postsettle-recovery-after-uptrend.d2_08-00-settlement-uptrend-giveback",
+      "7.g": "017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal, 017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal, 017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation, 017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.1898,
+        "seconds": 76.1
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 558.3
+      },
+      "step5_verdict": {
+        "usd": 0.1401,
+        "seconds": 35.6
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 9.9
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 6.5
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.b": {
+        "usd": 0.3786,
+        "seconds": 79.8
+      },
+      "step7_7.g": {
+        "usd": 0.3995,
+        "seconds": 80.1
+      },
+      "step7_7.d": {
+        "usd": 0.4978,
+        "seconds": 95.6
+      }
+    }
+  },
+  {
+    "idea": "017-04_postsettle-decline-after-downtrend",
+    "backtest": "017-04_postsettle-decline-after-downtrend_1h",
+    "parent": null,
+    "cost": 1.5329,
+    "step3": "plan",
+    "step5": "rejected (-5.89)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.c": "017-04_postsettle-decline-after-downtrend.c1_post-settlement-decline-four-hours, 017-04_postsettle-decline-after-downtrend.c2_off-settlement-rebound-after-falls",
+      "7.d": "no ideas: The after-settlement decline the book bets on is real but too small to pay. It is about 4 to 6 bp over 2 hours against roughly 10 bp of fee per trade (F1, F2). Its only larger form, after 00:00 UTC over 6 hours, loses its grading by the 3-day fall (F4) and has faded since 2023 (F5). Its clock pattern also appears at non-settlement hours (F6). So no amendment of this idea, and no idea the findings support, would lift the book's gain above its fees.",
+      "7.g": "017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls, 017-04_postsettle-decline-after-downtrend.g2_late-evening-rebound-after-falls, 017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.1351,
+        "seconds": 57.9
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 558.8
+      },
+      "step5_verdict": {
+        "usd": 0.1325,
+        "seconds": 35.2
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 8.7
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 6.2
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.g": {
+        "usd": 0.3678,
+        "seconds": 87.4
+      },
+      "step7_7.c": {
+        "usd": 0.392,
+        "seconds": 88.2
+      },
+      "step7_7.d": {
+        "usd": 0.5055,
+        "seconds": 116.5
+      }
+    }
+  },
+  {
+    "idea": "017-02_presettle-rise-after-downtrend",
+    "backtest": "017-02_presettle-rise-after-downtrend_1h",
+    "parent": null,
+    "cost": 1.3509,
+    "step3": "plan",
+    "step5": "inconclusive (+1.30)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.b": "017-02_presettle-rise-after-downtrend.b1_pre-settlement-rise-more-coins, 017-02_presettle-rise-after-downtrend.b2_deep-fall-pre-settlement-rebound",
+      "7.d": "017-02_presettle-rise-after-downtrend.d1_deep-fall-rebound-over-a-day, 017-02_presettle-rise-after-downtrend.d2_pre-midnight-settlement-trend-continuation",
+      "7.g": "017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall, 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods, 017-02_presettle-rise-after-downtrend.g3_daily-move-reversal"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.127,
+        "seconds": 48.5
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 551.8
+      },
+      "step5_verdict": {
+        "usd": 0.146,
+        "seconds": 43.5
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 9.5
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 6.5
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.d": {
+        "usd": 0.3221,
+        "seconds": 70.1
+      },
+      "step7_7.b": {
+        "usd": 0.3603,
+        "seconds": 78.9
+      },
+      "step7_7.g": {
+        "usd": 0.3955,
+        "seconds": 83.7
+      }
+    }
+  },
+  {
+    "idea": "017-05_settlement-move-reverses-after",
+    "backtest": "017-05_settlement-move-reverses-after_1h",
+    "parent": null,
+    "cost": 1.1595,
+    "step3": "plan",
+    "step5": "confirmed (+5.10)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.d": "017-05_settlement-move-reverses-after.d1_settlement-reversal-in-high-volatility, 017-05_settlement-move-reverses-after.d2_counter-trend-settlement-move-reverses",
+      "7.g": "017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound, 017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.22710000000000002,
+        "seconds": 97.19999999999999
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 533.4
+      },
+      "step5_verdict": {
+        "usd": 0.135,
+        "seconds": 37.4
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 12.3
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 6.9
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.g": {
+        "usd": 0.3267,
+        "seconds": 72.8
+      },
+      "step7_7.d": {
+        "usd": 0.4707,
+        "seconds": 96.3
+      }
+    }
+  },
+  {
+    "idea": "017-01_presettle-drop-after-uptrend.g1_midday-fade-of-3-day-trend",
+    "backtest": "017-01_presettle-drop-after-uptrend.g1_midday-fade-of-3-day-trend_1h",
+    "parent": "017-01_presettle-drop-after-uptrend",
+    "cost": 1.21,
+    "step3": "plan",
+    "step5": "inconclusive (+0.42)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.b": "017-01_presettle-drop-after-uptrend.g1_midday-fade-of-3-day-trend.b1_midday-fade-more-coins, 017-01_presettle-drop-after-uptrend.g1_midday-fade-of-3-day-trend.b2_four-hour-midday-trend-fade, 017-01_presettle-drop-after-uptrend.g1_midday-fade-of-3-day-trend.b3_afternoon-trend-continuation",
+      "7.d": "017-01_presettle-drop-after-uptrend.g1_midday-fade-of-3-day-trend.d1_midday-three-hour-trend-fade, 017-01_presettle-drop-after-uptrend.g1_midday-fade-of-3-day-trend.d2_scaled-trend-midday-four-hour-reversal",
+      "7.g": "017-01_presettle-drop-after-uptrend.g1_midday-fade-of-3-day-trend.g1_daily-reversal-in-volatile-regimes, 017-01_presettle-drop-after-uptrend.g1_midday-fade-of-3-day-trend.g2_hourly-rebound-after-sharp-falls"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.065,
+        "seconds": 24.7
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 474.4
+      },
+      "step5_verdict": {
+        "usd": 0.1315,
+        "seconds": 34.9
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 5.7
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 6.3
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.d": {
+        "usd": 0.3176,
+        "seconds": 69.7
+      },
+      "step7_7.b": {
+        "usd": 0.3269,
+        "seconds": 69.9
+      },
+      "step7_7.g": {
+        "usd": 0.369,
+        "seconds": 80.6
+      }
+    }
+  },
+  {
+    "idea": "017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall",
+    "backtest": "017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall_1h",
+    "parent": "017-02_presettle-rise-after-downtrend",
+    "cost": 1.2583,
+    "step3": "plan",
+    "step5": "rejected (-3.73)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.c": "017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall.c1_late-evening-daily-trend-continuation, 017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall.c2_late-evening-up-day-continuation",
+      "7.d": "017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall.d1_early-evening-rise-after-large-moves, 017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall.d2_late-evening-rise-after-daily-gain",
+      "7.g": "017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall.g1_late-evening-daily-trend-continuation, 017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall.g2_volatile-hourly-move-reversal, 017-02_presettle-rise-after-downtrend.g1_late-evening-rise-after-daily-fall.g3_daily-fall-next-day-rebound"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.0833,
+        "seconds": 36.5
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 490.5
+      },
+      "step5_verdict": {
+        "usd": 0.1389,
+        "seconds": 38.4
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 5.3
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 5.9
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.d": {
+        "usd": 0.3394,
+        "seconds": 71.0
+      },
+      "step7_7.c": {
+        "usd": 0.3408,
+        "seconds": 74.7
+      },
+      "step7_7.g": {
+        "usd": 0.3559,
+        "seconds": 75.3
+      }
+    }
+  },
+  {
+    "idea": "017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal",
+    "backtest": "017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal_1h",
+    "parent": "017-03_postsettle-recovery-after-uptrend",
+    "cost": 1.1924,
+    "step3": "plan",
+    "step5": "inconclusive (+10.23)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.b": "017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal.b1_one-hour-reversal-more-coins, 017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal.b2_two-hour-reversal-after-sharp-hour",
+      "7.d": "017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal.d1_daily-move-reversal-high-volatility, 017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal.d2_four-hour-reversal-in-volatility",
+      "7.g": "017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal.g1_daily-vol-scaled-move-reversal, 017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal.g2_four-hour-reversal-volatile-regimes, 017-03_postsettle-recovery-after-uptrend.g1_one-hour-move-reversal.g3_high-volume-hour-reversal"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.1017,
+        "seconds": 46.3
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 942.3
+      },
+      "step5_verdict": {
+        "usd": 0.1291,
+        "seconds": 36.5
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 88.2
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 16.8
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.b": {
+        "usd": 0.3041,
+        "seconds": 87.8
+      },
+      "step7_7.d": {
+        "usd": 0.3015,
+        "seconds": 88.7
+      },
+      "step7_7.g": {
+        "usd": 0.356,
+        "seconds": 97.0
+      }
+    }
+  },
+  {
+    "idea": "017-04_postsettle-decline-after-downtrend.c1_post-settlement-decline-four-hours",
+    "backtest": "017-04_postsettle-decline-after-downtrend.c1_post-settlement-decline-four-hours_1h",
+    "parent": "017-04_postsettle-decline-after-downtrend",
+    "cost": 0.9137,
+    "step3": "plan",
+    "step5": "confirmed (+4.85)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.d": "017-04_postsettle-decline-after-downtrend.c1_post-settlement-decline-four-hours.d1_calm-downtrend-settlement-day-decline, 017-04_postsettle-decline-after-downtrend.c1_post-settlement-decline-four-hours.d2_calm-downtrend-next-day-continuation",
+      "7.g": "017-04_postsettle-decline-after-downtrend.c1_post-settlement-decline-four-hours.g1_one-day-fall-rebound, 017-04_postsettle-decline-after-downtrend.c1_post-settlement-decline-four-hours.g2_evening-utc-volatile-drift"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.0823,
+        "seconds": 34.4
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 629.3
+      },
+      "step5_verdict": {
+        "usd": 0.1282,
+        "seconds": 36.1
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 13.5
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 6.9
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.g": {
+        "usd": 0.3657,
+        "seconds": 77.5
+      },
+      "step7_7.d": {
+        "usd": 0.3375,
+        "seconds": 85.8
+      }
+    }
+  },
+  {
+    "idea": "017-04_postsettle-decline-after-downtrend.c2_off-settlement-rebound-after-falls",
+    "backtest": "017-04_postsettle-decline-after-downtrend.c2_off-settlement-rebound-after-falls_1h",
+    "parent": "017-04_postsettle-decline-after-downtrend",
+    "cost": 1.0099,
+    "step3": "plan",
+    "step5": "confirmed (+4.08)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.d": "017-04_postsettle-decline-after-downtrend.c2_off-settlement-rebound-after-falls.d1_off-settlement-fall-daily-rebound, 017-04_postsettle-decline-after-downtrend.c2_off-settlement-rebound-after-falls.d2_deep-fall-one-day-rebound",
+      "7.g": "017-04_postsettle-decline-after-downtrend.c2_off-settlement-rebound-after-falls.g1_one-hour-move-reverses, 017-04_postsettle-decline-after-downtrend.c2_off-settlement-rebound-after-falls.g2_volatile-hour-spike-reversal"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.0893,
+        "seconds": 38.1
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 636.4
+      },
+      "step5_verdict": {
+        "usd": 0.1315,
+        "seconds": 34.3
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 12.4
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 7.4
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.g": {
+        "usd": 0.3373,
+        "seconds": 74.4
+      },
+      "step7_7.d": {
+        "usd": 0.4518,
+        "seconds": 99.3
+      }
+    }
+  },
+  {
+    "idea": "017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls",
+    "backtest": "017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls_1h",
+    "parent": "017-04_postsettle-decline-after-downtrend",
+    "cost": 0.8666,
+    "step3": "plan",
+    "step5": "confirmed (+4.06)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.d": "017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls.d1_us-open-rebound-after-double-fall, 017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls.d2_us-session-rebound-after-falls, 017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls.d3_post-open-hour-rebound-after-falls",
+      "7.g": "017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls.g1_us-afternoon-trend-continuation, 017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls.g2_evening-drift-in-volatile-coins, 017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls.g3_evening-fade-of-3-day-moves"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.0755,
+        "seconds": 31.7
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 491.8
+      },
+      "step5_verdict": {
+        "usd": 0.1354,
+        "seconds": 38.1
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 4.7
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 5.7
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.d": {
+        "usd": 0.2998,
+        "seconds": 63.9
+      },
+      "step7_7.g": {
+        "usd": 0.3559,
+        "seconds": 79.0
+      }
+    }
+  },
+  {
+    "idea": "017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound",
+    "backtest": "017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound_1h",
+    "parent": "017-05_settlement-move-reverses-after",
+    "cost": 1.4307,
+    "step3": "plan",
+    "step5": "confirmed (+13.80)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.d": "017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound.d1_volatile-dip-day-long-rebound, 017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound.d2_dip-rebound-scales-with-volatility",
+      "7.g": "017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound.g1_volatile-coin-daily-dip-rebound, 017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound.g2_rebound-grows-with-volatility, 017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound.g3_volatile-coin-spike-fade"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.4769,
+        "seconds": 54.099999999999994
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 950.4
+      },
+      "step5_verdict": {
+        "usd": 0.1265,
+        "seconds": 34.0
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 18.5
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 7.9
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.d": {
+        "usd": 0.3225,
+        "seconds": 76.3
+      },
+      "step7_7.g": {
+        "usd": 0.5048,
+        "seconds": 107.5
+      }
+    }
+  },
+  {
+    "idea": "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility",
+    "backtest": "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility_1h",
+    "parent": "017-01_presettle-drop-after-uptrend",
+    "cost": 0.7541,
+    "step3": "plan",
+    "step5": "confirmed (+12.28)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.d": "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d1_hourly-shock-fades-over-day, 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.d2_daily-vol-scaled-move-reversal",
+      "7.g": "017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.g1_high-vol-daily-move-reversal, 017-01_presettle-drop-after-uptrend.g2_hourly-move-reversal-by-volatility.g2_turbulent-sell-off-rebound"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.0495,
+        "seconds": 16.8
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 983.8
+      },
+      "step5_verdict": {
+        "usd": 0.1054,
+        "seconds": 27.5
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 87.9
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 16.5
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.d": {
+        "usd": 0.2785,
+        "seconds": 87.4
+      },
+      "step7_7.g": {
+        "usd": 0.3207,
+        "seconds": 94.0
+      }
+    }
+  },
+  {
+    "idea": "017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods",
+    "backtest": "017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods_1h",
+    "parent": "017-02_presettle-rise-after-downtrend",
+    "cost": 0.8702,
+    "step3": "plan",
+    "step5": "confirmed (+10.25)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.d": "017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d1_day-long-fade-of-sharp-hours, 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.d2_day-long-rebound-after-falls",
+      "7.g": "017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.g1_four-hour-move-daily-reversal, 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.g2_volatile-period-drop-rebound, 017-02_presettle-rise-after-downtrend.g2_hourly-reversal-in-volatile-periods.g3_daily-sell-off-next-day-rebound"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.0736,
+        "seconds": 29.3
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 2565.0
+      },
+      "step5_verdict": {
+        "usd": 0.1262,
+        "seconds": 35.3
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 90.2
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 17.9
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.d": {
+        "usd": 0.3025,
+        "seconds": 88.6
+      },
+      "step7_7.g": {
+        "usd": 0.3679,
+        "seconds": 107.8
+      }
+    }
+  },
+  {
+    "idea": "017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal",
+    "backtest": "017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal_1h",
+    "parent": "017-03_postsettle-recovery-after-uptrend",
+    "cost": 0.9405,
+    "step3": "plan",
+    "step5": "confirmed (+3.80)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.d": "017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal.d1_daily-reversal-in-high-volatility, 017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal.d2_daily-reversal-after-big-weeks, 017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal.d3_once-daily-move-reversal",
+      "7.g": "017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal.g1_reversal-after-volatility-expansion, 017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal.g2_calm-market-daily-continuation, 017-03_postsettle-recovery-after-uptrend.g2_daily-move-reversal.g3_outsized-hourly-move-reversal"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.0576,
+        "seconds": 23.3
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 739.1
+      },
+      "step5_verdict": {
+        "usd": 0.1279,
+        "seconds": 35.1
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 47.0
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 11.1
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.0
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.d": {
+        "usd": 0.3848,
+        "seconds": 97.4
+      },
+      "step7_7.g": {
+        "usd": 0.3702,
+        "seconds": 104.1
+      }
+    }
+  },
+  {
+    "idea": "017-04_postsettle-decline-after-downtrend.g2_late-evening-rebound-after-falls",
+    "backtest": "017-04_postsettle-decline-after-downtrend.g2_late-evening-rebound-after-falls_1h",
+    "parent": "017-04_postsettle-decline-after-downtrend",
+    "cost": 0.7332,
+    "step3": "plan",
+    "step5": "confirmed (+4.78)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.d": "017-04_postsettle-decline-after-downtrend.g2_late-evening-rebound-after-falls.d1_deep-fall-late-evening-four-hour-rebound, 017-04_postsettle-decline-after-downtrend.g2_late-evening-rebound-after-falls.d2_overnight-rebound-after-deep-falls",
+      "7.g": "017-04_postsettle-decline-after-downtrend.g2_late-evening-rebound-after-falls.g1_volatile-hourly-move-reversal, 017-04_postsettle-decline-after-downtrend.g2_late-evening-rebound-after-falls.g2_late-evening-rebound-after-down-hour"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.0762,
+        "seconds": 31.8
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 509.1
+      },
+      "step5_verdict": {
+        "usd": 0.1344,
+        "seconds": 36.8
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 4.9
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 5.9
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.d": {
+        "usd": 0.1473,
+        "seconds": 47.6
+      },
+      "step7_7.g": {
+        "usd": 0.3753,
+        "seconds": 79.6
+      }
+    }
+  },
+  {
+    "idea": "017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal",
+    "backtest": "017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal_1h",
+    "parent": "017-05_settlement-move-reverses-after",
+    "cost": 0.8863,
+    "step3": "plan",
+    "step5": "confirmed (+13.79)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.d": "017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal.d1_high-volatility-two-hour-reversal, 017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal.d2_daily-reversal-in-volatile-weeks",
+      "7.g": "017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal.g1_sharp-falls-rebound-fast, 017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal.g2_fade-strength-follows-vol-regime, 017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal.g3_exhaustion-spikes-after-stretched-runs, 017-05_settlement-move-reverses-after.g2_volatility-scaled-two-hour-reversal.g4_midday-european-move-reversal"
+    },
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.1037,
+        "seconds": 46.6
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 883.0
+      },
+      "step5_verdict": {
+        "usd": 0.1268,
+        "seconds": 34.4
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 79.6
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 16.0
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.d": {
+        "usd": 0.2887,
+        "seconds": 84.3
+      },
+      "step7_7.g": {
+        "usd": 0.3671,
+        "seconds": 110.7
+      }
+    }
+  },
+  {
+    "idea": "017-02_presettle-rise-after-downtrend.g3_daily-move-reversal",
+    "backtest": "017-02_presettle-rise-after-downtrend.g3_daily-move-reversal_1h",
+    "parent": "017-02_presettle-rise-after-downtrend",
+    "cost": 4.2814,
+    "step3": "plan",
+    "step5": "confirmed (+3.90)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.d": "017-02_presettle-rise-after-downtrend.g3_daily-move-reversal.d1_reversal-in-volatility-spikes, 017-02_presettle-rise-after-downtrend.g3_daily-move-reversal.d2_slow-rebound-after-volatile-drops",
+      "7.g": "017-02_presettle-rise-after-downtrend.g3_daily-move-reversal.g1_volatile-drop-next-day-rebound, 017-02_presettle-rise-after-downtrend.g3_daily-move-reversal.g2_volatility-weighted-daily-reversal, 017-02_presettle-rise-after-downtrend.g3_daily-move-reversal.g3_late-evening-utc-drift"
+    },
+    "finished_at": "2026-11-19T14:57:56Z",
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.0549,
+        "seconds": 19.7
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 753.6
+      },
+      "step5_verdict": {
+        "usd": 0.1529,
+        "seconds": 49.1
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 51.2
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 11.8
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.g": {
+        "usd": 0.3625,
+        "seconds": 95.6
+      },
+      "step7_7.d": {
+        "usd": 3.7111,
+        "seconds": 958.9
+      }
+    }
+  },
+  {
+    "idea": "017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation",
+    "backtest": "017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation_1h",
+    "parent": "017-03_postsettle-recovery-after-uptrend",
+    "cost": 1.0099,
+    "step3": "plan",
+    "step5": "confirmed (+9.14)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.d": "017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation.d1_post-settlement-twelve-hour-trend-continuation",
+      "7.g": "017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation.g1_high-volatility-hourly-spike-reversal, 017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation.g2_midday-3-day-trend-reversal, 017-03_postsettle-recovery-after-uptrend.g3_post-settlement-trend-continuation.g3_late-evening-trend-continuation"
+    },
+    "finished_at": "2026-11-19T15:10:27Z",
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.0676,
+        "seconds": 25.5
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 516.7
+      },
+      "step5_verdict": {
+        "usd": 0.1288,
+        "seconds": 35.8
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 7.7
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 6.5
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.d": {
+        "usd": 0.2824,
+        "seconds": 63.0
+      },
+      "step7_7.g": {
+        "usd": 0.5311,
+        "seconds": 109.9
+      }
+    }
+  },
+  {
+    "idea": "017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend",
+    "backtest": "017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend_1h",
+    "parent": "017-04_postsettle-decline-after-downtrend",
+    "cost": 1.0975,
+    "step3": "plan",
+    "step5": "confirmed (+8.07)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.d": "017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.d1_volatile-afternoon-trend-continuation, 017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.d2_wider-afternoon-trend-window",
+      "7.g": "017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.g1_midday-fade-of-3-day-trend, 017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.g2_daily-rebound-after-falls, 017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.g3_hourly-move-reversal, 017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.g4_late-evening-rebound-drift, 017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.g5_late-evening-3-day-continuation"
+    },
+    "finished_at": "2026-11-19T15:22:14Z",
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.0657,
+        "seconds": 24.5
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 513.9
+      },
+      "step5_verdict": {
+        "usd": 0.1426,
+        "seconds": 40.5
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 7.3
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 6.6
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.d": {
+        "usd": 0.3354,
+        "seconds": 79.0
+      },
+      "step7_7.g": {
+        "usd": 0.5538,
+        "seconds": 114.0
+      }
+    }
+  },
+  {
+    "idea": "017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback",
+    "backtest": "017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback_1h",
+    "parent": "017-03_postsettle-recovery-after-uptrend",
+    "cost": 0.859,
+    "step3": "plan",
+    "step5": "confirmed (+4.38)",
+    "step6": "not profitable enough (failed: Sharpe, Sharpe minus holding's Sharpe, Mean daily return, Lowest Sharpe, one window left out, Calmar)",
+    "step7": {
+      "7.d": "017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback.d1_midday-rebound-after-falls, 017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback.d2_half-day-rebound-after-falls",
+      "7.g": "017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback.g1_afternoon-trend-continuation, 017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback.g2_early-afternoon-hourly-reversal, 017-03_postsettle-recovery-after-uptrend.g4_midday-trend-giveback.g3_volatility-scaled-afternoon-continuation"
+    },
+    "finished_at": "2026-11-19T15:33:43Z",
+    "consumption": {
+      "step3_plan": {
+        "usd": 0.0725,
+        "seconds": 28.5
+      },
+      "step4_backtest": {
+        "usd": 0.0,
+        "seconds": 525.8
+      },
+      "step5_verdict": {
+        "usd": 0.1416,
+        "seconds": 40.3
+      },
+      "step6_check": {
+        "usd": 0.0,
+        "seconds": 8.5
+      },
+      "chart_files": {
+        "usd": 0.0,
+        "seconds": 6.9
+      },
+      "step7_7.e": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.b": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.c": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.a": {
+        "usd": 0.0,
+        "seconds": 0.1
+      },
+      "step7_7.d": {
+        "usd": 0.2903,
+        "seconds": 61.1
+      },
+      "step7_7.g": {
+        "usd": 0.3546,
+        "seconds": 78.2
       }
     }
   }

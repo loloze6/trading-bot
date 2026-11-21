@@ -1,0 +1,26 @@
+---
+line: 7.g patterns
+backtest: 017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend_1h
+idea tested: 017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5537 USD
+---
+## Findings
+- **F1:** The book's losses come from fees, not from the signal: on every coin the gross gain summed over bars is positive but smaller than the fees (BTC 1.58 vs 3.17, ETH 1.92 vs 2.92, LTC 1.07 vs 3.42, XMR 0.69 vs 3.69, XRP 1.43 vs 3.38, ZEC 2.01 vs 2.72), even though the tested slot does follow the 3-day trend in a graded way (excess 2-hour return from 16:00 by 3-day quintile: −14.6 bp, t −4.2 in the bottom fifth, rising to +17.3 bp, t 5.8 in the top fifth, about 3,375 cases each).
+- **F2:** The 2 hours from 13:00 UTC run against the 3-day trend, the reverse of the afternoon slot: the trend-signed excess 2-hour return on bars stamped 12:00 is −8.9 bp (t −4.39, n 16,830); by 3-day quintile it goes from +9.4 bp (t 2.6) in the bottom fifth to −11.9 bp (t −3.8) in the top fifth; it is negative in 6 of 8 years (2023: −13.1 bp, t −4.8) and positive against the trend on every coin (+3.5 to +18.1 bp).
+- **F3:** The 2 hours from 21:00 UTC rise on average: the excess return is +8.8 bp (t 7.9, n 16,404), positive on all six coins (t 2.7 to 4.2) and in 7 of 8 years; the rise is largest after the weakest 24-hour return (bottom quintile +19.4 bp, t 6.5, against 6.3, 9.2, −0.5 and 9.4 bp for the other quintiles).
+- **F4:** Daily moves revert after falls: on the non-overlapping 24-hour grid, the next 24 hours return +48.9 bp (t 4.1, n 2,200) after a 24-hour fall of 1–2 standard deviations, +24.1 bp (t 2.5) after a fall of 0.5–1 SD and +7.8 bp (t 0.9) after a fall of 0–0.5 SD, while rises are followed by small, insignificant declines; the vol-scaled reversal is positive in 2018–2023 (t 2.1 to 2.4 in five of those six years) and flat in 2024–2025.
+- **F5:** Hourly moves revert over the next hour: after a 1-hour fall of 1–2 SD of the last 24 hours the next hour returns +5.2 bp (t 8.9, n 41,260), after a fall of 0–1 SD +1.5 bp (t 6.0), after a rise of 0–1 SD −1.1 bp (t −4.4) and after a rise of 1–2 SD −2.0 bp (t −3.8); the signed reversal is positive in all 8 years (t above 2.4 in six of them).
+- **F6:** The trend-following pattern also appears late in the evening: the trend-signed excess 2-hour return is +8.9 bp (t 4.75) on bars stamped 22:00 and +5.5 bp (t 3.2) on bars stamped 21:00, and the 22:00 slot is positive in 7 of 8 years (2025: +14.1 bp, t 3.3).
+
+## Ideas
+- `017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.g1_midday-fade-of-3-day-trend` (from F2): Over the 2 hours from 13:00 UTC a coin's return runs against its 3-day move, and the stronger the 3-day rise, the larger the fall over those 2 hours.
+- `017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.g2_daily-rebound-after-falls` (from F4): After a coin falls over 24 hours, it rises over the next 24 hours, and the larger the 24-hour fall relative to its recent hourly volatility, the larger the rise.
+- `017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.g3_hourly-move-reversal` (from F5): After a coin's 1-hour move, the next hour moves the other way, and the larger the 1-hour move relative to its 24-hour volatility, the larger the reversal over the next hour.
+- `017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.g4_late-evening-rebound-drift` (from F3): Over the 2 hours from 21:00 UTC a coin rises, and the weaker its 24-hour return, the larger the rise over those 2 hours.
+- `017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend.g5_late-evening-3-day-continuation` (from F6, F1): Over the 2 hours from 22:00 UTC a coin's return follows its 3-day move, and the stronger the 3-day rise, the larger the rise over those 2 hours.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

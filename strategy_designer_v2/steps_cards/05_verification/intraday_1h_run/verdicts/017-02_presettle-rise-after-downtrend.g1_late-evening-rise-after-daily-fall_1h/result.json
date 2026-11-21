@@ -1,0 +1,27 @@
+{
+  "status": "rejected",
+  "situation_check": {
+    "agreement": 0.9971975712283979,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "OLS slope of 21:00 excess 2-bar return on forecast, pooled",
+    "value": -6.274553999766157e-05,
+    "statistic": {
+      "name": "OLS slope t",
+      "value": -3.725177265023921
+    },
+    "threshold": "slope t >= 2 to confirm (with supporting mean t >= 2); slope t <= -2 rejects"
+  },
+  "supporting_check": {
+    "name": "mean excess 2-bar return on 21:00 bars with forecast > 0",
+    "value": -7.460929906713204e-05,
+    "passed": false
+  },
+  "counts": {
+    "days with forecast > 0 across coins": 8587,
+    "21:00 cases": 17415
+  },
+  "decided_by": "Reject rule met: slope t = -3.73, supporting mean t = -0.45 (one at -2 or lower).",
+  "reading": "Cases are every bar stamped 21:00 UTC with a row two positions later in the same window (close[t+2] by row position), the coin mean is the mean 2-bar return on the non-overlapping grid of all its windows pooled, the slope t is the OLS slope over its standard error, the supporting check passes when its mean is above 0 with t >= 2, and the 300-day minimum counts 21:00 cases with forecast > 0 and a valid return, its shortfall giving 'not observable'."
+}

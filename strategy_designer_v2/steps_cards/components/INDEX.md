@@ -118,3 +118,4 @@ night3_1h_run | 018-04_hourly-surge-multiday-continuation.d1_surge-near-monthly-
 night3_1h_run | 018-05_hourly-plunge-loss-before-close.d1_sharp-dip-in-uptrend-rebounds_1h | DropInMeanAbsDailyMoves | built: MeanAbsScaledReturnComponent {"period": 24, "window": 720}
 night3_1h_run | 018-04_hourly-surge-multiday-continuation.d2_post-selloff-surge-fades_1h | ReturnToMeanAbsReturnRatio | exists: MeanAbsScaledReturnComponent {"period": 24, "window": 720}
 night3_1h_run | 018-05_hourly-plunge-loss-before-close.d2_ten-day-rebound-after-plunge_1h | DailyDropToMeanAbsDailyReturn | exists: MeanAbsScaledReturnComponent {"period": 24, "window": 720}
+intraday_1h_run | 017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound_1h | MeanAbsoluteMoveRankComponent | built: MeanAbsoluteMoveRankComponent {"lookback": 720, "period": 168}

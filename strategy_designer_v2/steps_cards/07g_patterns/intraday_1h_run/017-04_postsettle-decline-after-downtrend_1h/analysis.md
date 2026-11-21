@@ -1,0 +1,25 @@
+---
+line: 7.g patterns
+backtest: 017-04_postsettle-decline-after-downtrend_1h
+idea tested: 017-04_postsettle-decline-after-downtrend
+step 5: rejected
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3679 USD
+---
+## Findings
+- **F1:** Below a 3-day fall, a deeper fall is followed by a higher 2-hour return from 12:00 and from 13:00 UTC, the opposite of what the tested idea expected. Against the standardised 72-hour return below 0, the slope is -14.7 bp per unit for closes at 12 UTC (t -5.66, about 8,400 cases) and -16.2 bp per unit at 13 UTC (t -6.22). This is the strongest graded pattern among the 24 hours.
+- **F2:** The 12-UTC rebound slope holds across the sample. It is negative in all 6 coins (-5.2 to -24.9 bp, t -1.17 to -3.86) and in 6 of 8 years (t -2.41 to -3.96 in 5 of them). It is positive only in 2019 and 2022.
+- **F3:** The 2 hours from 21:00 UTC carry a large excess return of +8.28 bp (t 7.64, n 16,963). It is positive in all 6 coins (t 2.65 to 4.10), on every weekday (t 1.65 to 3.87) and in 7 of 8 years. The exception is 2022 at -5.54 bp (t -1.84).
+- **F4:** In that same 21-UTC slot the effect is graded by the 3-day fall. Below 0, the slope of the 2-hour excess return on the standardised 72-hour return is -9.1 bp per unit (t -4.52), so deeper falls bring larger rises.
+- **F5:** Around 15 to 16 UTC the 2-hour return follows the 3-day trend over all values. The slope is +4.3 bp per unit for closes at 15 UTC (t 4.48) and +6.0 bp per unit at 16 UTC (t 7.01). Across the settlement closes, the highest quintile of the 3-day move gives +2.35 bp and the lowest gives -4.97 bp (t -2.78).
+- **F6:** At the settlement closes the tested slope is weak and inconsistent. Below 0 it is +3.8, +2.2 and +2.0 bp per unit at 00, 08 and 16 UTC, all with t under 1.7. The 3 hours from 01 UTC change sign across years: t -5.73 in 2018 and -4.18 in 2022, but +2.56 in 2024 and +2.43 in 2025. Neither supports a stable settlement effect.
+- **F7:** The book's held bars earn small positive returns before fees: +2.04 bp (t 2.57), +1.31 bp (t 2.08), +2.06 bp (t 2.45) and +2.42 bp (t 3.36) at hours 1, 9, 16 and 17. Its mean daily return is still -0.12% (Sharpe -2.79) with 1.53 trades per day, so the loss comes from fees on a thin edge, not from a wrong direction.
+
+## Ideas
+- `017-04_postsettle-decline-after-downtrend.g1_us-open-rebound-after-falls` (from F1, F2): For a coin with a 3-day fall, the return over the 2 hours from 12:00 UTC is positive, and the deeper the 3-day fall, the larger that rise.
+- `017-04_postsettle-decline-after-downtrend.g2_late-evening-rebound-after-falls` (from F3, F4): For a coin with a 3-day fall, the return over the 2 hours from 21:00 UTC is positive, and the deeper the 3-day fall, the larger that rise.
+- `017-04_postsettle-decline-after-downtrend.g3_afternoon-continuation-of-3-day-trend` (from F5): The return over the 2 hours from 16:00 UTC follows the coin's 3-day move, and the stronger the 3-day rise, the larger the rise over those 2 hours.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.

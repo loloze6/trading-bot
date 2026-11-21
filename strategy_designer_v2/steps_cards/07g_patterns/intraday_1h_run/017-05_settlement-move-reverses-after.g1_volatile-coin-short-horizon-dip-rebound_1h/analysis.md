@@ -1,0 +1,24 @@
+---
+line: 7.g patterns
+backtest: 017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound_1h
+idea tested: 017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound
+step 5: confirmed
+step 6: not profitable enough
+mode: one call
+explorations: 3
+cost: 0.5048 USD
+---
+## Findings
+- **F1:** The book's loss comes from trading costs, not from a missing edge: the hourly position times the next bar's return sums to between 2.49 (ETH) and 4.78 (XRP) per coin before fees, but fees sum to between 5.96 and 7.98 per coin, and the 68,468 trades (median 2 hours) average -0.163% gross and -0.263% net.
+- **F2:** The rebound after a fall grows with the coin's volatility level, measured in the coin's own usual moves: in the high-volatility regime, the slope of the forward return on the size of the fall rises across volatility terciles from 0.011 (t 1.07) to 0.028 (t 2.71) to 0.147 (t 15.1) at 2 hours, and from -0.031 (t -0.69) to 0.066 (t 1.80) to 0.342 (t 10.3) at 24 hours.
+- **F3:** The reversal also holds over a day: in the high-volatility regime, the 24-hour fall's slope on the next 24-hour excess return is positive in all six coins (t from 2.72 for LTC to 4.95 for ZEC, about 1,000–1,100 cases each), but not in the low regime (t from -0.71 to 0.77); the bottom decile of the 24-hour move gains 167.75 bp (t 5.62, n 635).
+- **F4:** On a non-overlapping 72-hour grid within each coin's top volatility tercile, a 24-hour fall predicts gains over the next 24, 48 and 72 hours (t 5.74, 4.07, 4.93); the slope is positive in 6 of 8 years, though 2022 is negative (t -2.02). Only the largest-fall quintile carries it (146.78 bp, t 3.62); the other quintiles sit between -28 and -2 bp.
+- **F5:** Rises reverse too in volatile hours: in the high-volatility regime, the 2-hour rise's slope on the next 2-hour return is -6.42 bp (t -6.43, n 77,297) against -0.90 bp (t -1.47) in the low regime, and the ninth z-decile gives -9.05 bp (t -4.92); the long-only forecast never uses this.
+- **F6:** The 2-hour rebound strength rises from the large coins to the small ones: high-regime slope BTC 4.47 bp (t 2.67), ETH 8.16 (t 3.90), LTC 15.02, XMR 12.89, XRP 16.76, up to ZEC 26.28 bp (t 8.56).
+
+## Ideas
+- `017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound.g1_volatile-coin-daily-dip-rebound` (from F3, F4, F1): When a coin's 7-day mean absolute hourly move is high, the larger its 1-day fall measured in its usual 1-day moves, the larger its rise over the next 1 to 3 days.
+- `017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound.g2_rebound-grows-with-volatility` (from F2, F6): The higher a coin's 7-day mean absolute hourly move, the larger the rebound over the next day after a 1-day fall, measured in the coin's own usual daily moves.
+- `017-05_settlement-move-reverses-after.g1_volatile-coin-short-horizon-dip-rebound.g3_volatile-coin-spike-fade` (from F5, F2): When a coin's 7-day mean absolute hourly move is high, the larger its 2-hour rise relative to its usual 2-hour move, the larger its fall over the next 2 hours.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
