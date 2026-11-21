@@ -66,3 +66,18 @@ config, coins, folds, horizon and sizing with the level removed (the price chang
 Both controls are profitable enough on all six checks. **The level adds about 0.1 of Sharpe at most; what pays is the
 known momentum family.** Not a new paying family (N1 not supported for brief 020); the brief's first claim (a level
 turns price again) was not supported by its own ideas either.
+
+## Check: do the 4h breakouts add anything beyond their trend filter? (07:55 Paris, designer session, no model call)
+The 4h run's two breakout ideas that pay and hold on 2016-17 trade a breakout (`DistanceFromHighComponent`,
+`BreakoutInMeanRangesComponent`) only while the coin's past return is positive (`PriceEvolutionComponent`, 180 or 42
+bars). Control: the same gate, coins, folds, horizon and sizing, the forecast from the gate's own return (standardised,
+clipped at 0) instead of the breakout; steps 4 and 6 only.
+| Idea | Sharpe | Minus holding's | Calmar | Mean daily return | Trades per day |
+|---|---|---|---|---|---|
+| large breakouts in rising coins (19 coins) | 1.53 | +0.92 | 1.97 | 0.06 % | 0.15 |
+| control: the 30-day rise alone | 1.38 | +0.77 | 1.78 | 0.11 % | 0.41 |
+| break size in mean ranges (6 coins) | 1.11 | +0.56 | 1.21 | 0.11 % | 0.21 |
+| control: the 7-day rise alone | 1.05 | +0.49 | 1.29 | 0.10 % | 0.60 |
+Both controls are profitable enough on all six checks. The breakout adds 0.06 to 0.15 of Sharpe (and trades less); the
+trend filter carries most of the result. Same reading as the levels run: the paying ideas of night 3 are, at heart, the
+known momentum family; what the new components add is small and not yet shown to hold on its own.
