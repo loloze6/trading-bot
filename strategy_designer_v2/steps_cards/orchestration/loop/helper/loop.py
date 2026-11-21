@@ -202,6 +202,11 @@ def main():
     for iid in unfinished(args.run):
         if iid not in paths:
             continue
+        why = stop_reason(args.budget, spent(args.run), [iid])          # the budget holds for a resumed idea too
+        if why:                                                        # (2026-11-21: 29 resumed ideas ran past it)
+            log_turn(args.run, {"stop": why, "spent": spent(args.run)})
+            print(f"{args.run}: stopped: {why}")
+            return
         log_turn(args.run, {"idea": iid, "resumed": "its run was stopped before it finished", "spent_before": spent(args.run)})
         code, last = call_run_idea(paths[iid], args)
         if refused(args.run, iid, code, last):

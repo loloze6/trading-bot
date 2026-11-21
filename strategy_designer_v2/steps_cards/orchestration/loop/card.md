@@ -63,7 +63,9 @@ call the service refused (it never ran: a usage limit, an outage; `common/lib.py
 `run_idea` with that code; the loop then writes "not run: the model service refused a call", marks nothing failed, and
 stops; the idea is picked again when the loop is resumed. The components step refused the same way stops the loop too.
 An idea's **latest** outcome line counts: a "retry" line written after a failure, with its reason, makes it a candidate
-again (used once, for the ideas the usage limit marked failed on night 3).
+again (used once, for the ideas the usage limit marked failed on night 3). The budget holds before every
+`run_idea` call, a resumed idea's included (2026-11-21: 29 re-admitted ideas counted as unfinished ran before the
+budget check, 58 USD on a 35 USD budget).
 
 ## When the loop is stopped mid-idea
 An idea whose turn started but whose `run_idea` call did not finish (the operator stopped the loop, the machine

@@ -128,3 +128,21 @@ def test_a_refused_call_stops_the_loop_and_marks_nothing_failed(tmp_path):
     assert loop.refused("x_run", "a", loop.SERVICE_REFUSED, ["model call refused by the service: limit"], tmp_path)
     t = loop.turns("x_run", tmp_path)
     assert t[-1]["stop"].startswith(loop.REFUSED) and loop.failed("x_run", tmp_path) == set()
+
+
+def test_a_resumed_idea_does_not_run_past_the_budget(tmp_path, monkeypatch):
+    # night 3: ideas re-admitted by retry lines counted as unfinished and ran before the budget check (58 of 35 USD)
+    monkeypatch.setattr(loop, "ORCH", tmp_path)
+    run = "x_run"
+    (tmp_path / "run_idea" / run).mkdir(parents=True)
+    (tmp_path / "run_idea" / run / "table.json").write_text(json.dumps([{"idea": "done", "cost": 40.0}]))
+    monkeypatch.setattr(loop, "table_rows", lambda r, root=tmp_path: json.loads((tmp_path / "run_idea" / run / "table.json").read_text()))
+    monkeypatch.setattr(loop, "spent", lambda r, root=tmp_path: 40.0)
+    monkeypatch.setattr(loop, "unfinished", lambda r, root=tmp_path: ["a"])
+    monkeypatch.setattr(loop.select_next, "written_in", lambda r: [tmp_path / "a.md"])
+    called = []
+    monkeypatch.setattr(loop, "call_run_idea", lambda *a, **k: called.append(a) or (0, [""]))
+    monkeypatch.setattr(loop, "log_turn", lambda r, e, root=tmp_path: None)
+    monkeypatch.setattr(sys, "argv", ["loop.py", "--run", run, "--python", "py", "--budget", "35"])
+    loop.main()
+    assert called == []                                              # stopped on the budget before the resumed idea
