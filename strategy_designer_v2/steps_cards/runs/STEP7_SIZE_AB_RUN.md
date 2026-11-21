@@ -111,7 +111,7 @@ B, whether an idea repeats a daily idea already tested (its text against the run
 **Limits:** 11 and 9 ideas; a difference of one or two profitable ideas is noise. Read with the sizes against the cost,
 not with the profitable count alone.
 
-## End to end: reading (2026-11-21, 03:30 Paris; B 12.3 USD and 104 minutes here, B′ 7.66 USD and 64 minutes in its own session)
+## End to end: reading (2026-11-21, 02:50 Paris; B 12.3 USD and 104 minutes here, B′ 7.66 USD and 64 minutes in its own session)
 
 | | B (the information and the sentence) | B′ (the information only) |
 |---|---|---|
