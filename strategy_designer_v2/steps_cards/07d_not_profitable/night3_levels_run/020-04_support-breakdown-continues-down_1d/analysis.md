@@ -1,0 +1,22 @@
+---
+line: 7.d not profitable
+backtest: 020-04_support-breakdown-continues-down_1d
+idea tested: 020-04_support-breakdown-continues-down
+step 5: inconclusive
+step 6: not profitable enough
+mode: one call
+explorations: 2
+cost: 0.3291 USD
+---
+## Findings
+- **F1:** The book loses mostly by being short against coins that rise: it is short 73 % to 86 % of bars while the coins rise 0.07 % to 0.16 % a day on average, so its gain from the market's own rise is -0.03 % to -0.06 % a day per coin. That is most of its mean daily gain of -0.000 % to -0.09 %, and it leaves the book's Sharpe at -0.50 against holding's +0.55.
+- **F2:** The idea's size does not cover a trade. Per case, the unusual move is +0.20 % over 5 days, a strength of 0.017 (about a third of the usual 0.05). The total move is -0.39 %, set against a cost of 0.19 %, so a short on the signal loses before fees.
+- **F3:** The grading runs the wrong way. In the lowest four-fifths of depth × touch count, short cases show unusual moves of +0.69 %, +1.08 % (t 2.6), +0.63 % and +0.14 % (about 474 cases each). In the deepest fifth (raw 52 to 251) the unusual move is -0.96 % (t -1.79) and the total move is -1.56 %. The most negative forecast quartile shows a total of -0.68 % (t -2.16, 1183 cases). The deepest breaks of the most-held levels are followed by rises.
+- **F4:** Shorts lose after large prior falls and gain after mild ones. When the 10-day return before the case is below -12.9 %, the unusual move is -1.03 % (t -1.86, 432 cases) and the total is -1.65 %. When it is -12.9 % to -5.4 %, the unusual move is +1.41 % (t 2.72, 432 cases). Cases more than 43 % under the 90-day high show a total of -1.34 % (t -2.04, 391 cases).
+- **F5:** The result rests on its years. The unusual move of short cases is +2.20 % in 2018 (t 2.39, 404 cases) and +1.33 % in 2019, but negative from 2020 to 2024 (total t -2.1 to -3.4), and it is similar across the six coins (+0.08 % to +0.85 %).
+
+## Ideas
+- `020-04_support-breakdown-continues-down.d1_support-break-after-mild-decline` (from F3, F4, F2): When a coin closes below a price where it turned up several times in the past 90 days, it tends to keep falling over the next 5 days, and the more times the level held before, the larger the fall, except when the coin has already fallen sharply over its past 10 days: the larger that 10-day fall, the smaller the continuation.
+- `020-04_support-breakdown-continues-down.d2_deep-support-break-rebounds` (from F3, F4, F1, F2): When a coin closes far below a price where it turned up several times in the past 90 days, it tends to rise over the next 5 days, and the deeper its close under that level and the more times the level held, the larger the rise.
+
+Explorations: `exploration/` (each round's function and its result). Ideas: `ideas/`.
