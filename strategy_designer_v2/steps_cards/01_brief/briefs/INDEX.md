@@ -13,3 +13,8 @@
 013_anchoring-to-recent-high: Coins near their recent high under-react as anchored holders sell into it; breaks above the high then continue as that supply is exhausted. []
 014_funding-settlement-hour-pressure: Spot price and volume shift around fixed perpetual funding settlement times, as leveraged and basis traders unwind before paying, then partly reverse. []
 015_directional-volatility-asymmetry-question: Question: do a coin's rallies raise later volatility more than equal falls, via chasing and squeezes, or less, via forced long liquidation? []
+018_daily-condition-caught-on-the-hour: A daily situation acted on at the hour it first holds, not at the daily close, catches part of the move daily traders miss; held for days. [bar 1h]
+019_quiet-range-then-breakout-on-four-hour-bars: After unusually narrow ranges, the first decisive four-hour bar out of the range points the way of a large move over one to three days. [bar 4h]
+020_support-and-resistance-at-past-turning-prices: Prices where a coin turned several times act as barriers: it turns there again, and a clear close beyond one continues for days. [bar 1d]
+021_ichimoku-cloud-as-a-watched-equilibrium: Above a rising Ichimoku cloud a coin keeps rising, below a falling one it keeps falling; closes through a thin cloud move more. [bar 1d]
+022_weak-effects-combined-by-what-worked-before: Weak known effects, combined with weights learned only from past data, forecast the coming days better than any one alone. [bar 1d]
