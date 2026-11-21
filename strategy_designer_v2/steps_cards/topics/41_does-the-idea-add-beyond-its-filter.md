@@ -117,6 +117,7 @@ books in one live bot (it will use the register).
 | 2026-11-21 | The 20 older paying records rerun on today's engine, with a before and after table | the operator | references on equal terms; a proof of the holding rule and the measured costs on real books | keeping them as recorded (biased: other holding, other costs) |
 | 2026-11-21 | The function is named `ideas_similarities_check` | the operator | "paying books" is confusing as a function name (the notion keeps its name) | `paying_books` |
 | 2026-11-21 | Line 7.f deleted; who reads the comparisons, and whether `run_idea` calls the function, stays open in this topic | the operator | 7.f was on hold since 2026-11-15 and never ran; what comes after a paying idea is topic 08 | 7.f as its reader |
+| 2026-11-21 | The older paying books enter the register as they are: their plans have no holding setting (made before 2026-11-19), and they are not re-planned | the operator ("the backtest without the setting remains a valid backtest; nothing prevents us checking similarities with them") | the check compares books as recorded, and a book that re-sizes every bar is what it is | re-planning them with the holding setting (it changes the record, and answers another question: what the idea would be today) |
 
 ## Status and next
 The definitions agreed with the operator (2026-11-21); next: the plan in order, step 1 first (the definitions in
