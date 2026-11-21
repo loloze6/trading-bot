@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean unusual 18-bar move of breakout bets (return minus coin's mean 18-bar return)",
+    "value": 0.0017407382799906747,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.348593830687332
+    },
+    "threshold": "confirm t >= 2 over >= 30 cases with upper-minus-lower > 0; reject t <= -2 over >= 30 cases"
+  },
+  "supporting_check": {
+    "name": "mean unusual move of upper half minus lower half (split at median signal-bar forecast)",
+    "value": null,
+    "passed": null
+  },
+  "counts": {
+    "cases": 6664,
+    "upper half cases": 0,
+    "lower half cases": 6664
+  },
+  "decided_by": "The t of the mean unusual move lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "A case is the first bet (long forecast rising >= 2 points from its lowest level since the last bet, reset to 0 when flat) in each 18-bar grid cell counted from each window's first row, dropped if 18 bars do not remain in the window; the drift is the coin's mean return on the non-overlapping 18-bar grid of all its windows; the median split puts cases with forecast above the median in the upper half and those at or below it in the lower half."
+}
