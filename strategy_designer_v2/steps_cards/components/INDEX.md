@@ -76,3 +76,6 @@ intraday_1h_run | 017-04_postsettle-decline-after-downtrend_1h | HourOfDayCompon
 intraday_1h_run | 017-05_settlement-move-reverses-after_1h | HourOfDayComponent | exists: HourOfDayComponent {}
 slow_1h_run | 016-01_up-grind-price-continuation_1h | GrindShareOfRise | built: TopGainsShareOfRiseComponent {"form": "residual", "k": 3, "period": 72}
 slow_1h_run | 016-04_down-jump-price-reversal.g1_volatile-regime-daily-move-reversal_1h | VolRatioWeightedScaledReturn | built: VolatilityScaledReturnComponent {"period": 24, "vol_lookback": 720, "vol_period": 168}
+night3_4h_run | 019-03_upward-breakout-quiet-continuation_4h | StretchToAverageBarRangeRatio | built: RangeCompressionRatioComponent {"base": "mean_bar_range", "exclude_current": 1, "form": "width", "long_period": 180, "short_period": 12}
+night3_4h_run | 019-03_upward-breakout-quiet-continuation_4h | NarrowRangeBreakoutComponent | built: NarrowRangeBreakoutComponent {"base_period": 180, "period": 12}
+night3_4h_run | 019-04_downward-breakout-quiet-continuation_4h | StretchRangeToAverageBarRange | built: RangeCompressionRatioComponent {"base": "mean_bar_range", "exclude_current": 2, "form": "compression", "long_period": 180, "short_period": 12}

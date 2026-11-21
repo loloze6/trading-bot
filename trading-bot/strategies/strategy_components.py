@@ -2274,33 +2274,36 @@ class RsiChangeFromPriorLowComponent(SubStrategyComponent):
 
 class RangeCompressionRatioComponent(SubStrategyComponent):
     """
-    How narrow the recent high-low band is against a longer one, on every bar:
+    How narrow a short stretch of bars is against a longer base, on every bar.
 
-        exclude_current = 0 (default): end = t      (windows end at bar t, included)
-        exclude_current = 1:           end = t - 1  (windows end at bar t-1)
-        S = max(high[end-short_period+1 .. end]) - min(low[end-short_period+1 .. end])
-        L = max(high[end-long_period+1 .. end])  - min(low[end-long_period+1 .. end])
-        form = "compression" (default): raw_value = 1 - S / L   (0.0 when L is 0)
-        form = "width":                  raw_value = S / L       (1.0 when L is 0)
+        exclude_current = 0 (default): short = bars t-short_period+1 .. t,  long = bars t-long_period+1 .. t
+        exclude_current = 1:           short = bars t-short_period .. t-1,  long = bars t-long_period .. t-1
+        exclude_current = 2:           short = bars t-short_period .. t-1,  long = bars t-long_period+1 .. t
+        S = max(high[short]) - min(low[short])
+        base = "range" (default):    B = max(high[long]) - min(low[long])
+        base = "mean_bar_range":     B = mean(high[i] - low[i] for i in long)
+        ratio = S / B
+        form = "compression" (default): raw_value = 1 - ratio   (0.0 when B == 0)
+        form = "width":                 raw_value = ratio       (1.0 when B == 0)
 
-    "width" is exactly 1 minus "compression". No config step gives 1 minus a value, so it is a setting.
-    The defaults (form "compression", exclude_current 0) give the original output, unchanged.
-    With short_period 20, long_period 100 and form "width", the output is
-    (max high - min low over the last 20 bars) / (max high - min low over the last 100 bars).
+    Range & sign: base "range": 0 to 1, never negative, no direction ("compression" near 1 when the short band is
+    very narrow, 0 when it spans the whole long range; "width" the reverse). base "mean_bar_range": "width" is 0 and
+    up, unbounded (the stretch counted in average bar ranges); "compression" is 1 minus that, up to 1, signed,
+    rising as the stretch narrows. Graded.
+    Warm-up: long_period + 1 rows when exclude_current is 1, else long_period rows (bar t included); the short
+    window needs short_period + 1 rows at most, never more than long_period since short_period < long_period.
+    exclude_current 0 and 1 and base "range" are the original outputs, unchanged. exclude_current 2 leaves bar t
+    out of the stretch only, so bar t's own move cannot widen it, while the base of average bar ranges includes it.
 
-    Range and sign: 0 to 1, never negative, no direction. The short window lies inside the long one, so S <= L.
-    Graded: the value moves continuously with the two ranges.
-    Warm-up: long_period + exclude_current rows, bar t included.
+    NaN: a NaN high or low in any row read (long window or short window) gives NaN. A missing column raises.
+    Building the component raises for short_period < 1, short_period >= long_period, exclude_current not 0, 1 or 2,
+    form other than "compression" or "width", base other than "range" or "mean_bar_range".
 
-    NaN: a NaN high or low anywhere in the long window gives NaN. A missing high or low column raises.
-    Building the component raises for a short_period below 1, a short_period at or above long_period, an
-    exclude_current other than 0 or 1, or a form other than "compression" or "width".
-
-    WHY THIS CANNOT LEAK: it reads only the high and low columns of the last long_period + exclude_current rows
-    of data, the last of which is bar t; a bar's high and low are known at that bar's close.
+    WHY THIS CANNOT LEAK: it reads only the `high` and `low` columns of the last long_period + 1 rows at most of
+    data, the last row being bar t; no later row exists in the data it is given.
     """
 
-    def __init__(self, name="RangeCompressionRatio", weight=1.0, parameters=None):
+    def __init__(self, name="RangeCompression", weight=1.0, parameters=None):
         super().__init__(name, weight, parameters or {})
         self.short_period = int(self.parameters.get("short_period", 20))
         self.long_period = int(self.parameters.get("long_period", 100))
@@ -2308,17 +2311,20 @@ class RangeCompressionRatioComponent(SubStrategyComponent):
             raise ValueError(f"RangeCompressionRatioComponent: short_period must be >= 1, got {self.short_period}")
         if self.short_period >= self.long_period:
             raise ValueError(
-                f"RangeCompressionRatioComponent: short_period must be below long_period, got "
-                f"{self.short_period} and {self.long_period}")
+                f"RangeCompressionRatioComponent: short_period must be < long_period, "
+                f"got {self.short_period} and {self.long_period}")
         ex = self.parameters.get("exclude_current", 0)
-        if ex not in (0, 1):
-            raise ValueError(f"RangeCompressionRatioComponent: exclude_current must be 0 or 1, got {ex!r}")
+        if ex not in (0, 1, 2):
+            raise ValueError(f"RangeCompressionRatioComponent: exclude_current must be 0, 1 or 2, got {ex!r}")
         self.exclude_current = int(ex)
-        form = self.parameters.get("form", "compression")
-        if form not in ("compression", "width"):
+        self.form = self.parameters.get("form", "compression")
+        if self.form not in ("compression", "width"):
             raise ValueError(
-                f"RangeCompressionRatioComponent: form must be 'compression' or 'width', got {form!r}")
-        self.form = form
+                f"RangeCompressionRatioComponent: form must be 'compression' or 'width', got {self.form!r}")
+        self.base = self.parameters.get("base", "range")
+        if self.base not in ("range", "mean_bar_range"):
+            raise ValueError(
+                f"RangeCompressionRatioComponent: base must be 'range' or 'mean_bar_range', got {self.base!r}")
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -2327,35 +2333,42 @@ class RangeCompressionRatioComponent(SubStrategyComponent):
         self.debug_info = {}
         if not self.is_ready():
             return
-        high = data['high'].astype(float).to_numpy()
-        low = data['low'].astype(float).to_numpy()
-        end = len(high) - self.exclude_current
-        lh = high[end - self.long_period:end]
-        ll = low[end - self.long_period:end]
-        sh = high[end - self.short_period:end]
-        sl = low[end - self.short_period:end]
-        if np.isnan(lh).any() or np.isnan(ll).any():
-            self._raw_value = float("nan")
-            self.debug_info = {'short_range': float("nan"), 'long_range': float("nan")}
+        high = data['high'].astype(float)
+        low = data['low'].astype(float)
+        sp = self.short_period
+        lp = self.long_period
+        if self.exclude_current == 1:
+            lh, ll = high.iloc[-(lp + 1):-1], low.iloc[-(lp + 1):-1]
+            sh, sl = high.iloc[-(sp + 1):-1], low.iloc[-(sp + 1):-1]
+        elif self.exclude_current == 2:
+            lh, ll = high.iloc[-lp:], low.iloc[-lp:]
+            sh, sl = high.iloc[-(sp + 1):-1], low.iloc[-(sp + 1):-1]
         else:
-            long_range = float(lh.max() - ll.min())
-            short_range = float(sh.max() - sl.min())
-            if not long_range > 0:
-                compression = 0.0
-                width = 1.0
-            else:
-                ratio = short_range / long_range
-                compression = 1.0 - ratio
-                width = ratio
-            self._raw_value = float(width if self.form == "width" else compression)
-            self.debug_info = {'short_range': short_range, 'long_range': long_range, 'form': self.form}
+            lh, ll = high.iloc[-lp:], low.iloc[-lp:]
+            sh, sl = high.iloc[-sp:], low.iloc[-sp:]
+        if lh.isna().any() or ll.isna().any() or sh.isna().any() or sl.isna().any():
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        s_range = float(sh.max() - sl.min())
+        if self.base == "mean_bar_range":
+            b = float((lh - ll).mean())
+        else:
+            b = float(lh.max() - ll.min())
+        if b == 0:
+            self._raw_value = 0.0 if self.form == "compression" else 1.0
+        else:
+            ratio = s_range / b
+            self._raw_value = float(1.0 - ratio) if self.form == "compression" else float(ratio)
         self.confidence = 1.0
+        self.debug_info = {'short_range': s_range, 'base': b, 'base_kind': self.base,
+                           'exclude_current': self.exclude_current}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
 
     def get_required_periods(self) -> int:
-        return self.long_period + self.exclude_current
+        return self.long_period + (1 if self.exclude_current == 1 else 0)
 
 
 class LowerWickComponent(SubStrategyComponent):
@@ -3704,3 +3717,76 @@ class HourOfDayComponent(SubStrategyComponent):
 
     def get_required_periods(self):
         return 2
+
+
+class NarrowRangeBreakoutComponent(SubStrategyComponent):
+    """
+    The close's breakout above a narrow prior stretch, on every bar:
+
+        H = max(high[t-period .. t-1])                 (bar t excluded)
+        S = H - min(low[t-period .. t-1])              (the stretch's range)
+        B = mean(high[i] - low[i]), i = t-base_period+1 .. t   (bar t included)
+        raw_value = max(0, close[t] - H) / close[t] x 100 x B / S
+        raw_value = 0.0 when S = 0 (period identical flat bars)
+
+    Range & sign: 0 and up, unbounded above, never negative, no direction. It is 0 when close[t] <= H, and it grows
+    continuously with the breakout's size (percent of close[t]) and with the stretch's narrowness (average bar
+    ranges per stretch range).
+    Warm-up: max(base_period, period + 1) rows, bar t included (180 at the defaults).
+    NaN: a NaN high or low in the stretch or in the last base_period rows, or a NaN close[t], gives NaN.
+    A close[t] not above 0 also gives NaN (never on real bars).
+    Building the component raises for a period below 1 or a base_period below 1.
+
+    WHY THIS CANNOT LEAK: it reads only the high, low and close columns of the rows up to and including bar t (the
+    last row of data): close[t], high and low of bars t-period .. t-1, and high and low of the last base_period
+    rows. All of them are known at bar t's close.
+    """
+
+    def __init__(self, name="NarrowRangeBreakout", weight=1.0, parameters=None):
+        super().__init__(name, weight, parameters or {})
+        self.period = int(self.parameters.get("period", 12))
+        if self.period < 1:
+            raise ValueError(f"NarrowRangeBreakoutComponent: period must be >= 1, got {self.period}")
+        self.base_period = int(self.parameters.get("base_period", 180))
+        if self.base_period < 1:
+            raise ValueError(f"NarrowRangeBreakoutComponent: base_period must be >= 1, got {self.base_period}")
+        self._raw_value = 0.0
+
+    def update(self, data: pd.DataFrame):
+        self.data = data
+        self._raw_value = 0.0
+        self.debug_info = {}
+        if not self.is_ready():
+            return
+        high = data['high'].astype(float).to_numpy()
+        low = data['low'].astype(float).to_numpy()
+        close = data['close'].astype(float).to_numpy()
+        p = self.period
+        bp = self.base_period
+        sh = high[-(p + 1):-1]
+        sl = low[-(p + 1):-1]
+        bh = high[-bp:]
+        bl = low[-bp:]
+        c = float(close[-1])
+        if (np.isnan(sh).any() or np.isnan(sl).any() or np.isnan(bh).any() or np.isnan(bl).any()
+                or np.isnan(c) or not c > 0):
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        h_max = float(np.max(sh))
+        s = h_max - float(np.min(sl))
+        b = float(np.mean(bh - bl))
+        brk = max(0.0, c - h_max) / c * 100.0
+        if not s > 0:
+            value = 0.0
+        else:
+            value = brk * b / s
+        self._raw_value = float(value)
+        self.confidence = 1.0
+        self.debug_info = {'prior_high': h_max, 'stretch_range': s, 'mean_bar_range': b, 'breakout_pct': brk}
+
+    def is_ready(self) -> bool:
+        return self.data is not None and len(self.data) >= self.get_required_periods()
+
+    def get_required_periods(self) -> int:
+        return max(self.base_period, self.period + 1)
