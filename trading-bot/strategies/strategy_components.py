@@ -3721,25 +3721,28 @@ class HourOfDayComponent(SubStrategyComponent):
 
 class NarrowRangeBreakoutComponent(SubStrategyComponent):
     """
-    The close's breakout above a narrow prior stretch, on every bar:
+    A break out of a narrow stretch, scaled by how narrow the stretch is, on every bar:
 
-        H = max(high[t-period .. t-1])                 (bar t excluded)
-        S = H - min(low[t-period .. t-1])              (the stretch's range)
-        B = mean(high[i] - low[i]), i = t-base_period+1 .. t   (bar t included)
-        raw_value = max(0, close[t] - H) / close[t] x 100 x B / S
-        raw_value = 0.0 when S = 0 (period identical flat bars)
+        stretch = bars t-period .. t-1                      (bar t excluded)
+        H = max(high over the stretch), L = min(low over the stretch), S = H - L
+        B = mean(high[i] - low[i]) over the last base_period bars, bar t included
+        side = "above" (default): brk = max(0, close[t] - H)
+        side = "below":           brk = max(0, L - close[t])
+        raw_value = brk / close[t] x 100 x B / S            (0.0 when S = 0)
 
-    Range & sign: 0 and up, unbounded above, never negative, no direction. It is 0 when close[t] <= H, and it grows
-    continuously with the breakout's size (percent of close[t]) and with the stretch's narrowness (average bar
-    ranges per stretch range).
-    Warm-up: max(base_period, period + 1) rows, bar t included (180 at the defaults).
-    NaN: a NaN high or low in the stretch or in the last base_period rows, or a NaN close[t], gives NaN.
-    A close[t] not above 0 also gives NaN (never on real bars).
-    Building the component raises for a period below 1 or a base_period below 1.
+    Range & sign: 0 and up, unbounded above, never negative; no direction. "above" is 0 when the close is at or
+    below the prior high. "below" is 0 when the close is at or above the prior low. Both grow with the size of
+    the break and with how narrow the stretch is against the average bar range. side "above" is the original
+    output, unchanged; use `negate` on "below" for a short-side forecast.
+    Warm-up: max(base_period, period + 1) rows, bar t included.
+    NaN: a NaN high or low in the stretch or in the last base_period rows, or a NaN close[t], gives NaN. A
+    close[t] not above 0 gives NaN (never on real bars). S = 0 (period identical flat bars) gives 0.0.
+    Building the component raises for a period below 1, a base_period below 1, or a side other than "above"
+    or "below".
 
-    WHY THIS CANNOT LEAK: it reads only the high, low and close columns of the rows up to and including bar t (the
-    last row of data): close[t], high and low of bars t-period .. t-1, and high and low of the last base_period
-    rows. All of them are known at bar t's close.
+    WHY THIS CANNOT LEAK: it reads only the high, low and close of the rows up to and including bar t (the last
+    row of data): highs and lows of the last max(base_period, period + 1) rows and the close of bar t, all known
+    at bar t's close.
     """
 
     def __init__(self, name="NarrowRangeBreakout", weight=1.0, parameters=None):
@@ -3750,6 +3753,10 @@ class NarrowRangeBreakoutComponent(SubStrategyComponent):
         self.base_period = int(self.parameters.get("base_period", 180))
         if self.base_period < 1:
             raise ValueError(f"NarrowRangeBreakoutComponent: base_period must be >= 1, got {self.base_period}")
+        side = self.parameters.get("side", "above")
+        if side not in ("above", "below"):
+            raise ValueError(f"NarrowRangeBreakoutComponent: side must be 'above' or 'below', got {side!r}")
+        self.side = side
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -3760,30 +3767,37 @@ class NarrowRangeBreakoutComponent(SubStrategyComponent):
             return
         high = data['high'].astype(float).to_numpy()
         low = data['low'].astype(float).to_numpy()
-        close = data['close'].astype(float).to_numpy()
-        p = self.period
-        bp = self.base_period
-        sh = high[-(p + 1):-1]
-        sl = low[-(p + 1):-1]
-        bh = high[-bp:]
-        bl = low[-bp:]
-        c = float(close[-1])
+        close_t = float(data['close'].astype(float).to_numpy()[-1])
+        sh = high[-(self.period + 1):-1]
+        sl = low[-(self.period + 1):-1]
+        bh = high[-self.base_period:]
+        bl = low[-self.base_period:]
         if (np.isnan(sh).any() or np.isnan(sl).any() or np.isnan(bh).any() or np.isnan(bl).any()
-                or np.isnan(c) or not c > 0):
+                or np.isnan(close_t)):
             self._raw_value = float("nan")
             self.confidence = 1.0
             return
-        h_max = float(np.max(sh))
-        s = h_max - float(np.min(sl))
+        if not close_t > 0:
+            self._raw_value = float("nan")
+            self.confidence = 1.0
+            return
+        hi = float(np.max(sh))
+        lo = float(np.min(sl))
+        s = hi - lo
         b = float(np.mean(bh - bl))
-        brk = max(0.0, c - h_max) / c * 100.0
-        if not s > 0:
+        if s == 0:
             value = 0.0
+            brk = 0.0
         else:
-            value = brk * b / s
+            if self.side == "below":
+                brk = max(0.0, lo - close_t)
+            else:
+                brk = max(0.0, close_t - hi)
+            value = brk / close_t * 100.0 * b / s
         self._raw_value = float(value)
         self.confidence = 1.0
-        self.debug_info = {'prior_high': h_max, 'stretch_range': s, 'mean_bar_range': b, 'breakout_pct': brk}
+        self.debug_info = {'prior_high': hi, 'prior_low': lo, 'stretch_range': s,
+                           'mean_bar_range': b, 'break': brk, 'side': self.side}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
@@ -3794,23 +3808,27 @@ class NarrowRangeBreakoutComponent(SubStrategyComponent):
 
 class BreakoutInMeanRangesComponent(SubStrategyComponent):
     """
-    The size of the close's break above the prior high, counted in average bar ranges, on every bar:
+    The close's distance from the prior stretch's highest high, in average bar ranges, on one side of it:
 
-        H = max(high[t - period .. t - 1])                        (bar t excluded)
-        B = mean(high[i] - low[i]) for i = t - base_period + 1 .. t  (bar t included)
-        raw_value = max(0, close[t] - H) / B                      (0.0 when B = 0)
+        H = max(high[t - period .. t - 1])                     (bar t excluded)
+        B = mean(high[i] - low[i]) for i = t - base_period + 1 .. t   (bar t included)
+        side = "above" (default): raw_value = max(0, close[t] - H) / B
+        side = "below":           raw_value = max(0, H - close[t]) / B
+        raw_value = 0.0 when B = 0
 
-    Range & sign: 0 and up, unbounded above, never negative; no direction. It is 0 when the close is at or
-    below the prior high, and it grows linearly with the break measured in average bar ranges.
+    Range and sign: 0 and up, unbounded above, never negative; no direction. "above" is 0 when the close is at or
+    below the prior high and grows linearly with the size of the break. "below" is 0 when the close is at or above
+    the prior high and grows linearly as the close sits deeper below it. Units: mean bar ranges. Graded and
+    continuous in the close at H. The default "above" is the original output, unchanged.
     Warm-up: max(base_period, period + 1) rows, bar t included.
 
-    NaN: a NaN high in the stretch, a NaN high or low in the last base_period rows, or a NaN close[t] gives
-    NaN. B = 0 (base_period zero-range bars in a row) reads 0.0.
-    Building the component raises for a period below 1 or a base_period below 1.
+    WHY THIS CANNOT LEAK: it reads the `high` column of rows t-period .. t-1, the `high` and `low` columns of the
+    last base_period rows (up to and including bar t, the last row of data), and close[t]. All of these are known at
+    bar t's close.
 
-    WHY THIS CANNOT LEAK: it reads only the high, low and close columns of the rows up to and including bar t
-    (the last row of data): the highs of rows t-period .. t-1, the highs and lows of the last base_period
-    rows, and close[t]. All of these are known at bar t's close.
+    NaN: a NaN high in the stretch, a NaN high or low in the last base_period rows, or a NaN close[t] gives NaN.
+    Building the component raises for a period below 1, a base_period below 1, or a side other than "above" or
+    "below".
     """
 
     def __init__(self, name="BreakoutInMeanRanges", weight=1.0, parameters=None):
@@ -3822,6 +3840,10 @@ class BreakoutInMeanRangesComponent(SubStrategyComponent):
         if self.base_period < 1:
             raise ValueError(
                 f"BreakoutInMeanRangesComponent: base_period must be >= 1, got {self.base_period}")
+        side = self.parameters.get("side", "above")
+        if side not in ("above", "below"):
+            raise ValueError(f"BreakoutInMeanRangesComponent: side must be 'above' or 'below', got {side!r}")
+        self.side = side
         self._raw_value = 0.0
 
     def update(self, data: pd.DataFrame):
@@ -3833,24 +3855,23 @@ class BreakoutInMeanRangesComponent(SubStrategyComponent):
         high = data['high'].astype(float).to_numpy()
         low = data['low'].astype(float).to_numpy()
         close = data['close'].astype(float).to_numpy()
-        stretch_high = high[-(self.period + 1):-1]
-        base_high = high[-self.base_period:]
-        base_low = low[-self.base_period:]
+        stretch = high[-(self.period + 1):-1]
+        base_h = high[-self.base_period:]
+        base_l = low[-self.base_period:]
         c = float(close[-1])
-        if (np.isnan(stretch_high).any() or np.isnan(base_high).any() or np.isnan(base_low).any()
-                or np.isnan(c)):
+        if np.isnan(stretch).any() or np.isnan(base_h).any() or np.isnan(base_l).any() or np.isnan(c):
             self._raw_value = float("nan")
             self.confidence = 1.0
             return
-        prior_high = float(np.max(stretch_high))
-        mean_range = float(np.mean(base_high - base_low))
-        brk = max(0.0, c - prior_high)
-        if mean_range > 0:
-            self._raw_value = float(brk / mean_range)
-        else:
+        h = float(stretch.max())
+        b = float(np.mean(base_h - base_l))
+        gap = (c - h) if self.side == "above" else (h - c)
+        if b == 0:
             self._raw_value = 0.0
+        else:
+            self._raw_value = float(max(0.0, gap) / b)
         self.confidence = 1.0
-        self.debug_info = {'prior_high': prior_high, 'mean_bar_range': mean_range, 'break': brk}
+        self.debug_info = {'prior_high': h, 'mean_bar_range': b, 'side': self.side}
 
     def is_ready(self) -> bool:
         return self.data is not None and len(self.data) >= self.get_required_periods()
