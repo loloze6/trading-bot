@@ -38,3 +38,10 @@ against the cost; profitable enough; holding on the unseen dates; USD and hours.
 
 For brief 022 (learned weights), N4 or a leak is the main risk: the component must learn only from returns already
 known at each bar (no lookahead), and its proof must show it.
+
+## During the night
+- **03:56 Paris (02:56 UTC):** the account's 5-hour usage limit stopped every session at once (six sessions running,
+  the designer's included); it reset at 06:10 Paris. Visible in each session's events ("You've hit your 5-hour limit").
+- **06:15 Paris:** the operator: "continue; the other sessions reached the limit as well, so to be resumed". The five
+  sessions were told to resume their loops, keep their own turns short, and start nothing after 10:00 Paris (09:00
+  UTC) instead of 08:00, to give back the time lost; budgets unchanged.
