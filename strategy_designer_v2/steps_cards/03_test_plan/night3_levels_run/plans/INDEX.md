@@ -1,0 +1,1 @@
+020-01_resistance-retest-turns-down_1d: missing-components: The idea needs two things from the coin's own highs and closes over 90 days: the prices where it turned [BTC, ETH, LTC, XMR, XRP, ZEC, 1d, folds A, B, C, D]
