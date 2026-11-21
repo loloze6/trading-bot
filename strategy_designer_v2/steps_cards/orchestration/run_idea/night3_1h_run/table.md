@@ -25,21 +25,22 @@ One row per idea run; every status is read from the step's own result file. Each
 | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound | plan | inconclusive (+3.39) | profitable enough | - | 7.b: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.b1_plunge-rebound-all-coins, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.b2_uptrend-plunge-eight-day-rebound; 7.e: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e1_depth-graded-plunge-rebound-uptrend, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation; 7.g: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.g1_downtrend-rally-fades-next-day, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.g2_plunge-rebound-over-two-days | 1.86 | 81.4 |
 | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e1_depth-graded-plunge-rebound-uptrend | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends | plan | confirmed (+3.39) | profitable enough | unseen_2016_2017: holds; unseen_2026: no data | 7.g: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e1_depth-graded-plunge-rebound-uptrend.g1_strong-week-continues-uptrend, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e1_depth-graded-plunge-rebound-uptrend.g2_one-day-surge-keeps-rising | 0.66 | 11.5 |
 | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends | plan | inconclusive (+1.77) | profitable enough | - | 7.b: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.b1_monthly-rise-on-more-coins, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.b2_monthly-rise-one-week-continuation; 7.e: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e1_monthly-rise-weekly-continuation, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e2_strong-week-keeps-rising, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e3_monthly-continuation-in-up-years; 7.g: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.g1_weekly-rise-two-week-continuation, 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.g2_daily-plunge-three-day-rebound | 1.37 | 11.7 |
+| 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e1_monthly-rise-weekly-continuation | 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation | plan | confirmed (+2.93) | profitable enough | unseen_2016_2017: holds; unseen_2026: no data | 7.g: 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e1_monthly-rise-weekly-continuation.g1_weekend-continues-the-week | 0.84 | 11.3 |
 
 ## Consumption
-21 ideas, 20.29 USD, 259.0 minutes in all.
+22 ideas, 21.12 USD, 270.3 minutes in all.
 
 | Step | USD | Minutes |
 |---|---|---|
-| step3_plan | 2.58 | 82.3 |
-| step4_backtest | 0.00 | 102.9 |
-| step5_verdict | 2.18 | 9.7 |
-| step6_check | 0.00 | 1.4 |
-| chart_files | 0.00 | 1.8 |
+| step3_plan | 2.64 | 82.7 |
+| step4_backtest | 0.00 | 109.1 |
+| step5_verdict | 2.31 | 10.2 |
+| step6_check | 0.00 | 1.5 |
+| chart_files | 0.00 | 1.9 |
 | step7_7.a | 0.00 | 0.0 |
 | step7_7.c | 0.38 | 1.5 |
 | step7_7.e | 0.88 | 3.2 |
 | step7_7.b | 3.67 | 12.8 |
 | step7_7.d | 4.19 | 15.0 |
-| step7_7.g | 6.40 | 22.4 |
-| unseen_test | 0.00 | 6.0 |
+| step7_7.g | 7.04 | 24.6 |
+| unseen_test | 0.00 | 7.8 |

@@ -6,6 +6,7 @@
 018-05_hourly-plunge-loss-before-close_1h: not profitable enough [Sharpe -1.214; Sharpe minus holding's Sharpe -1.768; Calmar -0.3955]
 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b1_hourly-plunge-rebound-19-coins_1h: not profitable enough [Sharpe 0.4952; Sharpe minus holding's Sharpe -0.1121; Calmar 0.2419]
 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e1_depth-graded-plunge-rebound-uptrend_1h: profitable enough [Sharpe 1.019; Sharpe minus holding's Sharpe 0.465; Calmar 0.9953]
+018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation.e1_monthly-rise-weekly-continuation_1h: profitable enough [Sharpe 1.139; Sharpe minus holding's Sharpe 0.5848; Calmar 1.055]
 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends.e2_monthly-rise-multiweek-continuation_1h: profitable enough [Sharpe 1.073; Sharpe minus holding's Sharpe 0.5188; Calmar 0.8786]
 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b2_plunge-rebound-in-uptrends_1h: profitable enough [Sharpe 1.019; Sharpe minus holding's Sharpe 0.465; Calmar 0.9953]
 018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound.b3_plunge-continuation-in-downtrends_1h: not profitable enough [Sharpe -0.3092; Sharpe minus holding's Sharpe -0.8629; Calmar -0.2189]
