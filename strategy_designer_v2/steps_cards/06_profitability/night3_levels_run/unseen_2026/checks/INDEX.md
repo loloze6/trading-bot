@@ -1,1 +1,2 @@
+020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b1_resistance-breakout-in-uptrend_1d: not profitable enough [Sharpe 0.9039; Sharpe minus holding's Sharpe 0.8375; Calmar 1.762]
 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.e1_vol-scaled-20-day-high-breakout_1d: not profitable enough [Sharpe 0.3756; Sharpe minus holding's Sharpe 0.3092; Calmar 0.6977]

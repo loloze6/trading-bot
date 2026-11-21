@@ -1,0 +1,45 @@
+{
+  "line": "7.g",
+  "backtest": "020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b1_resistance-breakout-in-uptrend_1d",
+  "step5": "confirmed",
+  "step6": "profitable enough",
+  "explorations": 2,
+  "cost": 0.4708365000000001,
+  "findings": {
+    "F1": "Outside the breakout signal, a coin's own 30-day return grades what follows. On non-overlapping 10-day cells, the top fifth of 30-day returns per coin (median +40 %) is followed by a strength of +0.17 (t 3.2, 528 cases). The fourth fifth (median +12 %) gives +0.05 (t 1.1). The second fifth (median -13 %) gives -0.13 (t -3.9, 524 cases). The same order holds on 20-day cells: top +0.22 (t 3.0, 241 cases), second fifth -0.12 (t -2.5). It also holds on 5-day cells: top +0.12 (t 3.3, 1067 cases), second fifth -0.11 (t -4.7). The deepest falls (bottom fifth, median -27 %) are flat (-0.02 to -0.07), so the grading holds on the rising side and does not extend to the bottom.",
+    "F2": "The 30-day effect of F1 is not one period's. The 10-day strength of the top fifth minus the second fifth is positive in 7 of 8 years (+0.17 to +0.82). The exception is 2018, at -1.06, on few cases. The coins share dates, so the pooled t's overstate the independent evidence.",
+    "F3": "Within the tested breakout entries, the 30-day rise does more of the grading than the break measure. The 5-day strength rises from +0.04 to +0.16 to +0.20 across 30-day-return terciles (683 to 684 entries each). Across break-measure terciles it goes +0.13, +0.10, +0.18, with no order.",
+    "F4": "The breakout's move lasts about 10 days, not 20. From entries, the excess return is +0.92 % at 5 days (t 3.8, 3245), +1.73 % at 10 days (t 4.5, 3124) and +2.72 % at 20 days (t 4.3, 2850). Days 6 to 10 alone add +0.39 % (t 1.6), and days 11 to 20 alone add +0.42 % (t 1.0, 2050).",
+    "F5": "The book's gain depends on good years. The entries' 5-day strength is +0.23 to +0.40 in 2020, 2021 and 2024, and -0.35, -0.12 and -0.08 in 2018, 2022 and 2025.",
+    "F6": "Daily returns differ by weekday, but this is not graded and not tested as an idea. Per-coin demeaned daily returns are +27 bps on Wednesdays (t 3.3, positive in 18 of 19 coins and 6 of 8 years). They are +27 bps on Saturdays (t 4.4, 16 coins, 7 of 8 years) and -25 bps on Thursdays (t -2.4, positive in only 2 coins). These per-day moves are about one round-trip cost of 22 bps, so they would barely pay. Many angles were looked at, so this is reported without an idea."
+  },
+  "ideas": [
+    {
+      "idea": "The larger a coin's 30-day rise, the larger its rise over the next 10 days, while its 30-day return is positive.",
+      "consequence": "A trader would lean longer on a coin the further it has risen over the past month, and would refuse longs on a coin whose month is only mildly up.",
+      "name": "thirty-day rise keeps going",
+      "from": "F1, F2, F3",
+      "refs": [
+        "F1",
+        "F2",
+        "F3"
+      ]
+    },
+    {
+      "idea": "When a coin closes above a price where it turned down several times in the past 90 days while its 30-day return is positive, it keeps rising over the next 10 days, and the stronger its 30-day rise, the larger the rise.",
+      "consequence": "A trader buying such breaks in a rising month would hold them for about ten days rather than five, and would size them by the month's rise more than by the level's history.",
+      "name": "uptrend breakout lasts ten days",
+      "from": "F3, F4, F1",
+      "refs": [
+        "F3",
+        "F4",
+        "F1"
+      ]
+    }
+  ],
+  "idea_ids": [
+    "020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b1_resistance-breakout-in-uptrend.g1_thirty-day-rise-keeps-going",
+    "020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b1_resistance-breakout-in-uptrend.g2_uptrend-breakout-lasts-ten-days"
+  ],
+  "no_ideas": null
+}

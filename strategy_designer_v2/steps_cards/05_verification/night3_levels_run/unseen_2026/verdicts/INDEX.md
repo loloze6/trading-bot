@@ -1,1 +1,2 @@
+020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.b1_resistance-breakout-in-uptrend_1d: inconclusive (fit: adapted) [main: 0.00807868; t of the mean 1.43394; cases 425, upper half cases 212, lower half cases 213]
 020-03_resistance-breakout-continues-up.b1_resistance-breakout-all-coins.e1_vol-scaled-20-day-high-breakout_1d: inconclusive (fit: exact) [main: -0.000127818; OLS slope t -0.0452764; cases 166]
