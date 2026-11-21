@@ -1,0 +1,28 @@
+{
+  "status": "inconclusive",
+  "situation_check": {
+    "agreement": 1.0,
+    "passed": true
+  },
+  "main_measure": {
+    "name": "mean excess 18-bar return of bets (return minus coin's normal 18-bar drift), before costs",
+    "value": 0.0020280805802173605,
+    "statistic": {
+      "name": "t of the mean",
+      "value": 1.2762550119554619
+    },
+    "threshold": "confirm: mean > 0 with t >= 2 and supporting check passing; reject: mean < 0 with t <= -2; at least 30 independent cases"
+  },
+  "supporting_check": {
+    "name": "mean excess return of cases above the median signal forecast minus those at or below it",
+    "value": null,
+    "passed": null
+  },
+  "counts": {
+    "independent cases": 3073,
+    "upper half cases": 0,
+    "lower half cases": 3073
+  },
+  "decided_by": "The t of the mean excess return lies between -2 and 2, which the plan calls inconclusive.",
+  "reading": "A case is the first long bet (forecast rise of at least 2 points from its lowest positive level since the last bet, from 0 after flat) in each 18-bar grid cell counted from each window's first row, with its 18-bar return needing to end inside the window; the median split puts cases with forecast strictly above the median in the upper half and those at or below it in the lower half."
+}
