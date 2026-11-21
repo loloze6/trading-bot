@@ -2,4 +2,5 @@
 018-04_hourly-surge-multiday-continuation_1h: 3 ideas (2 explorations)
 018-05_hourly-plunge-loss-before-close.b1_plunge-in-uptrend-rebounds_1h: not run: entry condition not met (step 5: confirmed; step 6: profitable enough)
 018-05_hourly-plunge-loss-before-close_1h: 2 ideas (2 explorations)
+018-06_hourly-plunge-multiday-continuation.b1_hourly-plunge-two-day-rebound_1h: 3 ideas (2 explorations)
 018-06_hourly-plunge-multiday-continuation_1h: 3 ideas (2 explorations)
